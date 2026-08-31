@@ -26,8 +26,8 @@ export const meta = {
   title: 'Breakouts / Technical',
   subtitle: 'Live technical scoring across the NSE 500 and every listed holding — 16 rules, 24 points.',
   subviews: [
-    { id: 'technical-scanner', label: 'Technical Scanner' },
     { id: 'strong-breakouts', label: 'Strong Breakouts' },
+    { id: 'technical-scanner', label: 'Technical Scanner' },
     { id: 'fii-accumulation', label: 'FII Accumulation' },
     { id: 'earnings-surprise', label: 'Earnings Surprise' },
   ],
@@ -81,11 +81,11 @@ function loadingHtml() {
 function paint(ctx) {
   const rows = technicals.forScope(ctx.scope, coverage.holdings());
   const view = {
-    'technical-scanner': renderScanner,
     'strong-breakouts': renderStrongBreakouts,
+    'technical-scanner': renderScanner,
     'fii-accumulation': renderFiiAccumulation,
     'earnings-surprise': renderEarningsSurprise,
-  }[ctx.subview] || renderScanner;
+  }[ctx.subview] || renderStrongBreakouts;
 
   // Earnings Surprise is the one sub-view here whose left-hand columns come off `ctx.data`, and
   // that corpus is no longer in front of the shell's first paint (see js/app.js). Waiting for it
@@ -346,21 +346,35 @@ function renderScanner(ctx, rows) {
 
 // ---- (b) Strong Breakouts ------------------------------------------------------------------
 
+// Every group leads with `all` and every group defaults to it, so the sub-view opens on the
+// widest answer it can give and the reader narrows from there rather than discovering, after the
+// fact, that a chip they never touched had been hiding rows. The trend filter is the one that used
+// to do that: it shipped on "Above 200 DMA only", and a breakout below the primary trend line was
+// simply absent from a table that gave no sign it was withholding anything.
+//
+// `all` means this group applies NO constraint. In `strength` that is every breakout grade the feed
+// can report — the group grades a breakout, and `no_breakout` is the absence of one rather than a
+// fourth grade, so it stays out of this view exactly as it always has. The line under the chips
+// prints the matched count over every company with a detectable base, which is what keeps that
+// difference visible rather than implied.
+//
+// `aliases` retires the old `any` ids without breaking a saved link — see readChipState.
 const BREAKOUT_FILTERS = {
   strength: {
     param: 'bo',
     label: 'Breakout strength',
     multi: true,
+    aliases: { any: 'all' },
     options: [
+      { id: 'all', label: 'All' },
       { id: 'strong', label: 'Strong' },
       { id: 'weak_base', label: 'Weak base' },
       { id: 'low_volume', label: 'Low volume' },
-      { id: 'any', label: 'Any breakout' },
     ],
     test: (s, ids) => {
       const q = s.company.consolidation_breakout?.quality;
       if (!q) return false;
-      if (ids.includes('any')) return q !== 'no_breakout';
+      if (ids.includes('all')) return q !== 'no_breakout';
       return ids.includes(q);
     },
   },
@@ -368,14 +382,15 @@ const BREAKOUT_FILTERS = {
     param: 'vol',
     label: 'Volume confirm',
     multi: false,
+    aliases: { any: 'all' },
     options: [
+      { id: 'all', label: 'All' },
       { id: '1.5', label: '≥ 1.5×' },
       { id: '1.0', label: '≥ 1.0×' },
-      { id: 'any', label: 'Any' },
     ],
     test: (s, ids) => {
       const id = ids[0];
-      if (!id || id === 'any') return true;
+      if (!id || id === 'all') return true;
       const r = s.company.consolidation_breakout?.today_volume_ratio;
       return r != null && r >= Number(id);
     },
@@ -384,15 +399,16 @@ const BREAKOUT_FILTERS = {
     param: 'near',
     label: '52W proximity',
     multi: false,
+    aliases: { any: 'all' },
     options: [
+      { id: 'all', label: 'All' },
       { id: '5', label: 'Within 5%' },
       { id: '10', label: 'Within 10%' },
       { id: '20', label: 'Within 20%' },
-      { id: 'any', label: 'Any' },
     ],
     test: (s, ids) => {
       const id = ids[0];
-      if (!id || id === 'any') return true;
+      if (!id || id === 'all') return true;
       const p = s.company.high_proximity_pct;
       if (p == null) return false;
       return (1 - p) * 100 <= Number(id);
@@ -402,22 +418,30 @@ const BREAKOUT_FILTERS = {
     param: 'dma',
     label: 'Trend filter',
     multi: false,
+    // 'any' was this group's include-everything id, so it aliases onto 'all' rather than being
+    // dropped: a bookmarked `?dma=any` still means what its author meant.
+    aliases: { any: 'all' },
     options: [
+      { id: 'all', label: 'All' },
       { id: 'above', label: 'Above 200 DMA only' },
-      { id: 'any', label: 'Include below 200 DMA' },
     ],
-    test: (s, ids) => (ids[0] === 'any' ? true : s.company.above_200dma === true),
+    // Only 'above' constrains. Written this way round so an id this group no longer knows widens
+    // the view rather than silently emptying it.
+    test: (s, ids) => (ids[0] === 'above' ? s.company.above_200dma === true : true),
   },
 };
 
-// Defaults: any breakout, any volume, any proximity, above-200-DMA ON (per spec).
-const BREAKOUT_DEFAULTS = { bo: 'any', vol: 'any', near: 'any', dma: 'above' };
+// Defaults: all of everything. Nothing on this sub-view is narrowed until the reader narrows it.
+const BREAKOUT_DEFAULTS = { bo: 'all', vol: 'all', near: 'all', dma: 'all' };
 
-function readChipState(params, defaults) {
+function readChipState(params, defaults, groups = null) {
+  const aliasFor = (param) => Object.values(groups || {}).find((g) => g.param === param)?.aliases || null;
   const state = {};
   for (const [key, def] of Object.entries(defaults)) {
     const raw = params[key];
-    state[key] = raw == null || raw === '' ? def.split(',') : String(raw).split(',');
+    const ids = raw == null || raw === '' ? def.split(',') : String(raw).split(',');
+    const alias = aliasFor(key);
+    state[key] = alias ? ids.map((id) => alias[id] || id) : ids;
   }
   return state;
 }
@@ -461,12 +485,12 @@ function wireChipBar(root, groups, state, onChange) {
     let next;
     if (!g.multi) {
       next = [id];
-    } else if (id === 'any') {
-      next = ['any'];
+    } else if (id === 'all') {
+      next = ['all'];
     } else {
-      const without = cur.filter((x) => x !== 'any');
+      const without = cur.filter((x) => x !== 'all');
       next = without.includes(id) ? without.filter((x) => x !== id) : [...without, id];
-      if (!next.length) next = ['any'];
+      if (!next.length) next = ['all'];
     }
     onChange(g.param, next);
   });
@@ -479,7 +503,7 @@ function breakoutRank(s) {
 }
 
 function renderStrongBreakouts(ctx, rows) {
-  const state = readChipState(ctx.params || {}, BREAKOUT_DEFAULTS);
+  const state = readChipState(ctx.params || {}, BREAKOUT_DEFAULTS, BREAKOUT_FILTERS);
   const withBreakout = rows.filter((s) => !s.tickerError && s.company.consolidation_breakout);
 
   // Live counts per chip: how many rows would remain if that chip alone were toggled on,
@@ -500,6 +524,7 @@ function renderStrongBreakouts(ctx, rows) {
     .sort((a, b) => breakoutRank(b) - breakoutRank(a) || b.totalPoints - a.totalPoints);
 
   const strongCount = filtered.filter((s) => s.company.consolidation_breakout?.quality === 'strong').length;
+  const basingCount = withBreakout.filter((s) => s.company.consolidation_breakout?.quality === 'no_breakout').length;
 
   const stats = statStrip([
     { label: 'Breakout candidates', value: formatNumber(filtered.length), note: `of ${withBreakout.length} with a base` },
@@ -516,7 +541,12 @@ function renderStrongBreakouts(ctx, rows) {
                  <li><strong>Weak base</strong> — broke out on volume, but the base wasn't tight.</li>
                  <li><strong>Low volume</strong> — closed above the base high without volume confirmation. Suspect.</li>
                </ul>
-               <p class="mt-3 text-slate-500">The trend filter defaults to above-200-DMA only, because a breakout below the primary trend line is a hard fail in the client framework. Turn it off to see those too.</p>`,
+               <p class="mt-3 text-slate-500">Every filter opens on <strong>All</strong>, so nothing is held back until you hold it back. The trend filter is the one worth reaching for first — a breakout below the primary trend line is a hard fail in the client framework, and <em>Above 200 DMA only</em> drops those.</p>
+               <p class="mt-2 text-slate-500"><strong>All</strong> under Breakout strength means every grade above, not every company${
+                 basingCount
+                   ? `: the ${formatNumber(basingCount)} names whose base has not broken out are counted in the line beneath the chips, and are not this sub-view's subject`
+                   : ''
+               }.</p>`,
       },
     },
     freshnessCard(),
@@ -625,7 +655,7 @@ const FII_FILTERS = {
 const FII_DEFAULTS = { side: 'fii', mag: '0' };
 
 function renderFiiAccumulation(ctx, rows) {
-  const state = readChipState(ctx.params || {}, FII_DEFAULTS);
+  const state = readChipState(ctx.params || {}, FII_DEFAULTS, FII_FILTERS);
   const withHold = rows.filter((s) => !s.tickerError && (s.company.chg_fii_hold != null || s.company.chg_dii_hold != null));
 
   const counts = {};

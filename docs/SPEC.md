@@ -49,7 +49,7 @@ optional right-aligned count badge.
 | Earnings Hub | *(none — one table, so the rail is hidden)* |
 | Con-call | *(no sub-views)* — one live scan table, with the schedule behind an **Upcoming Concalls** overlay |
 | Public Chatter | *(no sub-views)* — one live table of covered companies, then everything the feed carried that we do not cover |
-| Breakouts / Technical | Technical Scanner · Strong Breakouts · FII Accumulation · Earnings Surprise |
+| Breakouts / Technical | Strong Breakouts *(default)* · Technical Scanner · FII Accumulation · Earnings Surprise |
 | Super Investors | Superstar Investors · Institutions |
 
 Portfolio Analytics' four tabs are built and still route by URL, but the workspace switcher has been
@@ -312,9 +312,17 @@ Yahoo Finance EOD scrape of the NSE 500 plus NSE bhavcopy delivery data. A close
 | Breakout | 52-Week High Proximity (2) · Breakout from Consolidation (2) · Base Formation (1) |
 | Risk | Beta (1) · ATR Stability (1) |
 
-Sub-views: **Technical Scanner** (the full scored universe), **Strong Breakouts** (6-week base
-breakouts, URL-reflected filter chips), **FII Accumulation** (shareholding changes joined to the
-score), **Earnings Surprise** (mock earnings beside the live score, deliberately not blended).
+Sub-views: **Strong Breakouts** (6-week base breakouts, URL-reflected filter chips) — first in the
+rail and so the view the tab opens on — then **Technical Scanner** (the full scored universe),
+**FII Accumulation** (shareholding changes joined to the score), **Earnings Surprise** (mock
+earnings beside the live score, deliberately not blended).
+
+Every Strong Breakouts filter group leads with **All** and defaults to it, so the sub-view opens on
+the widest answer it can give. The trend filter used to ship on *Above 200 DMA only*, which meant a
+breakout below the primary trend line was absent from a table that gave no sign it was withholding
+anything; it is now one click away instead of the default. **All** under Breakout strength is every
+breakout grade — a company whose base has not broken out is not a fourth grade, and the line under
+the chips prints the matched count over every company with a detectable base.
 
 Still to come:
 - Intraday refresh via the live-quote endpoint

@@ -1131,6 +1131,89 @@ await page.waitForTimeout(400);
 ok('ESC closes the drill', (await page.locator('#drill-panel.translate-x-full, #drill-panel:not(.translate-x-0)').count()) > 0);
 
 // ---------------------------------------------------------------------------------------
+// 4b2. Breakouts opens on Strong Breakouts, and no chip narrows the view on the reader's behalf
+//
+// The tab used to land on Technical Scanner — the whole scored universe — while the view that
+// answers "what is breaking out today" sat second in the rail. Strong Breakouts is first now, and
+// the shell resolves an absent sub-view to `subviews[0]`, so the rail order and the landing route
+// are one fact rather than two that could drift; both are asserted off the same navigation.
+//
+// The filters are the other half of it. Three of the four groups already defaulted to their widest
+// option, but that option sat LAST in its row, and the fourth — the trend filter — shipped on
+// "Above 200 DMA only". So a breakout below the primary trend line was absent from a table that
+// gave no sign it was withholding anything: nothing was wrong, nothing said anything, and the rows
+// were simply not there. Every group now leads with All, and a landing with no query string has
+// All selected in all four.
+//
+// The last check is the one that is easy to skip and expensive to lose: the ids were renamed, so a
+// bookmarked `?bo=any&vol=any&near=any&dma=any` must still light its chips. Without the alias the
+// row would render with nothing selected while the filter behaved as though something were —
+// state and screen disagreeing, which is this codebase's most-repeated failure shape.
+// ---------------------------------------------------------------------------------------
+console.log('\n— breakouts: default view and filters —');
+{
+  await go('/#/research/breakouts?scope=universe', 2500);
+  await waitForPanel();
+  ok('a bare /breakouts route lands on Strong Breakouts', /breakouts\/strong-breakouts/.test(page.url()), page.url());
+
+  const rail = await page.evaluate(() => {
+    const items = [...document.querySelectorAll('[data-rail-nav] [data-rail-id]')];
+    return { ids: items.map((b) => b.dataset.railId), active: items.find((b) => b.className.includes('text-indigo-700'))?.dataset.railId || null };
+  });
+  ok('...which is the first item in the rail', rail.ids[0] === 'strong-breakouts', rail.ids.join(' · '));
+  ok('...and is the one drawn as active', rail.active === 'strong-breakouts', String(rail.active));
+
+  // Read the chip bar as it is drawn: the first chip of every group, and which chip is selected.
+  // Asserted off the DOM rather than the module's config, because the config being right and the
+  // bar drawing something else is precisely the bug worth catching.
+  const chips = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('[data-chip-bar] > div')];
+    return rows.map((row) => {
+      const btns = [...row.querySelectorAll('[data-chip-id]')];
+      return {
+        group: row.querySelector('span')?.innerText.trim() || '',
+        first: btns[0]?.dataset.chipId || null,
+        firstLabel: btns[0]?.querySelector('span')?.innerText.trim() || '',
+        active: btns.filter((b) => b.className.includes('border-indigo-500')).map((b) => b.dataset.chipId),
+        ids: btns.map((b) => b.dataset.chipId),
+      };
+    });
+  });
+  ok('the Strong Breakouts chip bar has all four filter groups', chips.length === 4, chips.map((c) => c.group).join(' · '));
+  ok('every group leads with an All chip',
+    chips.length === 4 && chips.every((c) => c.first === 'all' && /^all$/i.test(c.firstLabel)),
+    chips.map((c) => `${c.group}: ${c.firstLabel || '—'}`).join(' · '));
+  ok('...and All is what a fresh landing has selected in every one',
+    chips.length === 4 && chips.every((c) => c.active.length === 1 && c.active[0] === 'all'),
+    chips.map((c) => `${c.group}: ${c.active.join(',') || 'none'}`).join(' · '));
+  ok('...so no group still carries a retired "any" chip',
+    chips.every((c) => !c.ids.includes('any')),
+    chips.map((c) => c.ids.join('/')).join(' · '));
+
+  // The trend filter defaulting to above-200-DMA was the one that actually hid rows, so assert the
+  // narrowing still works — an All that cannot be narrowed would be the opposite mistake.
+  const wideRows = await rowCount();
+  await go('/#/research/breakouts/strong-breakouts?scope=universe&dma=above', 2500);
+  await waitForPanel();
+  const narrowRows = await rowCount();
+  ok('Above 200 DMA only still narrows (or matches) the All set', narrowRows <= wideRows, `${wideRows} → ${narrowRows}`);
+
+  // A saved link written before the rename.
+  await go('/#/research/breakouts/strong-breakouts?scope=universe&bo=any&vol=any&near=any&dma=any', 2500);
+  await waitForPanel();
+  const legacy = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-chip-bar] > div')].map((row) =>
+      [...row.querySelectorAll('[data-chip-id]')].filter((b) => b.className.includes('border-indigo-500')).map((b) => b.dataset.chipId)
+    )
+  );
+  ok('a link written with the old "any" ids still selects All in every group',
+    legacy.length === 4 && legacy.every((a) => a.length === 1 && a[0] === 'all'),
+    legacy.map((a) => a.join(',') || 'none').join(' · '));
+  const legacyRows = await rowCount();
+  ok('...and paints the same rows as the default landing', legacyRows === wideRows, `${wideRows} vs ${legacyRows}`);
+}
+
+// ---------------------------------------------------------------------------------------
 // 4c. The live-quote refresh — every branch, stubbed.
 //
 // This route used to fail for every reader, every time, and the tab said only "Live quote refresh
