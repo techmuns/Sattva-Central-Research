@@ -328,10 +328,13 @@ ok('Latest Results renders the full listed universe', latestRows > 1000, `${late
 const ehText = await hostText();
 ok('states which quarter and which two periods', /Q\d\s*FY/i.test(ehText) && /\bvs\b/i.test(ehText));
 ok('says whether it is live or a snapshot', /\bLive\b/i.test(ehText) || /snapshot/i.test(ehText));
-// This tab deliberately has no stat strip and no rail: one table, one small Live button.
+// This tab deliberately has no stat strip and no sub-view picker: one table, one small Live button.
 ok('no stat-card furniture in front of the table', (await page.locator('#content-host .stat-card').count()) === 0);
 ok('a single small Live button instead', (await page.locator('[data-live-info]').count()) === 1);
-ok('the sub-view rail is hidden for this single-view tab', !/Latest Results|Movers|By Industry/.test(await page.locator('#aside-content').innerText()));
+ok('the sub-view picker is hidden for this single-view tab', await page.evaluate(() => {
+  const m = document.getElementById('subview-mount');
+  return !m || m.classList.contains('hidden') || !m.innerText.trim();
+}));
 // THE WORKSPACE SWITCHER IS GONE FROM THE CHROME. Only Research Central is offered, so there was
 // nothing left to pick — and it sat beside a scope toggle whose second option is also called
 // "Portfolio", which invited a genuine double-take.
@@ -1114,7 +1117,10 @@ console.log('\n— daily alerts —');
   ok('the stat strip carries four cards', (await page.locator('#content-host .stat-card').count()) === 4);
   ok('...with the gradient freshness hero as the fourth',
     await page.locator('#content-host .stat-card').nth(3).evaluate((el) => el.className.includes('from-indigo-500')));
-  ok('the sub-view rail is hidden for this single-stream tab', !(await page.locator('#aside-content').innerText()).trim());
+  ok('the sub-view picker is hidden for this single-stream tab', await page.evaluate(() => {
+    const m = document.getElementById('subview-mount');
+    return !m || m.classList.contains('hidden') || !m.innerText.trim();
+  }));
   ok('it states the Indian trading date rather than a UTC one', /Indian trading date · \d{4}-\d{2}-\d{2}/.test(daText));
 
   // THE COVERAGE PANEL IS THE HONESTY HALF. Without it an empty bucket reads as an all-clear.
@@ -1407,9 +1413,9 @@ ok('ESC closes the drill', (await page.locator('#drill-panel.translate-x-full, #
 // 4b2. Breakouts opens on Strong Breakouts, and no chip narrows the view on the reader's behalf
 //
 // The tab used to land on Technical Scanner — the whole scored universe — while the view that
-// answers "what is breaking out today" sat second in the rail. Strong Breakouts is first now, and
-// the shell resolves an absent sub-view to `subviews[0]`, so the rail order and the landing route
-// are one fact rather than two that could drift; both are asserted off the same navigation.
+// answers "what is breaking out today" sat second in the list. Strong Breakouts is first now, and
+// the shell resolves an absent sub-view to `subviews[0]`, so the picker order and the landing
+// route are one fact rather than two that could drift; both are asserted off the same navigation.
 //
 // The filters are the other half of it. Three of the four groups already defaulted to their widest
 // option, but that option sat LAST in its row, and the fourth — the trend filter — shipped on
@@ -1429,12 +1435,23 @@ console.log('\n— breakouts: default view and filters —');
   await waitForPanel();
   ok('a bare /breakouts route lands on Strong Breakouts', /breakouts\/strong-breakouts/.test(page.url()), page.url());
 
-  const rail = await page.evaluate(() => {
-    const items = [...document.querySelectorAll('[data-rail-nav] [data-rail-id]')];
-    return { ids: items.map((b) => b.dataset.railId), active: items.find((b) => b.className.includes('text-indigo-700'))?.dataset.railId || null };
+  // The menu markup is in the DOM whether or not it is open — only a `hidden` class moves — so
+  // this click is not what makes the items readable. It is here because the assertion below is
+  // about what the READER can see, and a menu clipped by its own card reads identically to a
+  // closed one from the DOM alone.
+  await page.locator('#subview-mount [data-dd-trigger]').click();
+  await page.waitForTimeout(300);
+  const picker = await page.evaluate(() => {
+    const items = [...document.querySelectorAll('#subview-mount [data-dd-id]')];
+    return {
+      ids: items.map((b) => b.dataset.ddId),
+      checked: items.find((b) => b.className.includes('text-indigo-700'))?.dataset.ddId || null,
+      face: document.querySelector('#subview-mount [data-dd-trigger]')?.innerText.replace(/\s+/g, ' ').trim() || '',
+    };
   });
-  ok('...which is the first item in the rail', rail.ids[0] === 'strong-breakouts', rail.ids.join(' · '));
-  ok('...and is the one drawn as active', rail.active === 'strong-breakouts', String(rail.active));
+  await page.keyboard.press('Escape');
+  ok('...which is the first item in the sub-view picker', picker.ids[0] === 'strong-breakouts', picker.ids.join(' · '));
+  ok('...and is the one the picker is set to', picker.checked === 'strong-breakouts' && /Strong Breakouts/.test(picker.face), `${picker.checked} — "${picker.face}"`);
 
   // Read the chip bar as it is drawn: the first chip of every group, and which chip is selected.
   // Asserted off the DOM rather than the module's config, because the config being right and the
@@ -1703,11 +1720,14 @@ ok('the panel says whose analysis this is', /own analysis/i.test(csText) && /pro
 // in js/ui/sources.js. What may never go with it is the claim that the analysis is not ours, so
 // this pair is asserted together: no brand anywhere, and the disclaimer everywhere.
 ok('...without printing the provider\'s brand', !/stockscans/i.test(csText), csText.match(/StockScans/i)?.[0] || '');
-// One view, no rail. The tab used to carry six sub-views, four of them on a synthetic transcript
+// One view, no picker. The tab used to carry six sub-views, four of them on a synthetic transcript
 // corpus with fictional speakers; they are gone, and with them the amber ribbon that had to sit
 // next to a live green pill explaining which half you were looking at.
 ok('the tab renders with no sub-view in the URL', csReady > 200);
-ok('...and the shell drops the rail entirely', (await page.locator('#aside-content').count()) === 0 || !(await page.locator('#aside-content').isVisible()));
+ok('...and the shell drops the sub-view picker entirely', await page.evaluate(() => {
+  const m = document.getElementById('subview-mount');
+  return !m || m.classList.contains('hidden') || !m.innerText.trim();
+}));
 ok('...and nothing on the tab is flagged illustrative any more', (await page.locator('[data-mock-ribbon]').count()) === 0);
 
 // Times are IST, not the viewer's zone. An 18:00 IST call is an 18:00 IST event; rendering it in
@@ -4336,6 +4356,115 @@ console.log('\n— news, announcements and insider trades —');
   }
 
   page.off('request', watchFilings);
+}
+
+// ---------------------------------------------------------------------------------------
+// 15b. The rail became a dropdown, and the roadmap card is gone
+//
+// The sub-view rail was a 240px left column above 1024px and a dropdown below it. It cost the
+// content 240px of the 1400px it has, permanently, to show at most four short labels — while the
+// tables beside it are the widest things in this dashboard and were scrolling inside their own
+// containers to fit what was left. Measured on this build, the column's removal takes Breakouts
+// from a 248px inner scroll to none, Super Investors from 380px to 116px, and Portfolio Overview
+// from 453px to 189px.
+//
+// Two presentations of one control is also two things to keep in step, and the narrow one was
+// already doing the whole job on the width that needed it most. So there is one picker now, at
+// every width, and the checks are: it exists and is set correctly where there are sub-views, it
+// is absent where there are none, and — the part a picker could quietly lose — it still SWITCHES
+// the content, which is what the rail was actually for.
+//
+// The roadmap card ("Wiring roadmap · Not built. Listed so the gap is visible rather than
+// implied.") closed most tabs. The gaps it listed are in docs/SPEC.md under each tab's "Still to
+// come", so removing it from the UI loses nothing that was written down. Asserted across every
+// tab rather than the one it was noticed on: a card removed from six of seven files is the shape
+// this kind of change fails in.
+// ---------------------------------------------------------------------------------------
+console.log('\n— sub-view picker and the removed roadmap card —');
+{
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const WITH_SUBVIEWS = [
+    ['/#/research/breakouts?scope=universe', 'breakouts'],
+    ['/#/research/super-investors?scope=universe', 'super-investors'],
+    ['/#/portfolio/overview?scope=universe', 'portfolio overview'],
+  ];
+  const WITHOUT = [
+    ['/#/research/earnings-hub?scope=universe', 'earnings hub'],
+    ['/#/research/concall?scope=universe', 'con-call'],
+    ['/#/research/news?scope=universe', 'news'],
+  ];
+
+  const readLayout = () =>
+    page.evaluate(() => {
+      const mount = document.getElementById('subview-mount');
+      const host = document.getElementById('content-host');
+      const overflows = [...document.querySelectorAll('[data-table-scroll]')].map((t) => t.scrollWidth - t.clientWidth);
+      return {
+        railGone: !document.getElementById('rail-aside'),
+        pickerShown: !!mount && !mount.classList.contains('hidden') && mount.offsetHeight > 0,
+        contentLeft: Math.round(host.getBoundingClientRect().left),
+        contentWidth: Math.round(host.getBoundingClientRect().width),
+        worstTableOverflow: overflows.length ? Math.max(...overflows) : 0,
+        roadmap: /wiring roadmap/i.test(host.innerText),
+        pageSideScroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+  const seen = [];
+  for (const [hash, label] of [...WITH_SUBVIEWS, ...WITHOUT]) {
+    await go(hash, 2600);
+    await waitForPanel();
+    seen.push([label, await readLayout()]);
+  }
+
+  ok('the left rail column is gone from the shell', seen.every(([, m]) => m.railGone));
+  ok('...so the content spans the full column on every tab',
+    seen.every(([, m]) => m.contentWidth >= 1300),
+    seen.map(([l, m]) => `${l}:${m.contentWidth}`).join(' · '));
+  ok('...and no page scrolls sideways for it',
+    seen.every(([, m]) => m.pageSideScroll <= 0),
+    seen.map(([l, m]) => `${l}:${m.pageSideScroll}`).join(' · '));
+  ok('no tab still renders the Wiring roadmap card',
+    seen.every(([, m]) => !m.roadmap),
+    seen.filter(([, m]) => m.roadmap).map(([l]) => l).join(', ') || 'none');
+  ok('a tab WITH sub-views shows the picker',
+    seen.filter(([l]) => WITH_SUBVIEWS.some(([, w]) => w === l)).every(([, m]) => m.pickerShown),
+    seen.map(([l, m]) => `${l}:${m.pickerShown}`).join(' · '));
+  ok('...and a tab with none shows no empty control',
+    seen.filter(([l]) => WITHOUT.some(([, w]) => w === l)).every(([, m]) => !m.pickerShown));
+  // Breakouts is the tab this was noticed on: ten columns that used to need an inner scrollbar.
+  const bo = seen.find(([l]) => l === 'breakouts')[1];
+  ok('Breakouts fits its columns with no scrollbar of its own', bo.worstTableOverflow === 0, `${bo.worstTableOverflow}px`);
+
+  // A picker that opens but does not navigate would pass every check above. The menu is also
+  // `position: absolute` BELOW its card, so a wrapper carrying `overflow-hidden` clips it into
+  // invisibility while every click handler goes on working — a control that looks broken and
+  // tests as fine. That is exactly what the first cut of this picker did.
+  //
+  // It is asserted as a CLASS contract rather than as geometry, and the distinction is the whole
+  // point here: with no egress to the Tailwind CDN this suite drives an effectively UNSTYLED
+  // page, where `overflow-hidden` does nothing and every box measures full width. The first
+  // version of this check read the open menu's box and passed with `w:1424 h:21` — which it
+  // would have done just as happily with the clipping bug still in place. A check that cannot
+  // fail is not a check.
+  await go('/#/research/breakouts/strong-breakouts?scope=universe', 2600);
+  await waitForPanel();
+  await page.locator('#subview-mount [data-dd-trigger]').click();
+  await page.waitForTimeout(350);
+  const menu = await page.evaluate(() => {
+    const el = document.querySelector('#subview-mount [data-dd-menu]');
+    const clippers = [];
+    for (let n = el.parentElement; n && n.id !== 'subview-mount'; n = n.parentElement) {
+      if (String(n.className || '').split(/\s+/).includes('overflow-hidden')) clippers.push(n.className);
+    }
+    return { open: !el.classList.contains('hidden'), items: el.querySelectorAll('[data-dd-id]').length, clippers };
+  });
+  ok('clicking the picker opens its menu', menu.open && menu.items === 4, JSON.stringify({ open: menu.open, items: menu.items }));
+  ok('...and nothing between the menu and its mount clips it', menu.clippers.length === 0, menu.clippers.join(' | ') || 'no overflow-hidden ancestor');
+  await page.locator('#subview-mount [data-dd-id="fii-accumulation"]').click();
+  await page.waitForTimeout(1800);
+  ok('...and picking a sub-view navigates to it', /breakouts\/fii-accumulation/.test(page.url()), page.url());
+  ok('...and the content follows', /Institutional holding changes/i.test(await hostText()));
 }
 
 // ---------------------------------------------------------------------------------------

@@ -15,7 +15,7 @@
 // import lives until reload, shows exactly what it parsed and what it rejected, and offers the
 // merged CSV back so the change can be committed to the repo.
 
-import { statStrip, scoreTable, openDrill, sectionHead, roadmapStrip, openModal } from '../ui/screener.js';
+import { statStrip, scoreTable, openDrill, sectionHead, openModal } from '../ui/screener.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRupee, formatNumber, formatDate, formatPct } from '../core/format.js';
@@ -34,13 +34,6 @@ export const meta = {
     { id: 'import', label: 'Import / Export' },
   ],
 };
-
-const FEATURES = [
-  'Broker contract-note parsing (Zerodha / Groww / ICICI Direct formats)',
-  'Server-side persistence so an import survives a reload',
-  'Duplicate detection across overlapping statements',
-  'Charges reconciliation against the contract note',
-];
 
 const TYPE_TONE = {
   buy: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
@@ -186,7 +179,6 @@ function renderTrades(ctx) {
     ${sessionBanner()}
     ${stats.html}
     ${table.html}
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);
@@ -384,7 +376,6 @@ function renderIncome(ctx) {
     ${stats.html}
     ${actionsPanel(actions)}
     ${rows.length ? table.html : '<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-100">No dividends or corporate actions in scope.</div>'}
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);
@@ -636,7 +627,6 @@ function renderImport(ctx) {
       }
       ${sessionRows ? '<button type="button" id="revert-import" class="mt-3 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 ring-1 ring-rose-200 transition-colors hover:bg-rose-50">Revert to the committed ledger</button>' : ''}
     </section>
-    ${roadmapStrip(FEATURES)}
   `;
 
   stats.wire(ctx.root);

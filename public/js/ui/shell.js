@@ -7,7 +7,7 @@ import { state, setScope, setRoute, saveLastRoute } from '../core/state.js';
 import * as router from '../core/router.js';
 import * as live from '../core/live.js';
 import * as watch from '../core/watch.js';
-import { tabBar, railNav, segmentedToggle, statusControl, emptyState } from './components.js';
+import { tabBar, segmentedToggle, statusControl, emptyState } from './components.js';
 import { openModal, closeDrill, closeModal, closeWorkspace, watchlistEmptyPanel } from './screener.js';
 import { sourcesModalHtml } from './sources.js';
 import { SCOPES, scopeLabel } from '../data/scope.js';
@@ -116,11 +116,9 @@ function shellTemplate() {
       <div id="tabbar-mount" class="min-w-0"></div>
     </nav>
 
-    <div class="mx-auto flex max-w-[1400px] flex-col gap-6 px-6 py-6 lg:flex-row">
-      <aside id="rail-aside" class="lg:w-60 lg:flex-shrink-0">
-        <div id="aside-content" class="lg:sticky lg:top-6"></div>
-      </aside>
-      <main class="fade-in min-w-0 flex-1">
+    <div class="mx-auto max-w-[1400px] px-6 py-6">
+      <div id="subview-mount" class="mb-5"></div>
+      <main class="fade-in min-w-0">
         <div id="content-host"></div>
       </main>
     </div>`;
@@ -206,39 +204,43 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   //
   // Portfolio Analytics itself is untouched and still routes; see WORKSPACES above.
 
+  // THE SUB-VIEW RAIL IS A DROPDOWN NOW, AT EVERY WIDTH.
+  //
+  // It used to be a 240px left column above 1024px and a dropdown below it. The column cost the
+  // content 240px of the 1400px it has, permanently, to show at most four short labels — and the
+  // tables it sat beside are the widest things here: Institutions carries thirteen numeric
+  // columns and the Earnings Hub ten, both tuned column by column (`dense`, `wrapHeads`,
+  // `nameMaxPx`) to fit inside what was left. Giving the content the full width is worth more
+  // than a permanently-visible list of four.
+  //
+  // The kicker reads "View" rather than the tab's own title: the section head immediately below
+  // prints that title as the page's heading, and the rail card's header was repeating it.
   const subviewItems = (tabModule.meta.subviews || []).map((s) => ({ id: s.id, label: s.label, badge: s.badge }));
   const activeSubviewLabel = subviewItems.find((s) => s.id === resolved.subview)?.label || '';
-  const rail = railNav({ items: subviewItems, activeId: resolved.subview, onSelect: goSubview });
-  const mobileSubDropdown = dropdownMenu({
-    key: 'subview-mobile',
-    kicker: tabModule.meta.title,
+  const subviewPicker = dropdownMenu({
+    key: 'subview',
+    kicker: 'View',
     valueLabel: activeSubviewLabel,
     items: subviewItems,
     activeId: resolved.subview,
     onSelect: goSubview,
+    title: `Switch between ${tabModule.meta.title} views`,
   });
 
   const hasSubviews = subviewItems.length > 0;
-  const asideEl = $('#aside-content', root);
-  const asideWrap = $('#rail-aside', root);
-  asideWrap.classList.toggle('hidden', !hasSubviews);
-
+  const subviewMount = $('#subview-mount', root);
+  // A tab with `subviews: []` has nothing to pick, so the row goes entirely rather than
+  // rendering an empty control — same rule the rail followed.
+  subviewMount.classList.toggle('hidden', !hasSubviews);
   if (!hasSubviews) {
-    asideEl.innerHTML = '';
+    subviewMount.innerHTML = '';
   } else {
-    asideEl.innerHTML = `
-      <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
-        <div class="p-2">
-          <div class="px-2 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(tabModule.meta.title)}</div>
-          ${rail.html}
-        </div>
-      </div>
-      <div class="mt-3 lg:hidden">${mobileSubDropdown.html}</div>`;
-    chromeDisposers.push(rail.wire(asideEl));
-    chromeDisposers.push(mobileSubDropdown.wire(asideEl));
+    subviewMount.innerHTML = `
+      <div class="w-full max-w-[15rem] rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        ${subviewPicker.html}
+      </div>`;
+    chromeDisposers.push(subviewPicker.wire(subviewMount));
   }
-
-
 
   const tabItems = ws.tabs.map((t) => ({ id: t.meta.id, label: t.meta.title }));
   const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab });
@@ -386,7 +388,7 @@ function goScope(scope) {
   router.navigate({ workspace: state.workspace, tab: state.tab, subview: state.subview, scope, params: router.parseHash().params });
 }
 
-// ---- Small local dropdown used by the workspace switcher + the mobile sub-view picker -------
+// ---- Small local dropdown, used by the sub-view picker -------------------------------------
 // (Not in ui/components.js because it's specifically about app navigation chrome, not a
 // general-purpose primitive other tabs would reuse.)
 

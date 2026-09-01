@@ -62,8 +62,8 @@ public/
       sources.js              data-source registry, opened from the header status pill
       notifications.js        the live alert stack, lower-right
       export.js               generic exceljs-from-CDN "Export Excel" helper
-      components.js           chrome primitives (tab bar, rail, toggle, search…)
-      shell.js                header + rail + tabs + content host + tab registry
+      components.js           chrome primitives (tab bar, toggle, search…)
+      shell.js                header + tabs + sub-view picker + content host + tab registry
     concall/
       scans.js                the WHOLE Con-call tab, live off StockScans (scores are THEIRS)
                               — the scan table plus the "Upcoming Concalls" schedule overlay
@@ -235,10 +235,19 @@ Conventions:
 - Tables scroll horizontally **inside their own container**; the page body must never scroll
   sideways. `overflow-x: hidden` on `html` *and* `body` is a backstop, not the mechanism —
   it's on `html` because the parked drill panel is `position: fixed` and `body` can't clip it.
-- The left rail collapses to a dropdown under 1024px (Tailwind `lg:`), and **disappears entirely
-  on a tab with `subviews: []`** — the content then spans the full width. The workspace switcher
-  sits in the tab-bar row, not the rail, which is what makes that safe: dropping the rail never
-  strands a workspace.
+- **Sub-views are one dropdown, at every width, and the content always spans the full column.**
+  There used to be a 240px left rail above 1024px and a dropdown below it. The rail cost the
+  content 240px of its 1400px, permanently, to show at most four short labels — while the tables
+  beside it are the widest things here and were scrolling inside their own containers to fit what
+  was left. Measured: removing it takes Breakouts from a 248px inner scroll to **none**, Super
+  Investors from 380px to 116px, Portfolio Overview from 453px to 189px. Two presentations of one
+  control was also two things to keep in step, and the narrow one was already doing the whole job
+  on the width that needed it most. A tab with `subviews: []` renders **no picker at all** — the
+  shell hides `#subview-mount` and skips wiring it. Its kicker reads *View*, not the tab's title,
+  because the section head immediately below prints that title as the page heading.
+  **The picker's menu is `position: absolute` below its card, so its wrapper must never carry
+  `overflow-hidden`** — that clips the menu into invisibility while every click handler goes on
+  working, which is a control that looks broken and tests as fine.
 - Long-running lists get `.scrollbar-thin`; panels that mount fresh get `.fade-in`.
 
 ---
@@ -262,14 +271,22 @@ Conventions:
 | `openWorkspace(config)` | full-screen overlay (singleton), `max-w-[1200px]`, with its own tab strip. For analysis that needs room — see below. |
 | `openModal(html, { size })` | centred modal (singleton). `size`: `default` \| `wide` \| `magazine`. |
 | `table.updateRows(keys)` | rebuild named rows **in place** after their data changed, leaving the row set — and so the reader's search, filters, watchlist and sort — untouched. For data landing on a mounted table: a live quote arriving over an EOD column is the reference case, and the watchlist star is the second. Not the same as a repaint: `repaint`'s fast path *moves* existing `<tr>` nodes, so invalidating the markup cache alone changes nothing on screen. |
-| `sectionHead`, `roadmapStrip`, `pendingPanel` | title block, the dashed roadmap card, and the honest "no data yet" panel. `sectionHead` takes **`meta`** (right of the title) and **`controls`** (a left-aligned row of its own beneath it) — see below. |
+| `sectionHead`, `pendingPanel` | title block and the honest "no data yet" panel. `sectionHead` takes **`meta`** (right of the title) and **`controls`** (a left-aligned row of its own beneath it) — see below. |
+
+**There is no roadmap card.** A dashed *"Wiring roadmap · Not built. Listed so the gap is visible
+rather than implied"* strip used to close most tabs. The gaps it listed are written down in
+`docs/SPEC.md` under each tab's *Still to come*, which is where a roadmap belongs — a permanent
+block of what a tab does **not** do, sitting under the thing it does, is chrome competing with
+content. `roadmapStrip()` and the older `comingSoonStrip()` are both deleted; do not reintroduce
+either. Listing a gap in the spec is the rule that survives.
 
 **A tab may opt out of the stat strip, and out of sub-views.** The Earnings Hub is one dense table
-and nothing else: no stat cards, no ribbon, no rail. The rule that survives is not "every tab has a
-stat strip" — it is **the provenance must always be reachable**. There it lives behind a small Live
+and nothing else: no stat cards, no ribbon, no sub-view picker. The rule that survives is not
+"every tab has a stat strip" — it is **the provenance must always be reachable**. There it lives behind a small Live
 pill in the section head, which opens a modal with what is live, what each column is joined from,
 what is missing and what a dash means. Decluttering a page is fine; deleting its accountability is
-not. A tab with `subviews: []` gets no rail — the shell hides that block and skips wiring it.
+not. A tab with `subviews: []` gets no sub-view picker — the shell hides that row and skips
+wiring it.
 
 The standard tab body, in order:
 
@@ -280,7 +297,6 @@ ctx.root.innerHTML = `
   ${cards.html}          // topCards — omit where no ranking is meaningful
   ${table.html}          // scoreTable
   ${legendStrip()}       // only on tabs that render signal dots
-  ${roadmapStrip(FEATURES)}
 `;
 stats.wire(ctx.root); cards.wire(ctx.root); table.wire(ctx.root);
 ```
@@ -1230,7 +1246,7 @@ pill on the other, `LIVE_SUBVIEWS` routing the two through separate code paths, 
 neither half's poller could repaint the other.
 
 The four synthetic views are gone, and so is the machinery: the tab is one live table plus the
-schedule overlay, `subviews: []`, no rail, no ribbon. **That is the preferred resolution whenever
+schedule overlay, `subviews: []`, no picker, no ribbon. **That is the preferred resolution whenever
 a tab acquires two provenances** — not a better ribbon. If the real transcript feed is ever wired
 (BSE publishes filed transcript PDFs), the keyword engine and the Deep Dive workspace are in git
 history at `8e31eec..` and would come back pointed at real text.
@@ -2119,7 +2135,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Add a server route | the API block in `worker/index.js` — return through `withTag` + `revalidate` so it is conditional like the rest |
 | Add/change a tab or sub-view | the module in `js/tabs/` or `js/portfolio/`, then `WORKSPACES` in `js/ui/shell.js` |
 | Change avatar / tier / status-pill styling | `js/ui/visual.js` |
-| Change the header, rail or tab bar | `js/ui/shell.js` |
+| Change the header, sub-view picker or tab bar | `js/ui/shell.js` |
 | Add a row to the Sources modal | `js/ui/sources.js` (and `docs/DATA-CONTRACTS.md`) |
 | Add a reusable chrome widget | `js/ui/components.js` |
 | Change the header status pill or refresh button | `statusControl()` in `js/ui/components.js`, wired in `wireStaticHeader()` |
@@ -2159,11 +2175,12 @@ It covers, beyond the checklist below:
 - all 13 tabs across both workspaces render their panel
 - every tab that has a statStrip shows 4 cards with the gradient freshness hero as the 4th
   (the Earnings Hub has none by design; its Live pill carries the provenance instead)
-- rail sub-views switch content
+- the sub-view picker switches content, its menu is not clipped by its own card, and the content
+  column is full width with no left rail on any tab
 - the Portfolio / Watchlist / Universe toggle changes what every tab reports, and the vocabulary
   is in that order — widest last
 - **the dashboard opens on Daily Alerts, in Portfolio scope**, with four stat cards and the
-  gradient hero fourth, no rail, and the Indian trading date stated rather than a UTC one
+  gradient hero fourth, no sub-view picker, and the Indian trading date stated rather than a UTC one
 - **it reads exactly the five feeds behind those four tabs** — asserted as an equality, not a floor,
   because a `>=` would not notice the page widening back to feeds it was narrowed away from
 - **it reads exactly four tabs** — Breakouts, News, Corp Announcements, Insider Trades — and says

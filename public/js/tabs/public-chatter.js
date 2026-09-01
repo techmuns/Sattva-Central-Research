@@ -21,7 +21,7 @@
 // is mention volume between scrapes, never a price move, so it is never coloured like a P&L and
 // the column says "Mentions Δ". `sparkline` is per-SCRAPE, not per-day, so it carries no time axis.
 
-import { statStrip, topCards, scoreTable, sectionHead, roadmapStrip, openModal } from '../ui/screener.js';
+import { statStrip, topCards, scoreTable, sectionHead, openModal } from '../ui/screener.js';
 import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatRelativeTime } from '../core/format.js';
@@ -38,12 +38,6 @@ export const meta = {
   // and splitting them across sub-views would invite the reading that they are separate sources.
   subviews: [],
 };
-
-const FEATURES = [
-  'Post-level drill: the actual threads behind a mention count, linked to the forum',
-  'A slug→symbol map for the companies our coverage does not carry, so the second section shrinks',
-  'Alerting when a book holding first appears in the feed',
-];
 
 let renderToken = 0;
 let disposers = [];
@@ -129,8 +123,7 @@ function paint(ctx) {
   if (!m?.ok) {
     ctx.root.innerHTML = `
       ${sectionHead({ title: 'Public Chatter', description: meta.subtitle })}
-      ${unavailablePanel(m?.reason, m?.url)}
-      ${roadmapStrip(FEATURES)}`;
+      ${unavailablePanel(m?.reason, m?.url)}`;
     return;
   }
 
@@ -155,8 +148,7 @@ function paint(ctx) {
       description:
         'Entries whose slug does not resolve to a symbol in our universe or the book. This is a statement about OUR coverage, not about them — the list mixes Indian companies we do not carry, foreign names and bare themes, and we do not guess which is which. Shown in full in both scopes, because a holding cannot be filtered out of a list that has no tickers.',
     })}
-    ${otherTable.html}
-    ${roadmapStrip(FEATURES)}`;
+    ${otherTable.html}`;
 
   stats.wire(ctx.root);
   if (cards) cards.wire(ctx.root);

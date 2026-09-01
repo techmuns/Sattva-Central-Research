@@ -16,7 +16,7 @@
 //   3. Call the curve's start-to-end move a return. It rises from ~₹92k to ~₹42.6L, and most of
 //      that is money paid in. Time-weighted return is the figure shown against the index.
 
-import { statStrip, sectionHead, roadmapStrip, scoreTable } from '../ui/screener.js';
+import { statStrip, sectionHead, scoreTable } from '../ui/screener.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRupee, formatPct, formatNumber, formatDate } from '../core/format.js';
@@ -34,13 +34,6 @@ export const meta = {
     { id: 'episodes', label: 'Drawdown Episodes' },
   ],
 };
-
-const FEATURES = [
-  'Rolling volatility and Sharpe from the same series',
-  'Per-position contribution to drawdown',
-  'Custom date-range windowing',
-  'Monte-Carlo forward risk bands',
-];
 
 const run = createLoader(meta.title, meta.subtitle);
 let disposers = [];
@@ -85,8 +78,7 @@ function renderNoHistory(ctx, m) {
         Run <code class="rounded bg-slate-100 px-1">node scripts/scrape-portfolio-history.mjs</code> to fetch three years of daily
         closes for every ticker the ledger touches, plus the Nifty 500.
       </p>
-    </div>
-    ${roadmapStrip(FEATURES)}`;
+    </div>`;
   wireProvenancePill(ctx.root, m);
 }
 
@@ -147,7 +139,6 @@ function renderCurve(ctx, curve, m) {
       ${infoCard('Nifty 500 over the same window', formatPct(s.benchmarkReturn, { decimals: 2 }), `${escapeHtml(curve.benchmark?.symbol || '—')} · same trading calendar, same start date.`)}
     </div>
     ${indexedChart(curve)}
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);
@@ -348,7 +339,6 @@ function renderUnderwater(ctx, curve, m) {
         ${curve.recoveryDate ? `recovered on ${escapeHtml(formatDate(curve.recoveryDate))}.` : 'not yet recovered.'}
       </p>
     </section>
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);
@@ -422,7 +412,6 @@ function renderEpisodes(ctx, curve, m) {
       ${escapeHtml(formatDate(curve.to))} reports its recovery as <strong>ongoing</strong> rather than being closed at the last
       day — the series simply has not reached its end yet, and closing it would understate the duration.
     </p>
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);

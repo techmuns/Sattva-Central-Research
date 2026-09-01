@@ -10,7 +10,7 @@
 // old would be wrong in exactly the way that matters for tax. So the holding-period cut groups
 // LOTS, and its counts are lot counts — the panel says so.
 
-import { statStrip, scoreTable, openDrill, sectionHead, roadmapStrip } from '../ui/screener.js';
+import { statStrip, scoreTable, openDrill, sectionHead } from '../ui/screener.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRupee, formatPct, formatNumber, formatDate } from '../core/format.js';
@@ -29,13 +29,6 @@ export const meta = {
     { id: 'pnl-band', label: 'By P&L Band' },
   ],
 };
-
-const FEATURES = [
-  'Market-cap and factor buckets from the universe join',
-  'Target vs actual weight per group',
-  'Group-level benchmark comparison',
-  'Custom saved groupings',
-];
 
 const LONG_TERM_DAYS = 365;
 
@@ -175,7 +168,6 @@ function paint(ctx) {
     ${stackedBar(groups, total)}
     ${table.html}
     ${detailTable(items, cut, ctx)}
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);

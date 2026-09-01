@@ -11,10 +11,10 @@ serves `public/` and (later) a few `/api/*` routes.
 Three levels, so nothing important is ever more than two clicks away and the user never has
 to scroll to find a section.
 
-### (a) Workspace — left rail dropdown
+### (a) Workspace — no switcher in the chrome
 
-A styled dropdown button at the top of the left rail (custom menu, not a bare `<select>`)
-showing the current workspace and a chevron.
+Only Research Central is offered, so there is nothing to pick; the control is gone from the
+header. Portfolio Analytics still routes by URL (`WORKSPACES` marks it `hidden: true`).
 
 | Workspace | id | Default |
 | --- | --- | --- |
@@ -43,15 +43,16 @@ inactive slate with hover. Order is fixed:
 3. Transaction History
 4. Drawdown
 
-### (c) Sub-view — left rail list
+### (c) Sub-view — one dropdown, at every width
 
-Rendered under the workspace dropdown as a vertical nav with an active-state pill and an
-optional right-aligned count badge.
+A styled dropdown button (custom menu, not a bare `<select>`) above the content, kickered
+*View*, showing the current sub-view and a chevron. There is no left rail: the content column
+spans the full 1400px on every tab.
 
 | Tab | Sub-views |
 | --- | --- |
-| Daily Alerts | *(none — one stream, so the rail is hidden)* |
-| Earnings Hub | *(none — one table, so the rail is hidden)* |
+| Daily Alerts | *(none — one stream, so the picker is hidden)* |
+| Earnings Hub | *(none — one table, so the picker is hidden)* |
 | Con-call | *(no sub-views)* — one live scan table, with the schedule behind an **Upcoming Concalls** overlay |
 | Public Chatter | *(no sub-views)* — one live table of covered companies, then everything the feed carried that we do not cover |
 | Breakouts / Technical | Strong Breakouts *(default)* · Technical Scanner · FII Accumulation · Earnings Surprise |
@@ -69,7 +70,14 @@ removed from the chrome, so Research Central's tabs are the whole navigation for
 unknown or absent tab, so the order of the `WORKSPACES` array *is* the landing page — there is no
 second place recording it that could disagree with the array.
 
-Under 1024px the rail collapses to a dropdown above the content.
+The picker is the same control at every width. It used to be a 240px left rail above 1024px and
+a dropdown below it — the rail cost the content 240px of its 1400px, permanently, to show at most
+four short labels, while the tables beside it are the widest things in this dashboard and were
+scrolling inside their own containers to fit what was left. Measured on removal: Breakouts goes
+from a 248px inner scroll to **none**, Super Investors 380px → 116px, Portfolio Overview
+453px → 189px.
+
+A tab with `subviews: []` renders no picker at all.
 
 ---
 
@@ -233,11 +241,11 @@ Every tab is assembled from five components rather than hand-rolled:
 - `openDrill(config)` — right-slide detail panel with grouped rule/detail cards.
 - `openModal(html, { size })` — centred modal.
 
-Plus `sectionHead`, `roadmapStrip`, `pendingPanel`, and the shared visual vocabulary in
+Plus `sectionHead`, `pendingPanel`, and the shared visual vocabulary in
 `visual.js`: `avatarFor`, `scoreTier`, `scoreBadgeClass`, `tierLabel`, `tierColor`,
 `statusPill`, `signalDots`, `legendStrip`.
 
-Chrome primitives (tab bar, rail, scope toggle, search, live badge) remain in
+Chrome primitives (tab bar, scope toggle, search, live badge) remain in
 `public/js/ui/components.js`.
 
 ### Honesty rules
@@ -344,7 +352,7 @@ Yahoo Finance EOD scrape of the NSE 500 plus NSE bhavcopy delivery data. A close
 | Risk | Beta (1) · ATR Stability (1) |
 
 Sub-views: **Strong Breakouts** (6-week base breakouts, URL-reflected filter chips) — first in the
-rail and so the view the tab opens on — then **Technical Scanner** (the full scored universe),
+picker and so the view the tab opens on — then **Technical Scanner** (the full scored universe),
 **FII Accumulation** (shareholding changes joined to the score), **Earnings Surprise** (mock
 earnings beside the live score, deliberately not blended).
 
@@ -355,7 +363,8 @@ anything; it is now one click away instead of the default. **All** under Breakou
 breakout grade — a company whose base has not broken out is not a fourth grade, and the line under
 the chips prints the matched count over every company with a detectable base.
 
-Still to come:
+Still to come — this list is now the only place the gap is recorded, since the dashed *Wiring
+roadmap* card that used to close each tab has been removed from the UI:
 - Intraday refresh via the live-quote endpoint
 - Sector-relative strength ranking
 - Saved scans and threshold alerts

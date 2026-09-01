@@ -201,12 +201,12 @@ public/js/
                            watch.js — app-wide feed watchers behind the alert stack (§4b)
   ui/
     screener.js            THE KIT: statStrip · topCards · scoreTable · openDrill · openWorkspace
-                           · openModal · sectionHead · roadmapStrip · pendingPanel · trapFocus
+                           · openModal · sectionHead · pendingPanel · trapFocus
     visual.js              avatars, tiers, status pills, signal dots, legend
     sources.js             the Sources-modal registry — the honest status of every feed
     notifications.js       the lower-right live alert stack (§4b)
     export.js              exceljs-from-CDN "Export Excel"
-    shell.js               header, rail, tab bar, the WORKSPACES registry
+    shell.js               header, tab bar, sub-view picker, the WORKSPACES registry
   data/                    one module per feed: load once, compute once, cache, expose accessors
                            coverage.js — THE BOOK: what the Portfolio scope filters by (§5a)
                            scope.js — the three scopes in one place; every forScope() asks it
@@ -230,9 +230,9 @@ worker/
 ```
 
 **To add a tab:** write a module exporting `meta` / `render(ctx)` / `destroy()`, then add it to
-`WORKSPACES` in `js/ui/shell.js`. That is the only registration point. Give it `subviews: []` and
-it renders full-width with no rail — the workspace switcher lives in the tab-bar row, so nothing
-is lost by dropping the rail.
+`WORKSPACES` in `js/ui/shell.js`. That is the only registration point. Every tab renders
+full-width; sub-views are one dropdown above the content, and `subviews: []` renders no picker at
+all.
 
 **To add a data source:** three files, together — `docs/DATA-CONTRACTS.md`, the loader in
 `js/app.js` (or a lazy `js/data/*.js`), and the entry in `js/ui/sources.js` with an honest `status`.
@@ -712,10 +712,10 @@ full in CLAUDE.md: do not re-band or recompute their score, say whose it is on e
 including the exported workbook, render `pending` rather than zero for a call they have not
 analysed yet, and link to their reader rather than reproducing their summaries.
 
-**It used to be six sub-views behind a rail**, four of them running on a 2MB synthetic transcript
+**It used to be six sub-views behind a left rail**, four of them running on a 2MB synthetic transcript
 corpus with fictional speakers, because no open source publishes full transcript text. That put a
 live half and a synthetic half in one tab, separated by an amber ribbon on one side and a green
-pill on the other. The four are gone — the tab has one source, no rail and no ribbon. The keyword
+pill on the other. The four are gone — the tab has one source, no picker and no ribbon. The keyword
 engine and the old Deep Dive workspace live on in git history and would come back if BSE's filed
 transcript PDFs were ever wired, pointed at real text.
 
@@ -1010,8 +1010,9 @@ Two traps worth carrying forward:
 
 ## 9. Known gaps
 
-Nothing here is hidden in the UI — each tab closes with a **Wiring roadmap** card listing its own.
-The ones that matter most:
+These are recorded in `docs/SPEC.md` under each tab's "Still to come". They used to be listed in a
+dashed **Wiring roadmap** card closing every tab; that card is gone from the UI, so the spec is now
+the single place a gap is written down. The ones that matter most:
 
 - **Con-call, chatter, super-investor and institutional data are mock.** Real feeds need transcript,
   forum and filing scrapers that do not exist. The shapes are the contract; swapping the files is the

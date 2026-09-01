@@ -25,7 +25,7 @@
 // A BLANK QUARTER IS AN EM DASH, NEVER A ZERO. Finology print "-" where a holder was not on the
 // shareholding pattern, which below the disclosure threshold means "not disclosed", not "sold".
 
-import { statStrip, scoreTable, sectionHead, openWorkspace, openModal, closeModal, roadmapStrip } from '../ui/screener.js';
+import { statStrip, scoreTable, sectionHead, openWorkspace, openModal, closeModal } from '../ui/screener.js';
 import { scopeSummary } from '../ui/components.js';
 import { avatarFor } from '../ui/visual.js';
 import { escapeHtml } from '../core/dom.js';
@@ -108,20 +108,13 @@ export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
       <span class="text-xs font-bold uppercase tracking-wider text-slate-500">All disclosed positions</span>
       <span class="text-[11px] text-slate-400">${escapeHtml(coverageNote(rows, quarters))}</span>
     </div>
-    ${table.html}
-    ${roadmapStrip(FEATURES)}`;
+    ${table.html}`;
 
   stats.wire(ctx.root);
   disposers.push(table.wire(ctx.root));
   wireLivePill(ctx.root, m);
   wireCards(ctx.root);
 }
-
-const FEATURES = [
-  'Join each holding to the technicals feed for price and momentum context',
-  'Alert when a tracked investor enters or exits a portfolio name',
-  'Cost-basis estimation from the quarter’s traded range',
-];
 
 // ---------------------------------------------------------------------------------------
 // States where there is nothing to show — and each says which
@@ -190,8 +183,7 @@ function renderUnavailable(ctx, m) {
           </p>
         </div>
       </div>
-    </div>
-    ${roadmapStrip(FEATURES)}`;
+    </div>`;
 }
 
 /**

@@ -1358,33 +1358,6 @@ export function sectionHead({ title, description = '', meta = '', controls = '' 
 }
 
 /**
- * roadmapStrip(features, opts) — the dashed card that closes every tab, listing what this tab
- * does NOT do.
- *
- * It used to read "Coming in a later prompt", which was true while the build had later prompts
- * and became a false promise the moment it did not. It now says what it actually is: a wiring
- * roadmap, listing the gaps so they are visible rather than merely absent. A missing feature
- * nobody has written down reads to a user as a feature that was never needed.
- */
-export function roadmapStrip(features = [], { note = 'Wiring roadmap', caption = 'Not built. Listed so the gap is visible rather than implied.' } = {}) {
-  return `
-    <div class="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white/60 p-4">
-      <div class="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-        <span>🚧</span><span>${escapeHtml(note)}</span>
-      </div>
-      ${caption ? `<p class="mb-2 text-[11px] text-slate-400">${escapeHtml(caption)}</p>` : ''}
-      <ul class="grid gap-1.5 sm:grid-cols-2">
-        ${features
-          .map(
-            (f) =>
-              `<li class="flex items-start gap-1.5 text-xs text-slate-500"><span class="mt-0.5 font-bold text-indigo-400">›</span><span>${escapeHtml(f)}</span></li>`
-          )
-          .join('')}
-      </ul>
-    </div>`;
-}
-
-/**
  * pendingPanel({ title, body, arriving }) — the honest placeholder used where a genuine data
  * feed has not landed yet. Never fabricate numbers into a chart; render this instead.
  */

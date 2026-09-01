@@ -45,7 +45,9 @@ transcript text for user-editable keywords, at runtime, in the browser. Both are
 they will be when the feeds land — swapping the JSON is the only change needed.
 
 The Sources modal in the header lists every feed with an honest live / real / mock / pending
-status, and every tab closes with a **Wiring roadmap** card naming what it does not do.
+status. What each tab does *not* do is recorded in `docs/SPEC.md` under its "Still to come" —
+a dashed **Wiring roadmap** card used to carry that under every table, and it was chrome competing
+with the content it sat beneath.
 
 ---
 

@@ -135,43 +135,6 @@ export function tabBar({ tabs, activeId, onSelect }) {
   return { html, wire };
 }
 
-// Vertical sub-view list rendered under the workspace dropdown — active pill + optional count badge.
-export function railNav({ items, activeId, onSelect }) {
-  const html = `
-    <nav class="flex flex-col gap-0.5" data-rail-nav>
-      ${items
-        .map(
-          (item) => `
-        <button type="button" data-rail-id="${escapeHtml(item.id)}"
-          class="flex items-center justify-between rounded-lg border-l-2 px-3 py-2 text-left text-sm transition-colors ${
-            item.id === activeId
-              ? 'border-indigo-500 bg-indigo-50/60 font-semibold text-indigo-700'
-              : 'border-transparent font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-          }">
-          <span>${escapeHtml(item.label)}</span>
-          ${
-            item.badge !== undefined && item.badge !== null
-              ? `<span class="ml-2 rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${item.id === activeId ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}">${escapeHtml(item.badge)}</span>`
-              : ''
-          }
-        </button>`
-        )
-        .join('')}
-    </nav>`;
-
-  function wire(root) {
-    const nav = root.querySelector('[data-rail-nav]');
-    function handler(e) {
-      const btn = e.target.closest('[data-rail-id]');
-      if (btn) onSelect(btn.dataset.railId);
-    }
-    nav.addEventListener('click', handler);
-    return () => nav.removeEventListener('click', handler);
-  }
-
-  return { html, wire };
-}
-
 // Two-option segmented control (Portfolio ⇄ Universe) with a sliding white "thumb".
 export function segmentedToggle({ options, activeValue, onChange }) {
   const html = `
@@ -651,20 +614,6 @@ export function tooltip({ trigger, content, position = 'top' }) {
         ${escapeHtml(content)}
       </span>
     </span>`;
-}
-
-// Legacy dashed strip. Superseded by roadmapStrip() in ui/screener.js, which every tab now uses;
-// kept only so nothing that still imports it breaks.
-export function comingSoonStrip(features = [], { note = 'Wiring roadmap' } = {}) {
-  return `
-    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 p-4">
-      <div class="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-400">
-        <span>🚧</span><span>${escapeHtml(note)}</span>
-      </div>
-      <ul class="grid gap-1.5 sm:grid-cols-2">
-        ${features.map((f) => `<li class="flex items-start gap-1.5 text-xs text-slate-500"><span class="mt-0.5 text-slate-300">›</span><span>${escapeHtml(f)}</span></li>`).join('')}
-      </ul>
-    </div>`;
 }
 
 // Minimal CSS.escape polyfill fallback (CSS.escape is supported everywhere we target, but this

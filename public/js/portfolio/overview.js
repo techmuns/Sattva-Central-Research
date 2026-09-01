@@ -7,7 +7,7 @@
 // the ledger through the FIFO engine once per page load — position-by.js and drawdown.js read
 // the same cached positions rather than each recomputing from a holdings array.
 
-import { statStrip, topCards, scoreTable, openDrill, sectionHead, roadmapStrip } from '../ui/screener.js';
+import { statStrip, topCards, scoreTable, openDrill, sectionHead } from '../ui/screener.js';
 import { legendStrip } from '../ui/visual.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
@@ -38,14 +38,6 @@ export const meta = {
     { id: 'realised', label: 'Realised P&L' },
   ],
 };
-
-const FEATURES = [
-  'Broker contract-note import (Zerodha / Groww / ICICI Direct)',
-  'Target weights and allocation drift alerts',
-  'Tax-lot harvesting suggestions before 31 March',
-  'Intraday marks from the live-quote endpoint',
-  'Multi-account and family-portfolio consolidation',
-];
 
 const run = createLoader(meta.title, meta.subtitle);
 let disposers = [];
@@ -191,7 +183,6 @@ function renderPositions(ctx) {
     ${cards.html}
     ${table.html}
     ${legendStrip({ note: 'Signals are direct readings of the position — no scoring model is applied to holdings.' })}
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);
@@ -282,7 +273,6 @@ function renderAllocation(ctx) {
         ${top5.map((r) => `<span><strong class="text-slate-700">${escapeHtml(r.ticker)}</strong> ${((r.marketValue / total) * 100).toFixed(1)}%</span>`).join('')}
       </div>
     </section>
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);
@@ -400,7 +390,6 @@ function renderRealised(ctx) {
     })}
     ${stats.html}
     ${rows.length ? table.html : '<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-100">No sells in the ledger yet — nothing has been realised.</div>'}
-    ${roadmapStrip(FEATURES)}
   `;
   stats.wire(ctx.root);
   wireProvenancePill(ctx.root, m);

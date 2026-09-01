@@ -9,7 +9,7 @@
 // page. Sub-view switches, scope changes, chip filters and sorts all operate on that cached
 // list — nothing below refetches or rescores.
 
-import { statStrip, topCards, scoreTable, sectionHead, roadmapStrip, openModal } from '../ui/screener.js';
+import { statStrip, topCards, scoreTable, sectionHead, openModal } from '../ui/screener.js';
 import { legendStrip } from '../ui/visual.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
@@ -32,15 +32,6 @@ export const meta = {
     { id: 'earnings-surprise', label: 'Earnings Surprise' },
   ],
 };
-
-const FEATURES = [
-  'Intraday refresh via the live-quote endpoint',
-  'Sector-relative strength ranking',
-  'Saved scans and threshold alerts',
-  'Historical score trend per company',
-  'TradingView indicator overlay (technicals-source.json)',
-  'Backtesting a scan over past snapshots',
-];
 
 // Bumped on every render so a slow load that resolves after the user navigated away is
 // discarded instead of painting over whatever is now on screen.
@@ -327,7 +318,6 @@ function renderScanner(ctx, rows) {
     ${cards.html}
     ${table.html}
     ${legendStrip({ note: `Scored from ${m?.source || 'Yahoo Finance'} daily OHLCV plus NSE delivery data. ${m?.failures || 0} of ${m?.company_count || 0} companies have no usable price history and score 0 of 0.` })}
-    ${roadmapStrip(FEATURES)}
   `;
 
   stats.wire(ctx.root);
@@ -580,7 +570,6 @@ function renderStrongBreakouts(ctx, rows) {
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${withBreakout.length}</span> companies with a detectable base match these filters.</div>
     ${table.html}
     ${legendStrip()}
-    ${roadmapStrip(FEATURES)}
   `;
 
   stats.wire(ctx.root);
@@ -723,7 +712,6 @@ function renderFiiAccumulation(ctx, rows) {
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${withHold.length}</span> names with shareholding data match these filters.</div>
     ${table.html}
     ${legendStrip()}
-    ${roadmapStrip(FEATURES)}
   `;
 
   stats.wire(ctx.root);
@@ -818,7 +806,6 @@ function renderEarningsSurprise(ctx, rows) {
     ${stats.html}
     ${table.html}
     ${legendStrip()}
-    ${roadmapStrip(FEATURES)}
   `;
 
   stats.wire(ctx.root);
