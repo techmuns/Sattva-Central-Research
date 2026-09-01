@@ -379,10 +379,21 @@ roadmap* card that used to close each tab has been removed from the UI:
 - TradingView indicator overlay (`technicals-source.json`)
 
 ### Super Investors — `super-investors`
-Superstar holdings, institutional ownership, fund flows.
-- Quarterly shareholding scrape (Ticker Finology)
-- Per-investor portfolio pages with history
-- New-entry / full-exit alerting
+Superstar holdings and institutional ownership.
+
+**Superstar Investors opens on a cross-book roll-up**, so a reader does not have to open ninety
+books one at a time: companies bought or sold down by more than one tracked investor, new
+entrants, the largest increases and reductions, and the positions no longer disclosed. It replaced
+a three-card stat strip, two of whose cards described the feed rather than answering anything.
+
+Increases and reductions are in **percentage points of the company** — the only size a filing
+states. A new or exited position carries **no size at all**, because a position appearing or
+vanishing is a change of disclosure rather than a move of the whole holding, and "exited" is
+always worded *no longer disclosed*. "Bought by more than one investor" is a **count of who
+moved**, never a signal or a score. See *Rolling ninety books up into one screen* in `CLAUDE.md`.
+
+Still to come — this list is now the only place the gap is recorded, since the dashed *Wiring
+roadmap* card that used to close each tab has been removed from the UI:
 - AMFI + Trendlyne mutual fund flow overlay
 - Investor conviction scoring vs position size
 - Cross-investor overlap heatmap

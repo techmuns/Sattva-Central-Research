@@ -2939,27 +2939,20 @@ if (siProbe.state === 'no-route') {
   const cards = await page.locator('[data-open-investor]').count();
   ok('an investor card renders for every investor in their list', cards === siProbe.count, `${cards} cards for ${siProbe.count} investors`);
 
-  // THREE STAT CARDS AND NO FRESHNESS HERO. The gradient "Last read · N minutes ago" tile is gone:
-  // shareholding data moves four times a year, so a relative clock beside it invited the reader to
-  // read staleness into a number that could not have changed, and it was the third thing on screen
-  // claiming to describe freshness. The provenance did not go with it — `deliveryNote()` inside the
-  // Live pill's modal still says where the paint came from — so the check is BOTH halves.
-  const strip = await page.evaluate(() => {
-    const cards = [...document.querySelectorAll('#content-host .stat-card')];
-    return {
-      count: cards.length,
-      gradients: cards.filter((c) => /from-indigo-500/.test(c.className)).length,
-      text: cards.map((c) => c.innerText.replace(/\s+/g, ' ')).join(' | '),
-    };
-  });
-  ok('the stat strip is three cards with no gradient freshness hero', strip.count === 3 && strip.gradients === 0, JSON.stringify(strip));
-  ok('...and none of them is a "last read" clock', !/last read/i.test(strip.text), strip.text);
-  ok('...while the strip still fills its row rather than leaving a gap', await page.evaluate(() => {
-    const sec = document.querySelector('#content-host .stat-card')?.parentElement;
-    if (!sec) return false;
-    const cols = getComputedStyle(sec).gridTemplateColumns.split(' ').length;
-    return cols === sec.querySelectorAll('.stat-card').length;
+  // NO STAT STRIP AT ALL NOW. It was three cards: investors tracked, combined book value, and a
+  // "58 new · 400 exits" count. Two described the FEED rather than answering anything a reader
+  // came for, and the third was a pair of numbers with no names attached — so the only way to act
+  // on it was to open ninety books, which is the thing this page exists to avoid. The roll-up
+  // below replaced it. What the cards genuinely measured did not go: the combined value moved to
+  // the coverage line under the table, and the book counts are on the Live pill and the loading
+  // strip. Asserted as a pair, so removing the cards AND the figures would fail.
+  const strip = await page.evaluate(() => ({
+    cards: document.querySelectorAll('#content-host .stat-card').length,
+    coverage: (document.querySelector('#content-host')?.innerText || '').replace(/\s+/g, ' '),
   }));
+  ok('the stat strip is gone from Superstar Investors', strip.cards === 0, `${strip.cards} cards`);
+  ok('...but the combined book value survives, still attributed to Finology',
+    /Finology.s value/i.test(strip.coverage) && /investor-company rows/.test(strip.coverage));
   ok('the table renders a row per investor-company pair', (await page.locator('tr[data-row-key]').count()) > 0);
 
   // THE NEWEST QUARTER IS ESTABLISHED FROM THE LABEL, NOT FROM THE ARRAY ORDER.
@@ -3094,6 +3087,148 @@ if (siProbe.state === 'no-route') {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   ok('ESC closes the book workspace', (await page.locator('#workspace-overlay.is-open').count()) === 0);
+}
+
+// ---------------------------------------------------------------------------------------
+// THE CROSS-BOOK SUMMARY runs on EITHER path — live books or the committed snapshot.
+//
+// It sits outside the Worker branch above on purpose. The roll-up is computed from whatever books
+// are loaded, and on a static origin those come from `public/data/super-investors.json` — a file,
+// needing no route at all. Gating it on `/api/super-investors` would have skipped it on every run
+// this sandbox can do, and a check that never executes is not a check. It skips only when no book
+// loaded by either path, which is the one case with genuinely nothing to summarise.
+// ---------------------------------------------------------------------------------------
+{
+  await go('/#/research/super-investors?scope=universe', 9000);
+  await waitForPanel();
+  const booksLoaded = await page.evaluate(async () => (await import('/js/data/super-investors.js')).books().length);
+  if (!booksLoaded) {
+    skip('the cross-book summary renders, with a panel per question', 'no investor book loaded by any path');
+  } else {
+  // ---------------------------------------------------------------------------------------
+  // THE CROSS-BOOK SUMMARY — and the four numbers it refuses to invent
+  //
+  // The page exists so a reader does not open ninety books one at a time, and the summary is what
+  // answers that: who bought what, who sold what, and where more than one tracked investor moved
+  // on the same company. Rendering it is the easy half. The half worth asserting is what it must
+  // NOT do, because every one of these is the obvious feature request and each would be a
+  // fabricated figure:
+  //
+  //   1. No rupee size on a move. `valueCr` is Finology's derivation of what a position is worth
+  //      NOW, not what was traded — ranking "largest buys" by it answers a different question and
+  //      prints a rupee amount nobody disclosed. Increases and reductions are in percentage points.
+  //   2. No size at all on a new or exited position. `deriveMoves` leaves deltaPp null for both on
+  //      purpose: a position appearing is a change of disclosure, not a move of the whole holding.
+  //   3. "Exited" is "no longer disclosed", never "sold" — below the threshold a real holding is
+  //      simply invisible in the filing.
+  //   4. Consensus is a count of who moved, never a signal, a weight or a score.
+  //
+  // Asserted against the SHIPPED data rather than a fixture, and cross-checked against `allMoves()`
+  // — the summary agreeing with itself would prove nothing.
+  // ---------------------------------------------------------------------------------------
+  const summary = await page.evaluate(async () => {
+    const feed = await import('/js/data/super-investors.js');
+    const q = feed.quarterSummary({});
+    const moves = feed.allMoves();
+    const host = document.getElementById('content-host');
+    const sec = host.querySelector('[data-quarter-summary]');
+    const panel = (k) => sec?.querySelector(`[data-ranked-list="${k}"]`);
+    const textOf = (k) => (panel(k)?.innerText || '').replace(/\s+/g, ' ');
+    const rowsOf = (k) => [...(panel(k)?.querySelectorAll('.divide-y > *') || [])].map((r) => r.innerText.replace(/\s+/g, ' ').trim());
+    return {
+      rendered: !!sec,
+      panels: sec ? sec.querySelectorAll('[data-ranked-list]').length : 0,
+      // the honesty invariants, over the whole set rather than the rendered top 5
+      newHaveNoSize: q.newEntrants.every((m) => m.deltaPp == null),
+      exitsHaveNoSize: q.exits.every((m) => m.deltaPp == null),
+      addsAllPositive: q.topAdds.every((m) => m.deltaPp > 0),
+      trimsAllNegative: q.topTrims.every((m) => m.deltaPp < 0),
+      addsSortedDesc: q.topAdds.every((m, i, a) => i === 0 || a[i - 1].deltaPp >= m.deltaPp),
+      consensusAllMultiple: q.consensusBuys.concat(q.consensusExits).every((c) => c.investors.length > 1),
+      consensusBuyActions: q.consensusBuys.every((c) => c.investors.every((i) => ['new', 'added'].includes(i.action))),
+      consensusExitActions: q.consensusExits.every((c) => c.investors.every((i) => ['exited', 'trimmed'].includes(i.action))),
+      // counts must agree with the raw move list, not be recounted independently
+      countsAgree:
+        q.counts.new === moves.filter((m) => m.action === 'new').length &&
+        q.counts.added === moves.filter((m) => m.action === 'added').length &&
+        q.counts.trimmed === moves.filter((m) => m.action === 'trimmed').length &&
+        q.counts.exited === moves.filter((m) => m.action === 'exited').length,
+      // no rupee figure anywhere in the two ranked-by-size panels
+      // Rows only. A panel's note explains the rule in prose — the exits note says an exit is
+      // "not the same as sold" — so folding it into the text under test makes the explanation
+      // fail the check it is explaining.
+      addsRows: rowsOf('si-adds'),
+      trimRows: rowsOf('si-trims'),
+      exitRows: rowsOf('si-exits'),
+      headText: (sec?.querySelector('p')?.innerText || '').replace(/\s+/g, ' '),
+      exitsNote: (panel('si-exits')?.querySelector('p')?.innerText || '').replace(/\s+/g, ' '),
+      // investor names must be the list's, not the book's SEO-suffixed page title
+      suffixed: /Portfolio, Shareholdings/i.test(sec?.innerText || ''),
+      tableSuffixed: /Portfolio, Shareholdings/i.test(host.innerText),
+    };
+  });
+
+  ok('the cross-book summary renders, with a panel per question', summary.rendered && summary.panels === 6, `${summary.panels} panels`);
+  ok('a new position carries no percentage-point size, and neither does an exit',
+    summary.newHaveNoSize && summary.exitsHaveNoSize);
+  ok('...so increases and reductions contain only positions that actually moved',
+    summary.addsAllPositive && summary.trimsAllNegative);
+  ok('...ranked by that move, largest first', summary.addsSortedDesc);
+  const sized = summary.addsRows.concat(summary.trimRows);
+  ok('increases and reductions are in percentage points, with no rupee figure on any move',
+    sized.length > 0 && sized.every((r) => /[-+]?\d+\.\d\d pp$/.test(r)) && !sized.some((r) => /₹/.test(r)),
+    sized[0] || 'no rows');
+  ok('an exit row states the stake last disclosed, never a size for the exit itself',
+    summary.exitRows.length > 0 && summary.exitRows.every((r) => /was \d+\.\d\d%$/.test(r)) && !summary.exitRows.some((r) => /\bsold\b/i.test(r)),
+    summary.exitRows[0] || 'no rows');
+  ok('...and the panel says in words that it is not the same as sold',
+    /not the same as sold/i.test(summary.exitsNote), summary.exitsNote.slice(0, 90));
+  ok('a consensus row is always two or more investors, doing the matching thing',
+    summary.consensusAllMultiple && summary.consensusBuyActions && summary.consensusExitActions);
+  ok('the summary counts agree with the raw move list rather than being recounted',
+    summary.countsAgree);
+  ok('...and the head says how many books contributed, out of how many are comparable',
+    /of \d+ comparable books/.test(summary.headText), summary.headText.slice(0, 130));
+  // Finology's list and book endpoints disagree about an investor's name — the book carries their
+  // page title, suffix and all. The cards always read the list; the table and the summary now do
+  // too, so one person is one string everywhere on this page.
+  ok('investor names come from the list, not the book\'s SEO page title',
+    !summary.suffixed && !summary.tableSuffixed);
+
+  // The summary and the table under it must narrow through ONE predicate. Two predicates over the
+  // same question is what had the filings tabs reporting different sets in two places on a page.
+  await go('/#/research/super-investors?scope=portfolio', 9000);
+  await waitForPanel();
+  // The table streams its rows in, so a comparison against it has to wait for the settled set —
+  // otherwise a company the summary names could be absent purely because its row had not been
+  // appended yet, which would fail for a reason that is not about scope at all.
+  await settleTables();
+  const scoped = await page.evaluate(async () => {
+    const feed = await import('/js/data/super-investors.js');
+    const host = document.getElementById('content-host');
+    const sec = host.querySelector('[data-quarter-summary]');
+    const names = [...sec.querySelectorAll('[data-ranked-list] .divide-y > * span.font-semibold')].map((n) => n.innerText.trim());
+    // Against the table's whole text rather than a per-row first line — that was the rank cell,
+    // so nothing ever matched and the check failed for a reason that had nothing to do with scope.
+    const tableText = [...host.querySelectorAll('tr[data-row-key]')].map((tr) => tr.innerText).join(' | ');
+    return {
+      head: (sec?.querySelector('p')?.innerText || '').replace(/\s+/g, ' '),
+      names,
+      missing: names.filter((n) => !tableText.includes(n)),
+    };
+  });
+  // `quarterSummary({})` is unscoped by construction, so the scoped head must report FEWER
+  // contributing books than the feed has comparable ones — a scope that narrowed nothing would
+  // print "87 of 87" here and look identical to a working one.
+  const contributing = Number(/across ([\d,]+) of ([\d,]+) comparable books/.exec(scoped.head)?.[1]?.replace(/,/g, '') ?? -1);
+  const comparable = Number(/across ([\d,]+) of ([\d,]+) comparable books/.exec(scoped.head)?.[2]?.replace(/,/g, '') ?? -1);
+  ok('a narrowed scope narrows the summary too', contributing > 0 && contributing < comparable, scoped.head.slice(0, 130));
+  ok('...and every company it names is one the table below also shows',
+    scoped.names.length > 0 && scoped.missing.length === 0,
+    `${scoped.names.length} named, ${scoped.missing.length} absent from the table${scoped.missing.length ? `: ${scoped.missing.slice(0, 2).join(', ')}` : ''}`);
+  await go('/#/research/super-investors?scope=universe', 9000);
+  await waitForPanel();
+  }
 }
 
 // ---------------------------------------------------------------------------------------

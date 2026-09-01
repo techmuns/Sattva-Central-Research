@@ -25,7 +25,7 @@
 // A BLANK QUARTER IS AN EM DASH, NEVER A ZERO. Finology print "-" where a holder was not on the
 // shareholding pattern, which below the disclosure threshold means "not disclosed", not "sold".
 
-import { statStrip, scoreTable, sectionHead, openWorkspace, openModal, closeModal } from '../ui/screener.js';
+import { rankedList, scoreTable, sectionHead, openWorkspace, openModal, closeModal } from '../ui/screener.js';
 import { scopeSummary } from '../ui/components.js';
 import { avatarFor } from '../ui/visual.js';
 import { escapeHtml } from '../core/dom.js';
@@ -56,41 +56,9 @@ export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
 
   const rows = scopedHoldings(ctx);
   const quarters = feed.quarterLabels();
-  const moves = feed.allMoves();
   const investorList = feed.list();
 
-  const stats = statStrip([
-    {
-      label: 'Investors tracked',
-      value: formatNumber(investorList.length),
-      note: booksNote(m),
-    },
-    {
-      label: 'Combined book',
-      value: cr(sumValue(rows)),
-      note: valuedNote(rows),
-      help: {
-        title: 'Whose rupee figure this is',
-        body: `<p>A shareholding filing discloses a <strong>percentage of the company</strong>, never a rupee amount. The ₹ figure beside every holding is <strong>Ticker Finology's own derivation</strong> from that percentage and a market cap — reproduced here unchanged, not recomputed.</p>
-               <p class="mt-3">It therefore moves for two different reasons: the holder changing their position, and the market repricing the company. It is not what anyone paid, and not what they are up.</p>
-               <p class="mt-3">The total sums only the positions that carry a value. ${escapeHtml(valuedNote(rows))} — a total that silently skipped the rest while looking complete would be worse than none.</p>`,
-      },
-    },
-    {
-      // The newest quarter across the WHOLE feed, not whichever book answered first. Different
-      // investors publish to different quarters, so `moves[0]` was a fact about arrival order.
-      label: `This quarter${feed.latestQuarter() ? ` · ${escapeHtml(feed.latestQuarter())}` : ''}`,
-      value: `${count(moves, 'new')} new · ${count(moves, 'exited')} exits`,
-      note: `${count(moves, 'added')} added, ${count(moves, 'trimmed')} trimmed · derived`,
-      help: {
-        title: 'How the quarter’s moves are derived',
-        body: `<p>This is the <strong>only computed figure on the page</strong>. Finology publish a holding percentage per quarter; the change is the latest quarter minus the one before it, per company, per investor.</p>
-               <p class="mt-3"><strong>A blank quarter is not a zero.</strong> Where a holder is not on the shareholding pattern the source prints "-", which below the disclosure threshold means <em>not disclosed</em> rather than <em>sold</em>. So a position appearing is counted as <strong>new</strong> and one disappearing as <strong>exited</strong>, and neither carries a percentage-point change — printing ±the whole holding would invent a trade size.</p>
-               <p class="mt-3">An investor whose book has only one published quarter is not comparable, and contributes nothing here rather than counting as entirely new.</p>`,
-      },
-    },
-  ]);
-
+  const summary = quarterSummaryBlock(ctx, m, rows);
   const table = holdingsTable(ctx, rows, quarters, tableView);
   onView?.(table.view);
 
@@ -100,9 +68,9 @@ export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
       description: `Every tracked investor's book as Ticker Finology publish it, quarter by quarter. ${SOURCE}`,
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: investorList.length, noun: 'investors' })}</div>`,
     })}
-    ${stats.html}
     ${staleStrip(m)}
     ${loadingStrip(m)}
+    ${summary.html}
     <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${investorList.map(investorCard).join('')}</div>
     <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
       <span class="text-xs font-bold uppercase tracking-wider text-slate-500">All disclosed positions</span>
@@ -110,10 +78,179 @@ export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
     </div>
     ${table.html}`;
 
-  stats.wire(ctx.root);
+  summary.wire(ctx.root, disposers);
   disposers.push(table.wire(ctx.root));
   wireLivePill(ctx.root, m);
   wireCards(ctx.root);
+}
+
+
+// ---------------------------------------------------------------------------------------
+// THE QUARTER, ACROSS EVERY BOOK — what the three stat tiles became
+//
+// The page used to open on three KPI cards: investors tracked, combined book value, and a
+// "58 new · 400 exits" count. Two of the three were properties of the FEED rather than answers a
+// reader came for — how many books loaded, and what they add up to — and the third was a pair of
+// numbers with no names attached, so the only way to act on it was to open ninety books.
+//
+// This is the roll-up instead: who bought what, who sold what, and where more than one tracked
+// investor moved on the same company. The counts the third tile carried are kept — as a line of
+// text under the heading, where they belong beside the names they describe.
+//
+// EVERY HONESTY RULE HERE IS ENFORCED IN `quarterSummary` (js/data/super-investors.js), and the
+// wording on these panels has to match it:
+//
+//   · increases and reductions are in PERCENTAGE POINTS of the company, never rupees — `valueCr`
+//     is what a position is worth now, not what was traded;
+//   · a new position carries no size, so it is ranked by the stake now disclosed;
+//   · an exit is "no longer disclosed", never "sold";
+//   · consensus is a count of who moved, never a signal, a weight or a score.
+// ---------------------------------------------------------------------------------------
+
+const pp = (v) => (v == null ? '—' : `${v > 0 ? '+' : ''}${Number(v).toFixed(2)} pp`);
+const andOthers = (names) => (names.length <= 2 ? names.join(' & ') : `${names[0]}, ${names[1]} +${names.length - 2}`);
+
+function quarterSummaryBlock(ctx, m, rows) {
+  const include = scopeFilter(ctx);
+  const q = feed.quarterSummary({ include, limit: 5 });
+
+  const panels = [
+    rankedList({
+      key: 'si-consensus-buys',
+      title: 'Bought by more than one investor',
+      note: 'Added to, or newly disclosed, by two or more tracked investors.',
+      items: q.consensusBuys.map((c) => ({
+        name: c.company,
+        sub: andOthers(c.investors.map((i) => i.investor)),
+        value: `${c.count} investors`,
+        badge: c.sized ? pp(c.sumPp) : null,
+        tone: 'pos',
+      })),
+      empty: 'No company was bought by more than one tracked investor this quarter.',
+    }),
+    rankedList({
+      key: 'si-new',
+      title: 'New entrants',
+      note: 'First quarter disclosed. Ranked by the stake now held — an appearance has no trade size.',
+      items: q.newEntrants.map((mv) => ({
+        name: mv.company,
+        sub: mv.investor,
+        value: mv.now == null ? '—' : `${Number(mv.now).toFixed(2)}%`,
+        tone: 'pos',
+      })),
+      empty: 'No new position was disclosed this quarter.',
+    }),
+    rankedList({
+      key: 'si-adds',
+      title: 'Largest increases',
+      note: 'Percentage points of the company, latest quarter minus the one before — derived.',
+      items: q.topAdds.map((mv) => ({ name: mv.company, sub: mv.investor, value: pp(mv.deltaPp), tone: 'pos' })),
+      empty: 'No position was increased this quarter.',
+    }),
+    rankedList({
+      key: 'si-consensus-exits',
+      title: 'Sold down by more than one investor',
+      note: 'Trimmed, or no longer disclosed, by two or more tracked investors.',
+      items: q.consensusExits.map((c) => ({
+        name: c.company,
+        sub: andOthers(c.investors.map((i) => i.investor)),
+        value: `${c.count} investors`,
+        badge: c.sized ? pp(c.sumPp) : null,
+        tone: 'neg',
+      })),
+      empty: 'No company was sold down by more than one tracked investor this quarter.',
+    }),
+    rankedList({
+      key: 'si-trims',
+      title: 'Largest reductions',
+      note: 'Percentage points of the company, latest quarter minus the one before — derived.',
+      items: q.topTrims.map((mv) => ({ name: mv.company, sub: mv.investor, value: pp(mv.deltaPp), tone: 'neg' })),
+      empty: 'No position was reduced this quarter.',
+    }),
+    rankedList({
+      key: 'si-exits',
+      title: 'No longer disclosed',
+      note: 'Off the shareholding pattern this quarter. Below the disclosure threshold that is not the same as sold.',
+      items: q.exits.map((mv) => ({
+        name: mv.company,
+        sub: mv.investor,
+        // The stake they last disclosed, labelled as the prior quarter's — NOT a size for the
+        // exit, which has none. An em dash where even that is missing.
+        value: mv.before == null ? '—' : `was ${Number(mv.before).toFixed(2)}%`,
+        tone: 'neg',
+      })),
+      empty: 'Every position disclosed last quarter is still disclosed.',
+    }),
+  ];
+
+  const html = `
+    <section class="mb-6" data-quarter-summary>
+      ${summaryHead(q)}
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">${panels.map((p) => p.html).join('')}</div>
+    </section>`;
+
+  function wire(root, disposers) {
+    for (const panel of panels) disposers.push(panel.wire(root));
+    const btn = root.querySelector('[data-summary-help]');
+    if (btn) btn.addEventListener('click', () => openModal(summaryHelpBody(q), { size: 'wide' }));
+  }
+
+  return { html, wire };
+}
+
+/**
+ * The heading, and the counts the removed tile carried.
+ *
+ * `clause()` is the Sources-modal rule applied here: a figure goes at the END of a sentence that
+ * survives without it, so a count of zero drops its clause rather than printing "0 new".
+ */
+function summaryHead(q) {
+  const c = q.counts;
+  const clause = (n, text) => (n ? text : null);
+  const parts = [
+    clause(c.new, `${formatNumber(c.new)} new`),
+    clause(c.added, `${formatNumber(c.added)} increased`),
+    clause(c.trimmed, `${formatNumber(c.trimmed)} reduced`),
+    clause(c.exited, `${formatNumber(c.exited)} no longer disclosed`),
+  ].filter(Boolean);
+
+  const span =
+    q.pairs.length === 1 && q.pairs[0].latest
+      ? `${escapeHtml(q.pairs[0].latest)} vs ${escapeHtml(q.pairs[0].prior)}`
+      : `${q.pairs.length} different quarter pairs`;
+
+  return `
+    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="font-display text-lg font-bold text-slate-900">The quarter across every book</h2>
+      <button type="button" data-summary-help
+        class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        <span>How this is derived</span><span aria-hidden="true">?</span>
+      </button>
+    </div>
+    <p class="mb-3 text-xs text-slate-500">
+      ${parts.length ? `${escapeHtml(parts.join(' · '))} across ${formatNumber(q.contributingBooks)} of ${formatNumber(q.comparableBooks)} comparable books` : 'No position moved in any comparable book.'}
+      <span class="text-slate-400">· ${span}${q.singleQuarterBooks ? ` · ${formatNumber(q.singleQuarterBooks)} book${q.singleQuarterBooks === 1 ? '' : 's'} publish only one quarter and cannot be compared` : ''}</span>
+    </p>`;
+}
+
+function summaryHelpBody(q) {
+  return `
+    <div class="scrollbar-thin max-h-[80vh] overflow-y-auto px-7 py-6">
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h2 class="font-display text-xl font-bold text-slate-900">How the quarter's moves are derived</h2>
+          <p class="mt-1 text-sm text-slate-500">${escapeHtml(SOURCE)}</p>
+        </div>
+        <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Close">&times;</button>
+      </div>
+      <div class="space-y-3 text-[13px] leading-relaxed text-slate-700">
+        <p>Finology publish a holding <strong>percentage</strong> per company per quarter. The change is the latest quarter minus the one before it, per company, per investor — <strong>the only computed figure on this page</strong>. Everything else is reproduced as they publish it.</p>
+        <p><strong>A blank quarter is not a zero.</strong> Where a holder is not on the shareholding pattern the source prints "-", which below the Indian disclosure threshold means <em>not disclosed</em> rather than <em>sold</em>. So a position appearing counts as <strong>new</strong> and one disappearing as <strong>no longer disclosed</strong> — and neither carries a percentage-point figure, because printing ±the whole holding would invent a trade size that nobody disclosed.</p>
+        <p><strong>Increases and reductions are in percentage points of the company, not rupees.</strong> The ₹ figure beside a holding is Finology's derivation of what the position is worth <em>now</em>, from a percentage and a market cap. It is not what was traded, so ranking "largest buys" by it would answer a different question and attach a rupee amount to a trade nobody stated.</p>
+        <p><strong>"Bought by more than one investor" is a count, not a signal.</strong> It says how many tracked investors added to or newly disclosed the same company. It is not weighted, not scored and not a recommendation — this dashboard adds no model of its own to somebody else's filings.</p>
+        <p><strong>The books are not all on the same quarter.</strong> Each is compared against its own two most recent published quarters, so this roll-up can span several quarter pairs; ${q.pairs.length === 1 ? 'in the current data they all land on one.' : `the current data spans ${q.pairs.length}.`} A book that publishes only one quarter is not comparable and contributes nothing, rather than counting as entirely new${q.singleQuarterBooks ? ` — ${formatNumber(q.singleQuarterBooks)} of them right now` : ''}.</p>
+      </div>
+    </div>`;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -667,18 +804,34 @@ function profilePanel() {
  * a company name and no symbol. The watchlist carries the name the row was starred under, which is
  * the same kind of string, so the two scopes use one comparison.
  */
-function scopedHoldings(ctx) {
-  const all = feed.allHoldings();
-  if (ctx.scope === 'universe') return all;
-  const names =
+/**
+ * ONE PREDICATE, used by the summary AND by the table under it.
+ *
+ * `null` means "this scope does not narrow" — the same convention `scopeTickers()` uses, and for
+ * the same reason: an empty watchlist must narrow to nothing rather than to everything.
+ *
+ * It is factored out because the summary panels and the all-positions table answer the same
+ * question about the same companies. Two predicates over one question is what had the filings
+ * tabs reporting different sets in two places on one screen.
+ */
+function scopeFilter(ctx) {
+  if (ctx.scope === 'universe') return null;
+  const names = (
     ctx.scope === 'watchlist'
-      ? watchlist.all().map((w) => String(w.name || '').toLowerCase())
-      : coverage.holdings().map((h) => String(h.name || '').toLowerCase());
-  if (!names.some(Boolean)) return [];
-  return all.filter((r) => names.some((n) => n && r.company.toLowerCase().includes(n.slice(0, 12))));
+      ? watchlist.all().map((w) => String(w.name || ''))
+      : coverage.holdings().map((h) => String(h.name || ''))
+  )
+    .map((n) => n.toLowerCase())
+    .filter(Boolean);
+  return (company) => names.some((n) => String(company).toLowerCase().includes(n.slice(0, 12)));
 }
 
-const count = (moves, action) => moves.filter((m) => m.action === action).length;
+function scopedHoldings(ctx) {
+  const all = feed.allHoldings();
+  const include = scopeFilter(ctx);
+  if (!include) return all;
+  return all.filter((r) => include(r.company));
+}
 
 /**
  * Rows still disclosed in their own book's latest quarter.
@@ -702,15 +855,20 @@ const valuedNote = (rows) => {
     ? `Finology’s value, all ${formatNumber(held.length)} currently disclosed positions`
     : `Finology’s value, ${formatNumber(valued)} of ${formatNumber(held.length)} currently disclosed positions carry one`;
 };
-const booksNote = (m) =>
-  m.failedBooks
-    ? `${formatNumber(m.loadedBooks)} books read · ${formatNumber(m.failedBooks)} could not be`
-    : m.pending
-      ? `${formatNumber(m.loadedBooks)} books read · ${formatNumber(m.pending)} still arriving`
-      : `${formatNumber(m.loadedBooks)} books, all read`;
-
-const coverageNote = (rows, quarters) =>
-  `${formatNumber(rows.length)} investor-company rows · ${quarters.length} quarter${quarters.length === 1 ? '' : 's'} published · a dash is a quarter with no disclosure, not a zero`;
+const coverageNote = (rows, quarters) => {
+  const total = sumValue(rows);
+  // The value clause drops out entirely when nothing carries one, rather than printing a nil: a
+  // feed with no valued position and a feed worth zero are different claims.
+  const value = total == null ? null : `${formatCroreCompact(total)} — ${valuedNote(rows)}`;
+  return [
+    `${formatNumber(rows.length)} investor-company rows`,
+    `${quarters.length} quarter${quarters.length === 1 ? '' : 's'} published`,
+    value,
+    'a dash is a quarter with no disclosure, not a zero',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+};
 
 async function runExport() {
   const m = feed.meta();

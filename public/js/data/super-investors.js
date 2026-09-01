@@ -67,7 +67,7 @@
 // re-read control in the Live pill's modal, and it asks for everything again.
 
 import { conditionalJson, readEntries, KEYS, isPersistent } from '../core/store.js';
-import { normalisePortfolio, deriveMoves, summarise, quarterOrder } from './finology-shared.js';
+import { normalisePortfolio, deriveMoves, summarise, quarterOrder, round2 } from './finology-shared.js';
 
 const LIST_PATH = 'api/super-investors';
 const bookPath = (slug) => `api/super-investors/${encodeURIComponent(slug)}`;
@@ -701,6 +701,23 @@ export function movesFor(slug) {
 // ---------------------------------------------------------------------------------------
 let memo = { version: -1 };
 
+/**
+ * The name to SHOW for an investor, which is the list's, not the book's.
+ *
+ * Finology's two endpoints disagree: the list says "Abakkus Fund - Sunil Singhania" and the book
+ * says "Abakkus Fund - Sunil Singhania Portfolio, Shareholdings & Investments." — their page
+ * title, SEO suffix and all. The cards were already reading the list, so the table under them and
+ * its investor filter were showing a different string for the same person, and the cross-book
+ * summary panels were unreadable: three of those suffixes in one line of a small card.
+ *
+ * Resolved here rather than by stripping the suffix with a regex — the list is the authoritative
+ * display name, and a pattern match would quietly fail the day they reword it. Falls back to the
+ * book's own name so a book that arrives before the list still renders something real.
+ */
+function displayName(b) {
+  return state.investors.find((i) => i.slug === b.slug)?.name || b.name;
+}
+
 function derived() {
   if (memo.version === version) return memo;
 
@@ -708,12 +725,13 @@ function derived() {
   const holdings = [];
   const seenQuarters = [];
   for (const b of state.books.values()) {
+    const investor = displayName(b);
     for (const q of b.quarters) if (!seenQuarters.includes(q)) seenQuarters.push(q);
 
     const [latest] = b.quarters;
     for (const h of b.holdings) {
       holdings.push({
-        investor: b.name,
+        investor,
         slug: b.slug,
         company: h.company,
         companySlug: h.companySlug,
@@ -727,7 +745,7 @@ function derived() {
 
     const { comparable, latest: l, prior, moves: ms } = deriveMoves(b);
     if (!comparable) continue;
-    for (const m of ms) moves.push({ ...m, investor: b.name, slug: b.slug, latest: l, prior });
+    for (const m of ms) moves.push({ ...m, investor, slug: b.slug, latest: l, prior });
   }
 
   memo = { version, moves, holdings, quarters: orderQuarters(seenQuarters) };
@@ -761,6 +779,108 @@ export const totalsFor = (slug) => {
 };
 
 /**
+ * THE QUARTER, ROLLED UP ACROSS EVERY COMPARABLE BOOK.
+ *
+ * The page exists so a reader does not have to open ninety books one at a time, and this is the
+ * function that answers that. It is a roll-up of `deriveMoves` — counting and grouping their
+ * numbers — and it invents nothing beyond the percentage-point subtraction that module already
+ * documents as the one derived figure here.
+ *
+ * FOUR THINGS IT DELIBERATELY WILL NOT DO, each of which is the obvious feature request:
+ *
+ *  1. **No rupee size on any move.** `valueCr` is Finology's derivation of what a position is
+ *     WORTH NOW, not what was traded. Ranking "largest buys" by it would answer "who holds the
+ *     biggest position that also grew", and print a rupee figure for a trade nobody disclosed.
+ *     Increases and reductions are therefore ranked in PERCENTAGE POINTS of the company, which is
+ *     the only size the filing actually states.
+ *  2. **No size at all on a new or exited position.** `deriveMoves` leaves `deltaPp` null for both
+ *     on purpose — a position appearing is a change of disclosure, not a move of "the whole
+ *     holding" — so new entrants are ranked by the stake they now disclose, and exits carry no
+ *     figure. Sorting them into the increase/reduction lists would fabricate the very number that
+ *     module refuses to state.
+ *  3. **"Exited" is not "sold".** Below the disclosure threshold a real holding vanishes from the
+ *     shareholding pattern. The wording on every surface is "no longer disclosed".
+ *  4. **Consensus is a COUNT, not a signal.** `consensusBuys` says how many tracked investors
+ *     added or newly disclosed the same company. It is not a recommendation, it is not weighted,
+ *     and it is not scored — this dashboard adds no model to somebody else's filings.
+ *
+ * AND THE BOOKS ARE NOT ALL ON THE SAME QUARTER. `deriveMoves` compares each book's own two most
+ * recent quarters, so across ninety investors this can span several (latest, prior) pairs. That is
+ * a fact about their publishing, not an error, and `pairs` reports it so the UI can say so rather
+ * than implying one clean quarter boundary.
+ *
+ * `include(company)` narrows to the scope the view is showing. It is passed in rather than read
+ * here so the summary and the table below it filter through ONE predicate — two predicates over
+ * the same question is the shape that had the filings tabs reporting different companies in two
+ * places on one screen.
+ */
+export function quarterSummary({ include = null, limit = 5 } = {}) {
+  const all = derived().moves;
+  const moves = include ? all.filter((m) => include(m.company)) : all;
+
+  const counts = { new: 0, exited: 0, added: 0, trimmed: 0, held: 0 };
+  for (const m of moves) if (counts[m.action] != null) counts[m.action] += 1;
+
+  // Grouped on the company, carrying who did what — the roll-up a reader would otherwise do by
+  // opening every book. `companySlug` rides along so a row can link out to Finology's own page.
+  const group = (actions) => {
+    const byCompany = new Map();
+    for (const m of moves) {
+      if (!actions.includes(m.action)) continue;
+      if (!byCompany.has(m.company)) byCompany.set(m.company, { company: m.company, companySlug: m.companySlug, investors: [] });
+      byCompany.get(m.company).investors.push({ investor: m.investor, slug: m.slug, action: m.action, deltaPp: m.deltaPp, now: m.now });
+    }
+    return [...byCompany.values()]
+      .filter((c) => c.investors.length > 1)
+      // Most investors first. The tie-break sums only the moves that HAVE a size — a company two
+      // investors newly disclosed sums to 0pp and must not therefore rank below one with a single
+      // measured +0.1pp; `sized` keeps that visible instead of letting a null read as zero.
+      .map((c) => ({
+        ...c,
+        count: c.investors.length,
+        sized: c.investors.filter((i) => i.deltaPp != null).length,
+        sumPp: round2(c.investors.reduce((a, i) => a + (i.deltaPp ?? 0), 0)),
+      }))
+      .sort((a, b) => b.count - a.count || Math.abs(b.sumPp) - Math.abs(a.sumPp));
+  };
+
+  const byAction = (action) => moves.filter((m) => m.action === action);
+
+  // Every (latest, prior) pair the comparable books were measured across.
+  const pairs = [];
+  for (const m of moves) {
+    if (!pairs.some((p) => p.latest === m.latest && p.prior === m.prior)) pairs.push({ latest: m.latest, prior: m.prior });
+  }
+
+  // A book with one published quarter is not comparable and contributes nothing — counted, so the
+  // panel can say so rather than letting it read as an investor who did nothing.
+  let comparableBooks = 0;
+  let singleQuarterBooks = 0;
+  for (const b of state.books.values()) (b.quarters.length > 1 ? comparableBooks++ : singleQuarterBooks++);
+
+  return {
+    counts,
+    total: moves.length,
+    pairs,
+    comparableBooks,
+    singleQuarterBooks,
+    // Books that actually contributed a move to THIS (possibly scoped) set. Under a narrowed
+    // scope `comparableBooks` alone would read as though all of them had — "5 new across 87
+    // comparable books" is true and sounds like 87 investors moved on five companies.
+    contributingBooks: new Set(moves.map((m) => m.slug)).size,
+    consensusBuys: group(['new', 'added']).slice(0, limit),
+    consensusExits: group(['exited', 'trimmed']).slice(0, limit),
+    // Ranked by the stake they now disclose — a filed figure — never by a change they did not make.
+    newEntrants: byAction('new').sort((a, b) => (b.now ?? 0) - (a.now ?? 0)),
+    topAdds: byAction('added').sort((a, b) => b.deltaPp - a.deltaPp),
+    topTrims: byAction('trimmed').sort((a, b) => a.deltaPp - b.deltaPp),
+    // No sort key exists for these and none is invented: an exit has no size, so they come out in
+    // book order rather than ranked by a figure that would have to be made up.
+    exits: byAction('exited'),
+  };
+}
+
+/**
  * Companies held by more than one tracked investor, most-held first.
  *
  * A count of who discloses the same name, not a view about it. Only the latest quarter of each
@@ -776,7 +896,7 @@ export function overlaps() {
       if (h.quarterlyHoldings[latest] == null) continue;
       const key = h.company;
       if (!byCompany.has(key)) byCompany.set(key, { company: key, companySlug: h.companySlug, holders: [] });
-      byCompany.get(key).holders.push({ investor: b.name, slug: b.slug, pct: h.quarterlyHoldings[latest], valueCr: h.valueCr });
+      byCompany.get(key).holders.push({ investor: displayName(b), slug: b.slug, pct: h.quarterlyHoldings[latest], valueCr: h.valueCr });
     }
   }
   return [...byCompany.values()]

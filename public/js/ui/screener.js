@@ -201,6 +201,75 @@ const METRIC_TONE = {
   neutral: 'text-slate-700',
 };
 
+/**
+ * rankedList({ title, note, items, limit, empty, onSelect }) — a compact ranked panel.
+ *
+ * `topCards` is the Top-10 HERO grid: five columns, 3xl figures, an avatar each. It is right when
+ * a tab has one ranking that deserves the top of the page, and wrong when it has six small ones
+ * that have to sit side by side — which is what a cross-book summary is.
+ *
+ * So this is the small sibling, not a hand-rolled panel in a tab: heading, a note that survives
+ * without its number, and up to `limit` rows of `{ name, sub, value, tone, badge }`. `value` is
+ * plain text and is escaped; `sub` is the second line. An empty list renders `empty` rather than a
+ * blank card, because "nothing matched" and "nothing was computed" look identical otherwise.
+ *
+ * A row is only clickable when `onSelect` is given — a list of dead buttons reads as broken.
+ *
+ * `key` is REQUIRED when a page renders more than one, which is the only reason to use this
+ * component at all. Several panels share this markup, so without a key `wire()` would bind the
+ * first panel's handler to every panel's rows — the click would work and open the wrong thing,
+ * which is worse than not working.
+ */
+export function rankedList({ key, title, note = '', items = [], limit = 5, empty = 'Nothing to show.', onSelect = null }) {
+  const shown = items.slice(0, limit);
+  // Derived the same way on both sides, so the attribute written and the selector queried cannot
+  // disagree — and reduced to a character set that needs no CSS escaping in the first place.
+  const id = String(key || title).replace(/[^a-zA-Z0-9-]+/g, '-');
+  const tone = (t) => (t === 'pos' ? 'text-emerald-600' : t === 'neg' ? 'text-rose-600' : t === 'warn' ? 'text-amber-600' : 'text-slate-700');
+  const tag = onSelect ? 'button' : 'div';
+
+  const rows = shown
+    .map(
+      (it, i) => `
+      <${tag} ${onSelect ? `type="button" data-ranked-idx="${i}"` : ''}
+        class="flex w-full items-baseline justify-between gap-3 rounded-lg px-2 py-1.5 text-left${onSelect ? ' transition-colors hover:bg-slate-50' : ''}">
+        <span class="min-w-0">
+          <span class="block truncate text-[13px] font-semibold text-slate-900">${escapeHtml(it.name)}</span>
+          ${it.sub ? `<span class="block truncate text-[11px] text-slate-500">${escapeHtml(it.sub)}</span>` : ''}
+        </span>
+        <span class="flex flex-shrink-0 items-baseline gap-1.5">
+          ${it.badge ? `<span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-600">${escapeHtml(it.badge)}</span>` : ''}
+          <span class="text-[13px] font-bold tabular-nums ${tone(it.tone)}">${escapeHtml(it.value ?? '')}</span>
+        </span>
+      </${tag}>`
+    )
+    .join('');
+
+  const html = `
+    <section class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100" data-ranked-list="${id}">
+      <div class="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(title)}</div>
+      ${note ? `<p class="mb-2 text-[11px] leading-snug text-slate-400">${escapeHtml(note)}</p>` : ''}
+      ${shown.length ? `<div class="-mx-2 divide-y divide-slate-100">${rows}</div>` : `<p class="py-2 text-[12px] text-slate-400">${escapeHtml(empty)}</p>`}
+      ${items.length > shown.length ? `<div class="mt-2 text-[11px] text-slate-400">and ${items.length - shown.length} more</div>` : ''}
+    </section>`;
+
+  function wire(root) {
+    if (!onSelect) return () => {};
+    const host = root.querySelector(`[data-ranked-list="${id}"]`);
+    if (!host) return () => {};
+    // Delegated on this panel's own section, so the handler cannot reach another panel's rows and
+    // there is one listener per panel rather than one per row.
+    const onClick = (e) => {
+      const btn = e.target.closest('[data-ranked-idx]');
+      if (btn && host.contains(btn)) onSelect(shown[Number(btn.dataset.rankedIdx)], Number(btn.dataset.rankedIdx));
+    };
+    host.addEventListener('click', onClick);
+    return () => host.removeEventListener('click', onClick);
+  }
+
+  return { html, wire, shown };
+}
+
 export function topCards({ title, items = [], valueFormat = 'metric', onSelect = null, limit = 10 }) {
   const shown = items.slice(0, limit);
 

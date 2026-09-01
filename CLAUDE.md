@@ -271,6 +271,7 @@ Conventions:
 | `openWorkspace(config)` | full-screen overlay (singleton), `max-w-[1200px]`, with its own tab strip. For analysis that needs room — see below. |
 | `openModal(html, { size })` | centred modal (singleton). `size`: `default` \| `wide` \| `magazine`. |
 | `table.updateRows(keys)` | rebuild named rows **in place** after their data changed, leaving the row set — and so the reader's search, filters, watchlist and sort — untouched. For data landing on a mounted table: a live quote arriving over an EOD column is the reference case, and the watchlist star is the second. Not the same as a repaint: `repaint`'s fast path *moves* existing `<tr>` nodes, so invalidating the markup cache alone changes nothing on screen. |
+| `rankedList(config)` | a compact ranked panel — heading, note, up to `limit` rows of `{ name, sub, value, tone, badge }`. The small sibling of `topCards`, for a page that needs several small rankings side by side rather than one hero grid. **`key` is required** where more than one is rendered, or `wire()` binds the first panel's handler to every panel's rows — a click that works and opens the wrong thing. |
 | `sectionHead`, `pendingPanel` | title block and the honest "no data yet" panel. `sectionHead` takes **`meta`** (right of the title) and **`controls`** (a left-aligned row of its own beneath it) — see below. |
 
 **There is no roadmap card.** A dashed *"Wiring roadmap · Not built. Listed so the gap is visible
@@ -574,6 +575,55 @@ column of it. See below.
 the ₹ value beside each one is Ticker Finology's derivation from a percentage and a market cap —
 headed *Value (Finology)*, reproduced, never recomputed. The single figure this dashboard computes
 on that feed is the quarter-over-quarter change, and it is headed *Change (derived)*.
+
+### Rolling ninety books up into one screen — `quarterSummary()`
+
+The page exists so a reader does not open ninety books one at a time, so the top of it is a
+cross-book roll-up: who bought what, who sold what, and where more than one tracked investor moved
+on the same company. It replaced three stat cards, two of which described the *feed* (how many
+books loaded, what they total) rather than answering anything, and a third that was a pair of
+counts with no names attached — so the only way to act on it was to open the books.
+
+`quarterSummary({ include, limit })` in `js/data/super-investors.js` is the whole of it, and it is
+a roll-up of `deriveMoves` rather than a new model. **Four numbers it refuses to invent**, each of
+which is the obvious feature request:
+
+1. **No rupee size on any move.** `valueCr` is Finology's derivation of what a position is worth
+   *now*, not what was traded. Ranking "largest buys" by it answers *"who holds the biggest
+   position that also grew"* and prints a rupee figure for a trade nobody disclosed. Increases and
+   reductions are ranked in **percentage points of the company**, which is the only size the filing
+   states.
+2. **No size at all on a new or exited position.** `deriveMoves` leaves `deltaPp` null for both on
+   purpose. New entrants are ranked by the stake they now disclose; exits carry the stake last
+   disclosed, worded *"was 4.02%"*, never a delta.
+3. **"Exited" is not "sold".** Below the disclosure threshold a real holding vanishes from the
+   pattern, so every surface says *no longer disclosed*.
+4. **Consensus is a COUNT, not a signal.** *"Bought by more than one investor"* says how many
+   tracked investors added or newly disclosed the same company. Not weighted, not scored, not a
+   recommendation.
+
+**The books are not all on the same quarter**, because each is compared against its own two most
+recent published ones. `pairs` reports how many (latest, prior) pairs the roll-up spans so the head
+can say so instead of implying one clean boundary, and a book publishing a single quarter is
+counted as not comparable rather than reading as an investor who did nothing.
+
+**The head prints how many books CONTRIBUTED, out of how many are comparable.** Under a narrowed
+scope "5 new across 87 comparable books" is true and sounds like 87 investors moved on five
+companies; *"across 33 of 87"* cannot be read that way.
+
+**`scopeFilter(ctx)` is one predicate, used by the summary AND the table under it.** Two predicates
+over the same question is what had the filings tabs reporting different sets in two places on one
+screen.
+
+### Finology's two endpoints disagree about a name
+
+The list says *"Abakkus Fund - Sunil Singhania"*; the book says *"Abakkus Fund - Sunil Singhania
+Portfolio, Shareholdings & Investments."* — their page title, SEO suffix and all. The cards always
+read the list, so the table beneath them and its investor filter were showing a different string
+for the same person, and three of those suffixes in one summary row is unreadable. `displayName()`
+resolves it from the list for every derived view, so one person is one string on the page. It is
+**not** a regex that strips the suffix: the list is the authoritative display name, and a pattern
+match would quietly fail the day they reword it.
 
 ### Two disclosures that look identical — the Institutions rule
 
@@ -2237,6 +2287,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change what the Refresh button drives | `js/core/refresh.js` (the registry) + `refreshNow()` in `js/core/watch.js` — read *Work the reader has to ask for* first; a per-company feed must never be registered with `live.js` |
 | Change the super-investor feed | `worker/finology.mjs` + `public/js/data/finology-shared.js`, then `/api/super-investors` — read *An upstream that needs a credential* below first |
 | Change the Superstar Investors view | `js/investors/live.js` — the whole sub-view is that one file |
+| Change the cross-book summary at the top of it | `quarterSummary()` in `js/data/super-investors.js` (the roll-up) + `quarterSummaryBlock()` in `js/investors/live.js` (the panels) — read *Rolling ninety books up into one screen* first; the four figures it refuses to invent are the point |
 | Make the Superstar Investors view load faster | `js/data/super-investors.js` (the three passes, the quarter-aware revalidation skip, the coalesced repaint) + `investorRoute` in `worker/index.js` (the edge cache and the last-good fallback) — read *When the wait is latency, not bandwidth* first, and measure with `x-sattva-cache` rather than by eye |
 | Refresh the super-investor snapshot | `node scripts/scrape-super-investors.mjs` (`SI_LIMIT=5` for a smoke run) — it reads **our own Worker**, not Finology, so it needs no token; commit `public/data/super-investors.json` |
 | Change which date the Earnings Calendar opens on | `defaultCalendarDate()` in `js/tabs/earnings-hub.js` — it is today, in **IST**, and `?date=` and the reader's own click both win over it |
