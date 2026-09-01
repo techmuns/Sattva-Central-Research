@@ -578,10 +578,11 @@ on that feed is the quarter-over-quarter change, and it is headed *Change (deriv
 
 ### Rolling ninety books up into one screen — `quarterSummary()`
 
-The page exists so a reader does not open ninety books one at a time, so the top of it is a
-cross-book roll-up: who bought what, who sold what, and where more than one tracked investor moved
-on the same company. It replaced three stat cards, two of which described the *feed* (how many
-books loaded, what they total) rather than answering anything, and a third that was a pair of
+The Quarterly Changes in-page tab exists so a reader does not open ninety books one at a time. It
+is a cross-book roll-up: who bought what, who sold what, and where more than one tracked investor
+moved on the same company. *All Investors* is the default beside it, containing the cards and the
+full holdings table. The roll-up replaced three stat cards, two of which described the *feed* (how
+many books loaded, what they total) rather than answering anything, and a third that was a pair of
 counts with no names attached — so the only way to act on it was to open the books.
 
 `quarterSummary({ include, limit })` in `js/data/super-investors.js` is the whole of it, and it is
@@ -2330,7 +2331,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change what the Refresh button drives | `js/core/refresh.js` (the registry) + `refreshNow()` in `js/core/watch.js` — read *Work the reader has to ask for* first; a per-company feed must never be registered with `live.js` |
 | Change the super-investor feed | `worker/finology.mjs` + `public/js/data/finology-shared.js`, then `/api/super-investors` — read *An upstream that needs a credential* below first |
 | Change the Superstar Investors view | `js/investors/live.js` — the whole sub-view is that one file |
-| Change the cross-book summary at the top of it | `quarterSummary()` in `js/data/super-investors.js` (the roll-up) + `quarterSummaryBlock()` in `js/investors/live.js` (the panels) — read *Rolling ninety books up into one screen* first; the four figures it refuses to invent are the point |
+| Change the cross-book summary in Quarterly Changes | `quarterSummary()` in `js/data/super-investors.js` (the roll-up) + `quarterSummaryBlock()` in `js/investors/live.js` (the panels) — read *Rolling ninety books up into one screen* first; the four figures it refuses to invent are the point |
 | Make the Superstar Investors view load faster | `js/data/super-investors.js` (the three passes, the quarter-aware revalidation skip, the coalesced repaint) + `investorRoute` in `worker/index.js` (the edge cache and the last-good fallback) — read *When the wait is latency, not bandwidth* first, and measure with `x-sattva-cache` rather than by eye |
 | Refresh the super-investor snapshot | `node scripts/scrape-super-investors.mjs` (`SI_LIMIT=5` for a smoke run) — it reads **our own Worker**, not Finology, so it needs no token; commit `public/data/super-investors.json` |
 | Change which date the Earnings Calendar opens on | `defaultCalendarDate()` in `js/tabs/earnings-hub.js` — it is today, in **IST**, and `?date=` and the reader's own click both win over it |

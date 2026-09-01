@@ -381,10 +381,12 @@ roadmap* card that used to close each tab has been removed from the UI:
 ### Super Investors — `super-investors`
 Superstar holdings and institutional ownership.
 
-**Superstar Investors opens on a cross-book roll-up**, so a reader does not have to open ninety
-books one at a time: companies bought or sold down by more than one tracked investor, new
-entrants, the largest increases and reductions, and the positions no longer disclosed. It replaced
-a three-card stat strip, two of whose cards described the feed rather than answering anything.
+**Superstar Investors has two in-page tabs.** *All Investors* opens first with the investor cards
+and the full holdings table. *Quarterly Changes* holds the cross-book roll-up, so a reader can see
+companies bought or sold down by more than one tracked investor, new entrants, the largest
+increases and reductions, and the positions no longer disclosed without opening ninety books one
+at a time. The chosen in-page tab survives scope changes and live-data repaints until the reader
+leaves Super Investors.
 
 Increases and reductions are in **percentage points of the company** — the only size a filing
 states. A new or exited position carries **no size at all**, because a position appearing or

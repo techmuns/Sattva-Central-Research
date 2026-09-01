@@ -26,7 +26,7 @@
 // shareholding pattern, which below the disclosure threshold means "not disclosed", not "sold".
 
 import { rankedList, scoreTable, sectionHead, openWorkspace, openModal, closeModal } from '../ui/screener.js';
-import { scopeSummary } from '../ui/components.js';
+import { scopeSummary, tabBar } from '../ui/components.js';
 import { avatarFor } from '../ui/visual.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatCroreCompact, formatRelativeTime } from '../core/format.js';
@@ -49,7 +49,12 @@ const cr = (v) => (v == null ? dash : formatCroreCompact(v));
 // Entry
 // ---------------------------------------------------------------------------------------
 
-export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
+const SECTIONS = [
+  { id: 'investors', label: 'All Investors' },
+  { id: 'quarterly-changes', label: 'Quarterly Changes' },
+];
+
+export function renderLive(ctx, { disposers = [], section = 'investors', tableView, onView, onSection } = {}) {
   const m = feed.meta();
 
   if (!m.ok) return renderUnavailable(ctx, m);
@@ -57,10 +62,23 @@ export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
   const rows = scopedHoldings(ctx);
   const quarters = feed.quarterLabels();
   const investorList = feed.list();
+  const activeSection = SECTIONS.some((item) => item.id === section) ? section : SECTIONS[0].id;
+  const sectionTabs = tabBar({ tabs: SECTIONS, activeId: activeSection, onSelect: onSection || (() => {}) });
 
-  const summary = quarterSummaryBlock(ctx, m, rows);
-  const table = holdingsTable(ctx, rows, quarters, tableView);
-  onView?.(table.view);
+  const summary = activeSection === 'quarterly-changes' ? quarterSummaryBlock(ctx, m, rows) : null;
+  const table = activeSection === 'investors' ? holdingsTable(ctx, rows, quarters, tableView) : null;
+  if (table) onView?.(table.view);
+
+  const panel =
+    activeSection === 'quarterly-changes'
+      ? summary.html
+      : `
+        <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${investorList.map(investorCard).join('')}</div>
+        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">All disclosed positions</span>
+          <span class="text-[11px] text-slate-400">${escapeHtml(coverageNote(rows, quarters))}</span>
+        </div>
+        ${table.html}`;
 
   ctx.root.innerHTML = `
     ${sectionHead({
@@ -70,25 +88,25 @@ export function renderLive(ctx, { disposers = [], tableView, onView } = {}) {
     })}
     ${staleStrip(m)}
     ${loadingStrip(m)}
-    ${summary.html}
-    <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${investorList.map(investorCard).join('')}</div>
-    <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-      <span class="text-xs font-bold uppercase tracking-wider text-slate-500">All disclosed positions</span>
-      <span class="text-[11px] text-slate-400">${escapeHtml(coverageNote(rows, quarters))}</span>
+    <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
+      ${sectionTabs.html}
     </div>
-    ${table.html}`;
+    <div role="tabpanel" aria-label="${escapeHtml(SECTIONS.find((item) => item.id === activeSection)?.label || '')}" data-live-panel="${escapeHtml(activeSection)}">
+      ${panel}
+    </div>`;
 
-  summary.wire(ctx.root, disposers);
-  disposers.push(table.wire(ctx.root));
+  disposers.push(sectionTabs.wire(ctx.root.querySelector('[data-live-section-tabs]')));
+  summary?.wire(ctx.root, disposers);
+  if (table) disposers.push(table.wire(ctx.root));
   wireLivePill(ctx.root, m);
-  wireCards(ctx.root);
+  if (activeSection === 'investors') wireCards(ctx.root);
 }
 
 
 // ---------------------------------------------------------------------------------------
-// THE QUARTER, ACROSS EVERY BOOK — what the three stat tiles became
+// THE QUARTER, ACROSS EVERY BOOK — the Quarterly Changes in-page tab
 //
-// The page used to open on three KPI cards: investors tracked, combined book value, and a
+// This roll-up replaced three KPI cards: investors tracked, combined book value, and a
 // "58 new · 400 exits" count. Two of the three were properties of the FEED rather than answers a
 // reader came for — how many books loaded, and what they add up to — and the third was a pair of
 // numbers with no names attached, so the only way to act on it was to open ninety books.

@@ -3315,6 +3315,29 @@ if (siProbe.state === 'no-route') {
   if (!booksLoaded) {
     skip('the cross-book summary renders, with a panel per question', 'no investor book loaded by any path');
   } else {
+  const sectionTabs = await page.evaluate(() => {
+    const host = document.getElementById('content-host');
+    const tabs = [...host.querySelectorAll('[data-live-section-tabs] [role="tab"]')];
+    return {
+      labels: tabs.map((tab) => tab.textContent.trim()),
+      selected: tabs.find((tab) => tab.getAttribute('aria-selected') === 'true')?.textContent.trim() || null,
+      panel: host.querySelector('[data-live-panel]')?.dataset.livePanel || null,
+      cards: host.querySelectorAll('[data-open-investor]').length,
+      summary: !!host.querySelector('[data-quarter-summary]'),
+    };
+  });
+  ok('Superstar Investors contains All Investors and Quarterly Changes tabs',
+    sectionTabs.labels.join('|') === 'All Investors|Quarterly Changes', sectionTabs.labels.join(' | '));
+  ok('All Investors is the default in-page tab',
+    sectionTabs.selected === 'All Investors' && sectionTabs.panel === 'investors' && sectionTabs.cards > 0 && !sectionTabs.summary,
+    JSON.stringify(sectionTabs));
+
+  await page.locator('#content-host [data-live-section-tabs] [data-tab-id="quarterly-changes"]').click();
+  await page.waitForSelector('#content-host [data-quarter-summary]');
+  ok('Quarterly Changes replaces the directory in the same Superstar Investors tab',
+    (await page.locator('#content-host [data-live-panel="quarterly-changes"]').count()) === 1 &&
+      (await page.locator('#content-host [data-open-investor]').count()) === 0);
+
   // ---------------------------------------------------------------------------------------
   // THE CROSS-BOOK SUMMARY — and the four numbers it refuses to invent
   //
@@ -3406,27 +3429,33 @@ if (siProbe.state === 'no-route') {
     !summary.suffixed && !summary.tableSuffixed);
 
   // The summary and the table under it must narrow through ONE predicate. Two predicates over the
-  // same question is what had the filings tabs reporting different sets in two places on a page.
+  // same question is what had the filings tabs reporting different sets in two places. They now
+  // live in separate in-page tabs, so read each panel in turn and compare their complete sets.
   await go('/#/research/super-investors?scope=portfolio', 9000);
   await waitForPanel();
+  ok('the selected in-page tab survives a scope change',
+    (await page.locator('#content-host [data-live-panel="quarterly-changes"]').count()) === 1);
+  const scoped = await page.evaluate(() => {
+    const host = document.getElementById('content-host');
+    const sec = host.querySelector('[data-quarter-summary]');
+    return {
+      head: (sec?.querySelector('p')?.innerText || '').replace(/\s+/g, ' '),
+      names: [...sec.querySelectorAll('[data-ranked-list] .divide-y > * span.font-semibold')].map((n) => n.innerText.trim()),
+    };
+  });
+
+  await page.locator('#content-host [data-live-section-tabs] [data-tab-id="investors"]').click();
   // The table streams its rows in, so a comparison against it has to wait for the settled set —
   // otherwise a company the summary names could be absent purely because its row had not been
   // appended yet, which would fail for a reason that is not about scope at all.
   await settleTables();
-  const scoped = await page.evaluate(async () => {
-    const feed = await import('/js/data/super-investors.js');
+  const scopedTableText = await page.evaluate(() => {
     const host = document.getElementById('content-host');
-    const sec = host.querySelector('[data-quarter-summary]');
-    const names = [...sec.querySelectorAll('[data-ranked-list] .divide-y > * span.font-semibold')].map((n) => n.innerText.trim());
     // Against the table's whole text rather than a per-row first line — that was the rank cell,
     // so nothing ever matched and the check failed for a reason that had nothing to do with scope.
-    const tableText = [...host.querySelectorAll('tr[data-row-key]')].map((tr) => tr.innerText).join(' | ');
-    return {
-      head: (sec?.querySelector('p')?.innerText || '').replace(/\s+/g, ' '),
-      names,
-      missing: names.filter((n) => !tableText.includes(n)),
-    };
+    return [...host.querySelectorAll('tr[data-row-key]')].map((tr) => tr.innerText).join(' | ');
   });
+  const missing = scoped.names.filter((name) => !scopedTableText.includes(name));
   // `quarterSummary({})` is unscoped by construction, so the scoped head must report FEWER
   // contributing books than the feed has comparable ones — a scope that narrowed nothing would
   // print "87 of 87" here and look identical to a working one.
@@ -3434,8 +3463,8 @@ if (siProbe.state === 'no-route') {
   const comparable = Number(/across ([\d,]+) of ([\d,]+) comparable books/.exec(scoped.head)?.[2]?.replace(/,/g, '') ?? -1);
   ok('a narrowed scope narrows the summary too', contributing > 0 && contributing < comparable, scoped.head.slice(0, 130));
   ok('...and every company it names is one the table below also shows',
-    scoped.names.length > 0 && scoped.missing.length === 0,
-    `${scoped.names.length} named, ${scoped.missing.length} absent from the table${scoped.missing.length ? `: ${scoped.missing.slice(0, 2).join(', ')}` : ''}`);
+    scoped.names.length > 0 && missing.length === 0,
+    `${scoped.names.length} named, ${missing.length} absent from the table${missing.length ? `: ${missing.slice(0, 2).join(', ')}` : ''}`);
   await go('/#/research/super-investors?scope=universe', 9000);
   await waitForPanel();
   }
