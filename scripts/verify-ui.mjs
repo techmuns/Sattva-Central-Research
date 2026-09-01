@@ -1504,6 +1504,136 @@ console.log('\n— breakouts: default view and filters —');
 }
 
 // ---------------------------------------------------------------------------------------
+// 4b3. The four stat cards are one Live pill now — and the pill still owes what they said
+//
+// Every Breakouts sub-view opened with a 4-up KPI row: two or three counts and the gradient
+// freshness hero. It was the first object on the page, above the table those counts describe, and
+// most of it was already on screen a few pixels lower — "Breakout candidates 21 of 586" is the
+// line under the chip bar, and "Strong breakouts 0" is the count on the Strong chip itself.
+//
+// So it went the way the Earnings Hub's strip and Portfolio's four-line block went, and the rule
+// that survives is the same one: DECLUTTERING A PAGE IS FINE, DELETING ITS ACCOUNTABILITY IS NOT.
+// Which is why the checks come in pairs — the cards are gone AND the modal behind the pill still
+// carries the capture time, the source and every figure they printed. A check that only asserted
+// their removal would pass just as happily for a change that threw the provenance away.
+//
+// The green is the other half. "A green Live is a claim about data and may not be painted
+// unconditionally" is in CLAUDE.md because the header once had a chip reading "just now" whether
+// or not a byte had been confirmed in an hour. The first cut of this pill made the opposite
+// mistake: it derived freshness from the cron (`30 1 * * 1-5`) and painted amber the moment a
+// scheduled run had not landed — which called a 22-hour-old END-OF-DAY capture stale, when
+// yesterday's close is the newest close there is. It also keyed the UI to a schedule this repo
+// has measured as unhonoured (12 of 124 runs on the market-news job). The threshold is the
+// schedule's own worst case instead: three days, wider than any weekend gap.
+//
+// `freshnessOf` is exported and asserted DIRECTLY, on both sides of that boundary, because the
+// shipped snapshot only ever has one age — the stale branch cannot be produced by the fixture,
+// exactly as `moveSeverity` cannot be produced by a day with no big faller in it.
+// ---------------------------------------------------------------------------------------
+console.log('\n— breakouts: the stat strip became a Live pill —');
+{
+  const SUBVIEWS = [
+    ['strong-breakouts', 'Strong Breakouts', false],
+    ['technical-scanner', 'Technical Scanner', false],
+    ['fii-accumulation', 'FII Accumulation', false],
+    ['earnings-surprise', 'Earnings Surprise', true], // half mock — may not wear a green Live
+  ];
+
+  const seen = [];
+  for (const [sub, label, mock] of SUBVIEWS) {
+    await go(`/#/research/breakouts/${sub}?scope=universe`, 2600);
+    await waitForPanel();
+    seen.push([
+      label,
+      mock,
+      await page.evaluate(() => {
+        const host = document.getElementById('content-host');
+        const pill = host.querySelector('[data-live-info]');
+        const head = host.querySelector('[data-section-head]') || host.firstElementChild;
+        return {
+          statCards: host.querySelectorAll('.stat-card').length,
+          hero: /last refresh/i.test(host.innerText),
+          pills: host.querySelectorAll('[data-live-info]').length,
+          face: pill ? pill.innerText.replace(/\s+/g, ' ').trim() : null,
+          green: pill ? /bg-emerald-50/.test(pill.className) : false,
+          amber: pill ? /bg-amber-50/.test(pill.className) : false,
+          dot: pill ? pill.querySelectorAll('span.rounded-full').length > 0 : false,
+          inHead: !!(pill && head && head.contains(pill)),
+        };
+      }),
+    ]);
+  }
+
+  ok('no Breakouts sub-view renders a stat card any more',
+    seen.every(([, , m]) => m.statCards === 0),
+    seen.map(([l, , m]) => `${l}:${m.statCards}`).join(' · '));
+  ok('...nor the gradient Last Refresh hero',
+    seen.every(([, , m]) => !m.hero),
+    seen.filter(([, , m]) => m.hero).map(([l]) => l).join(', ') || 'none');
+  ok('...and each carries exactly one Live pill, in the section head',
+    seen.every(([, , m]) => m.pills === 1 && m.inHead),
+    seen.map(([l, , m]) => `${l}:${m.pills}${m.inHead ? '' : ' (not in head)'}`).join(' · '));
+  ok('a live sub-view\'s pill is green, dotted, and reads exactly "Live"',
+    seen.filter(([, mock]) => !mock).every(([, , m]) => m.green && m.dot && m.face === 'Live'),
+    seen.filter(([, mock]) => !mock).map(([l, , m]) => `${l}:"${m.face}"`).join(' · '));
+
+  // The mock half may not hide behind a green chip: a screenshot travels without the modal.
+  const es = seen.find(([l]) => l === 'Earnings Surprise')[2];
+  ok('the half-mock sub-view is amber instead, and says so on the chip itself',
+    es.amber && !es.green && /mock/i.test(es.face), `"${es.face}"`);
+
+  // THE ACCOUNTABILITY HALF. Removing the cards is only correct if what they said is still one
+  // click away.
+  await go('/#/research/breakouts/strong-breakouts?scope=universe', 2600);
+  await waitForPanel();
+  await page.locator('#content-host [data-live-info]').click();
+  await page.waitForTimeout(500);
+  const modal = await page.evaluate(() => {
+    const c = document.getElementById('modal-content');
+    return {
+      open: !document.getElementById('modal-overlay').classList.contains('hidden'),
+      text: (c?.innerText || '').replace(/\s+/g, ' '),
+    };
+  });
+  ok('clicking the pill opens the provenance modal', modal.open && modal.text.length > 200);
+  ok('...which still names the source and the capture time',
+    /Yahoo Finance/i.test(modal.text) && /captured/i.test(modal.text) && /IST/.test(modal.text));
+  ok('...and still carries every figure the four cards printed',
+    /breakout candidates/i.test(modal.text) && /strong breakouts/i.test(modal.text) && /filters active/i.test(modal.text),
+    modal.text.slice(0, 160));
+  ok('...and the help the card\'s "?" used to open',
+    /how breakout quality is graded/i.test(modal.text) && /tight base/i.test(modal.text));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+
+  // The boundary itself, asserted on the exported predicate rather than on whatever age the
+  // committed snapshot happens to have today.
+  const fresh = await page.evaluate(async () => {
+    const { freshnessOf } = await import('/js/tabs/breakouts.js');
+    const now = Date.parse('2026-09-01T12:00:00Z');
+    const at = (h) => new Date(now - h * 3600 * 1000).toISOString();
+    return {
+      justNow: freshnessOf(at(0), now).state,
+      oneDay: freshnessOf(at(22), now).state,        // yesterday's close — current for an EOD feed
+      weekendEdge: freshnessOf(at(71), now).state,   // Friday capture, read on Monday
+      pastEdge: freshnessOf(at(73), now).state,      // wider than any weekend gap
+      weekOld: freshnessOf(at(24 * 7), now).state,
+      missing: freshnessOf(null, now).state,
+      garbage: freshnessOf('not a date', now).state,
+    };
+  });
+  ok('a same-day capture is live', fresh.justNow === 'live', fresh.justNow);
+  ok('...and so is yesterday\'s close, which is the newest an EOD feed can be',
+    fresh.oneDay === 'live', fresh.oneDay);
+  ok('...and a Friday capture read on Monday, which is the widest legitimate gap',
+    fresh.weekendEdge === 'live', fresh.weekendEdge);
+  ok('past that it is stale, not live', fresh.pastEdge === 'stale' && fresh.weekOld === 'stale',
+    `${fresh.pastEdge} / ${fresh.weekOld}`);
+  ok('and no capture time is its own state — never "live", never "stale"',
+    fresh.missing === 'unknown' && fresh.garbage === 'unknown', `${fresh.missing} / ${fresh.garbage}`);
+}
+
+// ---------------------------------------------------------------------------------------
 // 4c. The live-quote refresh — every branch, stubbed.
 //
 // This route used to fail for every reader, every time, and the tab said only "Live quote refresh

@@ -1345,7 +1345,7 @@ export function closeModal() {
 // flex-wrap, so letting the slot shrink makes them stack instead of vanish.
 export function sectionHead({ title, description = '', meta = '', controls = '' }) {
   return `
-    <div class="mb-5">
+    <div class="mb-5" data-section-head>
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 class="font-display text-xl font-bold text-slate-900">${escapeHtml(title)}</h2>

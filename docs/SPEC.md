@@ -351,6 +351,13 @@ Yahoo Finance EOD scrape of the NSE 500 plus NSE bhavcopy delivery data. A close
 | Breakout | 52-Week High Proximity (2) · Breakout from Consolidation (2) · Base Formation (1) |
 | Risk | Beta (1) · ATR Stability (1) |
 
+No sub-view here carries a stat strip: the two or three counts and the gradient freshness hero
+became one small **Live** pill in the section head, whose modal carries the capture time, the
+source and every figure the cards printed. The pill is green only while the capture is inside the
+schedule's worst case (72 hours — Friday's capture is still current on Monday); past that it is
+amber and prints the age, and on Earnings Surprise it is amber regardless, reading *Mock earnings ·
+live technicals*.
+
 Sub-views: **Strong Breakouts** (6-week base breakouts, URL-reflected filter chips) — first in the
 picker and so the view the tab opens on — then **Technical Scanner** (the full scored universe),
 **FII Accumulation** (shareholding changes joined to the score), **Earnings Surprise** (mock

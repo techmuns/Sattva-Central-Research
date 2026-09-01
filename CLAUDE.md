@@ -281,7 +281,11 @@ content. `roadmapStrip()` and the older `comingSoonStrip()` are both deleted; do
 either. Listing a gap in the spec is the rule that survives.
 
 **A tab may opt out of the stat strip, and out of sub-views.** The Earnings Hub is one dense table
-and nothing else: no stat cards, no ribbon, no sub-view picker. The rule that survives is not
+and nothing else: no stat cards, no ribbon, no sub-view picker. **Breakouts / Technical is the
+second, on all four sub-views** — each opened with two or three counts plus the gradient freshness
+hero, above the table those counts describe, and most of it was already on screen a few pixels
+lower: *"Breakout candidates 21 of 586"* is the line under the chip bar and *"Strong breakouts 0"*
+is the count on the Strong chip itself. The rule that survives is not
 "every tab has a stat strip" — it is **the provenance must always be reachable**. There it lives behind a small Live
 pill in the section head, which opens a modal with what is live, what each column is joined from,
 what is missing and what a dash means. Decluttering a page is fine; deleting its accountability is
@@ -1747,9 +1751,35 @@ Three things that make the trade honest rather than a deletion:
    drill note, and row 1 of every exported sheet. `exportBanner()` matters most: a workbook leaves
    the page without its chrome, and it is the one artefact nobody can see a pill on.
 
-**Prefer this shape whenever a caveat is competing with the content it qualifies.** Twice now the
-right answer to "this ribbon is too loud" has been to move the explanation behind a control that
-still states the claim — and never to delete the claim, and never to write a smaller ribbon.
+**Prefer this shape whenever a caveat is competing with the content it qualifies.** Three times now
+the right answer to "this block is too loud" has been to move the explanation behind a control that
+still states the claim — and never to delete the claim, and never to write a smaller version of the
+block.
+
+### A green "Live" is a claim about data — and its threshold comes from the DATA, not the cron
+
+Breakouts' pill is the third consumer of that rule, and it got the threshold wrong first in a way
+worth keeping. The scrape runs weekdays 07:00 IST (`30 1 * * 1-5`), so the obvious rule is "amber
+once a scheduled run has not landed". Two things are wrong with it:
+
+1. **A 22-hour-old END-OF-DAY capture is current.** Yesterday's close is the newest close there
+   is; no scrape at any hour can produce a fresher one until the market closes again. Reporting it
+   as stale describes the scraper's timetable, not the data.
+2. **It keys the UI to a schedule that is not honoured** — the market-news measurements above are
+   12 runs fired out of 124 scheduled. A chip that sits amber most of the week with nothing wrong
+   teaches the reader to ignore it, and is then worth nothing on the day something *is* wrong.
+
+So the threshold is the schedule's own **worst case**, the shape the market-news chip already
+uses: Friday's capture is still the newest thing that exists on Monday morning, so three days is
+the widest legitimate gap and `STALE_AFTER_MS` is 72 hours. `freshnessOf()` is **exported and
+pure** so the suite can assert both sides of that boundary directly — the shipped snapshot only
+ever has one age, so the stale branch cannot be produced by the fixture, exactly as `moveSeverity`
+cannot be produced by a day with no big faller in it. A feed with **no** capture time is a third
+state, `unknown`: never "live", never "stale".
+
+**And a half-mock view may not wear a green Live.** Breakouts' Earnings Surprise sub-view is amber
+and reads *Mock earnings · live technicals* on the face of the chip, because a screenshot travels
+without the modal.
 
 ---
 
@@ -2224,7 +2254,12 @@ It covers, beyond the checklist below:
 - shell renders with **zero console errors**
 - all 13 tabs across both workspaces render their panel
 - every tab that has a statStrip shows 4 cards with the gradient freshness hero as the 4th
-  (the Earnings Hub has none by design; its Live pill carries the provenance instead)
+  (the Earnings Hub and all four Breakouts sub-views have none by design; a Live pill carries the
+  provenance instead, and the suite asserts the modal behind it still names the source, the
+  capture time and every figure the cards printed)
+- **the Breakouts Live pill is green only when the data earns it**: `freshnessOf` is asserted
+  directly at 0h, 22h, 71h, 73h and a week, plus the no-capture-time case, because the shipped
+  snapshot only ever has one age
 - the sub-view picker switches content, its menu is not clipped by its own card, and the content
   column is full width with no left rail on any tab
 - the Portfolio / Watchlist / Universe toggle changes what every tab reports, and the vocabulary
