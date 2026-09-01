@@ -3337,6 +3337,8 @@ if (siProbe.state === 'no-route') {
   ok('Quarterly Changes replaces the directory in the same Superstar Investors tab',
     (await page.locator('#content-host [data-live-panel="quarterly-changes"]').count()) === 1 &&
       (await page.locator('#content-host [data-open-investor]').count()) === 0);
+  ok('switching in-page tabs leaves focus on the selected replacement tab',
+    await page.evaluate(() => document.activeElement?.matches('[data-live-section-tabs] [data-tab-id="quarterly-changes"]')));
 
   // ---------------------------------------------------------------------------------------
   // THE CROSS-BOOK SUMMARY — and the four numbers it refuses to invent
@@ -3440,7 +3442,7 @@ if (siProbe.state === 'no-route') {
     const sec = host.querySelector('[data-quarter-summary]');
     return {
       head: (sec?.querySelector('p')?.innerText || '').replace(/\s+/g, ' '),
-      names: [...sec.querySelectorAll('[data-ranked-list] .divide-y > * span.font-semibold')].map((n) => n.innerText.trim()),
+      names: [...(sec?.querySelectorAll('[data-ranked-list] .divide-y > * span.font-semibold') || [])].map((n) => n.innerText.trim()),
     };
   });
 
@@ -3467,6 +3469,14 @@ if (siProbe.state === 'no-route') {
     `${scoped.names.length} named, ${missing.length} absent from the table${missing.length ? `: ${missing.slice(0, 2).join(', ')}` : ''}`);
   await go('/#/research/super-investors?scope=universe', 9000);
   await waitForPanel();
+  await page.locator('#content-host [data-live-section-tabs] [data-tab-id="quarterly-changes"]').click();
+  await go('/#/research/super-investors/institutions?scope=universe', 2500);
+  await waitForPanel();
+  await go('/#/research/super-investors/superstar-investors?scope=universe', 2500);
+  await waitForPanel();
+  ok('returning from Institutions resets the in-page tab to All Investors',
+    (await page.locator('#content-host [data-live-panel="investors"]').count()) === 1 &&
+      (await page.locator('#content-host [data-tab-id="investors"][aria-selected="true"]').count()) === 1);
   }
 }
 

@@ -49,8 +49,8 @@ let liveUnsub = null;
 let liveUnregister = null;
 let liveView = null;
 // The Superstar sub-view has two in-page destinations of its own. Keep the reader on the one they
-// chose while scope changes and live-book arrivals repaint the tab; leaving Super Investors resets
-// it, just as leaving resets the all-holdings table's filters.
+// chose while scope changes and live-book arrivals repaint the tab; switching to Institutions or
+// leaving Super Investors resets it.
 let liveSection = 'investors';
 
 // ---------------------------------------------------------------------------------------
@@ -58,6 +58,9 @@ let liveSection = 'investors';
 // ---------------------------------------------------------------------------------------
 
 export function render(ctx) {
+  // A sub-view change does not destroy this module. Reset here when the reader leaves Superstar
+  // Investors so returning from Institutions opens on the documented All Investors default.
+  if (ctxRef?.subview === 'superstar-investors' && ctx.subview !== 'superstar-investors') liveSection = 'investors';
   renderToken++;
   ctxRef = ctx;
   const view = { institutions: renderInstitutions }[ctx.subview] || renderIndividuals;
@@ -162,6 +165,9 @@ function paintIndividuals(ctx) {
       if (section === liveSection || ctxRef?.subview !== 'superstar-investors') return;
       liveSection = section;
       paintIndividuals(ctxRef);
+      // The click removed the button that held focus when it repainted the root. Put focus on its
+      // selected replacement so a keyboard reader can continue from the in-page tabs.
+      ctxRef.root.querySelector('[data-live-section-tabs] [role="tab"][aria-selected="true"]')?.focus();
     },
   });
 }
