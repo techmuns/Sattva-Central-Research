@@ -62,9 +62,9 @@ function istTime(iso) {
   });
 }
 
-// A capture younger than this is current: the job runs every 30 minutes across the window the
-// publisher answers and hourly outside it, so anything inside 90 minutes is the newest there is.
-const FRESH_MS = 90 * 60 * 1000;
+// This matches the watchdog: beyond 45 minutes in the publisher's working window, recovery starts
+// and the face reports the measured age instead of claiming the capture is current.
+const FRESH_MS = 45 * 60 * 1000;
 
 /**
  * The whole of this tab's chrome: one small chip.
@@ -73,23 +73,18 @@ const FRESH_MS = 90 * 60 * 1000;
  * which is a lot of furniture above a list whose headlines are the point. The chip now states the
  * material status directly and is intentionally passive; it opens no provenance dialog.
  *
- * "LIVE" IS A CLAIM ABOUT DATA AND MAY NOT BE PAINTED GREEN UNCONDITIONALLY. That is exactly what
- * the header's old green chip did — it tracked a heartbeat that asked no server anything and read
- * "just now" whether or not a byte had been confirmed in an hour (see CLAUDE.md, *The header, and
- * the alert stack*). So green + `Live` appears only while the capture really is the newest the
- * schedule can produce; past that the chip turns amber and prints the age instead, and with no
- * capture at all it says so.
+ * Freshness follows the capture timestamp, never a browser heartbeat. Recent data says `Up to
+ * date`; otherwise the actual age is printed and the watchdog starts recovery in the background.
  */
 function pill(m) {
   const at = m.capturedAt ? Date.parse(m.capturedAt) : NaN;
   const age = Number.isFinite(at) ? Date.now() - at : null;
   const fresh = age !== null && age < FRESH_MS;
-  const tone = fresh ? 'text-emerald-700' : 'text-amber-700';
-  const dot = fresh ? 'bg-emerald-500' : 'bg-amber-500';
-  const label = age === null ? 'No capture' : fresh ? 'Live' : `Read ${formatRelativeTime(at)}`;
+  const tone = fresh ? 'text-emerald-700' : 'text-slate-500';
+  const label = age === null ? 'Updating' : fresh ? 'Up to date' : `Updated ${formatRelativeTime(at)}`;
   return `<span data-mcnews-info title="Market-news capture status"
       class="inline-flex items-center gap-1.5 text-xs font-semibold ${tone}">
-      <span class="h-1.5 w-1.5 rounded-full ${dot}"></span>${escapeHtml(label)}
+      ${escapeHtml(label)}
     </span>`;
 }
 
@@ -359,7 +354,7 @@ function provenance(m) {
          reads that capture. The only time printed here is when the publisher was actually <em>read</em>; nothing on this
          tab reports when the browser last checked, because that is a fact about us rather than about the news.</p>
 
-      <h3 class="font-display mt-4 text-sm font-bold text-slate-900">The schedule is best-effort, and this page used to overstate it</h3>
+      <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Scheduled first, checked again when the dashboard opens</h3>
       <p class="mt-1 text-xs">It said <em>"refreshed automatically every 20 minutes"</em>. Measured over 41 hours, that was
          not happening on two counts, so the sentence is gone rather than reworded smaller.</p>
       <p class="mt-2 text-xs"><strong>GitHub drops most of a dense cron.</strong> A 20-minute schedule fired
@@ -369,25 +364,23 @@ function provenance(m) {
          <strong>7 were answered with HTTP 403</strong>, and the split by clock is total — every success fell between
          10:27 and 21:14 IST, every refusal between 20:28 and 05:29 IST. So the job now runs every 30 minutes across the
          window that works and hourly outside it, retries a 403 with a real backoff, and reports a refusal as a refusal
-         rather than as a broken scraper. <strong>None of that makes the cadence a promise</strong>, which is why nothing
-         on this tab states one — and why the Fetch button exists, since it is the one path that does not wait for a
-         schedule. The chip in the heading turns green and reads <em>Live</em> only while the capture really is the newest
-         the schedule can produce; past that it turns amber and prints the age instead.</p>
+         rather than as a broken scraper. <strong>None of that makes the cron exact</strong>, so the dashboard also checks
+         the committed capture after first paint. During the publisher's working window, a capture older than 45 minutes
+         starts this same workflow automatically; the Worker declines duplicate or recently-started runs. The heading says
+         <em>Up to date</em> only inside the measured freshness window and otherwise prints the capture's age.</p>
 
-      <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Opening this tab on a stale capture fetches one</h3>
-      <p class="mt-1 text-xs">If the capture is more than twenty minutes old when you open News, the fetch below starts on
-         its own, once. Everywhere else in this dashboard nothing runs unprompted — that rule protects metered work and
-         rate-limited services, and neither applies here: this is one request to a public page, on our own runner, gated
-         by the capture's own age and declined at the edge if a run is already going. <strong>Your opening the tab is the
-         signal</strong>, so the news is fresh exactly when somebody is reading it and nothing runs when nobody is.</p>
+      <h3 class="font-display mt-4 text-sm font-bold text-slate-900">A stale capture recovers automatically</h3>
+      <p class="mt-1 text-xs">After the dashboard's first paint, one small status request checks capture timestamps for all
+         scheduled sources. If market news is overdue during the hours the publisher answers, it starts one refresh and
+         watches for the newly committed file. The check never blocks the page, never starts a current source, and is
+         deduplicated both in this browser and at the Worker edge.</p>
 
       <h3 class="font-display mt-4 text-sm font-bold text-slate-900">What the Fetch button does</h3>
       <p class="mt-1 text-xs">It reads the committed capture first — free, and if a scheduled run has just published one
          this browser has not picked up, that is the answer and nothing is started. Otherwise it asks the GitHub runner
-         to read the publisher feed <em>now</em>, starting the same scheduled job on demand and watching it. That is a real run
-         and a real request to somebody else's site, so <strong>nothing on this page ever starts one on its own</strong> —
-         no poll, no peek on load, only a click. If a run is already going it watches that one rather than starting a
-         second. The credential that authorises it lives on the Worker and has never been in a browser.</p>
+         to read the publisher feed <em>now</em>, starting the same scheduled job on demand and watching it. The automatic
+         watchdog and this button share the same duplicate guard, so if a run is already going they watch that one rather
+         than starting a second. The credential that authorises it lives on the Worker and has never been in a browser.</p>
       <p class="mt-2 text-xs">There used to be a second button that only made the free check. It was removed because it
          did nothing a reader was not already getting for nothing: the twenty-minute poll makes that same check
          unprompted, and the fetch has always ended by making it too. Two controls that do the same job read as two

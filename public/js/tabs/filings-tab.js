@@ -407,43 +407,24 @@ const loadingHtml = () => `
 /**
  * The section head is one chip, and it opens everything else.
  *
- * SAME CONTRACT AS THE MARKET-NEWS CHIP on the other half of the News tab, deliberately — that is
- * the one this was asked to look like, and it is worth being precise about what it does, because
- * "just show green Live" and "never paint a green Live you have not earned" are only compatible
- * if the green is conditional. It is: green + `Live` appears while the capture is still the newest
- * the schedule can produce, and past that the chip turns amber and prints the AGE instead. So the
- * normal state is green, and a feed that has quietly stopped refreshing cannot wear it.
- *
- * FRESH MEANS TODAY IN INDIA, not "less than 72 hours old". The old age window painted a green
- * Live chip on Wednesday over Tuesday's company-news rows — exactly the state this control exists
- * to expose. A weekend capture may be the newest available and it is still not a read of today;
- * the amber age is useful information rather than an alarm.
- *
- * FAILURES OUTRANK FRESHNESS. A capture taken a minute ago that could not read eighteen companies
- * is not "Live" — amber and `Partial` is the honest word, and the modal names them.
+ * Same contract as the market-news chip: recent captures say `Up to date`; older captures show
+ * their age. Coverage and retry details stay in provenance while the face uses calm customer
+ * language. The demand-driven watchdog starts recovery automatically; an internal pipeline state
+ * is not the label a customer needs above the table.
  */
-function istDay(value) {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return null;
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(date);
-  const get = (type) => parts.find((part) => part.type === type)?.value;
-  return get('year') && get('month') && get('day') ? `${get('year')}-${get('month')}-${get('day')}` : null;
-}
-
 function pill(m, scope, rows) {
   const at = m.capturedAt ? Date.parse(m.capturedAt) : NaN;
   const age = Number.isFinite(at) ? Date.now() - at : null;
-  const bad = m.failed > 0 || !!m.reason;
-  const fresh = age !== null && istDay(at) === istDay(Date.now());
-  const tone = bad || !fresh ? 'text-amber-700' : 'text-emerald-700';
-  const dot = bad || !fresh ? 'bg-amber-500' : 'bg-emerald-500';
-  const label = m.reason ? 'Unavailable' : bad ? 'Partial' : age === null ? 'No capture' : fresh ? 'Live' : `Read ${formatRelativeTime(at)}`;
+  const maxAge = m.kind === 'announcements' ? 90 * 60 * 1000 : m.kind === 'news' ? 3 * 60 * 60 * 1000 : 6 * 60 * 60 * 1000;
+  const fresh = age !== null && age >= 0 && age <= maxAge;
+  const tone = fresh ? 'text-emerald-700' : 'text-slate-500';
+  // The face is calm and useful. Coverage/retry details remain in provenance while the watchdog
+  // fixes them in the background; internal pipeline vocabulary is not customer guidance.
+  const label = age === null ? 'Updating' : fresh ? 'Up to date' : `Updated ${formatRelativeTime(at)}`;
   return `<span data-filings-info
       title="${escapeHtml(scopeTitle(scope, rows, m))}"
       class="inline-flex items-center gap-1.5 text-xs font-semibold ${tone}">
-      <span class="h-1.5 w-1.5 rounded-full ${dot}"></span>${escapeHtml(label)}
+      ${escapeHtml(label)}
     </span>`;
 }
 
@@ -587,9 +568,12 @@ function openProvenanceFactory(cfg, refreshLabelRef, onRefresh) {
 /** How old this is, in one clause, with nothing claimed that was not measured. */
 function freshnessLine(m) {
   const captured = m.capturedAt ? `captured ${escapeHtml(formatRelativeTime(Date.parse(m.capturedAt)))}` : null;
-  const refreshed = m.lastRefreshAt ? `read live ${escapeHtml(formatRelativeTime(m.lastRefreshAt))}` : null;
+  const refreshed = m.lastRefreshAt ? `checked directly ${escapeHtml(formatRelativeTime(m.lastRefreshAt))}` : null;
   const when = [refreshed, captured].filter(Boolean).join(' · ');
-  return when ? `Showing the ${escapeHtml(m.kind === 'news' ? 'news' : 'filings')} ${when}.` : '';
+  const retained = m.fallbackCount && m.oldestDataAt
+    ? ` The oldest retained company answer was captured ${escapeHtml(formatRelativeTime(Date.parse(m.oldestDataAt)))}.`
+    : '';
+  return when ? `Showing the ${escapeHtml(m.kind === 'news' ? 'news' : 'filings')} ${when}.${retained}` : '';
 }
 
 function busyStrip(m) {
@@ -650,7 +634,8 @@ export function coverageBlock(m) {
       <strong>${escapeHtml(formatNumber(m.rowCount))}</strong> rows across
       <strong>${escapeHtml(formatNumber(m.covered))}</strong> companies, reaching back
       <strong>${escapeHtml(String(m.windowDays))} days</strong>.
-      ${m.snapshotCount ? `${escapeHtml(formatNumber(m.snapshotCount))} came from the committed snapshot${m.capturedAt ? `, captured ${escapeHtml(formatRelativeTime(Date.parse(m.capturedAt)))}` : ''}.` : 'No committed snapshot has been written yet, so everything here was read live.'}
+      ${m.snapshotCount ? `${escapeHtml(formatNumber(m.snapshotCount))} came from the committed snapshot${m.capturedAt ? `, captured ${escapeHtml(formatRelativeTime(Date.parse(m.capturedAt)))}` : ''}.` : 'No committed snapshot has been written yet, so everything here was checked directly.'}
+      ${m.fallbackCount ? ` ${escapeHtml(formatNumber(m.fallbackCount))} ${m.fallbackCount === 1 ? 'company retains' : 'companies retain'} its last successful answer while the current read is retried.` : ''}
       ${m.failed ? ` <strong class="text-amber-700">${escapeHtml(formatNumber(m.failed))}</strong> ${m.failed === 1 ? 'company' : 'companies'} could not be read and ${m.failed === 1 ? 'is' : 'are'} absent rather than shown as having nothing.` : ''}
       ${m.truncated ? ` ${escapeHtml(formatNumber(m.truncated))} more were in scope but not asked about on this visit — these upstreams allow about sixty requests a minute.` : ''}
     </p>

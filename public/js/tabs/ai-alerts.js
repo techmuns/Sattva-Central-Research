@@ -137,8 +137,8 @@ export function feedStatus(rep) {
   const staleFeeds = Number(rep.meta?.staleFeeds || 0);
   if (staleFeeds > 0) {
     return {
-      label: `${staleFeeds} ${staleFeeds === 1 ? 'feed is' : 'feeds are'} stale or unread`,
-      tone: 'caution',
+      label: 'Sources updating',
+      tone: 'neutral',
       state: 'complete',
     };
   }

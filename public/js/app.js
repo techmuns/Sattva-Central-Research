@@ -11,7 +11,7 @@ import { prime as primeEarnings, adaptLegacySummary } from './data/earnings.js';
 import { prime as primeFiled } from './data/institution-holdings.js';
 import { prime as primePortfolio } from './data/portfolio.js';
 import { prime as primeCoverage } from './data/coverage.js';
-import { ensureCompanyNewsFresh } from './data/company-news-refresh.js';
+import { startCaptureWatchdog } from './data/capture-watchdog.js';
 
 // Add a file here and every tab can read it off `ctx.data.<key>` — no other wiring needed.
 //
@@ -139,12 +139,10 @@ async function boot() {
   }
   mount(root);
 
-  // Company News is a bulk capture rather than a browser-side per-company walk. Check it after
-  // first paint and, when its Indian calendar date is behind today, ask the dedicated refresh job
-  // to run once. This is deliberately not awaited: opening the dashboard must stay instant while
-  // the complete universe refreshes in the background, and the feed emits when today's capture
-  // reaches the browser so an open News tab repaints without a reload.
-  ensureCompanyNewsFresh().catch((err) => console.warn('[app] company-news freshness check failed', err));
+  // GitHub schedules are best-effort. One small timestamp request checks every committed capture
+  // after first paint and dispatches only the ones outside their real operating window. The Worker
+  // declines duplicate runs across readers; landed files repaint any feed already on screen.
+  startCaptureWatchdog();
 }
 
 boot();

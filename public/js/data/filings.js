@@ -194,6 +194,8 @@ export function createFeed(kind) {
       // walk does not. Falls back to the feed's own constant.
       snapshotWindowDays: null,
       capturedAt: null,
+      oldestDataAt: null,
+      fallbackCount: 0,
       checkedAt: null,
       reason: null,
       message: null,
@@ -261,6 +263,8 @@ export function createFeed(kind) {
       exchangeCompanies: state.exchangeCompanies,
       unnamedRows: state.unnamedRows,
       capturedAt: state.capturedAt,
+      oldestDataAt: state.oldestDataAt,
+      fallbackCount: state.fallbackCount,
       // The OLDEST confirmation behind what is on screen, not the newest — otherwise one fresh
       // company would overstate the age of the forty beside it.
       checkedAt: state.confirmedAt.size ? Math.min(...state.confirmedAt.values()) : state.checkedAt,
@@ -560,6 +564,10 @@ export function createFeed(kind) {
     // replace rows this browser has already proved came from a later capture.
     const newer = replace && Number.isFinite(nextCaptured) && (!Number.isFinite(heldCaptured) || nextCaptured > heldCaptured);
     if (!replace || newer) state.capturedAt = capturedAt;
+    if (!replace || newer) {
+      state.oldestDataAt = body.oldestDataAt || capturedAt;
+      state.fallbackCount = Number.isFinite(body.fallbackCount) ? body.fallbackCount : 0;
+    }
     if (Array.isArray(body.headers) && body.headers.length) state.headers = body.headers;
     // What the file declares about its own coverage and window. Read before the early return, so a
     // re-read that finds nothing newer still leaves these describing the file we actually hold.

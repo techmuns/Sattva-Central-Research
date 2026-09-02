@@ -451,7 +451,7 @@ const ribbonText = () => `
   <strong>This analysis is Concall Deep Dive's, reproduced here unchanged.</strong>
   Nothing on this panel is computed or re-scored by Sattva Central Research.
   ${deliveryLine()}
-  ${live.partial ? '<span class="text-amber-800"> Some fields were unavailable, so the report is incomplete in places — they flagged it <code class="rounded bg-amber-100 px-1">partial</code>.</span>' : ''}`;
+  ${live.partial ? '<span class="text-amber-800"> Some fields were unavailable, so the report is incomplete in places.</span>' : ''}`;
 
 /**
  * Repaint the ribbon alone, for when the re-check changed the delivery and nothing else.

@@ -210,7 +210,7 @@ async function main() {
   const payload = {
     _provenance:
       'Corporate announcements as filed with BSE, read from their date-indexed feed (AnnSubCategoryGetData) rather than one request per company. ' +
-      'Headlines, subjects and categories are BSE\'s, unchanged; the filing PDF stays on their server and every row links to it. ' +
+      'Headlines, subjects and categories are BSE\'s; presentation-only HTML break tags are normalised to spaces. The filing PDF stays on their server and every row links to it. ' +
       'Nothing here is summarised, scored or ranked.',
     kind: 'announcements',
     source: 'BSE — api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData',

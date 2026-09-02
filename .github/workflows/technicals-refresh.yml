@@ -1,8 +1,8 @@
 name: Data refresh
 
-# The dashboard's committed live baselines. The full capture runs at 07:00 IST; company news and
-# insider trades are refreshed with the full daily capture. Company news has its own lightweight
-# workflow so it can run again after publishing begins without touching end-of-day market data:
+# The dashboard's committed baselines. The full capture runs at 07:00 IST. Company news, insider
+# trades and corporate announcements have separate workflows so a slow per-company walk cannot
+# race with or block end-of-day market data:
 #
 #   scrape-technicals.mjs        ~400 calendar days of OHLCV for the NSE 500 from Yahoo, plus
 #                                NSE bhavcopy delivery %, recomputed into every indicator.
@@ -16,11 +16,8 @@ name: Data refresh
 #                                what the Superstar Investors grid is painted FROM, because the
 #                                live view is one request per investor and ninety-one round trips
 #                                is most of a minute on any device that has not been here before.
-#   scrape-filings.mjs           news and insider trades. Also not a fallback, and for the same
-#                                reason: one request per company.
-#
-# THE LAST TWO NEED NO SECRET. Both read this dashboard's own Worker, which holds the bearer token
-# the upstreams want — see the header of each script.
+# The super-investor capture needs no secret here. It reads this dashboard's own Worker, which
+# holds the bearer token the upstream wants — see the header of its script.
 #
 # NOTE ON THE EARNINGS FEED: the Earnings Hub does not wait for this. It reads /api/earnings,
 # which proxies Moneycontrol live behind a 30s edge cache, so a company that files at 14:32 is on
@@ -47,6 +44,13 @@ on:
     # Full daily capture: previous-session closing data before the next market opens.
     - cron: "30 1 * * 1-5"
   workflow_dispatch:
+    inputs:
+      source:
+        description: "Who asked for this run — auto, button, or manual"
+        required: false
+        default: "manual"
+
+run-name: Data refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
 
 # Only one refresh in flight at a time — concurrent runs would race on committed snapshots.
 concurrency:
@@ -119,25 +123,6 @@ jobs:
         continue-on-error: true
         run: node scripts/scrape-super-investors.mjs
 
-      # News and insider trades. Like the super-investor snapshot it reads
-      # THIS DASHBOARD'S OWN WORKER, so it needs no secret. This one is not a fallback either: those
-      # two tabs are painted from these files, and the live routes are what the reader's Refresh
-      # button asks — a walk of forty companies is not work to do on a page load.
-      #
-      # THE WHOLE UNIVERSE, NOT JUST THE BOOK. This pinned `FILINGS_SCOPE=book`, so the committed
-      # snapshot only ever held the 123 book companies and the Universe scope had nothing beyond
-      # the book to show — Insider Trades reported "70 companies with trades" for a 603-company
-      # universe, which reads as a broken feed and was a one-word setting. The scope the tab offers
-      # and the scope the capture covers have to be the same scope.
-      #
-      # `companies()` still walks the book FIRST, so a run cut short by the Action's time budget or
-      # the rate limit has covered the holdings before the index. It refuses to write a snapshot
-      # covering nobody, and refuses to replace one covering more, so an upstream outage leaves the
-      # previous capture in place rather than committing an empty file.
-      - name: Run filings snapshots
-        continue-on-error: true
-        run: FILINGS_SCOPE=universe node scripts/scrape-filings.mjs
-
       - name: Upload technicals data (artifact)
         if: always()
         uses: actions/upload-artifact@v5
@@ -153,8 +138,6 @@ jobs:
             public/data/earnings-calendar.json
             public/data/concall-scans.json
             public/data/super-investors.json
-            public/data/news.json
-            public/data/insider-trades.json
           if-no-files-found: warn
 
       - name: Commit refreshed technicals to main
@@ -165,7 +148,7 @@ jobs:
           git add public/data/technicals.json
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           [ -f public/data/portfolio-history.json ] && git add public/data/portfolio-history.json || true
-          for f in earnings-live mc-ticker-map result-returns earnings-calendar concall-scans super-investors news insider-trades; do
+          for f in earnings-live mc-ticker-map result-returns earnings-calendar concall-scans super-investors; do
             [ -f "public/data/$f.json" ] && git add "public/data/$f.json" || true
           done
           if git diff --cached --quiet; then

@@ -997,12 +997,12 @@ function calendarPill(payload, err, { mode = 'scheduled', filed = 0 } = {}) {
   // BOTH were read live.
   const captured = payload?.listSource === 'snapshot' || payload?.countSource === 'snapshot';
   const cls = bad
-    ? 'bg-amber-50 text-amber-800 ring-amber-300'
+    ? 'bg-slate-50 text-slate-600 ring-slate-200'
     : captured
       ? 'bg-sky-50 text-sky-800 ring-sky-300'
       : 'bg-emerald-50 text-emerald-800 ring-emerald-300';
   const dot = bad
-    ? '<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>'
+    ? ''
     : captured
       ? '<span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>'
       : '<span class="relative flex h-1.5 w-1.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span></span>';
@@ -1012,7 +1012,7 @@ function calendarPill(payload, err, { mode = 'scheduled', filed = 0 } = {}) {
   return `
     <span data-cal-info title="Current calendar-feed status"
       class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${cls}">
-      ${dot}<span>${bad ? 'Partial' : captured ? 'Captured' : 'Live'}</span>
+      ${dot}<span>${bad ? 'Updating' : captured ? 'Schedule updated' : 'Up to date'}</span>
       <span class="font-normal opacity-70">${count != null ? `${escapeHtml(formatNumber(count))} scheduled` : 'schedule'}</span>
     </span>`;
 }

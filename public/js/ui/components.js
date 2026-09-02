@@ -436,7 +436,7 @@ export function skeleton({ rows = 4, variant = 'rows' } = {}) {
 }
 
 /**
- * The header status control: one pill reading `● Live · updated 4m ago`, plus a refresh button.
+ * The header status control: one pill reading `Connected · checked 4m ago`, plus a refresh button.
  *
  * It used to be two separate chips — a green "Live · just now" and a white "Updated 52 minutes
  * ago" — which read as two competing claims about the same thing and left the reader to work out
@@ -453,13 +453,13 @@ export function skeleton({ rows = 4, variant = 'rows' } = {}) {
 export function statusControl({ getTimestamp, subscribeTick = null, onRefresh = null }) {
   const html = `
     <div class="flex items-center gap-1.5">
-      <span data-status-pill title="When a feed last confirmed its data with the server"
+      <span data-status-pill title="Most recent server confirmation from an active feed"
         class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
         <span class="relative flex h-1.5 w-1.5">
           <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
         </span>
-        <span>Live</span>
+        <span>Connected</span>
         <span class="text-emerald-300">·</span>
         <span data-live-time class="tabular-nums font-medium text-emerald-600">—</span>
       </span>
@@ -480,7 +480,7 @@ export function statusControl({ getTimestamp, subscribeTick = null, onRefresh = 
 
     function refresh() {
       const ts = getTimestamp ? getTimestamp() : null;
-      timeEl.textContent = ts ? `updated ${formatRelativeTime(ts)}` : 'waiting…';
+      timeEl.textContent = ts ? `checked ${formatRelativeTime(ts)}` : 'connecting…';
     }
     refresh();
     const interval = setInterval(refresh, 15000);

@@ -45,6 +45,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchNews, fetchInsiderTrades, MunsError } from '../worker/muns.mjs';
+import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = (f) => resolve(__dirname, '../public/data', f);
@@ -225,7 +226,7 @@ async function run(kind, list) {
   await Promise.all(workers);
 
   const rowCount = Object.values(byTicker).reduce((a, r) => a + r.length, 0);
-  const payload = {
+  let payload = {
     _provenance:
       `REAL DATA, NOT OURS. ${kind} for Indian listed companies via the Muns API, reaching back ${windowDays} days. ` +
       'Headlines, subjects, column headings and wording are the source\'s own, reproduced unchanged and never summarised. ' +
@@ -268,13 +269,6 @@ async function run(kind, list) {
   }
 
   const previous = readIfPresent(file);
-  if (previous && previous.covered > payload.covered && !process.env.FILINGS_FORCE) {
-    console.log(
-      `\r  ${kind}: covered ${payload.covered} of ${list.length}, but the committed snapshot covers ` +
-        `${previous.covered} — keeping it. Re-run when the upstream recovers, or set FILINGS_FORCE=1.`
-    );
-    return;
-  }
   // AND A COLLAPSE IN COMPANIES THAT HAD SOMETHING, which `covered` cannot see any more. Once
   // `covered` counted answers rather than rows, an upstream timing out stopped looking like a bad
   // run at all: every company answers "nothing", `empty` absorbs them, `covered` stays at the full
@@ -294,10 +288,22 @@ async function run(kind, list) {
     return;
   }
 
+  // A UNIVERSE WALK IS HUNDREDS OF INDEPENDENT ANSWERS, NOT ONE ALL-OR-NOTHING FILE.
+  //
+  // The old coverage guard discarded an entirely newer run when it reached even one fewer company
+  // than yesterday. On 2 Sep it read 584 companies, yesterday held 585, and all 584 fresh answers
+  // were thrown away. Merge at the company boundary instead: fresh rows or a fresh empty answer
+  // win, and a failed/not-reached company retains its last-known-good answer. The unresolved map is
+  // what remains after that recovery, so the UI can retry real gaps without freezing everybody.
+  if (previous && !process.env.FILINGS_FORCE) {
+    payload = mergeLastGoodFilings(payload, previous, list);
+  }
+
   writeFileSync(DATA(file), `${JSON.stringify(payload, null, 2)}\n`);
   console.log(
-    `\r  ${kind}: ${rowCount} rows across ${payload.withRows} of ${list.length} companies` +
+    `\r  ${kind}: ${payload.rowCount} rows across ${payload.withRows} of ${list.length} companies` +
       `${payload.emptyCount ? `, ${payload.emptyCount} asked and had nothing` : ''}` +
+      `${payload.fallbackCount ? `, ${payload.fallbackCount} retained from last-good data` : ''}` +
       `${payload.failedCount ? `, ${payload.failedCount} could not be read` : ''} -> public/data/${file}`
   );
 }

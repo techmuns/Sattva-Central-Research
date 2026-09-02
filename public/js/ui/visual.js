@@ -85,7 +85,7 @@ export function statusPill(status) {
     case 'pass':
       return `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">✓ Pass</span>`;
     case 'partial':
-      return `<span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">~ Partial</span>`;
+      return `<span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">Mixed</span>`;
     case 'fail':
       return `<span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 ring-1 ring-rose-200">✕ Fail</span>`;
     case 'hard_fail':
@@ -109,11 +109,12 @@ export const STATUS_DOT = {
 
 // A compact run of up to `max` status dots. `signals` is `[{ label, status }]`.
 export function signalDots(signals = [], max = 8) {
+  const face = (status) => (status === 'partial' ? 'mixed' : status);
   return signals
     .slice(0, max)
     .map(
       (s) =>
-        `<span class="h-1.5 w-1.5 rounded-full ${STATUS_DOT[s.status] || STATUS_DOT.na}" title="${escapeHtml(s.label)}: ${escapeHtml(s.status)}"></span>`
+        `<span class="h-1.5 w-1.5 rounded-full ${STATUS_DOT[s.status] || STATUS_DOT.na}" title="${escapeHtml(s.label)}: ${escapeHtml(face(s.status))}"></span>`
     )
     .join('');
 }
@@ -128,7 +129,7 @@ export function legendStrip({ note = '' } = {}) {
       <div class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Legend</div>
       <div class="flex flex-wrap gap-4 text-xs text-slate-600">
         ${item(STATUS_DOT.pass, 'Pass')}
-        ${item(STATUS_DOT.partial, 'Partial')}
+        ${item(STATUS_DOT.partial, 'Mixed')}
         ${item(STATUS_DOT.fail, 'Fail')}
         ${item(STATUS_DOT.hard_fail, 'Hard Fail (red flag)')}
         ${item(STATUS_DOT.na, 'N/A — see drill-down for reason')}

@@ -2304,10 +2304,9 @@ A normal run is one or two page reads. `MCNEWS_FULL=1` walks regardless, for the
 node scripts/scrape-mc-news.mjs                                  # top-up
 MCNEWS_FULL=1 MCNEWS_PAGES=25 node scripts/scrape-mc-news.mjs    # deep fill
 ```
-### Keeping the capture fresh — currently unsolved, and the reasons are measured
+### Keeping captures fresh — scheduled first, demand-driven recovery second
 
-**An external cron service drives this, because both built-in schedulers are ruled out by
-measurement:**
+**A schedule alone is not treated as proof of freshness.** The measured scheduler behaviour is:
 
 | route | status |
 | --- | --- |
@@ -2315,8 +2314,17 @@ measurement:**
 | Cloudflare Cron Trigger | **cannot be registered** — Workers Free allows 5 cron triggers *per account* and the account's five are already used by other Workers |
 | `workflow_dispatch` | **never late** — six dispatches in a day, each starting a run within seconds |
 
-So the mechanism works and only the *clock* is missing. `scheduled()` in `worker/index.js` is
-written, tested and deployed; it needs a trigger to call it. Any of these supplies one:
+`workflow_dispatch` is therefore the reliable actuator. GitHub schedules remain the normal first
+attempt, while `public/js/data/capture-watchdog.js` checks the committed timestamps after first
+paint and dispatches only an overdue source. `GET /api/capture-status` reads five small metadata
+records from the deployed assets; the browser never downloads every feed merely to inspect age.
+The Worker declines in-flight runs and holds a per-source edge cooldown. The browser checks every
+15 minutes while the SPA is open and retries a due source no more than once per 30 minutes, so a
+dashboard opened before the 19:00 Insider Trades boundary still notices when that source becomes
+due without a broken credential creating a busy loop.
+
+For market news, an external clock can still keep the capture warm when nobody has the dashboard
+open. Any of these supplies one:
 
 1. **Free one of the account's five cron slots**, then add `"triggers": { "crons": ["*/20 * * * *"] }`
    back to `wrangler.jsonc` (or add it in the Cloudflare dashboard). No code change.
@@ -2353,11 +2361,13 @@ written, tested and deployed; it needs a trigger to call it. Any of these suppli
    that measures them — the same measurement gap, one layer down, that `?source=` was added to
    close. GitHub's own schedule appears as `github-cron` and counts too.
 
-**The page does not depend on any of it any more.** Opening the News tab on a capture older than
-twenty minutes starts one fetch by itself — one request, gated by the capture's age, declined at the
-edge if a run is in flight, and never repeated inside the same window. An external scheduler is
-still worth having, because it keeps the capture warm for the alert stack while the reader is on
-other tabs; it is a safety net now rather than the only mechanism.
+**The page does not depend on an exact cron.** Opening the dashboard on an overdue capture starts
+one fetch after first paint — gated by the capture's real age, declined at the edge if a run is in
+flight, and never repeated in the same page. Market news is due after 45 minutes during the hours
+the publisher answers; company news after three hours; announcements after 75 minutes on weekdays;
+technicals after 07:15 IST on weekdays if today's capture is missing; insider trades at 19:00 IST
+on weekdays if today's capture is missing. An external scheduler is still useful to keep files warm
+when nobody is reading, but it is no longer the only recovery mechanism.
 
 **`GET /api/market-news/run` answers whether any of it is working**, via `lastAutomatic`: the most
 recent run that something other than a person started. It reads `null` while nothing schedules.
@@ -2556,11 +2566,11 @@ stops for the day, which is why it is not a step in the 07:00 data refresh.
 
 ### News and insider trades: snapshot first, live walk second
 
-These two are still per-ticker, capped at ~60 requests a minute. The full data job captures both at
-07:00 IST on weekdays. Company news has a separate 09:00 IST workflow that runs only the news half,
-excluding unchanged EOD technical snapshots and insider data. If GitHub's best-effort schedule has
-not produced a capture stamped with today's Indian date, opening the dashboard dispatches that same
-dedicated workflow once; the Worker declines duplicates and the browser watches the committed file.
+These two are still per-ticker, capped at ~60 requests a minute. They now have separate workflows:
+company news at 09:00 and 19:00 IST, and insider trades at 19:00 IST on weekdays. Keeping them out
+of the 07:00 technicals job prevents two long walks from racing over the same files. If GitHub's
+best-effort schedule misses, the capture watchdog dispatches the same dedicated workflow once; the
+Worker declines duplicates and the browser watches the committed file.
 
 **News is a search endpoint** — there is no "everything published today" request to make — so there
 is no axis to switch to the way announcements had one. It used to make the reader name companies
@@ -2573,12 +2583,20 @@ conditional GET. Measured on the shipped capture — 123 book tickers, 1,217 art
 News loads like the other two feeds and the walk stays behind Refresh.
 
 **On-open freshness re-reads the FILE; it never performs the forty-company walk.**
-`js/data/company-news-refresh.js` seeds `news.json`, compares `capturedAt` by Indian calendar date,
-dispatches `company-news-refresh.yml` only when the file is behind, and then calls
-`refreshSnapshot()` until today's deployment lands. A replacement snapshot replaces yesterday's
+`js/data/capture-watchdog.js` compares the capture timestamps with source-specific windows,
+dispatches only the workflow that is behind, and calls `refreshSnapshot()` when the new deployment
+lands. A replacement snapshot replaces yesterday's
 snapshot-derived company rows — including companies that became empty — while preserving any
 company this session read live. Additive merging here would leave expired stories on screen until
 a reload and is therefore not a refresh.
+
+**A universe walk is merged per company, never accepted or rejected as one indivisible file.** A
+fresh row or a fresh empty answer wins. A company that timed out or was never reached retains only
+its own last successful answer, with the original capture time in `fallback`; a company with no
+last-good answer remains explicitly failed. This closes the failure where 584 fresh answers were
+discarded because the previous file covered 585 companies, freezing every Insider Trades row on
+the older snapshot. A total outage and a collapse to less than half the prior with-rows count still
+fail closed and do not write.
 
 **A company that answered "nothing" is listed in `empty`, and that is what makes it COVERED.**
 The scrape used to write only companies that had something, so one with no trades vanished from the

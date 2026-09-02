@@ -220,13 +220,15 @@ function freshness() {
 
 const TONE = {
   live: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  stale: 'bg-amber-50 text-amber-800 ring-amber-300',
+  stale: 'bg-slate-50 text-slate-600 ring-slate-200',
   unknown: 'bg-slate-100 text-slate-600 ring-slate-300',
+  mock: 'bg-amber-50 text-amber-800 ring-amber-300',
 };
 const DOT = {
   live: '<span class="relative flex h-1.5 w-1.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span></span>',
-  stale: '<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>',
+  stale: '',
   unknown: '<span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>',
+  mock: '',
 };
 
 /**
@@ -242,20 +244,23 @@ const DOT = {
  */
 function livePill({ facts = [], bodyHtml = '', more = null, mock = false } = {}) {
   const f = freshness();
-  const tone = mock ? 'stale' : f.state;
+  const tone = mock ? 'mock' : f.state;
   const face = mock
     ? 'Mock earnings · live technicals'
     : f.state === 'live'
-      ? 'Live'
+      ? 'Up to date'
       : f.state === 'stale'
-        ? `EOD · ${formatRelativeTime(f.ts)}`
-        : 'Freshness unknown';
+        ? `Updated ${formatRelativeTime(f.ts)}`
+        : 'Updating';
+  const coverage = f.meta?.company_count
+    ? `${formatNumber(f.meta.scored_count || 0)} of ${formatNumber(f.meta.company_count)} companies scored`
+    : null;
   const title = mock
     ? 'Two provenances on one screen — click for what is mock and what is live'
     : f.state === 'live'
-      ? `End-of-day data, captured ${formatRelativeTime(f.ts)} — click for the source and the figures`
+      ? `End-of-day data, captured ${formatRelativeTime(f.ts)}${coverage ? ` · ${coverage}` : ''} — click for the source and the figures`
       : f.state === 'stale'
-        ? 'Older than any weekend gap — click for when it was captured'
+        ? `End-of-day data captured ${formatRelativeTime(f.ts)}${coverage ? ` · ${coverage}` : ''}`
         : 'This feed carries no capture time — click for what is known';
 
   const html = `
@@ -787,7 +792,7 @@ function renderFiiAccumulation(ctx, rows) {
       { label: 'FII exiting sharply', value: formatNumber(exiting), note: 'below −2% — flagged rose' },
     ],
     bodyHtml: `<h3 class="mb-1 text-xs font-bold uppercase tracking-wider text-indigo-700">Institutional Activity and the −2% caution</h3><p>The Institutional Activity rule scores the sum of the FII and DII holding change: net positive earns the point, net negative earns zero.</p>
-               <p class="mt-2">There is one caution branch: if the combined figure is positive but <strong>FII alone is falling by more than 2%</strong>, the rule downgrades to partial rather than a clean pass — domestic buying is masking a foreign exit.</p>
+               <p class="mt-2">There is one caution branch: if the combined figure is positive but <strong>FII alone is falling by more than 2%</strong>, the rule is marked mixed rather than a clean pass — domestic buying is masking a foreign exit.</p>
                <p class="mt-3 text-slate-500">Those companies are flagged in rose on this tab so the divergence is visible before you open the drill. Holding changes come from the Screener shareholding export, refreshed with the universe file.</p>`,
   });
 

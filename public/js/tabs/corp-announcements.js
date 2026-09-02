@@ -28,6 +28,14 @@ import { announcements as feed } from '../data/filings.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
+// Existing committed captures may predate the upstream normaliser fix. Clean on read as well so a
+// deploy repairs visible `<BR><BR>` immediately, without waiting for the next scheduled capture.
+export const cleanFilingText = (value) => String(value || '')
+  .replace(/<br\s*\/?>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
 // Category is identity, not judgement, so the palette is the brand ramp rather than anything
 // semantic — an AGM notice is not "worse" than a result. `Result` and `Board Meeting` get the two
 // strongest tints only because they are what a reader scans for.
@@ -54,12 +62,12 @@ const tab = makeFilingsTab({
   noun: 'announcements',
   nameLabel: 'Subject',
   nameMaxPx: 520,
-  rowName: (r) => r.title || r.headline || '(no subject)',
+  rowName: (r) => cleanFilingText(r.title || r.headline) || '(no subject)',
   // The company name leads, because a date-indexed feed covers companies this dashboard has no
   // ticker for and a bare scrip code identifies nothing to a reader.
   rowSub: (r) => [r.company, r.ticker, r.subCategory].filter(Boolean).join(' · '),
   searchable: (r) =>
-    `${r.title || ''} ${r.headline || ''} ${r.subject || ''} ${r.company || ''} ${r.ticker || ''} ${r.scripCode || ''} ${r.category || ''} ${r.subCategory || ''}`,
+    `${cleanFilingText(r.title)} ${cleanFilingText(r.headline)} ${cleanFilingText(r.subject)} ${r.company || ''} ${r.ticker || ''} ${r.scripCode || ''} ${r.category || ''} ${r.subCategory || ''}`,
   columns: () => [
     {
       label: 'Date',
@@ -164,7 +172,7 @@ const tab = makeFilingsTab({
         { header: 'Ticker', key: 't', width: 14, get: (r) => (r.__banner ? '' : r.ticker || '') },
         { header: 'BSE scrip code', key: 'sc', width: 14, get: (r) => (r.__banner ? '' : r.scripCode || '') },
         { header: 'Company (as filed)', key: 'co', width: 38, get: (r) => (r.__banner ? '' : r.company || '') },
-        { header: 'Subject (as filed)', key: 'h', width: 70, get: (r) => (r.__banner ? '' : r.title || r.headline || '') },
+        { header: 'Subject (as filed)', key: 'h', width: 70, get: (r) => (r.__banner ? '' : cleanFilingText(r.title || r.headline)) },
         { header: 'Category (as filed)', key: 'c', width: 22, get: (r) => (r.__banner ? '' : r.category || '') },
         { header: 'Sub-category (as filed)', key: 'sb', width: 30, get: (r) => (r.__banner ? '' : r.subCategory || '') },
         { header: 'Document URL', key: 'u', width: 60, get: (r) => (r.__banner ? '' : r.url || '') },

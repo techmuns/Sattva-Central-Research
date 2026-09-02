@@ -24,8 +24,9 @@
 //   value we did not request still shows up in the run report instead of being silently absent.
 //
 // WHAT IS REPRODUCED AND WHAT IS NOT. The headline, the subject line, the category and the filing
-// time are BSE's, unchanged. The PDF stays on their server and every row links to it. Nothing here
-// summarises, scores or ranks a filing — same rule as the news and con-call feeds.
+// time are BSE's. Presentation-only HTML break tags are normalised to spaces; the words are not
+// rewritten. The PDF stays on their server and every row links to it. Nothing here summarises,
+// scores or ranks a filing — same rule as the news and con-call feeds.
 
 /** BSE's own category names. Not a taxonomy of ours — these are the strings their API accepts. */
 export const CATEGORIES = [
@@ -109,6 +110,16 @@ export const rowCountOf = (body) => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** BSE occasionally embeds HTML break tags in a plain-text headline field. */
+export function cleanAnnouncementText(value) {
+  if (value == null) return null;
+  return String(value)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || null;
+}
+
 /**
  * One row, in this dashboard's vocabulary.
  *
@@ -124,8 +135,8 @@ export function normaliseAnnouncement(row) {
     company: row?.SLONGNAME ? String(row.SLONGNAME) : null,
     // BSE put the headline in HEADLINE and a longer subject in NEWSSUB; the subject is often
     // truncated mid-word by them, so the headline leads and the subject is kept beside it.
-    headline: row?.HEADLINE ? String(row.HEADLINE) : row?.NEWSSUB ? String(row.NEWSSUB) : null,
-    subject: row?.NEWSSUB ? String(row.NEWSSUB) : null,
+    headline: cleanAnnouncementText(row?.HEADLINE || row?.NEWSSUB),
+    subject: cleanAnnouncementText(row?.NEWSSUB),
     category: row?.CATEGORYNAME ? String(row.CATEGORYNAME) : null,
     subCategory: row?.SUBCATNAME && row.SUBCATNAME !== 'None' ? String(row.SUBCATNAME) : null,
     // A date that cannot be read stays null. It is never today's.

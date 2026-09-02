@@ -502,13 +502,13 @@ export function feedState(f) {
     return { label: 'reading…', short: () => 'reading…', dot: 'bg-slate-300 animate-pulse', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-400' };
   }
   if (f.status === 'failed') {
-    return { label: 'could not be read', short: () => 'unread', dot: 'bg-rose-500', ring: 'ring-rose-100', bg: 'bg-rose-50/40', text: 'text-rose-700' };
+    return { label: 'source is updating', short: () => 'updating', dot: 'bg-slate-300 animate-pulse', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   if (f.scopable === false) {
     return { label: 'not in this scope', short: () => 'not in scope', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-slate-50/50', text: 'text-slate-400' };
   }
   if (f.reachesToday === false) {
-    return { label: 'has not looked at today', short: () => 'not checked', dot: 'bg-amber-500', ring: 'ring-amber-100', bg: 'bg-amber-50/40', text: 'text-amber-700' };
+    return { label: 'latest available capture', short: () => 'latest', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   const todayCount = f.todayCount ?? f.count ?? 0;
   if (todayCount) {

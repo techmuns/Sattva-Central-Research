@@ -15,7 +15,8 @@
 //   GET  /api/research                          ->  whether Ask Research is configured
 //   POST /api/research                          ->  streamed dashboard-grounded research answer
 //
-// None writes anything back to the repo; all are read-through overlays on committed data.
+// Data reads are read-through overlays on committed data. The POST-only refresh routes dispatch
+// fixed repository workflows; credentials remain in the Worker and duplicate runs are declined.
 //
 // THE SUPER-INVESTOR ROUTES EXIST TO HOLD A CREDENTIAL. Unlike every other upstream here, that
 // API needs `Authorization: Bearer …`. A token in front-end code is a token published, so the
@@ -34,7 +35,18 @@ import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } f
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
 import { fetchNews, fetchAnnouncements, fetchInsiderTrades, searchStocks, MunsError } from './muns.mjs';
 import { CORS, preflight, contentTag, withTag, tagged, revalidate } from './http.mjs';
-import { dispatchWorkflow, latestRun, parseRepo, isInFlight, NEWS_WORKFLOW, COMPANY_NEWS_WORKFLOW, DEPLOY_WORKFLOW } from './github-actions.mjs';
+import {
+  dispatchWorkflow,
+  latestRun,
+  parseRepo,
+  isInFlight,
+  NEWS_WORKFLOW,
+  COMPANY_NEWS_WORKFLOW,
+  INSIDER_WORKFLOW,
+  ANNOUNCEMENTS_WORKFLOW,
+  DATA_WORKFLOW,
+  DEPLOY_WORKFLOW,
+} from './github-actions.mjs';
 import { handleResearch } from './research.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -149,6 +161,51 @@ export default {
         workflow: COMPANY_NEWS_WORKFLOW,
         cacheName: 'company-news-run-status',
       });
+    }
+    if (url.pathname === '/api/insider-snapshot/refresh') {
+      if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a refresh with POST.' }, 405);
+      return handleWorkflowDispatch(request, env, ctx, {
+        workflow: INSIDER_WORKFLOW,
+        cacheName: 'insider-snapshot-dispatch',
+        cooldownS: FILINGS_DISPATCH_COOLDOWN_S,
+      });
+    }
+    if (url.pathname === '/api/insider-snapshot/run') {
+      return handleWorkflowRunStatus(env, ctx, {
+        workflow: INSIDER_WORKFLOW,
+        cacheName: 'insider-snapshot-run-status',
+      });
+    }
+    if (url.pathname === '/api/announcements-snapshot/refresh') {
+      if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a refresh with POST.' }, 405);
+      return handleWorkflowDispatch(request, env, ctx, {
+        workflow: ANNOUNCEMENTS_WORKFLOW,
+        cacheName: 'announcements-snapshot-dispatch',
+        cooldownS: ANNOUNCEMENTS_DISPATCH_COOLDOWN_S,
+      });
+    }
+    if (url.pathname === '/api/announcements-snapshot/run') {
+      return handleWorkflowRunStatus(env, ctx, {
+        workflow: ANNOUNCEMENTS_WORKFLOW,
+        cacheName: 'announcements-snapshot-run-status',
+      });
+    }
+    if (url.pathname === '/api/data-snapshot/refresh') {
+      if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a refresh with POST.' }, 405);
+      return handleWorkflowDispatch(request, env, ctx, {
+        workflow: DATA_WORKFLOW,
+        cacheName: 'data-snapshot-dispatch',
+        cooldownS: DATA_DISPATCH_COOLDOWN_S,
+      });
+    }
+    if (url.pathname === '/api/data-snapshot/run') {
+      return handleWorkflowRunStatus(env, ctx, {
+        workflow: DATA_WORKFLOW,
+        cacheName: 'data-snapshot-run-status',
+      });
+    }
+    if (url.pathname === '/api/capture-status') {
+      return handleCaptureStatus(request, env, ctx);
     }
     if (url.pathname.startsWith('/api/')) {
       return json({ error: 'Not implemented', path: url.pathname }, 404);
@@ -1280,6 +1337,13 @@ const DISPATCH_COOLDOWN_S = 120;
 // A universe company-news walk is roughly ten minutes. Hold the automatic route across that
 // window so readers arriving in different moments cannot start a second run during publish lag.
 const COMPANY_NEWS_DISPATCH_COOLDOWN_S = 15 * 60;
+// A full universe filings walk takes roughly ten minutes. The cooldown spans the scrape and the
+// publish delay, so readers arriving in different moments cannot queue duplicate work.
+const FILINGS_DISPATCH_COOLDOWN_S = 30 * 60;
+// BSE's date index is cheap, but a deploy still takes a couple of minutes.
+const ANNOUNCEMENTS_DISPATCH_COOLDOWN_S = 10 * 60;
+// End-of-day technicals can take most of an hour and must never overlap themselves.
+const DATA_DISPATCH_COOLDOWN_S = 60 * 60;
 const RUN_STATUS_TTL_S = 5; // so twenty readers watching one run cost GitHub four calls a minute
 // How far back `lastAutomatic` looks. Ten runs is about a day at the schedule's own cadence.
 const RUN_WINDOW = 10;
@@ -1489,6 +1553,62 @@ async function handleWorkflowRunStatus(env, ctx, { workflow, cacheName }) {
   } catch (err) {
     return json(githubFailure(err), 200);
   }
+}
+
+// A small, same-origin view of the committed captures. The browser uses it as a watchdog without
+// downloading every multi-megabyte feed merely to learn its timestamp. Each source is independent:
+// one missing file cannot erase the status of the others, and the short edge cache makes a busy
+// dashboard cost one internal asset read per half-minute rather than one per reader.
+const CAPTURE_STATUS_TTL_S = 30;
+const CAPTURE_FILES = {
+  companyNews: '/data/news.json',
+  insider: '/data/insider-trades.json',
+  announcements: '/data/corp-announcements.json',
+  technicals: '/data/technicals.json',
+  marketNews: '/data/market-news.json',
+};
+
+async function handleCaptureStatus(request, env, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
+
+  const cache = caches.default;
+  const key = edgeKey('capture-status-v1');
+  const held = await cache.match(key);
+  if (held) {
+    return new Response(held.body, {
+      status: 200,
+      headers: { ...Object.fromEntries(held.headers), ...CORS, 'x-sattva-cache': 'hit' },
+    });
+  }
+
+  const captures = {};
+  await Promise.all(
+    Object.entries(CAPTURE_FILES).map(async ([name, path]) => {
+      try {
+        const response = await env.ASSETS.fetch(new Request(new URL(path, request.url)));
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const body = await response.json();
+        captures[name] = {
+          ok: true,
+          capturedAt: body.capturedAt || body.generated_at || body.fetchedAt || null,
+          covered: Number.isFinite(body.covered) ? body.covered : Number.isFinite(body.company_count) ? body.company_count : null,
+          failed: Number.isFinite(body.failedCount) ? body.failedCount : Number.isFinite(body.failures) ? body.failures : null,
+          fallback: Number.isFinite(body.fallbackCount) ? body.fallbackCount : 0,
+        };
+      } catch (error) {
+        captures[name] = { ok: false, capturedAt: null, reason: String(error?.message || error) };
+      }
+    }),
+  );
+
+  const payload = { ok: true, captures, servedAt: new Date().toISOString() };
+  const store = new Response(JSON.stringify(payload), {
+    headers: { 'content-type': 'application/json', 'cache-control': `max-age=${CAPTURE_STATUS_TTL_S}` },
+  });
+  ctx.waitUntil(cache.put(key, store));
+  const response = json(payload, 200);
+  response.headers.set('x-sattva-cache', 'live');
+  return response;
 }
 
 function json(obj, status = 200) {

@@ -142,7 +142,8 @@ function shellTemplate() {
 
 /**
  * One status control where there used to be a search box, a Sources button, a Live chip and an
- * Updated chip.
+ * Updated chip. It now says Connected because the timestamp belongs to the newest active feed,
+ * not to every data set in the dashboard.
  *
  * The two chips said different things about the same subject and neither was quite true: the green
  * one tracked the 20-second heartbeat, which asks nothing of any server, and the white one tracked

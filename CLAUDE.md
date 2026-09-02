@@ -135,7 +135,10 @@ scripts/
   stub-chatter.mjs            replays a captured chatter payload, so a verify run needs no egress
   verify-ui.mjs               the pre-push checklist, driven with Playwright
   lib/                        indicators.mjs, liquidity-estimators.mjs
-.github/workflows/technicals-refresh.yml   weekdays 07:00 IST; news + insider follow-up at 09:00 IST
+.github/workflows/technicals-refresh.yml   weekdays 07:00 IST; EOD prices and derived snapshots
+.github/workflows/company-news-refresh.yml weekdays 09:00 + 19:00 IST; company-news universe capture
+.github/workflows/insider-trades-refresh.yml weekdays 19:00 IST; insider-trades universe capture
+.github/workflows/announcements-refresh.yml weekdays 20:00 IST; BSE date-indexed filings
 worker/index.js               asset serving + POST /api/live-prices + GET /api/earnings
                               (+ ?fields=prices) + /api/earnings-calendar + /api/concalls
                               + /api/super-investors (+ /{slug})
@@ -1122,13 +1125,12 @@ the result, so they are already in `news.json` and cost one conditional GET. Mea
 capture: **all 123 book tickers, 1,217 articles, no failures.** The picker was charging the reader
 attention to avoid a cost that had already been paid.
 
-The full data refresh captures news and insider trades at 07:00 IST on weekdays. Company news then
-has its own `company-news-refresh.yml` at 09:00 IST, running only
-`scrape-filings.mjs news`: there is no newer EOD bar at that hour, and a transient Yahoo failure
-must not replace the healthy technical snapshot captured at 07:00. GitHub schedules are
-best-effort, so opening the dashboard on a company-news capture whose Indian calendar date is
-older than today dispatches that dedicated workflow once and watches until the committed file
-reaches the browser. It never falls back to a forty-company page-load walk.
+The 07:00 IST data refresh no longer captures company news or insider trades. Company news has its
+own `company-news-refresh.yml` at 09:00 and 19:00 IST; Insider Trades has
+`insider-trades-refresh.yml` at 19:00 IST. This keeps long per-company walks from racing with EOD
+technicals or each other. GitHub schedules are best-effort, so a single post-paint watchdog checks
+the committed capture timestamps and dispatches only an overdue workflow. It never falls back to a
+forty-company page-load walk.
 
 So News now loads like the other two — snapshot on mount, nothing per company — and the walk is
 still the Refresh button's. **The rule that survives is the one that was always doing the work: a
@@ -1166,17 +1168,10 @@ Two things follow that are easy to get wrong:
   straight back into the file under the predicate added to remove them, and the run reported
   "123 of 123 companies" — a number that looked like the fix working.
 
-**THE FILINGS HEAD IS ONE CHIP, AND ITS GREEN IS CONDITIONAL.** The three filings tabs carry the
-same chip the market-news half of the News tab already wore — a dot and a word, no pill chrome, no
-scope summary beside it — because that is what it was asked to look like and because two chips at
-the top of three tabs across three scopes is furniture. Green + `Live` appears only when the
-capture was made on TODAY'S INDIAN CALENDAR DATE. The former 72-hour window painted Tuesday green
-on Wednesday, which is precisely the missing-fresh-data state the chip should expose. A prior-day
-capture turns amber and prints the AGE;
-failures outrank freshness and read `Partial`. **"Show a green Live" and "never paint a green Live
-you have not earned" are only compatible because the green is conditional** — and the suite asserts
-the colour against the measured age, in both directions, so a chip made unconditionally green would
-fail rather than quietly start lying.
+**THE FILINGS HEAD IS ONE QUIET FRESHNESS LABEL.** Recent captures say `Up to date`; older captures
+print their measured age, and a missing timestamp says `Updating`. Internal retry states and words
+such as `Partial` do not appear in customer chrome. Coverage, failures and per-company last-good
+retention remain in the provenance panel, and the watchdog starts recovery automatically.
 
 **The denominator moved into that chip; it was not dropped.** `scopeSummary`'s sentence is
 reproduced whole in the chip's `title` and again in its modal, because the rule was always that the
@@ -2502,7 +2497,8 @@ nothing — which is exactly why the con-call route has no projection either.
 | Make a committed file reach the live site | **Cloudflare's Git integration deploys on push** — that is the live path, and `.github/workflows/deploy.yml` is a fallback whose deploy job is *skipped* here for want of `CLOUDFLARE_API_TOKEN`. Its run summary says which mode is in effect on every run; do not read a green tick as "deployed" |
 | Change how those three tabs look | `js/tabs/filings-tab.js` is the shared renderer; the three modules beside it are columns and words |
 | Refresh the news / insider snapshots | `node scripts/scrape-filings.mjs` — **universe scope is the default and the scheduled job now uses it**; `FILINGS_SCOPE=book` narrows to the holdings, `FILINGS_LIMIT=20` for a smoke run. It reads **our own Worker**, so it needs no token; `MUNS_TOKEN=…` switches it back to the upstream |
-| Change which companies a filings snapshot covers | `FILINGS_SCOPE` in `.github/workflows/technicals-refresh.yml` — it was pinned to `book`, so the capture held 123 companies while the tab offered a 603-company Universe scope and Insider Trades read as a broken feed. **The scope the tab offers and the scope the capture covers have to be the same scope**; `companies()` still walks the book first, so a truncated run has covered the holdings |
+| Change which companies a filings snapshot covers | `FILINGS_SCOPE` in `.github/workflows/company-news-refresh.yml` and `.github/workflows/insider-trades-refresh.yml`. **The scope the tab offers and the scope the capture covers have to be the same scope**; `companies()` still walks the book first, so a truncated run has covered the holdings |
+| Change automatic stale-capture recovery | `public/js/data/capture-watchdog.js` + `/api/capture-status` and the fixed workflow routes in `worker/index.js`; keep the browser's 15-minute check / 30-minute retry guard and the Worker's in-flight/cooldown guard together |
 | Refresh the announcements snapshot | `node scripts/scrape-bse-announcements.mjs` — no token; `ANN_DAYS=7` to backfill, `ANN_MERGE=0` to replace |
 | Change what the Refresh button drives | `js/core/refresh.js` (the registry) + `refreshNow()` in `js/core/watch.js` — read *Work the reader has to ask for* first; a per-company feed must never be registered with `live.js` |
 | Change the super-investor feed | `worker/finology.mjs` + `public/js/data/finology-shared.js`, then `/api/super-investors` — read *An upstream that needs a credential* below first |

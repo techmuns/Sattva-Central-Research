@@ -31,6 +31,12 @@ on:
         description: "How many days the committed file keeps (default 3)"
         required: false
         default: "3"
+      source:
+        description: "Who asked for this run — auto, button, or manual"
+        required: false
+        default: "manual"
+
+run-name: Corporate announcements refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
 
 # One at a time — two runs would race on the same committed file.
 concurrency:

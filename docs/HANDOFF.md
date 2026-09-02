@@ -62,6 +62,9 @@ This is the first thing to check before quoting any number off a screen.
 | **Every earnings call held this quarter** — 877, with StockScans' result score, sentiment tier and highlight bullets | `GET /api/concalls` (live) + `public/data/concall-scans.json` | StockScans | **Live: 30s edge cache, 30s client poll** |
 | **Retail chatter** — mentions and sentiment across ValuePickr, TradingQnA and Google News, 219 entries over a rolling 30 days | called direct from the browser, **not** proxied — see §5e | SentimentDash | **Live: twice daily upstream (01:30 / 13:30 UTC), hourly client poll** |
 | **Market-wide stocks news** — every story Moneycontrol publish to `/news/business/stocks/`, 600 held | `public/data/market-news.json` (406 KB) | Moneycontrol, read with `curl` from a GitHub runner — **neither the browser nor the Worker can fetch this host** | Every 30 min in Indian hours, hourly outside (measured — see `docs/DATA-CONTRACTS.md`), **and on demand from the tab's Fetch button** |
+| **Company news** | `public/data/news.json` | Muns company search through the Worker | 09:00 + 19:00 IST weekdays; watchdog recovery after 3h |
+| **Insider trades** | `public/data/insider-trades.json` | Muns filings through the Worker | 19:00 IST weekdays; watchdog recovery after 19:00 |
+| **Corporate announcements** | `public/data/corp-announcements.json` | BSE date index, no credential | 20:00 IST weekdays; watchdog recovery after 75m |
 | scID → NSE ticker, industry, share count | `public/data/mc-ticker-map.json` (190 KB) | Moneycontrol price feed | Incremental, daily |
 | Close on each result date | `public/data/result-returns.json` (80 KB) | Yahoo Finance | Incremental, daily |
 
@@ -91,8 +94,8 @@ publishes through **Cloudflare's Git integration** rather than through `.github/
 `GH_REPO` and `GH_REF` are plain vars in `wrangler.jsonc` — fixed there, not read from the request,
 so the unauthenticated route cannot be pointed at another workflow. **Without the secret nothing
 breaks**: the button says the deployment has no token and names that command, and the scheduled
-20-minute run is unaffected because its cron does not go through this route. The free *Check for new
-stories* button beside it works either way. Full contract in `docs/DATA-CONTRACTS.md`.
+scheduled files remain readable. Automatic recovery and the Fetch button require the token because
+both dispatch a fixed GitHub workflow. Full contract in `docs/DATA-CONTRACTS.md`.
 
 **Known upstream fault, live now.** Moneycontrol's results-calendar count endpoint
 (`indexId=N`) started answering `0` for every date on 14 Aug 2026 — a 200 with `success: 1` and

@@ -141,7 +141,7 @@ if (covered < investors.length * MIN_COVERAGE && !process.env.SI_FORCE) {
 
 const snapshot = {
   capturedAt: new Date().toISOString(),
-  source: 'Ticker Finology, read through this dashboard’s Worker',
+  source: 'Ticker Finology, captured through this dashboard’s Worker and refreshed on demand',
   count: investors.length,
   dropped: list.dropped || 0,
   covered,

@@ -153,7 +153,7 @@ export const META = {
     },
     consolidation: {
       source: COMPUTED_FROM_YAHOO,
-      calculation: "Look at the last 30 trading days = 6 weeks. Base range % = (max(high) − min(low)) / avg(close) × 100. Tight base = range < 12%. Breakout = today's close > prior 6-week high. Volume confirm = today's volume > 1.5× base avg volume. Strong = all three; partials documented in the note.",
+      calculation: "Look at the last 30 trading days = 6 weeks. Base range % = (max(high) − min(low)) / avg(close) × 100. Tight base = range < 12%. Breakout = today's close > prior 6-week high. Volume confirm = today's volume > 1.5× base avg volume. Strong = all three; mixed outcomes are documented in the note.",
       clientLogic: "PASS if breaking out of at least 6-week base on strong volume; 2 pts. No base = 0 pts.",
       ourLogic: null,
     },
@@ -171,7 +171,7 @@ export const META = {
     },
     atr: {
       source: COMPUTED_FROM_YAHOO,
-      calculation: "ATR(14) using Wilder smoothing over True Range values. ATR % = ATR ÷ latest close × 100. Trend assessed from atr_history.json accumulator (≥10 daily snapshots needed for trend): recent-half avg vs older-half avg. Scoring combines absolute level (<2.5% / 2.5–4% / >4%) AND trend direction (declining boosts to PASS, rising downgrades to partial). Accumulator builds 1 snapshot per daily Technicals scrape, so the trend signal strengthens over ~2 weeks.",
+      calculation: "ATR(14) using Wilder smoothing over True Range values. ATR % = ATR ÷ latest close × 100. Trend assessed from atr_history.json accumulator (≥10 daily snapshots needed for trend): recent-half avg vs older-half avg. Scoring combines absolute level (<2.5% / 2.5–4% / >4%) AND trend direction (declining boosts to PASS, rising produces a mixed result). Accumulator builds 1 snapshot per daily Technicals scrape, so the trend signal strengthens over ~2 weeks.",
       clientLogic: "PASS if 14-day ATR % declining or stable (< 2.5% for large cap); 1 pt. Rising ATR = position-size flag.",
       ourLogic: null,
     },
@@ -185,7 +185,7 @@ export const META = {
     rev_yoy: {
       source: SCREENER_QUARTERS,
       calculation: 'Revenue for the latest reported quarter versus the same quarter one year earlier (four quarters back in the series): (latest − year-ago) ÷ |year-ago| × 100.',
-      clientLogic: 'PASS if revenue YoY > 15%; 2 pts. 8–15% = 1 pt (partial). Below 8% = 0 pts.',
+      clientLogic: 'PASS if revenue YoY > 15%; 2 pts. 8–15% = 1 pt (mixed). Below 8% = 0 pts.',
       ourLogic: null,
     },
     pat_yoy: {
@@ -231,7 +231,7 @@ export const META = {
       calculation: 'Year-on-year growth of operating profit compared with year-on-year growth of net profit. The gap (OP growth − PAT growth) is the score driver: zero or positive means the operating line is doing the work. Returns N/A when operating profit is zero or negative in either quarter, where the two growth rates are not comparable.',
       clientLogic: 'PASS if operating profit growth is at least as fast as PAT growth; 2 pts. PAT outrunning OP means other income or one-offs are carrying the print.',
       ourLogic:
-        'Two deviations. (1) The client states a binary test; we add a partial band, a gap between 0 and −5pp scoring 1 point rather than 0, because a small non-operating contribution is common and not by itself a quality problem. (2) We return N/A on an operating loss on either side. Taken literally the test rewards it: an operating profit collapsing from +466 Cr to −268 Cr reads as −157% growth, which "beats" a PAT that fell −208%, and the company would collect full earnings-quality marks for a quarter with no operating profit at all. The same guard already applies to Other Income Share and Effective Tax Rate on a negative PBT.',
+        'Two deviations. (1) The client states a binary test; we add a mixed band, a gap between 0 and −5pp scoring 1 point rather than 0, because a small non-operating contribution is common and not by itself a quality problem. (2) We return N/A on an operating loss on either side. Taken literally the test rewards it: an operating profit collapsing from +466 Cr to −268 Cr reads as −157% growth, which "beats" a PAT that fell −208%, and the company would collect full earnings-quality marks for a quarter with no operating profit at all. The same guard already applies to Other Income Share and Effective Tax Rate on a negative PBT.',
     },
     other_inc: {
       source: EXCHANGE_FILING,
@@ -248,8 +248,8 @@ export const META = {
     tax_rate: {
       source: EXCHANGE_FILING,
       calculation: 'Effective tax rate = tax expense ÷ profit before tax × 100. N/A when PBT is zero or negative.',
-      clientLogic: 'PASS if the effective tax rate is between 20% and 30%; 1 pt. Outside that band scores partial, with the reason flagged.',
-      ourLogic: 'The client says "outside the band = partial" without splitting the reasons. We score both directions at 0.5 but write different notes: below 20% points at a credit, exemption or deferred-tax reversal flattering PAT; above 30% at a one-off charge or prior-period adjustment depressing it.',
+      clientLogic: 'PASS if the effective tax rate is between 20% and 30%; 1 pt. Outside that band scores mixed, with the reason flagged.',
+      ourLogic: 'The client uses one mixed band without splitting the reasons. We score both directions at 0.5 but write different notes: below 20% points at a credit, exemption or deferred-tax reversal flattering PAT; above 30% at a one-off charge or prior-period adjustment depressing it.',
     },
 
     eps_surp: {

@@ -37,7 +37,7 @@ import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
 import { scopePossessive } from '../data/scope.js';
 
-const SOURCE = 'Ticker Finology, read live through this dashboard’s Worker.';
+const SOURCE = 'Ticker Finology, captured through this dashboard’s Worker and refreshed on demand.';
 const FINOLOGY_COMPANY = (slug) => `https://ticker.finology.in/company/${encodeURIComponent(slug)}`;
 
 const dash = '<span class="text-slate-300">—</span>';

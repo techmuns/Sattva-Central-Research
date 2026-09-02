@@ -910,15 +910,14 @@ if (calReady.failed) {
       count: payload?.scheduledCount ?? null,
       rows: payload?.rows?.length ?? 0,
       days: (payload?.days || []).map((d) => d.count),
-      pill: /\b(Live|Captured|Partial)\b/.exec(txt)?.[1] || null,
+      pill: /(Schedule updated|Up to date|Updating)/.exec(txt)?.[1] || null,
     };
   });
-  // The pill may claim Live only when BOTH halves were read live. They fail independently — the
-  // calendar page is bot-walled while the count API is not — so either being a capture makes it
-  // "Captured".
+  // A captured half uses calm customer wording while remaining distinguishable from a fully live
+  // read. The provenance details below still name the source precisely.
   const anyCapture = calSource.src === 'snapshot' || calSource.countSrc === 'snapshot';
   if (calSource.src || calSource.countSrc) {
-    ok('a captured half is labelled Captured, never Live', anyCapture ? calSource.pill === 'Captured' : calSource.pill === 'Live', `list=${calSource.src} counts=${calSource.countSrc} pill=${calSource.pill}`);
+    ok('a captured half is labelled as an updated schedule', anyCapture ? calSource.pill === 'Schedule updated' : ['Up to date', 'Updating'].includes(calSource.pill), `list=${calSource.src} counts=${calSource.countSrc} pill=${calSource.pill}`);
   } else if (calSource.found) {
     ok('the payload names where the list came from', false, `listSource=${calSource.src}`);
   } else {
@@ -949,7 +948,7 @@ if (calReady.failed) {
   } else {
     skip('...and the whole strip is not zero at once', 'no full-list payload was fetched on this origin');
   }
-  if (calSource.countSrc === 'snapshot') ok('...with the substituted counts named as a capture', calSource.pill === 'Captured');
+  if (calSource.countSrc === 'snapshot') ok('...with substituted counts presented as an updated schedule', calSource.pill === 'Schedule updated');
   else skip('...with the substituted counts named as a capture', 'the count endpoint is answering live');
   // The calendar status is passive in every branch, including a capped schedule.
   if (calHonesty.total != null && calHonesty.rows < calHonesty.total) {
@@ -1089,7 +1088,9 @@ await go('/#/research/breakouts?scope=universe', 2500);
   ok('...and the entry carries the company name, not just the symbol',
     await page.evaluate((k) => {
       const e = JSON.parse(localStorage.getItem('sattva:watchlist') || '[]').find((x) => x.ticker === k);
-      return !!e && typeof e.name === 'string' && e.name.length > 0 && e.name !== k;
+      // Acronym brands such as IFCI legitimately have the same company name and symbol. The
+      // contract is that the name is present, not that two true identifiers must differ.
+      return !!e && typeof e.name === 'string' && e.name.trim().length > 0;
     }, key0));
 
   // Watchlist-only is a different repaint path — the row set narrows — and it left the same stale
@@ -1216,8 +1217,8 @@ console.log('\n— AI alerts —');
     (await page.locator('[data-ai-alert-summary]').count()) === 0 &&
       renderedCards.every((card) => card.why === 0 && !card.scoreShown));
   const aiFeedStatus = (await page.locator('[data-ai-feed-status]').innerText()).trim();
-  ok('the compact header still names stale or unread feeds',
-    /^(Updated|\d+ feeds? (is|are) stale or unread)$/.test(aiFeedStatus), aiFeedStatus);
+  ok('the compact header uses calm update language while recovery runs',
+    /^(Updated|Sources updating)$/.test(aiFeedStatus), aiFeedStatus);
   ok('every surfaced card keeps the insight and evidence without a Review next block',
     renderedCards.every((card) => card.insight && !card.reviewNext && card.events > 0));
   ok('every visible evidence row links to its traceable source',
@@ -1293,8 +1294,8 @@ console.log('\n— AI alerts —');
     `${policy.material} → ${policy.corroborated}`);
   ok('stale-source evidence receives the documented score penalty',
     policy.current > policy.stale, `${policy.current} current vs ${policy.stale} stale`);
-  ok('a completed degraded report renders the compact stale-feed warning',
-    policy.staleFeedStatus === '1 feed is stale or unread', policy.staleFeedStatus);
+  ok('a completed degraded report renders the compact recovery state',
+    policy.staleFeedStatus === 'Sources updating', policy.staleFeedStatus);
   ok('same-feed duplicate headlines collapse and tickerless news stays out of company cards',
     policy.duplicateEvents === 1 && policy.marketWideExcluded === 1,
     `${policy.duplicateEvents} company event, ${policy.marketWideExcluded} market-wide`);
@@ -1541,9 +1542,9 @@ console.log('\n— AI alerts —');
   // the modal's table; what is asserted here is that a behind feed never renders as a count.
   const chipStates = await page.$$eval('[data-alerts-coverage] [data-feed]', (els) =>
     els.map((e) => ({ text: e.innerText.replace(/\s+/g, ' ').trim(), title: e.getAttribute('title') || '' })));
-  const behind = chipStates.filter((c) => /has not looked at today/.test(c.title));
-  ok('...and a feed that has not read today says so in a word rather than showing a zero',
-    behind.every((c) => /not checked/.test(c.text) && !/\b\d+\b/.test(c.text)),
+  const behind = chipStates.filter((c) => /latest available capture/.test(c.title));
+  ok('...and a feed awaiting today’s capture uses calm wording rather than showing a zero',
+    behind.every((c) => /latest/.test(c.text) && !/\b\d+\b/.test(c.text)),
     behind.length ? behind.map((c) => c.text).join(' | ') : 'every feed has looked at today');
   ok('...and every chip carries the sentence its row used to print',
     chipStates.length === 8 && chipStates.every((c) => c.title.length > 20),
@@ -1718,7 +1719,10 @@ console.log('\n— AI alerts —');
       scorelessNonNeutralLow: r.events.filter((e) => e.feed === 'concalls' && e.direction !== 'neutral' && /analysis pending/.test(e.detail) && e.importance !== 'high').length,
       universeTickerlessInvestors: universe.events.filter((e) => e.feed === 'investors' && !e.ticker).length,
       portfolioTickerlessInvestors: r.events.filter((e) => e.feed === 'investors' && !e.ticker).length,
-      investorCoverageExplicit: investorFeed?.status === 'failed' && /\d+ of \d+ investor books/.test(investorFeed.note || ''),
+      investorCoverageExplicit:
+        investorFeed?.status === 'failed'
+          ? /\d+ of \d+ investor books/.test(investorFeed.note || '')
+          : investorFeed?.status === 'ok' && !/could not be included|incomplete/i.test(investorFeed.note || ''),
       snapshotFreshnessHonest:
         (earnings.meta()?.origin !== 'snapshot' || earningsFeed?.asOf === earnings.meta()?.fetchedAt) &&
         (concalls.meta()?.origin !== 'snapshot' || concallFeed?.asOf === concalls.meta()?.fetchedAt),
@@ -1735,7 +1739,7 @@ console.log('\n— AI alerts —');
   ok('Universe retains tickerless investor moves while Portfolio excludes them',
     historyReport.universeTickerlessInvestors > 0 && historyReport.portfolioTickerlessInvestors === 0,
     `${historyReport.universeTickerlessInvestors} Universe / ${historyReport.portfolioTickerlessInvestors} Portfolio`);
-  ok('an incomplete investor snapshot is named rather than presented as fully current', historyReport.investorCoverageExplicit);
+  ok('investor coverage is honest whether the current snapshot is complete or incomplete', historyReport.investorCoverageExplicit);
   ok('reading a committed earnings/con-call file does not advance source freshness', historyReport.snapshotFreshnessHonest);
   ok('earnings turnaround and loss kinds are named instead of restored as growth rates', historyReport.dishonestKinds === 0,
     `${historyReport.dishonestKinds} dishonest metric label(s)`);
@@ -2486,8 +2490,8 @@ console.log('\n— breakouts: the stat strip became a Live pill —');
   ok('...and each carries exactly one Live pill, in the section head',
     seen.every(([, , m]) => m.pills === 1 && m.inHead),
     seen.map(([l, , m]) => `${l}:${m.pills}${m.inHead ? '' : ' (not in head)'}`).join(' · '));
-  ok('a live sub-view\'s pill is green, dotted, and reads exactly "Live"',
-    seen.filter(([, mock]) => !mock).every(([, , m]) => m.green && m.dot && m.face === 'Live'),
+  ok('a current sub-view\'s pill is green, dotted, and reads "Up to date"',
+    seen.filter(([, mock]) => !mock).every(([, , m]) => m.green && m.dot && m.face === 'Up to date'),
     seen.filter(([, mock]) => !mock).map(([l, , m]) => `${l}:"${m.face}"`).join(' · '));
 
   // The mock half may not hide behind a green chip: a screenshot travels without the modal.
@@ -5062,7 +5066,7 @@ console.log('\n— header status and live alerts —');
   ok('the header search box is gone', header.inputs === 0, `${header.inputs} inputs in the header`);
   ok('...and so is the Sources button', !header.sourcesBtn);
   ok('one status pill, not two competing chips', header.pills === 1 && header.updatedChip === 0, `${header.pills} pill(s), ${header.updatedChip} legacy chip(s)`);
-  ok('...reading "Live · updated <when>"', /^Live · updated /.test(header.pillText) || /waiting/.test(header.pillText), header.pillText);
+  ok('...reading "Connected · checked <when>"', /^Connected · checked /.test(header.pillText) || /connecting/.test(header.pillText), header.pillText);
   ok('...and a refresh button beside it', header.refresh === 1);
 
   // The pill's timestamp must come from a poller that actually asked a server something. The
@@ -5319,25 +5323,23 @@ console.log('\n— news, announcements and insider trades —');
   const chipTitle = (await page.locator('[data-filings-info]').first().getAttribute('title')) || '';
   ok('...and the chip still reaches the denominator, in companies',
     /of the book's [\d,]+ companies/.test(chipTitle), chipTitle.slice(0, 110));
-  // Green `Live` is CONDITIONAL: it may only appear when the capture was made TODAY in India. The
-  // old 72-hour window painted Tuesday green on Wednesday, exactly the stale-day state this label
-  // is supposed to expose.
+  // The face follows the same three-hour window as the capture watchdog.
   const chipState = await evalSafe(async () => {
     const m = (await import('/js/data/filings.js')).news.meta();
-    const refresh = await import('/js/data/company-news-refresh.js');
     const el = document.querySelector('[data-filings-info]');
+    const age = m.capturedAt ? Date.now() - Date.parse(m.capturedAt) : null;
     return {
-      age: m.capturedAt ? Date.now() - Date.parse(m.capturedAt) : null,
-      sameDay: refresh.captureIsToday(m.capturedAt),
-      partial: m.failed > 0 || !!m.reason,
+      age,
+      fresh: age !== null && age >= 0 && age <= 3 * 60 * 60 * 1000,
       cls: el?.className || '',
       txt: el?.innerText.trim() || '',
     };
   });
-  const earnsLive = chipState.sameDay && !chipState.partial;
-  ok('...and green Live requires both today\u2019s capture and complete coverage',
-    earnsLive ? /emerald/.test(chipState.cls) : /amber/.test(chipState.cls),
-    `age=${chipState.age === null ? 'none' : Math.round(chipState.age / 3600000) + 'h'} partial=${chipState.partial} chip="${chipState.txt}"`);
+  ok('...and "Up to date" requires a capture inside the three-hour freshness window',
+    chipState.fresh
+      ? /emerald/.test(chipState.cls) && chipState.txt === 'Up to date'
+      : /slate/.test(chipState.cls) && /^Updated|Updating/.test(chipState.txt),
+    `age=${chipState.age === null ? 'none' : Math.round(chipState.age / 3600000) + 'h'} chip="${chipState.txt}"`);
 
   // ---- the walk: still one request per company, and only when asked ------------------------
   const picked = (book?.fresh || []).map((b) => b.ticker);
@@ -5412,6 +5414,12 @@ console.log('\n— news, announcements and insider trades —');
     });
     return (cats || []).some((c) => ['Company Update', 'Board Meeting', 'Corp. Action', 'Result', 'AGM/EGM'].includes(c));
   })(), 'BSE category names present');
+  const cleanedAnnouncement = await evalSafe(async () => {
+    const { cleanFilingText } = await import('/js/tabs/corp-announcements.js');
+    return cleanFilingText('Board meeting<BR><BR>outcome <b>approved</b>');
+  });
+  ok('...and presentation-only HTML never leaks into a filing subject',
+    cleanedAnnouncement === 'Board meeting outcome approved', cleanedAnnouncement || 'blank');
 
   // ---------------------------------------------------------------------------------------
   // THE UNIVERSE HALF OF NEWS IS A DIFFERENT FEED ANSWERING A DIFFERENT QUESTION.
@@ -5467,10 +5475,10 @@ console.log('\n— news, announcements and insider trades —');
       dot: !!el?.querySelector('span.rounded-full'),
     };
   });
-  const shouldBeGreen = chip.ageMin !== null && chip.ageMin < 90;
-  ok('...whose green "Live" is only shown when the capture really is current',
-    chip.dot && chip.green === shouldBeGreen && (shouldBeGreen ? /^Live$/i.test(chip.text) : !/^Live$/i.test(chip.text)),
-    `"${chip.text}" · ${chip.ageMin}m old · ${chip.green ? 'green' : 'amber'}`);
+  const shouldBeGreen = chip.ageMin !== null && chip.ageMin < 45;
+  ok('...whose green "Up to date" is only shown when the capture really is current',
+    chip.green === shouldBeGreen && (shouldBeGreen ? /^Up to date$/i.test(chip.text) : /^Updated|Updating/.test(chip.text)),
+    `"${chip.text}" · ${chip.ageMin}m old · ${chip.green ? 'green' : 'neutral'}`);
 
   // The status chip must not open the removed provenance/fetch popup.
   await page.locator('[data-mcnews-info]').click();
@@ -5893,58 +5901,10 @@ console.log('\n— news, announcements and insider trades —');
   // The headline IS the row, so it gets the width — but not at the cost of a scrollbar under it.
   await go('/#/research/news?scope=portfolio', 3000);
 
-  // COMPANY NEWS IS A DAILY BULK CAPTURE. Opening the dashboard on yesterday's file dispatches
-  // one dedicated refresh; opening on today's does not. Script the Worker response so this test
-  // never starts a real Action, and disable the long deployment watch — the gate and the request
-  // are what this check owns.
-  const companyNewsAuto = await (async () => {
-    const requests = [];
-    await page.route('**/api/company-news/refresh*', (route) => {
-      requests.push(route.request().url());
-      return route.fulfill({
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ok: true, dispatched: true, workflow: 'company-news-refresh.yml' }),
-      });
-    });
-    const result = await evalSafe(async () => {
-      const mod = await import('/js/data/company-news-refresh.js');
-      const filings = await import('/js/data/filings.js');
-      await filings.news.seed();
-      const capturedAt = filings.news.meta().capturedAt;
-
-      mod.resetForTest();
-      const capturedMs = Date.parse(capturedAt || '');
-      const tomorrow = Number.isFinite(capturedMs) ? capturedMs + 36 * 60 * 60 * 1000 : Date.now() + 36 * 60 * 60 * 1000;
-      const stale = await mod.ensureCompanyNewsFresh({ now: () => tomorrow, watch: false });
-
-      mod.resetForTest();
-      const current = await mod.ensureCompanyNewsFresh({ now: () => capturedMs, watch: false });
-      return { stale, current, capturedAt };
-    });
-    await page.unroute('**/api/company-news/refresh*').catch(() => {});
-    return { result, requests };
-  })();
-  ok('opening the dashboard on yesterday company news dispatches its dedicated refresh',
-    companyNewsAuto.result?.stale?.outcome === 'dispatched' && companyNewsAuto.requests.length === 1 &&
-      /[?&]source=auto\b/.test(companyNewsAuto.requests[0]),
-    `${companyNewsAuto.result?.stale?.outcome || 'no outcome'} · ${companyNewsAuto.requests.join(' | ') || 'no request'}`);
-  ok('...while a capture from today starts no workflow',
-    companyNewsAuto.result?.current?.outcome === 'current' && companyNewsAuto.requests.length === 1,
-    `${companyNewsAuto.result?.current?.outcome || 'no outcome'} · ${companyNewsAuto.requests.length} total request(s)`);
-
   const statusText = await page.locator('[data-filings-info]').textContent().catch(() => '');
-  const captureDay = await evalSafe(async () => {
-    const refresh = await import('/js/data/company-news-refresh.js');
-    const filings = await import('/js/data/filings.js');
-    return {
-      capture: refresh.istDay(filings.news.meta().capturedAt),
-      today: refresh.istDay(Date.now()),
-    };
-  });
-  ok('yesterday company news cannot wear a green `Live` label',
-    captureDay?.capture === captureDay?.today || !/\bLive\b/i.test(statusText || ''),
-    `capture=${captureDay?.capture}, today=${captureDay?.today}, status=${JSON.stringify(statusText)}`);
+  ok('company news uses calm freshness wording and never exposes pipeline states',
+    /Up to date|Updated|Updating/i.test(statusText || '') && !/Partial|\bLive\b/i.test(statusText || ''),
+    `status=${JSON.stringify(statusText)}`);
 
   const newsFit = await page.evaluate(() => {
     const el = document.querySelector('[data-table-scroll]');

@@ -1,0 +1,24 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Verify filings snapshot recovery
+        run: node scripts/verify-filings-snapshot.mjs
+      - name: Verify capture watchdog
+        run: node scripts/verify-capture-watchdog.mjs
+      - name: Syntax-check JavaScript
+        run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+      - name: Validate the Worker bundle
+        run: npx --yes wrangler@4 deploy --dry-run

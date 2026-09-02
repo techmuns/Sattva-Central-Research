@@ -9,6 +9,9 @@ name: Company news refresh
 on:
   schedule:
     - cron: "30 3 * * 1-5"
+    # Evening top-up: 13:30 UTC = 19:00 IST. The morning capture cannot cover stories published
+    # through the trading day; the demand-driven watchdog remains the fallback when GitHub is late.
+    - cron: "30 13 * * 1-5"
   workflow_dispatch:
     inputs:
       source:

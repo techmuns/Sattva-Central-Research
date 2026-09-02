@@ -1,0 +1,65 @@
+name: Insider trades refresh
+
+# Insider dealing is a per-company source, so the complete universe is captured once and served as
+# one file. The evening schedule includes the trading day's disclosures; opening a dashboard with
+# an older capture dispatches this same job as a demand-driven safety net.
+
+on:
+  schedule:
+    # 13:30 UTC = 19:00 IST, weekdays.
+    - cron: "30 13 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Who asked for this run — auto, button, or manual"
+        required: false
+        default: "manual"
+
+run-name: Insider trades refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
+
+concurrency:
+  group: insider-trades-refresh
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Capture insider trades
+        run: FILINGS_SCOPE=universe node scripts/scrape-filings.mjs insider
+
+      - name: Upload insider-trades data
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: insider-trades-data
+          path: public/data/insider-trades.json
+          if-no-files-found: warn
+
+      - name: Commit insider trades to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/insider-trades.json
+          if git diff --cached --quiet; then
+            echo "No insider-trades changes to commit."
+            exit 0
+          fi
+          git commit -m "Insider trades refresh ($(date -u +'%Y-%m-%d %H:%M') UTC)"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          exit 1

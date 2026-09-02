@@ -24,8 +24,8 @@
 // pipeline that happens to be ours. `dispatchWorkflow` starts a real run on a real runner and
 // makes a real request to Moneycontrol. `latestRun` is a plain read. So:
 //
-//   • NOTHING HERE FIRES ON ITS OWN. No poller, no peek on render. The route is POST-only and is
-//     reached only from a click.
+//   • DISPATCH IS ALWAYS EXPLICIT AND POST-ONLY. A button or the capture watchdog may call it only
+//     after comparing the committed capture timestamp with that source's freshness window.
 //   • A DISPATCH ASKS FIRST WHETHER A RUN IS ALREADY GOING. Their concurrency group would queue a
 //     second one harmlessly, but not asking at all is the version that cannot start a run through
 //     a bug of ours.
@@ -54,6 +54,9 @@
 export const API = 'https://api.github.com';
 export const NEWS_WORKFLOW = 'market-news-refresh.yml';
 export const COMPANY_NEWS_WORKFLOW = 'company-news-refresh.yml';
+export const INSIDER_WORKFLOW = 'insider-trades-refresh.yml';
+export const ANNOUNCEMENTS_WORKFLOW = 'announcements-refresh.yml';
+export const DATA_WORKFLOW = 'technicals-refresh.yml';
 export const DEPLOY_WORKFLOW = 'deploy.yml';
 
 // Six seconds is generous for api.github.com, which answers in well under one when healthy. Two
