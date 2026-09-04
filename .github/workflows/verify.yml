@@ -40,6 +40,8 @@ jobs:
         run: node scripts/verify-capture-watchdog.mjs
       - name: Verify active Family Office holdings sync
         run: node scripts/verify-family-sync.mjs
+      - name: Verify S Screen portfolio mirror safety
+        run: node scripts/verify-screener-watchlist.mjs
       - name: Verify NSE filing history and scoped search
         run: node scripts/verify-nse-history.mjs
       - name: Verify caller-private combined filings

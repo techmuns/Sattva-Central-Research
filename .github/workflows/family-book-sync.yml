@@ -6,6 +6,12 @@ on:
   schedule:
     - cron: "30 0 * * *"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan the S Screen changes without applying them
+        required: false
+        default: false
+        type: boolean
   repository_dispatch:
     types: [family-book-updated]
 concurrency:
@@ -31,6 +37,19 @@ jobs:
         run: node scripts/sync-family-book.mjs
       - name: Verify the sync contract
         run: node scripts/verify-family-sync.mjs
+      - name: Install pinned Screener browser runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/screener-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/screener-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Mirror the live portfolio into the existing S Screen watchlist
+        env:
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          SCREENER_SYNC_DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-browser/node_modules/playwright
+          DEBUG: ""
+          PWDEBUG: ""
+        run: node scripts/sync-screener-watchlist.mjs
       - name: Open or update the fallback snapshot PR
         uses: peter-evans/create-pull-request@v8.1.1
         with:
