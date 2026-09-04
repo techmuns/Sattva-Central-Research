@@ -27,7 +27,7 @@
 import { scoreTable, sectionHead } from '../ui/screener.js';
 import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
-import { formatNumber, formatRelativeTime } from '../core/format.js';
+import { formatNumber } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/daily-alerts.js';
@@ -261,7 +261,7 @@ function paint(ctx) {
         book: coverage.meta(),
       })}${historyPill(m)}</div>`,
     })}
-    ${coveragePanel(shown, day, ctx.scope)}
+    ${coveragePanel(shown)}
     ${table.html}`;
 
   table.wire(ctx.root);
@@ -367,7 +367,7 @@ function historyPill(historyMeta) {
 // The coverage panel — one row per feed
 // ---------------------------------------------------------------------------------------
 
-function coveragePanel(feeds, day, scope) {
+function coveragePanel(feeds) {
   if (!feeds.length) {
     return `<div class="mb-5 text-xs text-slate-400" data-alerts-coverage>Reading the feeds…</div>`;
   }
@@ -393,18 +393,11 @@ function coveragePanel(feeds, day, scope) {
 
   for (const f of feeds) {
     const st = feedState(f);
+    const detail = st.short(f);
     const on = !!picked && picked.has(f.id);
-    // THE TOOLTIP CARRIES THE SENTENCE THE ROW USED TO PRINT, and the modal carries all of it in a
-    // table. Compressing the panel may not compress what it is accountable for.
-    const title = [
-      `${f.label}: ${st.label}.`,
-      `${formatNumber(f.count || 0)} retained event${f.count === 1 ? '' : 's'}; ${formatNumber(f.todayCount || 0)} on ${day}.`,
-      f.note || f.what,
-      f.asOf ? `Last read ${formatRelativeTime(f.asOf)}.` : null,
-      'Tick to show only the ticked feeds.',
-    ]
-      .filter(Boolean)
-      .join(' ');
+    // Feed health remains operational metadata. The customer-facing control stays focused on its
+    // one job: selecting a source. Only a confirmed, current count is shown beside the source name.
+    const title = `Filter alerts to ${f.label}.`;
     chips.push(`
       <button type="button" data-feed-toggle="${escapeHtml(f.id)}" data-feed="${escapeHtml(f.id)}"
         role="checkbox" aria-checked="${on}" title="${escapeHtml(title)}"
@@ -412,7 +405,7 @@ function coveragePanel(feeds, day, scope) {
         ${box(on)}
         <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full ${st.dot}"></span>
         <span class="font-semibold ${on || allOn ? 'text-slate-700' : 'text-slate-400'}">${escapeHtml(f.label)}</span>
-        <span class="font-semibold ${st.text}">${escapeHtml(st.short(f))}</span>
+        ${detail ? `<span class="font-semibold ${st.text}">${escapeHtml(detail)}</span>` : ''}
       </button>`);
   }
 
@@ -507,39 +500,36 @@ function wireFeedFilter(ctx, available) {
 }
 
 /**
- * The four states a feed can be in, kept apart deliberately.
+ * The feed states remain distinct for internal styling and monitoring.
  *
  * EXPORTED BECAUSE IT IS THE RULE, not because a tab needs it — the same reason `moveSeverity` is.
  * The branch that matters most here is the one that must never print a number, and it can only be
  * reached on a day a feed is actually behind, which most days it is not: asserting it through the
  * rendered panel passes vacuously and proves nothing. The suite calls this directly instead.
  *
- * "Behind" and "failed" are different things an operator does different things about, and neither
- * is "no events" — collapsing any two of them would throw away the only information that makes the
- * panel worth having.
+ * Customer-facing chips intentionally omit health jargon. A factual count appears only after a
+ * feed has confirmed the selected day; every other state keeps the source name uncluttered.
  */
 export function feedState(f) {
-  // `label` is the full wording carried by the chip title. `short` is what the
-  // compact chip shows, and the two must agree: a chip that reads `0` under a feed whose state is
-  // "has not looked at today" would be the exact confusion this panel exists to prevent — a count
-  // is a finished answer and that state is the absence of one, so it prints a WORD, never a number.
+  // `label` remains available to operational callers. `short` is customer-facing: it is empty for
+  // health states and numeric only when the count is a confirmed reading for the selected day.
   const n = (x) => formatNumber(x || 0);
   // PENDING IS ITS OWN STATE. A feed nobody has heard from yet must never be drawn as "nothing
   // today" — that is a finished answer, and this is the absence of one.
   if (f.status === 'pending') {
-    return { label: 'reading…', short: () => 'reading…', dot: 'bg-slate-300 animate-pulse', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-400' };
+    return { label: 'reading…', short: () => '', dot: 'bg-slate-300 animate-pulse', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-400' };
   }
   if (f.status === 'failed') {
-    return { label: 'read failed or incomplete; retained records shown', short: () => 'incomplete', dot: 'bg-amber-500', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
+    return { label: 'read failed or incomplete; retained records shown', short: () => '', dot: 'bg-amber-500', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   if (f.status === 'on-demand') {
-    return { label: 'on-demand coverage only; not a complete source scan', short: () => 'on-demand', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
+    return { label: 'on-demand coverage only; not a complete source scan', short: () => '', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   if (f.scopable === false) {
-    return { label: 'not in this scope', short: () => 'not in scope', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-slate-50/50', text: 'text-slate-400' };
+    return { label: 'not in this scope', short: () => '', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-slate-50/50', text: 'text-slate-400' };
   }
   if (f.reachesToday !== true) {
-    return { label: 'latest available capture; not confirmed current', short: () => 'stale / unknown', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
+    return { label: 'latest available capture; not confirmed current', short: () => '', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   const todayCount = f.todayCount ?? f.count ?? 0;
   if (todayCount) {
@@ -750,7 +740,7 @@ const feedOptions = (events) => {
  */
 function emptyMessageFor(scope, day) {
   const where = scope === 'universe' ? 'across the market' : `for your ${scopeLabel(scope).toLowerCase()}`;
-  return `No loaded event ${where} matches the current search, feed, direction, importance and date filters through ${day}. The feed panel above still says which sources have checked today.`;
+  return `No loaded event ${where} matches the current search, feed, direction, importance and date filters through ${day}. Use the source filters above to adjust the view.`;
 }
 
 // ---------------------------------------------------------------------------------------
