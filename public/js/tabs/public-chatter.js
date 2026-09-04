@@ -1,6 +1,7 @@
 // tabs/public-chatter.js — retail chatter across ValuePickr, TradingQnA and Google News.
 //
-// ONE PAGE, TWO SIMPLE IN-PAGE TABS, ONE PROVENANCE.
+// The forum coverage tabs retain their provenance. X Chatter is a separately requested
+// portfolio search feed, independent of the publisher-account X posts in News.
 //   Covered companies    entries whose slug resolves to an NSE symbol we cover. Scope-aware.
 //   Not in our coverage  everything else, whole, in both scopes.
 //
@@ -27,13 +28,14 @@ import { formatDate, formatNumber, formatRelativeTime, formatTime } from '../cor
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
 import * as coverage from '../data/coverage.js';
+import { mountXChatter } from './x-chatter-view.js';
+import { navigate, parseHash } from '../core/router.js';
 
 export const meta = {
   id: 'public-chatter',
   title: 'Public Chatter',
   subtitle: 'What retail is actually discussing, across ValuePickr, TradingQnA and Google News.',
-  // No shell sub-view picker: Coverage and Not in coverage are simple tabs inside this page.
-  // They remain one feed and one provenance.
+  // These are in-page tabs; X collection is independent of the forum coverage feed.
   subviews: [],
 };
 
@@ -52,6 +54,7 @@ let openedFor = null;
 
 const SECTIONS = [
   { id: 'coverage', label: 'Coverage' },
+  { id: 'x-chatter', label: 'X Chatter' },
   { id: 'not-in-coverage', label: 'Not in coverage' },
 ];
 
@@ -62,6 +65,7 @@ const SECTIONS = [
 export function render(ctx) {
   const token = ++renderToken;
   cleanup();
+  if (SECTIONS.some((s) => s.id === ctx?.params?.section)) chatterSection = ctx.params.section;
 
   // A COMPANY DEEP-LINK, USUALLY FROM A GENERAL ALERTS CHATTER ROW. Seed the covered table's search
   // to that company and switch to the Coverage section (a resolved ticker always lives there), so
@@ -70,13 +74,14 @@ export function render(ctx) {
   // leave whatever the reader has since typed alone, exactly as companySeededView does elsewhere.
   const requestedCompany = String(ctx?.params?.company || '').trim().toUpperCase();
   const wantMentions = ctx?.params?.open === 'mentions';
-  if (requestedCompany && requestedCompany !== routeCompany) {
+  if (requestedCompany && requestedCompany !== routeCompany && ctx?.params?.section !== 'x-chatter') {
     chatterSection = 'coverage';
     tableViews = { covered: { q: requestedCompany }, other: tableViews.other };
   }
   routeCompany = requestedCompany || null;
 
-  ctx.root.innerHTML = loadingHtml();
+  // Both feeds have an independent availability state. Tabs remain reachable if either is down.
+  paint(ctx);
 
   // PAINT ON THE CHATTER FEED ALONE. This used to await the technicals feed as well, which the tab
   // never reads — it is needed only when somebody clicks a row and opens the drill. That made first
@@ -87,7 +92,7 @@ export function render(ctx) {
     .catch(() => null)
     .then(() => {
       if (token !== renderToken) return;
-      paint(ctx);
+      if (chatterSection !== 'x-chatter') paint(ctx);
       // OPEN THE MENTIONS POPUP THE ALERT ASKED FOR — once per deep-link. The chatter alert's whole
       // content is this popup, not the row, so a click that only landed on the tab left the reader
       // to find the company and click again. Guarded on `openedFor` so a live repaint or a scope
@@ -103,7 +108,7 @@ export function render(ctx) {
       disposers.push(chatter.startLive(ctx.live));
       disposers.push(
         chatter.onChange(() => {
-          if (token === renderToken) paint(ctx);
+          if (token === renderToken && chatterSection !== 'x-chatter') paint(ctx);
         }),
       );
     });
@@ -142,25 +147,6 @@ function clearPaint() {
   }
 }
 
-/**
- * The first paint, before the feed has answered.
- *
- * It carries the section head, not just a spinner. This tab is the one whose data comes from
- * ANOTHER ORIGIN, so its first paint waits on a cross-origin round trip rather than a local file —
- * long enough that a bare "Loading…" is what a reader actually sees on arrival, and long enough
- * that a route check with a short settle found an all-but-empty panel. Every other tab renders its
- * chrome immediately; this one now does too, and only the body arrives late.
- */
-const loadingHtml = () => `
-  ${sectionHead({
-    title: 'Public Chatter',
-    description:
-      'Mention counts and sentiment across ValuePickr, TradingQnA and Google News, computed by SentimentDash over a rolling 30 days. The counts and the sentiment are theirs; the NSE symbol is ours.',
-  })}
-  <div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-slate-100">
-    Loading chatter…
-  </div>`;
-
 // ---------------------------------------------------------------------------------------
 // Paint
 // ---------------------------------------------------------------------------------------
@@ -172,13 +158,6 @@ function paint(ctx) {
   // A failed read is not an empty result. `unavailablePanel` names the state and, where an
   // operator can fix it, the command that does — the same split the Superstar Investors view
   // makes between "configure this" and "wait for this".
-  if (!m?.ok) {
-    ctx.root.innerHTML = `
-      ${sectionHead({ title: 'Public Chatter', description: meta.subtitle })}
-      ${unavailablePanel(m?.reason, m?.url)}`;
-    return;
-  }
-
   const covered = chatter.forScope(ctx.scope);
   const other = chatter.uncovered();
   const activeSection = SECTIONS.some((item) => item.id === chatterSection) ? chatterSection : SECTIONS[0].id;
@@ -188,15 +167,20 @@ function paint(ctx) {
     onSelect: (section) => {
       if (section === chatterSection) return;
       chatterSection = section;
+      const route = parseHash();
+      navigate({ ...route, params: { ...route.params, section, company: null, open: null } }, { replace: true });
+      ctx.params = { ...ctx.params, section, company: null, open: null };
       paint(ctx);
       ctx.root.querySelector('[data-chatter-section-tabs] [role="tab"][aria-selected="true"]')?.focus();
     },
   });
-  const cards = activeSection === 'coverage' ? buildTopCards(covered) : null;
-  const coveredTable = activeSection === 'coverage' ? buildCoveredTable(covered) : null;
-  const otherTable = activeSection === 'not-in-coverage' ? buildOtherTable(other) : null;
+  const cards = m?.ok && activeSection === 'coverage' ? buildTopCards(covered) : null;
+  const coveredTable = m?.ok && activeSection === 'coverage' ? buildCoveredTable(covered) : null;
+  const otherTable = m?.ok && activeSection === 'not-in-coverage' ? buildOtherTable(other) : null;
   const panel =
-    activeSection === 'coverage'
+    activeSection === 'x-chatter' ? '<div data-x-chatter-view></div>'
+      : !m?.ok ? unavailablePanel(m?.reason, m?.url)
+      : activeSection === 'coverage'
       ? `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : emptyCovered(ctx.scope)}`
       : `${sectionHead({
           title: 'Not in our coverage',
@@ -207,18 +191,19 @@ function paint(ctx) {
   ctx.root.innerHTML = `
     ${sectionHead({
       title: 'Public Chatter',
-      description: `Mention counts and sentiment over a rolling ${escapeHtml(m.window)}, computed by SentimentDash across ValuePickr, TradingQnA and Google News. The counts and the sentiment are theirs; the NSE symbol is ours.`,
-      meta: `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: covered.length, noun: `mentioned · ${m.window}`, book: coverage.meta() })}</div>`,
+      description: activeSection === 'x-chatter' ? 'Company searches across public X posts, including individual accounts. Each post keeps its author, publication date and original link.' : m?.ok ? `Mention counts and sentiment over a rolling ${escapeHtml(m.window)}, computed by SentimentDash across ValuePickr, TradingQnA and Google News. The counts and the sentiment are theirs; the NSE symbol is ours.` : meta.subtitle,
+      meta: activeSection === 'x-chatter' || !m?.ok ? '' : `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: covered.length, noun: `mentioned · ${m.window}`, book: coverage.meta() })}</div>`,
     })}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-chatter-section-tabs>
       ${sectionTabs.html}
     </div>
     <div role="tabpanel" aria-label="${escapeHtml(SECTIONS.find((item) => item.id === activeSection)?.label || '')}" data-chatter-panel="${escapeHtml(activeSection)}">
       ${panel}
-      ${chatterFootnotes(m)}
+      ${activeSection !== 'x-chatter' && m?.ok ? chatterFootnotes(m) : ''}
     </div>`;
 
   paintDisposers.push(sectionTabs.wire(ctx.root.querySelector('[data-chatter-section-tabs]')));
+  if (activeSection === 'x-chatter') paintDisposers.push(mountXChatter(ctx.root.querySelector('[data-x-chatter-view]')));
   if (cards) cards.wire(ctx.root);
   if (coveredTable) paintDisposers.push(coveredTable.wire(ctx.root));
   if (otherTable) paintDisposers.push(otherTable.wire(ctx.root));

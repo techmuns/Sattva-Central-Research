@@ -3580,3 +3580,21 @@ the Super Investors tab's ninety-one-book revalidation walk.
 
 For anything that should update without a page reload, register a poller with
 `live.register(id, { intervalMs, fetcher })` instead of adding it to `DATA_SOURCES`.
+# X Chatter: bounded portfolio searches
+
+`Public Chatter → X Chatter` reads `GET /api/x-chatter`, a cached view of official X Recent Search
+results. It is independent of SentimentDash and the publisher-account source in News. The payload
+contains `source: "X API"`, collection `status`, `running`, `version`, `asOf`, `lastSuccessAt`,
+`perCompany`, `intervalHours`, `dailyLimit`, `reservedToday`, `companies`, paged `posts`, `total`,
+`offset` and `hasMore`. Company rows retain key/name/ticker/query, status, checkedAt/expiresAt, count
+and partial. Posts retain ID, author name/username, original text, createdAt, original URL, media,
+edit IDs and matched company keys, with capture/expiry times. These are query matches, not verified
+issuer facts. The request date is not a capture time or an event date.
+
+There is no committed post snapshot, browser persistent text cache, export of raw text, or paid
+read triggered by a viewer. A shared Durable Object performs bounded, operator-enabled API reads.
+Default state is disabled, zero allowance, awaiting API configuration. Every portfolio holding is
+listed by name, including those without an NSE ticker; local additions stay pending until present
+in the server book. Missing, failed, expired and limited searches are distinct from an empty
+successful response. See [X-CHATTER.md](X-CHATTER.md) for setup, limits, budget arithmetic,
+retention/removal, authentication prerequisites and source references.

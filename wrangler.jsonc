@@ -8,6 +8,8 @@
   "compatibility_date": "2026-05-23",
   "main": "worker/index.js",
   "assets": { "directory": "./public", "binding": "ASSETS" },
+  "durable_objects": { "bindings": [{ "name": "X_CHATTER", "class_name": "XChatterPortfolio" }] },
+  "migrations": [{ "tag": "x-chatter-v1", "new_sqlite_classes": ["XChatterPortfolio"] }],
 
   // WHICH REPOSITORY THE NEWS REFRESH BUTTON MAY START A RUN IN.
   //
@@ -22,6 +24,13 @@
   // "Actions: read and write". Nothing else — it does not need contents, and a token that can
   // write code is not the token to hand an unauthenticated route.
   "vars": {
+    // Inert until an operator approves the API use case, credits, pilot and spend cap.
+    // Secrets: X_BEARER_TOKEN and X_CHATTER_OPERATOR_TOKEN (32+ random characters).
+    "X_CHATTER_ENABLED": "false",
+    "X_CHATTER_DAILY_POST_LIMIT": "0",
+    "X_CHATTER_POSTS_PER_COMPANY": "20",
+    "X_CHATTER_INTERVAL_HOURS": "12",
+    "X_CHATTER_COMPANIES": "",
     "GH_REPO": "techmuns/Sattva-Central-Research",
     "GH_REF": "main",
 
