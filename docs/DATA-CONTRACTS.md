@@ -3554,18 +3554,22 @@ The four forms are `all`, `concalls`, `annual_report` and `earnings_report`. Tic
 uppercased and validated. Authentication uses the existing Worker `MUNS_TOKEN`, or the forwarded
 host session token when that secret is absent; `MUNS_BASE` can redirect local tests.
 
-Successful responses have `ok`, `ticker`, `form`, `source`, `count`, `documents`, `skipped` and
-`fetchedAt`. Each document contains `ticker`, `form` (nullable), `title`, `date` (nullable source
+Successful responses have `ok`, `ticker`, `form`, `source`, `count`, `documents`, `skipped`,
+`unavailableLinks`, bounded `unreadableShapes` field/type diagnostics and `fetchedAt`.
+Each document contains `ticker`, `form` (nullable), `title`, `date` (nullable source
 text), `url` and `source`. The parser accepts link records, document arrays and grouped/wrapped
 records. Only HTTP(S) URLs without embedded credentials become links. Repeated form/URL pairs
 collapse; original links and period labels are retained. Unreadable entries produce a visible
-partial-response warning. An unfamiliar or error payload fails instead of becoming an empty list.
+partial-response warning. Null document slots are counted separately as source-unavailable links.
+An unfamiliar or error payload fails instead of becoming an empty list.
 
-The supplied contract and public OpenAPI do **not** define a concrete response schema. The parser
-is verified against fixtures; an authenticated upstream sample must still be checked when a
-session token is available. No test queries production. Successful responses are edge-cached for
-15 minutes, failures for 15 seconds, with ticker and form in the cache key. Upstream reads have
-the existing bounded timeout/retry policy plus a 4 MB response limit.
+The supplied contract and public OpenAPI do **not** define a concrete response schema. Local tests
+use fixtures. Authenticated reads through the branch preview on 4 September 2026 verified all four
+forms for RELIANCE: 18 concall links, 15 annual reports and 12 earnings reports; concalls also had
+28 null document slots. Links retain the source's original target, which can be a report page
+rather than a direct PDF. Successful responses are edge-cached for 15 minutes, failures for
+15 seconds, with ticker, form and normalized-schema version in the cache key. Upstream reads
+have the existing bounded timeout/retry policy plus a 4 MB response limit.
 
 The browser merges document links into a last-good device copy for each ticker/form. A failed
 refresh labels that copy stale and shows the error; an empty later response does not erase known

@@ -22,6 +22,11 @@ assert.equal(normaliseDomesticFilings([fixture.data.concalls[0], fixture.data.co
 assert.throws(() => normaliseDomesticFilings({ message: 'Server failed' }, 'TEST'), /unfamiliar/);
 assert.throws(() => normaliseDomesticFilings({ data: { unknown: true } }, 'TEST'), /unfamiliar/);
 assert.throws(() => normaliseDomesticFilings({ data: null }, 'TEST'), /unfamiliar/);
+const missingTranscript = normaliseDomesticFilings({ concalls: [{ date: 'Jan 2020', transcript: null }, { date: 'Jul 2026', transcript: 'https://example.com/call.pdf' }] }, 'RELIANCE');
+assert.equal(missingTranscript.documents.length, 1);
+assert.equal(missingTranscript.unavailableLinks, 1, 'null source slots are distinct from parser failures');
+assert.equal(missingTranscript.skipped, 0);
+assert.throws(() => normaliseDomesticFilings({ concalls: null }, 'TEST'), /unfamiliar/);
 assert.throws(() => normaliseDomesticFilings({ success: false, data: [] }, 'TEST'), /error response/);
 const partial = normaliseDomesticFilings([...fixture.data.concalls, { link: 'javascript:alert(1)' }, { unknown: true }], 'TEST', 'concalls');
 assert.equal(partial.documents.length, 1);

@@ -14,6 +14,7 @@ export function documentUrl(value) {
 const keyOf = (value) => String(value).toLowerCase().replace(/[^a-z0-9]/g, '');
 const forms = { concalls: 'concalls', concall: 'concalls', transcripts: 'concalls', transcript: 'concalls',
   annualreport: 'annual_report', annualreports: 'annual_report', earningsreport: 'earnings_report', earningsreports: 'earnings_report', results: 'earnings_report' };
+const linkKeys = ['url', 'link', 'href', 'pdf', 'pdfurl', 'documenturl', 'attachment', 'downloadurl', 'transcripturl', 'reporturl'];
 const pick = (row, keys) => Object.entries(row).find(([key, value]) => keys.includes(keyOf(key)) && typeof value === 'string' && value.trim())?.[1] || null;
 
 /** Accept link records, grouped arrays, and wrappers; never turn an unknown/error object into no filings. */
@@ -22,6 +23,7 @@ export function normaliseDomesticFilings(body, ticker, requestedForm = 'all') {
   const seen = new Set();
   let recognized = false;
   let skipped = 0;
+  let unavailableLinks = 0;
   const unreadableShapes = new Map();
   function skip(value) {
     skipped++;
@@ -65,7 +67,12 @@ export function normaliseDomesticFilings(body, ticker, requestedForm = 'all') {
     let handled = false;
     for (const [key, item] of Object.entries(value)) {
       const name = keyOf(key);
-      if (['url', 'link', 'href', 'pdf', 'pdfurl', 'documenturl', 'attachment', 'downloadurl', 'transcripturl', 'reporturl'].includes(name) && typeof item === 'string') {
+      // The live Screener response lists historical periods with a null transcript slot.
+      // Preserve that availability count separately from a record the parser cannot understand.
+      if ((forms[name] || linkKeys.includes(name)) && item === null) {
+        handled = true;
+        unavailableLinks++;
+      } else if (linkKeys.includes(name) && typeof item === 'string') {
         recognized = handled = true;
         add(item, next);
       } else if (forms[name] || ['data', 'result', 'documents', 'filings', 'items', 'reports'].includes(name)) {
@@ -77,7 +84,7 @@ export function normaliseDomesticFilings(body, ticker, requestedForm = 'all') {
   }
   walk(body);
   if (!recognized || (skipped && !documents.length)) throw new Error('The filings service returned an unfamiliar document format; no empty result has been assumed.');
-  return { documents, skipped, unreadableShapes: [...unreadableShapes.values()] };
+  return { documents, skipped, unavailableLinks, unreadableShapes: [...unreadableShapes.values()] };
 }
 
 export function domesticFilingsHref(ticker, { form = 'all', scope = 'universe' } = {}) {

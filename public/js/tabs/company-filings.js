@@ -57,7 +57,8 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
       if (disposed || active !== controller) return;
       status.textContent = `${result.documents.length} retained documents for ${ticker}. ` +
         (result.stale ? `Showing the saved copy. Refresh failed: ${result.error}` : result.fetchedAt ? `Source checked ${new Date(result.fetchedAt).toLocaleString()}.` : 'Source check time unavailable.') +
-        (result.skipped ? ` ${result.skipped} entries could not be read; this response may be incomplete.` : '');
+        (result.skipped ? ` ${result.skipped} entries could not be read; this response may be incomplete.` : '') +
+        (result.unavailableLinks ? ` The source lists ${result.unavailableLinks} unavailable document links.` : '');
       const table = scoreTable({
         rows: result.documents, key: (r) => `${r.form}|${r.url}`, name: (r) => r.title, nameLabel: 'Document',
         watchKey: (r) => r.ticker, watchName: (r) => companies.find((c) => c.ticker === r.ticker)?.name || r.ticker,

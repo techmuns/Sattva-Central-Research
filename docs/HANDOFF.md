@@ -1069,9 +1069,10 @@ the single place a gap is written down. The ones that matter most:
 
 - **Analyst consensus and structured financial history are not connected.** Earnings Surprise is
   unavailable. Domestic company filings supply document links, not the missing scoring inputs.
-- **Domestic filings needs an authenticated response-schema check.** The request contract is
-  documented, but OpenAPI does not specify the returned fields. Local fixture tests cover the
-  accepted link/group/wrapper shapes; an unfamiliar response fails visibly.
+- **Domestic filings can list periods without document links.** Preview reads verified all four
+  forms against the authenticated service. Null source slots are shown as unavailable links;
+  genuinely unfamiliar entries still trigger a partial-response warning. Source links can open
+  report pages rather than direct PDFs; the dashboard does not extract their contents.
 - **The live earnings feed is an undocumented third-party API.** It is stable-shaped, CORS-open, has
   no auth and no bot wall, and `worker/mc.mjs` validates the payload's own header block so a column
   insertion fails loudly rather than shifting every field. But it can change without notice; the

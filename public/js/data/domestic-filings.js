@@ -27,7 +27,7 @@ export async function loadDomesticFilings(ticker, form = 'all', { signal } = {})
       if (url) documents.set(`${row.form || ''}|${url}`, { ...row, ticker: t, url });
     }
     if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
-    const result = { ticker: t, form, documents: [...documents.values()], fetchedAt: body.fetchedAt || null, skipped: body.skipped || 0, stale: false };
+    const result = { ticker: t, form, documents: [...documents.values()], fetchedAt: body.fetchedAt || null, skipped: body.skipped || 0, unavailableLinks: body.unavailableLinks || 0, stale: false };
     await writeEntry(key, { value: result });
     loaded.set(key, result);
     return result;
