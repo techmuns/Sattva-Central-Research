@@ -223,6 +223,9 @@ test('workflow is incremental every 15 minutes and audits the full history daily
   assert.match(collector, /number === 1 \? SCREENER_MARKET_UPCOMING_URL : `\$\{SCREENER_MARKET_UPCOMING_URL\}\?p=\$\{number\}`/);
   assert.match(collector, /await page\.waitForTimeout\(full \? 5000 : 750\)/);
   assert.match(collector, /upcomingCollected\.length !== upcomingFirst\.publishedTotal/);
+  assert.match(collector, /const readPortfolioUpcoming = async/);
+  assert.match(collector, /failureFeed = 'portfolio'/);
+  assert.match(collector, /watchlistLink\.count\(\)\) < 1/, 'responsive duplicate links are layout, while the fixed watchlist must still be present');
   assert.match(calendarClient, /const POLL_MS = 60_000/);
   assert.match(calendarClient, /live\.register\(LIVE_ID/);
   assert.match(calendarClient, /const request = current\(\)/, 'the open-tab poll follows the date the reader selected');

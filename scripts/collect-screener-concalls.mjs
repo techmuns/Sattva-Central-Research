@@ -228,20 +228,47 @@ async function main() {
 
   stage = 'portfolio calendar capture';
   const checkedAt = new Date().toISOString();
-  const dashboard = await page.goto(SCREENER_PORTFOLIO_DASHBOARD, { waitUntil: 'domcontentloaded' });
-  const dashboardUrl = new URL(page.url());
-  const watchlistLink = page.locator(`a[href^="/watchlist/${SCREENER_PORTFOLIO_WATCHLIST_ID}/"]`);
-  const namedWatchlist = page.getByText(SCREENER_PORTFOLIO_WATCHLIST_NAME, { exact: true });
-  if (
-    !dashboard?.ok() ||
-    dashboardUrl.origin !== 'https://www.screener.in' ||
-    dashboardUrl.pathname !== `/dash/${SCREENER_PORTFOLIO_WATCHLIST_ID}/` ||
-    (await watchlistLink.count()) !== 1 ||
-    (await namedWatchlist.count()) < 1
-  ) {
-    throw Error('S Screen dashboard identity could not be verified');
-  }
-  const portfolioUpcoming = parseScreenerPortfolioUpcomingPage(await page.content(), checkedAt);
+  // This read follows seven market-calendar pages on a normal run (and the complete document
+  // catalogue on a daily audit). Give the authenticated session a quiet boundary and retry only
+  // this fixed dashboard: a transient refusal or partial render must not discard the two valid
+  // captures already completed, while an identity or shape change must still fail closed.
+  await page.waitForTimeout(2500);
+  const readPortfolioUpcoming = async () => {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const dashboard = await page.goto(SCREENER_PORTFOLIO_DASHBOARD, { waitUntil: 'domcontentloaded' }).catch(() => {
+          throw collectionError('navigation');
+        });
+        const dashboardUrl = new URL(page.url());
+        if (!dashboard?.ok()) throw collectionError('response');
+        if (dashboardUrl.origin !== 'https://www.screener.in' || dashboardUrl.pathname !== `/dash/${SCREENER_PORTFOLIO_WATCHLIST_ID}/`) {
+          throw collectionError('session');
+        }
+        const watchlistLink = page.locator(`a[href^="/watchlist/${SCREENER_PORTFOLIO_WATCHLIST_ID}/"]`);
+        const namedWatchlist = page.getByText(SCREENER_PORTFOLIO_WATCHLIST_NAME, { exact: true });
+        // Screener renders the same fixed watchlist link in both responsive navigation variants.
+        // Require its presence; cardinality is layout, not account identity.
+        if ((await watchlistLink.count()) < 1 || (await namedWatchlist.count()) < 1) throw collectionError('identity');
+        try {
+          return parseScreenerPortfolioUpcomingPage(await page.content(), checkedAt);
+        } catch {
+          throw collectionError('shape');
+        }
+      } catch (error) {
+        if (attempt === 3) {
+          failurePage = 1;
+          failureFeed = 'portfolio';
+          failureCode = ['navigation', 'response', 'session', 'identity', 'shape'].includes(error?.collectionCode)
+            ? error.collectionCode
+            : 'browser';
+          throw error;
+        }
+        await page.waitForTimeout(2500 * attempt);
+      }
+    }
+    throw Error('S Screen dashboard unavailable');
+  };
+  const portfolioUpcoming = await readPortfolioUpcoming();
 
   stage = 'capture validation';
   const current = {
