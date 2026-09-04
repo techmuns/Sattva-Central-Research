@@ -68,29 +68,43 @@ try {
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 });
   assert(Date.now() - reloadedAt < 1500, 'repeat visit paints from the app cache without waiting for the network');
 
-  const tabList = page.locator('[data-tab-list]');
-  const beforeScroll = await tabList.evaluate((node) => node.scrollLeft);
-  await page.locator('[data-tab-scroll="1"]').click();
-  await page.waitForFunction((before) => document.querySelector('[data-tab-list]')?.scrollLeft > before,
-    beforeScroll, { timeout: 500 });
+  const scrollMs = await page.evaluate(async () => {
+    const list = document.querySelector('[data-tab-list]');
+    const before = list.scrollLeft;
+    const started = performance.now();
+    document.querySelector('[data-tab-scroll="1"]').click();
+    while (list.scrollLeft <= before && performance.now() - started < 500) {
+      await new Promise(requestAnimationFrame);
+    }
+    return list.scrollLeft > before ? performance.now() - started : null;
+  });
+  assert(scrollMs != null && scrollMs < 500, 'tab-strip scroll button responds locally');
 
   const tabIds = ['ask-research', 'ai-alerts', 'daily-alerts', 'earnings-hub', 'concall', 'public-chatter',
     'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements', 'nse-filings', 'insider-trades'];
   for (const id of tabIds) {
-    const tabAt = Date.now();
-    await page.locator(`[data-tab-id="${id}"]`).click();
-    await page.waitForFunction((selected) => document.querySelector(`[data-tab-id="${selected}"]`)?.getAttribute('aria-selected') === 'true' &&
-      !!document.querySelector('#content-host')?.firstElementChild, id, { timeout: 500 });
-    assert(Date.now() - tabAt < 500, `${id} opens immediately while revalidation is unavailable`);
+    const tabMs = await page.evaluate(async (selected) => {
+      const started = performance.now();
+      document.querySelector(`[data-tab-id="${selected}"]`).click();
+      const ready = () => document.querySelector(`[data-tab-id="${selected}"]`)?.getAttribute('aria-selected') === 'true' &&
+        !!document.querySelector('#content-host')?.firstElementChild;
+      while (!ready() && performance.now() - started < 500) await new Promise(requestAnimationFrame);
+      return ready() ? performance.now() - started : null;
+    }, id);
+    assert(tabMs != null && tabMs < 500, `${id} opens immediately while revalidation is unavailable`);
   }
 
   await page.locator('[data-tab-id="ai-alerts"]').click();
   await page.getByRole('heading', { name: 'AI Alerts', exact: true }).waitFor({ timeout: 500 });
 
-  const popupAt = Date.now();
-  await page.locator('[data-sources-open]').click();
-  await page.locator('#modal-overlay:not(.hidden)').waitFor({ timeout: 300 });
-  assert(Date.now() - popupAt < 300, 'shared popups open without a network dependency');
+  const popupMs = await page.evaluate(async () => {
+    const started = performance.now();
+    document.querySelector('[data-sources-open]').click();
+    const ready = () => !document.querySelector('#modal-overlay')?.classList.contains('hidden');
+    while (!ready() && performance.now() - started < 300) await new Promise(requestAnimationFrame);
+    return ready() ? performance.now() - started : null;
+  });
+  assert(popupMs != null && popupMs < 300, 'shared popups open without a network dependency');
   await page.locator('[data-modal-close]').first().click();
 
   const restartHits = await page.evaluate(async () => {
