@@ -85,18 +85,18 @@ async function extractRows(page, url) {
 }
 
 async function scrapeSource(page, source, previousMeta, previousIdentities = new Set()) {
-  page.setDefaultTimeout(30_000);
-  page.setDefaultNavigationTimeout(45_000);
   const rows = [];
   let latestDate = null;
   let oldestDate = null;
   let pagesRead = 0;
   let complete = false;
-  let sourceStage = 'page navigation';
+  let sourceStage = 'page setup';
   let currentPage = 0;
   const fallbackBoundary = previousMeta?.coverageFrom || bootstrapFrom;
 
   try {
+    page.setDefaultTimeout(30_000);
+    page.setDefaultNavigationTimeout(45_000);
     for (let pageNumber = 1; pageNumber <= MAX_PAGES; pageNumber++) {
       currentPage = pageNumber;
       const url = pageUrl(source, pageNumber);
@@ -172,6 +172,18 @@ async function scrapeSource(page, source, previousMeta, previousIdentities = new
 let browser;
 let stage = 'credential configuration';
 try {
+  stage = 'prior snapshot indexing';
+  const previous = readPrior();
+  const previousSources = new Map((previous?.sources || []).map((source) => [source.id, source]));
+  const previousRows = flatten(previous);
+  const previousIdentities = new Map(SCREENER_TRADE_SOURCES.map((source) => [source.id, new Set()]));
+  for (const row of previousRows) {
+    const identities = previousIdentities.get(row.sourceId);
+    if (identities) identities.add(insiderTradeIdentity(row));
+  }
+  console.log(`Indexed ${previousRows.length} prior rows for incremental capture.`);
+
+  stage = 'credential configuration';
   let username = process.env.SCREENER_USERNAME;
   let password = process.env.SCREENER_PASSWORD;
   if (!username || !password) throw new Error('missing credentials');
@@ -222,20 +234,14 @@ try {
   await login.close();
 
   stage = 'four-category capture';
-  const previous = readPrior();
-  const previousSources = new Map((previous?.sources || []).map((source) => [source.id, source]));
-  const previousRows = flatten(previous);
   console.log('Authenticated session handed to the four-category capture.');
   // Keep one authenticated listing request in flight at a time. Screener is the source of truth,
   // not a high-throughput API, and concurrent page walks can trip its protective throttling.
   const captures = [];
   for (const source of SCREENER_TRADE_SOURCES) {
-    console.log(`Starting ${source.id} capture.`);
-    const previousIdentities = new Set(
-      previousRows.filter((row) => row.sourceId === source.id).map(insiderTradeIdentity),
-    );
-    console.log(`${source.id}: ${previousIdentities.size} prior event identities loaded.`);
-    captures.push(await scrapeSource(capturePage, source, previousSources.get(source.id), previousIdentities));
+    const identities = previousIdentities.get(source.id);
+    console.log(`Starting ${source.id} capture with ${identities.size} prior event identities.`);
+    captures.push(await scrapeSource(capturePage, source, previousSources.get(source.id), identities));
   }
   await capturePage.close();
 
