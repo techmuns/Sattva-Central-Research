@@ -223,6 +223,7 @@ python3 -m http.server 8080 -d public &
 node scripts/verify-calendar.mjs
 node scripts/verify-research.mjs
 node scripts/verify-ui.mjs
+node scripts/verify-navigation.mjs
 ```
 
 Drives the site with Playwright and walks CLAUDE.md's checklist — every route in both scopes,
@@ -240,4 +241,3 @@ elsewhere) rather than adding an npm dependency.
 | Strong Breakouts | FII Accumulation |
 | --- | --- |
 | ![Strong Breakouts](docs/screenshots/strong-breakouts.png) | ![FII Accumulation](docs/screenshots/fii-accumulation.png) |
-

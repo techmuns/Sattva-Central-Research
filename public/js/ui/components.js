@@ -92,47 +92,137 @@ export function scopeSummary({ scope, count, noun = 'companies', book = null }) 
   return pill({ label: `${label} · ${formatNumber(count)} of ${formatNumber(book.count)} ${noun}`, tone, title: why });
 }
 
-// Horizontal top-level tabs with an animated underline indicator (scaleX-style slide via translateX + width).
-export function tabBar({ tabs, activeId, onSelect }) {
-  // The active indicator is pure CSS (`.tab-btn::after`, defined in index.html): a springy
-  // indigo→purple bar that scales in from the centre. No JS measurement, so nothing can
-  // overflow the viewport when the bar scrolls horizontally on narrow screens.
+// Scrollable tabs with explicit overflow controls and manual keyboard activation.
+export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
+  let list = null;
+  let revealActive = () => {};
   const html = `
-    <div class="scrollbar-thin flex items-center gap-1 overflow-x-auto border-b border-slate-200" role="tablist" data-tab-list>
+    <div class="tab-bar" data-tab-bar>
+      <div class="tab-list" role="tablist" aria-label="${escapeHtml(label)}" data-tab-list>
       ${tabs
         .map(
           (t) => `
         <button type="button" role="tab" data-tab-id="${escapeHtml(t.id)}" aria-selected="${t.id === activeId}"
-          class="tab-btn -mb-px flex-shrink-0 whitespace-nowrap border-b-2 border-transparent px-4 py-2.5 text-sm font-semibold transition-colors ${
-            t.id === activeId ? 'is-active text-indigo-600' : 'text-slate-500 hover:text-slate-700'
-          }">
+          tabindex="${t.id === activeId ? 0 : -1}" class="tab-btn${t.id === activeId ? ' is-active' : ''}">
           ${escapeHtml(t.label)}
         </button>`
         )
         .join('')}
+      </div>
+      <div class="tab-scroll-controls" data-tab-scroll-controls hidden>
+        <button type="button" class="tab-scroll-btn" data-tab-scroll="-1" aria-label="Scroll tabs left" title="Scroll tabs left">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 5-5 5 5 5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+        <button type="button" class="tab-scroll-btn" data-tab-scroll="1" aria-label="Scroll tabs right" title="Scroll tabs right">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      </div>
     </div>`;
 
   function wire(root) {
-    const list = root.querySelector('[data-tab-list]');
+    const bar = root.querySelector('[data-tab-bar]');
+    list = bar.querySelector('[data-tab-list]');
+    const buttons = [...list.querySelectorAll('[data-tab-id]')];
+    const controls = bar.querySelector('[data-tab-scroll-controls]');
+    const previous = bar.querySelector('[data-tab-scroll="-1"]');
+    const next = bar.querySelector('[data-tab-scroll="1"]');
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    let frame = 0;
 
-    list.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-tab-id]');
-      if (btn) onSelect(btn.dataset.tabId);
-    });
+    const scrollTo = (left, animate = true) => list.scrollTo({ left, behavior: animate && !motion.matches ? 'smooth' : 'instant' });
+    const reveal = (button, animate = true) => {
+      if (!button) return;
+      const bounds = list.getBoundingClientRect();
+      const target = button.getBoundingClientRect();
+      // Long labels on small screens take priority over the decorative edge fades.
+      const inset = Math.max(0, Math.min(14, (bounds.width - target.width) / 2));
+      if (target.left < bounds.left + inset) scrollTo(list.scrollLeft + target.left - bounds.left - inset, animate);
+      else if (target.right > bounds.right - inset) scrollTo(list.scrollLeft + target.right - bounds.right + inset, animate);
+    };
+    const syncEdges = () => {
+      const maxScroll = list.scrollWidth - list.clientWidth;
+      previous.disabled = list.scrollLeft <= 1;
+      next.disabled = list.scrollLeft >= maxScroll - 1;
+      bar.dataset.canScrollLeft = String(!previous.disabled);
+      bar.dataset.canScrollRight = String(!next.disabled);
+    };
+    const measure = () => {
+      // Compare against the FULL available width, including the space controls would release.
+      // Otherwise controls can keep themselves visible after the viewport grows to fit all tabs.
+      controls.hidden = list.scrollWidth <= bar.clientWidth - 12 + 1;
+      const focused = buttons.includes(document.activeElement) ? document.activeElement : null;
+      reveal(focused || buttons.find((button) => button.dataset.tabId === activeId), false);
+      syncEdges();
+    };
+    revealActive = () => {
+      reveal(buttons.find((button) => button.dataset.tabId === activeId));
+      syncEdges();
+    };
+    const tabStop = (button) => buttons.forEach((item) => { item.tabIndex = item === button ? 0 : -1; });
+    const onClick = (event) => {
+      const button = event.target.closest('[data-tab-id]');
+      if (!button) return;
+      tabStop(button);
+      onSelect(button.dataset.tabId);
+    };
+    const onKeydown = (event) => {
+      const index = buttons.indexOf(event.target);
+      if (index < 0 || event.altKey || event.ctrlKey || event.metaKey) return;
+      let target;
+      if (event.key === 'ArrowRight') target = buttons[(index + 1) % buttons.length];
+      else if (event.key === 'ArrowLeft') target = buttons[(index - 1 + buttons.length) % buttons.length];
+      else if (event.key === 'Home') target = buttons[0];
+      else if (event.key === 'End') target = buttons.at(-1);
+      else return; // Enter/Space activate the native button; arrows only move focus.
+      event.preventDefault();
+      tabStop(target);
+      target.focus({ preventScroll: true });
+      reveal(target);
+    };
+    const onScrollClick = (event) => {
+      const button = event.target.closest('[data-tab-scroll]');
+      if (button) scrollTo(list.scrollLeft + Number(button.dataset.tabScroll) * list.clientWidth * 0.75);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(syncEdges);
+    };
 
-    // On narrow screens the active tab may start outside the scrolled view — pull it in.
-    requestAnimationFrame(() => {
-      const active = list.querySelector(`[data-tab-id="${cssEscape(activeId)}"]`);
-      if (!active) return;
-      if (active.offsetLeft < list.scrollLeft || active.offsetLeft + active.offsetWidth > list.scrollLeft + list.clientWidth) {
-        list.scrollTo({ left: Math.max(0, active.offsetLeft - 16), behavior: 'smooth' });
-      }
-    });
+    list.addEventListener('click', onClick);
+    list.addEventListener('keydown', onKeydown);
+    list.addEventListener('scroll', onScroll, { passive: true });
+    controls.addEventListener('click', onScrollClick);
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    // Font loading can change the content width without changing the container's width.
+    buttons.forEach((button) => observer.observe(button));
+    measure();
 
-    return () => {};
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      list.removeEventListener('click', onClick);
+      list.removeEventListener('keydown', onKeydown);
+      list.removeEventListener('scroll', onScroll);
+      controls.removeEventListener('click', onScrollClick);
+      revealActive = () => {};
+      list = null;
+    };
   }
 
-  return { html, wire };
+  function update(nextActiveId) {
+    activeId = nextActiveId;
+    if (!list) return;
+    for (const button of list.querySelectorAll('[data-tab-id]')) {
+      const selected = button.dataset.tabId === activeId;
+      button.setAttribute('aria-selected', String(selected));
+      button.classList.toggle('is-active', selected);
+      button.tabIndex = selected ? 0 : -1;
+    }
+    revealActive();
+  }
+
+  return { html, wire, update };
 }
 
 // Scope segmented control with a sliding brand thumb.
@@ -604,11 +694,4 @@ export function tooltip({ trigger, content, position = 'top' }) {
         ${escapeHtml(content)}
       </span>
     </span>`;
-}
-
-// Minimal CSS.escape polyfill fallback (CSS.escape is supported everywhere we target, but this
-// keeps attribute selectors safe even if a ticker/id ever contains a quote-breaking character).
-function cssEscape(value) {
-  if (window.CSS && CSS.escape) return CSS.escape(String(value));
-  return String(value).replace(/["\\]/g, '\\$&');
 }

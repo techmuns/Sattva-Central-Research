@@ -71,6 +71,8 @@ export const KEYS = {
   marketNewsMonth: (month) => `market-news:${month}`,
   // NSE's live announcements feed — one committed blob, refreshed live off /api/nse-announcements.
   nseFilings: 'nse-filings',
+  // Separate from the HTTP response/ETag: a shrinking live window cannot erase retained rows.
+  nseFilingsHistory: 'nse-filings:history',
   // X/Twitter posts from the monitored handles, which join the market-news list. Its own key
   // rather than a slice of `marketNews`: the two are separate captures with separate ETags, and a
   // post landing must not invalidate 600 publisher stories.

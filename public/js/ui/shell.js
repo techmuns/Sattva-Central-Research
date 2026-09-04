@@ -61,8 +61,11 @@ let contentHost = null;
 let currentTabModule = null;
 let chromeDisposers = [];
 let headerDisposer = null;
+let topTabs = null;
 
 export function mount(root) {
+  topTabs?.dispose();
+  topTabs = null;
   root.innerHTML = shellTemplate();
   contentHost = $('#content-host', root);
 
@@ -145,7 +148,7 @@ function shellTemplate() {
       </div>
     </header>
 
-    <nav class="mx-auto max-w-[1400px] px-6">
+    <nav class="mx-auto max-w-[1400px] px-6" aria-label="Research navigation">
       <div id="tabbar-mount" class="min-w-0"></div>
     </nav>
 
@@ -343,11 +346,18 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
     chromeDisposers.push(subviewPicker.wire(subviewMount));
   }
 
-  const tabItems = ws.tabs.map((t) => ({ id: t.meta.id, label: t.meta.title }));
-  const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab });
-  const tabBarMount = $('#tabbar-mount', root);
-  tabBarMount.innerHTML = bar.html;
-  chromeDisposers.push(bar.wire(tabBarMount));
+  // Keep the strip mounted across routes: replacing it resets horizontal scroll and drops
+  // keyboard focus on every selection, including changes to the scope or subview.
+  if (topTabs?.workspace === ws.id) {
+    topTabs.bar.update(resolved.tab);
+  } else {
+    topTabs?.dispose();
+    const tabItems = ws.tabs.map((t) => ({ id: t.meta.id, label: t.meta.title }));
+    const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab, label: 'Research sections' });
+    const tabBarMount = $('#tabbar-mount', root);
+    tabBarMount.innerHTML = bar.html;
+    topTabs = { workspace: ws.id, bar, dispose: bar.wire(tabBarMount) };
+  }
 
   document.title = `${tabModule.meta.title} · Sattva Central Research`;
 
