@@ -7,8 +7,10 @@
 //   uncovered()        the lines no NSE-keyed feed can ever carry, each with its reason
 //   meta()             counts, as-of date and provenance for the "N of 142" notes
 //
-// THIS IS THE ONLY PORTFOLIO INFORMATION THIS DASHBOARD HOLDS: names and sectors, synced from the
-// family's own repository. No quantity, no cost, no valuation, no P&L. There used to be a second
+// THE PUBLIC SNAPSHOT HOLDS names and sectors, synced from the family's own repository. No
+// quantity, cost, valuation or P&L. The authenticated Family bridge may also supply ephemeral
+// holding percentages for AI Alerts; these are never written to public assets or storage.
+// There used to be a second
 // file — `portfolio.json`, an ILLUSTRATIVE twelve-position ledger with invented quantities and
 // costs — feeding a Portfolio Analytics workspace and an Ask Research evidence source. It is
 // deleted (see js/ui/shell.js), so "Portfolio" now means exactly one thing here: this book, used

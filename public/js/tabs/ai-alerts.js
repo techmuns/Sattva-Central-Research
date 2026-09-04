@@ -14,6 +14,7 @@ import * as alerts from '../data/ai-alerts.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
+import { privatePortfolioContext, readPositionSizes, onPortfolioInvalidation, onPortfolioReady, FAMILY_RESEARCH_URL } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
 export const meta = {
@@ -33,12 +34,31 @@ let unsubs = [];
 let filter = 'all';
 let visibleLimit = PAGE_SIZE;
 let query = '';
+let sizeController = null;
+let sizesLoading = false;
+let sizeError = '';
+let awaitingBook = null;
 
 export function render(ctx) {
   ctxRef = ctx;
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
+    unsubs.push(onPortfolioInvalidation((version) => {
+      if (!ctxRef || ctxRef.scope !== 'portfolio') return;
+      report = null;
+      coverage.useFamilyBook(null);
+      // Wait until Family adopts the new book; starting another archive check here
+      // would invalidate the check that is still running in the parent.
+      if (!sizesLoading) { loadToken += 1; awaitingBook = version; }
+      paint(ctxRef);
+    }));
+    unsubs.push(onPortfolioReady((version) => {
+      if (ctxRef?.scope === 'portfolio' && awaitingBook !== null && version >= awaitingBook && !sizesLoading) {
+        awaitingBook = null;
+        void recollect(ctxRef);
+      }
+    }));
     unsubs.push(
       refresh.register(REFRESH_ID, {
         label: 'AI Alerts',
@@ -62,6 +82,12 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  sizeController?.abort();
+  sizeController = null;
+  sizesLoading = false;
+  sizeError = '';
+  awaitingBook = null;
+  if (privatePortfolioContext()) report = null;
   ctxRef = null;
   loadToken += 1;
   for (const off of unsubs) {
@@ -76,10 +102,39 @@ export function destroy() {
 
 async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
   const token = ++loadToken;
+  sizeController?.abort();
+  sizeController = null;
+  sizesLoading = false;
+  sizeError = '';
+  awaitingBook = null;
   try {
+    let positionSizes = null;
+    if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
+      const controller = new AbortController();
+      sizeController = controller;
+      sizesLoading = true;
+      report = null;
+      paint(ctx);
+      try {
+        positionSizes = await readPositionSizes(controller.signal);
+        if (token !== loadToken || !ctxRef) return;
+        if (!positionSizes) throw new Error('Holding sizes are not connected yet. Refresh after the Family portfolio connection is available.');
+        coverage.useFamilyBook(positionSizes.holdings, positionSizes.sizes.bookAsOf);
+      } catch (err) {
+        if (token !== loadToken || !ctxRef) return;
+        coverage.useFamilyBook(null);
+        sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
+        sizesLoading = false;
+        paint(ctxRef);
+        return;
+      } finally {
+        if (token === loadToken) { sizesLoading = false; sizeController = null; }
+      }
+    }
     const next = await alerts.collect({
       scope: ctx.scope,
       holdings: coverage.holdings(),
+      positionSizes,
       refresh: forceRefresh,
       onPartial: (partial) => {
         if (token !== loadToken || !ctxRef) return;
@@ -104,7 +159,7 @@ function paint(ctx) {
   // Keep the input node mounted while typing and while independent feeds deliver partials.
   // Replacing the whole root loses the caret, keyboard focus and IME composition.
   if (!ctx.root.querySelector('[data-ai-layout]')) {
-    ctx.root.innerHTML = `<div data-ai-layout><div data-ai-heading></div>${searchMarkup()}<div data-ai-toolbar></div><div data-ai-results></div></div>`;
+    ctx.root.innerHTML = `<div data-ai-layout><div data-ai-heading></div>${searchMarkup()}<div data-ai-position-status></div><div data-ai-toolbar></div><div data-ai-results></div></div>`;
     const input = ctx.root.querySelector('[data-ai-search]');
     input.value = query;
     input.addEventListener('input', () => {
@@ -115,11 +170,26 @@ function paint(ctx) {
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
   ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
+  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx);
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
   ctx.root.querySelector('[data-ai-toolbar]').innerHTML = report ? controls(matches, cards.length) : '';
-  ctx.root.querySelector('[data-ai-results]').innerHTML = report ? cardsPanel(ctx, shown, cards.length) : loadingPanel();
+  ctx.root.querySelector('[data-ai-results]').innerHTML = report ? cardsPanel(ctx, shown, cards.length) : sizeError ? errorPanel(sizeError) : loadingPanel();
   if (!report) return;
   wire(ctx, cards.length);
+}
+
+function positionStatus(ctx) {
+  if (ctx.scope !== 'portfolio') return '';
+  if (sizesLoading || awaitingBook !== null) return '<p class="mb-4 text-xs text-slate-500" role="status">Reading your holding sizes from Sattva Family…</p>';
+  const sizes = report?.meta?.positionSizes;
+  if (sizes) {
+    const prices = sizes.quotes?.notLive > 0 || sizes.quotes?.status !== 'live' ? 'Some prices use workbook marks' : 'Quote freshness varies by stock';
+    return `<p data-ai-size-note class="mb-4 text-xs text-slate-500" title="${escapeHtml(`Portfolio checked ${sizes.checkedAt}. Quote batch ${sizes.quotes?.asOf || 'unavailable'}. Percentages include all held equities, ETFs and liquid positions in the listed book.`)}">
+      <strong class="font-semibold text-slate-700">${report.meta.sortedByHolding ? 'Largest holdings first' : 'Holding sizes unavailable · Ordered by alert priority'}</strong> · % of listed portfolio · Book ${fmtDay(sizes.bookAsOf)} · ${prices}
+    </p>`;
+  }
+  if (privatePortfolioContext()) return '';
+  return `<p class="mb-4 text-xs text-slate-500">Ordered by alert priority · <a href="${FAMILY_RESEARCH_URL}" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-700 hover:underline">Open with your portfolio</a> to sort by holding size.</p>`;
 }
 
 function searchMarkup() {
@@ -328,6 +398,7 @@ function cardMarkup(card, scope, day, archived = false) {
         <p data-ai-date class="mt-2 text-xs leading-relaxed text-slate-500" title="Date of the newest source event behind this alert. Times are shown only when every event on that date has a source time; all dates use IST.">
           ${signal ? `Latest signal · <time datetime="${escapeHtml(signal.datetime)}"><span data-ai-age data-day="${signal.day}" class="font-semibold capitalize text-slate-600">${relativeAge(signal.day, day)}</span> · ${fmtDay(signal.day)}${signal.time ? ` · ${signal.time} IST` : ''}</time>` : 'Signal date unavailable'}
         </p>
+        ${Number.isFinite(card.holdingWeightPct) ? `<p data-ai-holding-size class="mt-1 text-xs font-semibold text-indigo-700">${card.holdingWeightPct > 0 && card.holdingWeightPct < 0.01 ? '&lt;0.01' : card.holdingWeightPct.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of listed portfolio</p>` : ''}
 
         <p data-ai-insight class="font-display mt-3 text-[17px] font-bold leading-snug text-slate-900">${escapeHtml(card.insight)}</p>
 

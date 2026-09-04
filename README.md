@@ -30,6 +30,11 @@ beyond the first page, within the selected scope and priority/archive filter. Ea
 latest source signal date (not an AI generation timestamp, which is not recorded). Source times
 appear only when the newest day has complete time precision. Relative ages follow the current
 IST calendar and the seven-day window re-ranks at midnight or when a sleeping tab returns.
+Inside Sattva Family, AI Alerts reads the refreshed active book and orders surfaced alerts by
+holding size within the selected filter. Cards show each stock's share of listed portfolio market
+value, aggregated across entities. The book date and quote limitations remain visible. Standalone
+Research has no private sizes and retains evidence-priority ordering; no portfolio values are
+copied into public files or browser storage.
 Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
 newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
 Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,

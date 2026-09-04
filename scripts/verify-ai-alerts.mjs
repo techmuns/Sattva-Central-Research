@@ -37,3 +37,27 @@ for (const q of ['', '  ', 'MAHINDRA', 'm&m', 'lithium SUPPLY', 'mahindra agreem
 assert(!matchesSearch(card, 'unrelated bank'));
 assert(!matchesSearch(card, 'mahindra missing-keyword'));
 console.log('PASS: AI alert search, source date precision, IST rollover, invalid dates and calendar ages across timezones.');
+
+globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+const { rankReport } = await import('../public/js/data/ai-alerts.js');
+const sizeHoldings = [
+  { ticker: 'LARGE', name: 'Large holding', weightPct: 20 },
+  { ticker: 'SMALL', name: 'Small holding', weightPct: 5 },
+  { ticker: null, name: 'Fund with no research symbol', weightPct: 75 },
+];
+const feeds = ['earnings', 'announcements', 'insider'].map(id => ({ id, status: 'ok', reachesToday: true }));
+const report = { day: '2026-09-04', scope: 'portfolio', feeds, events: ['LARGE', 'SMALL'].flatMap(ticker => feeds.map(({ id }) => ({
+  id: `${ticker}-${id}`, ticker, company: ticker, feed: id, day: '2026-09-04', headline: `${ticker} ${id} signal`,
+  importance: 'high', direction: ticker === 'SMALL' ? 'negative' : 'positive',
+}))) };
+const sizes = { sizes: { complete: true, basis: 'listed-market-value' }, holdings: sizeHoldings };
+const bySize = rankReport(report, { holdings: sizeHoldings, positionSizes: sizes });
+assert.equal(bySize.cards[0].ticker, 'LARGE');
+assert.equal(bySize.cards[0].holdingWeightPct, 20, 'unmatched funds stay in the percentage denominator');
+assert(bySize.cards[0].score < bySize.cards[1].score, 'size ordering leaves evidence priority intact');
+const byPriority = rankReport(report, { holdings: sizeHoldings });
+assert.equal(byPriority.cards[0].ticker, 'SMALL', 'public identities cannot activate size ordering');
+assert(byPriority.cards.every(c => c.holdingWeightPct === null));
+assert.equal(rankReport({ ...report, scope: 'universe' }, { holdings: sizeHoldings, positionSizes: sizes }).cards[0].ticker, 'SMALL');
+assert.equal(rankReport(report, { holdings: sizeHoldings, positionSizes: { sizes: { complete: false } } }).cards[0].ticker, 'SMALL');
+console.log('PASS: authenticated size ordering, evidence priority preservation, unmatched denominator and missing-size fallback.');

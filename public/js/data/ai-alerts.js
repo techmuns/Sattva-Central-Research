@@ -10,9 +10,9 @@
 // the card keeps the arithmetic hidden and shows the evidence and next action instead.
 //
 // PORTFOLIO HONESTY: `coverage.js` is the real 142-company book used by the Research scope. The
-// separate Portfolio Analytics ledger is explicitly illustrative, so its weights and conviction
-// labels MUST NOT influence a real alert priority. A real book company gets a membership boost;
-// nothing here claims to know the real position size.
+// public coverage snapshot contains identities, not position sizes. Only a validated snapshot
+// from the authenticated Family parent can order cards by holding size. Size changes ordering
+// within the selected filter; the materiality threshold and alert priority remain evidence-based.
 
 import * as generalAlerts from './daily-alerts.js';
 import * as coverage from './coverage.js';
@@ -608,9 +608,18 @@ function directionSummary(events) {
  * product rules; testing only whatever today's capture happens to contain would leave branches
  * unexercised most days.
  */
-export function rankReport(report, { holdings = coverage.holdings() } = {}) {
+export function rankReport(report, { holdings = coverage.holdings(), positionSizes = null } = {}) {
   const day = report?.day || generalAlerts.today();
   const firstDay = shiftDay(day, -(WINDOW_DAYS - 1));
+  const weights = new Map();
+  if (report?.scope === 'portfolio' && positionSizes?.sizes.complete) {
+    for (const h of holdings) {
+      if (h.ticker && Number.isFinite(h.weightPct)) {
+        const ticker = h.ticker.toUpperCase();
+        weights.set(ticker, (weights.get(ticker) || 0) + h.weightPct);
+      }
+    }
+  }
   const feedById = new Map((report?.feeds || []).map((feed) => [feed.id, feed]));
   const holdingByTicker = new Map(
     (holdings || [])
@@ -670,6 +679,7 @@ export function rankReport(report, { holdings = coverage.holdings() } = {}) {
       company: top?.event.company || holding?.name || ticker,
       sector: holding?.sector || null,
       holding: !!holding,
+      holdingWeightPct: weights.get(ticker) ?? null,
       // Cards show the strongest evidence first. General Alerts remains the chronological record.
       events: scoredEvents.map((entry) => entry.event),
       topEvent: top?.event || events[0],
@@ -718,7 +728,7 @@ export function rankReport(report, { holdings = coverage.holdings() } = {}) {
   });
 
   cards.sort(
-    (a, b) => b.score - a.score || b.highCount - a.highCount || String(b.topEvent?.day || '').localeCompare(String(a.topEvent?.day || '')) || a.company.localeCompare(b.company)
+    (a, b) => (weights.size ? (b.holdingWeightPct ?? -1) - (a.holdingWeightPct ?? -1) : 0) || b.score - a.score || b.highCount - a.highCount || String(b.topEvent?.day || '').localeCompare(String(a.topEvent?.day || '')) || a.company.localeCompare(b.company)
   );
   const surfaced = cards.filter((card) => card.score >= MIN_SCORE);
   const marketWide = (report?.events || []).filter(
@@ -733,6 +743,8 @@ export function rankReport(report, { holdings = coverage.holdings() } = {}) {
     cards: surfaced,
     allCards: cards,
     meta: {
+      positionSizes: report?.scope === 'portfolio' ? positionSizes?.sizes || null : null,
+      sortedByHolding: weights.size > 0,
       firstDay,
       rawEvents: recent.length,
       dedupedEvents: cards.reduce((sum, card) => sum + card.events.length, 0),
@@ -749,14 +761,14 @@ export function rankReport(report, { holdings = coverage.holdings() } = {}) {
 }
 
 /** Collect General Alerts once and rank each partial/final report without adding any request. */
-export async function collect({ scope = 'portfolio', holdings = null, refresh = false, onPartial = null } = {}) {
+export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, onPartial = null } = {}) {
   const book = holdings || coverage.holdings();
   const report = await generalAlerts.collect({
     scope,
     holdings: book,
     includeHistory: true,
     refresh,
-    onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book })) : null,
+    onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book, positionSizes })) : null,
   });
-  return rankReport(report, { holdings: book });
+  return rankReport(report, { holdings: book, positionSizes });
 }

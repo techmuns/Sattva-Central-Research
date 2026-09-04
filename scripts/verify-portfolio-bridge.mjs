@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateResearchBody } from '../worker/research.mjs';
-import { validPortfolioReply, questionNeedsPortfolio } from '../public/js/research/portfolio-bridge.js';
+import { validPortfolioReply, validPositionSizes, questionNeedsPortfolio } from '../public/js/research/portfolio-bridge.js';
 import { providerEvidenceChars } from '../public/js/research/evidence-shared.js';
 
 globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
@@ -9,6 +9,15 @@ const { fitEvidenceToBudget, DASHBOARD_RESEARCH_SOURCES } = await import('../pub
 const coverage = await import('../public/js/data/coverage.js');
 const reading = { status: 'ready', answer: 'A verified portfolio reading.', bookAsOf: '2026-06-30', checkedAt: new Date().toISOString(), quotes: { freshness: 'partial-or-stale' } };
 const holdings = [{ isin: 'INE009A01021', name: 'Example equity', sector: 'Technology', ticker: 'EXAMPLE' }, { isin: 'INF000000001', name: 'Example fund', sector: 'Fund', ticker: null }];
+const sizeReply = { sizes: { basis: 'listed-market-value', complete: true, bookAsOf: reading.bookAsOf, checkedAt: reading.checkedAt, archiveVersion: 2 }, holdings: holdings.map(h => ({ ...h, weightPct: 50 })) };
+assert.equal(validPositionSizes(sizeReply), true);
+assert.equal(validPositionSizes({ ...sizeReply, sizes: { ...sizeReply.sizes, bookAsOf: '2026-02-31' } }), false);
+assert.equal(validPositionSizes({ ...sizeReply, sizes: { ...sizeReply.sizes, checkedAt: '2020-01-01' } }), false);
+assert.equal(validPositionSizes({ ...sizeReply, holdings: [sizeReply.holdings[0], sizeReply.holdings[0]] }), false);
+for (const weightPct of [null, -1, Infinity, NaN, 1000, 10]) {
+  assert.equal(validPositionSizes({ ...sizeReply, holdings: [{ ...sizeReply.holdings[0], weightPct }, sizeReply.holdings[1]] }), false);
+}
+assert.equal(validPositionSizes({ ...sizeReply, sizes: { ...sizeReply.sizes, complete: false }, holdings: holdings.map(h => ({ ...h, weightPct: null })) }), true);
 assert.equal(validPortfolioReply({ reading, holdings }), true);
 assert.equal(validPortfolioReply({ reading: { ...reading, checkedAt: '2020-01-01' }, holdings }), false);
 assert.equal(validPortfolioReply({ reading: { ...reading, answer: 'x'.repeat(6001) }, holdings }), false);
@@ -48,7 +57,7 @@ const emit = (message, origin = 'https://sattva-family.pages.dev', source = pare
 responder = m => {
   emit({ ...m, type: 'ready' }, 'https://evil.example');
   emit({ ...m, type: 'ready' }, undefined, {});
-  emit({ ...m, type: 'ready' });
+  emit({ ...m, type: 'ready', capabilities: ['position-sizes'] });
 };
 assert.equal(await bridge.connectPortfolio(), true);
 assert.equal(listeners.size, 1, 'only the lifetime archive-change listener remains');
@@ -58,8 +67,19 @@ emit({ channel: bridge.PORTFOLIO_CHANNEL, type: 'invalidated', version: 2 }, 'ht
 assert.equal(invalidated, null);
 emit({ channel: bridge.PORTFOLIO_CHANNEL, type: 'invalidated', version: 2 });
 assert.equal(invalidated, 2);
+let readyVersion = null;
+bridge.onPortfolioReady(version => { readyVersion = version; });
+emit({ channel: bridge.PORTFOLIO_CHANNEL, type: 'positions-ready', version: 2 }, 'https://evil.example');
+assert.equal(readyVersion, null);
+emit({ channel: bridge.PORTFOLIO_CHANNEL, type: 'positions-ready', version: 2 });
+assert.equal(readyVersion, 2);
+assert.equal(invalidated, 2, 'a ready notification does not invalidate the book again');
 responder = m => emit({ ...m, type: 'result', reading: { ...reading, checkedAt: new Date().toISOString() }, holdings });
 assert.deepEqual((await bridge.readPortfolio('Do I own Example?')).holdings, holdings);
+responder = m => emit({ ...m, type: 'result', ...sizeReply, sizes: { ...sizeReply.sizes, checkedAt: new Date().toISOString() } });
+assert.equal((await bridge.readPositionSizes()).holdings[0].weightPct, 50);
+assert.equal(posts.at(-1).message.type, 'positions');
+assert.equal(posts.at(-1).message.question, undefined, 'position sizing does not invoke a model question');
 responder = m => emit({ ...m, type: 'result', reading: { ...reading, checkedAt: '2020-01-01' }, holdings });
 await assert.rejects(bridge.readPortfolio('Do I own Example?'), /stale or invalid/);
 responder = undefined;

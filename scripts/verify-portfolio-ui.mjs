@@ -53,6 +53,30 @@ try {
   assert.equal(await research.getByText('Saved standalone conversation', { exact: true }).count(), 0);
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH, fullPage: true });
 
+  await child.evaluate(() => { location.hash = '#/research/ai-alerts?scope=portfolio'; });
+  await research.locator('[data-ai-size-note]').filter({ hasText: 'Largest holdings first' }).waitFor({ timeout: 60_000 });
+  await child.waitForFunction(() => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', null, { timeout: 60_000 });
+  const weights = await research.locator('[data-ai-holding-size]').allTextContents();
+  assert(weights.length > 0, 'actual Family book sizes reach surfaced AI cards');
+  const percentages = weights.map(w => parseFloat(w));
+  assert(percentages.every(Number.isFinite));
+  assert(percentages.every((w, i) => i === 0 || w <= percentages[i - 1]), 'largest holdings appear first');
+  assert.equal(questions.length, 1, 'holding size requests do not invoke a model');
+  assert.match(await research.locator('[data-ai-size-note]').innerText(), /Book 30 Jun 2026/);
+  assert(await child.evaluate(() => !JSON.stringify(localStorage).includes('weightPct')), 'private sizes are never persisted');
+  if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-sizes.png'), fullPage: true });
+  outage = true;
+  await child.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
+  await research.locator('[data-ai-error]').filter({ hasText: 'could not be checked' }).waitFor();
+  assert.equal(await research.locator('[data-ai-holding-size]').count(), 0, 'failed revalidation removes old private sizes');
+  outage = false;
+  await child.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
+  await research.locator('[data-ai-size-note]').filter({ hasText: 'Largest holdings first' }).waitFor();
+  await page.evaluate(async () => { await (await import('/src/lib/auditStore.ts')).refreshAskArchive(); });
+  await research.locator('[data-ai-size-note]').filter({ hasText: 'Largest holdings first' }).waitFor({ timeout: 60_000 });
+  await child.evaluate(() => { location.hash = '#/research/ask-research?scope=portfolio'; });
+  await input.waitFor();
+
   outage = true;
   await input.fill('Do I have Sterlite in my portfolio?');
   await research.getByRole('button', { name: 'Send question' }).click();
@@ -82,7 +106,7 @@ try {
   await standalone.getByText('This question needs your full portfolio.', { exact: false }).waitFor();
   assert.equal(questions.length, 2, 'standalone portfolio questions never reach a model');
   assert.deepEqual(errors, []);
-  console.log('Portfolio UI: real Family readers → Research evidence, dates, memory-only history, outage refusal, in-flight invalidation and standalone refusal passed. No production API calls.');
+  console.log('Portfolio UI: real Family readers → Research evidence and holding sizes, descending position order, dates, memory-only state, outage refusal, invalidation and standalone refusal passed. No production API calls.');
 } catch (error) {
   console.error('Browser errors:', errors);
   for (const frame of page?.frames() || []) console.error('Frame:', frame.url(), (await frame.locator('body').innerText().catch(() => '')).slice(-6000));
