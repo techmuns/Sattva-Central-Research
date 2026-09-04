@@ -214,6 +214,12 @@ try {
   await logout.waitFor({ state: 'attached' });
   if (!hasSession) throw new Error('login not verified');
   await login.waitForTimeout(2_000);
+  // Do not reuse the form-navigation page for the long crawl. A fresh page shares the verified
+  // session cookies but has no pending login lifecycle or form listeners to interfere with the
+  // first incremental navigation.
+  stage = 'capture page startup';
+  const capturePage = await context.newPage();
+  await login.close();
 
   stage = 'four-category capture';
   const previous = readPrior();
@@ -228,9 +234,10 @@ try {
     const previousIdentities = new Set(
       previousRows.filter((row) => row.sourceId === source.id).map(insiderTradeIdentity),
     );
-    captures.push(await scrapeSource(login, source, previousSources.get(source.id), previousIdentities));
+    console.log(`${source.id}: ${previousIdentities.size} prior event identities loaded.`);
+    captures.push(await scrapeSource(capturePage, source, previousSources.get(source.id), previousIdentities));
   }
-  await login.close();
+  await capturePage.close();
 
   stage = 'snapshot validation';
   const snapshot = buildScreenerTradesSnapshot(previous, captures, { capturedAt });
