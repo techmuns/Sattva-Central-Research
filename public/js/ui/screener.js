@@ -183,15 +183,16 @@ export function statStrip(cards = []) {
 // ---------------------------------------------------------------------------------------
 
 /**
- * topCards({ title, items, valueFormat, onSelect, limit })
+ * topCards({ title, items, valueFormat, onSelect, limit, compact })
  *
  *  title        e.g. "Top 10 by Earnings Surprise" (a 🏆 is prepended)
- *  items        [{ name, sub?, value, max?, tone?, warn?, payload? }]
+ *  items        [{ name, sub?, value, unit?, caption?, actionLabel?, max?, tone?, warn?, payload? }]
  *  valueFormat  'score'  → renders `value/max` and colours by tier (needs `max`)
  *               'metric' → renders `value` verbatim, coloured by `tone`
  *  tone         for 'metric': 'positive' | 'negative' | 'caution' | 'neutral' | 'brand'
  *  onSelect     (item, index) => void — fired on card click, wire up the drill panel here
  *  limit        default 10
+ *  compact      omit decorative avatars and numeric ranks; allow company names to wrap
  */
 const METRIC_TONE = {
   positive: 'text-emerald-600',
@@ -271,14 +272,14 @@ export function rankedList({ key, title, note = '', items = [], limit = 5, empty
   return { html, wire, shown };
 }
 
-export function topCards({ title, items = [], valueFormat = 'metric', onSelect = null, limit = 10 }) {
+export function topCards({ title, items = [], valueFormat = 'metric', onSelect = null, limit = 10, compact = false }) {
   const shown = items.slice(0, limit);
 
   const html = `
     <section class="mb-8" data-top-cards>
       <div class="mb-3 flex items-center justify-between">
         <h2 class="font-display flex items-center gap-2 text-lg font-bold text-slate-900">
-          <span class="text-amber-500">🏆</span> ${escapeHtml(title)}
+          ${compact ? '' : '<span class="text-amber-500">🏆</span>'} ${escapeHtml(title)}
         </h2>
       </div>
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -294,22 +295,23 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
             const caption = isScore ? tierLabel(tier) : item.caption || '';
             return `
               <button type="button" data-top-idx="${i}"
-                class="group relative overflow-hidden rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
-                <div class="absolute right-3 top-3 text-xs font-bold text-slate-400">#${i + 1}</div>
+                class="group relative overflow-hidden rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                ${compact ? '' : `<div class="absolute right-3 top-3 text-xs font-bold text-slate-400">#${i + 1}</div>`}
                 <div class="mb-3 flex items-center gap-3">
-                  <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${color} text-sm font-bold text-white shadow-md">${escapeHtml(initials)}</div>
-                  <div class="min-w-0 flex-1 pr-6">
-                    <div class="truncate text-sm font-semibold text-slate-900">${escapeHtml(item.name)}</div>
+                  ${compact ? '' : `<div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${color} text-sm font-bold text-white shadow-md">${escapeHtml(initials)}</div>`}
+                  <div class="min-w-0 flex-1${compact ? '' : ' pr-6'}">
+                    <div class="${compact ? 'break-words' : 'truncate'} text-sm font-semibold text-slate-900">${escapeHtml(item.name)}</div>
                     ${item.sub ? `<div class="truncate text-xs text-slate-500">${escapeHtml(item.sub)}</div>` : ''}
                   </div>
                 </div>
                 <div class="flex items-end justify-between">
                   <div class="min-w-0">
-                    <div class="truncate text-3xl font-bold tabular-nums ${valueClass}">${valueHtml}</div>
+                    <div class="${item.unit && !isScore ? 'flex flex-wrap items-baseline gap-x-1.5' : 'truncate'} text-3xl font-bold tabular-nums ${valueClass}">${valueHtml}${item.unit && !isScore ? ` <span class="text-sm font-medium text-slate-500">${escapeHtml(item.unit)}</span>` : ''}</div>
                     ${caption ? `<div class="mt-0.5 truncate text-xs text-slate-500">${escapeHtml(caption)}</div>` : ''}
                   </div>
                   ${item.warn ? `<div class="flex-shrink-0 text-xl text-rose-500" title="${escapeHtml(item.warn)}">⚠</div>` : ''}
                 </div>
+                ${onSelect && item.actionLabel ? `<span class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">${escapeHtml(item.actionLabel)} <span aria-hidden="true">→</span></span>` : ''}
               </button>`;
           })
           .join('')}
