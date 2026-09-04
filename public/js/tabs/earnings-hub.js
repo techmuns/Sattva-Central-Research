@@ -48,7 +48,6 @@ import { exportRows } from '../ui/export.js';
 import * as feed from '../data/earnings-live.js';
 import * as calendar from '../data/earnings-calendar.js';
 import * as coverage from '../data/coverage.js';
-import { withCompanyDocuments } from '../ui/company-documents.js';
 import { filterByScope, scopePossessive } from '../data/scope.js';
 import { renderCompanyFilings } from './company-filings.js';
 import { domesticFilingsHref } from '../data/domestic-filings-shared.js';
@@ -156,7 +155,8 @@ function destroyFeed() {
 /** Which half of the tab the URL is asking for. Anything unrecognised falls back to reported. */
 const viewOf = (ctx) => (['calendar', 'filings'].includes(ctx.params?.view) ? ctx.params.view : 'reported');
 
-export const { render, destroy } = withCompanyDocuments({ render: renderFeed, destroy: destroyFeed }, { form: 'earnings_report', feedLabel: 'Results & calendar', label: 'Filed earnings reports' });
+export const render = renderFeed;
+export const destroy = destroyFeed;
 
 function loadingHtml() {
   return `

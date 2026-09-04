@@ -2293,7 +2293,6 @@ modify the portfolio or produce earnings figures / transcript summaries from doc
 | --- | --- |
 | NSE Filings → Company NSE filings | India, all forms; only records with an explicit NSE source or an NSE document host are shown |
 | Con-call → Filed con-call documents | India, `form: ["concalls"]`; source links, not invented transcripts |
-| Earnings Hub → Filed earnings reports | India, `form: ["earnings_report"]`; separate from reported metrics and calendar |
 
 The reader selects one company inside the current Portfolio/Watchlist/Universe scope and a date
 range no longer than 366 elapsed days. Name searches return explicit company choices; ambiguous
