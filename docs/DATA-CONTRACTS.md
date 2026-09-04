@@ -23,17 +23,15 @@ the interface, and change the doc and the producer together.
 | --- | --- |
 | `portfolioCompanies` | `public/data/portfolio-companies.json` |
 | `universe` | `public/data/universe.json` |
-| `earnings` | `public/data/mock/earnings.json` |
-| `earningsCalendar` | `public/data/mock/earnings-calendar.json` |
 | `filedHoldings` | `public/data/institution-holdings.json` |
 
 `universe.json` is loaded twice over: the raw screener rows stay on `ctx.data.universeRaw`, and
 `ctx.data.universe` carries the adapted `{ ticker, name, marketCap, sector, industry }` shape the
 older tabs were built against (see `js/data/universe.js`).
 
-`earnings.json` follows the same pattern: the full payload stays on `ctx.data.earningsRaw` and
-primes `js/data/earnings.js` (so the module never refetches it), while `ctx.data.earnings` carries
-the flat one-row-per-company summary that Breakouts → Earnings Surprise was written against.
+The synthetic earnings and calendar corpus is now under `scripts/fixtures/`, outside the served
+assets. Bootstrap no longer loads it; legacy scoring accessors reject mock/synthetic payloads.
+Earnings Surprise stays unavailable until verified actuals and analyst estimates are connected.
 
 **Not in that map:** several heavy feeds are fetched lazily by their own data modules the first
 time their tab mounts, then cached for the life of the page — the other tabs shouldn't pay for
@@ -3543,6 +3541,45 @@ chatter revalidators plus one conditional read of the bulk investor snapshot. It
 the Super Investors tab's ninety-one-book revalidation walk.
 
 ---
+
+## Domestic company filings
+
+**Consumer:** Earnings Hub → Company Filings (`?view=filings`), with ticker links from Earnings
+Reported (earnings reports) and Con-call (transcripts). Existing live results, schedules and scan
+analysis remain separate sources. This is a reader-initiated document lookup, not a universe crawl.
+
+The browser calls `GET /api/domestic-filings/{ticker}?form=all`. The Worker sends an authenticated
+`POST https://devde.muns.io/filings/domestic` with `{ "ticker": "RELIANCE", "form": "all" }`.
+The four forms are `all`, `concalls`, `annual_report` and `earnings_report`. Tickers are trimmed,
+uppercased and validated. Authentication uses the existing Worker `MUNS_TOKEN`, or the forwarded
+host session token when that secret is absent; `MUNS_BASE` can redirect local tests.
+
+Successful responses have `ok`, `ticker`, `form`, `source`, `count`, `documents`, `skipped` and
+`fetchedAt`. Each document contains `ticker`, `form` (nullable), `title`, `date` (nullable source
+text), `url` and `source`. The parser accepts link records, document arrays and grouped/wrapped
+records. Only HTTP(S) URLs without embedded credentials become links. Repeated form/URL pairs
+collapse; original links and period labels are retained. Unreadable entries produce a visible
+partial-response warning. An unfamiliar or error payload fails instead of becoming an empty list.
+
+The supplied contract and public OpenAPI do **not** define a concrete response schema. The parser
+is verified against fixtures; an authenticated upstream sample must still be checked when a
+session token is available. No test queries production. Successful responses are edge-cached for
+15 minutes, failures for 15 seconds, with ticker and form in the cache key. Upstream reads have
+the existing bounded timeout/retry policy plus a 4 MB response limit.
+
+The browser merges document links into a last-good device copy for each ticker/form. A failed
+refresh labels that copy stale and shows the error; an empty later response does not erase known
+documents. Navigation cancels in-flight work. Watchlist stars identify the company and Excel
+exports include the original document URL. Portfolio/Watchlist scope limits the selectable
+companies; Universe also accepts a directly entered Indian ticker.
+
+Ask Research can cite the metadata/links from lookups already performed in this page session.
+**PDF contents are not extracted.** This endpoint does not provide analyst consensus, eight-quarter
+financial history or a basis for beat/miss and quality scores. The source registry therefore lists
+**Screener.in — company filings: On demand** and **Analyst consensus estimates: Not connected**.
+
+Run `node scripts/verify-domestic-filings.mjs` for parser, proxy, authentication, caching,
+saved-document retention and synthetic-data rejection checks.
 
 ## Adding a new data file
 

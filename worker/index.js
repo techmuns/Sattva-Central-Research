@@ -33,7 +33,8 @@
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
-import { fetchNews, fetchAnnouncements, fetchInsiderTrades, searchStocks, withCallerToken, MunsError } from './muns.mjs';
+import { fetchNews, fetchAnnouncements, fetchInsiderTrades, fetchDomesticFilings, searchStocks, withCallerToken, MunsError } from './muns.mjs';
+import { DOMESTIC_FORMS } from '../public/js/data/domestic-filings-shared.js';
 import { CORS, preflight, contentTag, withTag, tagged, revalidate } from './http.mjs';
 import {
   dispatchWorkflow,
@@ -153,6 +154,9 @@ export default {
     }
     if (url.pathname.startsWith('/api/insider-trades/')) {
       return handleMuns(request, env, ctx, 'insider', url.pathname.slice('/api/insider-trades/'.length));
+    }
+    if (url.pathname.startsWith('/api/domestic-filings/')) {
+      return handleMuns(request, env, ctx, 'domestic', url.pathname.slice('/api/domestic-filings/'.length));
     }
     // POST-ONLY, DELIBERATELY. This is the one route here that makes something happen rather than
     // reporting something — a GET that started a scrape could be fired by a prefetcher, a link
@@ -666,7 +670,7 @@ async function handleCalendar(request, env, ctx) {
 // A FAILURE IS CACHED FOR SECONDS, NOT MINUTES. These are session JWTs and they expire, so a
 // corrected token has to take effect at once rather than after the success TTL.
 // ---------------------------------------------------------------------------------------
-const MUNS_TTL_S = { news: 180, announcements: 900, insider: 900 };
+const MUNS_TTL_S = { news: 180, announcements: 900, insider: 900, domestic: 900 };
 const MUNS_FAIL_TTL_S = 15;
 
 // Company names move much less often than filings. Cache each query at the edge so ten readers
@@ -710,8 +714,11 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
 
   // A ticker is a path segment on two of these routes, so it is validated rather than passed
   // through: this must not become an open proxy to arbitrary upstream paths.
-  const ticker = decodeURIComponent(rawTicker).trim().toUpperCase();
-  if (kind !== 'news' && !/^[A-Z0-9&.\-]{1,20}$/.test(ticker)) {
+  let ticker;
+  try { ticker = decodeURIComponent(rawTicker).trim().toUpperCase(); }
+  catch { return json({ ok: false, reason: 'shape', message: 'That is not a valid ticker.' }, 400); }
+  const tickerPattern = kind === 'domestic' ? /^[A-Z0-9&._-]{1,80}$/ : /^[A-Z0-9&.\-]{1,20}$/;
+  if (kind !== 'news' && !tickerPattern.test(ticker)) {
     return json({ ok: false, reason: 'shape', message: 'That is not a ticker this route will ask about.' }, 400);
   }
 
@@ -720,7 +727,9 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
     return json({ ok: false, reason: 'shape', message: 'A news search needs ?q=.' }, 400);
   }
 
-  const cacheKey = edgeKey(`muns-${kind}?t=${ticker}&q=${encodeURIComponent(query || '')}&from=${from || ''}&to=${to || ''}`);
+  const form = kind === 'domestic' ? url.searchParams.get('form') || 'all' : null;
+  if (form && !Object.hasOwn(DOMESTIC_FORMS, form)) return json({ ok: false, reason: 'shape', message: 'Choose all, concalls, annual_report or earnings_report.' }, 400);
+  const cacheKey = edgeKey(`muns-${kind}?t=${encodeURIComponent(ticker)}&q=${encodeURIComponent(query || '')}&from=${from || ''}&to=${to || ''}${form ? `&form=${form}` : ''}`);
   const cache = caches.default;
   const hit = await cache.match(cacheKey);
   if (hit) return revalidate(request, hit, 'hit');
@@ -730,6 +739,7 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
   try {
     if (kind === 'news') payload = { ok: true, kind, ...(await fetchNews({ query, country: url.searchParams.get('country') || 'IN', fromDate: from, toDate: to }, env)) };
     else if (kind === 'announcements') payload = { ok: true, kind, ...(await fetchAnnouncements({ ticker, fromDate: from, toDate: to }, env)) };
+    else if (kind === 'domestic') payload = { ok: true, kind, ...(await fetchDomesticFilings({ ticker, form }, env)) };
     else payload = { ok: true, kind, ...(await fetchInsiderTrades({ ticker, country: 'india', fromDate: from, toDate: to }, env)) };
   } catch (err) {
     const e = err instanceof MunsError ? err : new MunsError('upstream', String(err?.message || err));

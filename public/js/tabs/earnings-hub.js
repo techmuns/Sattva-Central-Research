@@ -15,8 +15,8 @@
 //   publishes three figures per company — revenue, gross profit, net profit — which is nowhere
 //   near enough to feed that model. Rather than run a real model on fake numbers next to a live
 //   table of real ones, the scoring sub-views are gone. `js/scoring/earnings-scoring.js` and the
-//   mock set remain in the repo for the Breakouts → Earnings Surprise join, which still labels
-//   itself mock.
+//   legacy scoring code remain available, but the synthetic set is no longer loaded. Analyst
+//   estimates are unavailable; Company Filings provides original documents, not estimated metrics.
 //
 // THE PERCENTAGE THAT ISN'T ONE
 //   13% of companies have a sign flip between the two periods. "+199%" on a loss-to-profit
@@ -49,6 +49,8 @@ import * as feed from '../data/earnings-live.js';
 import * as calendar from '../data/earnings-calendar.js';
 import * as coverage from '../data/coverage.js';
 import { filterByScope, scopePossessive } from '../data/scope.js';
+import { renderCompanyFilings } from './company-filings.js';
+import { domesticFilingsHref } from '../data/domestic-filings-shared.js';
 
 export const meta = {
   id: 'earnings-hub',
@@ -58,11 +60,11 @@ export const meta = {
   subviews: [],
 };
 
-// The two halves of this tab: what has been reported, and what is scheduled. Same source, same
-// quarter, opposite direction in time.
+// Filed results, scheduled results, and original company documents.
 const VIEWS = [
   { value: 'reported', label: 'Earnings Reported', help: 'Companies that have already filed this quarter' },
   { value: 'calendar', label: 'Earnings Calendar', help: 'Companies scheduled to report, by date' },
+  { value: 'filings', label: 'Company Filings', help: 'Annual reports, earnings reports and concall transcripts' },
 ];
 
 let disposers = [];
@@ -87,6 +89,10 @@ let periodError = null;
 
 export function render(ctx) {
   const token = ++renderToken;
+  if (viewOf(ctx) === 'filings') {
+    disposers.push(renderCompanyFilings(ctx, { controls: viewToggle('filings'), wireControls: wireViewToggle }));
+    return;
+  }
   ctx.root.innerHTML = loadingHtml();
   const seeded = companySeededView(ctx, routeCompany, tableView);
   routeCompany = seeded.company;
@@ -147,7 +153,7 @@ export function destroy() {
 }
 
 /** Which half of the tab the URL is asking for. Anything unrecognised falls back to reported. */
-const viewOf = (ctx) => (ctx.params?.view === 'calendar' ? 'calendar' : 'reported');
+const viewOf = (ctx) => (['calendar', 'filings'].includes(ctx.params?.view) ? ctx.params.view : 'reported');
 
 function loadingHtml() {
   return `
@@ -423,6 +429,7 @@ function renderLatest(ctx) {
 
       { label: 'Market Cap', get: (r) => (r.marketCap == null ? '<span class="text-slate-300">—</span>' : escapeHtml(formatCroreCompact(r.marketCap))), html: true, align: 'right', sortValue: (r) => r.marketCap ?? -1 },
       { label: 'Basis', get: (r) => basisPill(r.basis), html: true, align: 'right', sortValue: (r) => r.basis || '' },
+      { label: 'Filings', get: (r) => r.ticker ? `<a data-norow class="font-semibold text-indigo-600" href="${escapeHtml(domesticFilingsHref(r.ticker, { form: 'earnings_report', scope: ctx.scope }))}">Reports</a>` : '—', html: true, sortable: false },
     ],
     // Two dropdowns, not one: "PAT grew" and "Consolidated only" are different questions and a
     // reader should be able to ask both at once.

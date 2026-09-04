@@ -159,7 +159,7 @@ const server = createServer((req, res) => {
 try {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   for (const file of ['scripts/scrape-filings.mjs', 'scripts/lib/filings-snapshot.mjs', 'worker/muns.mjs',
-    'public/js/data/filings-shared.js', 'public/js/data/insider-history.js']) {
+    'public/js/data/filings-shared.js', 'public/js/data/insider-history.js', 'public/js/data/domestic-filings-shared.js']) {
     await mkdir(dirname(join(scratch, file)), { recursive: true });
     await copyFile(new URL(`../${file}`, import.meta.url), join(scratch, file));
   }
