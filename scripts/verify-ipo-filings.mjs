@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { IPO_SOURCES, parseNseOffers, parseSebiOffers, parseBseOffers, captureIpoFilings, boundedIpoText } from '../worker/ipo-sources.mjs';
+import { IPO_SOURCES, parseNseOffers, parseSebiOffers, parseBseOffers, captureIpoFilings, boundedIpoText, readIpoSource } from '../worker/ipo-sources.mjs';
 import { handleIpoFilings } from '../worker/ipo-filings.mjs';
 import { ipoDay, filingType, mergeIpoFilings, validateIpoFilings, legacyIpoFilings } from '../public/js/data/ipo-filings-shared.js';
 import { createIpoFilingsFeed } from '../public/js/data/ipo-filings.js';
@@ -48,6 +48,51 @@ await test('BSE public-navigation headers work without leaking caller credential
   const p = await response.json();
   assert.equal(p.sources.find((s) => s.id === 'bse-sme').status, 'ok');
   assert(p.rows.some((r) => r.sourceId === 'bse-sme'));
+});
+await test('transient BSE failures get exactly one retry; other sources keep a single attempt', async () => {
+  let attempts = 0;
+  const p = await captureIpoFilings({ now, fetcher: async (url, init) => {
+    if (url.includes('www.bsesme.com')) {
+      assert.equal(init.cache, undefined);
+      if (++attempts === 1) return new Response('Connection timed out', { status: 522 });
+    } else assert.equal(init.cache, 'no-store');
+    return new Response(bodies(url));
+  } });
+  const b = p.sources.find((s) => s.id === 'bse-sme');
+  assert.equal(attempts, 2); assert.equal(b.status, 'ok'); assert.equal(b.attempts, 2);
+  assert(b.note.includes('retry')); assert(p.rows.some((r) => r.sourceId === 'bse-sme'));
+  let failed = 0;
+  await assert.rejects(readIpoSource(source('bse-sme'), { fetcher: async () => { failed++; return new Response('Fail', { status: 522 }); } }));
+  assert.equal(failed, 2);
+  failed = 0;
+  await assert.rejects(readIpoSource(source('nse-equity'), { fetcher: async () => { failed++; throw new TypeError('Network failure'); } }));
+  assert.equal(failed, 1);
+});
+await test('BSE retry cancels stalled bodies, respects the parent deadline and does not retry refusals', async () => {
+  let attempts = 0, cancelled = false; const limits = [];
+  const result = await readIpoSource(source('bse-sme'), {
+    timeout: (ms) => { limits.push(ms); const controller = new AbortController(); if (limits.length === 1) setTimeout(() => controller.abort(new DOMException('Timed out', 'TimeoutError')), 10); return controller.signal; },
+    fetcher: async () => ++attempts === 1 ? new Response(new ReadableStream({ cancel() { cancelled = true; } })) : new Response(bse),
+  });
+  assert(cancelled); assert.equal(result.attempts, 2); assert.deepEqual(limits, [10000, 14000]);
+  const parent = new AbortController(); let calls = 0;
+  await assert.rejects(readIpoSource(source('bse-sme'), { signal: parent.signal, fetcher: async () => { calls++; parent.abort(); throw new Error('Abort'); } }));
+  assert.equal(calls, 1);
+  for (const status of [301, 403, 429]) {
+    calls = 0;
+    await assert.rejects(readIpoSource(source('bse-sme'), { fetcher: async () => { calls++; return new Response('', { status }); } }));
+    assert.equal(calls, 1);
+  }
+});
+await test('partial response caches expire quickly and the old failed cache key is not reused', async () => {
+  const response = await handleIpoFilings(new Request('https://app.test/api/ipo-filings'), { now,
+    cache: { match: async (key) => { assert.equal(new URL(key.url).search, '?source-contract=bse-retry-v2'); return null; }, put: async () => {} },
+    fetcher: async (url) => new Response(bodies(url), { status: url.includes('www.bsesme.com') ? 522 : 200 }),
+  });
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=30');
+  const p = await response.json(); assert.equal(p.sources.find((s) => s.id === 'bse-sme').status, 'failed');
+  const request = new Request('https://codex-fix-bse-ipo-fetch-sattva-central-research.tech-441.workers.dev/api/ipo-filings?probe=bse');
+  assert.equal((await handleIpoFilings(request, { fetcher: () => { throw Error('No preview diagnostics may remain'); } })).status, 400);
 });
 await test('schema rejects invalid links, dates and missing source status', () => {
   for (const change of [{ url: 'javascript:alert(1)' }, { filingDate: '2026-02-31' }, { observedAt: 'not-a-date' }]) assert.throws(() => validateIpoFilings({ ...payload, rows: [{ ...payload.rows[0], ...change }] }));

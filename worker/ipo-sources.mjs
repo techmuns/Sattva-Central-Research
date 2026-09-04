@@ -11,7 +11,7 @@ export const IPO_SOURCES = [
   { id: 'sebi-other', label: 'SEBI other documents', kind: 'sebi', type: 'Other document', url: sebi(78) },
 ];
 export const IPO_HEADERS = { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36', accept: 'application/json,text/html;q=0.9,*/*;q=0.8', 'accept-language': 'en-US,en;q=0.9' };
-// BSE's public site answers the hosted reader when its own navigation referrer is supplied.
+// Normal public-site navigation metadata; this header alone is not a connectivity guarantee.
 // Fixed publisher metadata only: never forward the dashboard URL, caller headers or credentials.
 export const BSE_IPO_HEADERS = { ...IPO_HEADERS, referer: 'https://www.bsesme.com/' };
 const decode = (s) => String(s || '').replace(/&#(x[\da-f]+|\d+);/gi, (_, code) => {
@@ -101,6 +101,30 @@ export async function boundedIpoText(response, signal, limit = 4 * 1024 * 1024) 
     }
   } finally { signal.removeEventListener('abort', abort); await reader.cancel().catch(() => {}); reader.releaseLock(); }
 }
+export async function readIpoSource(source, { fetcher = fetch, signal = AbortSignal.timeout(25000), timeout = (ms) => AbortSignal.timeout(ms) } = {}) {
+  const isBse = source.kind === 'bse', attempts = isBse ? 2 : 1;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    // The first stalled BSE connection must leave room for a second within the 25s route budget.
+    const sourceSignal = AbortSignal.any([signal, timeout(isBse ? (attempt === 1 ? 10000 : 14000) : 20000)]);
+    let transient = false;
+    try {
+      sourceSignal.throwIfAborted();
+      let response;
+      try {
+        response = await fetcher(source.url, { method: 'GET', headers: isBse ? BSE_IPO_HEADERS : IPO_HEADERS, redirect: 'manual', ...(!isBse ? { cache: 'no-store' } : {}), signal: sourceSignal });
+      } catch (error) { transient = true; throw error; }
+      if (!response.ok) {
+        transient = response.status === 408 || response.status >= 500;
+        await response.body?.cancel();
+        throw Error(`Source HTTP ${response.status}`);
+      }
+      return { body: await boundedIpoText(response, sourceSignal), attempts: attempt };
+    } catch (error) {
+      if (attempt < attempts && !signal.aborted && (transient || sourceSignal.aborted)) continue;
+      throw error;
+    }
+  }
+}
 export async function captureIpoFilings({ fetcher = fetch, now = Date.now, signal = AbortSignal.timeout(25000) } = {}) {
   const checkedAt = new Date(now()).toISOString(), results = new Array(IPO_SOURCES.length);
   let next = 0;
@@ -109,12 +133,9 @@ export async function captureIpoFilings({ fetcher = fetch, now = Date.now, signa
     while (next < IPO_SOURCES.length) {
       const i = next++, s = IPO_SOURCES[i];
       try {
-        const sourceSignal = AbortSignal.any([signal, AbortSignal.timeout(20000)]);
-        const response = await fetcher(s.url, { method: 'GET', headers: s.kind === 'bse' ? BSE_IPO_HEADERS : IPO_HEADERS, redirect: 'manual', cache: 'no-store', signal: sourceSignal });
-        if (!response.ok) { await response.body?.cancel(); throw Error(`Source HTTP ${response.status}`); }
-        const body = await boundedIpoText(response, sourceSignal);
+        const { body, attempts } = await readIpoSource(s, { fetcher, signal });
         const parsed = (s.kind === 'nse' ? parseNseOffers : s.kind === 'bse' ? parseBseOffers : parseSebiOffers)(body, s, checkedAt);
-        results[i] = { rows: parsed.rows, source: { id: s.id, label: s.label, url: s.page || s.url, status: 'ok', checkedAt, count: parsed.rows.length, records: parsed.records, unmapped: parsed.unmapped, note: parsed.note + (parsed.unmapped ? ` ${parsed.unmapped} issuer/filing rows could not be mapped.` : '') } };
+        results[i] = { rows: parsed.rows, source: { id: s.id, label: s.label, url: s.page || s.url, status: 'ok', checkedAt, attempts, count: parsed.rows.length, records: parsed.records, unmapped: parsed.unmapped, note: parsed.note + (attempts > 1 ? ' Read succeeded on a retry after a transient connection failure.' : '') + (parsed.unmapped ? ` ${parsed.unmapped} issuer/filing rows could not be mapped.` : '') } };
       } catch (error) {
         results[i] = { rows: [], source: { id: s.id, label: s.label, url: s.page || s.url, status: 'failed', checkedAt, count: 0, reason: String(error?.message || 'source-read').slice(0, 120), note: signal.aborted || error?.name === 'TimeoutError' ? 'Source timed out; retained filings are not a fresh confirmation.' : 'Source could not be read; retained filings are not a fresh confirmation.' } };
       }

@@ -2400,8 +2400,20 @@ The fixed read-only endpoint rejects caller-supplied query URLs and non-GET meth
 three-connection pool, a 25-second total deadline, 20-second per-source deadlines and a 4 MiB
 streaming body cap per source. Redirects are rejected and no caller headers/tokens are forwarded.
 Every source reports its own status/check time; partial failures retain successful sources.
-Responses with at least one working source cache for five minutes (including their original check
-timestamps). Complete failure returns 502 and is not cached.
+Complete responses cache for five minutes (including their original check timestamps). Partial
+responses cache for only 30 seconds so opening/refreshing can recover promptly; complete failure
+returns 502 and is not cached. The internal cache revision excludes pre-fix five-minute failures.
+
+BSE uses its fixed public-site referrer and normal publisher cache semantics (observed responses
+are `DYNAMIC`, `private`/`no-cache`/`no-store`, without an Age header). BSE connectivity from the
+hosted Worker is intermittent: the same request options returned 522 on one preview read and 200
+on another. The referrer alone is not a fix. BSE gets at most one retry for a network failure,
+timeout, HTTP 408 or 5xx. Its first connection has a ten-second deadline, leaving up to fourteen
+seconds for the retry within the unchanged total budget. A stalled body is cancelled before retry.
+Parent cancellation, redirects, 403/429 refusals, oversized bodies and parser failures do not
+trigger retries. Other sources retain one attempt. Successful retry counts and a provenance note
+are carried in source metadata; persistent failure stays explicitly unavailable. There is no new
+collector, data scheduler, proxy service, credential or production diagnostic route.
 
 The browser paints `data/ipo-filings.json`, then revalidates the official feed on entry and every
 five minutes while mounted. The existing live engine pauses hidden-tab polling. Public captured
