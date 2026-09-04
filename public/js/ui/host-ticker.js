@@ -3,7 +3,7 @@
 // The Munshot host carries a selected company across every dashboard embedded in it, and pushes it
 // down the SDK channel as `context.market.selectedTicker`. Receiving it and doing nothing with it
 // would make the integration inert, so this is the surface: one chip beside the scope toggle,
-// naming the selection and opening General Alerts filtered to it.
+// naming the selection and opening All Alerts filtered to it.
 //
 // WHY THIS IS A CHIP AND NOT A FILTER OVER THE WHOLE DASHBOARD, which is the obvious alternative:
 //
@@ -18,7 +18,7 @@
 //     here takes a ticker from the host, so the honest rendering of "no selection" is no chip at
 //     all — never eleven tabs of "No stock selected" over feeds that are complete without one.
 //   * **It navigates rather than filters.** `#/research/daily-alerts?company=<ticker>` is the
-//     route AI Alerts already uses to hand a company to General Alerts, so the host's selection
+//     route AI Alerts already uses to hand a company to All Alerts, so the host's selection
 //     lands the reader exactly where a company clicked inside this dashboard would.
 //
 // Off-host — a plain static origin, which is how the verification suite drives this — there is no
@@ -50,7 +50,7 @@ function chipHtml() {
       data-host-ticker="${escapeHtml(ticker)}"
       class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition hover:brightness-95"
       style="background:#eef2ff;border-color:#e0e7ff;color:#4338ca"
-      title="Selected in Munshot: ${escapeHtml(label)}. Opens General Alerts filtered to this company."
+      title="Selected in Munshot: ${escapeHtml(label)}. Opens All Alerts filtered to this company."
     >
       <span class="h-1.5 w-1.5 rounded-full" style="background:#4f46e5"></span>
       <span class="max-w-[13rem] truncate">${escapeHtml(label)}</span>

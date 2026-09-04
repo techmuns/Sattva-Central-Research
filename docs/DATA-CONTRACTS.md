@@ -1,6 +1,6 @@
 # Data Contracts
 
-General Alerts' current source-record pool, date semantics, scope rules, privacy and coverage
+All Alerts' current source-record pool, date semantics, scope rules, privacy and coverage
 limitations are specified in [GENERAL-ALERTS-POOL.md](GENERAL-ALERTS-POOL.md). That contract
 supersedes the older nine-feed/threshold-entry description of the timeline in this document.
 
@@ -113,7 +113,7 @@ Root is an **object** with a metadata header and a `companies` array.
 | Header field | Type | Unit / values | Notes |
 | --- | --- | --- | --- |
 | `generated_at` | string | ISO 8601 UTC | When the scrape finished. Drives the gradient "Last Refresh" card. **Not** the date of the closes — see `price_date`. |
-| `price_date` | string \| null | YYYY-MM-DD (IST) | The session the closes belong to: the most common `bar_date` across priced rows. On the scheduled 07:00 IST run this is the previous trading day. General Alerts dates every price move by this (per row `bar_date`), never by `generated_at`. |
+| `price_date` | string \| null | YYYY-MM-DD (IST) | The session the closes belong to: the most common `bar_date` across priced rows. On the scheduled 07:00 IST run this is the previous trading day. All Alerts dates every price move by this (per row `bar_date`), never by `generated_at`. |
 | `price_date_rows` | number | count | How many rows share `price_date`. A row on another date is a company whose latest Yahoo bar lags. |
 | `move_verification` | object \| null | — | What `scripts/lib/muns-market-data.mjs` did, across the scrape and every follow-up pass: `{ source, threshold_pct, alert_pct, flagged, cached, checked, confirmed, corrected, unavailable, refusals, elapsed_ms, budget_exhausted, passes?, last_pass_at? }`. Null when the check was skipped (`MUNS_VERIFY=0`). |
 
@@ -2936,7 +2936,7 @@ remain visible with a blank date. An authenticated preview lookup for RELIANCE o
 2025-01-01 through 2026-07-15 returned 252 announcements from the NSE fallback on 4 September 2026.
 
 `withAnnouncementLookups()` wraps the existing BSE feed. The same Corp Announcements table,
-Source filter, company watchlist, exports, Ask Research and General Alerts consume the combined
+Source filter, company watchlist, exports, Ask Research and All Alerts consume the combined
 rows. Its `supplement` metadata reports the lookups separately; `capturedAt`, `coversUniverse` and
 `windowDays` still describe only the BSE base. The freshness label names the BSE capture explicitly.
 The normal Refresh re-reads BSE and the shared company capture. Opening the page loads the
@@ -3661,11 +3661,11 @@ Alongside the ±`MOVE_PCT` price move, `fromTechnicals` emits one event per comp
 heavy trading was accumulation or distribution. Only a confirmed base break is `positive`. On the
 shipped capture, 40 of 603 companies clear 2x and 16 clear 3x.
 
-## General Alerts history — DERIVED, no file and no route of its own
+## All Alerts history — DERIVED, no file and no route of its own
 
 `js/data/daily-alerts.js` writes nothing and introduces no route of its own. It calls the loaders of
 all eight research tabs and returns readings in one of two modes: the default one-day report, or `includeHistory: true`
-for every retained row through the requested **Indian trading date**. General Alerts and AI Alerts use history
+for every retained row through the requested **Indian trading date**. All Alerts and AI Alerts use history
 mode; its table progressively paints the rows inside one fixed-height scroller, newest first.
 
 | Feed id | Tab | Contributes |
@@ -3758,7 +3758,7 @@ also uses `fetchedAt`: reading the file today is not evidence that its upstream 
 snapshot and this device, no per-company request — which is deliberately separate from `load()`:
 `load()` memoises its promise, so a seed arriving first would hand the tab that owns the feed the
 seed's promise and silently discard its company list, and the Refresh button would then re-read an
-empty set and ask about nothing. General Alerts Refresh uses the one-shot earnings, con-call and
+empty set and ask about nothing. All Alerts Refresh uses the one-shot earnings, con-call and
 chatter revalidators plus one conditional read of the bulk investor snapshot. It never performs
 the Super Investors tab's ninety-one-book revalidation walk.
 

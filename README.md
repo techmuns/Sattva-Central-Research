@@ -15,7 +15,7 @@ deleted; it is in git history at `d3bba30` if a real ledger is ever wired.
 portfolio company and surfaces the highest-signal evidence first. Materiality, recency, direction,
 real Portfolio membership, independent-feed corroboration, conflicts and sector clusters determine
 its internal ordering; cards show evidence and a next action without exposing score arithmetic.
-Stale feeds are penalised and named in a compact header warning. **General Alerts** keeps the complete
+Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
 newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
 Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,
 importance and feed filters. Both views reuse the same feeds and add no source of their own.

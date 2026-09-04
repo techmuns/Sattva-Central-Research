@@ -1075,7 +1075,7 @@ await go('/#/research/breakouts?scope=universe', 2500);
 }
 
 // ---------------------------------------------------------------------------------------
-// 3d. Ask Research is the landing tab; AI Alerts and General Alerts retain their focused checks
+// 3d. Ask Research is the landing tab; AI Alerts and All Alerts retain their focused checks
 // ---------------------------------------------------------------------------------------
 console.log('\n— AI alerts —');
 {
@@ -1348,7 +1348,7 @@ console.log('\n— AI alerts —');
   // button — so this names one rather than asserting there is only one to name.
   await aiCards.first().locator('[data-open-general]').first().click();
   await page.waitForTimeout(5000);
-  ok('a card drills into General Alerts without changing the selected scope',
+  ok('a card drills into All Alerts without changing the selected scope',
     /\/daily-alerts\?scope=portfolio/.test(page.url()) && new URL(page.url()).hash.includes(`company=${firstTicker}`), page.url());
   const seeded = await page.locator('#content-host [data-table-search]').inputValue();
   // Count REAL result rows. `tbody tr` includes the one empty-state row, so the old assertion
@@ -1439,9 +1439,9 @@ console.log('\n— AI alerts —');
 
   // A QUESTION THAT NAMES A COMPANY GETS THAT COMPANY, FROM EVERY SOURCE THAT CARRIES IT. Measured
   // against the shipped data rather than a fixture: the book company with events in the most
-  // General Alerts feeds is asked about by NAME, in lower case, and the packet must resolve it to
+  // All Alerts feeds is asked about by NAME, in lower case, and the packet must resolve it to
   // its ticker and land its rows from more than one source. Before this, "anything i should know
-  // about IIFL finance?" was answered "not present" over four visible General Alerts rows.
+  // about IIFL finance?" was answered "not present" over four visible All Alerts rows.
   const companyAudit = await evalSafe(async () => {
     const { buildResearchEvidence } = await import('/js/research/estate.js');
     const alerts = await import('/js/data/daily-alerts.js');
@@ -1476,7 +1476,7 @@ console.log('\n— AI alerts —');
     `"${companyAudit.name}" → ${companyAudit.resolved?.map((company) => `${company.ticker} (${company.inScope ? 'in scope' : 'outside scope'})`).join(', ') || 'nothing'}`);
   ok('...and lands that company\'s rows from more than one source, ahead of every other company\'s',
     companyAudit.carrying?.length >= 2 && companyAudit.alertRows >= Math.min(companyAudit.alertFeeds, 2) && companyAudit.companyRowsFirst === true,
-    `${companyAudit.ticker}: ${companyAudit.carrying?.join(', ')} · ${companyAudit.alertRows} General Alerts row(s) of ${companyAudit.alertFeeds} feed(s)`);
+    `${companyAudit.ticker}: ${companyAudit.carrying?.join(', ')} · ${companyAudit.alertRows} All Alerts row(s) of ${companyAudit.alertFeeds} feed(s)`);
 
   // THE MOCK LEDGER IS NOT EVIDENCE. It used to be the fifteenth source — invented quantities and
   // costs, marked live, summarised into XIRR/TWR/drawdown and streamed to the model, which then
@@ -1577,14 +1577,14 @@ console.log('\n— AI alerts —');
 
   // AN ANSWER SAVED BEFORE ITS COMPANIES WERE STORED STILL DEEP-LINKS. Its question is resolved
   // again on first paint and the result stored on the message — so a conversation from before
-  // the link change opens General Alerts on the company's nineteen rows, not on all 21,000.
+  // the link change opens All Alerts on the company's nineteen rows, not on all 21,000.
   const legacyMember = await page.evaluate(async () => {
     const coverage = await import('/js/data/coverage.js');
     const member = coverage.holdings().find((h) => h.ticker && h.name && h.name.split(' ').length >= 2);
     const stored = JSON.parse(localStorage.getItem('sattva:ask-research:v1') || '[]');
     stored.unshift({ id: 'legacy-answer', title: 'legacy', createdAt: '2026-09-01T00:00:00Z', updatedAt: '2099-01-01T00:00:00Z', messages: [
       { role: 'user', text: `anything i should know about ${member.name.toLowerCase()}?` },
-      { role: 'assistant', text: 'Filed today. [Dashboard: General Alerts]', dashboardSources: [{ id: 'daily-alerts', tab: 'General Alerts', route: '#/research/daily-alerts' }], webSources: [] },
+      { role: 'assistant', text: 'Filed today. [Dashboard: All Alerts]', dashboardSources: [{ id: 'daily-alerts', tab: 'All Alerts', route: '#/research/daily-alerts' }], webSources: [] },
     ] });
     localStorage.setItem('sattva:ask-research:v1', JSON.stringify(stored));
     return member.ticker;
@@ -1665,7 +1665,7 @@ console.log('\n— AI alerts —');
     `${seedTicker}: search "${seededSearch}", ${seededRows.length} row(s), company present ${seededCompanyPresent}`);
 
   // ---------------------------------------------------------------------------------------
-  // 3f. General Alerts — the complete chronological stream
+  // 3f. All Alerts — the complete chronological stream
   //
   // It must consolidate every feed, keep today's freshness distinct from retained history, and
   // reveal older dates through the table's own scroller in strict chronological order.
@@ -1678,7 +1678,7 @@ console.log('\n— AI alerts —');
   // beneath them already lists and the fourth printed the date; the description restated what the
   // coverage panel says per feed. What may not be lost with them is the provenance and the day, so
   // both are asserted here rather than the furniture that used to carry them.
-  ok('General Alerts carries no redundant stat strip', (await page.locator('#content-host .stat-card').count()) === 0);
+  ok('All Alerts carries no redundant stat strip', (await page.locator('#content-host .stat-card').count()) === 0);
   ok('...and no description paragraph competing with the stream',
     !/in one stream\. Red is an alert/.test(daText));
   ok('the sub-view picker is hidden for this single-stream tab', await page.evaluate(() => {
@@ -1694,7 +1694,7 @@ console.log('\n— AI alerts —');
     (await page.locator('[data-alerts-info]').count()) === 1 &&
       (await page.locator('[data-alerts-info]').evaluate((el) => el.tagName)) === 'SPAN');
   const historyPillText = await page.locator('#content-host [title*="newest first"]').innerText();
-  ok('General Alerts states that retained history is loaded', /History · \d+ dates?/.test(historyPillText), historyPillText);
+  ok('All Alerts states that retained history is loaded', /History · \d+ dates?/.test(historyPillText), historyPillText);
 
   // THE COVERAGE PANEL IS THE HONESTY HALF. Without it an empty bucket reads as an all-clear.
   const panel = await page.locator('[data-alerts-coverage]').innerText();
@@ -1753,7 +1753,7 @@ console.log('\n— AI alerts —');
   // The status label must not bring back the long explainer overlay.
   await page.locator('[data-alerts-info]').first().click();
   await page.waitForTimeout(200);
-  ok('the General Alerts status opens no explainer popup',
+  ok('the All Alerts status opens no explainer popup',
     (await page.locator('#modal-overlay:not(.hidden)').count()) === 0);
   ok('...and a feed that could not be read is distinguished from one with nothing to report',
     !/could not be read/.test(panel) || !/could not be read.*nothing today/s.test(panel));
@@ -2172,7 +2172,7 @@ console.log('\n— AI alerts —');
     embeddedFill ? `table ends ${embeddedFill.vh - embeddedFill.bottom}px above the fold, ${embeddedFill.height}px tall` : 'no scroll container');
   await page.setViewportSize({ width: 1440, height: 1100 });
 
-  // THE NEWS TIME, ASSERTED AT THE RULE. General Alerts read it off `raw.page_age`, and `raw` is
+  // THE NEWS TIME, ASSERTED AT THE RULE. All Alerts read it off `raw.page_age`, and `raw` is
   // stripped before the snapshot is written — so it was present on a live walk and absent on every
   // row that came from the file, which is all of them. It reads `publishedAt` now, a first-class
   // field that survives the strip. That field only reaches the committed capture once the Worker
@@ -3530,7 +3530,7 @@ if (!chatterState.ok) {
     await page.locator('#modal-content [data-modal-close]').click();
   }
 
-  // A GENERAL ALERTS CHATTER ROW OPENS THE COMPANY'S MENTIONS POPUP, not just the tab. The chatter
+  // A ALL ALERTS CHATTER ROW OPENS THE COMPANY'S MENTIONS POPUP, not just the tab. The chatter
   // event carries no source URL, so daily-alerts.js falls back to the tab WITH the company and an
   // `open=mentions` flag; this asserts the receiving end honours it. Driven through the URL the row
   // click builds (deterministic) rather than through the alerts tab, which needs every feed's egress

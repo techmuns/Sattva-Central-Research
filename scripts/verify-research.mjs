@@ -42,7 +42,7 @@ const parseEvents = async (response) =>
 
 ok('the runtime research catalog covers every visible research tab, and nothing that is not one', () => {
   const tabs = new Set(DASHBOARD_RESEARCH_SOURCES.map((source) => source.tab));
-  for (const title of ['AI Alerts', 'General Alerts', 'Earnings Hub', 'Con-call', 'Public Chatter', 'Breakouts / Technical', 'Super Investors', 'News', 'Corp Announcements', 'Insider Trades']) {
+  for (const title of ['AI Alerts', 'All Alerts', 'Earnings Hub', 'Con-call', 'Public Chatter', 'Breakouts / Technical', 'Super Investors', 'News', 'Corp Announcements', 'Insider Trades']) {
     assert.equal(tabs.has(title), true, title);
   }
   // The mock ledger was the fifteenth source and cited itself as "Portfolio Analytics", linking

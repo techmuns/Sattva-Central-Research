@@ -1,6 +1,6 @@
-// tabs/ai-alerts.js — THE SMALL, EXPLAINABLE READING LIST ABOVE GENERAL ALERTS.
+// tabs/ai-alerts.js — THE SMALL, EXPLAINABLE READING LIST ABOVE ALL ALERTS.
 //
-// General Alerts is the complete chronological record. This tab deliberately is not: it groups
+// All Alerts is the complete chronological record. This tab deliberately is not: it groups
 // the last seven days by company, ranks the material company-specific evidence, and suppresses
 // names that do not cross the published threshold. The ranking lives in data/ai-alerts.js so the
 // product rules are pure, testable and available to exports or notifications later.
@@ -296,7 +296,7 @@ const DOT_TONE = {
  *
  * The direction pill, the importance pill, the full timestamp and the rule's own reason sentence
  * all came off this row. None of them was wrong — they are simply the workings, and every one of
- * them is still one click away in General Alerts, which is the tab that exists to show them. What
+ * them is still one click away in All Alerts, which is the tab that exists to show them. What
  * a card owes is the claim and its provenance.
  *
  * THE AGE IS PRINTED AT THE RESOLUTION THE FEED PUBLISHES. Most of these feeds date a row to a day
@@ -440,7 +440,7 @@ function emptyPanel(ctx) {
   const m = report?.meta || {};
   // MUTING ITS OWN LIST EMPTY IS NOT THE SAME ANSWER AS NOTHING REACHING THE THRESHOLD, and the
   // panel must not print the second over the first — that would be a claim about the feeds made on
-  // the strength of a control the reader set, the same error as General Alerts' chip filter
+  // the strength of a control the reader set, the same error as All Alerts' chip filter
   // emptying its own stream. So it says which, and offers the way back.
   const archivedHere = (report?.cards || []).filter((card) => mute.isHidden(card.ticker, card.topEvent?.id || '')).length;
   if (filter === 'archived') {
@@ -471,7 +471,7 @@ function emptyPanel(ctx) {
           ? `The latest ${alerts.WINDOW_DAYS}-day read found ${escapeHtml(formatNumber(m.activeCompanies || 0))} companies with events, but none reached ${alerts.MIN_SCORE} points. That is a ranked result, not a claim that nothing happened.`
           : 'The other priority level may still contain companies. Change the filter above or open the complete stream.'}
       </p>
-      <button type="button" data-ai-empty-general class="mt-5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">Open General Alerts</button>
+      <button type="button" data-ai-empty-general class="mt-5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">Open All Alerts</button>
     </div>`;
 }
 

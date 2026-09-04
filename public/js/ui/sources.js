@@ -26,7 +26,7 @@ import * as nseFeed from '../data/nse-filings.js';
 import * as twitterNews from '../data/twitter-news.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import * as superInvestors from '../data/super-investors.js';
-// NOT TYPED OUT. The threshold is stated in the General Alerts row reasons, its export and here; all
+// NOT TYPED OUT. The threshold is stated in the All Alerts row reasons, its export and here; all
 // three read the same constant, so changing it cannot leave one of them describing the old filter.
 import * as dailyAlerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
@@ -209,18 +209,18 @@ export function sourceGroups() {
       // THE ALERT PAIR COMES FIRST because this is the only group whose whole point is that it
       // introduces NOTHING. A reader is owed "no new feed" before looking for a source that does
       // not exist.
-      title: 'AI & General Alerts',
+      title: 'AI & All Alerts',
       icon: '🔔',
-      tabs: 'AI Alerts · General Alerts',
+      tabs: 'AI Alerts · All Alerts',
       items: [
         {
           name: 'No source of its own — two views over the research feeds below',
           feeds:
-            `<strong>General Alerts</strong> retains the available records from ${dailyAlerts.FEEDS.length} source categories, including NSE filings, IPO history and tracked-issuer supplements, schedules, institutional holdings, X posts and session-only document lookups. Missing dates and unresolved companies remain visible in Universe; on-demand coverage is explicitly labelled. Date filters narrow the loaded pool without issuing requests. ` +
+            `<strong>All Alerts</strong> retains the available records from ${dailyAlerts.FEEDS.length} source categories, including NSE filings, IPO history and tracked-issuer supplements, schedules, institutional holdings, X posts and session-only document lookups. Missing dates and unresolved companies remain visible in Universe; on-demand coverage is explicitly labelled. Date filters narrow the loaded pool without issuing requests. ` +
             '<strong>Positive / Negative / Neutral</strong> direction and <strong>High / Low</strong> importance are separate, and every row prints both reasons. Source sentiment is reproduced where it exists; insider and investor transactions use their own direction; announcements use the narrow rules documented here; news remains neutral. ' +
             `High thresholds include ±${dailyAlerts.MOVE_PCT}% price moves, ${dailyAlerts.INSIDER_HIGH_PCT}% or ₹${dailyAlerts.INSIDER_HIGH_VALUE / 10_000_000} crore insider activity, ${dailyAlerts.INVESTOR_HIGH_PP}pp investor changes, and ${dailyAlerts.CHATTER_HIGH_MENTIONS} mentions or ${dailyAlerts.CHATTER_HIGH_CHANGE_PCT}% mention change. ` +
             `Its panel distinguishes failed, stale and on-demand coverage from current data. <strong>AI Alerts</strong> applies its existing ${aiAlerts.WINDOW_DAYS}-day, ${aiAlerts.MIN_SCORE}-point policy to supported company signals; newly retained raw snapshots and schedules are not automatically ranked as corroboration. Broader AI interpretation is a separate phase. No illustrative portfolio weights are used.`,
-          cadence: 'General Alerts revalidates on visit, Refresh and every 90 seconds while visible. Source updates reuse loaded records; no per-company walks or upstream job dispatches.',
+          cadence: 'All Alerts revalidates on visit, Refresh and every 90 seconds while visible. Source updates reuse loaded records; no per-company walks or upstream job dispatches.',
           status: 'live',
           file: 'js/data/ai-alerts.js · js/tabs/ai-alerts.js · js/data/daily-alerts.js · js/tabs/daily-alerts.js',
         },
@@ -437,12 +437,12 @@ export function sourceGroups() {
           name: 'Tracked news keywords (computed)',
           url: null,
           feeds:
-            '<strong>Not a feed — the one reading this dashboard adds to somebody else\'s reporting.</strong> Thirty keywords, supplied by the desk, matched against each story\'s headline and standfirst on both News surfaces, against each filing\'s subject and BSE\'s own sub-category on Corp Announcements, and used as the materiality rule for both feeds in General Alerts and AI Alerts. ' +
+            '<strong>Not a feed — the one reading this dashboard adds to somebody else\'s reporting.</strong> Thirty keywords, supplied by the desk, matched against each story\'s headline and standfirst on both News surfaces, against each filing\'s subject and BSE\'s own sub-category on Corp Announcements, and used as the materiality rule for both feeds in All Alerts and AI Alerts. ' +
             'It exists because the news upstream is a <strong>search by company name</strong>, so the capture is a name match and names collide: on the shipped file, filtering 11,060 stories by these keywords leaves 2,889. ' +
-            '<strong>A keyword is a TOPIC, never a direction</strong> — "Lawsuit" is something a company can be on either side of — so no story here is scored positive or negative, and every company-news row in General Alerts stays directionally neutral exactly as it was. What a match changes is importance. ' +
+            '<strong>A keyword is a TOPIC, never a direction</strong> — "Lawsuit" is something a company can be on either side of — so no story here is scored positive or negative, and every company-news row in All Alerts stays directionally neutral exactly as it was. What a match changes is importance. ' +
             'Several patterns are deliberately narrower than the plain word, and each says so on its own chip: a bare <em>trial</em> matched free-trial boilerplate, a bare <em>fire</em> matched "stock on fire". ' +
             'The filter always offers <strong>No tracked keyword</strong>, so a pattern that is quietly too narrow can be found rather than mistaken for a quiet week; and a story that does not appear to name the company it is filed under is <strong>marked, never removed</strong>. ' +
-            'On announcements it also <strong>replaced</strong> a borrowed gate rather than sitting beside one: BSE\'s own critical flag marks about a third of all filings, most of them AGM notices, so it is reproduced on every row but no longer decides what General Alerts calls material — measured, high importance there fell from 32% of filings to 11%.',
+            'On announcements it also <strong>replaced</strong> a borrowed gate rather than sitting beside one: BSE\'s own critical flag marks about a third of all filings, most of them AGM notices, so it is reproduced on every row but no longer decides what All Alerts calls material — measured, high importance there fell from 32% of filings to 11%.',
           cadence: 'Recomputed on every load',
           status: 'static',
           file: 'public/js/data/news-keywords.js',

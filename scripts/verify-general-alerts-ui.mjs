@@ -69,7 +69,7 @@ const settled = () => page.waitForFunction(() => {
 try {
   await page.goto(origin);
   await settled();
-  console.log('Rendered complete General Alerts pool');
+  console.log('Rendered complete All Alerts pool');
   assert.equal(await page.locator('[data-feed]').count(), 19);
   assert((await page.locator('[data-feed="company-documents"]').innerText()).includes('on-demand'));
   await page.locator('[data-table-search]').fill('Undated retained item');

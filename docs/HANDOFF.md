@@ -20,7 +20,7 @@ One workspace, twelve tabs:
 
 | Workspace | Tabs |
 | --- | --- |
-| Research Central | **Ask Research** · AI Alerts · General Alerts · Earnings Hub · Con-call · Public Chatter · Breakouts / Technical · Super Investors · News · Corp Announcements · NSE Filings · Insider Trades |
+| Research Central | **Ask Research** · AI Alerts · All Alerts · Earnings Hub · Con-call · Public Chatter · Breakouts / Technical · Super Investors · News · Corp Announcements · NSE Filings · Insider Trades |
 
 **There was a second workspace and it is deleted.** Portfolio Analytics was four modules over an
 illustrative ledger, kept `hidden: true` so old links still resolved — routable but not clickable,
@@ -29,7 +29,7 @@ money with nothing on the page that led back. **Portfolio here means the book of
 and nothing else.** See §2 and `d3bba30` in git history.
 
 **Ask Research is the landing tab.** AI Alerts ranks the last seven days of company-specific events from all
-nine alert feeds into a concise portfolio priority queue. **General Alerts** keeps the complete
+nine alert feeds into a concise portfolio priority queue. **All Alerts** keeps the complete
 newest-first stream (News contributes company and market-wide feeds). Direction and importance stay
 separate, every General row states both reasons, and AI cards show the strongest evidence and next
 action without exposing score arithmetic. Both are derived views with no data source of their own.
@@ -263,18 +263,18 @@ all.
 ## 4c. AI Alerts
 
 **AI Alerts is the prioritised reading list.** `js/data/ai-alerts.js` groups the last seven
-days of company-specific General Alerts by ticker. It ranks materiality, recency, direction, real
+days of company-specific All Alerts by ticker. It ranks materiality, recency, direction, real
 Portfolio membership, independent-feed corroboration, repeated high-importance events,
 directional conflict and high-importance negative clusters inside a portfolio sector. A stale, failed
 or unread feed subtracts points. Cards are sorted by score internally, show the strongest three source
-events and next action, and keep the score arithmetic out of the UI. They link to General Alerts
+events and next action, and keep the score arithmetic out of the UI. They link to All Alerts
 pre-filtered for that company. A compact header status still names stale or unread feeds so a partial
 queue cannot look fully current.
 
 The model is deliberately deterministic rather than generative: the feeds already carry the
 structured facts needed to prioritise them, so a repeatable rule cannot invent a filing or silently
 change its mind. Single-feed neutral news noise stays below the threshold, and tickerless market
-news stays in General Alerts because it cannot honestly be attributed to a portfolio company.
+news stays in All Alerts because it cannot honestly be attributed to a portfolio company.
 No position weight or conviction tier enters the ranking — there is no ledger here to take one
 from, and an invented weight must never decide what a real reader is told is urgent. `coverage.js`
 supplies the real 142-company membership and sector context.
@@ -292,7 +292,7 @@ while the tab is unmounted. An unsent draft is persisted with the conversation; 
 interrupted by a page reload is handed back to the composer rather than re-sent, because a re-ask
 costs a model run.
 `js/research/estate.js` is the registry: fourteen adapters read the same modules as AI Alerts,
-General Alerts, Earnings Hub, Con-call, Public Chatter, Breakouts, both Super Investor disclosures,
+All Alerts, Earnings Hub, Con-call, Public Chatter, Breakouts, both Super Investor disclosures,
 both News feeds, exchange filings and Insider Trades. **Every source is a tab the reader can open**
 — the mock ledger was the fifteenth and cited itself as *Portfolio Analytics*, linking into a hidden
 workspace with no way back; `verify-research.mjs` now requires every route to start `#/research/`.
@@ -330,14 +330,14 @@ Never put that value in `public/`, `wrangler.jsonc` or browser storage.
 
 ---
 
-## 4e. General Alerts — the complete timeline
+## 4e. All Alerts — the complete timeline
 
 Its route id remains `daily-alerts` so saved links keep working; only the user-facing name changed.
 
 Every other tab here is organised by SOURCE: this is what the results feed holds, this is what BSE
 filed, this is what the technicals scrape measured. That is right for research and wrong for the
 first thirty seconds of a morning, when the question is not *what does Moneycontrol have* but *what
-happened, and does any of it need me*. General Alerts is organised as one chronological timeline.
+happened, and does any of it need me*. All Alerts is organised as one chronological timeline.
 
 `js/data/daily-alerts.js` takes the General readings; `js/tabs/daily-alerts.js` draws them. **It adds no
 data source** — every row comes from a feed that already has its own tab. The timeline asks for

@@ -1,4 +1,4 @@
-// tabs/daily-alerts.js — GENERAL ALERTS, THE COMPLETE CHRONOLOGICAL STREAM.
+// tabs/daily-alerts.js — ALL ALERTS, THE COMPLETE CHRONOLOGICAL STREAM.
 //
 // Every other tab here is organised by SOURCE: this is what the results feed holds, this is what
 // BSE filed, this is what the technicals scrape measured. That is the right shape for research and
@@ -37,7 +37,7 @@ import * as records from '../data/alert-records.js';
 
 export const meta = {
   id: 'daily-alerts',
-  title: 'General Alerts',
+  title: 'All Alerts',
   subtitle: 'Every retained alert in one newest-first timeline.',
   // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
   // collapse — the feed filter in the toolbar does that job without costing a navigation.
@@ -82,7 +82,7 @@ export function render(ctx) {
 
   // AI ALERTS LINKS TO THE COMPLETE EVIDENCE FOR ONE COMPANY. Seed the existing table search
   // rather than inventing a second company filter. Entering through that link resets an earlier
-  // General Alerts filter state: "See all" cannot quietly retain e.g. Today-only or one feed and
+  // All Alerts filter state: "See all" cannot quietly retain e.g. Today-only or one feed and
   // then show an empty subset. Subsequent feed repaints retain the new table's own state as usual.
   const requestedCompany = String(ctx.params?.company || '').trim();
   if (requestedCompany && requestedCompany !== routeCompany) tableView = { q: requestedCompany };
@@ -102,7 +102,7 @@ export function render(ctx) {
     unsubs.push(() => clearInterval(timer));
     unsubs.push(
       refresh.register(REFRESH_ID, {
-        label: 'General Alerts',
+        label: 'All Alerts',
         // A REFRESH HERE COSTS NOTHING PER COMPANY. Earnings, con-calls and chatter each expose a
         // bounded one-shot revalidation; investors revalidate the one bulk snapshot. The owning
         // Super Investors tab keeps the deliberate ninety-one-book walk behind its own control.
@@ -253,7 +253,7 @@ function paint(ctx) {
   // in the source registry and export — see the stat-strip opt-out rule in CLAUDE.md.
   ctx.root.innerHTML = `
     ${sectionHead({
-      title: 'General Alerts',
+      title: 'All Alerts',
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(report, day)}${pendingPill(report)}${scopeSummary({
         scope: ctx.scope,
         count: m.companies || 0,
@@ -698,7 +698,7 @@ function eventsTable(ctx, events, day) {
     initialSort: { key: 'Date / time', dir: 'desc' },
     initialView: tableView,
     emptyMessage: emptyMessageFor(ctx.scope, day),
-    exportName: `sattva-general-alerts-through-${day}`,
+    exportName: `sattva-all-alerts-through-${day}`,
     onExport: (visible) => exportStream(visible, day, ctx.scope),
   });
 }
@@ -767,7 +767,7 @@ function exportStream(visible, day, scope) {
   const banner = {
     __banner: true,
     line:
-      `SATTVA CENTRAL RESEARCH — GENERAL ALERTS HISTORY through ${day} (Indian trading date), ${scopeLabel(scope)} scope. ` +
+      `SATTVA CENTRAL RESEARCH — ALL ALERTS HISTORY through ${day} (Indian trading date), ${scopeLabel(scope)} scope. ` +
       `Registered feeds: ${alerts.FEEDS.map((f) => f.label).join(', ')}. Includes captured records, scheduled events and explicitly labelled snapshots, including undated records. ` +
       `Direction (positive/negative/neutral) and Importance (high/low) are independent; every row carries both reasons. ` +
       `High thresholds: price ±${alerts.MOVE_PCT}%; insider ${alerts.INSIDER_HIGH_PCT}% or ₹${alerts.INSIDER_HIGH_VALUE / 10_000_000} crore; investor presence change or ${alerts.INVESTOR_HIGH_PP}pp; chatter ${alerts.CHATTER_HIGH_MENTIONS} mentions or ${alerts.CHATTER_HIGH_CHANGE_PCT}% mention change. ` +
@@ -779,8 +779,8 @@ function exportStream(visible, day, scope) {
 
   const cell = (get) => (r) => (r.__banner ? '' : get(r));
   return exportRows({
-    filename: `sattva-general-alerts-through-${day}`,
-    sheetName: 'General Alerts',
+    filename: `sattva-all-alerts-through-${day}`,
+    sheetName: 'All Alerts',
     columns: [
       { header: 'Date (IST)', key: 'date', width: 14, get: (r) => (r.__banner ? r.line : r.day || '') },
       { header: 'Time (IST)', key: 'time', width: 12, get: cell((r) => r.time || '') },

@@ -16,7 +16,7 @@
 // coverages, definitions and summaries — used to be measured on the wire packet, chrome included,
 // and on real data it alone exceeded the budget. So every row was pushed and immediately popped, and
 // the model was told, correctly, that `includedRows` was 0 everywhere: it answered that the dashboard
-// held no company data while General Alerts showed four rows for the company asked about. Nothing
+// held no company data while All Alerts showed four rows for the company asked about. Nothing
 // threw and the packet was under bound. The skeleton is now compact, measured on the provider's
 // shape (`evidence-shared.js`), and may take at most `1 - ROW_RESERVE_SHARE` of the budget: past
 // that, summaries and then coverages are dropped from the largest sources — recorded on the source
@@ -44,8 +44,8 @@ import { providerEvidenceChars } from './evidence-shared.js';
 import { withoutPublisherName } from '../core/source-copy.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
-  { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over General Alerts: which companies carry the most material, corroborated recent evidence.' },
-  { id: 'daily-alerts', tab: 'General Alerts', route: '#/research/daily-alerts', description: 'Derived timeline across earnings, con-calls, chatter, technicals, investor activity, news, announcements and insider disclosures.' },
+  { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
+  { id: 'daily-alerts', tab: 'All Alerts', route: '#/research/daily-alerts', description: 'Derived timeline across earnings, con-calls, chatter, technicals, investor activity, news, announcements and insider disclosures.' },
   { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns.' },
   { id: 'company-filings', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=filings', description: 'Company document titles, periods and source links already read in Company Filings. PDF contents are not extracted.' },
   { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Currently loaded all-exchange scheduled-results dates and company lists.' },
@@ -589,7 +589,7 @@ const byDateDesc = (key) => (a, b) => String(b[key] || '').localeCompare(String(
 const byDateTimeDesc = (a, b) => `${b.date || ''} ${b.time || ''}`.localeCompare(`${a.date || ''} ${a.time || ''}`);
 
 // Each builder LOADS (phase one) and then READS (phase three) — see the header. `read` is a plain
-// filter over the module's cache and must not fetch; General Alerts is the one exception, because
+// filter over the module's cache and must not fetch; All Alerts is the one exception, because
 // `collect()` is the whole of that feed and it seeds rather than walks.
 const BUILDERS = [
   {
@@ -914,11 +914,11 @@ const BUILDERS = [
       const m = report.meta || {};
       const cards = report.cards || [];
       return sourcePacket(this.id, {
-        source: 'Derived ranking over General Alerts (this dashboard)',
+        source: 'Derived ranking over All Alerts (this dashboard)',
         asOf: report.day || null,
         rowCount: cards.length,
         coverage: { windowDays: aiAlerts.WINDOW_DAYS, firstDay: m.firstDay, activeCompanies: m.activeCompanies, surfaced: m.surfacedCompanies, suppressed: m.suppressedCompanies },
-        definition: 'Deterministic seven-day priority over General Alerts: importance, materiality, recency, book membership, multi-feed corroboration, repeats. rank is the reading; no score is published. Not a recommendation.',
+        definition: 'Deterministic seven-day priority over All Alerts: importance, materiality, recency, book membership, multi-feed corroboration, repeats. rank is the reading; no score is published. Not a recommendation.',
         ...chooseRows(cards, plan, (card, index) => ({
           rank: index + 1,
           ticker: card.ticker || null,

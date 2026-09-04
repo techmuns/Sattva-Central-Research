@@ -1,6 +1,6 @@
-# General Alerts: source-record pool
+# All Alerts: source-record pool
 
-General Alerts collects before it filters. Portfolio and Watchlist are exact ticker-matched views
+All Alerts collects before it filters. Portfolio and Watchlist are exact ticker-matched views
 of the same records as Universe. A missing ticker stays in Universe and is counted in each feed's
 `unresolvedCount`; it is not guessed from an ambiguous company name. Universe exclusions still
 apply to ticker-bearing records. Scope changes do not launch company requests.
@@ -11,7 +11,7 @@ No production collection jobs are dispatched by opening this page.
 
 ## Included sources
 
-| Source tab | General Alerts records |
+| Source tab | All Alerts records |
 | --- | --- |
 | Earnings Hub | Filed results and every company/date in the captured calendar, enriched by the stable Moneycontrol ID-to-ticker map; loaded calendar dates also join |
 | Con-call | Held-call analysis, full source tags and scheduled calls |
@@ -50,7 +50,7 @@ source record as JSON alongside the readable columns.
 
 ## Refresh and health
 
-Opening General Alerts revalidates bounded source captures. While the tab is visible it rechecks
+Opening All Alerts revalidates bounded source captures. While the tab is visible it rechecks
 every 90 seconds, and Refresh uses the same path. Concurrent consumers share per-feed in-flight
 reads. Source-tab updates reassemble loaded records without network requests; subscriptions and
 timers are removed when leaving the tab.
@@ -65,7 +65,7 @@ coverage by the upstream.
 
 This change expands collection, not priority policy. New raw record kinds carry `aiEligible: false`
 so unchanged holdings, routine snapshots and schedules do not manufacture independent corroboration
-or silently change existing AI rankings. AI still reads the General Alerts collector and applies
+or silently change existing AI rankings. AI still reads the All Alerts collector and applies
 its existing policy to supported signals. Mapping the new evidence into ranking is the next phase.
 
 ## Verification
