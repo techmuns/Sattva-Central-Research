@@ -217,7 +217,7 @@ function rowHtml(item, i) {
   // title attribute raw — strip the tags and escape what is left. The cadence is the useful half.
   const detail = String(item.cadence || '').replace(/<[^>]*>/g, '');
   return `
-    <li class="beacon-row ${cls}"${item.id ? ` data-beacon-source="${escapeHtml(item.id)}"` : ''} title="${escapeHtml(`${item.name} — ${label} · ${detail}`)}">
+    <li class="beacon-row ${cls}"${item.id ? ` data-beacon-source="${escapeHtml(item.id)}"` : ''}${item.readState ? ` data-beacon-read-state="${escapeHtml(item.readState)}"` : ''} title="${escapeHtml(`${item.name} — ${label} · ${detail}`)}">
       <span class="beacon-dot" style="animation-delay:${((i % 9) * 0.23).toFixed(2)}s" aria-hidden="true"></span>
       <span class="beacon-row-name">${escapeHtml(item.name)}</span>
       <span class="beacon-row-status">${escapeHtml(label)}</span>
@@ -392,6 +392,7 @@ function refreshPortfolioStatus() {
   const row = rootEl?.querySelector('[data-beacon-source="family-portfolio"]');
   if (!row) return;
   const source = portfolioSource();
+  row.dataset.beaconReadState = source.readState;
   row.classList.toggle('is-live', source.readState === 'read');
   row.classList.toggle('is-mock', source.readState !== 'read');
   row.querySelector('.beacon-row-status').textContent = source.readLabel;
