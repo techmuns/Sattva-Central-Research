@@ -208,10 +208,12 @@ try {
   stage = 'four-category capture';
   const previous = readPrior();
   const previousSources = new Map((previous?.sources || []).map((source) => [source.id, source]));
+  console.log('Authenticated session handed to the four-category capture.');
   // Keep one authenticated listing request in flight at a time. Screener is the source of truth,
   // not a high-throughput API, and concurrent page walks can trip its protective throttling.
   const captures = [];
   for (const source of SCREENER_TRADE_SOURCES) {
+    console.log(`Starting ${source.id} capture.`);
     captures.push(await scrapeSource(login, source, previousSources.get(source.id)));
   }
   await login.close();
@@ -222,8 +224,9 @@ try {
   archiveFilings(archive, 'insider', allRows);
   writeFileSync(output, `${JSON.stringify(snapshot, null, 2)}\n`);
   console.log(`Captured ${snapshot.rowCount} unique trades across ${snapshot.withRows} companies and all four categories.`);
-} catch {
-  console.error(`Screener trade capture stopped during ${stage}. The existing snapshot was not replaced.`);
+} catch (error) {
+  const errorType = ['Error', 'TypeError', 'TimeoutError'].includes(error?.name) ? error.name : 'Error';
+  console.error(`Screener trade capture stopped during ${stage} (${errorType}). The existing snapshot was not replaced.`);
   process.exitCode = 1;
 } finally {
   await browser?.close().catch(() => {});
