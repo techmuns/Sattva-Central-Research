@@ -83,8 +83,7 @@ async function extractRows(page, url) {
   return raw;
 }
 
-async function scrapeSource(context, source, previousMeta) {
-  const page = await context.newPage();
+async function scrapeSource(page, source, previousMeta) {
   page.setDefaultTimeout(30_000);
   page.setDefaultNavigationTimeout(45_000);
   const rows = [];
@@ -144,8 +143,6 @@ async function scrapeSource(context, source, previousMeta) {
     // cookies or browser exceptions in a shared Action log.
     console.error(`${source.id}: capture stopped during ${sourceStage} on page ${currentPage || 1}.`);
     throw new Error('Screener source capture failed.');
-  } finally {
-    await page.close().catch(() => {});
   }
 
   if (!complete) throw new Error('pagination limit reached');
@@ -207,7 +204,6 @@ try {
   await logout.waitFor({ state: 'attached' });
   if (!hasSession) throw new Error('login not verified');
   await login.waitForTimeout(2_000);
-  await login.close();
 
   stage = 'four-category capture';
   const previous = readPrior();
@@ -216,8 +212,9 @@ try {
   // not a high-throughput API, and concurrent page walks can trip its protective throttling.
   const captures = [];
   for (const source of SCREENER_TRADE_SOURCES) {
-    captures.push(await scrapeSource(context, source, previousSources.get(source.id)));
+    captures.push(await scrapeSource(login, source, previousSources.get(source.id)));
   }
+  await login.close();
 
   stage = 'snapshot validation';
   const snapshot = buildScreenerTradesSnapshot(previous, captures, { capturedAt });
