@@ -27,7 +27,7 @@ export async function boundedArtifactBytes(response, signal, limit = BSE_COMPRES
   return result;
 }
 
-export async function readBseCollector({ token, ref = 'main', fetcher = fetch, now = Date.now, signal = AbortSignal.timeout(12000) } = {}) {
+export async function readBseCollector({ token, ref = 'main', allowMissing = false, fetcher = fetch, now = Date.now, signal = AbortSignal.timeout(12000) } = {}) {
   if (!token) throw Error('BSE collector requires the existing Worker GitHub Actions credential');
   const headers = { accept: 'application/vnd.github+json', authorization: `Bearer ${token}`, 'user-agent': 'sattva-bse-ipo-reader', 'x-github-api-version': '2026-03-10' };
   const get = (path) => fetcher(`${API}${path}`, { method: 'GET', headers, redirect: 'manual', cache: 'no-store', signal });
@@ -36,11 +36,18 @@ export async function readBseCollector({ token, ref = 'main', fetcher = fetch, n
     if (!r.ok) { await r.body?.cancel(); throw Error(`BSE collector GitHub read failed (HTTP ${r.status})`); }
     return JSON.parse(await boundedIpoText(r, signal, 512 * 1024));
   };
-  const listing = await json(`/actions/workflows/${BSE_COLLECTOR_WORKFLOW}/runs?branch=${encodeURIComponent(ref)}&per_page=10`);
-  const runs = (listing.workflow_runs || []).filter((r) => positiveId(r.id) && r.head_branch === ref && r.head_repository?.full_name === BSE_COLLECTOR_REPO
-    && (['schedule', 'push', 'workflow_dispatch'].includes(r.event) || (ref !== 'main' && r.event === 'pull_request')));
-  const run = runs.find((r) => r.status === 'completed' && r.conclusion === 'success');
-  if (!run) throw Error('No successful BSE collector capture is available');
+  const runPath = `/actions/workflows/${BSE_COLLECTOR_WORKFLOW}/runs?branch=${encodeURIComponent(ref)}`;
+  const trusted = (r) => positiveId(r.id) && r.head_branch === ref && r.head_repository?.full_name === BSE_COLLECTOR_REPO
+    && (['schedule', 'push', 'workflow_dispatch'].includes(r.event) || (ref !== 'main' && r.event === 'pull_request'));
+  const listing = await json(`${runPath}&per_page=10`);
+  const runs = (listing.workflow_runs || []).filter(trusted);
+  // Failure streaks must not hide the previous good capture beyond a ten-run window.
+  const successful = await json(`${runPath}&status=success&per_page=10`);
+  const run = (successful.workflow_runs || []).find((r) => trusted(r) && r.status === 'completed' && r.conclusion === 'success');
+  if (!run) {
+    if (allowMissing && successful.total_count === 0 && !runs.some((r) => r.conclusion === 'success')) return null; // first-ever capture only, never an API error
+    throw Error('No successful BSE collector capture is available');
+  }
   const artifacts = await json(`/actions/runs/${run.id}/artifacts?per_page=10`);
   const artifact = (artifacts.artifacts || []).find((a) => a.name === BSE_ARTIFACT_NAME && !a.expired && a.workflow_run?.id === run.id && positiveId(a.id));
   if (!artifact || !/^sha256:[a-f0-9]{64}$/.test(artifact.digest || '') || !(artifact.size_in_bytes > 0 && artifact.size_in_bytes <= BSE_COMPRESSED_LIMIT)) throw Error('BSE collector artifact missing or invalid');
@@ -62,11 +69,11 @@ export async function readBseCollector({ token, ref = 'main', fetcher = fetch, n
   const latest = runs.find((r) => r.status === 'completed');
   const latestFailed = latest?.conclusion !== 'success';
   const source = IPO_SOURCES.find((s) => s.id === 'bse-sme');
-  return { rows: capture.rows, source: {
+  return { capture, rows: capture.rows, source: {
     id: source.id, label: source.label, url: source.url, status: 'ok', checkedAt: capture.checkedAt,
-    count: capture.rows.length, records: capture.records, unmapped: capture.unmapped,
+    count: capture.currentCount, retainedCount: capture.retainedCount, records: capture.records, unmapped: capture.unmapped,
     delivery: 'scheduled', collectorRunId: run.id, collectorRunUrl: `https://github.com/${BSE_COLLECTOR_REPO}/actions/runs/${run.id}`,
     collectorLatestFailed: latestFailed, collectorLatestConclusion: latest?.conclusion || null,
-    note: `${capture.note} Collected separately by GitHub Actions; the source check time is the collection time, not this page load. Requested every 15 minutes; scheduling can lag.${latestFailed ? ' The latest completed collection failed; this is the previous successful capture.' : ''}`,
+    note: `${capture.note} ${capture.retainedCount} additional documents retained from earlier captures, not re-confirmed by this read. Collected separately by GitHub Actions; the source check time is the collection time, not this page load. Requested every 15 minutes; scheduling can lag.${latestFailed ? ' The latest completed collection failed; this is the previous successful capture.' : ''}`,
   } };
 }

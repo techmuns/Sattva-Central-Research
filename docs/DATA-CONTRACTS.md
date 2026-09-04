@@ -2411,8 +2411,28 @@ BSE direct Worker reads remained unreliable after bounded retries, so the servin
 15 minutes, on collector-related main changes, and in isolated PR validation. Schedules are
 best-effort, not guaranteed. `scripts/collect-bse-ipo.mjs` reads only the official BSE table with
 bounded curl, validates every row, and uploads one gzip file via `upload-artifact@v7` with
-`archive: false`. Artifacts expire after two days; the workflow has only `contents: read`, never
-commits to main, never deploys, and never accepts a target URL. Failed reads publish no artifact.
+`archive: false`. Artifacts expire after seven days; the workflow has only `contents: read` and
+`actions: read`, never commits to main, never deploys, and never accepts a target URL. Failed reads
+publish no artifact. Hosted network acceptance is required before this workflow can be activated:
+both standard Ubuntu and macOS runners timed out connecting to BSE on 4 September 2026. A green
+mock/contract test does not establish working BSE access or repeated successful collection.
+
+Each successful capture carries forward the previous successful capture plus the reviewed BSE
+seed, keyed by source and exact document URL. Re-reading the same document updates its observation
+instead of appending a duplicate. Distinct document URLs remain separate, even for the same company,
+filing type and date; amendments must not be discarded as duplicates. Version 2 separates
+`currentCount` from `retainedCount`. A link absent from the current response retains its original
+`observedAt` and supplied filing date, rather than being relabelled as newly seen.
+
+History restore is mandatory in Actions. Only a verified empty successful-run history permits
+first-run bootstrap. An API error, missing/expired previous artifact, unmapped rows, a greater-than-10%
+issuer-table shrink, inconsistent counts or a size cap failure blocks publication, rather than
+silently resetting/truncating history. Successful captures are queried separately from recent runs,
+so a streak of more than ten failures cannot hide the last success. The shrink guard is an anomaly
+check, not proof that the publisher has exposed every filing. Seven-day rolling artifacts preserve
+history through ordinary failures but are **not permanent storage**: an outage longer than the
+retention window requires deliberate archive recovery. Durable long-term backup remains necessary
+before claiming lossless, indefinite historical collection.
 
 The Worker reads only this repository's successful **main** collector runs, never PR/fork
 artifacts. It verifies artifact SHA-256, fixed filename, source identities, dates, counts, allowed
@@ -2433,8 +2453,9 @@ five minutes while mounted. The existing live engine pauses hidden-tab polling. 
 history accumulates in IndexedDB, bounded to 20,000 rows with visible truncation warnings. Failed
 revalidation or direct-source check times older than ten minutes are visibly stale; scheduled BSE
 uses the separate 30-minute limit above. Refresh does not discard filings missing from a narrower
-source window. BSE collection continues while closed, but closed browsers do not accumulate new
-local history and artifact retention is not a permanent archive. Upstream publication, SEBI pagination and
+source window. Once enabled, successful BSE collection carries history forward while closed, but
+closed browsers do not accumulate new local history and artifact retention is not a permanent archive.
+Upstream publication, SEBI pagination and
 BSE-only mainboard coverage can still leave gaps, disclosed in the Data flowing in source panel.
 
 The IPO table keeps only a compact freshness/error line and a Source details shortcut. This opens

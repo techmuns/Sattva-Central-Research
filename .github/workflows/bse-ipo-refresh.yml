@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: bse-ipo-capture-${{ github.ref }}
@@ -20,9 +21,9 @@ concurrency:
 
 jobs:
   collect:
-    # Standard Linux runners could not establish a BSE TCP connection. Validate the
-    # standard macOS runner's independent network path before enabling production.
-    runs-on: macos-15
+    # Do not activate until repeated hosted captures pass. Changing the runner OS
+    # did not resolve BSE's connection failure; a reachable egress path is required.
+    runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v5
@@ -31,13 +32,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Inspect the staging BSE connection
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        run: |
-          node --input-type=module -e "import dns from 'node:dns/promises'; console.log(await dns.lookup('www.bsesme.com', {all:true}));"
-          curl --head --verbose --connect-timeout 10 --max-time 15 https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx
       - name: Collect and validate the official BSE SME table
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/collect-bse-ipo.mjs "$RUNNER_TEMP/bse-ipo-v1.json.gz"
       - name: Publish the immutable public-data capture
         uses: actions/upload-artifact@v7
@@ -45,4 +42,4 @@ jobs:
           path: ${{ runner.temp }}/bse-ipo-v1.json.gz
           archive: false
           if-no-files-found: error
-          retention-days: 2
+          retention-days: 7
