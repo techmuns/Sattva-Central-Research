@@ -106,6 +106,7 @@ export function refresh() {
 }
 
 export function syncLabel() {
+  if (family?.error) return 'Family Office is temporarily unavailable — showing the last verified holdings. Refresh to try again.';
   if (family) return family.checking ? 'Checking Family Office for changes — showing the last verified holdings.' : 'Using holdings supplied by the authenticated Family Office session. These private session identities are not saved to the public portfolio snapshot.';
   const checked = raw?.syncedAt ? new Date(raw.syncedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'unknown';
   const source = `Workbook: ${raw?.sourceWorkbook?.label || 'saved baseline'} · stated period end: ${raw?.asOf || 'unknown'} · last successful check: ${checked} IST`;
@@ -138,6 +139,12 @@ export function useFamilyBook(entries, asOf, checkedAt = null) {
  * check must not briefly swap the current book for an older public fallback. */
 export function invalidateFamilyBook() {
   if (family) { family.checking = true; notify(false); }
+}
+
+/** A transport/read failure changes freshness, not ownership. Explicit sign-out
+ * still clears the private session via useFamilyBook(null). */
+export function failFamilyBook() {
+  if (family) { family.checking = false; family.error = true; notify(false); }
 }
 
 export function prime(payload) {
@@ -180,7 +187,7 @@ export function meta() {
     source: family ? 'Active Sattva Family book' : raw?.source || null,
     sourceWorkbook: family ? null : raw?.sourceWorkbook || null,
     syncedAt: family ? family.checkedAt : raw?.syncedAt || null,
-    syncStatus: family ? (family.checking ? 'family-checking' : 'family-session') : currentStatus(),
+    syncStatus: family ? (family.error ? 'family-unavailable' : family.checking ? 'family-checking' : 'family-session') : currentStatus(),
     syncError,
     manualEdits: 0,
     count: current.length,

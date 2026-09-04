@@ -38,6 +38,42 @@ let sizeController = null;
 let sizesLoading = false;
 let sizeError = '';
 let awaitingBook = null;
+let collecting = false;
+let loadError = '';
+
+// Keep a completed view in memory across tab visits. This lifetime listener also
+// revokes that cached private view if access expires while another tab is open.
+onPortfolioInvalidation((version) => {
+  if (version < 0) {
+    if (report?.scope === 'portfolio') report = null;
+    if (ctxRef?.scope !== 'portfolio') return;
+    loadToken++;
+    sizeController?.abort();
+    sizeController = null;
+    sizesLoading = collecting = false;
+    awaitingBook = null;
+    sizeError = 'Unlock your portfolio to refresh your alerts.';
+  } else {
+    if (ctxRef?.scope !== 'portfolio') return;
+    // A positions read already in flight will return the checked book. Otherwise
+    // wait for Family to adopt it before asking for a new reading.
+    if (!sizesLoading) { loadToken++; collecting = false; awaitingBook = version; sizeError = loadError = ''; }
+  }
+  paint(ctxRef);
+});
+
+function portfolioUnavailable() {
+  if (ctxRef?.scope !== 'portfolio' || sizesLoading || (sizeError && awaitingBook === null)) return;
+  // Background checks can fail without positions-ready, including repeated
+  // failures while the connection is already unavailable.
+  loadToken++;
+  collecting = false;
+  awaitingBook = null;
+  sizeError = 'Family Office is temporarily unavailable.';
+  if (report) report = alerts.rankReport({ scope: report.scope, day: report.day,
+    feeds: report.feeds, events: report.allCards.flatMap(card => card.events) }, { holdings: coverage.holdings() });
+  paint(ctxRef);
+}
 
 export function render(ctx) {
   ctxRef = ctx;
@@ -46,14 +82,10 @@ export function render(ctx) {
     unsubs.push(watchCalendar());
     unsubs.push(onPortfolioConnection((connected) => {
       if (connected && ctxRef?.scope === 'portfolio' && !sizesLoading) void recollect(ctxRef);
+      else if (!connected && portfolioConnectionState() === 'unavailable') portfolioUnavailable();
     }));
-    unsubs.push(onPortfolioInvalidation((version) => {
-      if (!ctxRef || ctxRef.scope !== 'portfolio') return;
-      report = null;
-      // Wait until Family adopts the new book; starting another archive check here
-      // would invalidate the check that is still running in the connector.
-      if (!sizesLoading) { loadToken += 1; awaitingBook = version; }
-      paint(ctxRef);
+    unsubs.push(coverage.onChange(() => {
+      if (coverage.meta().syncStatus === 'family-unavailable') portfolioUnavailable();
     }));
     unsubs.push(onPortfolioReady((version) => {
       if (ctxRef?.scope === 'portfolio' && awaitingBook !== null && version >= awaitingBook && !sizesLoading) {
@@ -67,8 +99,10 @@ export function render(ctx) {
         refresh: async () => {
           const before = new Set((report?.cards || []).map((card) => `${card.ticker}:${card.topEvent?.id || ''}`));
           await recollect(ctxRef, { refresh: true });
+          if (sizeError || loadError) throw new Error(sizeError || loadError);
           const added = (report?.cards || []).filter((card) => !before.has(`${card.ticker}:${card.topEvent?.id || ''}`)).length;
-          return { added, checked: (report?.feeds || []).filter((feed) => feed.status === 'ok').length };
+          return { added, checked: (report?.feeds || []).filter((feed) => feed.status === 'ok').length,
+            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length };
         },
       })
     );
@@ -89,7 +123,8 @@ export function destroy() {
   sizesLoading = false;
   sizeError = '';
   awaitingBook = null;
-  if (privatePortfolioContext()) report = null;
+  collecting = false;
+  loadError = '';
   ctxRef = null;
   loadToken += 1;
   for (const off of unsubs) {
@@ -103,51 +138,60 @@ export function destroy() {
 }
 
 async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
+  if (!ctx) return;
   const token = ++loadToken;
+  const keepResults = !!report;
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
-  sizeError = '';
+  collecting = true;
+  sizeError = loadError = '';
   awaitingBook = null;
-  try {
-    let positionSizes = null;
-    if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
-      const controller = new AbortController();
-      sizeController = controller;
-      sizesLoading = true;
-      report = null;
-      paint(ctx);
-      try {
-        positionSizes = await readPositionSizes(controller.signal);
-        if (token !== loadToken || !ctxRef) return;
-      } catch (err) {
-        if (token !== loadToken || !ctxRef) return;
-        sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
-        sizesLoading = false;
-        paint(ctxRef);
-        return;
-      } finally {
-        if (token === loadToken) { sizesLoading = false; sizeController = null; }
-      }
-    }
-    const next = await alerts.collect({
-      scope: ctx.scope,
-      holdings: coverage.holdings(),
-      positionSizes,
-      refresh: forceRefresh,
-      onPartial: (partial) => {
-        if (token !== loadToken || !ctxRef) return;
-        report = partial;
-        paint(ctxRef);
-      },
+  const current = () => token === loadToken && !!ctxRef;
+
+  // Public evidence can load while the private connector checks holding sizes.
+  // A slow or unavailable size reader must not hold the first alert hostage.
+  let positions = Promise.resolve(null);
+  if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
+    const controller = new AbortController();
+    sizeController = controller;
+    sizesLoading = true;
+    positions = readPositionSizes(controller.signal).catch((err) => {
+      if (current()) sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
+      return null;
+    }).finally(() => {
+      if (current()) { sizesLoading = false; sizeController = null; }
     });
-    if (token !== loadToken || !ctxRef) return;
-    report = next;
-    paint(ctxRef);
+  }
+  paint(ctx);
+  try {
+    const [next, positionSizes] = await Promise.all([
+      alerts.collect({
+        scope: ctx.scope,
+        holdings: coverage.holdings(),
+        refresh: forceRefresh,
+        onPartial: (partial) => {
+          // Refresh a populated view atomically; partial feeds otherwise remove
+          // companies and reorder cards underneath the reader on every arrival.
+          if (!current() || keepResults) return;
+          report = partial;
+          paint(ctxRef);
+        },
+      }),
+      positions,
+    ]);
+    if (!current()) return;
+    // The checked book can contain additions/exits since collection began. Read
+    // the now-loaded feeds against that book without another network refresh.
+    const completed = positionSizes ? await alerts.collect({ scope: ctx.scope,
+      holdings: coverage.holdings(), positionSizes, load: false }) : next;
+    if (!current()) return;
+    report = completed;
   } catch (err) {
-    console.error('[ai-alerts] collect failed', err);
-    if (token !== loadToken || !ctxRef) return;
-    ctx.root.innerHTML = `${head(ctx)}${errorPanel(err)}`;
+    if (!current()) return;
+    loadError = err?.message || 'The alert feeds could not be refreshed.';
+  } finally {
+    if (current()) { collecting = false; paint(ctxRef); }
   }
 }
 
@@ -169,17 +213,28 @@ function paint(ctx) {
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
   ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
-  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx);
+  ctx.root.querySelector('[data-ai-position-status]').innerHTML = refreshStatus() || positionStatus(ctx);
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
-  ctx.root.querySelector('[data-ai-toolbar]').innerHTML = report ? controls(matches, cards.length) : '';
-  ctx.root.querySelector('[data-ai-results]').innerHTML = report ? cardsPanel(ctx, shown, cards.length) : sizeError ? errorPanel(sizeError) : loadingPanel();
-  if (!report) return;
+  // Identical results keep their DOM, expanded evidence and keyboard focus.
+  for (const [selector, markup] of [
+    ['[data-ai-toolbar]', report ? controls(matches, cards.length) : ''],
+    ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : (sizeError || loadError) ? '' : loadingPanel()],
+  ]) {
+    const node = ctx.root.querySelector(selector);
+    if (node._markup !== markup) { node.innerHTML = markup; node._markup = markup; }
+  }
   wire(ctx, cards.length);
+}
+
+function refreshStatus() {
+  const error = loadError || sizeError;
+  if (error) return `<p data-ai-error class="mb-4 text-xs text-amber-700" role="status">${escapeHtml(error)} ${report ? 'Showing available alerts. ' : ''}Use Refresh to try again.</p>`;
+  return '';
 }
 
 function positionStatus(ctx) {
   if (ctx.scope !== 'portfolio') return '';
-  if (sizesLoading || awaitingBook !== null) return '<p class="mb-4 text-xs text-slate-500" role="status">Refreshing your holding sizes…</p>';
+  if (sizesLoading || awaitingBook !== null) return `<p class="mb-4 text-xs text-slate-500" role="status">${report ? 'Updating holdings in the background — current alerts remain available.' : 'Checking holding sizes…'}</p>`;
   const sizes = report?.meta?.positionSizes;
   if (sizes) {
     const prices = sizes.quotes?.notLive > 0 || sizes.quotes?.status !== 'live' ? 'Some prices use workbook marks' : 'Quote freshness varies by stock';
@@ -240,18 +295,19 @@ function watchCalendar() {
 
 function head(ctx) {
   const m = report?.meta || {};
-  const status = feedStatus(report);
+  const status = (loadError || sizeError) ? { label: 'Refresh unavailable', tone: 'neutral', state: 'error' }
+    : report && (collecting || awaitingBook !== null) ? { label: 'Updating…', tone: 'neutral', state: 'pending' } : feedStatus(report);
   return sectionHead({
     title: 'AI Alerts',
     description: 'Important company signals from the last seven days.',
     meta: `<div class="flex flex-wrap items-center justify-end gap-2">
       <span data-ai-feed-status data-state="${status.state}">${pill({ label: status.label, tone: status.tone })}</span>
-      ${scopeSummary({
+      ${report ? scopeSummary({
         scope: ctx.scope,
         count: m.activeCompanies || 0,
         noun: 'companies with recent events',
         book: coverage.meta(),
-      })}
+      }) : pill({ label: { portfolio: 'Portfolio', watchlist: 'Watchlist', universe: 'Universe' }[ctx.scope], tone: 'neutral' })}
       ${pill({ label: `${alerts.WINDOW_DAYS}-day window`, tone: 'brand', title: `${fmtDay(m.firstDay)} through ${fmtDay(report?.day)}` })}
     </div>`,
   });
@@ -519,9 +575,10 @@ function filteredCards(cards) {
 }
 
 function wire(ctx, total) {
-  ctx.root.querySelector('[data-ai-unlock]')?.addEventListener('click', unlockPortfolio);
-  ctx.root.querySelector('[data-ai-empty-clear]')?.addEventListener('click', clearSearch);
-  ctx.root.querySelector('[data-ai-controls]')?.addEventListener('click', (event) => {
+  const click = (selector, handler) => { const node = ctx.root.querySelector(selector); if (node) node.onclick = handler; };
+  click('[data-ai-unlock]', unlockPortfolio);
+  click('[data-ai-empty-clear]', clearSearch);
+  click('[data-ai-controls]', (event) => {
     const button = event.target.closest('[data-ai-filter]');
     if (!button) return;
     filter = button.dataset.aiFilter;
@@ -529,12 +586,12 @@ function wire(ctx, total) {
     paint(ctxRef);
   });
 
-  ctx.root.querySelector('[data-ai-more]')?.addEventListener('click', () => {
+  click('[data-ai-more]', () => {
     visibleLimit = Math.min(total, visibleLimit + PAGE_SIZE);
     paint(ctxRef);
   });
 
-  ctx.root.querySelector('[data-ai-cards]')?.addEventListener('click', (event) => {
+  click('[data-ai-cards]', (event) => {
     const muteButton = event.target.closest('[data-ai-mute]');
     if (muteButton) {
       mute.hide(muteButton.dataset.ticker, muteButton.dataset.seen || null);
@@ -553,17 +610,17 @@ function wire(ctx, total) {
     location.hash = `#/research/daily-alerts?scope=${encodeURIComponent(ctx.scope)}&company=${encodeURIComponent(ticker)}`;
   });
 
-  ctx.root.querySelector('[data-ai-unmute-all]')?.addEventListener('click', () => {
+  click('[data-ai-unmute-all]', () => {
     mute.clear();
     paint(ctxRef);
   });
 
-  ctx.root.querySelector('[data-ai-empty] [data-ai-unmute-all]')?.addEventListener('click', () => {
+  click('[data-ai-empty] [data-ai-unmute-all]', () => {
     mute.clear();
     paint(ctxRef);
   });
 
-  ctx.root.querySelector('[data-ai-empty-general]')?.addEventListener('click', () => {
+  click('[data-ai-empty-general]', () => {
     location.hash = `#/research/daily-alerts?scope=${encodeURIComponent(ctx.scope)}`;
   });
 }
@@ -620,8 +677,4 @@ function loadingPanel() {
       <div class="flex items-center gap-3 text-sm font-semibold text-slate-600"><span class="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-500"></span>Reading and ranking the alert feeds…</div>
       <p class="mt-2 text-xs text-slate-400">Cards arrive as independent feeds finish; a slow source does not hold back the rest.</p>
     </div>`;
-}
-
-function errorPanel(err) {
-  return `<div class="rounded-2xl bg-rose-50 p-5 text-sm text-rose-800 ring-1 ring-rose-200" data-ai-error>AI Alerts could not rank the feeds: ${escapeHtml(err?.message || String(err))}</div>`;
 }

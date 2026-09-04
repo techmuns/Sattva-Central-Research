@@ -761,13 +761,14 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
 }
 
 /** Collect General Alerts once and rank each partial/final report without adding any request. */
-export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, onPartial = null } = {}) {
+export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, load = true, onPartial = null } = {}) {
   const book = holdings || coverage.holdings();
   const report = await generalAlerts.collect({
     scope,
     holdings: book,
     includeHistory: true,
     refresh,
+    load,
     onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book, positionSizes })) : null,
   });
   return rankReport(report, { holdings: book, positionSizes });

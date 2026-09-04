@@ -37,6 +37,11 @@ holding size within the selected filter. Cards show each stock's share of listed
 value, aggregated across entities. The book date and quote limitations remain visible. Standalone
 Research has no private sizes and retains evidence-priority ordering; no portfolio values are
 copied into public files or browser storage.
+Alert evidence loads alongside holding-size checks. Completed AI Alerts remain visible during
+background refreshes and return visits, with search and pagination preserved; a completed refresh
+replaces the view together. All Alerts retains each source's existing records while it rechecks.
+Temporary Family Office failures retain the last verified company list with an unavailable status;
+expired access clears the private session. Private holding sizes remain in memory only.
 Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
 newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
 Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,

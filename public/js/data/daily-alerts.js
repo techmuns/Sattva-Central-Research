@@ -413,6 +413,16 @@ function loadFeed(id, refresh) {
 export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null } = {}) {
   const book = holdings || coverage.holdings();
   const settledFeeds = new Map(); // feed id -> the finished feed row
+  // Start with every source's current in-memory records. Refreshing one source
+  // must not temporarily remove all the others from the timeline. The pending
+  // status still says these records have not been rechecked by this collection.
+  for (const feed of FEEDS) {
+    try {
+      const out = COLLECTORS[feed.id]({ day, scope: 'universe', wanted: null, includeHistory }) || {};
+      settledFeeds.set(feed.id, toFeedRow(feed, { ...out, status: 'pending',
+        events: (out.events || []).filter((e) => includeHistory || eventDay(e) === day) }, day));
+    } catch { /* A source with no readable snapshot starts empty. */ }
+  }
   const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds });
 
   // EACH FEED SETTLES ON ITS OWN AND THE PAGE PAINTS AS IT DOES.

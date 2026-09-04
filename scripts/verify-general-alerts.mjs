@@ -100,8 +100,12 @@ assert(!(await alerts.collect({ ...options, scope: 'universe', load: false })).e
 records.recordDocuments('company-documents', { rows: [privateRow] }, { ticker: 'STLTECH' });
 let releaseNse;
 nseGate = new Promise((done) => { releaseNse = done; });
-const racing = alerts.collect({ ...options, scope: 'universe', refresh: true });
+const partials = [];
+const racing = alerts.collect({ ...options, scope: 'universe', refresh: true, onPartial: report => partials.push(report) });
 await new Promise((done) => setImmediate(done));
+assert(partials.length > 0, 'fast sources produce updates while NSE is still checking');
+assert(partials.every(report => report.events.some(e => e.url === nseRow.url)), 'a slow refreshing source keeps its previous records in every partial');
+assert(partials.every(report => report.feeds.find(f => f.id === 'nse-filings').status === 'pending'), 'retained records do not imply a finished refresh');
 records.clearPrivateRecords(); releaseNse(); nseGate = null;
 assert(!(await racing).events.some((e) => e.private), 'a public read finishing after logout cannot restore old private records');
 

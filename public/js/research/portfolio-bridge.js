@@ -1,4 +1,4 @@
-import { useFamilyBook, invalidateFamilyBook } from '../data/coverage.js';
+import { useFamilyBook, invalidateFamilyBook, failFamilyBook } from '../data/coverage.js';
 // The authenticated Family reader runs in a hidden frame inside Central Research.
 // No token, raw ledger, or portfolio reply is persisted here.
 export const FAMILY_ORIGIN = 'https://sattva-family.pages.dev';
@@ -198,13 +198,14 @@ function enqueueRead(read, signal) {
     reading = true;
     try {
       const reply = await read();
-      useFamilyBook(reply?.holdings || null, reply?.sizes.bookAsOf, reply?.sizes.checkedAt);
+      if (reply) useFamilyBook(reply.holdings, reply.sizes.bookAsOf, reply.sizes.checkedAt);
+      else failFamilyBook();
       if (reply) setConnection('connected');
       else if (state !== 'locked') setConnection('unavailable');
       return reply;
     } catch (error) {
       if (error?.name !== 'AbortError') {
-        useFamilyBook(null);
+        failFamilyBook();
         if (state !== 'locked') setConnection('unavailable');
       }
       throw error;

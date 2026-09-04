@@ -96,6 +96,8 @@ await assert.rejects(bridge.readPortfolio('Do I own Example?'), /stale or invali
 assert.equal(bridge.portfolioConnectionState(), 'unavailable', 'a rejected reading revokes the connected badge');
 assert.equal(bridge.portfolioConnected(), false);
 assert.notEqual(coverage.meta().syncStatus, 'family-session');
+assert.deepEqual(coverage.holdings().map(h => h.isin), sizeReply.holdings.map(h => h.isin), 'failed checks retain the verified identities instead of reverting to the public snapshot');
+assert.match(coverage.syncLabel(), /temporarily unavailable.*last verified holdings/);
 assert.equal(await bridge.connectPortfolio(), true, 'the transport can still be available after a data failure');
 assert.equal(bridge.portfolioConnected(), false, 'a handshake alone cannot certify recovery');
 responder = m => emit({ ...m, type: 'ready', capabilities: ['position-sizes'] });
