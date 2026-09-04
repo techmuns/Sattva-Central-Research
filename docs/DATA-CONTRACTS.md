@@ -2971,6 +2971,13 @@ and [SAHANA](https://www.nseindia.com/get-quote/equity/SAHANA/Sahana-System-Limi
 The two warrant ISINs in the saved Family book join their respective equity issuers for this
 company-announcement view only. This does not alter portfolio positions or quote-provider symbols.
 
+Future Supply Chain Solutions is retained as a historical filing identity after leaving the active
+directory. Its [NSE page](https://www.nseindia.com/get-quote/equity/FSC/Future-Supply-Chain-Solutions-Limited)
+confirms `FSC` / `INE935Q01015` and retains delisting/insolvency announcements; its
+[exchange-hosted filing](https://nsearchives.nseindia.com/corporate/FSC_01092021172712_20210901_StockExchangeFiling.pdf)
+confirms BSE code `540798` on page 1. The supplement records these sources and its verification date.
+It permits history capture and matching without relabelling the holding as currently traded.
+
 **`corp-announcements.json` remains the BSE date-indexed base capture.** Additional Muns company/date lookups are merged in the browser; they never overwrite that exchange-wide file.
 The per-company route reached 118 of 603 companies because it costs one request each against a
 ~60/minute cap. BSE publish the same filings indexed by date, so the whole exchange arrives in about

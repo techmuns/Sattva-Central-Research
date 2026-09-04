@@ -15,6 +15,8 @@ const master = buildAnnouncementIdentities([{ ISIN_NUMBER: 'INE564S01019', SCRIP
 const issuers = createAnnouncementIdentity(master.entries);
 assert.equal(issuers.find({ isin: 'INE564S13022' }).ticker, 'KAMATS', 'warrants join their verified equity issuer only for announcements');
 assert.equal(issuers.find({ isin: 'INE0R4713012' }).ticker, 'ALPEXSOLAR');
+assert.equal(issuers.find({ isin: 'INE935Q01015' }).ticker, 'FSC', 'delisted holdings retain their verified historical filing identity');
+assert.equal(issuers.key({ scripCode: '540798' }), issuers.key({ isin: 'INE935Q01015' }));
 assert.equal(mergeAnnouncements([{ ticker: 'ALPEXSOLAR-SM', date: '2026-09-04', url: 'https://example.test/a.pdf' }].map(issuers.row),
   [{ ticker: 'ALPEXSOLAR', date: '2026-09-04', url: 'https://example.test/a.pdf' }].map(issuers.row)).length, 1, 'quote aliases cannot duplicate the same announcement');
 
