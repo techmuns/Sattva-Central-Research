@@ -2111,9 +2111,9 @@ exactly where it would be read as a price move.
 
 ---
 
-## News, Corporate Announcements and Insider Trades — LIVE, behind a credential
+## News, Corporate Announcements and company-level Insider Trades — LIVE, behind a credential
 
-Three feeds and company search from the Muns API, behind Worker routes. All need
+Three company-level feeds and company search from the Muns API, behind Worker routes. All need
 `Authorization: Bearer …`, so all are proxied — the token lives in `env.MUNS_TOKEN` and never
 reaches the browser, exactly as the Finology feed does on the same host.
 
@@ -2224,17 +2224,25 @@ lands, so every arrival shifted the indices and a cached row was moved under a k
 different article. Row keys here are content-derived, and `verify-ui.mjs` **compares** the rendered
 rows against the feed's rather than counting them.
 
-**Insider trades was right first time.** Fifteen columns, straight off the markdown table:
-`Company, Insider, Category, Security Type, Transaction, Trade Shares, Trade %, Trade Value,
-Post Holding Shares, Post Holding %, Mode, From Date, To Date, Broadcast Date, Source`. Rows that
-look duplicated in the visible columns are genuinely distinct filings — same day, same size,
-different insider, sometimes the opposite direction — which is why nothing here dedupes them.
+**Insider Trades is now four market-wide lists, not one per-company walk.** The scheduled capture
+authenticates to Screener.in and reads all four supplied newest-first listings: **Bulk deal, Block
+deal, SAST and Insider trade**. Their common five-cell presentation is normalised into the existing
+flexible row cells: value/quantity/price for Bulk and Block, percentage/quantity/mode for SAST, and
+person role/security/quantity for Insider. `Trade Category` is the one dashboard-owned field; it is
+what makes the four-way Category filter exact. Source-specific wording remains unchanged.
 
-**Insider responses now add to retained disclosures.** The supplied
-`POST https://devde.muns.io/filings/data/insider_trades` source is already the feed's upstream;
-it is called once per company, with `country: india` and explicit `fromDate` / `toDate` filters
-to avoid the unfiltered India path's 100-record cap. No second copy of the same source is fetched.
-The client also supports `country: USA` for Finviz, but this dashboard's universe remains Indian.
+The first successful run follows pagination back 30 days for every list. Later runs reread at least
+two newest pages and continue until they overlap the previous source's newest date, so a burst larger
+than one page is not skipped. `sources[].coverageFrom` preserves the initial complete boundary while
+`windowDays: 365` is the retention boundary; the UI does not pretend those are the same fact. All four
+lists must authenticate, retain the expected five headings and parse every visible row before the
+snapshot changes. A redirect to login, one missing list, a changed table shape or a pagination cap
+leaves the last good file untouched.
+
+The live `POST https://devde.muns.io/filings/data/insider_trades` path remains available for a
+company refresh and its fifteen exchange fields. It supplements the market-wide snapshot rather
+than owning scheduled coverage. `scripts/scrape-filings.mjs insider` refuses to overwrite a
+four-category snapshot; scheduled publication belongs to `scripts/scrape-screener-trades.mjs`.
 
 Scheduled captures and browser refreshes share `public/js/data/insider-history.js`. A successful
 empty or smaller response adds what it returned without deleting earlier events inside the
@@ -2243,12 +2251,13 @@ companies retain their prior capture timestamps through the existing fallback me
 news collapse guard does not discard a partial insider capture, and `FILINGS_FORCE` does not
 disable insider retention. Readable dates outside the requested window expire; undated rows stay.
 
-Overlap is matched using every row field except the redundant `raw` copy, with object keys sorted
-for comparison. Source labels, insider names, direction, quantities and document URLs all remain
-part of the match. The merge keeps the greatest observed multiplicity of identical rows, so
-repeated responses do not inflate counts and identical rows already present in one response are
-not collapsed. Without a stable filing ID, a corrected record is retained as a distinct variant.
-Headings are unioned in source order so columns from earlier responses remain visible/exportable.
+Overlap is matched on the economic event fields shared by both providers: trade category, ticker,
+date, person, normalised direction and share quantity. Provider label, URL and number formatting do
+not participate, so `Acquisition / 120000 / BSE` and `Bought / 1,20,000 Equity / Screener.in` render
+once. A Bulk event and a SAST event remain separate because their categories differ. Rows missing
+enough shared identity fall back to their complete sorted content rather than guessing. When two
+representations merge, detailed exchange cells and a direct Screener evidence URL are both retained.
+Headings are unioned in source order so columns from either provider remain visible/exportable.
 
 Browser history uses `insider-history:{ticker}` separately from the exact HTTP payload and ETag
 under `filings:insider:{ticker}`. Reloading after an empty or failed response therefore keeps prior
@@ -2270,7 +2279,7 @@ per field, keeps the untouched record beside the normalised one, and leaves anyt
 as `null` — which renders as an em dash saying the source did not carry it. **A date that will not
 parse stays blank and sorts last**; it is never given today's.
 
-**Insider trades is markdown, not JSON.** Its columns are unknown until a response arrives, so the
+**The supplemental Muns insider response is markdown, not JSON.** Its columns are unknown until a response arrives, so the
 table is built from `headers` at render time, in the source's order, under the source's headings.
 Nothing is renamed. Nothing is summed — a quantity written `1,20,000 (pledged)` is not a number.
 
@@ -2786,9 +2795,9 @@ attempt, while `public/js/data/capture-watchdog.js` checks the committed timesta
 paint and dispatches only an overdue source. `GET /api/capture-status` reads five small metadata
 records from the deployed assets; the browser never downloads every feed merely to inspect age.
 The Worker declines in-flight runs and holds a per-source edge cooldown. The browser checks every
-15 minutes while the SPA is open and retries a due source no more than once per 30 minutes, so a
-dashboard opened before the 19:00 Insider Trades boundary still notices when that source becomes
-due without a broken credential creating a busy loop.
+15 minutes while the SPA is open and retries a due source no more than once per 30 minutes. The
+four-category trade capture is due after 75 minutes, so an open dashboard can recover a delayed
+GitHub schedule without waiting for an end-of-day boundary or creating a busy loop.
 
 For market news, an external clock can still keep the capture warm when nobody has the dashboard
 open. Any of these supplies one:
@@ -2832,8 +2841,8 @@ open. Any of these supplies one:
 one fetch after first paint — gated by the capture's real age, declined at the edge if a run is in
 flight, and never repeated in the same page. Market news is due after 45 minutes during the hours
 the publisher answers; company news after three hours; announcements after 75 minutes on weekdays;
-technicals after 07:15 IST on weekdays if today's capture is missing; insider trades at 19:00 IST
-on weekdays if today's capture is missing. An external scheduler is still useful to keep files warm
+technicals after 07:15 IST on weekdays if today's capture is missing; the four trade lists after
+75 minutes. An external scheduler is still useful to keep files warm
 when nobody is reading, but it is no longer the only recovery mechanism.
 
 **`GET /api/market-news/run` answers whether any of it is working**, via `lastAutomatic`: the most
@@ -3202,13 +3211,14 @@ maximum observed multiplicity across responses. Manual lookups remain device-ret
 calendar validation, authentication, range-separated caching, overlap, empty/failure retention and
 restoring device history. Browser checks cover the form, scope identity, Source filter and export.
 
-### News and insider trades: snapshot first, live walk second
+### News and trades: snapshot first, live detail second
 
-These two are still per-ticker, capped at ~60 requests a minute. They now have separate workflows:
-company news at 09:00 and 19:00 IST, and insider trades at 19:00 IST on weekdays. Keeping them out
-of the 07:00 technicals job prevents two long walks from racing over the same files. If GitHub's
-best-effort schedule misses, the capture watchdog dispatches the same dedicated workflow once; the
-Worker declines duplicates and the browser watches the committed file.
+Company news remains per-ticker and capped at ~60 requests a minute. Trades now use Screener's four
+market-wide date-ordered lists on a 30-minute schedule; the Muns per-ticker route remains an optional
+live detail path. Keeping both captures out of the 07:00 technicals job prevents long jobs from racing
+over the same files. If GitHub's best-effort schedule misses, the capture watchdog dispatches the
+dedicated workflow once after 75 minutes; the Worker declines duplicates and the browser watches the
+committed file.
 
 **News is a search endpoint** — there is no "everything published today" request to make — so there
 is no axis to switch to the way announcements had one. It used to make the reader name companies
@@ -3228,20 +3238,18 @@ snapshot-derived company rows — including companies that became empty — whil
 company this session read live. Additive merging here would leave expired stories on screen until
 a reload and is therefore not a refresh.
 
-**A universe walk is merged per company, never accepted or rejected as one indivisible file.** A
+**The News universe walk is merged per company, never accepted or rejected as one indivisible file.** A
 fresh row or a fresh empty answer wins. A company that timed out or was never reached retains only
 its own last successful answer, with the original capture time in `fallback`; a company with no
 last-good answer remains explicitly failed. This closes the failure where 584 fresh answers were
-discarded because the previous file covered 585 companies, freezing every Insider Trades row on
-the older snapshot. A total outage and a collapse to less than half the prior with-rows count still
+discarded because the previous file covered 585 companies, freezing every News row on the older
+snapshot. A total outage and a collapse to less than half the prior with-rows count still
 fail closed and do not write.
 
-**A company that answered "nothing" is listed in `empty`, and that is what makes it COVERED.**
-The scrape used to write only companies that had something, so one with no trades vanished from the
-file — indistinguishable from one the run never reached. The browser counted those outstanding for
-ever: measured on the shipped insider capture, the tab reported **51 companies "have not been
-checked since"** that had all been checked and genuinely have no trades, and the strip kept offering
-to re-search them. `empty` closes that, `outstanding()` excludes it, and the four answers are now
+**A News company that answered "nothing" is listed in `empty`, and that is what makes it COVERED.**
+The per-company scrape used to write only companies that had something, so an empty result vanished
+from the file — indistinguishable from one the run never reached. `empty` closes that,
+`outstanding()` excludes it, and the four answers are now
 distinct in the file: **in `byTicker`** had something, **in `empty`** was asked and had nothing,
 **in `failed`** could not be read, **in none of the three** was never reached.
 
@@ -3256,16 +3264,15 @@ instead — but `keepRow` still drops them on the way to the table, because a ca
 this change is still a valid file and still holds 62 of them.
 
 ```
-public/data/news.json · insider-trades.json
+public/data/news.json
 {
   "kind": "announcements",
   "capturedAt": "2026-08-14T…Z", "from": "2025-08-14", "to": "2026-08-14", "windowDays": 365,
   "scope": "universe", "asked": 603, "covered": 561, "rowCount": 18422, "failedCount": 42,
   // `scope` MUST match the widest scope the tab offers. It was pinned to "book" in the scheduled
-  // workflow, so the capture held 123 companies while Universe offered 603 and Insider Trades read
-  // as a feed that had stopped working. Measured after: 603 asked, 226 with trades, 359 with none.
+  // workflow, so the capture held 123 companies while Universe offered 603 and the tab read as a
+  // feed that had stopped working.
   "withRows": 519, "emptyCount": 42,   // covered = withRows + emptyCount; never derive by subtraction
-  "headers": [],                       // insider trades only: the source's own column headings
   "byTicker": { "RELIANCE": [ … ] },   // had something in the window
   "empty":    [ "SKYGOLD", "OFSS" ],   // ASKED, and answered nothing — covered, and never re-walked
   // news only: the article's own instant where the upstream gave one, null where it gave a day.
@@ -3276,7 +3283,7 @@ public/data/news.json · insider-trades.json
 }
 ```
 
-**The three files are committed as empty placeholders** until the first scheduled run. They carry
+**New snapshot files are committed as empty placeholders** until the first scheduled run. They carry
 `capturedAt: null`, `covered: 0` and an empty `byTicker`, and they exist for two reasons: the shape
 is then documented in the repo, and the tabs fetch a 200 rather than a 404 — which otherwise breaks
 the zero-console-errors bar on every page load. **An empty placeholder is not a claim that these
@@ -3345,12 +3352,12 @@ An empty cache is the one exception: with nothing to paint, `load()` walks once 
 ### Refreshing it
 
 ```bash
-node scripts/scrape-filings.mjs                                       # news + insider, 603 companies
-node scripts/scrape-filings.mjs news                                  # one feed
-MUNS_TOKEN=…  node scripts/scrape-filings.mjs                         # straight at the upstream
+node scripts/scrape-filings.mjs news                                  # company News walk
+SCREENER_USERNAME=… SCREENER_PASSWORD=… PLAYWRIGHT_ROOT=… \
+  node scripts/scrape-screener-trades.mjs                             # all four trade lists
+MUNS_TOKEN=… node scripts/scrape-filings.mjs news                     # News straight at the upstream
 FILINGS_LIMIT=20 FILINGS_SCOPE=book node scripts/scrape-filings.mjs   # a smoke run
-FILINGS_BASE=http://127.0.0.1:8787 node scripts/scrape-filings.mjs    # against wrangler dev
-MUNS_TOKEN=… node scripts/scrape-filings.mjs                          # straight at the upstream
+FILINGS_BASE=http://127.0.0.1:8787 node scripts/scrape-filings.mjs news # against wrangler dev
 ```
 
 **It reads our own Worker by default and therefore needs no secret**, the same arrangement as the
@@ -4128,17 +4135,17 @@ first; the explicit source-check button uses the authenticated API. Coverage det
 never-checked, overdue, backfilling and unregistered companies, and source-unavailable links.
 The source registry shows **Coverage gaps** while these conditions remain.
 
-Before applying recent display windows, the BSE and insider scrapers preserve records in
+Before applying recent display windows, the BSE and four-category trade scrapers preserve records in
 `public/data/announcements-archive/` and `public/data/insider-archive/`, partitioned by month with
 an index. There is no archive expiry. The migration seeds the existing real snapshots (3,180 BSE
 announcements and 2,185 insider rows); it cannot recover events the dashboard never captured.
 Read-only staging checks also seed RELIANCE and INFY (109 domestic documents and two recent
 NSE announcements); all other companies remain explicitly unchecked for the new sources.
-Insider exact-row multiplicity and source columns are preserved. The insider scan has a 30-minute
-budget and prioritizes failed, unreached and older company reads; it also has a global request gate; incomplete scans retain last-good data and explicit failures.
-A complete insider capture is reused for 18 hours between scheduled company-capture passes.
-Company capture runs before the longer insider pass; either successful capture can publish its
-saved progress even if the other step fails. Health checks run after that publication.
+Insider source columns are preserved, while repeat representations of the same economic event are
+collapsed across captures and providers. The four lists are captured every 30 minutes with a
+25-minute job budget; an incomplete or structurally changed list leaves the last-good snapshot
+untouched. Company filings capture runs before the trade capture; either successful capture can
+publish its saved progress even if the other step fails. Health checks run after that publication.
 
 The BSE job also runs every two hours on all days, overlapping two days and recovering from the
 last completed date if a scheduled run was missed. A source pagination shortfall or unknown
@@ -4147,14 +4154,14 @@ category prevents `coversUniverse: true` and does not advance `lastCompleteTo`.
 **Operational limit:** these jobs use the repository's existing snapshot publication pipeline once
 the change is approved and deployed. GitHub schedules are best-effort and have previously stalled;
 the browser watchdog detects an overdue company-capture report as an additional safety net.
-There is still no independent guaranteed scheduler: this Cloudflare account has no free cron slot.
-This change neither installs a production scheduler nor dispatches a production job. Deployment
-and any scheduler provisioning require separate, specific authorization. Analyst consensus remains
-unconnected, and exchange/provider omissions and unresolved company identities remain visible
-limitations. The dashboard must not advertise 100% completeness.
+The GitHub workflow is the independent scheduler for these committed captures. Four-category trades
+run at minutes 17 and 47 of every hour; the browser watchdog can dispatch the same workflow after a
+75-minute gap. GitHub schedules remain best-effort, so the capture time and verified coverage start
+stay visible. Analyst consensus remains unconnected, and exchange/provider omissions and unresolved
+company identities remain visible limitations. The dashboard must not advertise 100% completeness.
 
 Verification: `node scripts/verify-company-capture.mjs` exercises restart fairness, request pacing,
-time budgets, date gaps, partial/empty/auth failures, raw-universe scope, archive multiplicity,
+time budgets, date gaps, partial/empty/auth failures, raw-universe scope, archive event identity,
 missing static files, and coverage reporting. The existing domestic, announcement, insider and
 snapshot contract tests cover the upstream parsers and additive consumer behavior.
 

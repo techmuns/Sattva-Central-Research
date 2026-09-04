@@ -63,6 +63,16 @@ assert.equal(assess(malformedRanges).status, 'degraded', 'malformed range metada
 const retained = structuredClone(healthy);
 retained.insider.fallback = { A: { capturedAt: recent, reason: 'timeout' } };
 assert(assess(retained).findings.some((f) => f.code === 'company-reads-incomplete'), 'last-good rows cannot mask the failed newest read');
+const exchangeInsider = structuredClone(healthy);
+exchangeInsider.insider = {
+  byTicker: { A: [{ ticker: 'A' }] }, rowCount: 1, capturedAt: recent, coversUniverse: true,
+  categories: ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'], failed: {}, failedCount: 0,
+  fallback: {}, fallbackCount: 0,
+  sources: ['bulk', 'block', 'sast', 'insiders'].map((id) => ({ id, ok: true, rowCount: 1, pagesRead: 2, coverageFrom: '2026-08-01' })),
+};
+assert.equal(assess(exchangeInsider).ok, true, 'all four market-wide Screener categories satisfy insider coverage');
+exchangeInsider.insider.sources.pop();
+assert(assess(exchangeInsider).findings.some((f) => f.code === 'trade-category-coverage-unverified'), 'a missing Screener category fails closed');
 const short = structuredClone(healthy);
 short.announcements.shortfall = [{ category: 'Result', collected: 1, declared: 2 }];
 assert(assess(short).findings.some((f) => f.code === 'pagination-shortfall'));

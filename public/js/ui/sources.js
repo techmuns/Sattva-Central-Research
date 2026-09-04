@@ -534,11 +534,20 @@ export function sourceGroups() {
           file: 'scripts/lib/screener-actions.mjs · scripts/scrape-corporate-actions.mjs · .github/workflows/corporate-actions-refresh.yml',
         },
         {
-          name: 'Muns filings API — insider trades',
+          name: 'Screener.in — Bulk, Block, SAST and Insider trades',
+          url: 'https://www.screener.in/trades/',
+          feeds:
+            '<strong>Four real, market-wide disclosure lists.</strong> The scheduled capture signs in to Screener.in and reads Bulk deals, Block deals, SAST disclosures and Insider trades. Source wording, quantities, values, prices, percentages, modes, roles and security descriptions remain visible. <strong>Trade Category</strong> is added only to make the four-way filter exact. Matching Muns exchange rows are retained as extra detail but the same economic event is shown once, using category, company, date, person, direction and quantity rather than provider formatting as its identity.',
+          cadence: 'Captured every 30 minutes on all days; the watchdog retries after 75 minutes. The first complete capture covers 30 days and later runs overlap prior pages while retaining up to 365 days. All four lists must validate before the shared snapshot changes.',
+          status: 'live',
+          file: 'scripts/scrape-screener-trades.mjs · scripts/lib/screener-trades.mjs · public/js/data/insider-history.js · .github/workflows/insider-trades-refresh.yml',
+        },
+        {
+          name: 'Muns filings API — company insider-trade detail',
           url: 'https://devde.muns.io',
           feeds:
-            "<strong>Real disclosures.</strong> Promoter, director and designated-person dealing from <code class=\"rounded bg-slate-100 px-1\">POST /filings/data/insider_trades</code> with <code class=\"rounded bg-slate-100 px-1\">country: india</code>, routing to NSE, BSE and Trendlyne. <strong>This endpoint answers with a markdown table, not JSON</strong> — the only upstream here that does — so the columns on screen are whatever their table declared, in their order, under their headings. Nothing is renamed and <strong>nothing is summed</strong>: a quantity written \"1,20,000 (pledged)\" is not a number.",
-          cadence: 'Additive history within a rolling 365-day window · captured weekdays at 19:00 IST; Refresh adds live disclosures while retaining earlier captures',
+            '<strong>Supplemental company detail.</strong> A reader-initiated refresh can add promoter, director and designated-person dealing from <code class="rounded bg-slate-100 px-1">POST /filings/data/insider_trades</code>, routing to NSE, BSE and Trendlyne. Its source-defined markdown columns are retained and combined with the market-wide lists without duplicating matching economic events.',
+          cadence: 'On demand for the selected companies; additive within the same rolling 365-day history. It does not own scheduled market-wide coverage.',
           status: 'live',
           file: 'worker/index.js → /api/insider-trades/{ticker} · worker/muns.mjs · public/js/data/filings-shared.js',
         },

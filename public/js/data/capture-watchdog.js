@@ -60,10 +60,11 @@ const CONFIG = {
   insider: {
     route: 'api/insider-snapshot/refresh?source=auto',
     run: 'api/insider-snapshot/run',
-    // One complete universe walk after disclosures settle, with on-demand recovery if the cron
-    // missed. Before 19:00 yesterday evening's snapshot is the newest complete daily cut.
-    due: (capture, clock) => clock.weekday && clock.hour >= 19 && istDay(capture?.capturedAt) !== clock.day,
-    budgetMs: 35 * 60 * 1000,
+    // Screener's four market-wide lists are cheap incremental page reads after bootstrap. A reader
+    // therefore recovers a missed scheduled run by age, rather than waiting for an end-of-day cut.
+    active: () => true,
+    maxAgeMs: 75 * 60 * 1000,
+    budgetMs: 55 * 60 * 1000,
   },
   technicals: {
     route: 'api/data-snapshot/refresh?source=auto',

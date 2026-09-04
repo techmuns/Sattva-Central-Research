@@ -502,7 +502,7 @@ const loadingHtml = () => `
 function pill(m, scope, rows) {
   const at = m.capturedAt ? Date.parse(m.capturedAt) : NaN;
   const age = Number.isFinite(at) ? Date.now() - at : null;
-  const maxAge = m.kind === 'announcements' ? 90 * 60 * 1000 : m.kind === 'news' ? 3 * 60 * 60 * 1000 : 6 * 60 * 60 * 1000;
+  const maxAge = m.kind === 'announcements' ? 90 * 60 * 1000 : m.kind === 'news' ? 3 * 60 * 60 * 1000 : 75 * 60 * 1000;
   const fresh = age !== null && age >= 0 && age <= maxAge;
   const tone = fresh ? 'text-emerald-700' : 'text-slate-500';
   // The face is calm and useful. Coverage/retry details remain in provenance while the watchdog
@@ -584,8 +584,9 @@ function coverageSentence(m, cov) {
   if (cov.coversUniverse) {
     // Nothing was asked company by company here, so there is no company that went unasked. What
     // the reader is owed instead is that an absence in this feed is a real answer.
-    return ` The capture reads the whole exchange by date, so a company with nothing here filed
-      nothing in the last ${n(m.windowDays)} days — ${n(cov.withRows)} of ${n(cov.inScope)}
+    const period = m.coverageFrom ? `since <strong>${escapeHtml(m.coverageFrom)}</strong>` : `in the last ${n(m.windowDays)} days`;
+    return ` The capture reads the whole exchange by date, so a company with nothing here has no captured disclosure
+      ${period} — ${n(cov.withRows)} of ${n(cov.inScope)}
       ${co(cov.inScope, 'company', 'companies')} in scope filed something.`;
   }
 
@@ -738,8 +739,8 @@ export function coverageBlock(m) {
       m.coversUniverse
         ? `<p class="mt-2 text-xs"><strong>Read by date, not by company.</strong> The question asked was <em>what was filed on
              these dates</em>, across ${m.exchangeCompanies ? `all <strong>${escapeHtml(formatNumber(m.exchangeCompanies))}</strong> active listings` : 'the whole exchange'} —
-             not <em>what did these companies file</em>. So <strong>a company absent from this file filed nothing in the
-             window</strong>, rather than being one there was no request budget to ask about. That distinction is the entire
+             not <em>what did these companies file</em>. So <strong>a company absent from this file has no captured row
+             ${m.coverageFrom ? `since ${escapeHtml(m.coverageFrom)}` : 'in the verified window'}</strong>, rather than being one there was no request budget to ask about. That distinction is the entire
              reason this feed changed source.</p>`
         : `<p class="mt-2 text-xs">A company with no rows had <em>nothing in this window</em>; a company that could not be read is not
        listed at all. Those are different states and the pill counts them separately.</p>`

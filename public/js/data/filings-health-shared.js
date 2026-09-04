@@ -5,7 +5,7 @@ export const FILINGS_HEALTH_FILES = {
   announcements: 'corp-announcements.json',
   insider: 'insider-trades.json',
 };
-export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 36 };
+export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 3 };
 const object = (value) => value && typeof value === 'object' && !Array.isArray(value);
 const stamp = (value) => typeof value === 'string' ? Date.parse(value) : NaN;
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
@@ -89,6 +89,18 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         else if (body.shortfall != null && !Array.isArray(body.shortfall)) add(source, 'invalid-capture', 'critical');
         if (Object.keys(body.unknownCategories || {}).length) add(source, 'unknown-source-categories', 'critical', Object.keys(body.unknownCategories));
         if (body.coversUniverse !== true) add(source, 'exchange-coverage-unverified', 'critical');
+      } else if (body.coversUniverse === true) {
+        const required = new Set(['bulk', 'block', 'sast', 'insiders']);
+        const sources = Array.isArray(body.sources) ? body.sources : [];
+        const seen = new Set(sources.map((item) => item?.id).filter(Boolean));
+        const invalid = sources.length !== required.size || sources.some((item) =>
+          !object(item) || !required.has(item.id) || item.ok !== true || !count(item.rowCount) || !count(item.pagesRead) || item.pagesRead === 0 || !Number.isFinite(stamp(item.coverageFrom))
+        );
+        if (invalid || [...required].some((id) => !seen.has(id))) add(source, 'trade-category-coverage-unverified', 'critical');
+        const categories = new Set(Array.isArray(body.categories) ? body.categories : []);
+        const requiredCategories = ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'];
+        if (categories.size !== requiredCategories.length || requiredCategories.some((category) => !categories.has(category))) add(source, 'invalid-capture', 'critical');
+        if (!object(body.fallback) || Object.keys(body.fallback).length || body.fallbackCount > 0) add(source, 'company-reads-incomplete', 'critical');
       } else {
         if (!count(body.asked) || body.asked === 0 || !count(body.covered) || body.covered > body.asked || !object(body.fallback)) add(source, 'invalid-capture', 'critical');
         const fallback = Object.keys(body.fallback || {});

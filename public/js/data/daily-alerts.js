@@ -391,8 +391,13 @@ export function eventSearchText(event = {}) {
 
 const numeric = (value) => {
   if (value == null || value === '') return null;
-  const n = Number(String(value).replace(/[^0-9.+-]/g, ''));
-  return Number.isFinite(n) ? n : null;
+  const text = String(value).trim();
+  if (!/\d/.test(text)) return null;
+  const n = Number(text.replace(/[^0-9.+-]/g, ''));
+  if (!Number.isFinite(n)) return null;
+  if (/\b(?:crore|cr)\b/i.test(text)) return n * 10_000_000;
+  if (/\b(?:lakh|lac|lacs)\b/i.test(text)) return n * 100_000;
+  return n;
 };
 
 /** Transaction direction plus comparable, stated thresholds; unknown transaction words stay neutral. */
@@ -411,10 +416,10 @@ export function insiderSignal(cells = {}) {
   } else if (/\binvoke\w*\b/.test(transactionWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Pledge creation/invocation in the upstream transaction wording.';
-  } else if (/\b(?:disposal|dispose\w*|sell|sale)\b/.test(transactionWords)) {
+  } else if (/\b(?:disposal|dispose\w*|sell|sold|sale)\b/.test(transactionWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Disposal/sale in the upstream transaction wording.';
-  } else if (/\b(?:acquisition|acquire\w*|buy|purchase)\b/.test(transactionWords)) {
+  } else if (/\b(?:acquisition|acquire\w*|buy|bought|purchase)\b/.test(transactionWords)) {
     direction = DIRECTION.POSITIVE;
     basis = 'Acquisition/purchase in the upstream transaction wording.';
   } else if (/\bpledge\b/.test(transactionWords)) {
@@ -431,10 +436,10 @@ export function insiderSignal(cells = {}) {
   } else if (/\b(?:invoke\w*|creat\w*)\b.*\bpledge\b|\bpledge\b/.test(modeWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Pledge creation/invocation in the upstream mode wording.';
-  } else if (/\b(?:disposal|dispose\w*|sell|sale)\b/.test(modeWords)) {
+  } else if (/\b(?:disposal|dispose\w*|sell|sold|sale)\b/.test(modeWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Disposal/sale in the upstream mode wording.';
-  } else if (/\b(?:acquisition|acquire\w*|buy|purchase)\b/.test(modeWords)) {
+  } else if (/\b(?:acquisition|acquire\w*|buy|bought|purchase)\b/.test(modeWords)) {
     direction = DIRECTION.POSITIVE;
     basis = 'Acquisition/purchase in the upstream mode wording.';
   }

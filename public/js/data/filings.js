@@ -196,6 +196,7 @@ export function createFeed(kind) {
       // The window the snapshot actually holds, which a date-indexed capture knows and a per-company
       // walk does not. Falls back to the feed's own constant.
       snapshotWindowDays: null,
+      coverageFrom: null,
       capturedAt: null,
       oldestDataAt: null,
       fallbackCount: 0,
@@ -277,6 +278,7 @@ export function createFeed(kind) {
       // A date-indexed snapshot knows its own window; only fall back to the constant when nothing
       // has declared one, so the coverage text cannot claim a year it does not hold.
       windowDays: state.snapshotWindowDays ?? WINDOW_DAYS[kind],
+      coverageFrom: state.coverageFrom,
       // WHAT THIS SESSION HAS NOT LOOKED AT, which is a statement about us and not a claim about
       // the upstream. These routes answer per company and have no index, so "is there anything
       // new?" cannot be answered without asking — the honest thing to print is how many companies
@@ -614,6 +616,7 @@ export function createFeed(kind) {
     state.exchangeCompanies = Number.isFinite(body.exchangeCompanies) ? body.exchangeCompanies : null;
     state.unnamedRows = Number.isFinite(body.unnamedRows) ? body.unnamedRows : 0;
     state.snapshotWindowDays = Number.isFinite(body.windowDays) ? body.windowDays : null;
+    state.coverageFrom = /^\d{4}-\d{2}-\d{2}$/.test(body.coverageFrom || '') ? body.coverageFrom : null;
     if (replace && !newer) return state.rows.size > 0;
 
     if (newer) {

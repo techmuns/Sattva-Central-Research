@@ -175,6 +175,10 @@ async function run(kind, list) {
   const startedAt = Date.now();
   const budgetMs = Number(process.env.FILINGS_BUDGET_MS || (kind === 'insider' ? 30 : 20) * 60000);
   const prior = readIfPresent(file);
+  if (kind === 'insider' && prior?.coversUniverse === true && Array.isArray(prior?.categories)) {
+    console.log('insider: the committed file is owned by scripts/scrape-screener-trades.mjs; the per-company Muns reader cannot replace its four-category coverage.');
+    return;
+  }
   const minimumAge = Number(process.env.FILINGS_MIN_INTERVAL_HOURS || 0) * 3600000;
   const knownTickers = new Set([...Object.keys(prior?.byTicker || {}), ...(prior?.empty || [])]);
   if (minimumAge && list.every((c) => knownTickers.has(c.ticker)) && prior?.capturedAt && !prior.failedCount && !prior.fallbackCount && Date.now() - Date.parse(prior.capturedAt) < minimumAge) {

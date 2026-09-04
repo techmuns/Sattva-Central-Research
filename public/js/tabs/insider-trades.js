@@ -1,8 +1,7 @@
-// tabs/insider-trades.js — insider dealing in the companies in scope.
+// tabs/insider-trades.js — market-wide Bulk, Block, SAST and Insider disclosures.
 //
-// THIS FEED ARRIVES AS A MARKDOWN TABLE, not JSON — the only upstream in this dashboard that does.
-// So the columns are not ours and are not fixed: whatever the source heads its table with is what
-// appears here, in its order. `columnsFor()` builds the table from `meta.headers` at render time.
+// Muns insider rows arrive as markdown while Screener's four market-wide lists arrive as HTML.
+// The normalised cells remain flexible: every heading in the retained snapshot appears here.
 //
 // THE HEADINGS ARE REPRODUCED, NOT TRANSLATED. If the source writes "Acq/Disp" this says
 // "Acq/Disp", not "Action" — mapping their vocabulary onto ours would put our word on their data,
@@ -71,7 +70,7 @@ function directionTint(v) {
 // "Transaction type" on the control because that is the question the reader is asking; its option
 // values remain the source's own words (Acquisition, Disposal, Pledge, and so on).
 const FILTER_FIELDS = [
-  { label: 'Category', allLabel: 'All categories', keys: ['category'], maxWidthPx: 220 },
+  { label: 'Category', allLabel: 'All four categories', keys: ['trade category', 'disclosure type'], maxWidthPx: 220 },
   {
     label: 'Transaction type',
     allLabel: 'All transaction types',
@@ -109,7 +108,7 @@ const tab = makeFilingsTab({
   wireAboveTable: history.wire,
   id: 'insider-trades',
   title: 'Insider Trades',
-  subtitle: 'Insider dealing disclosed for the companies in scope. Each row preserves the disclosure’s fields and links to its matching public record.',
+  subtitle: 'Bulk deals, block deals, SAST and insider disclosures for the companies in scope, retained once per economic event.',
   feed,
   noun: 'trades',
   nameLabel: 'Insider',
@@ -169,23 +168,22 @@ const tab = makeFilingsTab({
         <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
       </div>
       <div class="text-sm leading-relaxed text-slate-600">
-        <p><strong>Real disclosures.</strong> Indian promoters, directors and designated persons must disclose their dealing
-           to the exchanges. These come through the Muns filings API
-           (<code class="rounded bg-slate-100 px-1">POST /filings/data/insider_trades</code>) with
-           <code class="rounded bg-slate-100 px-1">country: india</code>, which routes to NSE, BSE and Trendlyne.</p>
+        <p><strong>Real market disclosures.</strong> The scheduled capture reads Screener.in’s complete market-wide
+           <strong>Bulk deal, Block deal, SAST and Insider trade</strong> lists. Retained Muns insider rows supplement
+           those lists where they carry more exchange fields.</p>
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">The table is theirs, columns and all</h3>
-        <p class="mt-1 text-xs">This endpoint answers with a <strong>markdown table</strong> rather than JSON — the only
-           upstream here that does. So the columns on screen are whatever their table declared, in their order, under
-           <strong>their headings</strong>. Nothing is renamed: if they write <em>Acq/Disp</em> that is what this says.
-           Translating their vocabulary into ours would put our word on their data and would hide a column the day they
-           add one.</p>
+        <p class="mt-1 text-xs">The source-specific cells are retained under their own headings. The one common field,
+           <strong>Trade Category</strong>, distinguishes which of the four lists published the row and drives the
+           Category filter.</p>
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">What this dashboard does to it</h3>
         <ul class="mt-1 list-disc space-y-1 pl-5 text-xs">
           <li><strong>Adds disclosures to retained history.</strong> A later empty or partial response does not erase
-              trades already captured in the rolling 365-day window. Repeat responses do not multiply rows;
-              different insiders, transactions and sources remain separate. Undated disclosures are retained.</li>
+              trades already captured in the rolling 365-day window.</li>
+          <li><strong>Removes duplicates.</strong> The same ticker, date, person, direction and quantity in the same trade
+              category appears once even when Screener and Muns format or attribute it differently. Different trade
+              categories remain separate.</li>
           <li><strong>Reads the date</strong>, so the table can sort. That is the only cell interpreted.</li>
           <li><strong>Tints a direction</strong> where the cell says so in words — <em>bought</em>, <em>sold</em>,
               <em>disposal</em>. A value it does not recognise stays plain rather than being guessed into a direction.</li>
@@ -212,8 +210,8 @@ const tab = makeFilingsTab({
           width: 14,
           get: (r) =>
             r.__banner
-              ? `REAL DISCLOSURES, NOT OURS. Insider trades via the Muns filings API, reaching back ${m.windowDays} days, exported ${new Date().toISOString()}. ` +
-                `THE COLUMNS AND THEIR HEADINGS ARE THE SOURCE'S OWN and are reproduced unrenamed — this endpoint returns a markdown table, and its shape is theirs to change. ` +
+              ? `REAL DISCLOSURES, NOT OURS. Bulk deals, block deals, SAST and insider trades from Screener.in, supplemented by retained Muns rows, reaching back ${m.windowDays} days, exported ${new Date().toISOString()}. ` +
+                `THE SOURCE-SPECIFIC COLUMNS AND THEIR HEADINGS ARE RETAINED; Trade Category is the common four-list classifier. Duplicate economic events appear once. ` +
                 `NOTHING IS SUMMED OR CLASSIFIED: no total quantity, no total value, and no judgement about what a trade means. ` +
                 `${m.covered} companies covered${m.failed ? `; ${m.failed} could not be read and are ABSENT rather than shown as having no insider dealing` : ''}. ` +
                 `A blank cell is one the source left empty, never a zero.`
