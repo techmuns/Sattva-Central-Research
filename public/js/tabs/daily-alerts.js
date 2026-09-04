@@ -730,7 +730,10 @@ function eventsTable(ctx, events, day, tablePosition = null) {
         location.hash = `#/research/${e.tab}?${params.join('&')}`;
       }
     },
-    searchable: (e) => `${e.day || ''} ${e.time || ''} ${e.company} ${e.ticker || ''} ${e.direction || ''} ${e.importance || ''} ${e.headline} ${e.detail || ''} ${e.signalReason || ''} ${e.importanceReason || ''} ${e.feedLabel}`,
+    // Company-news identity is query metadata, not publisher evidence. The shared helper keeps an
+    // unverified row retained but prevents that synthetic label from making an unrelated headline
+    // satisfy a company search. Every other feed has a resolved/source-carried company identity.
+    searchable: alerts.eventSearchText,
     filters: [
       {
         label: 'Importance',

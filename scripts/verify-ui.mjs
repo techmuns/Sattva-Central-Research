@@ -7355,10 +7355,22 @@ const keywordRules = await page.evaluate(async () => {
     // The materiality rule on the news feed: topic yes, direction never.
     trackedIsHigh: alerts.newsSignal({ title: 'Advait Energy bags Rs 135-crore order', query: 'Advait Energy' }).importance === 'high',
     untrackedIsLow: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).importance === 'low',
+    untrackedKeepsNameEvidence: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).namesCompany === false,
     // BOTH HALVES OF "company name + keyword", or it is not an alert: a tracked word on a story
     // that does not carry the company is somebody else's order win under this company's name.
     unnamedStaysLow: alerts.newsSignal({ title: 'Some other firm bags Rs 135-crore order', query: 'Advait Energy' }).importance === 'low',
     unnamedKeepsItsKeywords: alerts.newsSignal({ title: 'Some other firm bags Rs 135-crore order', query: 'Advait Energy' }).keywords.includes('Order'),
+    unrelatedQueryIdentityIsNotSearchEvidence:
+      !alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
+        headline: 'Lululemon stock analysis', sourceRecord: { summary: 'Is Lululemon a buy?' } }).toLowerCase().includes('jayaswal'),
+    unrelatedPublisherTextRemainsSearchable:
+      alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
+        headline: 'Lululemon stock analysis', sourceRecord: { summary: 'Is Lululemon a buy?' } }).toLowerCase().includes('lululemon'),
+    uncheckableNewsKeepsAssignedCompanySearch:
+      alerts.eventSearchText({ feed: 'news', company: 'A Company', ticker: 'ACOMPANY', namesCompany: null,
+        headline: 'Quarterly update' }).includes('ACOMPANY'),
+    otherFeedsKeepResolvedCompanySearch:
+      alerts.eventSearchText({ feed: 'announcements', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', headline: 'Press release' }).includes('JAYNECOIND'),
     uncheckableStillCounts: alerts.newsSignal({ title: 'Bags Rs 135-crore order' }).importance === 'high',
     // A standfirst is not a headline. Several outlets fill it with a related-links strip, so one
     // sidebar was tagging unrelated stories with whatever the sidebar happened to mention.

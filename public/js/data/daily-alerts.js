@@ -246,9 +246,15 @@ export function newsSignal(row = {}) {
         DIRECTION.NEUTRAL,
         IMPORTANCE.LOW,
         'Publisher headline; not directionally graded.',
-        'Low: no tracked keyword matched, so this is general coverage rather than a watched event.'
+        reading.namesCompany === false
+          ? "Low: no tracked keyword matched, and the publisher text does not appear to name this company. Retained as an unverified result from the upstream company-name search."
+          : 'Low: no tracked keyword matched, so this is general coverage rather than a watched event.'
       ),
       keywords: [],
+      // Attribution and topic are independent. The old early return lost this field precisely on
+      // the untracked rows that make up most search spillover, leaving All Alerts unable to tell
+      // “the article names the company” from “the search API filed it under the company”.
+      namesCompany: reading.namesCompany,
     };
   }
   const labels = reading.labels;
@@ -297,6 +303,28 @@ export function newsSignal(row = {}) {
     keywordGroups: reading.groups,
     namesCompany: named,
   };
+}
+
+/**
+ * The text All Alerts is allowed to match for one event.
+ *
+ * Company news is the exceptional feed: its ticker and company label come from the QUERY we sent,
+ * not from the article. The upstream sometimes fills the bottom of a short result set with recent
+ * stories about unrelated companies. Indexing that query-assigned label made a search for
+ * “Jayaswal” match a Lululemon headline even though neither the headline nor standfirst mentioned
+ * Jayaswal Neco.
+ *
+ * Do not delete or de-scope those rows. A name check is heuristic and can be false for a genuine
+ * brand/alias story, so the complete record stays in the retained stream and in the News source
+ * tab. We only stop unsupported metadata from satisfying the free-text search. The publisher's
+ * headline and standfirst remain searchable, which also means a brand-name search still finds an
+ * article that used the brand instead of the legal company name.
+ */
+export function eventSearchText(event = {}) {
+  const unsupportedCompanyAttribution = event.feed === 'news' && event.namesCompany === false;
+  const identity = unsupportedCompanyAttribution ? '' : `${event.company || ''} ${event.ticker || ''}`;
+  const publisherText = event.feed === 'news' ? event.sourceRecord?.summary || '' : '';
+  return `${event.day || ''} ${event.time || ''} ${identity} ${event.direction || ''} ${event.importance || ''} ${event.headline || ''} ${event.detail || ''} ${publisherText} ${event.signalReason || ''} ${event.importanceReason || ''} ${event.feedLabel || ''}`;
 }
 
 const numeric = (value) => {

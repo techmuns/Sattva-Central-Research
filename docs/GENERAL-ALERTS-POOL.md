@@ -37,6 +37,14 @@ identity, company identity if resolved, independent direction/importance labels 
 Collection does not truncate the evidence. Exact duplicates within a source are removed;
 cross-source evidence is kept separately.
 
+Company news is produced by a search endpoint, so the company/ticker on a row records the query
+that returned it rather than a claim made by the publisher. If neither the headline nor standfirst
+contains a distinctive word from that query, the row is retained (the check can miss a real brand
+or alias) but the query-assigned company/ticker is not indexed by All Alerts' free-text search. The
+publisher text remains searchable. This prevents an unrelated result used to pad a short upstream
+result set from appearing merely because the reader searched the company, without deleting a
+possibly genuine story or narrowing any other feed.
+
 `includeHistory: true` means **all available records**, including undated items and future scheduled
 dates. A date not supplied stays `day: null`, appears under "All available dates"/"Date not
 supplied", and is never stamped with today. UTC instants are converted to IST. Calendar and

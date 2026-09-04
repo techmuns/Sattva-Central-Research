@@ -19,7 +19,7 @@ window.SATTVA_CHATTER_URL=location.origin+'/chatter';
 import * as tab from '/js/tabs/daily-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
-coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'}]});
+coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'}]});
 window.show=(scope='universe')=>tab.render({root:document.querySelector('#root'),params:{},scope,data:{}});
 window.dispose=()=>tab.destroy();
 document.querySelector('#refresh').onclick=()=>refresh.refreshAll();
@@ -91,6 +91,19 @@ try {
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Newly arrived NSE record'));
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
   console.log('Verified undated search, scope changes and newly arrived filings');
+
+  // Regression: the upstream search padded Jayaswal Neco's result set with a current Investing.com
+  // batch. The rows remain retained, but a search for the company must be supported by publisher
+  // text rather than by the query-assigned company column. Keep this after the refresh assertion so
+  // the extra searches cannot let the tab's deliberate 90-second revalidation race that fixture.
+  await page.locator('[data-table-search]').fill('jayaswal');
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.toLowerCase().includes('jayaswal'));
+  const jayaswalResults = await page.locator('tbody').innerText();
+  assert(jayaswalResults.includes('Jayaswal Neco'), 'publisher-supported Jayaswal stories remain searchable');
+  assert(!jayaswalResults.includes('Lululemon'), 'query metadata cannot make the unrelated Lululemon story match Jayaswal');
+  await page.locator('[data-table-search]').fill('lululemon');
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.toLowerCase().includes('lululemon'));
+  assert((await page.locator('tbody').innerText()).includes('Lululemon'), 'the retained story remains searchable by its own publisher text');
 
   await page.locator('[data-table-search]').fill('Session-private fixture');
   await page.evaluate(async () => (await import('/js/data/alert-records.js')).recordDocuments('company-documents', {
