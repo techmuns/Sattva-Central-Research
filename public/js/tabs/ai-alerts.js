@@ -14,7 +14,7 @@ import * as alerts from '../data/ai-alerts.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
-import { privatePortfolioContext, readPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
+import { privatePortfolioContext, readPositionSizes, cachedPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
 export const meta = {
@@ -30,6 +30,7 @@ const PAGE_SIZE = 8;
 let ctxRef = null;
 let report = null;
 let loadToken = 0;
+let cacheToken = 0;
 let unsubs = [];
 let filter = 'all';
 let visibleLimit = PAGE_SIZE;
@@ -117,6 +118,18 @@ export function render(ctx) {
   }
 
   paint(ctx);
+  if (!report) {
+    const token = ++cacheToken;
+    void alerts.cached({
+      scope: ctx.scope,
+      holdings: coverage.holdings(),
+      positionSizes: cachedPositionSizes(),
+    }).then((cached) => {
+      if (token !== cacheToken || ctxRef !== ctx || report || !cached) return;
+      report = cached;
+      paint(ctxRef);
+    });
+  }
   recollect(ctx);
 }
 
@@ -129,6 +142,7 @@ export function destroy() {
   collecting = false;
   loadError = '';
   ctxRef = null;
+  cacheToken += 1;
   loadToken += 1;
   for (const off of unsubs) {
     try {
@@ -143,7 +157,6 @@ export function destroy() {
 async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
-  const keepResults = !!report;
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -154,17 +167,22 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
 
   // Public evidence can load while the private connector checks holding sizes.
   // A slow or unavailable size reader must not hold the first alert hostage.
-  let positions = Promise.resolve(null);
+  // An explicit Refresh must really check Family again. Navigation, calendar
+  // ageing and a quick tab return are the paths allowed to reuse the snapshot.
+  const heldSizes = forceRefresh ? null : cachedPositionSizes();
+  let positions = Promise.resolve(heldSizes);
   if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
-    const controller = new AbortController();
-    sizeController = controller;
-    sizesLoading = true;
-    positions = readPositionSizes(controller.signal).catch((err) => {
-      if (current()) sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
-      return null;
-    }).finally(() => {
-      if (current()) { sizesLoading = false; sizeController = null; }
-    });
+    if (!heldSizes) {
+      const controller = new AbortController();
+      sizeController = controller;
+      sizesLoading = true;
+      positions = readPositionSizes(controller.signal, { force: forceRefresh }).catch((err) => {
+        if (current()) sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
+        return null;
+      }).finally(() => {
+        if (current()) { sizesLoading = false; sizeController = null; }
+      });
+    }
   }
   paint(ctx);
   try {
@@ -176,7 +194,7 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
         onPartial: (partial) => {
           // Refresh a populated view atomically; partial feeds otherwise remove
           // companies and reorder cards underneath the reader on every arrival.
-          if (!current() || keepResults) return;
+          if (!current() || report) return;
           report = partial;
           paint(ctxRef);
         },
@@ -231,7 +249,7 @@ function paint(ctx) {
 
 function positionStatus(ctx) {
   if (ctx.scope !== 'portfolio') return '';
-  if (sizesLoading || awaitingBook !== null) return `<p class="mb-4 text-xs text-slate-500" role="status">${report ? 'Updating holdings in the background — current alerts remain available.' : 'Checking holding sizes…'}</p>`;
+  if (sizesLoading || awaitingBook !== null) return `<p class="mb-4 text-xs text-slate-500" role="status">${report ? 'Alerts are ready · Checking holding sizes quietly.' : 'Checking holding sizes…'}</p>`;
   const sizes = report?.meta?.positionSizes;
   if (sizes) {
     const prices = sizes.quotes?.notLive > 0 || sizes.quotes?.status !== 'live' ? 'Some prices use workbook marks' : 'Quote freshness varies by stock';
@@ -295,7 +313,7 @@ function head(ctx) {
   // Connector and refresh failures stay available to the refresh controller for diagnostics, but
   // this customer-facing queue falls back quietly instead of turning infrastructure into an alert.
   const status = (loadError || sizeError) ? { label: report ? 'Latest available' : 'AI Alerts', tone: 'neutral', state: 'complete' }
-    : report && (collecting || awaitingBook !== null) ? { label: 'Updating…', tone: 'neutral', state: 'pending' } : feedStatus(report);
+    : report && (collecting || awaitingBook !== null) ? { label: 'Ready · checking quietly', tone: 'neutral', state: 'pending' } : feedStatus(report);
   return sectionHead({
     title: 'AI Alerts',
     description: 'Important company signals from the last seven days.',

@@ -95,6 +95,20 @@ const privateReport = await alerts.collect({ ...options, scope: 'portfolio', loa
 assert.equal(privateReport.events.filter((e) => e.private).length, 1);
 assert.equal(privateReport.events.find((e) => e.private).sourceRecord.isRead, true);
 assert([...storage.values()].every((value) => !String(value).includes('Private annual report')), 'private data never persists');
+const durableWindow = alerts.materializePublicAlertWindow({
+  day: options.day,
+  feeds: [{ id: 'earnings', events: [{}], count: 1, todayCount: 1 },
+    { id: 'company-documents', count: 1 }, { id: 'drhp-documents', count: 1 }],
+  events: [
+    { id: 'private', ticker: 'STLTECH', day: options.day, feed: 'company-documents', private: true },
+    { id: 'public', ticker: 'STLTECH', day: options.day, feed: 'earnings', headline: 'Public result',
+      sourceRecord: { privatePayload: true }, weightPct: 40, holdingWeightPct: 40 },
+  ],
+});
+assert.deepEqual(durableWindow.feeds.map((feed) => feed.id), ['earnings']);
+assert.deepEqual(durableWindow.events.map((event) => event.id), ['public']);
+assert.doesNotMatch(JSON.stringify(durableWindow), /privatePayload|sourceRecord|weightPct|company-documents|drhp-documents/,
+  'the actual durable alert serializer strips private events, source records, document feeds and holding weights');
 records.clearPrivateRecords();
 assert(!(await alerts.collect({ ...options, scope: 'universe', load: false })).events.some((e) => e.private));
 records.recordDocuments('company-documents', { rows: [privateRow] }, { ticker: 'STLTECH' });
@@ -130,6 +144,12 @@ assert.equal((await alerts.collect({ ...options, scope: 'universe', load: false 
 broken.clear();
 const recovered = await alerts.collect({ ...options, scope: 'universe', refresh: true });
 assert.equal(recovered.feeds.find((f) => f.id === 'technicals').status, 'ok');
+const cachedTomorrow = await alerts.readCachedAlertWindow({ scope: 'universe', holdings: [], day: '2026-09-05' });
+assert(cachedTomorrow?.events.length > 0, 'a completed public collection leaves a ready repeat-visit window');
+assert(cachedTomorrow.events.every((event) => event.day >= '2026-08-30' && event.day <= '2026-09-05'),
+  'the restored window is re-aged against the current IST day');
+assert(cachedTomorrow.events.every((event) => !event.private && event.sourceRecord == null &&
+  event.weightPct == null && event.holdingWeightPct == null), 'the restored ready view contains public alert fields only');
 assert(!calls.some((url) => /api\/(combined-filings|drhp-filings|super-investors\/|company-news\/|announcements\/|insider-trades\/)/.test(url)), 'no private or per-company fanout');
 
 // Expanding the collection pool must not quietly rewrite the existing AI prioritization policy.

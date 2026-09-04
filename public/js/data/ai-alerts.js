@@ -756,8 +756,16 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       important: surfaced.filter((card) => card.priority === 'important').length,
       marketWideExcluded: marketWide,
       staleFeeds: (report?.feeds || []).filter((feed) => feed.status !== 'ok' || feed.reachesToday === false).length,
+      cacheSavedAt: report?.cacheSavedAt || null,
     },
   };
+}
+
+/** A privacy-safe ready view while the live source modules revalidate. */
+export async function cached({ scope = 'portfolio', holdings = null, positionSizes = null } = {}) {
+  const book = holdings || coverage.holdings();
+  const report = await generalAlerts.readCachedAlertWindow({ scope, holdings: book });
+  return report ? rankReport(report, { holdings: book, positionSizes }) : null;
 }
 
 /** Collect General Alerts once and rank each partial/final report without adding any request. */

@@ -63,7 +63,7 @@ jobs:
       - name: Verify AI alert search and calendar dates
         run: node scripts/verify-ai-alerts.mjs
       - name: Syntax-check JavaScript
-        run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
+        run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check && node --check public/sw.js
       - name: Validate the Worker bundle
         run: npx --yes wrangler@4 deploy --dry-run
       - name: Verify durable company registry in the local Worker runtime
@@ -92,6 +92,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-ai-alerts-ui.mjs
+      - name: Verify instant repeat visits and interaction cache boundaries
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-dashboard-performance-ui.mjs
       - name: Verify clean corporate stream, automatic history and live scope updates
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -647,6 +647,6 @@ export function startLive(live) {
       return state;
     },
   });
-  live.start(LIVE_ID);
+  live.start(LIVE_ID, { fresh: true });
   return () => live.stop(LIVE_ID);
 }

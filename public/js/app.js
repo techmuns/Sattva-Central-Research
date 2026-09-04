@@ -145,6 +145,16 @@ async function boot() {
   void loadCompanyCaptureIndex();
   startCaptureWatchdog();
   startWatchlistCapture();
+
+  // Install the public app/data cache only after the dashboard is interactive.
+  // It warms the complete module graph for future tab switches and repeat visits,
+  // while the service worker explicitly excludes authenticated and no-store reads.
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    const register = () => navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .catch((err) => console.warn('[app] repeat-visit cache unavailable', err));
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(register, { timeout: 2000 });
+    else setTimeout(register, 0);
+  }
 }
 
 boot();

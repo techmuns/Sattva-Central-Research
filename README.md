@@ -1,8 +1,8 @@
 # Sattva Central Research
 
-An Indian-equities research dashboard: twelve tabs — Ask Research, AI and general alerts,
+An Indian-equities research dashboard: thirteen tabs — Ask Research, AI and general alerts,
 earnings, con-calls, public chatter, technical breakouts, superstar investors, news, corporate
-announcements, NSE filings and insider trades — under a global **Portfolio · Watchlist · Universe**
+announcements, IPOs, NSE filings and insider trades — under a global **Portfolio · Watchlist · Universe**
 scope toggle that applies to every one of them.
 
 **The public Portfolio snapshot is a list of company names, not a ledger.** The Portfolio scope filters the
@@ -40,6 +40,10 @@ copied into public files or browser storage.
 Alert evidence loads alongside holding-size checks. Completed AI Alerts remain visible during
 background refreshes and return visits, with search and pagination preserved; a completed refresh
 replaces the view together. All Alerts retains each source's existing records while it rechecks.
+After the first complete collection, AI Alerts also keeps a seven-day public-event snapshot in
+IndexedDB so a hard reload can restore useful cards before the sources answer. That snapshot is
+deliberately universe-wide and is narrowed against the current in-memory scope on read; it contains
+no holding weights, Family replies, source records or private document-feed metadata.
 Temporary Family Office failures retain the last verified company list and quietly keep the latest
 available AI Alerts without exposing technical outage banners; expired access clears the private
 session. Private holding sizes remain in memory only.
@@ -56,6 +60,9 @@ exposing the session token or waiting for the complete model response.
 
 Static runtime, no bundler, no framework, no npm dependencies for the app itself.
 Vanilla ES modules and a committed, precompiled Tailwind stylesheet. Hosted as a Cloudflare Worker.
+After first paint, a service worker warms the complete same-origin module graph. Repeat visits and
+tab switches therefore use the local app shell immediately while mutable public data revalidates in
+the background. Authenticated, `no-store` and `/api/*` responses are never put in that cache.
 
 ![Earnings Hub](docs/screenshots/earnings-hub.png)
 

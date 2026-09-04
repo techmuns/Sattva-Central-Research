@@ -210,6 +210,8 @@ node scripts/sync-family-book.mjs               # FAMILY_REPO_TOKEN=… or FAMIL
 ```
 public/index.html          design tokens, fonts, compiled CSS link, #app, three overlay roots
                            (drill z-50 < workspace z-55 < modal z-60)
+public/sw.js               repeat-visit app shell: full ES-module graph + public-data SWR;
+                           never caches /api, Authorization or no-store requests
 public/css/tailwind.css    generated Tailwind utilities; committed and served directly
 public/js/
   app.js                   bootstrap: fetch the small JSON set once, prime the data modules, mount
@@ -258,6 +260,13 @@ all.
 **To add a data source:** three files, together — `docs/DATA-CONTRACTS.md`, the loader in
 `js/app.js` (or a lazy `js/data/*.js`), and the entry in `js/ui/sources.js` with an honest `status`.
 
+**To change shipped JavaScript or CSS:** bump `CACHE_NAME` in `public/sw.js`. The install step
+follows static imports from `js/app.js` and warms the whole graph, so there is no second asset list
+to maintain. Code is cache-first within that named version; the browser's service-worker update
+check installs the next graph atomically. Navigation HTML and public `/data/*` assets are
+stale-while-revalidate. `/api/*`, requests with `Authorization`, explicit `no-store` requests and
+private Family replies stay outside CacheStorage.
+
 ---
 
 ## 4c. AI Alerts
@@ -270,6 +279,14 @@ or unread feed subtracts points. Cards are sorted by score internally, show the 
 events and next action, and keep the score arithmetic out of the UI. They link to All Alerts
 pre-filtered for that company. A compact header status still names stale or unread feeds so a partial
 queue cannot look fully current.
+
+The completed public seven-day event window is materialised under
+`ai-alerts:public-window:v1` in the existing IndexedDB store. A hard reload can rank and paint that
+window before the live collectors settle, then swap in one complete refreshed report. The stored
+window is universe-wide so Portfolio and Watchlist are applied only against the current in-memory
+book on read. Its serializer drops private events, the private document feeds, source records and
+all holding-weight fields. Authenticated position sizes are reusable for 55 seconds only in the
+current page process; explicit Refresh bypasses that reuse and no private reply reaches storage.
 
 The model is deliberately deterministic rather than generative: the feeds already carry the
 structured facts needed to prioritise them, so a repeatable rule cannot invent a filing or silently

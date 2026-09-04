@@ -17,6 +17,11 @@ let watching = false;
 let target = null;
 let dialog = null;
 let state = 'connecting';
+// Private position sizes may be reused only inside this page process. This removes
+// duplicate reads across a tab switch or a burst of focus/pageshow events without
+// putting a private holding, weight or reply into browser storage.
+const POSITION_REUSE_MS = 55_000;
+let lastPositionReply = null;
 export const portfolioConnectionState = () => state;
 function setConnection(next) {
   if (state === next) return;
@@ -91,15 +96,20 @@ function ensureTarget() {
       if (event.origin !== target.origin || event.source !== target.window || event.data?.channel !== PORTFOLIO_CHANNEL) return;
       if (event.data.type === 'auth-required') {
         transportReady = false;
+        lastPositionReply = null;
         useFamilyBook(null);
         setConnection('locked');
         for (const fn of invalidations) fn(-1);
       } else if (event.data.type === 'available') {
         transportReady = false;
+        lastPositionReply = null;
         if (state !== 'unavailable') setConnection('connecting');
         connectPortfolio();
       } else if (Number.isSafeInteger(event.data.version)) {
-        if (event.data.type === 'invalidated') invalidateFamilyBook();
+        if (event.data.type === 'invalidated') {
+          lastPositionReply = null;
+          invalidateFamilyBook();
+        }
         const targets = event.data.type === 'invalidated' ? invalidations : event.data.type === 'positions-ready' ? portfolioReady : [];
         for (const fn of targets) fn(event.data.version);
       }
@@ -171,7 +181,15 @@ async function readPositionSizesNow() {
   const startedAt = Date.now();
   const reply = await request('positions', null, null, 90_000);
   if (!validPositionSizes(reply, startedAt)) throw new Error('Holding sizes were stale or incomplete. Refresh to read the active portfolio again.');
+  lastPositionReply = reply;
   return reply;
+}
+
+/** The current page's recent verified size reply, never a persisted value. */
+export function cachedPositionSizes(now = Date.now()) {
+  const checked = Date.parse(lastPositionReply?.sizes?.checkedAt || '');
+  if (!Number.isFinite(checked) || checked > now + 10_000 || now - checked > POSITION_REUSE_MS) return null;
+  return lastPositionReply;
 }
 
 // Family accepts one read at a time. Background refresh, AI Alerts and Ask
@@ -199,12 +217,16 @@ function enqueueRead(read, signal) {
     try {
       const reply = await read();
       if (reply) useFamilyBook(reply.holdings, reply.sizes.bookAsOf, reply.sizes.checkedAt);
-      else failFamilyBook();
+      else {
+        lastPositionReply = null;
+        failFamilyBook();
+      }
       if (reply) setConnection('connected');
       else if (state !== 'locked') setConnection('unavailable');
       return reply;
     } catch (error) {
       if (error?.name !== 'AbortError') {
+        lastPositionReply = null;
         failFamilyBook();
         if (state !== 'locked') setConnection('unavailable');
       }
@@ -217,8 +239,16 @@ function enqueueRead(read, signal) {
 export function readPortfolio(question, signal) {
   return forConsumer(enqueueRead(() => readPortfolioNow(question, signal), signal), signal);
 }
-export function readPositionSizes(signal) {
+export function readPositionSizes(signal, { force = false } = {}) {
   if (signal?.aborted) return Promise.reject(cancelled());
+  const cached = force ? null : cachedPositionSizes();
+  if (cached) {
+    // A visibility transition may have marked the current Family book as
+    // checking. Reusing its still-fresh verified reply must also restore that
+    // book to ready; otherwise the data is instant but the badge stays pending.
+    useFamilyBook(cached.holdings, cached.sizes.bookAsOf, cached.sizes.checkedAt);
+    return Promise.resolve(cached);
+  }
   if (!pendingSizes) pendingSizes = enqueueRead(readPositionSizesNow).finally(() => { pendingSizes = null; });
   return forConsumer(pendingSizes, signal);
 }

@@ -128,7 +128,14 @@ const downloadOrSkip = async (label, file) => {
 }
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--test-type'] });
-const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, acceptDownloads: true });
+// This suite stubs APIs with context routes. Playwright cannot intercept network
+// requests initiated inside a service worker, so keep that worker out of this
+// fixture and exercise it separately in verify-dashboard-performance-ui.mjs.
+const context = await browser.newContext({
+  viewport: { width: 1440, height: 1100 },
+  acceptDownloads: true,
+  serviceWorkers: 'block',
+});
 const page = await context.newPage();
 
 // Research requires a fresh private-portfolio exchange before submitting. Exercise the real

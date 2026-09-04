@@ -56,7 +56,7 @@ export function createIpoFilingsFeed({
   return {
     rows: () => rows, companies: () => companies, meta, load: () => loaded ? Promise.resolve() : refresh(), refresh,
     onChange: (fn) => { subscribers.add(fn); return () => subscribers.delete(fn); },
-    startLive: (live) => { live.register('ipo-filings', { intervalMs: IPO_POLL_MS, fetcher: async () => { await refresh(); return null; } }); live.start('ipo-filings'); },
+    startLive: (live) => { live.register('ipo-filings', { intervalMs: IPO_POLL_MS, fetcher: async () => { await refresh(); return null; } }); live.start('ipo-filings', { fresh: true }); },
     stopLive: (live) => live.stop('ipo-filings'),
     invalidate: () => { generation++; rows = []; companies = []; sources = []; checkedAt = null; loaded = false; liveFailed = true; },
   };

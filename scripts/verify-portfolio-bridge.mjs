@@ -147,8 +147,8 @@ responder = m => {
   }, 10);
 };
 const consumer = new AbortController();
-const discarded = bridge.readPositionSizes(consumer.signal);
-const shared = bridge.readPositionSizes();
+const discarded = bridge.readPositionSizes(consumer.signal, { force: true });
+const shared = bridge.readPositionSizes(undefined, { force: true });
 const question = bridge.readPortfolio('What changed?');
 consumer.abort();
 await assert.rejects(discarded, /Cancelled/);

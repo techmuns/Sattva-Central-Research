@@ -130,7 +130,10 @@ export function render(ctx) {
   // Paint immediately with whatever is already collected, then collect. A tab that renders nothing
   // until every feed has answered is a blank timeline.
   paint(ctx);
-  recollect(ctx, { refresh: true });
+  // Opening or returning to a tab is navigation, not an explicit refresh.
+  // Loaders reuse their retained snapshots; the 90-second cadence and header
+  // Refresh remain the two places that deliberately revalidate everything.
+  recollect(ctx);
 }
 
 export function destroy() {

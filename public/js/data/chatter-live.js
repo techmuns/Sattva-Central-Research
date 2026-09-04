@@ -363,7 +363,7 @@ export function startLive(live) {
       }
     }
   });
-  live.start(LIVE_ID);
+  live.start(LIVE_ID, { fresh: true });
   return () => {
     off();
     live.stop(LIVE_ID);

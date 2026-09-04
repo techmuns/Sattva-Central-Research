@@ -6,9 +6,9 @@
 //   live.stop('earnings-feed');    // call from that tab's destroy()
 //
 // Pollers only tick while both `start()` has been called (their tab is mounted) AND the
-// document is visible — they pause on hidden and refetch immediately when it becomes visible
-// again. A failed fetch never throws into the UI: it logs, backs off, and keeps the last good
-// data on screen.
+// document is visible. They pause while hidden and resume the remaining cadence when visible;
+// only an overdue source refetches immediately. A failed fetch never throws into the UI: it
+// logs, backs off, and keeps the last good data on screen.
 
 import { authHeaders } from './host-context.js';
 
@@ -33,6 +33,7 @@ function makeRecord(id, { intervalMs, fetcher, synthetic }) {
     errorCount: 0,
     lastData: null,
     lastTick: null,
+    lastAttemptAt: null,
     lastError: null,
     listeners: new Set(),
   };
@@ -66,12 +67,20 @@ export function unsubscribe(id, cb) {
   pollers.get(id)?.listeners.delete(cb);
 }
 
-// Begin polling (called when the owning tab mounts). Fetches immediately, then on interval.
-export function start(id) {
+// Begin polling when the owning tab mounts. A source with no known freshness ticks
+// immediately; a retained source resumes the rest of its existing cadence.
+export function start(id, { fresh = false } = {}) {
   const poller = pollers.get(id);
   if (!poller || poller.running) return;
   poller.running = true;
-  if (!document.hidden) scheduleTick(poller, 0);
+  // Feed modules call this after their own initial `load()` has completed. Let
+  // them seed the cadence without fabricating a global "checked" timestamp or
+  // immediately repeating the exact request that just returned.
+  if (fresh && poller.lastTick == null && poller.lastAttemptAt == null) poller.lastTick = Date.now();
+  // A tab switch is not a freshness event. If this poller completed moments ago,
+  // keep that result and resume the remainder of its cadence instead of issuing
+  // another request merely because its owner was mounted again.
+  if (!document.hidden) scheduleWhenDue(poller);
 }
 
 // Stop polling (called when the owning tab unmounts). Leaves subscribers intact.
@@ -125,9 +134,24 @@ function scheduleTick(poller, delay) {
   poller.timer = setTimeout(() => tick(poller), delay);
 }
 
+/** Time left in the current success cadence or error backoff. */
+function dueIn(poller) {
+  const interval = poller.errorCount > 0
+    ? Math.min(poller.intervalMs * 2 ** poller.errorCount, 60000)
+    : poller.intervalMs;
+  const since = poller.errorCount > 0 ? poller.lastAttemptAt : poller.lastTick;
+  if (since == null) return 0;
+  return Math.max(0, interval - (Date.now() - since));
+}
+
+function scheduleWhenDue(poller) {
+  scheduleTick(poller, dueIn(poller));
+}
+
 async function tick(poller) {
   if (!poller.running || document.hidden || poller.inFlight) return;
   poller.inFlight = true;
+  poller.lastAttemptAt = Date.now();
   try {
     const data = await poller.fetcher();
     poller.inFlight = false;
@@ -161,13 +185,14 @@ function safeNotify(cb, ...args) {
   }
 }
 
-// Pause every running poller when the tab is hidden; refetch immediately on return so the
-// data is never stale-looking when the user comes back.
+// Pause every running poller while hidden and resume each source at its actual due time.
 document.addEventListener('visibilitychange', () => {
   for (const poller of pollers.values()) {
     if (!poller.running) continue;
     if (document.hidden) clearTimer(poller);
-    else scheduleTick(poller, 0);
+    // Returning from a brief app switch must not make every live source fire at
+    // once. A source that is genuinely overdue still gets a zero-delay tick.
+    else scheduleWhenDue(poller);
   }
 });
 

@@ -455,7 +455,7 @@ export function startLive(live) {
     if (!payload) return;
     notify();
   });
-  live.start(LIVE_ID);
+  live.start(LIVE_ID, { fresh: true });
   return () => {
     off();
     live.stop(LIVE_ID);

@@ -298,13 +298,15 @@ A small pub/sub polling store so tabs just subscribe.
 live.register(id, { intervalMs, fetcher });
 live.subscribe(id, cb);   // returns an unsubscribe fn
 live.unsubscribe(id, cb);
-live.start(id);           // call from render()
+live.start(id);           // call from render(); immediate only when no freshness is known
+live.start(id, { fresh: true }); // the module just completed its own initial load
 live.stop(id);            // call from destroy()
 live.onGlobalTick(cb);    // header Live pill
 ```
 
-- Pollers run only while their tab is mounted **and** the document is visible; they pause on
-  `visibilitychange` and refetch immediately on return.
+- Pollers run only while their tab is mounted **and** the document is visible. A tab switch or a
+  brief `visibilitychange` resumes the remaining success/backoff cadence; only an actually overdue
+  source refetches immediately.
 - Exponential backoff on error, capped at 60s. Errors never throw into the UI — the last good
   data stays on screen.
 - `mockFetcher(path)` reads a static JSON file and jitters numbers slightly so liveness is

@@ -55,6 +55,7 @@ import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
 import * as records from './alert-records.js';
+import { readEntry, writeEntry } from '../core/store.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -67,6 +68,67 @@ import * as records from './alert-records.js';
 const IST_OFFSET_MS = 5.5 * 3600 * 1000;
 
 export const today = (now = Date.now()) => new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
+
+// A compact, public-only materialized view for the one dashboard surface that
+// otherwise has to assemble every source before it can draw a useful card. It
+// deliberately carries no Family reply, holding weight, private document or
+// sourceRecord. Those stay memory-only; this cache is safe to survive a reload.
+export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
+export const ALERT_WINDOW_CACHE_DAYS = 7;
+
+function shiftDay(day, amount) {
+  const date = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return day;
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
+}
+
+export function materializePublicAlertWindow(report) {
+  const firstDay = shiftDay(report.day, -(ALERT_WINDOW_CACHE_DAYS - 1));
+  const privateFeeds = new Set(['company-documents', 'drhp-documents']);
+  return {
+    version: 1,
+    day: report.day,
+    feeds: (report.feeds || []).filter((feed) => !privateFeeds.has(feed.id)).map(({ events, count, todayCount, ...feed }) => feed),
+    events: (report.events || [])
+      .filter((event) => !event.private && event.ticker && event.day >= firstDay && event.day <= report.day)
+      .map(({ sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct,
+        holdingWeightPct: _holdingWeightPct, ...event }) => event),
+  };
+}
+
+function validAlertWindow(value, throughDay) {
+  const privateFeeds = new Set(['company-documents', 'drhp-documents']);
+  if (value?.version !== 1 || !/^\d{4}-\d{2}-\d{2}$/.test(value.day || '') ||
+      !Array.isArray(value.events) || !Array.isArray(value.feeds) || value.events.length > 100_000) return false;
+  const captured = Date.parse(`${value.day}T00:00:00Z`);
+  const through = Date.parse(`${throughDay}T00:00:00Z`);
+  return Number.isFinite(captured) && Number.isFinite(through) && captured <= through &&
+    through - captured < ALERT_WINDOW_CACHE_DAYS * 86_400_000 &&
+    value.feeds.every((feed) => !privateFeeds.has(feed?.id)) &&
+    value.events.every((event) => !event.private && event.sourceRecord == null &&
+      event.weightPct == null && event.holdingWeightPct == null &&
+      typeof event.ticker === 'string' && typeof event.feed === 'string');
+}
+
+/** Restore a ready public alert window, narrowed against the current in-memory scope. */
+export async function readCachedAlertWindow({ scope = 'portfolio', holdings = null, day = today() } = {}) {
+  const entry = await readEntry(ALERT_WINDOW_CACHE_KEY);
+  if (!validAlertWindow(entry?.value, day)) return null;
+  const wanted = scopeMatcher(scope, holdings || coverage.holdings());
+  const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
+  const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day && wanted.has(event.ticker));
+  const sameDay = entry.value.day === day;
+  return {
+    day,
+    scope,
+    includeHistory: true,
+    events,
+    feeds: entry.value.feeds.map((feed) => ({ ...feed, reachesToday: sameDay ? feed.reachesToday : false })),
+    pending: 0,
+    cacheSavedAt: entry.savedAt || null,
+  };
+}
 
 /** The IST clock time of an instant, as HH:MM, for a row that carries a real timestamp. */
 function istTime(value) {
@@ -491,7 +553,15 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     })
   );
 
-  return build();
+  const completed = build();
+  if (load) {
+    // Materialize from the already-settled source records; this starts no second
+    // read. Universe is used so the same public snapshot can be narrowed against
+    // the current Portfolio or Watchlist after a reload without persisting either.
+    const allPublic = assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
+    void writeEntry(ALERT_WINDOW_CACHE_KEY, { value: materializePublicAlertWindow(allPublic) });
+  }
+  return completed;
 }
 
 const LOADERS = {

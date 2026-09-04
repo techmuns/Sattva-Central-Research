@@ -111,7 +111,7 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
     },
     startLive(live) {
       live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: () => read(false) });
-      live.start(LIVE_ID);
+      live.start(LIVE_ID, { fresh: true });
     },
     stopLive: (live) => live.stop(LIVE_ID),
   };
