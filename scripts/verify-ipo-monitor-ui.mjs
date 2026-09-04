@@ -96,6 +96,7 @@ try {
   for (const width of [900, 390, 320]) {
     await page.setViewportSize({ width, height: 850 });
     check(`directory contains overflow at ${width}px`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    check(`directory search remains usable at ${width}px`, await page.locator('[data-table-search]').evaluate((el) => el.getBoundingClientRect().width >= 160));
   }
   await page.setViewportSize({ width: 1280, height: 850 });
   await page.locator('[data-ipo-view]').selectOption('filings');

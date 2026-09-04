@@ -81,6 +81,8 @@ export function render(ctx) {
       <p data-ipo-export-status role="status" class="mb-2 text-xs text-amber-700"></p>${table.html}
     </section>`;
     tableDispose = table.wire(ctx.root);
+    // Keep the search usable when the source/status filters wrap on a phone.
+    ctx.root.querySelector('[data-table-search]').parentElement.style.minWidth = 'min(100%, 180px)';
     // The shared table normalizes its query for matching; preserve the reader's typed casing.
     if (searchText !== undefined) ctx.root.querySelector('[data-table-search]').value = searchText;
     if (selection) { const search = ctx.root.querySelector('[data-table-search]'); search.focus({ preventScroll: true }); search.setSelectionRange(...selection); }
