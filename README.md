@@ -8,7 +8,7 @@ scope toggle that applies to every one of them.
 **The public Portfolio snapshot is a list of company names, not a ledger.** The Portfolio scope filters the
 research tabs by Family Office's active shared workbook, through a protected names-only export.
 It refreshes on load, every minute while visible, and on Refresh; failed reads retain the saved
-book with an explicit warning. See [active holdings setup](docs/ACTIVE-FAMILY-HOLDINGS.md).
+book. Sources shows the portfolio connection as Connected or Not connected. See [active holdings setup](docs/ACTIVE-FAMILY-HOLDINGS.md).
 There are no quantities, costs or valuations in this public snapshot.
 A Portfolio Analytics workspace over an illustrative ledger used to exist and was
 deleted; it is in git history at `d3bba30` if a real ledger is ever wired.

@@ -65,7 +65,6 @@ let contentHost = null;
 let currentTabModule = null;
 let chromeDisposers = [];
 let headerDisposer = null;
-let bookStatusDisposer = null;
 let topTabs = null;
 
 export function mount(root) {
@@ -76,20 +75,7 @@ export function mount(root) {
 
   scopeLists.migratePortfolioToWatchlist();
   wireStaticHeader(root);
-  const paintBookStatus = () => {
-    const el = $('#portfolio-sync-status', root);
-    el.textContent = coverage.syncLabel();
-    const m = coverage.meta();
-    // Ask Research has its own connection state and dated readings. A separate
-    // public-snapshot warning must not contradict its authenticated book.
-    el.hidden = state.tab === 'ask-research' || m.syncStatus === 'family-session';
-    el.className = `mt-3 text-xs ${m.syncStatus === 'live' && !m.manualEdits ? 'text-slate-500' : 'text-amber-700'}`;
-  };
-  bookStatusDisposer?.();
-  bookStatusDisposer = subscribe(reason => { if (reason === 'route') paintBookStatus(); });
-  paintBookStatus();
   coverage.onChange(({ changed }) => {
-    paintBookStatus();
     if (changed && state.scope === 'portfolio' && !['ask-research', 'ai-alerts'].includes(state.tab) && !document.querySelector('[data-scope-editor]')) {
       setTimeout(() => handleRoute(root, router.parseHash()), 0);
     }
@@ -104,8 +90,6 @@ export function mount(root) {
   live.start('family-portfolio');
   bindFamilySyncLifecycle();
   startFamilySession();
-  live.onGlobalTick(paintBookStatus); // expire the label even if only the heartbeat is running
-  scopeLists.onChange(paintBookStatus);
 
   // "Data flowing in", lower-left. Page-level chrome with the same lifetime as the alert stack:
   // mounted once, outside `#app`, so a route change never tears it down. It reads the source
@@ -182,7 +166,6 @@ function shellTemplate() {
           <div id="status-mount"></div>
         </div>
       </div>
-      <div id="portfolio-sync-status" role="status"></div>
     </header>
 
     <nav class="mx-auto max-w-[1400px] px-6" aria-label="Research navigation">
