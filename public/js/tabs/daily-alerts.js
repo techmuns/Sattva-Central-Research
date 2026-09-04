@@ -244,7 +244,8 @@ function paint(ctx) {
   const visible = picked ? events.filter((e) => picked.has(e.feed)) : events;
 
   const focus = captureFocus(ctx.root);
-  const table = eventsTable(ctx, visible, day);
+  const tablePosition = captureTablePosition(ctx.root);
+  const table = eventsTable(ctx, visible, day, tablePosition);
   tableView = table.view;
 
   // NO DESCRIPTION AND NO STAT STRIP. The four cards were the loudest version of
@@ -267,7 +268,57 @@ function paint(ctx) {
   table.wire(ctx.root);
   wireFeedFilter(ctx, available);
   fitStreamToViewport(ctx.root);
+  restoreTablePosition(ctx.root, tablePosition);
   restoreFocus(ctx.root, focus);
+}
+
+/**
+ * Preserve the row the reader is looking at while live feeds repaint the stream.
+ *
+ * Saving scrollTop alone is wrong when a newly arrived alert is inserted above the viewport: the
+ * same pixel offset would now point at a different event. Keep the first visible row plus its
+ * offset beneath the sticky header, and ask scoreTable to include that row in its first slice.
+ */
+function captureTablePosition(root) {
+  const scroller = root.querySelector('[data-table-scroll]');
+  if (!scroller) return null;
+  const rows = [...scroller.querySelectorAll('tbody tr[data-row-key]')];
+  const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
+  const anchor = rows.find((row) => row.getBoundingClientRect().bottom > boundary) || rows.at(-1) || null;
+  return {
+    top: scroller.scrollTop,
+    left: scroller.scrollLeft,
+    rendered: rows.length,
+    key: anchor?.dataset.rowKey || null,
+    offset: anchor ? anchor.getBoundingClientRect().top - boundary : 0,
+  };
+}
+
+function restoreTablePosition(root, position) {
+  if (!position) return;
+  const scroller = root.querySelector('[data-table-scroll]');
+  if (!scroller) return;
+  // The shared surface deliberately smooths reader-initiated keyboard/programmatic movement.
+  // Restoration is different: animating from the new element's zero position would visibly lose
+  // the row before finding it again. Make this bookkeeping jump atomic, then restore the surface.
+  const inlineBehavior = scroller.style.scrollBehavior;
+  scroller.style.scrollBehavior = 'auto';
+  try {
+    scroller.scrollLeft = position.left;
+    if (position.top <= 1) {
+      scroller.scrollTop = 0;
+      return;
+    }
+    const anchor = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((row) => row.dataset.rowKey === position.key);
+    if (!anchor) {
+      scroller.scrollTop = position.top;
+      return;
+    }
+    const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
+    scroller.scrollTop += anchor.getBoundingClientRect().top - boundary - position.offset;
+  } finally {
+    scroller.style.scrollBehavior = inlineBehavior;
+  }
 }
 
 /**
@@ -552,21 +603,49 @@ export function feedState(f) {
 // The stream
 // ---------------------------------------------------------------------------------------
 
-// The row tint plus a 3px left edge in the direction's semantic colour. NO `hover:` class here —
-// `scoreTable` appends its own `hover:bg-slate-50`
+// Direction owns the hue; importance owns the visual weight. High rows get the stronger tint and
+// 4px edge, while Low stays quiet with a 2px edge. NO `hover:` class here — `scoreTable` appends
+// its own `hover:bg-slate-50`
 // after whatever `rowClass` returns, and two hover rules on one element are decided by stylesheet
 // order rather than by class order, which is a coin toss dressed up as a decision.
 const DIR = {
-  positive: { label: 'Positive', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200', row: 'bg-emerald-50/30 shadow-[inset_3px_0_0_#059669]', reason: 'text-emerald-700' },
-  negative: { label: 'Negative', chip: 'bg-rose-50 text-rose-700 ring-rose-200', row: 'bg-rose-50/40 shadow-[inset_3px_0_0_#e11d48]', reason: 'text-rose-700' },
-  neutral: { label: 'Neutral', chip: 'bg-slate-100 text-slate-600 ring-slate-200', row: 'shadow-[inset_3px_0_0_#94a3b8]', reason: 'text-slate-500' },
+  positive: {
+    label: 'Positive', symbol: '↑', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200', reason: 'text-emerald-700',
+    highRow: 'bg-emerald-50/60 shadow-[inset_4px_0_0_#059669]', lowRow: 'bg-emerald-50/20 shadow-[inset_2px_0_0_#10b981]',
+  },
+  negative: {
+    label: 'Negative', symbol: '↓', chip: 'bg-rose-50 text-rose-700 ring-rose-200', reason: 'text-rose-700',
+    highRow: 'bg-rose-50/60 shadow-[inset_4px_0_0_#e11d48]', lowRow: 'bg-rose-50/20 shadow-[inset_2px_0_0_#fb7185]',
+  },
+  neutral: {
+    label: 'Neutral', symbol: '•', chip: 'bg-slate-100 text-slate-600 ring-slate-200', reason: 'text-slate-500',
+    highRow: 'bg-violet-50/40 shadow-[inset_4px_0_0_#64748b]', lowRow: 'shadow-[inset_2px_0_0_#cbd5e1]',
+  },
 };
 const IMP = {
-  high: 'bg-violet-50 text-violet-700 ring-violet-200',
-  low: 'bg-slate-50 text-slate-500 ring-slate-200',
+  high: { label: 'High priority', chip: 'bg-violet-600 text-white ring-violet-600 shadow-sm' },
+  low: { label: 'Low priority', chip: 'bg-white/70 text-slate-500 ring-slate-200' },
 };
 
-function eventsTable(ctx, events, day) {
+function alertRowClass(event) {
+  const direction = DIR[event.direction] || DIR.neutral;
+  return event.importance === 'high' ? direction.highRow : direction.lowRow;
+}
+
+function signalCell(event) {
+  const direction = DIR[event.direction] || DIR.neutral;
+  const importance = IMP[event.importance] || IMP.low;
+  const title = `${direction.label} direction — ${event.signalReason || 'No direction reason supplied'}. ${importance.label} — ${event.importanceReason || 'No importance reason supplied'}.`;
+  return `<div data-alert-signal data-alert-direction="${escapeHtml(event.direction || 'neutral')}" data-alert-importance="${escapeHtml(event.importance || 'low')}"
+      class="flex min-w-[108px] flex-col items-start gap-1.5" role="group" aria-label="${escapeHtml(`${direction.label} direction, ${importance.label}`)}" title="${escapeHtml(title)}">
+    <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ring-1 ${direction.chip}">
+      <span aria-hidden="true" class="text-sm leading-none">${direction.symbol}</span>${direction.label}
+    </span>
+    <span class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${importance.chip}">${importance.label}</span>
+  </div>`;
+}
+
+function eventsTable(ctx, events, day, tablePosition = null) {
   return scoreTable({
     rows: events,
     // Content-derived and unique per event — never a position. The stream grows while feeds land,
@@ -584,7 +663,9 @@ function eventsTable(ctx, events, day) {
     showRank: false,
     // Date and time lead every row. Some feeds resolve only to a day; saying "Day only" is more
     // informative than an em dash and keeps older rows intelligibly ordered as the reader scrolls.
-    nameAfter: 1,
+    // Date first, then the combined signal/priority marker, then company identity. This keeps the
+    // two judgements in the reader's scan path without spending two repetitive table columns.
+    nameAfter: 2,
     dense: true,
     wrapHeads: true,
     // A FIRST-FRAME FALLBACK ONLY — `fitStreamToViewport` sets the real height after the paint.
@@ -598,7 +679,10 @@ function eventsTable(ctx, events, day) {
     // complete data set in the table model, but append DOM rows only as the internal scroller nears
     // its end. Search, filters, counts and export still operate over every retained event.
     fillMode: 'scroll',
-    rowClass: (e) => DIR[e.direction]?.row || DIR.neutral.row,
+    rowClass: alertRowClass,
+    initialRowCount: tablePosition?.rendered || 40,
+    initialRowKey: tablePosition?.key || null,
+    scrollLabel: 'All Alerts history table',
     columns: [
       {
         label: 'Date / time',
@@ -611,18 +695,11 @@ function eventsTable(ctx, events, day) {
         sortValue: (e) => `${e.day || '0000-00-00'}T${e.time || ''}`,
       },
       {
-        label: 'Direction',
-        get: (e) => {
-          const s = DIR[e.direction] || DIR.neutral;
-          return `<span class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${s.chip}">${s.label}</span>`;
-        },
+        label: 'Signal / priority',
+        get: signalCell,
         html: true,
-        sortValue: (e) => e.direction,
-      },
-      {
-        label: 'Importance',
-        get: (e) => `<span class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${IMP[e.importance] || IMP.low}">${escapeHtml(e.importance || 'low')}</span>`,
-        html: true,
+        // Sorting this column answers the useful question — what needs attention first — while
+        // stable sort preserves chronology within High and Low.
         sortValue: (e) => (e.importance === 'high' ? 1 : 0),
       },
       {
@@ -631,8 +708,8 @@ function eventsTable(ctx, events, day) {
           <div class="max-w-[560px]">
             <div class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${escapeHtml(e.headline)}</div>
             <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
-            <div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}">${escapeHtml(e.signalReason || '')}</div>
-            <div class="truncate text-[11px] text-slate-400" title="${escapeHtml(e.importanceReason || '')}">${escapeHtml(e.importanceReason || '')}</div>
+            <div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
+            <div class="truncate text-[11px] ${e.importance === 'high' ? 'font-semibold text-violet-700' : 'text-slate-400'}" title="${escapeHtml(e.importanceReason || '')}"><span class="text-slate-400">Priority ·</span> ${escapeHtml(e.importanceReason || '')}</div>
           </div>`,
         html: true,
         sortValue: (e) => String(e.headline || '').toLowerCase(),
@@ -666,6 +743,15 @@ function eventsTable(ctx, events, day) {
     searchable: (e) => `${e.day || ''} ${e.time || ''} ${e.company} ${e.ticker || ''} ${e.direction || ''} ${e.importance || ''} ${e.headline} ${e.detail || ''} ${e.signalReason || ''} ${e.importanceReason || ''} ${e.feedLabel}`,
     filters: [
       {
+        label: 'Importance',
+        options: [
+          { value: 'all', label: 'All priorities' },
+          { value: 'high', label: 'High priority only' },
+          { value: 'low', label: 'Low priority only' },
+        ],
+        match: (e, v) => e.importance === v,
+      },
+      {
         label: 'Direction',
         options: [
           { value: 'all', label: 'Every direction' },
@@ -674,15 +760,6 @@ function eventsTable(ctx, events, day) {
           { value: 'neutral', label: 'Neutral only' },
         ],
         match: (e, v) => e.direction === v,
-      },
-      {
-        label: 'Importance',
-        options: [
-          { value: 'all', label: 'High and low' },
-          { value: 'high', label: 'High only' },
-          { value: 'low', label: 'Low only' },
-        ],
-        match: (e, v) => e.importance === v,
       },
       {
         label: 'Feed',

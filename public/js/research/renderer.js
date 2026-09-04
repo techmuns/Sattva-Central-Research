@@ -83,7 +83,7 @@ function renderTable(lines, start, cite) {
   }
   table.appendChild(body);
   return {
-    node: el('div', { class: 'scrollbar-thin my-4 overflow-x-auto rounded-xl border border-slate-200', tabindex: '0', 'aria-label': 'Answer data table' }, table),
+    node: el('div', { class: 'table-scroll-surface scrollbar-thin my-4 overflow-x-auto rounded-xl border border-slate-200', tabindex: '0', role: 'region', 'aria-label': 'Answer data table' }, table),
     next: cursor,
   };
 }

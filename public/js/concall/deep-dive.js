@@ -668,7 +668,7 @@ const chip = (k, val) => {
 };
 
 function objectTable(rows, cols) {
-  return `<div class="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+  return `<div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Con-call analysis table">
     <table class="w-full text-sm"><thead class="bg-slate-50"><tr>
       ${cols
         .map(

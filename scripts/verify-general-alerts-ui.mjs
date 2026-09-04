@@ -105,6 +105,59 @@ try {
     return first?.getAttribute('data-event-day');
   });
   assert(!(await page.locator('tbody tr').first().innerText()).includes('Date not supplied'), 'undated rows sort after dated records');
+
+  const tableContract = await page.evaluate(() => {
+    const scroller = document.querySelector('[data-table-scroll]');
+    const style = getComputedStyle(scroller);
+    return {
+      headers: [...document.querySelectorAll('thead th')].map((cell) => cell.innerText.replace(/[▴▾]/g, '').trim()),
+      className: scroller.className,
+      tabIndex: scroller.tabIndex,
+      role: scroller.getAttribute('role'),
+      label: scroller.getAttribute('aria-label'),
+      overscroll: style.overscrollBehavior,
+      scrollBehavior: style.scrollBehavior,
+      signals: [...document.querySelectorAll('[data-alert-signal]')].map((cell) => ({
+        direction: cell.dataset.alertDirection,
+        importance: cell.dataset.alertImportance,
+        label: cell.getAttribute('aria-label'),
+      })),
+    };
+  });
+  assert.deepEqual(tableContract.headers.slice(0, 3), ['DATE / TIME', 'SIGNAL / PRIORITY', 'COMPANY']);
+  assert(!tableContract.headers.includes('DIRECTION') && !tableContract.headers.includes('IMPORTANCE'));
+  assert(tableContract.className.includes('table-scroll-surface'));
+  assert.equal(tableContract.tabIndex, 0);
+  assert.equal(tableContract.role, 'region');
+  assert.equal(tableContract.label, 'All Alerts history table');
+  assert.equal(tableContract.overscroll, 'contain');
+  assert.equal(tableContract.scrollBehavior, 'smooth');
+  assert(tableContract.signals.length > 0 && tableContract.signals.every((signal) =>
+    ['positive', 'negative', 'neutral'].includes(signal.direction) &&
+    ['high', 'low'].includes(signal.importance) &&
+    /direction, (High|Low) priority/.test(signal.label)));
+
+  // A source refresh can insert rows above the viewport. Preserve the visible event, not merely
+  // its old pixel offset, so a reader never loses their place while the stream is live.
+  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
+    scroller.style.scrollBehavior = 'auto';
+    scroller.scrollTop = Math.min(900, scroller.scrollHeight - scroller.clientHeight);
+    scroller.style.removeProperty('scroll-behavior');
+    const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
+    const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((item) => item.getBoundingClientRect().bottom > boundary);
+    return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : 0 };
+  });
+  assert(beforeRefresh.key && (await page.locator('[data-table-scroll]').evaluate((el) => el.scrollTop)) > 0);
+  await page.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
+  await settled();
+  const afterRefresh = await page.locator('[data-table-scroll]').evaluate((scroller, key) => {
+    const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
+    const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((item) => item.dataset.rowKey === key);
+    return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : null };
+  }, beforeRefresh.key);
+  assert.equal(afterRefresh.key, beforeRefresh.key);
+  assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
+
   for (const width of [1440, 1024, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.waitForTimeout(300);

@@ -365,6 +365,7 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  dense         default false. true tightens horizontal cell padding for wide numeric tables.
  *  fillMode      'idle' (default) eventually paints every row; 'scroll' appends adaptive pages
  *                only as the reader approaches the bottom of the table.
+ *  scrollLabel   accessible name for the keyboard-focusable table scroller.
  *
  * Sorting, search, watchlist-only and the filter select are all handled internally; the table
  * re-renders its own tbody without the tab getting involved.
@@ -443,6 +444,7 @@ export function scoreTable(config) {
     showWatchFilter = true,
     initialRowCount = 40,
     initialRowKey = null,
+    scrollLabel = `${nameLabel} data table`,
   } = config;
 
   // `watchKey` defaults to the row key, which is correct wherever a row is a company. `watchName`
@@ -685,8 +687,8 @@ export function scoreTable(config) {
   // The old adaptive ceiling reached 800 rows. HTML insertion looked cheap, but the style/layout
   // work landed on the next frame: traces showed 40–88ms layout blocks while a table filled. Keep
   // each background batch below a screenful so loading can never monopolise an interaction frame.
-  const MIN_SLICE = 20;
-  const MAX_SLICE = 80;
+  const MIN_SLICE = fillMode === 'scroll' ? 16 : 20;
+  const MAX_SLICE = fillMode === 'scroll' ? 40 : 80;
 
   // requestIdleCallback where it exists, with a timeout so a busy or backgrounded tab still
   // finishes. Safari has no rIC, hence the fallback — a slower fill is fine, a stalled one is not.
@@ -755,7 +757,7 @@ export function scoreTable(config) {
         </div>
       </div>
 
-      <div class="scrollbar-thin overflow-x-auto" data-table-scroll ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto"` : ''}>
+      <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto"` : ''}>
         <table class="w-full text-sm">
           <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-slate-50 shadow-[inset_0_-1px_0_rgb(226_232_240)]' : 'bg-slate-50/70'}">${headHtml()}</thead>
           <tbody data-table-body>${bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
@@ -811,7 +813,7 @@ export function scoreTable(config) {
       // Adapt inside the strict ceiling above: the cost per row swings by an order of magnitude
       // between a three-column table and a thirteen-column one.
       const ms = performance.now() - started;
-      if (ms > 12) slice = Math.max(MIN_SLICE, Math.round(slice / 2));
+      if (ms > (fillMode === 'scroll' ? 8 : 12)) slice = Math.max(MIN_SLICE, Math.round(slice / 2));
       else if (ms < 4) slice = Math.min(MAX_SLICE, slice * 2);
       if (filled < current.length) {
         if (fillMode !== 'scroll') cancelFill = scheduleSlice(pumpFill);
@@ -865,7 +867,15 @@ export function scoreTable(config) {
         scrollQueued = false;
         const last = body.lastElementChild;
         if (filled >= current.length || !last) return;
-        if (last.getBoundingClientRect().top < window.innerHeight * 2) {
+        // Internal table scrollers should fill from their own geometry, not from the viewport's.
+        // The old viewport-only test could wait until the reader hit the painted edge, then append
+        // a large slice during the gesture. Keeping roughly 1.5 table viewports buffered makes the
+        // history feel continuous while retaining scroll-paged DOM bounds.
+        const internalNearEnd = scroller && scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < Math.max(480, scroller.clientHeight * 1.5);
+        const pageNearEnd = !scroller || scroller.scrollHeight <= scroller.clientHeight
+          ? last.getBoundingClientRect().top < window.innerHeight * 2
+          : false;
+        if (internalNearEnd || pageNearEnd) {
           if (fillMode === 'scroll') pumpFill();
           else flush();
         }

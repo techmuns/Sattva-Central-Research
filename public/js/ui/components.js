@@ -261,7 +261,7 @@ export function segmentedToggle({ options, activeValue, onChange }) {
 
 // Sortable, sticky-header data table. Horizontal-scrolls inside its own container so the page
 // body never scrolls sideways. Zebra-free — rows differentiate on hover only.
-export function dataTable({ columns, rows, sortable = true, initialSort = null, emptyMessage = 'No data yet.' }) {
+export function dataTable({ columns, rows, sortable = true, initialSort = null, emptyMessage = 'No data yet.', scrollLabel = 'Scrollable data table' }) {
   function cellValue(row, col) {
     return col.render ? col.render(row) : escapeHtml(row[col.key] ?? '—');
   }
@@ -281,7 +281,7 @@ export function dataTable({ columns, rows, sortable = true, initialSort = null, 
   }
 
   const html = `
-    <div class="overflow-x-auto rounded-2xl ring-1 ring-slate-100" data-table-wrap>
+    <div class="table-scroll-surface overflow-x-auto rounded-2xl ring-1 ring-slate-100" data-table-wrap tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}">
       <table class="w-full min-w-max border-collapse text-sm">
         <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur">
           <tr>
