@@ -23,6 +23,8 @@ const capturedAt = new Date().toISOString();
 const BOOTSTRAP_DAYS = Math.max(1, Number(process.env.SCREENER_BOOTSTRAP_DAYS || 30));
 const MAX_PAGES = Math.max(2, Number(process.env.SCREENER_MAX_PAGES || 200));
 const OVERLAP_PAGES = Math.max(1, Number(process.env.SCREENER_OVERLAP_PAGES || 2));
+const NAVIGATION_ATTEMPTS = 3;
+const PAGE_PACE_MS = 1_500;
 
 const iso = (value) => new Date(value).toISOString().slice(0, 10);
 const bootstrapFrom = iso(Date.now() - BOOTSTRAP_DAYS * 86400000);
@@ -45,6 +47,20 @@ const pageUrl = (source, pageNumber) => {
   if (pageNumber > 1) url.searchParams.set('p', String(pageNumber));
   return url.href;
 };
+
+async function navigate(page, url, expectedPath) {
+  for (let attempt = 1; attempt <= NAVIGATION_ATTEMPTS; attempt++) {
+    try {
+      const response = await page.goto(url, { waitUntil: 'commit' });
+      if (response?.ok() && new URL(page.url()).pathname === expectedPath) return response;
+    } catch {
+      // Retry only the fixed URL already selected by the capture. Exception text can contain page
+      // state and never enters shared logs.
+    }
+    if (attempt < NAVIGATION_ATTEMPTS) await page.waitForTimeout(attempt * 5_000);
+  }
+  throw new Error('navigation unavailable');
+}
 
 async function extractRows(page, url) {
   const raw = await page.locator('#result_list tbody tr').evaluateAll((elements, sourceUrl) => elements.map((row) => ({
@@ -88,8 +104,7 @@ async function scrapeSource(context, source, previousMeta) {
       // The table is server-rendered. Waiting for the whole DOMContentLoaded lifecycle makes the
       // capture depend on unrelated slow page assets on hosted runners; wait for the response and
       // the actual table row instead.
-      const response = await page.goto(url, { waitUntil: 'commit' });
-      if (!response?.ok() || new URL(page.url()).pathname !== source.path) throw new Error('source unavailable');
+      await navigate(page, url, source.path);
       sourceStage = 'session validation';
       if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw new Error('session unavailable');
       sourceStage = 'table validation';
@@ -122,6 +137,7 @@ async function scrapeSource(context, source, previousMeta) {
         complete = true;
         break;
       }
+      await page.waitForTimeout(PAGE_PACE_MS);
     }
   } catch {
     // A fixed source id and stage are operationally useful without exposing page text, form values,
@@ -175,20 +191,22 @@ try {
 
   stage = 'Screener login';
   const destination = SCREENER_TRADE_SOURCES[0].path;
-  const response = await login.goto(`${origin}/login/?next=${encodeURIComponent(destination)}`, { waitUntil: 'domcontentloaded' });
-  if (!response?.ok()) throw new Error('login unavailable');
+  await navigate(login, `${origin}/login/?next=${encodeURIComponent(destination)}`, '/login/');
   const form = login.locator('form[action="/login/"]');
-  await form.waitFor({ state: 'visible' });
+  await form.waitFor({ state: 'attached' });
   await form.locator('input[name="username"]').fill(username);
   await form.locator('input[name="password"]').fill(password);
   username = '';
   password = '';
   await Promise.all([
-    login.waitForURL(`${origin}${destination}`, { waitUntil: 'domcontentloaded' }),
-    form.locator('button[type="submit"]').click(),
+    login.waitForURL(`${origin}${destination}`, { waitUntil: 'commit' }),
+    form.locator('button[type="submit"]').click({ noWaitAfter: true }),
   ]);
   const hasSession = (await context.cookies(origin)).some((cookie) => cookie.name === 'sessionid' && cookie.value);
-  if (!hasSession || !(await login.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw new Error('login not verified');
+  const logout = login.locator('a[href^="/logout/"], form[action^="/logout/"]').first();
+  await logout.waitFor({ state: 'attached' });
+  if (!hasSession) throw new Error('login not verified');
+  await login.waitForTimeout(2_000);
   await login.close();
 
   stage = 'four-category capture';
