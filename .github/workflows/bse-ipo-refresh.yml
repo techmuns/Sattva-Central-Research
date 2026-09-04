@@ -20,7 +20,9 @@ concurrency:
 
 jobs:
   collect:
-    runs-on: ubuntu-latest
+    # Standard Linux runners could not establish a BSE TCP connection. Validate the
+    # standard macOS runner's independent network path before enabling production.
+    runs-on: macos-15
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v5

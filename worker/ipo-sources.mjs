@@ -125,7 +125,7 @@ export async function readIpoSource(source, { fetcher = fetch, signal = AbortSig
     }
   }
 }
-export async function captureIpoFilings({ fetcher = fetch, now = Date.now, signal = AbortSignal.timeout(25000) } = {}) {
+export async function captureIpoFilings({ fetcher = fetch, now = Date.now, signal = AbortSignal.timeout(25000), readBse = null } = {}) {
   const checkedAt = new Date(now()).toISOString(), results = new Array(IPO_SOURCES.length);
   let next = 0;
   // Bounded connection pool, response sizes and total deadline; requests never follow redirects.
@@ -133,6 +133,7 @@ export async function captureIpoFilings({ fetcher = fetch, now = Date.now, signa
     while (next < IPO_SOURCES.length) {
       const i = next++, s = IPO_SOURCES[i];
       try {
+        if (s.id === 'bse-sme' && readBse) { results[i] = await readBse({ signal }); continue; }
         const { body, attempts } = await readIpoSource(s, { fetcher, signal });
         const parsed = (s.kind === 'nse' ? parseNseOffers : s.kind === 'bse' ? parseBseOffers : parseSebiOffers)(body, s, checkedAt);
         results[i] = { rows: parsed.rows, source: { id: s.id, label: s.label, url: s.page || s.url, status: 'ok', checkedAt, attempts, count: parsed.rows.length, records: parsed.records, unmapped: parsed.unmapped, note: parsed.note + (attempts > 1 ? ' Read succeeded on a retry after a transient connection failure.' : '') + (parsed.unmapped ? ` ${parsed.unmapped} issuer/filing rows could not be mapped.` : '') } };

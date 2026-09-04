@@ -1,5 +1,5 @@
 import { readEntry, writeEntry } from '../core/store.js';
-import { mergeIpoFilings, validateIpoFilings, IPO_POLL_MS, MAX_IPO_ROWS } from './ipo-filings-shared.js';
+import { mergeIpoFilings, validateIpoFilings, IPO_POLL_MS, MAX_IPO_ROWS, ipoSourceIsStale } from './ipo-filings-shared.js';
 const KEY = 'ipo-filings:history:v1';
 const readJson = async (path) => {
   const response = await fetch(path, { cache: 'no-store', signal: AbortSignal.timeout(30000) });
@@ -45,7 +45,7 @@ export function createIpoFilingsFeed({
     pending = run().finally(() => { pending = null; }); return pending;
   }
   function meta() {
-    const stale = !checkedAt || now() - Date.parse(checkedAt) > IPO_POLL_MS * 2 || Date.parse(checkedAt) > now() + 60000;
+    const stale = !checkedAt || now() - Date.parse(checkedAt) > IPO_POLL_MS * 2 || Date.parse(checkedAt) > now() + 60000 || sources.some((s) => ipoSourceIsStale(s, now()));
     const failed = sources.filter((s) => s.status !== 'ok');
     return { sources, checkedAt, liveFailed, stale, snapshotFailed, capped, loaded,
       degraded: liveFailed || stale || snapshotFailed || failed.length > 0 || sources.some((s) => s.unmapped) || capped,

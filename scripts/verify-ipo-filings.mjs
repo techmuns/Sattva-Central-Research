@@ -86,7 +86,7 @@ await test('BSE retry cancels stalled bodies, respects the parent deadline and d
 });
 await test('partial response caches expire quickly and the old failed cache key is not reused', async () => {
   const response = await handleIpoFilings(new Request('https://app.test/api/ipo-filings'), { now,
-    cache: { match: async (key) => { assert.equal(new URL(key.url).search, '?source-contract=bse-retry-v2'); return null; }, put: async () => {} },
+    cache: { match: async (key) => { assert.equal(new URL(key.url).search, '?source-contract=bse-collector-v3'); return null; }, put: async () => {} },
     fetcher: async (url) => new Response(bodies(url), { status: url.includes('www.bsesme.com') ? 522 : 200 }),
   });
   assert.equal(response.headers.get('cache-control'), 'public, max-age=30');
@@ -161,7 +161,7 @@ await test('source panel never labels unknown, cached, expired or future checks 
 });
 await test('moved coverage preserves cadence, missing dates, limits and safe source text', () => {
   const group = ipoSourceGroup({ ...presentationMeta, capped: true, snapshotFailed: true, sources: payload.sources.map((s) => ({ ...s, note: '<img src=x onerror=alert(1)>', url: 'javascript:alert(1)' })) }, now());
-  assert(group.notes.some((s) => s.includes('No continuous collection while closed')));
+  assert(group.notes.some((s) => s.includes('including while closed')));
   assert(group.notes.some((s) => s.includes('2 without a supplied filing date')));
   assert(group.notes.some((s) => s.includes('BSE-only mainboard')));
   assert(group.notes.some((s) => s.includes('history limit')));
