@@ -74,7 +74,7 @@ test('live route authenticates only the fixed source URL and never forwards the 
     calls++;
     assert.equal(url, FAMILY_HOLDINGS_URL);
     assert.equal(init.headers.authorization, `Bearer ${token}`);
-    assert.equal(init.redirect, 'error');
+    assert.equal(init.redirect, 'manual', 'use the Workers-supported no-follow mode');
     return Response.json(incoming);
   });
   assert.equal(calls, 1);
@@ -93,6 +93,16 @@ test('upstream refusal, missing configuration, oversized bodies and redirects ca
     assert.equal((await response.json()).ok, false);
   }
   await assert.rejects(fetchFamilyBook(null));
+  for (const status of [301, 302, 303, 307, 308]) {
+    let requests = 0;
+    await assert.rejects(fetchFamilyBook(token, async (url, init) => {
+      requests++;
+      assert.equal(url, FAMILY_HOLDINGS_URL);
+      assert.equal(init.redirect, 'manual');
+      return new Response(null, { status, headers: { location: 'https://untrusted.test/holdings' } });
+    }), new RegExp(`HTTP ${status}`));
+    assert.equal(requests, 1, 'never follow redirects or forward the holdings token');
+  }
   await assert.rejects(fetchFamilyBook(token, async () => Response.json({ ...incoming, checkedAt: '2020-01-01T00:00:00Z' })));
   await assert.rejects(boundedJson(new Response('x'.repeat(100)), 50));
 });

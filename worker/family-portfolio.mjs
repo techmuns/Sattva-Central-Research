@@ -8,7 +8,9 @@ export async function fetchFamilyBook(token, fetcher = fetch) {
   if (typeof token !== 'string' || token.length < 32) throw new Error('Family holdings sync is not configured');
   const response = await fetcher(FAMILY_HOLDINGS_URL, {
     headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
-    redirect: 'error', signal: AbortSignal.timeout(10000), cache: 'no-store',
+    // Workers rejects redirect:'error' before making a request. 'manual' never
+    // forwards the credential to a redirect target; boundedJson rejects 3xx.
+    redirect: 'manual', signal: AbortSignal.timeout(10000), cache: 'no-store',
   });
   const book = validateFamilyBook(await boundedJson(response));
   assertRecentCheck(book.checkedAt);

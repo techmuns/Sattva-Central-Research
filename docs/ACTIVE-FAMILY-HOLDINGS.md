@@ -22,6 +22,14 @@ expires after 90 seconds even if browser timers stopped; reads more than five se
 future are refused. A pre-sleep request cannot overwrite a resumed request. Browser, Worker and
 scheduled collectors share strict identity, count, provenance and freshness validation.
 
+The shared source fetch must use `redirect: 'manual'`, not `'error'`: the latter
+works in Node but is rejected by the Cloudflare runtime before any network request.
+Every non-2xx response, including a redirect, is rejected before parsing; the
+holdings credential must never follow a redirect. Contract tests pin the supported
+mode and cover 301, 302, 303, 307 and 308 refusal. A bundle-only dry run does not
+exercise edge HTTP behaviour; also check the authenticated path in a Cloudflare
+preview when changing its request options.
+
 The source workbook, stated period end, its age and last successful connection check are visible
 beside the Portfolio controls. A future period end is flagged as not proving today's holdings.
 Existing browser-local manual overrides remain local; an explicit warning identifies when the
