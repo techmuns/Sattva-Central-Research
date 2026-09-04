@@ -1,12 +1,13 @@
 name: NSE announcements refresh
 
-# NSE's live "latest announcements" feed, captured to a committed snapshot.
+# NSE's live "latest announcements" feed, captured to a snapshot and additive daily history.
 #
 # WHY A SNAPSHOT WHEN THE FEED IS LIVE. The live experience is the Worker route
 # /api/nse-announcements, which the NSE Filings tab polls. This snapshot is the FLOOR beneath it:
 # what a first visit paints before the route answers, what a static origin (no Worker) shows, and
 # what the Worker itself serves when NSE refuses a fetch. Every other feed here has the same live
-# route + committed fallback shape.
+# route + committed fallback shape. Each successful capture also archives the previous and new
+# windows by filing date, so rollover does not delete yesterday's searchable records.
 #
 # COST: one request, a few seconds. NSE does NOT TLS-fingerprint the reader the way Moneycontrol
 # does, so node's fetch reads it directly with a full desktop user-agent (a weak one is
@@ -20,8 +21,8 @@ name: NSE announcements refresh
 on:
   schedule:
     # Hourly across Indian market and filing hours (04:00-15:00 UTC = 09:30-20:30 IST), weekdays.
-    # Deliberately not denser: GitHub sheds the densest crons first, and this only refreshes a
-    # FALLBACK — the live route is what a reader actually sees minute to minute.
+    # GitHub schedules are best-effort. This preserves what was captured, not a complete exchange
+    # archive; the live route also retains observed rows in each reader's device cache.
     - cron: "0 4-15 * * 1-5"
   workflow_dispatch:
 
@@ -58,12 +59,12 @@ jobs:
           fi
           exit $code
 
-      - name: Commit the snapshot
+      - name: Commit the snapshot and captured history
         if: success() && steps.capture.outputs.blocked != 'true' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/nse-announcements.json
+          git add public/data/nse-announcements.json public/data/nse-filings
           if git diff --cached --quiet; then
             echo "No change."
             exit 0

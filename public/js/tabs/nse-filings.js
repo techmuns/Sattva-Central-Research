@@ -12,17 +12,17 @@
 // narrowed scope, because nothing on it says whose it is (the honesty rule every feed here follows).
 
 import { scoreTable, sectionHead } from '../ui/screener.js';
-import { scopeSummary } from '../ui/components.js';
+import { pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime } from '../core/format.js';
-import { scopePossessive } from '../data/scope.js';
+import { scopeBook, scopeLabel } from '../data/scope.js';
 import * as coverage from '../data/coverage.js';
 import * as feed from '../data/nse-filings.js';
 
 export const meta = {
   id: 'nse-filings',
   title: 'NSE Filings',
-  subtitle: 'Live exchange announcements, narrowed to your companies — updated as they are filed.',
+  subtitle: 'Search captured NSE filing history by company or ticker, with live updates.',
   subviews: [],
 };
 
@@ -115,6 +115,9 @@ function filingCell(r) {
 }
 
 function paint(ctx) {
+  const previousSearch = ctx.root.querySelector('[data-table-search]');
+  const selection = previousSearch && document.activeElement === previousSearch
+    ? [previousSearch.selectionStart, previousSearch.selectionEnd] : null;
   const m = feed.meta();
   const rows = feed.forScope(ctx.scope, coverage.holdings());
 
@@ -151,42 +154,67 @@ function paint(ctx) {
       },
       { label: 'Document', get: filingCell, html: true, align: 'right', sortable: false },
     ],
-    filters: subjects.length > 1
-      ? [
-          {
-            label: 'Subject',
-            options: [{ value: 'all', label: 'All subjects' }, ...subjects.map(([s, n]) => ({ value: s, label: `${s} (${n})` }))],
-            match: (r, v) => r.subject === v,
-          },
-        ]
-      : null,
-    searchable: (r) => `${r.company} ${r.ticker || ''} ${r.subject || ''}`,
+    // Keep this filter's position stable across refreshes so a saved selection cannot move.
+    filters: [
+      {
+        label: 'Subject',
+        options: [{ value: 'all', label: 'All subjects' }, ...subjects.map(([s, n]) => ({ value: s, label: `${s} (${n})` }))],
+        match: (r, v) => r.subject === v,
+      },
+    ],
+    searchable: (r) => `${r.company} ${r.ticker || ''} ${r.subject || ''} ${r.description || ''}`,
     link: (r) => (linkable(r.url) ? r.url : null),
     initialSort: { key: 'Filed (IST)', dir: 'desc' },
     exportName: 'sattva-nse-filings',
-    emptyMessage: scopePossessive(ctx.scope)
-      ? `None of ${scopePossessive(ctx.scope)} has filed with NSE recently.`
-      : 'No filings match your filters.',
+    countNoun: 'filings',
+    emptyMessage: `No captured filings match your search and filters in ${scopeLabel(ctx.scope)}. Try a longer history range${ctx.scope !== 'universe' ? ' or switch to Universe' : ''}. This does not mean the company has not filed.`,
     initialView: tableView,
   });
   tableView = table.view;
 
   const fresh = m.capturedAt ? formatRelativeTime(Date.parse(m.capturedAt)) : 'never';
   const originWord = m.origin === 'live' ? 'Live' : m.origin === 'store' ? 'Cached' : m.origin === 'snapshot' ? 'Snapshot' : '';
-  const desc = `Every announcement NSE has published recently, newest first, resolved to the filing company. `
-    + `${m.resolved} of ${m.count} resolved to a symbol. Times are IST. `
+  const desc = `Captured filings from ${m.from} onwards (IST), plus undated notices. Search company names, tickers and filing text. `
+    + `${m.resolved} of ${m.count} captured filings resolved to a symbol. `
     + `${originWord ? `${originWord} · read ${escapeHtml(fresh)}.` : ''}`
-    + (m.degraded ? ` ${escapeHtml(m.degraded)}` : '');
+    + (m.degraded ? ` ${escapeHtml(m.degraded)}` : '')
+    + ' Captured history is not a complete NSE archive.';
+  const companies = new Set(rows.map((r) => r.company.trim().toLowerCase())).size;
+  const book = scopeBook(ctx.scope);
+  const companyCount = book ? `${companies} of ${book.count}` : String(companies);
+  const historyWarning = m.historyUnavailable || m.missingDays.length
+    ? `<p role="status" class="mb-3 text-xs text-amber-700">History is incomplete: ${m.historyUnavailable ? 'the archive index could not be loaded' : `${m.missingDays.length} daily archive file(s) could not be loaded`}. Refresh to retry; a missing search result is not proof of no filing.</p>` : '';
 
   ctx.root.innerHTML = `
     ${sectionHead({
       title: meta.title,
       description: desc,
-      meta: scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'filings', book: coverage.meta() }),
+      meta: pill({ label: `${scopeLabel(ctx.scope)} · ${rows.length} filing${rows.length === 1 ? '' : 's'} · ${companyCount} ${(book?.count ?? companies) === 1 ? 'company' : 'companies'}`, tone: 'brand' }),
     })}
+    <div class="mb-3 flex flex-wrap items-center gap-3">
+      <label class="text-xs font-semibold text-slate-600">History range
+        <select data-nse-history aria-label="History range" class="ml-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+          ${feed.HISTORY_DAYS.map((days) => `<option value="${days}"${m.windowDays === days ? ' selected' : ''}>Last ${days} days</option>`).join('')}
+        </select>
+      </label>
+      <span class="text-xs text-slate-500">Search stays within the selected scope and history range.</span>
+    </div>
+    ${historyWarning}
     ${table.html}
   `;
   table.wire(ctx.root);
+  if (selection) {
+    const search = ctx.root.querySelector('[data-table-search]');
+    search.focus({ preventScroll: true });
+    search.setSelectionRange(...selection);
+  }
+  ctx.root.querySelector('[data-nse-history]').addEventListener('change', async (event) => {
+    const select = event.target;
+    select.disabled = true;
+    select.setAttribute('aria-busy', 'true');
+    try { await feed.loadHistory(Number(select.value)); }
+    finally { select.disabled = false; select.removeAttribute('aria-busy'); }
+  });
 }
 
 function loadingHtml() {

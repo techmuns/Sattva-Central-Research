@@ -13,16 +13,25 @@
 // the SAME pure module the Worker uses (worker/nse-ann.mjs), so the snapshot and the live route can
 // never disagree about shape or about how a name becomes a ticker.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FEED_URL, HEADERS, parseAnnouncements, assertShape, buildResolver, resolveAll } from '../worker/nse-ann.mjs';
+import { archiveNseFilings } from './lib/nse-history.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = (f) => resolve(__dirname, '../public/data', f);
 const num = (n) => Number(n).toLocaleString('en-IN');
 
 async function main() {
+  const previous = existsSync(DATA('nse-announcements.json'))
+    ? JSON.parse(readFileSync(DATA('nse-announcements.json'), 'utf8')) : null;
+  if (process.argv.includes('--archive-only')) {
+    if (!previous?.rows?.length) throw new Error('No saved NSE capture to archive.');
+    const archive = archiveNseFilings(DATA(''), [previous]);
+    console.log(`Archived ${archive.count} captured filings across ${archive.days.length} day(s); no network requests.`);
+    return;
+  }
   console.log('NSE announcements — reading the live feed');
   let xml = null;
   for (let attempt = 1; attempt <= 3 && !xml; attempt += 1) {
@@ -68,7 +77,10 @@ async function main() {
     unresolved: rows.length - withTicker,
     rows: resolved,
   };
+  // Preserve the old window BEFORE replacing the live fallback, including the first migration.
+  const archive = archiveNseFilings(DATA(''), [previous, payload]);
   writeFileSync(DATA('nse-announcements.json'), `${JSON.stringify(payload)}\n`);
+  console.log(`  retained ${num(archive.count)} captured filings in ${archive.days.length} daily history files`);
   console.log(`  ${num(rows.length)} announcements · ${num(withTicker)} resolved to a ticker · ${num(rows.length - withTicker)} unresolved`);
   console.log(`  wrote ${DATA('nse-announcements.json')}`);
 }

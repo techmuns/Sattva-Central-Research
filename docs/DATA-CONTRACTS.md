@@ -2335,7 +2335,35 @@ Moneycontrol, NSE does not TLS-fingerprint the reader: node's `fetch` and a Clou
 reliably (5/5 measured) **with a full desktop user-agent** — a weak or blank one gets a 430-byte
 Akamai "Access Denied". So `GET /api/nse-announcements` fetches, resolves and returns JSON, edge-cached
 90s with a content ETag; the browser polls it. `public/data/nse-announcements.json` is the committed
-floor beneath it (first paint, static origins, and the Worker's own fallback when NSE refuses).
+floor beneath it (static origins and the Worker's own fallback when NSE refuses). The browser reads
+both the snapshot and the live response: a successful smaller live window must not hide older rows.
+
+**Captured history is additive, not a complete exchange archive.** Before replacing the snapshot,
+`scripts/scrape-nse-announcements.mjs` merges the previous and new captures into
+`public/data/nse-filings/YYYY-MM-DD.json` (filing date in IST; `undated.json` for notices without a
+date). Each shard is `{ day, rows }`. `index.json` is written last and contains
+`{ version: 1, note, capturedAt, count, days: [{ day, count, revision }] }`; `revision` is the first
+16 hex characters of the shard's SHA-256. The scheduled workflow commits both snapshot and archive.
+Older shards are retained, not pruned. `--archive-only` seeds history from the existing snapshot
+without any network request; it does not reconstruct periods never captured.
+
+The browser defaults to the last **7 calendar days**, with **30 / 90 day** choices, loading only
+the needed shards with four concurrent readers per batch. Search matches company name, ticker,
+subject and description **within the selected scope and range**. Unresolved names remain Universe
+only. Badges distinguish filing counts from company counts. Failed index/day reads produce an
+incomplete-history warning; an empty search never claims that a company did not file.
+
+Rows are deduplicated by document URL, or company + published time + subject for linkless notices.
+Archived and device-retained rows additionally carry `observedAt` (the original capture timestamp,
+not the filing time). Newer observations win corrections, while an already resolved ticker is not
+erased by a later null resolution. A smaller live response is not a deletion. Device-observed rows
+are retained separately from HTTP validators in IndexedDB key `nse-filings:history`, bounded to
+90 days plus undated notices; archive-only rows can be reloaded from their daily assets. The old
+`nse-filings` response cache is migrated on first load, before the next response can replace it.
+
+Regression checks: `node scripts/verify-nse-history.mjs` (also in CI), and the local-only browser
+test `PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-nse-history-ui.mjs`. The latter accepts
+`CHROME_PATH` for an existing Chromium executable and blocks all non-local requests.
 
 **THE FILENAME PREFIX IS NOT A RELIABLE SYMBOL — resolve by NAME.** Every item links to a PDF whose
 name usually starts with the filer's symbol, but measured on a live pull only **31%** of prefixes were
