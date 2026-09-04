@@ -245,6 +245,10 @@ export function concallDetail(r) {
     const score = r.resultScore != null ? `Result score ${Math.round(r.resultScore)}/100 (third-party)` : 'Analysis ready (third-party)';
     return r.resultTier?.label ? `${score} · ${r.resultTier.label}` : score;
   }
+  if (r.analysisTracked === false) {
+    const kinds = [...new Set((r.documents || []).map((document) => document.type))];
+    return kinds.length ? `${kinds.join(', ')} added to the concall document index` : 'Concall document added';
+  }
   if (r.resultScore == null) return 'Call held — analysis pending';
   return `Result score ${Math.round(r.resultScore)}/100 (third-party)`;
 }

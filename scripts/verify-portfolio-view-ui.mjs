@@ -23,6 +23,32 @@ const onemi = { isin: 'INE12F801023', name: 'OnEMI Technology Solutions Ltd', ti
 const other = { isin: 'INE532F01054', name: 'Edelweiss', ticker: 'EDELWEISS', sector: 'Financials', weightPct: 30 };
 const unknown = { isin: 'INE000000001', name: 'Unmapped held company', ticker: null, sector: 'Unclassified', weightPct: 10 };
 const initial = [onemi, other, unknown];
+const concallRow = ({ ticker, name, date = '2026-09-04', analysisTracked = false, type = 'Transcript' }) => ({
+  companyKey: ticker || `screener:${name}`,
+  companyId: ticker ? `NSE:${ticker}` : `SCREENER:${name}`,
+  ticker: ticker || null,
+  exchange: ticker ? 'NSE' : null,
+  name,
+  industry: null,
+  when: `${date}T00:00:00+05:30`,
+  date,
+  publishedDate: date,
+  ssUrl: null,
+  pptSsUrl: null,
+  src: null,
+  notesReady: false,
+  resultScore: analysisTracked ? 72 : null,
+  sentimentTier: analysisTracked ? 3 : null,
+  tags: analysisTracked ? ['Fixture growth'] : [],
+  analysisTracked,
+  documents: [{ type, url: `https://example.com/${encodeURIComponent(ticker || name)}.pdf` }],
+});
+const concallRows = [
+  concallRow({ ticker: 'KISSHT', name: 'OnEMI Technology Solutions', analysisTracked: true, type: 'Presentation' }),
+  concallRow({ ticker: 'NEWCO', name: 'New holding concall' }),
+  concallRow({ ticker: 'OUTSIDE', name: 'Outside universe concall', type: 'Recording' }),
+  concallRow({ ticker: null, name: 'Unresolved BSE concall' }),
+];
 const familyHtml = `<script>
 window.book = ${JSON.stringify(initial)}; window.version = 1; window.failed = false; window.requests = 0;
 const channel = 'sattva-portfolio-v1', origin = ${JSON.stringify(origin)};
@@ -54,6 +80,13 @@ await context.route('**/*', route => {
   if (url.origin !== origin) return route.fulfill({ status:503, body:'External network disabled' });
   if (url.pathname === '/data/portfolio-companies.json') return json({ asOf:'2026-06-30', count:1, resolved:1, holdings:[other] });
   if (url.pathname === '/data/news.json') return json({ kind:'news', capturedAt:new Date().toISOString(), byTicker:Object.fromEntries(['KISSHT','EDELWEISS','NEWCO'].map(t => [t,[{ date:'2026-09-04',title:`${t} announces dividend`,url:`https://example.com/${t}`,source:'Fixture' }]])), empty:[],failed:[],headers:[] });
+  if (url.pathname === '/api/concalls') return json({
+    ok: true,
+    rows: concallRows,
+    upcoming: [],
+    today: { day: '2026-09-05', rows: [] },
+    meta: { fetchedAt: new Date().toISOString(), quarter: 202609, screener: { status: 'ok', checkedAt: new Date().toISOString(), publishedTotal: 4, records: 4, fullHistory: true } },
+  });
   if (url.pathname === '/api/research') {
     if(route.request().method() === 'GET') return json({ configured:true });
     questions.push(route.request().postDataJSON());
@@ -104,6 +137,21 @@ try {
     await page.getByRole('button', { name:'View Portfolio',exact:true }).click();
     assert.equal(await page.locator('[data-scope-count]').innerText(), '3', tab);
     await page.getByRole('button', { name:'Done',exact:true }).click();
+    if (tab === 'concall') {
+      await page.getByRole('heading', { name:'Concall Library', exact:true }).waitFor();
+      const portfolioCalls = await page.locator('#content-host').innerText();
+      assert.match(portfolioCalls, /OnEMI Technology Solutions/);
+      assert.match(portfolioCalls, /New holding concall/);
+      assert.doesNotMatch(portfolioCalls, /Outside universe concall|Unresolved BSE concall/);
+      assert.match(portfolioCalls, /Presentation|Transcript/);
+      assert.match(portfolioCalls, /documents/);
+      await page.evaluate(() => { location.hash = '#/research/concall?scope=universe'; });
+      await page.waitForFunction(async () => (await import('/js/core/state.js')).state.scope === 'universe');
+      await page.getByText('Unresolved BSE concall', { exact:true }).waitFor();
+      const universeCalls = await page.locator('#content-host').innerText();
+      assert.match(universeCalls, /Outside universe concall/);
+      assert.match(universeCalls, /Unresolved BSE concall/);
+    }
   }
   await page.getByRole('textbox', { name:'Ask about the dashboard' }).fill('What should I know?');
   await page.getByRole('button', { name:'Send question' }).click();
@@ -134,7 +182,7 @@ try {
   assert.equal(questions.length, 2, 'a recovered question can use the verified portfolio');
   assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('weightPct')), false);
   assert.deepEqual(errors, []);
-  console.log('PASS: any-tab startup, OnEMI name/ticker/ISIN search, read-only ownership, uncovered holdings, legacy Watchlist migration, whole-book parity, additions/exits while open, all tabs, Ask exposure, outage status and verified recovery.');
+  console.log('PASS: any-tab startup, OnEMI name/ticker/ISIN search, read-only ownership, uncovered holdings, legacy Watchlist migration, whole-book parity, additions/exits while open, Con-call document scope isolation, all tabs, Ask exposure, outage status and verified recovery.');
 } catch(error) {
   if(page) console.error((await page.locator('body').innerText()).slice(-5000), errors);
   throw error;

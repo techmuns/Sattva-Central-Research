@@ -54,6 +54,8 @@ jobs:
         run: node scripts/verify-ipo-filings.mjs
       - name: Verify IPOPlatform pagination, archive integrity and repeat collection
         run: node scripts/verify-ipo-platform.mjs
+      - name: Verify Screener concall pagination, deduplication and artifact integrity
+        run: node scripts/verify-screener-concalls.mjs
       - name: Verify complete General Alerts pool and scope isolation
         run: node scripts/verify-general-alerts.mjs
       - name: Verify AI alert search and calendar dates

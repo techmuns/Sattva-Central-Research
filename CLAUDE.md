@@ -171,6 +171,8 @@ scripts/
                                            keeps the book in step with techmuns/Sattva-Family
 .github/workflows/price-move-verify.yml    hourly through the Indian day; asks the Muns market-data
                                            endpoint about every flagged move the scrape could not verify
+.github/workflows/screener-concalls-refresh.yml  every 15 min incremental + daily full authenticated
+                                           Screener concall index; immutable Actions artifact, no commit
 .github/workflows/company-news-refresh.yml weekdays 09:00 + 19:00 IST; company-news universe capture
 .github/workflows/insider-trades-refresh.yml weekdays 19:00 IST; insider-trades universe capture
 .github/workflows/announcements-refresh.yml weekdays 20:00 IST; BSE date-indexed filings

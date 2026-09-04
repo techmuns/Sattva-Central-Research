@@ -8,7 +8,7 @@
 //   GET  /api/earnings?fields=prices           ->  just the traded prices, for the poll
 //   GET  /api/earnings-calendar                ->  who is SCHEDULED to report, and when
 //   GET  /api/earnings-calendar?list=none      ->  the date strip alone, no per-date company list
-//   GET  /api/concalls                         ->  the live StockScans con-call scan
+//   GET  /api/concalls                         ->  live analysis + scheduled Screener document history
 //   GET  /api/super-investors                  ->  the tracked super-investor list (Finology)
 //   GET  /api/super-investors/{slug}           ->  one investor's book, quarter by quarter
 //   GET  /api/stock-search?q=                   ->  company search for the scope editor (Muns)
@@ -59,6 +59,8 @@ import { handleIpoMonitor } from './ipo-monitor.mjs';
 import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
+import { readScreenerConcallCollector } from './screener-concalls-collector.mjs';
+import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -784,9 +786,9 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
 }
 
 // ---------------------------------------------------------------------------------------
-// GET /api/concalls — the live con-call scan, from StockScans.
+// GET /api/concalls — live StockScans analysis plus the scheduled Screener document index.
 //
-// TWO CACHES, ONE ROUTE, BECAUSE THE FEED IS SORTED NEWEST-FIRST.
+// INDEPENDENT CACHES, ONE ROUTE, BECAUSE THE SOURCES MOVE AT DIFFERENT SPEEDS.
 // A quarter is ~880 calls across 18 pages. Re-pulling all eighteen every 30 seconds to catch one
 // new row would be both slow and rude to someone else's server. But the feed descends by call
 // time from offset 0, verified across a full quarter, so a call that has just been analysed can
@@ -796,7 +798,9 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
 //   TAIL  offset 50 onwards   — cached CONCALL_TAIL_TTL_S (10 min). It cannot change.
 //
 // The head is merged OVER the tail, so a row whose analysis landed between the two fetches is
-// taken from the head with its score rather than from the tail without one.
+// taken from the head with its score rather than from the tail without one. The complete Screener
+// Actions artifact is checked once a minute, then grouped by company/publication date and joined
+// to the nearest unambiguous analysis call. Every distinct document survives that grouping.
 //
 // In steady state that is one upstream request per 30 seconds instead of eighteen.
 //
@@ -812,6 +816,8 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
 const CONCALL_HEAD_TTL_S = 30;
 const CONCALL_TAIL_TTL_S = 600;
 const CONCALL_SCHEDULE_TTL_S = 120;
+const CONCALL_SCREENER_TTL_S = 60;
+const CONCALL_SCREENER_DISPATCH_COOLDOWN_S = 15 * 60;
 const CONCALL_SNAPSHOT = '/data/concall-scans.json';
 
 // ---------------------------------------------------------------------------------------
@@ -913,6 +919,28 @@ async function handleNseAnnouncements(request, env, ctx) {
   }
 }
 
+function screenerNeedsRefresh(source, now = Date.now()) {
+  const checkedAt = Date.parse(source?.checkedAt || '');
+  return source?.status !== 'ok' || !Number.isFinite(checkedAt) || now - checkedAt > SCREENER_CONCALL_FRESH_MS;
+}
+
+async function dispatchScreenerRefresh(env) {
+  const cfg = githubConfig(env);
+  if (cfg.error) return;
+  const cache = caches.default;
+  const key = edgeKey('concalls/screener-refresh-dispatch');
+  if (await cache.match(key)) return;
+  // Write the cooldown before calling GitHub. A credential or publisher failure should retry on a
+  // measured cadence, not make every reader start another runner. dispatchWorkflow independently
+  // declines an in-flight run, which closes the race between locations.
+  await cache.put(key, new Response('1', { headers: { 'cache-control': `public, max-age=${CONCALL_SCREENER_DISPATCH_COOLDOWN_S}` } }));
+  try {
+    await dispatchWorkflow(fetch, cfg, SCREENER_CONCALL_WORKFLOW, cfg.ref, { source: 'auto', full: 'false' });
+  } catch (error) {
+    console.error(JSON.stringify({ message: 'Screener concall refresh dispatch failed', reason: error?.code || 'upstream' }));
+  }
+}
+
 async function handleConcalls(request, env, ctx) {
   if (request.method !== 'GET') return json({ error: 'GET only' }, 405);
   const cache = caches.default;
@@ -933,17 +961,42 @@ async function handleConcalls(request, env, ctx) {
   };
 
   try {
-    const [head, tail, sched] = await Promise.all([
+    const [head, tail, sched, screener] = await Promise.all([
       cached('head', CONCALL_HEAD_TTL_S, () => fetchConcallScans({ pages: 1 })),
       cached('tail', CONCALL_TAIL_TTL_S, () => fetchConcallScans({ pages: 'all', startOffset: PAGE_SIZE })),
       cached('schedule', CONCALL_SCHEDULE_TTL_S, async () => {
         const [upcoming, today] = await Promise.all([fetchUpcoming(), fetchToday()]);
         return { upcoming, today };
       }),
+      cached('screener-v1', CONCALL_SCREENER_TTL_S, async () => {
+        try {
+          return await readScreenerConcallCollector({
+            token: env.GH_DISPATCH_TOKEN,
+            signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
+          });
+        } catch {
+          // Scores remain live when the scheduled document index is unavailable. The payload says
+          // which half is missing; an auxiliary source must never blank the primary analysis feed.
+          return {
+            capture: null,
+            source: {
+              id: 'screener-concalls',
+              status: 'failed',
+              checkedAt: new Date().toISOString(),
+              publishedTotal: 0,
+              records: 0,
+              fullHistory: false,
+            },
+          };
+        }
+      }),
     ]);
 
-    const rows = mergeScans(head.value.rows, tail.value.rows);
-    if (!rows.length) throw new Error('upstream returned no rows');
+    const stockscansRows = mergeScans(head.value.rows, tail.value.rows);
+    if (!stockscansRows.length) throw new Error('upstream returned no rows');
+    const rows = screener.value.capture
+      ? enrichConcallScans(stockscansRows, screener.value.capture.rows)
+      : stockscansRows;
 
     const payload = {
       ok: true,
@@ -953,8 +1006,11 @@ async function handleConcalls(request, env, ctx) {
       today: sched.value.today || { day: null, rows: [] },
       meta: {
         ...head.value.meta,
+        total: rows.length,
+        stockscansTotal: stockscansRows.length,
         headRows: head.value.rows.length,
         tailRows: tail.value.rows.length,
+        screener: screener.value.source,
         // True if OUR page bound stopped the walk, not the feed's own end. A truncated quarter
         // must not be presented as the whole quarter.
         truncated: !!tail.value.meta.truncated,
@@ -964,6 +1020,7 @@ async function handleConcalls(request, env, ctx) {
     // the content did not, so the ETag would never match and the 304 this route exists for would
     // never fire. `meta.fetchedAt` — when the upstream was actually read — is the honest freshness
     // signal, and the client stamps its own "last checked" on every poll, 304s included.
+    if (screenerNeedsRefresh(screener.value.source)) ctx?.waitUntil?.(dispatchScreenerRefresh(env));
     const { body, tag } = withTag(payload);
     return revalidate(request, tagged(body, tag, CONCALL_HEAD_TTL_S, { 'x-sattva-head': head.fresh ? 'fresh' : 'cached' }), head.fresh ? 'miss' : 'hit');
   } catch (err) {

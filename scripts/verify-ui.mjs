@@ -3043,11 +3043,12 @@ ok('call times render in IST regardless of the viewer’s zone', csTimes.some((t
 const csPending = await page.evaluate(async () => {
   const mod = await import('/js/data/concall-scans.js');
   const rows = mod.all();
-  const nulls = rows.filter((r) => r.resultScore == null);
+  const nulls = rows.filter((r) => r.analysisTracked !== false && r.resultScore == null);
+  const documentsOnly = rows.filter((r) => r.analysisTracked === false);
   const zeros = rows.filter((r) => r.resultScore === 0);
-  return { total: rows.length, nulls: nulls.length, zeros: zeros.length, analysed: rows.filter((r) => r.resultScore != null).length };
+  return { total: rows.length, nulls: nulls.length, documentsOnly: documentsOnly.length, zeros: zeros.length, analysed: rows.filter((r) => r.resultScore != null).length };
 });
-ok('unanalysed calls carry a null score, never a zero', csPending.nulls >= 0 && csPending.zeros === 0, `${csPending.nulls} pending of ${csPending.total}`);
+ok('unanalysed calls carry a null score, never a zero', csPending.nulls >= 0 && csPending.zeros === 0, `${csPending.nulls} pending · ${csPending.documentsOnly} document-only of ${csPending.total}`);
 await page.locator('#content-host select').first().selectOption('pending');
 await page.waitForTimeout(600);
 ok('...and the pending filter shows them as “pending”', (await rowCount()) === csPending.nulls && (csPending.nulls === 0 || /pending/i.test(await hostText())), `${await rowCount()} rows`);
@@ -3242,7 +3243,8 @@ await page.waitForSelector('[data-deep-dive]', { timeout: 25000 }).catch(() => {
 // wrong on the page. `rowCount()` already waits; this makes the button count wait too.
 const ddRows = await rowCount();
 const ddCells = await page.locator('[data-deep-dive]').count();
-ok('every scan row carries a Deep Dive button', ddCells > 200 && ddCells === ddRows, `${ddCells} buttons, ${ddRows} rows`);
+const ddTracked = await page.evaluate(async () => (await import('/js/data/concall-scans.js')).all().filter((row) => row.analysisTracked !== false).length);
+ok('every analysis-tracked row carries a Deep Dive button', ddCells > 200 && ddCells === ddTracked && ddCells <= ddRows, `${ddCells} buttons, ${ddTracked} analysis rows, ${ddRows} total rows`);
 ok('...and the column is headed Deep Dive', (await page.$$eval('#content-host thead th', (ts) => ts.map((t) => t.innerText.trim().toUpperCase()))).includes('DEEP DIVE'));
 ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.report === 0, `analyze=${ddHits.analyze} report=${ddHits.report}`);
 // Their free index is read once per document load and never again — not per row, not per repaint,
