@@ -6,7 +6,7 @@
 // lookups never cross the persistence boundary.
 
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-v2`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/data/portfolio-companies.json'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
