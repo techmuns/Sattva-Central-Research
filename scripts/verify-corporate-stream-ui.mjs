@@ -160,6 +160,10 @@ try {
   await page.evaluate(() => window.addWatch('FUTURE'));
   await page.waitForFunction(() => window.enrollment.status().remaining.length === 0);
   assert(enrollments.some(batch => batch.tickers.includes('FUTURE')), 'a watchlist addition enrolls without reloading the page');
+  await page.evaluate(() => { window.addWatch('539659'); window.renderScope('watchlist'); });
+  await search.fill('KAMATS');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'a watched BSE code shows the issuer’s filings');
+  await search.fill('new-holding');
   await page.evaluate(() => window.renderScope('portfolio'));
   console.log('PASS a new portfolio holding and newly published NSE identity join the live feed without a page reload');
   fail = true; await page.evaluate(() => window.stream.refresh());

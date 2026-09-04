@@ -9,6 +9,7 @@ const identity = createAnnouncementIdentity(identityRows);
 assert.equal(filingTicker('SAHANA-SM'), 'SAHANA');
 assert.equal(identity.key({ isin: 'INEKAMATS001' }), identity.key({ scripCode: '539659', ticker: 'WRONG' }));
 assert.equal(identity.row({ scripCode: '539659', ticker: 'OLD' }).ticker, 'KAMATS');
+assert.equal(identity.key({ ticker: '539659' }), identity.key({ isin: 'INEKAMATS001' }), 'BSE watchlist codes join the same issuer as its announcements');
 assert.notEqual(identity.key({ isin: 'INEOTHER001', ticker: 'KAMATS' }), identity.key({ isin: 'INEKAMATS001' }));
 assert.equal(identity.find({ company: 'Vikram Kamats Hospitality Other Ltd' }), null, 'prefix names cannot match another issuer');
 const master = buildAnnouncementIdentities([{ ISIN_NUMBER: 'INE564S01019', SCRIP_CD: '539659', scrip_id: 'KAMATS', Scrip_Name: 'Vikram Kamats Hospitality Ltd' }]);

@@ -37,6 +37,8 @@ export function createAnnouncementIdentity(entries = []) {
     if (company.isin) return isins.get(ISSUER_EQUITY[upper(company.isin)] || upper(company.isin)) || null;
     if (company.scripCode || company.bseCode) return codes.get(String(company.scripCode || company.bseCode)) || null;
     const ticker = filingTicker(company.ticker || company.bseSymbol);
+    // An explicit BSE watchlist entry stores its company code in the ticker field.
+    if (/^\d{6}$/.test(ticker)) return codes.get(ticker) || null;
     if (ticker && symbols.has(ticker)) return symbols.get(ticker);
     // Exact exchange names only, and only for source records without a symbol.
     return !ticker ? names.get(nameKey(company.company || company.name)) || null : null;
