@@ -31,7 +31,7 @@ import { filterByScope, scopeAllowsTicker } from '../data/scope.js';
 import * as alerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
 import * as earningsLive from '../data/earnings-live.js';
-import * as earningsScored from '../data/earnings.js';
+import { domesticFilingsEvidence } from '../data/domestic-filings.js';
 import * as earningsCalendar from '../data/earnings-calendar.js';
 import * as concalls from '../data/concall-scans.js';
 import * as chatter from '../data/chatter-live.js';
@@ -47,11 +47,12 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over General Alerts: which companies carry the most material, corroborated recent evidence.' },
   { id: 'daily-alerts', tab: 'General Alerts', route: '#/research/daily-alerts', description: 'Derived timeline across earnings, con-calls, chatter, technicals, investor activity, news, announcements and insider disclosures.' },
   { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns.' },
+  { id: 'company-filings', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=filings', description: 'Company document titles, periods and source links already read in Company Filings. PDF contents are not extracted.' },
   { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Currently loaded all-exchange scheduled-results dates and company lists.' },
   { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Held and scheduled earnings calls with StockScans scores, sentiment tiers and source tags.' },
   { id: 'public-chatter', tab: 'Public Chatter', route: '#/research/public-chatter', description: 'Retail mention counts and sentiment across ValuePickr, TradingQnA and Google News.' },
   { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
-  { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'The explicitly mock earnings-scoring corpus used by the Earnings Surprise sub-view.' },
+  { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'Analyst consensus and earnings surprise are unavailable until a real estimates feed is connected.' },
   { id: 'super-investors', tab: 'Super Investors', route: '#/research/super-investors/superstar-investors', description: 'Filed superstar-investor holdings and quarter-on-quarter disclosed changes.' },
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
   { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Company-specific retained news for covered symbols.' },
@@ -590,6 +591,20 @@ const byDateTimeDesc = (a, b) => `${b.date || ''} ${b.time || ''}`.localeCompare
 // `collect()` is the whole of that feed and it seeds rather than walks.
 const BUILDERS = [
   {
+    id: 'company-filings',
+    load: async () => null,
+    read({ scope, holdings, plan }) {
+      const evidence = domesticFilingsEvidence();
+      const rows = filterByScope(evidence.rows, scope, holdings);
+      return sourcePacket(this.id, {
+        source: 'Screener.in domestic filings via Muns', rowCount: rows.length,
+        coverage: { lookups: evidence.lookups, staleLookups: evidence.stale },
+        definition: 'Document metadata and links only, from company lookups already made in this session. PDF contents have not been read: never infer financial figures, consensus or transcript findings from titles.',
+        ...chooseRows(rows, plan, (row) => ({ ticker: row.ticker, title: clipped(row.title, 160), form: row.form, period: row.date, url: row.url })),
+      });
+    },
+  },
+  {
     id: 'earnings-hub',
     load: () => earningsLive.load(),
     read({ scope, holdings, plan }) {
@@ -724,38 +739,9 @@ const BUILDERS = [
   },
   {
     id: 'earnings-surprise',
-    load: () => earningsScored.load(),
-    read({ scope, holdings, plan }) {
-      const rows = earningsScored.forScope(scope, holdings);
-      const meta = earningsScored.meta() || {};
-      return sourcePacket(this.id, {
-        source: 'Mock earnings corpus (seeded generator)',
-        asOf: meta.generated_at || null,
-        rowCount: rows.length,
-        coverage: { total: meta.company_count, withoutResultData: rows.filter((row) => row.tickerError).length },
-        definition: 'MOCK: synthetic financial figures on real company identities. Label as mock; never blend into factual company financials.',
-        dataQuality: 'mock',
-        ...chooseRows(rows, plan, (row) => {
-          const company = row.company || {};
-          const latest = company.quarters?.at?.(-1) || null;
-          // The book gets a placeholder row for a holding the corpus does not carry; it must read
-          // as "no data", never as a company that scored nought.
-          if (row.tickerError) return { ticker: company.ticker || null, company: clipped(company.name || company.ticker, 60), note: clipped(row.tickerError, 80) };
-          return {
-            ticker: company.ticker || null,
-            company: clipped(company.name || company.ticker, 60),
-            quarter: company.quarter || latest?.quarter || null,
-            reportedOn: company.reportedOn || null,
-            score: { points: row.totalPoints ?? null, max: row.totalMax ?? null, pct: round(row.scorePct) },
-            hardFails: (row.hardFails || []).map((item) => clipped(item.label || item.key || item, 80)).slice(0, 6),
-            revenueCr: latest?.revenue ?? null,
-            netProfitCr: latest?.netProfit ?? null,
-            epsRupees: latest?.eps ?? null,
-            operatingMarginPct: latest?.opm ?? null,
-            consensusEpsRupees: company.consensus?.eps ?? null,
-          };
-        }, (a, b) => (b.score?.points ?? -Infinity) - (a.score?.points ?? -Infinity)),
-      });
+    load: async () => null,
+    read() {
+      return failedPacket(this.id, 'Analyst consensus estimates and structured earnings history are not connected. No synthetic financials are supplied.');
     },
   },
   {

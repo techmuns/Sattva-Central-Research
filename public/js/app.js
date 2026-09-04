@@ -7,7 +7,6 @@ import { setData, setDataError, setDeferredData } from './core/state.js';
 import { revalidatedJson } from './core/store.js';
 import { mount } from './ui/shell.js';
 import { adaptUniverse } from './data/universe.js';
-import { prime as primeEarnings, adaptLegacySummary } from './data/earnings.js';
 import { prime as primeFiled } from './data/institution-holdings.js';
 import { prime as primeCoverage } from './data/coverage.js';
 import { startCaptureWatchdog } from './data/capture-watchdog.js';
@@ -44,8 +43,6 @@ const CRITICAL_SOURCES = {
 
 const DEFERRED_SOURCES = {
   universe: 'data/universe.json',
-  earnings: 'data/mock/earnings.json',
-  earningsCalendar: 'data/mock/earnings-calendar.json',
   // REAL: filed shareholdings scraped from Trendlyne, plus the AMC monthly portfolios. 347KB, and
   // read by exactly one sub-view.
   filedHoldings: 'data/institution-holdings.json',
@@ -90,13 +87,6 @@ function loadDeferred(data) {
       // against — see js/data/universe.js.
       data.universeRaw = data.universe;
       data.universe = adaptUniverse(data.universeRaw);
-
-      // Same pattern for earnings. The rich payload primes js/data/earnings.js (so it never
-      // refetches), and `ctx.data.earnings` keeps the flat one-row-per-company summary that
-      // Breakouts → Earnings Surprise was written against.
-      data.earningsRaw = data.earnings;
-      primeEarnings(data.earningsRaw, data.earningsCalendar);
-      data.earnings = adaptLegacySummary(data.earningsRaw);
 
       // Institutions: filed shareholdings and AMC portfolios. The Superstar half of that tab loads
       // nothing from here — it is live off /api/super-investors, cached by js/core/store.js.

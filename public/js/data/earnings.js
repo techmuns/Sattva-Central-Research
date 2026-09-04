@@ -9,16 +9,13 @@
 //   meta()                   // generated_at, seed, counts, provenance
 //   calendar()               // upcoming results events
 //
-// PROVENANCE: the financials behind these scores are SYNTHETIC (see
-// scripts/gen-mock-earnings.mjs). `meta().isMock` is true and every surface that displays a
-// number off this feed is required to say so. When the real filings feed is wired, the file
-// swaps and `isMock` goes false — nothing else here changes.
+// Legacy scoring accessors remain for consumers that still import them. No synthetic corpus is
+// loaded: document PDFs alone cannot populate eight financial quarters or analyst estimates.
 
 import { scoreCompany } from '../scoring/earnings-scoring.js';
 import { scopeTickers, filterByScope } from './scope.js';
 
-const EARNINGS_PATH = 'data/mock/earnings.json';
-const CALENDAR_PATH = 'data/mock/earnings-calendar.json';
+const UNAVAILABLE = { source: 'Structured financial history and analyst estimates are not connected', companies: [] };
 
 export const LIVE_ID = 'earnings-feed';
 
@@ -36,18 +33,13 @@ export function load() {
   return loadPromise;
 }
 
-// Committed static files, so `no-cache` and not `no-store`: revalidate on each load, and reuse the
-// bytes already on disk when the server says they have not changed. `no-store` forbids reuse
-// outright, which meant a 2MB corpus was re-downloaded in full on every single visit.
-async function fetchJson(path) {
-  const res = await fetch(path, { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
-  return res.json();
-}
-
 // Turn a raw payload into the cached, scored shape. Shared by the initial load and by every
 // live tick, so a tick and a cold load can never diverge.
 function ingest(payload, calendarPayload) {
+  if (!payload || /mock|synthetic/i.test(`${payload.source || ''} ${payload._provenance || ''}`)) {
+    payload = UNAVAILABLE;
+    calendarPayload = null;
+  }
   const rows = Array.isArray(payload?.companies) ? payload.companies : [];
   const scored = rows.map((c) => scoreCompany(c)).sort(bestFirst);
   const byTicker = new Map();
@@ -56,7 +48,7 @@ function ingest(payload, calendarPayload) {
   return {
     meta: {
       generated_at: payload?.generated_at ?? null,
-      source: payload?.source ?? 'Mock data',
+      source: payload?.source ?? UNAVAILABLE.source,
       generator: payload?.generator ?? null,
       seed: payload?.seed ?? null,
       quarter: payload?.quarter ?? null,
@@ -65,7 +57,8 @@ function ingest(payload, calendarPayload) {
       company_count: payload?.company_count ?? rows.length,
       provenance: payload?._provenance ?? null,
       // The whole tab keys its honesty markers off this flag.
-      isMock: String(payload?.source ?? '').toLowerCase().includes('mock'),
+      isMock: false,
+      available: rows.length > 0,
     },
     scored,
     byTicker,
@@ -76,18 +69,12 @@ function ingest(payload, calendarPayload) {
 }
 
 async function build() {
-  const [payload, calendarPayload] = await Promise.all([
-    fetchJson(EARNINGS_PATH),
-    fetchJson(CALENDAR_PATH).catch(() => null), // calendar is optional
-  ]);
-  cache = ingest(payload, calendarPayload);
+  cache = ingest(UNAVAILABLE, null);
   return cache;
 }
 
 /**
- * Seed the cache from an already-fetched payload. app.js loads earnings.json during bootstrap
- * (the Earnings Hub is the default tab, so it is needed on first paint anyway); priming means
- * this module never fetches the same ~240KB a second time.
+ * Retained for legacy consumers and fixtures. Bootstrap no longer primes synthetic earnings.
  */
 export function prime(payload, calendarPayload) {
   cache = ingest(payload, calendarPayload);
@@ -96,10 +83,10 @@ export function prime(payload, calendarPayload) {
 
 /**
  * Flatten the rich payload into the one-row-per-company summary that predates this shape.
- * Breakouts → Earnings Surprise reads `ctx.data.earnings` in that older form; rather than
- * rewrite that view, app.js hands it this adapter's output. Same idea as data/universe.js.
+ * Legacy compatibility only; the current bootstrap and Earnings Surprise view do not call it.
  */
 export function adaptLegacySummary(payload) {
+  if (/mock|synthetic/i.test(`${payload?.source || ''} ${payload?._provenance || ''}`)) return [];
   const rows = Array.isArray(payload?.companies) ? payload.companies : [];
   return rows
     .map((c) => {
@@ -152,9 +139,7 @@ function bestFirst(a, b) {
 export function registerPoller(live, { intervalMs = 45000 } = {}) {
   live.register(LIVE_ID, {
     intervalMs,
-    // Swap for live.realFetcher('/api/earnings') when the filings feed exists.
-    // jitter:0 — jittering reported financials would be a lie, not a liveness cue.
-    fetcher: live.mockFetcher(EARNINGS_PATH, { jitter: 0 }),
+    fetcher: async () => UNAVAILABLE,
   });
 }
 

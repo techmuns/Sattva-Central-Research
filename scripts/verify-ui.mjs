@@ -2677,7 +2677,7 @@ console.log('\n— breakouts: the stat strip became a Live pill —');
     ['strong-breakouts', 'Strong Breakouts', false],
     ['technical-scanner', 'Technical Scanner', false],
     ['fii-accumulation', 'FII Accumulation', false],
-    ['earnings-surprise', 'Earnings Surprise', true], // half mock — may not wear a green Live
+    ['earnings-surprise', 'Earnings Surprise', true], // estimates unavailable — no live pill
   ];
 
   const seen = [];
@@ -2712,16 +2712,16 @@ console.log('\n— breakouts: the stat strip became a Live pill —');
     seen.every(([, , m]) => !m.hero),
     seen.filter(([, , m]) => m.hero).map(([l]) => l).join(', ') || 'none');
   ok('...and each carries exactly one Live pill, in the section head',
-    seen.every(([, , m]) => m.pills === 1 && m.inHead),
+    seen.filter(([, unavailable]) => !unavailable).every(([, , m]) => m.pills === 1 && m.inHead),
     seen.map(([l, , m]) => `${l}:${m.pills}${m.inHead ? '' : ' (not in head)'}`).join(' · '));
   ok('a current sub-view\'s pill is green, dotted, and reads "Up to date"',
     seen.filter(([, mock]) => !mock).every(([, , m]) => m.green && m.dot && m.face === 'Up to date'),
     seen.filter(([, mock]) => !mock).map(([l, , m]) => `${l}:"${m.face}"`).join(' · '));
 
-  // The mock half may not hide behind a green chip: a screenshot travels without the modal.
+  // Missing estimates must not be replaced by a synthetic table or a live-data label.
   const es = seen.find(([l]) => l === 'Earnings Surprise')[2];
-  ok('the half-mock sub-view is amber instead, and says so on the chip itself',
-    es.amber && !es.green && /mock/i.test(es.face), `"${es.face}"`);
+  ok('the unavailable estimates view has no live-data pill', es.pills === 0 && !es.green);
+  ok('missing consensus is explicit and no generated rows are shown', /consensus estimates are not connected/i.test(await hostText()) && await rowCount() === 0);
 
   // The compact status stays on the page without opening a verbose explainer.
   await go('/#/research/breakouts/strong-breakouts?scope=universe', 2600);
@@ -2936,7 +2936,7 @@ const sources = await page.evaluate(async () => {
 });
 ok('the source registry lists the live published-results feed without naming the provider',
   /live published-results feed/i.test(sources) && !/money\s*control/i.test(sources));
-ok('...and still labels the remaining mock earnings set', /gen-mock-earnings/.test(sources));
+ok('...and distinguishes real document access from unavailable consensus', /Screener.in — company filings/.test(sources) && /Analyst consensus estimates/.test(sources) && /Not connected/.test(sources) && !/gen-mock-earnings/.test(sources));
 
 // NO FIGURE IN THE SOURCES MODAL MAY BE TYPED BY HAND. Every count in it used to be the number
 // that was true the day the sentence was written — "1,319 companies in the current pull", "877 in
