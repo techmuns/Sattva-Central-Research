@@ -29,7 +29,7 @@ export async function boundedArtifactBytes(response, signal, limit = PLATFORM_CO
 
 export async function readPlatformCollector({ token, ref = 'main', allowMissing = false, fetcher = fetch, now = Date.now, signal = AbortSignal.timeout(12000) } = {}) {
   if (!token) throw Error('IPOPlatform collector requires the existing Worker GitHub Actions credential');
-  const headers = { accept: 'application/vnd.github+json', authorization: `Bearer ${token}`, 'user-agent': 'sattva-bse-ipo-reader', 'x-github-api-version': '2026-03-10' };
+  const headers = { accept: 'application/vnd.github+json', authorization: `Bearer ${token}`, 'user-agent': 'sattva-ipo-platform-reader', 'x-github-api-version': '2026-03-10' };
   const get = (path) => fetcher(`${API}${path}`, { method: 'GET', headers, redirect: 'manual', cache: 'no-store', signal });
   const json = async (path) => {
     const r = await get(path);
@@ -68,12 +68,12 @@ export async function readPlatformCollector({ token, ref = 'main', allowMissing 
   const capture = validatePlatformCapture(JSON.parse(await boundedIpoText(new Response(decompressed), signal, PLATFORM_LIMIT)), now());
   const latest = runs.find((r) => r.status === 'completed');
   const latestFailed = latest ? latest.conclusion !== 'success' : false;
-  
+
   return { capture, rows: capture.rows, companies: capture.companies, source: {
     id: 'ipo-platform', label: 'IPOPlatform catalogue & DRHPs', url: 'https://www.ipoplatform.com/ipo', status: 'ok', checkedAt: capture.checkedAt,
     count: capture.rows.length, records: capture.companies.length, unmapped: 0,
     delivery: 'scheduled', collectorRunId: run.id, collectorRunUrl: `https://github.com/${PLATFORM_REPO}/actions/runs/${run.id}`,
     collectorLatestFailed: latestFailed, collectorLatestConclusion: latest?.conclusion || null,
-    note: `${capture.companies.length} issuers retained across paginated SME/mainboard, upcoming/open/closed/listed and both DRHP lists. Secondary publisher metadata, not a complete exchange archive. Document dates are not exchange filing dates. Document links may still depend on BSE/NSE. Collected hourly by GitHub Actions; scheduling and publisher updates can lag.${latestFailed ? ' The latest completed collection failed; showing the previous successful capture.' : ''}`,
+    note: `${capture.companies.length} issuers retained across paginated SME/mainboard, upcoming/open/closed/listed and both DRHP lists. Secondary publisher metadata, not a complete exchange archive. Document dates are not exchange filing dates. ${capture.rows.filter((r) => !r.url).length} document records have no usable public link; other links may still depend on BSE/NSE. Collected hourly by GitHub Actions; scheduling and publisher updates can lag.${latestFailed ? ' The latest completed collection failed; showing the previous successful capture.' : ''}`,
   } };
 }
