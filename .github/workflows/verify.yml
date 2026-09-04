@@ -96,6 +96,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-dashboard-performance-ui.mjs
+      - name: Verify All Alerts time horizons, source controls and portfolio calendar isolation
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-general-alerts-ui.mjs
       - name: Verify clean corporate stream, automatic history and live scope updates
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

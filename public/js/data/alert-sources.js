@@ -7,6 +7,7 @@ import * as concalls from './concall-scans.js';
 import * as chatter from './chatter-live.js';
 import * as calendar from './earnings-calendar.js';
 import * as ipoFilings from './ipo-filings.js';
+import { screenerUpcomingKey } from './screener-upcoming-shared.js';
 import { revalidatedJson } from '../core/store.js';
 import { documentRecords, record, istDay } from './alert-records.js';
 
@@ -105,6 +106,35 @@ export const ADDITIONAL_SOURCES = [
       detail: `Scheduled for ${r.date || r.when || 'an unspecified date'}; not a completed call or published analysis.`, url: r.transcriptUrl,
       kind: 'scheduled', scheduledFor: r.date || istDay(r.when) })),
       ...confirmed(concalls.meta()?.fetchedAt, day, !!concalls.meta()?.degraded) }) },
+  { id: 'screener-portfolio-upcoming', label: 'Portfolio calendar', tab: 'daily-alerts', portfolioOnly: true,
+    what: 'Upcoming AGMs, postal ballots, results, calls and other scheduled events shown for the exact S Screen portfolio watchlist. Scheduled, not completed.',
+    load: () => concalls.load(),
+    read: ({ day }) => {
+      const source = concalls.meta()?.screener;
+      return {
+        events: concalls.portfolioUpcoming().map((r) => record({
+          id: `screener-upcoming:${screenerUpcomingKey(r)}`,
+          row: r,
+          at: r.date,
+          time: r.time || null,
+          ticker: r.ticker,
+          company: r.name,
+          headline: `${r.eventType} scheduled`,
+          detail: `${r.eventType} is listed for ${r.date}${r.time ? ` at ${r.time} IST` : ''} on the portfolio calendar; this is not confirmation that it occurred.`,
+          url: r.sourceUrl || r.companyUrl,
+          kind: 'scheduled',
+          scheduledFor: r.date,
+          portfolioOnly: true,
+          companyUrl: r.companyUrl,
+        })),
+        ...confirmed(
+          source?.checkedAt,
+          day,
+          source?.status !== 'ok' || source?.collectorLatestFailed === true || source?.portfolioUpcomingAvailable === false,
+          'Authenticated S Screen dashboard calendar for the synchronized portfolio watchlist.',
+        ),
+      };
+    } },
   { id: 'investor-positions', label: 'Investor holdings', tab: 'super-investors', what: 'All retained investor/company disclosures, including unchanged holdings and filing-due states. Snapshots, not trades.',
     load: () => investors.load(),
     read: ({ day }) => ({ events: investors.books().flatMap((b) => (b.holdings || []).map((r) => record({

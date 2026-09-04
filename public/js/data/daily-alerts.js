@@ -665,9 +665,15 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
       feed = toFeedRow(settled, current, day);
     }
     const all = feed.events;
-    const events = all.filter((event) => event.ticker ? wanted.has(event.ticker) : scope === 'universe');
+    // The S Screen calendar is already scoped by the exact synchronized portfolio membership.
+    // That fact lets BSE-only holdings survive even when they have no NSE ticker; it must not make
+    // the private portfolio schedule leak into Universe or the reader's personal watchlist.
+    const events = all.filter((event) => event.portfolioOnly
+      ? scope === 'portfolio'
+      : event.ticker ? wanted.has(event.ticker) : scope === 'universe');
     const unresolved = all.filter((event) => !event.ticker).length;
-    const unscopable = scope !== 'universe' && ['market-news', 'twitter'].includes(feed.id);
+    const unscopable = (scope !== 'universe' && ['market-news', 'twitter'].includes(feed.id)) ||
+      (feed.portfolioOnly && scope !== 'portfolio');
     return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
       sourceCount: all.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };

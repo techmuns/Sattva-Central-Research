@@ -856,11 +856,17 @@ The rules that make it safe to trust:
              "tags": ["▲ Revenue guidance raised to high teens", "…"],
              "ssUrl": "as-…pdf", "pptSsUrl": "…pdf" }],
   "upcoming": [{ "ticker": "LANDMARK", "name": "Landmark Cars Ltd", "when": "2026-08-12T09:00:00+05:30" }],
+  "portfolioUpcoming": [{ "id": "JAYNECOIND|2026-08-19|AGM|day",
+                           "companyKey": "JAYNECOIND", "ticker": "JAYNECOIND",
+                           "name": "Jayaswal Neco", "date": "2026-08-19", "time": null,
+                           "eventType": "AGM", "companyUrl": "https://www.screener.in/company/JAYNECOIND/",
+                           "sourceUrl": "https://www.screener.in/company/JAYNECOIND/", "observedAt": "2026-08-11T…Z" }],
   "today":    { "day": "2026-08-12", "rows": [ … ] },
   "meta": { "quarter": 202606, "total": 4100, "stockscansTotal": 877,
             "headRows": 50, "tailRows": 827, "truncated": false,
             "screener": { "status": "ok", "checkedAt": "2026-08-11T…Z",
-                          "publishedTotal": 4189, "records": 4189, "fullHistory": true },
+                          "publishedTotal": 4189, "records": 4189, "fullHistory": true,
+                          "portfolioUpcomingAvailable": true, "portfolioUpcomingRecords": 27 },
             "fetchedAt": "2026-08-11T…Z", "contentTag": "2a4926653eb47e5e" }
 }
 ```
@@ -883,6 +889,14 @@ as a Con-call header control or overlay. `today` is a
 strict SUBSET of `upcoming`'s entries for the current date — the ones still ahead of now (43 of
 today's 64, in the pull above). Consumers must not merge it back into `upcoming`; that would
 double-count and then need de-duplicating for nothing.
+
+`portfolioUpcoming` is a separate, already-portfolio-scoped calendar read from the authenticated
+S Screen dashboard. It carries AGMs, postal ballots, results, timed calls and other labels exactly
+as scheduled evidence, with no directional or causal inference. The browser exposes it only in
+Portfolio scope, including numeric/BSE-only company paths that cannot be safely mapped to an NSE
+ticker. It must never be broadened into Universe or a personal Watchlist. When another calendar
+contains the same company/date/type, All Alerts' Upcoming view renders one entry and prefers this
+portfolio row's source link.
 
 The body carries **no "served at" stamp**, deliberately: it would differ on every request while
 the content did not, so the ETag would never match and the 304 this route depends on would never
@@ -956,14 +970,16 @@ feed contract but is not rendered in the tab chrome.
 
 `.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
 `SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
-generated data. Every 15 minutes it reads the newest pages until it reaches records already in the
-previous complete artifact. At 01:07 UTC daily, and on a manual full run, it follows every published
-pagination page and reconciles the source's total. The collector refuses empty, truncated,
-duplicate, malformed or non-web-link captures; public logs never contain credentials, cookies,
-page HTML or account details. Screener company and summary links must be HTTPS. Historical source
-documents may retain the publisher's original HTTP URL, but remain inert outbound `noopener` links;
-publisher-specific ports are retained because the Worker never fetches these links. Script, data and
-credential-bearing URLs are rejected. Screener-owned URLs also reject custom ports.
+generated data. Every 15 minutes it reads the newest concall pages until it reaches records already
+in the previous complete artifact, then validates the exact dashboard id and `S Screen` name before
+capturing its forward calendar. At 01:07 UTC daily, and on a manual full run, it follows every
+published pagination page and reconciles the source's total. The collector refuses empty,
+ambiguous, truncated, duplicate, malformed or non-web-link captures; public logs never contain
+credentials, cookies, page HTML or account details. Screener company, summary and forward-calendar
+links must be HTTPS. Historical document sources may retain the publisher's original HTTP URL, but
+remain inert outbound `noopener` links; publisher-specific ports are retained because the Worker
+never fetches these links. Script, data and credential-bearing URLs are rejected. Screener-owned
+URLs also reject custom ports.
 
 `worker/screener-concalls-collector.mjs` accepts only a successful main-branch run of this fixed
 workflow in this fixed repository, verifies GitHub's SHA-256 artifact digest, bounds compressed and

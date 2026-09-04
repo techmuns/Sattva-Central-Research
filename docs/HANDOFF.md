@@ -356,12 +356,13 @@ filed, this is what the technicals scrape measured. That is right for research a
 first thirty seconds of a morning, when the question is not *what does Moneycontrol have* but *what
 happened, and does any of it need me*. All Alerts is organised as one chronological timeline.
 
-`js/data/daily-alerts.js` takes the General readings; `js/tabs/daily-alerts.js` draws them. **It adds no
-data source** — every row comes from a feed that already has its own tab. The timeline asks for
-each feed's retained window, orders it newest-first by **Indian trading date and time**, and relies
-on the table kit's progressive body fill so the fixed-height internal scroller reaches older rows
-without blocking first paint. The date filter narrows that loaded history to today, 7 days, 30 days
-or older rows; it does not issue a new request.
+`js/data/daily-alerts.js` takes the General readings; `js/tabs/daily-alerts.js` draws them. Every row
+comes from a registered feed. The one portfolio-only addition is the authenticated S Screen forward
+calendar carried on the existing `/api/concalls` capture; it is never exposed in Universe or a
+personal Watchlist. **Till Today** orders retained history newest-first by **Indian trading date and
+time**. **Upcoming** shows scheduled rows from today forward, nearest-first, and collapses the same
+company/date/type when two calendars discover it. Both use the table kit's progressive body fill;
+their date filters only narrow loaded records and issue no new request.
 
 **All eight source tabs are represented.** Earnings Hub, Con-call, Public Chatter, Breakouts /
 Technical, Super Investors, News, Corp Announcements and Insider Trades. News contributes two feeds:

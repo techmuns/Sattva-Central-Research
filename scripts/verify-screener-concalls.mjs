@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { parseScreenerConcallPage, addResolvedTickers } from './lib/screener-concalls.mjs';
+import { parseScreenerUpcomingPage, upcomingDay, upcomingTime } from './lib/screener-upcoming.mjs';
 import {
   enrichConcallScans,
   groupScreenerConcalls,
@@ -28,6 +29,18 @@ const html = `<!doctype html><table id="result_list"><tbody>
 
 const parsed = parseScreenerConcallPage(html, observedAt);
 const rows = addResolvedTickers(parsed.rows, (name) => (name === 'Leap India' ? 'LEAPIND' : null));
+const upcomingHtml = `<!doctype html><aside class="sidebar-panel"><h2>Upcoming</h2><div>S Screen</div>
+  <ul class="bg-base list-style-none">
+    <li><strong>Today</strong></li>
+    <li class="flex"><a href="/company/GAEL/consolidated/"><span class="ink-900">Guj. Ambuja Exp</span></a><div><span class="badge sub">AGM</span></div></li>
+    <li><strong>Tue, 8 Sep</strong></li>
+    <li class="flex"><a href="/company/GODREJAGRO/consolidated/"><span class="ink-900">Godrej Agrovet</span></a><div><a href="https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=call.pdf"><span class="tag tag-small"><i class="icon-phone"></i>9:30 a.m.</span></a></div></li>
+    <li><strong>Thu, 10 Sep</strong></li>
+    <li class="flex"><a href="/company/GAJA/consolidated/"><span class="ink-900">Gaja Alternative Asset</span></a><div><span class="badge sub"><i class="icon-chart-bar"></i>Result</span></div></li>
+    <li><strong>Sat, 2 Jan</strong></li>
+    <li class="flex"><a href="/company/531569/"><span class="ink-900">Sanjiv.Parant.</span></a><div><span class="badge sub">Postal ballot</span></div></li>
+  </ul></aside>`;
+const portfolioUpcoming = parseScreenerUpcomingPage(upcomingHtml, observedAt);
 const capture = {
   version: 1,
   sourceId: SCREENER_CONCALL_ID,
@@ -36,6 +49,7 @@ const capture = {
   pagesFetched: 2,
   fullHistory: true,
   duplicatesRemoved: 0,
+  portfolioUpcoming,
   rows,
 };
 
@@ -50,6 +64,21 @@ test('authenticated page parser keeps every document and its fixed Screener iden
   assert.equal(rows[2].url, 'https://media.example.com:3000/leap.pdf', 'publisher document ports are preserved');
   assert.equal(rows[0].summaryUrl, 'https://www.screener.in/concalls/summary/23328860/');
   validateScreenerConcallCapture(capture, Date.parse(observedAt));
+});
+
+test('S Screen parser keeps today, times, event types and year rollover without inventing a BSE ticker', () => {
+  assert.equal(portfolioUpcoming.length, 4);
+  assert.deepEqual(portfolioUpcoming.map((item) => [item.date, item.eventType, item.time]), [
+    ['2026-09-05', 'AGM', null],
+    ['2026-09-08', 'Con-call', '09:30'],
+    ['2026-09-10', 'Result', null],
+    ['2027-01-02', 'Postal ballot', null],
+  ]);
+  assert.equal(portfolioUpcoming[1].sourceUrl, 'https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=call.pdf');
+  assert.equal(portfolioUpcoming[3].ticker, null);
+  assert.equal(upcomingDay('Fri, 2 Oct', '2026-09-05'), '2026-10-02');
+  assert.equal(upcomingTime('12 p.m.'), '12:00');
+  assert.equal(upcomingTime('12:15 a.m.'), '00:15');
 });
 
 test('a short final page retains the catalogue page count instead of inflating it', () => {
@@ -125,6 +154,8 @@ function artifactFetch({ digest = null, host = 'https://example.blob.core.window
 test('Worker accepts only trusted, digest-verified Actions artifacts', async () => {
   const out = await readScreenerConcallCollector({ token: 'test-token', now: () => Date.parse(observedAt), fetcher: artifactFetch() });
   assert.equal(out.capture.rows.length, 3);
+  assert.equal(out.source.portfolioUpcomingAvailable, true);
+  assert.equal(out.source.portfolioUpcomingRecords, 4);
   for (const options of [{ digest: '0'.repeat(64) }, { host: 'https://evil.test/capture' }, { event: 'pull_request' }]) {
     await assert.rejects(readScreenerConcallCollector({ token: 'test-token', now: () => Date.parse(observedAt), fetcher: artifactFetch(options) }));
   }

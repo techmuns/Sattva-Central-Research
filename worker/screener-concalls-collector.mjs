@@ -162,6 +162,8 @@ export async function readScreenerConcallCollector({
       publishedTotal: capture.publishedTotal,
       records: capture.rows.length,
       fullHistory: capture.fullHistory,
+      portfolioUpcomingAvailable: Array.isArray(capture.portfolioUpcoming),
+      portfolioUpcomingRecords: capture.portfolioUpcoming?.length || 0,
       collectorRunId: run.id,
       collectorRunUrl: `https://github.com/${SCREENER_CONCALL_REPO}/actions/runs/${run.id}`,
       collectorLatestFailed: latest ? latest.conclusion !== 'success' : false,

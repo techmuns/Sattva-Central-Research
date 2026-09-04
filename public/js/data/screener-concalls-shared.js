@@ -4,6 +4,8 @@
 // use the same row identity, validation and merge rules, so an incremental capture cannot create
 // a second copy of a document that the full crawl already retained.
 
+import { validateScreenerUpcomingRows } from './screener-upcoming-shared.js';
+
 export const SCREENER_CONCALL_ID = 'screener-concalls';
 export const SCREENER_CONCALL_REPO = 'techmuns/Sattva-Central-Research';
 export const SCREENER_CONCALL_WORKFLOW = 'screener-concalls-refresh.yml';
@@ -110,6 +112,9 @@ export function validateScreenerConcallCapture(capture, now = Date.now()) {
     throw Error('Invalid Screener concall capture');
   }
   validateScreenerConcallRows(capture.rows);
+  // Older v1 artifacts predate the portfolio calendar. Accept their missing field during the
+  // rolling deploy; every newly written artifact includes and validates it.
+  if (capture.portfolioUpcoming !== undefined) validateScreenerUpcomingRows(capture.portfolioUpcoming);
   if (capture.fullHistory && capture.rows.length + capture.duplicatesRemoved < capture.publishedTotal) throw Error('Incomplete Screener concall history');
   if (mergeScreenerConcallRows(capture.rows).length !== capture.rows.length) throw Error('Duplicate Screener concall history');
   return capture;

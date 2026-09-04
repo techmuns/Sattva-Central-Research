@@ -4,10 +4,11 @@
 // BSE filed, this is what the technicals scrape measured. That is the right shape for research and
 // the wrong shape for prioritisation, when the question is not "what does Moneycontrol have" but
 // "what happened, and does any of it need me". AI Alerts answers that narrower question. This tab
-// remains the complete TIME view: one stream, every feed, newest first through retained history.
+// remains the complete TIME view: one stream, with retained history and forward schedules kept in
+// separate, explicit horizons.
 //
-// It introduces no data source of its own — see js/data/daily-alerts.js, which is where the
-// readings are taken and where the rule for each one is written down.
+// See js/data/daily-alerts.js, where the readings are taken and each source's scope rule is written
+// down. The authenticated S Screen calendar is portfolio-only by construction.
 //
 // ---------------------------------------------------------------------------------------
 // DIRECTION AND IMPORTANCE ARE SEPARATE. Green/red/grey reproduce an explicit source band,
@@ -38,7 +39,7 @@ import * as records from '../data/alert-records.js';
 export const meta = {
   id: 'daily-alerts',
   title: 'All Alerts',
-  subtitle: 'Every retained alert in one newest-first timeline.',
+  subtitle: 'Every retained alert and loaded portfolio schedule in one time view.',
   // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
   // collapse — the feed filter in the toolbar does that job without costing a navigation.
   subviews: [],
@@ -58,7 +59,10 @@ let ctxRef = null;
 let report = null; // the last collected report
 let loadToken = 0;
 let unsubs = [];
-let tableView = null; // the reader's search / filters / sort, carried across repaints
+const HORIZON = { THROUGH: 'through', UPCOMING: 'upcoming' };
+let horizon = HORIZON.THROUGH;
+let renderedHorizon = HORIZON.THROUGH;
+let tableViews = { [HORIZON.THROUGH]: null, [HORIZON.UPCOMING]: null }; // one view per time horizon
 let routeCompany = null; // a company deep-link supplied by an AI Alert card
 // WHICH FEEDS ARE TICKED. `null` means All — deliberately not "a Set holding every id", because
 // those are different claims the moment a feed appears or disappears: All keeps meaning all, while
@@ -85,8 +89,15 @@ export function render(ctx) {
   // All Alerts filter state: "See all" cannot quietly retain e.g. Today-only or one feed and
   // then show an empty subset. Subsequent feed repaints retain the new table's own state as usual.
   const requestedCompany = String(ctx.params?.company || '').trim();
-  if (requestedCompany && requestedCompany !== routeCompany) tableView = { q: requestedCompany };
-  else if (!requestedCompany && routeCompany) tableView = { ...(tableView || {}), q: '' };
+  if (requestedCompany && requestedCompany !== routeCompany) {
+    horizon = HORIZON.THROUGH;
+    tableViews = { [HORIZON.THROUGH]: { q: requestedCompany }, [HORIZON.UPCOMING]: { q: requestedCompany } };
+  } else if (!requestedCompany && routeCompany) {
+    tableViews = {
+      [HORIZON.THROUGH]: { ...(tableViews[HORIZON.THROUGH] || {}), q: '' },
+      [HORIZON.UPCOMING]: { ...(tableViews[HORIZON.UPCOMING] || {}), q: '' },
+    };
+  }
   routeCompany = requestedCompany || null;
 
   if (!unsubs.length) {
@@ -234,7 +245,13 @@ function paint(ctx) {
   // THE FEEDS ON OFFER, AND THEN THE ONES TICKED. Market-wide news carries no company, so under a
   // narrowed scope it contributes nothing and is not shown as a filter — the reason it is absent
   // stays in the source registry. Dropping the chip is not dropping the claim.
-  const shown = feeds.filter((f) => ctx.scope === 'universe' || f.scopable !== false);
+  const scopedFeeds = feeds.filter((f) => f.portfolioOnly ? ctx.scope === 'portfolio' : ctx.scope === 'universe' || f.scopable !== false);
+  // Upcoming is a purpose-built calendar, so its source picker contains only sources that can
+  // actually schedule something. A historical news or insider checkbox with no possible row is
+  // clutter, not transparency; the complete source account returns under Till Today.
+  const shown = horizon === HORIZON.UPCOMING
+    ? scopedFeeds.filter((f) => ['earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming'].includes(f.id) || f.events.some((event) => isUpcomingEvent(event, day)))
+    : scopedFeeds;
   const available = shown.map((f) => f.id);
   // A SELECTION THAT SURVIVES A REPAINT BUT NOT A VANISHED FEED. Rows land while feeds settle and
   // every arrival repaints, so the ticks live in the module; but a scope change can take a feed
@@ -244,12 +261,23 @@ function paint(ctx) {
     picked = new Set([...picked].filter((id) => available.includes(id)));
     if (!picked.size || picked.size === available.length) picked = null;
   }
-  const visible = picked ? events.filter((e) => picked.has(e.feed)) : events;
+  const feedVisible = picked ? events.filter((e) => picked.has(e.feed)) : events;
+  const periodEvents = feedVisible.filter((event) => horizon === HORIZON.UPCOMING ? isUpcomingEvent(event, day) : !isUpcomingEvent(event, day));
+  const visible = horizon === HORIZON.UPCOMING ? collapseUpcoming(periodEvents) : periodEvents;
+  const allUpcoming = collapseUpcoming(events.filter((event) => isUpcomingEvent(event, day)));
+  const allThrough = events.filter((event) => !isUpcomingEvent(event, day));
+  const displayFeeds = shown.map((feed) => ({
+    ...feed,
+    count: feed.events.filter((event) => horizon === HORIZON.UPCOMING ? isUpcomingEvent(event, day) : !isUpcomingEvent(event, day)).length,
+    todayCount: feed.events.filter((event) => event.day === day && (horizon === HORIZON.UPCOMING ? isUpcomingEvent(event, day) : !isUpcomingEvent(event, day))).length,
+  }));
 
   const focus = captureFocus(ctx.root);
-  const tablePosition = captureTablePosition(ctx.root);
-  const table = eventsTable(ctx, visible, day, tablePosition);
-  tableView = table.view;
+  // Preserve the visible row across live repaints inside one horizon, but never carry a deep
+  // history scroll offset into the much shorter forward calendar (or vice versa).
+  const tablePosition = renderedHorizon === horizon ? captureTablePosition(ctx.root) : null;
+  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition);
+  tableViews[horizon] = table.view;
 
   // NO DESCRIPTION AND NO STAT STRIP. The four cards were the loudest version of
   // the problem: three of them counted rows the table beneath them already lists, and the fourth
@@ -263,15 +291,18 @@ function paint(ctx) {
         count: m.companies || 0,
         noun: 'companies in loaded history',
         book: coverage.meta(),
-      })}${historyPill(m)}</div>`,
+      })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}</div>`,
     })}
-    ${coveragePanel(shown)}
+    ${horizonToggle(allThrough.length, allUpcoming.length, day)}
+    ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length)}
     ${table.html}`;
 
   table.wire(ctx.root);
+  wireHorizon(ctx);
   wireFeedFilter(ctx, available);
   fitStreamToViewport(ctx.root);
   restoreTablePosition(ctx.root, tablePosition);
+  renderedHorizon = horizon;
   restoreFocus(ctx.root, focus);
 }
 
@@ -339,15 +370,22 @@ function captureFocus(root) {
   const el = document.activeElement;
   // Matched on the kit's own hook rather than on `type`, which is `text` — the screener's search
   // box is not an `<input type="search">`, and testing for one would silently never fire.
-  if (!el || !root.contains(el) || !el.matches?.('[data-table-search]')) return null;
-  return { start: el.selectionStart, end: el.selectionEnd };
+  if (!el || !root.contains(el)) return null;
+  if (el.matches?.('[data-table-search]')) return { kind: 'search', start: el.selectionStart, end: el.selectionEnd };
+  if (el.matches?.('[data-feed-toggle]')) return { kind: 'feed', value: el.dataset.feedToggle };
+  if (el.matches?.('[data-horizon-toggle]')) return { kind: 'horizon', value: el.dataset.horizonToggle };
+  return null;
 }
 
 function restoreFocus(root, focus) {
   if (!focus) return;
-  const el = root.querySelector('[data-table-search]');
+  const el = focus.kind === 'search'
+    ? root.querySelector('[data-table-search]')
+    : [...root.querySelectorAll(focus.kind === 'feed' ? '[data-feed-toggle]' : '[data-horizon-toggle]')]
+        .find((node) => node.dataset[focus.kind === 'feed' ? 'feedToggle' : 'horizonToggle'] === focus.value);
   if (!el) return;
   el.focus();
+  if (focus.kind !== 'search') return;
   try {
     el.setSelectionRange(focus.start, focus.end);
   } catch {
@@ -417,31 +455,62 @@ function historyPill(historyMeta) {
   });
 }
 
+function calendarPill(events) {
+  const days = [...new Set(events.map((event) => event.day).filter(Boolean))].sort();
+  if (!days.length) return pill({ label: 'Calendar · no loaded dates', tone: 'neutral' });
+  return pill({
+    label: `Calendar · ${days.length} ${days.length === 1 ? 'date' : 'dates'}`,
+    tone: 'neutral',
+    title: `${fmtDay(days[0])} through ${fmtDay(days.at(-1))}, nearest first.`,
+  });
+}
+
+function horizonToggle(throughCount, upcomingCount, day) {
+  const tab = (value, label, count) => {
+    const active = horizon === value;
+    return `<button type="button" role="tab" data-horizon-toggle="${value}" aria-selected="${active}" tabindex="${active ? '0' : '-1'}"
+      class="inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+        active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
+      }">
+      ${escapeHtml(label)}
+      <span class="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}">${escapeHtml(formatNumber(count))}</span>
+    </button>`;
+  };
+  return `<div class="mb-4 flex flex-wrap items-center gap-3">
+    <div role="tablist" aria-label="Alert time horizon" class="inline-flex rounded-2xl bg-slate-100 p-1 ring-1 ring-slate-200/80" data-alerts-horizon>
+      ${tab(HORIZON.THROUGH, 'Till Today', throughCount)}
+      ${tab(HORIZON.UPCOMING, 'Upcoming', upcomingCount)}
+    </div>
+    <p class="text-xs text-slate-500">${horizon === HORIZON.UPCOMING
+      ? `Scheduled events from ${fmtDay(day)} onward, nearest first.`
+      : `Retained events through ${fmtDay(day)}, newest first.`}</p>
+  </div>`;
+}
+
 // ---------------------------------------------------------------------------------------
 // The coverage panel — one row per feed
 // ---------------------------------------------------------------------------------------
 
-function coveragePanel(feeds) {
+function coveragePanel(feeds, visibleCount) {
   if (!feeds.length) {
     return `<div class="mb-5 text-xs text-slate-400" data-alerts-coverage>Reading the feeds…</div>`;
   }
 
   const box = (on) => `
-    <span class="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
-      on ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-transparent'
+    <span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-all ${
+      on ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm' : 'border-slate-300 bg-white text-transparent group-hover:border-indigo-300'
     }">
-      <svg viewBox="0 0 12 12" class="h-2.5 w-2.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 4.7 9 10 3.5"/></svg>
+      <svg aria-hidden="true" viewBox="0 0 12 12" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 4.7 9 10 3.5"/></svg>
     </span>`;
 
-  const total = feeds.reduce((a, f) => a + (f.count || 0), 0);
   const allOn = !picked;
   const chips = [
     `<button type="button" data-feed-toggle="__all" role="checkbox" aria-checked="${allOn}"
        title="Show every feed on this page. This is the default."
-       class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-0.5 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+       class="group inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${allOn ? 'border-indigo-200 bg-indigo-50 text-indigo-800 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50/60'}">
        ${box(allOn)}
-       <span class="font-semibold ${allOn ? 'text-slate-800' : 'text-slate-500'}">All</span>
-       <span class="font-semibold text-slate-400">${escapeHtml(formatNumber(total))}</span>
+       <span class="font-semibold">All sources</span>
+       <span class="rounded-full bg-white/80 px-1.5 py-0.5 font-bold tabular-nums text-slate-500 ring-1 ring-slate-200">${escapeHtml(formatNumber(visibleCount))}</span>
      </button>`,
   ];
 
@@ -455,17 +524,24 @@ function coveragePanel(feeds) {
     chips.push(`
       <button type="button" data-feed-toggle="${escapeHtml(f.id)}" data-feed="${escapeHtml(f.id)}"
         role="checkbox" aria-checked="${on}" title="${escapeHtml(title)}"
-        class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-0.5 transition-colors hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+        class="group inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${on ? 'border-indigo-200 bg-indigo-50 text-indigo-800 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50/60'}">
         ${box(on)}
         <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full ${st.dot}"></span>
-        <span class="font-semibold ${on || allOn ? 'text-slate-700' : 'text-slate-400'}">${escapeHtml(f.label)}</span>
+        <span class="font-semibold ${on || allOn ? 'text-slate-700' : 'text-slate-500'}">${escapeHtml(f.label)}</span>
         ${detail ? `<span class="font-semibold ${st.text}">${escapeHtml(detail)}</span>` : ''}
       </button>`);
   }
 
   return `
-    <section class="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs" data-alerts-coverage>
-      ${chips.join('')}
+    <section class="mb-5 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-slate-100" data-alerts-coverage aria-label="Alert source filters">
+      <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600">Sources</h2>
+          <p class="mt-0.5 text-xs text-slate-400">Select one or more feeds to focus the list.</p>
+        </div>
+        ${picked ? '<span class="text-[11px] font-semibold text-indigo-600">Custom selection</span>' : ''}
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-xs">${chips.join('')}</div>
     </section>`;
 }
 
@@ -520,6 +596,25 @@ function fitStreamToViewport(root) {
 // edge and its shadow off the fold.
 const MIN_STREAM_PX = 320;
 const STREAM_BOTTOM_GAP_PX = 24;
+
+function wireHorizon(ctx) {
+  const root = ctx.root.querySelector('[data-alerts-horizon]');
+  if (!root) return;
+  const select = (value) => {
+    if (!Object.values(HORIZON).includes(value) || value === horizon) return;
+    horizon = value;
+    // A source selection is meaningful inside the horizon where it was made. Carrying an
+    // historical-only source into Upcoming would make the calendar look empty on arrival.
+    picked = null;
+    paint(ctx);
+  };
+  root.addEventListener('click', (event) => select(event.target.closest('[data-horizon-toggle]')?.dataset.horizonToggle));
+  root.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    select(event.key === 'ArrowLeft' || event.key === 'Home' ? HORIZON.THROUGH : HORIZON.UPCOMING);
+  });
+}
 
 /**
  * The tick boxes, which filter the stream by the feed a row came from.
@@ -638,15 +733,100 @@ function signalCell(event) {
   </div>`;
 }
 
-function eventsTable(ctx, events, day, tablePosition = null) {
+/** Today belongs to Upcoming only while the source still explicitly calls the row scheduled. */
+export function isUpcomingEvent(event, day) {
+  if (!event?.day) return false;
+  return event.day > day || (event.day === day && event.kind === 'scheduled');
+}
+
+function upcomingCategory(event) {
+  const words = `${event.headline || ''} ${event.detail || ''}`.toLowerCase();
+  if (/\b(?:con[ -]?call|conference call|earnings call)\b/.test(words)) return 'concall';
+  if (/\b(?:earnings result|results?|financial results?)\b/.test(words)) return 'result';
+  if (/\b(?:annual general meeting|agm)\b/.test(words)) return 'agm';
+  if (/\bpostal ballot\b/.test(words)) return 'postal-ballot';
+  if (/\bcourt-convened meeting\b/.test(words)) return 'court-meeting';
+  return words.replace(/\bscheduled\b/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'event';
+}
+
+/** One calendar entry per company/date/type even when two feeds discovered the same filing. */
+export function collapseUpcoming(events) {
+  const merged = new Map();
+  for (const event of events) {
+    const company = String(event.ticker || event.company || '').toUpperCase().replace(/[^A-Z0-9&]/g, '');
+    const key = `${company}|${event.day}|${upcomingCategory(event)}`;
+    const previous = merged.get(key);
+    // The portfolio calendar usually points at the exchange filing and is already guaranteed to
+    // be in the book. Prefer it to a duplicate provider row; otherwise prefer a real source URL.
+    const rank = (row) => (row.feed === 'screener-portfolio-upcoming' ? 2 : 0) + (row.url ? 1 : 0);
+    if (!previous || rank(event) > rank(previous)) merged.set(key, event);
+  }
+  return [...merged.values()];
+}
+
+function eventsTable(ctx, events, day, mode, initialView, tablePosition = null) {
+  const dateColumn = {
+    label: 'Date / time',
+    align: 'left',
+    get: (e) => `<time datetime="${escapeHtml(e.day || '')}" data-event-day="${escapeHtml(e.day || '')}" class="block whitespace-nowrap tabular-nums text-slate-700">
+      <span class="block font-medium">${escapeHtml(e.day ? fmtDay(e.day) : 'Date not supplied')}</span>
+      <span class="block text-xs ${e.time ? 'text-slate-500' : 'text-slate-400'}">${e.kind === 'scheduled' ? 'Scheduled · ' : ''}${e.time ? `${escapeHtml(e.time)} IST` : e.day ? 'Day only' : 'Undated'}</span>
+    </time>`,
+    html: true,
+    sortValue: (e) => `${e.day || '0000-00-00'}T${e.time || (mode === HORIZON.UPCOMING ? '99:99' : '')}`,
+  };
+  const eventColumn = {
+    label: mode === HORIZON.UPCOMING ? 'What is scheduled' : 'What happened',
+    get: (e) => `
+      <div class="max-w-[560px]">
+        <div class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${escapeHtml(e.headline)}</div>
+        <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
+        ${mode === HORIZON.UPCOMING ? '' : `<div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
+        <div class="truncate text-[11px] ${e.importance === 'high' ? 'font-semibold text-violet-700' : 'text-slate-400'}" title="${escapeHtml(e.importanceReason || '')}"><span class="text-slate-400">Priority ·</span> ${escapeHtml(e.importanceReason || '')}</div>`}
+      </div>`,
+    html: true,
+    sortValue: (e) => String(e.headline || '').toLowerCase(),
+  };
+  const columns = mode === HORIZON.UPCOMING
+    ? [dateColumn, eventColumn, { label: 'Source', get: (e) => e.feedLabel }]
+    : [
+        dateColumn,
+        {
+          label: 'Signal / priority',
+          get: signalCell,
+          html: true,
+          sortValue: (e) => (e.importance === 'high' ? 1 : 0),
+        },
+        eventColumn,
+        { label: 'Feed', get: (e) => e.feedLabel },
+      ];
+  const filters = mode === HORIZON.UPCOMING
+    ? [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDateRange(e.day, day, v) }]
+    : [
+        {
+          label: 'Importance',
+          options: [
+            { value: 'all', label: 'All priorities' },
+            { value: 'high', label: 'High priority only' },
+            { value: 'low', label: 'Low priority only' },
+          ],
+          match: (e, v) => e.importance === v,
+        },
+        {
+          label: 'Direction',
+          options: [
+            { value: 'all', label: 'Every direction' },
+            { value: 'positive', label: 'Positive only' },
+            { value: 'negative', label: 'Negative only' },
+            { value: 'neutral', label: 'Neutral only' },
+          ],
+          match: (e, v) => e.direction === v,
+        },
+        { label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDateRange(e.day, day, v) },
+      ];
   return scoreTable({
     rows: events,
-    // Content-derived and unique per event — never a position. The stream grows while feeds land,
-    // so an index in the key would make one key mean a different row on every arrival, which is
-    // exactly what made the News table look as though it were duplicating rows.
     key: (e) => e.id,
-    // THE STAR MARKS THE COMPANY, NOT THE EVENT. Three announcements from one filer are three rows
-    // and one watched company; a market-wide story has no company and gets no star at all.
     watchKey: (e) => e.ticker || null,
     watchName: (e) => e.company,
     name: (e) => e.company,
@@ -656,59 +836,18 @@ function eventsTable(ctx, events, day, tablePosition = null) {
     showRank: false,
     // Date and time lead every row. Some feeds resolve only to a day; saying "Day only" is more
     // informative than an em dash and keeps older rows intelligibly ordered as the reader scrolls.
-    // Date first, then the combined signal/priority marker, then company identity. This keeps the
-    // two judgements in the reader's scan path without spending two repetitive table columns.
-    nameAfter: 2,
+    // History adds the combined signal/priority marker before company identity. Upcoming has no
+    // inferred signal, so company follows the date directly.
+    nameAfter: mode === HORIZON.UPCOMING ? 1 : 2,
     dense: true,
     wrapHeads: true,
-    // A FIRST-FRAME FALLBACK ONLY — `fitStreamToViewport` sets the real height after the paint.
-    // A `calc(100vh - <constant>)` cannot do this job: the constant IS the height of everything
-    // above the table, and that varies with the window width (the chip row wraps), with the
-    // number of feeds on offer, and with the reader's zoom. Measured against my own window it was
-    // exact, and on a wider one the table stopped ~110px short — a magic number that was only ever
-    // right for the geometry it was measured on.
     stickyHead: 'max(320px, calc(100vh - 560px))',
-    // This is a historical stream, not a screener whose full DOM is useful for Ctrl-F. Keep the
-    // complete data set in the table model, but append DOM rows only as the internal scroller nears
-    // its end. Search, filters, counts and export still operate over every retained event.
     fillMode: 'scroll',
-    rowClass: alertRowClass,
+    rowClass: mode === HORIZON.UPCOMING ? null : alertRowClass,
     initialRowCount: tablePosition?.rendered || 40,
     initialRowKey: tablePosition?.key || null,
-    scrollLabel: 'All Alerts history table',
-    columns: [
-      {
-        label: 'Date / time',
-        align: 'left',
-        get: (e) => `<time datetime="${escapeHtml(e.day || '')}" data-event-day="${escapeHtml(e.day || '')}" class="block whitespace-nowrap tabular-nums text-slate-700">
-          <span class="block font-medium">${escapeHtml(e.day ? fmtDay(e.day) : 'Date not supplied')}</span>
-          <span class="block text-xs ${e.time ? 'text-slate-500' : 'text-slate-400'}">${e.kind === 'scheduled' ? 'Scheduled · ' : ''}${e.time ? `${escapeHtml(e.time)} IST` : e.day ? 'Day only' : 'Undated'}</span>
-        </time>`,
-        html: true,
-        sortValue: (e) => `${e.day || '0000-00-00'}T${e.time || ''}`,
-      },
-      {
-        label: 'Signal / priority',
-        get: signalCell,
-        html: true,
-        // Sorting this column answers the useful question — what needs attention first — while
-        // stable sort preserves chronology within High and Low.
-        sortValue: (e) => (e.importance === 'high' ? 1 : 0),
-      },
-      {
-        label: 'What happened',
-        get: (e) => `
-          <div class="max-w-[560px]">
-            <div class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${escapeHtml(e.headline)}</div>
-            <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
-            <div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
-            <div class="truncate text-[11px] ${e.importance === 'high' ? 'font-semibold text-violet-700' : 'text-slate-400'}" title="${escapeHtml(e.importanceReason || '')}"><span class="text-slate-400">Priority ·</span> ${escapeHtml(e.importanceReason || '')}</div>
-          </div>`,
-        html: true,
-        sortValue: (e) => String(e.headline || '').toLowerCase(),
-      },
-      { label: 'Feed', get: (e) => e.feedLabel },
-    ],
+    scrollLabel: mode === HORIZON.UPCOMING ? 'All Alerts upcoming events table' : 'All Alerts history table',
+    columns,
     link: (e) => e.url || null,
     // THE ROW OPENS THE SOURCE. It used to navigate to the tab that owns the feed, which put two
     // clicks and a scan between the reader and the thing the row is about — they had already read
@@ -737,42 +876,12 @@ function eventsTable(ctx, events, day, tablePosition = null) {
     // unverified row retained but prevents that synthetic label from making an unrelated headline
     // satisfy a company search. Every other feed has a resolved/source-carried company identity.
     searchable: alerts.eventSearchText,
-    filters: [
-      {
-        label: 'Importance',
-        options: [
-          { value: 'all', label: 'All priorities' },
-          { value: 'high', label: 'High priority only' },
-          { value: 'low', label: 'Low priority only' },
-        ],
-        match: (e, v) => e.importance === v,
-      },
-      {
-        label: 'Direction',
-        options: [
-          { value: 'all', label: 'Every direction' },
-          { value: 'positive', label: 'Positive only' },
-          { value: 'negative', label: 'Negative only' },
-          { value: 'neutral', label: 'Neutral only' },
-        ],
-        match: (e, v) => e.direction === v,
-      },
-      {
-        label: 'Feed',
-        options: [{ value: 'all', label: 'Every feed' }, ...feedOptions(events)],
-        match: (e, v) => e.feed === v,
-      },
-      {
-        label: 'Date range',
-        options: dateRangeOptions(events, day),
-        match: (e, v) => matchesDateRange(e.day, day, v),
-      },
-    ],
-    initialSort: { key: 'Date / time', dir: 'desc' },
-    initialView: tableView,
-    emptyMessage: emptyMessageFor(ctx.scope, day),
-    exportName: `sattva-all-alerts-through-${day}`,
-    onExport: (visible) => exportStream(visible, day, ctx.scope),
+    filters,
+    initialSort: { key: 'Date / time', dir: mode === HORIZON.UPCOMING ? 'asc' : 'desc' },
+    initialView,
+    emptyMessage: emptyMessageFor(ctx.scope, day, mode),
+    exportName: `sattva-all-alerts-${mode === HORIZON.UPCOMING ? 'upcoming-from' : 'through'}-${day}`,
+    onExport: (visible) => exportStream(visible, day, ctx.scope, mode),
   });
 }
 
@@ -783,15 +892,21 @@ function shiftDay(day, amount) {
   return d.toISOString().slice(0, 10);
 }
 
-function dateRangeOptions(events, day) {
+function dateRangeOptions(events, day, mode) {
+  if (mode === HORIZON.UPCOMING) {
+    return [
+      { value: 'all', label: 'All upcoming dates' },
+      { value: 'next7', label: 'Next 7 days' },
+      { value: 'next30', label: 'Next 30 days' },
+    ];
+  }
   const options = [
-    { value: 'all', label: 'All available dates' },
+    { value: 'all', label: 'All dates through today' },
     { value: 'today', label: 'Today only' },
     { value: '7d', label: 'Last 7 days' },
     { value: '30d', label: 'Last 30 days' },
   ];
   if (events.some((event) => !event.day)) options.push({ value: 'undated', label: 'Date not supplied' });
-  if (events.some((event) => event.day > day)) options.push({ value: 'upcoming', label: 'Upcoming dates' });
   if (events.some((event) => event.day < shiftDay(day, -29))) options.push({ value: 'older', label: 'Older than 30 days' });
   return options;
 }
@@ -800,19 +915,14 @@ function matchesDateRange(eventDay, throughDay, range) {
   if (range === 'all') return true;
   if (range === 'undated') return !eventDay;
   if (!eventDay) return false;
-  if (range === 'upcoming') return eventDay > throughDay;
+  if (range === 'next7') return eventDay >= throughDay && eventDay <= shiftDay(throughDay, 6);
+  if (range === 'next30') return eventDay >= throughDay && eventDay <= shiftDay(throughDay, 29);
   if (range === 'today') return eventDay === throughDay;
   if (range === '7d') return eventDay >= shiftDay(throughDay, -6) && eventDay <= throughDay;
   if (range === '30d') return eventDay >= shiftDay(throughDay, -29) && eventDay <= throughDay;
   if (range === 'older') return eventDay < shiftDay(throughDay, -29);
   return true;
 }
-
-const feedOptions = (events) => {
-  const seen = new Map();
-  for (const e of events) if (!seen.has(e.feed)) seen.set(e.feed, e.feedLabel);
-  return [...seen].map(([value, label]) => ({ value, label }));
-};
 
 /**
  * The empty table's message, which must not overstate what an empty table means.
@@ -821,8 +931,9 @@ const feedOptions = (events) => {
  * have actually looked. So this says what IS true: nothing reached this page, and points at the
  * panel that explains why.
  */
-function emptyMessageFor(scope, day) {
+function emptyMessageFor(scope, day, mode) {
   const where = scope === 'universe' ? 'across the market' : `for your ${scopeLabel(scope).toLowerCase()}`;
+  if (mode === HORIZON.UPCOMING) return `No loaded upcoming event ${where} matches the current search, source and date filters from ${day}.`;
   return `No loaded event ${where} matches the current search, feed, direction, importance and date filters through ${day}. Use the source filters above to adjust the view.`;
 }
 
@@ -834,17 +945,18 @@ function emptyMessageFor(scope, day) {
 // colours has to travel inside the file.
 // ---------------------------------------------------------------------------------------
 
-function exportStream(visible, day, scope) {
+function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
   const feeds = report?.feeds || [];
   const behind = feeds.filter((f) => f.reachesToday !== true || f.status !== 'ok').map((f) => f.label);
+  const upcoming = mode === HORIZON.UPCOMING;
+  const modeNote = upcoming
+    ? 'Every row is scheduled evidence, not confirmation that an event occurred; no directional inference is shown in this view. '
+    : `Includes captured records, explicitly labelled snapshots and undated records. Direction (positive/negative/neutral) and Importance (high/low) are independent; every row carries both reasons. High thresholds: price ±${alerts.MOVE_PCT}%; insider ${alerts.INSIDER_HIGH_PCT}% or ₹${alerts.INSIDER_HIGH_VALUE / 10_000_000} crore; investor presence change or ${alerts.INVESTOR_HIGH_PP}pp; chatter ${alerts.CHATTER_HIGH_MENTIONS} mentions or ${alerts.CHATTER_HIGH_CHANGE_PCT}% mention change. Announcement direction is rule-derived and unmatched filings stay neutral; news stays neutral. `;
   const banner = {
     __banner: true,
     line:
-      `SATTVA CENTRAL RESEARCH — ALL ALERTS HISTORY through ${day} (Indian trading date), ${scopeLabel(scope)} scope. ` +
-      `Registered feeds: ${alerts.FEEDS.map((f) => f.label).join(', ')}. Includes captured records, scheduled events and explicitly labelled snapshots, including undated records. ` +
-      `Direction (positive/negative/neutral) and Importance (high/low) are independent; every row carries both reasons. ` +
-      `High thresholds: price ±${alerts.MOVE_PCT}%; insider ${alerts.INSIDER_HIGH_PCT}% or ₹${alerts.INSIDER_HIGH_VALUE / 10_000_000} crore; investor presence change or ${alerts.INVESTOR_HIGH_PP}pp; chatter ${alerts.CHATTER_HIGH_MENTIONS} mentions or ${alerts.CHATTER_HIGH_CHANGE_PCT}% mention change. ` +
-      `Announcement direction is rule-derived and unmatched filings stay neutral; news stays neutral. ` +
+      `SATTVA CENTRAL RESEARCH — ${upcoming ? `UPCOMING EVENTS from ${day}` : `ALL ALERTS HISTORY through ${day}`} (Indian trading date), ${scopeLabel(scope)} scope. ` +
+      `Registered feeds: ${alerts.FEEDS.map((f) => f.label).join(', ')}. ${modeNote}` +
       (behind.length
         ? `NOT EVERY FEED HAS LOOKED AT THIS DAY: ${behind.join(', ')} last read earlier, so an absence here is not evidence that nothing happened.`
         : `Every daily feed on this dashboard had read this day when the sheet was written.`),
@@ -852,22 +964,26 @@ function exportStream(visible, day, scope) {
 
   const cell = (get) => (r) => (r.__banner ? '' : get(r));
   return exportRows({
-    filename: `sattva-all-alerts-through-${day}`,
+    filename: `sattva-all-alerts-${mode === HORIZON.UPCOMING ? 'upcoming-from' : 'through'}-${day}`,
     sheetName: 'All Alerts',
     columns: [
       { header: 'Date (IST)', key: 'date', width: 14, get: (r) => (r.__banner ? r.line : r.day || '') },
       { header: 'Time (IST)', key: 'time', width: 12, get: cell((r) => r.time || '') },
-      { header: 'Direction', key: 'direction', width: 12, get: cell((r) => r.direction || 'neutral') },
-      { header: 'Importance', key: 'importance', width: 12, get: cell((r) => r.importance || 'low') },
+      ...(!upcoming ? [
+        { header: 'Direction', key: 'direction', width: 12, get: cell((r) => r.direction || 'neutral') },
+        { header: 'Importance', key: 'importance', width: 12, get: cell((r) => r.importance || 'low') },
+      ] : []),
       { header: 'Feed', key: 'feed', width: 18, get: cell((r) => r.feedLabel) },
       { header: 'Ticker', key: 'ticker', width: 14, get: cell((r) => r.ticker || '') },
       { header: 'Company', key: 'company', width: 32, get: cell((r) => r.company) },
-      { header: 'What happened', key: 'headline', width: 60, get: cell((r) => r.headline) },
+      { header: upcoming ? 'What is scheduled' : 'What happened', key: 'headline', width: 60, get: cell((r) => r.headline) },
       { header: 'Detail', key: 'detail', width: 50, get: cell((r) => r.detail || '') },
       { header: 'Record type', key: 'kind', width: 16, get: cell((r) => r.kind || 'event') },
       { header: 'Source record (JSON)', key: 'sourceRecord', width: 60, get: cell((r) => JSON.stringify(r.sourceRecord || {})) },
-      { header: 'Direction reason', key: 'signalReason', width: 48, get: cell((r) => r.signalReason || '') },
-      { header: 'Importance reason', key: 'importanceReason', width: 48, get: cell((r) => r.importanceReason || '') },
+      ...(!upcoming ? [
+        { header: 'Direction reason', key: 'signalReason', width: 48, get: cell((r) => r.signalReason || '') },
+        { header: 'Importance reason', key: 'importanceReason', width: 48, get: cell((r) => r.importanceReason || '') },
+      ] : []),
       { header: 'Source link', key: 'url', width: 44, get: cell((r) => r.url || '') },
     ],
     rows: [banner, ...visible],

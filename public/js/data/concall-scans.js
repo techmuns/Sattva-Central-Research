@@ -171,6 +171,9 @@ function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
     rows,
     byTicker,
     upcoming: (payload?.upcoming || []).slice().sort((a, b) => String(a.when || '').localeCompare(String(b.when || ''))),
+    portfolioUpcoming: (payload?.portfolioUpcoming || []).slice().sort(
+      (a, b) => String(a.date || '').localeCompare(String(b.date || '')) || String(a.time || '99:99').localeCompare(String(b.time || '99:99')),
+    ),
     today: payload?.today || { day: null, rows: [] },
     meta: {
       ...(payload?.meta || {}),
@@ -282,6 +285,8 @@ function hasChanged(payload) {
   if (!cache) return true;
   if ((payload.rows?.length ?? 0) !== cache.meta.count) return true;
   if (!!payload.degraded !== !!cache.meta.degraded) return true;
+  const schedule = (rows) => JSON.stringify((rows || []).map((row) => [row.id, row.date, row.time, row.eventType, row.sourceUrl]));
+  if (schedule(payload.portfolioUpcoming) !== schedule(cache.portfolioUpcoming)) return true;
   return fingerprint(payload.rows) !== fingerprint(cache.rows);
 }
 
@@ -295,6 +300,7 @@ export function onChange(fn) {
 // ---------------------------------------------------------------------------------------
 export const all = () => (cache ? cache.rows : []);
 export const upcoming = () => (cache ? cache.upcoming : []);
+export const portfolioUpcoming = () => (cache ? cache.portfolioUpcoming : []);
 export const today = () => (cache ? cache.today : { day: null, rows: [] });
 export const meta = () => (cache ? cache.meta : null);
 export const isLoaded = () => !!cache;

@@ -8,6 +8,12 @@ import { pathToFileURL } from 'node:url';
 import { buildIndex, resolveTicker } from './lib/company-index.mjs';
 import { addResolvedTickers, parseScreenerConcallPage, SCREENER_CONCALL_URL } from './lib/screener-concalls.mjs';
 import {
+  parseScreenerUpcomingPage,
+  SCREENER_PORTFOLIO_DASHBOARD,
+  SCREENER_PORTFOLIO_WATCHLIST_ID,
+  SCREENER_PORTFOLIO_WATCHLIST_NAME,
+} from './lib/screener-upcoming.mjs';
+import {
   mergeScreenerConcallCapture,
   mergeScreenerConcallRows,
   SCREENER_CONCALL_COMPRESSED_LIMIT,
@@ -154,8 +160,24 @@ async function main() {
   const duplicatesRemoved = collected.length - unique.length;
   if (full && collected.length !== first.publishedTotal) throw Error('Screener full history count mismatch');
 
-  stage = 'capture validation';
+  stage = 'portfolio calendar capture';
   const checkedAt = new Date().toISOString();
+  const dashboard = await page.goto(SCREENER_PORTFOLIO_DASHBOARD, { waitUntil: 'domcontentloaded' });
+  const dashboardUrl = new URL(page.url());
+  const watchlistLink = page.locator(`a[href^="/watchlist/${SCREENER_PORTFOLIO_WATCHLIST_ID}/"]`);
+  const namedWatchlist = page.getByText(SCREENER_PORTFOLIO_WATCHLIST_NAME, { exact: true });
+  if (
+    !dashboard?.ok() ||
+    dashboardUrl.origin !== 'https://www.screener.in' ||
+    dashboardUrl.pathname !== `/dash/${SCREENER_PORTFOLIO_WATCHLIST_ID}/` ||
+    (await watchlistLink.count()) !== 1 ||
+    (await namedWatchlist.count()) < 1
+  ) {
+    throw Error('S Screen dashboard identity could not be verified');
+  }
+  const portfolioUpcoming = parseScreenerUpcomingPage(await page.content(), checkedAt);
+
+  stage = 'capture validation';
   const current = {
     version: 1,
     sourceId: SCREENER_CONCALL_ID,
@@ -164,6 +186,7 @@ async function main() {
     pagesFetched,
     fullHistory: full,
     duplicatesRemoved,
+    portfolioUpcoming,
     rows: resolved.map((row) => ({ ...row, observedAt: checkedAt })),
   };
   const capture = mergeScreenerConcallCapture(current, previous);
@@ -181,6 +204,7 @@ async function main() {
       duplicatesRemoved: capture.duplicatesRemoved,
       pagesFetched,
       fullHistory: full,
+      portfolioUpcoming: capture.portfolioUpcoming.length,
       bytes: bytes.length,
     }),
   );

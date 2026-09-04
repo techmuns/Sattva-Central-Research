@@ -32,7 +32,13 @@ const server = createServer((req, res) => {
   try {
     if (url.pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (url.pathname === '/api/earnings') { json(data('earnings-live.json')); return; }
-    if (url.pathname === '/api/concalls') { json(data('concall-scans.json')); return; }
+    if (url.pathname === '/api/concalls') {
+      const payload = data('concall-scans.json');
+      json({ ...payload, portfolioUpcoming: [
+        { id: 'STLTECH|2026-09-10|AGM|day', companyKey: 'STLTECH', ticker: 'STLTECH', name: 'Sterlite Technologies', date: '2026-09-10', time: null, eventType: 'AGM', companyUrl: 'https://www.screener.in/company/STLTECH/', sourceUrl: 'https://www.screener.in/company/STLTECH/', observedAt: '2026-09-04T07:00:00Z' },
+      ], meta: { ...payload.meta, screener: { status: 'ok', checkedAt: '2026-09-04T07:00:00Z', portfolioUpcomingAvailable: true } } });
+      return;
+    }
     if (url.pathname === '/api/super-investors') { const x = data('super-investors.json'); json({ ok: true, investors: x.investors, fetchedAt: x.capturedAt }); return; }
     if (url.pathname === '/api/nse-announcements') { json({ capturedAt: '2026-09-04T08:00:00Z', rows: [
       { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T07:00:00Z', subject: 'Analyst day complete source record', description: 'Original analyst presentation', url: 'https://example.test/analyst.pdf' },
@@ -62,15 +68,57 @@ const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
 page.on('console', (message) => { if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) errors.push(message.text()); });
 await page.route('**/*', (route) => route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
-const settled = () => page.waitForFunction(() => {
-  const chips = [...document.querySelectorAll('[data-feed]')];
-  return chips.length > 15 && chips.every((c) => !c.textContent.includes('reading…'));
-}, null, { timeout: 60000 });
+const settled = async () => {
+  try {
+    await page.waitForFunction(() => {
+      const chips = [...document.querySelectorAll('[data-feed]')];
+      const panel = document.querySelector('#root');
+      return chips.length > 15 && chips.every((c) => !c.textContent.includes('reading…')) && !/Reading \d+ more feeds?/.test(panel?.textContent || '');
+    }, null, { timeout: Number(process.env.GENERAL_ALERTS_SETTLE_MS || 90000) });
+  } catch (error) {
+    const pending = await page.locator('[data-feed]').evaluateAll((chips) => chips.map((chip) => chip.textContent.trim()).filter((label) => label.includes('reading…')));
+    const state = await page.locator('#root').innerText().catch(() => 'root unavailable');
+    throw new Error(`All Alerts did not settle; pending feeds: ${pending.join(', ') || 'controls unavailable'}; page: ${state.slice(0, 500) || 'empty'}; errors: ${errors.join(' | ') || 'none'}`, { cause: error });
+  }
+};
 try {
   await page.goto(origin);
   await settled();
   console.log('Rendered complete All Alerts pool');
-  assert.equal(await page.locator('[data-feed]').count(), 19);
+  assert.equal(await page.locator('[data-feed]').count(), 19, 'Universe hides the portfolio-only calendar');
+  assert.equal(await page.locator('[data-horizon-toggle]').count(), 2);
+  assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
+  const sourceControl = await page.locator('[data-feed]').first().evaluate((node) => {
+    const checkbox = node.querySelector('span');
+    return {
+      touchTarget: node.classList.contains('min-h-10'),
+      checkbox: checkbox?.classList.contains('h-5') && checkbox?.classList.contains('w-5'),
+    };
+  });
+  assert(
+    sourceControl.touchTarget && sourceControl.checkbox,
+    'source controls ship comfortable touch targets and legible checkboxes',
+  );
+  await page.locator('[data-horizon-toggle="through"]').press('ArrowRight');
+  assert.equal(await page.locator('[data-horizon-toggle="upcoming"]').getAttribute('aria-selected'), 'true', 'time horizon is keyboard operable');
+  await page.locator('[data-horizon-toggle="upcoming"]').press('ArrowLeft');
+  assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
+  await page.evaluate(() => window.show('portfolio'));
+  await settled();
+  assert.equal(await page.locator('[data-feed="screener-portfolio-upcoming"]').count(), 1);
+  await page.locator('[data-horizon-toggle="upcoming"]').click();
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('AGM scheduled'));
+  assert.equal(await page.locator('[data-horizon-toggle="upcoming"]').getAttribute('aria-selected'), 'true');
+  assert((await page.locator('[data-alerts-coverage]').innerText()).includes('Portfolio calendar'));
+  assert(!(await page.locator('[data-alerts-coverage]').innerText()).includes('Price & volume'), 'Upcoming hides sources that cannot schedule events');
+  const upcomingHeaders = await page.locator('thead').innerText();
+  assert(upcomingHeaders.includes('WHAT IS SCHEDULED'));
+  assert(!upcomingHeaders.includes('DIRECTION') && !upcomingHeaders.includes('IMPORTANCE'));
+  if (process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT });
+  await page.locator('[data-horizon-toggle="through"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-horizon-toggle="through"]')?.getAttribute('aria-selected') === 'true');
+  await page.evaluate(() => window.show('universe'));
+  await settled();
   const coverageText = await page.locator('[data-alerts-coverage]').innerText();
   assert(!/stale\s*\/\s*unknown|incomplete|on-demand|not in scope/i.test(coverageText), 'customer-facing source filters omit feed-health jargon');
   assert.equal(await page.locator('[data-feed][title*="stale" i], [data-feed][title*="unknown" i], [data-feed][title*="incomplete" i], [data-feed][title*="on-demand" i]').count(), 0,
@@ -88,7 +136,10 @@ try {
   version++;
   await page.locator('#refresh').click();
   await settled();
-  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Newly arrived NSE record'));
+  await page.waitForFunction(async () => {
+    const refreshState = await import('/js/core/refresh.js');
+    return !refreshState.isRunning('daily-alerts') && document.querySelector('tbody')?.textContent.includes('Newly arrived NSE record');
+  }, null, { timeout: 60000 });
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
   console.log('Verified undated search, scope changes and newly arrived filings');
 

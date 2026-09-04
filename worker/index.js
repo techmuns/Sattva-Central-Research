@@ -1018,6 +1018,9 @@ async function handleConcalls(request, env, ctx) {
       degraded: null,
       rows,
       upcoming: sched.value.upcoming || [],
+      // Portfolio-only schedule from the exact S Screen dashboard. Kept separate from the
+      // market-wide StockScans schedule so the browser can enforce scope without guessing.
+      portfolioUpcoming: screener.value.capture?.portfolioUpcoming || [],
       today: sched.value.today || { day: null, rows: [] },
       meta: {
         ...head.value.meta,
