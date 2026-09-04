@@ -22,6 +22,14 @@ if (!output) throw Error('Provide a staging artifact output path');
 const MAX_PAGE_BYTES = 2 * 1024 * 1024;
 let stage = 'configuration';
 let browser;
+let failurePage = null;
+let failureCode = null;
+
+function collectionError(code) {
+  const error = new Error('Screener concall page rejected');
+  error.collectionCode = code;
+  return error;
+}
 
 const readData = (name) => JSON.parse(readFileSync(new URL(`../public/data/${name}.json`, import.meta.url), 'utf8'));
 
@@ -92,17 +100,31 @@ async function main() {
         // Use the authenticated browser page itself. A separate API-style request changes the
         // browser fingerprint and can be refused even though it shares the same session cookie.
         // Sequential navigation is also deliberately gentle: this daily audit is not urgent.
-        const response = await page.goto(`${SCREENER_CONCALL_URL}?p=${number}`, { waitUntil: 'domcontentloaded' });
+        const response = await page.goto(`${SCREENER_CONCALL_URL}?p=${number}`, { waitUntil: 'domcontentloaded' }).catch(() => {
+          throw collectionError('navigation');
+        });
         const finalUrl = new URL(page.url());
-        if (!response?.ok() || finalUrl.origin !== 'https://www.screener.in' || finalUrl.pathname !== '/concalls/') throw Error('Authenticated concall page unavailable');
+        if (!response?.ok()) throw collectionError('response');
+        if (finalUrl.origin !== 'https://www.screener.in' || finalUrl.pathname !== '/concalls/') throw collectionError('session');
         const html = await page.content();
-        if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw Error('Screener concall page exceeds size limit');
-        const parsed = parseScreenerConcallPage(html);
-        if (parsed.publishedTotal !== first.publishedTotal || parsed.lastPage !== first.lastPage) throw Error('Screener pagination changed during collection');
+        if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw collectionError('oversized');
+        let parsed;
+        try {
+          parsed = parseScreenerConcallPage(html);
+        } catch {
+          throw collectionError('shape');
+        }
+        if (parsed.publishedTotal !== first.publishedTotal || parsed.lastPage !== first.lastPage) throw collectionError('pagination');
         await page.waitForTimeout(120);
         return parsed.rows;
       } catch (error) {
-        if (attempt === 3) throw error;
+        if (attempt === 3) {
+          failurePage = number;
+          failureCode = ['navigation', 'response', 'session', 'oversized', 'shape', 'pagination'].includes(error?.collectionCode)
+            ? error.collectionCode
+            : 'browser';
+          throw error;
+        }
         await page.waitForTimeout(500 * attempt);
       }
     }
@@ -169,7 +191,8 @@ try {
 } catch {
   // Browser exceptions can include form values or page content. Public logs get only a fixed
   // stage name; credentials, HTML, account details and cookies never appear.
-  console.error(`Screener concall collection failed during ${stage}. No credentials or page content were logged.`);
+  const location = failurePage ? ` (page ${failurePage}, ${failureCode})` : '';
+  console.error(`Screener concall collection failed during ${stage}${location}. No credentials or page content were logged.`);
   process.exitCode = 1;
 } finally {
   await browser?.close().catch(() => {});

@@ -137,4 +137,6 @@ test('workflow is incremental every 15 minutes and audits the full history daily
   assert.doesNotMatch(workflow, /git push|contents:\s*write/);
   assert.match(collector, /page\.goto\(`\$\{SCREENER_CONCALL_URL\}\?p=\$\{number\}`/);
   assert.doesNotMatch(collector, /context\.request|get\([^)]*user-agent/i, 'history pages retain the authenticated browser fingerprint');
+  assert.match(collector, /\['navigation', 'response', 'session', 'oversized', 'shape', 'pagination'\]/);
+  assert.doesNotMatch(collector, /console\.error\([^\n]*(error|message|html|cookie)/i, 'failure logs contain only fixed stage, page and category fields');
 });
