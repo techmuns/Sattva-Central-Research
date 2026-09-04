@@ -3521,7 +3521,7 @@ offers only Indian results with valid NSE-shaped tickers.
 
 | Field | Meaning |
 | --- | --- |
-| `ticker` | **NSE symbol, upper case.** The join key, same as every file in this document. |
+| `ticker` | **Upper-case NSE symbol or six-digit BSE company code.** Digit-leading symbols such as `20MICRONS` are accepted. |
 | `name` | The display name of the row it was starred from, or `null` for a pre-v2 entry. It exists so a watched company can be *named* on a feed that does not carry it — printing the symbol back as though it were a name would be inventing one. |
 | `addedAt` | ISO timestamp. Drives the ordering: a watchlist is a working set, so newest first. |
 
@@ -3545,8 +3545,9 @@ did nothing is worse than a control that is not offered.
 **The legacy set is pruned, not reinterpreted.** An upgrading reader has an array of old row keys
 under this same key. Reading them all back as tickers would file `RELIANCE|2026-08-12|3` as a
 company — a value that meant something else, read as a measurement. The migration keeps only
-entries *shaped like* an NSE symbol (`/^[A-Z][A-Z0-9&.\-]{0,19}$/`) and drops the rest, once,
-recording that it ran under `sattva:watchlist:shape`. A dropped entry was never a company; it was
+entries *shaped like* an NSE symbol and drops composite row keys. Legacy bare numeric strings
+remain excluded; only explicit company objects can carry six-digit BSE codes. The migration
+records that it ran under `sattva:watchlist:shape`. A dropped entry was never a company; it was
 a row.
 
 ### `sattva:scope` — which of the three scopes is active
@@ -3880,8 +3881,31 @@ critical while capture continues for known companies. No money, quantities or un
 are copied into the cache. New companies are registered before requests begin, so the next run can
 resume even if this one has no budget left. Valid removals lose portfolio priority; archived filings
 remain retained and companies still in Universe continue to be captured. Entries without a usable
-ticker remain explicitly unresolved; browser-only scope/watchlist additions are not transmitted to
-this public repository and therefore are **not registered for background capture**.
+ticker remain explicitly unresolved.
+
+Watchlist additions now enroll public company identities through `POST /api/capture-registration`.
+The request contains only ticker symbols; the server resolves ISINs and names from the verified BSE/NSE
+directories. It stores no account, device identifier, ownership, personal watchlist name or quantities.
+Personal membership and ordering remain in `sattva:watchlist`; removing a star changes that local
+scope without retracting shared company history. Existing watchlists enroll after the app opens.
+Acknowledgements persist on the device, are rechecked daily, and are accepted only after durable
+storage succeeds. Offline, rejected and unresolved registrations retry with bounded delays; diagnostic
+details remain behind the feed information control.
+
+Four SQLite Durable Object shards retain the issuer catalog across restarts, with 250 companies per
+shard and a six-request/minute caller rate limit. Each request accepts at most 50 verified ticker
+symbols and 8 KiB. Cross-origin submissions are rejected. Alias collisions and unknown identities
+cannot become guessed issuers; partial shard failures acknowledge only completed writes. Capacity
+limits remain explicit instead of silently dropping registrations. The binding and first SQLite
+migration are versioned in `wrangler.jsonc`; `worker/entry.js` exports the runtime class while route
+contracts remain importable in Node through `worker/index.js`.
+
+The scheduled company collector reads the public issuer catalog using `GET /api/capture-registration`
+and stores a last-verified copy in `filing-capture/registrations.json`. Registered issuers join the
+portfolio/universe capture queue with priority. An unavailable or unexpectedly shrunken registry
+preserves the previous catalog and makes operational health critical. Registration does not mean
+filings were already fetched: first reads and historical backfill still follow the existing paced
+schedule. No registration request dispatches a production workflow.
 
 `public/data/filing-capture/index.json` records each source/company independently: last attempt,
 last fully parsed success, response time, errors, failure count, next retry time, query symbol,

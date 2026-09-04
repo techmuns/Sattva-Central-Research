@@ -32,6 +32,8 @@ jobs:
         run: node scripts/verify-company-capture.mjs
       - name: Verify live portfolio capture onboarding and source recovery
         run: node scripts/verify-capture-onboarding.mjs
+      - name: Verify watchlist capture registration and retries
+        run: node scripts/verify-capture-registration.mjs
       - name: Verify operational filing health
         run: node scripts/verify-filings-health.mjs
       - name: Verify capture watchdog
@@ -56,6 +58,8 @@ jobs:
         run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
       - name: Validate the Worker bundle
         run: npx --yes wrangler@4 deploy --dry-run
+      - name: Verify durable company registry in the local Worker runtime
+        run: node scripts/verify-capture-registry-runtime.mjs
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15

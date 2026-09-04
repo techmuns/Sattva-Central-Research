@@ -131,6 +131,32 @@ const browser = await chromium.launch({ executablePath: CHROME, args: ['--test-t
 const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, acceptDownloads: true });
 const page = await context.newPage();
 
+// Research requires a fresh private-portfolio exchange before submitting. Exercise the real
+// iframe/message contract with a local response, without opening a production Family session.
+const familyFixture = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));
+const familyHoldings = familyFixture.holdings.map(h => ({ isin: h.isin, ticker: h.ticker, name: h.name, sector: h.sector || 'Unclassified', weightPct: null }));
+const familyHtml = `<!doctype html><script>
+const holdings = ${JSON.stringify(familyHoldings).replaceAll('<', '\\u003c')};
+addEventListener('message', event => {
+  const m = event.data; if (event.source !== parent || m?.channel !== 'sattva-portfolio-v1') return;
+  const send = value => event.source.postMessage({ channel: m.channel, id: m.id, ...value }, event.origin);
+  if (m.type === 'hello') return send({ type: 'ready', capabilities: ['position-sizes'] });
+  if (m.type === 'cancel') return send({ type: 'error', message: 'Cancelled' });
+  if (!['read', 'positions'].includes(m.type)) return;
+  const checkedAt = new Date().toISOString(), bookAsOf = '2026-06-30', archiveVersion = 1;
+  send({ type: 'result', holdings, sizes: { basis: 'listed-market-value', complete: false, checkedAt, bookAsOf, archiveVersion },
+    reading: { status: 'limited', checkedAt, bookAsOf, archiveVersion, answer: 'Local test holdings are available; position sizes are not supplied by this fixture.' } });
+});
+</script>`;
+await context.route('**/research-bridge', route => route.fulfill({ contentType: 'text/html', body: familyHtml }));
+await context.route('**/api/family-portfolio', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+  ...familyFixture, ok: true, syncStatus: 'live', storage: 'shared', sourceRevision: 'a'.repeat(64),
+  sourceWorkbook: { fileKey: 'local-fixture', label: 'Local test workbook', uploadedAt: '2026-09-01T00:00:00Z' },
+  count: familyFixture.holdings.length, resolved: familyFixture.holdings.filter(h => h.ticker).length,
+  syncedAt: new Date().toISOString(),
+}) }));
+await context.route('**/api/capture-registration', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false,"reason":"local-fixture"}' }));
+
 // The route sweep reaches Public Chatter long before its dedicated block. Install the local feed
 // override before the first document loads so the dashboard and its lazy /posts detail requests
 // are guaranteed to come from the same captured test source.
@@ -733,7 +759,8 @@ if (!hasLiveRoute) {
 console.log('\n— earnings calendar —');
 await go('/#/research/earnings-hub?scope=universe', 800);
 await waitForPanel();
-ok('the tab offers Reported / Calendar', (await page.locator('[data-view]').count()) === 2);
+ok('the tab offers Reported / Calendar / Company Filings',
+  JSON.stringify(await page.locator('[data-view]').evaluateAll(nodes => nodes.map(node => node.dataset.view).sort())) === JSON.stringify(['calendar', 'filings', 'reported']));
 
 await page.locator('[data-view="calendar"]').click();
 // THE CALENDAR OPENS ON TODAY. Today can legitimately have no scheduled rows, so this waits for
@@ -1391,7 +1418,7 @@ console.log('\n— AI alerts —');
     `${failedConfigGets} failed check(s), ${configGets - failedConfigGets} recovery check(s)`);
 
   const evidenceAudit = await evalSafe(async () => {
-    const { buildResearchEvidence, RESEARCH_EVIDENCE_CHAR_BUDGET } = await import('/js/research/estate.js');
+    const { buildResearchEvidence, RESEARCH_EVIDENCE_CHAR_BUDGET, DASHBOARD_RESEARCH_SOURCES } = await import('/js/research/estate.js');
     const { providerEvidenceChars } = await import('/js/research/evidence-shared.js');
     const packet = await buildResearchEvidence({
       question: 'Which companies in my portfolio have the strongest recent evidence across multiple tabs?',
@@ -1401,6 +1428,9 @@ console.log('\n— AI alerts —');
     return {
       catalog: packet.catalog.length,
       sources: packet.sources.length,
+      expected: DASHBOARD_RESEARCH_SOURCES.map(source => source.id).sort(),
+      catalogIds: packet.catalog.map(source => source.id).sort(),
+      sourceIds: packet.sources.map(source => source.id).sort(),
       ready: packet.selection.sourcesReady,
       statuses: packet.sources.map((source) => `${source.id}:${source.status}`),
       budget: RESEARCH_EVIDENCE_CHAR_BUDGET,
@@ -1415,8 +1445,9 @@ console.log('\n— AI alerts —');
       tokens: packet.selection.tokens,
     };
   });
-  ok('...assembles one status-bearing packet from all fourteen dashboard sources',
-    evidenceAudit.catalog === 14 && evidenceAudit.sources === 14 && evidenceAudit.ready > 0 &&
+  ok('...assembles one status-bearing packet from every registered dashboard source',
+    JSON.stringify(evidenceAudit.catalogIds) === JSON.stringify(evidenceAudit.expected) &&
+      JSON.stringify(evidenceAudit.sourceIds) === JSON.stringify(evidenceAudit.expected) && evidenceAudit.ready > 0 &&
       evidenceAudit.statuses.every((entry) => /:(ready|unavailable)$/.test(entry)),
     `${evidenceAudit.ready} ready · ${evidenceAudit.statuses.join(', ')}`);
   ok('...and keeps the provider-facing packet inside the local model budget',
@@ -1500,7 +1531,9 @@ console.log('\n— AI alerts —');
   await page.waitForFunction(() => /Dashboard evidence remains traceable/.test(document.querySelector('[data-research-transcript]')?.innerText || ''), null, { timeout: 25000 });
   const researchAnswer = await page.locator('[data-research-transcript]').innerText();
   ok('...submits the complete dashboard packet without claiming unsupported web research',
-    askRequest?.webResearch === false && askRequest?.evidence?.catalog?.length === 14 && askRequest?.evidence?.sources?.length === 14,
+    askRequest?.webResearch === false && askRequest?.requirePortfolio === true &&
+      askRequest?.evidence?.portfolio?.status === 'limited' &&
+      askRequest?.evidence?.catalog?.length === evidenceAudit.expected.length && askRequest?.evidence?.sources?.length === evidenceAudit.expected.length,
     `${askRequest?.evidence?.selection?.sourcesReady ?? 0} sources ready`);
   ok('...renders the streamed dashboard answer without a fabricated web source',
     /dashboard research/i.test(researchAnswer) &&
@@ -1538,12 +1571,13 @@ console.log('\n— AI alerts —');
   ok('leaving Ask Research mid-answer really does unmount it', awaySession && !(await page.locator('[data-research-input]').count()));
   const landedAway = await page
     .waitForFunction(() => {
-      const stored = JSON.parse(localStorage.getItem('sattva:ask-research:v1') || '[]');
-      return stored.some((session) => session.messages?.some((m) => m.role === 'assistant' && /OFF_TAB_ANSWER/.test(m.text)));
+      return document.querySelectorAll('[data-notification="research"]').length > 0;
     }, null, { timeout: 20000 })
     .then(() => true)
     .catch(() => false);
-  ok('...and the answer still arrives and is saved while another tab is on screen', landedAway);
+  ok('...and the answer still arrives while another tab is on screen', landedAway);
+  ok('...without persisting private portfolio conversations to device storage',
+    await page.evaluate(() => !/OFF_TAB_ANSWER|Dashboard evidence remains traceable/.test(localStorage.getItem('sattva:ask-research:v1') || '')));
   // Keeping it running silently would be a feature nobody can see, so it announces itself in the
   // alert stack — the same place a filed result does, under the tab it belongs to.
   ok('...and says so in the alert stack rather than finishing invisibly',
@@ -1556,7 +1590,7 @@ console.log('\n— AI alerts —');
     /OFF_TAB_ANSWER/.test(backText) && (await page.locator('[data-research-input]').inputValue()) === '',
     backText.replace(/\s+/g, ' ').slice(0, 120));
 
-  // A TYPED-BUT-UNSENT QUESTION IS THE READER'S WORK TOO. It survives leaving the tab and a reload.
+  // Private drafts survive same-page navigation but deliberately do not persist across reloads.
   await page.locator('[data-research-input]').fill('An unsent draft that must survive');
   await page.waitForTimeout(700);
   await page.evaluate(() => { location.hash = '#/research/breakouts?scope=portfolio'; });
@@ -1567,8 +1601,9 @@ console.log('\n— AI alerts —');
     (await page.locator('[data-research-input]').inputValue()) === 'An unsent draft that must survive');
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => !document.querySelector('[data-research-input]')?.disabled, null, { timeout: 15000 });
-  ok('...and a reload',
-    (await page.locator('[data-research-input]').inputValue()) === 'An unsent draft that must survive');
+  ok('...but private drafts disappear on reload rather than entering device storage',
+    (await page.locator('[data-research-input]').inputValue()) !== 'An unsent draft that must survive' &&
+    await page.evaluate(() => !/An unsent draft that must survive/.test(localStorage.getItem('sattva:ask-research:v1') || '')));
   await page.evaluate(() => {
     const input = document.querySelector('[data-research-input]');
     input.value = '';
@@ -1633,6 +1668,14 @@ console.log('\n— AI alerts —');
   });
 
   await page.unroute('**/api/research');
+  if (process.env.VERIFY_UI_STOP_AFTER_RESEARCH === '1') {
+    const own = [...new Set(errors)].filter(ownError);
+    ok('zero application console errors through the Research smoke checks', own.length === 0, own.slice(0, 3).join(' | '));
+    await browser.close();
+    await new Promise(resolve => ddStub.close(resolve));
+    console.log(`${failures} failures through Research; ${skipped} environment skips.`);
+    process.exit(failures ? 1 : 0);
+  }
 
   // EVERY TABLE TAB HONOURS `?company=` THE SAME WAY: the first paint after the parameter appears
   // opens the table searched for that company, which is what a citation deep-links to. Asserted on

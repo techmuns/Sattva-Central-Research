@@ -48,7 +48,7 @@ export function companyCaptureStatus(kind, tickers = null, now = Date.now()) {
   }
   return { ...tally, total: wanted.length, gaps, available: !!index, error: indexError,
     from: index?.requestedFrom, to: index?.requestedTo, updatedAt: index?.updatedAt,
-    unresolved: index?.unresolved || [], portfolio: index?.portfolio || null, identitySources: index?.identitySources || {}, entries };
+    unresolved: index?.unresolved || [], portfolio: index?.portfolio || null, registration: index?.registration || null, identitySources: index?.identitySources || {}, entries };
 }
 export async function capturedCompany(kind, ticker) {
   if (!/^[A-Z0-9&._-]{1,80}$/.test(ticker)) throw new Error('Choose a valid company ticker.');

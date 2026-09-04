@@ -33,6 +33,10 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         if (body.portfolio.status !== 'live' || body.portfolio.error) add(source, 'portfolio-sync-unavailable', 'critical');
         age(source, body.portfolio.checkedAt, FILINGS_HEALTH_LIMITS.runHours, 'portfolio-check-overdue');
       }
+      if (body.registration?.liveRequested) {
+        if (body.registration.error) add(source, 'company-registration-unavailable', 'critical');
+        age(source, body.registration.checkedAt, FILINGS_HEALTH_LIMITS.runHours, 'company-registration-overdue');
+      }
       for (const [kind, directory] of Object.entries(body.identitySources || {})) {
         if (!object(directory)) { add(source, 'invalid-capture', 'critical', [kind]); continue; }
         if (directory.error) add(source, 'identity-directory-unavailable', 'critical', [kind]);

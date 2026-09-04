@@ -11,6 +11,7 @@ import { prime as primeFiled } from './data/institution-holdings.js';
 import { prime as primeCoverage, restoreLastGood } from './data/coverage.js';
 import { loadCompanyCaptureIndex } from './data/company-captures.js';
 import { startCaptureWatchdog } from './data/capture-watchdog.js';
+import { startWatchlistCapture } from './data/watchlist-capture.js';
 // Imported for its side effect as much as for `startHostCapture`: js/core/sdk.js builds the one
 // SDK client at import time, so pulling it in from the bootstrap is what guarantees the client
 // exists — and its window listener is attached — before the host can post `host:init`.
@@ -143,6 +144,7 @@ async function boot() {
   // declines duplicate runs across readers; landed files repaint any feed already on screen.
   void loadCompanyCaptureIndex();
   startCaptureWatchdog();
+  startWatchlistCapture();
 }
 
 boot();
