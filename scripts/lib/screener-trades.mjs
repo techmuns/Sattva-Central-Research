@@ -39,6 +39,16 @@ export function hasScreenerTradeOverlap(previousIdentities, rows) {
     && (Array.isArray(rows) ? rows : []).some((row) => previousIdentities.has(insiderTradeIdentity(row)));
 }
 
+/** Index retained Screener events once so each incremental source can stop at an exact overlap. */
+export function indexPriorScreenerTradeIdentities(rows) {
+  const bySource = new Map(SCREENER_TRADE_SOURCES.map((source) => [source.id, new Set()]));
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const identities = bySource.get(row?.sourceId);
+    if (identities) identities.add(insiderTradeIdentity(row));
+  }
+  return bySource;
+}
+
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 const compact = (value) => clean(value).replaceAll(',', '');
 const nonempty = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value != null && clean(value) !== ''));

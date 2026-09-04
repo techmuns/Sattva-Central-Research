@@ -11,6 +11,7 @@ import { archiveFilings } from './lib/filing-archive.mjs';
 import {
   buildScreenerTradesSnapshot,
   hasScreenerTradeOverlap,
+  indexPriorScreenerTradeIdentities,
   normaliseScreenerTrade,
   SCREENER_TRADE_SOURCES,
 } from './lib/screener-trades.mjs';
@@ -179,11 +180,7 @@ try {
   stage = 'prior row flattening';
   const previousRows = flatten(previous);
   stage = 'prior identity indexing';
-  const previousIdentities = new Map(SCREENER_TRADE_SOURCES.map((source) => [source.id, new Set()]));
-  for (const row of previousRows) {
-    const identities = previousIdentities.get(row.sourceId);
-    if (identities) identities.add(insiderTradeIdentity(row));
-  }
+  const previousIdentities = indexPriorScreenerTradeIdentities(previousRows);
   console.log(`Indexed ${previousRows.length} prior rows for incremental capture.`);
 
   stage = 'credential configuration';

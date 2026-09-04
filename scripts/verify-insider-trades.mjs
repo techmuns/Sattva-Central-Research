@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 import { mergeInsiderTrades, insiderTradeIdentity } from '../public/js/data/insider-history.js';
 import { normaliseInsiderTrades } from '../public/js/data/filings-shared.js';
 import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
-import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
+import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, indexPriorScreenerTradeIdentities, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
 import { fetchInsiderTrades } from '../worker/muns.mjs';
 import { createFeed } from '../public/js/data/filings.js';
 import { clearAll, readEntry, writeEntry, KEYS } from '../public/js/core/store.js';
@@ -87,6 +87,12 @@ assert.deepEqual([screenerRows[3].date, screenerRows[3].cells.Category], ['2026-
 const priorBulkIdentities = new Set([insiderTradeIdentity(screenerRows[0])]);
 assert.equal(hasScreenerTradeOverlap(priorBulkIdentities, [{ ...screenerRows[0], cells: { ...screenerRows[0].cells, Insider: 'New same-day seller' } }]), false, 'a matching date is not enough to stop a high-volume incremental walk');
 assert.equal(hasScreenerTradeOverlap(priorBulkIdentities, [screenerRows[0]]), true, 'an exact prior event establishes safe pagination overlap');
+const indexedPrior = indexPriorScreenerTradeIdentities([
+  ...screenerRows,
+  { ...screenerRows[0], sourceId: 'unknown' },
+]);
+assert.deepEqual(SCREENER_TRADE_SOURCES.map(({ id }) => indexedPrior.get(id).size), [1, 1, 1, 1], 'each source receives its own retained identity index');
+assert.equal(hasScreenerTradeOverlap(indexedPrior.get('bulk'), [screenerRows[0]]), true, 'the indexed identity drives incremental overlap');
 
 const captures = SCREENER_TRADE_SOURCES.map((item, index) => ({
   id: item.id, label: item.label, url: `https://www.screener.in${item.path}?o=-2`, pagesRead: 1,
