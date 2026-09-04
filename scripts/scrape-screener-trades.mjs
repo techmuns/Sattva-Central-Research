@@ -172,10 +172,13 @@ async function scrapeSource(page, source, previousMeta, previousIdentities = new
 let browser;
 let stage = 'credential configuration';
 try {
-  stage = 'prior snapshot indexing';
+  stage = 'prior snapshot read';
   const previous = readPrior();
+  stage = 'prior source indexing';
   const previousSources = new Map((previous?.sources || []).map((source) => [source.id, source]));
+  stage = 'prior row flattening';
   const previousRows = flatten(previous);
+  stage = 'prior identity indexing';
   const previousIdentities = new Map(SCREENER_TRADE_SOURCES.map((source) => [source.id, new Set()]));
   for (const row of previousRows) {
     const identities = previousIdentities.get(row.sourceId);
@@ -253,6 +256,11 @@ try {
   console.log(`Captured ${snapshot.rowCount} unique trades across ${snapshot.withRows} companies and all four categories.`);
 } catch (error) {
   const errorType = ['Error', 'TypeError', 'TimeoutError'].includes(error?.name) ? error.name : 'Error';
+  if (stage.startsWith('prior ')) {
+    // This phase runs before credentials are read and operates only on the checked-in snapshot, so
+    // its exception text is safe and necessary to diagnose data/runtime compatibility failures.
+    console.error(`Prior snapshot diagnostic: ${errorType}: ${String(error?.message || 'unknown failure').slice(0, 240)}`);
+  }
   console.error(`Screener trade capture stopped during ${stage} (${errorType}). The existing snapshot was not replaced.`);
   process.exitCode = 1;
 } finally {
