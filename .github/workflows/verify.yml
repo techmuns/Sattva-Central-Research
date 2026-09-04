@@ -48,6 +48,8 @@ jobs:
         run: node scripts/verify-ipo-monitor.mjs
       - name: Verify official IPO filing feed and source failures
         run: node scripts/verify-ipo-filings.mjs
+      - name: Verify IPOPlatform pagination, archive integrity and repeat collection
+        run: node scripts/verify-ipo-platform.mjs
       - name: Verify complete General Alerts pool and scope isolation
         run: node scripts/verify-general-alerts.mjs
       - name: Verify AI alert search and calendar dates
