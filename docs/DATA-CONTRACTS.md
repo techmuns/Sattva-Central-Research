@@ -2617,6 +2617,8 @@ shape `market-news.json` already produces — `id`, `title`, `summary`, `url`, `
 one sort, one search, one export, one card renderer with a single branch on `kind === 'twitter'`.
 The Source control always offers **All sources**, **News publishers**, and **Twitter / X**, even
 before the first X capture. **Manage X accounts** opens the account editor directly from News.
+Every X post has a prominent dark **X / Twitter** badge before the author, above the post text,
+including posts with media thumbnails. Publisher stories do not carry this badge.
 The coverage line separately counts publisher stories, captured X posts and monitored accounts,
 and states when X was last read or that the first collection is still pending. It does not imply
 that all of X, or every historical post from a monitored account, has been collected.

@@ -299,7 +299,11 @@ function postBody(r, canLink) {
   return `
       <div class="h-[62px] w-[110px] flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 sm:h-[76px] sm:w-[135px]">${thumb}</div>
       <div class="min-w-0 max-w-4xl flex-1">
-        <div class="flex flex-wrap items-baseline gap-x-1.5">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span data-news-x-label class="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.3l-4.9-6.4L6.2 22H3.1l7.3-8.3L2 2h6.4l4.4 5.9L18.9 2Zm-1.1 18h1.7L7.3 3.8H5.5L17.8 20Z"/></svg>
+            X / Twitter
+          </span>
           <span class="font-display text-sm font-bold text-slate-900">${escapeHtml(r.displayName)}</span>
           <span class="text-xs font-medium text-slate-400">@${escapeHtml(r.handle)}</span>
         </div>
@@ -310,13 +314,6 @@ function postBody(r, canLink) {
               ? `<span class="tabular-nums">${escapeHtml(when)}</span>`
               : '<span class="text-slate-300" title="The capture carried no post time.">time not published</span>'
           }
-          <span class="text-slate-300">·</span>
-          <!-- NOT \`uppercase\`, unlike the premium chip beside it in the publisher card: this is a
-               product name, and "TWITTER / X" is not how it is written. -->
-          <span class="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23 22h-6.3l-4.9-6.4L6.2 22H3.1l7.3-8.3L2 2h6.4l4.4 5.9L18.9 2Zm-1.1 18h1.7L7.3 3.8H5.5L17.8 20Z"/></svg>
-            Twitter / X
-          </span>
         </div>
       </div>`;
 }

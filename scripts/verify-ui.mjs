@@ -6705,7 +6705,7 @@ console.log('\n— twitter / x as a news source —');
 
   const feed = await evalSafe(() => {
     const cards = [...document.querySelectorAll('[data-news-key]')];
-    const postAt = cards.map((c, i) => (/Twitter \/ X/.test(c.innerText) ? i : -1)).filter((i) => i >= 0);
+    const postAt = cards.map((c, i) => (/X \/ Twitter/.test(c.innerText) ? i : -1)).filter((i) => i >= 0);
     const first = cards[postAt[0]];
     return {
       total: cards.length,
@@ -6721,7 +6721,7 @@ console.log('\n— twitter / x as a news source —');
     !!feed && feed.posts === 3 && feed.total > 3, feed ? `${feed.posts} post(s) among ${feed.total} stories` : 'no feed');
   ok('...carrying the account name, the handle, the text, a time and the source',
     !!feed && /Sattva Desk/.test(feed.text) && /@sattva_desk/.test(feed.text) && /Fixture post one/.test(feed.text) &&
-      /\d{2}:\d{2}/.test(feed.text) && /Twitter \/ X/.test(feed.text), feed ? feed.text.slice(0, 120) : '');
+      /\d{2}:\d{2}/.test(feed.text) && /X \/ Twitter/.test(feed.text), feed ? feed.text.slice(0, 120) : '');
   ok('...linking to the original post', feed?.href === 'https://x.com/sattva_desk/status/901', feed?.href || 'no link');
   // INTERLEAVED, NOT APPENDED. Two feeds concatenated would put every post at one end of the list,
   // which is a separate Twitter section wearing the same chrome.
@@ -6767,14 +6767,14 @@ console.log('\n— twitter / x as a news source —');
   await page.waitForTimeout(400);
   const onlyTw = await evalSafe(() => {
     const c = [...document.querySelectorAll('[data-news-key]')];
-    return { n: c.length, all: c.length > 0 && c.every((x) => /Twitter \/ X/.test(x.innerText)) };
+    return { n: c.length, all: c.length > 0 && c.every((x) => /X \/ Twitter/.test(x.innerText)) };
   });
   ok('...and narrowing to Twitter / X leaves only posts', !!onlyTw && onlyTw.n === 3 && onlyTw.all, onlyTw ? `${onlyTw.n} row(s)` : '');
   await page.selectOption('[data-news-source]', 'publishers');
   await page.waitForTimeout(400);
   const onlyPub = await evalSafe(() => {
     const c = [...document.querySelectorAll('[data-news-key]')];
-    return { n: c.length, none: !c.some((x) => /Twitter \/ X/.test(x.innerText)) };
+    return { n: c.length, none: !c.some((x) => /X \/ Twitter/.test(x.innerText)) };
   });
   ok('...and narrowing to publishers leaves none — the existing feed, untouched',
     !!onlyPub && onlyPub.n > 0 && onlyPub.none, onlyPub ? `${onlyPub.n} publisher row(s)` : '');
