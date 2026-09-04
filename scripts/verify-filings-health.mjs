@@ -13,8 +13,8 @@ const from = '2025-01-01', to = new Date(now).toISOString().slice(0, 10);
 const healthy = {
   company: { version: 1, companies: [{ ticker: 'A' }], createdAt: recent, lastRunFinishedAt: recent, requestedFrom: from, requestedTo: to,
     sources: { announcements: { A: { lastSuccessAt: recent, recentCheckedAt: recent, ranges: [{ from, to }] } }, domestic: { A: { lastSuccessAt: recent } } } },
-  announcements: { byTicker: {}, capturedAt: recent, coversUniverse: true, shortfall: [], failed: [] },
-  insider: { byTicker: {}, empty: ['A'], capturedAt: recent, asked: 1, covered: 1, failed: {}, fallback: {} },
+  announcements: { byTicker: {}, rowCount: 0, capturedAt: recent, coversUniverse: true, shortfall: [], failed: [] },
+  insider: { byTicker: {}, rowCount: 0, empty: ['A'], capturedAt: recent, asked: 1, covered: 1, failed: {}, fallback: {} },
 };
 const assess = (value) => assessFilingsHealth(value, { now });
 assert.equal(assess(healthy).status, 'healthy');
@@ -42,6 +42,16 @@ const missing = structuredClone(healthy);
 delete missing.company.sources.domestic;
 assert.equal(assess(missing).ok, false);
 assert.equal(assess({}).critical, 3, 'missing files fail closed for each source independently');
+assert.equal(assess(null).critical, 3);
+for (const [source, key, value] of [
+  ['announcements', 'failed', [null]], ['announcements', 'rowCount', undefined],
+  ['insider', 'asked', undefined], ['insider', 'asked', 0], ['insider', 'covered', 2],
+  ['insider', 'failed', 'invalid'], ['insider', 'fallback', []], ['insider', 'failedCount', '0'],
+]) {
+  const malformed = structuredClone(healthy);
+  malformed[source][key] = value;
+  assert(assess(malformed).findings.some((f) => f.code === 'invalid-capture'), `${source}.${key} must fail closed instead of throwing or reporting healthy`);
+}
 const corrupt = structuredClone(healthy);
 corrupt.company.companies = [null];
 corrupt.announcements.rowCount = 4;

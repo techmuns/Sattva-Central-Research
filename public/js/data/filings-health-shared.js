@@ -8,6 +8,7 @@ export const FILINGS_HEALTH_FILES = {
 export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 36 };
 const object = (value) => value && typeof value === 'object' && !Array.isArray(value);
 const stamp = (value) => typeof value === 'string' ? Date.parse(value) : NaN;
+const count = (value) => Number.isSafeInteger(value) && value >= 0;
 
 export function assessFilingsHealth(captures, { now = Date.now(), sources = Object.keys(FILINGS_HEALTH_FILES) } = {}) {
   const findings = [];
@@ -21,7 +22,7 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
   };
   for (const source of sources) {
     if (!Object.hasOwn(FILINGS_HEALTH_FILES, source)) throw new Error(`Unknown health source: ${source}`);
-    const body = captures[source];
+    const body = captures?.[source];
     if (!object(body)) { add(source, 'capture-unavailable', 'critical'); continue; }
     if (source === 'company') {
       if (body.version !== 1 || !Array.isArray(body.companies) || !body.companies.length || body.companies.some((c) => !object(c) || typeof c.ticker !== 'string' || !/^[A-Z0-9&._-]{1,80}$/.test(c.ticker)) || !object(body.sources)) {
@@ -62,10 +63,13 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
     } else {
       if (!object(body.byTicker)) { add(source, 'invalid-capture', 'critical'); continue; }
       const lists = Object.values(body.byTicker);
+      if (!count(body.rowCount) || (!object(body.failed) && !Array.isArray(body.failed)) ||
+          (Array.isArray(body.failed) && body.failed.some((failure) => typeof failure !== 'string' && !object(failure))) ||
+          ['failedCount', 'fallbackCount'].some((key) => body[key] !== undefined && !count(body[key]))) add(source, 'invalid-capture', 'critical');
       if (lists.some((rows) => !Array.isArray(rows))) add(source, 'invalid-capture', 'critical');
       else if (Number.isFinite(body.rowCount) && body.rowCount !== lists.reduce((sum, rows) => sum + rows.length, 0)) add(source, 'row-count-mismatch', 'critical');
       age(source, body.capturedAt, source === 'insider' ? FILINGS_HEALTH_LIMITS.insiderHours : FILINGS_HEALTH_LIMITS.runHours, 'capture-overdue');
-      const failures = object(body.failed) ? Object.keys(body.failed) : Array.isArray(body.failed) ? body.failed.map((f) => typeof f === 'string' ? f : f.ticker || 'unknown') : [];
+      const failures = object(body.failed) ? Object.keys(body.failed) : Array.isArray(body.failed) ? body.failed.map((f) => typeof f === 'string' ? f : f?.ticker || 'unknown') : [];
       if (failures.length || body.failedCount > 0) add(source, 'source-read-failed', 'critical', failures, Math.max(failures.length, body.failedCount || 0));
       if (source === 'announcements') {
         if (Array.isArray(body.shortfall) && body.shortfall.length) add(source, 'pagination-shortfall', 'critical', body.shortfall.map((s) => s?.category || 'unknown'));
@@ -73,6 +77,7 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         if (Object.keys(body.unknownCategories || {}).length) add(source, 'unknown-source-categories', 'critical', Object.keys(body.unknownCategories));
         if (body.coversUniverse !== true) add(source, 'exchange-coverage-unverified', 'critical');
       } else {
+        if (!count(body.asked) || body.asked === 0 || !count(body.covered) || body.covered > body.asked || !object(body.fallback)) add(source, 'invalid-capture', 'critical');
         const fallback = Object.keys(body.fallback || {});
         // Retained rows must not hide a failed or unfinished latest company read.
         if (fallback.length || body.fallbackCount > 0) add(source, 'company-reads-incomplete', 'critical', fallback, Math.max(fallback.length, body.fallbackCount || 0));
