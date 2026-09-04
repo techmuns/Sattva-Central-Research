@@ -100,7 +100,7 @@ export function mountXChatter(root) {
       </div>
       ${selected?.partial ? '<p class="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">This company’s search was capped or incomplete. More posts may exist on X.</p>' : ''}
       ${posts.length ? posts.map(postCard).join('') : `<p class="p-8 text-center text-sm text-slate-500">${payload?.status === 'free-only'
-        ? 'Open Company coverage and searches below to read posts on X. Automatic company-wide collection requires paid X access and is disabled.'
+        ? 'Open Company coverage and searches below to read posts on X. The official automatic search connection costs money and is disabled.'
         : payload?.status === 'setup-required' || !records.length
         ? 'Company searches are ready. Posts will appear after the official API is connected and collection starts.'
         : 'No cached posts match these filters. Try a wider date range and check company coverage below; an unread or limited search is not proof of no activity.'}</p>`}
