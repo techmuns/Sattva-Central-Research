@@ -4144,8 +4144,9 @@ NSE announcements); all other companies remain explicitly unchecked for the new 
 Insider source columns are preserved, while repeat representations of the same economic event are
 collapsed across captures and providers. The four lists are captured every 30 minutes with a
 25-minute job budget; an incomplete or structurally changed list leaves the last-good snapshot
-untouched. Company filings capture runs before the trade capture; either successful capture can
-publish its saved progress even if the other step fails. Health checks run after that publication.
+untouched. Trades run first; the slower company-filings capture joins only the separate two-hour
+schedule. Either successful capture can publish its saved progress. Health checks run after that
+publication, and ordinary 30-minute trade runs are not failed by unrelated company-source gaps.
 
 The BSE job also runs every two hours on all days, overlapping two days and recovering from the
 last completed date if a scheduled run was missed. A source pagination shortfall or unknown

@@ -3,15 +3,17 @@ name: Filings and four-category trades refresh
 env:
   FAMILY_HOLDINGS_LIVE: 'true'
 
-# Domestic documents and the four market-wide Screener trade lists share one publication job.
-# Screener is incremental after a 30-day bootstrap: each pass rereads overlapping newest pages,
-# and the snapshot changes only when Bulk, Block, SAST and Insider all parse successfully.
+# The four Screener lists run every 30 minutes and always run first. The slower company-filings
+# checkpoint keeps its two-hour cadence without delaying ordinary trade refreshes. Screener is
+# incremental after a 30-day bootstrap and publishes only when all four lists parse successfully.
 
 on:
   schedule:
     # Offset from the top of the hour, when GitHub's shared scheduler is busiest. The dashboard's
     # watchdog dispatches this same workflow when a scheduled run is late.
     - cron: "17,47 * * * *"
+    # Preserve the existing company-filings capture without putting it on the 30-minute cadence.
+    - cron: "30 */2 * * *"
   workflow_dispatch:
     inputs:
       source:
@@ -45,11 +47,6 @@ jobs:
           test -x "$(command -v google-chrome)"
           echo "SCREENER_CHROME_PATH=$(command -v google-chrome)" >> "$GITHUB_ENV"
 
-      - name: Capture company announcements and domestic filings
-        id: company
-        timeout-minutes: 25
-        run: node scripts/capture-company-filings.mjs
-
       - name: Capture all four Screener trade categories
         id: insider
         timeout-minutes: 25
@@ -62,6 +59,12 @@ jobs:
           DEBUG: ""
           PWDEBUG: ""
         run: node scripts/scrape-screener-trades.mjs
+
+      - name: Capture company announcements and domestic filings
+        id: company
+        if: ${{ !cancelled() && github.event_name == 'schedule' && github.event.schedule == '30 */2 * * *' }}
+        timeout-minutes: 25
+        run: node scripts/capture-company-filings.mjs
 
       - name: Upload insider-trades data
         if: always()
@@ -96,8 +99,14 @@ jobs:
 
       # Run after snapshot publication: a bad source must mark the job failed without discarding
       # useful rows and checkpoints already collected by the successful capture steps.
-      - name: Check operational capture health
-        if: always()
+      - name: Check trade capture health
+        if: ${{ always() && steps.company.outcome == 'skipped' }}
+        env:
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
+        run: node scripts/check-filings-health.mjs insider
+
+      - name: Check filing and trade capture health
+        if: ${{ always() && steps.company.outcome != 'skipped' }}
         env:
           FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
         run: node scripts/check-filings-health.mjs company insider

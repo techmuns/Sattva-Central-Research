@@ -129,9 +129,11 @@ try {
   data = healthy;
   await promisify(execFile)(process.execPath, ['scripts/check-filings-health.mjs'], options);
   assert.equal(JSON.parse(readFileSync(report)).status, 'healthy');
-  for (const workflow of ['announcements-refresh.yml', 'insider-trades-refresh.yml']) {
-    const yaml = readFileSync(new URL(`../.github/workflows/${workflow}`, import.meta.url), 'utf8');
-    assert(yaml.indexOf('Check operational capture health') > yaml.indexOf('git push origin HEAD:main'), 'health gate runs after preserving/publishing captured progress');
+  const announcementsWorkflow = readFileSync(new URL('../.github/workflows/announcements-refresh.yml', import.meta.url), 'utf8');
+  assert(announcementsWorkflow.indexOf('Check operational capture health') > announcementsWorkflow.indexOf('git push origin HEAD:main'), 'announcement health gate runs after preserving/publishing captured progress');
+  const insiderWorkflow = readFileSync(new URL('../.github/workflows/insider-trades-refresh.yml', import.meta.url), 'utf8');
+  for (const gate of ['Check trade capture health', 'Check filing and trade capture health']) {
+    assert(insiderWorkflow.indexOf(gate) > insiderWorkflow.indexOf('git push origin HEAD:main'), `${gate} runs after preserving/publishing captured progress`);
   }
 } finally { await new Promise((resolve) => server.close(resolve)); rmSync(scratch, { recursive: true, force: true }); }
 console.log('PASS source health failures, fixed initial grace, stale checks, retained-data incidents, HTTP 503, read-only caching and workflow gate ordering');
