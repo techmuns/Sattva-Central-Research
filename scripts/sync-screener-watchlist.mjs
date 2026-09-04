@@ -85,9 +85,14 @@ async function importAdditions(page, additions) {
     buffer: Buffer.from(additionsCsv(additions)),
   });
   const form = input.locator('xpath=ancestor::form[1]');
-  await form.locator('button[type="submit"], input[type="submit"]').first().click();
+  const [response] = await Promise.all([
+    page.waitForResponse(candidate => candidate.request().method() === 'POST' && new URL(candidate.url()).pathname === IMPORT_PATH),
+    form.locator('button[type="submit"], input[type="submit"]').first().click(),
+  ]);
+  if (response.status() < 200 || response.status() >= 400) throw new Error('Screener rejected the import request');
   await page.waitForLoadState('domcontentloaded');
   if (new URL(page.url()).origin !== ORIGIN) throw new Error('Unexpected import result');
+  if (await page.locator('.errorlist li, .alert-danger, .messages .error').count()) throw new Error('Screener reported an import error');
 }
 
 async function removeCompanies(page, matches) {
