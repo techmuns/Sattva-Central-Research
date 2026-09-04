@@ -32,6 +32,13 @@ export const SCREENER_TRADE_HEADERS = [
   'Source',
 ];
 
+/** Whether this listing page has reached an exact event retained from its prior capture. */
+export function hasScreenerTradeOverlap(previousIdentities, rows) {
+  return previousIdentities instanceof Set
+    && previousIdentities.size > 0
+    && (Array.isArray(rows) ? rows : []).some((row) => previousIdentities.has(insiderTradeIdentity(row)));
+}
+
 const clean = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 const compact = (value) => clean(value).replaceAll(',', '');
 const nonempty = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value != null && clean(value) !== ''));

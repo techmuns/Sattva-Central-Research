@@ -2232,8 +2232,9 @@ person role/security/quantity for Insider. `Trade Category` is the one dashboard
 what makes the four-way Category filter exact. Source-specific wording remains unchanged.
 
 The first successful run follows pagination back 30 days for every list. Later runs reread at least
-two newest pages and continue until they overlap the previous source's newest date, so a burst larger
-than one page is not skipped. `sources[].coverageFrom` preserves the initial complete boundary while
+two newest pages and continue until they encounter an exact event identity from the previous source
+snapshot, so a high-volume burst of same-day rows cannot be mistaken for overlap merely because its
+date matches. `sources[].coverageFrom` preserves the initial complete boundary while
 `windowDays: 365` is the retention boundary; the UI does not pretend those are the same fact. All four
 lists must authenticate, retain the expected five headings and parse every visible row before the
 snapshot changes. A redirect to login, one missing list, a changed table shape or a pagination cap

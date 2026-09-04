@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { archiveFilings } from './lib/filing-archive.mjs';
 import {
   buildScreenerTradesSnapshot,
+  hasScreenerTradeOverlap,
   normaliseScreenerTrade,
   SCREENER_TRADE_SOURCES,
 } from './lib/screener-trades.mjs';
@@ -83,7 +84,7 @@ async function extractRows(page, url) {
   return raw;
 }
 
-async function scrapeSource(page, source, previousMeta) {
+async function scrapeSource(page, source, previousMeta, previousIdentities = new Set()) {
   page.setDefaultTimeout(30_000);
   page.setDefaultNavigationTimeout(45_000);
   const rows = [];
@@ -93,7 +94,7 @@ async function scrapeSource(page, source, previousMeta) {
   let complete = false;
   let sourceStage = 'page navigation';
   let currentPage = 0;
-  const stopAt = previousMeta?.latestDate || bootstrapFrom;
+  const fallbackBoundary = previousMeta?.coverageFrom || bootstrapFrom;
 
   try {
     for (let pageNumber = 1; pageNumber <= MAX_PAGES; pageNumber++) {
@@ -131,7 +132,13 @@ async function scrapeSource(page, source, previousMeta) {
         try { return Number(new URL(link.href).searchParams.get('p')) === nextPage; }
         catch { return false; }
       }), pageNumber + 1);
-      const reachedKnownData = pagesRead >= OVERLAP_PAGES && pageOldest && pageOldest <= stopAt;
+      // A date alone is not overlap: hundreds of new Bulk rows can share one date and push older
+      // same-day rows beyond page two. Once bootstrapped, stop only after an exact prior event is
+      // seen. The date boundary is reserved for a first run or recovery from legacy metadata that
+      // did not retain source ids.
+      const reachedPriorEvent = hasScreenerTradeOverlap(previousIdentities, parsed);
+      const reachedFallbackBoundary = previousIdentities.size === 0 && pageOldest && pageOldest <= fallbackBoundary;
+      const reachedKnownData = pagesRead >= OVERLAP_PAGES && (reachedPriorEvent || reachedFallbackBoundary);
       if (!hasNext || reachedKnownData) {
         complete = true;
         break;
@@ -211,13 +218,17 @@ try {
   stage = 'four-category capture';
   const previous = readPrior();
   const previousSources = new Map((previous?.sources || []).map((source) => [source.id, source]));
+  const previousRows = flatten(previous);
   console.log('Authenticated session handed to the four-category capture.');
   // Keep one authenticated listing request in flight at a time. Screener is the source of truth,
   // not a high-throughput API, and concurrent page walks can trip its protective throttling.
   const captures = [];
   for (const source of SCREENER_TRADE_SOURCES) {
     console.log(`Starting ${source.id} capture.`);
-    captures.push(await scrapeSource(login, source, previousSources.get(source.id)));
+    const previousIdentities = new Set(
+      previousRows.filter((row) => row.sourceId === source.id).map(insiderTradeIdentity),
+    );
+    captures.push(await scrapeSource(login, source, previousSources.get(source.id), previousIdentities));
   }
   await login.close();
 
