@@ -15,6 +15,7 @@ import { companyCaptureStatus } from '../data/company-captures.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime, formatNumber } from '../core/format.js';
 import * as coverage from '../data/coverage.js';
+import { assertRecentCheck } from '../data/family-book-contract.js';
 import * as concalls from '../data/concall-scans.js';
 import * as earningsLive from '../data/earnings-live.js';
 import * as chatter from '../data/chatter-live.js';
@@ -176,6 +177,22 @@ function twitterSources() {
   });
 }
 
+/** Connection health belongs in Sources, independently of workbook period dates. */
+export function portfolioSource() {
+  const book = coverage.meta();
+  let connected = ['live', 'family-session', 'family-checking'].includes(book.syncStatus) &&
+    (typeof navigator === 'undefined' || navigator.onLine !== false);
+  try { assertRecentCheck(book.syncedAt); } catch { connected = false; }
+  return {
+    id: 'family-portfolio', name: 'Family Office portfolio', url: null,
+    // Configured automatic feed; readState reports whether its latest check succeeded.
+    status: 'live', readState: connected ? 'read' : 'unavailable',
+    readLabel: connected ? 'Connected' : 'Not connected',
+    feeds: connected ? 'Holdings synced from Family Office.' : 'Showing saved holdings until the connection returns.',
+    cadence: 'Connection checked every minute.',
+  };
+}
+
 /**
  * Built fresh on every open, so every figure in it is the one the tabs are showing right now.
  * Call it — do not hoist the result into a module-level const, which is how the numbers went
@@ -185,7 +202,6 @@ export function sourceGroups() {
   const uni = num(() => technicals.all().length);
   const reported = num(() => earningsLive.all().length);
   const calls = num(() => concalls.all().length);
-  const book = coverage.isLoaded?.() ? coverage.meta() : null;
   // Read from the module the view reads, like every other figure here — never typed.
   const si = { count: num(() => superInvestors.meta().loadedBooks) };
   const chat = num(() => chatter.all().length);
@@ -585,25 +601,11 @@ export function sourceGroups() {
       items: twitterSources(),
     },
     {
+      id: 'portfolio',
       title: 'Portfolio scope',
       icon: '💼',
       tabs: 'Every research tab',
-      items: [
-        {
-          name: 'Direct-equity statement — the book',
-          url: null,
-          feeds:
-            `What the Portfolio toggle means on every research tab, and <strong>the only portfolio information this ` +
-            `dashboard holds</strong>.${clause(book?.count, ' <n> company lines')} read from Family Office's active shared workbook ` +
-            `through its protected holdings export and resolved with the same ISIN/ticker rules as the scheduled snapshot. ` +
-            `<strong>Names and sectors only — no quantity, no cost, no value, ` +
-            `no valuation.</strong>${clause(book?.uncovered, ' <n> lines carry no NSE symbol')} (unlisted, warrants, the Vedanta demerger entities, ` +
-            `BSE-only, or unresolved); they are kept with the reason and shown as held-but-not-covered rather than dropped.`,
-          cadence: 'On load, every minute while visible, and on Refresh; reviewed snapshot retained when unavailable',
-          status: book?.syncStatus === 'live' ? 'live' : 'static',
-          file: 'public/data/portfolio-companies.json',
-        },
-      ],
+      items: [portfolioSource()],
     },
   ];
 }
@@ -682,8 +684,7 @@ export function sourcesModalHtml() {
                     <div class="text-[11px] leading-snug text-slate-500">${it.feeds}</div>
                     <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-400">
                       <span class="font-medium text-slate-500">${it.cadence}</span>
-                      <span>·</span>
-                      <code class="rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-500">${it.file}</code>
+                      ${it.file ? `<span>·</span><code class="rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-500">${it.file}</code>` : ''}
                     </div>`;
                   return it.url
                     ? `<a href="${it.url}" target="_blank" rel="noopener"

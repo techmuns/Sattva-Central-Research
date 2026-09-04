@@ -86,10 +86,10 @@ await test('shipped capture retains EAAA and all imported dated filings without 
   assert(capture.rows.some((r) => r.filingDate === '2026-09-04')); assert(capture.rows.every((r) => !('score' in r)));
   assert.equal(legacyIpoFilings([{ meta: { data_as_of: '2026-08-31' }, filings: [], ipo_market: { open_upcoming: [{ company_name: 'Not a filing' }] } }]).length, 0);
 });
-const presentationMeta = { sources: payload.sources, count: payload.rows.length, undated: 2, loaded: true, liveFailed: false };
+const presentationMeta = { sources: [...payload.sources, { id: 'ipo-platform', label: 'IPOPlatform', status: 'ok', checkedAt: at, note: 'Secondary publisher', delivery: 'scheduled' }], count: payload.rows.length, undated: 2, loaded: true, liveFailed: false };
 await test('source registry lists each official feed and keeps connection count separate from read health', () => {
   const group = ipoSourceGroup(presentationMeta, now());
-  assert.deepEqual(group.items.map((s) => s.id), IPO_SOURCES.map((s) => s.id));
+  assert.deepEqual(group.items.map((s) => s.id), [...IPO_SOURCES.map((s) => s.id), 'ipo-platform']);
   assert(group.items.every((s) => s.status === 'live' && s.readState === 'read'));
   const failed = ipoSourceGroup({ ...presentationMeta, sources: payload.sources.map((s) => s.id === 'bse-sme' ? { ...s, status: 'failed', note: 'Source unavailable', count: 0 } : s) }, now());
   const bse = failed.items.find((s) => s.id === 'bse-sme');
@@ -100,12 +100,12 @@ await test('source panel never labels unknown, cached, expired or future checks 
   assert(ipoSourceGroup({ ...presentationMeta, sources: [], loaded: false }, now()).items.every((s) => s.readState === 'unchecked'));
   assert(ipoSourceGroup({ ...presentationMeta, loaded: false }, now()).items.every((s) => s.readState === 'unconfirmed'));
   assert(ipoSourceGroup({ ...presentationMeta, liveFailed: true }, now()).items.every((s) => s.readState === 'unconfirmed'));
-  assert(ipoSourceGroup(presentationMeta, now() + 601000).items.every((s) => s.readState === 'dated'));
+  assert(ipoSourceGroup(presentationMeta, now() + 7201000).items.every((s) => s.readState === 'dated'));
   assert(ipoSourceGroup(presentationMeta, now() - 61000).items.every((s) => s.readState === 'dated'));
 });
 await test('moved coverage preserves cadence, missing dates, limits and safe source text', () => {
-  const group = ipoSourceGroup({ ...presentationMeta, capped: true, snapshotFailed: true, sources: payload.sources.map((s) => ({ ...s, note: '<img src=x onerror=alert(1)>', url: 'javascript:alert(1)' })) }, now());
-  assert(group.notes.some((s) => s.includes('No continuous collection while closed')));
+  const group = ipoSourceGroup({ ...presentationMeta, capped: true, snapshotFailed: true, sources: presentationMeta.sources.map((s) => ({ ...s, note: '<img src=x onerror=alert(1)>', url: 'javascript:alert(1)' })) }, now());
+  assert(group.notes.some((s) => s.includes('hourly by GitHub Actions even while closed')));
   assert(group.notes.some((s) => s.includes('2 without a supplied filing date')));
   assert(group.notes.some((s) => s.includes('BSE-only mainboard')));
   assert(group.notes.some((s) => s.includes('history limit')));

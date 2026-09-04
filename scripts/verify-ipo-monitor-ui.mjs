@@ -57,14 +57,14 @@ try {
   check('long source disclosure removed from the IPO table', await page.locator('#root [data-ipo-coverage]').count() === 0);
   await page.locator('[data-ipo-sources]').click();
   const ipoGroup = page.locator('[data-beacon-group="ipo-filings"]');
-  check('source shortcut opens existing beacon at all seven IPO sources', await ipoGroup.isVisible() && await ipoGroup.locator('[data-beacon-source]').count() === 7 && await page.locator('[data-beacon-notes="ipo-filings"] > summary').evaluate((el) => el === document.activeElement));
+  check('source shortcut opens existing beacon at all eight IPO sources', await ipoGroup.isVisible() && await ipoGroup.locator('[data-beacon-source]').count() === 8 && await page.locator('[data-beacon-notes="ipo-filings"] > summary').evaluate((el) => el === document.activeElement));
   check('live-feed and source totals are derived from the updated registry', await page.evaluate(async () => {
     const { sourceGroups } = await import('/js/ui/sources.js');
     const items = sourceGroups().flatMap((g) => g.items);
     return document.querySelector('[data-beacon-launch-count]').textContent === `${items.filter((s) => s.status === 'live').length} live feeds` && !items.some((s) => s.name.includes('public IPO monitor'));
   }));
   await page.locator('[data-beacon-notes="ipo-filings"] > summary').click();
-  check('coverage limitations moved into expandable source-panel details', (await ipoGroup.innerText()).includes('No continuous collection while closed') && (await ipoGroup.innerText()).includes('BSE-only mainboard'));
+  check('coverage limitations moved into expandable source-panel details', (await ipoGroup.innerText()).includes('hourly by GitHub Actions even while closed') && (await ipoGroup.innerText()).includes('BSE-only mainboard'));
   const bseDetails = page.locator('[data-beacon-source="bse-sme"]');
   await bseDetails.locator('summary').click();
   const originalBse = structuredClone(live.sources.find((s) => s.id === 'bse-sme'));
@@ -82,6 +82,24 @@ try {
   await page.locator('[data-table-search]').fill('Edelweiss Alternatives');
   check('issuer aliases are retained', await page.locator('[data-row-key]').count() >= 1);
   await page.locator('[data-table-search]').fill('');
+  live.companies = [{ id: '999999', company: 'Directory-only <img src=x onerror="window.ipoXss=1">', url: 'https://www.ipoplatform.com/ipo/directory-only/999999', board: 'SME', status: 'Upcoming', openingWindow: '10 Sep - 15 Sep', listingDate: '2026-09-18', observedAt: capture.checkedAt, retained: false }];
+  await page.evaluate(() => window.poll.fetcher());
+  await page.locator('[data-ipo-view]').selectOption('directory');
+  check('issuer directory uses same native table and includes companies without filings', await page.locator('[data-score-table]').count() === 1 && (await page.locator('[data-row-count]').innerText()).startsWith('1 of 1') && (await page.locator('[data-row-key]').innerText()).includes('Upcoming'));
+  check('publisher directory metadata is labelled and HTML escaped', (await page.locator('#root').innerText()).includes('not exchange confirmations') && await page.locator('[data-row-key] img').count() === 0 && await page.evaluate(() => !window.ipoXss));
+  const directoryDownload = page.waitForEvent('download'); await page.locator('[data-export]').click();
+  const directoryWorkbook = new ExcelJS.Workbook(); await directoryWorkbook.xlsx.readFile(await (await directoryDownload).path());
+  check('directory export includes publisher provenance and all matching issuers', directoryWorkbook.worksheets[0].name === 'IPO directory' && directoryWorkbook.worksheets[0].rowCount === 3);
+  failure = true; await page.locator('[data-ipo-refresh]').click(); await ready();
+  check('directory survives outage without a fresh label', await page.locator('[data-row-key]').count() === 1 && (await page.locator('[data-ipo-freshness]').innerText()).includes('unavailable'));
+  failure = false;
+  for (const width of [900, 390, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    check(`directory contains overflow at ${width}px`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    check(`directory search remains usable at ${width}px`, await page.locator('[data-table-search]').evaluate((el) => el.getBoundingClientRect().width >= 160));
+  }
+  await page.setViewportSize({ width: 1280, height: 850 });
+  await page.locator('[data-ipo-view]').selectOption('filings');
   await page.locator('[data-table-filter="1"]').selectOption('SME');
   await page.locator('[data-table-filter="2"]').selectOption('BSE SME');
   await page.locator('[data-table-filter="0"]').selectOption('DRHP / Draft prospectus');

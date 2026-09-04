@@ -2377,6 +2377,61 @@ not been integrated or verified here.
 
 ### IPOs — native official filing feed (4 Sep 2026)
 
+#### IPOPlatform scheduled supplement (4 Sep 2026)
+
+`ipo-platform-refresh.yml` requests an hourly capture at minute 17, independently of open
+browsers. `scripts/collect-ipo-platform.mjs` reads the public SME/mainboard DataTables endpoint
+with stable ID ordering and full pagination, the `/ipo` lifecycle table, and both
+`/ipo/drhp-filed-{sme,mainboard}-ipos` lists. Company ID, name, board, source page, publisher
+status, supplied dates and observation time are retained; financial estimates, ratings and
+publisher prose are not imported. Yearless opening windows remain yearless, not inferred from
+an adjacent listing date. Original draft/refiling dates are separate; an original draft date
+is not assigned to a potentially refiled document. Unusable document links do not erase issuers.
+
+The job has read-only repository/Actions permissions. Its only output is a validated gzip
+artifact (`ipo-platform-v1.json.gz`, upload-artifact v7, `archive:false`), not commits to main,
+deployments or upstream writes. Each successful run restores and merges the previous successful
+capture for that branch. Source shrinkage above 10%, incomplete/changing pagination, duplicate
+page IDs, unparseable issuer rows, history restore failures and size-limit breaches fail closed.
+Absent issuers/documents retain their original observation times. A verified first-ever run can
+bootstrap from the public sources; an API error or expired prior artifact cannot masquerade as
+that case. Artifacts expire after 30 days: healthy runs carry history forward, but a prolonged
+outage needs archive recovery. This is rolling retention, not a permanent independent backup.
+
+`worker/ipo-platform-collector.mjs` reads only this repository/workflow's successful **main**
+captures using the existing `GH_DISPATCH_TOKEN` Actions credential. PR refs are test dependency
+injection only, never request parameters. It validates run provenance, artifact metadata,
+SHA-256, gzip and the capture schema. Signed blob redirects use a narrow HTTPS host allowlist;
+the GitHub credential is never sent to blob storage. Both compressed (2 MiB) and decompressed
+(12 MiB) bodies are stream-bounded with deadlines. A separate successful-run query preserves
+the previous good capture even during a long failure streak. It never dispatches a job.
+
+The existing `/api/ipo-filings` endpoint adds an eighth source and an optional `companies`
+directory. The seven-source bundled history stays backwards compatible. An exact official
+document URL suppresses its secondary IPOPlatform duplicate without changing official dates;
+distinct URLs are not assumed to be identical bytes. No PDF mirroring or fingerprint-based
+cross-host equivalence is claimed. Publisher document dates remain `documentDate`, with
+`filingDate:null`; the table visibly distinguishes them and Excel exports separate columns.
+General Alerts still relies on exchange filing dates rather than manufacturing dated events.
+
+The native IPO table offers **Filings** and **Issuer directory** views using the same screener
+kit. Directory status is publisher-reported as of the displayed observation, not proof that an
+issue is currently open or approved. Directory and filing history survive refresh/outage/reload
+in IndexedDB. The existing Data flowing in panel carries cadence and coverage details. Collector
+checks older than two hours, or a newer completed failed run, are dated/degraded even if the
+dashboard endpoint was just checked. Partial responses cache for 30 seconds, complete responses
+for five minutes. IPOPlatform supplements exchange discovery; it cannot guarantee completeness,
+independent document hosting, or instant publisher updates. Official feeds below stay on demand.
+
+Verification: `node scripts/verify-ipo-platform.mjs`, `node scripts/verify-ipo-filings.mjs`, and
+the existing IPO browser suite cover pagination, retained history, 100 idempotent replays,
+source dates, unsafe links, artifact security, outage behavior, directory export and layout.
+Hosted collection and artifact restoration must also pass on the PR; offline fixtures alone
+are not evidence of GitHub network reachability.
+
+The following describes the original official-source portion, with the scheduled supplement
+and directory behavior above taking precedence where noted.
+
 The primary IPOs tab now uses the **same `scoreTable` and `sectionHead` as NSE Filings**:
 white table, dashboard typography/avatars, newest-first dates, search, filing/board/source filters,
 history ranges and filtered Excel export. It is automatically populated for all issuers regardless
