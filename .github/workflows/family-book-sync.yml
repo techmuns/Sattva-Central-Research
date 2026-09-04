@@ -51,6 +51,8 @@ jobs:
           PWDEBUG: ""
         run: node scripts/sync-screener-watchlist.mjs
       - name: Open or update the fallback snapshot PR
+        id: fallback_snapshot
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v8.1.1
         with:
           token: ${{ secrets.FAMILY_SYNC_PR_TOKEN || github.token }}
@@ -65,3 +67,6 @@ jobs:
             Names-only fallback snapshot from Family Office's active shared workbook.
             Review additions/removals and required checks before merging. No auto-merge or deployment.
             Live Portfolio scope does not wait for this PR.
+      - name: Report an unavailable fallback snapshot PR
+        if: steps.fallback_snapshot.outcome == 'failure'
+        run: echo "::warning::The live portfolio and S Screen sync succeeded, but the optional fallback snapshot PR could not be opened."
