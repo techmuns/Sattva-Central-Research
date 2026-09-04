@@ -76,19 +76,24 @@ async function scrapeSource(context, source, previousMeta) {
   let oldestDate = null;
   let pagesRead = 0;
   let complete = false;
+  let sourceStage = 'page navigation';
   const stopAt = previousMeta?.latestDate || bootstrapFrom;
 
   try {
     for (let pageNumber = 1; pageNumber <= MAX_PAGES; pageNumber++) {
       const url = pageUrl(source, pageNumber);
+      sourceStage = 'page navigation';
       const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
       if (!response?.ok() || new URL(page.url()).pathname !== source.path) throw new Error('source unavailable');
+      sourceStage = 'session validation';
       if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw new Error('session unavailable');
+      sourceStage = 'table validation';
       const table = page.locator('#result_list');
       await table.waitFor({ state: 'visible' });
       const headers = await table.locator('thead th').allTextContents();
       if (headers.length !== 5) throw new Error('unexpected table shape');
 
+      sourceStage = 'row parsing';
       const raw = await extractRows(page, url);
       const parsed = raw.map((item) => normaliseScreenerTrade(source, item, { capturedAt })).filter(Boolean);
       if (!raw.length || parsed.length !== raw.length) throw new Error('unreadable rows');
@@ -101,13 +106,22 @@ async function scrapeSource(context, source, previousMeta) {
       latestDate = latestDate || pageLatest;
       oldestDate = pageOldest || oldestDate;
 
-      const hasNext = await page.locator(`.paginator a[href*="p=${pageNumber + 1}"]`).count() > 0;
+      sourceStage = 'pagination validation';
+      const hasNext = await page.locator('.paginator a[href]').evaluateAll((links, nextPage) => links.some((link) => {
+        try { return Number(new URL(link.href).searchParams.get('p')) === nextPage; }
+        catch { return false; }
+      }), pageNumber + 1);
       const reachedKnownData = pagesRead >= OVERLAP_PAGES && pageOldest && pageOldest <= stopAt;
       if (!hasNext || reachedKnownData) {
         complete = true;
         break;
       }
     }
+  } catch {
+    // A fixed source id and stage are operationally useful without exposing page text, form values,
+    // cookies or browser exceptions in a shared Action log.
+    console.error(`${source.id}: capture stopped during ${sourceStage}.`);
+    throw new Error('Screener source capture failed.');
   } finally {
     await page.close().catch(() => {});
   }
@@ -170,7 +184,12 @@ try {
   stage = 'four-category capture';
   const previous = readPrior();
   const previousSources = new Map((previous?.sources || []).map((source) => [source.id, source]));
-  const captures = await Promise.all(SCREENER_TRADE_SOURCES.map((source) => scrapeSource(context, source, previousSources.get(source.id))));
+  // Keep one authenticated listing request in flight at a time. Screener is the source of truth,
+  // not a high-throughput API, and concurrent page walks can trip its protective throttling.
+  const captures = [];
+  for (const source of SCREENER_TRADE_SOURCES) {
+    captures.push(await scrapeSource(context, source, previousSources.get(source.id)));
+  }
 
   stage = 'snapshot validation';
   const snapshot = buildScreenerTradesSnapshot(previous, captures, { capturedAt });
