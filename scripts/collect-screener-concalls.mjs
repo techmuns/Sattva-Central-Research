@@ -87,32 +87,34 @@ async function main() {
   let pagesFetched = 1;
 
   const readPage = async (number) => {
-    const response = await context.request.get(`${SCREENER_CONCALL_URL}?p=${number}`, {
-      failOnStatusCode: false,
-      headers: { accept: 'text/html', 'user-agent': 'Sattva-Screener-Concall-Collector/1.0' },
-      timeout: 45000,
-    });
-    const finalUrl = new URL(response.url());
-    if (!response.ok() || finalUrl.origin !== 'https://www.screener.in' || finalUrl.pathname !== '/concalls/') throw Error('Authenticated concall page unavailable');
-    const html = await response.text();
-    if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw Error('Screener concall page exceeds size limit');
-    const parsed = parseScreenerConcallPage(html);
-    if (parsed.publishedTotal !== first.publishedTotal || parsed.lastPage !== first.lastPage) throw Error('Screener pagination changed during collection');
-    return parsed.rows;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        // Use the authenticated browser page itself. A separate API-style request changes the
+        // browser fingerprint and can be refused even though it shares the same session cookie.
+        // Sequential navigation is also deliberately gentle: this daily audit is not urgent.
+        const response = await page.goto(`${SCREENER_CONCALL_URL}?p=${number}`, { waitUntil: 'domcontentloaded' });
+        const finalUrl = new URL(page.url());
+        if (!response?.ok() || finalUrl.origin !== 'https://www.screener.in' || finalUrl.pathname !== '/concalls/') throw Error('Authenticated concall page unavailable');
+        const html = await page.content();
+        if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw Error('Screener concall page exceeds size limit');
+        const parsed = parseScreenerConcallPage(html);
+        if (parsed.publishedTotal !== first.publishedTotal || parsed.lastPage !== first.lastPage) throw Error('Screener pagination changed during collection');
+        await page.waitForTimeout(120);
+        return parsed.rows;
+      } catch (error) {
+        if (attempt === 3) throw error;
+        await page.waitForTimeout(500 * attempt);
+      }
+    }
+    throw Error('Screener concall page unavailable');
   };
 
   if (full) {
     stage = 'full history crawl';
-    let next = 2;
-    const workers = Array.from({ length: Math.min(4, Math.max(0, first.lastPage - 1)) }, async () => {
-      while (next <= first.lastPage) {
-        const number = next++;
-        const rows = await readPage(number);
-        collected.push(...rows);
-        pagesFetched++;
-      }
-    });
-    await Promise.all(workers);
+    for (let pageNumber = 2; pageNumber <= first.lastPage; pageNumber++) {
+      collected.push(...(await readPage(pageNumber)));
+      pagesFetched++;
+    }
   } else if (!firstIsKnown) {
     stage = 'incremental crawl';
     for (let pageNumber = 2; pageNumber <= first.lastPage; pageNumber++) {

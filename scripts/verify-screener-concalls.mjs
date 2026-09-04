@@ -128,10 +128,13 @@ test('Worker accepts only trusted, digest-verified Actions artifacts', async () 
 
 test('workflow is incremental every 15 minutes and audits the full history daily', () => {
   const workflow = readFileSync(new URL('../.github/workflows/screener-concalls-refresh.yml', import.meta.url), 'utf8');
+  const collector = readFileSync(new URL('./collect-screener-concalls.mjs', import.meta.url), 'utf8');
   assert.match(workflow, /cron: '\*\/15 \* \* \* \*'/);
   assert.match(workflow, /cron: '7 1 \* \* \*'/);
   assert.match(workflow, /SCREENER_FULL_REFRESH/);
   assert.match(workflow, /actions\/upload-artifact@v7/);
   assert.match(workflow, /archive:\s*false/, 'the Worker consumes the direct gzip, not a zip wrapper');
   assert.doesNotMatch(workflow, /git push|contents:\s*write/);
+  assert.match(collector, /page\.goto\(`\$\{SCREENER_CONCALL_URL\}\?p=\$\{number\}`/);
+  assert.doesNotMatch(collector, /context\.request|get\([^)]*user-agent/i, 'history pages retain the authenticated browser fingerprint');
 });
