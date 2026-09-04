@@ -15,6 +15,7 @@ const eventsFor = (ticker, company, day = '2026-09-04') => feeds.map((feed, i) =
 const events = Array.from({ length: 11 }, (_, i) => eventsFor(`A${String(i).padStart(2, '0')}`, i === 10 ? 'Zenith Manufacturing' : `Company ${String(i).padStart(2, '0')}`)).flat();
 events.find((e) => e.ticker === 'A01').time = null;
 events.push({ ...events[30], id: 'hidden-event', importance: 'low', headline: 'Lithium supply agreement hidden beyond the evidence preview' });
+events.push({ ...events[0], id: 'context-document', aiEligible: false, kind: 'document', importance: 'low', direction: 'neutral', headline: 'Material risk source document', detail: 'Underlying source record' });
 events.push(...eventsFor('OLD', 'Old signal', '2026-08-29'));
 events.push({ ...events[1], id: 'important-event', ticker: 'ZIMP', company: 'Important Company', direction: 'neutral' });
 const holdings = [...new Map(events.map(e => [e.ticker, { ticker: e.ticker, name: e.company }])).values()]
@@ -114,6 +115,8 @@ try {
   await peer.evaluate(() => window.releasePositions());
   await settled();
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
+  assert.match(await card('A00').locator('[data-ai-context]').innerText(), /Related context/);
+  assert.equal(await card('A00').locator('[data-ai-context]').getAttribute('title'), 'Context only; it does not add alert priority.');
   assert.equal(await card('A10').count(), 0, 'target starts beyond the first page');
   const search = page.getByRole('searchbox', { name: 'Search AI Alerts' });
   await search.fill('lithium supply');

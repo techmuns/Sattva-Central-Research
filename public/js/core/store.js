@@ -81,6 +81,10 @@ export const KEYS = {
   // rather than a slice of `marketNews`: the two are separate captures with separate ETags, and a
   // post landing must not invalidate 600 publisher stories.
   twitterPosts: 'twitter-posts',
+  // Source-backed operating metrics extracted by Screener from company documents. One daily
+  // artifact covers the public universe and the synchronized portfolio; it is conditional and
+  // disk-backed because the series change far less often than a dashboard session.
+  screenerInsights: 'screener-insights',
 };
 
 // The in-memory tier. Always written, so a reader that lands during an IndexedDB round trip still

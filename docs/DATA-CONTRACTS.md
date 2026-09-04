@@ -3837,8 +3837,24 @@ The score begins with the strongest event and then adds smaller company-level co
 
 Every contribution is returned as `{ label, points }` in `scoreBreakdown` for deterministic ordering and verification, but the score arithmetic is not rendered on the card.
 The derived `insight`, `metrics` and `badge` values are templates over those structured facts, not
-generated claims — see *The card's reading layer* below. `rankReport(report, { holdings })` is pure and exported so every product-rule branch can be
+generated claims — see *The card's reading layer* below. `rankReport(report, { holdings,
+positionSizes, insightCompanies })` is pure and exported so every product-rule branch can be
 verified with fixtures independently of what happens to be in today's capture.
+
+`holdings` is the public names-only coverage list. It decides membership and sector context; it
+does not contain money. In the authenticated Family host, `positionSizes.holdings` is the separately
+validated, complete positions response. Its weights only order already-surfaced cards and print as
+`% of listed portfolio`; they never add points, create an alert, change direction or survive in the
+public seven-day cache. If the private payload is incomplete or unavailable, evidence order wins.
+
+After scoring, `js/data/intelligence-graph.js` searches every same-company row in the full All Alerts
+pool, including `aiEligible: false` filings, documents, snapshots and schedules. A context row must
+come from a readable source and pass company, time and topic tests. Unsupported company attribution
+is rejected; slow Screener operating series require a shared topic, except that a material change can
+sit beside an earnings/con-call trigger. At most three independent-source-first context rows and two
+future milestones are attached. They contribute **zero priority points** and cannot originate a
+card. AI Alerts renders only one linked context sentence; Ask Research receives the same structured
+`relatedContext` and `upcoming` evidence.
 
 ### Cross-feed patterns — `confluenceOf(events, { feedById })`
 
@@ -3883,6 +3899,39 @@ never parsed back out of a sentence.
 `cardBadge(card)` names the action rather than the band: a directional disagreement reads
 `Reconcile`, because that changes what the reader does next and `Important` does not. The band
 itself stays on the card as `data-priority` and in the filter chips.
+
+### Screener company Insights — authenticated capture, context only
+
+Screener's company `#insights` tables are captured because they contain source-backed operating
+series that do not exist in the headline feeds: production, sales volumes, capacity and similar
+company-specific measures. Yearly and quarterly remain separate. Every point retains the period,
+display value, parsed numeric value when available, unit, and the tooltip's source title, bounded
+quote, page and HTTP(S) source URL. A missing section is recorded as a successful company read with
+zero rows; page text is data and is never treated as an instruction.
+
+`.github/workflows/screener-insights-refresh.yml` runs daily at 02:17 UTC using the existing
+Screener secrets. The first pass (and any pass after more than eight days without complete coverage)
+reads the complete 535-company universe plus the exact synchronized S Screen portfolio. Portfolio
+membership comes from Screener's full verified watchlist export, not the possibly paginated links
+visible on one page. Subsequent daily passes re-read every portfolio company and one stable seventh
+of the remaining universe with three browser pages and a short inter-company pause. A partial pass
+replaces companies it successfully checked, retains the last valid rows for failed/unvisited current
+targets, forgets removed targets and keeps `fullCoverage: false` when the latest check failed.
+
+The validated gzip artifact is `screener-insights-v1.json.gz`, retained for 30 days. Its public
+contract is bounded to 1,000 companies, 40 metrics per company, 16 points per series, 24 MB raw and
+4 MB compressed. It contains public company data only: no credential, cookies, account HTML,
+downloaded export or error text enters the artifact or logs. The Worker accepts only a digest-matched
+artifact from the fixed repository, workflow, ref and successful trusted run, follows only a bounded
+GitHub signed-download host, decompresses under the raw limit and re-validates the entire shape.
+
+`GET /api/screener-insights` serves that one shared capture with an ETag and five-minute edge cache.
+A missing/stale (older than 36 hours), incomplete or latest-failed capture requests one background
+workflow dispatch behind a 30-minute cooldown; it never blocks or empties the twenty All Alerts
+feeds. The browser keeps a conditional IndexedDB last-good copy under `screener-insights`. Ask
+Research reports the source unavailable until the first valid
+capture exists. Insights remain context-only everywhere: they cannot produce an All Alerts event or
+an AI Alerts card by themselves.
 
 ### `sattva:ai-muted:v1` — the archive, device-local
 
@@ -3962,8 +4011,8 @@ shipped capture, 40 of 603 companies clear 2x and 16 clear 3x.
 
 ## All Alerts history — DERIVED, no file and no route of its own
 
-`js/data/daily-alerts.js` writes nothing and introduces no route of its own. It calls the loaders of
-all eight research tabs and returns readings in one of two modes: the default one-day report, or `includeHistory: true`
+`js/data/daily-alerts.js` writes nothing and introduces no route of its own. It normalizes all
+twenty supported dashboard categories and returns readings in one of two modes: the default one-day report, or `includeHistory: true`
 for every retained row through the requested **Indian trading date**. All Alerts and AI Alerts use history
 mode; its table progressively paints the rows inside one fixed-height scroller, newest first.
 
@@ -3978,6 +4027,17 @@ mode; its table progressively paints the rows inside one fixed-height scroller, 
 | `insider` | Insider Trades | retained insider and promoter disclosures (up to 365 days in the current source contract) |
 | `news` | News | retained stories about a company in scope (30-day source window) |
 | `market-news` | News | retained market-wide stories — no company, so Universe only; bounded by the capture's keep limit |
+| `nse-filings` | NSE Filings | all retained NSE filings, including unresolved and undated rows |
+| `twitter` | News | captured posts from monitored X accounts; no inferred company mapping |
+| `ipos` | IPOs | retained official-source IPO filings and explicitly dated market observations |
+| `earnings-calendar` | Earnings Hub | captured scheduled result dates; a schedule is not a filing |
+| `scheduled-concalls` | Con-call | future calls returned by the con-call source; not held-call evidence |
+| `screener-portfolio-upcoming` | All Alerts | S Screen portfolio AGMs, ballots, results, calls and other scheduled events |
+| `investor-positions` | Super Investors | all retained disclosed positions, including unchanged and filing-due states |
+| `institutions` | Super Investors | institutional holdings and former holdings, preserving company-ownership vs fund-NAV meaning |
+| `chatter-posts` | Public Chatter | individual posts already requested in that tab; session/on-demand coverage only |
+| `company-documents` | Corp Announcements | combined-filings lookup results already requested in the session; private and on-demand |
+| `drhp-documents` | IPOs | private DRHP lookup results already requested in the session; not discovery |
 
 News appears twice because that tab owns company and market-wide feeds. Adding a source is an entry
 in `FEEDS` plus a collector — nothing else in the module is special-cased by feed id.
@@ -4042,6 +4102,8 @@ depending on what the feed is:
 | Earnings, Con-calls, Announcements, Insider, News, Market news | `capturedDay >= day` | rows carry their own date, so a later capture still covers an earlier day |
 | Price moves, Chatter | `snapshotDay === day`, **equals, not `>=`** | these are single capture views; chatter is a rolling snapshot |
 | Investor activity | `bookConfirmationDay === day` | moves are quarterly disclosure comparisons; each row follows the confirmation represented by its current investor book, not an older seed snapshot |
+| NSE filings, X posts, IPO filings, earnings calendar, scheduled calls, portfolio calendar, institutional/position snapshots | owning capture/confirmation day reaches `day` and is complete | rows keep their own event or scheduled date, while coverage belongs to the source check |
+| Chatter posts, company documents, private DRHP documents | `null` / on-demand | only records explicitly opened in this session are represented; silence makes no universe-wide claim |
 
 A feed nobody has heard from yet is `pending`, which the panel draws as *reading…* and never as
 *nothing today* — a half-finished read must not be allowed to give a finished answer.

@@ -16,6 +16,8 @@
 
 import * as generalAlerts from './daily-alerts.js';
 import * as coverage from './coverage.js';
+import * as screenerInsights from './screener-insights.js';
+import { enrichCardFromAllAlerts } from './intelligence-graph.js';
 
 export const WINDOW_DAYS = 7;
 export const MIN_SCORE = 64;
@@ -358,6 +360,7 @@ const PLAIN_PATTERN = {
 export const FEED_TAG = {
   earnings: 'RESULT',
   concalls: 'CALL',
+  'screener-insights': 'INSIGHT',
   announcements: 'FILING',
   insider: 'INSIDER',
   investors: 'FUND',
@@ -608,12 +611,16 @@ function directionSummary(events) {
  * product rules; testing only whatever today's capture happens to contain would leave branches
  * unexercised most days.
  */
-export function rankReport(report, { holdings = coverage.holdings(), positionSizes = null } = {}) {
+export function rankReport(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all() } = {}) {
   const day = report?.day || generalAlerts.today();
   const firstDay = shiftDay(day, -(WINDOW_DAYS - 1));
   const weights = new Map();
   if (report?.scope === 'portfolio' && positionSizes?.sizes.complete) {
-    for (const h of holdings) {
+    // The authenticated positions payload owns weights. `coverage.holdings()` intentionally does
+    // not persist them, so reading only that public identity list made the production path claim it
+    // was sorting by size while `weights` was empty. Tests may still pass weighted holdings as a
+    // direct pure-function fixture; the real session uses `positionSizes.holdings`.
+    for (const h of positionSizes.holdings || holdings) {
       if (h.ticker && Number.isFinite(h.weightPct)) {
         const ticker = h.ticker.toUpperCase();
         weights.set(ticker, (weights.get(ticker) || 0) + h.weightPct);
@@ -724,7 +731,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     card.insight = plainInsight(card);
     card.metrics = cardMetrics(card);
     card.badge = cardBadge(card);
-    return card;
+    return enrichCardFromAllAlerts(card, report, { insightCompanies });
   });
 
   cards.sort(
@@ -747,7 +754,10 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       sortedByHolding: weights.size > 0,
       firstDay,
       rawEvents: recent.length,
+      topFunnelEvents: (report?.events || []).length,
       dedupedEvents: cards.reduce((sum, card) => sum + card.events.length, 0),
+      contextualEvents: cards.reduce((sum, card) => sum + (card.contextEvents?.length || 0) + (card.upcomingEvents?.length || 0), 0),
+      insightsAvailable: insightCompanies.length,
       activeCompanies: cards.length,
       surfacedCompanies: surfaced.length,
       suppressedCompanies: cards.length - surfaced.length,
@@ -765,19 +775,21 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
 export async function cached({ scope = 'portfolio', holdings = null, positionSizes = null } = {}) {
   const book = holdings || coverage.holdings();
   const report = await generalAlerts.readCachedAlertWindow({ scope, holdings: book });
-  return report ? rankReport(report, { holdings: book, positionSizes }) : null;
+  return report ? rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() }) : null;
 }
 
 /** Collect General Alerts once and rank each partial/final report without adding any request. */
 export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, load = true, onPartial = null } = {}) {
   const book = holdings || coverage.holdings();
+  const insightRead = load ? screenerInsights.load({ refresh }).catch(() => null) : Promise.resolve(null);
   const report = await generalAlerts.collect({
     scope,
     holdings: book,
     includeHistory: true,
     refresh,
     load,
-    onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book, positionSizes })) : null,
+    onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() })) : null,
   });
-  return rankReport(report, { holdings: book, positionSizes });
+  await insightRead;
+  return rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() });
 }

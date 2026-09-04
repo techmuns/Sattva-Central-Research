@@ -27,6 +27,11 @@ See [the integration contract](docs/PORTFOLIO-INTEGRATION.md).
 portfolio company and surfaces the highest-signal evidence first. Materiality, recency, direction,
 real Portfolio membership, independent-feed corroboration, conflicts and sector clusters determine
 its internal ordering; cards show evidence and a next action without exposing score arithmetic.
+The shared company evidence graph also inspects every company-linked record in All Alerts—twenty
+feed categories in the current registry—and adds at most one concise, zero-score context line when
+time/topic proximity genuinely helps. Routine schedules, snapshots and documents can explain an
+alert but cannot create one. Screener's source-backed yearly/quarterly operating series use the same
+context-only boundary.
 Search covers company names, symbols, summaries and all underlying events, including evidence
 beyond the first page, within the selected scope and priority/archive filter. Each card shows its
 latest source signal date (not an AI generation timestamp, which is not recorded). Source times
@@ -48,15 +53,17 @@ Temporary Family Office failures retain the last verified company list and quiet
 available AI Alerts without exposing technical outage banners; expired access clears the private
 session. Private holding sizes remain in memory only.
 Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
-newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
-Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,
-importance and feed filters. Both views reuse the same feeds and add no source of their own.
+newest-first, internally scrollable history from all twenty normalized feed categories—material
+signals plus raw filings, schedules, snapshots, documents and posts—with date, direction,
+importance and feed filters. AI Alerts reuses that pool and adds no event of its own.
 
 **Ask Research** is a conversational workspace that assembles a bounded evidence
 packet from every dashboard data module, reports source coverage and provenance, and keeps its
 conversation library on the reader's device. The Worker sends the bounded packet to Muns' hosted
 LLM router and forwards each NDJSON text chunk immediately, so answers render progressively without
-exposing the session token or waiting for the complete model response.
+exposing the session token or waiting for the complete model response. The same deterministic
+company correlations, authenticated holding weights and Screener operating context supplied to AI
+Alerts travel in the packet, so the two surfaces cannot produce competing attention models.
 
 Static runtime, no bundler, no framework, no npm dependencies for the app itself.
 Vanilla ES modules and a committed, precompiled Tailwind stylesheet. Hosted as a Cloudflare Worker.

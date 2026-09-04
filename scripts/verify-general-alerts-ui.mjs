@@ -239,5 +239,5 @@ try {
   assert.equal(calls.length, count, 'destroy removes source listeners and does not start another read');
   assert(!calls.some((p) => /\/api\/(combined-filings|drhp-filings|super-investors\/)/.test(p)), 'no per-company fanout');
   assert.deepEqual(errors, [], 'zero application errors');
-  console.log('PASS: 19 feed categories, source updates, private-session clearing, filters, responsive layout and cleanup.');
+  console.log('PASS: 20 normalized feed categories (19 visible in Universe), source updates, private-session clearing, filters, responsive layout and cleanup.');
 } finally { await browser.close(); await new Promise((done) => server.close(done)); }

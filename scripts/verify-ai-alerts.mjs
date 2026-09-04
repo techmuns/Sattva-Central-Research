@@ -60,4 +60,31 @@ assert.equal(byPriority.cards[0].ticker, 'SMALL', 'public identities cannot acti
 assert(byPriority.cards.every(c => c.holdingWeightPct === null));
 assert.equal(rankReport({ ...report, scope: 'universe' }, { holdings: sizeHoldings, positionSizes: sizes }).cards[0].ticker, 'SMALL');
 assert.equal(rankReport(report, { holdings: sizeHoldings, positionSizes: { sizes: { complete: false } } }).cards[0].ticker, 'SMALL');
-console.log('PASS: authenticated size ordering, evidence priority preservation, unmatched denominator and missing-size fallback.');
+const publicIdentities = sizeHoldings.map(({ weightPct: _weightPct, ...holding }) => holding);
+const byAuthenticatedPayload = rankReport(report, { holdings: publicIdentities, positionSizes: sizes });
+assert.equal(byAuthenticatedPayload.cards[0].ticker, 'LARGE', 'production reads weights from the authenticated positions payload, not the public identity list');
+assert.equal(byAuthenticatedPayload.cards[0].holdingWeightPct, 20);
+
+const context = {
+  id: 'LARGE-raw-filing', ticker: 'LARGE', company: 'Large holding', feed: 'announcements',
+  day: '2026-09-04', headline: 'LARGE signal source document', detail: 'Underlying source record',
+  kind: 'document', aiEligible: false, importance: 'low', direction: 'neutral',
+};
+const contextOnly = {
+  id: 'CONTEXT-only', ticker: 'CONTEXT', company: 'Context only company', feed: 'announcements',
+  day: '2026-09-04', headline: 'Routine source document', kind: 'document', aiEligible: false,
+  importance: 'low', direction: 'neutral',
+};
+const routineSnapshot = {
+  ...context, id: 'LARGE-routine-snapshot', feed: 'investor-positions', feedLabel: 'Investor holdings',
+  headline: 'Quarterly holding disclosure snapshot', kind: 'snapshot',
+};
+const contextual = rankReport({ ...report, events: [...report.events, context, contextOnly, routineSnapshot], feeds: [...report.feeds, { id: 'investor-positions', status: 'ok', reachesToday: true }] }, { holdings: publicIdentities, positionSizes: sizes });
+const largeBefore = byAuthenticatedPayload.cards.find((card) => card.ticker === 'LARGE');
+const largeAfter = contextual.cards.find((card) => card.ticker === 'LARGE');
+assert.equal(largeAfter.score, largeBefore.score, 'context contributes zero priority points');
+assert.equal(largeAfter.contextEvents[0].id, context.id, 'the raw top-of-funnel record still enriches the card');
+assert.equal(largeAfter.contextEvents.some((event) => event.id === routineSnapshot.id), false, 'an unrelated routine snapshot does not clutter the alert');
+assert.equal(contextual.allCards.some((card) => card.ticker === 'CONTEXT'), false, 'context-only data cannot manufacture an AI alert');
+assert.equal(contextual.meta.topFunnelEvents, report.events.length + 3);
+console.log('PASS: authenticated size ordering, evidence priority preservation, full-pool zero-score context and missing-size fallback.');

@@ -28,15 +28,15 @@ which is exactly how a reader following an Ask Research citation ended up on a s
 money with nothing on the page that led back. **Portfolio here means the book of 142 company names
 and nothing else.** See §2 and `d3bba30` in git history.
 
-**Ask Research is the landing tab.** AI Alerts ranks the last seven days of company-specific events from all
-nine alert feeds into a concise portfolio priority queue. **All Alerts** keeps the complete
+**Ask Research is the landing tab.** AI Alerts ranks the last seven days of company-specific material events from the
+complete twenty-category All Alerts pool into a concise portfolio priority queue. **All Alerts** keeps the complete
 newest-first stream (News contributes company and market-wide feeds). Direction and importance stay
 separate, every General row states both reasons, and AI cards show the strongest evidence and next
 action without exposing score arithmetic. Both are derived views with no data source of their own.
 See §4c and §4e.
 
 **Ask Research** builds one bounded evidence packet from the runtime data modules behind every
-other research tab — fourteen sources, each one a tab the reader can actually open — recording a
+other research tab — sixteen sources, each one a tab the reader can actually open — recording a
 status for each so an unavailable feed cannot disappear silently. The Worker streams that packet through Muns'
 hosted LLM router and forwards each NDJSON text chunk as it arrives. The browser holds no provider
 credential; configure a Muns session-token secret. Conversation history is device-local, but each
@@ -280,6 +280,13 @@ events and next action, and keep the score arithmetic out of the UI. They link t
 pre-filtered for that company. A compact header status still names stale or unread feeds so a partial
 queue cannot look fully current.
 
+`js/data/intelligence-graph.js` then reads **all** company-linked rows in the normalized pool,
+including `aiEligible: false` filings, documents, snapshots and schedules. It attaches at most three
+related context records by company, source health, time and topic, plus the next known milestones.
+This layer contributes zero points: a routine row can explain a material trigger but can never
+create a card. Unsupported company-news attribution is excluded. One small linked context sentence
+is the only added card UI.
+
 The completed public seven-day event window is materialised under
 `ai-alerts:public-window:v1` in the existing IndexedDB store. A hard reload can rank and paint that
 window before the live collectors settle, then swap in one complete refreshed report. The stored
@@ -292,9 +299,11 @@ The model is deliberately deterministic rather than generative: the feeds alread
 structured facts needed to prioritise them, so a repeatable rule cannot invent a filing or silently
 change its mind. Single-feed neutral news noise stays below the threshold, and tickerless market
 news stays in All Alerts because it cannot honestly be attributed to a portfolio company.
-No position weight or conviction tier enters the ranking — there is no ledger here to take one
-from, and an invented weight must never decide what a real reader is told is urgent. `coverage.js`
-supplies the real 142-company membership and sector context.
+Inside the authenticated Family host, complete position weights order surfaced portfolio cards and
+appear as `% of listed portfolio`; they do not alter the score, priority, direction or certainty.
+The ranker reads them from `positionSizes.holdings`—never the public names-only coverage list—and
+falls back to evidence priority when the complete checked set is unavailable. `coverage.js`
+supplies membership and sector context only.
 
 ---
 
@@ -308,9 +317,9 @@ under the scope recorded on the generation, and those watchers sit at module lev
 while the tab is unmounted. An unsent draft is persisted with the conversation; a question
 interrupted by a page reload is handed back to the composer rather than re-sent, because a re-ask
 costs a model run.
-`js/research/estate.js` is the registry: fourteen adapters read the same modules as AI Alerts,
+`js/research/estate.js` is the registry: sixteen adapters read the same modules as AI Alerts,
 All Alerts, Earnings Hub, Con-call, Public Chatter, Breakouts, both Super Investor disclosures,
-both News feeds, exchange filings and Insider Trades. **Every source is a tab the reader can open**
+both News feeds, exchange filings, Insider Trades and Screener's source-backed Insights series. **Every source is a tab the reader can open**
 — the mock ledger was the fifteenth and cited itself as *Portfolio Analytics*, linking into a hidden
 workspace with no way back; `verify-research.mjs` now requires every route to start `#/research/`.
 Every adapter loads first
@@ -364,10 +373,10 @@ time**. **Upcoming** shows scheduled rows from today forward, nearest-first, and
 company/date/type when two calendars discover it. Both use the table kit's progressive body fill;
 their date filters only narrow loaded records and issue no new request.
 
-**All eight source tabs are represented.** Earnings Hub, Con-call, Public Chatter, Breakouts /
-Technical, Super Investors, News, Corp Announcements and Insider Trades. News contributes two feeds:
-the per-company search and the market-wide capture. Adding a source remains an entry in `FEEDS` plus
-a collector; no rendering behaviour is special-cased by feed id.
+**All twenty registered feed categories are represented.** They include the material readings plus
+raw NSE/IPO filings, earnings and call schedules, the portfolio calendar, investor/institutional
+snapshots, captured posts and session-only document lookups. Adding a source remains an entry in
+`FEEDS` plus a collector; no rendering behaviour is special-cased by feed id.
 
 **Direction and importance are independent readings.**
 
@@ -420,11 +429,11 @@ walk remains behind its owning tab's explicit control. It reports what changed b
 ids, never counts**: the day rolls over, captures land, stories drop off the end of a bounded cache,
 and a count cannot answer "did anything change" for a collection like that.
 
-**Feeds land one at a time and the page follows them.** The first version awaited all eight
+**Feeds land one at a time and the page follows them.** The first version awaited every feed
 together and the timeline sat blank for as long as the slowest — measured at 10–15 seconds on a
 static origin, because the chatter API is a direct call to somebody else's service and an
-unreachable host takes its own time to say so. Seven feeds that had already answered were held
-hostage by the one that had not. Now each settles independently and paints as it lands, coalesced
+unreachable host takes its own time to say so. Feeds that had already answered were held hostage
+by the one that had not. Now each settles independently and paints as it lands, coalesced
 into at most one repaint per 250 ms (a trailing throttle, not a debounce — a debounce would keep
 deferring while feeds kept landing). Measured after the change: first paint at **~250 ms**,
 everything settled by 3 s.

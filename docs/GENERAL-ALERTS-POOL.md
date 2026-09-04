@@ -75,10 +75,14 @@ coverage by the upstream.
 
 ## AI compatibility boundary
 
-This change expands collection, not priority policy. New raw record kinds carry `aiEligible: false`
-so unchanged holdings, routine snapshots and schedules do not manufacture independent corroboration
-or silently change existing AI rankings. AI still reads the All Alerts collector and applies
-its existing policy to supported signals. Mapping the new evidence into ranking is the next phase.
+Raw record kinds carry `aiEligible: false`, so unchanged holdings, routine snapshots and schedules
+do not manufacture urgency or change existing AI scores. `intelligence-graph.js` now uses those
+records as a second, zero-score context pass after a supported material trigger already created a
+candidate. Exact company identity is mandatory; source health, date distance and topic overlap rank
+the context, independent feeds are preferred, unsupported query-assigned news identities are
+excluded, and future schedules remain explicitly future. AI Alerts shows at most one linked context
+sentence. Ask Research receives the same correlations. This is enrichment, not a second priority
+policy.
 
 ## Verification
 

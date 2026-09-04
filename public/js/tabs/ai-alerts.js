@@ -442,6 +442,19 @@ function metricsMarkup(card) {
     </div>`;
 }
 
+// One sentence, only when the complete top-of-funnel pool has genuinely related context. This is
+// deliberately not another panel: the card stays the same shape and the source remains one click
+// away. Context contributes no alert score (see intelligence-graph.js).
+function contextMarkup(card, scope) {
+  if (!card.contextSummary) return '';
+  const event = card.contextEvents?.[0] || card.upcomingEvents?.[0];
+  if (!event) return '';
+  const destination = evidenceDestination(event, scope);
+  return `<a data-ai-context href="${escapeHtml(destination.href)}" ${destination.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
+    aria-label="${escapeHtml(destination.ariaLabel)}" title="Context only; it does not add alert priority."
+    class="mt-2 block text-xs leading-relaxed text-slate-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${escapeHtml(card.contextSummary)}</a>`;
+}
+
 function cardMarkup(card, scope, day, archived = false) {
   const badge = card.badge || { id: 'important', label: 'Important', tone: 'neutral' };
   const tone = {
@@ -472,6 +485,7 @@ function cardMarkup(card, scope, day, archived = false) {
         ${Number.isFinite(card.holdingWeightPct) ? `<p data-ai-holding-size class="mt-1 text-xs font-semibold text-indigo-700">${card.holdingWeightPct > 0 && card.holdingWeightPct < 0.01 ? '&lt;0.01' : card.holdingWeightPct.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of listed portfolio</p>` : ''}
 
         <p data-ai-insight class="font-display mt-3 text-[17px] font-bold leading-snug text-slate-900">${escapeHtml(card.insight)}</p>
+        ${contextMarkup(card, scope)}
 
         ${confluenceMarkup(card)}
         ${metricsMarkup(card)}

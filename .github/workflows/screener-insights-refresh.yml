@@ -1,0 +1,61 @@
+name: Screener Insights collection
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Who requested this run'
+        required: false
+        type: string
+        default: 'manual'
+      full:
+        description: 'Re-read every company in the universe and portfolio'
+        required: false
+        type: boolean
+        default: false
+
+run-name: Screener Insights collection (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: screener-insights-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install pinned browser runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/screener-insights-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/screener-insights-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Collect portfolio and universe Insights
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-insights-browser/node_modules/playwright
+          SCREENER_FULL_REFRESH: ${{ inputs.full == true }}
+          DEBUG: ''
+          PWDEBUG: ''
+        run: node scripts/collect-screener-insights.mjs "$RUNNER_TEMP/screener-insights-v1.json.gz"
+      - name: Publish validated immutable public-data capture
+        uses: actions/upload-artifact@v7
+        with:
+          name: screener-insights-v1.json.gz
+          path: ${{ runner.temp }}/screener-insights-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 30

@@ -63,6 +63,8 @@ import { readPlatformCollector } from './ipo-platform-collector.mjs';
 import { readScreenerConcallCollector } from './screener-concalls-collector.mjs';
 import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
 import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calendar-shared.js';
+import { readScreenerInsightsCollector } from './screener-insights-collector.mjs';
+import { SCREENER_INSIGHTS_FRESH_MS, SCREENER_INSIGHTS_WORKFLOW } from '../public/js/data/screener-insights-shared.js';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -159,6 +161,9 @@ export default {
     }
     if (url.pathname === '/api/concalls') {
       return handleConcalls(request, env, ctx);
+    }
+    if (url.pathname === '/api/screener-insights') {
+      return handleScreenerInsights(request, env, ctx);
     }
     if (url.pathname === '/api/super-investors') {
       return handleInvestorList(request, env, ctx);
@@ -1034,6 +1039,52 @@ async function readCachedScreenerCollector(request, env, ctx) {
   }
   ctx?.waitUntil?.(cache.put(cacheKey, tagged(JSON.stringify(value), contentTag('screener-v2'), CONCALL_SCREENER_TTL_S)));
   return { value, fresh: true };
+}
+
+const SCREENER_INSIGHTS_TTL_S = 300;
+const SCREENER_INSIGHTS_DISPATCH_COOLDOWN_S = 30 * 60;
+
+async function dispatchScreenerInsightsRefresh(env, full = false) {
+  const cfg = githubConfig(env);
+  if (cfg.error) return;
+  const cache = caches.default;
+  const key = edgeKey('screener-insights/refresh-dispatch');
+  if (await cache.match(key)) return;
+  await cache.put(key, new Response('1', { headers: { 'cache-control': `public, max-age=${SCREENER_INSIGHTS_DISPATCH_COOLDOWN_S}` } }));
+  try {
+    await dispatchWorkflow(fetch, cfg, SCREENER_INSIGHTS_WORKFLOW, cfg.ref, { source: 'auto', full: String(full) });
+  } catch (error) {
+    console.error(JSON.stringify({ message: 'Screener Insights refresh dispatch failed', reason: error?.code || 'upstream' }));
+  }
+}
+
+// The artifact is public company data, already stripped of HTML/account state by the collector.
+// A single conditional payload avoids a per-company browser walk and lets both Ask Research and AI
+// Alerts read the exact same captured series. Missing data is explicit and triggers one bounded
+// background dispatch; it never blocks or empties the other twenty alert feeds.
+async function handleScreenerInsights(request, env, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
+  const cache = caches.default;
+  const cacheKey = edgeKey('screener-insights/v1');
+  const hit = await cache.match(cacheKey);
+  if (hit) return revalidate(request, new Response(hit.body, { headers: Object.fromEntries(hit.headers) }), 'hit');
+  try {
+    const result = await readScreenerInsightsCollector({
+      token: env.GH_DISPATCH_TOKEN,
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]),
+    });
+    const capture = { ...result.capture, source: result.source };
+    const checkedAt = Date.parse(capture.checkedAt || '');
+    const stale = !Number.isFinite(checkedAt) || Date.now() - checkedAt > SCREENER_INSIGHTS_FRESH_MS || result.source.collectorLatestFailed;
+    if (stale) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, !capture.fullCoverage));
+    const { body, tag } = withTag(capture);
+    const response = tagged(body, tag, SCREENER_INSIGHTS_TTL_S);
+    ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
+    return revalidate(request, response, 'miss');
+  } catch {
+    ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, true));
+    return json({ ok: false, reason: 'unavailable', message: 'Screener Insights capture is not available yet.' }, 503);
+  }
 }
 
 async function handleConcalls(request, env, ctx) {
