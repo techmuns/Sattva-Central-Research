@@ -64,6 +64,7 @@ export function parsePlatformDrafts(html, board, at) {
     const c = { ...company(a, board, at), draftDate: day(attr(starts[i][0], 'data-date_of_drhp')),
       status: 'DRHP filed', drhpStatus: links.find((a) => /\bbtn-primary\b/.test(a.className))?.text || null,
       exchange: attr(starts[i][0], 'data-exchange').toUpperCase(), sector: attr(starts[i][0], 'data-sector') || null };
+    c.status = c.drhpStatus || c.status;
     if (!c.id || !c.company) throw Error('Unmapped IPOPlatform DRHP issuer');
     companies.push(c); rows.push({ ...doc(c, draft?.url || null, 'DRHP / Draft prospectus', c.draftDate), ...(!draft?.url ? { note: 'Publisher did not supply a usable public DRHP link.' } : {}) });
   }

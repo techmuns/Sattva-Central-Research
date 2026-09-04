@@ -27,7 +27,7 @@ const capture = await collectPlatform({ fetcher, now });
 await test('all five catalogue families combine by stable issuer id without importing financial estimates', () => {
   assert.equal(capture.companies.length, 5); assert.equal(capture.rows.length, 6);
   assert.equal(capture.companies.find((c) => c.id === '1').status, 'Listed');
-  assert.equal(capture.companies.find((c) => c.id === '4').status, 'DRHP filed');
+  assert.equal(capture.companies.find((c) => c.id === '4').status, 'DRHP Under Process');
   assert(capture.rows.every((r) => r.filingDate === null && r.sourceId === 'ipo-platform' && !('score' in r)));
   assert.equal(capture.companies.find((c) => c.id === '3').openingDate, undefined, 'year not invented from adjacent listing date');
 });
@@ -36,6 +36,7 @@ await test('publisher draft dates never become exchange dates or RHP dates', () 
   const rows = parsePlatformPage(p, 'SME', at).rows;
   assert(rows.every((r) => r.filingDate === null && r.documentDate === null));
   assert.equal(parsePlatformDrafts(drafts(4), 'SME', at).rows[0].documentDate, '2026-09-02');
+  assert.equal(parsePlatformDrafts(drafts(4).replace('DRHP Under Process', 'DRHP Withdrawn / Returned'), 'SME', at).companies[0].status, 'DRHP Withdrawn / Returned');
 });
 await test('unsafe historical document links retain the issuer with no actionable unsafe URL', () => {
   const p = page(1); p.data[0].drhp_link = 'javascript:alert(1)';
