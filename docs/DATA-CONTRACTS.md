@@ -959,8 +959,10 @@ feed contract but is not rendered in the tab chrome.
 generated data. Every 15 minutes it reads the newest pages until it reaches records already in the
 previous complete artifact. At 01:07 UTC daily, and on a manual full run, it follows every published
 pagination page and reconciles the source's total. The collector refuses empty, truncated,
-duplicate, malformed or unsafe-link captures; public logs never contain credentials, cookies, page
-HTML or account details.
+duplicate, malformed or non-web-link captures; public logs never contain credentials, cookies,
+page HTML or account details. Screener company and summary links must be HTTPS. Historical source
+documents may retain the publisher's original HTTP URL, but remain inert outbound `noopener` links;
+script, data, credential-bearing and custom-port URLs are rejected.
 
 `worker/screener-concalls-collector.mjs` accepts only a successful main-branch run of this fixed
 workflow in this fixed repository, verifies GitHub's SHA-256 artifact digest, bounds compressed and

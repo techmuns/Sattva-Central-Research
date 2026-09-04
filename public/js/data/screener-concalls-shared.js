@@ -17,16 +17,24 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const TICKER = /^[A-Z0-9&-]{1,30}$/;
 const KINDS = new Set(['Transcript', 'Recording', 'Presentation', 'Other']);
 
-export function safeHttpsUrl(value, { screener = false } = {}) {
+export function safeDocumentUrl(value) {
   if (!value) return null;
   try {
     const url = new URL(value, 'https://www.screener.in');
-    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
-    if (screener && !['www.screener.in', 'screener.in'].includes(url.hostname)) return null;
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.port) return null;
     return url.href;
   } catch {
     return null;
   }
+}
+
+export function safeHttpsUrl(value, { screener = false } = {}) {
+  const safe = safeDocumentUrl(value);
+  if (!safe) return null;
+  const url = new URL(safe);
+  if (url.protocol !== 'https:') return null;
+  if (screener && !['www.screener.in', 'screener.in'].includes(url.hostname)) return null;
+  return url.href;
 }
 
 export function screenerConcallKey(row) {
@@ -67,7 +75,7 @@ export function validateScreenerConcallRows(rows) {
       !DAY.test(row.publishedDate || '') ||
       !KINDS.has(row.kind) ||
       !safeHttpsUrl(row.companyUrl, { screener: true }) ||
-      !safeHttpsUrl(row.url) ||
+      !safeDocumentUrl(row.url) ||
       (row.summaryUrl && !safeHttpsUrl(row.summaryUrl, { screener: true })) ||
       !Number.isFinite(Date.parse(row.observedAt)) ||
       ids.has(id)

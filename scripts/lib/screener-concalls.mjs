@@ -1,6 +1,6 @@
 // Pure parser for https://www.screener.in/concalls/. Publisher HTML is data only; nothing found
 // in it is executed, followed as an instruction, or allowed to choose another collection origin.
-import { safeHttpsUrl, screenerConcallKey } from '../../public/js/data/screener-concalls-shared.js';
+import { safeDocumentUrl, screenerConcallKey } from '../../public/js/data/screener-concalls-shared.js';
 
 const ORIGIN = 'https://www.screener.in';
 const ROWS_PER_PAGE = 25;
@@ -19,7 +19,7 @@ const text = (value) => decode(String(value || '').replace(/<[^>]*>/g, ' ')).rep
 const attr = (value, name) => decode(new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i').exec(value)?.[2] || '');
 const anchors = (html) =>
   [...String(html || '').matchAll(/<a\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/a\s*>/gi)].map((match) => ({
-    href: safeHttpsUrl(attr(match[1], 'href')),
+    href: safeDocumentUrl(attr(match[1], 'href')),
     label: text(match[2]),
   }));
 
@@ -36,7 +36,7 @@ export function screenerDay(value) {
 function companyIdentity(url) {
   if (!url) return null;
   const parsed = new URL(url);
-  if (!['www.screener.in', 'screener.in'].includes(parsed.hostname)) return null;
+  if (parsed.protocol !== 'https:' || !['www.screener.in', 'screener.in'].includes(parsed.hostname)) return null;
   const match = /^\/company\/([^/]+)\/(?:consolidated\/)?$/.exec(parsed.pathname);
   if (!match) return null;
   const companyKey = decodeURIComponent(match[1]).toUpperCase();
@@ -66,7 +66,7 @@ export function parseScreenerConcallPage(html, observedAt = new Date().toISOStri
     const summaryUrl = actionLinks.find((link) => {
       if (!link.href) return false;
       const url = new URL(link.href);
-      return ['www.screener.in', 'screener.in'].includes(url.hostname) && /^\/concalls\/summary\/\d+\/$/.test(url.pathname);
+      return url.protocol === 'https:' && ['www.screener.in', 'screener.in'].includes(url.hostname) && /^\/concalls\/summary\/\d+\/$/.test(url.pathname);
     })?.href || null;
     if (!identity || !name || !publishedDate || !action?.href) throw Error('Unmapped Screener concall row');
     const row = {
