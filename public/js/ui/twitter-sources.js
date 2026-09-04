@@ -8,9 +8,8 @@
 //
 // WHAT IT MAY SAY, AND WHAT IT MAY NOT.
 //   • `Adding…` while a run is being asked for, `Active` once the ingestion job's own capture names
-//     the handle, `Account not found` when that job reported it could not read the account. Those
-//     are three different facts and the middle one is the only one this browser can establish on
-//     its own — see core/twitter-handles.js.
+//     the handle, `Account not found` for an explicit missing-account reason, and `Could not read`
+//     for a request that failed. A blocked request cannot establish that the account is missing.
 //   • A handle this browser has added but the job has not picked up yet is `Adding…`, not `Active`.
 //     Saying "active" over an account nothing is reading yet is the same class of claim as a green
 //     Live pill over data nobody confirmed.
@@ -30,6 +29,7 @@ const STATUS = {
   active: { label: 'Active', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
   adding: { label: 'Adding…', cls: 'bg-amber-50 text-amber-700 ring-amber-200' },
   'not-found': { label: 'Account not found', cls: 'bg-rose-50 text-rose-700 ring-rose-200' },
+  unreadable: { label: 'Could not read', cls: 'bg-rose-50 text-rose-700 ring-rose-200' },
 };
 
 // The result of the last add or remove, held across the repaint it causes. Module state rather

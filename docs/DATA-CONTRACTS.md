@@ -2661,12 +2661,30 @@ failures are never shown as the handle's failures: a deployment with no Worker o
 `GH_DISPATCH_TOKEN` cannot start a run, and that is a fact about the deployment — the account stays
 on the list reading `Adding…`, which is exactly what is true.
 
-**Setting it up on a deployment.** `twscrape` drives X as a signed-in user, so it needs at least one
-account: add a repository secret named **`X_ACCOUNTS`** (*Settings → Secrets and variables →
-Actions*), one per line as `username:password:email:email_password`. With none configured the job
-exits **3**, writes nothing and posts a warning rather than failing — no capture is damaged and the
-dashboard goes on saying the accounts are being added. Exit **2** means every account failed while a
-good capture exists, so the file is left alone. Exit **1** still means a real fault.
+**Setting it up on a deployment.** In GitHub *Settings → Secrets and variables → Actions*, add
+**`X_COOKIES`**, containing `auth_token=...; ct0=...` from the collector account's signed-in X
+browser session (Chrome: *Application → Storage → Cookies → https://x.com*). These are credentials;
+paste them directly into GitHub's secret field, never into a commit, issue, screenshot or chat.
+The collector uses only those two cookies and skips password login when this secret is supplied.
+Replace the secret with fresh cookies when the session expires. Acceptance into twscrape's pool
+is only a format check: successful post retrieval is the evidence the session worked.
+
+When `X_COOKIES` is absent, **`X_ACCOUNTS`** remains available, one
+`username:password:email:email_password` per line. An invalid cookie secret does not fall back to
+password login. X has blocked the runner's password login; cookies avoid that step but requests
+can still be refused. **`TWS_PROXY`** optionally supplies a proxy URL. Neither option guarantees
+access. `scripts/requirements-twitter.txt` pins the dependency used by collection and offline
+regressions. Session databases are temporary, outside the checkout, and deleted after each run.
+
+Exit **3** means no usable session (missing/invalid credentials, rejected/expired session or no
+account available because of rate limits). Exit **2** means every handle was unreadable. Both leave
+the capture and requested handle additions unchanged, including an empty first capture. A profile
+lookup that returns nothing is reported as `could not be read`: twscrape returns the same result
+when blocked, so this cannot prove `account not found`. An empty timeline is also left unverified
+because the library can silently end an aborted request. A known post counts as a successful read.
+Exit **1** means a code/dependency fault. On `main`, exits 2/3 produce warnings; branch verification
+retains their nonzero status and never commits or publishes a capture. The workflow summary states
+which mode ran. A successful no-handle run remains a no-op, not evidence of authentication.
 
 **`scripts/scrape-twitter.py` is the one Python script in this repository**, and the rule it breaks
 is narrow: the retrieval library asked for is Python, it runs on a GitHub runner only, and nothing

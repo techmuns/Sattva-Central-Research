@@ -6826,6 +6826,14 @@ console.log('\n— twitter / x as a news source —');
       unread.withCapture.some((v) => v.endsWith(':active')),
     unread ? `no capture: ${unread.without.join(', ')} · with: ${unread.withCapture.join(', ')}` : 'not evaluated');
 
+  const blocked = await evalSafe(async () => {
+    const h = await import('/js/core/twitter-handles.js');
+    const states = h.all({ failed: new Map([['sattva_desk', 'could not be read'], ['sattva_gone', 'account not found']]) });
+    return { blocked: states.find((e) => e.key === 'sattva_desk')?.status, missing: states.find((e) => e.key === 'sattva_gone')?.status };
+  });
+  ok('an unreadable X request is distinct from an explicitly missing account',
+    blocked?.blocked === 'unreadable' && blocked?.missing === 'not-found', JSON.stringify(blocked));
+
   const addOne = async (value) => {
     await page.fill('[data-tw-input]', value);
     await page.locator('[data-tw-add] button[type=submit]').click();

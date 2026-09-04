@@ -32,7 +32,7 @@ on:
 run-name: Twitter refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }}${{ inputs.handle && format(' · @{0}', inputs.handle) || '' }})
 
 concurrency:
-  group: twitter-refresh
+  group: twitter-refresh-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -54,19 +54,22 @@ jobs:
       # public/, in the Worker or in the Node scripts depends on Python. See the header of
       # scripts/scrape-twitter.py for why this is the exception to the no-dependencies rule.
       - name: Install twscrape
-        run: pip install --quiet twscrape
+        run: pip install --quiet -r scripts/requirements-twitter.txt
 
       # EXIT CODES ARE THE INTERFACE.
       #   0  read what it could and wrote a capture
-      #   2  every account failed and a good capture already exists — the file is untouched, which
+      #   2  every handle was unreadable — the file is untouched, which
       #      is not a fault in this repository and must not be a red build
-      #   3  no X account is configured, so nothing could be read at all — a one-off setup step,
+      #   3  no usable X session, including expired cookies or rate limiting,
       #      reported as a warning so the operator sees it without the run failing every 30 minutes
       #   1  a real fault: the library changed, the runner broke, this code is wrong
       - name: Collect posts
         id: collect
         env:
+          X_COOKIES: ${{ secrets.X_COOKIES }}
           X_ACCOUNTS: ${{ secrets.X_ACCOUNTS }}
+          TWS_PROXY: ${{ secrets.TWS_PROXY }}
+          TWS_TELEMETRY: "0"
           TWITTER_ADD: ${{ github.event.inputs.handle || '' }}
         run: |
           set +e
@@ -74,6 +77,11 @@ jobs:
           code=$?
           set -e
           echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Collector exit code: $code (0 = completed, check post counts; 1 = code fault; 2 = unreadable; 3 = no usable session)." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Branch verification only: no capture will be committed or published." >> "$GITHUB_STEP_SUMMARY"
+            exit "$code"
+          fi
           if [ "$code" = "2" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::warning title=No account could be read::The committed capture is unchanged."
@@ -81,7 +89,7 @@ jobs:
           fi
           if [ "$code" = "3" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::warning title=No X account could sign in::Either no X_ACCOUNTS secret is set (username:password:email:email_password, one per line), or the accounts it names could not sign in — X challenges datacentre addresses, so a runner is often refused where a home connection is not; twscrape takes a proxy for that. The committed capture is unchanged and no handle has been marked unreadable. Handles added in the dashboard stay listed as being added until a run reads them."
+            echo "::warning title=No usable X session::Set or renew X_COOKIES (auth_token=...; ct0=...). It takes precedence over X_ACCOUNTS password login. X may reject or rate-limit a session; TWS_PROXY is optional if the runner is blocked. The committed capture is unchanged."
             exit 0
           fi
           exit $code
