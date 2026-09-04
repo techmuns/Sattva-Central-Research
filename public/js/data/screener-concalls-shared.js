@@ -1,4 +1,4 @@
-// Screener's authenticated, market-wide concall document index.
+// Screener's authenticated, market-wide concall document index and upcoming-call calendar.
 //
 // This module is deliberately pure. The GitHub collector, the Worker and the browser tests all
 // use the same row identity, validation and merge rules, so an incremental capture cannot create
@@ -13,6 +13,7 @@ export const SCREENER_CONCALL_ARTIFACT = 'screener-concalls-v1.json.gz';
 export const SCREENER_CONCALL_LIMIT = 16 * 1024 * 1024;
 export const SCREENER_CONCALL_COMPRESSED_LIMIT = 3 * 1024 * 1024;
 export const SCREENER_CONCALL_MAX_ROWS = 25000;
+export const SCREENER_MARKET_UPCOMING_MAX_ROWS = 5000;
 export const SCREENER_CONCALL_FRESH_MS = 30 * 60 * 1000;
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -58,6 +59,60 @@ export function mergeScreenerConcallRows(...groups) {
       String(a.kind || '').localeCompare(String(b.kind || '')) ||
       String(a.id || '').localeCompare(String(b.id || '')),
   );
+}
+
+/** A stable identity for one invitation. The exchange notice URL is the publisher's identity. */
+export function screenerMarketUpcomingKey(row) {
+  return row?.url || `${row?.companyKey || row?.name || ''}|${row?.date || ''}|${row?.time || ''}`;
+}
+
+/**
+ * Keep one copy of each published invitation. The newest observation wins so a ticker resolved by
+ * a later collector can improve an older row without duplicating the event.
+ */
+export function mergeScreenerMarketUpcomingRows(...groups) {
+  const byKey = new Map();
+  for (const row of groups.flat()) {
+    if (!row) continue;
+    const key = screenerMarketUpcomingKey(row);
+    const old = byKey.get(key);
+    if (!old || String(row.observedAt || '') >= String(old.observedAt || '')) byKey.set(key, { ...old, ...row, id: key });
+  }
+  return [...byKey.values()].sort(
+    (a, b) =>
+      String(a.date || '').localeCompare(String(b.date || '')) ||
+      String(a.time || '').localeCompare(String(b.time || '')) ||
+      String(a.name || '').localeCompare(String(b.name || '')) ||
+      String(a.id || '').localeCompare(String(b.id || '')),
+  );
+}
+
+export function validateScreenerMarketUpcomingRows(rows) {
+  if (!Array.isArray(rows) || rows.length > SCREENER_MARKET_UPCOMING_MAX_ROWS) throw Error('Invalid Screener upcoming rows');
+  const ids = new Set();
+  for (const row of rows) {
+    const id = screenerMarketUpcomingKey(row);
+    if (
+      !row ||
+      typeof row.name !== 'string' ||
+      !row.name.trim() ||
+      row.name.length > 300 ||
+      typeof row.companyKey !== 'string' ||
+      !row.companyKey ||
+      row.companyKey.length > 80 ||
+      (row.ticker !== null && row.ticker !== undefined && (typeof row.ticker !== 'string' || !TICKER.test(row.ticker))) ||
+      !DAY.test(row.date || '') ||
+      (row.time !== null && row.time !== undefined && !/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(row.time)) ||
+      ![null, undefined, 'NSE', 'BSE'].includes(row.exchange) ||
+      !safeDocumentUrl(row.url) ||
+      !Number.isFinite(Date.parse(row.observedAt)) ||
+      ids.has(id)
+    ) {
+      throw Error('Invalid Screener upcoming record');
+    }
+    ids.add(id);
+  }
+  return rows;
 }
 
 export function validateScreenerConcallRows(rows) {
@@ -117,6 +172,30 @@ export function validateScreenerConcallCapture(capture, now = Date.now()) {
   if (capture.portfolioUpcoming !== undefined) validateScreenerUpcomingRows(capture.portfolioUpcoming);
   if (capture.fullHistory && capture.rows.length + capture.duplicatesRemoved < capture.publishedTotal) throw Error('Incomplete Screener concall history');
   if (mergeScreenerConcallRows(capture.rows).length !== capture.rows.length) throw Error('Duplicate Screener concall history');
+
+  // Backward-compatible while the first enriched collector run replaces the previous artifact.
+  // Once present, all upcoming fields are one atomic, authoritative snapshot: missing invitations
+  // must not be mistaken for a genuinely quiet calendar.
+  const carriesUpcoming = ['upcomingPublishedTotal', 'upcomingPagesFetched', 'upcomingDuplicatesRemoved', 'upcoming'].some(
+    (key) => capture[key] !== undefined,
+  );
+  if (carriesUpcoming) {
+    if (
+      !Number.isSafeInteger(capture.upcomingPublishedTotal) ||
+      capture.upcomingPublishedTotal < 0 ||
+      !Number.isSafeInteger(capture.upcomingPagesFetched) ||
+      capture.upcomingPagesFetched < 1 ||
+      !Number.isSafeInteger(capture.upcomingDuplicatesRemoved) ||
+      capture.upcomingDuplicatesRemoved < 0
+    ) {
+      throw Error('Invalid Screener upcoming capture');
+    }
+    validateScreenerMarketUpcomingRows(capture.upcoming);
+    if (capture.upcoming.length + capture.upcomingDuplicatesRemoved !== capture.upcomingPublishedTotal) {
+      throw Error('Incomplete Screener upcoming calendar');
+    }
+    if (mergeScreenerMarketUpcomingRows(capture.upcoming).length !== capture.upcoming.length) throw Error('Duplicate Screener upcoming calendar');
+  }
   return capture;
 }
 

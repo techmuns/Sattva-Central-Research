@@ -312,7 +312,9 @@ export const CALENDAR_PAGE_URL = 'https://www.moneycontrol.com/earnings-calendar
 export const CALENDAR_WIDGET_URL = 'https://www.moneycontrol.com/earnings-widget';
 export const CALENDAR_PAGINATION_URL = 'https://www.moneycontrol.com/pagination/earnings-pagination';
 export const CALENDAR_PAGE_SIZE = 20;
-export const CALENDAR_MAX_PAGES = 45;
+// Forty result pages + two bounded retries + one count request + the five-request Screener
+// artifact read stay below the Workers Free external-subrequest ceiling as one combined route.
+export const CALENDAR_MAX_PAGES = 40;
 
 // www.moneycontrol.com sits behind Akamai Bot Manager. From an ordinary client (a laptop, a
 // GitHub runner) these headers get the real server-rendered page. From a Cloudflare Worker they

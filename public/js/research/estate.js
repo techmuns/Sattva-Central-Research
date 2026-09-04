@@ -48,7 +48,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'daily-alerts', tab: 'All Alerts', route: '#/research/daily-alerts', description: 'Derived timeline across earnings, con-calls, chatter, technicals, investor activity, news, announcements and insider disclosures.' },
   { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns.' },
   { id: 'company-filings', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=filings', description: 'Company document titles, periods and source links already read in Company Filings. PDF contents are not extracted.' },
-  { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Currently loaded all-exchange scheduled-results dates and company lists.' },
+  { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=calendar', description: 'Currently loaded scheduled-result and upcoming-con-call dates and company lists.' },
   { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Screener’s retained transcript, recording and presentation index, enriched with StockScans scores and sentiment where available.' },
   { id: 'public-chatter', tab: 'Public Chatter', route: '#/research/public-chatter', description: 'Retail mention counts and sentiment across ValuePickr, TradingQnA and Google News.' },
   { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
@@ -644,12 +644,14 @@ const BUILDERS = [
       const scheduledRows = loaded.flatMap((payload) => payload.rows || []);
       const picked = chooseRows(scheduledRows, plan, (row) => ({
         date: row.resultDate || null,
+        eventType: row.eventType || 'Result',
         company: clipped(row.name, 130),
         ticker: row.ticker || null,
         industry: clipped(row.industry, 120),
         exchange: row.exchange === 'N' ? 'NSE' : row.exchange === 'B' ? 'BSE' : row.exchange || null,
         quarter: row.quarter || null,
         scheduledTime: row.time || null,
+        noticeUrl: row.noticeUrl || null,
         price: round(row.ltp),
         marketCapCr: round(row.marketCap),
       }));
@@ -659,16 +661,17 @@ const BUILDERS = [
         .sort()
         .at(-1) || null;
       return sourcePacket(this.id, {
-        source: 'Moneycontrol Earnings Calendar — all-exchange count, widget and pagination feeds',
+        source: 'Moneycontrol scheduled results plus Screener upcoming con-call invitations',
         asOf,
         rowCount: scheduledRows.length,
         coverage: {
           loadedDates: loaded.length,
           completeDates: loaded.filter((payload) => payload.complete).length,
+          screenerUpcomingRecords: Math.max(0, ...loaded.map((payload) => payload.screenerUpcomingRecords || 0)),
           strip: strip.map((item) => ({ date: item.date, scheduledCount: item.count })).slice(0, 14),
           note: strip.length ? 'Only schedule dates loaded in this browser are included; filed results are a separate Earnings Reported source.' : 'No scheduled-results date has been opened in this browser yet.',
         },
-        definition: 'Scheduled results, not filed results. Counts and rows use All exchanges; company rows follow every published pagination page.',
+        definition: 'Scheduled events, not filed results. Result rows use Moneycontrol All exchanges; Con-call rows use every page of Screener’s authenticated upcoming-invitation index. Event types remain distinct.',
         ...picked,
       });
     },

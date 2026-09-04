@@ -375,6 +375,15 @@ export function sourceGroups() {
           status: 'live',
           file: 'worker/index.js → /api/earnings-calendar · worker/mc.mjs → fetchCalendarDay() · public/data/earnings-calendar.json · scripts/scrape-calendar.mjs',
         },
+        {
+          name: 'Screener.in — upcoming con-call invitations',
+          url: 'https://www.screener.in/concalls/upcoming/',
+          feeds:
+            'Every currently published upcoming invitation across all pagination pages, with company, date, time and the original BSE/NSE notice link. These are labelled <strong>Con-call</strong> beside Moneycontrol’s distinct <strong>Result</strong> events; one never masquerades as the other. Resolved tickers drive Portfolio and Watchlist filtering, while unresolved invitations remain visible only in Universe.',
+          cadence: 'GitHub Actions every 15 minutes; every run replaces the complete mutable invitation list. Opening Earnings Calendar also requests the fixed workflow when the artifact is over 30 minutes old, behind a 15-minute cooldown. An open calendar revalidates every minute and immediately after the page becomes visible again.',
+          status: 'live',
+          file: '.github/workflows/screener-concalls-refresh.yml · scripts/collect-screener-concalls.mjs · worker/screener-concalls-collector.mjs · worker/index.js → /api/earnings-calendar',
+        },
       ],
     },
     ipoSourceGroup(),

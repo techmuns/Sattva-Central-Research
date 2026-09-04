@@ -51,6 +51,7 @@ import * as coverage from '../data/coverage.js';
 import { filterByScope, scopePossessive } from '../data/scope.js';
 import { renderCompanyFilings } from './company-filings.js';
 import { domesticFilingsHref } from '../data/domestic-filings-shared.js';
+import { safeDocumentUrl } from '../data/screener-concalls-shared.js';
 
 export const meta = {
   id: 'earnings-hub',
@@ -63,7 +64,7 @@ export const meta = {
 // Filed results, scheduled results, and original company documents.
 const VIEWS = [
   { value: 'reported', label: 'Earnings Reported', help: 'Companies that have already filed this quarter' },
-  { value: 'calendar', label: 'Earnings Calendar', help: 'Companies scheduled to report, by date' },
+  { value: 'calendar', label: 'Earnings Calendar', help: 'Scheduled results and upcoming con-calls, by date' },
   { value: 'filings', label: 'Company Filings', help: 'Annual reports, earnings reports and concall transcripts' },
 ];
 
@@ -123,6 +124,20 @@ function renderFeed(ctx) {
         })
       );
       disposers.push(feed.startLive(ctx.live));
+      if (viewOf(ctx) === 'calendar') {
+        disposers.push(
+          calendar.onChange(() => {
+            if (token !== renderToken || viewOf(ctx) !== 'calendar') return;
+            renderCalendar(ctx);
+          }),
+        );
+        disposers.push(
+          calendar.startLive(ctx.live, () => {
+            const date = calendarDate || isoToday();
+            return { date, ...stripWindowFor(date) };
+          }),
+        );
+      }
     })
     .catch((err) => {
       if (token !== renderToken) return;
@@ -510,12 +525,11 @@ function renderLatest(ctx) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Earnings Calendar — Moneycontrol's all-exchange scheduled-results calendar.
+// Earnings Calendar — Moneycontrol scheduled results plus Screener upcoming calls.
 //
-// This view answers one question on every date: who was scheduled to report? It deliberately does
-// not turn into a filings table for today or past dates. The adjacent Earnings Reported view
-// answers that second question from the published-results feed. Keeping the two views separate
-// makes the label, count and rows agree with the linked source.
+// This view answers one question on every date: what earnings event is scheduled? Result
+// publications and con-calls remain labelled as different event types. It deliberately does not
+// turn into a filings table for today or past dates; Earnings Reported answers that second question.
 // ---------------------------------------------------------------------------------------
 
 // TODAY IN IST, NOT IN UTC. Every date on this tab is an Indian trading date — a company files at
@@ -597,9 +611,8 @@ function stripDays(active) {
  * Every chip is a scheduled count from the same all-exchange population as the rows beneath it.
  */
 function chipCount(iso) {
-  const co = (n) => (n === 1 ? 'company' : 'companies');
   const scheduled = calendar.scheduledCountFor(iso);
-  if (scheduled != null) return { n: scheduled, kicker: 'due', noun: `${co(scheduled)} due` };
+  if (scheduled != null) return { n: scheduled, kicker: 'due', noun: `${scheduled === 1 ? 'event' : 'events'} due` };
   return { n: null, kicker: '', noun: null };
 }
 
@@ -724,18 +737,31 @@ function renderCalendar(ctx) {
   const table = scoped.length
     ? scoreTable({
         rows: scoped,
-        key: (r) => r.scId,
+        key: (r) => r.eventId || r.scId,
+        watchKey: (r) => r.ticker || null,
+        watchName: (r) => r.name || r.ticker,
         name: (r) => r.name,
         nameLabel: 'Company',
-        sub: (r) => `${r.ticker || 'no ticker'} · ${r.industry || r.sectorSlug || '—'}`,
+        sub: (r) => `${r.ticker || 'no ticker'} · ${r.industry || r.sectorSlug || r.eventSource || '—'}`,
         showRank: false,
         dense: true,
         nameMaxPx: 300,
         stickyHead: 'max(280px, calc(100vh - 420px))',
         columns: scheduledColumns(),
+        filters: [
+          {
+            label: 'Event type',
+            options: [
+              { value: 'all', label: 'All events' },
+              { value: 'result', label: 'Results' },
+              { value: 'concall', label: 'Con-calls' },
+            ],
+            match: (r, value) => (value === 'result' ? r.eventType === 'Result' : value === 'concall' ? r.eventType === 'Con-call' : true),
+          },
+        ],
         nameAfter: 1,
-        searchable: (r) => `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.exchange || ''}`,
-        initialSort: { key: 'Market Cap', dir: 'desc' },
+        searchable: (r) => `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.exchange || ''} ${r.eventType || ''} ${r.eventSource || ''}`,
+        initialSort: { key: 'Time (IST)', dir: 'asc' },
         exportName: 'sattva-earnings-calendar',
         onExport: (visible) => exportCalendar(visible, payload, wanted),
         emptyMessage: 'No companies match your filters.',
@@ -747,7 +773,7 @@ function renderCalendar(ctx) {
   ctx.root.innerHTML = `
     ${sectionHead({
       title: 'Earnings Calendar',
-      description: 'Companies scheduled to report, by date. Pick a date from the strip.',
+      description: 'Scheduled results and upcoming con-calls, by date. Pick a date from the strip.',
       controls: `${viewToggle('calendar')}${calendarPill(payload, err)}${scopeSummary({ scope: ctx.scope, count: scoped.length, noun: 'scheduled', book: coverage.meta() })}`,
     })}
     ${dateStrip(wanted, today)}
@@ -757,7 +783,7 @@ function renderCalendar(ctx) {
              <div class="text-3xl">📅</div>
              <div class="mt-2 text-sm font-semibold text-slate-700">The results calendar could not be loaded</div>
              <div class="mt-1 text-xs text-slate-500">${escapeHtml(withoutPublisherName(err))}</div>
-             <div class="mx-auto mt-3 max-w-lg text-xs text-slate-400">The Earnings Calendar is the scheduled-results view. Earnings Reported remains available separately for filed results.</div>
+             <div class="mx-auto mt-3 max-w-lg text-xs text-slate-400">The Earnings Calendar is the scheduled-events view. Earnings Reported remains available separately for filed results.</div>
            </div>`
         : table
           ? table.html
@@ -786,15 +812,34 @@ function renderCalendar(ctx) {
   if (table) disposers.push(table.wire(ctx.root));
 }
 
-/** Moneycontrol's scheduled-result columns; filed financials live in Earnings Reported. */
+function eventPill(eventType) {
+  const call = eventType === 'Con-call';
+  return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${
+    call ? 'bg-violet-50 text-violet-700 ring-violet-200' : 'bg-sky-50 text-sky-700 ring-sky-200'
+  }">${call ? 'Con-call' : 'Result'}</span>`;
+}
+
+/** Scheduled-event columns; filed financials live in Earnings Reported. */
 function scheduledColumns() {
   return [
     { label: 'Date', get: (r) => shortDate(r.resultDate), align: 'left', sortValue: (r) => r.resultDate || '' },
+    { label: 'Event', get: (r) => eventPill(r.eventType), html: true, sortValue: (r) => r.eventType || '' },
     { label: 'Quarter', get: (r) => escapeHtml(r.quarter || '—'), html: true, sortValue: (r) => r.quarter || '' },
     { label: 'Exchange', get: (r) => escapeHtml(r.exchange === 'N' ? 'NSE' : r.exchange === 'B' ? 'BSE' : r.exchange || '—'), html: true, sortValue: (r) => r.exchange || '' },
     // Moneycontrol says "Time Not Available" for almost every row; the normaliser turns that into
     // null so this reads as a dash rather than a sentence where a clock belongs.
-    { label: 'Time', get: (r) => (r.time ? escapeHtml(r.time) : '<span class="text-slate-300">—</span>'), html: true, sortValue: (r) => r.time || 'zzz' },
+    { label: 'Time (IST)', get: (r) => (r.time ? escapeHtml(r.time) : '<span class="text-slate-300">—</span>'), html: true, sortValue: (r) => r.time || 'zzz' },
+    {
+      label: 'Notice',
+      get: (r) => {
+        const url = safeDocumentUrl(r.noticeUrl);
+        return url
+          ? `<a data-norow href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-800">Open ↗</a>`
+          : '<span class="text-slate-300">—</span>';
+      },
+      html: true,
+      sortable: false,
+    },
     { label: 'Price', get: (r) => (r.ltp == null ? '<span class="text-slate-300">—</span>' : escapeHtml(formatRupee(r.ltp))), html: true, align: 'right', sortValue: (r) => r.ltp ?? -Infinity },
     { label: 'Change', get: (r) => priceChangeCell(r.changePct), html: true, align: 'right', sortValue: (r) => r.changePct ?? -Infinity },
     { label: 'Market Cap', get: (r) => (r.marketCap == null ? '<span class="text-slate-300">—</span>' : escapeHtml(formatCroreCompact(r.marketCap))), html: true, align: 'right', sortValue: (r) => r.marketCap ?? -1 },
@@ -809,9 +854,9 @@ function priceChangeCell(pct) {
 }
 
 /**
- * Three states, not two. The count and list are live when the Worker can reach
- * Moneycontrol's calendar page and comes from the committed capture when it cannot. "Live" and
- * "Captured" are both fine — what would not be fine is showing captured rows under a Live badge.
+ * Three states, not two. Moneycontrol's count and list are live when both endpoints answer; its
+ * list comes from the committed capture when the calendar page is blocked. Screener's invitation
+ * list is a frequently refreshed Actions artifact. The label must describe that provenance.
  */
 function calendarPill(payload, err) {
   if (!payload && !err) {
@@ -821,12 +866,12 @@ function calendarPill(payload, err) {
         <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400"></span><span>Loading calendar</span>
       </span>`;
   }
-  const bad = !!err || !!payload?.degraded || payload?.complete !== true || !payload?.countSource || !payload?.listSource;
+  const bad = !!err || !!payload?.degraded || payload?.complete !== true || !payload?.countSource || !payload?.listSource || !payload?.screenerUpcomingSource;
   // Either half can be a capture and either makes the pill say so. The list and the counts fail
   // independently — the calendar page is bot-walled while the count API is not, and on 14 Aug 2026
   // the count API went flat while the list capture was fine — so "Live" may only be claimed when
   // BOTH were read live.
-  const captured = payload?.listSource === 'snapshot' || payload?.countSource === 'snapshot';
+  const captured = payload?.listSource === 'snapshot' || payload?.countSource === 'snapshot' || payload?.screenerUpcomingSource === 'artifact';
   const cls = bad
     ? 'bg-slate-50 text-slate-600 ring-slate-200'
     : captured
@@ -857,9 +902,8 @@ function calendarPill(payload, err) {
  */
 function believableCount(payload, shown = payload?.rows?.length || 0) {
   const raw = payload?.scheduledCount;
-  if (raw == null) return null;
-  if (payload?.complete && shown && raw !== shown) return null;
-  return raw >= shown ? raw : null;
+  if (raw == null || payload?.complete !== true || raw !== shown) return null;
+  return raw;
 }
 
 async function exportCalendar(rows, payload, date = '') {
@@ -869,10 +913,10 @@ async function exportCalendar(rows, payload, date = '') {
     : 'The count and list could not be verified as one complete observation; treat the visible rows as the available schedule. ';
   const banner = {
     __banner:
-      `REAL DATA. Published results calendar — companies SCHEDULED to report on ${payload?.date || date || ''}` +
+      `REAL DATA. Published earnings-event calendar — scheduled results and con-calls on ${payload?.date || date || ''}` +
       `${payload?.asOnDate ? ` (schedule as on ${payload.asOnDate})` : ''}, exported ${new Date().toISOString()}. ` +
       `This is a schedule, not a set of filed results. ` +
-      `${count != null ? `${count} ${count === 1 ? 'company is' : 'companies are'} scheduled on this date. ` : ''}` +
+      `${count != null ? `${count} ${count === 1 ? 'event is' : 'events are'} scheduled on this date: ${payload.resultScheduledCount || 0} results and ${payload.concallScheduledCount || 0} con-calls. ` : ''}` +
       completeness +
       `Market cap in Rs. crore. Blank cells mean not known, not zero.`,
   };
@@ -880,13 +924,15 @@ async function exportCalendar(rows, payload, date = '') {
     filename: 'sattva-earnings-calendar',
     sheetName: 'Results Calendar',
     columns: [
-      { header: 'Result Date', key: 'd', width: 14, get: (r) => (r.__banner ? r.__banner : r.resultDate) },
+      { header: 'Event Date', key: 'd', width: 14, get: (r) => (r.__banner ? r.__banner : r.resultDate) },
+      { header: 'Event Type', key: 'et', width: 14, get: (r) => (r.__banner ? '' : r.eventType || '') },
       { header: 'Ticker', key: 't', width: 14, get: (r) => (r.__banner ? '' : r.ticker || '') },
       { header: 'Company', key: 'c', width: 36, get: (r) => (r.__banner ? '' : r.name) },
       { header: 'Industry', key: 'i', width: 26, get: (r) => (r.__banner ? '' : r.industry || '') },
       { header: 'Quarter', key: 'q', width: 14, get: (r) => (r.__banner ? '' : r.quarter || '') },
       { header: 'Exchange', key: 'ex', width: 12, get: (r) => (r.__banner ? '' : r.exchange === 'N' ? 'NSE' : r.exchange === 'B' ? 'BSE' : r.exchange || '') },
-      { header: 'Time', key: 'tm', width: 14, get: (r) => (r.__banner ? '' : r.time || '') },
+      { header: 'Time (IST)', key: 'tm', width: 14, get: (r) => (r.__banner ? '' : r.time || '') },
+      { header: 'Notice URL', key: 'url', width: 45, get: (r) => (r.__banner ? '' : safeDocumentUrl(r.noticeUrl) || '') },
       { header: 'Price', key: 'p', width: 14, get: (r) => (r.__banner ? '' : (r.ltp ?? '')) },
       { header: 'Change %', key: 'ch', width: 12, get: (r) => (r.__banner ? '' : (r.changePct ?? '')) },
       { header: 'MCap (Cr)', key: 'm', width: 16, get: (r) => (r.__banner ? '' : (r.marketCap ?? '')) },

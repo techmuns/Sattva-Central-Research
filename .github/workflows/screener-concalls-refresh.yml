@@ -1,9 +1,9 @@
 name: Screener concall collection
 
 # The collector publishes an immutable Actions artifact rather than committing generated data.
-# The Worker reads the latest successful main-branch artifact and folds the concall index plus the
-# S Screen forward calendar into /api/concalls, so a refresh reaches open dashboards without a
-# generated-data commit, pull request or deployment.
+# The Worker reads the latest successful main-branch artifact: retained documents and the private
+# S Screen forward calendar feed /api/concalls, while the complete market invitation list feeds
+# /api/earnings-calendar. Refreshes need no generated-data commit, pull request or deployment.
 on:
   schedule:
     - cron: '*/15 * * * *'
@@ -48,7 +48,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/screener-concalls-browser" --no-save --package-lock=false playwright@1.62.1
           node "$RUNNER_TEMP/screener-concalls-browser/node_modules/playwright/cli.js" install --with-deps chromium
-      - name: Collect concall history and the S Screen forward calendar
+      - name: Collect retained documents, S Screen calendar and all market invitations
         env:
           GH_TOKEN: ${{ github.token }}
           SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}

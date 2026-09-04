@@ -909,6 +909,7 @@ if (calReady.failed) {
       found: !!payload,
       src: payload?.listSource ?? null,
       countSrc: payload?.countSource ?? null,
+      screenerSrc: payload?.screenerUpcomingSource ?? null,
       count: payload?.scheduledCount ?? null,
       rows: payload?.rows?.length ?? 0,
       complete: payload?.complete === true,
@@ -919,9 +920,9 @@ if (calReady.failed) {
   });
   // A captured half uses calm customer wording while remaining distinguishable from a fully live
   // read. The provenance details below still name the source precisely.
-  const anyCapture = calSource.src === 'snapshot' || calSource.countSrc === 'snapshot';
+  const anyCapture = calSource.src === 'snapshot' || calSource.countSrc === 'snapshot' || calSource.screenerSrc === 'artifact';
   if (calSource.src || calSource.countSrc) {
-    ok('a captured half is labelled as an updated schedule', anyCapture ? calSource.pill === 'Schedule updated' : ['Up to date', 'Updating'].includes(calSource.pill), `list=${calSource.src} counts=${calSource.countSrc} pill=${calSource.pill}`);
+    ok('a captured half is labelled as an updated schedule', anyCapture ? calSource.pill === 'Schedule updated' : ['Up to date', 'Updating'].includes(calSource.pill), `list=${calSource.src} counts=${calSource.countSrc} screener=${calSource.screenerSrc} pill=${calSource.pill}`);
   } else if (calSource.found) {
     ok('the payload names where the list came from', false, `listSource=${calSource.src}`);
   } else {

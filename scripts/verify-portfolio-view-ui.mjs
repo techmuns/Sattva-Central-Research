@@ -49,6 +49,14 @@ const concallRows = [
   concallRow({ ticker: 'OUTSIDE', name: 'Outside universe concall', type: 'Recording' }),
   concallRow({ ticker: null, name: 'Unresolved BSE concall' }),
 ];
+const todayIst = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+const calendarRows = [
+  { eventId: `result:${todayIst}:KISSHT`, eventType: 'Result', eventSource: 'Moneycontrol', scId: 'KISSHT', ticker: 'KISSHT', name: 'OnEMI scheduled result', resultDate: todayIst, quarter: 'Q2', time: null, exchange: 'N', noticeUrl: null },
+  { eventId: 'concall:newco', eventType: 'Con-call', eventSource: 'Screener', scId: 'screener:newco', ticker: 'NEWCO', name: 'New holding scheduled call', resultDate: todayIst, quarter: null, time: '16:00:00', exchange: 'B', noticeUrl: 'https://www.bseindia.com/newco.pdf' },
+  { eventId: 'concall:outside', eventType: 'Con-call', eventSource: 'Screener', scId: 'screener:outside', ticker: 'OUTSIDE', name: 'Outside scheduled call', resultDate: todayIst, quarter: null, time: '17:00:00', exchange: 'N', noticeUrl: 'https://nsearchives.nseindia.com/outside.pdf' },
+  { eventId: 'concall:unresolved', eventType: 'Con-call', eventSource: 'Screener', scId: 'screener:unresolved', ticker: null, name: 'Unresolved scheduled call', resultDate: todayIst, quarter: null, time: '18:00:00', exchange: 'B', noticeUrl: 'https://www.bseindia.com/unresolved.pdf' },
+];
+const freshCalendarRow = { eventId: 'concall:fresh', eventType: 'Con-call', eventSource: 'Screener', scId: 'screener:fresh', ticker: 'KISSHT', name: 'Fresh portfolio call', resultDate: todayIst, quarter: null, time: '19:00:00', exchange: 'N', noticeUrl: 'https://nsearchives.nseindia.com/fresh.pdf' };
 const familyHtml = `<script>
 window.book = ${JSON.stringify(initial)}; window.version = 1; window.failed = false; window.requests = 0;
 const channel = 'sattva-portfolio-v1', origin = ${JSON.stringify(origin)};
@@ -71,7 +79,7 @@ send({ id:'connector',type:'available' });
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const context = await browser.newContext({ viewport: { width: 1365, height: 900 } });
 const errors = [], questions = [];
-let searches = 0;
+let searches = 0, calendarRequests = 0, calendarVersion = 0;
 await context.addInitScript(() => localStorage.setItem('sattva:scope-lists:v1', JSON.stringify({ portfolio: { added: [{ ticker:'MANUAL',name:'Manual research selection' }], removed:[{ ticker:'KISSHT',name:'OnEMI' }] } })));
 await context.route('**/*', route => {
   const url = new URL(route.request().url());
@@ -87,6 +95,36 @@ await context.route('**/*', route => {
     today: { day: '2026-09-05', rows: [] },
     meta: { fetchedAt: new Date().toISOString(), quarter: 202609, screener: { status: 'ok', checkedAt: new Date().toISOString(), publishedTotal: 4, records: 4, fullHistory: true } },
   });
+  if (url.pathname === '/api/earnings-calendar') {
+    calendarRequests++;
+    const currentCalendarRows = calendarVersion ? [...calendarRows, freshCalendarRow] : calendarRows;
+    return json({
+    ok: true,
+    degraded: null,
+    date: url.searchParams.get('date') || todayIst,
+    from: url.searchParams.get('from') || todayIst,
+    to: url.searchParams.get('to') || todayIst,
+    listRequested: true,
+    listSource: 'live',
+    countSource: 'live',
+    screenerUpcomingSource: 'artifact',
+    screenerUpcomingCheckedAt: new Date().toISOString(),
+    screenerUpcomingPublishedTotal: calendarVersion ? 4 : 3,
+    screenerUpcomingRecords: calendarVersion ? 4 : 3,
+    screenerUpcomingPagesFetched: 1,
+    scheduledCount: currentCalendarRows.length,
+    resultScheduledCount: 1,
+    concallScheduledCount: currentCalendarRows.length - 1,
+    pageSize: 20,
+    pagesFetched: 1,
+    resultComplete: true,
+    concallComplete: true,
+    complete: true,
+    days: [{ date: todayIst, displayDate: todayIst, resultCount: 1, concallCount: currentCalendarRows.length - 1, count: currentCalendarRows.length }],
+    rows: currentCalendarRows,
+    meta: { source: 'Fixture schedules', fetchedAt: new Date().toISOString() },
+    });
+  }
   if (url.pathname === '/api/research') {
     if(route.request().method() === 'GET') return json({ configured:true });
     questions.push(route.request().postDataJSON());
@@ -152,6 +190,32 @@ try {
       assert.match(universeCalls, /Outside universe concall/);
       assert.match(universeCalls, /Unresolved BSE concall/);
     }
+    if (tab === 'earnings-hub') {
+      await page.evaluate(date => { location.hash = `#/research/earnings-hub?scope=portfolio&view=calendar&date=${date}`; }, todayIst);
+      await page.getByRole('heading', { name:'Earnings Calendar', exact:true }).waitFor();
+      await page.getByText('New holding scheduled call', { exact:true }).waitFor();
+      const portfolioCalendar = await page.locator('#content-host').innerText();
+      assert.match(portfolioCalendar, /OnEMI scheduled result/);
+      assert.match(portfolioCalendar, /New holding scheduled call/);
+      assert.doesNotMatch(portfolioCalendar, /Outside scheduled call|Unresolved scheduled call/);
+      assert.match(portfolioCalendar, /Result|Con-call/);
+      calendarVersion = 1;
+      await page.getByRole('button', { name:'Refresh', exact:true }).click();
+      await page.getByText('Fresh portfolio call', { exact:true }).waitFor();
+      assert.ok(calendarRequests >= 2, 'the header refresh revalidates an already-open calendar');
+      await page.evaluate(async () => { (await import('/js/core/watchlist.js')).add('KISSHT', 'OnEMI scheduled result'); });
+      await page.evaluate(date => { location.hash = `#/research/earnings-hub?scope=watchlist&view=calendar&date=${date}`; }, todayIst);
+      await page.waitForFunction(async () => (await import('/js/core/state.js')).state.scope === 'watchlist');
+      await page.getByText('OnEMI scheduled result', { exact:true }).waitFor();
+      const watchlistCalendar = await page.locator('#content-host').innerText();
+      assert.doesNotMatch(watchlistCalendar, /New holding scheduled call|Outside scheduled call|Unresolved scheduled call/);
+      await page.evaluate(date => { location.hash = `#/research/earnings-hub?scope=universe&view=calendar&date=${date}`; }, todayIst);
+      await page.waitForFunction(async () => (await import('/js/core/state.js')).state.scope === 'universe');
+      await page.getByText('Unresolved scheduled call', { exact:true }).waitFor();
+      const universeCalendar = await page.locator('#content-host').innerText();
+      assert.match(universeCalendar, /Outside scheduled call/);
+      assert.match(universeCalendar, /Unresolved scheduled call/);
+    }
   }
   await page.getByRole('textbox', { name:'Ask about the dashboard' }).fill('What should I know?');
   await page.getByRole('button', { name:'Send question' }).click();
@@ -182,7 +246,7 @@ try {
   assert.equal(questions.length, 2, 'a recovered question can use the verified portfolio');
   assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('weightPct')), false);
   assert.deepEqual(errors, []);
-  console.log('PASS: any-tab startup, OnEMI name/ticker/ISIN search, read-only ownership, uncovered holdings, legacy Watchlist migration, whole-book parity, additions/exits while open, Con-call document scope isolation, all tabs, Ask exposure, outage status and verified recovery.');
+  console.log('PASS: any-tab startup, OnEMI name/ticker/ISIN search, read-only ownership, uncovered holdings, legacy Watchlist migration, whole-book parity, additions/exits while open, Con-call and Earnings Calendar scope isolation across Portfolio/Watchlist/Universe, open-calendar refresh, all tabs, Ask exposure, outage status and verified recovery.');
 } catch(error) {
   if(page) console.error((await page.locator('body').innerText()).slice(-5000), errors);
   throw error;

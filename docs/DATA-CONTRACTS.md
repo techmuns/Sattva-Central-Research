@@ -990,28 +990,36 @@ feed contract but is not rendered in the tab chrome.
 `SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
 generated data. Every 15 minutes it reads the newest concall pages until it reaches records already
 in the previous complete artifact, then validates the exact dashboard id and `S Screen` name before
-capturing its forward calendar. At 01:07 UTC daily, and on a manual full run, it follows every
-published pagination page and reconciles the source's total. The collector refuses empty,
-ambiguous, truncated, duplicate, malformed or non-web-link captures; public logs never contain
-credentials, cookies, page HTML or account details. Screener company, summary and forward-calendar
-links must be HTTPS. Historical document sources may retain the publisher's original HTTP URL, but
-remain inert outbound `noopener` links; publisher-specific ports are retained because the Worker
-never fetches these links. Script, data and credential-bearing URLs are rejected. Screener-owned
-URLs also reject custom ports.
+capturing that portfolio's forward calendar. **Every run also replaces the entire market-wide,
+mutable `/concalls/upcoming/` list**, following all pages and reconciling Screener's published
+invitation total, so withdrawn or rescheduled events do not survive as a stale merged tail. At
+01:07 UTC daily, and on a manual full run, it follows every historical pagination page and
+reconciles the source's total.
+
+The collector refuses empty, ambiguous, truncated, duplicate, malformed or non-web-link captures;
+a genuinely empty market invitation list is valid only when Screener's own published total is zero.
+Public logs never contain credentials, cookies, page HTML or account details. Screener company,
+summary and S Screen forward-calendar links must be HTTPS. Historical document sources may retain
+the publisher's original HTTP URL, but remain inert outbound `noopener` links; publisher-specific
+ports are retained because the Worker never fetches these links. Script, data and credential-bearing
+URLs are rejected. Screener-owned URLs also reject custom ports.
 
 `worker/screener-concalls-collector.mjs` accepts only a successful main-branch run of this fixed
 workflow in this fixed repository, verifies GitHub's SHA-256 artifact digest, bounds compressed and
 expanded sizes, and never forwards the Worker GitHub token to the signed blob host. The edge holds
-that read for 60 seconds. Since the browser polls the combined `/api/concalls` representation every
-30 seconds, a successful Actions capture reaches an already-open dashboard without a data commit or
-deployment. The existing `GH_DISPATCH_TOKEN` needs Actions read access, the same permission already
-used for the IPOPlatform artifact reader.
+that read for 60 seconds and shares it between `/api/concalls` and `/api/earnings-calendar`. A
+successful Actions capture therefore reaches the next calendar request, an already-open calendar
+on its one-minute poll, and an already-open Con-call tab on its 30-second poll—without a data
+commit or deployment. The existing
+`GH_DISPATCH_TOKEN` needs Actions read access, the same permission already used for the IPOPlatform
+artifact reader.
 
-GitHub schedules are best-effort, so `/api/concalls` also compares the artifact timestamp with the
-30-minute freshness window. A stale or missing artifact asks the same fixed workflow for an
-incremental `auto` run in `ctx.waitUntil()`. A 15-minute edge cooldown is written before dispatch,
-and `dispatchWorkflow()` independently declines a run already queued or in progress. No repository,
-workflow name, ref, publisher URL or credentials come from the browser request.
+GitHub schedules are best-effort, so both consuming routes compare the artifact timestamp and both
+forward-calendar schema markers with the 30-minute freshness window. A stale or missing artifact
+asks the same fixed workflow for an incremental `auto` run in `ctx.waitUntil()`. A 15-minute edge cooldown is
+written before dispatch, and `dispatchWorkflow()` independently declines a run already queued or in
+progress. No repository, workflow name, ref, publisher URL or credentials come from the browser
+request.
 
 ---
 
@@ -1174,7 +1182,7 @@ rendering the gaps as if complete.
 
 ---
 
-## `GET /api/earnings-calendar` — LIVE, who is *scheduled* to report
+## `GET /api/earnings-calendar` — LIVE scheduled results plus upcoming con-calls
 
 ```
 GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=none]
@@ -1186,15 +1194,29 @@ GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=n
   "date": "2026-08-13",
   "from": "2026-08-06", "to": "2026-08-27",   // strip window; defaults to date-7 .. date+14
   "asOnDate": "11/08/2026",                    // Moneycontrol's own "schedule as on"
-  "scheduledCount": 585,                       // complete All-exchange count for `date`
+  "scheduledCount": 587,                       // result + con-call events for `date`
+  "resultScheduledCount": 585,
+  "concallScheduledCount": 2,
   "listRequested": true,                       // false => `rows` is empty because nobody asked
   "pageSize": 20, "pagesFetched": 30, "requestsMade": 31, // includes bounded retries
-  "complete": true,                            // every published pagination page was read
-  "days": [{ "date": "2026-08-13", "displayDate": "13 Aug", "count": 585 }],
-  "rows": [{ "scId": "SE20", "name": "Solar Industries India", "ticker": "SOLARINDS",
+  "resultComplete": true, "concallComplete": true,
+  "complete": true,                            // both source lists are complete
+  "screenerUpcomingSource": "artifact",
+  "screenerUpcomingPublishedTotal": 151,
+  "screenerUpcomingRecords": 151,
+  "screenerUpcomingDuplicatesRemoved": 0,
+  "screenerUpcomingPagesFetched": 7,
+  "days": [{ "date": "2026-08-13", "displayDate": "13 Aug", "resultCount": 585,
+             "concallCount": 2, "count": 587 }],
+  "rows": [{ "eventId": "result:2026-08-13:SE20", "eventType": "Result",
+             "scId": "SE20", "name": "Solar Industries India", "ticker": "SOLARINDS",
              "industry": "Commodity Chemicals", "resultDate": "2026-08-13",
              "quarter": "Q1 FY26-27", "time": null, "ltp": 18770, "changePct": -1.2,
-             "marketCap": 169849.83, "mcUrl": "https://…" }]
+             "marketCap": 169849.83, "mcUrl": "https://…", "noticeUrl": null },
+           { "eventId": "concall:https://…pdf", "eventType": "Con-call",
+             "name": "Solar Industries India", "ticker": "SOLARINDS",
+             "resultDate": "2026-08-13", "time": "16:00:00",
+             "noticeUrl": "https://www.bseindia.com/…pdf" }]
 }
 ```
 
@@ -1202,7 +1224,8 @@ GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=n
 
 The dashboard asks for `list=full` on every selected date. `list=none` remains available to
 diagnostic and strip-only consumers; it skips the HTML pages, ticker-map asset read and identity
-look-ups.
+look-ups. It still reads the shared Screener artifact because upcoming calls are part of the date
+strip itself.
 
 It is a **different representation, not a cheaper one**, and it is treated as such throughout: its
 own edge-cache key, its own device-store key (`calendar:<date>:none`), `x-sattva-list-source:
@@ -1212,24 +1235,27 @@ reading `rows` must check `listRequested` first.
 
 `degraded` is null in this mode. Nothing failed; nothing was asked.
 
-**Two endpoints, one All-exchange population.**
+**Two event sources; every row says which.**
 
 | What | Where from | Complete? |
 | --- | --- | --- |
 | The count on each date | `api.moneycontrol.com/mcapi/v1/earnings/result-calendar?fromDate&toDate&indexId=All` | **Yes** — clean JSON and unpaginated |
 | First company-list page | `www.moneycontrol.com/earnings-widget?...&indexId=All&page=1` | Up to 20 rows |
 | Remaining company-list pages | `www.moneycontrol.com/pagination/earnings-pagination?...&indexId=All&page=N` | **Yes** — followed until the complete count is reached |
+| Upcoming con-call invitations | `www.screener.in/concalls/upcoming/?p=N` | **Yes** — every page, refreshed every 15 minutes |
 
 The public page's current JavaScript names both HTML routes. `fetchCalendarDay()` requests the
 first widget and every required pagination page, deduplicates by date plus `scId`, and rejects a
-response that names fewer companies than the count. `scheduledCount` and `rows.length` therefore
-match for a complete same-time read. A live-count/captured-list race may still disagree; in that
-case `believableCount()` omits the total rather than presenting two observations as one fact.
+response that names fewer companies than the count. The Worker then appends every Screener
+invitation for the selected date. `scheduledCount` and `rows.length` therefore match when both
+source lists are complete. A live-count/captured-list race may still disagree; in that case
+`believableCount()` omits the total rather than presenting two observations as one fact.
 
-**Identity is resolved live, always.** A company that has not reported yet is by definition absent
-from a map built from companies that have, so almost every calendar row would arrive with no ticker.
-The Worker resolves unknown identities within the external-subrequest budget left after pagination.
-Rows that cannot be resolved remain visible with a null ticker; they are never dropped.
+**Identity is resolved before scope filtering, always.** Moneycontrol misses are resolved live
+within the external-subrequest budget left after pagination. Screener names are resolved by the
+collector against the same collision-guarded repository company index. Rows that cannot be
+resolved remain visible with a null ticker in Universe and are excluded from Portfolio/Watchlist;
+they are never assigned by guesswork.
 
 ### It opens on today, in IST
 
@@ -1245,17 +1271,20 @@ navigation survive; this is only the answer to *"no date chosen yet"*.
 **Today is today in IST**, not in UTC. Every date on this tab is an Indian trading date, and
 `toISOString()` alone names *yesterday* between 18:30 IST and midnight.
 
-### Scheduled and filed results are separate views
+### Scheduled events and filed results are separate views
 
-The **Earnings Calendar** always renders this route's schedule, whether the selected date is past,
-present or future. The adjacent **Earnings Reported** view always renders published filings from
+The **Earnings Calendar** always renders this route's event schedule, whether the selected date is
+past, present or future. It labels Moneycontrol rows **Result** and Screener rows **Con-call**, so a
+call invitation never masquerades as a scheduled result. The adjacent **Earnings Reported** view
+always renders published filings from
 the Rapid Results feed. Switching the meaning of the calendar according to the date caused the
 screen to disagree with the linked source: on 2 Sep 2026 Moneycontrol scheduled Technocraft
 Ventures and BSE-only Vivanta Industries, while only Technocraft had filed at the time. The old UI
 therefore showed one row under “Earnings Calendar” where the source showed two.
 
-The two sources are never merged or subtracted. A schedule is an announced expectation; a filing
-is a published result, and companies can file a day either side of an announced date.
+The calendar schedule is never merged with or subtracted from the filed-results feed. A schedule is
+an announced expectation; a filing is a published result, and companies can file a day either side
+of an announced date.
 
 ### The Akamai wall — why the list is usually a capture
 
@@ -1264,7 +1293,7 @@ behind Akamai Bot Manager and can answer an ordinary client and a Cloudflare Wor
 If an expected non-empty page returns HTML with no company rows, it is a blocked response, not an
 empty calendar.
 
-So the list has two possible origins, and the payload names which one it used:
+So the Moneycontrol result list has two possible origins, and the payload names which one it used:
 
 | `listSource` | Where from | UI |
 | --- | --- | --- |
@@ -1275,18 +1304,29 @@ So the list has two possible origins, and the payload names which one it used:
 plain `Error` when the parsed row count is below the published total. Both prefer the dated capture
 over presenting a partial live list as complete.
 
+Screener carries separate provenance: `screenerUpcomingSource: 'artifact'`, its collection time,
+published total, unique-record count and page count. The artifact-backed half makes the calm status
+pill read **Schedule updated**. Missing or stale upcoming data marks the combined schedule as
+updating and asks the fixed workflow to refresh behind the existing cooldown.
+
 **The counts and the list fail independently, so each names its own origin** — `countSource`
 alongside `listSource`. Where the counts are live and the list is a capture (the usual state), a
 schedule that has moved since the capture shows up as the two disagreeing in front of the reader,
 rather than as two figures agreeing with each other and being wrong together. Cached 5 minutes at
 the edge — a schedule moves in hours, not ticks.
 
+While the Earnings Calendar is mounted, the browser revalidates the selected date every minute.
+The poll pauses while the page is hidden and checks immediately when the reader returns. A changed
+artifact repaints in place while retaining the selected scope and table view; an unchanged ETag
+costs no response body.
+
 ### Pagination coverage and Worker request bounds
 
 Each HTML page carries at most 20 companies. The all-exchange count determines how many pages are
 required; `fetchCalendarDay()` requests them in batches of at most six concurrent connections and
-deduplicates their rows. The 45-page guard keeps the request below the Workers Free-plan external-
-subrequest ceiling after the count request. Identity resolution spends only the remaining budget,
+deduplicates their rows. The 40-page guard keeps the request below the Workers Free-plan external-
+subrequest ceiling after the count request and a cold five-request Screener artifact read. Identity
+resolution spends only the remaining budget,
 so a busy calendar can never be truncated merely to preserve ticker enrichment.
 
 This was verified against 13 Aug 2026: the all-exchange count was 585, pages 1–29 each carried 20

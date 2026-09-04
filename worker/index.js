@@ -6,7 +6,7 @@
 //   POST /api/live-prices  { tickers: [...] }  ->  { generated_at, source, ticker_count, prices }
 //   GET  /api/earnings                         ->  the live Moneycontrol results feed
 //   GET  /api/earnings?fields=prices           ->  just the traded prices, for the poll
-//   GET  /api/earnings-calendar                ->  who is SCHEDULED to report, and when
+//   GET  /api/earnings-calendar                ->  scheduled results + upcoming con-calls
 //   GET  /api/earnings-calendar?list=none      ->  the date strip alone, no per-date company list
 //   GET  /api/concalls                         ->  live analysis + scheduled Screener document history
 //   GET  /api/super-investors                  ->  the tracked super-investor list (Finology)
@@ -62,6 +62,7 @@ import { handleCaptureRegistration } from './capture-registration.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
 import { readScreenerConcallCollector } from './screener-concalls-collector.mjs';
 import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
+import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calendar-shared.js';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -525,10 +526,9 @@ function structureTagOf(rows, salt) {
 // ---------------------------------------------------------------------------------------
 // GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=none]
 //
-// The Earnings Calendar schedule. Moneycontrol splits it across a clean JSON count endpoint and
-// the paginated HTML endpoint used by its public /earnings-calendar page. Both are requested for
-// All exchanges, and fetchCalendarDay follows every published twenty-row page, so the rows and the
-// count answer the same question.
+// The Earnings Calendar combines Moneycontrol's scheduled results with Screener's current
+// upcoming-call invitations. Moneycontrol is requested for All exchanges and every published
+// twenty-row page; Screener is read from the complete authenticated artifact collected by Actions.
 //
 // Cached longer than the results feed (CALENDAR_TTL_S vs 30s) because a schedule changes on the
 // order of hours, not ticks. The strip is fetched even when the day list fails, so a reader always
@@ -559,7 +559,10 @@ async function handleCalendar(request, env, ctx) {
 
   // Fetch the count first so the list reader knows exactly how many published pages exist. A
   // rejected half remains independent: the other half can still be served with honest provenance.
-  const [stripOut] = await Promise.allSettled([fetchCalendarStrip({ fromDate: from, toDate: to, indexId: 'All' })]);
+  const [stripOut, screenerOut] = await Promise.allSettled([
+    fetchCalendarStrip({ fromDate: from, toDate: to, indexId: 'All' }),
+    readCachedScreenerCollector(request, env, ctx),
+  ]);
   let days = stripOut.status === 'fulfilled' ? stripOut.value : [];
   const expectedCount = days.find((d) => d.date === date)?.count ?? null;
   const [dayOut] = await Promise.allSettled([
@@ -626,28 +629,43 @@ async function handleCalendar(request, env, ctx) {
   // `pagesFetched` on the list; whatever remains (with two requests of headroom for redirects) can
   // resolve missing identities. Existing map hits cost no external request.
   const known = wantsList ? (await loadTickerMap(env, request)) || {} : {};
-  const listRequests = listSource === 'live'
+  const listRequests = !wantsList
+    ? 0
+    : listSource === 'live'
     ? day.requestsMade || day.pagesFetched || 1
     : dayOut.status === 'rejected'
       ? dayOut.reason?.requestsMade || 1
       : 1;
-  const identityLimit = Math.min(25, Math.max(0, 48 - listRequests - (stripOut.status === 'fulfilled' ? 1 : 0)));
+  // A cold Screener artifact read uses up to five GitHub/blob subrequests. Reserve that budget even
+  // when this location happened to hit the artifact cache, so the same calendar date cannot cross
+  // the platform bound merely because its cache state changed.
+  const identityLimit = Math.min(25, Math.max(0, 43 - listRequests - (stripOut.status === 'fulfilled' ? 1 : 0)));
   const { resolved, attempted, failed } = wantsList ? await resolveMissing(day.rows, known, { limit: identityLimit }) : { resolved: {}, attempted: 0, failed: 0 };
   const merged = Object.keys(resolved).length ? { ...known, ...resolved } : known;
+  const screener = screenerOut.status === 'fulfilled' ? screenerOut.value.value : null;
+  const screenerUpcomingAvailable = screener?.source?.status === 'ok' && Array.isArray(screener?.capture?.upcoming);
+  const combined = mergeEarningsCalendarSources({
+    date,
+    days,
+    resultRows: wantsList ? applyIdentity(day.rows, merged) : [],
+    upcoming: screenerUpcomingAvailable ? screener.capture.upcoming : [],
+  });
+  if (screenerNeedsRefresh(screener?.source)) ctx?.waitUntil?.(dispatchScreenerRefresh(env));
+
+  const resultDegraded = !wantsList
+    ? null
+    : listSource === 'live' || listSource === 'snapshot'
+      ? null
+      : `The results list for this date is unavailable (${String(dayOut.reason?.message || dayOut.reason)}). ${listNote || ''}`;
+  const upcomingDegraded = wantsList && !screenerUpcomingAvailable
+    ? 'The upcoming con-call invitation schedule is still updating.'
+    : null;
 
   const payload = {
     ok: true,
     resolvedOnTheFly: attempted,
     unresolved: failed,
-    degraded: !wantsList
-      ? // Nothing is degraded: the list was not requested. Saying otherwise would report a failure
-        // that did not happen, and the caller in this mode has a better list than this route's.
-        null
-      : listSource === 'live'
-        ? null
-        : listSource === 'snapshot'
-          ? null // not degraded — a labelled capture, and the UI prints how old it is
-          : `The company list for this date is unavailable (${String(dayOut.reason?.message || dayOut.reason)}). ${listNote || ''} The per-date counts are live.`,
+    degraded: [resultDegraded, upcomingDegraded].filter(Boolean).join(' ') || null,
     date,
     from,
     to,
@@ -660,25 +678,35 @@ async function handleCalendar(request, env, ctx) {
     listNote,
     // Count and rows are the same All-exchange population. They still carry separate provenance
     // because the live count and a captured list can have been observed at different times.
-    scheduledCount: days.find((d) => d.date === date)?.count ?? null,
+    scheduledCount: combined.scheduledCount,
+    resultScheduledCount: combined.resultScheduledCount,
+    concallScheduledCount: combined.concallScheduledCount,
     // Counts and the company list fail independently, so they carry their provenance separately.
     // Freezing them together would hide a schedule that has moved since the capture.
     countSource,
     countsCapturedAt,
+    screenerUpcomingSource: screenerUpcomingAvailable ? 'artifact' : null,
+    screenerUpcomingCheckedAt: screener?.source?.checkedAt || null,
+    screenerUpcomingPublishedTotal: screener?.source?.upcomingPublishedTotal ?? null,
+    screenerUpcomingRecords: screener?.source?.upcomingRecords ?? 0,
+    screenerUpcomingDuplicatesRemoved: screener?.source?.upcomingDuplicatesRemoved ?? 0,
+    screenerUpcomingPagesFetched: screener?.source?.upcomingPagesFetched ?? 0,
     pageSize: day.pageSize || CALENDAR_PAGE_SIZE,
     pagesFetched: day.pagesFetched || 0,
     requestsMade: listRequests,
-    complete: day.complete === true,
-    days,
-    rows: applyIdentity(day.rows, merged),
+    resultComplete: day.complete === true,
+    concallComplete: screenerUpcomingAvailable,
+    complete: day.complete === true && screenerUpcomingAvailable,
+    days: combined.days,
+    rows: wantsList ? combined.rows : [],
     meta: {
-      source: 'Moneycontrol — Earnings Calendar (all-exchange counts plus the paginated earnings-widget list)',
+      source: 'Moneycontrol scheduled results plus Screener upcoming concall invitations',
       fetchedAt: new Date().toISOString(),
     },
   };
 
   // Nothing at all: no counts and no list. That is a real outage, not a partial view.
-  if (!days.length && !payload.rows.length) {
+  if (!payload.days.length && !payload.rows.length) {
     return json({ ok: false, degraded: `calendar upstream unavailable: ${String(stripOut.reason?.message || stripOut.reason || 'no data')}`, days: [], rows: [] }, 502);
   }
 
@@ -936,7 +964,15 @@ async function handleNseAnnouncements(request, env, ctx) {
 
 function screenerNeedsRefresh(source, now = Date.now()) {
   const checkedAt = Date.parse(source?.checkedAt || '');
-  return source?.status !== 'ok' || !Number.isFinite(checkedAt) || now - checkedAt > SCREENER_CONCALL_FRESH_MS;
+  return (
+    source?.status !== 'ok' ||
+    !Number.isFinite(checkedAt) ||
+    now - checkedAt > SCREENER_CONCALL_FRESH_MS ||
+    source?.portfolioUpcomingAvailable !== true ||
+    !Number.isSafeInteger(source?.upcomingPublishedTotal) ||
+    !Number.isSafeInteger(source?.upcomingPagesFetched) ||
+    source.upcomingPagesFetched < 1
+  );
 }
 
 async function dispatchScreenerRefresh(env) {
@@ -954,6 +990,50 @@ async function dispatchScreenerRefresh(env) {
   } catch (error) {
     console.error(JSON.stringify({ message: 'Screener concall refresh dispatch failed', reason: error?.code || 'upstream' }));
   }
+}
+
+/**
+ * One minute cache shared by Con-call and Earnings Calendar.
+ *
+ * The immutable artifact holds both retained documents and the authoritative current invitation
+ * list. Reading it once for each route would double GitHub API traffic whenever a dashboard opens
+ * both tabs, so both consume this same internal cache entry.
+ */
+async function readCachedScreenerCollector(request, env, ctx) {
+  const cache = caches.default;
+  const cacheKey = edgeKey('concalls/screener-v2');
+  const hit = await cache.match(cacheKey);
+  if (hit) return { value: await hit.json(), fresh: false };
+
+  let value;
+  try {
+    value = await readScreenerConcallCollector({
+      token: env.GH_DISPATCH_TOKEN,
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
+    });
+  } catch {
+    // Either consumer can keep its independent primary source on screen while this auxiliary
+    // schedule is unavailable. No GitHub or publisher error body is exposed to the browser.
+    value = {
+      capture: null,
+      source: {
+        id: 'screener-concalls',
+        status: 'failed',
+        checkedAt: new Date().toISOString(),
+        publishedTotal: 0,
+        records: 0,
+        fullHistory: false,
+        portfolioUpcomingAvailable: false,
+        portfolioUpcomingRecords: 0,
+        upcomingPublishedTotal: null,
+        upcomingRecords: 0,
+        upcomingDuplicatesRemoved: 0,
+        upcomingPagesFetched: 0,
+      },
+    };
+  }
+  ctx?.waitUntil?.(cache.put(cacheKey, tagged(JSON.stringify(value), contentTag('screener-v2'), CONCALL_SCREENER_TTL_S)));
+  return { value, fresh: true };
 }
 
 async function handleConcalls(request, env, ctx) {
@@ -983,28 +1063,7 @@ async function handleConcalls(request, env, ctx) {
         const [upcoming, today] = await Promise.all([fetchUpcoming(), fetchToday()]);
         return { upcoming, today };
       }),
-      cached('screener-v1', CONCALL_SCREENER_TTL_S, async () => {
-        try {
-          return await readScreenerConcallCollector({
-            token: env.GH_DISPATCH_TOKEN,
-            signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
-          });
-        } catch {
-          // Scores remain live when the scheduled document index is unavailable. The payload says
-          // which half is missing; an auxiliary source must never blank the primary analysis feed.
-          return {
-            capture: null,
-            source: {
-              id: 'screener-concalls',
-              status: 'failed',
-              checkedAt: new Date().toISOString(),
-              publishedTotal: 0,
-              records: 0,
-              fullHistory: false,
-            },
-          };
-        }
-      }),
+      readCachedScreenerCollector(request, env, ctx),
     ]);
 
     const stockscansRows = mergeScans(head.value.rows, tail.value.rows);

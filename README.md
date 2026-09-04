@@ -82,9 +82,12 @@ deploy notes and the known gaps.
 daily Yahoo Finance EOD scrape plus NSE delivery data, refreshed weekdays at 07:00 IST by
 [a GitHub Action](.github/workflows/technicals-refresh.yml).
 
-**Earnings and con-call scans use real feeds.** Earnings Reported uses Moneycontrol and Con-call
-uses StockScans. Earnings Hub → Company Filings adds on-demand annual reports, earnings reports
-and transcripts from Screener.in through Muns. The old synthetic earnings corpus is no longer
+**Earnings and con-call scans use real feeds.** Earnings Reported uses Moneycontrol; Earnings
+Calendar combines Moneycontrol's scheduled results with Screener's complete upcoming con-call
+invitation list, keeping the two event types labelled and filtering both through Portfolio,
+Watchlist or Universe. Con-call uses StockScans plus Screener's retained document history. Earnings
+Hub → Company Filings adds on-demand annual reports, earnings reports and transcripts from
+Screener.in through Muns. The old synthetic earnings corpus is no longer
 served or loaded. Analyst consensus estimates remain **not connected**, so Earnings Surprise
 shows an unavailable state instead of invented beat/miss figures.
 
