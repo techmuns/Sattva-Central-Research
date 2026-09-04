@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { XChatterEngine } from './x-chatter-engine.mjs';
+import { XChatterEngine, collectionConfig } from './x-chatter-engine.mjs';
 import { boundedJson } from './x-chatter-api.mjs';
 
 // One coordinated cache for the deployed portfolio; browsers cannot select another tenant/key.
@@ -40,6 +40,8 @@ export async function handleXChatter(request, env) {
   const admin = url.pathname.endsWith('/admin');
   if (request.method !== (admin ? 'POST' : 'GET')) return json({ error: 'method-not-allowed' }, 405);
   if (admin && !(await authorised(request, env.X_CHATTER_OPERATOR_TOKEN))) return json({ error: 'unauthorised' }, 401);
+  // Free mode reads no paid upstream and does not even instantiate the optional collector.
+  if (!admin && !collectionConfig(env).allowPaid) return json({ source: 'X API', status: 'free-only', companies: [], posts: [], total: 0 });
   if (!env.X_CHATTER) return json({ source: 'X API', status: 'setup-required', companies: [], posts: [], total: 0 });
   const object = env.X_CHATTER.getByName('committed-portfolio-v1');
   try {

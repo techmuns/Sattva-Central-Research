@@ -2,11 +2,12 @@ import { CACHE_MS, MAX_COMPANIES, activePosts, portfolioCatalog, recordStatus, i
 import { searchRecent } from './x-chatter-api.mjs';
 
 export function collectionConfig(env) {
+  const allowPaid = env.X_CHATTER_ALLOW_PAID === 'true';
   const dailyLimit = Math.min(100000, Math.max(0, Math.floor(Number(env.X_CHATTER_DAILY_POST_LIMIT) || 0)));
   const perCompany = Math.min(20, Math.max(10, Math.floor(Number(env.X_CHATTER_POSTS_PER_COMPANY) || 20)));
-  const enabled = env.X_CHATTER_ENABLED === 'true' && dailyLimit >= perCompany && Boolean(env.X_BEARER_TOKEN);
+  const enabled = allowPaid && env.X_CHATTER_ENABLED === 'true' && dailyLimit >= perCompany && Boolean(env.X_BEARER_TOKEN);
   const selected = String(env.X_CHATTER_COMPANIES || '').split(',').map((s) => s.trim()).filter(Boolean);
-  return { enabled: enabled && selected.length > 0, dailyLimit, perCompany, selected,
+  return { allowPaid, enabled: enabled && selected.length > 0, dailyLimit, perCompany, selected,
     intervalMs: Math.max(1, Math.min(24, Number(env.X_CHATTER_INTERVAL_HOURS) || 12)) * 3600000 };
 }
 
@@ -28,6 +29,7 @@ export class XChatterEngine {
   }
   async start(holdings) {
     const cfg = collectionConfig(this.env);
+    if (!cfg.allowPaid) return { ok: false, code: 'free-only' };
     if (!cfg.enabled) return { ok: false, code: 'setup-required' };
     if (this.state.running || this.busy) return { ok: false, code: 'already-running' };
     const catalog = portfolioCatalog(holdings);
@@ -170,7 +172,7 @@ export class XChatterEngine {
     }
     const sorted = [...posts.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
     const start = Math.max(0, Math.floor(Number(offset) || 0)), size = Math.max(1, Math.min(50, Math.floor(Number(limit) || 50)));
-    return { source: 'X API', status: !cfg.enabled ? 'setup-required' : this.state.problem || (this.state.running ? 'collecting' : 'not-started'),
+    return { source: 'X API', status: !cfg.allowPaid ? 'free-only' : !cfg.enabled ? 'setup-required' : this.state.problem || (this.state.running ? 'collecting' : 'not-started'),
       running: cfg.enabled && this.state.running, version: this.state.revision,
       asOf: new Date(now).toISOString(), lastSuccessAt: this.state.lastSuccessAt || null,
       perCompany: cfg.perCompany, intervalHours: cfg.intervalMs / 3600000, dailyLimit: cfg.dailyLimit,

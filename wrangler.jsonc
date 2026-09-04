@@ -24,7 +24,9 @@
   // "Actions: read and write". Nothing else — it does not need contents, and a token that can
   // write code is not the token to hand an unauthenticated route.
   "vars": {
-    // Inert until an operator approves the API use case, credits, pilot and spend cap.
+    // User requirement: free data only. No paid X access is authorised.
+    "X_CHATTER_ALLOW_PAID": "false",
+    // Inert until a future explicit approval changes both this policy and the collection settings.
     // Secrets: X_BEARER_TOKEN and X_CHATTER_OPERATOR_TOKEN (32+ random characters).
     "X_CHATTER_ENABLED": "false",
     "X_CHATTER_DAILY_POST_LIMIT": "0",

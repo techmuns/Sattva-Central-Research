@@ -3593,7 +3593,9 @@ issuer facts. The request date is not a capture time or an event date.
 
 There is no committed post snapshot, browser persistent text cache, export of raw text, or paid
 read triggered by a viewer. A shared Durable Object performs bounded, operator-enabled API reads.
-Default state is disabled, zero allowance, awaiting API configuration. Every portfolio holding is
+The current requirement is free data only: `X_CHATTER_ALLOW_PAID=false` blocks paid collection
+even if the token and other enable settings exist. The free view offers manual X search links,
+not automatic ingestion. Default state is disabled with zero allowance. Every portfolio holding is
 listed by name, including those without an NSE ticker; local additions stay pending until present
 in the server book. Missing, failed, expired and limited searches are distinct from an empty
 successful response. See [X-CHATTER.md](X-CHATTER.md) for setup, limits, budget arithmetic,

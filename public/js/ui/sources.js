@@ -388,8 +388,8 @@ export function sourceGroups() {
           feeds: 'Public posts from company-name and ticker searches, including individual accounts. ' +
             'Each keeps its author, post date and original link, labelled as unverified social content. ' +
             'The X Chatter tab shows company-level capture gaps. A capped recent search does not guarantee complete coverage. ' +
-            'Official API access, a spending allowance and operator activation are required; opening the view does not buy data.',
-          cadence: xChatterStatus.meta()?.perCompany ? `Up to ${xChatterStatus.meta().perCompany} recent matches per company · planned every ${xChatterStatus.meta().intervalHours} hours` : 'Awaiting official API setup and operator activation',
+            'Free mode offers manual company searches on X; these do not import posts. Automatic API search is paid and disabled under the free-only requirement.',
+          cadence: xChatterStatus.meta()?.perCompany ? `Up to ${xChatterStatus.meta().perCompany} recent matches per company · planned every ${xChatterStatus.meta().intervalHours} hours` : 'Free mode · manual searches · automatic X collection off',
           status: xChatterStatus.meta()?.state === 'collecting' && Date.now() - Date.parse(xChatterStatus.meta()?.lastSuccessAt) < 86400000 ? 'live' : 'pending',
           file: 'worker/x-chatter.mjs · docs/X-CHATTER.md',
         },

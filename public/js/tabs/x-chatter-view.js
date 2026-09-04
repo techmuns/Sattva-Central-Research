@@ -4,6 +4,7 @@ import { portfolioCatalog, manualSearchUrl, X_LABEL } from '../data/x-chatter-sh
 import { recordStatus } from '../data/x-chatter-status.js';
 
 const labels = {
+  'free-only': 'Free data only · automatic X search is off',
   'setup-required': 'X API connection is not set up yet', 'not-started': 'Collection has not started',
   collecting: 'Scheduled collection enabled', paused: 'Collection paused', 'daily-limit': 'Daily collection allowance reached',
   'access-required': 'X access or credits need attention', 'rate-limited': 'Waiting for X’s rate limit to reset',
@@ -81,7 +82,9 @@ export function mountXChatter(root) {
     const mainStatus = labels[payload?.status] || 'X capture unavailable';
     status.innerHTML = `<p class="font-semibold text-slate-800">${esc(error || mainStatus)}</p>
       <p class="mt-1 text-xs">${checked} of ${catalog.length} holdings checked with a current capture · ${catalog.length - checked} not checked, expired or needing attention${limited ? ` · ${limited} searches were limited` : ''}.</p>
-      <p class="mt-1 text-xs">${payload?.status === 'setup-required' || !payload
+      <p class="mt-1 text-xs">${payload?.status === 'free-only'
+        ? 'Use Latest on X or Top on X in the company list below. These open X for you to read; they do not automatically import posts. No paid X service is enabled.'
+        : payload?.status === 'setup-required' || !payload
         ? 'An official X API connection and an agreed spending allowance are needed. You can already open the company searches below.'
         : `Up to ${esc(String(payload.perCompany))} recent matches per company per check · planned every ${esc(String(payload.intervalHours))} hours · last successful company check: ${esc(date(payload.lastSuccessAt))}.`}</p>`;
     root.querySelector('[data-x-company-status]').innerHTML = companyRows();
@@ -96,7 +99,9 @@ export function mountXChatter(root) {
         <span>${company ? '10 posts per page' : '50 posts per page'} · ${X_LABEL}</span>
       </div>
       ${selected?.partial ? '<p class="border-b border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">This company’s search was capped or incomplete. More posts may exist on X.</p>' : ''}
-      ${posts.length ? posts.map(postCard).join('') : `<p class="p-8 text-center text-sm text-slate-500">${payload?.status === 'setup-required' || !records.length
+      ${posts.length ? posts.map(postCard).join('') : `<p class="p-8 text-center text-sm text-slate-500">${payload?.status === 'free-only'
+        ? 'Open Company coverage and searches below to read posts on X. Automatic company-wide collection requires paid X access and is disabled.'
+        : payload?.status === 'setup-required' || !records.length
         ? 'Company searches are ready. Posts will appear after the official API is connected and collection starts.'
         : 'No cached posts match these filters. Try a wider date range and check company coverage below; an unread or limited search is not proof of no activity.'}</p>`}
       ${total > pageSize ? `<div class="flex items-center justify-between gap-2 border-t border-slate-100 p-4">
@@ -115,7 +120,7 @@ export function mountXChatter(root) {
       const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin', signal: currentController.signal });
       if (destroyed || request !== requestNumber) return;
       if (response.status === 404) {
-        payload = { status: 'setup-required', companies: [], posts: [], total: 0 };
+        payload = { status: 'free-only', companies: [], posts: [], total: 0 };
       } else {
         if (!response.ok) throw new Error('unavailable');
         const next = await response.json();

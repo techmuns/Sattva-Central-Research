@@ -1,5 +1,10 @@
 # X Chatter: company searches for the portfolio
 
+**Current user requirement (4 September 2026): free data only. No paid X service is authorised.**
+`X_CHATTER_ALLOW_PAID=false` prevents API collection even if a token, a positive allowance and
+the ordinary enable flag are accidentally configured. The default also applies when the new flag
+is absent. Changing this policy requires a future explicit user instruction and a reviewed change.
+
 The **Public Chatter → Coverage | X Chatter | Not in coverage** navigation adds a company-search
 feed alongside the forum coverage views. Publisher accounts in News remain a separate use case.
 Every card identifies **X / Twitter**, the author and handle, the post date (including year, IST),
@@ -9,9 +14,25 @@ the system does not invent a verified fact from an image or automatically OCR/su
 
 The feature ships **disabled**, with a zero read allowance and no selected companies. There are
 no sample posts in the shipped data and no paid X requests on page load, refresh, search or paging.
-Until configured, the tab shows every holding and links to date-bounded manual Latest/Top searches.
+In free mode, the tab shows every holding and links to date-bounded manual Latest/Top searches.
+Those links open X for a person to read. They do **not** automatically import posts into the system.
 
-## Recommended workflow
+## What free mode can and cannot promise
+
+- Reading/searching on X manually does not require buying API credits. The company links remain
+  available as shortcuts, subject to X's own login and viewing restrictions.
+- There is no confirmed free, unrestricted, reliable API for automatically collecting every
+  company's X posts. The official Recent Search route implemented here is paid and stays off.
+- A cookie is a saved login session, not permanent data access. It can stop working or be revoked,
+  and X may challenge or restrict non-API automation. Saving it as a GitHub secret does not renew it
+  or make automated scraping approved. The earlier test only demonstrated a limited capture.
+- A configured GitHub/Cloudflare collector runs on cloud servers, so it does not need the laptop
+  to stay on. The `127.0.0.1` review page does need the laptop; it is not the deployed service.
+  Neither cloud hosting nor a saved cookie guarantees uninterrupted collection forever.
+- Free official filings and publisher feeds remain the automatic research sources. X in this
+  free-only company view is manual reading; do not label it as an active automatic feed.
+
+## Optional workflow only if paid access is explicitly approved later
 
 - Use the official X API with the application's customer-facing use case declared to X and the
   appropriate access/licence. A provider is an alternative only if its licence expressly permits
@@ -38,8 +59,8 @@ on 4 September 2026; it is not silently added as a holding.
 
 ## Cost assumptions, checked 4 September 2026
 
-X lists post reads at **USD 0.005 per resource**. Author/user reads (USD 0.010) and media reads
-(USD 0.005) are additional; this implementation requests author and media expansions. The
+X lists post reads at **USD 0.005 per resource** and author/user reads at USD 0.010. This
+implementation requests author and media expansions; confirm all applicable resource charges in the console. The
 developer console is authoritative for charges and access. Daily deduplication can reduce cost,
 but X describes it as a soft guarantee and its window resets at UTC midnight.
 
@@ -55,7 +76,7 @@ the bill. Set **both** the X console's currency spending limit and this collecto
 limit. The latter reserves the maximum results *before* each request, including failed/uncertain
 requests, so it is deliberately conservative; it is not dollar accounting.
 
-## Setup after an explicitly approved deployment
+## Future paid setup — not authorised under the current free-only requirement
 
 No browser password or login cookie is needed for this collector. Being signed in at x.com does
 not itself create API access. The earlier cookie-based News collector is a prototype and is not
@@ -83,6 +104,7 @@ reuses its credentials.
 
    | Variable | Default | Operator choice |
    | --- | --- | --- |
+   | `X_CHATTER_ALLOW_PAID` | `false` | Must remain false unless the user explicitly changes the free-only requirement |
    | `X_CHATTER_ENABLED` | `false` | `true` only after approval/setup |
    | `X_CHATTER_COMPANIES` | empty | Comma-separated portfolio ISINs/tickers for a pilot; `all` for the book |
    | `X_CHATTER_DAILY_POST_LIMIT` | `0` | A positive daily reservation cap; 400 permits two 20-post checks for 10 distinct company queries |

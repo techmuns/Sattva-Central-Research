@@ -9,7 +9,7 @@ import { XChatterEngine, collectionConfig } from '../worker/x-chatter-engine.mjs
 const NOW = Date.parse('2026-09-04T07:00:00Z');
 const holdings = [{ isin: 'INE000000001', name: 'Example Optical Limited', ticker: 'EXAMPLE' },
   { isin: 'INE000000002', name: 'Sample Unlisted Private Ltd', ticker: null }];
-const env = { X_CHATTER_ENABLED: 'true', X_CHATTER_DAILY_POST_LIMIT: '80', X_CHATTER_COMPANIES: 'all', X_BEARER_TOKEN: 'offline-placeholder' };
+const env = { X_CHATTER_ALLOW_PAID: 'true', X_CHATTER_ENABLED: 'true', X_CHATTER_DAILY_POST_LIMIT: '80', X_CHATTER_COMPANIES: 'all', X_BEARER_TOKEN: 'offline-placeholder' };
 const post = (id = '111') => ({ id, text: 'Example fixture post', author: { name: 'Fixture author', username: 'fixture_author' },
   createdAt: new Date(NOW - 3600000).toISOString(), editIds: [id], images: [] });
 function harness({ environment = env, read = async () => ({ posts: [post()], partial: false, returned: 1 }) } = {}) {
@@ -89,8 +89,19 @@ test('oversized successful responses are bounded', async () => {
 test('disabled configuration and public snapshots never start paid reads', async () => {
   let reads = 0; const h = harness({ environment: {}, read: async () => { reads++; } });
   assert.equal(collectionConfig({}).enabled, false);
-  assert.equal((await h.engine.start(holdings)).code, 'setup-required');
+  assert.equal((await h.engine.start(holdings)).code, 'free-only');
   await h.engine.alarm(); h.engine.snapshot(); h.engine.snapshot(); assert.equal(reads, 0);
+});
+test('free-only policy blocks paid reads even if a token, budget and enabled flag exist', async () => {
+  let reads = 0;
+  const environment = { ...env, X_CHATTER_ALLOW_PAID: 'false' };
+  const h = harness({ environment, read: async () => { reads++; } });
+  assert.equal((await h.engine.start(holdings)).code, 'free-only');
+  h.engine.state.running = true;
+  await h.engine.alarm();
+  assert.equal(h.engine.snapshot().status, 'free-only'); assert.equal(reads, 0);
+  delete environment.X_CHATTER_ALLOW_PAID;
+  assert.equal(collectionConfig(environment).enabled, false);
 });
 test('daily reservations persist across restarts and GETs cost no reads', async () => {
   let reads = 0; const h = harness({ environment: { ...env, X_CHATTER_DAILY_POST_LIMIT: '20' },

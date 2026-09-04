@@ -21,7 +21,7 @@ for (let c = 0; c < catalog.length; c++) {
 }
 const store = { get: (k) => structuredClone(rows.get(k)), put: (k, v) => rows.set(k, structuredClone(v)),
   entries: (prefix) => [...rows].filter(([k]) => k.startsWith(prefix)).map((r) => structuredClone(r)), delete: (k) => rows.delete(k) };
-const engine = new XChatterEngine(store, { X_CHATTER_ENABLED: 'true', X_CHATTER_DAILY_POST_LIMIT: '120', X_CHATTER_COMPANIES: 'all', X_BEARER_TOKEN: 'offline-fixture' });
+const engine = new XChatterEngine(store, { X_CHATTER_ALLOW_PAID: 'true', X_CHATTER_ENABLED: 'true', X_CHATTER_DAILY_POST_LIMIT: '120', X_CHATTER_COMPANIES: 'all', X_BEARER_TOKEN: 'offline-fixture' });
 let mode = 'ready';
 page.on('pageerror', (err) => errors.push(err.message));
 await page.route('**/*', async (route) => {
@@ -32,6 +32,7 @@ await page.route('**/*', async (route) => {
     requests.push(request.method());
     if (mode === 'error') return route.fulfill({ status: 503, json: {} });
     if (mode === 'setup') return route.fulfill({ json: { source: 'X API', status: 'setup-required', companies: [], posts: [], total: 0 } });
+    if (mode === 'free') return route.fulfill({ json: { source: 'X API', status: 'free-only', companies: [], posts: [], total: 0 } });
     return route.fulfill({ json: engine.snapshot(Object.fromEntries(url.searchParams)) });
   }
   if (url.pathname.startsWith('/api/')) return route.fulfill({ status: 404, json: {} });
@@ -81,6 +82,9 @@ try {
   mode = 'setup'; await page.locator('[data-x-refresh]').click();
   await page.waitForFunction(() => document.querySelector('[data-x-status]')?.textContent.includes('not set up yet'));
   ok('setup state keeps every holding visible without fabricated posts', await page.locator('[data-x-company-row]').count() === 3 && await page.locator('[data-x-post]').count() === 0);
+  mode = 'free'; await page.locator('[data-x-refresh]').click();
+  await page.waitForFunction(() => document.querySelector('[data-x-status]')?.textContent.includes('Free data only'));
+  ok('free mode clearly offers manual reading, not automatic ingestion', /do not automatically import/.test(await page.locator('[data-x-status]').textContent()) && await page.locator('[data-x-post]').count() === 0);
   ok('all X view requests are read-only', requests.length > 5 && requests.every((method) => method === 'GET'));
   ok('no application JavaScript errors', errors.length === 0);
   console.log(`${checks} X Chatter browser checks passed`);
