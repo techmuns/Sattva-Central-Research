@@ -229,7 +229,16 @@ try {
   await waitFor(page, () => !document.querySelector('[data-ai-card][data-ticker="A00"]'));
   await settled();
   assert.equal(await card('A00').count(), 0, 'a verified exit removes the old holding');
-  await page.locator('[data-ai-clear]').click();
+  await search.fill('A00');
+  await page.evaluate(() => window.show('universe'));
+  await settled();
+  assert(!/in portfolio/i.test(await card('A00').innerText()), 'the active private book excludes the exited company');
+  await peer.evaluate(() => window.lock());
+  await waitFor(page, async () => (await import('/js/research/portfolio-bridge.js')).portfolioConnectionState() === 'locked');
+  await settled();
+  assert(/in portfolio/i.test(await card('A00').innerText()), 'sign-out recomputes Universe membership from the public book');
+  await page.evaluate(() => window.show());
+  await settled();
   await page.evaluate(() => { window.dispose(); document.querySelector('#root').innerHTML = ''; });
   await peer.evaluate(() => { window.holdPositions = true; window.lock(); });
   await waitFor(page, async () => (await import('/js/research/portfolio-bridge.js')).portfolioConnectionState() === 'locked');

@@ -45,14 +45,17 @@ let loadError = '';
 // revokes that cached private view if access expires while another tab is open.
 onPortfolioInvalidation((version) => {
   if (version < 0) {
-    if (report?.scope === 'portfolio') report = null;
-    if (ctxRef?.scope !== 'portfolio') return;
+    // Universe/Watchlist cards also carry membership badges from the private
+    // book, so revoke those cached annotations as well as Portfolio results.
+    report = null;
+    if (!ctxRef) return;
     loadToken++;
     sizeController?.abort();
     sizeController = null;
     sizesLoading = collecting = false;
     awaitingBook = null;
     sizeError = 'Unlock your portfolio to refresh your alerts.';
+    if (ctxRef.scope !== 'portfolio') { void recollect(ctxRef); return; }
   } else {
     if (ctxRef?.scope !== 'portfolio') return;
     // A positions read already in flight will return the checked book. Otherwise
