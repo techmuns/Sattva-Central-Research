@@ -22,6 +22,17 @@ export function normaliseDomesticFilings(body, ticker, requestedForm = 'all') {
   const seen = new Set();
   let recognized = false;
   let skipped = 0;
+  const unreadableShapes = new Map();
+  function skip(value) {
+    skipped++;
+    // Bounded field/type diagnostics let an operator investigate source-shape changes without
+    // returning unknown record values or mistaking a partial parse for complete coverage.
+    const shape = value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(Object.entries(value).slice(0, 20).map(([key, item]) => [key.slice(0, 80), item === null ? 'null' : Array.isArray(item) ? 'array' : typeof item]))
+      : { value: value === null ? 'null' : typeof value };
+    const key = JSON.stringify(shape);
+    if (unreadableShapes.size < 5 || unreadableShapes.has(key)) unreadableShapes.set(key, { fields: shape, count: (unreadableShapes.get(key)?.count || 0) + 1 });
+  }
   function add(url, context) {
     const safe = documentUrl(url);
     if (!safe) { skipped++; return; }
@@ -43,7 +54,7 @@ export function normaliseDomesticFilings(body, ticker, requestedForm = 'all') {
       else if (value.trim()) skipped++;
       return;
     }
-    if (!value || typeof value !== 'object') { skipped++; return; }
+    if (!value || typeof value !== 'object') { skip(value); return; }
     if (value.ok === false || value.success === false || value.error) throw new Error('The filings service returned an error response.');
     const next = {
       ...context,
@@ -62,11 +73,11 @@ export function normaliseDomesticFilings(body, ticker, requestedForm = 'all') {
         walk(item, { ...next, form: forms[name] || next.form }, depth + 1);
       }
     }
-    if (!handled) skipped++;
+    if (!handled) skip(value);
   }
   walk(body);
   if (!recognized || (skipped && !documents.length)) throw new Error('The filings service returned an unfamiliar document format; no empty result has been assumed.');
-  return { documents, skipped };
+  return { documents, skipped, unreadableShapes: [...unreadableShapes.values()] };
 }
 
 export function domesticFilingsHref(ticker, { form = 'all', scope = 'universe' } = {}) {
