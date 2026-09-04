@@ -49,7 +49,7 @@ jobs:
 
       - name: Capture all four Screener trade categories
         id: insider
-        timeout-minutes: 25
+        timeout-minutes: 45
         if: ${{ !cancelled() }}
         env:
           SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}

@@ -4143,8 +4143,9 @@ Read-only staging checks also seed RELIANCE and INFY (109 domestic documents and
 NSE announcements); all other companies remain explicitly unchecked for the new sources.
 Insider source columns are preserved, while repeat representations of the same economic event are
 collapsed across captures and providers. The four lists are captured every 30 minutes with a
-25-minute job budget; an incomplete or structurally changed list leaves the last-good snapshot
-untouched. Trades run first; the slower company-filings capture joins only the separate two-hour
+45-minute safety budget for the high-volume first bootstrap; ordinary overlapping refreshes finish
+far sooner. An incomplete or structurally changed list leaves the last-good snapshot untouched.
+Trades run first; the slower company-filings capture joins only the separate two-hour
 schedule. Either successful capture can publish its saved progress. Health checks run after that
 publication, and ordinary 30-minute trade runs are not failed by unrelated company-source gaps.
 

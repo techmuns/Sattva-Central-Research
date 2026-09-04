@@ -21,7 +21,7 @@ const archive = resolve(here, '../public/data/insider-archive');
 const origin = 'https://www.screener.in';
 const capturedAt = new Date().toISOString();
 const BOOTSTRAP_DAYS = Math.max(1, Number(process.env.SCREENER_BOOTSTRAP_DAYS || 30));
-const MAX_PAGES = Math.max(2, Number(process.env.SCREENER_MAX_PAGES || 200));
+const MAX_PAGES = Math.max(2, Number(process.env.SCREENER_MAX_PAGES || 600));
 const OVERLAP_PAGES = Math.max(1, Number(process.env.SCREENER_OVERLAP_PAGES || 2));
 const NAVIGATION_ATTEMPTS = 3;
 const PAGE_PACE_MS = 1_500;
@@ -145,7 +145,10 @@ async function scrapeSource(page, source, previousMeta) {
     throw new Error('Screener source capture failed.');
   }
 
-  if (!complete) throw new Error('pagination limit reached');
+  if (!complete) {
+    console.error(`${source.id}: capture reached the ${MAX_PAGES}-page safety limit before its date boundary.`);
+    throw new Error('pagination limit reached');
+  }
   console.log(`${source.id}: ${rows.length} rows across ${pagesRead} page(s), ${latestDate || 'undated'} to ${oldestDate || 'undated'}.`);
   return {
     id: source.id,
