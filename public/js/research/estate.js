@@ -56,7 +56,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
   { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Company-specific retained news for covered symbols.' },
   { id: 'market-news', tab: 'News', route: '#/research/news', description: 'Market-wide Moneycontrol stories; intentionally not company-scopeable.' },
-  { id: 'announcements', tab: 'Corp Announcements', route: '#/research/corp-announcements', description: 'BSE filings in the exchange-wide retained capture.' },
+  { id: 'announcements', tab: 'Corp Announcements', route: '#/research/corp-announcements', description: 'BSE exchange-wide capture plus retained company/date lookups from BSE, NSE and DRHP.' },
   { id: 'insider-trades', tab: 'Insider Trades', route: '#/research/insider-trades', description: 'Insider and promoter disclosures in the upstream\'s own vocabulary.' },
 ];
 
@@ -535,6 +535,8 @@ function announcementRow(row) {
     category: clipped(row.category, 60),
     subCategory: clipped(row.subCategory, 60),
     source: row.source || null,
+    sources: row.sources || null,
+    url: row.url || null,
   };
 }
 
@@ -860,11 +862,11 @@ const BUILDERS = [
       const rows = filterByScope(announcements.rows(), scope, holdings);
       const meta = announcements.meta();
       return sourcePacket(this.id, {
-        source: 'BSE date-indexed corporate announcements',
+        source: 'BSE date capture plus Muns BSE / NSE / DRHP company lookups',
         asOf: meta.capturedAt || meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { coversUniverse: meta.coversUniverse, exchangeCompanies: meta.exchangeCompanies, windowDays: meta.windowDays, unnamedRows: meta.unnamedRows },
-        definition: 'BSE categories are taxonomy, not a materiality or sentiment judgement.',
+        coverage: { bseCoversUniverse: meta.coversUniverse, exchangeCompanies: meta.exchangeCompanies, bseWindowDays: meta.windowDays, unnamedRows: meta.unnamedRows, additionalLookups: meta.supplement?.lookups || 0, lookupCompanies: meta.supplement?.companies || 0, failedLookups: meta.supplement?.failed || 0 },
+        definition: 'Categories are source taxonomy, not a sentiment judgement. The capture timestamp and universe coverage apply only to BSE. Additional BSE/NSE/DRHP rows cover explicitly requested company/date ranges, not a full universe crawl. PDF contents have not been read.',
         ...chooseRows(rows, plan, announcementRow, byDateTimeDesc),
       });
     },

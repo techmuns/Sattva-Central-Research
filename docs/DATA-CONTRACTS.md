@@ -2704,7 +2704,7 @@ committed capture. `TWITTER_LIMIT` (20) bounds the posts read per account per ru
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 
-**`corp-announcements.json` no longer comes from the Muns filings API and must not go back to it.**
+**`corp-announcements.json` remains the BSE date-indexed base capture.** Additional Muns company/date lookups are merged in the browser; they never overwrite that exchange-wide file.
 The per-company route reached 118 of 603 companies because it costs one request each against a
 ~60/minute cap. BSE publish the same filings indexed by date, so the whole exchange arrives in about
 twenty requests, with no credential.
@@ -2761,6 +2761,44 @@ ANN_DAYS=7 ANN_MERGE=0 node scripts/scrape-bse-announcements.mjs   # rebuild a w
 ```
 Scheduled by `.github/workflows/announcements-refresh.yml` at 20:00 IST on weekdays — after filing
 stops for the day, which is why it is not a step in the 07:00 data refresh.
+
+### Additional corporate-announcement lookups
+
+Corp Announcements now offers a company ticker and date-range form for the supplied
+`GET /filings/corp/announcements/{ticker}` service. The Worker sends required `fromDate` and
+`toDate` in `YYYYMMDD`; its browser route `/api/announcements/{ticker}` accepts `from`/`to` ISO dates
+or the compact `fromDate`/`toDate` aliases. Invalid calendar dates, reversed ranges and malformed
+symbols fail before an upstream request. Successes are cached for 15 minutes per ticker/range,
+failures for 15 seconds; the normalized schema has a versioned cache identity. Reads are bounded
+by the existing 20-second retry deadline and a 4 MB response limit. Authentication uses the existing
+server token or the signed-in host's forwarded session token when the server secret is absent.
+
+`announcements-shared.js` preserves BSE/NSE/DRHP grouping, source subject, timestamp, original
+attachment URL and the requested company ticker. A BSE numeric `symbol` becomes `scripCode`, not
+the NSE ticker used for Portfolio/Watchlist scope. Unknown/error payloads fail visibly rather than
+claiming no announcements; partially unreadable groups carry `skipped`. Undated DRHP documents
+remain visible with a blank date. An authenticated preview lookup for RELIANCE over
+2025-01-01 through 2026-07-15 returned 252 announcements from the NSE fallback on 4 September 2026.
+
+`withAnnouncementLookups()` wraps the existing BSE feed. The same Corp Announcements table,
+Source filter, company watchlist, exports, Ask Research and General Alerts consume the combined
+rows. Its `supplement` metadata reports the lookups separately; `capturedAt`, `coversUniverse` and
+`windowDays` still describe only the BSE base. The freshness label names the BSE capture explicitly.
+The normal Refresh re-reads BSE. **There is no implicit company walk:** supplementary requests run
+only when the reader submits the form, and the form repeats a lookup when requested. Opening the
+page restores saved rows without spending a per-company request.
+
+Lookup rows are retained in IndexedDB under `announcement-lookups:v1`, outside the HTTP cache and
+the BSE snapshot. An empty/failed response or a newer BSE snapshot cannot erase them. Matching
+company/date/document identity collapses overlap while retaining source/provider labels; BSE's
+AttachLive, AttachHis and Pname variants of one attachment share its PDF identifier. Distinct
+exchange documents remain distinct, and identical rows without a document ID preserve their
+maximum observed multiplicity across responses. This is device-retained lookup history, not a
+scheduled NSE/DRHP universe archive. It may include dates older than the BSE base window.
+
+`node scripts/verify-announcement-lookups.mjs` covers source grouping, numeric BSE identity,
+calendar validation, authentication, range-separated caching, overlap, empty/failure retention and
+restoring device history. Browser checks cover the form, scope identity, Source filter and export.
 
 ### News and insider trades: snapshot first, live walk second
 

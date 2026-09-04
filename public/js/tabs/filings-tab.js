@@ -179,6 +179,8 @@ export function makeFilingsTab(cfg) {
   }
 
   function paint(ctx) {
+    disposers.forEach((dispose) => dispose && dispose());
+    disposers = [];
     const m = cfg.feed.meta();
     let all = cfg.feed.rows();
 
@@ -229,9 +231,11 @@ export function makeFilingsTab(cfg) {
           description: cfg.subtitle,
           meta: pill(m, ctx.scope, []),
         })}
+        ${cfg.aboveTable?.(ctx, m) || ''}
         ${unavailablePanel(m, refreshLabel === 'Check for new' ? 'Try again' : refreshLabel)}
         ${methodFooter(cfg)}`;
       wireRefresh(ctx.root);
+      disposers.push(cfg.wireAboveTable?.(ctx.root, ctx));
       wireMethod(ctx.root, m, null, ctx.scope, []);
       return;
     }
@@ -331,10 +335,12 @@ export function makeFilingsTab(cfg) {
         // moves when you use it reads as a different page.
       })}
       ${busyStrip(m)}
+      ${cfg.aboveTable?.(ctx, m) || ''}
       ${table.html}
       ${methodFooter(cfg)}`;
 
     disposers.push(table.wire(ctx.root));
+    disposers.push(cfg.wireAboveTable?.(ctx.root, ctx));
     wireMethod(ctx.root, m, cov, ctx.scope, rows);
     // THE ACCOUNT MOVED BEHIND THE PILL, IT DID NOT GO. A permanent grey paragraph under the
     // heading — how old the capture is, how many companies were searched, what they answered —
@@ -460,7 +466,7 @@ function pill(m, scope, rows) {
   const tone = fresh ? 'text-emerald-700' : 'text-slate-500';
   // The face is calm and useful. Coverage/retry details remain in provenance while the watchdog
   // fixes them in the background; internal pipeline vocabulary is not customer guidance.
-  const label = age === null ? 'Updating' : fresh ? 'Up to date' : `Updated ${formatRelativeTime(at)}`;
+  const label = (m.supplement ? 'BSE capture · ' : '') + (age === null ? 'Updating' : fresh ? 'Up to date' : `Updated ${formatRelativeTime(at)}`);
   return `<span data-filings-info
       title="${escapeHtml(scopeTitle(scope, rows, m))}"
       class="inline-flex items-center gap-1.5 text-xs font-semibold ${tone}">

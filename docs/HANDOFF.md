@@ -150,6 +150,7 @@ Awaited` row is excluded from moves and is never misreported as an exit.
 
 | Feed | Where | Notes |
 | --- | --- | --- |
+| **Additional corporate announcements** | Corp Announcements company/date form | Muns BSE/NSE/DRHP records join the BSE table, with source filters and document links. Lookups are retained on the device through empty/failed responses; no automatic universe walk. See `docs/DATA-CONTRACTS.md` → Additional corporate-announcement lookups. |
 | **Concall Deep Dive** — a per-company report on one call | The **Deep Dive** column on the Con-call tab | A separate Cloudflare Worker runs its own LLM pipeline and returns the report; this dashboard triggers it, mirrors its progress and lays out the result. Nothing is stored in `public/data/` and nothing is committed. Reading the reports they already hold is free and happens once per visit; **starting a new run costs real compute**, so that never fires without a click and a confirm. See §5c. |
 
 ### Mock — placeholder data shipped so the shell has something to render

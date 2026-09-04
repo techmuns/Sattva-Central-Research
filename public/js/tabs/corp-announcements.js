@@ -12,8 +12,8 @@
 //   requests. So the coverage question changed shape — a company with no rows here filed nothing in
 //   the window, rather than being one we had no budget to ask about.
 //
-// THERE IS NO SOURCE COLUMN ANY MORE. Every row is BSE, so a column of identical badges was noise
-// dressed as provenance. Which exchange said it now belongs in the pill and the modal, said once.
+// Company/date lookups now add BSE, NSE and DRHP records. Source labels and lookup coverage stay
+// separate from the scheduled BSE capture, which remains the inexpensive exchange-wide floor.
 //
 // THE SUBJECT LINE IS THE FILING'S OWN. Nothing here classifies an announcement as material or
 // routine, or summarises a PDF — the row carries what the exchange published and links to the
@@ -25,7 +25,9 @@ import { formatDate, formatNumber } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { announcements as feed } from '../data/filings.js';
-import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, groupLabel, FILTER_TARGETED } from '../data/news-keywords.js';
+import { announcementSources } from '../data/announcements-shared.js';
+import { announcementLookupControls } from './announcement-lookup.js';
+import { classifyStory, topicFilterOptions, matchesTopic, groupLabel, FILTER_TARGETED } from '../data/news-keywords.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
@@ -77,12 +79,15 @@ const categoryBadge = (c) => {
   return `<span class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${cls}">${escapeHtml(String(c))}</span>`;
 };
 
+const lookup = announcementLookupControls(feed);
 const tab = makeFilingsTab({
   id: 'corp-announcements',
   title: 'Corp Announcements',
   subtitle:
-    'Every corporate filing made with BSE in the window, for the whole exchange — read by date rather than one company at a time. Subjects and categories are the filings’ own; the document is linked, not reproduced.',
+    'BSE’s exchange-wide capture, plus additional BSE, NSE and DRHP records fetched by company. Subjects and categories are the sources’ own; each available document is linked.',
   feed,
+  aboveTable: lookup.html,
+  wireAboveTable: lookup.wire,
   noun: 'announcements',
   nameLabel: 'Subject',
   nameMaxPx: 520,
@@ -93,6 +98,7 @@ const tab = makeFilingsTab({
   searchable: (r) =>
     `${cleanFilingText(r.title)} ${cleanFilingText(r.headline)} ${cleanFilingText(r.subject)} ${r.company || ''} ${r.ticker || ''} ${r.scripCode || ''} ${r.category || ''} ${r.subCategory || ''}`,
   columns: () => [
+    { label: 'Source', get: (r) => announcementSources(r).join(' / ') || 'Not specified' },
     {
       label: 'Date',
       get: (r) =>
@@ -154,6 +160,7 @@ const tab = makeFilingsTab({
         options: topicFilterOptions((value) => cache.filter((reading) => matchesTopic(reading, value)).length).filter((o) => o.value !== FILTER_TARGETED),
         match: (r, v) => matchesTopic(readingFor(r), v),
       },
+      { label: 'Source', options: [{ value: 'all', label: 'All sources' }, ...[...new Set(rows.flatMap(announcementSources))].sort().map((value) => ({ value, label: value }))], match: (r, value) => announcementSources(r).includes(value) },
     ];
     const cats = [...new Set(rows.map((r) => r.category).filter(Boolean))].sort();
     if (cats.length > 1) {
@@ -174,67 +181,25 @@ const tab = makeFilingsTab({
     return out;
   },
   provenance: (m) => `<div class="px-7 py-6">
-      <div class="mb-3 flex items-start justify-between gap-4">
-        <h2 class="font-display text-xl font-bold text-slate-900">Corporate announcements</h2>
-        <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
-      </div>
-      <div class="text-sm leading-relaxed text-slate-600">
-        <p><strong>Real filings, read from BSE's own date index.</strong> Indian listed companies file announcements with the
-           exchanges continuously — board meetings, results, corporate actions, clarifications. These come from BSE's
-           <code class="rounded bg-slate-100 px-1">AnnSubCategoryGetData</code> feed, which answers
-           <em>what was filed on these dates</em> rather than <em>what did this company file</em>.</p>
-
-        <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Why that difference matters to what you see</h3>
-        <p class="mt-1 text-xs">Asking company by company costs one request each against an upstream capped near sixty a
-           minute, so the universe took ten minutes and a run cut short by the limit covered whatever it reached. Asking by
-           date covers <strong>every listed company</strong> in about two dozen requests. So
-           <strong>a company with no rows here filed nothing in the window</strong> — it was not skipped for want of
-           request budget. Those are different statements and only the second one is honest about the old feed.</p>
-
-        <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Topic — the one reading that is ours</h3>
-        <p class="mt-1 text-xs">The whole exchange files roughly <strong>900 announcements a weekday</strong>, and BSE's own
-           two ways of narrowing that are their filing taxonomy rather than an answer: the category has eight values, of
-           which <em>Company Update</em> is about a fifth of everything, and the sub-category has 67, mostly procedural.
-           Neither tells you which of these is an order win, a QIP or a resignation.</p>
-        <p class="mt-2 text-xs"><strong>Topic</strong> is the same thirty keywords this desk tracks newsflow by, matched
-           against the filing's own subject and BSE's own sub-category for it — both the exchange's words, not a summary of
-           ours. Every option shows how many rows it would leave, counted from the rows in scope, and
-           <strong>&ldquo;No tracked keyword&rdquo;</strong> is always offered so a pattern that is quietly too narrow can be
-           found rather than mistaken for a quiet week.</p>
-        <div class="mt-2 space-y-1.5 text-xs">
-          ${GROUPS.map(
-            (g) =>
-              `<p><span class="font-semibold text-slate-700">${escapeHtml(g.label)}</span> — ${KEYWORDS.filter((k) => k.group === g.id)
-                .map((k) => escapeHtml(k.label))
-                .join(', ')}</p>`
-          ).join('')}
-        </div>
-        <p class="mt-2 text-xs">A keyword names a <strong>topic, never a direction</strong> — <em>Lawsuit</em> is something a
-           company can be on either side of — and nothing on this table is ranked or scored. What a match does change is
-           whether <strong>General Alerts</strong> treats the filing as material, which is stated on the row there.</p>
-
-        <h3 class="font-display mt-4 text-sm font-bold text-slate-900">What else is ours</h3>
-        <ul class="mt-1 list-disc space-y-1 pl-5 text-xs">
-          <li><strong>Nothing in the subject, the category or the sub-category</strong> — all are BSE's own strings, and the
-              category list is what their API accepts rather than a taxonomy of ours.</li>
-          <li><strong>No ranking, and no materiality judgement on this table.</strong> Nothing here is scored or sorted by
-              importance. <strong>BSE's own critical-filing flag is reproduced where they set it and is theirs</strong> — and
-              it is deliberately <em>not</em> used as this dashboard's materiality gate, because it marks roughly a third of
-              all filings and most of those are AGM notices and board-meeting intimations. It is a calendar flag; borrowing
-              it would make a third of the exchange urgent.</li>
-          <li><strong>The ticker.</strong> BSE identify a filer by scrip code. Where this dashboard already holds that code
-              in <code class="rounded bg-slate-100 px-1">mc-ticker-map.json</code> the row carries the confirmed NSE symbol;
-              otherwise it carries BSE's own symbol, and a filer we cannot name at all keeps its row under its scrip code
-              rather than being dropped.${m.unnamedRows ? ` <strong>${escapeHtml(formatNumber(m.unnamedRows))}</strong> rows are in that last state.` : ''}</li>
-          <li><strong>The date normalisation only.</strong> A date that cannot be read stays blank and the row sorts last,
-              rather than being given today's.</li>
-        </ul>
-
-        ${coverageBlock(m)}
-
-        <p class="mt-4 text-xs text-slate-500">A dash means <em>the filing did not carry it</em> — never zero.</p>
-      </div>
-    </div>`,
+    <div class="mb-3 flex items-start justify-between gap-4">
+      <h2 class="font-display text-xl font-bold text-slate-900">Corporate announcements</h2>
+      <button data-modal-close class="text-2xl text-slate-400">&times;</button>
+    </div>
+    <div class="space-y-3 text-sm leading-relaxed text-slate-600">
+      <p><strong>BSE date capture:</strong> the scheduled exchange-wide feed covers its retained ${m.windowDays}-day window.
+        Its freshness label applies to that capture. Subjects, categories and sub-categories are supplied by the exchange.</p>
+      <p><strong>Additional company lookups:</strong> Muns reads BSE, NSE fallback and DRHP documents for the ticker and dates
+        you enter. These rows are added to this table and retained on this device. They are not a complete NSE or DRHP universe capture.
+        Repeating a lookup adds new records; a failed or empty response does not remove earlier disclosures.</p>
+      <p>The Source column and filter preserve exchange labels. Matching document, company and date overlap is shown once;
+        separate exchange documents remain separate rows. Original document links are included in the export.</p>
+      <p><strong>Topic</strong> is the desk’s keyword reading of the filing subject and sub-category, not a source-provided sentiment.
+        No PDF is summarized or scored. Missing fields remain blank.</p>
+      <p>${m.supplement?.lookups || 0} additional lookups across ${m.supplement?.companies || 0} companies;
+        ${m.supplement?.failed || 0} latest attempts failed. The form reports its latest response and any partial result.</p>
+      ${coverageBlock(m)}
+    </div>
+  </div>`,
   onExport: async (visible, m) => {
     await exportRows({
       filename: 'sattva-corp-announcements',
@@ -246,12 +211,9 @@ const tab = makeFilingsTab({
           width: 14,
           get: (r) =>
             r.__banner
-              ? `REAL FILINGS, NOT OURS. Corporate announcements as filed with BSE, read from their date-indexed feed ` +
-                `(AnnSubCategoryGetData), covering ${m.windowDays} day(s) to ${new Date().toISOString().slice(0, 10)}, exported ${new Date().toISOString()}. ` +
-                `SUBJECTS, CATEGORIES AND SUB-CATEGORIES ARE BSE'S OWN WORDS — nothing here judges an announcement material or routine, and no document is summarised. ` +
-                `READ BY DATE, NOT BY COMPANY: every listed company is covered, so a company absent from this file filed nothing in the window rather than having been skipped. ` +
-                `${m.covered} companies filed something${m.unnamedRows ? `; ${m.unnamedRows} rows are filed under a BSE scrip code because this dashboard has no symbol for the filer` : ''}. ` +
-                `A blank date means the filing's date could not be read, never that it is undated today.`
+              ? `SOURCE DISCLOSURES. BSE exchange-wide capture: ${m.windowDays} day(s), captured ${m.capturedAt || 'at an unknown time'}. ` +
+                `Additional Muns company/date lookups are retained on this device and may cover older dates. Their coverage is limited to the companies and ranges requested. ` +
+                `Subjects and categories are the sources' own words; Topic is the dashboard's keyword reading. No document contents are summarized. Exported ${new Date().toISOString()}.`
               : r.date || '',
         },
         { header: 'Time', key: 'tm', width: 10, get: (r) => (r.__banner ? '' : r.time || '') },
@@ -261,6 +223,8 @@ const tab = makeFilingsTab({
         { header: 'Subject (as filed)', key: 'h', width: 70, get: (r) => (r.__banner ? '' : cleanFilingText(r.title || r.headline)) },
         { header: 'Category (as filed)', key: 'c', width: 22, get: (r) => (r.__banner ? '' : r.category || '') },
         { header: 'Sub-category (as filed)', key: 'sb', width: 30, get: (r) => (r.__banner ? '' : r.subCategory || '') },
+        { header: 'Source', key: 'src', width: 20, get: (r) => r.__banner ? '' : announcementSources(r).join(' / ') },
+        { header: 'Retrieved through', key: 'via', width: 35, get: (r) => r.__banner ? '' : (r.providers || []).join(' / ') },
         { header: 'Document URL', key: 'u', width: 60, get: (r) => (r.__banner ? '' : r.url || '') },
       ],
       rows: [{ __banner: true }, ...visible],

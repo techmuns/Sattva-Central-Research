@@ -34,6 +34,7 @@ import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCa
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
 import { fetchNews, fetchAnnouncements, fetchInsiderTrades, searchStocks, withCallerToken, MunsError } from './muns.mjs';
+import { announcementRange } from '../public/js/data/announcements-shared.js';
 import { CORS, preflight, contentTag, withTag, tagged, revalidate } from './http.mjs';
 import {
   dispatchWorkflow,
@@ -705,13 +706,20 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
 
   const url = new URL(request.url);
   const iso = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null);
-  const from = iso(url.searchParams.get('from'));
-  const to = iso(url.searchParams.get('to'));
+  let from = iso(url.searchParams.get('from'));
+  let to = iso(url.searchParams.get('to'));
+  if (kind === 'announcements') {
+    try { ({ from, to } = announcementRange(url.searchParams.get('from') || url.searchParams.get('fromDate'), url.searchParams.get('to') || url.searchParams.get('toDate'))); }
+    catch (err) { return json({ ok: false, reason: 'shape', message: err.message }, 400); }
+  }
 
   // A ticker is a path segment on two of these routes, so it is validated rather than passed
   // through: this must not become an open proxy to arbitrary upstream paths.
-  const ticker = decodeURIComponent(rawTicker).trim().toUpperCase();
-  if (kind !== 'news' && !/^[A-Z0-9&.\-]{1,20}$/.test(ticker)) {
+  let ticker;
+  try { ticker = decodeURIComponent(rawTicker).trim().toUpperCase(); }
+  catch { return json({ ok: false, reason: 'shape', message: 'That is not a valid ticker.' }, 400); }
+  const tickerPattern = kind === 'announcements' ? /^[A-Z0-9&._-]{1,80}$/ : /^[A-Z0-9&.\-]{1,20}$/;
+  if (kind !== 'news' && !tickerPattern.test(ticker)) {
     return json({ ok: false, reason: 'shape', message: 'That is not a ticker this route will ask about.' }, 400);
   }
 
@@ -720,7 +728,7 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
     return json({ ok: false, reason: 'shape', message: 'A news search needs ?q=.' }, 400);
   }
 
-  const cacheKey = edgeKey(`muns-${kind}?t=${ticker}&q=${encodeURIComponent(query || '')}&from=${from || ''}&to=${to || ''}`);
+  const cacheKey = edgeKey(`muns-${kind}?t=${encodeURIComponent(ticker)}&q=${encodeURIComponent(query || '')}&from=${from || ''}&to=${to || ''}${kind === 'announcements' ? '&schema=2' : ''}`);
   const cache = caches.default;
   const hit = await cache.match(cacheKey);
   if (hit) return revalidate(request, hit, 'hit');

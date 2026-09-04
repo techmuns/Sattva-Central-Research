@@ -891,15 +891,15 @@ function fromAnnouncements({ day, wanted, includeHistory }) {
   const capturedDay = istDay(m.capturedAt);
   const rows = announcements.rows().filter((r) => inRequestedWindow(r.date, day, includeHistory) && inScope(wanted, r.ticker));
 
-  const events = rows.map((r, i) => ({
-    id: `ann:${r.newsId || `${r.ticker}|${r.date}|${i}`}`,
+  const events = rows.map((r) => ({
+    id: `ann:${r.newsId || `${r.ticker}|${r.date}|${r.url || `${r.title || r.headline}|${r.time || ''}`}`}`,
     ...announcementSignal(r),
     time: r.time ? String(r.time).slice(0, 5) : null,
     at: r.date,
     ticker: r.ticker || null,
     company: r.company || r.ticker || '—',
     headline: r.title || r.headline || 'Filing',
-    detail: [r.category, r.subCategory].filter(Boolean).join(' · ') || 'Category not carried',
+    detail: [...(r.sources || [r.source]), r.category, r.subCategory].filter(Boolean).join(' · ') || 'Category not carried',
     url: r.url || null,
   }));
 
@@ -910,7 +910,8 @@ function fromAnnouncements({ day, wanted, includeHistory }) {
     // empty bucket means nobody looked, not that nobody filed.
     reachesToday: !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
-    note: capturedDay && capturedDay >= day ? null : `The newest capture of the exchange's filings ran on ${capturedDay || 'an unknown date'}, so nothing here has looked at ${day}.`,
+    note: (capturedDay && capturedDay >= day ? '' : `The newest BSE capture ran on ${capturedDay || 'an unknown date'}. `) +
+      'Exchange-wide coverage and freshness refer to BSE. Additional NSE/DRHP rows cover only requested company/date lookups.',
   };
 }
 
