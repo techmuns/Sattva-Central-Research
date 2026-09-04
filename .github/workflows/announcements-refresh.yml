@@ -88,3 +88,19 @@ jobs:
           done
           echo "Push failed after 4 attempts."
           exit 1
+
+      # Run after snapshot publication: a bad source must mark the job failed without discarding
+      # useful rows and checkpoints already collected by the successful capture steps.
+      - name: Check operational capture health
+        if: always()
+        env:
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
+        run: node scripts/check-filings-health.mjs announcements
+
+      - name: Upload capture health report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: filings-health
+          path: ${{ runner.temp }}/filings-health.json
+          if-no-files-found: warn

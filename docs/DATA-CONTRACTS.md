@@ -3712,6 +3712,10 @@ time budgets, date gaps, partial/empty/auth failures, raw-universe scope, archiv
 missing static files, and coverage reporting. The existing domestic, announcement, insider and
 snapshot contract tests cover the upstream parsers and additive consumer behavior.
 
+Operational detection and alert-delivery requirements are documented in
+[`FILINGS-OPERATIONS.md`](FILINGS-OPERATIONS.md). Source failures fail a post-publication health
+gate, and `/api/filings-health` exposes a read-only HTTP 503 signal for external monitoring.
+
 ## Adding a new data file
 
 1. Drop the JSON in `public/data/` (or `public/data/mock/` if it's placeholder data).

@@ -1,0 +1,38 @@
+name: Filings operational health
+
+# Read-only check of published captures, independent of whether a capture job finishes.
+# GitHub's own scheduler is best-effort: an external monitor should also read /api/filings-health.
+# Workflow notification delivery depends on the operator's GitHub notification settings.
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: filings-operational-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Check published source captures
+        env:
+          FILINGS_HEALTH_BASE: https://sattva-central-research.tech-441.workers.dev
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
+        run: node scripts/check-filings-health.mjs
+      - name: Upload operational health report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: filings-health
+          path: ${{ runner.temp }}/filings-health.json
+          if-no-files-found: warn

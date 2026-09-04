@@ -23,12 +23,14 @@ try {
   const options = { dir: join(scratch, 'capture'), companies, request, now: () => clock,
     sleep: async (ms) => { clock += ms; }, concurrency: 3, spacingMs: 2500 };
   let index = await captureCompanySources({ ...options, maxRequests: 1 });
+  const createdAt = index.createdAt;
   assert.equal(calls.length, 1);
   assert(index.sources.announcements.A.lastSuccessAt);
   assert(!index.sources.announcements.B.lastSuccessAt, 'unreached companies remain explicit');
   assert(!index.sources.domestic.A.lastSuccessAt);
   clock += 3600000;
   index = await captureCompanySources({ ...options, maxRequests: 3 });
+  assert.equal(index.createdAt, createdAt, 'a new run cannot reset the initial coverage grace period');
   assert.equal(calls.length, 4);
   assert.deepEqual(calls.slice(1).map((c) => `${c.kind}/${c.ticker}`), ['announcements/B', 'domestic/A', 'domestic/B'], 'restart reaches the remaining companies before repeating work');
   assert(calls[2].at - calls[1].at >= 2500 && calls[3].at - calls[2].at >= 2500, 'one rate gate across concurrent workers');

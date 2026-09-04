@@ -24,6 +24,8 @@ jobs:
         run: node scripts/verify-domestic-filings.mjs
       - name: Verify automatic filing capture and archives
         run: node scripts/verify-company-capture.mjs
+      - name: Verify operational filing health
+        run: node scripts/verify-filings-health.mjs
       - name: Verify capture watchdog
         run: node scripts/verify-capture-watchdog.mjs
       - name: Verify NSE filing history and scoped search

@@ -36,6 +36,7 @@ import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mj
 import { fetchNews, fetchAnnouncements, fetchInsiderTrades, fetchDomesticFilings, searchStocks, withCallerToken, MunsError } from './muns.mjs';
 import { DOMESTIC_FORMS } from '../public/js/data/domestic-filings-shared.js';
 import { announcementRange } from '../public/js/data/announcements-shared.js';
+import { assessFilingsHealth, FILINGS_HEALTH_FILES } from '../public/js/data/filings-health-shared.js';
 import { CORS, preflight, contentTag, withTag, tagged, revalidate } from './http.mjs';
 import {
   dispatchWorkflow,
@@ -249,6 +250,9 @@ export default {
         workflow: DATA_WORKFLOW,
         cacheName: 'data-snapshot-run-status',
       });
+    }
+    if (url.pathname === '/api/filings-health') {
+      return handleFilingsHealth(request, env, ctx);
     }
     if (url.pathname === '/api/capture-status') {
       return handleCaptureStatus(request, env, ctx);
@@ -1728,6 +1732,31 @@ const CAPTURE_FILES = {
   technicals: '/data/technicals.json',
   marketNews: '/data/market-news.json',
 };
+
+// Read-only health signal for an independent uptime monitor. Never starts a capture or calls Muns.
+async function handleFilingsHealth(request, env, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
+  const key = edgeKey('filings-operational-health-v1');
+  const cache = caches.default;
+  const hit = await cache.match(key);
+  if (hit) {
+    const report = await hit.json();
+    return json(report, report.ok ? 200 : 503);
+  }
+  const captures = {};
+  await Promise.all(Object.entries(FILINGS_HEALTH_FILES).map(async ([source, path]) => {
+    try {
+      const response = await env.ASSETS.fetch(new Request(new URL(`/data/${path}`, request.url)));
+      if (!response.ok) throw new Error('Capture unavailable');
+      captures[source] = await response.json();
+    } catch { captures[source] = null; }
+  }));
+  const report = assessFilingsHealth(captures);
+  ctx.waitUntil(cache.put(key, new Response(JSON.stringify(report), {
+    headers: { 'content-type': 'application/json', 'cache-control': 'max-age=30' },
+  })));
+  return json(report, report.ok ? 200 : 503);
+}
 
 async function handleCaptureStatus(request, env, ctx) {
   if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);

@@ -81,6 +81,7 @@ export async function captureCompanySources({ dir, companies, unresolved = [], r
   const start = now(), to = day(start);
   const indexPath = join(dir, 'index.json');
   const index = readJson(indexPath, { version: 1, sources: {} });
+  index.createdAt ||= index.lastRunAt || new Date(start).toISOString();
   const from = index.requestedFrom || shift(to, -(backfillDays - 1));
   const wanted = new Set(companies.map((c) => c.ticker));
   index.companies = companies;
@@ -91,7 +92,10 @@ export async function captureCompanySources({ dir, companies, unresolved = [], r
   index.scope = 'Committed portfolio, universe and technicals; device-only additions are not registered for background capture.';
   for (const kind of ['announcements', 'domestic']) {
     const entries = index.sources[kind] ||= {};
-    for (const { ticker } of companies) entries[ticker] ||= { rowCount: 0, ranges: [] };
+    for (const { ticker } of companies) {
+      if (!entries[ticker]) entries[ticker] = { rowCount: 0, ranges: [], registeredAt: new Date(start).toISOString() };
+      else entries[ticker].registeredAt ||= index.createdAt;
+    }
   }
   // Fair across restarts. A failure is attempted again, but does not starve companies that have
   // never been reached. Nothing is sliced out of the declared universe to meet a run's budget.
