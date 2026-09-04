@@ -13,6 +13,8 @@ import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
+import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
+export { relativeAge } from '../ui/ai-alert-utils.js';
 
 export const meta = {
   id: 'ai-alerts',
@@ -30,11 +32,13 @@ let loadToken = 0;
 let unsubs = [];
 let filter = 'all';
 let visibleLimit = PAGE_SIZE;
+let query = '';
 
 export function render(ctx) {
   ctxRef = ctx;
 
   if (!unsubs.length) {
+    unsubs.push(watchCalendar());
     unsubs.push(
       refresh.register(REFRESH_ID, {
         label: 'AI Alerts',
@@ -94,15 +98,76 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
 }
 
 function paint(ctx) {
-  const cards = filteredCards(report?.cards || []);
+  const matches = (report?.cards || []).filter((card) => matchesSearch(card, query));
+  const cards = filteredCards(matches);
   const shown = cards.slice(0, visibleLimit);
-  ctx.root.innerHTML = `
-    ${head(ctx)}
-    ${report ? '' : loadingPanel()}
-    ${report ? controls(report, cards.length) : ''}
-    ${report ? cardsPanel(ctx, shown, cards.length) : ''}`;
+  // Keep the input node mounted while typing and while independent feeds deliver partials.
+  // Replacing the whole root loses the caret, keyboard focus and IME composition.
+  if (!ctx.root.querySelector('[data-ai-layout]')) {
+    ctx.root.innerHTML = `<div data-ai-layout><div data-ai-heading></div>${searchMarkup()}<div data-ai-toolbar></div><div data-ai-results></div></div>`;
+    const input = ctx.root.querySelector('[data-ai-search]');
+    input.value = query;
+    input.addEventListener('input', () => {
+      query = input.value;
+      visibleLimit = PAGE_SIZE;
+      paint(ctxRef);
+    });
+    ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
+  }
+  ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
+  ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
+  ctx.root.querySelector('[data-ai-toolbar]').innerHTML = report ? controls(matches, cards.length) : '';
+  ctx.root.querySelector('[data-ai-results]').innerHTML = report ? cardsPanel(ctx, shown, cards.length) : loadingPanel();
   if (!report) return;
   wire(ctx, cards.length);
+}
+
+function searchMarkup() {
+  return `<div role="search" aria-label="Search AI Alerts" class="mb-4">
+    <label for="ai-alert-search" class="sr-only">Search AI Alerts</label>
+    <div class="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-indigo-500">
+      <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <input id="ai-alert-search" data-ai-search type="search" autocomplete="off" aria-describedby="ai-search-help" placeholder="Search company, symbol or alert…" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400">
+      <button type="button" data-ai-clear class="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-indigo-500">Clear</button>
+    </div>
+    <p id="ai-search-help" class="mt-2 text-xs text-slate-500">Search all events behind these alerts · Last ${alerts.WINDOW_DAYS} days · Dates in IST</p>
+  </div>`;
+}
+
+function clearSearch() {
+  query = '';
+  visibleLimit = PAGE_SIZE;
+  const input = ctxRef?.root.querySelector('[data-ai-search]');
+  if (input) input.value = '';
+  if (ctxRef) paint(ctxRef);
+  input?.focus({ preventScroll: true });
+}
+
+/** Re-age immediately at IST midnight and after a sleeping/background tab becomes visible. */
+function watchCalendar() {
+  let day = currentDay();
+  let timer;
+  const check = () => {
+    if (!ctxRef || document.hidden || currentDay() === day) return;
+    day = currentDay();
+    for (const el of ctxRef.root.querySelectorAll('[data-ai-age]')) {
+      el.textContent = relativeAge(el.dataset.day, day);
+    }
+    // Re-rank and drop evidence that has left the seven-day window as well as updating labels.
+    void recollect(ctxRef);
+  };
+  const schedule = () => {
+    const nextMidnight = Date.parse(`${currentDay()}T00:00:00+05:30`) + 86_400_000;
+    timer = setTimeout(() => { check(); schedule(); }, Math.max(1, nextMidnight - Date.now() + 50));
+  };
+  schedule();
+  document.addEventListener('visibilitychange', check);
+  window.addEventListener('focus', check);
+  return () => {
+    clearTimeout(timer);
+    document.removeEventListener('visibilitychange', check);
+    window.removeEventListener('focus', check);
+  };
 }
 
 function head(ctx) {
@@ -146,16 +211,16 @@ export function feedStatus(rep) {
   return { label: 'Updated', tone: 'positive', state: 'complete' };
 }
 
-function controls(rep, visibleCount) {
-  const all = rep.cards.length;
-  const mustSee = rep.cards.filter((card) => card.priority === 'must-see').length;
-  const important = all - mustSee;
+function controls(cards, visibleCount) {
+  const active = cards.filter((card) => !mute.isHidden(card.ticker, card.topEvent?.id || ''));
+  const mustSee = active.filter((card) => card.priority === 'must-see').length;
+  const important = active.length - mustSee;
   // Counted over what is ACTUALLY archived out of this view, not over the whole store: an entry
   // whose evidence has been overtaken is no longer hiding anything, and reporting it as archived
   // would send the reader looking for a card that is already back on the page.
-  const archived = rep.cards.filter((card) => mute.isHidden(card.ticker, card.topEvent?.id || '')).length;
+  const archived = cards.length - active.length;
   const options = [
-    { id: 'all', label: `All priorities · ${all - archived}` },
+    { id: 'all', label: `All priorities · ${active.length}` },
     { id: 'must-see', label: `Must see · ${mustSee}` },
     { id: 'important', label: `Important · ${important}` },
     // ARCHIVING IS NOT DELETING, so the archive is a place and not just a smaller list. A control
@@ -171,7 +236,7 @@ function controls(rep, visibleCount) {
       </div>
       <div class="flex items-center gap-3 text-xs text-slate-500">
         ${filter === 'archived' && archived ? `<button type="button" data-ai-unmute-all class="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200">Restore all</button>` : ''}
-        <span><strong class="font-semibold text-slate-700">${escapeHtml(formatNumber(visibleCount))}</strong> ${visibleCount === 1 ? 'company' : 'companies'} in this view</span>
+        <span role="status" aria-live="polite" aria-atomic="true"><strong class="font-semibold text-slate-700">${escapeHtml(formatNumber(visibleCount))}</strong> ${visibleCount === 1 ? 'company' : 'companies'} ${query.trim() ? 'matching in this view' : 'in this view'}</span>
       </div>
     </div>`;
 }
@@ -180,7 +245,7 @@ function cardsPanel(ctx, cards, total) {
   if (!cards.length) return emptyPanel(ctx, total);
   return `
     <section class="grid gap-4 lg:grid-cols-2" data-ai-cards>
-      ${cards.map((card) => cardMarkup(card, ctx.scope, report?.day, filter === 'archived')).join('')}
+      ${cards.map((card) => cardMarkup(card, ctx.scope, currentDay(), filter === 'archived')).join('')}
     </section>
     ${total > cards.length ? `<div class="mt-5 text-center"><button type="button" data-ai-more class="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-slate-200 transition hover:ring-indigo-300">Show ${escapeHtml(formatNumber(Math.min(PAGE_SIZE, total - cards.length)))} more</button></div>` : ''}`;
 }
@@ -245,6 +310,7 @@ function cardMarkup(card, scope, day, archived = false) {
   }[badge.tone] || { edge: 'border-l-slate-300', badge: 'bg-white text-slate-600 ring-slate-200' };
   const events = alerts.topEvidence(card, 3);
   const rest = card.events.length - events.length;
+  const signal = latestSignal(card.events);
   return `
     <article data-ai-card data-ticker="${escapeHtml(card.ticker)}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
       class="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 ${archived ? 'border-l-slate-200' : tone.edge} bg-white shadow-sm ring-1 ring-slate-100">
@@ -258,6 +324,10 @@ function cardMarkup(card, scope, day, archived = false) {
           </div>
           <span class="shrink-0 rounded-md px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ${tone.badge}">${escapeHtml(badge.label)}</span>
         </div>
+
+        <p data-ai-date class="mt-2 text-xs leading-relaxed text-slate-500" title="Date of the newest source event behind this alert. Times are shown only when every event on that date has a source time; all dates use IST.">
+          ${signal ? `Latest signal · <time datetime="${escapeHtml(signal.datetime)}"><span data-ai-age data-day="${signal.day}" class="font-semibold capitalize text-slate-600">${relativeAge(signal.day, day)}</span> · ${fmtDay(signal.day)}${signal.time ? ` · ${signal.time} IST` : ''}</time>` : 'Signal date unavailable'}
+        </p>
 
         <p data-ai-insight class="font-display mt-3 text-[17px] font-bold leading-snug text-slate-900">${escapeHtml(card.insight)}</p>
 
@@ -320,18 +390,9 @@ function eventMarkup(event, scope, day) {
         class="group flex items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-indigo-50/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
         <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT_TONE[event.direction] || DOT_TONE.neutral}" aria-hidden="true"></span>
         <span class="line-clamp-2 min-w-0 flex-1 text-sm leading-snug text-slate-700 group-hover:text-slate-900" title="${escapeHtml(event.headline || '')}">${escapeHtml(claim)}</span>
-        <span class="mt-0.5 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider text-slate-400" title="${escapeHtml(`${event.feedLabel || event.feed} · ${when}`)}">${escapeHtml(tag)} · ${escapeHtml(age)}</span>
+        <span class="mt-0.5 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider text-slate-400" title="${escapeHtml(`${event.feedLabel || event.feed} · ${when}`)}">${escapeHtml(tag)} · <time data-ai-age data-day="${escapeHtml(event.day)}" datetime="${escapeHtml(event.day)}">${escapeHtml(age)}</time></span>
       </a>
     </li>`;
-}
-
-/** Day-resolution age. Never finer than the feed publishes — see `eventMarkup`. */
-export function relativeAge(eventDay, throughDay) {
-  const from = Date.parse(`${eventDay}T00:00:00Z`);
-  const to = Date.parse(`${throughDay}T00:00:00Z`);
-  if (!Number.isFinite(from) || !Number.isFinite(to)) return '—';
-  const days = Math.max(0, Math.round((to - from) / 86_400_000));
-  return days === 0 ? 'today' : `${days}d`;
 }
 
 /**
@@ -389,6 +450,7 @@ function filteredCards(cards) {
 }
 
 function wire(ctx, total) {
+  ctx.root.querySelector('[data-ai-empty-clear]')?.addEventListener('click', clearSearch);
   ctx.root.querySelector('[data-ai-controls]')?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-ai-filter]');
     if (!button) return;
@@ -438,6 +500,13 @@ function wire(ctx, total) {
 
 function emptyPanel(ctx) {
   const m = report?.meta || {};
+  if (query.trim()) {
+    return `<div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100" data-ai-empty>
+      <h3 class="font-display text-lg font-bold text-slate-900">No matching alerts in this view</h3>
+      <p class="mt-2 break-words text-sm text-slate-500">No results for “${escapeHtml(query.trim())}”. Try a company, symbol or keyword, or choose another priority filter.</p>
+      <button type="button" data-ai-empty-clear class="mt-4 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">Clear search</button>
+    </div>`;
+  }
   // MUTING ITS OWN LIST EMPTY IS NOT THE SAME ANSWER AS NOTHING REACHING THE THRESHOLD, and the
   // panel must not print the second over the first — that would be a claim about the feeds made on
   // the strength of a control the reader set, the same error as All Alerts' chip filter
@@ -485,10 +554,4 @@ function loadingPanel() {
 
 function errorPanel(err) {
   return `<div class="rounded-2xl bg-rose-50 p-5 text-sm text-rose-800 ring-1 ring-rose-200" data-ai-error>AI Alerts could not rank the feeds: ${escapeHtml(err?.message || String(err))}</div>`;
-}
-
-function fmtDay(day) {
-  const d = new Date(`${day}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return day || '—';
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }

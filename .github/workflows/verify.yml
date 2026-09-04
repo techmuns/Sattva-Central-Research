@@ -42,6 +42,8 @@ jobs:
         run: node scripts/verify-ipo-monitor.mjs
       - name: Verify complete General Alerts pool and scope isolation
         run: node scripts/verify-general-alerts.mjs
+      - name: Verify AI alert search and calendar dates
+        run: node scripts/verify-ai-alerts.mjs
       - name: Syntax-check JavaScript
         run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
       - name: Validate the Worker bundle

@@ -25,6 +25,11 @@ See [the integration contract](docs/PORTFOLIO-INTEGRATION.md) for boundaries and
 portfolio company and surfaces the highest-signal evidence first. Materiality, recency, direction,
 real Portfolio membership, independent-feed corroboration, conflicts and sector clusters determine
 its internal ordering; cards show evidence and a next action without exposing score arithmetic.
+Search covers company names, symbols, summaries and all underlying events, including evidence
+beyond the first page, within the selected scope and priority/archive filter. Each card shows its
+latest source signal date (not an AI generation timestamp, which is not recorded). Source times
+appear only when the newest day has complete time precision. Relative ages follow the current
+IST calendar and the seven-day window re-ranks at midnight or when a sleeping tab returns.
 Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
 newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
 Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,
@@ -232,6 +237,8 @@ Seeded, so output is byte-stable.
 python3 -m http.server 8080 -d public &
 node scripts/verify-calendar.mjs
 node scripts/verify-research.mjs
+node scripts/verify-ai-alerts.mjs
+node scripts/verify-ai-alerts-ui.mjs
 node scripts/verify-ui.mjs
 node scripts/verify-navigation.mjs
 ```
