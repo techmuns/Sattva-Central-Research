@@ -5951,8 +5951,11 @@ console.log('\n— news, announcements and insider trades —');
     const input = document.querySelector('[data-news-search]');
     if (!input) return null;
     const mod = await import('/js/data/market-news.js');
+    const x = await import('/js/data/twitter-news.js');
     const term = 'stock';
-    const expect = mod.rows().filter((r) => `${r.title || ''} ${r.summary || ''} ${r.section || ''}`.toLowerCase().includes(term)).length;
+    // All sources is the default on a fresh visit; matching X posts count too.
+    const expect = mod.rows().filter((r) => `${r.title || ''} ${r.summary || ''} ${r.section || ''}`.toLowerCase().includes(term)).length
+      + x.rows().filter((r) => `${r.title || ''} @${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(term)).length;
     // FOCUS FIRST. A reader types into a focused box, and the restore path this is checking reads
     // `document.activeElement` before the rebuild — dispatching `input` at an unfocused node tests
     // nothing and fails for the wrong reason.
@@ -5966,8 +5969,8 @@ console.log('\n— news, announcements and insider trades —');
     const live = document.querySelector('[data-news-search]');
     const focused = document.activeElement === live;
     const caret = live ? live.selectionStart : null;
-    input.value = '';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    live.value = '';
+    live.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 500));
     return { expect, shown: label ? Number(label[1].replace(/,/g, '')) : null, total: label ? Number(label[2].replace(/,/g, '')) : null, focused, caret, term, pending: !!pending, restored: document.querySelectorAll('[data-news-key]').length };
   });
