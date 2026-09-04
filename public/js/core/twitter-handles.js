@@ -138,8 +138,8 @@ function committedEntries() {
  * Every monitored handle, committed and local, in one list.
  *
  * `status` is derived, never stored: `active` once a collection run has actually read the account,
- * `adding` while it is monitored and nothing has read it, `not-found` when the capture recorded
- * that the account could not be read.
+ * `adding` while it is monitored and nothing has read it, `not-found` only for an explicit
+ * missing-account reason, and `unreadable` for a request that could not establish that.
  *
  * `collected` IS WHAT SEPARATES THE FIRST TWO, AND BEING IN THE COMMITTED FILE IS NOT ENOUGH.
  * A dispatch may name a handle, and the collector writes it to the list BEFORE it tries to read
@@ -155,15 +155,16 @@ export function all({ failed = new Map(), collected = true } = {}) {
   const overlay = readOverlay();
   const removed = new Set(overlay.removed);
   const seen = new Map();
+  const failureStatus = (key) => failed.get(key) === 'account not found' ? 'not-found' : 'unreadable';
 
   for (const e of committedEntries()) {
     if (removed.has(e.key)) continue;
-    const status = failed.has(e.key) ? 'not-found' : collected ? 'active' : 'adding';
+    const status = failed.has(e.key) ? failureStatus(e.key) : collected ? 'active' : 'adding';
     seen.set(e.key, { ...e, status, reason: failed.get(e.key) || null });
   }
   for (const e of overlay.added) {
     if (removed.has(e.key) || seen.has(e.key)) continue;
-    seen.set(e.key, { ...e, committed: false, status: failed.has(e.key) ? 'not-found' : 'adding', reason: failed.get(e.key) || null });
+    seen.set(e.key, { ...e, committed: false, status: failed.has(e.key) ? failureStatus(e.key) : 'adding', reason: failed.get(e.key) || null });
   }
   return [...seen.values()].sort((a, b) => a.handle.toLowerCase().localeCompare(b.handle.toLowerCase()));
 }

@@ -151,7 +151,7 @@ function twitterSources() {
       name: `@${e.handle}`,
       url: `https://x.com/${encodeURIComponent(e.handle)}`,
       feeds:
-        e.status === 'not-found'
+        e.status === 'not-found' || e.status === 'unreadable'
           ? `This account could not be read${e.reason ? ` — ${escapeHtml(e.reason)}` : ''}. It stays on the list and is tried again on the next run; it is <strong>absent</strong> from the feed rather than shown as an account with nothing to say.`
           : e.status === 'adding'
             ? 'Monitored by this browser. Its posts join the News feed once a collection run has read the account.'

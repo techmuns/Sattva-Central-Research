@@ -22,29 +22,29 @@ FOUR RULES, ALL OF THEM ONES THIS CODEBASE ALREADY HOLDS ELSEWHERE:
      post pushes the oldest off the end and the LENGTH DOES NOT MOVE — the same trap the market
      news Fetch button fell into. `changed` below compares id sets.
   2. A HANDLE THAT COULD NOT BE READ IS ABSENT, NOT EMPTY. It goes under `failed` with a reason, so
-     the UI can say "account not found" rather than showing an account that simply never posts.
+     the UI can say "could not be read" rather than showing an account that simply never posts.
      Writing it as an account with zero posts would report an outage as silence.
-  3. A RUN THAT READ NOTHING DOES NOT OVERWRITE A GOOD CAPTURE. If every handle failed and the
-     existing file has posts, it exits 2 — the same "the upstream refused this runner" exit the
+  3. A RUN THAT READ NOTHING DOES NOT OVERWRITE A CAPTURE. If every handle failed,
+     it exits 2 — the same "the upstream refused this runner" exit the
      market-news scraper uses, which the workflow turns into a warning rather than a red build.
   4. ONLY WHAT IS NEEDED IS STORED: id, handle, display name, text, time, url, one media url and
      the source url. No engagement counts, no replies, no followers, no search — see the scope
      limits in docs/DATA-CONTRACTS.md.
 
 CREDENTIALS
-    twscrape drives X as a logged-in user, so it needs at least one account. They are supplied as
-    the `X_ACCOUNTS` secret, one account per line:
+    Prefer the `X_COOKIES` secret from an existing browser session:
+        auth_token=...; ct0=...
+    It takes precedence over `X_ACCOUNTS` and never attempts password login. Cookies can expire;
+    accepting their format is not evidence that X accepted the session. Without X_COOKIES, the
+    legacy `X_ACCOUNTS` secret still accepts one account per line:
         username:password:email:email_password
     With none configured — OR when the configured ones cannot sign in — the script exits 3 and
     writes nothing: no capture is changed, and the UI goes on saying the accounts are being added
     rather than inventing a failure about them.
 
-    X SIGN-IN FROM A CI RUNNER IS THE HARD PART, AND IT IS NOT A BUG HERE. Measured on this
-    repository's own runner: X's Cloudflare returned "403 - Sorry, you have been blocked. You are
-    unable to access x.com" to the login itself. Datacenter address ranges are challenged; a
-    residential address usually is not. twscrape takes a proxy for exactly this
-    (`API(proxy=...)`, or the TWS_PROXY environment variable), which is the supported way through
-    it. Nothing in this file pretends otherwise, and no handle is blamed for it.
+    The runner's password login has been blocked by X. Cookies skip that login, but reading posts
+    can still be blocked. An optional TWS_PROXY secret supplies twscrape's global proxy. Neither
+    configuration is a guarantee of access. Sessions live only in a temporary account database.
 """
 
 import asyncio
@@ -52,8 +52,11 @@ import json
 import os
 import re
 import sys
+from contextlib import aclosing
 from datetime import datetime, timezone
+from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parent.parent
 POSTS_FILE = ROOT / "public" / "data" / "twitter-posts.json"
@@ -136,8 +139,42 @@ def shape(tweet, handle):
     }
 
 
+def cookie_header(raw):
+    """Accept the documented Cookie header; forward only the two required session cookies."""
+    cookies = SimpleCookie()
+    cookies.load(raw)
+    required = ("auth_token", "ct0")
+    if any(name not in cookies or not cookies[name].value.strip() for name in required):
+        raise ValueError("X_COOKIES must contain auth_token and ct0")
+    values = {name: cookies[name].value for name in required}
+    if any(re.search(r"[\s\x00-\x1f\x7f]", value) for value in values.values()):
+        raise ValueError("X_COOKIES contains whitespace inside a cookie value")
+    # GitHub masks the full secret automatically, but upstream logs may contain one component.
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        for value in values.values():
+            print(f"::add-mask::{value.replace('%', '%25')}", flush=True)
+    return "; ".join(f"{name}={value}" for name, value in values.items())
+
+
 async def add_accounts(api):
-    """Log the pool in. Returns False when nothing is configured, which is not a scrape failure."""
+    """Load browser cookies first; use password login only when no cookie secret is supplied."""
+    raw_cookies = os.environ.get("X_COOKIES", "").strip()
+    if raw_cookies:
+        try:
+            cookies = cookie_header(raw_cookies)
+        except (CookieError, ValueError):
+            print("X_COOKIES must contain both values as auth_token=...; ct0=... .", file=sys.stderr)
+            return False
+        try:
+            # This is a local pool label, not an X username or a monitored handle.
+            await api.pool.add_account_cookies("collector-session", cookies)
+        except Exception as err:
+            # Exceptions can contain credentials. Report the type, never their message.
+            print(f"Could not load X_COOKIES ({type(err).__name__}).", file=sys.stderr)
+            return False
+        print("Browser session loaded; verifying it by reading posts.")
+        return True
+
     raw = os.environ.get("X_ACCOUNTS", "").strip()
     if not raw:
         return False
@@ -148,7 +185,7 @@ async def add_accounts(api):
         try:
             await api.pool.add_account(parts[0], parts[1], parts[2], parts[3])
         except Exception as err:  # already present, or malformed — neither stops the run
-            print(f"  account {parts[0]}: {err}", file=sys.stderr)
+            print(f"Could not add a password account ({type(err).__name__}).", file=sys.stderr)
     await api.pool.login_all()
     return True
 
@@ -169,8 +206,8 @@ async def active_accounts(api):
     So a run with no live account stops before the walk and says the credential could not sign
     in. That is a fact about THIS DEPLOYMENT, and it is never spent on a handle.
 
-    None means twscrape did not expose the pool in a shape this understands — a version change
-    rather than a failure — and the run proceeds rather than refusing on a check of its own.
+    None means twscrape did not expose the expected pool shape. The caller stops with a code
+    error rather than proceeding without knowing whether any session is available.
     """
     try:
         info = await api.pool.accounts_info()
@@ -189,42 +226,51 @@ async def active_accounts(api):
 
 
 async def collect(api, handles, held_ids):
+    from twscrape import NoAccountError
+
     posts, failed = [], []
     for entry in handles:
         handle = entry["handle"]
         try:
             user = await api.user_by_login(handle)
             if not user:
-                failed.append({"handle": handle, "reason": "account not found"})
-                print(f"  @{handle}: not found")
-                continue
+                # twscrape also returns None when a Cloudflare response aborts the request.
+                # It cannot establish that this handle does not exist.
+                raise RuntimeError("No readable profile response")
             got = 0
-            async for tweet in api.user_tweets(user.id, limit=PER_HANDLE):
-                record = shape(tweet, handle)
-                if not record["tweet_id"]:
-                    continue
-                # The timeline is newest-first, so the first post already held means the rest are
-                # too. Stopping there is what makes a top-up run cheap.
-                if record["tweet_id"] in held_ids:
-                    break
-                posts.append(record)
-                got += 1
+            read_any = False
+            async with aclosing(api.user_tweets(user.id, limit=PER_HANDLE)) as timeline:
+                async for tweet in timeline:
+                    record = shape(tweet, handle)
+                    if not record["tweet_id"]:
+                        continue
+                    read_any = True
+                    # A known post is still evidence the timeline was read successfully.
+                    if record["tweet_id"] in held_ids:
+                        break
+                    posts.append(record)
+                    got += 1
+            if not read_any:
+                # The library can silently end an aborted timeline. Do not advance freshness
+                # without a readable post; a genuinely empty timeline remains unverified too.
+                raise RuntimeError("No readable timeline response")
             print(f"  @{handle}: {got} new")
+        except NoAccountError:
+            raise  # Expired cookies/rate limiting concern the session, never the handle.
         except Exception as err:
             failed.append({"handle": handle, "reason": "could not be read"})
-            print(f"  @{handle}: {type(err).__name__}: {err}", file=sys.stderr)
+            print(f"  @{handle}: could not be read ({type(err).__name__})", file=sys.stderr)
     return posts, failed
 
 
 async def main():
     body, handles = read_handles()
 
-    # A handle the dashboard asked for, added before the walk so this run covers it.
+    # Include a requested handle in this run, but persist it only after a successful capture.
     wanted = normalise(os.environ.get("TWITTER_ADD", ""))
-    if wanted and not any(h["handle"].lower() == wanted.lower() for h in handles):
+    added = bool(wanted and not any(h["handle"].lower() == wanted.lower() for h in handles))
+    if added:
         handles.append({"handle": wanted, "addedAt": datetime.now(timezone.utc).isoformat(timespec="seconds")})
-        write_handles(body, handles)
-        print(f"Added @{wanted} to the monitored list.")
 
     if not handles:
         print("No handles are monitored; nothing to collect.")
@@ -233,17 +279,29 @@ async def main():
     try:
         from twscrape import API
     except ImportError:
-        print("twscrape is not installed (pip install twscrape).", file=sys.stderr)
-        return 3
+        print("Install the collector dependency: pip install -r scripts/requirements-twitter.txt", file=sys.stderr)
+        return 1
 
-    api = API()
+    # The database contains session cookies. Keep it outside the checkout and delete it even
+    # when authentication or collection fails; no credential file belongs in a capture.
+    with TemporaryDirectory(prefix="sattva-twitter-") as directory:
+        api = API(str(Path(directory) / "accounts.db"), raise_when_no_account=True)
+        return await capture(api, body, handles, added)
+
+
+async def capture(api, body, handles, added=False):
+    from twscrape import NoAccountError
+
     if not await add_accounts(api):
-        print("No X_ACCOUNTS secret is configured, so no account could be read.", file=sys.stderr)
+        print("No usable X session is configured. Check X_COOKIES or X_ACCOUNTS.", file=sys.stderr)
         return 3
 
     # THE CREDENTIAL EXISTS; DID IT WORK? See `active_accounts` for why these are different
     # questions and why answering only the first one slanders the handles.
     live = await active_accounts(api)
+    if live is None:
+        print("Could not inspect the X account pool; capture unchanged.", file=sys.stderr)
+        return 1
     if live == 0:
         print(
             "The configured X account(s) could not sign in, so nothing could be read. "
@@ -258,7 +316,11 @@ async def main():
     before = set(held)
 
     print(f"Reading {len(handles)} account(s)...")
-    fresh, failed = await collect(api, handles, before)
+    try:
+        fresh, failed = await collect(api, handles, before)
+    except NoAccountError:
+        print("The X session expired, was rejected or is rate limited; capture unchanged.", file=sys.stderr)
+        return 3
 
     for record in fresh:
         held[record["tweet_id"]] = record
@@ -268,9 +330,8 @@ async def main():
     merged = sorted(held.values(), key=lambda p: (p.get("created_at") or "", p.get("tweet_id") or ""), reverse=True)[:KEEP]
     after = {p["tweet_id"] for p in merged}
 
-    # Every handle failed and we already had posts: keep what we have rather than replacing a good
-    # capture with a record of one bad run.
-    if failed and len(failed) == len(handles) and before:
+    # Preserve an empty initial capture too: a timestamp must mean posts were actually read.
+    if failed and len(failed) == len(handles):
         print(f"Every account failed; the existing capture of {len(before)} posts is unchanged.", file=sys.stderr)
         return 2
 
@@ -290,6 +351,8 @@ async def main():
         + "\n",
         encoding="utf-8",
     )
+    if added:
+        write_handles(body, handles)
     # Compared, never counted: the cap makes the length a constant once the capture is full.
     print(f"{len(after - before)} new post(s); {len(merged)} held; {len(failed)} account(s) could not be read.")
     return 0

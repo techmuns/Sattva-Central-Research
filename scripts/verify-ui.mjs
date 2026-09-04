@@ -5591,6 +5591,10 @@ console.log('\n— news, announcements and insider trades —');
       !/money\s*control/i.test(await hostText());
   })());
   await go('/#/research/news?scope=universe', 3500);
+  // Publisher layout/provenance checks below deliberately select publisher rows. X attribution
+  // is tested separately and must remain verbatim even when a handle names a publisher.
+  await page.selectOption('[data-news-source]', 'publishers');
+  await page.waitForFunction(() => !document.querySelector('[data-rows-pending]'), null, { timeout: 20000 });
 
   // The tab keeps one passive status chip and no freshness-card or popup furniture.
   const headText = (await page.locator('#content-host').innerText().catch(() => '')).replace(/\s+/g, ' ');
@@ -5785,7 +5789,7 @@ console.log('\n— news, announcements and insider trades —');
     sel.value = want;
     sel.dispatchEvent(new Event('change', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 900));
-    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+stories/);
+    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+items/);
     const drawnPubs = [...new Set([...document.querySelectorAll('[data-news-key]')].map((n) => {
       const m = mod.rows().find((r) => String(r.id || r.url) === n.dataset.newsKey);
       return m?.publisher;
@@ -5865,7 +5869,7 @@ console.log('\n— news, announcements and insider trades —');
       const mod = await import('/js/data/market-news.js');
       const foot = document.querySelector('[data-news-more]')?.innerText.trim() || '';
       const arc = mod.archiveMeta();
-      return { exhausted: arc.exhausted, remaining: arc.remaining, saysEnd: /that is every story/i.test(foot), saysMore: /keep scrolling|load older/i.test(foot), foot: foot.slice(0, 90) };
+      return { exhausted: arc.exhausted, remaining: arc.remaining, saysEnd: /all available publisher history is loaded/i.test(foot), saysMore: /keep scrolling|load older/i.test(foot), foot: foot.slice(0, 90) };
     });
     ok('...and the footer says the archive is spent exactly when it is',
       footState && footState.saysEnd === footState.exhausted && footState.saysMore === !footState.exhausted,
@@ -5947,8 +5951,11 @@ console.log('\n— news, announcements and insider trades —');
     const input = document.querySelector('[data-news-search]');
     if (!input) return null;
     const mod = await import('/js/data/market-news.js');
+    const x = await import('/js/data/twitter-news.js');
     const term = 'stock';
-    const expect = mod.rows().filter((r) => `${r.title || ''} ${r.summary || ''} ${r.section || ''}`.toLowerCase().includes(term)).length;
+    // All sources is the default on a fresh visit; matching X posts count too.
+    const expect = mod.rows().filter((r) => `${r.title || ''} ${r.summary || ''} ${r.section || ''}`.toLowerCase().includes(term)).length
+      + x.rows().filter((r) => `${r.title || ''} @${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(term)).length;
     // FOCUS FIRST. A reader types into a focused box, and the restore path this is checking reads
     // `document.activeElement` before the rebuild — dispatching `input` at an unfocused node tests
     // nothing and fails for the wrong reason.
@@ -5958,12 +5965,12 @@ console.log('\n— news, announcements and insider trades —');
     input.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 700));
     const pending = document.querySelector('[data-rows-pending]');
-    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+stories/);
+    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+items/);
     const live = document.querySelector('[data-news-search]');
     const focused = document.activeElement === live;
     const caret = live ? live.selectionStart : null;
-    input.value = '';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    live.value = '';
+    live.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 500));
     return { expect, shown: label ? Number(label[1].replace(/,/g, '')) : null, total: label ? Number(label[2].replace(/,/g, '')) : null, focused, caret, term, pending: !!pending, restored: document.querySelectorAll('[data-news-key]').length };
   });
@@ -6698,7 +6705,7 @@ console.log('\n— twitter / x as a news source —');
 
   const feed = await evalSafe(() => {
     const cards = [...document.querySelectorAll('[data-news-key]')];
-    const postAt = cards.map((c, i) => (/Twitter \/ X/.test(c.innerText) ? i : -1)).filter((i) => i >= 0);
+    const postAt = cards.map((c, i) => (/X \/ Twitter/.test(c.innerText) ? i : -1)).filter((i) => i >= 0);
     const first = cards[postAt[0]];
     return {
       total: cards.length,
@@ -6714,7 +6721,7 @@ console.log('\n— twitter / x as a news source —');
     !!feed && feed.posts === 3 && feed.total > 3, feed ? `${feed.posts} post(s) among ${feed.total} stories` : 'no feed');
   ok('...carrying the account name, the handle, the text, a time and the source',
     !!feed && /Sattva Desk/.test(feed.text) && /@sattva_desk/.test(feed.text) && /Fixture post one/.test(feed.text) &&
-      /\d{2}:\d{2}/.test(feed.text) && /Twitter \/ X/.test(feed.text), feed ? feed.text.slice(0, 120) : '');
+      /\d{2}:\d{2}/.test(feed.text) && /X \/ Twitter/.test(feed.text), feed ? feed.text.slice(0, 120) : '');
   ok('...linking to the original post', feed?.href === 'https://x.com/sattva_desk/status/901', feed?.href || 'no link');
   // INTERLEAVED, NOT APPENDED. Two feeds concatenated would put every post at one end of the list,
   // which is a separate Twitter section wearing the same chrome.
@@ -6760,14 +6767,14 @@ console.log('\n— twitter / x as a news source —');
   await page.waitForTimeout(400);
   const onlyTw = await evalSafe(() => {
     const c = [...document.querySelectorAll('[data-news-key]')];
-    return { n: c.length, all: c.length > 0 && c.every((x) => /Twitter \/ X/.test(x.innerText)) };
+    return { n: c.length, all: c.length > 0 && c.every((x) => /X \/ Twitter/.test(x.innerText)) };
   });
   ok('...and narrowing to Twitter / X leaves only posts', !!onlyTw && onlyTw.n === 3 && onlyTw.all, onlyTw ? `${onlyTw.n} row(s)` : '');
   await page.selectOption('[data-news-source]', 'publishers');
   await page.waitForTimeout(400);
   const onlyPub = await evalSafe(() => {
     const c = [...document.querySelectorAll('[data-news-key]')];
-    return { n: c.length, none: !c.some((x) => /Twitter \/ X/.test(x.innerText)) };
+    return { n: c.length, none: !c.some((x) => /X \/ Twitter/.test(x.innerText)) };
   });
   ok('...and narrowing to publishers leaves none — the existing feed, untouched',
     !!onlyPub && onlyPub.n > 0 && onlyPub.none, onlyPub ? `${onlyPub.n} publisher row(s)` : '');
@@ -6825,6 +6832,14 @@ console.log('\n— twitter / x as a news source —');
     !!unread && unread.without.length > 0 && unread.without.every((v) => v.endsWith(':adding')) &&
       unread.withCapture.some((v) => v.endsWith(':active')),
     unread ? `no capture: ${unread.without.join(', ')} · with: ${unread.withCapture.join(', ')}` : 'not evaluated');
+
+  const blocked = await evalSafe(async () => {
+    const h = await import('/js/core/twitter-handles.js');
+    const states = h.all({ failed: new Map([['sattva_desk', 'could not be read'], ['sattva_gone', 'account not found']]) });
+    return { blocked: states.find((e) => e.key === 'sattva_desk')?.status, missing: states.find((e) => e.key === 'sattva_gone')?.status };
+  });
+  ok('an unreadable X request is distinct from an explicitly missing account',
+    blocked?.blocked === 'unreadable' && blocked?.missing === 'not-found', JSON.stringify(blocked));
 
   const addOne = async (value) => {
     await page.fill('[data-tw-input]', value);
