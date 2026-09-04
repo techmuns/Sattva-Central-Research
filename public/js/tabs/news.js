@@ -34,6 +34,8 @@ import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { news as feed } from '../data/filings.js';
 import * as marketNews from './market-news-view.js';
 import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, groupLabel } from '../data/news-keywords.js';
+import { filterByScope as filterTickerRows } from '../data/scope.js';
+import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
@@ -85,8 +87,12 @@ const tab = makeFilingsTab({
   // scrollbar of its own, which `verify-ui.mjs` measures.
   nameMaxPx: 780,
   rowName: (r) => withoutPublisherName(r.title) || '(untitled)',
-  rowSub: (r) => [r.ticker, withoutPublisherName(r.source)].filter(Boolean).join(' · '),
-  searchable: (r) => `${r.title || ''} ${r.source || ''} ${r.ticker || ''} ${r.summary || ''}`,
+  rowSub: (r) => [r.company || r.ticker, r.company && r.ticker, withoutPublisherName(r.source)].filter(Boolean).join(' · '),
+  searchable: (r) => `${r.title || ''} ${r.source || ''} ${r.company || ''} ${r.ticker || ''} ${r.summary || ''}`,
+  // News is name-searched and can therefore scope private/BSE-only companies by stable entity id.
+  // Watchlist remains symbol-based because a saved watch item is a ticker by construction.
+  filterByScope: (rows, scope, holdings) =>
+    filterCompanyNewsByScope(rows, scope, holdings) ?? filterTickerRows(rows, scope, holdings),
   columns: () => [
     {
       label: 'Date',
@@ -182,8 +188,13 @@ const tab = makeFilingsTab({
       </div>
       <div class="text-sm leading-relaxed text-slate-600">
         <p><strong>Real, and not ours.</strong> Articles come from the Muns news API
-           (<code class="rounded bg-slate-100 px-1">POST /tools/news-search</code>), one search per company, read through this
+           (<code class="rounded bg-slate-100 px-1">POST /tools/news-search</code>), one search per reviewed company identity name, read through this
            dashboard's Worker because the API needs a credential the browser must never hold.</p>
+
+        <p class="mt-2 text-xs"><strong>Incremental and permanent.</strong> Portfolio identities are checked every few hours
+           with a 48-hour overlap. Every returned article is written to a permanent monthly archive before this fast 30-day
+           view is derived, so a successful empty search never retracts an article captured earlier. Companies without an NSE
+           ticker are searched by legal name and remain linked to the portfolio by ISIN.</p>
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Why a search feed needs a topic filter</h3>
         <p class="mt-1 text-xs">The upstream is a <strong>search endpoint, not a feed</strong>: there is no request that returns
@@ -253,6 +264,7 @@ const tab = makeFilingsTab({
                 `A blank means the article did not carry that field.`
               : r.date || '',
         },
+        { header: 'Company', key: 'c', width: 28, get: (r) => (r.__banner ? '' : r.company || r.ticker || '') },
         { header: 'Ticker', key: 't', width: 14, get: (r) => (r.__banner ? '' : r.ticker || '') },
         { header: 'Headline', key: 'h', width: 70, get: (r) => (r.__banner ? '' : withoutPublisherName(r.title)) },
         { header: 'Outlet', key: 'o', width: 24, get: (r) => (r.__banner ? '' : withoutPublisherName(r.source)) },

@@ -50,9 +50,21 @@ import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
 import { captureCompanies } from './lib/company-capture.mjs';
 import { mergeInsiderTrades } from '../public/js/data/insider-history.js';
 import { archiveFilings } from './lib/filing-archive.mjs';
+import { portfolioNewsEntities, withUniverseNewsEntities } from '../public/js/data/company-news-identity.js';
+import {
+  articlesFromNewsSnapshot,
+  commitCompanyNewsArchive,
+  incrementalNewsRange,
+  observedCompanyArticles,
+  readCompanyNewsIndex,
+  recentArchivedCompanyNews,
+  DEFAULT_OVERLAP_HOURS,
+} from './lib/company-news-archive.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = (f) => resolve(__dirname, '../public/data', f);
+const NEWS_ARCHIVE = DATA('company-news');
+const NEWS_IDENTITIES = resolve(__dirname, 'company-news-identity-overrides.json');
 
 // ANNOUNCEMENTS ARE NO LONGER HERE, AND MUST NOT COME BACK TO THIS SCRIPT.
 //
@@ -140,13 +152,33 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * the Action's time budget — should have covered the holdings before the index. The alphabetical
  * order that fell out of the file would have covered whatever happened to start with A.
  */
-async function companies() {
-  const book = await loadActivePortfolio(DATA('portfolio-companies.json'));
+function companies(book) {
   const held = (book.holdings || []).filter((h) => h.ticker).map((h) => ({ ticker: h.ticker.toUpperCase(), name: h.name, held: true }));
   if (SCOPE === 'book') return dedupe(held);
 
   const rest = captureCompanies(DATA('.')).companies;
   return dedupe([...held, ...rest]);
+}
+
+function newsCompanies(book) {
+  // This is capture coverage, not optional presentation metadata. A malformed registry must stop
+  // the run visibly instead of silently dropping every reviewed brand/former-name search.
+  let identityFile;
+  try {
+    identityFile = JSON.parse(readFileSync(NEWS_IDENTITIES, 'utf8'));
+  } catch (error) {
+    throw new Error(`Company-news identity registry could not be read: ${error.message}`);
+  }
+  if (!Array.isArray(identityFile.entities)) throw new Error('Company-news identity registry must contain an entities array.');
+  const overrides = identityFile.entities;
+  const portfolio = portfolioNewsEntities(book.holdings || [], overrides);
+  const all = SCOPE === 'book'
+    ? portfolio
+    : withUniverseNewsEntities(portfolio, captureCompanies(DATA('.')).companies);
+  return {
+    portfolio,
+    all: LIMIT ? all.slice(0, LIMIT) : all,
+  };
 }
 
 /** The committed snapshot as it stands, or null. Used to refuse to replace a better one. */
@@ -156,6 +188,254 @@ function readIfPresent(file) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Incremental company news is a different storage contract from the replacement filings feeds.
+ * The first-paint file stays bounded to 30 days; portfolio rows are written to permanent monthly
+ * shards before they can age out of it. Each reviewed identity term has its own watermark so a new
+ * former name or brand receives a full initial backfill while established terms read only the
+ * overlapping interval.
+ */
+async function runNews(list, portfolio, book) {
+  const startedAt = Date.now();
+  // A healthy full-universe walk is about 26½ minutes at the shared 2.5-second request gate now
+  // that portfolio aliases are separate searches. Twenty-four minutes would starve the same tail
+  // on every universe run because only portfolio watermarks are permanent. Leave enough room for
+  // the complete healthy walk; the workflow keeps a separate outer timeout for cleanup/commit.
+  const budgetMs = Number(process.env.FILINGS_BUDGET_MS || 28 * 60000);
+  const previous = readIfPresent('news.json') || {};
+  const archiveBefore = readCompanyNewsIndex(NEWS_ARCHIVE);
+  const overlapHours = Number(process.env.NEWS_OVERLAP_HOURS || DEFAULT_OVERLAP_HOURS);
+  const queryState = structuredClone(archiveBefore.queries || {});
+  const observedAt = new Date().toISOString();
+  const results = new Map(list.map((entity) => [entity.entityId, { attempted: 0, succeeded: 0, failed: 0, rows: [], error: null }]));
+  const portfolioIds = new Set(portfolio.map((entity) => entity.entityId));
+
+  // The legacy head is already a real observation. Seed it into the permanent archive once rather
+  // than waiting thirty days for those rows to fall off and discovering the migration was lossy.
+  const seed = articlesFromNewsSnapshot(previous, portfolio, previous.capturedAt || observedAt);
+
+  const previousCovered = new Set([
+    ...Object.keys(previous.byTicker || {}).map((value) => String(value).toUpperCase()),
+    ...(previous.empty || []).map((value) => String(value).toUpperCase()),
+  ]);
+  const jobs = list.flatMap((entity) => entity.queries.map((query) => {
+    const state = queryState[entity.entityId]?.[query] || null;
+    // Before the archive index exists, the current snapshot's capture time is the honest
+    // watermark for its primary company-name query. Alias queries are new and backfill 30 days.
+    const inherited = !state && query === entity.queries[0] && previousCovered.has(entity.key.toUpperCase())
+      ? { lastSuccessAt: previous.capturedAt }
+      : state;
+    return { entity, query, state: inherited, range: incrementalNewsRange(inherited, Date.now(), { overlapHours }) };
+  })).sort((a, b) => Number(b.entity.portfolio) - Number(a.entity.portfolio)
+    || String(a.state?.lastSuccessAt || '').localeCompare(String(b.state?.lastSuccessAt || '')));
+
+  let done = 0;
+  let stop = false;
+  const queue = [...jobs];
+  const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+    for (;;) {
+      if (stop || Date.now() - startedAt >= budgetMs) return;
+      const job = queue.shift();
+      if (!job) return;
+      const { entity, query, range } = job;
+      const outcome = results.get(entity.entityId);
+      outcome.attempted++;
+      const state = queryState[entity.entityId] ||= {};
+      const checkpoint = state[query] ||= {};
+      checkpoint.lastAttemptAt = new Date().toISOString();
+      checkpoint.from = range.from;
+      checkpoint.to = range.to;
+      try {
+        let response;
+        if (!VIA_WORKER) await paceRequest();
+        response = VIA_WORKER
+          ? await readNews(query, range.from, range.to)
+          : await fetchNews({ query, country: 'IN', fromDate: range.from, toDate: range.to }, env);
+        const rows = observedCompanyArticles(response.articles || [], entity, query, checkpoint.lastAttemptAt);
+        outcome.rows.push(...rows);
+        outcome.succeeded++;
+        checkpoint.lastSuccessAt = checkpoint.lastAttemptAt;
+        checkpoint.lastResultCount = rows.length;
+        checkpoint.error = null;
+      } catch (error) {
+        const failure = error instanceof MunsError ? error : new MunsError('upstream', String(error?.message || error));
+        outcome.failed++;
+        outcome.error = { reason: failure.reason, message: failure.message };
+        checkpoint.error = { reason: failure.reason, message: failure.message, at: checkpoint.lastAttemptAt };
+        if (['no-token', 'unauthorised'].includes(failure.reason)) stop = true;
+      }
+      done++;
+      if (done % 25 === 0) process.stdout.write(`\r  news queries: ${done}/${jobs.length} …`);
+    }
+  });
+  await Promise.all(workers);
+
+  const incomingPortfolio = [...results.entries()]
+    .filter(([entityId]) => portfolioIds.has(entityId))
+    .flatMap(([, result]) => result.rows);
+  const portfolioQueries = Object.fromEntries(Object.entries(queryState).filter(([entityId]) => portfolioIds.has(entityId)));
+  const archive = commitCompanyNewsArchive({
+    dir: NEWS_ARCHIVE,
+    articles: [...seed, ...incomingPortfolio],
+    entities: portfolio,
+    capturedAt: observedAt,
+    queries: portfolioQueries,
+    overlapHours,
+  });
+
+  const from = daysAgo(FEEDS.news.windowDays);
+  const byTicker = {};
+  const empty = new Set();
+  const failed = {};
+  const fallback = {};
+  const portfolioKeys = new Set(portfolio.map((entity) => entity.key.toUpperCase()));
+  const previousRows = new Set(Object.keys(previous.byTicker || {}).map((key) => key.toUpperCase()));
+  const previousEmpty = new Set((previous.empty || []).map((key) => String(key).toUpperCase()));
+  const previousFallback = previous.fallback || {};
+  const fullyRead = (entity, outcome) => !!outcome
+    && outcome.attempted === entity.queries.length
+    && outcome.failed === 0;
+
+  const retainLastGood = (key, outcome) => {
+    const older = previousFallback[key] || previousFallback[key.toUpperCase()];
+    fallback[key] = {
+      capturedAt: older?.capturedAt || previous.capturedAt || archiveBefore.updatedAt || null,
+      reason: outcome?.error?.reason || older?.reason || (outcome?.attempted ? 'upstream' : 'not-reached'),
+    };
+  };
+
+  // A portfolio-only top-up must not erase the universe half of the existing head. A universe run
+  // replaces only companies it successfully searched; failures and jobs outside the run budget
+  // retain their last-good head rows.
+  for (const [key, rows] of Object.entries(previous.byTicker || {})) {
+    if (!portfolioKeys.has(key.toUpperCase())) {
+      byTicker[key.toUpperCase()] = rows;
+      if (previousFallback[key]) fallback[key.toUpperCase()] = previousFallback[key];
+    }
+  }
+  for (const key of previous.empty || []) {
+    if (!portfolioKeys.has(String(key).toUpperCase())) {
+      empty.add(String(key).toUpperCase());
+      if (previousFallback[key]) fallback[String(key).toUpperCase()] = previousFallback[key];
+    }
+  }
+  Object.assign(failed, previous.failed || {});
+
+  const portfolioById = new Map(portfolio.map((entity) => [entity.entityId, entity]));
+  for (const row of recentArchivedCompanyNews(NEWS_ARCHIVE, from)) {
+    const entity = portfolioById.get(row.entityId);
+    if (!entity) continue;
+    (byTicker[entity.key] ||= []).push(row);
+  }
+
+  for (const entity of portfolio) {
+    const outcome = results.get(entity.entityId);
+    delete failed[entity.key];
+    if (byTicker[entity.key]?.length) {
+      if (!fullyRead(entity, outcome)) retainLastGood(entity.key, outcome);
+      continue;
+    }
+    // One alias answering empty cannot speak for another alias which failed or was not reached.
+    // `empty` means every reviewed search for this company succeeded and collectively found no
+    // recent row; anything less is partial coverage and retains the prior company answer.
+    if (fullyRead(entity, outcome)) {
+      empty.add(entity.key);
+      continue;
+    }
+    if (previousEmpty.has(entity.key.toUpperCase())) {
+      empty.add(entity.key);
+      retainLastGood(entity.key, outcome);
+      continue;
+    }
+    failed[entity.key] = outcome?.error || {
+      reason: 'not-reached',
+      message: outcome?.succeeded
+        ? 'One or more reviewed identity searches were not completed; the company will be retried.'
+        : 'The refresh ended before this company was reached; it will be retried.',
+    };
+  }
+
+  if (SCOPE !== 'book') {
+    for (const entity of list.filter((item) => !item.portfolio)) {
+      const outcome = results.get(entity.entityId);
+      if (!outcome?.succeeded) {
+        const hasLastGood = previousRows.has(entity.key) || previousEmpty.has(entity.key);
+        if (hasLastGood) {
+          retainLastGood(entity.key, outcome);
+          delete failed[entity.key];
+        } else {
+          failed[entity.key] = outcome?.error || {
+            reason: 'not-reached',
+            message: 'The refresh ended before this company was reached; it will be retried.',
+          };
+        }
+        continue;
+      }
+      delete failed[entity.key];
+      delete fallback[entity.key];
+      empty.delete(entity.key);
+      const rows = outcome.rows;
+      if (rows.length) byTicker[entity.key] = rows;
+      else {
+        delete byTicker[entity.key];
+        empty.add(entity.key);
+      }
+    }
+  }
+
+  const withRows = Object.keys(byTicker).length;
+  const failedCount = Object.keys(failed).length;
+  const payload = {
+    _provenance:
+      'REAL DATA, NOT OURS. Recent company-news head from Muns identity searches. Every returned portfolio article is written to the permanent monthly archive before this bounded 30-day view is derived. Topic, materiality and scope filters are applied only after capture. A successful empty incremental response never retracts an earlier article.',
+    kind: 'news',
+    source: VIA_WORKER ? 'Muns news API, read through this dashboard’s Worker' : 'Muns news API',
+    generator: 'scripts/scrape-filings.mjs',
+    capturedAt: observedAt,
+    from,
+    to: iso(Date.now()),
+    windowDays: FEEDS.news.windowDays,
+    retention: 'permanent-archive',
+    overlapHours,
+    scope: SCOPE,
+    asked: list.length,
+    covered: withRows + empty.size,
+    withRows,
+    emptyCount: empty.size,
+    rowCount: Object.values(byTicker).reduce((sum, rows) => sum + rows.length, 0),
+    failedCount,
+    fallback,
+    fallbackCount: Object.keys(fallback).length,
+    oldestDataAt: Object.keys(fallback).length
+      ? Object.values(fallback).map((entry) => entry?.capturedAt).filter(Boolean).sort()[0] || previous.oldestDataAt || previous.capturedAt || observedAt
+      : observedAt,
+    byTicker,
+    empty: [...empty].sort(),
+    failed,
+    entities: portfolio,
+    portfolioLines: (book.holdings || []).length,
+    portfolioEntities: portfolio.length,
+    tickerlessPortfolioLines: (book.holdings || []).filter((holding) => !holding.ticker).length,
+    tickerlessPortfolioEntities: portfolio.filter((entity) => !entity.ticker).length,
+    queryCoverage: {
+      planned: jobs.length,
+      attempted: [...results.values()].reduce((sum, result) => sum + result.attempted, 0),
+      succeeded: [...results.values()].reduce((sum, result) => sum + result.succeeded, 0),
+      failed: [...results.values()].reduce((sum, result) => sum + result.failed, 0),
+    },
+    archive: {
+      index: 'company-news/index.json',
+      articleCount: archive.articleCount,
+      months: archive.archive.length,
+    },
+  };
+  writeFileSync(DATA('news.json'), `${JSON.stringify(payload, null, 2)}\n`);
+  console.log(
+    `\r  news: ${payload.rowCount} recent rows; ${archive.articleCount} portfolio observations retained permanently; ` +
+      `${payload.queryCoverage.succeeded}/${payload.queryCoverage.planned} identity queries succeeded -> public/data/news.json`
+  );
 }
 
 function dedupe(list) {
@@ -345,7 +625,12 @@ async function run(kind, list) {
   );
 }
 
-const list = await companies();
-console.log(`Walking ${list.length} companies (${SCOPE}) for: ${wanted.join(', ')}`);
+const book = await loadActivePortfolio(DATA('portfolio-companies.json'));
+const list = companies(book);
+const newsList = wanted.includes('news') ? newsCompanies(book) : { all: [], portfolio: [] };
+console.log(`Walking ${wanted.includes('news') ? newsList.all.length : list.length} companies (${SCOPE}) for: ${wanted.join(', ')}`);
 console.log(VIA_WORKER ? `  through ${BASE} — no token needed here; the Worker holds it\n` : '  straight at the upstream, with MUNS_TOKEN\n');
-for (const kind of wanted) await run(kind, list);
+for (const kind of wanted) {
+  if (kind === 'news') await runNews(newsList.all, newsList.portfolio, book);
+  else await run(kind, list);
+}

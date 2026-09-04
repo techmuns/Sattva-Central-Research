@@ -2124,6 +2124,31 @@ reaches the browser, exactly as the Finology feed does on the same host.
 | `GET /api/insider-trades/{ticker}?from=&to=` | `POST devde.muns.io/filings/data/insider_trades` | 900s | 365 days |
 | `GET /api/stock-search?q=` | `POST birdnest.muns.io/stock/search` | 300s | Query body fixes `user_index` at `124` |
 
+The 30-day value above is the **bounded first-paint window**, not the retention policy. Portfolio
+company news is additive and permanent:
+
+```
+public/data/news.json                    newest 30 days, loaded on first paint
+public/data/company-news/index.json      stable identities, query watermarks and archive manifest
+public/data/company-news/<YYYY-MM>.json  every portfolio article captured in that month
+public/data/company-news/undated.json    source rows without a readable publication date
+```
+
+Every established identity query starts 48 hours before its last successful observation. A newly
+added legal name, former name, brand, subsidiary or reviewed alias receives a 30-day initial
+backfill. Empty incremental responses add no rows and retract nothing. The archive is written before
+the head is derived, so an article leaving the 30-day UI window has already been retained.
+
+`scripts/company-news-identity-overrides.json` is the reviewed enrichment layer. The active Family
+book supplies ISIN, current name and ticker where one exists; overrides may supply `legalName`,
+`formerNames`, `brands`, `subsidiaries`, `aliases` and `officialDomains`. Every active security line
+maps to one identity. Warrant lines share the underlying company's identity, while private,
+BSE-only, demerged and unresolved-symbol companies retain their own ISIN identity and are searched
+by name. Those facts are never guessed from fuzzy article matches.
+
+No topic or materiality rule runs in the collector. Every usable upstream row reaches the archive;
+the News tab and alert layers apply scope, topic and materiality only after capture.
+
 On Insider Trades, the toolbar count is a count of **trade-disclosure rows**, not companies: one
 company can contribute many rows. It therefore reads *"1,295 of 1,295 trades shown"*. Company
 coverage is reported separately in the scope/provenance text, so a Portfolio view never implies
@@ -3214,12 +3239,13 @@ restoring device history. Browser checks cover the form, scope identity, Source 
 
 ### News and trades: snapshot first, live detail second
 
-Company news remains per-ticker and capped at ~60 requests a minute. Trades now use Screener's four
-market-wide date-ordered lists on a 30-minute schedule; the Muns per-ticker route remains an optional
-live detail path. Keeping both captures out of the 07:00 technicals job prevents long jobs from racing
-over the same files. If GitHub's best-effort schedule misses, the capture watchdog dispatches the
-dedicated workflow once after 75 minutes; the Worker declines duplicates and the browser watches the
-committed file.
+Company news uses per-company calls capped at ~60 requests a minute: portfolio identities run every
+three hours, every day, and full-universe top-ups run at 09:00 and 19:00 IST on weekdays. Trades use
+Screener's four market-wide date-ordered lists on a 30-minute schedule; the Muns per-ticker route
+remains an optional live detail path. Keeping both captures out of the 07:00 technicals job prevents
+long jobs from racing over the same files. If GitHub's best-effort schedule misses, the capture
+watchdog dispatches the overdue dedicated workflow; the Worker declines duplicates and the browser
+watches the committed file.
 
 **News is a search endpoint** — there is no "everything published today" request to make — so there
 is no axis to switch to the way announcements had one. It used to make the reader name companies
@@ -3227,9 +3253,15 @@ before it would show anything, on the reasoning that a live walk of the universe
 against a sixty-a-minute cap.
 
 That is still true of the *walk*, and irrelevant to what a scoped view paints: `scrape-filings.mjs`
-walks **the book first** and commits the result, so those rows are in `news.json` and cost one
-conditional GET. Measured on the shipped capture — 123 book tickers, 1,217 articles, no failures. So
-News loads like the other two feeds and the walk stays behind Refresh.
+walks **the complete book first**, including companies without an NSE ticker, and commits the
+result, so those rows are in `news.json` and cost one conditional GET. News loads like the other
+two feeds and the browser's smaller walk stays behind Refresh.
+
+`news.json` is only the bounded 30-day first-paint head. Every portfolio article first enters
+`public/data/company-news/<YYYY-MM>.json`, while `company-news/index.json` retains the company
+identity registry, per-alias success watermarks and shard manifest. Established queries overlap by
+48 hours; newly reviewed names backfill 30 days. Captured rows are append-only, and successful
+empty reads cannot retract them. Topic, materiality and portfolio filters run only in consumers.
 
 **On-open freshness re-reads the FILE; it never performs the forty-company walk.**
 `js/data/capture-watchdog.js` compares the capture timestamps with source-specific windows,

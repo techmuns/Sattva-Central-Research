@@ -5512,7 +5512,8 @@ console.log('\n— news, announcements and insider trades —');
     !/Portfolio · [\d,]+ of [\d,]+/.test(await hostText()));
   const chipTitle = (await page.locator('[data-filings-info]').first().getAttribute('title')) || '';
   ok('...and the chip still reaches the denominator, in companies',
-    /of the book's [\d,]+ companies/.test(chipTitle), chipTitle.slice(0, 110));
+    /of [\d,]+ portfolio companies/.test(chipTitle) && /All [\d,]+ book lines resolve to a news identity/.test(chipTitle),
+    chipTitle.slice(0, 180));
   // The face follows the same three-hour window as the capture watchdog.
   const chipState = await evalSafe(async () => {
     const m = (await import('/js/data/filings.js')).news.meta();

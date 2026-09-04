@@ -79,7 +79,20 @@ await context.route('**/*', route => {
   if (url.origin === familyOrigin && url.pathname === '/research-bridge') return route.fulfill({ contentType:'text/html', body:familyHtml });
   if (url.origin !== origin) return route.fulfill({ status:503, body:'External network disabled' });
   if (url.pathname === '/data/portfolio-companies.json') return json({ asOf:'2026-06-30', count:1, resolved:1, holdings:[other] });
-  if (url.pathname === '/data/news.json') return json({ kind:'news', capturedAt:new Date().toISOString(), byTicker:Object.fromEntries(['KISSHT','EDELWEISS','NEWCO'].map(t => [t,[{ date:'2026-09-04',title:`${t} announces dividend`,url:`https://example.com/${t}`,source:'Fixture' }]])), empty:[],failed:[],headers:[] });
+  if (url.pathname === '/data/news.json') return json({
+    kind:'news', capturedAt:new Date().toISOString(), retention:'permanent-archive', overlapHours:48,
+    portfolioLines:3, portfolioEntities:3, tickerlessPortfolioLines:1, tickerlessPortfolioEntities:1,
+    entities:[
+      {entityId:'isin:INE12F801023',key:'KISSHT',ticker:'KISSHT',name:'OnEMI Technology Solutions Ltd'},
+      {entityId:'isin:INE532F01054',key:'EDELWEISS',ticker:'EDELWEISS',name:'Edelweiss'},
+      {entityId:'isin:INE000000001',key:'ISIN:INE000000001',ticker:null,name:'Unmapped held company'},
+    ],
+    byTicker:{
+      ...Object.fromEntries(['KISSHT','EDELWEISS','NEWCO'].map(t => [t,[{ date:'2026-09-04',title:`${t} announces dividend`,url:`https://example.com/${t}`,source:'Fixture' }]])),
+      'ISIN:INE000000001':[{entityId:'isin:INE000000001',ticker:null,company:'Unmapped held company',date:'2026-09-04',title:'Tickerless private company routine update',url:'https://example.com/private-company',source:'Fixture'}],
+    },
+    empty:[], failed:{}, headers:[],
+  });
   if (url.pathname === '/api/concalls') return json({
     ok: true,
     rows: concallRows,
@@ -105,6 +118,12 @@ try {
   await peer.waitForFunction(() => Array.isArray(window.book));
   assert.equal(await page.locator('iframe[title="Private portfolio connection"]').isVisible(), false);
   await page.getByText('KISSHT announces dividend', { exact:true }).waitFor();
+  await page.getByText('Tickerless private company routine update', { exact:true }).waitFor();
+  assert.equal(await page.evaluate(async () => {
+    const rows = (await import('/js/data/filings.js')).news.rows();
+    const row = rows.find(item => item.title === 'Tickerless private company routine update');
+    return row?.entityId === 'isin:INE000000001' && row?.ticker === null;
+  }), true, 'tickerless company news stays linked by ISIN without a synthetic ticker');
   assert.deepEqual(await page.evaluate(async () => (await import('/js/data/coverage.js')).holdings().map(h => h.isin).sort()), initial.map(h => h.isin).sort());
   assert.deepEqual(await page.evaluate(async () => (await import('/js/core/watchlist.js')).all().map(h => h.ticker)), ['MANUAL']);
   await page.getByRole('button', { name:'View Portfolio',exact:true }).click();

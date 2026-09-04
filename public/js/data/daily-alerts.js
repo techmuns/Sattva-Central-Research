@@ -56,6 +56,7 @@ import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
 import * as records from './alert-records.js';
 import { readEntry, writeEntry } from '../core/store.js';
+import { portfolioNewsEntities } from './company-news-identity.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -658,6 +659,7 @@ function toFeedRow(feed, out, day) {
  */
 function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
   const wanted = scopeMatcher(scope, holdings);
+  const portfolioNewsIds = new Set(portfolioNewsEntities(holdings).map((entity) => entity.entityId));
   const feeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ).map((settled) => {
@@ -673,10 +675,15 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
     // The S Screen calendar is already scoped by the exact synchronized portfolio membership.
     // That fact lets BSE-only holdings survive even when they have no NSE ticker; it must not make
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
-    const events = all.filter((event) => event.portfolioOnly
-      ? scope === 'portfolio'
-      : event.ticker ? wanted.has(event.ticker) : scope === 'universe');
-    const unresolved = all.filter((event) => !event.ticker).length;
+    // Company News has the same legitimate no-ticker case, but carries a stable ISIN entity id
+    // instead of being pre-scoped by its collector.
+    const events = all.filter((event) => {
+      if (event.portfolioOnly) return scope === 'portfolio';
+      if (event.ticker) return wanted.has(event.ticker);
+      if (feed.id === 'news' && scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
+      return scope === 'universe';
+    });
+    const unresolved = all.filter((event) => !event.ticker && !(feed.id === 'news' && event.entityId)).length;
     const unscopable = (scope !== 'universe' && ['market-news', 'twitter'].includes(feed.id)) ||
       (feed.portfolioOnly && scope !== 'portfolio');
     return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
@@ -1287,7 +1294,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
   const events = rows.map((r) => ({
     // THE TICKER IS PART OF THE IDENTITY. One story is returned by several companies' searches,
     // and a RELIANCE row and an HDFCBANK row about the same article are two rows, not one.
-    id: `news:${r.ticker || '?'}|${r.url || JSON.stringify([r.date, r.title, r.source])}`,
+    id: `news:${r.entityId || r.ticker || '?'}|${r.url || JSON.stringify([r.date, r.title, r.source])}`,
     sourceRecord: r,
     // THE TRACKED KEYWORDS ARE THIS FEED'S MATERIALITY RULE. Before them every story on the busiest
     // feed here was low-importance and neutral, so 11,060 rows of name-matched search results —
@@ -1301,6 +1308,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     time: istTime(r.publishedAt) || null,
     at: r.date,
     ticker: r.ticker || null,
+    entityId: r.entityId || null,
     company: r.company || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
     headline: r.title || 'Story',
     detail: r.source ? `Published by ${r.source}` : 'Publisher not carried',

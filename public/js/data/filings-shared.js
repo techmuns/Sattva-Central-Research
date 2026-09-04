@@ -296,6 +296,45 @@ export function normaliseArticle(r, query = null) {
   };
 }
 
+/** One story at its desktop/mobile/AMP addresses is still one publisher article. */
+export function canonicalArticleUrl(raw) {
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase().replace(/^(www|m|amp|mobile)\./, '');
+    const path = url.pathname.replace(/\/amp\/?$/i, '').replace(/\/+$/, '');
+    return `${host}${path}${url.search}`;
+  } catch {
+    return String(raw || '');
+  }
+}
+
+/**
+ * Exact article deduplication within one company.
+ *
+ * Independent publishers are retained even when their headlines match. The company identity is
+ * deliberately outside this function: one article returned for two portfolio companies remains
+ * visible under both of them.
+ */
+export function dedupeArticles(list = []) {
+  const seenUrl = new Set();
+  const seenStory = new Set();
+  return list.filter((row) => {
+    const url = row?.url ? canonicalArticleUrl(row.url) : null;
+    if (url) {
+      if (seenUrl.has(url)) return false;
+      seenUrl.add(url);
+    }
+    const story = row?.title && row?.source
+      ? `${String(row.date || row.publishedAt || '').slice(0, 10)} :: ${String(row.source).trim().toLowerCase()} :: ${String(row.title).trim().toLowerCase()}`
+      : null;
+    if (story) {
+      if (seenStory.has(story)) return false;
+      seenStory.add(story);
+    }
+    return true;
+  });
+}
+
 /**
  * The insider-trades payload, whichever form it arrives in.
  *

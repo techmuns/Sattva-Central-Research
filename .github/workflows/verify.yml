@@ -16,6 +16,10 @@ jobs:
           node-version: "22"
       - name: Verify filings snapshot recovery
         run: node scripts/verify-filings-snapshot.mjs
+      - name: Verify permanent company-news identities and archive
+        run: node scripts/verify-company-news-archive.mjs
+      - name: Verify incremental company-news capture
+        run: node scripts/verify-company-news-capture.mjs
       - name: Verify research and portfolio evidence
         run: node scripts/verify-research.mjs
       - name: Verify private portfolio bridge

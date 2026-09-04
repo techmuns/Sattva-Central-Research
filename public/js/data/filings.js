@@ -52,6 +52,7 @@ import { conditionalJson, readEntries, writeEntry, KEYS, isPersistent } from '..
 import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
 import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
+import { dedupeArticles } from './filings-shared.js';
 
 // How many companies a live walk will ask about before it stops and says so. The upstreams allow
 // 60 requests a minute; forty keeps a cold start under a minute and well inside that budget.
@@ -97,7 +98,7 @@ const ROUTE = {
 // Which array each payload carries its rows in, and what a row's company is called.
 const ROWS_KEY = { news: 'articles', announcements: 'announcements', insider: 'trades' };
 
-/** How far back each feed asks. An announcement is worth a year; news past a month is not news. */
+/** How far back each live request and first-paint head asks; portfolio-news retention is permanent. */
 export const WINDOW_DAYS = { news: 30, announcements: 365, insider: 365 };
 
 const iso = (d) => new Date(d).toISOString().slice(0, 10);
@@ -121,38 +122,6 @@ const daysAgo = (n) => iso(Date.now() - n * 86400000);
  *     is what the provenance modal says — and dropping one would hide it from whichever reader was
  *     looking at that company. Hence: within a company, never across.
  */
-const canonicalUrl = (raw) => {
-  try {
-    const u = new URL(raw);
-    const host = u.hostname.toLowerCase().replace(/^(www|m|amp|mobile)\./, '');
-    const path = u.pathname.replace(/\/amp\/?$/i, '').replace(/\/+$/, '');
-    return `${host}${path}${u.search}`;
-  } catch {
-    return String(raw);
-  }
-};
-
-const dedupeArticles = (list) => {
-  const seenUrl = new Set();
-  const seenStory = new Set();
-  return list.filter((r) => {
-    const u = r?.url ? canonicalUrl(r.url) : null;
-    // No URL is not the same as the same URL — an article with none is kept.
-    if (u) {
-      if (seenUrl.has(u)) return false;
-      seenUrl.add(u);
-    }
-    // Same publisher, same headline, twice. Unambiguous, and the only title comparison made: two
-    // headlines that merely share a long prefix are two stories, and the table shows the prefix.
-    const story = r?.title && r?.source ? `${r.source} :: ${String(r.title).trim().toLowerCase()}` : null;
-    if (story) {
-      if (seenStory.has(story)) return false;
-      seenStory.add(story);
-    }
-    return true;
-  });
-};
-
 export function createFeed(kind) {
   let state = fresh();
   let loading = null;
@@ -166,8 +135,10 @@ export function createFeed(kind) {
       rows: new Map(), // ticker -> rows[]
       failures: new Map(), // ticker -> { reason, message, requestedUrl }
       asked: new Set(),
-      // ticker -> company name, so the news search asks about the COMPANY rather than the symbol.
+      // Capture key -> company name/identity. News keys may be NSE symbols or stable `ISIN:…`
+      // values for portfolio companies which have no ticker.
       names: new Map(),
+      identities: new Map(),
       // Companies the committed snapshot covers. They are not re-walked: the snapshot is the bulk
       // source and is refreshed on a schedule, and its age is reported as `capturedAt` rather than
       // hidden by 603 live requests.
@@ -197,6 +168,13 @@ export function createFeed(kind) {
       // walk does not. Falls back to the feed's own constant.
       snapshotWindowDays: null,
       coverageFrom: null,
+      retention: null,
+      archive: null,
+      portfolioLines: null,
+      portfolioEntities: null,
+      tickerlessPortfolioLines: null,
+      tickerlessPortfolioEntities: null,
+      queryCoverage: null,
       capturedAt: null,
       oldestDataAt: null,
       fallbackCount: 0,
@@ -279,6 +257,13 @@ export function createFeed(kind) {
       // has declared one, so the coverage text cannot claim a year it does not hold.
       windowDays: state.snapshotWindowDays ?? WINDOW_DAYS[kind],
       coverageFrom: state.coverageFrom,
+      retention: state.retention,
+      archive: state.archive,
+      portfolioLines: state.portfolioLines,
+      portfolioEntities: state.portfolioEntities,
+      tickerlessPortfolioLines: state.tickerlessPortfolioLines,
+      tickerlessPortfolioEntities: state.tickerlessPortfolioEntities,
+      queryCoverage: state.queryCoverage,
       // WHAT THIS SESSION HAS NOT LOOKED AT, which is a statement about us and not a claim about
       // the upstream. These routes answer per company and have no index, so "is there anything
       // new?" cannot be answered without asking — the honest thing to print is how many companies
@@ -296,7 +281,14 @@ export function createFeed(kind) {
   /** Every row that has landed, newest first. Rows with no readable date sort last, never first. */
   function rows() {
     const out = [];
-    for (const [ticker, list] of state.rows) for (const r of list) out.push({ ...r, ticker: r.ticker || ticker });
+    for (const [key, list] of state.rows) {
+      for (const row of list) {
+        // A stable entity key is not a synthetic exchange symbol. Tickerless portfolio companies
+        // stay tickerless while their `entityId` makes them scopable.
+        const ticker = row.ticker || (kind === 'news' && row.entityId ? null : key);
+        out.push({ ...row, ticker });
+      }
+    }
     return out.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
 
@@ -382,13 +374,14 @@ export function createFeed(kind) {
   function setWanted(items = []) {
     const wanted = [];
     for (const item of items) {
-      const t = String(item?.ticker ?? item ?? '').toUpperCase();
+      const t = String(item?.key ?? item?.ticker ?? item ?? '').toUpperCase();
       if (!t || wanted.includes(t)) continue;
       wanted.push(t);
       // Names accumulate across scopes rather than being replaced: the news search needs a name for
       // any company it may walk, and a company can leave the current scope while its name stays
       // true. The list is per-scope; the lookup is not.
       if (item?.name) state.names.set(t, String(item.name));
+      if (item && typeof item === 'object') state.identities.set(t, item);
     }
     state.wanted = wanted;
     return wanted;
@@ -617,6 +610,21 @@ export function createFeed(kind) {
     state.unnamedRows = Number.isFinite(body.unnamedRows) ? body.unnamedRows : 0;
     state.snapshotWindowDays = Number.isFinite(body.windowDays) ? body.windowDays : null;
     state.coverageFrom = /^\d{4}-\d{2}-\d{2}$/.test(body.coverageFrom || '') ? body.coverageFrom : null;
+    state.retention = body.retention || null;
+    state.archive = body.archive || null;
+    state.portfolioLines = Number.isFinite(body.portfolioLines) ? body.portfolioLines : null;
+    state.portfolioEntities = Number.isFinite(body.portfolioEntities) ? body.portfolioEntities : null;
+    state.tickerlessPortfolioLines = Number.isFinite(body.tickerlessPortfolioLines) ? body.tickerlessPortfolioLines : null;
+    state.tickerlessPortfolioEntities = Number.isFinite(body.tickerlessPortfolioEntities) ? body.tickerlessPortfolioEntities : null;
+    state.queryCoverage = body.queryCoverage && typeof body.queryCoverage === 'object' ? body.queryCoverage : null;
+    if (kind === 'news') {
+      for (const entity of Array.isArray(body.entities) ? body.entities : []) {
+        const key = String(entity?.key || entity?.ticker || entity?.entityId || '').toUpperCase();
+        if (!key) continue;
+        state.identities.set(key, entity);
+        if (entity.name) state.names.set(key, entity.name);
+      }
+    }
     if (replace && !newer) return state.rows.size > 0;
 
     if (newer) {
@@ -752,7 +760,16 @@ export function createFeed(kind) {
     }
 
     if (Array.isArray(body.headers)) addHeaders(body.headers);
-    const list = storeRows(t, rowsIn(body));
+    const identity = state.identities.get(t);
+    const incoming = kind === 'news' && identity
+      ? rowsIn(body).map((row) => ({
+          ...row,
+          ticker: identity.ticker || null,
+          entityId: identity.entityId || row.entityId || null,
+          company: identity.name || row.company || null,
+        }))
+      : rowsIn(body);
+    const list = storeRows(t, incoming);
     if (kind === 'insider') {
       // Never attach the upstream ETag to merged bytes: a subsequent 304 must replay only the
       // actual response. This separate entry preserves live-only additions across page reloads.

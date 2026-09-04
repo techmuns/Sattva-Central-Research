@@ -3,17 +3,18 @@ name: Company news refresh
 env:
   FAMILY_HOLDINGS_LIVE: 'true'
 
-# The company-news tab is a committed universe capture, built one company search at a time. This
-# dedicated job can run after publishing begins without touching end-of-day prices or technicals.
-# The weekday schedule is the normal morning attempt. Opening the dashboard is the demand-driven
-# fallback: if GitHub's best-effort scheduler has not produced today's capture, the Worker dispatches
-# this same job immediately and declines duplicate runs.
+# Portfolio news is an overlapping incremental capture every few hours, including private,
+# BSE-only and demerged companies which have no NSE symbol. The two weekday universe walks retain
+# the broader company-news view. Both write through the same permanent portfolio archive and share
+# one concurrency group, so one capture can never overwrite another while it is still running.
 
 on:
   schedule:
+    # Portfolio top-ups around the clock. Together with the two universe walks below, no normal gap
+    # is longer than three hours; every established identity query overlaps its last 48 hours.
+    - cron: "15 */3 * * *"
+    # Full universe reads at 09:00 and 19:00 IST on weekdays, as before.
     - cron: "30 3 * * 1-5"
-    # Evening top-up: 13:30 UTC = 19:00 IST. The morning capture cannot cover stories published
-    # through the trading day; the demand-driven watchdog remains the fallback when GitHub is late.
     - cron: "30 13 * * 1-5"
   workflow_dispatch:
     inputs:
@@ -21,6 +22,12 @@ on:
         description: "Who asked for this run — cron, auto, button, or manual"
         required: false
         default: "manual"
+      scope:
+        description: "Portfolio incremental capture, or the complete universe"
+        type: choice
+        options: [book, universe]
+        required: false
+        default: "book"
 
 run-name: Company news refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
 
@@ -31,7 +38,7 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     permissions:
       contents: write
     steps:
@@ -44,14 +51,20 @@ jobs:
           node-version: "22"
 
       - name: Capture company news
-        run: FILINGS_SCOPE=universe node scripts/scrape-filings.mjs news
+        env:
+          # Scheduled 09:00/19:00 IST runs keep the universe fresh. Every other schedule and the
+          # default manual/automatic dispatch concentrates the budget on the complete portfolio.
+          NEWS_SCOPE: ${{ (github.event_name == 'schedule' && (github.event.schedule == '30 3 * * 1-5' || github.event.schedule == '30 13 * * 1-5')) && 'universe' || inputs.scope || 'book' }}
+        run: FILINGS_SCOPE="$NEWS_SCOPE" FILINGS_BUDGET_MS=1680000 NEWS_OVERLAP_HOURS=48 node scripts/scrape-filings.mjs news
 
       - name: Upload company-news data
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: company-news-data
-          path: public/data/news.json
+          path: |
+            public/data/news.json
+            public/data/company-news/
           if-no-files-found: warn
 
       - name: Commit company news to main
@@ -59,7 +72,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/news.json
+          git add public/data/news.json public/data/company-news/
           if git diff --cached --quiet; then
             echo "No company-news changes to commit."
             exit 0

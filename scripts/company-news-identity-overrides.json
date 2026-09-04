@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "_provenance": "Reviewed company-news search enrichment. Entries are matched to the active portfolio by ISIN, ticker or entityId. Former names, brands, subsidiaries, aliases and official domains are factual identity data, never inferred by the capture. Every name in those arrays becomes a separate news search; add only specific names that identify this company.",
+  "entities": [
+    {
+      "match": { "isin": "INE12F801023" },
+      "brands": ["Kissht"]
+    },
+    {
+      "match": { "isin": "INE526E01018" },
+      "legalName": "SPR Auto Technologies Ltd",
+      "formerNames": ["Shriram Pistons & Rings Ltd"]
+    },
+    {
+      "match": { "isin": "INE879I01012" },
+      "formerNames": ["DB Realty Ltd"]
+    },
+    {
+      "match": { "isin": "INE010J01012" },
+      "legalName": "Tejas Networks Limited"
+    }
+  ]
+}

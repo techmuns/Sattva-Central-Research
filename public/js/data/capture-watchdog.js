@@ -28,7 +28,9 @@ const CONFIG = {
     route: 'api/company-news/refresh?source=auto',
     run: 'api/company-news/run',
     maxAgeMs: 3 * 60 * 60 * 1000,
-    active: ({ hour }) => hour >= 8 && hour < 24,
+    // Portfolio capture runs around the clock. Weekend and overnight stories are still stories;
+    // an overdue schedule should recover without waiting for the next market session.
+    active: () => true,
     budgetMs: 35 * 60 * 1000,
   },
   marketNews: {

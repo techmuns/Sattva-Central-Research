@@ -67,7 +67,7 @@ This is the first thing to check before quoting any number off a screen.
 | **Retail chatter** — mentions and sentiment across ValuePickr, TradingQnA and Google News, 219 entries over a rolling 30 days | called direct from the browser, **not** proxied — see §5e | SentimentDash | **Live: twice daily upstream (01:30 / 13:30 UTC), hourly client poll** |
 | **NSE live announcements** — the exchange's own filings RSS, rebuilt every few minutes, resolved to a ticker so it can be **scoped to your Portfolio / Watchlist**. The one company-scoped live feed | `public/data/nse-announcements.json` (fallback) + live `/api/nse-announcements` | NSE, read by our **Worker** (the browser can't — CORS null); a full desktop user-agent or Akamai 430s it | Live off the exchange, edge-cached 90s; the snapshot refreshes hourly in Indian hours |
 | **Market-wide news** — five publishers in one list, every row bylined. A bounded head plus a shard per month, and **nothing is ever discarded** | `public/data/market-news.json` (head, ~430 KB) + `public/data/market-news/<YYYY-MM>.json` (archive, fetched only when a reader scrolls past the head) | Moneycontrol's listing page plus Business Standard, Mint, Economic Times and Investing.com RSS — all read with `curl` from a GitHub runner, because **three of the five answer a Worker with the same 24-byte 403** | Moneycontrol every 30 min in Indian hours and hourly outside (measured — see `docs/DATA-CONTRACTS.md`), **and on demand from the tab's Fetch button**; the RSS publishers hourly. Both jobs share one concurrency group because they merge into one file |
-| **Company news** | `public/data/news.json` | Muns company search through the Worker | 09:00 + 19:00 IST weekdays; watchdog recovery after 3h |
+| **Company news** | `public/data/news.json` (bounded 30-day head) + `public/data/company-news/<YYYY-MM>.json` (permanent portfolio archive) | Muns company-name and reviewed-alias searches through the Worker; every active book line resolves to a stable company identity, including companies without NSE symbols | Portfolio every 3h, every day, with a 48h overlap; universe 09:00 + 19:00 IST weekdays; watchdog recovery after 3h |
 | **Bulk, Block, SAST and Insider trades** | `public/data/insider-trades.json` | Authenticated Screener.in market-wide lists; retained Muns rows add exchange detail | Every 30 minutes; watchdog recovery after 75m |
 | **Corporate announcements** | `public/data/corp-announcements.json` | BSE date index, no credential | 20:00 IST weekdays; watchdog recovery after 75m |
 | scID → NSE ticker, industry, share count | `public/data/mc-ticker-map.json` (190 KB) | Moneycontrol price feed | Incremental, daily |
@@ -188,6 +188,8 @@ python3 -m http.server 8080 -d public
 # verify (Chromium is preinstalled — never run `playwright install`)
 node scripts/verify-calendar.mjs                # Moneycontrol calendar parser + pagination contract
 node scripts/verify-research.mjs                # Ask Research evidence + Worker contract
+node scripts/verify-company-news-archive.mjs    # identity coverage, append-only archive and overlap
+node scripts/verify-company-news-capture.mjs    # scheduled capture against a local news fixture
 node scripts/verify-ui.mjs                      # ~180 checks, exits non-zero on the first failure
 
 # refresh the live feeds

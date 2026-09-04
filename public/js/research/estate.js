@@ -42,6 +42,7 @@ import { news, announcements, insider } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
 import { researchEvidenceChars } from './evidence-shared.js';
 import { withoutPublisherName } from '../core/source-copy.js';
+import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
@@ -55,7 +56,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'Analyst consensus and earnings surprise are unavailable until a real estimates feed is connected.' },
   { id: 'super-investors', tab: 'Super Investors', route: '#/research/super-investors/superstar-investors', description: 'Filed superstar-investor holdings and quarter-on-quarter disclosed changes.' },
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
-  { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Company-specific retained news for covered symbols.' },
+  { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Permanently retained company news, including portfolio companies without exchange symbols.' },
   { id: 'market-news', tab: 'News', route: '#/research/news', description: 'Market-wide Moneycontrol stories; intentionally not company-scopeable.' },
   { id: 'announcements', tab: 'Corp Announcements', route: '#/research/corp-announcements', description: 'BSE exchange-wide capture plus retained company/date lookups from BSE, NSE and DRHP.' },
   { id: 'insider-trades', tab: 'Insider Trades', route: '#/research/insider-trades', description: 'Insider and promoter disclosures in the upstream\'s own vocabulary.' },
@@ -800,7 +801,8 @@ const BUILDERS = [
     id: 'company-news',
     load: () => news.seed(),
     read({ scope, holdings, plan }) {
-      const rows = filterByScope(news.rows(), scope, holdings);
+      const all = news.rows();
+      const rows = filterCompanyNewsByScope(all, scope, holdings) ?? filterByScope(all, scope, holdings);
       const meta = news.meta();
       return sourcePacket(this.id, {
         source: 'Retained company news snapshot',

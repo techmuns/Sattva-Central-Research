@@ -90230,5 +90230,2689 @@
   },
   "fallbackCount": 131,
   "freshCovered": 484,
-  "oldestDataAt": "2026-09-04T15:25:23.542Z"
+  "oldestDataAt": "2026-09-04T15:25:23.542Z",
+  "retention": "permanent-archive",
+  "overlapHours": 48,
+  "entities": [
+    {
+      "entityId": "isin:INE423A01024",
+      "key": "ADANIENT",
+      "name": "Adani Enterprises",
+      "legalName": "Adani Enterprises Ltd",
+      "ticker": "ADANIENT",
+      "portfolioIsins": [
+        "INE423A01024"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Adani Enterprises Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE674K01013",
+      "key": "ABCAPITAL",
+      "name": "Aditya Birla Capital",
+      "legalName": "Aditya Birla Capital Limited",
+      "ticker": "ABCAPITAL",
+      "portfolioIsins": [
+        "INE674K01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Aditya Birla Capital Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE679V01027",
+      "key": "AVL",
+      "name": "Aditya Vision Limited",
+      "legalName": "Aditya Vision Limited",
+      "ticker": "AVL",
+      "portfolioIsins": [
+        "INE679V01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Aditya Vision Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0ALI01010",
+      "key": "ADVAIT",
+      "name": "Advait Energy Transitions",
+      "legalName": "Advait Energy Transitions Ltd",
+      "ticker": "ADVAIT",
+      "portfolioIsins": [
+        "INE0ALI01010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Advait Energy Transitions Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE914E01040",
+      "key": "ALANKIT",
+      "name": "Alankit Limited",
+      "legalName": "ALANKIT LIMITED",
+      "ticker": "ALANKIT",
+      "portfolioIsins": [
+        "INE914E01040"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "ALANKIT LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE1YPB01014",
+      "key": "AGL",
+      "name": "Allcargo Global",
+      "legalName": "Allcargo Global Limited",
+      "ticker": "AGL",
+      "portfolioIsins": [
+        "INE1YPB01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Allcargo Global Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE418H01029",
+      "key": "ALLCARGO",
+      "name": "Allcargo Logistics",
+      "legalName": "ALLCARGO LOGISTICS",
+      "ticker": "ALLCARGO",
+      "portfolioIsins": [
+        "INE418H01029"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "ALLCARGO LOGISTICS"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0R4701017",
+      "key": "ALPEXSOLAR-SM",
+      "name": "Alpex Solar",
+      "legalName": "Alpex Solar Ltd",
+      "ticker": "ALPEXSOLAR-SM",
+      "portfolioIsins": [
+        "INE0R4701017",
+        "INE0R4713012"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Alpex Solar Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE732I01021",
+      "key": "ANGELONE",
+      "name": "Angel One Limited",
+      "legalName": "ANGEL ONE LIMITED",
+      "ticker": "ANGELONE",
+      "portfolioIsins": [
+        "INE732I01021"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "ANGEL ONE LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE094B01013",
+      "key": "ISIN:INE094B01013",
+      "name": "Ashika Credit Capital",
+      "legalName": "Ashika Credit Capital Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE094B01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Ashika Credit Capital Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE483S01020",
+      "key": "ISIN:INE483S01020",
+      "name": "AvenuesAI Ltd",
+      "legalName": "AvenuesAI Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE483S01020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "AvenuesAI Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE555B01013",
+      "key": "AXISCADES",
+      "name": "Axiscades Technologies",
+      "legalName": "Axiscades Technologies Ltd",
+      "ticker": "AXISCADES",
+      "portfolioIsins": [
+        "INE555B01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Axiscades Technologies Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE02IJ01035",
+      "key": "AZAD",
+      "name": "Azad Engineering",
+      "legalName": "Azad Engineering Ltd",
+      "ticker": "AZAD",
+      "portfolioIsins": [
+        "INE02IJ01035"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Azad Engineering Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE878I01022",
+      "key": "BAFNAPH",
+      "name": "Bafna Pharmaceuticals",
+      "legalName": "Bafna Pharmaceuticals Ltd",
+      "ticker": "BAFNAPH",
+      "portfolioIsins": [
+        "INE878I01022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Bafna Pharmaceuticals Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE083K01017",
+      "key": "BENGALASM",
+      "name": "Bengal and Assam Company",
+      "legalName": "Bengal and Assam Company Limited",
+      "ticker": "BENGALASM",
+      "portfolioIsins": [
+        "INE083K01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Bengal and Assam Company Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0HOQ01053",
+      "key": "GROWW",
+      "name": "Billionbrains Garage Ventures",
+      "legalName": "Billionbrains Garage Ventures Ltd",
+      "ticker": "GROWW",
+      "portfolioIsins": [
+        "INE0HOQ01053"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Billionbrains Garage Ventures Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE376G01013",
+      "key": "BIOCON",
+      "name": "Biocon Ltd",
+      "legalName": "Biocon Ltd",
+      "ticker": "BIOCON",
+      "portfolioIsins": [
+        "INE376G01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Biocon Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE476A01022",
+      "key": "CANBK",
+      "name": "Canara Bank",
+      "legalName": "CANARA BANK",
+      "ticker": "CANBK",
+      "portfolioIsins": [
+        "INE476A01022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "CANARA BANK"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE482D01024",
+      "key": "CARYSIL",
+      "name": "Carysil Limited",
+      "legalName": "CARYSIL LIMITED",
+      "ticker": "CARYSIL",
+      "portfolioIsins": [
+        "INE482D01024"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "CARYSIL LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE016Q01014",
+      "key": "CEINSYS",
+      "name": "Ceinsys Tech",
+      "legalName": "Ceinsys Tech Ltd",
+      "ticker": "CEINSYS",
+      "portfolioIsins": [
+        "INE016Q01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Ceinsys Tech Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE736A01011",
+      "key": "CDSL",
+      "name": "Central Depository Services",
+      "legalName": "Central Depository Services Ltd",
+      "ticker": "CDSL",
+      "portfolioIsins": [
+        "INE736A01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Central Depository Services Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE522F01014",
+      "key": "COALINDIA",
+      "name": "Coal India",
+      "legalName": "Coal India Ltd",
+      "ticker": "COALINDIA",
+      "portfolioIsins": [
+        "INE522F01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Coal India Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE591G01025",
+      "key": "COFORGE",
+      "name": "Coforge Limited",
+      "legalName": "COFORGE LIMITED",
+      "ticker": "COFORGE",
+      "portfolioIsins": [
+        "INE591G01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "COFORGE LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0N0J01014",
+      "key": "ISIN:INE0N0J01014",
+      "name": "Concord Control Systems",
+      "legalName": "Concord Control Systems Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE0N0J01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Concord Control Systems Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0S4R01014",
+      "key": "CRIZAC",
+      "name": "Crizac Ltd",
+      "legalName": "Crizac Ltd",
+      "ticker": "CRIZAC",
+      "portfolioIsins": [
+        "INE0S4R01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Crizac Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE00R701025",
+      "key": "DALBHARAT",
+      "name": "Dalmia Bharat",
+      "legalName": "Dalmia Bharat Ltd",
+      "ticker": "DALBHARAT",
+      "portfolioIsins": [
+        "INE00R701025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Dalmia Bharat Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE532F01054",
+      "key": "EDELWEISS",
+      "name": "Edelweiss Financial Services",
+      "legalName": "Edelweiss Financial Services Ltd",
+      "ticker": "EDELWEISS",
+      "portfolioIsins": [
+        "INE532F01054"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Edelweiss Financial Services Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE236E01022",
+      "key": "ELLEN",
+      "name": "Ellenbarrie Industrial Gases",
+      "legalName": "Ellenbarrie Industrial Gases Ltd",
+      "ticker": "ELLEN",
+      "portfolioIsins": [
+        "INE236E01022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Ellenbarrie Industrial Gases Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE069I01010",
+      "key": "EMBDL",
+      "name": "Embassy Developments",
+      "legalName": "Embassy Developments Ltd",
+      "ticker": "EMBDL",
+      "portfolioIsins": [
+        "INE069I01010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Embassy Developments Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE1C6T01020",
+      "key": "EMMVEE",
+      "name": "Emmvee Photovoltaic Power",
+      "legalName": "Emmvee Photovoltaic Power Ltd",
+      "ticker": "EMMVEE",
+      "portfolioIsins": [
+        "INE1C6T01020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Emmvee Photovoltaic Power Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE758T01015",
+      "key": "ETERNAL",
+      "name": "Eternal",
+      "legalName": "Eternal",
+      "ticker": "ETERNAL",
+      "portfolioIsins": [
+        "INE758T01015"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Eternal"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0KCE01017",
+      "key": "EUREKAFORB",
+      "name": "Eureka Forbes",
+      "legalName": "Eureka Forbes Ltd",
+      "ticker": "EUREKAFORB",
+      "portfolioIsins": [
+        "INE0KCE01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Eureka Forbes Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE128A01029",
+      "key": "EVEREADY",
+      "name": "Eveready",
+      "legalName": "EVEREADY",
+      "ticker": "EVEREADY",
+      "portfolioIsins": [
+        "INE128A01029"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "EVEREADY"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0HF201011",
+      "key": "FABTECH",
+      "name": "Fabtech Technologies",
+      "legalName": "Fabtech Technologies Ltd",
+      "ticker": "FABTECH",
+      "portfolioIsins": [
+        "INE0HF201011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Fabtech Technologies Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0EDU01014",
+      "key": "ISIN:INE0EDU01014",
+      "name": "Finbud Financial Services",
+      "legalName": "Finbud Financial Services Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE0EDU01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Finbud Financial Services Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE220J01025",
+      "key": "FCONSUMER",
+      "name": "Future Consumer",
+      "legalName": "Future Consumer Ltd",
+      "ticker": "FCONSUMER",
+      "portfolioIsins": [
+        "INE220J01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Future Consumer Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE935Q01015",
+      "key": "ISIN:INE935Q01015",
+      "name": "Future Supply Chain Solutions",
+      "legalName": "FUTURE SUPPLY CHAIN SOLUTIONS LIMITED",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE935Q01015"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "FUTURE SUPPLY CHAIN SOLUTIONS LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE291A01017",
+      "key": "GRWRHITECH",
+      "name": "Garware Hi-Tech Film",
+      "legalName": "GARWARE HI-TECH FILM",
+      "ticker": "GRWRHITECH",
+      "portfolioIsins": [
+        "INE291A01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "GARWARE HI-TECH FILM"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE741B01027",
+      "key": "ISIN:INE741B01027",
+      "name": "Glittke Granites",
+      "legalName": "Glittke Granites Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE741B01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Glittke Granites Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE077F01035",
+      "key": "GOCLCORP",
+      "name": "GOCL Corporation",
+      "legalName": "GOCL CORPORATION",
+      "ticker": "GOCLCORP",
+      "portfolioIsins": [
+        "INE077F01035"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "GOCL CORPORATION"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE036B01030",
+      "key": "GAEL",
+      "name": "Gujarat Ambuja Exports",
+      "legalName": "Gujarat Ambuja Exports Limited",
+      "ticker": "GAEL",
+      "portfolioIsins": [
+        "INE036B01030"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Gujarat Ambuja Exports Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE330T01021",
+      "key": "HAPPYFORGE",
+      "name": "Happy Forgings",
+      "legalName": "Happy Forgings Ltd",
+      "ticker": "HAPPYFORGE",
+      "portfolioIsins": [
+        "INE330T01021"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Happy Forgings Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0JUS01029",
+      "key": "HARSHA",
+      "name": "Harsha",
+      "legalName": "HARSHA",
+      "ticker": "HARSHA",
+      "portfolioIsins": [
+        "INE0JUS01029"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "HARSHA"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE040A01034",
+      "key": "HDFCBANK",
+      "name": "HDFC Bank",
+      "legalName": "HDFC BANK Ltd",
+      "ticker": "HDFCBANK",
+      "portfolioIsins": [
+        "INE040A01034"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "HDFC BANK Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE548A01028",
+      "key": "HFCL",
+      "name": "HFCL Limited",
+      "legalName": "HFCL LIMITED",
+      "ticker": "HFCL",
+      "portfolioIsins": [
+        "INE548A01028"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "HFCL LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE267A01025",
+      "key": "HINDZINC",
+      "name": "Hindustan Zinc",
+      "legalName": "Hindustan Zinc Ltd",
+      "ticker": "HINDZINC",
+      "portfolioIsins": [
+        "INE267A01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Hindustan Zinc Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE530B01024",
+      "key": "IIFL",
+      "name": "IIFL Finance",
+      "legalName": "IIFL Finance",
+      "ticker": "IIFL",
+      "portfolioIsins": [
+        "INE530B01024"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "IIFL Finance"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE053A01029",
+      "key": "INDHOTEL",
+      "name": "Indian Hotels Company",
+      "legalName": "Indian Hotels Company Ltd",
+      "ticker": "INDHOTEL",
+      "portfolioIsins": [
+        "INE053A01029"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Indian Hotels Company Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE622H01018",
+      "key": "INDOFARM",
+      "name": "Indo Farm Equipment",
+      "legalName": "Indo Farm Equipment Ltd",
+      "ticker": "INDOFARM",
+      "portfolioIsins": [
+        "INE622H01018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Indo Farm Equipment Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0LGX01024",
+      "key": "INA",
+      "name": "Insolation Energy",
+      "legalName": "Insolation Energy Ltd",
+      "ticker": "INA",
+      "portfolioIsins": [
+        "INE0LGX01024"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Insolation Energy Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE00M901018",
+      "key": "INTERARCH",
+      "name": "Interarch Building Products",
+      "legalName": "Interarch Building Products Ltd",
+      "ticker": "INTERARCH",
+      "portfolioIsins": [
+        "INE00M901018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Interarch Building Products Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE858B01029",
+      "key": "ISGEC",
+      "name": "ISGEC Heavy Engineering",
+      "legalName": "ISGEC Heavy Engineering Ltd",
+      "ticker": "ISGEC",
+      "portfolioIsins": [
+        "INE858B01029"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "ISGEC Heavy Engineering Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE154A01025",
+      "key": "ITC",
+      "name": "ITC Ltd",
+      "legalName": "ITC LTD",
+      "ticker": "ITC",
+      "portfolioIsins": [
+        "INE154A01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "ITC LTD"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE168A01041",
+      "key": "J&KBANK",
+      "name": "J&K Bank",
+      "legalName": "J & K BANK LTD.",
+      "ticker": "J&KBANK",
+      "portfolioIsins": [
+        "INE168A01041"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "J & K BANK LTD."
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE953L01027",
+      "key": "JSFB",
+      "name": "Jana Small Finance Bank",
+      "legalName": "Jana Small Finance Bank",
+      "ticker": "JSFB",
+      "portfolioIsins": [
+        "INE953L01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Jana Small Finance Bank"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0SMY01017",
+      "key": "JAYBEE-SM",
+      "name": "Jay Bee Laminations",
+      "legalName": "Jay Bee Laminations Ltd",
+      "ticker": "JAYBEE-SM",
+      "portfolioIsins": [
+        "INE0SMY01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Jay Bee Laminations Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE571B01036",
+      "key": "JAYBARMARU",
+      "name": "Jay Bharat Maruti",
+      "legalName": "JAY BHARAT MARUTI LTD",
+      "ticker": "JAYBARMARU",
+      "portfolioIsins": [
+        "INE571B01036"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "JAY BHARAT MARUTI LTD"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE854B01010",
+      "key": "JAYNECOIND",
+      "name": "Jayaswal Neco Industries",
+      "legalName": "Jayaswal Neco Industries Ltd",
+      "ticker": "JAYNECOIND",
+      "portfolioIsins": [
+        "INE854B01010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Jayaswal Neco Industries Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE758E01017",
+      "key": "JIOFIN",
+      "name": "Jio Financial Services",
+      "legalName": "Jio Financial Services Ltd",
+      "ticker": "JIOFIN",
+      "portfolioIsins": [
+        "INE758E01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Jio Financial Services Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE121E01018",
+      "key": "JSWENERGY",
+      "name": "JSW Energy",
+      "legalName": "JSW Energy Ltd",
+      "ticker": "JSWENERGY",
+      "portfolioIsins": [
+        "INE121E01018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "JSW Energy Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE019A01038",
+      "key": "JSWSTEEL",
+      "name": "JSW Steel",
+      "legalName": "JSW STEEL Ltd",
+      "ticker": "JSWSTEEL",
+      "portfolioIsins": [
+        "INE019A01038"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "JSW STEEL Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE700A01033",
+      "key": "JUBLPHARMA",
+      "name": "Jubilant Pharmova",
+      "legalName": "JUBILANT PHARMOVA LT",
+      "ticker": "JUBLPHARMA",
+      "portfolioIsins": [
+        "INE700A01033"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "JUBILANT PHARMOVA LT"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE918Z01012",
+      "key": "KAYNES",
+      "name": "Kaynes Technology India",
+      "legalName": "Kaynes Technology India Ltd",
+      "ticker": "KAYNES",
+      "portfolioIsins": [
+        "INE918Z01012"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Kaynes Technology India Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE082A01010",
+      "key": "KOPRAN",
+      "name": "Kopran Limited",
+      "legalName": "Kopran Limited",
+      "ticker": "KOPRAN",
+      "portfolioIsins": [
+        "INE082A01010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Kopran Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE237A01036",
+      "key": "KOTAKBANK",
+      "name": "Kotak Mahindra Bank",
+      "legalName": "Kotak Mahindra Bank Ltd",
+      "ticker": "KOTAKBANK",
+      "portfolioIsins": [
+        "INE237A01036"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Kotak Mahindra Bank Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0O6601022",
+      "key": "KROSS",
+      "name": "Kross Limited",
+      "legalName": "Kross Limited",
+      "ticker": "KROSS",
+      "portfolioIsins": [
+        "INE0O6601022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Kross Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE818H01020",
+      "key": "LTFOODS",
+      "name": "LT Foods Limited",
+      "legalName": "LT FOODS LIMITED",
+      "ticker": "LTFOODS",
+      "portfolioIsins": [
+        "INE818H01020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "LT FOODS LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE155Z01011",
+      "key": "MACPOWER",
+      "name": "Macpower CNC Machines",
+      "legalName": "Macpower CNC Machines Ltd",
+      "ticker": "MACPOWER",
+      "portfolioIsins": [
+        "INE155Z01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Macpower CNC Machines Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE101A01026",
+      "key": "M&M",
+      "name": "Mahindra & Mahindra",
+      "legalName": "MAHINDRA & MAHINDRA LIMITED",
+      "ticker": "M&M",
+      "portfolioIsins": [
+        "INE101A01026"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "MAHINDRA & MAHINDRA LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE993A01026",
+      "key": "MANINDS",
+      "name": "Man Industries (India)",
+      "legalName": "Man Industries (India) Ltd",
+      "ticker": "MANINDS",
+      "portfolioIsins": [
+        "INE993A01026"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Man Industries (India) Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE103A01014",
+      "key": "MRPL",
+      "name": "Mangalore Petrochemicals and Refinery",
+      "legalName": "MANGALORE PETROCHEMICALS AND REFINERY LIMITED",
+      "ticker": "MRPL",
+      "portfolioIsins": [
+        "INE103A01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "MANGALORE PETROCHEMICALS AND REFINERY LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0CT101020",
+      "key": "MOL",
+      "name": "Meghmani Organics",
+      "legalName": "Meghmani Organics",
+      "ticker": "MOL",
+      "portfolioIsins": [
+        "INE0CT101020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Meghmani Organics"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE338I01027",
+      "key": "MOTILALOFS",
+      "name": "Motilal Oswal Financial Services",
+      "legalName": "Motilal Oswal Financial Services Ltd",
+      "ticker": "MOTILALOFS",
+      "portfolioIsins": [
+        "INE338I01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Motilal Oswal Financial Services Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE410P01011",
+      "key": "NH",
+      "name": "Narayana Hrudayalaya",
+      "legalName": "NARAYANA HRUDAYALAYA LTD",
+      "ticker": "NH",
+      "portfolioIsins": [
+        "INE410P01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "NARAYANA HRUDAYALAYA LTD"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE310A01015",
+      "key": "NILKAMAL",
+      "name": "Nilkamal",
+      "legalName": "Nilkamal",
+      "ticker": "NILKAMAL",
+      "portfolioIsins": [
+        "INE310A01015"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Nilkamal"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0DQN01013",
+      "key": "ISIN:INE0DQN01013",
+      "name": "Nisus Finance Services",
+      "legalName": "Nisus Finance Services Co Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE0DQN01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Nisus Finance Services Co Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE12F801023",
+      "key": "KISSHT",
+      "name": "OnEMI Technology Solutions",
+      "legalName": "OnEMI Technology Solutions Ltd",
+      "ticker": "KISSHT",
+      "portfolioIsins": [
+        "INE12F801023"
+      ],
+      "formerNames": [],
+      "brands": [
+        "Kissht"
+      ],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "OnEMI Technology Solutions Ltd",
+        "Kissht"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE881D01027",
+      "key": "OFSS",
+      "name": "Oracle Financial Services Software",
+      "legalName": "ORACLE FINANCIAL SERVICES SOFTWARE LIMITED",
+      "ticker": "OFSS",
+      "portfolioIsins": [
+        "INE881D01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "ORACLE FINANCIAL SERVICES SOFTWARE LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0BYP01024",
+      "key": "OSWALPUMPS",
+      "name": "Oswal Pumps Limited",
+      "legalName": "Oswal Pumps Limited",
+      "ticker": "OSWALPUMPS",
+      "portfolioIsins": [
+        "INE0BYP01024"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Oswal Pumps Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0S3G01027",
+      "key": "PACEDIGITK",
+      "name": "Pace Digitek",
+      "legalName": "Pace Digitek Ltd",
+      "ticker": "PACEDIGITK",
+      "portfolioIsins": [
+        "INE0S3G01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Pace Digitek Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE119201023",
+      "key": "PARKHOSPS",
+      "name": "Park Medi World",
+      "legalName": "Park Medi World Ltd",
+      "ticker": "PARKHOSPS",
+      "portfolioIsins": [
+        "INE119201023"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Park Medi World Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE417T01026",
+      "key": "POLICYBZR",
+      "name": "PB Fintech Limited",
+      "legalName": "PB FINTECH LIMITED",
+      "ticker": "POLICYBZR",
+      "portfolioIsins": [
+        "INE417T01026"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "PB FINTECH LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE262H01021",
+      "key": "PERSISTENT",
+      "name": "Persistent Systems",
+      "legalName": "PERSISTENT SYSTEMS L",
+      "ticker": "PERSISTENT",
+      "portfolioIsins": [
+        "INE262H01021"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "PERSISTENT SYSTEMS L"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE15B701018",
+      "key": "PINELABS",
+      "name": "Pine Labs Limited",
+      "legalName": "Pine Labs Limited",
+      "ticker": "PINELABS",
+      "portfolioIsins": [
+        "INE15B701018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Pine Labs Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE572E01012",
+      "key": "PNBHOUSING",
+      "name": "PNB Housing Fin",
+      "legalName": "PNB HOUSING FIN LTD",
+      "ticker": "PNBHOUSING",
+      "portfolioIsins": [
+        "INE572E01012"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "PNB HOUSING FIN LTD"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE633B01018",
+      "key": "POLYPLEX",
+      "name": "Polyplex Corporation",
+      "legalName": "Polyplex Corporation Ltd",
+      "ticker": "POLYPLEX",
+      "portfolioIsins": [
+        "INE633B01018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Polyplex Corporation Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE722B01019",
+      "key": "PRAVEG",
+      "name": "Praveg Limited",
+      "legalName": "PRAVEG LIMITED",
+      "ticker": "PRAVEG",
+      "portfolioIsins": [
+        "INE722B01019"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "PRAVEG LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE546Y01022",
+      "key": "PRAXIS",
+      "name": "Praxis Home Retails",
+      "legalName": "PRAXIS HOME RETAILS LIMITED",
+      "ticker": "PRAXIS",
+      "portfolioIsins": [
+        "INE546Y01022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "PRAXIS HOME RETAILS LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE811K01011",
+      "key": "PRESTIGE",
+      "name": "Prestige Estate Projects",
+      "legalName": "Prestige Estate Projects Limited",
+      "ticker": "PRESTIGE",
+      "portfolioIsins": [
+        "INE811K01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Prestige Estate Projects Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE004A01022",
+      "key": "PROTEAN",
+      "name": "Protean eGov Technologies",
+      "legalName": "Protean eGov Technologies Ltd",
+      "ticker": "PROTEAN",
+      "portfolioIsins": [
+        "INE004A01022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Protean eGov Technologies Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE855B01025",
+      "key": "RAIN",
+      "name": "Rain Industries",
+      "legalName": "Rain Industries Ltd",
+      "ticker": "RAIN",
+      "portfolioIsins": [
+        "INE855B01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Rain Industries Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE399G01023",
+      "key": "RKFORGE",
+      "name": "Ramkrishna Forgings",
+      "legalName": "Ramkrishna Forgings Ltd",
+      "ticker": "RKFORGE",
+      "portfolioIsins": [
+        "INE399G01023"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Ramkrishna Forgings Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE027A01015",
+      "key": "RCF",
+      "name": "Rashtriya Chemicals",
+      "legalName": "RASHTRIYA CHEMICALS",
+      "ticker": "RCF",
+      "portfolioIsins": [
+        "INE027A01015"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "RASHTRIYA CHEMICALS"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE1SY401010",
+      "key": "RAYMONDREL",
+      "name": "Raymond Realty",
+      "legalName": "Raymond Realty Ltd",
+      "ticker": "RAYMONDREL",
+      "portfolioIsins": [
+        "INE1SY401010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Raymond Realty Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE976G01028",
+      "key": "RBLBANK",
+      "name": "RBL Bank",
+      "legalName": "RBL Bank Ltd",
+      "ticker": "RBLBANK",
+      "portfolioIsins": [
+        "INE976G01028"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "RBL Bank Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE07T201019",
+      "key": "RBA",
+      "name": "Restaurant Brands Asia",
+      "legalName": "Restaurant Brands Asia Ltd",
+      "ticker": "RBA",
+      "portfolioIsins": [
+        "INE07T201019"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Restaurant Brands Asia Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE425Y01011",
+      "key": "RPSGVENT",
+      "name": "RPSG Ventures",
+      "legalName": "RPSG VENTURES LIMITE",
+      "ticker": "RPSGVENT",
+      "portfolioIsins": [
+        "INE425Y01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "RPSG VENTURES LIMITE"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0LEX01011",
+      "key": "SAHANA-SM",
+      "name": "Sahana Systems",
+      "legalName": "Sahana Systems Ltd",
+      "ticker": "SAHANA-SM",
+      "portfolioIsins": [
+        "INE0LEX01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Sahana Systems Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE08U801020",
+      "key": "SAMHI",
+      "name": "Samhi Hotels Limited",
+      "legalName": "SAMHI HOTELS LIMITED",
+      "ticker": "SAMHI",
+      "portfolioIsins": [
+        "INE08U801020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SAMHI HOTELS LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE148I01020",
+      "key": "SAMMAANCAP",
+      "name": "Sammaan Capital",
+      "legalName": "Sammaan Capital Ltd",
+      "ticker": "SAMMAANCAP",
+      "portfolioIsins": [
+        "INE148I01020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Sammaan Capital Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE860D01013",
+      "key": "ISIN:INE860D01013",
+      "name": "Sanjivani Paranteral",
+      "legalName": "SANJIVANI PARANTERAL LIMITED",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE860D01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SANJIVANI PARANTERAL LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE953O01021",
+      "key": "SANSERA",
+      "name": "Sansera Engineering",
+      "legalName": "Sansera Engineering Ltd",
+      "ticker": "SANSERA",
+      "portfolioIsins": [
+        "INE953O01021"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Sansera Engineering Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE08NE01025",
+      "key": "SANSTAR",
+      "name": "Sanstar Ltd",
+      "legalName": "Sanstar Ltd",
+      "ticker": "SANSTAR",
+      "portfolioIsins": [
+        "INE08NE01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Sanstar Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE955I01044",
+      "key": "SEJALLTD",
+      "name": "Sejal Glass Limited",
+      "legalName": "SEJAL GLASS LIMITED",
+      "ticker": "SEJALLTD",
+      "portfolioIsins": [
+        "INE955I01044"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SEJAL GLASS LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE597J01018",
+      "key": "SHALBY",
+      "name": "Shalby Limited",
+      "legalName": "Shalby Limited",
+      "ticker": "SHALBY",
+      "portfolioIsins": [
+        "INE597J01018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Shalby Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE024F01011",
+      "key": "SHILCTECH",
+      "name": "Shilchar Technologies",
+      "legalName": "Shilchar Technologies Ltd",
+      "ticker": "SHILCTECH",
+      "portfolioIsins": [
+        "INE024F01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Shilchar Technologies Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE109A01011",
+      "key": "SCI",
+      "name": "Shipping Corporation of India",
+      "legalName": "Shipping Corporation of India Ltd",
+      "ticker": "SCI",
+      "portfolioIsins": [
+        "INE109A01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Shipping Corporation of India Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE070A01015",
+      "key": "SHREECEM",
+      "name": "Shree Cements",
+      "legalName": "Shree Cements Ltd",
+      "ticker": "SHREECEM",
+      "portfolioIsins": [
+        "INE070A01015"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Shree Cements Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE526E01018",
+      "key": "SHRIPISTON",
+      "name": "Shriram Pistons & Rings",
+      "legalName": "SPR Auto Technologies Ltd",
+      "ticker": "SHRIPISTON",
+      "portfolioIsins": [
+        "INE526E01018"
+      ],
+      "formerNames": [
+        "Shriram Pistons & Rings Ltd"
+      ],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SPR Auto Technologies Ltd",
+        "Shriram Pistons & Rings"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE1NPP01017",
+      "key": "ENRIN",
+      "name": "Siemens Energy India",
+      "legalName": "SIEMENS ENERGY INDIA",
+      "ticker": "ENRIN",
+      "portfolioIsins": [
+        "INE1NPP01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SIEMENS ENERGY INDIA"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE01IU01018",
+      "key": "SKYGOLD",
+      "name": "Sky Gold Limited",
+      "legalName": "SKY GOLD LIMITED",
+      "ticker": "SKYGOLD",
+      "portfolioIsins": [
+        "INE01IU01018"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SKY GOLD LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0M4D01010",
+      "key": "ISIN:INE0M4D01010",
+      "name": "Standard Engineering Technology",
+      "legalName": "Standard Engineering Technology Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE0M4D01010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Standard Engineering Technology Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE958L01034",
+      "key": "ISIN:INE958L01034",
+      "name": "String Metaverse",
+      "legalName": "STRING METAVERSE Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE958L01034"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "STRING METAVERSE Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE239C01020",
+      "key": "STYLAMIND",
+      "name": "Stylam Industries",
+      "legalName": "STYLAM INDUSTRIES",
+      "ticker": "STYLAMIND",
+      "portfolioIsins": [
+        "INE239C01020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "STYLAM INDUSTRIES"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE659A01023",
+      "key": "SUDARSCHEM",
+      "name": "Sudarshan Chemical Industries",
+      "legalName": "Sudarshan Chemical Industries Ltd",
+      "ticker": "SUDARSCHEM",
+      "portfolioIsins": [
+        "INE659A01023"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Sudarshan Chemical Industries Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE07RO01027",
+      "key": "SUPRIYA",
+      "name": "Supriya Lifescience",
+      "legalName": "SUPRIYA LIFESCIENCE",
+      "ticker": "SUPRIYA",
+      "portfolioIsins": [
+        "INE07RO01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "SUPRIYA LIFESCIENCE"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE665A01038",
+      "key": "SWANCORP",
+      "name": "Swan Corp",
+      "legalName": "Swan Corp Ltd",
+      "ticker": "SWANCORP",
+      "portfolioIsins": [
+        "INE665A01038"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Swan Corp Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE976I01016",
+      "key": "TATACAP",
+      "name": "Tata Capital Ltd",
+      "legalName": "Tata Capital Ltd",
+      "ticker": "TATACAP",
+      "portfolioIsins": [
+        "INE976I01016"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Tata Capital Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE142M01025",
+      "key": "TATATECH",
+      "name": "Tata Technologies",
+      "legalName": "Tata Technologies Ltd",
+      "ticker": "TATATECH",
+      "portfolioIsins": [
+        "INE142M01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Tata Technologies Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE285K01026",
+      "key": "TECHNOE",
+      "name": "Techno Electric & Engineering",
+      "legalName": "TECHNO ELECTRIC & ENGINEERING COMPANY LTD",
+      "ticker": "TECHNOE",
+      "portfolioIsins": [
+        "INE285K01026"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "TECHNO ELECTRIC & ENGINEERING COMPANY LTD"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE010J01012",
+      "key": "TEJASNET",
+      "name": "Tejas Networks",
+      "legalName": "Tejas Networks Limited",
+      "ticker": "TEJASNET",
+      "portfolioIsins": [
+        "INE010J01012"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Tejas Networks Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE332A01027",
+      "key": "THOMASCOOK",
+      "name": "Thomas Cook (India)",
+      "legalName": "THOMAS COOK (INDIA)",
+      "ticker": "THOMASCOOK",
+      "portfolioIsins": [
+        "INE332A01027"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "THOMAS COOK (INDIA)"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE615H01020",
+      "key": "TITAGARH",
+      "name": "Titagarh Rail Systems",
+      "legalName": "TITAGARH RAIL SYSTEMS Ltd",
+      "ticker": "TITAGARH",
+      "portfolioIsins": [
+        "INE615H01020"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "TITAGARH RAIL SYSTEMS Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE763I01026",
+      "key": "TARIL",
+      "name": "Transformers and Rectifiers India",
+      "legalName": "Transformers and Rectifiers India Ltd",
+      "ticker": "TARIL",
+      "portfolioIsins": [
+        "INE763I01026"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Transformers and Rectifiers India Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0OC301013",
+      "key": "ISIN:INE0OC301013",
+      "name": "Turtlemint Fintech Solutions",
+      "legalName": "TURTLEMINT FINTECH SOLUTIONS LIMITED",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE0OC301013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "TURTLEMINT FINTECH SOLUTIONS LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0U3I01011",
+      "key": "UNIMECH",
+      "name": "Unimech Aerospace",
+      "legalName": "UNIMECH AEROSPACE",
+      "ticker": "UNIMECH",
+      "portfolioIsins": [
+        "INE0U3I01011"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "UNIMECH AEROSPACE"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0CAZ01013",
+      "key": "URBANCO",
+      "name": "Urban Company",
+      "legalName": "Urban Company Ltd",
+      "ticker": "URBANCO",
+      "portfolioIsins": [
+        "INE0CAZ01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Urban Company Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE879I01012",
+      "key": "DBREALTY",
+      "name": "Valor Estate Limited",
+      "legalName": "VALOR ESTATE LIMITED",
+      "ticker": "DBREALTY",
+      "portfolioIsins": [
+        "INE879I01012"
+      ],
+      "formerNames": [
+        "DB Realty Ltd"
+      ],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "VALOR ESTATE LIMITED",
+        "DB Realty Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE1CDF01017",
+      "key": "ISIN:INE1CDF01017",
+      "name": "Vedanta Aluminium Metal",
+      "legalName": "Vedanta Aluminium Metal Limited",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE1CDF01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vedanta Aluminium Metal Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE1CLE01013",
+      "key": "ISIN:INE1CLE01013",
+      "name": "Vedanta Iron and Steel",
+      "legalName": "Vedanta Iron and Steel Limited",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE1CLE01013"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vedanta Iron and Steel Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE205A01025",
+      "key": "VEDL",
+      "name": "Vedanta Limited",
+      "legalName": "VEDANTA LIMITED",
+      "ticker": "VEDL",
+      "portfolioIsins": [
+        "INE205A01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "VEDANTA LIMITED"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE704J01044",
+      "key": "ISIN:INE704J01044",
+      "name": "Vedanta Oil and Gas",
+      "legalName": "Vedanta Oil and Gas Limited",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE704J01044"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vedanta Oil and Gas Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE694L01019",
+      "key": "ISIN:INE694L01019",
+      "name": "Vedanta Power Limited",
+      "legalName": "Vedanta Power Limited",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE694L01019"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vedanta Power Limited"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE564S01019",
+      "key": "ISIN:INE564S01019",
+      "name": "Vikram Kamats Hospitality",
+      "legalName": "Vikram Kamats Hospitality Ltd",
+      "ticker": null,
+      "portfolioIsins": [
+        "INE564S01019",
+        "INE564S13022"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vikram Kamats Hospitality Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE498Q01014",
+      "key": "VINCOFE",
+      "name": "Vintage Coffee and Beverages",
+      "legalName": "Vintage Coffee and Beverages Ltd",
+      "ticker": "VINCOFE",
+      "portfolioIsins": [
+        "INE498Q01014"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vintage Coffee and Beverages Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE0I0T01010",
+      "key": "VOEPL",
+      "name": "Virtuoso Optoelectronics",
+      "legalName": "Virtuoso Optoelectronics Ltd",
+      "ticker": "VOEPL",
+      "portfolioIsins": [
+        "INE0I0T01010"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Virtuoso Optoelectronics Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE01EA01019",
+      "key": "VMM",
+      "name": "Vishal Mega Mart",
+      "legalName": "Vishal Mega Mart Ltd",
+      "ticker": "VMM",
+      "portfolioIsins": [
+        "INE01EA01019"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Vishal Mega Mart Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE540H01012",
+      "key": "VOLTAMP",
+      "name": "Voltamp Transformers",
+      "legalName": "Voltamp Transformers Ltd",
+      "ticker": "VOLTAMP",
+      "portfolioIsins": [
+        "INE540H01012"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Voltamp Transformers Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE377N01017",
+      "key": "WAAREEENER",
+      "name": "Waaree Energies",
+      "legalName": "Waaree Energies Ltd",
+      "ticker": "WAAREEENER",
+      "portfolioIsins": [
+        "INE377N01017"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Waaree Energies Ltd"
+      ],
+      "portfolio": true
+    },
+    {
+      "entityId": "isin:INE049B01025",
+      "key": "WOCKPHARMA",
+      "name": "Wockhardt",
+      "legalName": "Wockhardt Ltd",
+      "ticker": "WOCKPHARMA",
+      "portfolioIsins": [
+        "INE049B01025"
+      ],
+      "formerNames": [],
+      "brands": [],
+      "subsidiaries": [],
+      "aliases": [],
+      "officialDomains": [],
+      "queries": [
+        "Wockhardt Ltd"
+      ],
+      "portfolio": true
+    }
+  ],
+  "portfolioLines": 142,
+  "portfolioEntities": 140,
+  "tickerlessPortfolioEntities": 16,
+  "archive": {
+    "index": "company-news/index.json",
+    "articleCount": 1812,
+    "months": 2
+  },
+  "tickerlessPortfolioLines": 18
 }

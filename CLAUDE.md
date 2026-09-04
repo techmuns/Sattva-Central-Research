@@ -1256,11 +1256,22 @@ capture: **all 123 book tickers, 1,217 articles, no failures.** The picker was c
 attention to avoid a cost that had already been paid.
 
 The 07:00 IST data refresh no longer captures company news or insider trades. Company news has its
-own `company-news-refresh.yml` at 09:00 and 19:00 IST; Insider Trades has
+own `company-news-refresh.yml`: portfolio identities run every three hours, every day, with a
+48-hour overlap, while the complete universe still runs at 09:00 and 19:00 IST on weekdays. Insider Trades has
 `insider-trades-refresh.yml` at 19:00 IST. This keeps long per-company walks from racing with EOD
 technicals or each other. GitHub schedules are best-effort, so a single post-paint watchdog checks
 the committed capture timestamps and dispatches only an overdue workflow. It never falls back to a
 forty-company page-load walk.
+
+**THE THIRTY-DAY COMPANY-NEWS FILE IS A HEAD, NOT A RETENTION LIMIT.** Before that head is rebuilt,
+every portfolio row is merged into `public/data/company-news/<YYYY-MM>.json`; its index holds the
+stable company identities and a watermark per reviewed query. An empty or smaller response never
+retracts a captured article. ISIN identities let private, BSE-only, demerged and unresolved-symbol
+holdings participate without being given a fake ticker. Warrant security lines map to the underlying
+company instead of duplicating its news. Identity enrichment lives in
+`scripts/company-news-identity-overrides.json` and is factual, reviewed data—former names, brands,
+subsidiaries, aliases and domains are never inferred from search results. Collection keeps every
+usable upstream row; keyword, materiality and scope readings happen only after capture.
 
 So News now loads like the other two — snapshot on mount, nothing per company — and the walk is
 still the Refresh button's. **The rule that survives is the one that was always doing the work: a

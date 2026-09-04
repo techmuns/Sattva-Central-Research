@@ -271,7 +271,13 @@ export function identifyingWords(query) {
  * measurement. See the header: this is a signal, never a silent exclusion.
  */
 export function namesCompany(row = {}) {
-  const words = identifyingWords(row.query || row.company || '');
+  // An archived row may have arrived under several reviewed searches. Treat a brand/former-name
+  // mention as valid attribution even when the first observation used the legal name; the full
+  // `matchedQueries` list is evidence from collection, not a fuzzy alias inferred here.
+  const queries = Array.isArray(row.matchedQueries) && row.matchedQueries.length
+    ? row.matchedQueries
+    : [row.query || row.company || ''];
+  const words = [...new Set(queries.flatMap(identifyingWords))];
   if (!words.length) return null;
   const text = normalise(`${row.title || ''} ${row.summary || ''}`);
   return words.some((w) => text.includes(w));
