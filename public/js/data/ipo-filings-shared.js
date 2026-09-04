@@ -4,6 +4,12 @@ import { validDay } from './combined-filings-shared.js';
 export const IPO_SOURCE_IDS = ['nse-equity', 'nse-sme', 'bse-sme', 'sebi-draft', 'sebi-rhp', 'sebi-final', 'sebi-other'];
 export const MAX_IPO_ROWS = 20000;
 export const IPO_POLL_MS = 300000;
+export const BSE_COLLECTOR_FRESH_MS = 30 * 60000;
+export function ipoSourceIsStale(source, now = Date.now()) {
+  const at = Date.parse(source?.checkedAt);
+  const window = source?.id === 'bse-sme' && source.delivery === 'scheduled' ? BSE_COLLECTOR_FRESH_MS : IPO_POLL_MS * 2;
+  return !Number.isFinite(at) || at > now + 60000 || now - at > window || source?.collectorLatestFailed === true;
+}
 export function filingUrl(value, base) {
   if (!value || value === '-') return null;
   try {
@@ -45,12 +51,17 @@ export function mergeIpoFilings(...groups) {
   // An undated document is never assigned the company's draft/issue date or its URL timestamp.
   return [...byKey.values()].sort((a, b) => (b.filingDate || '').localeCompare(a.filingDate || '') || a.company.localeCompare(b.company) || a.id.localeCompare(b.id));
 }
-export function validateIpoFilings(payload) {
-  if (payload?.version !== 1 || !Array.isArray(payload.rows) || payload.rows.length > MAX_IPO_ROWS || !Array.isArray(payload.sources) || payload.sources.length !== IPO_SOURCE_IDS.length) throw Error('Invalid IPO filing feed');
-  if (!Number.isFinite(Date.parse(payload.checkedAt))) throw Error('Missing IPO source check date');
-  for (const r of payload.rows) {
+export function validateIpoRows(rows) {
+  if (!Array.isArray(rows) || rows.length > MAX_IPO_ROWS) throw Error('Invalid IPO filing rows');
+  for (const r of rows) {
     if (typeof r.company !== 'string' || !r.company.trim() || r.company.length > 600 || typeof r.title !== 'string' || r.title.length > 1600 || ![...IPO_SOURCE_IDS, 'imported'].includes(r.sourceId) || typeof r.source !== 'string' || typeof r.filingType !== 'string' || (r.filingDate !== null && !validDay(r.filingDate)) || (r.url !== null && !filingUrl(r.url)) || !Number.isFinite(Date.parse(r.observedAt)) || (r.aliases != null && (!Array.isArray(r.aliases) || r.aliases.some((a) => typeof a !== 'string')))) throw Error('Invalid IPO filing record');
   }
+  return rows;
+}
+export function validateIpoFilings(payload) {
+  if (payload?.version !== 1 || !Array.isArray(payload.sources) || payload.sources.length !== IPO_SOURCE_IDS.length) throw Error('Invalid IPO filing feed');
+  if (!Number.isFinite(Date.parse(payload.checkedAt))) throw Error('Missing IPO source check date');
+  validateIpoRows(payload.rows);
   for (const s of payload.sources) {
     if (!IPO_SOURCE_IDS.includes(s.id) || !['ok', 'failed'].includes(s.status) || typeof s.label !== 'string' || !Number.isFinite(Date.parse(s.checkedAt)) || typeof s.note !== 'string') throw Error('Invalid IPO source status');
   }

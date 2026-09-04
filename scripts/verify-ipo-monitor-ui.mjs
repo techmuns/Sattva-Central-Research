@@ -64,7 +64,7 @@ try {
     return document.querySelector('[data-beacon-launch-count]').textContent === `${items.filter((s) => s.status === 'live').length} live feeds` && !items.some((s) => s.name.includes('public IPO monitor'));
   }));
   await page.locator('[data-beacon-notes="ipo-filings"] > summary').click();
-  check('coverage limitations moved into expandable source-panel details', (await ipoGroup.innerText()).includes('No continuous collection while closed') && (await ipoGroup.innerText()).includes('BSE-only mainboard'));
+  check('coverage limitations and separate BSE cadence stay in source-panel details', (await ipoGroup.innerText()).includes('including while closed') && (await ipoGroup.innerText()).includes('BSE-only mainboard'));
   const bseDetails = page.locator('[data-beacon-source="bse-sme"]');
   await bseDetails.locator('summary').click();
   const originalBse = structuredClone(live.sources.find((s) => s.id === 'bse-sme'));

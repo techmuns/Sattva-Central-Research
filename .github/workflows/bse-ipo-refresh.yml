@@ -1,0 +1,45 @@
+name: BSE IPO collection
+
+on:
+  # Best-effort schedule, not a real-time promise. The dashboard independently checks capture age.
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/bse-ipo-refresh.yml', 'scripts/collect-bse-ipo.mjs', 'worker/ipo-sources.mjs', 'public/js/data/*ipo*shared.js']
+  pull_request:
+    paths: ['.github/workflows/bse-ipo-refresh.yml', 'scripts/collect-bse-ipo.mjs', 'worker/ipo-sources.mjs', 'public/js/data/*ipo*shared.js']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: bse-ipo-capture-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    # Do not activate until repeated hosted captures pass. Changing the runner OS
+    # did not resolve BSE's connection failure; a reachable egress path is required.
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Collect and validate the official BSE SME table
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/collect-bse-ipo.mjs "$RUNNER_TEMP/bse-ipo-v1.json.gz"
+      - name: Publish the immutable public-data capture
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/bse-ipo-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 7

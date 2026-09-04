@@ -2383,7 +2383,9 @@ history ranges and filtered Excel export. It is automatically populated for all 
 of Portfolio/Watchlist scope; a missing listed symbol never removes an issuer. The weekly KPI cards,
 cream/teal theme, financial scoring and separate weekly/tracker/news views are no longer this tab.
 
-`GET /api/ipo-filings` reads seven fixed public resources with no credentials:
+`GET /api/ipo-filings` combines seven fixed public sources. NSE/SEBI reads need no credentials;
+BSE is collected separately by GitHub Actions and read through the Worker's existing
+`GH_DISPATCH_TOKEN` (Actions read permission). No caller credential or portfolio data is used:
 
 - NSE mainboard and SME: `https://www.nseindia.in/api/corporates/offerdocs?index=equities` and
   `?index=sme`, verified from the official [offer-document page](https://www.nseindia.com/companies-listing/corporate-filings-offer-documents)
@@ -2397,18 +2399,63 @@ cream/teal theme, financial scoring and separate weekly/tracker/news views are n
   and that limitation remain visible in the Data flowing in source panel and the exported workbook. No full-universe claim.
 
 The fixed read-only endpoint rejects caller-supplied query URLs and non-GET methods. It has a
-three-connection pool, a 25-second total deadline, 20-second per-source deadlines and a 4 MiB
-streaming body cap per source. Redirects are rejected and no caller headers/tokens are forwarded.
+three-connection pool, a 25-second total deadline, 20-second NSE/SEBI deadlines and a 4 MiB
+streaming body cap per source. Publisher redirects are rejected and no caller headers/tokens are forwarded.
 Every source reports its own status/check time; partial failures retain successful sources.
-Responses with at least one working source cache for five minutes (including their original check
-timestamps). Complete failure returns 502 and is not cached.
+Complete responses cache for five minutes (including their original check timestamps). Partial
+responses cache for only 30 seconds so opening/refreshing can recover promptly; complete failure
+returns 502 and is not cached. The internal cache revision excludes pre-fix five-minute failures.
+
+BSE direct Worker reads remained unreliable after bounded retries, so the serving route uses
+`worker/bse-ipo-collector.mjs`. `.github/workflows/bse-ipo-refresh.yml` requests a collection every
+15 minutes, on collector-related main changes, and in isolated PR validation. Schedules are
+best-effort, not guaranteed. `scripts/collect-bse-ipo.mjs` reads only the official BSE table with
+bounded curl, validates every row, and uploads one gzip file via `upload-artifact@v7` with
+`archive: false`. Artifacts expire after seven days; the workflow has only `contents: read` and
+`actions: read`, never commits to main, never deploys, and never accepts a target URL. Failed reads
+publish no artifact. Hosted network acceptance is required before this workflow can be activated:
+both standard Ubuntu and macOS runners timed out connecting to BSE on 4 September 2026. A green
+mock/contract test does not establish working BSE access or repeated successful collection.
+
+Each successful capture carries forward the previous successful capture plus the reviewed BSE
+seed, keyed by source and exact document URL. Re-reading the same document updates its observation
+instead of appending a duplicate. Distinct document URLs remain separate, even for the same company,
+filing type and date; amendments must not be discarded as duplicates. Version 2 separates
+`currentCount` from `retainedCount`. A link absent from the current response retains its original
+`observedAt` and supplied filing date, rather than being relabelled as newly seen.
+
+History restore is mandatory in Actions. Only a verified empty successful-run history permits
+first-run bootstrap. An API error, missing/expired previous artifact, unmapped rows, a greater-than-10%
+issuer-table shrink, inconsistent counts or a size cap failure blocks publication, rather than
+silently resetting/truncating history. Successful captures are queried separately from recent runs,
+so a streak of more than ten failures cannot hide the last success. The shrink guard is an anomaly
+check, not proof that the publisher has exposed every filing. Seven-day rolling artifacts preserve
+history through ordinary failures but are **not permanent storage**: an outage longer than the
+retention window requires deliberate archive recovery. Durable long-term backup remains necessary
+before claiming lossless, indefinite historical collection.
+
+The Worker reads only this repository's successful **main** collector runs, never PR/fork
+artifacts. It verifies artifact SHA-256, fixed filename, source identities, dates, counts, allowed
+filing hosts, compressed (1 MiB) and decompressed (4 MiB) limits within 12 seconds. The GitHub
+credential is sent only to the fixed GitHub API; signed blob downloads receive no credential.
+The source carries the original `checkedAt`, `delivery: scheduled`, run link and latest completed
+collection outcome. A newer failed collection flags the retained capture immediately; an otherwise
+successful capture older than 30 minutes is dated, even if the surrounding NSE/SEBI response is new.
+Refresh reads the latest published artifact and does not start a job. No new production secret,
+Cloudflare storage binding, arbitrary proxy or diagnostic route is required.
+
+`captureIpoFilings()` without a collector remains available for local/staging capture. Direct BSE
+reads there use a fixed public referrer and at most one transient retry (10/14 seconds within the
+25-second route budget). This is not the production BSE delivery path.
 
 The browser paints `data/ipo-filings.json`, then revalidates the official feed on entry and every
 five minutes while mounted. The existing live engine pauses hidden-tab polling. Public captured
 history accumulates in IndexedDB, bounded to 20,000 rows with visible truncation warnings. Failed
-revalidation or check times older than ten minutes are visibly stale. Refresh does not discard
-filings missing from a narrower source window. There is **no new background capture scheduler**:
-closed browsers do not accumulate new local history. Upstream publication, SEBI pagination and
+revalidation or direct-source check times older than ten minutes are visibly stale; scheduled BSE
+uses the separate 30-minute limit above. Refresh does not discard filings missing from a narrower
+source window. Once enabled, successful BSE collection carries history forward while closed, but
+closed browsers do not accumulate new local history and artifact retention is not a permanent archive.
+Upstream publication, SEBI pagination and
 BSE-only mainboard coverage can still leave gaps, disclosed in the Data flowing in source panel.
 
 The IPO table keeps only a compact freshness/error line and a Source details shortcut. This opens
@@ -2419,7 +2466,8 @@ warnings. The registry and sources modal use the same IPO feed metadata, without
 fetch. The beacon updates open IPO details on feed changes and age checks, preserving expansion,
 focus and scroll without restarting the flow diagram. Live-feed counts still measure configured
 refresh connections, not successful latest reads: failed, unconfirmed or dated IPO readings are
-explicitly labelled with non-green dots. No background collector or refresh cadence was changed.
+explicitly labelled with non-green dots. BSE shows “Collected” and its collection time, not a
+claim that the publisher was just read by this browser.
 
 `node scripts/capture-ipo-filings.mjs` refreshes only the local bundled capture for a reviewed PR.
 It also migrates actual filings from all nine imported DRHP snapshots and the EAAA supplement;
@@ -2427,7 +2475,7 @@ weekly market observations, financials and scores are not treated as filings. So
 different regulators/exchanges remain separately labelled; equal URLs within one source deduplicate.
 General Alerts consumes this exact filing feed, not the old weekly IPO data.
 
-Verification: `node scripts/verify-ipo-filings.mjs`, existing General Alerts/legacy contract checks,
+Verification: `node scripts/verify-ipo-filings.mjs`, `node scripts/verify-bse-ipo-collector.mjs`, existing General Alerts/legacy contract checks,
 and `PLAYWRIGHT_ROOT=/path/to/playwright EXCELJS_ROOT=/path/to/exceljs node scripts/verify-ipo-monitor-ui.mjs`.
 The `browser` CI job checks layout, search/filter persistence, real XLSX export beyond the
 rendered row window, polling, source outages, HTML escaping, mobile containment and unmount cleanup.
