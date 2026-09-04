@@ -230,6 +230,7 @@ async function run(kind, list) {
     _provenance:
       `REAL DATA, NOT OURS. ${kind} for Indian listed companies via the Muns API, reaching back ${windowDays} days. ` +
       'Headlines, subjects, column headings and wording are the source\'s own, reproduced unchanged and never summarised. ' +
+      (kind === 'insider' ? 'Insider disclosures accumulate within the date window; an empty or partial response does not retract retained events. ' : '') +
       'A company in `byTicker` had something; one in `empty` was asked and answered nothing; one in `failed` could not be read; ' +
       'one in none of the three was never reached. Those are four different answers and must not be conflated.',
     kind,
@@ -280,7 +281,7 @@ async function run(kind, list) {
   // this week and none next — and a strict "never fewer" would block almost every honest run. Half
   // is far outside that drift and squarely inside an outage.
   const prevWithRows = previous ? (previous.withRows ?? Object.keys(previous.byTicker || {}).length) : 0;
-  if (previous && prevWithRows >= 8 && payload.withRows < prevWithRows / 2 && !process.env.FILINGS_FORCE) {
+  if (kind !== 'insider' && previous && prevWithRows >= 8 && payload.withRows < prevWithRows / 2 && !process.env.FILINGS_FORCE) {
     console.log(
       `\r  ${kind}: only ${payload.withRows} companies had anything, against ${prevWithRows} in the committed ` +
         'snapshot — that is an upstream problem, not a quiet week. Keeping it; set FILINGS_FORCE=1 to override.'
@@ -295,13 +296,15 @@ async function run(kind, list) {
   // were thrown away. Merge at the company boundary instead: fresh rows or a fresh empty answer
   // win, and a failed/not-reached company retains its last-known-good answer. The unresolved map is
   // what remains after that recovery, so the UI can retry real gaps without freezing everybody.
-  if (previous && !process.env.FILINGS_FORCE) {
+  // Insider events are additive even after an empty/partial response or a forced capture. Their
+  // rolling date window bounds retention, so the news collapse guard must not discard new trades.
+  if (kind === 'insider' || (previous && !process.env.FILINGS_FORCE)) {
     payload = mergeLastGoodFilings(payload, previous, list);
   }
 
   writeFileSync(DATA(file), `${JSON.stringify(payload, null, 2)}\n`);
   console.log(
-    `\r  ${kind}: ${payload.rowCount} rows across ${payload.withRows} of ${list.length} companies` +
+    `\r  ${kind}: ${payload.rowCount} rows across ${payload.withRows} companies (${list.length} requested)` +
       `${payload.emptyCount ? `, ${payload.emptyCount} asked and had nothing` : ''}` +
       `${payload.fallbackCount ? `, ${payload.fallbackCount} retained from last-good data` : ''}` +
       `${payload.failedCount ? `, ${payload.failedCount} could not be read` : ''} -> public/data/${file}`

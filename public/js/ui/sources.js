@@ -473,7 +473,7 @@ export function sourceGroups() {
           url: 'https://devde.muns.io',
           feeds:
             "<strong>Real disclosures.</strong> Promoter, director and designated-person dealing from <code class=\"rounded bg-slate-100 px-1\">POST /filings/data/insider_trades</code> with <code class=\"rounded bg-slate-100 px-1\">country: india</code>, routing to NSE, BSE and Trendlyne. <strong>This endpoint answers with a markdown table, not JSON</strong> — the only upstream here that does — so the columns on screen are whatever their table declared, in their order, under their headings. Nothing is renamed and <strong>nothing is summed</strong>: a quantity written \"1,20,000 (pledged)\" is not a number.",
-          cadence: 'Rolling 365 days · captured weekdays at 07:00 and 09:00 IST; the live routes answer the Refresh button, never a page load',
+          cadence: 'Additive history within a rolling 365-day window · captured weekdays at 19:00 IST; Refresh adds live disclosures while retaining earlier captures',
           status: 'live',
           file: 'worker/index.js → /api/insider-trades/{ticker} · worker/muns.mjs · public/js/data/filings-shared.js',
         },

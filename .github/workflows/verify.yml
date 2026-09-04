@@ -16,6 +16,8 @@ jobs:
           node-version: "22"
       - name: Verify filings snapshot recovery
         run: node scripts/verify-filings-snapshot.mjs
+      - name: Verify additive insider trades
+        run: node scripts/verify-insider-trades.mjs
       - name: Verify capture watchdog
         run: node scripts/verify-capture-watchdog.mjs
       - name: Syntax-check JavaScript

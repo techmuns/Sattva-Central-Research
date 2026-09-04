@@ -4,6 +4,9 @@
 // object means one extra timeout can freeze every company on yesterday's data. The durable unit is
 // the company: a fresh answer (including a fresh empty answer) wins; a company that failed or was
 // not reached keeps its last-known-good answer; only a company with neither is unresolved.
+// Insider disclosures additionally retain earlier events inside the requested window.
+
+import { mergeInsiderTrades, mergeInsiderHeaders } from '../../public/js/data/insider-history.js';
 
 const upper = (value) => String(value || '').trim().toUpperCase();
 
@@ -19,7 +22,11 @@ const keyed = (value) => Object.fromEntries(Object.entries(object(value)).map(([
  * need their previous answer carried forward.
  */
 export function mergeLastGoodFilings(payload, previous, tickers = []) {
-  if (!previous || typeof previous !== 'object') return payload;
+  const additive = payload.kind === 'insider';
+  if (!previous || typeof previous !== 'object') {
+    if (!additive) return payload;
+    previous = {};
+  }
 
   const next = structuredClone(payload);
   next.byTicker = keyed(next.byTicker);
@@ -51,6 +58,7 @@ export function mergeLastGoodFilings(payload, previous, tickers = []) {
   }
   const universe = new Set([
     ...tickers.map((ticker) => upper(ticker?.ticker ?? ticker)),
+    ...(additive ? [...Object.keys(previousRows), ...previousEmpty] : []),
     ...Object.keys(next.byTicker).map(upper),
     ...empty,
     ...Object.keys(next.failed).map(upper),
@@ -61,7 +69,19 @@ export function mergeLastGoodFilings(payload, previous, tickers = []) {
   for (const ticker of fresh) delete next.failed[ticker];
 
   for (const ticker of universe) {
-    if (fresh.has(ticker)) continue;
+    if (fresh.has(ticker)) {
+      if (additive) {
+        const rows = mergeInsiderTrades(Array.isArray(previousRows[ticker]) ? previousRows[ticker] : [], next.byTicker[ticker] || [], next);
+        if (rows.length) {
+          next.byTicker[ticker] = rows;
+          empty.delete(ticker);
+        } else {
+          delete next.byTicker[ticker];
+          empty.add(ticker);
+        }
+      }
+      continue;
+    }
 
     const oldRows = previousRows[ticker];
     const hadEmptyAnswer = previousEmpty.has(ticker);
@@ -76,7 +96,8 @@ export function mergeLastGoodFilings(payload, previous, tickers = []) {
     }
 
     const failure = next.failed[ticker];
-    if (Array.isArray(oldRows) && oldRows.length) next.byTicker[ticker] = structuredClone(oldRows);
+    const retained = additive ? mergeInsiderTrades([], Array.isArray(oldRows) ? oldRows : [], next) : oldRows;
+    if (Array.isArray(retained) && retained.length) next.byTicker[ticker] = structuredClone(retained);
     else empty.add(ticker);
     delete next.failed[ticker];
 
@@ -88,6 +109,10 @@ export function mergeLastGoodFilings(payload, previous, tickers = []) {
   }
 
   next.empty = [...empty].sort();
+  if (additive) {
+    next.headers = mergeInsiderHeaders(previous.headers || [], next.headers || [],
+      Object.values(next.byTicker).flatMap((rows) => rows.flatMap((row) => Object.keys(row.cells || {}))));
+  }
   next.fallback = fallback;
   next.fallbackCount = Object.keys(fallback).length;
   next.freshCovered = fresh.size;

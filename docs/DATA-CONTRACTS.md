@@ -2140,6 +2140,34 @@ Post Holding Shares, Post Holding %, Mode, From Date, To Date, Broadcast Date, S
 look duplicated in the visible columns are genuinely distinct filings — same day, same size,
 different insider, sometimes the opposite direction — which is why nothing here dedupes them.
 
+**Insider responses now add to retained disclosures.** The supplied
+`POST https://devde.muns.io/filings/data/insider_trades` source is already the feed's upstream;
+it is called once per company, with `country: india` and explicit `fromDate` / `toDate` filters
+to avoid the unfiltered India path's 100-record cap. No second copy of the same source is fetched.
+The client also supports `country: USA` for Finviz, but this dashboard's universe remains Indian.
+
+Scheduled captures and browser refreshes share `public/js/data/insider-history.js`. A successful
+empty or smaller response adds what it returned without deleting earlier events inside the
+365-day window. A narrower capture retains previously covered companies; failed/unreached
+companies retain their prior capture timestamps through the existing fallback metadata. The
+news collapse guard does not discard a partial insider capture, and `FILINGS_FORCE` does not
+disable insider retention. Readable dates outside the requested window expire; undated rows stay.
+
+Overlap is matched using every row field except the redundant `raw` copy, with object keys sorted
+for comparison. Source labels, insider names, direction, quantities and document URLs all remain
+part of the match. The merge keeps the greatest observed multiplicity of identical rows, so
+repeated responses do not inflate counts and identical rows already present in one response are
+not collapsed. Without a stable filing ID, a corrected record is retained as a distinct variant.
+Headings are unioned in source order so columns from earlier responses remain visible/exportable.
+
+Browser history uses `insider-history:{ticker}` separately from the exact HTTP payload and ETag
+under `filings:insider:{ticker}`. Reloading after an empty or failed response therefore keeps prior
+live additions without assigning their merged bytes the upstream response's validator. Cache-write
+time is not used as a server confirmation. The UI's capture/check times describe when the source
+was queried, not a guarantee that every retained row was returned again. News and announcements
+keep their existing replacement semantics. `node scripts/verify-insider-trades.mjs` exercises the
+request contract, overlap handling, retention boundary, snapshot/live merges and device history.
+
 ### THE PARSING STAYS LOOSE ANYWAY
 
 None of the three could be probed when they were wired: the only token available locally was a

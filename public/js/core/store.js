@@ -60,6 +60,8 @@ export const KEYS = {
   // walked live, so a quarter landing for one company cannot invalidate the other six hundred.
   filings: (kind) => `filings:${kind}`,
   filingRow: (kind, ticker) => `filings:${kind}:${ticker}`,
+  // Additive insider history is separate from the exact HTTP response and its ETag.
+  insiderHistory: (ticker) => `insider-history:${ticker}`,
   // Market-wide stocks news, the Universe half of the News tab. One committed capture, refreshed
   // by a scheduled Action — neither the browser nor the Worker can read the publisher directly.
   marketNews: 'market-news',
