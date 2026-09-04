@@ -6,9 +6,9 @@ on:
     - cron: '7,22,37,52 * * * *'
   push:
     branches: [main]
-    paths: ['.github/workflows/bse-ipo-refresh.yml', 'scripts/collect-bse-ipo.mjs', 'worker/ipo-sources.mjs', 'public/js/data/ipo-filings-shared.js']
+    paths: ['.github/workflows/bse-ipo-refresh.yml', 'scripts/collect-bse-ipo.mjs', 'worker/ipo-sources.mjs', 'public/js/data/*ipo*shared.js']
   pull_request:
-    paths: ['.github/workflows/bse-ipo-refresh.yml', 'scripts/collect-bse-ipo.mjs', 'worker/ipo-sources.mjs', 'public/js/data/ipo-filings-shared.js']
+    paths: ['.github/workflows/bse-ipo-refresh.yml', 'scripts/collect-bse-ipo.mjs', 'worker/ipo-sources.mjs', 'public/js/data/*ipo*shared.js']
   workflow_dispatch:
 
 permissions:
