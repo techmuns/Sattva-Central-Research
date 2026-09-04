@@ -156,7 +156,12 @@ try {
   await page.locator('[data-ai-more]').click();
   assert.equal(await card('OLD').count(), 1);
   await search.fill('A00');
+  // runFor advances the parent and cross-origin frame clocks separately. Deliver the
+  // fresh source reply after both have advanced, avoiding an artificial stale timestamp.
+  await peer.evaluate(() => { window.holdPositions = true; });
   await page.clock.runFor(2100);
+  await waitFor(peer, () => !!window.releasePositions);
+  await peer.evaluate(() => window.releasePositions());
   await settled();
   assert.equal((await card('A00').locator('[data-ai-date] [data-ai-age]').innerText()).toLowerCase(), '1d');
   assert.deepEqual(await card('A00').locator('[data-ai-evidence] [data-ai-age]').allTextContents(), ['1d', '1d', '1d']);
