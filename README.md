@@ -47,10 +47,11 @@ deploy notes and the known gaps.
 daily Yahoo Finance EOD scrape plus NSE delivery data, refreshed weekdays at 07:00 IST by
 [a GitHub Action](.github/workflows/technicals-refresh.yml).
 
-**Two full scoring/analysis systems sit on mock-but-real-shaped data.** The Earnings Hub scores
-every result against a 15-rule, 21-point quality-and-growth model; the Con-call tab scans real
-transcript text for user-editable keywords, at runtime, in the browser. Both are wired exactly as
-they will be when the feeds land — swapping the JSON is the only change needed.
+**Earnings and con-call scans use real feeds.** Earnings Reported uses Moneycontrol and Con-call
+uses StockScans. Earnings Hub → Company Filings adds on-demand annual reports, earnings reports
+and transcripts from Screener.in through Muns. The old synthetic earnings corpus is no longer
+served or loaded. Analyst consensus estimates remain **not connected**, so Earnings Surprise
+shows an unavailable state instead of invented beat/miss figures.
 
 The Sources modal in the header lists every feed with an honest live / real / mock / pending
 status. What each tab does *not* do is recorded in `docs/SPEC.md` under its "Still to come" —
@@ -141,7 +142,7 @@ public/
     tabs/             ai-alerts, daily-alerts, ask-research, earnings-hub, concall, public-chatter, breakouts,
                       super-investors, news, corp-announcements, insider-trades
   data/               portfolio-companies.json (the book, synced from techmuns/Sattva-Family — names
-                      and sectors only, the ONLY portfolio data here), universe.json, technicals.json, mock/*.json
+                      and sectors only, the ONLY portfolio data here), universe.json, technicals.json
 worker/index.js       asset serving + live read-through APIs + the Ask Research stream
 worker/research.mjs   server-only streaming Muns LLM bridge and request limits
 docs/SPEC.md          product spec, nav model, per-tab features, roadmap
@@ -171,18 +172,17 @@ TECH_LIMIT=15 node scripts/scrape-technicals.mjs   # smoke run -> technicals.smo
 A capped run writes to a sibling file and skips the ATR accumulator, so it can never truncate
 the committed feed or poison the volatility-trend history.
 
-## Regenerate the mock earnings set
+## Regenerate the earnings test fixtures
 
 ```bash
 node scripts/gen-mock-earnings.mjs
 ```
 
 Seeded, so the output is byte-stable — a diff means a real change. Writes
-`public/data/mock/earnings.json` and `public/data/mock/earnings-calendar.json`. Company names,
-tickers, sectors and market caps come from `universe.json` and are real; **every financial figure
-is synthetic**, and the dashboard says so on every surface that shows one. Swapping in the real
-filings feed is a three-file change — see *Wiring the real feed* in
-[`docs/DATA-CONTRACTS.md`](docs/DATA-CONTRACTS.md).
+`scripts/fixtures/mock-earnings.json` and `scripts/fixtures/mock-earnings-calendar.json`.
+These synthetic figures are test inputs outside the served assets. The dashboard rejects them.
+See [Domestic company filings](docs/DATA-CONTRACTS.md#domestic-company-filings) for the real
+document endpoint; PDFs do not populate analyst estimates or structured financial history.
 
 ## Regenerate the mock con-calls
 

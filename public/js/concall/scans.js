@@ -41,6 +41,7 @@ import { scopeSummary } from '../ui/components.js';
 import { avatarFor } from '../ui/visual.js';
 import { deliveryNote } from '../ui/sources.js';
 import { escapeHtml } from '../core/dom.js';
+import { domesticFilingsHref } from '../data/domestic-filings-shared.js';
 import { formatNumber, formatRelativeTime } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import * as feed from '../data/concall-scans.js';
@@ -216,6 +217,7 @@ export function renderScans(ctx, { disposers, tableView, onView }) {
     stickyHead: 'max(320px, calc(100vh - 330px))',
     columns: [
       { label: 'Call', get: (r) => whenCell(r.when), html: true, align: 'left', sortValue: (r) => r.when || '' },
+      { label: 'Filings', get: (r) => r.ticker ? `<a data-norow class="font-semibold text-indigo-600" href="${escapeHtml(domesticFilingsHref(r.ticker, { form: 'concalls', scope: ctx.scope }))}">Transcripts</a>` : '—', html: true, sortable: false },
       {
         // Their index, on their scale. `max: 100` and no tier colouring of our own — the badge
         // beside it is their label for that band.

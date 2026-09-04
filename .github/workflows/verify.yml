@@ -20,6 +20,8 @@ jobs:
         run: node scripts/verify-insider-trades.mjs
       - name: Verify additive corporate-announcement lookups
         run: node scripts/verify-announcement-lookups.mjs
+      - name: Verify domestic filings and earnings provenance
+        run: node scripts/verify-domestic-filings.mjs
       - name: Verify capture watchdog
         run: node scripts/verify-capture-watchdog.mjs
       - name: Verify NSE filing history and scoped search

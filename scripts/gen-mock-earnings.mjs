@@ -3,17 +3,15 @@
 //
 //   node scripts/gen-mock-earnings.mjs
 //
-// Writes public/data/mock/earnings.json and public/data/mock/earnings-calendar.json.
+// Writes scripts/fixtures/mock-earnings.json and scripts/fixtures/mock-earnings-calendar.json.
 //
 // WHAT IS REAL AND WHAT IS NOT
 //   Real:      company names, tickers, sectors and market caps — all drawn from
 //              public/data/universe.json, the actual NSE-500 screener export.
 //   Synthetic: every rupee, every margin, every EPS. None of it is a reported figure.
 //
-// The dashboard states this everywhere it shows the data (amber ribbon on the tab, "Mock
-// data" on the freshness card, `mock` in the Sources modal, a banner row in the Excel
-// export). This file exists so that when the real filings feed is wired, the ONLY change is
-// swapping the JSON — the shape below is the contract, documented in docs/DATA-CONTRACTS.md.
+// These files are test fixtures outside the served public directory. They must never be loaded
+// as dashboard financials or estimates. The legacy earnings loader rejects their provenance.
 //
 // Determinism: a seeded PRNG (mulberry32) means the same seed always produces the same
 // numbers, so the committed file is reproducible and a diff is reviewable. Change SEED and
@@ -25,8 +23,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UNIVERSE_PATH = resolve(__dirname, '../public/data/universe.json');
-const OUT_PATH = resolve(__dirname, '../public/data/mock/earnings.json');
-const CALENDAR_PATH = resolve(__dirname, '../public/data/mock/earnings-calendar.json');
+const OUT_PATH = resolve(__dirname, './fixtures/mock-earnings.json');
+const CALENDAR_PATH = resolve(__dirname, './fixtures/mock-earnings-calendar.json');
 
 const SEED = 20260810;          // change this and every number changes
 const COMPANY_COUNT = 120;
