@@ -6,8 +6,9 @@ export async function handleIpoFilings(request, { fetcher = fetch, cache = globa
   // Temporary, fixed-destination diagnostic for this branch preview only. Removed before merge.
   if (url.hostname === 'codex-fix-bse-ipo-fetch-sattva-central-research.tech-441.workers.dev' && url.search === '?probe=bse' && request.method === 'GET') {
     const probes = [
-      ['https-documents', 'https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx'],
-      ['https-referer', 'https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx'],
+      ['default-referer', 'https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx'],
+      ['no-store-referer', 'https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx'],
+      ['default-bare', 'https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx'],
     ];
     const out = []; let next = 0;
     await Promise.all(Array.from({ length: 3 }, async () => {
@@ -15,9 +16,9 @@ export async function handleIpoFilings(request, { fetcher = fetch, cache = globa
         const [name, target] = probes[next++], start = Date.now();
         try {
           const signal = AbortSignal.any([request.signal, AbortSignal.timeout(21000)]);
-          const r = await fetcher(target, { redirect: 'manual', cache: 'no-store', signal, headers: name === 'https-referer' ? { ...IPO_HEADERS, referer: 'https://www.bsesme.com/' } : IPO_HEADERS });
+          const r = await fetcher(target, { redirect: 'manual', ...(name.startsWith('no-store') ? { cache: 'no-store' } : {}), signal, headers: name.endsWith('referer') ? { ...IPO_HEADERS, referer: 'https://www.bsesme.com/' } : IPO_HEADERS });
           const body = await boundedIpoText(r, signal);
-          out.push({ name, status: r.status, ms: Date.now() - start, location: r.headers.get('location'), table: body.includes('ContentPlaceHolder1_gvData'), title: body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim(), bytes: body.length });
+          out.push({ name, status: r.status, ms: Date.now() - start, headers: Object.fromEntries(['date', 'age', 'cache-control', 'cf-cache-status', 'last-modified'].map((k) => [k, r.headers.get(k)])), table: body.includes('ContentPlaceHolder1_gvData'), title: body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim(), bytes: body.length });
         } catch (error) { out.push({ name, ms: Date.now() - start, error: String(error.message).slice(0, 150) }); }
       }
     }));
