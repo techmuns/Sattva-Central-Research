@@ -64,7 +64,8 @@ let lastResult = null;
 let failure = null;
 // The reader's own filters. Module state, not node state: every repaint rebuilds the list, so a
 // value held on the input would be discarded the moment a capture landed.
-let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all' };
+const defaultView = () => ({ q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', handle: 'all' });
+let listView = defaultView();
 let fillStop = null;
 // Whether the provenance modal — which holds the Fetch control — is on screen, so a fetch's
 // progress can be re-rendered into it rather than reported to a panel nobody is looking at.
@@ -194,6 +195,11 @@ let moreInFlight = false;
  * at all to tell the two apart from the screen.
  */
 function moreFooter() {
+  if (listView.source === 'twitter') {
+    return `<div data-news-more class="border-t border-slate-100 px-5 py-4 text-center text-sm text-slate-400">
+      All available captured X posts are loaded. Coverage is limited to monitored accounts and recent collections.
+    </div>`;
+  }
   const arc = marketNews.archiveMeta();
   const back = arc.oldest ? istTime(arc.oldest) : null;
   const base = 'flex items-center justify-center gap-3 border-t border-slate-100 px-5 py-4 text-sm';
@@ -214,12 +220,13 @@ function moreFooter() {
     </div>`;
   }
   return `<div data-news-more class="${base} text-slate-400">
-    <span>That is every story captured${back ? `, back to ${escapeHtml(back)}` : ''}. History grows from here — nothing is discarded any more.</span>
+    <span>All available publisher history is loaded${back ? `, back to ${escapeHtml(back)}` : ''}. X posts cover recent collections from monitored accounts.</span>
   </div>`;
 }
 
 /** Pull the next month in. Guarded so a flick of the wheel cannot start three of these at once. */
 async function requestMore(root) {
+  if (listView.source === 'twitter') return;
   if (moreInFlight) return;
   const arc = marketNews.archiveMeta();
   if (arc.exhausted) return;
@@ -248,15 +255,14 @@ function visibleRows(rows) {
   const topic = listView.topic;
   const source = listView.source;
   return rows.filter((r) => {
-    // The source filter is the coarsest of the four and comes first: publisher, section and topic
-    // are all readings of a PUBLISHER story, and a post carries none of them.
+    // Source, author and publisher narrow identity. Topic reads the text of either kind of row.
     if (source === 'twitter' && !isPost(r)) return false;
     if (source === 'publishers' && isPost(r)) return false;
     if (isPost(r)) {
-      // A post has no publisher, no section and no keyword reading, so any of those narrowing to a
-      // named value excludes it — the honest answer, and not the same as pretending it matched.
-      if ((publisher && publisher !== 'all') || (section && section !== 'all') || (topic && topic !== 'all')) return false;
-      return !q || `${r.title || ''} ${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
+      if ((publisher && publisher !== 'all') || (section && section !== 'all')) return false;
+      if (listView.handle !== 'all' && r.handleKey !== listView.handle) return false;
+      if (topic && topic !== 'all' && !matchesTopic(readingFor(r), topic)) return false;
+      return !q || `${r.title || ''} @${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
     }
     if (publisher && publisher !== 'all' && r.publisher !== publisher) return false;
     if (section && section !== 'all' && r.section !== section) return false;
@@ -389,7 +395,7 @@ function cardHtml(r) {
  * control that silently means something else on this half of the tab.
  */
 function topicOptions() {
-  const all = marketNews.rows();
+  const all = feedRows().filter((row) => listView.source === 'all' || (listView.source === 'twitter' ? isPost(row) : !isPost(row)));
   const cache = all.map(readingFor);
   const counted = (value) => cache.filter((reading) => matchesTopic(reading, value)).length;
   return topicFilterOptions(counted).filter((o) => o.value !== 'targeted');
@@ -402,19 +408,17 @@ function listHtml(rows) {
   // options as you use it cannot be used to get back. Posts are excluded from it because their
   // "section" is the source, which the control beside it already asks about.
   const allSections = [...new Set(marketNews.rows().map((r) => r.section).filter(Boolean))].sort();
-  // NOT OFFERED WHEN THERE IS NOTHING TO CHOOSE BETWEEN. A dropdown whose every option means the
-  // same set is a control that looks like it does something, which is worse than no control — the
-  // same reason market-wide news is absent from General Alerts' chips under a narrowed scope
-  // rather than present and permanently empty.
+  // Keep X discoverable before its first capture, with a measured status instead of hiding it.
   const posts = twitterNews.rows().length;
-  const sourceSelect = posts
-    ? `<select data-news-source aria-label="Source"
+  const accounts = twitterHandles.all({ failed: twitterNews.failedByKey(), collected: !!twitterNews.meta().capturedAt });
+  const postCounts = twitterNews.countsByHandle();
+  const xOnly = listView.source === 'twitter';
+  const sourceSelect = `<select data-news-source aria-label="Source"
          class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
          <option value="all"${listView.source === 'all' ? ' selected' : ''}>All sources</option>
          <option value="publishers"${listView.source === 'publishers' ? ' selected' : ''}>News publishers</option>
          <option value="twitter"${listView.source === 'twitter' ? ' selected' : ''}>Twitter / X</option>
-       </select>`
-    : '';
+       </select>`;
   // Publishers in the order they contribute, most stories first, so the busiest masthead is the
   // easiest to reach. Read off the WHOLE feed rather than the filtered set, for the same reason the
   // sections are: a dropdown that loses its own options as you use it cannot be used to get back.
@@ -427,12 +431,12 @@ function listHtml(rows) {
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <div class="relative w-full min-w-[180px] flex-1 sm:w-auto sm:max-w-md">
             <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input type="text" data-news-search placeholder="Search headlines..." value="${escapeHtml(listView.q || '')}"
+            <input type="text" data-news-search aria-label="Search news and X posts" placeholder="Search news, posts or @handles…" value="${escapeHtml(listView.q || '')}"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           ${sourceSelect}
           ${
-            allPublishers.length > 1
+            !xOnly && allPublishers.length > 1
               ? `<select data-news-publisher aria-label="Publisher"
                    class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                    <option value="all">All publishers</option>
@@ -441,7 +445,7 @@ function listHtml(rows) {
               : ''
           }
           ${
-            allSections.length > 1
+            !xOnly && allSections.length > 1
               ? `<select data-news-section aria-label="Section"
                    class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                    <option value="all">All sections</option>
@@ -449,6 +453,11 @@ function listHtml(rows) {
                  </select>`
               : ''
           }
+          ${xOnly && accounts.length ? `<select data-news-handle aria-label="X account"
+            class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="all">All monitored accounts</option>
+            ${accounts.map((a) => `<option value="${escapeHtml(a.key)}"${listView.handle === a.key ? ' selected' : ''}>@${escapeHtml(a.handle)} (${escapeHtml(formatNumber(postCounts.get(a.key) || 0))})</option>`).join('')}
+          </select>` : ''}
           <select data-news-topic aria-label="Topic"
             class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
             ${topicOptions()
@@ -457,15 +466,25 @@ function listHtml(rows) {
           </select>
         </div>
         <div class="flex items-center gap-3">
-          <span class="whitespace-nowrap text-sm text-slate-500"><strong class="text-slate-800">${escapeHtml(formatNumber(rows.length))}</strong> of ${escapeHtml(formatNumber(feedRows().length))} stories</span>
+          <span data-news-count class="whitespace-nowrap text-sm text-slate-500"><strong class="text-slate-800">${escapeHtml(formatNumber(rows.length))}</strong> of ${escapeHtml(formatNumber(feedRows().length))} items</span>
           <button type="button" data-news-export
             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
             <span>📊</span><span>Export Excel</span>
           </button>
         </div>
       </div>
+      <div data-news-coverage class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
+        <span>${escapeHtml(formatNumber(marketNews.rows().length))} publisher stories · ${escapeHtml(formatNumber(posts))} X posts · ${escapeHtml(formatNumber(accounts.length))} monitored X account${accounts.length === 1 ? '' : 's'}.
+          ${twitterNews.meta().capturedAt ? `X last read ${escapeHtml(formatRelativeTime(Date.parse(twitterNews.meta().capturedAt)))}.` : accounts.length ? 'X is awaiting its first successful collection.' : 'Add X accounts to expand coverage.'}
+          ${accounts.some((a) => a.status === 'unreadable' || a.status === 'not-found') ? 'Some X accounts could not be read; coverage is incomplete.' : ''}
+        </span>
+        <button type="button" data-news-manage-x class="rounded-lg px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-slate-200 hover:bg-slate-50">Manage X accounts</button>
+      </div>
       <div data-news-scroll class="scrollbar-thin divide-y divide-slate-100 overflow-y-auto" style="max-height: max(360px, calc(100vh - 330px))">
-        ${shown.map(cardHtml).join('') || '<p class="px-5 py-10 text-center text-sm text-slate-400">No story matches your search.</p>'}
+        ${shown.map(cardHtml).join('') || `<div class="px-5 py-10 text-center text-sm text-slate-400">
+          <p>${xOnly && !posts ? 'No X posts are available yet. Use Manage X accounts to check or expand coverage.' : 'No news or X posts match these filters.'}</p>
+          <button type="button" data-news-clear class="mt-2 rounded-lg px-3 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 hover:bg-slate-50">Show all news and X posts</button>
+        </div>`}
       </div>
       ${moreFooter()}
     </section>`;
@@ -562,8 +581,10 @@ async function exportVisible(visible, m) {
         width: 18,
         get: (r) =>
           r.__banner
-            ? `REAL REPORTING, NOT OURS. Market-wide news from several publishers, each read from their own feed, ` +
+            ? `Publisher news and X posts from monitored accounts. ` +
               `captured ${m.capturedAt || 'unknown'}, exported ${new Date().toISOString()}. ` +
+              `X last read ${twitterNews.meta().capturedAt || 'not yet captured'}; ${twitterNews.meta().count} captured X posts from ${twitterNews.meta().handles} monitored accounts. ` +
+              `X coverage is recent collections, not a complete history of X. Post text, author and account handle are reproduced unchanged. ` +
               `HEADLINES, STANDFIRSTS AND SECTIONS ARE THE PUBLISHER'S, reproduced unchanged — nothing here is summarised, scored, ranked or judged. ` +
               `THE PUBLISHER COLUMN SAYS WHOSE REPORTING EACH ROW IS, and it is the only reliable answer once a workbook has left this page: ` +
               `${publisherTally() || 'no publisher recorded'}. ` +
@@ -575,8 +596,10 @@ async function exportVisible(visible, m) {
               `Topic filter applied to this sheet: ${topicLabel(listView.topic)}.`
             : istTime(r.publishedAt) || '',
       },
-      { header: 'Publisher', key: 'pub', width: 20, get: (r) => (r.__banner ? '' : publisherLabel(r.publisher)) },
-      { header: 'Headline', key: 'h', width: 80, get: (r) => (r.__banner ? '' : withoutPublisherName(r.title)) },
+      { header: 'Source type', key: 'type', width: 18, get: (r) => (r.__banner ? '' : isPost(r) ? 'X post' : 'News publisher') },
+      { header: 'Publisher / author', key: 'pub', width: 24, get: (r) => (r.__banner ? '' : isPost(r) ? r.displayName || r.handle : publisherLabel(r.publisher)) },
+      { header: 'X account', key: 'handle', width: 22, get: (r) => (r.__banner || !isPost(r) ? '' : `@${r.handle}`) },
+      { header: 'Headline / X post', key: 'h', width: 80, get: (r) => (r.__banner ? '' : isPost(r) ? r.title : withoutPublisherName(r.title)) },
       { header: 'Section', key: 's', width: 20, get: (r) => (r.__banner ? '' : sectionLabel(r.section)) },
       { header: 'Tracked topics', key: 'k', width: 30, get: (r) => (r.__banner ? '' : readingFor(r).labels.join(', ')) },
       { header: 'Standfirst (publisher)', key: 'p', width: 80, get: (r) => (r.__banner ? '' : withoutPublisherName(r.summary)) },
@@ -718,6 +741,8 @@ function provenance(m) {
 function paint(ctx) {
   const m = marketNews.meta();
   const rows = feedRows();
+  // Removing the selected account must not leave an invisible filter excluding the others.
+  if (listView.handle !== 'all' && !twitterHandles.activeKeys().has(listView.handle)) listView.handle = 'all';
   if (fillStop) {
     fillStop();
     fillStop = null;
@@ -924,6 +949,20 @@ function wireList(root) {
   const sourceSelect = root.querySelector('[data-news-source]');
   sourceSelect?.addEventListener('change', () => {
     listView.source = sourceSelect.value;
+    // Publisher-only filters must not make the X option appear empty.
+    listView.publisher = 'all';
+    listView.section = 'all';
+    listView.handle = 'all';
+    relist(root);
+  });
+
+  root.querySelector('[data-news-handle]')?.addEventListener('change', (e) => {
+    listView.handle = e.target.value;
+    relist(root);
+  });
+  root.querySelector('[data-news-manage-x]')?.addEventListener('click', openTwitterSources);
+  root.querySelector('[data-news-clear]')?.addEventListener('click', () => {
+    listView = defaultView();
     relist(root);
   });
 
@@ -970,8 +1009,8 @@ function wireList(root) {
 }
 
 const DESCRIPTION =
-  'Every story in the market-wide feeds of several publishers — not filtered to the companies in scope. Each row names who published it; headlines and standfirsts are theirs, and the article stays where it is published. ' +
-  'Topic narrows it to the thirty keywords this desk tracks newsflow by; these rows carry no company, so a topic names a subject rather than an exposure.';
+  'Publisher news and posts from the X accounts you monitor, together in one timeline. Search the full text, filter by source or topic, and open each original. ' +
+  'X coverage starts with recent posts from monitored accounts; manage the account list here to expand it.';
 
 /**
  * OPENING THIS TAB ON A STALE CAPTURE FETCHES ONE. A DELIBERATE REVERSAL, SO HERE IS THE REASONING.
@@ -1075,5 +1114,5 @@ export function destroy() {
   modalOpen = false;
   // The filters are the reader's, and leaving the tab discards them deliberately: coming back to a
   // list silently narrowed by a search typed ten minutes ago reads as a feed that lost stories.
-  listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all' };
+  listView = defaultView();
 }

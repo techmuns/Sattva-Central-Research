@@ -2615,7 +2615,20 @@ minutes, plus a `workflow_dispatch` the dashboard sends when a reader adds an ac
 shape `market-news.json` already produces — `id`, `title`, `summary`, `url`, `image`,
 `publishedAt`, `section` — and the Universe half of the News tab merges the two arrays. One list,
 one sort, one search, one export, one card renderer with a single branch on `kind === 'twitter'`.
-The publisher feed is untouched: with no handles monitored, nothing about that tab differs.
+The Source control always offers **All sources**, **News publishers**, and **Twitter / X**, even
+before the first X capture. **Manage X accounts** opens the account editor directly from News.
+The coverage line separately counts publisher stories, captured X posts and monitored accounts,
+and states when X was last read or that the first collection is still pending. It does not imply
+that all of X, or every historical post from a monitored account, has been collected.
+
+Selecting X clears publisher/section filters and replaces those controls with an X-account filter.
+Search accepts post text, display names and `@handles`; Topic reads either story headlines or X
+post text without assigning sentiment or a company. An empty result offers a reset to all sources.
+The mixed counter counts **items**, while the coverage line distinguishes stories from posts.
+Excel exports carry source type, author, account handle, unmodified full post text and the original
+URL; publisher-brand substitutions never alter X post text. Publisher history remains available
+through scrolling; X-only mode names its recent-capture boundary rather than loading unrelated
+publisher archives. `scripts/verify-news-x.mjs` exercises these flows using fictional fixtures.
 
 Five things it deliberately does not do, and each is a rule this codebase already holds:
 

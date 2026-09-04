@@ -5591,6 +5591,10 @@ console.log('\n— news, announcements and insider trades —');
       !/money\s*control/i.test(await hostText());
   })());
   await go('/#/research/news?scope=universe', 3500);
+  // Publisher layout/provenance checks below deliberately select publisher rows. X attribution
+  // is tested separately and must remain verbatim even when a handle names a publisher.
+  await page.selectOption('[data-news-source]', 'publishers');
+  await page.waitForFunction(() => !document.querySelector('[data-rows-pending]'), null, { timeout: 20000 });
 
   // The tab keeps one passive status chip and no freshness-card or popup furniture.
   const headText = (await page.locator('#content-host').innerText().catch(() => '')).replace(/\s+/g, ' ');
@@ -5785,7 +5789,7 @@ console.log('\n— news, announcements and insider trades —');
     sel.value = want;
     sel.dispatchEvent(new Event('change', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 900));
-    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+stories/);
+    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+items/);
     const drawnPubs = [...new Set([...document.querySelectorAll('[data-news-key]')].map((n) => {
       const m = mod.rows().find((r) => String(r.id || r.url) === n.dataset.newsKey);
       return m?.publisher;
@@ -5865,7 +5869,7 @@ console.log('\n— news, announcements and insider trades —');
       const mod = await import('/js/data/market-news.js');
       const foot = document.querySelector('[data-news-more]')?.innerText.trim() || '';
       const arc = mod.archiveMeta();
-      return { exhausted: arc.exhausted, remaining: arc.remaining, saysEnd: /that is every story/i.test(foot), saysMore: /keep scrolling|load older/i.test(foot), foot: foot.slice(0, 90) };
+      return { exhausted: arc.exhausted, remaining: arc.remaining, saysEnd: /all available publisher history is loaded/i.test(foot), saysMore: /keep scrolling|load older/i.test(foot), foot: foot.slice(0, 90) };
     });
     ok('...and the footer says the archive is spent exactly when it is',
       footState && footState.saysEnd === footState.exhausted && footState.saysMore === !footState.exhausted,
@@ -5958,7 +5962,7 @@ console.log('\n— news, announcements and insider trades —');
     input.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 700));
     const pending = document.querySelector('[data-rows-pending]');
-    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+stories/);
+    const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+items/);
     const live = document.querySelector('[data-news-search]');
     const focused = document.activeElement === live;
     const caret = live ? live.selectionStart : null;

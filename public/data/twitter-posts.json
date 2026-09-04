@@ -1,9 +1,210 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": null,
+  "capturedAt": "2026-09-04T07:06:31+00:00",
   "handles": [
     "moneycontrolcom"
   ],
-  "posts": [],
+  "posts": [
+    {
+      "tweet_id": "2095770084405113266",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCProOpinion | Will SEBI’s new accreditation norms for angel investors help or hinder the startup ecosystem? Read this piece by @ChanduNair\n\nhttps://t.co/A9Rz9nh0kk",
+      "created_at": "2026-09-04T07:05:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095770084405113266",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095767305469018451",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Rupee rises to 94.5: 5 ways the currency move can affect your household finances\n\n-Rupee strengthens to Rs 94.5 against US dollar.\n-Foreign travel and education may become cheaper.\n-US investments, NRI remittances can be affected.\n\nDetails by @imNavneetDubey ⤵️\nhttps://t.co/ojKlfbufim",
+      "created_at": "2026-09-04T06:53:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095767305469018451",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095766309346627874",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | SBI Scholarship 2026: How students can cut education costs by up to Rs 15 lakh; check details\n\nSBI Asha Scholarship 2026-27 applications are open until September 19, offering eligible students financial aid from Rs 15,000 to Rs 15 lakh for school, college, IIT, IIM and overseas studies\n\n@mrayushmishra with details \nhttps://t.co/KLpH92Bqk2",
+      "created_at": "2026-09-04T06:50:00+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095766309346627874",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095765252428169650",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Reliance rises 2% to be among top Nifty gainers, stock crosses key technical level\n\nLast week, Jio Platforms Ltd., the digital and telecommunications arm of RIL, had received regulatory approval for its initial public offering\n\n@jagan520 with details \nhttps://t.co/P8yot2fift",
+      "created_at": "2026-09-04T06:45:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095765252428169650",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095764969161949632",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPro | Will SEBI’s review of settlement price methodology for derivatives contracts bring relief to traders?\n\nDetails here ⤵️\nhttps://t.co/ONWed2c6jc",
+      "created_at": "2026-09-04T06:44:40+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095764969161949632",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095764681357197482",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Nimesh Chandan: Smallcaps Are The Better Bet Now\n\nFund manager @Nimesh_Chandan of Bajaj Finserv AMC explains why smallcaps are still preferred over midcaps right now. According to him, midcaps currently carry smallcap-like valuations but with largecap-like growth — a mismatch that's making valuations less attractive for long-term compounding. Watch the full conversation for more on where to find growth in today's market.\n\nIn conversation with @SurabhiUpadhyay 🎥",
+      "created_at": "2026-09-04T06:43:32+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095764681357197482",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095763064117506443",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Rs 10,000 monthly SIP in this flexi-cap fund grew to Rs 7.25 crore: What investors should know\n\n-Monthly SIP of Rs 10k grew to Rs 7.25 cr by Aug 2026.\n-Fund invests across market caps with large-cap bias.\n-Past performance doesn't guarantee future returns.\n\nDetails by @imNavneetDubey ⤵️\nhttps://t.co/yrHUdKCikg",
+      "created_at": "2026-09-04T06:37:06+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095763064117506443",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095761785186115935",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPro | Rainbow Children’s Medicare is moving from expansion to monetisation. Can rising occupancy and operating leverage unlock its earnings growth potential?\n\nDetails here ⤵️\nhttps://t.co/wYseprY57v https://t.co/NDPWNQtTWX",
+      "created_at": "2026-09-04T06:32:01+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095761785186115935",
+      "image": "https://pbs.twimg.com/media/HRWkKHSbcAAm54b.jpg",
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095760816884908213",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPro | VIP Industries is showing early signs of a turnaround after seven quarters of revenue decline. Can new products and stronger brands drive a sustainable recovery?\n\nDetails here ⤵️\nhttps://t.co/P86mYFxEp8 https://t.co/JpwpUNMT8s",
+      "created_at": "2026-09-04T06:28:10+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095760816884908213",
+      "image": "https://pbs.twimg.com/media/HRWjR3rboAAGg1U.png",
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095759966808535142",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH | 🚀 ‘India’s First’: ISRO Successfully Launches EOS-05 Into Orbit\n\nSriharikota: ISRO Chief V Narayanan announces the successful and precise injection of EOS-05, India’s first-ever imaging satellite from geosynchronous orbit, aboard the GSLV-F17.\n\nPositioned around 36,000 km above Earth, EOS-05 is designed to provide continuous, near-real-time imaging of India and surrounding regions, strengthening earth observation and strategic monitoring capabilities. The 2,367-kg satellite was placed into a sub-geosynchronous transfer orbit and will subsequently be raised to its operational orbit.\n\n#ISRO #EOS05 #GSLVF17 #SpaceIndia",
+      "created_at": "2026-09-04T06:24:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095759966808535142",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095758608252228092",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "Stop asking, “How high can this stock go?”\nAsk: “How much can I afford to risk?”\nYou can't control the reward.\nYou can control your risk and stop loss.\nLearn Risk Management + Systematic Trading in Vishal Malkan’s FREE Masterclass.\n\n🎯 Limited seats.\n👉 Register Now - https://t.co/w0wimyGxRl\n\n#Moneycontrol #RiskManagement #SystematicTrading",
+      "created_at": "2026-09-04T06:19:24+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095758608252228092",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095757309675028888",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Sensex up 700 pts, Nifty above 24,000: Positive global cues among key factors behind market rise\n\nDetails by @ParasBisht15 ⤵️\nhttps://t.co/MJyjBSXSiL",
+      "created_at": "2026-09-04T06:14:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095757309675028888",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095756684610478432",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#WATCH 🎥 | 🚨 Nine Days After Deadly Floods, Workers Rescued Alive From Trishuli 3A Tunnel in Nepal\n\nRescue workers pulled a person alive from a tunnel at the Upper Trishuli 3A Hydropower Project on Friday, nine days after devastating flash floods and landslides swept through Nepal’s Trishuli River valley on August 26. \n\nThe breakthrough has raised hopes of finding more survivors. Two workers — Sanjay Sah and Kabir Maharjan — have now been rescued alive, while hundreds of workers remain missing across hydropower projects affected by the disaster. \n\n#Nepal #Trishuli3A #Rescue #Floods",
+      "created_at": "2026-09-04T06:11:45+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095756684610478432",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095756159361945935",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#StartupsWithMC | Ultrahuman raises $70 million in funding led by Qualcomm Ventures\n\n-Ultrahuman raised $70M led by Qualcomm Ventures.\n-Expanding beyond smart-ring to health intelligence.\n-Funding to accelerate R&amp;D and global expansion.\n\nRead More ⤵️\nhttps://t.co/AgKv1BdphN",
+      "created_at": "2026-09-04T06:09:40+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095756159361945935",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095754973128868165",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#TechWithMC | YouTube partners Ekta Kapoor's Balaji Telefilms to launch original shows in connected TV push\n\n-YouTube partners with Balaji Telefilms for 5 original shows.\n-Ekta Kapoor to lead creative vision for the new series.\n-YouTube reaches over 75 million adults in India on connected TV\n\nDetails by @tsuvik ⤵️\nhttps://t.co/rayPYJtrJk",
+      "created_at": "2026-09-04T06:04:57+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095754973128868165",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095751890541957327",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#TechWithMC | Payment aggregators request RBI to extend the September 15 re-KYC deadline\n\n-Payment aggregators seek re-KYC deadline extension.\n-Sept 15 deadline for merchant re-KYC.\n-Backlog of merchants could disrupt digital payments.\n\nDetails by @AnandJRAnand ⤵️\nhttps://t.co/21vOFg6X9z",
+      "created_at": "2026-09-04T05:52:42+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095751890541957327",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095750236333658258",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MCPersonalFinance | Rs 10 crore by age 60: How much SIP do you need if you start at 25, 30, 35 or 40?\n\n-Starting early reduces monthly investment for retirement.\n-Rs 10 cr by 60 needs Rs 1 lakh/month if starting at 40.\n-Starting at 25 needs only Rs 15,396/month.\n\nDetails by @PriyadarshiniM9 ⤵️\nhttps://t.co/v1PRNV1Cdx",
+      "created_at": "2026-09-04T05:46:08+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095750236333658258",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095747817054814240",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Angel One shares jump over 5% as client base rises 18% YoY in August; Groww up 2%\n\n-Angel One's client base grew 17.8% YoY to 3.95 crore.\n-Client funding book rose over 40% YoY to Rs 7,421 crore.\n-Commodity market share declined 2,391 bps YoY to 52%.\n\nDetails by @jagan520 ⤵️\nhttps://t.co/W6ueFHiTP1",
+      "created_at": "2026-09-04T05:36:31+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095747817054814240",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095743470233362770",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#MarketsWithMC | Sensex up 600 pts, Nifty above 23,950: Positive global cues among key factors behind market rise\n\nDetails by @ParasBisht15 ⤵️\nhttps://t.co/MJyjBSXSiL",
+      "created_at": "2026-09-04T05:19:14+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095743470233362770",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    },
+    {
+      "tweet_id": "2095740843781210407",
+      "handle": "moneycontrolcom",
+      "display_name": "Moneycontrol",
+      "text": "#Business | India opens inventory-based e-commerce to FDI for exports; domestic B2C rules unchanged\n\n-FDI norms allow e-commerce inventory for export.\n-Inventory must be for India-made goods.\n-Aims to boost Indian exports globally.\n\nRead More ⤵️\nhttps://t.co/kKyBw0JB0a",
+      "created_at": "2026-09-04T05:08:48+00:00",
+      "url": "https://x.com/moneycontrolcom/status/2095740843781210407",
+      "image": null,
+      "source_url": "https://x.com/moneycontrolcom"
+    }
+  ],
   "failed": []
 }
