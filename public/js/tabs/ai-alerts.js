@@ -216,23 +216,17 @@ function paint(ctx) {
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
   ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
-  ctx.root.querySelector('[data-ai-position-status]').innerHTML = refreshStatus() || positionStatus(ctx);
+  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx);
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
   // Identical results keep their DOM, expanded evidence and keyboard focus.
   for (const [selector, markup] of [
     ['[data-ai-toolbar]', report ? controls(matches, cards.length) : ''],
-    ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : (sizeError || loadError) ? '' : loadingPanel()],
+    ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : loadError ? quietFallbackPanel() : loadingPanel()],
   ]) {
     const node = ctx.root.querySelector(selector);
     if (node._markup !== markup) { node.innerHTML = markup; node._markup = markup; }
   }
   wire(ctx, cards.length);
-}
-
-function refreshStatus() {
-  const error = loadError || sizeError;
-  if (error) return `<p data-ai-error class="mb-4 text-xs text-amber-700" role="status">${escapeHtml(error)} ${report ? 'Showing available alerts. ' : ''}Use Refresh to try again.</p>`;
-  return '';
 }
 
 function positionStatus(ctx) {
@@ -242,10 +236,10 @@ function positionStatus(ctx) {
   if (sizes) {
     const prices = sizes.quotes?.notLive > 0 || sizes.quotes?.status !== 'live' ? 'Some prices use workbook marks' : 'Quote freshness varies by stock';
     return `<p data-ai-size-note class="mb-4 text-xs text-slate-500" title="${escapeHtml(`Portfolio checked ${sizes.checkedAt}. Quote batch ${sizes.quotes?.asOf || 'unavailable'}. Percentages include all held equities, ETFs and liquid positions in the listed book.`)}">
-      <strong class="font-semibold text-slate-700">${report.meta.sortedByHolding ? 'Largest holdings first' : 'Holding sizes unavailable · Ordered by alert priority'}</strong> · % of listed portfolio · Book ${fmtDay(sizes.bookAsOf)} · ${prices}
+      <strong class="font-semibold text-slate-700">${report.meta.sortedByHolding ? 'Largest holdings first' : 'Ordered by alert priority'}</strong> · % of listed portfolio · Book ${fmtDay(sizes.bookAsOf)} · ${prices}
     </p>`;
   }
-  return `<p class="mb-4 text-xs text-slate-500">Holding sizes unavailable · Ordered by alert priority${portfolioConnectionState() === 'locked' ? ' · <button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio</button>' : ''}</p>`;
+  return `<p class="mb-4 text-xs text-slate-500">Ordered by alert priority${portfolioConnectionState() === 'locked' ? ' · <button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio to include holding sizes</button>' : ''}</p>`;
 }
 
 function searchMarkup() {
@@ -298,7 +292,9 @@ function watchCalendar() {
 
 function head(ctx) {
   const m = report?.meta || {};
-  const status = (loadError || sizeError) ? { label: 'Refresh unavailable', tone: 'neutral', state: 'error' }
+  // Connector and refresh failures stay available to the refresh controller for diagnostics, but
+  // this customer-facing queue falls back quietly instead of turning infrastructure into an alert.
+  const status = (loadError || sizeError) ? { label: report ? 'Latest available' : 'AI Alerts', tone: 'neutral', state: 'complete' }
     : report && (collecting || awaitingBook !== null) ? { label: 'Updating…', tone: 'neutral', state: 'pending' } : feedStatus(report);
   return sectionHead({
     title: 'AI Alerts',
@@ -679,5 +675,15 @@ function loadingPanel() {
     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100" data-ai-loading>
       <div class="flex items-center gap-3 text-sm font-semibold text-slate-600"><span class="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-500"></span>Reading and ranking the alert feeds…</div>
       <p class="mt-2 text-xs text-slate-400">Cards arrive as independent feeds finish; a slow source does not hold back the rest.</p>
+    </div>`;
+}
+
+function quietFallbackPanel() {
+  return `
+    <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100" data-ai-empty>
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-xl text-indigo-600 ring-1 ring-indigo-100">✦</div>
+      <h3 class="font-display mt-4 text-lg font-bold text-slate-900">Your AI Alerts will appear here</h3>
+      <p class="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">Open the complete alert stream to continue reviewing recent company events.</p>
+      <button type="button" data-ai-empty-general class="mt-5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">Open All Alerts</button>
     </div>`;
 }

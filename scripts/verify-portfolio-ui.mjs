@@ -103,7 +103,8 @@ try {
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-sizes.png'), fullPage: true });
   outage = true;
   await child.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
-  await research.locator('[data-ai-error]').filter({ hasText: 'could not be checked' }).waitFor();
+  await research.locator('[data-ai-feed-status]').filter({ hasText: 'Latest available' }).waitFor();
+  assert.equal(await research.locator('[data-ai-error]').count(), 0, 'portfolio outages do not show customer-facing error banners');
   assert.equal(await research.locator('[data-ai-holding-size]').count(), 0, 'failed revalidation removes old private sizes');
   outage = false;
   await child.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());

@@ -40,8 +40,9 @@ copied into public files or browser storage.
 Alert evidence loads alongside holding-size checks. Completed AI Alerts remain visible during
 background refreshes and return visits, with search and pagination preserved; a completed refresh
 replaces the view together. All Alerts retains each source's existing records while it rechecks.
-Temporary Family Office failures retain the last verified company list with an unavailable status;
-expired access clears the private session. Private holding sizes remain in memory only.
+Temporary Family Office failures retain the last verified company list and quietly keep the latest
+available AI Alerts without exposing technical outage banners; expired access clears the private
+session. Private holding sizes remain in memory only.
 Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
 newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
 Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,
