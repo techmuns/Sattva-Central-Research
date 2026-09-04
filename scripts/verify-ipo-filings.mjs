@@ -36,8 +36,19 @@ await test('BSE dated drafts and undated RHP remain distinct', () => {
   assert.equal(r.length, 2); assert.equal(r[0].company, 'SME & Co Limited'); assert.equal(r[1].filingDate, null); assert.equal(r[1].filingType, 'RHP');
   assert.throws(() => parseBseOffers('<html>blocked</html>', source('bse-sme'), at));
 });
-const payload = await captureIpoFilings({ now, fetcher: async (url, init) => { assert.equal(init.method, 'GET'); assert.equal(init.redirect, 'manual'); assert.equal(init.headers.authorization, undefined); return new Response(bodies(url)); } });
+const payload = await captureIpoFilings({ now, fetcher: async (url, init) => { assert.equal(init.method, 'GET'); assert.equal(init.redirect, 'manual'); assert.equal(init.headers.authorization, undefined); assert.equal(init.headers.cookie, undefined); assert.equal(init.headers.referer, url.includes('www.bsesme.com') ? 'https://www.bsesme.com/' : undefined); return new Response(bodies(url)); } });
 await test('seven-source capture and payload validate', () => { assert(payload.ok); validateIpoFilings(payload); assert.equal(payload.sources.length, 7); assert.equal(payload.rows.length, 10); });
+await test('BSE public-navigation headers work without leaking caller credentials', async () => {
+  const request = new Request('https://app.test/api/ipo-filings', { headers: { authorization: 'Bearer private-fixture', cookie: 'session=private-fixture', referer: 'https://private-portfolio.test/' } });
+  const response = await handleIpoFilings(request, { now, cache: null, fetcher: async (url, init) => {
+    assert(!JSON.stringify(init.headers).includes('private'));
+    if (url.includes('www.bsesme.com') && init.headers.referer !== 'https://www.bsesme.com/') return new Response('Timed out', { status: 522 });
+    return new Response(bodies(url));
+  } });
+  const p = await response.json();
+  assert.equal(p.sources.find((s) => s.id === 'bse-sme').status, 'ok');
+  assert(p.rows.some((r) => r.sourceId === 'bse-sme'));
+});
 await test('schema rejects invalid links, dates and missing source status', () => {
   for (const change of [{ url: 'javascript:alert(1)' }, { filingDate: '2026-02-31' }, { observedAt: 'not-a-date' }]) assert.throws(() => validateIpoFilings({ ...payload, rows: [{ ...payload.rows[0], ...change }] }));
   assert.throws(() => validateIpoFilings({ ...payload, sources: payload.sources.slice(1) }));

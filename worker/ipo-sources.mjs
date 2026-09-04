@@ -11,6 +11,9 @@ export const IPO_SOURCES = [
   { id: 'sebi-other', label: 'SEBI other documents', kind: 'sebi', type: 'Other document', url: sebi(78) },
 ];
 export const IPO_HEADERS = { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36', accept: 'application/json,text/html;q=0.9,*/*;q=0.8', 'accept-language': 'en-US,en;q=0.9' };
+// BSE's public site answers the hosted reader when its own navigation referrer is supplied.
+// Fixed publisher metadata only: never forward the dashboard URL, caller headers or credentials.
+export const BSE_IPO_HEADERS = { ...IPO_HEADERS, referer: 'https://www.bsesme.com/' };
 const decode = (s) => String(s || '').replace(/&#(x[\da-f]+|\d+);/gi, (_, code) => {
   const n = code[0].toLowerCase() === 'x' ? parseInt(code.slice(1), 16) : Number(code);
   return n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : '';
@@ -107,7 +110,7 @@ export async function captureIpoFilings({ fetcher = fetch, now = Date.now, signa
       const i = next++, s = IPO_SOURCES[i];
       try {
         const sourceSignal = AbortSignal.any([signal, AbortSignal.timeout(20000)]);
-        const response = await fetcher(s.url, { method: 'GET', headers: IPO_HEADERS, redirect: 'manual', cache: 'no-store', signal: sourceSignal });
+        const response = await fetcher(s.url, { method: 'GET', headers: s.kind === 'bse' ? BSE_IPO_HEADERS : IPO_HEADERS, redirect: 'manual', cache: 'no-store', signal: sourceSignal });
         if (!response.ok) { await response.body?.cancel(); throw Error(`Source HTTP ${response.status}`); }
         const body = await boundedIpoText(response, sourceSignal);
         const parsed = (s.kind === 'nse' ? parseNseOffers : s.kind === 'bse' ? parseBseOffers : parseSebiOffers)(body, s, checkedAt);
