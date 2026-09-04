@@ -31,6 +31,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Inspect the staging BSE connection
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          node --input-type=module -e "import dns from 'node:dns/promises'; console.log(await dns.lookup('www.bsesme.com', {all:true}));"
+          curl --head --verbose --connect-timeout 10 --max-time 15 https://www.bsesme.com/PublicIssues/SMEIPODRHP.aspx
       - name: Collect and validate the official BSE SME table
         run: node scripts/collect-bse-ipo.mjs "$RUNNER_TEMP/bse-ipo-v1.json.gz"
       - name: Publish the immutable public-data capture
