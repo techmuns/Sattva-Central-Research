@@ -69,6 +69,59 @@ The three Super Investors files load at bootstrap and seed `js/data/investors.js
 
 ---
 
+## `public/data/corporate-actions.json` — LIVE
+
+NSE's exchange-wide corporate-actions calendar, captured hourly by
+`.github/workflows/corporate-actions-refresh.yml` through
+`scripts/scrape-corporate-actions.mjs`. The request covers the prior three years and the next year
+in one bounded response. The browser loads this file only when Corporate Actions opens, keeps it in
+the shared IndexedDB cache, and conditionally checks it every 90 seconds while visible.
+
+The capture is replaced only after a successful HTTP response parses into a valid row set. A
+refusal, timeout, empty response, format change, or drop of more than 25% of the prior rows or
+companies exits without replacing the last valid file.
+The app-wide capture watchdog asks the fixed workflow to recover whenever the committed capture is
+more than 75 minutes old.
+
+```jsonc
+{
+  "version": 1,
+  "capturedAt": "2026-09-04T19:52:40.891Z",
+  "source": "NSE corporate actions",
+  "requestedFrom": "2023-09-05",
+  "requestedTo": "2027-09-04",
+  "rowCount": 5806,
+  "companyCount": 1667,
+  "typeCounts": { "dividend": 4757, "bonus": 162 /* … */ },
+  "skipped": 0,
+  "excludedMeetings": 1396,
+  "duplicates": 0,
+  "rows": [ /* … */ ]
+}
+```
+
+| Row field | Type | Meaning |
+| --- | --- | --- |
+| `id` | string | Stable identity from ISIN/symbol, series, dates and purpose. |
+| `ticker` | string | NSE symbol. This is the watchlist join key and a portfolio join key. |
+| `company` | string | Company name as supplied by NSE. |
+| `isin`, `series` | string \| null | Exchange identifiers as supplied. |
+| `purpose` | string | Corporate-action purpose verbatim from NSE. |
+| `actionType` | enum | Derived navigation label: `dividend`, `distribution`, `bonus`, `rights`, `split`, `buyback`, `demerger`, `interest`, `redemption`, `capital-reduction`, or `other`. It is not a score. |
+| `faceValue` | string \| null | Face value as supplied; no numeric interpretation is imposed on the capture. |
+| `exDate`, `recordDate`, `bookClosureStart`, `bookClosureEnd` | date \| null | NSE dates normalized from `DD-Mmm-YYYY` to ISO; missing and invalid dates stay null. |
+| `source` | `"NSE"` | Source identity. |
+| `sourceUrl` | URL | Official NSE company-action view. |
+
+The file covers the exchange rather than the current book. Portfolio and Watchlist filter the
+same retained rows at paint time, so a newly added symbol does not wait for a new upstream capture.
+Portfolio matching also uses ISIN, so a symbol rename does not detach earlier actions from the book.
+Meeting-only AGM/EGM diary entries returned by the endpoint are counted in `excludedMeetings` and
+left out of this action feed; a meeting row that also declares an action remains. An action absent
+from NSE's published calendar cannot be inferred or filled from another site.
+
+---
+
 ## `public/data/technicals.json` — LIVE
 
 **The dashboard's one genuinely live feed.** Written by `scripts/scrape-technicals.mjs`, refreshed
@@ -792,7 +845,7 @@ The rules that make it safe to trust:
 
 ---
 
-## `GET /api/concalls` — LIVE, the con-call scan (StockScans)
+## `GET /api/concalls` — LIVE analysis plus the retained Screener concall index
 
 ```jsonc
 {
@@ -804,10 +857,26 @@ The rules that make it safe to trust:
              "ssUrl": "as-…pdf", "pptSsUrl": "…pdf" }],
   "upcoming": [{ "ticker": "LANDMARK", "name": "Landmark Cars Ltd", "when": "2026-08-12T09:00:00+05:30" }],
   "today":    { "day": "2026-08-12", "rows": [ … ] },
-  "meta": { "quarter": 202606, "total": 877, "headRows": 50, "tailRows": 827, "truncated": false,
+  "meta": { "quarter": 202606, "total": 4100, "stockscansTotal": 877,
+            "headRows": 50, "tailRows": 827, "truncated": false,
+            "screener": { "status": "ok", "checkedAt": "2026-08-11T…Z",
+                          "publishedTotal": 4189, "records": 4189, "fullHistory": true },
             "fetchedAt": "2026-08-11T…Z", "contentTag": "2a4926653eb47e5e" }
 }
 ```
+
+The route is a union of two separately attributed sources. StockScans remains the only source of
+`resultScore`, `sentimentTier` and `tags`. Screener contributes its authenticated market-wide
+document index: Transcript, Recording, Presentation and Summary links. Multiple Screener entries
+for one company/publication date become one visible row with a de-duplicated `documents` array;
+when an unambiguous StockScans call for that ticker is within five days, those documents enrich the
+analysis row instead of creating another call. Historical Screener-only rows carry
+`analysisTracked:false`, so they render as document history and never as analysis pending.
+
+The client applies the normal shared ticker scope after this merge. Portfolio and Watchlist exclude
+unresolved numeric/BSE-only company pages; Universe retains them. Numeric Screener company paths
+are assigned a ticker only when the repository's collision-guarded company-name index resolves one
+unambiguously.
 
 `upcoming` retains every call StockScans have listed but not yet seen held. It is no longer exposed
 as a Con-call header control or overlay. `today` is a
@@ -882,6 +951,30 @@ Worker the same way it answers a laptop, unlike the Moneycontrol calendar page.
 
 **Consumed by** — `js/data/concall-scans.js` → the Con-call scan table. `upcoming` remains in the
 feed contract but is not rendered in the tab chrome.
+
+### Screener collection and freshness
+
+`.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
+`SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
+generated data. Every 15 minutes it reads the newest pages until it reaches records already in the
+previous complete artifact. At 01:07 UTC daily, and on a manual full run, it follows every published
+pagination page and reconciles the source's total. The collector refuses empty, truncated,
+duplicate, malformed or unsafe-link captures; public logs never contain credentials, cookies, page
+HTML or account details.
+
+`worker/screener-concalls-collector.mjs` accepts only a successful main-branch run of this fixed
+workflow in this fixed repository, verifies GitHub's SHA-256 artifact digest, bounds compressed and
+expanded sizes, and never forwards the Worker GitHub token to the signed blob host. The edge holds
+that read for 60 seconds. Since the browser polls the combined `/api/concalls` representation every
+30 seconds, a successful Actions capture reaches an already-open dashboard without a data commit or
+deployment. The existing `GH_DISPATCH_TOKEN` needs Actions read access, the same permission already
+used for the IPOPlatform artifact reader.
+
+GitHub schedules are best-effort, so `/api/concalls` also compares the artifact timestamp with the
+30-minute freshness window. A stale or missing artifact asks the same fixed workflow for an
+incremental `auto` run in `ctx.waitUntil()`. A 15-minute edge cooldown is written before dispatch,
+and `dispatchWorkflow()` independently declines a run already queued or in progress. No repository,
+workflow name, ref, publisher URL or credentials come from the browser request.
 
 ---
 
@@ -2293,7 +2386,6 @@ modify the portfolio or produce earnings figures / transcript summaries from doc
 | --- | --- |
 | NSE Filings → Company NSE filings | India, all forms; only records with an explicit NSE source or an NSE document host are shown |
 | Con-call → Filed con-call documents | India, `form: ["concalls"]`; source links, not invented transcripts |
-| Earnings Hub → Filed earnings reports | India, `form: ["earnings_report"]`; separate from reported metrics and calendar |
 
 The reader selects one company inside the current Portfolio/Watchlist/Universe scope and a date
 range no longer than 366 elapsed days. Name searches return explicit company choices; ambiguous

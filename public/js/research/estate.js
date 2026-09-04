@@ -49,7 +49,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns.' },
   { id: 'company-filings', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=filings', description: 'Company document titles, periods and source links already read in Company Filings. PDF contents are not extracted.' },
   { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Currently loaded all-exchange scheduled-results dates and company lists.' },
-  { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Held and scheduled earnings calls with StockScans scores, sentiment tiers and source tags.' },
+  { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Screener’s retained transcript, recording and presentation index, enriched with StockScans scores and sentiment where available.' },
   { id: 'public-chatter', tab: 'Public Chatter', route: '#/research/public-chatter', description: 'Retail mention counts and sentiment across ValuePickr, TradingQnA and Google News.' },
   { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
   { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'Analyst consensus and earnings surprise are unavailable until a real estimates feed is connected.' },
@@ -680,21 +680,24 @@ const BUILDERS = [
       const rows = concalls.forScope(scope, holdings);
       const meta = concalls.meta() || {};
       return sourcePacket(this.id, {
-        source: 'Research provider con-call scans (live)',
+        source: 'Screener concall documents plus research-provider scans',
         asOf: meta.fetchedAt || meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { total: meta.count, analysed: meta.analysed },
-        definition: 'Score, tier, sentiment and tags are the research provider\'s analysis; the dashboard adds none. A missing score is analysis pending, not zero.',
+        coverage: { total: meta.count, analysed: meta.analysed, screenerRecords: meta.screener?.records || 0, screenerPublishedTotal: meta.screener?.publishedTotal || 0 },
+        definition: 'Documents are Screener’s authenticated market-wide index. Score, tier, sentiment and tags are the research provider\'s analysis; the dashboard adds none. A missing score means pending only when analysisTracked is true; document-only history is not labelled pending.',
         ...chooseRows(rows, plan, (row) => ({
           ticker: row.ticker || null,
           company: clipped(row.name, 60),
           industry: clipped(row.industry, 60),
           when: row.when || null,
+          publishedDate: row.publishedDate || null,
+          analysisTracked: row.analysisTracked !== false,
           notesReady: row.notesReady ?? null,
           resultScore: row.resultScore ?? null,
           resultTier: row.resultTier?.label || row.resultTier || null,
           sentiment: row.sentiment?.label || row.sentiment || null,
           sourceTags: (row.tags || []).map((tag) => clipped(tag, 110)).slice(0, 4),
+          documents: (row.documents || []).map((document) => ({ type: document.type, url: document.url })).slice(0, 6),
         }), byDateDesc('when')),
       });
     },

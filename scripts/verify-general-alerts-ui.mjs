@@ -71,7 +71,10 @@ try {
   await settled();
   console.log('Rendered complete All Alerts pool');
   assert.equal(await page.locator('[data-feed]').count(), 19);
-  assert((await page.locator('[data-feed="company-documents"]').innerText()).includes('on-demand'));
+  const coverageText = await page.locator('[data-alerts-coverage]').innerText();
+  assert(!/stale\s*\/\s*unknown|incomplete|on-demand|not in scope/i.test(coverageText), 'customer-facing source filters omit feed-health jargon');
+  assert.equal(await page.locator('[data-feed][title*="stale" i], [data-feed][title*="unknown" i], [data-feed][title*="incomplete" i], [data-feed][title*="on-demand" i]').count(), 0,
+    'feed-health jargon is also absent from hover text');
   await page.locator('[data-table-search]').fill('Undated retained item');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Undated retained item'));
   assert((await page.locator('tbody').innerText()).includes('Date not supplied'));

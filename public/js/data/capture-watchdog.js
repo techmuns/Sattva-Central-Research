@@ -49,6 +49,13 @@ const CONFIG = {
     active: () => true,
     budgetMs: 20 * 60 * 1000,
   },
+  corporateActions: {
+    route: 'api/corporate-actions-snapshot/refresh?source=auto',
+    run: 'api/corporate-actions-snapshot/run',
+    maxAgeMs: 75 * 60 * 1000,
+    active: () => true,
+    budgetMs: 20 * 60 * 1000,
+  },
   insider: {
     route: 'api/insider-snapshot/refresh?source=auto',
     run: 'api/insider-snapshot/run',
@@ -139,6 +146,11 @@ export function freshnessOf(name, capture) {
 }
 
 async function applyLandedCapture(name) {
+  if (name === 'corporateActions') {
+    const feed = await import('./corporate-actions.js');
+    if (feed.isLoaded()) await feed.refresh();
+    return;
+  }
   if (name === 'companyFilings') {
     const capture = await import('./company-captures.js');
     await capture.loadCompanyCaptureIndex({ force: true });

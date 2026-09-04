@@ -777,7 +777,7 @@ function fromConcalls({ day, wanted, includeHistory }) {
   const degraded = !!m.degraded;
   const confirmedAt = degraded || m.origin === 'snapshot' ? m.fetchedAt : latestConfirmation(m.checkedAt, m.fetchedAt);
   const fetchedDay = istDay(confirmedAt);
-  const rows = concalls.all().filter((r) => inRequestedWindow(r.date || r.when, day, includeHistory) && inScope(wanted, r.ticker));
+  const rows = concalls.all().filter((r) => r.analysisTracked !== false && inRequestedWindow(r.date || r.when, day, includeHistory) && inScope(wanted, r.ticker));
   const events = rows.map((r) => {
     const sentiment = r.sentiment?.label || null;
     const direction = ['Bullish', 'Optimistic'].includes(sentiment)

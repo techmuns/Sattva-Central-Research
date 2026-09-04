@@ -384,13 +384,22 @@ export function sourceGroups() {
       tabs: 'Con-call',
       items: [
         {
+          name: 'Screener.in — complete concall document index',
+          url: 'https://www.screener.in/concalls/',
+          feeds:
+            `Every retained Screener concall entry — transcripts, recordings, presentations and Screener summaries — grouped into one company/publication-date row so multiple documents for the same call never appear as duplicate calls. Direct NSE symbols are retained; numeric/BSE company pages are resolved only where the dashboard’s existing collision-guarded company index finds one unambiguous symbol. ${clause(calls, '<n> combined call rows are currently loaded.')}`,
+          cadence: 'GitHub Actions every 15 minutes; incremental head reads over a complete retained artifact, with a full pagination audit daily. Opening the feed also requests the fixed workflow when the artifact is over 30 minutes old, behind a 15-minute cooldown. The Worker re-reads the newest successful artifact every minute, so open tabs receive it on their normal 30-second poll.',
+          status: 'live',
+          file: '.github/workflows/screener-concalls-refresh.yml · scripts/collect-screener-concalls.mjs · worker/screener-concalls-collector.mjs',
+        },
+        {
           // The provider is named in the code and in docs/DATA-CONTRACTS.md, and every row links
           // straight to their own page for that call — but their brand is deliberately not printed
           // on any customer-facing surface. What the reader is owed is that the analysis is NOT
           // this dashboard's, and that claim is made in full here and on every other surface.
           name: 'Con-call scans — third-party research provider',
           feeds:
-            `The whole Con-call tab: every earnings call held this quarter${clause(calls, ' (<n> in the current pull)')} with the provider's own <strong>result score</strong> (0–100), <strong>management sentiment tier</strong> (Bullish → Bearish) and three highlight bullets per call, plus the schedule of calls not yet held, behind the <strong>Upcoming Concalls</strong> button. <strong>These are their numbers, not ours</strong> — reproduced unchanged, with their published tier bands, and this dashboard adds no scoring of its own on top. Full summaries and transcripts stay with them; every row links to theirs.`,
+            `Current-quarter earnings calls with the provider's own <strong>result score</strong> (0–100), <strong>management sentiment tier</strong> (Bullish → Bearish) and three highlight bullets per call, joined to the broader Screener document history. <strong>These are their numbers, not ours</strong> — reproduced unchanged, with their published tier bands, and this dashboard adds no scoring of its own on top. Their summaries stay with them; every analysed row links to theirs.`,
           cadence: 'Live — 30s edge cache on the newest page, 30s client poll. A call analysed at 14:32 is on screen by ~14:33.',
           status: 'live',
           file: 'worker/index.js → /api/concalls · public/data/concall-scans.json',
@@ -505,6 +514,15 @@ export function sourceGroups() {
             `Live off the exchange, edge-cached; scheduled captures also retain daily history. Search covers the selected 7, 30 or 90 days and scope, not a complete NSE archive. Missing historical files are flagged.${clause(num(() => nseFeed.meta().count), ' <n> announcements in the selected range.')}${clause(num(() => nseFeed.meta().resolved), ' <n> resolved to a symbol.')}`,
           status: 'live',
           file: 'worker/nse-ann.mjs · public/js/data/nse-filings.js · scripts/scrape-nse-announcements.mjs · .github/workflows/nse-announcements-refresh.yml',
+        },
+        {
+          name: 'NSE — corporate actions calendar',
+          url: 'https://www.nseindia.com/companies-listing/corporate-filings-actions',
+          feeds:
+            '<strong>Official exchange-wide actions.</strong> NSE supplies the company, symbol, ISIN, series, purpose, face value, ex date, record date and book-closure dates. The Corporate Actions tab keeps the purpose exactly as filed and derives only a filter label for the declared action. Meeting-only AGM/EGM diary entries are excluded; mixed entries that also declare an action remain. One market-wide snapshot is filtered locally for Portfolio and Watchlist, so a newly added symbol needs no company-specific capture. Portfolio matching also uses ISIN so symbol renames retain their history.',
+          cadence: 'Captured hourly with three years of history and one year of forward calendar; checked every 90 seconds while visible. The app requests recovery after a missed scheduled run, and a failed or malformed read cannot replace the last valid snapshot.',
+          status: 'live',
+          file: 'public/data/corporate-actions.json · scripts/scrape-corporate-actions.mjs · .github/workflows/corporate-actions-refresh.yml',
         },
         {
           name: 'Muns filings API — insider trades',

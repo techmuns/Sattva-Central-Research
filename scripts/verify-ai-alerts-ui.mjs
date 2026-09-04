@@ -200,15 +200,18 @@ try {
   assert(failed.results.some(r => /Fixture workbook unavailable/.test(r.error)), 'header Refresh reports the failure');
   assert.equal(await card('A00').count(), 1, 'a portfolio outage keeps alert evidence visible');
   assert.equal(await page.locator('[data-ai-holding-size]').count(), 0, 'unverified sizes are removed');
-  assert.match(await page.locator('[data-ai-error]').innerText(), /Showing available alerts/);
+  assert.equal(await page.locator('[data-ai-error]').count(), 0, 'portfolio outages do not show customer-facing error banners');
+  assert.equal(await page.locator('[data-ai-feed-status]').innerText(), 'Latest available');
+  assert.doesNotMatch(await page.locator('#root').innerText(), /temporarily unavailable|refresh unavailable|could not be checked|showing available alerts|try again|holding sizes unavailable/i);
   assert.equal(await page.evaluate(async () => (await import('/js/data/coverage.js')).meta().syncStatus), 'family-unavailable');
   // Background rechecks may send invalidated and then fail without ever sending
-  // positions-ready. Repeated failures must leave a warning, not a stuck spinner.
+  // positions-ready. Repeated failures keep a settled, quiet fallback rather than a stuck spinner.
   for (let attempt = 0; attempt < 2; attempt++) {
     await peer.evaluate(() => window.invalidate());
     await waitFor(page, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'pending');
     await page.evaluate(async () => { try { await (await import('/js/research/portfolio-bridge.js')).readPositionSizes(); } catch {} });
-    assert.equal(await page.locator('[data-ai-feed-status]').getAttribute('data-state'), 'error');
+    assert.equal(await page.locator('[data-ai-feed-status]').getAttribute('data-state'), 'complete');
+    assert.equal(await page.locator('[data-ai-feed-status]').innerText(), 'Latest available');
     assert.equal(await card('A00').count(), 1, 'a repeated background failure preserves the evidence');
   }
   await peer.evaluate(() => { window.failed = false; });

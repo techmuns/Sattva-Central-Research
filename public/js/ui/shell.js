@@ -30,6 +30,7 @@ import * as breakouts from '../tabs/breakouts.js';
 import * as superInvestors from '../tabs/super-investors.js';
 import * as news from '../tabs/news.js';
 import * as corpAnnouncements from '../tabs/corp-announcements.js';
+import * as corporateActions from '../tabs/corporate-actions.js';
 import * as nseFilings from '../tabs/nse-filings.js';
 import * as insiderTrades from '../tabs/insider-trades.js';
 import * as ipos from '../tabs/ipos.js';
@@ -58,7 +59,7 @@ import * as ipos from '../tabs/ipos.js';
 // an unknown or absent tab, so the order of this array IS the default landing page — there is no
 // second place recording it that could disagree.
 const WORKSPACES = [
-  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, nseFilings, insiderTrades] },
+  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades] },
 ];
 
 let contentHost = null;

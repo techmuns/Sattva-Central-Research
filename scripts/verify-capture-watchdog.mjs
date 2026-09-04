@@ -12,6 +12,8 @@ assert.equal(refreshDue('marketNews', { capturedAt: new Date(wed2200 - 47 * 60 *
 assert.equal(refreshDue('marketNews', { capturedAt: new Date(wed2200 - 47 * 60 * 1000).toISOString() }, wed2200), false, 'market news does not hammer a publisher outside its measured window');
 assert.equal(refreshDue('announcements', { capturedAt: new Date(wed2200 - 2 * hour).toISOString() }, wed2200), true);
 assert.equal(refreshDue('announcements', { capturedAt: null }, Date.parse('2026-09-05T16:30:00.000Z')), true, 'weekend filings are captured too');
+assert.equal(refreshDue('corporateActions', { capturedAt: new Date(wed2200 - 74 * 60 * 1000).toISOString() }, wed2200), false);
+assert.equal(refreshDue('corporateActions', { capturedAt: new Date(wed2200 - 76 * 60 * 1000).toISOString() }, wed2200), true, 'corporate actions recover after an hourly schedule miss');
 
 const wed1859 = Date.parse('2026-09-02T13:29:00.000Z');
 const wed1900 = Date.parse('2026-09-02T13:30:00.000Z');
@@ -39,6 +41,7 @@ try {
           companyNews: { capturedAt: new Date(wed2200 - hour).toISOString() },
           marketNews: { capturedAt: new Date(wed2200 - 10 * 60 * 1000).toISOString() },
           announcements: { capturedAt: new Date(wed2200 - 30 * 60 * 1000).toISOString() },
+          corporateActions: { capturedAt: new Date(wed2200 - 30 * 60 * 1000).toISOString() },
           insider: { capturedAt: yesterday },
           technicals: { capturedAt: '2026-09-02T01:50:00.000Z' },
         },

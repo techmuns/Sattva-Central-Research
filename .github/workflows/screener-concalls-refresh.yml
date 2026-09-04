@@ -1,0 +1,67 @@
+name: Screener concall collection
+
+# The collector publishes an immutable Actions artifact rather than committing generated data.
+# The Worker reads the latest successful main-branch artifact and folds it into /api/concalls, so
+# a refresh reaches open dashboards without a data commit, pull request or deployment.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+    # A daily full walk catches older backfills and deletions; normal runs stop at the first page
+    # already present in the previous complete artifact.
+    - cron: '7 1 * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Who requested this run'
+        required: false
+        type: string
+        default: 'manual'
+      full:
+        description: 'Re-read every historical page'
+        required: false
+        type: boolean
+        default: false
+
+run-name: Screener concall collection (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: screener-concalls-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install pinned browser runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/screener-concalls-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/screener-concalls-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Collect new records over the complete retained history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-concalls-browser/node_modules/playwright
+          SCREENER_FULL_REFRESH: ${{ github.event.schedule == '7 1 * * *' || inputs.full == true }}
+          DEBUG: ''
+          PWDEBUG: ''
+        run: node scripts/collect-screener-concalls.mjs "$RUNNER_TEMP/screener-concalls-v1.json.gz"
+      - name: Publish validated immutable public-data capture
+        uses: actions/upload-artifact@v7
+        with:
+          name: screener-concalls-v1.json.gz
+          path: ${{ runner.temp }}/screener-concalls-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 30

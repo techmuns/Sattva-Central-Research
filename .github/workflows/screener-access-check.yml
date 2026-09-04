@@ -1,6 +1,7 @@
 name: Screener access check
 
-# Read-only diagnostic. No schedule, exports, saved sessions, or dashboard writes.
+# Read-only diagnostic. The S Screen export is parsed in runner memory; no
+# downloaded artifact, saved session, watchlist mutation, or dashboard write.
 on:
   workflow_dispatch:
 
@@ -35,3 +36,12 @@ jobs:
           DEBUG: ""
           PWDEBUG: ""
         run: node scripts/check-screener-access.mjs
+      - name: Verify and plan the existing S Screen portfolio mirror
+        env:
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          SCREENER_SYNC_DRY_RUN: "true"
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-browser/node_modules/playwright
+          DEBUG: ""
+          PWDEBUG: ""
+        run: node scripts/sync-screener-watchlist.mjs

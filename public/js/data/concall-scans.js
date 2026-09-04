@@ -1,4 +1,4 @@
-// data/concall-scans.js — the LIVE con-call scan, from StockScans.
+// data/concall-scans.js — live current-quarter analysis plus Screener's retained document index.
 //
 //   await load();                 // snapshot first paint, then one live fetch
 //   all()                         // calls, newest first
@@ -12,11 +12,12 @@
 // HOW "LIVE" WORKS HERE
 //   First paint reads whatever this device already holds (core/store.js, IndexedDB) so the table
 //   is populated with no network at all. Then the tab polls /api/concalls every 30s, which
-//   re-reads StockScans' newest page behind a 30s edge cache. A call analysed at 14:32 is on
-//   screen by about 14:33.
+//   re-reads StockScans' newest page behind a 30s edge cache and the newest successful Screener
+//   Actions artifact behind a 60s cache. A call analysed at 14:32 is on screen by about 14:33;
+//   a newly collected document reaches an open tab on the same conditional poll.
 //
 // WHAT ACTUALLY TRAVELS ON A TICK
-//   The payload is ~450KB of JSON and nothing on a con-call row moves on a tick — a row appears
+//   The combined payload is large and almost nothing on a con-call row moves on a tick — a row appears
 //   when the call is held and changes once more when StockScans has analysed it. So the poll is a
 //   conditional GET: it sends the ETag of the copy we hold, and 119 polls out of 120 come back as
 //   a bodyless 304. The feed is re-sent only when a row genuinely changed, which is also the only
@@ -102,8 +103,9 @@ async function build() {
   if (stored?.value?.rows?.length) ingest(stored.value, { live: true, origin: 'store', checkedAt: stored.savedAt });
 
   // 2. Ask the Worker what has changed. With the stored ETag attached this is usually a bodyless
-  //    304. Deliberately optional: a missing Worker (plain `python3 -m http.server`) must not stop
-  //    the tab rendering.
+  //    304. The Worker has already merged its latest successful Screener Actions artifact into
+  //    this representation. Deliberately optional: a missing Worker (plain `python3 -m http.server`)
+  //    must not stop the tab rendering.
   const out = await conditionalJson(LIVE_ENDPOINT, { key: STORE_KEY, optional: true });
   if (out.status === 200 && out.value?.rows?.length) ingest(out.value, { live: true, origin: 'live', checkedAt: out.checkedAt });
   else if (out.status === 304) markChecked('live', out.checkedAt);
@@ -178,7 +180,8 @@ function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
       degraded: payload?.degraded || null,
       receivedAt: Date.now(),
       // Where this paint came from, and when the server last confirmed it. `fetchedAt` is when
-      // StockScans was read; `checkedAt` is when we last asked whether that was still current. A
+      // StockScans was read; `meta.screener.checkedAt` dates the independent document capture;
+      // `checkedAt` is when we last asked whether the combined representation was still current. A
       // 304 moves the second and not the first.
       origin,
       checkedAt,

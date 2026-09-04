@@ -366,6 +366,7 @@ const routes = await page.evaluate(async () => {
       'tabs/super-investors.js',
       'tabs/news.js',
       'tabs/corp-announcements.js',
+      'tabs/corporate-actions.js',
       'tabs/nse-filings.js',
       'tabs/insider-trades.js',
     ],
@@ -1753,19 +1754,16 @@ console.log('\n— AI alerts —');
   ok('...and every research tab asked for is represented',
     ['Price & volume', 'Earnings', 'Con-calls', 'Public chatter', 'Investor activity', 'Announcements', 'Insider trades', 'Company news'].every((n) => panel.includes(n)),
     panel.replace(/\s+/g, ' ').slice(0, 120));
-  // A COUNT IS A FINISHED ANSWER; "has not looked" IS THE ABSENCE OF ONE. The compact chip prints a
-  // WORD for the second, never a number — a `0` under a feed that has not checked today is exactly
-  // the confusion this panel exists to prevent. The full wording lives in the chip's tooltip and in
-  // the modal's table; what is asserted here is that a behind feed never renders as a count.
+  // A COUNT IS A FINISHED ANSWER; "has not looked" IS THE ABSENCE OF ONE. A chip without a confirmed
+  // reading shows only the source name: no misleading zero and no customer-facing health jargon.
   const chipStates = await page.$$eval('[data-alerts-coverage] [data-feed]', (els) =>
     els.map((e) => ({ text: e.innerText.replace(/\s+/g, ' ').trim(), title: e.getAttribute('title') || '' })));
-  const behind = chipStates.filter((c) => /latest available capture/.test(c.title));
-  ok('...and a feed awaiting today’s capture uses calm wording rather than showing a zero',
-    behind.every((c) => /latest/.test(c.text) && !/\b\d+\b/.test(c.text)),
-    behind.length ? behind.map((c) => c.text).join(' | ') : 'every feed has looked at today');
-  ok('...and every chip carries the sentence its row used to print',
-    chipStates.length === 8 && chipStates.every((c) => c.title.length > 20),
-    `${chipStates.length} chips, shortest title ${Math.min(...chipStates.map((c) => c.title.length))} chars`);
+  ok('...and source filters omit feed-health labels from visible and hover text',
+    chipStates.every((c) => !/stale|unknown|incomplete|on-demand|not in scope|read failed/i.test(`${c.text} ${c.title}`)),
+    chipStates.map((c) => `${c.text} [${c.title}]`).join(' | '));
+  ok('...and every chip has a simple filtering hint',
+    chipStates.length === expectedScopedFeeds && chipStates.every((c) => /^Filter alerts to .+\.$/.test(c.title)),
+    `${chipStates.length} chips`);
   // AND ASSERTED AT THE RULE, because the check above passes vacuously on any day every feed has
   // looked at today — which is most days. `feedState` is exported for exactly this reason, the same
   // reason `moveSeverity` and `freshnessOf` are: a branch the shipped data cannot reach is a branch
@@ -1783,17 +1781,17 @@ console.log('\n— AI alerts —');
       some: of({ reachesToday: true, count: 30 }),
     };
   });
-  ok('a feed that has not looked at today never renders as a count, whatever it holds',
-    !/\d/.test(states.behind.short) && !/\d/.test(states.behindWithRows.short),
+  ok('a feed that has not looked at today renders no customer-facing detail',
+    states.behind.short === '' && states.behindWithRows.short === '',
     `count 0 -> "${states.behind.short}", count 7 -> "${states.behindWithRows.short}"`);
-  ok('...nor does one that could not be read, or one still reading',
-    !/\d/.test(states.failed.short) && !/\d/.test(states.pending.short) && !/\d/.test(states.unscoped.short),
+  ok('...and neither do failed, pending, or unscoped feeds',
+    states.failed.short === '' && states.pending.short === '' && states.unscoped.short === '',
     `failed "${states.failed.short}", pending "${states.pending.short}", unscoped "${states.unscoped.short}"`);
   // The one case that IS a number, and the one zero that is a real measurement rather than a gap.
   ok('...while a feed that looked and found nothing prints a real zero',
     states.nothing.short === '0' && states.some.short === '30',
     `nothing -> "${states.nothing.short}", 30 events -> "${states.some.short}"`);
-  ok('...and all five states stay distinguishable by their full wording',
+  ok('...while all five states remain distinguishable internally',
     new Set([states.behind.label, states.failed.label, states.pending.label, states.unscoped.label, states.nothing.label]).size === 5);
   // The status label must not bring back the long explainer overlay.
   await page.locator('[data-alerts-info]').first().click();
@@ -3046,11 +3044,12 @@ ok('call times render in IST regardless of the viewer’s zone', csTimes.some((t
 const csPending = await page.evaluate(async () => {
   const mod = await import('/js/data/concall-scans.js');
   const rows = mod.all();
-  const nulls = rows.filter((r) => r.resultScore == null);
+  const nulls = rows.filter((r) => r.analysisTracked !== false && r.resultScore == null);
+  const documentsOnly = rows.filter((r) => r.analysisTracked === false);
   const zeros = rows.filter((r) => r.resultScore === 0);
-  return { total: rows.length, nulls: nulls.length, zeros: zeros.length, analysed: rows.filter((r) => r.resultScore != null).length };
+  return { total: rows.length, nulls: nulls.length, documentsOnly: documentsOnly.length, zeros: zeros.length, analysed: rows.filter((r) => r.resultScore != null).length };
 });
-ok('unanalysed calls carry a null score, never a zero', csPending.nulls >= 0 && csPending.zeros === 0, `${csPending.nulls} pending of ${csPending.total}`);
+ok('unanalysed calls carry a null score, never a zero', csPending.nulls >= 0 && csPending.zeros === 0, `${csPending.nulls} pending · ${csPending.documentsOnly} document-only of ${csPending.total}`);
 await page.locator('#content-host select').first().selectOption('pending');
 await page.waitForTimeout(600);
 ok('...and the pending filter shows them as “pending”', (await rowCount()) === csPending.nulls && (csPending.nulls === 0 || /pending/i.test(await hostText())), `${await rowCount()} rows`);
@@ -3245,7 +3244,8 @@ await page.waitForSelector('[data-deep-dive]', { timeout: 25000 }).catch(() => {
 // wrong on the page. `rowCount()` already waits; this makes the button count wait too.
 const ddRows = await rowCount();
 const ddCells = await page.locator('[data-deep-dive]').count();
-ok('every scan row carries a Deep Dive button', ddCells > 200 && ddCells === ddRows, `${ddCells} buttons, ${ddRows} rows`);
+const ddTracked = await page.evaluate(async () => (await import('/js/data/concall-scans.js')).all().filter((row) => row.analysisTracked !== false).length);
+ok('every analysis-tracked row carries a Deep Dive button', ddCells > 200 && ddCells === ddTracked && ddCells <= ddRows, `${ddCells} buttons, ${ddTracked} analysis rows, ${ddRows} total rows`);
 ok('...and the column is headed Deep Dive', (await page.$$eval('#content-host thead th', (ts) => ts.map((t) => t.innerText.trim().toUpperCase()))).includes('DEEP DIVE'));
 ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.report === 0, `analyze=${ddHits.analyze} report=${ddHits.report}`);
 // Their free index is read once per document load and never again — not per row, not per repaint,
