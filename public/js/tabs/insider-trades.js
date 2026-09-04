@@ -13,6 +13,7 @@
 // column may be blank; totalling those would either crash or, worse, quietly produce a number.
 // Insider dealing is a list of events, and this shows the list.
 
+import { filingHistoryControls } from './filing-history-controls.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatDate } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
@@ -102,7 +103,10 @@ function tradeFilters(rows) {
   });
 }
 
+const history = filingHistoryControls(feed);
 const tab = makeFilingsTab({
+  aboveTable: history.html,
+  wireAboveTable: history.wire,
   id: 'insider-trades',
   title: 'Insider Trades',
   subtitle: 'Insider dealing disclosed for the companies in scope. Each row preserves the disclosure’s fields and links to its matching public record.',

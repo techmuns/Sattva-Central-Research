@@ -3426,3 +3426,14 @@ It covers, beyond the checklist below:
 > Sandbox note: the agent proxy may not reach Google Fonts or ExcelJS. The committed Tailwind
 > stylesheet still gives screenshots the shipped layout and colours; the browser falls back to
 > system fonts when Google Fonts is unavailable. Export checks report SKIP when ExcelJS cannot load.
+
+## Automatic filing coverage (September 2026)
+
+The company announcement and domestic-filings integrations now share the scheduled
+`insider-trades-refresh.yml` capture. See `docs/DATA-CONTRACTS.md` → Automatic company capture
+and permanent filing history for the authoritative contract. Do not replace BSE's date feed
+with company lookups, discard captured history on an empty/failing response, advance a date
+checkpoint after a partial parse, or equate a successful source check with complete coverage.
+`company-capture.mjs` owns resumable state; `filing-archive.mjs` preserves BSE/insider events
+before recent display windows apply. The frontend exposes coverage gaps and archived rows.
+Production activation remains subject to the user's PR-specific deployment authorization.

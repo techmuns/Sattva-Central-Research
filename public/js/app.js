@@ -9,6 +9,7 @@ import { mount } from './ui/shell.js';
 import { adaptUniverse } from './data/universe.js';
 import { prime as primeFiled } from './data/institution-holdings.js';
 import { prime as primeCoverage } from './data/coverage.js';
+import { loadCompanyCaptureIndex } from './data/company-captures.js';
 import { startCaptureWatchdog } from './data/capture-watchdog.js';
 // Imported for its side effect as much as for `startHostCapture`: js/core/sdk.js builds the one
 // SDK client at import time, so pulling it in from the bootstrap is what guarantees the client
@@ -139,6 +140,7 @@ async function boot() {
   // GitHub schedules are best-effort. One small timestamp request checks every committed capture
   // after first paint and dispatches only the ones outside their real operating window. The Worker
   // declines duplicate runs across readers; landed files repaint any feed already on screen.
+  void loadCompanyCaptureIndex();
   startCaptureWatchdog();
 }
 

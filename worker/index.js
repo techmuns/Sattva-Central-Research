@@ -1721,6 +1721,7 @@ async function handleWorkflowRunStatus(env, ctx, { workflow, cacheName }) {
 // dashboard cost one internal asset read per half-minute rather than one per reader.
 const CAPTURE_STATUS_TTL_S = 30;
 const CAPTURE_FILES = {
+  companyFilings: '/data/filing-capture/index.json',
   companyNews: '/data/news.json',
   insider: '/data/insider-trades.json',
   announcements: '/data/corp-announcements.json',
@@ -1732,7 +1733,7 @@ async function handleCaptureStatus(request, env, ctx) {
   if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
 
   const cache = caches.default;
-  const key = edgeKey('capture-status-v1');
+  const key = edgeKey('capture-status-v2');
   const held = await cache.match(key);
   if (held) {
     return new Response(held.body, {
@@ -1762,7 +1763,7 @@ async function handleCaptureStatus(request, env, ctx) {
           : null;
         captures[name] = {
           ok: true,
-          capturedAt: body.capturedAt || body.generated_at || body.fetchedAt || null,
+          capturedAt: body.capturedAt || body.generated_at || body.fetchedAt || body.lastRunFinishedAt || null,
           ...(perSource ? { sources: perSource } : {}),
           covered: Number.isFinite(body.covered) ? body.covered : Number.isFinite(body.company_count) ? body.company_count : null,
           failed: Number.isFinite(body.failedCount) ? body.failedCount : Number.isFinite(body.failures) ? body.failures : null,

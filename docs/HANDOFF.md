@@ -146,12 +146,12 @@ Awaited` row is excluded from moves and is never misreported as an exit.
 | The coverage universe | `public/data/universe.json` | The actual NSE-500 Screener export, 535 companies. Names, tickers, sectors and market caps everywhere else in the app come from here. |
 | **The book** — what the Portfolio toggle means | `public/data/portfolio-companies.json` | The family office's listed direct-equity book, **read from `techmuns/Sattva-Family`** (`src/data/sattvaData.ts`) by `scripts/sync-family-book.mjs` — **142 companies, one per equity ISIN, names and sectors only** — and resolved to NSE symbols by `scripts/resolve-portfolio-companies.mjs`. `family-book-sync.yml` keeps it in step (needs `FAMILY_REPO_TOKEN`). This is what every research tab's Portfolio scope filters by. It is **not** the ledger — see §5a. |
 
-### Real, but produced only when the reader asks for it
+### Additional document and research sources
 
 | Feed | Where | Notes |
 | --- | --- | --- |
-| **Additional corporate announcements** | Corp Announcements company/date form | Muns BSE/NSE/DRHP records join the BSE table, with source filters and document links. Lookups are retained on the device through empty/failed responses; no automatic universe walk. See `docs/DATA-CONTRACTS.md` → Additional corporate-announcement lookups. |
-| **Company filings** — annual reports, earnings reports and transcripts | Earnings Hub → Company Filings; Reports/Transcripts links in results and con-call scans | Authenticated Muns `/filings/domestic` proxy to Screener.in; per-company lookup, 15-minute edge cache, retained device copies and original document links. No PDF extraction or analyst estimates. See `docs/DATA-CONTRACTS.md` → Domestic company filings. |
+| **Additional corporate announcements** | Corp Announcements company/date form | Muns BSE/NSE/DRHP records join the BSE table, with source filters and document links. Scheduled company captures and immediate lookups join the same table. Shared histories do not expire; coverage gaps are visible. See `docs/DATA-CONTRACTS.md` → Additional corporate-announcement lookups. |
+| **Company filings** — annual reports, earnings reports and transcripts | Earnings Hub → Company Filings; Reports/Transcripts links in results and con-call scans | Authenticated Muns `/filings/domestic` proxy to Screener.in; scheduled company capture, 15-minute edge cache, shared/device history and original document links. No PDF extraction or analyst estimates. See `docs/DATA-CONTRACTS.md` → Domestic company filings. |
 | **Concall Deep Dive** — a per-company report on one call | The **Deep Dive** column on the Con-call tab | A separate Cloudflare Worker runs its own LLM pipeline and returns the report; this dashboard triggers it, mirrors its progress and lays out the result. Nothing is stored in `public/data/` and nothing is committed. Reading the reports they already hold is free and happens once per visit; **starting a new run costs real compute**, so that never fires without a click and a confirm. See §5c. |
 
 ### Synthetic earnings data is test-only

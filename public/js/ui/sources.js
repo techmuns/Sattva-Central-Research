@@ -11,6 +11,7 @@
 //   'mock'    — placeholder data ships in the repo; the real source is named but not connected
 //   'pending' — nothing exists yet; named so the gap is visible rather than hidden
 
+import { companyCaptureStatus } from '../data/company-captures.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime, formatNumber } from '../core/format.js';
 import * as coverage from '../data/coverage.js';
@@ -46,6 +47,17 @@ import * as aiAlerts from '../data/ai-alerts.js';
 // written to lose the clause rather than print a wrong figure — "every earnings call held this
 // quarter" is true forever; "877 of them" is true for about a day.
 // ---------------------------------------------------------------------------------------
+
+function capturedSourceState(kind) {
+  const status = companyCaptureStatus(kind);
+  return !status.available ? 'pending' : status.error || status.gaps.length || status.unresolved.length || status.unavailableLinks ? 'partial' : 'live';
+}
+function capturedSourceCadence(kind) {
+  const status = companyCaptureStatus(kind);
+  return 'Scheduled every two hours; progress resumes across runs. ' + (!status.available ? 'No shared capture published yet.' :
+    `${status.checked}/${status.total} recently checked, ${status.failed} failed, ${status.never} never checked, ${status.stale} overdue, ${status.backfill} backfilling. `) +
+    'Shared history does not expire; personal device-only additions are outside scheduled coverage.';
+}
 
 /** A live count, or null if the feed has not loaded. Never 0-as-unknown — see the header. */
 function num(fn) {
@@ -315,8 +327,8 @@ export function sourceGroups() {
           url: 'https://www.screener.in/',
           feeds:
             'Annual report PDFs, earnings report PDFs and concall transcripts for an Indian ticker, read through the authenticated Muns domestic-filings service. Open Earnings Hub → Company Filings, or follow Reports / Transcripts from a company row. Documents keep their original source links. This source provides documents; it does not populate a financial quality score or analyst estimates.',
-          cadence: 'On demand by company and document type · 15-minute edge cache; saved document links remain available after a failed refresh',
-          status: 'ondemand',
+          cadence: capturedSourceCadence('domestic'),
+          status: capturedSourceState('domestic'),
           file: 'worker/muns.mjs → POST /filings/domestic · /api/domestic-filings/{ticker} · public/js/tabs/company-filings.js',
         },
         {
@@ -454,16 +466,16 @@ export function sourceGroups() {
           // screen and this feed only loads when its tab mounts. A sentence built AROUND a number
           // reads as broken prose the moment it does not arrive.
           cadence:
-            `Refreshed weekdays at 20:00 IST, after filing stops for the day.${clause(num(() => annFeed.meta().windowDays), ' Rolling <n>-day window.')}${clause(num(() => annFeed.meta().baseRowCount), ' <n> filings in the current file.')}${clause(num(() => annFeed.meta().baseCovered), ' <n> companies filed something.')}`,
+            `Scheduled every two hours, including weekends; missed date windows are retried and older rows are archived.${clause(num(() => annFeed.meta().windowDays), ' Rolling <n>-day window.')}${clause(num(() => annFeed.meta().baseRowCount), ' <n> filings in the current file.')}${clause(num(() => annFeed.meta().baseCovered), ' <n> companies filed something.')}`,
           status: 'live',
           file: 'worker/bse-ann.mjs · scripts/scrape-bse-announcements.mjs · .github/workflows/announcements-refresh.yml',
         },
         {
           name: 'Muns — BSE / NSE / DRHP corporate announcements',
           url: 'https://devde.muns.io',
-          feeds: 'Additional corporate announcements from BSE, NSE fallback and DRHP documents through the authenticated corporate-announcements endpoint. Enter a company and date range in Corp Announcements. Results join the existing table with source labels and document links; matching disclosures are deduplicated. Saved lookup rows survive an empty or failed refresh. Coverage is limited to the companies and dates requested, not the whole NSE or DRHP universe.',
-          cadence: 'On demand by company and date range · 15-minute edge cache · retained on this device',
-          status: 'ondemand',
+          feeds: 'Additional corporate announcements from BSE, NSE fallback and DRHP documents through the authenticated corporate-announcements endpoint. Scheduled captures cover the committed companies; the company/date form permits an immediate check. Results join the existing table with source labels and document links; matching disclosures are deduplicated. Saved lookup rows survive an empty or failed refresh. Coverage is limited to the companies and dates requested, not the whole NSE or DRHP universe.',
+          cadence: capturedSourceCadence('announcements'),
+          status: capturedSourceState('announcements'),
           file: 'worker/muns.mjs → GET /filings/corp/announcements/{ticker} · public/js/data/announcements-extra.js',
         },
         {
@@ -585,6 +597,7 @@ const STATUS_CHIP = {
   // Indigo is the brand/action colour and this status IS an action — a source that produces
   // nothing until the reader asks it to. It is deliberately not emerald: counting it among the
   // live feeds would claim data is flowing when none is until someone clicks.
+  partial: 'bg-amber-50 text-amber-700 ring-amber-200',
   ondemand: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
   // A source this browser is monitoring that nothing has read yet. Amber rather than emerald for
   // the reason the whole registry exists: green means data is arriving, and none is until a
@@ -598,6 +611,7 @@ export const STATUS_LABEL = {
   live: 'Live',
   static: 'Real · manual',
   mock: 'Mock data',
+  partial: 'Coverage gaps',
   ondemand: 'On demand',
   adding: 'Adding…',
   unreadable: 'Not found',

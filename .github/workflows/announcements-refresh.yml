@@ -1,26 +1,12 @@
 name: Corporate announcements refresh
 
-# Corporate announcements, read from BSE's DATE index rather than one request per company.
-#
-# WHY THIS IS ITS OWN JOB AND NOT A STEP IN THE DAILY REFRESH
-#   The full refresh runs at 07:00 IST so it picks up the previous session's closing prices. The
-#   09:00 company-news/insider pass is still far too early for filings submitted well past the close —
-#   the latest in a normal day lands around 19:00 IST — so this runs after filing stops.
-#
-# COST: about twenty requests for the whole exchange, a few seconds. It replaced a per-company walk
-# that cost six hundred requests and still only reached 118 companies, because the old upstream is
-# capped near sixty requests a minute and its session token expires mid-run.
-#
-# The script keeps a rolling window (ANN_KEEP_DAYS, default 3) and merges each run into it, so the
-# daily cost stays at one day while the file keeps enough context to be worth opening on a Monday.
-# Widening it is one variable — but a weekday carries ~900 filings across the exchange, and every
-# byte of this file is downloaded by every visitor, so it is a deliberate ceiling rather than an
-# oversight.
+# BSE date-indexed announcements for the exchange. Successful windows overlap and recover gaps
+# after missed runs. Monthly archives retain rows before the recent display window trims them.
 
 on:
   schedule:
-    # 14:30 UTC = 20:00 IST, weekdays — after filing has stopped for the day.
-    - cron: "30 14 * * 1-5"
+    # All days. Recovery starts at the last completed window if a run was missed.
+    - cron: "15 */2 * * *"
   workflow_dispatch:
     inputs:
       days:
@@ -71,7 +57,9 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: corp-announcements
-          path: public/data/corp-announcements.json
+          path: |
+            public/data/corp-announcements.json
+            public/data/announcements-archive/
           if-no-files-found: warn
 
       # `if: success()` matters here. The scraper exits non-zero when it collected nothing across
@@ -82,7 +70,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/corp-announcements.json
+          git add public/data/corp-announcements.json public/data/announcements-archive/
           if git diff --cached --quiet; then
             echo "No announcement changes to commit."
             exit 0

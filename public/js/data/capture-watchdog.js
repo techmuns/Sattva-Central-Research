@@ -17,6 +17,13 @@ const watchers = new Map();
 let checkTimer = null;
 
 const CONFIG = {
+  companyFilings: {
+    route: 'api/insider-snapshot/refresh?source=auto',
+    run: 'api/insider-snapshot/run',
+    maxAgeMs: 3 * 60 * 60 * 1000,
+    active: () => true,
+    budgetMs: 70 * 60 * 1000,
+  },
   companyNews: {
     route: 'api/company-news/refresh?source=auto',
     run: 'api/company-news/run',
@@ -39,7 +46,7 @@ const CONFIG = {
     route: 'api/announcements-snapshot/refresh?source=auto',
     run: 'api/announcements-snapshot/run',
     maxAgeMs: 75 * 60 * 1000,
-    active: ({ weekday, hour }) => weekday && hour >= 9 && hour < 23,
+    active: () => true,
     budgetMs: 20 * 60 * 1000,
   },
   insider: {
@@ -132,6 +139,13 @@ export function freshnessOf(name, capture) {
 }
 
 async function applyLandedCapture(name) {
+  if (name === 'companyFilings') {
+    const capture = await import('./company-captures.js');
+    await capture.loadCompanyCaptureIndex({ force: true });
+    const { announcements } = await import('./filings.js');
+    if (announcements.isLoaded()) await announcements.refreshSnapshot();
+    return;
+  }
   if (name === 'marketNews') {
     const feed = await import('./market-news.js');
     await feed.refresh();
@@ -173,6 +187,7 @@ export async function runCaptureWatchdog({ now = Date.now, watchRuns = true } = 
   if (status.ok === false || !status.captures) return { ok: false, reason: status.reason || 'unavailable', started: [] };
 
   const started = [];
+  const dispatchedRoutes = new Map();
   for (const [name, config] of Object.entries(CONFIG)) {
     const capture = status.captures[name];
     const checkedAt = now();
@@ -180,8 +195,10 @@ export async function runCaptureWatchdog({ now = Date.now, watchRuns = true } = 
     if (!refreshDue(name, capture, checkedAt) || checkedAt - lastAttempt < ATTEMPT_COOLDOWN_MS) continue;
     attempts.set(name, checkedAt);
 
-    const dispatch = await ask(config.route, { method: 'POST' });
-    started.push({ name, ...dispatch });
+    const alreadyDispatched = dispatchedRoutes.has(config.route);
+    const dispatch = alreadyDispatched ? dispatchedRoutes.get(config.route) : await ask(config.route, { method: 'POST' });
+    dispatchedRoutes.set(config.route, dispatch);
+    if (!alreadyDispatched) started.push({ name, ...dispatch });
     if (watchRuns && dispatch.ok !== false && !watchers.has(name)) {
       const task = watch(name, freshnessOf(name, capture), { now })
         .catch(() => ({ ok: false, outcome: 'failed', reason: 'unreachable' }))

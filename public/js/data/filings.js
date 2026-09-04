@@ -50,6 +50,7 @@
 
 import { conditionalJson, readEntries, writeEntry, KEYS, isPersistent } from '../core/store.js';
 import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
+import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
 
 // How many companies a live walk will ask about before it stops and says so. The upstreams allow
@@ -790,5 +791,5 @@ export function createFeed(kind) {
 // One instance per feed, module-level so a second visit to the tab repaints instantly instead of
 // re-walking. Same reasoning as the super-investor feed.
 export const news = createFeed('news');
-export const announcements = withAnnouncementLookups(createFeed('announcements'));
-export const insider = createFeed('insider');
+export const announcements = withAnnouncementLookups(withFilingArchive(createFeed('announcements'), 'announcements'));
+export const insider = withFilingArchive(createFeed('insider'), 'insider');

@@ -46,6 +46,9 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchNews, fetchInsiderTrades, MunsError } from '../worker/muns.mjs';
 import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
+import { captureCompanies } from './lib/company-capture.mjs';
+import { mergeInsiderTrades } from '../public/js/data/insider-history.js';
+import { archiveFilings } from './lib/filing-archive.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = (f) => resolve(__dirname, '../public/data', f);
@@ -63,11 +66,20 @@ const FEEDS = {
   insider: { file: 'insider-trades.json', rowsKey: 'trades', windowDays: 365 },
 };
 
-// Sixty requests a minute is the documented ceiling. One request per second with four in flight
-// sits under it with room for the retries muns.mjs does on a timeout — and being comfortably under
-// somebody else's limit is cheaper than discovering where it is.
+// One global 2.5-second request-start interval leaves room for the Worker's retries.
+// A per-worker pause alone does not enforce a shared upstream budget.
 const CONCURRENCY = 4;
-const GAP_MS = 250;
+const GAP_MS = 2500;
+let requestGate = Promise.resolve();
+let nextRequestAt = 0;
+function paceRequest() {
+  const turn = requestGate.then(async () => {
+    await new Promise((resolve) => setTimeout(resolve, Math.max(0, nextRequestAt - Date.now())));
+    nextRequestAt = Date.now() + GAP_MS;
+  });
+  requestGate = turn;
+  return turn;
+}
 
 const env = { MUNS_TOKEN: process.env.MUNS_TOKEN, MUNS_NEWS_TOKEN: process.env.MUNS_NEWS_TOKEN, MUNS_BASE: process.env.MUNS_BASE, MUNS_NEWS_BASE: process.env.MUNS_NEWS_BASE };
 
@@ -89,6 +101,7 @@ async function viaWorker(path, label) {
   let last = null;
   for (let attempt = 1; attempt <= REQ_ATTEMPTS; attempt++) {
     try {
+      await paceRequest();
       const res = await fetch(`${BASE}${path}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(REQ_TIMEOUT_MS) });
       if (!res.ok) {
         last = new MunsError('upstream', `${label} answered HTTP ${res.status}.`, { status: res.status, url: `${BASE}${path}` });
@@ -131,8 +144,7 @@ function companies() {
   const held = (book.holdings || []).filter((h) => h.ticker).map((h) => ({ ticker: h.ticker.toUpperCase(), name: h.name, held: true }));
   if (SCOPE === 'book') return dedupe(held);
 
-  const tech = JSON.parse(readFileSync(DATA('technicals.json'), 'utf8'));
-  const rest = (tech.companies || []).filter((c) => c.ticker).map((c) => ({ ticker: String(c.ticker).toUpperCase(), name: c.name, held: false }));
+  const rest = captureCompanies(DATA('.')).companies;
   return dedupe([...held, ...rest]);
 }
 
@@ -159,6 +171,15 @@ function dedupe(list) {
 /** One feed, walked CONCURRENCY at a time, writing what it got even if it did not get all of it. */
 async function run(kind, list) {
   const { file, rowsKey, windowDays } = FEEDS[kind];
+  const startedAt = Date.now();
+  const budgetMs = Number(process.env.FILINGS_BUDGET_MS || (kind === 'insider' ? 30 : 20) * 60000);
+  const prior = readIfPresent(file);
+  const minimumAge = Number(process.env.FILINGS_MIN_INTERVAL_HOURS || 0) * 3600000;
+  const knownTickers = new Set([...Object.keys(prior?.byTicker || {}), ...(prior?.empty || [])]);
+  if (minimumAge && list.every((c) => knownTickers.has(c.ticker)) && prior?.capturedAt && !prior.failedCount && !prior.fallbackCount && Date.now() - Date.parse(prior.capturedAt) < minimumAge) {
+    console.log(`${kind}: last complete capture is inside the configured refresh interval.`);
+    return;
+  }
   const from = daysAgo(windowDays);
   const to = iso(Date.now());
 
@@ -174,13 +195,16 @@ async function run(kind, list) {
   const headers = new Set();
   let done = 0;
 
-  const queue = [...list];
+  const lastGoodAt = (ticker) => prior?.failed?.[ticker] || !knownTickers.has(ticker) ? '' : prior?.fallback?.[ticker]?.capturedAt || prior?.capturedAt || '';
+  const queue = [...list].sort((a, b) => lastGoodAt(a.ticker).localeCompare(lastGoodAt(b.ticker)));
   const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
     for (;;) {
+      if (Date.now() - startedAt >= budgetMs) return;
       const c = queue.shift();
       if (!c) return;
       try {
         let res;
+        if (!VIA_WORKER) await paceRequest();
         // THE COMPANY NAME, AND NOTHING APPENDED TO IT. The query used to end "share price results",
         // which reads like a helpful narrowing and is not: measured against one company it swapped a
         // Moneycontrol quarterly-results story for an unrelated IPO story, because the extra words
@@ -220,7 +244,7 @@ async function run(kind, list) {
       }
       done++;
       if (done % 25 === 0) process.stdout.write(`\r  ${kind}: ${done}/${list.length} …`);
-      await sleep(GAP_MS);
+
     }
   });
   await Promise.all(workers);
@@ -264,12 +288,17 @@ async function run(kind, list) {
   // query and devde.muns.io did not answer at all, so a run wrote a snapshot covering nobody — and
   // a snapshot covering nobody is a file that says "these 123 companies have no news", which is a
   // measurement nobody made. An outage is not an absence of events.
-  if (!payload.covered && list.length && !process.env.FILINGS_FORCE) {
+  if (kind !== 'insider' && !payload.covered && list.length && !process.env.FILINGS_FORCE) {
     console.log(`\r  ${kind}: nothing came back for any of ${list.length} companies — the upstream is down. Nothing written.`);
     return;
   }
 
   const previous = readIfPresent(file);
+  if (kind === 'insider') {
+    const flatten = (capture) => Object.entries(capture?.byTicker || {}).flatMap(([ticker, rows]) => rows.map((row) => ({ ...row, ticker })));
+    // Retain before mergeLastGoodFilings applies the 365-day display window.
+    archiveFilings(DATA('insider-archive'), 'insider', mergeInsiderTrades(flatten(previous), flatten(payload)));
+  }
   // AND A COLLAPSE IN COMPANIES THAT HAD SOMETHING, which `covered` cannot see any more. Once
   // `covered` counted answers rather than rows, an upstream timing out stopped looking like a bad
   // run at all: every company answers "nothing", `empty` absorbs them, `covered` stays at the full
