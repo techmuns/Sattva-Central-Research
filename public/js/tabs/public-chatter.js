@@ -55,6 +55,14 @@ const SECTIONS = [
   { id: 'not-in-coverage', label: 'Not in coverage' },
 ];
 
+function windowLabel(window = '30d') {
+  const days = String(window).match(/^(\d+)d$/);
+  return days ? `${Number(days[1])} ${Number(days[1]) === 1 ? 'day' : 'days'}` : String(window);
+}
+
+const description = (window = '30d') =>
+  `Company mentions across ValuePickr, TradingQnA and Google News over the last ${windowLabel(window)}. Select a company to read the mentions.`;
+
 // ---------------------------------------------------------------------------------------
 // Entry
 // ---------------------------------------------------------------------------------------
@@ -154,8 +162,7 @@ function clearPaint() {
 const loadingHtml = () => `
   ${sectionHead({
     title: 'Public Chatter',
-    description:
-      'Mention counts and sentiment across ValuePickr, TradingQnA and Google News, computed by SentimentDash over a rolling 30 days. The counts and the sentiment are theirs; the NSE symbol is ours.',
+    description: description(),
   })}
   <div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-slate-100">
     Loading chatter…
@@ -207,7 +214,7 @@ function paint(ctx) {
   ctx.root.innerHTML = `
     ${sectionHead({
       title: 'Public Chatter',
-      description: `Mention counts and sentiment over a rolling ${escapeHtml(m.window)}, computed by SentimentDash across ValuePickr, TradingQnA and Google News. The counts and the sentiment are theirs; the NSE symbol is ours.`,
+      description: description(m.window),
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: covered.length, noun: `mentioned · ${m.window}`, book: coverage.meta() })}</div>`,
     })}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-chatter-section-tabs>
@@ -425,16 +432,20 @@ function buildTopCards(rows) {
   const ranked = rows.filter((r) => r.mentions > 0).slice(0, 10);
   if (ranked.length < 3) return null;
   return topCards({
-    title: 'Most discussed — companies we cover',
+    title: 'Most discussed companies',
+    compact: true,
     items: ranked.map((r) => ({
       key: r.slug,
       name: r.name,
       sub: `${r.ticker} · ${r.sentiment.labelText}`,
-      value: r.mentions,
+      value: formatNumber(r.mentions),
+      unit: r.mentions === 1 ? 'mention' : 'mentions',
+      caption: `Last ${windowLabel(chatter.meta()?.window)}`,
+      actionLabel: 'Read mentions',
       tone: 'neutral',
     })),
     valueFormat: 'metric',
-    onSelect: (slug) => openMentions(rows.find((r) => r.slug === slug)),
+    onSelect: (item) => openMentions(rows.find((r) => r.slug === item.key)),
   });
 }
 

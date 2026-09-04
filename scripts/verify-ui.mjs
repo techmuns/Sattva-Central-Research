@@ -3511,6 +3511,24 @@ if (!chatterState.ok) {
   ok('the resolver produced real NSE symbols', chatterState.resolvedSample.length > 0, chatterState.resolvedSample.join(', '));
   ok('the scrape time is shown', !!chatterState.generatedAt, chatterState.generatedAt || 'missing');
 
+  const featuredCard = page.locator('#content-host [data-top-cards] [data-top-idx]').first();
+  if (await featuredCard.count()) {
+    const featured = await evalSafe(async () => {
+      const c = await import('/js/data/chatter-live.js');
+      const row = c.forScope('universe').find((entry) => entry.mentions > 0);
+      return { name: row.name, slug: row.slug, mentions: row.mentions };
+    });
+    const cardText = (await featuredCard.innerText()).replace(/\s+/g, ' ');
+    ok('a most-discussed card explains its count, time period and action',
+      /\bmentions?\b/.test(cardText) && /Last \d+ days?/.test(cardText) && cardText.includes('Read mentions'), cardText);
+    await featuredCard.click();
+    await page.locator('[data-chatter-mention-row]').first().waitFor({ state: 'visible' });
+    ok('clicking the card opens that company’s underlying mentions',
+      await page.locator('[data-chatter-mentions-dialog]').getAttribute('data-chatter-slug') === featured.slug,
+      `${featured.name} · ${featured.mentions} mentions`);
+    await page.locator('#modal-content [data-modal-close]').click();
+  }
+
   // A GENERAL ALERTS CHATTER ROW OPENS THE COMPANY'S MENTIONS POPUP, not just the tab. The chatter
   // event carries no source URL, so daily-alerts.js falls back to the tab WITH the company and an
   // `open=mentions` flag; this asserts the receiving end honours it. Driven through the URL the row
