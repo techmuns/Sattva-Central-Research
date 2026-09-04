@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import { corporateActionType, corporateActionKey, normaliseNseCorporateActions, parseNseActionDate } from '../public/js/data/corporate-actions-shared.js';
+import { assertSafeCorporateActionReplacement, corporateActionType, corporateActionKey, normaliseNseCorporateActions, parseNseActionDate } from '../public/js/data/corporate-actions-shared.js';
 import { createCorporateActionsFeed, filterCorporateActionsByScope } from '../public/js/data/corporate-actions.js';
 
 assert.equal(parseNseActionDate('04-Sep-2026'), '2026-09-04');
@@ -35,6 +35,14 @@ assert.equal(normalised.rows[0].ticker, 'BETA', 'newest ex date sorts first');
 assert.match(normalised.rows[0].sourceUrl, /nseindia\.com/);
 assert.equal(normalised.rows[1].id, corporateActionKey(normalised.rows[1]));
 assert.deepEqual(filterCorporateActionsByScope(normalised.rows, 'portfolio', [{ ticker: 'OLD-BETA', isin: 'INE000B01000' }]).map((row) => row.ticker), ['BETA'], 'ISIN keeps renamed portfolio symbols connected');
+
+const priorLarge = { version: 1, rows: Array.from({ length: 120 }, (_, index) => ({ ticker: `OLD${index}` })) };
+assert.throws(
+  () => assertSafeCorporateActionReplacement({ rows: Array.from({ length: 50 }, (_, index) => ({ ticker: `NEW${index}` })) }, priorLarge),
+  /shrank abnormally/,
+  'a syntactically valid partial response cannot erase retained history',
+);
+assert.doesNotThrow(() => assertSafeCorporateActionReplacement({ rows: priorLarge.rows.slice(0, 100) }, priorLarge));
 
 const capture = {
   version: 1, capturedAt: '2026-09-04T18:00:00.000Z', requestedFrom: '2023-09-05', requestedTo: '2027-09-04',

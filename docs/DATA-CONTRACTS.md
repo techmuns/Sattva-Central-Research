@@ -77,21 +77,22 @@ NSE's exchange-wide corporate-actions calendar, captured hourly by
 in one bounded response. The browser loads this file only when Corporate Actions opens, keeps it in
 the shared IndexedDB cache, and conditionally checks it every 90 seconds while visible.
 
-The capture is replaced only after a successful HTTP response parses into at least one valid row.
-A refusal, timeout, empty response or format change exits without replacing the last valid file.
+The capture is replaced only after a successful HTTP response parses into a valid row set. A
+refusal, timeout, empty response, format change, or drop of more than 25% of the prior rows or
+companies exits without replacing the last valid file.
 The app-wide capture watchdog asks the fixed workflow to recover whenever the committed capture is
 more than 75 minutes old.
 
 ```jsonc
 {
   "version": 1,
-  "capturedAt": "2026-09-04T19:26:25.353Z",
+  "capturedAt": "2026-09-04T19:52:40.891Z",
   "source": "NSE corporate actions",
   "requestedFrom": "2023-09-05",
   "requestedTo": "2027-09-04",
-  "rowCount": 5805,
+  "rowCount": 5806,
   "companyCount": 1667,
-  "typeCounts": { "dividend": 4756, "bonus": 162 /* … */ },
+  "typeCounts": { "dividend": 4757, "bonus": 162 /* … */ },
   "skipped": 0,
   "excludedMeetings": 1396,
   "duplicates": 0,

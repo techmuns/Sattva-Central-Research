@@ -36,6 +36,24 @@ export const corporateActionKey = (row) => [
   row.isin || row.ticker || '', row.series || '', row.exDate || '', row.recordDate || '', row.purpose || '',
 ].join('|');
 
+/**
+ * Refuse a plausible-looking partial response before it replaces retained history.
+ *
+ * NSE returns this calendar as one array rather than paginated pages, so a sudden loss of more
+ * than a quarter of its rows or companies is not normal rolling-window expiry. Keeping the prior
+ * file is safer than publishing a truncated array as a complete exchange-wide answer.
+ */
+export function assertSafeCorporateActionReplacement(next, previous = null) {
+  if (!next?.rows?.length) throw new Error('Corporate actions capture contained no usable rows.');
+  if (previous?.version !== 1 || !Array.isArray(previous.rows) || previous.rows.length < 100) return next;
+  const nextCompanies = new Set(next.rows.map((row) => row.ticker).filter(Boolean)).size;
+  const previousCompanies = new Set(previous.rows.map((row) => row.ticker).filter(Boolean)).size;
+  if (next.rows.length < previous.rows.length * 0.75 || nextCompanies < previousCompanies * 0.75) {
+    throw new Error(`NSE corporate actions response shrank abnormally (${next.rows.length}/${previous.rows.length} rows; ${nextCompanies}/${previousCompanies} companies); previous capture retained.`);
+  }
+  return next;
+}
+
 export function normaliseNseCorporateActions(payload) {
   if (!Array.isArray(payload)) throw new Error('NSE corporate actions response was not an array.');
   const rows = [];

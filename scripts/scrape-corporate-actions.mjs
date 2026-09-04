@@ -6,7 +6,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { normaliseNseCorporateActions } from '../public/js/data/corporate-actions-shared.js';
+import { assertSafeCorporateActionReplacement, normaliseNseCorporateActions } from '../public/js/data/corporate-actions-shared.js';
 
 const OUTPUT = path.resolve('public/data/corporate-actions.json');
 const ENDPOINT = 'https://www.nseindia.com/api/corporates-corporateActions';
@@ -37,6 +37,10 @@ let raw;
 try { raw = JSON.parse(text); } catch { throw new Error('NSE corporate actions response was not JSON.'); }
 const parsed = normaliseNseCorporateActions(raw);
 if (!parsed.rows.length) throw new Error('NSE corporate actions response contained no usable rows; previous capture retained.');
+
+let previous = null;
+try { previous = JSON.parse(await fs.readFile(OUTPUT, 'utf8')); } catch {}
+assertSafeCorporateActionReplacement(parsed, previous);
 
 const typeCounts = Object.fromEntries([...new Set(parsed.rows.map((row) => row.actionType))].sort().map((type) => [type, parsed.rows.filter((row) => row.actionType === type).length]));
 const body = {
