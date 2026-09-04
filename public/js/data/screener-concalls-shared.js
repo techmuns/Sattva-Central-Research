@@ -21,7 +21,7 @@ export function safeDocumentUrl(value) {
   if (!value) return null;
   try {
     const url = new URL(value, 'https://www.screener.in');
-    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.port) return null;
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) return null;
     return url.href;
   } catch {
     return null;
@@ -32,7 +32,7 @@ export function safeHttpsUrl(value, { screener = false } = {}) {
   const safe = safeDocumentUrl(value);
   if (!safe) return null;
   const url = new URL(safe);
-  if (url.protocol !== 'https:') return null;
+  if (url.protocol !== 'https:' || url.port) return null;
   if (screener && !['www.screener.in', 'screener.in'].includes(url.hostname)) return null;
   return url.href;
 }

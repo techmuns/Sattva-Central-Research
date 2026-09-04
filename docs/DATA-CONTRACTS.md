@@ -962,7 +962,8 @@ pagination page and reconciles the source's total. The collector refuses empty, 
 duplicate, malformed or non-web-link captures; public logs never contain credentials, cookies,
 page HTML or account details. Screener company and summary links must be HTTPS. Historical source
 documents may retain the publisher's original HTTP URL, but remain inert outbound `noopener` links;
-script, data, credential-bearing and custom-port URLs are rejected.
+publisher-specific ports are retained because the Worker never fetches these links. Script, data and
+credential-bearing URLs are rejected. Screener-owned URLs also reject custom ports.
 
 `worker/screener-concalls-collector.mjs` accepts only a successful main-branch run of this fixed
 workflow in this fixed repository, verifies GitHub's SHA-256 artifact digest, bounds compressed and

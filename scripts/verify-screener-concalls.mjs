@@ -23,7 +23,7 @@ const row = ({ company = 'Dhoot Transmission', key = 'DHOOTTRANS', date = '4 Sep
 const html = `<!doctype html><table id="result_list"><tbody>
   ${row({ url: 'http://legacy.example.com/audio/call.mp3', summary: '/concalls/summary/23328860/' })}
   ${row({ kind: 'Presentation', url: 'https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=deck.pdf' })}
-  ${row({ company: 'Leap India', key: '544999', kind: 'Transcript', url: 'https://nsearchives.nseindia.com/corporate/leap.pdf' })}
+  ${row({ company: 'Leap India', key: '544999', kind: 'Transcript', url: 'https://media.example.com:3000/leap.pdf' })}
   </tbody></table><a href="?p=2">2</a><div>3 concalls</div>`;
 
 const parsed = parseScreenerConcallPage(html, observedAt);
@@ -47,6 +47,7 @@ test('authenticated page parser keeps every document and its fixed Screener iden
   assert.equal(rows[0].ticker, 'DHOOTTRANS');
   assert.equal(rows[2].ticker, 'LEAPIND');
   assert.equal(rows[0].url, 'http://legacy.example.com/audio/call.mp3', 'legacy HTTP documents remain available as inert web links');
+  assert.equal(rows[2].url, 'https://media.example.com:3000/leap.pdf', 'publisher document ports are preserved');
   assert.equal(rows[0].summaryUrl, 'https://www.screener.in/concalls/summary/23328860/');
   validateScreenerConcallCapture(capture, Date.parse(observedAt));
 });
@@ -102,6 +103,7 @@ test('incremental captures retain the complete baseline and reject malformed or 
   assert.throws(() => validateScreenerConcallCapture({ ...capture, rows: [...rows, rows[0]] }, Date.parse(observedAt)));
   assert.throws(() => validateScreenerConcallCapture({ ...capture, rows: rows.map((item, i) => (i ? item : { ...item, url: 'javascript:alert(1)' })) }, Date.parse(observedAt)));
   assert.throws(() => validateScreenerConcallCapture({ ...capture, rows: rows.map((item, i) => (i ? item : { ...item, companyUrl: 'http://www.screener.in/company/DHOOTTRANS/' })) }, Date.parse(observedAt)));
+  assert.throws(() => validateScreenerConcallCapture({ ...capture, rows: rows.map((item, i) => (i ? item : { ...item, companyUrl: 'https://www.screener.in:3000/company/DHOOTTRANS/' })) }, Date.parse(observedAt)));
 });
 
 function artifactFetch({ digest = null, host = 'https://example.blob.core.windows.net/capture', event = 'schedule' } = {}) {
