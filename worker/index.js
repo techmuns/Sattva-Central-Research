@@ -47,6 +47,7 @@ import {
   COMPANY_NEWS_WORKFLOW,
   INSIDER_WORKFLOW,
   ANNOUNCEMENTS_WORKFLOW,
+  CORPORATE_ACTIONS_WORKFLOW,
   DATA_WORKFLOW,
   TWITTER_WORKFLOW,
   DEPLOY_WORKFLOW,
@@ -252,6 +253,20 @@ export default {
       return handleWorkflowRunStatus(env, ctx, {
         workflow: ANNOUNCEMENTS_WORKFLOW,
         cacheName: 'announcements-snapshot-run-status',
+      });
+    }
+    if (url.pathname === '/api/corporate-actions-snapshot/refresh') {
+      if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a refresh with POST.' }, 405);
+      return handleWorkflowDispatch(request, env, ctx, {
+        workflow: CORPORATE_ACTIONS_WORKFLOW,
+        cacheName: 'corporate-actions-snapshot-dispatch',
+        cooldownS: ANNOUNCEMENTS_DISPATCH_COOLDOWN_S,
+      });
+    }
+    if (url.pathname === '/api/corporate-actions-snapshot/run') {
+      return handleWorkflowRunStatus(env, ctx, {
+        workflow: CORPORATE_ACTIONS_WORKFLOW,
+        cacheName: 'corporate-actions-snapshot-run-status',
       });
     }
     if (url.pathname === '/api/data-snapshot/refresh') {
@@ -1746,6 +1761,7 @@ const CAPTURE_FILES = {
   companyNews: '/data/news.json',
   insider: '/data/insider-trades.json',
   announcements: '/data/corp-announcements.json',
+  corporateActions: '/data/corporate-actions.json',
   technicals: '/data/technicals.json',
   marketNews: '/data/market-news.json',
 };

@@ -69,6 +69,58 @@ The three Super Investors files load at bootstrap and seed `js/data/investors.js
 
 ---
 
+## `public/data/corporate-actions.json` — LIVE
+
+NSE's exchange-wide corporate-actions calendar, captured hourly by
+`.github/workflows/corporate-actions-refresh.yml` through
+`scripts/scrape-corporate-actions.mjs`. The request covers the prior three years and the next year
+in one bounded response. The browser loads this file only when Corporate Actions opens, keeps it in
+the shared IndexedDB cache, and conditionally checks it every 90 seconds while visible.
+
+The capture is replaced only after a successful HTTP response parses into at least one valid row.
+A refusal, timeout, empty response or format change exits without replacing the last valid file.
+The app-wide capture watchdog asks the fixed workflow to recover whenever the committed capture is
+more than 75 minutes old.
+
+```jsonc
+{
+  "version": 1,
+  "capturedAt": "2026-09-04T19:26:25.353Z",
+  "source": "NSE corporate actions",
+  "requestedFrom": "2023-09-05",
+  "requestedTo": "2027-09-04",
+  "rowCount": 5805,
+  "companyCount": 1667,
+  "typeCounts": { "dividend": 4756, "bonus": 162 /* … */ },
+  "skipped": 0,
+  "excludedMeetings": 1396,
+  "duplicates": 0,
+  "rows": [ /* … */ ]
+}
+```
+
+| Row field | Type | Meaning |
+| --- | --- | --- |
+| `id` | string | Stable identity from ISIN/symbol, series, dates and purpose. |
+| `ticker` | string | NSE symbol. This is the watchlist join key and a portfolio join key. |
+| `company` | string | Company name as supplied by NSE. |
+| `isin`, `series` | string \| null | Exchange identifiers as supplied. |
+| `purpose` | string | Corporate-action purpose verbatim from NSE. |
+| `actionType` | enum | Derived navigation label: `dividend`, `distribution`, `bonus`, `rights`, `split`, `buyback`, `demerger`, `interest`, `redemption`, `capital-reduction`, or `other`. It is not a score. |
+| `faceValue` | string \| null | Face value as supplied; no numeric interpretation is imposed on the capture. |
+| `exDate`, `recordDate`, `bookClosureStart`, `bookClosureEnd` | date \| null | NSE dates normalized from `DD-Mmm-YYYY` to ISO; missing and invalid dates stay null. |
+| `source` | `"NSE"` | Source identity. |
+| `sourceUrl` | URL | Official NSE company-action view. |
+
+The file covers the exchange rather than the current book. Portfolio and Watchlist filter the
+same retained rows at paint time, so a newly added symbol does not wait for a new upstream capture.
+Portfolio matching also uses ISIN, so a symbol rename does not detach earlier actions from the book.
+Meeting-only AGM/EGM diary entries returned by the endpoint are counted in `excludedMeetings` and
+left out of this action feed; a meeting row that also declares an action remains. An action absent
+from NSE's published calendar cannot be inferred or filled from another site.
+
+---
+
 ## `public/data/technicals.json` — LIVE
 
 **The dashboard's one genuinely live feed.** Written by `scripts/scrape-technicals.mjs`, refreshed

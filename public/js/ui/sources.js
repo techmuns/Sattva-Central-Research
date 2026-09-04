@@ -507,6 +507,15 @@ export function sourceGroups() {
           file: 'worker/nse-ann.mjs · public/js/data/nse-filings.js · scripts/scrape-nse-announcements.mjs · .github/workflows/nse-announcements-refresh.yml',
         },
         {
+          name: 'NSE — corporate actions calendar',
+          url: 'https://www.nseindia.com/companies-listing/corporate-filings-actions',
+          feeds:
+            '<strong>Official exchange-wide actions.</strong> NSE supplies the company, symbol, ISIN, series, purpose, face value, ex date, record date and book-closure dates. The Corporate Actions tab keeps the purpose exactly as filed and derives only a filter label for the declared action. Meeting-only AGM/EGM diary entries are excluded; mixed entries that also declare an action remain. One market-wide snapshot is filtered locally for Portfolio and Watchlist, so a newly added symbol needs no company-specific capture. Portfolio matching also uses ISIN so symbol renames retain their history.',
+          cadence: 'Captured hourly with three years of history and one year of forward calendar; checked every 90 seconds while visible. The app requests recovery after a missed scheduled run, and a failed or malformed read cannot replace the last valid snapshot.',
+          status: 'live',
+          file: 'public/data/corporate-actions.json · scripts/scrape-corporate-actions.mjs · .github/workflows/corporate-actions-refresh.yml',
+        },
+        {
           name: 'Muns filings API — insider trades',
           url: 'https://devde.muns.io',
           feeds:

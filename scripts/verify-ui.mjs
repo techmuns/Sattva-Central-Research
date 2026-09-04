@@ -366,6 +366,7 @@ const routes = await page.evaluate(async () => {
       'tabs/super-investors.js',
       'tabs/news.js',
       'tabs/corp-announcements.js',
+      'tabs/corporate-actions.js',
       'tabs/nse-filings.js',
       'tabs/insider-trades.js',
     ],

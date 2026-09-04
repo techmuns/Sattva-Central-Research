@@ -308,7 +308,7 @@ export function makeFilingsTab(cfg) {
       filters: cfg.filters ? cfg.filters(rows) : null,
       searchable: cfg.searchable,
       link: cfg.link === false ? null : cfg.link || ((r) => r.url || null),
-      initialSort: { key: 'Date', dir: 'desc' },
+      initialSort: cfg.initialSort || { key: 'Date', dir: 'desc' },
       initialView: view,
       // TWO UNITS, BOTH NAMED. Insider Trades can carry many disclosures for one portfolio
       // company, so a bare "1,295 of 1,295 shown" was understandably read as 1,295 companies.
@@ -572,6 +572,14 @@ function coverageSentence(m, cov) {
   if (!cov || !cov.inScope) return '';
   const n = (x) => escapeHtml(formatNumber(x));
   const co = (x, one, many) => `${x === 1 ? one : many}`;
+
+  if (m.kind === 'corporate-actions') {
+    const range = m.requestedFrom && m.requestedTo
+      ? ` between <strong>${escapeHtml(m.requestedFrom)}</strong> and <strong>${escapeHtml(m.requestedTo)}</strong>`
+      : '';
+    return ` The capture reads NSE's exchange-wide calendar${range}; ${n(cov.withRows)} of ${n(cov.inScope)}
+      ${co(cov.inScope, 'company', 'companies')} in scope have a published action in that range.`;
+  }
 
   if (cov.coversUniverse) {
     // Nothing was asked company by company here, so there is no company that went unasked. What

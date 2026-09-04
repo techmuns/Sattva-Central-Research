@@ -38,6 +38,8 @@ jobs:
         run: node scripts/verify-filings-health.mjs
       - name: Verify capture watchdog
         run: node scripts/verify-capture-watchdog.mjs
+      - name: Verify retained NSE corporate actions and dynamic scope
+        run: node scripts/verify-corporate-actions.mjs public/data/corporate-actions.json
       - name: Verify active Family Office holdings sync
         run: node scripts/verify-family-sync.mjs
       - name: Verify S Screen portfolio mirror safety
@@ -92,6 +94,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-corporate-stream-ui.mjs
+      - name: Verify corporate actions scopes, retention and responsive table
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-corporate-actions-ui.mjs
       - name: Verify IPO table, live refresh, Excel export and mobile layout
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
