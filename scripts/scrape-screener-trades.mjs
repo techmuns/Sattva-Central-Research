@@ -77,19 +77,25 @@ async function scrapeSource(context, source, previousMeta) {
   let pagesRead = 0;
   let complete = false;
   let sourceStage = 'page navigation';
+  let currentPage = 0;
   const stopAt = previousMeta?.latestDate || bootstrapFrom;
 
   try {
     for (let pageNumber = 1; pageNumber <= MAX_PAGES; pageNumber++) {
+      currentPage = pageNumber;
       const url = pageUrl(source, pageNumber);
       sourceStage = 'page navigation';
-      const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
+      // The table is server-rendered. Waiting for the whole DOMContentLoaded lifecycle makes the
+      // capture depend on unrelated slow page assets on hosted runners; wait for the response and
+      // the actual table row instead.
+      const response = await page.goto(url, { waitUntil: 'commit' });
       if (!response?.ok() || new URL(page.url()).pathname !== source.path) throw new Error('source unavailable');
       sourceStage = 'session validation';
       if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw new Error('session unavailable');
       sourceStage = 'table validation';
       const table = page.locator('#result_list');
-      await table.waitFor({ state: 'visible' });
+      await table.waitFor({ state: 'attached' });
+      await table.locator('tbody tr').first().waitFor({ state: 'attached' });
       const headers = await table.locator('thead th').allTextContents();
       if (headers.length !== 5) throw new Error('unexpected table shape');
 
@@ -120,7 +126,7 @@ async function scrapeSource(context, source, previousMeta) {
   } catch {
     // A fixed source id and stage are operationally useful without exposing page text, form values,
     // cookies or browser exceptions in a shared Action log.
-    console.error(`${source.id}: capture stopped during ${sourceStage}.`);
+    console.error(`${source.id}: capture stopped during ${sourceStage} on page ${currentPage || 1}.`);
     throw new Error('Screener source capture failed.');
   } finally {
     await page.close().catch(() => {});
@@ -159,6 +165,10 @@ try {
     ...(process.env.SCREENER_CHROME_PATH ? { executablePath: process.env.SCREENER_CHROME_PATH } : {}),
   });
   const context = await browser.newContext({ acceptDownloads: false });
+  await context.route('**/*', (route) => {
+    const type = route.request().resourceType();
+    return ['image', 'font', 'media'].includes(type) ? route.abort() : route.continue();
+  });
   const login = await context.newPage();
   login.setDefaultTimeout(30_000);
   login.setDefaultNavigationTimeout(45_000);
