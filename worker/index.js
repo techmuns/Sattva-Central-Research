@@ -49,6 +49,8 @@ import {
   DEPLOY_WORKFLOW,
 } from './github-actions.mjs';
 import { handleResearch } from './research.mjs';
+import { handleXChatter } from './x-chatter.mjs';
+export { XChatterPortfolio } from './x-chatter.mjs';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -95,6 +97,11 @@ const EARNINGS_SNAPSHOT = '/data/earnings-live.json';
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Own method/auth policy. In particular a public GET never starts a paid X read.
+    if (url.pathname === '/api/x-chatter' || url.pathname.startsWith('/api/x-chatter/')) {
+      return handleXChatter(request, env);
+    }
 
     // ---------------------------------------------------------------------------------
     // API ROUTES

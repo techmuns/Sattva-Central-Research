@@ -17,6 +17,7 @@ import * as coverage from '../data/coverage.js';
 import * as concalls from '../data/concall-scans.js';
 import * as earningsLive from '../data/earnings-live.js';
 import * as chatter from '../data/chatter-live.js';
+import * as xChatterStatus from '../data/x-chatter-status.js';
 import * as institutions from '../data/institution-holdings.js';
 import * as technicals from '../data/technicals.js';
 import { announcements as annFeed } from '../data/filings.js';
@@ -381,6 +382,17 @@ export function sourceGroups() {
       icon: '💬',
       tabs: 'Public Chatter',
       items: [
+        {
+          name: 'X / Twitter — portfolio company searches',
+          url: 'https://docs.x.com/x-api/posts/search-recent-posts',
+          feeds: 'Public posts from company-name and ticker searches, including individual accounts. ' +
+            'Each keeps its author, post date and original link, labelled as unverified social content. ' +
+            'The X Chatter tab shows company-level capture gaps. A capped recent search does not guarantee complete coverage. ' +
+            'Official API access, a spending allowance and operator activation are required; opening the view does not buy data.',
+          cadence: xChatterStatus.meta()?.perCompany ? `Up to ${xChatterStatus.meta().perCompany} recent matches per company · planned every ${xChatterStatus.meta().intervalHours} hours` : 'Awaiting official API setup and operator activation',
+          status: xChatterStatus.meta()?.state === 'collecting' && Date.now() - Date.parse(xChatterStatus.meta()?.lastSuccessAt) < 86400000 ? 'live' : 'pending',
+          file: 'worker/x-chatter.mjs · docs/X-CHATTER.md',
+        },
         {
           name: 'SentimentDash — mention counts and sentiment',
           url: 'https://sentimentdash-api.tech-441.workers.dev/v1',
