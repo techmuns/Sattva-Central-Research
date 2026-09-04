@@ -31,12 +31,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Verify the sync contract
+        run: node scripts/verify-family-sync.mjs
       - name: Read the active shared holdings
         env:
           FAMILY_HOLDINGS_TOKEN: ${{ secrets.FAMILY_HOLDINGS_TOKEN }}
         run: node scripts/sync-family-book.mjs
-      - name: Verify the sync contract
-        run: node scripts/verify-family-sync.mjs
       - name: Install pinned Screener browser runtime
         run: |
           npm install --prefix "$RUNNER_TEMP/screener-browser" --no-save --package-lock=false playwright@1.62.1
