@@ -119,7 +119,7 @@ try {
       role: scroller.getAttribute('role'),
       label: scroller.getAttribute('aria-label'),
       overscroll: style.overscrollBehavior,
-      scrollBehavior: style.scrollBehavior,
+      touchAction: style.touchAction,
       signals: [...document.querySelectorAll('[data-alert-signal]')].map((cell) => ({
         direction: cell.dataset.alertDirection,
         importance: cell.dataset.alertImportance,
@@ -134,7 +134,7 @@ try {
   assert.equal(tableContract.role, 'region');
   assert.equal(tableContract.label, 'All Alerts history table');
   assert.equal(tableContract.overscroll, 'contain');
-  assert.equal(tableContract.scrollBehavior, 'smooth');
+  assert.equal(tableContract.touchAction, 'pan-x pan-y');
   assert(tableContract.signals.length > 0 && tableContract.signals.every((signal) =>
     ['positive', 'negative', 'neutral'].includes(signal.direction) &&
     ['high', 'low'].includes(signal.importance) &&

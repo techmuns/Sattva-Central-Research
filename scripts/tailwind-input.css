@@ -22,7 +22,6 @@
 .table-scroll-surface {
   max-width: 100%;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
   scroll-padding: 1rem;
   scrollbar-color: #94a3b8 transparent;
   scrollbar-width: thin;
@@ -51,8 +50,4 @@
 .table-scroll-surface:focus-visible {
   outline: 2px solid #6366f1;
   outline-offset: -2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .table-scroll-surface { scroll-behavior: auto; }
 }

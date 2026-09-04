@@ -298,9 +298,9 @@ function restoreTablePosition(root, position) {
   if (!position) return;
   const scroller = root.querySelector('[data-table-scroll]');
   if (!scroller) return;
-  // The shared surface deliberately smooths reader-initiated keyboard/programmatic movement.
-  // Restoration is different: animating from the new element's zero position would visibly lose
-  // the row before finding it again. Make this bookkeeping jump atomic, then restore the surface.
+  // A caller or browser theme may opt into smooth programmatic movement. Restoration is different:
+  // animating from the new element's zero position would visibly lose the row before finding it
+  // again. Make this bookkeeping jump atomic, then restore the surface.
   const inlineBehavior = scroller.style.scrollBehavior;
   scroller.style.scrollBehavior = 'auto';
   try {
