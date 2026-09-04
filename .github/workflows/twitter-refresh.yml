@@ -94,6 +94,19 @@ jobs:
           fi
           exit $code
 
+      # Only public feed records are retained for reviewing a branch in a populated preview.
+      # Never upload the account database, environment or diagnostic dumps.
+      - name: Save branch preview capture
+        if: success() && steps.collect.outputs.code == '0' && github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: twitter-preview-capture
+          path: |
+            public/data/twitter-posts.json
+            public/data/twitter-handles.json
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Commit the capture
         if: success() && steps.collect.outputs.skip != 'true' && github.ref == 'refs/heads/main'
         run: |
