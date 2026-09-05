@@ -338,6 +338,7 @@ try {
   await search.fill('Quiet Signals');
   assert.equal(await card('QUIET').count(), 1, 'company search reaches eligible below-threshold cards');
   assert.match(await card('QUIET').innerText(), /Company update/i);
+  assert.match(await page.locator('[data-ai-filter="important"]').innerText(), /0/, 'below-threshold search results do not inflate the Important count');
   await search.fill('Private Robotics');
   const privateCard = page.locator('[data-ai-card][data-entity-id="isin:INE000009999"]');
   assert.equal(await privateCard.count(), 1);

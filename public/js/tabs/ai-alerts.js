@@ -368,7 +368,7 @@ export function feedStatus(rep) {
 function controls(cards, visibleCount) {
   const active = cards.filter((card) => !mute.isHidden(card.key || card.ticker, card.evidenceKey || card.topEvent?.id || ''));
   const mustSee = active.filter((card) => card.priority === 'must-see').length;
-  const important = active.length - mustSee;
+  const important = active.filter(card => card.priority === 'important').length;
   // Counted over what is ACTUALLY archived out of this view, not over the whole store: an entry
   // whose evidence has been overtaken is no longer hiding anything, and reporting it as archived
   // would send the reader looking for a card that is already back on the page.

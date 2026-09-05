@@ -1244,6 +1244,8 @@ function fromTechnicals({ day, wanted, includeHistory }) {
 function fromCompanyNews({ day, wanted, includeHistory }) {
   const m = news.meta();
   const capturedDay = istDay(m.capturedAt);
+  const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
+  const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
   const rows = news.rows().filter((r) => inRequestedWindow(r.publishedAt || r.date, day, includeHistory) && inScope(wanted, r.ticker));
 
   const events = rows.map((r) => ({
@@ -1276,7 +1278,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     reachesToday: !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
     note: [capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
-      m.enrichmentCoverage ? `Global discovery: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Last checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.']
+      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.']
       .filter(Boolean).join(' ') || null,
   };
 }
