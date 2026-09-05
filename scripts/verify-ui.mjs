@@ -3865,7 +3865,7 @@ const tg = await evalSafe(async () => {
     pillTag: host.querySelector('[data-telegram-live]')?.tagName || '',
     idsDescending: ids.every((id, k) => k === 0 || ids[k - 1] > id),
     uniqueKeys: new Set(keys).size === keys.length,
-    everyPostHasText: rows.every((r) => typeof r.text === 'string' && r.text.trim().length > 0),
+    everyPostHasText: rows.every((r) => r.text || r.publishedAt),
     noPublishedAt: rows.every((r) => r.publishedAt === null),
     // A DATE CELL MUST NEVER CARRY `firstSeenAt`. That is when OUR scraper saw the post, and
     // rendering it as the post's time would stamp our reading time onto somebody else's words.
@@ -3888,44 +3888,18 @@ if (!tg?.ok) {
   ok('...ordered by message id, newest first', tg.idsDescending);
   ok('...with unique, content-derived row keys', tg.uniqueKeys, `${tg.count} keys`);
 
-  // THE CENTRAL HONESTY CHECK FOR THIS FEED. The route publishes no time, so there must be no time
-  // column at all — a column of em dashes would say "we asked and were refused", when the truth is
-  // that this disclosure does not answer the question.
-  ok('this feed publishes no post times, and every post says so', tg.publishesTime === false && tg.noPublishedAt);
-  ok('...so the table carries NO time column rather than a column of dashes',
-    !tg.heads.some((h) => /time|date|when|posted/i.test(h)), tg.heads.join(' | ') || '(no heads)');
-  ok('...and the absence is stated in words, not left to be inferred',
-    /publishes no post times/i.test(tg.description) && /publishes none/i.test(tg.footnotes),
-    tg.description.slice(0, 90));
-  ok('...and our own first-seen time is never drawn as the post\'s time', tg.firstSeenNotDrawn !== false);
-
-  // Coverage, so a batch of caption-less broker PDFs cannot read as a quiet channel.
-  // THE THREE STATES, KEPT APART. `unreadable` mixes the channel's caption-less documents with ids
-  // OUR run could not fetch, and the second is not the channel's silence. The footnote says which,
-  // in both directions — the zero case is a claim too.
-  ok('...and separates our own fetch failures from the channel having nothing to say',
-    tg.pending > 0
-      ? /are ours rather than the channel/i.test(tg.footnotes)
-      : /None of them is the third kind/i.test(tg.footnotes),
-    `pending=${tg.pending}`);
-  ok('the footnote accounts for the ids this route could not read',
-    /Coverage: this capture spans message/i.test(tg.footnotes) && /without a caption/i.test(tg.footnotes),
-    tg.footnotes.slice(0, 150));
-  // The coverage figures are DERIVED from the capture's own span, so they must reconcile exactly —
-  // a tally carried across runs could not, which is why it is not one.
-  ok('...and the coverage figures reconcile with the span exactly',
-    tg.span === tg.spanTo - tg.spanFrom + 1 && tg.readable + tg.unreadable === tg.span && tg.readable === tg.count,
-    `${tg.readable} readable + ${tg.unreadable} unreadable = ${tg.span} ids (${tg.spanFrom}..${tg.spanTo})`);
-
+  ok('Telegram renders a source publication date column', tg.heads.some((h) => /Published/.test(h)));
+  ok('the description explains source publication dates', /original publication dates/i.test(tg.description));
+  ok('collector time is not rendered as publication time', tg.firstSeenNotDrawn !== false);
+  ok('history and retry coverage are stated', /history/i.test(tg.footnotes) && /awaiting retry/i.test(tg.footnotes));
+  ok('archive coverage reconciles', tg.readable + tg.unreadable === tg.span && tg.readable === tg.count);
   ok('the Telegram status label is passive and opens no explainer',
     tg.pillTag === 'SPAN' && tg.modalsOpen === 0, tg.pill);
   // THE CENTRAL CLAIM CHECK FOR THIS LABEL. `capturedAt` moves when the CHANNEL posts, not when
   // the job last looked, so nothing here may wear the word that means "confirmed just now".
   ok('...and never claims to be Live, which this feed cannot know',
     !/\bLive\b/i.test(tg.pill) && !/\bLive\b/i.test(tg.pillState), tg.pill);
-  ok('...it says the capture time is the newest POST, not the last check',
-    /newest post/i.test(tg.footnotes) && /not.*when the job last looked/i.test(tg.footnotes),
-    tg.footnotes.slice(-160));
+  ok('publication and collection times are distinguished', /collection and first-seen times are separate/i.test(tg.footnotes));
 }
 
 // GREEN IS A CLAIM ABOUT DATA, so the threshold is asserted directly at both sides. The shipped

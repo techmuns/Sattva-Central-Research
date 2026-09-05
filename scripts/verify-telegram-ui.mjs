@@ -65,21 +65,22 @@ assert(/CACHE_NAME = `\$\{CACHE_PREFIX\}[^`]+`/.test(sw), 'sw.js no longer decla
 // text) so the coverage arithmetic is exercised rather than trivially satisfied.
 // ---------------------------------------------------------------------------------------
 const capturedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-const post = (id, text) => ({ id, text, url: `https://t.me/researchreportss/${id}`, publishedAt: null, firstSeenAt: capturedAt });
+const post = (id, text) => ({ id, text, url: `https://t.me/researchreportss/${id}`, publishedAt: '2026-05-13T10:57:05.000Z', firstSeenAt: capturedAt });
 const capture = {
   source: 't.me public channel pages',
   channel: 'researchreportss',
   channelUrl: 'https://t.me/researchreportss',
-  route: 'permalink',
-  publishesTime: false,
+  schemaVersion: 2, route: 'embed+permalink',
+  publishesTime: true, lastCheckedAt: capturedAt, historyNextId: 490,
+  lastRun: { status: 'ok' },
   capturedAt,
   headId: 500, lowestId: 491, spanFrom: 491, spanTo: 500, walkedFrom: 491,
-  lastRun: { scanned: 10, readable: 7, unreadable: 3, errors: 0 },
+
   retryIds: [],
   posts: [
-    post(500, 'Broker A sees 30% UPSIDE in Company One - a note'),
-    post(499, 'Broker B on Company Two - visit note'),
-    post(498, 'Broker C sector update'),
+    post(500, 'Broker A sees 30% UPSIDE in Company One - a note <img src=x onerror=alert(1)>'),
+    { ...post(499, null), contentStatus: 'telegram-only', attachments: [] },
+    { ...post(498, null), mediaType: 'document', attachments: [{ type: 'document', name: 'Broker C sector update.pdf', size: '2 MB' }] },
     post(496, 'Broker D on Company Four'),
     post(495, 'Broker E results preview'),
     post(493, 'Broker F initiates coverage'),
@@ -99,6 +100,7 @@ window.renderScope=(scope)=>{const root=document.querySelector('#content-host');
 window.renderScope('universe');
 </script></body></html>`;
 
+let servedCapture = capture;
 const TYPES = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 const server = createServer((request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
@@ -106,7 +108,7 @@ const server = createServer((request, response) => {
   if (pathname === '/') { response.setHeader('content-type', 'text/html'); response.end(html); return; }
   if (pathname === '/data/telegram-posts.json') {
     response.setHeader('content-type', 'application/json');
-    response.end(JSON.stringify(capture));
+    response.end(JSON.stringify(servedCapture));
     return;
   }
   try {
@@ -151,7 +153,8 @@ try {
       drawn: host.querySelectorAll('[data-chatter-panel="telegram"] tbody tr').length,
       descending: ids.every((id, i) => i === 0 || ids[i - 1] > id),
       unique: new Set(keys).size === keys.length,
-      allNullTimes: t.posts().every((r) => r.publishedAt === null),
+      actualTimes: t.posts().every((r) => r.publishedAt === '2026-05-13T10:57:05.000Z'),
+      hidden: t.posts().filter((r) => r.contentStatus === 'telegram-only').length,
       starIsButton: !!host.querySelector('[data-chatter-panel="telegram"] tbody tr button[data-watch]'),
       footnotes: host.querySelector('[data-telegram-footnotes]')?.textContent.replace(/\s+/g, ' ') || '',
       description: host.querySelector('p')?.textContent.replace(/\s+/g, ' ') || '',
@@ -164,18 +167,51 @@ try {
   assert.equal(view.drawn, 7, 'and every one of them is drawn');
   assert(view.descending, 'ordered by message id, newest first');
   assert(view.unique, 'row keys are unique');
-  assert.equal(view.publishesTime, false);
-  assert(view.allNullTimes, 'this route publishes no post times, so every post carries none');
-  // THE CENTRAL CHECK. A column of em dashes would say "we asked and were refused"; the honest
-  // statement is that this disclosure does not answer the question, so there is no column at all.
-  assert(!view.heads.some((h) => /time|date|when|posted/i.test(h)), `no time column, got: ${view.heads.join(' | ')}`);
-  assert(/publishes no post times/i.test(view.description), 'the absence is stated in words');
-  // Coverage is derived from the span, so it must reconcile exactly: 10 ids, 7 readable, 3 not.
+  assert.equal(view.publishesTime, true);
+  assert(view.actualTimes, 'source dates survive normalisation');
+  assert.equal(view.hidden, 1, 'a confirmed hidden post stays in the table');
+  assert(view.heads.includes('Published (IST)'));
+  assert(/original publication dates/i.test(view.description));
   assert.equal(view.span, 10);
   assert.equal(view.readable, 7);
   assert.equal(view.unreadable, 3);
-  assert(/spans message/i.test(view.footnotes) && /without a caption/i.test(view.footnotes), 'coverage is stated');
-  assert(/None of them is the third kind/i.test(view.footnotes), 'our own fetch failures are separated from the channel having nothing to say');
+  assert(/Older history.*automatically/i.test(view.footnotes));
+  assert(/awaiting retry/i.test(view.footnotes));
+  assert(/Checked/i.test(view.pill), 'collector success time is visible');
+  assert(await page.locator('[data-chatter-panel="telegram"]').innerText().then((t) => t.includes('13 May 2026')));
+  const search = page.locator('[data-chatter-panel="telegram"] [data-table-search]');
+  assert.equal(await search.getAttribute('placeholder'), 'Search posts, reports or message number…');
+  await search.fill('499');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1);
+  await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').click();
+  await page.waitForSelector('[data-telegram-post-dialog]');
+  assert((await page.locator('[data-telegram-post-dialog]').innerText()).includes('does not expose its text'));
+  assert.equal(await page.locator('[data-telegram-post-dialog] a').getAttribute('href'), 'https://t.me/researchreportss/499');
+  await page.locator('[data-telegram-post-dialog] [data-modal-close]').click();
+  await search.fill('sector update.pdf');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1, 'attachment filenames are searchable');
+  await search.fill('500');
+  await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').click();
+  assert.equal(await page.locator('[data-telegram-post-dialog] img').count(), 0, 'source markup remains escaped text');
+  assert((await page.locator('[data-telegram-post-dialog]').innerText()).includes('<img src=x'));
+  await page.locator('[data-telegram-post-dialog] [data-modal-close]').click();
+  await search.fill('');
+  if (process.env.EXCELJS_ROOT) {
+    await page.addScriptTag({ path: `${process.env.EXCELJS_ROOT}/dist/exceljs.min.js` });
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('[data-chatter-panel="telegram"] [data-table-export]').click(),
+    ]);
+    const ExcelJS = (await import(`${process.env.EXCELJS_ROOT}/excel.js`)).default;
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(await download.path());
+    const sheet = workbook.getWorksheet('Telegram');
+    assert.equal(sheet.rowCount, 9, 'headers + provenance + seven posts');
+    assert.equal(sheet.getCell('C3').value, '2026-05-13T10:57:05.000Z');
+    assert.equal(sheet.getCell('G3').value, capturedAt, 'collector time is a separate column');
+    assert.equal(sheet.getCell('A4').value, 'Content available in Telegram');
+    assert.equal(sheet.getCell('E5').value, 'Broker C sector update.pdf');
+  }
   // `capturedAt` moves when the CHANNEL posts, not when the job ran, so the label may not claim it.
   assert(!/\bLive\b/i.test(view.pill), `the status label must not claim Live, got: ${view.pill}`);
   assert.equal(view.pillTag, 'SPAN', 'the status label is passive');
@@ -204,8 +240,20 @@ try {
   const watchRows = await page.$$eval('[data-chatter-panel="telegram"] tbody tr', (r) => r.length);
   assert.equal(watchRows, 7, 'an empty watchlist neither hides the section nor narrows it');
 
+  servedCapture = { ...capture, lastRun: { status: 'failed', error: 'upstream unavailable' } };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  await page.waitForFunction(() => document.querySelector('[data-telegram-live]')?.textContent.includes('needs attention'));
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7, 'source failures retain the archive');
+  servedCapture = { ...capture, posts: [] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7, 'empty refresh retains last-good rows');
+  servedCapture = { error: 'malformed response' };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7, 'malformed refresh cannot erase last-good rows');
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);
-  console.log('PASS telegram section: module graph reachable, three sections without the chatter feed, no time column, coverage reconciled, no Live claim, freshness boundaries, empty-watchlist scope');
+  console.log('PASS telegram section: module graph reachable, three sections without the chatter feed, source dates, restricted content, filenames, modal, retained failed refresh, empty-watchlist scope and mobile');
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));
