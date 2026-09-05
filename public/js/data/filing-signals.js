@@ -11,7 +11,7 @@ const signal = (direction, importance, signalReason, importanceReason) => ({
 
 const textOf = (...parts) => parts.filter(Boolean).join(' ').toLowerCase();
 
-/** Conservative, visible rules over BSE's title/taxonomy. Neutral is the deliberate fallback. */
+/** Shared rules over the exchanges' own subject/taxonomy. Neutral is the fallback. */
 export function announcementSignal(row = {}) {
   const text = textOf(row.category, row.subCategory, row.title, row.headline, row.description);
   const negative = [
@@ -52,12 +52,11 @@ export function announcementSignal(row = {}) {
   // certain in a way a name-matched search result never is.
   const reading = classifyStory({ title: row.title || row.headline, summary: textOf(row.subCategory, row.description) });
 
-  // ONE PREDICATE, THREE STATED INPUTS — not two rules over one question. See
-  // BSE_CRITICAL_IS_MATERIAL above for why their flag is reproduced but does not gate this.
-  // Measured: this takes high importance from 1,271 of 3,942 filings (32%) to 446 (11%).
-  const researchDisclosure = /\b(?:analyst|investor|capital markets?)[ -]+day\b/.test(text)
+  // Explicit research disclosures extend the topic/directional rules. Generic meeting
+  // intimations and exchange calendar flags alone remain routine.
+  const researchDisclosure = /\b(?:analysts?|investors?|capital markets?)[ -]+day\b/.test(text)
     ? 'analyst or investor day disclosure'
-    : /\b(?:investor|analyst|investor relations|corporate)[ -]+presentation\b/.test(text)
+    : /\b(?:investors?|analysts?|investor relations|corporate)[ -]+presentation\b|\b(?:analysts?|investors?)\b[^.!?]{0,60}\bpresentation\b|\bpresentation\b[^.!?]{0,40}\b(?:analysts?|investors?)\b/.test(text)
       ? 'investor presentation' : null;
   const critical = row.critical === true;
   const high = reading.tracked || !!matched || !!researchDisclosure || (BSE_CRITICAL_IS_MATERIAL && critical);

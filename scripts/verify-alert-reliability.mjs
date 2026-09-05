@@ -33,7 +33,7 @@ assert.equal(rank([{ ...story, importance: 'low' }], '2026-09-05').cards.length,
 assert.equal(rank([{ ...story, aiEligible: false }]).cards.length, 0, 'uncertain or context-only news never bypasses eligibility');
 assert.equal(rank([{ ...story, day: '2026-09-31' }], '2026-10-01').cards.length, 0, 'invalid source dates cannot manufacture a material alert');
 
-for (const title of ['Analyst Day presentation', 'Investor Presentation', 'Capital Markets Day disclosure']) {
+for (const title of ['Analyst Day presentation', 'Investor Presentation', 'Capital Markets Day disclosure', 'Analysts / Institutional Investor Meet: presentation', 'Presentation to analysts']) {
   const signal = announcementSignal({ title });
   assert.equal(signal.importance, 'high', title);
   assert.equal(signal.direction, 'neutral', 'disclosure is not a buy/sell inference');
