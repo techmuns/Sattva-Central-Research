@@ -173,7 +173,8 @@ async function performTick(poller) {
     if (!poller.synthetic) lastDataTick = poller.lastTick;
     for (const cb of poller.listeners) safeNotify(cb, data, null);
     for (const cb of globalTickListeners) safeNotify(cb, lastGlobalTick);
-    return { id: poller.id, checked: 1 };
+    return { id: poller.id, checked: data?.checked ?? 1, added: data?.added || 0,
+      partial: !!data?.partial, truncated: !!data?.truncated, pending: !!data?.pending };
   } catch (err) {
     poller.inFlight = false;
     poller.errorCount += 1;

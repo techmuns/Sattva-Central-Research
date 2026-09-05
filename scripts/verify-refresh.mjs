@@ -42,6 +42,8 @@ const b = live.refreshAll({ ids: ['wanted'] });
 assert.equal(ticks, 1); assert.equal(otherTicks, 0, 'refresh leaves unrelated sources on their cadence');
 poll.resolve();
 assert.equal((await a)[0].checked, 1); await b;
+live.register('wanted', { intervalMs: 60000, fetcher: () => ({ checked: 2, partial: true }) });
+assert.equal(refresh.resultLabel(refresh.summarize(await live.refreshAll({ ids: ['wanted'] }))), 'Partly refreshed', 'partial polling outcomes remain visible');
 live.register('wanted', { intervalMs: 60000, fetcher: () => { throw Error('Offline fixture'); } });
 const last = live.getLastDataTick();
 assert.equal((await live.refreshAll({ ids: ['wanted'] }))[0].failed, 1);
