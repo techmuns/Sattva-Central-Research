@@ -1,4 +1,4 @@
-// ui/source-beacon.js — "Data flowing in", the bottom-left source beacon.
+// ui/source-beacon.js — Research connections, the bottom-left source beacon.
 //
 // A small always-present launcher in the lower-left corner that opens a popover showing EVERY
 // source this dashboard reads, as one long vertical list, with the flow drawn converging into a
@@ -19,10 +19,8 @@
 //   1. NO FIGURE HERE IS TYPED. Every count is derived from `sourceGroups()` — the same registry
 //      the source modal is built from, called on each open, never hoisted. See the long note at
 //      the top of ui/sources.js for why that rule exists.
-//   2. GREEN IS A CLAIM AND IT IS WORDED AS A COUNT. The pill reads "<n> live feeds", which is a
-//      statement about how many sources are WIRED to a refreshing feed — a property of the
-//      plumbing, and exactly what `status: 'live'` means in the registry. It is never a bare
-//      "Live", which would read as "this was confirmed seconds ago" about data nobody checked.
+//   2. GREEN REQUIRES A RECENT SUCCESSFUL CHECK. The pill counts connected sources, separately
+//      from configured automatic feeds. Unknown, expired, partial and failed checks cannot pulse.
 //      The freshness claim is separate, dated, and comes from `live.getLastDataTick()` — the last
 //      time a poller actually confirmed something with a server. Before any poller has ticked it
 //      says so rather than borrowing the page-load time.
@@ -46,28 +44,10 @@ import { openTwitterSources } from './twitter-sources.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import * as ipoFilings from '../data/ipo-filings.js';
 import { ipoSourceGroup } from './ipo-sources.js';
+import { sourceConnection, sourceSummary } from './source-connections.js';
 
 const ROOT_ID = 'source-beacon-root';
 const PANEL_ID = 'source-beacon-panel';
-
-// The registry's five states, in the vocabulary the sources modal already uses. Emerald means a
-// feed refreshes on its own; nothing else is allowed to be green, because "green" on this
-// dashboard means data is arriving. On-demand is indigo — the brand/action colour — because it is
-// an action rather than a flow: nothing comes in until a reader asks for it.
-const STATUS = {
-  live: { label: 'Live', short: 'live feeds', cls: 'is-live' },
-  static: { label: 'Real · manual', short: 'refreshed by hand', cls: 'is-static' },
-  ondemand: { label: 'On demand', short: 'run on request', cls: 'is-ondemand' },
-  // A source this browser monitors that nothing has read yet — an X account added a minute ago.
-  // Amber, never emerald: green here means data is arriving, and none is until a run has reached it.
-  adding: { label: 'Adding…', short: 'being added', cls: 'is-mock' },
-  // The collector's own answer about an account, carried through rather than paraphrased.
-  unreadable: { label: 'Not found', short: 'could not be read', cls: 'is-unreadable' },
-  mock: { label: 'Mock data', short: 'placeholder', cls: 'is-mock' },
-  pending: { label: 'Not yet built', short: 'not built', cls: 'is-pending' },
-  partial: { label: 'Coverage gaps', short: 'with coverage gaps', cls: 'is-mock' },
-};
-const ORDER = ['live', 'static', 'ondemand', 'adding', 'unreadable', 'mock', 'pending', 'partial'];
 
 let rootEl = null;
 let open = false;
@@ -79,12 +59,10 @@ let offPortfolio = null;
 /** Reads the registry — never a cached copy of it — and reduces it to what this widget draws. */
 function readEstate() {
   const groups = sourceGroups();
-  const items = groups.flatMap((g) => g.items);
-  const counts = Object.fromEntries(ORDER.map((k) => [k, items.filter((i) => i.status === k).length]));
   // Derived, like everything else here: the tab list each group already names, de-duplicated.
   const tabs = new Set();
   groups.forEach((g) => String(g.tabs || '').split('·').forEach((t) => t.trim() && tabs.add(t.trim())));
-  return { groups, total: items.length, counts, tabs: tabs.size };
+  return { groups, ...sourceSummary(groups), tabs: tabs.size };
 }
 
 /** The last moment a poller actually confirmed something with a server, or null before any did. */
@@ -95,10 +73,10 @@ function confirmedAt() {
 
 function freshnessText() {
   const at = confirmedAt();
-  if (at) return `Last confirmed ${formatRelativeTime(at)}`;
+  if (at) return `Latest feed activity confirmed ${formatRelativeTime(at)}`;
   // NEVER `state.dataLoadedAt` dressed up as a confirmation — loading a committed file is not a
   // feed answering. Say which it was.
-  return state.dataLoadedAt ? 'Loaded from committed captures · no feed confirmed yet' : 'Waiting for the first feed';
+  return state.dataLoadedAt ? 'Research captures loaded · source checks shown below' : 'Connecting your research workspace';
 }
 
 /** True when the reader has asked the OS for less motion. See rule 4 in the header. */
@@ -200,24 +178,23 @@ function flowRail(estate) {
 // ---- The list --------------------------------------------------------------------------------
 
 function rowHtml(item, i) {
-  const s = STATUS[item.status] || STATUS.pending;
-  const label = item.readLabel || s.label;
-  const cls = item.readState ? (item.readState === 'read' ? 'is-live' : item.readState === 'unchecked' ? 'is-pending' : 'is-mock') : s.cls;
+  const { label, cls } = sourceConnection(item);
+  const attributes = `data-beacon-name="${escapeHtml(item.name)}"${item.readState ? ` data-beacon-read-state="${escapeHtml(item.readState)}"` : ''}`;
   if (item.details) {
     return `<li><details data-beacon-source="${escapeHtml(item.id)}" class="beacon-source-details">
-      <summary class="beacon-row ${cls}" aria-label="${escapeHtml(`${item.name}: ${item.readLabel}. Source details`)}">
+      <summary class="beacon-row ${cls}" ${attributes} aria-label="${escapeHtml(`${item.name}: ${label}. Source details`)}">
         <span class="beacon-dot" aria-hidden="true"></span>
         <span class="beacon-row-name">${escapeHtml(item.name)}</span>
-        <span class="beacon-row-status">${escapeHtml(item.readLabel)}</span>
+        <span class="beacon-row-status">${escapeHtml(label)}</span>
       </summary>
-      <div class="beacon-source-copy">${item.details.map((note) => `<p>${escapeHtml(note)}</p>`).join('')}</div>
+      <div class="beacon-source-copy">${[item.cadence, ...item.details].filter(Boolean).map((note) => `<p>${escapeHtml(note)}</p>`).join('')}</div>
     </details></li>`;
   }
   // `feeds` is trusted markup in the registry (it carries <strong>), so it is NOT dropped into a
   // title attribute raw — strip the tags and escape what is left. The cadence is the useful half.
   const detail = String(item.cadence || '').replace(/<[^>]*>/g, '');
   return `
-    <li class="beacon-row ${cls}"${item.id ? ` data-beacon-source="${escapeHtml(item.id)}"` : ''}${item.readState ? ` data-beacon-read-state="${escapeHtml(item.readState)}"` : ''} title="${escapeHtml(`${item.name} — ${label} · ${detail}`)}">
+    <li class="beacon-row ${cls}" ${attributes}${item.id ? ` data-beacon-source="${escapeHtml(item.id)}"` : ''} title="${escapeHtml(`${item.name} — ${label} · ${detail}`)}">
       <span class="beacon-dot" style="animation-delay:${((i % 9) * 0.23).toFixed(2)}s" aria-hidden="true"></span>
       <span class="beacon-row-name">${escapeHtml(item.name)}</span>
       <span class="beacon-row-status">${escapeHtml(label)}</span>
@@ -243,7 +220,7 @@ function listHtml(estate) {
             ${action}
           </div>
           <div class="beacon-group-tabs">${escapeHtml(g.tabs || '')}</div>
-          ${g.notes ? `<details class="beacon-group-details" data-beacon-notes="${escapeHtml(g.id)}"><summary>Coverage &amp; refresh details</summary><div class="beacon-source-copy">${g.notes.map((note) => `<p>${escapeHtml(note)}</p>`).join('')}</div></details>` : ''}
+          ${g.notes ? `<details class="beacon-group-details" data-beacon-notes="${escapeHtml(g.id)}"><summary>Connection &amp; coverage details</summary><div class="beacon-source-copy">${g.notes.map((note) => `<p>${escapeHtml(note)}</p>`).join('')}</div></details>` : ''}
           <ul class="beacon-rows">${rows}</ul>
         </li>`;
     })
@@ -251,8 +228,9 @@ function listHtml(estate) {
 }
 
 function legendHtml(estate) {
-  return ORDER.filter((k) => estate.counts[k] > 0)
-    .map((k) => `<span class="beacon-legend-item ${STATUS[k].cls}"><span class="beacon-dot beacon-dot-static" aria-hidden="true"></span>${estate.counts[k]} ${escapeHtml(STATUS[k].short)}</span>`)
+  return [[estate.connected, 'connected', 'is-live'], [estate.automatic, 'automatic feeds', 'is-scheduled'],
+    [estate.onRequest, 'on request', 'is-ondemand'], [estate.reference, 'reference & computed', 'is-static']]
+    .filter(([n]) => n > 0).map(([n, label, cls]) => `<span class="beacon-legend-item ${cls}"><span class="beacon-dot beacon-dot-static" aria-hidden="true"></span>${n} ${escapeHtml(label)}</span>`)
     .join('');
 }
 
@@ -262,12 +240,12 @@ function panelHtml() {
     <section id="${PANEL_ID}" class="beacon-panel" role="dialog" aria-label="Data sources feeding this dashboard" tabindex="-1">
       <header class="beacon-panel-head">
         <div class="beacon-panel-titles">
-          <h2 class="beacon-panel-title">Data flowing in</h2>
+          <h2 class="beacon-panel-title">Research connections</h2>
           <p class="beacon-panel-sub" data-beacon-fresh>${escapeHtml(freshnessText())}</p>
         </div>
-        <span class="beacon-live-pill" title="How many of the sources below are wired to a feed that refreshes on its own. It counts the plumbing, not the age of any one figure — the line beneath says when a feed last confirmed anything.">
+        <span class="beacon-live-pill" title="Connected counts only sources with a recent successful check. Scheduled sources and retained copies are labelled separately.">
           <span class="beacon-live-dot" aria-hidden="true"></span>
-          ${estate.counts.live} live feeds
+          <span data-beacon-connected>${estate.connected} connected</span>
         </span>
         <button type="button" class="beacon-close" data-beacon-close aria-label="Close data sources">&times;</button>
       </header>
@@ -281,7 +259,7 @@ function panelHtml() {
 
       <footer class="beacon-panel-foot">
         <div class="beacon-legend">${legendHtml(estate)}</div>
-        <p class="beacon-foot-note">Field-level shapes, units and cadences live in <code>docs/DATA-CONTRACTS.md</code>.</p>
+        <p class="beacon-foot-note">Automatic checks keep research moving. Expand a source for its latest check and coverage details.</p>
       </footer>
     </section>`;
 }
@@ -293,8 +271,8 @@ function launcherHtml(estate) {
       title="See every source this dashboard reads">
       <span class="beacon-mark" aria-hidden="true">SC</span>
       <span class="beacon-launcher-text">
-        <span class="beacon-launcher-line" data-beacon-launch-count>${estate.counts.live} live feeds</span>
-        <span class="beacon-launcher-sub">${estate.total} data sources</span>
+        <span class="beacon-launcher-line" data-beacon-launch-count>${estate.total} research sources</span>
+        <span class="beacon-launcher-sub" data-beacon-launch-sub>${estate.automatic} automatic feeds</span>
       </span>
       <span class="beacon-live-dot beacon-live-dot-sm" aria-hidden="true"></span>
     </button>`;
@@ -394,9 +372,41 @@ function refreshPortfolioStatus() {
   const source = portfolioSource();
   row.dataset.beaconReadState = source.readState;
   row.classList.toggle('is-live', source.readState === 'read');
-  row.classList.toggle('is-mock', source.readState !== 'read');
+  row.classList.toggle('is-saved', source.readState !== 'read');
   row.querySelector('.beacon-row-status').textContent = source.readLabel;
   row.title = `${source.name} — ${source.readLabel} · ${source.cadence}`;
+}
+
+// Update connection state in place, without resetting expanded details, focus, scroll or motion.
+function refreshConnections() {
+  if (!rootEl) return;
+  const estate = readEstate();
+  rootEl.classList.toggle('has-connection', estate.connected > 0 && navigator.onLine !== false);
+  const count = rootEl.querySelector('[data-beacon-launch-count]');
+  if (count) count.textContent = `${estate.total} research sources`;
+  const sub = rootEl.querySelector('[data-beacon-launch-sub]');
+  if (sub) sub.textContent = `${estate.automatic} automatic feeds`;
+  const connected = rootEl.querySelector('[data-beacon-connected]');
+  if (connected) connected.textContent = `${estate.connected} connected`;
+  const items = new Map(estate.groups.flatMap(g => g.items).map(i => [i.name, i]));
+  for (const row of rootEl.querySelectorAll('[data-beacon-name]')) {
+    const item = items.get(row.dataset.beaconName);
+    if (!item) continue;
+    const connection = sourceConnection(item);
+    for (const cls of ['is-live', 'is-static', 'is-scheduled', 'is-saved', 'is-ondemand', 'is-mock', 'is-unreadable', 'is-pending']) row.classList.remove(cls);
+    row.classList.add(connection.cls);
+    row.querySelector('.beacon-row-status').textContent = connection.label;
+    if (item.readState) row.dataset.beaconReadState = item.readState;
+    if (row.tagName === 'SUMMARY') {
+      row.setAttribute('aria-label', `${item.name}: ${connection.label}. Source details`);
+      const copy = row.parentElement.querySelector('.beacon-source-copy');
+      if (copy && item.details) copy.innerHTML = [item.cadence, ...item.details].filter(Boolean).map(note => `<p>${escapeHtml(note)}</p>`).join('');
+    } else {
+      row.title = `${item.name} — ${connection.label} · ${item.cadence || ''}`;
+    }
+  }
+  const legend = rootEl.querySelector('.beacon-legend');
+  if (legend) legend.innerHTML = legendHtml(estate);
 }
 
 function focusGroup(id) {
@@ -420,26 +430,24 @@ export function openBeacon({ group } = {}) {
   // The launcher's own count is re-read on every open for the same reason the panel's is: it is a
   // measurement, and a measurement that is only taken once is the bug this registry was rewritten
   // to remove.
-  const estate = readEstate();
-  const count = rootEl.querySelector('[data-beacon-launch-count]');
-  if (count) count.textContent = `${estate.counts.live} live feeds`;
+  refreshConnections();
 
   // Only the one line moves, never the panel: a full repaint would restart every animation in it.
   clock = setInterval(() => {
     const el = rootEl?.querySelector('[data-beacon-fresh]');
     if (el) el.textContent = freshnessText();
     // Age is recomputed even without a successful network response. Preserve disclosure state.
-    if (open) { refreshIpoDetails(); refreshPortfolioStatus(); }
+    if (open) { refreshIpoDetails(); refreshPortfolioStatus(); refreshConnections(); }
   }, 15000);
 
   document.addEventListener('click', onDocClick, true);
   // Adding or removing an X account changes this panel's rows and every count in its header, and
   // that happens in a modal on top of it. Repaint on the change rather than on a timer.
   offHandles = twitterHandles.onChange(() => {
-    if (open) paintPanel();
+    if (open) { paintPanel(); refreshConnections(); }
   });
-  offIpos = ipoFilings.onChange(() => { if (open) refreshIpoDetails(); });
-  offPortfolio = coverage.onChange(() => { if (open) refreshPortfolioStatus(); });
+  offIpos = ipoFilings.onChange(() => { if (open) { refreshIpoDetails(); refreshConnections(); } });
+  offPortfolio = coverage.onChange(() => { if (open) { refreshPortfolioStatus(); refreshConnections(); } });
 }
 
 export function close() {
@@ -477,12 +485,22 @@ export function mount() {
   rootEl.className = 'beacon-root';
 
   rootEl.innerHTML = `<div data-beacon-panel-host></div>${launcherHtml(readEstate())}`;
+  refreshConnections();
   rootEl.querySelector('[data-beacon-toggle]').addEventListener('click', () => (open ? close() : openBeacon()));
   document.addEventListener('keydown', onKey);
+  // The closed launcher must age and lose its pulse when offline too; opening the panel is not
+  // what makes a source check fresh. These listeners perform no network reads.
+  const statusClock = setInterval(refreshConnections, 60000);
+  const offTick = live.onGlobalTick(refreshConnections);
+  window.addEventListener('offline', refreshConnections);
+  window.addEventListener('online', refreshConnections);
 
   return () => {
     close();
     document.removeEventListener('keydown', onKey);
+    clearInterval(statusClock); offTick();
+    window.removeEventListener('offline', refreshConnections);
+    window.removeEventListener('online', refreshConnections);
     rootEl?.remove();
     rootEl = null;
   };

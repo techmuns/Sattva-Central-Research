@@ -28,7 +28,7 @@ export function ipoSourceGroup(meta = feed.meta(), now = Date.now()) {
       const stale = ipoSourceIsStale(source, now);
       const readState = !source ? 'unchecked' : source.status !== 'ok' ? 'unavailable'
         : !meta.loaded || meta.liveFailed ? 'unconfirmed' : stale ? 'dated' : source.unmapped ? 'partial' : 'read';
-      const readLabel = { unchecked: 'Not checked', unavailable: 'Unavailable', unconfirmed: 'Unconfirmed', dated: 'Dated', partial: 'Partial', read: source?.delivery === 'scheduled' ? 'Collected' : 'Read' }[readState];
+      const readLabel = { unchecked: 'Ready to check', unavailable: 'Connection paused', unconfirmed: 'Saved copy', dated: 'Refresh due', partial: 'Partial coverage', read: 'Connected' }[readState];
       const details = [
         source ? `Last check: ${stamp(source.checkedAt)}.` : 'Open IPOs to check this source. No source read has completed in this session.',
         ...(source?.status === 'ok' && Number.isFinite(source.count) ? [`${source.count.toLocaleString('en-IN')} documents in the last successful response.`] : []),

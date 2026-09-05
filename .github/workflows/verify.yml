@@ -31,6 +31,8 @@ jobs:
         run: node scripts/verify-portfolio-news-discovery.mjs && node scripts/verify-news-country.mjs && python3 scripts/verify-twitter-search.py
       - name: Verify public TradingView ingestion and automatic portfolio membership
         run: node scripts/verify-tradingview-news.mjs && node scripts/verify-continuous-news.mjs
+      - name: Verify source connections and scheduled pipeline health
+        run: node scripts/verify-source-connections.mjs && node scripts/verify-workflow-health.mjs
       - name: Verify research and portfolio evidence
         run: node scripts/verify-research.mjs
       - name: Verify private portfolio bridge
@@ -147,3 +149,7 @@ jobs:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
           EXCELJS_ROOT: ${{ runner.temp }}/family-browser/node_modules/exceljs
         run: node scripts/verify-ipo-monitor-ui.mjs
+      - name: Verify source inventory, connection states, offline pulse and mobile layout
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-source-connections-ui.mjs

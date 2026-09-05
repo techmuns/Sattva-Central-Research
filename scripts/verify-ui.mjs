@@ -2973,8 +2973,8 @@ const sources = await page.evaluate(async () => {
   return el.innerText;
 });
 ok('the source registry lists the live published-results feed without naming the provider',
-  /live published-results feed/i.test(sources) && !/money\s*control/i.test(sources));
-ok('...and distinguishes real document access from unavailable consensus', /Screener.in — company filings/.test(sources) && /Analyst consensus estimates/.test(sources) && /Not connected/.test(sources) && !/gen-mock-earnings/.test(sources));
+  /live published-results feed/i.test(sources) && !/Moneycontrol — results/i.test(sources));
+ok('...and lists implemented document and news sources without roadmap-only consensus', /Screener.in — company filings/.test(sources) && /TradingView — portfolio headlines/.test(sources) && !/Analyst consensus estimates/.test(sources) && !/gen-mock-earnings/.test(sources));
 
 // NO FIGURE IN THE SOURCES MODAL MAY BE TYPED BY HAND. Every count in it used to be the number
 // that was true the day the sentence was written — "1,319 companies in the current pull", "877 in
@@ -6750,12 +6750,13 @@ console.log('\n— source beacon —');
     !!launcher && launcher.left < 40 && launcher.bottom < 40 && !launcher.inHeader,
     launcher ? `left ${launcher.left}, bottom ${launcher.bottom}` : 'no launcher');
   ok('...and it counts wired feeds rather than claiming a bare "Live"',
-    !!launcher && /\d+ live feeds/.test(launcher.text) && !/^\s*Live\s*$/.test(launcher.text), launcher?.text || '');
+    !!launcher && /\d+ research sources/.test(launcher.text) && !/^\s*Live\s*$/.test(launcher.text), launcher?.text || '');
 
   await page.locator('[data-beacon-toggle]').click();
   await page.waitForTimeout(450);
   const panel = await evalSafe(async () => {
     const { sourceGroups } = await import('/js/ui/sources.js');
+    const { sourceSummary } = await import('/js/ui/source-connections.js');
     const groups = sourceGroups();
     const items = groups.flatMap((g) => g.items);
     const p = document.getElementById('source-beacon-panel');
@@ -6767,11 +6768,11 @@ console.log('\n— source beacon —');
       icons: [...p.querySelectorAll('.beacon-flow-icon')].map((n) => n.textContent),
       pill: p.querySelector('.beacon-live-pill')?.innerText.replace(/\s+/g, ' ').trim() || '',
       fresh: p.querySelector('[data-beacon-fresh]')?.textContent || '',
-      // A status word on a row: only the exceptions carry one.
+      // Every row distinguishes the connection from its scheduling configuration.
       labelled: [...p.querySelectorAll('.beacon-row')].filter((r) => (r.querySelector('.beacon-row-status')?.offsetParent) !== null).length,
       liveRows: p.querySelectorAll('.beacon-row.is-live').length,
       scrolls: (p.querySelector('.beacon-list')?.scrollHeight || 0) > (p.querySelector('.beacon-list')?.clientHeight || 0),
-      expected: { items: items.length, live: items.filter((i) => i.status === 'live').length, green: items.filter((i) => i.status === 'live' && (!i.readState || i.readState === 'read')).length, families: groups.length, icons: groups.map((g) => g.icon) },
+      expected: { items: items.length, connected: sourceSummary(groups).connected, families: groups.length, icons: groups.map((g) => g.icon) },
       // The core must sit ON the point every wire converges to, or the picture is of wires
       // arriving somewhere the dashboard is not.
       aligned: (() => {
@@ -6789,15 +6790,14 @@ console.log('\n— source beacon —');
   ok('the panel lists every source in the registry', !!panel && panel.rows === panel.expected.items,
     panel ? `${panel.rows} rows of ${panel.expected.items} registered` : 'no panel');
   ok('...as one long vertical column that scrolls', !!panel && panel.scrolls);
-  ok('...and its live count is read from the registry, not typed',
-    !!panel && panel.pill === `${panel.expected.live} live feeds` && panel.liveRows === panel.expected.green,
-    panel ? `${panel.pill} vs ${panel.expected.live} live in the registry` : '');
-  // ONLY THE EXCEPTIONS ARE LABELLED, which is what makes mock and manual legible at a glance.
-  ok('...with a status word on every non-green row, including unconfirmed IPO reads',
-    !!panel && panel.labelled === panel.expected.items - panel.expected.green,
-    panel ? `${panel.labelled} labelled, ${panel.expected.items - panel.expected.green} not green` : '');
+  ok('...and its connected count uses verified checks, not configured schedules',
+    !!panel && panel.pill === `${panel.expected.connected} connected` && panel.liveRows === panel.expected.connected,
+    panel ? `${panel.pill} vs ${panel.expected.connected} connected in the registry` : '');
+  ok('...with a status word on every source, including unconfirmed IPO reads',
+    !!panel && panel.labelled === panel.expected.items,
+    panel ? `${panel.labelled} labelled, ${panel.expected.items} registered` : '');
   ok('...and a freshness line that is a separate, dated claim from the pill',
-    !!panel && /(Last confirmed|committed captures|Waiting for)/.test(panel.fresh), panel?.fresh || '');
+    !!panel && /(Latest feed activity|Research captures|Connecting your)/.test(panel.fresh), panel?.fresh || '');
   // ONE WIRE PER FAMILY. A fixed decorative count would be a picture making a claim of its own.
   ok('the diagram draws one wire per source family, carrying that family\'s own icon',
     !!panel && panel.wires === panel.expected.families && panel.icons.join('') === panel.expected.icons.join(''),
