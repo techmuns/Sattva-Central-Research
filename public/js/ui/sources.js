@@ -423,7 +423,12 @@ export function sourceGroups() {
             `${clause(tgUnreadable, ' &mdash; <n> of the ids reached were of that kind and are counted rather than guessed at')}. ` +
             `Read by a scheduled Action and committed; the browser reads the file with one conditional GET${clause(tg, ', <n> posts in the capture now')}.`,
           cadence: 'Every 2 hours · GitHub Actions · no credential required',
-          status: tgMeta?.ok ? 'live' : 'pending',
+          // `live` describes the PLUMBING — this feed is wired to a scheduled job that refreshes
+          // it — exactly as it does for every other row here. It must NOT be derived from
+          // `meta().ok`, which only says whether THIS BROWSER has loaded the module: the reader is
+          // on another tab nine times out of ten, Public Chatter has not mounted, and the registry
+          // would report a healthy committed feed as `pending`, which means "not built".
+          status: 'live',
           file: 'public/data/telegram-posts.json · scripts/scrape-telegram.mjs',
         },
         {

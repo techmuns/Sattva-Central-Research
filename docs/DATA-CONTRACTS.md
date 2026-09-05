@@ -2913,7 +2913,8 @@ pages are public, so there is no secret to install and none to expire.
   "publishesTime": false,      // read by the UI rather than assumed — see below
   "capturedAt": "2026-09-05T10:00:00Z",   // when the channel was last read AND something changed
   "headId": 7540,              // the highest message id seen; where the next run starts
-  "lowestId": 7220,
+  "lowestId": 7220,            // the oldest post KEPT, after the KEEP cap
+  "walkedFrom": 7140,          // the oldest id ever WALKED — what a backfill resumes from
   // COVERAGE IS DERIVED FROM THE SPAN, NEVER FROM A TALLY. These are the lowest and highest
   // message ids the capture holds; everything between them that is not a post is an id this route
   // could not read. A running tally could not answer this honestly across runs — an hourly
@@ -2991,8 +2992,8 @@ a deleted message**, so it claims neither and reports both together as ids it co
 on the filings snapshots.
 
 **Nothing is scored, ranked, summarised, sentiment-tagged or mapped to a company.** A channel post
-is somebody's own words, reproduced. `line-clamp` shortens what is DRAWN; search and export see
-every word. **The pump-risk heuristic stays deleted** — its gate is calibrated for a firehose, and
+is somebody's own words, reproduced. The table truncates the text to one line at a fixed width and
+carries the whole post in the cell's tooltip; search and export see every word either way. **The pump-risk heuristic stays deleted** — its gate is calibrated for a firehose, and
 running it here would return "Clear" for every row, which is a fabricated clean bill of health
 rather than a real one.
 
@@ -3005,10 +3006,21 @@ on screen rather than left as a silent inconsistency.
 end and the LENGTH DOES NOT MOVE — "did anything arrive" is answered by comparing id sets, never by
 counting. `refresh()` returns the arrived ids for that reason.
 
-**The capture is rewritten only when a post arrives**, so `capturedAt` is the age of the newest post
-found and not of the last check — which is why the status label's threshold is 24 hours, read from
-the data rather than from the cron. A run that finds nothing exits **2**, leaves the file untouched
-and is a notice rather than a red build.
+**The capture is rewritten only when a post arrives**, so `capturedAt` says when the channel last
+said something this route could read — **not** when the job last looked. Nothing in the committed
+file can answer the second question, because a run that finds nothing exits **2** and leaves the
+file untouched (a notice, not a red build). **The status label therefore never says "Live"**: that
+word claims the data was confirmed recently, and reading `capturedAt` as freshness gets it wrong in
+both directions — a quiet weekend would turn it amber over data checked twenty minutes ago, and a
+job that died a week ago would keep it green until its last capture aged out. The label states what
+is actually known — when the newest post it holds was captured — and past three days says the
+capture has not changed since then and that it cannot tell a quiet channel from a stopped job.
+
+**`walkedFrom` is not `lowestId`.** The first is how far down the channel the walk has actually
+been; the second is the oldest post still *kept* after the `KEEP` cap. Backfill resumes from
+`walkedFrom`, because resuming from `lowestId` re-read ids below the cap on every run, found real
+posts, and then sliced every one of them away — reporting them as arrivals each time. Widening
+history is a change to `TELEGRAM_KEEP`, not a longer walk.
 
 **Wiring another channel.** `TELEGRAM_CHANNEL` selects it (validated against Telegram's own rule for
 a public username, 5–32 of `[A-Za-z0-9_]`, because the value reaches a URL). A capture for a

@@ -3855,6 +3855,13 @@ if (!tg?.ok) {
 
   ok('the Telegram status label is passive and opens no explainer',
     tg.pillTag === 'SPAN' && tg.modalsOpen === 0, tg.pill);
+  // THE CENTRAL CLAIM CHECK FOR THIS LABEL. `capturedAt` moves when the CHANNEL posts, not when
+  // the job last looked, so nothing here may wear the word that means "confirmed just now".
+  ok('...and never claims to be Live, which this feed cannot know',
+    !/\bLive\b/i.test(tg.pill) && !/\bLive\b/i.test(tg.pillState), tg.pill);
+  ok('...it says the capture time is the newest POST, not the last check',
+    /newest post/i.test(tg.footnotes) && /not.*when the job last looked/i.test(tg.footnotes),
+    tg.footnotes.slice(-160));
 }
 
 // GREEN IS A CLAIM ABOUT DATA, so the threshold is asserted directly at both sides. The shipped
@@ -3867,9 +3874,9 @@ const tgFresh = await evalSafe(async () => {
   const at = (h) => new Date(now - h * 3600 * 1000).toISOString();
   return {
     fresh: tab.telegramFreshness(at(1), now).state,
-    justInside: tab.telegramFreshness(at(23), now).state,
-    justOutside: tab.telegramFreshness(at(25), now).state,
-    week: tab.telegramFreshness(at(24 * 7), now).state,
+    justInside: tab.telegramFreshness(at(24 * 2), now).state,
+    justOutside: tab.telegramFreshness(at(24 * 4), now).state,
+    week: tab.telegramFreshness(at(24 * 14), now).state,
     none: tab.telegramFreshness(null, now).state,
     rubbish: tab.telegramFreshness('not a date', now).state,
   };
@@ -3877,11 +3884,11 @@ const tgFresh = await evalSafe(async () => {
 if (!tgFresh) {
   ok('the Telegram freshness rule is exported for direct assertion', false, 'telegramFreshness is not exported from js/tabs/public-chatter.js');
 } else {
-  ok('a 1-hour-old Telegram capture reads live', tgFresh.fresh === 'live', tgFresh.fresh);
-  ok('...23 hours still reads live', tgFresh.justInside === 'live', tgFresh.justInside);
-  ok('...25 hours does not', tgFresh.justOutside === 'stale', tgFresh.justOutside);
-  ok('...a week does not', tgFresh.week === 'stale', tgFresh.week);
-  ok('...and no capture is a THIRD state, never live and never stale',
+  ok('a 1-hour-old Telegram capture reads as captured', tgFresh.fresh === 'captured', tgFresh.fresh);
+  ok('...two days still does', tgFresh.justInside === 'captured', tgFresh.justInside);
+  ok('...four days reads as unchanged instead', tgFresh.justOutside === 'unchanged', tgFresh.justOutside);
+  ok('...a fortnight does too', tgFresh.week === 'unchanged', tgFresh.week);
+  ok('...and no capture is a THIRD state, never either of those',
     tgFresh.none === 'unknown' && tgFresh.rubbish === 'unknown', `${tgFresh.none} / ${tgFresh.rubbish}`);
 }
 

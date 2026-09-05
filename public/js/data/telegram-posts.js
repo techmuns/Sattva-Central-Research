@@ -28,8 +28,8 @@
 //     market news merging on Moneycontrol's own article id rather than on a headline.
 //
 // A POST IS SOMEBODY'S OWN WORDS AND IS REPRODUCED, NEVER SUMMARISED. Nothing here scores, ranks,
-// sentiment-tags or extracts a ticker. `line-clamp` shortens what is DRAWN; search and export see
-// every word. See the scope limits in docs/DATA-CONTRACTS.md.
+// sentiment-tags or extracts a ticker. The table truncates the text to one line at a fixed width
+// and carries the whole post in the cell's tooltip; search and export see every word either way. See the scope limits in docs/DATA-CONTRACTS.md.
 //
 // POSTS CARRY NO COMPANY, SO THEY ARE NOT FILTERED BY ONE — Universe only, exactly as market-wide
 // news and the X posts are, and for the same reason: filtering rows that have no ticker BY ticker
@@ -109,6 +109,12 @@ export function load() {
     })
     .catch((err) => {
       state = { ...fresh(), loaded: true, ok: false, reason: String(err?.message || err) };
+      // A FAILED READ IS NOT MEMOISED. `loading` is held so two callers in one tick share a
+      // request, which is right for a success — but keeping a FAILURE means the first miss is
+      // permanent for the life of the page: every later mount returns the rejected result without
+      // asking, and the panel would be promising a retry that could never happen. Clearing it
+      // makes the next mount ask again, which is what a reader switching back to the tab expects.
+      loading = null;
       emit();
       return state;
     });
@@ -127,6 +133,10 @@ function apply(res) {
       reason: res?.status === 404 ? 'no-capture' : 'unreachable',
       checkedAt: res?.checkedAt || null,
     };
+    // Same reason as the catch above: a miss must not be cached as though it were an answer. The
+    // scheduled job commits the capture between one visit and the next, so "no capture yet" is a
+    // state this page should be able to leave without a reload.
+    loading = null;
     emit();
     return;
   }

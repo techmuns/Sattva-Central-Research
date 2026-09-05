@@ -8,6 +8,14 @@
 // WHAT IT WRITES
 //     public/data/telegram-posts.json   posts, deduplicated by message id
 //
+// EXIT CODES ARE THE INTERFACE
+//     0  read the channel and wrote a capture
+//     2  nothing new, or nothing could be read and a good capture exists — file untouched, and on
+//        this feed that is the ordinary quiet-hours outcome rather than a fault
+//     4  nothing readable across a whole window with a capture already held: the shape of a
+//        refused runner rather than a quiet channel. A suspicion, not a diagnosis; file untouched
+//     1  a real fault: the markup moved, the channel name is invalid, or this code is wrong
+//
 // WHY THIS READS HTML PAGES AND NOT AN API, WHICH IS A MEASUREMENT AND NOT A PREFERENCE.
 //     Telegram publishes three ways in and only one of them is open to us for THIS channel:
 //
@@ -96,18 +104,60 @@ const RETRIES = 3;
 const BLANK_RETRIES = 2;
 const BLANK_PAUSE_MS = Number(process.env.TELEGRAM_BLANK_PAUSE_MS || 650);
 const BUDGET_MS = Number(process.env.TELEGRAM_BUDGET_MS || 9 * 60 * 1000);
+// THE HEAD SEEK GETS A SLICE OF THE BUDGET, NEVER ALL OF IT. Measured on a cold start: the seek
+// ran for the full thirteen minutes, found the head, and the run then had nothing left to collect
+// with — it exited having written no capture at all. A search that consumes the run it exists to
+// serve is worse than a coarse answer, because the coarse answer still gets posts on the page and
+// the next run starts from a known head.
+const SEEK_SHARE = Number(process.env.TELEGRAM_SEEK_SHARE || 0.35);
+// An operator lever, and the one thing that makes a cold start cheap: the highest message id known
+// to exist. The seek is skipped and the walk starts there. It only has to be BELOW the true head —
+// the forward walk finds the rest — so a stale hint costs nothing but a few extra ids.
+const HEAD_HINT = Number(process.env.TELEGRAM_HEAD_HINT || 0);
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const started = Date.now();
 const outOfTime = () => Date.now() - started > BUDGET_MS;
+const outOfSeekTime = () => Date.now() - started > BUDGET_MS * SEEK_SHARE;
 
 // ---------------------------------------------------------------------------------------
 // Reading one page
 // ---------------------------------------------------------------------------------------
 
 const META_RE = (prop) => new RegExp(`<meta property="${prop}" content="([^"]*)"`, 'i');
+
+/**
+ * The channel's OWN landing-page description, read once per run.
+ *
+ * THE BLANK TEST CANNOT REST ON THIS CHANNEL HAPPENING TO HAVE NO BIO. An id with nothing readable
+ * answers 200 with the channel's landing page, and `og:description` there is the channel's
+ * DESCRIPTION. Today @researchreportss has none, so t.me falls back to the channel title and
+ * `desc === title` catches it — but that equality is an accident of this channel's settings, not a
+ * property of Telegram. The day somebody writes a bio, every unreadable id would look like a post
+ * whose text is that bio: hundreds of identical fabricated posts, and a forward walk that never
+ * sees MISS_RUN misses and so never terminates.
+ *
+ * So the landing page is fetched once and its own description is recorded as the signature of
+ * "nothing here". Positive evidence, and it survives the owner editing their channel.
+ */
+async function channelSignature() {
+  for (let attempt = 0; attempt < RETRIES; attempt++) {
+    if (attempt) await sleep(DELAY_MS * (attempt + 1) * 2);
+    try {
+      const res = await fetch(`https://t.me/${CHANNEL}`, {
+        headers: { 'user-agent': UA, accept: 'text/html,application/xhtml+xml' },
+        signal: AbortSignal.timeout(20000),
+      });
+      const html = await res.text();
+      const title = metaOf(html, 'og:title');
+      const desc = metaOf(html, 'og:description');
+      if (title !== null) return { title, desc };
+    } catch { /* fall through to the next attempt */ }
+  }
+  return null;
+}
 
 /** Decode the entity set Telegram's og tags actually use. */
 function decodeEntities(s) {
@@ -139,7 +189,7 @@ const metaOf = (html, prop) => {
  * `blank` is deliberately not called "missing": this route cannot tell a caption-less PDF from a
  * deleted message, and claiming either would be inventing a fact about the channel.
  */
-async function readId(id, { confirmBlanks = true } = {}) {
+async function readId(id, { confirmBlanks = true, signature = null } = {}) {
   let lastErr = null;
   let blanks = 0;
   for (let attempt = 0; attempt < RETRIES; attempt++) {
@@ -176,7 +226,12 @@ async function readId(id, { confirmBlanks = true } = {}) {
     // Believing the first one does not fail, it QUIETLY UNDER-REPORTS: the id is written down as
     // a message of this channel we could not read, when the truth is that we were refused. One
     // backed-off re-ask is what separates the two, and it is the only thing that can.
-    if (!desc || desc === title) {
+    // Blank when the page carries no description, or carries the CHANNEL'S own — either its title
+    // (the no-bio fallback) or the bio itself, both read from the landing page at the start of the
+    // run rather than assumed.
+    const isChannelOwn =
+      !desc || desc === title || (signature && (desc === signature.desc || desc === signature.title));
+    if (isChannelOwn) {
       // The re-ask is spent ONLY where a false blank would become a permanent lie — that is, on
       // the real walk, where the id is written into the capture's coverage. The head seek probes
       // speculatively far past the end of the channel, where a throttled answer and a genuine
@@ -221,10 +276,13 @@ async function loadExisting() {
       posts: Array.isArray(raw.posts) ? raw.posts : [],
       headId: Number(raw.headId) || 0,
       lowestId: Number(raw.lowestId) || 0,
+      // The lowest id ever WALKED, which is not the lowest id KEPT. Backfill has to resume from
+      // the former; resuming from the latter re-walks ground already covered — see walkBack().
+      walkedFrom: Number(raw.walkedFrom) || 0,
       channel: raw.channel || null,
     };
   } catch {
-    return { posts: [], headId: 0, lowestId: 0, channel: null };
+    return { posts: [], headId: 0, lowestId: 0, walkedFrom: 0, channel: null };
   }
 }
 
@@ -238,17 +296,27 @@ async function main() {
     return 1;
   }
 
+  // Read the channel's own landing page FIRST. It is both the blank signature every id is compared
+  // against and a reachability check: if this cannot be read, nothing else in the run can be
+  // trusted, and a capture written from it would be a guess.
+  const signature = await channelSignature();
+  if (!signature) {
+    console.error(`Could not read https://t.me/${CHANNEL} at all. Not touching the capture.`);
+    return 2;
+  }
+
   const existing = await loadExisting();
   // A capture for a DIFFERENT channel is not history for this one. Starting from its head would
   // walk the wrong ids and merging its posts would file another channel's words under ours.
   const sameChannel = !existing.channel || existing.channel === CHANNEL;
-  const prior = sameChannel ? existing : { posts: [], headId: 0, lowestId: 0 };
+  const prior = sameChannel ? existing : { posts: [], headId: 0, lowestId: 0, walkedFrom: 0 };
   if (!sameChannel) console.warn(`Existing capture is for @${existing.channel}; starting fresh for @${CHANNEL}.`);
 
   const byId = new Map(prior.posts.map((p) => [Number(p.id), p]));
   const beforeIds = new Set(byId.keys());
 
   let scanned = 0;
+  let walkedFrom = prior.walkedFrom || 0;
   let readable = 0;
   let blank = 0;
   let errors = 0;
@@ -257,7 +325,7 @@ async function main() {
 
   const visit = async (id) => {
     scanned++;
-    const r = await readId(id);
+    const r = await readId(id, { signature });
     await sleep(DELAY_MS);
     if (r.state === 'post') {
       readable++;
@@ -284,8 +352,8 @@ async function main() {
   // footnote claiming 876 of this channel's messages could not be read, when the true figure over
   // the walked range was two thirds of 219. Only `visit()` moves the coverage counters.
   const postNear = async (from) => {
-    for (let id = from; id < from + MISS_RUN && !outOfTime(); id++) {
-      const r = await readId(id, { confirmBlanks: false });
+    for (let id = from; id < from + MISS_RUN && !outOfSeekTime(); id++) {
+      const r = await readId(id, { confirmBlanks: false, signature });
       await sleep(DELAY_MS);
       if (r.state === 'post') return id;
       if (r.state === 'shape') shapeFaults++;
@@ -293,19 +361,35 @@ async function main() {
     return 0;
   };
 
-  let head = prior.headId;
+  let head = prior.headId || (HEAD_HINT > 0 ? HEAD_HINT : 0);
+  if (!prior.headId && HEAD_HINT > 0) console.log(`Starting from the supplied head hint ${HEAD_HINT}; skipping the seek.`);
 
   if (!head) {
     // Double until a window comes back empty, then bisect on the same window test. ~60 requests
     // against a channel thousands of messages deep, rather than walking every id from one.
+    // THE PROBE NEEDS A FLOOR AS WELL AS A CEILING, and 512 is asked about exactly once.
+    // Doubling from 512 alone has no branch for a channel SHORTER than 512 messages: the probe
+    // fails, `lo` stays 0, the bisect is skipped, and the forward walk — gated on a non-zero head —
+    // never runs, reporting a perfectly readable channel as an ordinary quiet run. So the first
+    // probe decides the direction: found means climb, not found means halve down. Finding nothing
+    // even at id 1 is not an abort — a channel whose earliest messages were all deleted is
+    // ordinary, and it simply leaves the head unfound for this run.
     let lo = 0;
     let hi = 0;
-    for (let step = 512; step <= 262144; step *= 2) {
-      if (outOfTime()) break;
-      if (await postNear(step)) lo = step; else { hi = step; break; }
+    if (await postNear(512)) {
+      lo = 512;
+      for (let step = 1024; step <= 262144 && !outOfSeekTime(); step *= 2) {
+        if (await postNear(step)) lo = step; else { hi = step; break; }
+      }
+    } else {
+      hi = 512;
+      for (let step = 256; step >= 1 && !outOfSeekTime(); step = Math.floor(step / 2)) {
+        if (await postNear(step)) { lo = step; break; }
+        hi = step;
+      }
     }
     if (lo && hi) {
-      while (hi - lo > MISS_RUN && !outOfTime()) {
+      while (hi - lo > MISS_RUN && !outOfSeekTime()) {
         const mid = Math.floor((lo + hi) / 2);
         if (await postNear(mid)) lo = mid; else hi = mid;
       }
@@ -314,28 +398,58 @@ async function main() {
     console.log(`No prior capture. Head seek landed near id ${head || '(none)'}.`);
   }
 
-  // --- forward: pin the head and collect anything new -----------------------------------
-  let cursor = head ? head + 1 : 1;
-  let miss = 0;
-  while (head && miss < MISS_RUN && !outOfTime()) {
-    const found = await visit(cursor);
-    if (found) { head = cursor; miss = 0; } else miss++;
-    cursor++;
-  }
+  // ON A COLD START, COLLECT BEFORE PINNING THE HEAD. The forward walk runs off the end of the
+  // channel by design — it stops only after MISS_RUN misses — so on a first run it spends the
+  // remaining budget confirming absences while the capture is still empty. Walking DOWN from the
+  // head reads real posts immediately. On every later run the order does not matter, because the
+  // head is known and the forward walk is short.
+  const coldStart = !prior.posts.length;
 
-  // --- backward: optional backfill ------------------------------------------------------
-  if (BACKFILL > 0 && head) {
-    const from = prior.lowestId ? prior.lowestId - 1 : head - 1;
-    const to = Math.max(1, from - BACKFILL + 1);
-    for (let id = from; id >= to && !outOfTime(); id--) await visit(id);
-  }
+  const walkBack = async () => {
+    if (!head) return;
+    const span = BACKFILL > 0 ? BACKFILL : coldStart ? KEEP : 0;
+    if (span <= 0) return;
+    // A FULL CAPTURE CANNOT BE EXTENDED DOWNWARDS, so walking further back is time spent reading
+    // posts that the KEEP cap will discard on the way out. It used to resume from `lowestId`, which
+    // is computed AFTER the cap — so every backfill run re-read ids below the 600th-newest post,
+    // found real posts, and then sliced every one of them away, reporting them as arrivals each
+    // time. Widening history is a change to KEEP, not a longer walk.
+    if (byId.size >= KEEP && BACKFILL > 0) {
+      console.log(`Capture already holds ${byId.size} posts (KEEP=${KEEP}); skipping backfill. Raise TELEGRAM_KEEP to hold more history.`);
+      return;
+    }
+    const from = prior.walkedFrom ? prior.walkedFrom - 1 : head;
+    const to = Math.max(1, from - span + 1);
+    for (let id = from; id >= to && !outOfTime(); id--) {
+      await visit(id);
+      walkedFrom = Math.min(walkedFrom || Infinity, id);
+    }
+  };
+
+  const walkForward = async () => {
+    let cursor = head ? head + 1 : 1;
+    let miss = 0;
+    while (head && miss < MISS_RUN && !outOfTime()) {
+      const found = await visit(cursor);
+      if (found) { head = cursor; miss = 0; } else miss++;
+      cursor++;
+    }
+  };
+
+  if (coldStart) { await walkBack(); await walkForward(); }
+  else { await walkForward(); await walkBack(); }
 
   // --- decide whether to write ----------------------------------------------------------
 
   // Nothing read AND nothing understood: the markup moved under us. Loud, exit 1 — this is the
   // case a human has to look at, and it must never quietly commit an empty file over a good one.
-  if (readable === 0 && shapeFaults > 0 && blank === 0) {
-    console.error(`Every page parsed without an og:title (${shapeFaults} of ${scanned}). The markup has changed.`);
+  // It used to also require `blank === 0`, which disarmed it completely: roughly two thirds of this
+  // channel's ids are blank, so any real walk has dozens and the branch could never be reached. The
+  // question it asks is whether ANY page was understood, and a blank page WAS understood — it is
+  // the landing page, correctly identified. So the test is simply: nothing read, and pages that
+  // could not be parsed at all.
+  if (readable === 0 && shapeFaults > 0) {
+    console.error(`${shapeFaults} of ${scanned} pages carried no og:title and nothing was read. The markup has changed.`);
     return 1;
   }
 
@@ -345,6 +459,21 @@ async function main() {
   const ids = new Set(byId.keys());
   const arrived = [...ids].filter((id) => !beforeIds.has(id));
   if (!arrived.length && prior.posts.length) {
+    // A REFUSED RUNNER AND A QUIET CHANNEL LEAVE THE SAME FOOTPRINT, so they are separated here
+    // rather than left to look identical for ever. Both exit without touching the capture, and on
+    // a channel that posts most weekdays a walk that reads NOTHING at all across a full window is
+    // the shape of a refusal, not of a quiet day — t.me answers a throttled request with the same
+    // landing page an absent id gives. Exit 4 says "this looks like us, not them" so the job can
+    // raise a warning instead of another routine notice, and an operator sees a run of them.
+    // It is deliberately NOT a failure: the committed capture is still correct.
+    if (readable === 0 && blank >= MISS_RUN) {
+      console.error(
+        `Read ${blank} ids and not one carried a post. On a channel that posts most weekdays that is ` +
+        `the shape of t.me refusing this runner rather than a quiet day — the two are indistinguishable ` +
+        `from one request, so this is a suspicion and not a diagnosis. The capture is unchanged.`,
+      );
+      return 4;
+    }
     console.log(`No new posts (scanned ${scanned}, ${blank} unreadable ids, ${errors} errors). Capture unchanged.`);
     return 2;
   }
@@ -368,6 +497,9 @@ async function main() {
     capturedAt: new Date().toISOString(),
     headId: head || 0,
     lowestId: posts.length ? Math.min(...posts.map((p) => Number(p.id))) : 0,
+    // How far down the channel this capture has actually been walked. Distinct from `lowestId`,
+    // which is capped by KEEP, and it is what the next backfill resumes from.
+    walkedFrom: walkedFrom || (posts.length ? Math.min(...posts.map((p) => Number(p.id))) : 0),
     // COVERAGE IS DERIVED FROM THE CAPTURE'S OWN SPAN, NOT FROM A RUNNING TALLY.
     // The tab states how much of this channel the route can see, and a tally cannot answer that
     // honestly across runs: an hourly incremental walk touches ~60 ids, so writing its counts here

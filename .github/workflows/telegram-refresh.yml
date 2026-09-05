@@ -59,6 +59,10 @@ jobs:
       #   0  read the channel and wrote a capture
       #   2  nothing new, or nothing could be read and a good capture already exists — the file is
       #      untouched, which is the ordinary quiet-hour outcome here and must not be a red build
+      #   4  nothing readable across a whole window while holding a capture — the shape of t.me
+      #      refusing this runner rather than a quiet channel. Surfaced as a WARNING, because a run
+      #      of them is the only thing that separates a stopped feed from a silent one, and neither
+      #      shows up in the committed file. Still not a red build: the capture is unharmed
       #   1  a real fault: the markup changed, the runner broke, or this code is wrong
       - name: Collect posts
         id: collect
@@ -73,6 +77,11 @@ jobs:
           if [ "$code" = "2" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice title=No new posts::The committed capture is unchanged."
+            exit 0
+          fi
+          if [ "$code" = "4" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Nothing readable — t.me may be refusing this runner::Not one id in a full window carried a post. On a channel that posts most weekdays that is the shape of a refusal rather than a quiet day, but the two are indistinguishable from one request, so this is a suspicion. The committed capture is unchanged and still correct. A RUN of these is the signal worth acting on; a single one is not."
             exit 0
           fi
           exit $code
