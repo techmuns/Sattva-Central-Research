@@ -57,6 +57,7 @@ import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js'
 import * as records from './alert-records.js';
 import { readEntry, writeEntry } from '../core/store.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
+import { attributionFor, newsSearchText } from './company-news-attribution.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -303,39 +304,30 @@ export function announcementSignal(row = {}) {
  */
 export function newsSignal(row = {}) {
   const reading = classifyStory(row);
+  const attribution = reading.attribution;
+  const identityReading = { attribution, aiEligible: attribution.status === 'confirmed', namesCompany: reading.namesCompany };
   if (!reading.tracked) {
     return {
       ...signal(
         DIRECTION.NEUTRAL,
         IMPORTANCE.LOW,
         'Publisher headline; not directionally graded.',
-        reading.namesCompany === false
-          ? "Low: no tracked keyword matched, and the publisher text does not appear to name this company. Retained as an unverified result from the upstream company-name search."
+        attribution.status !== 'confirmed'
+          ? `Low: no tracked keyword matched. ${attribution.reason}`
           : 'Low: no tracked keyword matched, so this is general coverage rather than a watched event.'
       ),
       keywords: [],
       // Attribution and topic are independent. The old early return lost this field precisely on
       // the untracked rows that make up most search spillover, leaving All Alerts unable to tell
       // “the article names the company” from “the search API filed it under the company”.
-      namesCompany: reading.namesCompany,
+      ...identityReading,
     };
   }
   const labels = reading.labels;
   const named = reading.namesCompany;
   const where = reading.inTitle ? 'headline' : 'standfirst';
-  // BOTH HALVES, OR IT IS NOT AN ALERT. "Company name + keyword" is the desk's rule and a keyword
-  // on its own is only half of it: the search returns a name match, so a story that carries a
-  // tracked word and does not carry the company is a story about somebody else. Promoting it would
-  // put another company's order win at the top of this company's card — which is the exact noise
-  // the keywords were brought in to remove, re-introduced one layer up.
-  //
-  // The row is not dropped and the keywords are not withheld: it stays in the timeline, tagged, at
-  // low importance, and the reason says which half failed. Dropping it would be the heuristic
-  // deciding on the reader's behalf, and it is not good enough for that — see `namesCompany` in
-  // news-keywords.js, and note it cannot separate a company from a namesake that shares a generic
-  // industry word (a story about Indo Tech TRANSFORMERS reads as naming Transformers & Rectifiers).
-  // `null` — no search term to check against — still counts, because an unverifiable name is not a
-  // failed one.
+  // Identity and topic are separate. Unknown identity stays visible in company search, but cannot
+  // promote an event or count as independent AI corroboration. Absence of a name is NOT a mismatch.
   // AND THE KEYWORD HAS TO BE IN THE HEADLINE, NOT ONLY THE STANDFIRST.
   //
   // The publisher chose what to lead with; a standfirst is a paragraph that happened to contain the
@@ -348,7 +340,7 @@ export function newsSignal(row = {}) {
   //
   // The FILTER still matches both, and the chip says which — exploring a feed and asserting a
   // company needs attention are different jobs, and only the second is a claim.
-  const bothHalves = named !== false && reading.inTitle;
+  const bothHalves = named === true && reading.inTitle;
   return {
     ...signal(
       DIRECTION.NEUTRAL,
@@ -357,37 +349,28 @@ export function newsSignal(row = {}) {
       bothHalves
         ? `High: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')} in the ${where}` +
           (named === true ? ', and the story names the company.' : '.')
-        : named === false
-          ? `Low: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')}, but the story does not appear to name this company — the company's own name search returned it, and a keyword without the name is half the rule.`
+        : named !== true
+          ? `Low: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')}. ${attribution.reason}`
           : `Low: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')} only in the standfirst, which several outlets fill with a related-links strip rather than this story's own summary. The headline is what the publisher chose to lead with.`
     ),
     keywords: labels,
     keywordIds: reading.ids,
     keywordGroups: reading.groups,
-    namesCompany: named,
+    ...identityReading,
   };
 }
 
 /**
  * The text All Alerts is allowed to match for one event.
  *
- * Company news is the exceptional feed: its ticker and company label come from the QUERY we sent,
- * not from the article. The upstream sometimes fills the bottom of a short result set with recent
- * stories about unrelated companies. Indexing that query-assigned label made a search for
- * “Jayaswal” match a Lululemon headline even though neither the headline nor standfirst mentioned
- * Jayaswal Neco.
- *
- * Do not delete or de-scope those rows. A name check is heuristic and can be false for a genuine
- * brand/alias story, so the complete record stays in the retained stream and in the News source
- * tab. We only stop unsupported metadata from satisfying the free-text search. The publisher's
- * headline and standfirst remain searchable, which also means a brand-name search still finds an
- * article that used the brand instead of the legal company name.
+ * Confirmed and uncertain news retain company search recall. Only a reviewed mismatch loses the
+ * query identity from search; the article stays in the unassigned retained stream. The old rule
+ * excluded every missing-name result and hid real brand/spelling variants from company searches.
  */
 export function eventSearchText(event = {}) {
-  const unsupportedCompanyAttribution = event.feed === 'news' && event.namesCompany === false;
-  const identity = unsupportedCompanyAttribution ? '' : `${event.company || ''} ${event.ticker || ''}`;
-  const publisherText = event.feed === 'news' ? event.sourceRecord?.summary || '' : '';
-  return `${event.day || ''} ${event.time || ''} ${identity} ${event.direction || ''} ${event.importance || ''} ${event.headline || ''} ${event.detail || ''} ${publisherText} ${event.signalReason || ''} ${event.importanceReason || ''} ${event.feedLabel || ''}`;
+  const row = { ...event.sourceRecord, title: event.headline, company: event.company, ticker: event.ticker, attribution: event.attribution || event.sourceRecord?.attribution };
+  const identity = event.feed === 'news' ? newsSearchText(row) : `${event.company || ''} ${event.ticker || ''}`;
+  return `${event.day || ''} ${event.time || ''} ${identity} ${event.direction || ''} ${event.importance || ''} ${event.headline || ''} ${event.detail || ''} ${event.signalReason || ''} ${event.importanceReason || ''} ${event.feedLabel || ''}`;
 }
 
 const numeric = (value) => {
@@ -1309,7 +1292,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     at: r.date,
     ticker: r.ticker || null,
     entityId: r.entityId || null,
-    company: r.company || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
+    company: attributionFor(r).status === 'unrelated' ? 'Unrelated search result' : r.company || attributionFor(r).queryCompany || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
     headline: r.title || 'Story',
     detail: r.source ? `Published by ${r.source}` : 'Publisher not carried',
     url: r.url || null,

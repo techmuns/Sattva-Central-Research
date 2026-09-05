@@ -2200,6 +2200,14 @@ by name. Those facts are never guessed from fuzzy article matches.
 No topic or materiality rule runs in the collector. Every usable upstream row reaches the archive;
 the News tab and alert layers apply scope, topic and materiality only after capture.
 
+The browser decorates news rows with a derived `attribution` object (version 1): `status`
+(`confirmed | uncertain | unrelated`), `reason`, `queryTicker`, `queryCompany`, `queryEntityId`,
+`companyTicker`, `companyName`, and `evidence: [{field, match, kind}]`. Only confirmed attribution
+sets `companyTicker`/`companyName`. Existing row `ticker`/`company` remain search-scope fields for
+confirmed and uncertain results; a reviewed mismatch clears those display fields but retains the
+query fields and original archived record. All consumers use the same derivation in
+`company-news-attribution.js`; see [the recall and AI policy](GENERAL-ALERTS-POOL.md).
+
 On Insider Trades, the toolbar count is a count of **trade-disclosure rows**, not companies: one
 company can contribute many rows. It therefore reads *"1,295 of 1,295 trades shown"*. Company
 coverage is reported separately in the scope/provenance text, so a Portfolio view never implies

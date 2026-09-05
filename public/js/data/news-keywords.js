@@ -47,24 +47,14 @@
 //    the scrape already covers in one request per company. This is the same trap CLAUDE.md names
 //    under *Ask the axis the data is published on*, arrived at from the other side: there is no
 //    cheaper axis for a search endpoint, so the honest move is to spend nothing extra and classify
-//    the capture we already pay for. The upstream already searched by company NAME, so every row is
-//    a company-name hit; this file supplies the "+ keyword" half.
+//    the capture we already pay for. A company-name search hit is only provenance, not attribution.
 //
 // ---------------------------------------------------------------------------------------
-// `namesCompany` — THE OTHER HALF OF "COMPANY NAME + KEYWORD", OFFERED AND NEVER IMPOSED
-//
-// A row is filed under the company we searched for, which is not the same as a story that is about
-// it: the search is a name match and names collide. So `namesCompany(row)` asks whether a
-// distinctive word from the search term survives in the headline or standfirst.
-//
-// It is a HEURISTIC AND IT IS TREATED AS ONE. It reads `false` for a story that refers to a company
-// by a brand the search term does not contain — GOCL Corporation trading as Gulf Oil is the case in
-// the shipped data — so using it to drop rows silently would be discarding real coverage on a guess.
-// Measured, it would drop 332 of the 3,221 keyword matches. It is therefore:
-//   • RETURNED AS A SIGNAL the row can display, never applied behind the reader's back;
-//   • OFFERED AS ITS OWN, LABELLED FILTER OPTION, so the strict reading is one click away;
-//   • `null` — not `false` — where the row carries no search term to check against, because "we
-//     cannot tell" and "it does not" are different answers and only one of them is a measurement.
+// Attribution is independent of topics. `namesCompany` is a compatibility reading of the shared
+// tri-state attribution: true = matched identity, null = possible/unverified, false = reviewed
+// mismatch. The optional strict filter requires true. Default views retain uncertain coverage.
+
+import { attributionFor } from './company-news-attribution.js';
 
 /** The families the thirty keywords sort into, in the order the filter offers them. */
 export const GROUPS = [
@@ -266,21 +256,11 @@ export function identifyingWords(query) {
 /**
  * Does this story actually name the company it is filed under?
  *
- * `null` where the row carries no search term to check against, or where the term is nothing but
- * stopwords — "we cannot tell" is a different answer from "it does not", and only one of them is a
- * measurement. See the header: this is a signal, never a silent exclusion.
+ * `null` means uncertain, including missing names and snippet-only evidence, not irrelevant.
  */
 export function namesCompany(row = {}) {
-  // An archived row may have arrived under several reviewed searches. Treat a brand/former-name
-  // mention as valid attribution even when the first observation used the legal name; the full
-  // `matchedQueries` list is evidence from collection, not a fuzzy alias inferred here.
-  const queries = Array.isArray(row.matchedQueries) && row.matchedQueries.length
-    ? row.matchedQueries
-    : [row.query || row.company || ''];
-  const words = [...new Set(queries.flatMap(identifyingWords))];
-  if (!words.length) return null;
-  const text = normalise(`${row.title || ''} ${row.summary || ''}`);
-  return words.some((w) => text.includes(w));
+  const status = attributionFor(row).status;
+  return status === 'confirmed' ? true : status === 'unrelated' ? false : null;
 }
 
 /**
@@ -288,12 +268,13 @@ export function namesCompany(row = {}) {
  *
  * `tracked` is the plain answer to "is this one of the thirty things we watch". `targeted` is the
  * strict reading of "company name + keyword" — tracked AND the story names the company — with a
- * `null` from `namesCompany` counting as tracked, because an unverifiable name is not a failed one.
+ * unknown identity kept in default views but not in the explicitly strict `targeted` filter.
  */
 export function classifyStory(row = {}) {
   const keywords = matchKeywords(row.title, row.summary);
   const named = namesCompany(row);
   return {
+    attribution: attributionFor(row),
     keywords,
     ids: keywords.map((k) => k.id),
     labels: keywords.map((k) => k.label),
@@ -301,7 +282,7 @@ export function classifyStory(row = {}) {
     inTitle: keywords.some((k) => k.where === 'title'),
     namesCompany: named,
     tracked: keywords.length > 0,
-    targeted: keywords.length > 0 && named !== false,
+    targeted: keywords.length > 0 && named === true,
   };
 }
 

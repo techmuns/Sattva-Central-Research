@@ -7546,8 +7546,8 @@ const keywordRules = await page.evaluate(async () => {
     multi: hit('Receipt of order worth Rs 240 crore; orderbook now at a record').length >= 3,
 
     // `namesCompany` is three answers, not two.
-    namesYes: kw.namesCompany({ query: 'Advait Energy Transitions', title: 'Advait Energy wins order' }) === true,
-    namesNo: kw.namesCompany({ query: 'Advait Energy Transitions', title: 'Some other company wins an order' }) === false,
+    namesYes: kw.namesCompany({ query: 'Advait Energy Transitions', title: 'Advait Energy Transitions wins order' }) === true,
+    missingNameIsUncertain: kw.namesCompany({ query: 'Advait Energy Transitions', title: 'Some other company wins an order' }) === null,
     namesUnknown: kw.namesCompany({ title: 'A headline with no search term behind it' }) === null,
     // A term that is nothing but stopwords cannot answer the question, so it says so.
     namesStopwordsOnly: kw.namesCompany({ query: 'India Ltd', title: 'A story about India Ltd' }) === null,
@@ -7558,19 +7558,19 @@ const keywordRules = await page.evaluate(async () => {
     untrackedMatches: kw.matchesTopic(kw.classifyStory({ title: 'A quiet day at the office', query: 'Test Co' }), 'untracked'),
     // The strict reading keeps a row whose name check could not be answered — an unverifiable name
     // is not a failed one — and drops only one that was checked and did not name the company.
-    targetedKeepsUnknown: kw.classifyStory({ title: 'Wins Rs 10 crore order' }).targeted === true,
+    targetedRequiresConfirmedIdentity: kw.classifyStory({ title: 'Wins Rs 10 crore order' }).targeted === false,
     targetedDropsUnnamed: kw.classifyStory({ title: 'Wins Rs 10 crore order', query: 'Advait Energy Transitions' }).targeted === false,
 
     // The materiality rule on the news feed: topic yes, direction never.
     trackedIsHigh: alerts.newsSignal({ title: 'Advait Energy bags Rs 135-crore order', query: 'Advait Energy' }).importance === 'high',
     untrackedIsLow: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).importance === 'low',
-    untrackedKeepsNameEvidence: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).namesCompany === false,
+    untrackedKeepsNameEvidence: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).attribution.status === 'uncertain',
     // BOTH HALVES OF "company name + keyword", or it is not an alert: a tracked word on a story
     // that does not carry the company is somebody else's order win under this company's name.
     unnamedStaysLow: alerts.newsSignal({ title: 'Some other firm bags Rs 135-crore order', query: 'Advait Energy' }).importance === 'low',
     unnamedKeepsItsKeywords: alerts.newsSignal({ title: 'Some other firm bags Rs 135-crore order', query: 'Advait Energy' }).keywords.includes('Order'),
-    unrelatedQueryIdentityIsNotSearchEvidence:
-      !alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
+    uncertainQueryIdentityRemainsSearchable:
+      alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
         headline: 'Lululemon stock analysis', sourceRecord: { summary: 'Is Lululemon a buy?' } }).toLowerCase().includes('jayaswal'),
     unrelatedPublisherTextRemainsSearchable:
       alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
@@ -7580,7 +7580,7 @@ const keywordRules = await page.evaluate(async () => {
         headline: 'Quarterly update' }).includes('ACOMPANY'),
     otherFeedsKeepResolvedCompanySearch:
       alerts.eventSearchText({ feed: 'announcements', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', headline: 'Press release' }).includes('JAYNECOIND'),
-    uncheckableStillCounts: alerts.newsSignal({ title: 'Bags Rs 135-crore order' }).importance === 'high',
+    uncheckableCannotScore: alerts.newsSignal({ title: 'Bags Rs 135-crore order' }).aiEligible === false,
     // A standfirst is not a headline. Several outlets fill it with a related-links strip, so one
     // sidebar was tagging unrelated stories with whatever the sidebar happened to mention.
     standfirstOnlyStaysLow:

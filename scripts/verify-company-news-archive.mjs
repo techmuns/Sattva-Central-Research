@@ -8,6 +8,7 @@ import {
   portfolioNewsEntities,
 } from '../public/js/data/company-news-identity.js';
 import { namesCompany } from '../public/js/data/news-keywords.js';
+import { attributeNewsRow } from '../public/js/data/company-news-attribution.js';
 import {
   commitCompanyNewsArchive,
   incrementalNewsRange,
@@ -59,8 +60,10 @@ try {
   assert.deepEqual(merged.find((row) => row.source === 'Publisher A').matchedQueries, ['Private Beta Limited', 'BetaPay']);
   assert.equal(merged.find((row) => row.source === 'Publisher A').firstSeenAt, '2026-09-01T00:00:00.000Z');
   assert.equal(merged.find((row) => row.source === 'Publisher A').lastSeenAt, '2026-09-03T00:00:00.000Z');
-  assert.equal(namesCompany({ title: 'Kissht launches a new product', query: 'OnEMI Technology Solutions Ltd', matchedQueries: ['OnEMI Technology Solutions Ltd', 'Kissht'] }), true,
-    'post-capture attribution recognises any reviewed identity query which found the story');
+  assert.equal(namesCompany(attributeNewsRow({ title: 'BetaPay launches a new product', query: 'Private Beta Limited', matchedQueries: ['Private Beta Limited', 'BetaPay'] }, beta)), true,
+    'post-capture attribution recognises a brand from the reviewed identity, not just a query hit');
+  assert.equal(namesCompany({ title: 'Beta Services launches a new product', query: 'Private Beta Limited', matchedQueries: ['Private Beta Limited', 'Beta Services'] }), null,
+    'a query hit alone cannot prove a subsidiary event belongs to the parent');
 
   const index = commitCompanyNewsArchive({
     dir: root,
