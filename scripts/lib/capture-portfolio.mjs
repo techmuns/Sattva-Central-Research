@@ -12,8 +12,9 @@ function project(book) {
       ...(h.reason ? { reason: h.reason } : {}) })) };
 }
 
-export async function loadCapturePortfolio(dataDir, { live = process.env.FAMILY_HOLDINGS_LIVE === 'true', fetcher = fetch, now = Date.now } = {}) {
-  const path = join(dataDir, 'portfolio-companies.json'), cache = join(dataDir, 'filing-capture/portfolio.json');
+export async function loadCapturePortfolio(dataDir, { live = process.env.FAMILY_HOLDINGS_LIVE === 'true', fetcher = fetch, now = Date.now,
+  cachePath = join(dataDir, 'filing-capture/portfolio.json') } = {}) {
+  const path = join(dataDir, 'portfolio-companies.json'), cache = cachePath;
   let book = readJson(path), origin = 'snapshot';
   if (live) {
     try {

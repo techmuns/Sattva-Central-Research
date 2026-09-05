@@ -7,15 +7,20 @@ import { loadCapturePortfolio } from './lib/capture-portfolio.mjs';
 import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
 import { mergeExchangeIdentities } from '../public/js/data/announcement-identity.js';
 import { commitCompanyNewsArchive, readCompanyNewsIndex, observedCompanyArticles,
-  recentArchivedCompanyNews, articlesFromNewsSnapshot } from './lib/company-news-archive.mjs';
+  recentArchivedCompanyNews, articlesFromNewsSnapshot, companyNewsArchiveRows } from './lib/company-news-archive.mjs';
 import { tradingViewTargets, readTradingViewNews, tradingViewPageUrl } from './lib/tradingview-news.mjs';
 
 const DATA = fileURLToPath(new URL('../public/data/', import.meta.url));
 
 export async function enrichTradingViewNews({ dataDir = DATA, portfolio = null, fetcher = fetch,
-  now = Date.now(), budgetMs = 6 * 60000, spacingMs = 1250, maxRequests = Infinity,
+  isolated = false, now = Date.now(), budgetMs = (isolated ? 8 : 6) * 60000, spacingMs = 1250, maxRequests = Infinity,
   sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
-  const book = portfolio || await loadCapturePortfolio(dataDir, { fetcher });
+  // The frequent lane owns a separate write set, including its verified portfolio checkpoint.
+  // It never waits behind, or overwrites, the much slower company-name/global searches.
+  const archivePrefix = isolated ? 'tradingview-news' : 'company-news';
+  const dir = join(dataDir, archivePrefix), statePath = join(dir, 'tradingview.json');
+  const book = portfolio || await loadCapturePortfolio(dataDir, { fetcher,
+    ...(isolated ? { cachePath: join(dir, 'portfolio.json') } : {}) });
   if (!Array.isArray(book.holdings) || !book.holdings.length) throw Error('No verified portfolio; refusing to infer exits from an empty book.');
   const overrides = readJson(fileURLToPath(new URL('./company-news-identity-overrides.json', import.meta.url)), {}).entities || [];
   const entities = portfolioNewsEntities(book.holdings, overrides);
@@ -23,9 +28,10 @@ export async function enrichTradingViewNews({ dataDir = DATA, portfolio = null, 
   const directory = mergeExchangeIdentities(readJson(join(dataDir, 'announcement-identities.json'), {}).entries || [],
     nse.sme?.entries || [], nse.equity?.entries || []);
   const targets = tradingViewTargets(entities, directory);
-  const dir = join(dataDir, 'company-news'), statePath = join(dir, 'tradingview.json');
-  const index = readCompanyNewsIndex(dir), head = readJson(join(dataDir, 'news.json'), {});
-  const state = readJson(statePath, { version: 1, entries: {} });
+  const headPath = isolated ? join(dir, 'latest.json') : join(dataDir, 'news.json');
+  const index = readCompanyNewsIndex(dir), head = readJson(headPath, {});
+  const legacy = isolated ? readJson(join(dataDir, 'company-news/tradingview.json'), {}) : {};
+  const state = readJson(statePath, { ...legacy, version: 1, entries: legacy.entries || {} });
   const at = new Date(now).toISOString(), deadline = Date.now() + budgetMs;
   const active = new Set(entities.map(e => e.entityId));
   for (const entry of Object.values(state.entries)) entry.active = false;
@@ -38,6 +44,7 @@ export async function enrichTradingViewNews({ dataDir = DATA, portfolio = null, 
   // A newly enrolled holding may already have identity-less rows in the legacy universe head.
   // Its exact bucket is an observation too; archive it before rebuilding the recent view.
   const incoming = articlesFromNewsSnapshot(head, entities, head.capturedAt || at);
+  if (isolated && !index.createdAt) incoming.push(...companyNewsArchiveRows(join(dataDir, 'company-news')).filter(r => r.tradingViewId));
   let attempted = 0, retainedThisRun = 0;
   for (const { entity, symbol, issuerSymbols, entry } of jobs) {
     if (attempted >= maxRequests || Date.now() > deadline - 17000 || Date.parse(state.blockedUntil || '') > now) break;
@@ -73,18 +80,21 @@ export async function enrichTradingViewNews({ dataDir = DATA, portfolio = null, 
   }
   const entries = jobs.map(job => job.entry);
   const unresolved = targets.filter(t => !t.symbols.length).map(t => ({ entityId: t.entity.entityId, company: t.entity.name, reason: t.reason }));
-  const stale = entries.filter(e => e.error || !e.lastSuccessAt || now - Date.parse(e.lastSuccessAt) > 4 * 3600000);
+  const staleAfterMinutes = isolated ? 45 : 240;
+  const stale = entries.filter(e => e.error || !e.lastSuccessAt || now - Date.parse(e.lastSuccessAt) > staleAfterMinutes * 60000);
   const coverage = { checkedAt: at, activeCompanies: entities.length, mappedCompanies: targets.length - unresolved.length,
     plannedSymbols: jobs.length, attemptedSymbols: attempted, staleOrFailedSymbols: stale.length,
     unresolvedCompanies: unresolved.length, possibleGapSymbols: entries.filter(e => e.possibleGapSince).length,
     limitedHistorySymbols: entries.filter(e => e.publicWindowLimited).length,
     restrictedHeadlines: entries.reduce((sum, e) => sum + (e.restrictedCount || 0), 0),
-    retainedThisRun, blockedUntil: state.blockedUntil || null,
+    retainedThisRun, blockedUntil: state.blockedUntil || null, staleAfterMinutes,
+    oldestSuccessAt: entries.length && entries.every(e => e.lastSuccessAt) ? entries.map(e => e.lastSuccessAt).sort()[0] : null,
+    targetIntervalMinutes: isolated ? 15 : 180,
     portfolioStatus: book.portfolio?.status || 'injected', portfolioError: book.portfolio?.error || null,
     note: 'Public headline metadata only. Latest-page coverage is bounded; history, restricted headlines and all-source completeness are not guaranteed.' };
   // Archive before acknowledging source success. A failed/empty response never deletes a row.
   // Keep the core query-health clock separate from this independent source's observations.
-  const archive = commitCompanyNewsArchive({ dir, entities, articles: incoming, capturedAt: index.updatedAt || at });
+  const archive = commitCompanyNewsArchive({ dir, entities, articles: incoming, capturedAt: isolated ? at : index.updatedAt || at, archivePrefix });
   const byTicker = { ...head.byTicker };
   const entityById = new Map(entities.map(e => [e.entityId, e]));
   const recent = new Map();
@@ -99,18 +109,19 @@ export async function enrichTradingViewNews({ dataDir = DATA, portfolio = null, 
   }
   const identities = new Map((head.entities || []).map(e => [e.entityId, { ...e, portfolio: active.has(e.entityId) }]));
   for (const entity of entities) identities.set(entity.entityId, entity);
-  writeJson(join(dataDir, 'news.json'), { ...head, byTicker, entities: [...identities.values()],
+  writeJson(headPath, { ...head, ...(isolated ? { capturedAt: at, generator: 'scripts/enrich-tradingview-news.mjs', retention: 'permanent-archive' } : {}),
+    byTicker, entities: [...identities.values()],
     newsUpdatedAt: at, tradingViewCoverage: coverage,
     rowCount: Object.values(byTicker).reduce((n, rows) => n + rows.length, 0),
     empty: (head.empty || []).filter(key => !byTicker[key]?.length),
-    archive: { ...head.archive, index: 'company-news/index.json', articleCount: archive.articleCount, months: archive.archive.length } });
+    archive: { ...head.archive, index: `${archivePrefix}/index.json`, articleCount: archive.articleCount, months: archive.archive.length } });
   writeJson(statePath, { ...state, version: 1, checkedAt: at, unresolved, coverage });
   return coverage;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const result = await enrichTradingViewNews();
+  const result = await enrichTradingViewNews({ isolated: process.argv.includes('--isolated') });
   console.log(JSON.stringify(result));
   if (result.staleOrFailedSymbols || result.unresolvedCompanies || result.possibleGapSymbols || result.portfolioError)
-    console.log('::warning::TradingView enrichment has coverage limits; retained news is preserved. See company-news/tradingview.json.');
+    console.log('::warning::TradingView enrichment has coverage limits; retained news is preserved. See its tradingview.json checkpoint.');
 }

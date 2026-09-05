@@ -27,7 +27,7 @@ jobs:
       - name: Verify portfolio discovery, customer misses and source recovery
         run: node scripts/verify-portfolio-news-discovery.mjs && node scripts/verify-news-country.mjs && python3 scripts/verify-twitter-search.py
       - name: Verify public TradingView ingestion and automatic portfolio membership
-        run: node scripts/verify-tradingview-news.mjs
+        run: node scripts/verify-tradingview-news.mjs && node scripts/verify-continuous-news.mjs
       - name: Verify research and portfolio evidence
         run: node scripts/verify-research.mjs
       - name: Verify private portfolio bridge

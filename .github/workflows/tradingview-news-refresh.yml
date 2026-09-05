@@ -1,0 +1,68 @@
+name: TradingView portfolio news
+
+# Independent from slow name/global searches. GitHub schedules are best-effort, not a stream.
+# Off-the-hour quarter-hour slots reduce scheduler congestion. No browser needs to remain open.
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: tradingview-portfolio-news
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    env:
+      FAMILY_HOLDINGS_LIVE: 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # A queued event's SHA may predate a completed capture. Always start at current main
+          # so its archive, source backoff and onboarding checkpoints cannot roll backwards.
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Capture public portfolio headlines
+        run: node scripts/enrich-tradingview-news.mjs --isolated
+      - name: Retain capture artifact
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: tradingview-news-data
+          path: public/data/tradingview-news/
+          if-no-files-found: warn
+      - name: Publish independent news capture
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/tradingview-news/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "TradingView portfolio news ($(date -u +'%Y-%m-%d %H:%M') UTC)"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          exit 1
+      # Partial capture and Retry-After are durable before reporting failure, so the next
+      # scheduled run can recover without discarding news or hammering a refusing source.
+      - name: Check TradingView coverage
+        if: success()
+        env:
+          TRADINGVIEW_HEALTH_REPORT: ${{ runner.temp }}/tradingview-health.json
+        run: node scripts/check-tradingview-news-health.mjs
+      - name: Retain coverage report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: tradingview-news-health
+          path: ${{ runner.temp }}/tradingview-health.json
+          if-no-files-found: warn
