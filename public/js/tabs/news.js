@@ -35,6 +35,7 @@ import { news as feed } from '../data/filings.js';
 import * as marketNews from './market-news-view.js';
 import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, groupLabel } from '../data/news-keywords.js';
 import { filterByScope as filterTickerRows } from '../data/scope.js';
+import { attributionFor, attributionLabel, newsSearchText } from '../data/company-news-attribution.js';
 import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
@@ -87,8 +88,8 @@ const tab = makeFilingsTab({
   // scrollbar of its own, which `verify-ui.mjs` measures.
   nameMaxPx: 780,
   rowName: (r) => withoutPublisherName(r.title) || '(untitled)',
-  rowSub: (r) => [r.company || r.ticker, r.company && r.ticker, withoutPublisherName(r.source)].filter(Boolean).join(' · '),
-  searchable: (r) => `${r.title || ''} ${r.source || ''} ${r.company || ''} ${r.ticker || ''} ${r.summary || ''}`,
+  rowSub: (r) => [attributionLabel(r), r.company || r.ticker, r.company && r.ticker, withoutPublisherName(r.source)].filter(Boolean).join(' · '),
+  searchable: newsSearchText,
   // News is name-searched and can therefore scope private/BSE-only companies by stable entity id.
   // Watchlist remains symbol-based because a saved watch item is a ticker by construction.
   filterByScope: (rows, scope, holdings) =>
@@ -114,12 +115,10 @@ const tab = makeFilingsTab({
         if (!reading.tracked) {
           return `<span class="text-slate-300" title="No tracked keyword matched this headline or standfirst. It is in the capture because the company's own name search returned it.">untracked</span>`;
         }
-        // The name-match caveat rides on the chip rather than removing the row: `namesCompany` is a
-        // heuristic that reads false for a company known by a brand its search term omits, so it
-        // marks a row and never drops one. See js/data/news-keywords.js.
+        // The relationship label is always present in the row, even without a tracked topic.
         const unnamed =
-          reading.namesCompany === false
-            ? `<span class="ml-1 text-[10px] font-semibold text-amber-600" title="The story does not appear to name this company. It is filed here because the company's own name search returned it — worth opening before acting on.">?</span>`
+          reading.attribution.status !== 'confirmed'
+            ? `<span class="ml-1 text-[10px] font-semibold text-amber-600" title="${escapeHtml(reading.attribution.reason)}">?</span>`
             : '';
         // AT MOST TWO CHIPS, AND THE REST AS A COUNT. A story can carry five keywords — "Receipt of
         // order worth Rs 240 crore; orderbook at a record" carries three on its own — and five
@@ -168,12 +167,22 @@ const tab = makeFilingsTab({
       options: topicFilterOptions(counted),
       match: (r, v) => matchesTopic(readingFor(r), v),
     };
+    const relationship = {
+      label: 'Company relationship',
+      options: [
+        { value: 'all', label: 'Matched + possible news' },
+        { value: 'confirmed', label: `Company matched · ${rows.filter(r => attributionFor(r).status === 'confirmed').length}` },
+        { value: 'uncertain', label: `Possible matches · ${rows.filter(r => attributionFor(r).status === 'uncertain').length}` },
+      ],
+      match: (r, v) => attributionFor(r).status === v,
+    };
     const outlets = [...new Set(rows.map((r) => r.source).filter(Boolean))].sort();
     // AN ARRAY, so the two AND together — "Order" and "Business Standard" are different questions
     // and folding them into one dropdown would make them mutually exclusive for no reason.
-    if (outlets.length < 2) return [topic];
+    if (outlets.length < 2) return [topic, relationship];
     return [
       topic,
+      relationship,
       {
         label: 'Outlet',
         options: [{ value: 'all', label: 'All outlets' }, ...outlets.slice(0, 40).map((o) => ({ value: o, label: withoutPublisherName(o) }))],
@@ -198,12 +207,10 @@ const tab = makeFilingsTab({
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Why a search feed needs a topic filter</h3>
         <p class="mt-1 text-xs">The upstream is a <strong>search endpoint, not a feed</strong>: there is no request that returns
-           everything published today, only one that answers “what has been written about this company”. So every row here was
-           found by matching a <strong>company name</strong> — and names collide. A company called iDream Film collects film
-           coverage; GOCL collects “stock on fire”. Measured on this capture, roughly three stories in four are about somebody
-           else.</p>
+           everything published today, only one that answers a <strong>company-name query</strong>. Search engines can return
+           unrelated stories, and a returned row is not proof that the article concerns the searched company.</p>
         <p class="mt-2 text-xs">The <strong>Topic</strong> filter is the other half of the query. Thirty keywords, listed below,
-           say what a story has to be <em>about</em>; the search already supplied the company. Every option shows how many rows
+           say what a story has to be <em>about</em>; company attribution is assessed separately. Every option shows how many rows
            it would leave, counted from the rows in scope rather than typed in — including
            <strong>“No tracked keyword”</strong>, which is there so a pattern that is quietly too narrow can be found rather
            than mistaken for a quiet week.</p>
@@ -222,10 +229,12 @@ const tab = makeFilingsTab({
            would put our judgement beside somebody else's reporting, which this tab does not do. Several patterns are
            deliberately narrower than the plain word (a bare “trial” matched free-trial boilerplate; a bare “fire” matched
            “stock on fire”); hover a chip to see where and why.</p>
-        <p class="mt-2 text-xs">A chip followed by an amber <strong>?</strong> means the story does not appear to name the company
-           it is filed under. It is <strong>marked and never removed</strong>: the check is a name heuristic and reads false for a
-           company known by a brand its search term omits, so it flags a row for a second look rather than deciding on your
-           behalf. <em>Tracked keyword · names the company</em> in the Topic filter is the strict reading if you want it.</p>
+        <p class="mt-2 text-xs"><strong>Company matched</strong> means a whole identity name, reviewed alias or identifiable
+           symbol occurs in the headline or a bounded article body. It does not verify the reported event.
+           <strong>Possible match — unverified</strong> stays visible and searchable by company by default, including
+           snippet-only, subsidiary and unknown-brand coverage. A missing name never proves irrelevance. The optional
+           relationship filter shows counts. Only an explicitly reviewed article-company mismatch loses its company label;
+           its source record remains archived and findable by headline in All Alerts / Universe.</p>
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">What is reproduced and what is not</h3>
         <ul class="mt-1 list-disc space-y-1 pl-5 text-xs">
@@ -259,13 +268,16 @@ const tab = makeFilingsTab({
                 `HEADLINES, OUTLETS AND DATES ARE THE PUBLISHERS' — reproduced unchanged, never summarised into our words, and carrying no sentiment or ranking of ours. ` +
                 `The company each story is filed under is OUR search term, not a claim by the article: a story about several companies appears under whichever was asked about. ` +
                 `TRACKED TOPICS ARE OURS AND ARE A SUBJECT READING, NEVER A DIRECTION — a keyword says what a story is about, so nothing in this workbook is scored positive or negative. ` +
-                `"Names the company" is a name heuristic over the search term: "no" flags a story for a second look and never means the row was filtered out; a blank means there was no search term to check. ` +
+                `Company relationship and evidence are separate columns. A possible match is unverified coverage, not proof about the company. A blank name-match value means uncertain; only an explicit reviewed mismatch means no. ` +
                 `${m.covered} companies covered${m.failed ? `; ${m.failed} could not be read and are ABSENT rather than shown as having no news` : ''}. ` +
                 `A blank means the article did not carry that field.`
               : r.date || '',
         },
         { header: 'Company', key: 'c', width: 28, get: (r) => (r.__banner ? '' : r.company || r.ticker || '') },
         { header: 'Ticker', key: 't', width: 14, get: (r) => (r.__banner ? '' : r.ticker || '') },
+        { header: 'Company relationship', key: 'attribution', width: 28, get: (r) => r.__banner ? '' : attributionLabel(r) },
+        { header: 'Searched company (not attribution)', key: 'queryCompany', width: 32, get: (r) => r.__banner ? '' : attributionFor(r).queryCompany || '' },
+        { header: 'Attribution evidence', key: 'evidence', width: 70, get: (r) => r.__banner ? '' : JSON.stringify(attributionFor(r)) },
         { header: 'Headline', key: 'h', width: 70, get: (r) => (r.__banner ? '' : withoutPublisherName(r.title)) },
         { header: 'Outlet', key: 'o', width: 24, get: (r) => (r.__banner ? '' : withoutPublisherName(r.source)) },
         // THE WORKBOOK IS THE ONE ARTEFACT NOBODY CAN SEE A CHIP ON, so the topics travel as their

@@ -15,6 +15,7 @@
 // within the selected filter; the materiality threshold and alert priority remain evidence-based.
 
 import * as generalAlerts from './daily-alerts.js';
+import { newsCanSupportAI } from './company-news-attribution.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
 import { enrichCardFromAllAlerts } from './intelligence-graph.js';
@@ -634,8 +635,9 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       .map((holding) => [String(holding.ticker).toUpperCase(), holding])
   );
 
-  const recent = (report?.events || []).filter(
-    (event) => event.aiEligible !== false && event.ticker && event.day && event.day >= firstDay && event.day <= day
+  const supportedReport = { ...report, events: (report?.events || []).filter(newsCanSupportAI) };
+  const recent = supportedReport.events.filter(
+    (event) => event.aiEligible !== false && newsCanSupportAI(event) && event.ticker && event.day && event.day >= firstDay && event.day <= day
   );
   const grouped = new Map();
   for (const event of recent) {
@@ -731,7 +733,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     card.insight = plainInsight(card);
     card.metrics = cardMetrics(card);
     card.badge = cardBadge(card);
-    return enrichCardFromAllAlerts(card, report, { insightCompanies });
+    return enrichCardFromAllAlerts(card, supportedReport, { insightCompanies });
   });
 
   cards.sort(

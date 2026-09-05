@@ -53,6 +53,7 @@ import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
 import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
 import { dedupeArticles } from './filings-shared.js';
+import { attributeNewsRow } from './company-news-attribution.js';
 
 // How many companies a live walk will ask about before it stops and says so. The upstreams allow
 // 60 requests a minute; forty keeps a cold start under a minute and well inside that budget.
@@ -286,7 +287,13 @@ export function createFeed(kind) {
         // A stable entity key is not a synthetic exchange symbol. Tickerless portfolio companies
         // stay tickerless while their `entityId` makes them scopable.
         const ticker = row.ticker || (kind === 'news' && row.entityId ? null : key);
-        out.push({ ...row, ticker });
+        if (kind === 'news') {
+          // Keep fallback identity objects stable so repeated renders reuse the pure attribution
+          // result. Reviewed snapshot/live identities replace this fallback when they arrive.
+          if (!state.identities.has(key)) state.identities.set(key, { ticker, name: state.names.get(key) || row.company || row.query });
+          const identity = state.identities.get(key);
+          out.push(attributeNewsRow(row, identity));
+        } else out.push({ ...row, ticker });
       }
     }
     return out.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -381,7 +388,18 @@ export function createFeed(kind) {
       // any company it may walk, and a company can leave the current scope while its name stays
       // true. The list is per-scope; the lookup is not.
       if (item?.name) state.names.set(t, String(item.name));
-      if (item && typeof item === 'object') state.identities.set(t, item);
+      if (item && typeof item === 'object') {
+        const previous = kind === 'news' ? state.identities.get(t) : null;
+        if (previous) {
+          // Scope pickers often carry just ticker/name (or empty enrichment arrays). They must
+          // not erase the reviewed alias relationships loaded from the capture identity registry.
+          const merged = { ...previous, ...item, legalName: previous.legalName || item.legalName };
+          for (const field of ['brands', 'aliases', 'formerNames', 'subsidiaries']) {
+            merged[field] = [...new Set([...(previous[field] || []), ...(item[field] || [])])];
+          }
+          state.identities.set(t, merged);
+        } else state.identities.set(t, item);
+      }
     }
     state.wanted = wanted;
     return wanted;
