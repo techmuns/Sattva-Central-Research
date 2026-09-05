@@ -57,6 +57,14 @@ jobs:
           NEWS_SCOPE: ${{ (github.event_name == 'schedule' && (github.event.schedule == '30 3 * * 1-5' || github.event.schedule == '30 13 * * 1-5')) && 'universe' || inputs.scope || 'book' }}
         run: FILINGS_SCOPE="$NEWS_SCOPE" FILINGS_BUDGET_MS=1680000 NEWS_OVERLAP_HOURS=48 node scripts/scrape-filings.mjs news
 
+      - name: Install bounded official-document reader
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+
+      - name: Enrich from global search, official IR pages and retained publisher feeds
+        # Core search progress must still be committed when an independent enrichment source fails.
+        continue-on-error: true
+        run: node scripts/enrich-company-news.mjs
+
       - name: Upload company-news data
         if: always()
         uses: actions/upload-artifact@v5

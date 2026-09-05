@@ -86,7 +86,7 @@ export const ADDITIONAL_SOURCES = [
     read: ({ day }) => { const m = nse.meta(); return { events: nseRecords(nse.retainedRows()),
       ...confirmed(m.capturedAt, day, !!(m.degraded || m.historyUnavailable || m.allMissingDays?.length),
         `Available NSE archive: up to 90 days.${m.degraded ? ` ${m.degraded}` : ''}${m.historyUnavailable ? ' Archive index unavailable.' : ''}${m.allMissingDays?.length ? ` Unread archive days: ${m.allMissingDays.join(', ')}.` : ''}`) }; } },
-  { id: 'twitter', label: 'X / Twitter posts', tab: 'news', what: 'Every captured post from currently monitored accounts. No inferred company mapping.',
+  { id: 'twitter', label: 'X / Twitter posts', tab: 'news', what: 'Monitored accounts plus company-name searches across authors. Reviewed identity mapping only; posts are unverified discovery leads.',
     load: async (refresh) => { await twitter.load(); if (refresh) await twitter.refresh(); },
     read: ({ day }) => { const m = twitter.meta(); return { events: twitter.rows().map((r) => record({ id: r.id, row: r, at: r.publishedAt,
       company: `@${r.handle}`, headline: r.title, detail: r.displayName, url: r.url, kind: 'post' })),

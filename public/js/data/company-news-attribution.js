@@ -1,5 +1,6 @@
 // Company identity is not the search query and a missing name is not a negative fact.
 // Pure, shared by snapshot/live readers, search, exports, research and AI ranking.
+import { reviewedNewsIdentity } from './company-news-reviewed.js';
 export const ATTRIBUTION_VERSION = 1;
 export const normalizeNewsText = (value) => String(value || '').normalize('NFKD')
   .replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ')
@@ -26,6 +27,7 @@ const articleAddress = (value) => {
 
 /** Reviewed identity fields only. Never infer aliases or subsidiaries from a search result. */
 export function companyNewsAttribution(row = {}, identity = {}) {
+  identity = reviewedNewsIdentity(identity);
   const queryTicker = String(identity.ticker || row.queryTicker || row.ticker || '').toUpperCase() || null;
   const queryCompany = identity.name || identity.legalName || row.queryCompany || row.company || row.query || queryTicker;
   const queryEntityId = identity.entityId || row.queryEntityId || row.entityId || null;
@@ -36,6 +38,8 @@ export function companyNewsAttribution(row = {}, identity = {}) {
     ...['formerNames', 'brands', 'aliases'].flatMap(kind => list(kind).map(name => ({ name, kind }))),
     // A subsidiary mention is related coverage, not proof that its parent experienced the event.
     ...list('subsidiaries').map(name => ({ name, kind: 'subsidiary' })),
+    ...list('relatedEntities').filter(r => r.relationship && /^https:\/\//.test(r.evidenceUrl || ''))
+      .flatMap(relation => [relation.name, ...(relation.aliases || [])].map(name => ({ name, kind: 'related', relation }))),
   ].map(candidate => ({ ...candidate, key: withoutLegalSuffix(candidate.name) }));
   const title = normalizeNewsText(row.title);
   const summary = normalizeNewsText(row.summary);
@@ -47,7 +51,8 @@ export function companyNewsAttribution(row = {}, identity = {}) {
   for (const candidate of candidates) {
     if (candidate.key.length < 4 || genericNames.has(candidate.key)) continue;
     for (const [field, text] of [['title', title], ['summary', summary], ['articleBody', body]]) {
-      if (phrase(text, candidate.key)) evidence.push({ field, match: candidate.name, kind: candidate.kind });
+      if (phrase(text, candidate.key)) evidence.push({ field, match: candidate.name, kind: candidate.kind,
+        ...(candidate.relation ? { relationship: candidate.relation } : {}) });
     }
   }
   if (queryTicker) {
@@ -60,13 +65,15 @@ export function companyNewsAttribution(row = {}, identity = {}) {
       }
     }
   }
-  const direct = evidence.some(e => e.field !== 'summary' && e.kind !== 'subsidiary');
+  const direct = evidence.some(e => e.field !== 'summary' && !['subsidiary', 'related'].includes(e.kind));
+  const related = evidence.filter(e => e.field !== 'summary' && e.kind === 'related');
   const reviewed = queryTicker === reviewedMismatch.ticker &&
     articleAddress(row.url) === reviewedMismatch.url &&
     title === normalizeNewsText(reviewedMismatch.title) && summary === normalizeNewsText(reviewedMismatch.summary) && !body;
-  const status = direct ? 'confirmed' : reviewed ? 'unrelated' : 'uncertain';
+  const status = direct ? 'confirmed' : reviewed ? 'unrelated' : related.length ? 'related' : 'uncertain';
   const reason = status === 'confirmed'
     ? 'Company identity matched in the article headline or bounded article body; this is not verification of the reported event.'
+    : status === 'related' ? `Related-entity coverage, not a direct event of ${queryCompany}. ${related[0].relationship.note}`
     : status === 'unrelated'
       ? 'User-reviewed mismatch: this exact Lululemon article is unrelated to the searched company. Original record retained.'
       : evidence.length
@@ -75,6 +82,7 @@ export function companyNewsAttribution(row = {}, identity = {}) {
   return { version: ATTRIBUTION_VERSION, status, reason, queryTicker, queryCompany, queryEntityId,
     companyTicker: status === 'confirmed' ? queryTicker : null,
     companyName: status === 'confirmed' ? queryCompany : null,
+    relationships: [...new Map(related.map(e => [e.relationship.name, e.relationship])).values()],
     evidence: evidence.filter((e, i, all) => all.findIndex(x => x.field === e.field && x.match === e.match && x.kind === e.kind) === i) };
 }
 
@@ -96,7 +104,7 @@ export function attributeNewsRow(row, identity = null) {
   return value;
 }
 
-export const attributionLabel = (row) => ({ confirmed: 'Company matched', uncertain: 'Possible match — unverified', unrelated: 'Unrelated search result' })[attributionFor(row).status];
+export const attributionLabel = (row) => ({ confirmed: 'Company matched', related: 'Related entity — exposure not established', uncertain: 'Possible match — unverified', unrelated: 'Unrelated search result' })[attributionFor(row).status];
 
 export function newsSearchText(row = {}) {
   const a = attributionFor(row);
@@ -107,5 +115,11 @@ export function newsSearchText(row = {}) {
 
 /** Old cached events have no trustworthy attribution. They must not supply corroboration. */
 export function newsCanSupportAI(event = {}) {
-  return event.feed !== 'news' || event.attribution?.version === ATTRIBUTION_VERSION && event.attribution.status === 'confirmed';
+  if (event.attribution?.status === 'related') return false;
+  return !['news', 'market-news', 'twitter'].includes(event.feed) || event.feed !== 'twitter' && event.attribution?.version === ATTRIBUTION_VERSION && event.attribution.status === 'confirmed';
 }
+
+/** Reviewed context can be surfaced for investigation, never spent as direct corroboration. */
+export const isRelatedNewsContext = event => ['news', 'market-news', 'ipos'].includes(event.feed) &&
+  event.attribution?.version === ATTRIBUTION_VERSION && event.attribution.status === 'related' &&
+  event.attribution.relationships?.some(r => r.relationship && /^https:\/\//.test(r.evidenceUrl || ''));

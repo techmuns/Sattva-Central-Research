@@ -6,8 +6,9 @@ import { resolve } from 'node:path';
 
 export function withTwitterCollectionStatus(body, { enabled, code = null, now = new Date().toISOString() }) {
   const previous = body.collection || {};
-  const status = !enabled ? 'disabled' : code === 0 ? (body.failed?.length ? 'partial' : 'ok') : 'unavailable';
-  const reason = !enabled ? 'not-enabled' : code === 3 ? 'sign-in-unavailable' : code === 2 ? 'source-read-failed' : code === 0 ? (body.failed?.length ? 'partial-read' : null) : 'collector-failed';
+  const partial = body.failed?.length || body.searchCoverage?.incomplete;
+  const status = !enabled ? 'disabled' : code === 0 ? (partial ? 'partial' : 'ok') : 'unavailable';
+  const reason = !enabled ? 'not-enabled' : code === 3 ? 'sign-in-unavailable' : code === 2 ? 'source-read-failed' : code === 0 ? (partial ? 'partial-read' : null) : 'collector-failed';
   return {
     ...body,
     posts: body.posts || [], failed: body.failed || [], capturedAt: body.capturedAt || null,

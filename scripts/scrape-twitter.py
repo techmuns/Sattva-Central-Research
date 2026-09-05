@@ -49,12 +49,17 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from contextlib import aclosing
+from time import monotonic
 
 ROOT = Path(__file__).resolve().parent.parent
 POSTS_FILE = ROOT / "public" / "data" / "twitter-posts.json"
 HANDLES_FILE = ROOT / "public" / "data" / "twitter-handles.json"
+SEARCH_FILE = ROOT / "public" / "data" / "twitter-search.json"
+SEARCH_PLAN = ROOT / "public" / "data" / "twitter-search-plan.json"
+ARCHIVE_DIR = ROOT / "public" / "data" / "twitter-archive"
 
 # X's own rule, and the same one js/core/twitter-handles.js and worker/index.js enforce.
 HANDLE_RE = re.compile(r"^[A-Za-z0-9_]{1,15}$")
@@ -133,12 +138,44 @@ def shape(tweet, handle):
     }
 
 
+def cookie_header(raw):
+    """Supported own-session formats: Cookie header, cookie dict, or browser JSON cookie list."""
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            cookies = {str(c.get("name")): str(c.get("value")) for c in parsed if isinstance(c, dict)}
+        elif isinstance(parsed, dict):
+            cookies = parsed.get("cookies", parsed)
+            if isinstance(cookies, list):
+                cookies = {str(c.get("name")): str(c.get("value")) for c in cookies if isinstance(c, dict)}
+        else:
+            return None
+    except (ValueError, TypeError):
+        cookies = dict(part.strip().split("=", 1) for part in raw.split(";") if "=" in part)
+    if not isinstance(cookies, dict) or not all(cookies.get(k) for k in ["auth_token", "ct0"]):
+        return None
+    return "; ".join(f"{k}={cookies[k]}" for k in ["auth_token", "ct0"])
+
+
 async def add_accounts(api):
     """Log the pool in. Returns False when nothing is configured, which is not a scrape failure."""
+    own_session = os.environ.get("X_COOKIES", "").strip()
+    if own_session:
+        cookies = cookie_header(own_session)
+        if not cookies:
+            print("X_COOKIES is not a supported own-session cookie format.", file=sys.stderr)
+            return False
+        try:
+            await api.pool.add_account_cookies("sattva_owned_session", cookies)
+            return True
+        except Exception:
+            print("Own-session authentication is unavailable; no alternate account will be tried.", file=sys.stderr)
+            return False
     raw = os.environ.get("X_ACCOUNTS", "").strip()
     if not raw:
         return False
-    for line in raw.splitlines():
+    # One configured account only. Never rotate accounts or proxies around a refusal.
+    for line in raw.splitlines()[:1]:
         parts = [p.strip() for p in line.split(":")]
         if len(parts) < 4 or not parts[0]:
             continue
@@ -196,21 +233,107 @@ async def collect(api, handles, held_ids):
                 print(f"  @{handle}: not found")
                 continue
             got = 0
-            async for tweet in api.user_tweets(user.id, limit=PER_HANDLE):
-                record = shape(tweet, handle)
-                if not record["tweet_id"]:
-                    continue
-                # The timeline is newest-first, so the first post already held means the rest are
-                # too. Stopping there is what makes a top-up run cheap.
-                if record["tweet_id"] in held_ids:
-                    break
-                posts.append(record)
-                got += 1
+            async with aclosing(api.user_tweets(user.id, limit=PER_HANDLE)) as timeline:
+                async for tweet in timeline:
+                    record = shape(tweet, handle)
+                    # Pinned/previously seen posts do not prove the rest of a timeline is old.
+                    if not record["tweet_id"] or record["tweet_id"] in held_ids:
+                        continue
+                    posts.append(record)
+                    got += 1
             print(f"  @{handle}: {got} new")
         except Exception as err:
             failed.append({"handle": handle, "reason": "could not be read"})
-            print(f"  @{handle}: {type(err).__name__}: {err}", file=sys.stderr)
+            print(f"  @{handle}: {type(err).__name__}", file=sys.stderr)
     return posts, failed
+
+
+async def collect_searches(api, jobs, state, *, now=None, budget_seconds=480, limit=100):
+    """Latest search across all authors; every term has its own overlapping coverage checkpoint.
+
+    Small time partitions limit per-query volume. Saturation narrows the saved partition on the
+    next run; it NEVER advances lastSuccessAt or gets labelled 'no news'. No keyword filtering.
+    """
+    now = now or datetime.now(timezone.utc)
+    deadline = monotonic() + budget_seconds
+    queries = state.setdefault("queries", {})
+    posts, attempted = [], 0
+    ordered = sorted(jobs, key=lambda job: queries.get(job["key"], {}).get("lastAttemptAt", ""))
+    for job in ordered:
+        if monotonic() >= deadline:
+            break
+        attempted += 1
+        checkpoint = queries.setdefault(job["key"], {})
+        stamp = now.isoformat(timespec="seconds")
+        checkpoint["lastAttemptAt"] = stamp
+        try:
+            last = datetime.fromisoformat(checkpoint["lastSuccessAt"]) if checkpoint.get("lastSuccessAt") else now - timedelta(days=7)
+            pending = list(checkpoint.get("pending") or [{"from": (last - timedelta(hours=48)).isoformat(), "to": stamp}])
+            window = pending.pop(0)
+            start, end = datetime.fromisoformat(window["from"]), datetime.fromisoformat(window["to"])
+            query = f'{job["query"]} since_time:{int(start.timestamp())} until_time:{int(end.timestamp())}'
+            count = 0
+            async with asyncio.timeout(max(1, min(45, deadline - monotonic()))):
+                async with aclosing(api.search(query, limit=limit)) as results:
+                    async for tweet in results:
+                        record = shape(tweet, "unknown")
+                        if record["tweet_id"]:
+                            record["matchedQueries"] = [{"entityId": job["entityId"], "query": job["query"]}]
+                            posts.append(record)
+                            count += 1
+            checkpoint["lastResultCount"] = count
+            if count >= limit:
+                if (end - start).total_seconds() > 3600:
+                    middle = start + (end - start) / 2
+                    pending.extend([{"from": start.isoformat(), "to": middle.isoformat()}, {"from": middle.isoformat(), "to": end.isoformat()}])
+                else:
+                    pending.append(window)
+                checkpoint["error"] = "result-cap-incomplete"
+            else:
+                checkpoint["error"] = None
+                if not pending:
+                    # The completed upper bound, not run time (a backlog may be older).
+                    checkpoint["lastSuccessAt"] = checkpoint.get("targetThrough") or window["to"]
+            checkpoint["targetThrough"] = checkpoint.get("targetThrough") if pending else None
+            if pending and not checkpoint.get("targetThrough"):
+                checkpoint["targetThrough"] = window["to"]
+            checkpoint["pending"] = pending
+        except Exception as err:
+            checkpoint["error"] = "search-unavailable"
+            print(f"  Company search unavailable: {type(err).__name__}", file=sys.stderr)
+            # A refusal is an outage. Stop the run, not a reason to find another account.
+            break
+    state["coverage"] = {"planned": len(jobs), "attempted": attempted,
+        "incomplete": sum(1 for job in jobs if not queries.get(job["key"], {}).get("lastSuccessAt") or
+            queries.get(job["key"], {}).get("error") or queries.get(job["key"], {}).get("pending") or
+            now - datetime.fromisoformat(queries[job["key"]]["lastSuccessAt"]) > timedelta(hours=48)), "checkedAt": now.isoformat()}
+    return posts
+
+
+def merge_posts(previous, incoming):
+    held = {p["tweet_id"]: p for p in previous if p.get("tweet_id")}
+    for post in incoming:
+        old = held.get(post["tweet_id"], {})
+        matched = {json.dumps(q, sort_keys=True): q for q in old.get("matchedQueries", []) + post.get("matchedQueries", [])}
+        held[post["tweet_id"]] = {**old, **post, "matchedQueries": list(matched.values())}
+    return sorted(held.values(), key=lambda p: (p.get("created_at") or "", p["tweet_id"]), reverse=True)
+
+
+def archive_posts(posts):
+    ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+    buckets = {}
+    for post in posts:
+        month = (post.get("created_at") or "")[:7]
+        if not re.fullmatch(r"\d{4}-\d{2}", month):
+            month = "undated"
+        buckets.setdefault(month, []).append(post)
+    for month, incoming in buckets.items():
+        path = ARCHIVE_DIR / f"{month}.json"
+        old = load_json(path, {})
+        path.write_text(json.dumps({"month": month, "posts": merge_posts(old.get("posts", []), incoming)}, ensure_ascii=False) + "\n", encoding="utf-8")
+    return [{"file": f"twitter-archive/{path.name}", "month": path.stem}
+            for path in sorted(ARCHIVE_DIR.glob("*.json"), reverse=True)
+            if re.fullmatch(r"(?:\d{4}-\d{2}|undated)\.json", path.name)]
 
 
 async def main():
@@ -223,7 +346,8 @@ async def main():
         write_handles(body, handles)
         print(f"Added @{wanted} to the monitored list.")
 
-    if not handles:
+    jobs = load_json(SEARCH_PLAN, {}).get("queries", [])
+    if not handles and not jobs:
         print("No handles are monitored; nothing to collect.")
         return 0
 
@@ -233,9 +357,9 @@ async def main():
         print("twscrape is not installed (pip install twscrape).", file=sys.stderr)
         return 3
 
-    api = API()
+    api = API(raise_when_no_account=True, wait_timeout=15, wait_interval=1)
     if not await add_accounts(api):
-        print("No X_ACCOUNTS secret is configured, so no account could be read.", file=sys.stderr)
+        print("No usable own-session X credential is configured.", file=sys.stderr)
         return 3
 
     # THE CREDENTIAL EXISTS; DID IT WORK? See `active_accounts` for why these are different
@@ -255,19 +379,27 @@ async def main():
     before = set(held)
 
     print(f"Reading {len(handles)} account(s)...")
-    fresh, failed = await collect(api, handles, before)
+    try:
+        fresh, failed = await asyncio.wait_for(collect(api, handles, before), timeout=120)
+    except TimeoutError:
+        fresh, failed = [], [{"handle": h["handle"], "reason": "source timed out"} for h in handles]
+    search_state = load_json(SEARCH_FILE, {})
+    fresh.extend(await collect_searches(api, jobs, search_state))
+    SEARCH_FILE.write_text(json.dumps(search_state, indent=2) + "\n", encoding="utf-8")
 
     for record in fresh:
         held[record["tweet_id"]] = record
 
     # DEDUPLICATED BY ID, THEN CAPPED. Newest first by post time, with the id as the tie-break so
     # a post with no readable time still lands somewhere stable rather than moving between runs.
-    merged = sorted(held.values(), key=lambda p: (p.get("created_at") or "", p.get("tweet_id") or ""), reverse=True)[:KEEP]
+    all_posts = merge_posts(existing.get("posts", []), fresh)
+    archive = archive_posts(all_posts)
+    merged = all_posts[:KEEP]
     after = {p["tweet_id"] for p in merged}
 
     # Every handle failed and we already had posts: keep what we have rather than replacing a good
     # capture with a record of one bad run.
-    if failed and len(failed) == len(handles) and before:
+    if failed and len(failed) == len(handles) and before and not fresh:
         print(f"Every account failed; the existing capture of {len(before)} posts is unchanged.", file=sys.stderr)
         return 2
 
@@ -280,6 +412,8 @@ async def main():
                 "handles": [h["handle"] for h in handles],
                 "posts": merged,
                 "failed": failed,
+                "searchCoverage": search_state["coverage"],
+                "archive": archive,
             },
             indent=2,
             ensure_ascii=False,
