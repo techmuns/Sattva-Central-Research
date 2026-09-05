@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-09-05T18:19:09.750Z",
-  "oldestDataAt": "2026-09-05T18:19:09.750Z",
-  "from": "2025-09-05",
-  "to": "2026-09-05",
+  "capturedAt": "2026-09-05T18:31:12.572Z",
+  "oldestDataAt": "2026-09-05T18:31:12.572Z",
+  "from": "2025-09-06",
+  "to": "2026-09-06",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-09-05T18:19:09.750Z",
+      "capturedAt": "2026-09-05T18:31:12.572Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-09-05T18:19:09.750Z",
+      "capturedAt": "2026-09-05T18:31:12.572Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-09-05T18:19:09.750Z",
+      "capturedAt": "2026-09-05T18:31:12.572Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-09-05T18:19:09.750Z",
+      "capturedAt": "2026-09-05T18:31:12.572Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1304,
   "emptyCount": 0,
-  "rowCount": 13269,
+  "rowCount": 13244,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -37563,94 +37563,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "CARYSIL",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "Carysil Ltd",
-          "Insider": "Anand Sharma",
-          "Category": "Director",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1000",
-          "Trade %": "0",
-          "Trade Value": "917101",
-          "Post Holding Shares": "25000",
-          "Post Holding %": "0.09",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "CARYSIL",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "Carysil Ltd",
-          "Insider": "Anand Sharma",
-          "Category": "Director",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "6000",
-          "Trade %": "0.02",
-          "Trade Value": "5688420",
-          "Post Holding Shares": "19000",
-          "Post Holding %": "0.07",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-09-05",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "CARYSIL",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "Carysil Ltd",
-          "Insider": "Chetan N Shah",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2000",
-          "Trade %": "0.01",
-          "Trade Value": "1858000",
-          "Post Holding Shares": "2655",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "CARYSIL",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "Carysil Ltd",
-          "Insider": "Chetan N Shah",
-          "Category": "Employee",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "500",
-          "Trade %": "0",
-          "Trade Value": "480000",
-          "Post Holding Shares": "2155",
-          "Post Holding %": "0.01",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-09-05",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "AXISCADES": [
@@ -44091,138 +44003,6 @@
           "From Date": "2025-09-05",
           "To Date": "2025-09-05",
           "Broadcast Date": "2025-09-08",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "M&M",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "M&M",
-          "Insider": "Nalinikanth Gollagunta",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2900",
-          "Trade %": "0",
-          "Trade Value": "10108240",
-          "Post Holding Shares": "2907",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "M&M",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "M&M",
-          "Insider": "Naveen Raju",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Revoke",
-          "Trade Shares": "16060",
-          "Trade %": "0",
-          "Trade Value": "55912890",
-          "Post Holding Shares": "16127",
-          "Post Holding %": "0",
-          "Mode": "Pledge Released",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "M&M",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "M&M",
-          "Insider": "Naveen Raju",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "16060",
-          "Trade %": "0",
-          "Trade Value": "55933312",
-          "Post Holding Shares": "67",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "M&M",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "M&M",
-          "Insider": "Santanu Sinha",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "730",
-          "Trade %": "0",
-          "Trade Value": "2562292",
-          "Post Holding Shares": "3423",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "M&M",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "M&M",
-          "Insider": "Sriram Ramachandran",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "500",
-          "Trade %": "0",
-          "Trade Value": "1780000",
-          "Post Holding Shares": "34000",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "M&M",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "M&M",
-          "Insider": "Yogesh Dattatraya Gandhi",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "100",
-          "Trade %": "0",
-          "Trade Value": "350000",
-          "Post Holding Shares": "1834",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -55974,116 +55754,6 @@
           "From Date": "2025-09-08",
           "To Date": "2025-09-08",
           "Broadcast Date": "2025-09-12",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees ESOP Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "6000",
-          "Trade %": "0",
-          "Trade Value": "311760",
-          "Post Holding Shares": "86285",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-09-03",
-          "To Date": "2025-09-03",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "16016",
-          "Trade %": "0",
-          "Trade Value": "160160",
-          "Post Holding Shares": "1305159",
-          "Post Holding %": "0.07",
-          "Mode": "ESOP",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "23",
-          "Trade %": "0",
-          "Trade Value": "11725",
-          "Post Holding Shares": "1378961",
-          "Post Holding %": "0.08",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-03",
-          "To Date": "2025-09-03",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "3713",
-          "Trade %": "0",
-          "Trade Value": "1873462",
-          "Post Holding Shares": "1321175",
-          "Post Holding %": "0.08",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "JSWENERGY",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "JSWENERGY",
-          "Insider": "JSW Energy Employees Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "54073",
-          "Trade %": "0",
-          "Trade Value": "540730",
-          "Post Holding Shares": "1324888",
-          "Post Holding %": "0.08",
-          "Mode": "ESOP",
-          "From Date": "2025-09-03",
-          "To Date": "2025-09-03",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -87017,28 +86687,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "ECLERX",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "ECLERX",
-          "Insider": "Eclerx Employee Welfare Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "4351",
-          "Trade %": "0.01",
-          "Trade Value": "19148039",
-          "Post Holding Shares": "694705",
-          "Post Holding %": "1.45",
-          "Mode": "Market Purchase",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "AJANTPHARM": [
@@ -102034,50 +101682,6 @@
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "LALPATHLAB",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "LALPATHLAB",
-          "Insider": "MRINAL KAPOOR",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "500",
-          "Trade %": "0",
-          "Trade Value": "1425715",
-          "Post Holding Shares": "3000",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "LALPATHLAB",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "LALPATHLAB",
-          "Insider": "VIJAY MITTAL",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "550",
-          "Trade %": "0",
-          "Trade Value": "906257",
-          "Post Holding Shares": "690",
-          "Post Holding %": "0",
-          "Mode": "ESOP",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "NEULANDLAB": [
@@ -107780,28 +107384,6 @@
           "From Date": "2025-09-08",
           "To Date": "2025-09-08",
           "Broadcast Date": "2025-09-08",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "BERGEPAINT",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "BERGEPAINT",
-          "Insider": "Sujyoti Mukherjee",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "1000",
-          "Trade %": "0",
-          "Trade Value": "544465",
-          "Post Holding Shares": "18136",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -114393,28 +113975,6 @@
           "From Date": "2025-09-05",
           "To Date": "2025-09-05",
           "Broadcast Date": "2025-09-08",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "USHAMART",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "USHAMART",
-          "Insider": "Peterhouse Investments India Ltd.",
-          "Category": "Promoter Group",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "40000",
-          "Trade %": "0.01",
-          "Trade Value": "15223200",
-          "Post Holding Shares": "5591529",
-          "Post Holding %": "1.83",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -129106,28 +128666,6 @@
           "Source": "BSE",
           "Trade Category": "Insider trade"
         }
-      },
-      {
-        "ticker": "APOLLOHOSP",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "Apollo Hospitals Enterprise Ltd",
-          "Insider": "SUNEETA REDDY",
-          "Category": "Promoter & Director",
-          "Security Type": "Equity Shares",
-          "Transaction": "Revoke",
-          "Trade Shares": "575000",
-          "Trade %": "0",
-          "Trade Value": "4448200000",
-          "Post Holding Shares": "2937066",
-          "Post Holding %": "2.04",
-          "Mode": "Pledge Released",
-          "From Date": "2025-09-03",
-          "To Date": "2025-09-03",
-          "Broadcast Date": "2025-09-05",
-          "Source": "BSE",
-          "Trade Category": "Insider trade"
-        }
       }
     ],
     "SARDAEN": [
@@ -134502,28 +134040,6 @@
           "From Date": "2025-09-05",
           "To Date": "2025-09-05",
           "Broadcast Date": "2025-09-08",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "DMART",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "DMART",
-          "Insider": "Santosh Nagnath Kadam",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "100",
-          "Trade %": "0",
-          "Trade Value": "487310",
-          "Post Holding Shares": "2300",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -148025,28 +147541,6 @@
           "From Date": "2025-09-08",
           "To Date": "2025-09-09",
           "Broadcast Date": "2025-09-09",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "APLLTD",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "APLLTD",
-          "Insider": "Chirayu Ramanbhai Amin HUF",
-          "Category": "Promoter Group",
-          "Security Type": "Equity Shares",
-          "Transaction": "Acquisition",
-          "Trade Shares": "13068",
-          "Trade %": "0.01",
-          "Trade Value": "12590868",
-          "Post Holding Shares": "876345",
-          "Post Holding %": "0.45",
-          "Mode": "Market Purchase",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
@@ -175842,50 +175336,6 @@
           "From Date": "2025-09-09",
           "To Date": "2025-09-09",
           "Broadcast Date": "2025-09-09",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAUKRI",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "NAUKRI",
-          "Insider": "Info Edge Employees Stock Option Plan Trust",
-          "Category": "Trust",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "7132",
-          "Trade %": "0",
-          "Trade Value": "14264",
-          "Post Holding Shares": "508191",
-          "Post Holding %": "0.08",
-          "Mode": "ESOP",
-          "From Date": "2025-09-04",
-          "To Date": "2025-09-04",
-          "Broadcast Date": "2025-09-05",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "NAUKRI",
-        "date": "2025-09-05",
-        "cells": {
-          "Company": "NAUKRI",
-          "Insider": "Sumit Kumar Jaiswal",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "700",
-          "Trade %": "0",
-          "Trade Value": "938702",
-          "Post Holding Shares": "2800",
-          "Post Holding %": "0",
-          "Mode": "Market Sale",
-          "From Date": "2025-09-05",
-          "To Date": "2025-09-05",
-          "Broadcast Date": "2025-09-05",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
