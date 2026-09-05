@@ -59,6 +59,8 @@ import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
 import * as records from './alert-records.js';
 import { readEntry, writeEntry } from '../core/store.js';
+import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
+export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
 import { attributionFor, newsSearchText } from './company-news-attribution.js';
 
@@ -79,7 +81,6 @@ export const today = (now = Date.now()) => new Date(now + IST_OFFSET_MS).toISOSt
 // deliberately carries no Family reply, holding weight, private document or
 // sourceRecord. Those stay memory-only; this cache is safe to survive a reload.
 export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
-export const ALERT_WINDOW_CACHE_DAYS = 7;
 
 function shiftDay(day, amount) {
   const date = new Date(`${day}T00:00:00Z`);
