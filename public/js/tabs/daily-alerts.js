@@ -40,6 +40,7 @@ import { attributionLabel } from '../data/company-news-attribution.js';
 export const meta = {
   id: 'daily-alerts',
   title: 'All Alerts',
+  layout: 'table',
   subtitle: 'Every retained alert and loaded portfolio schedule in one time view.',
   // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
   // collapse — the feed filter in the toolbar does that job without costing a navigation.
@@ -74,6 +75,10 @@ let collecting = 0;
 let sourceTimer = null;
 let sourceDirty = false;
 let tableDispose = null;
+let workspaceDispose = null;
+let sourcesOpen = false;
+let focusMode = false;
+let pageBeforeFocus = 0;
 let scrollQuietUntil = 0;
 let deferredPaintTimer = null;
 function sourceChanged() {
@@ -161,6 +166,11 @@ export function destroy() {
   cancelDeferredPaint();
   if (tableDispose) tableDispose();
   tableDispose = null;
+  workspaceDispose?.();
+  workspaceDispose = null;
+  sourcesOpen = false;
+  focusMode = false;
+  delete document.documentElement.dataset.alertsFocusMode;
   if (unfit) unfit();
   unfit = null;
   for (const off of unsubs) {
@@ -313,6 +323,7 @@ function paint(ctx) {
   }));
 
   const focus = captureFocus(ctx.root);
+  const sourceScrollTop = renderedHorizon === horizon ? ctx.root.querySelector('[data-alerts-coverage]')?.scrollTop || 0 : 0;
   // Preserve the visible row across live repaints inside one horizon, but never carry a deep
   // history scroll offset into the much shorter forward calendar (or vice versa).
   const tablePosition = renderedHorizon === horizon ? captureTablePosition(ctx.root) : null;
@@ -328,7 +339,10 @@ function paint(ctx) {
   // table and one more global scroll listener.
   if (tableDispose) tableDispose();
   tableDispose = null;
+  workspaceDispose?.();
+  workspaceDispose = null;
   ctx.root.innerHTML = `
+    <div class="alerts-workspace" data-alerts-workspace>
     ${sectionHead({
       title: 'All Alerts',
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(report, day)}${pendingPill(report)}${scopeSummary({
@@ -338,13 +352,32 @@ function paint(ctx) {
         book: coverage.meta(),
       })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}</div>`,
     })}
-    ${horizonToggle(allThrough.length, allUpcoming.length, day)}
-    ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length)}
-    ${table.html}`;
+    <div class="alerts-controls" data-alerts-controls>
+      ${horizonToggle(allThrough.length, allUpcoming.length, day)}
+      <div class="alerts-view-controls">
+        ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length)}
+        <button type="button" class="alerts-layout-button" data-alerts-focus aria-pressed="${focusMode}"
+          title="${focusMode ? 'Restore the app header and navigation (Escape)' : 'Hide the app header and navigation for more table space'}">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-alerts-focus-label>${focusMode ? 'Exit focus' : 'Focus table'}</span>
+        </button>
+        <div data-alerts-table-actions></div>
+      </div>
+    </div>
+    ${table.html}
+    </div>`;
 
   tableDispose = table.wire(ctx.root);
+  // Wire the shared controls first, then move their existing nodes beside the view controls.
+  // Search and the three filters now get a full row even on a narrower laptop. The kit still
+  // owns count updates and exports over its complete filtered model, never the mounted rows.
+  ctx.root.querySelector('[data-alerts-table-actions]').append(ctx.root.querySelector('[data-table-actions]'));
   wireHorizon(ctx);
   wireFeedFilter(ctx, available);
+  workspaceDispose = wireWorkspace(ctx);
+  // A long picker scrolls on phones. Selecting a checkbox must not snap that panel back to
+  // its first source while the table below is being repainted for the new selection.
+  if (sourcesOpen) ctx.root.querySelector('[data-alerts-coverage]').scrollTop = sourceScrollTop;
   fitStreamToViewport(ctx.root);
   restoreTablePosition(ctx.root, tablePosition);
   renderedHorizon = horizon;
@@ -426,6 +459,9 @@ function captureFocus(root) {
   if (el.matches?.('[data-table-search]')) return { kind: 'search', start: el.selectionStart, end: el.selectionEnd };
   if (el.matches?.('[data-feed-toggle]')) return { kind: 'feed', value: el.dataset.feedToggle };
   if (el.matches?.('[data-horizon-toggle]')) return { kind: 'horizon', value: el.dataset.horizonToggle };
+  if (el.matches?.('[data-sources-summary]')) return { kind: 'sources' };
+  if (el.matches?.('[data-alerts-focus]')) return { kind: 'focus' };
+  if (el.matches?.('[data-sources-close]')) return { kind: 'sources-close' };
   return null;
 }
 
@@ -433,10 +469,13 @@ function restoreFocus(root, focus) {
   if (!focus) return;
   const el = focus.kind === 'search'
     ? root.querySelector('[data-table-search]')
+    : focus.kind === 'sources' ? root.querySelector('[data-sources-summary]')
+    : focus.kind === 'focus' ? root.querySelector('[data-alerts-focus]')
+    : focus.kind === 'sources-close' ? root.querySelector('[data-sources-close]')
     : [...root.querySelectorAll(focus.kind === 'feed' ? '[data-feed-toggle]' : '[data-horizon-toggle]')]
         .find((node) => node.dataset[focus.kind === 'feed' ? 'feedToggle' : 'horizonToggle'] === focus.value);
   if (!el) return;
-  el.focus();
+  el.focus({ preventScroll: true });
   if (focus.kind !== 'search') return;
   try {
     el.setSelectionRange(focus.start, focus.end);
@@ -528,12 +567,12 @@ function horizonToggle(throughCount, upcomingCount, day) {
       <span class="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}">${escapeHtml(formatNumber(count))}</span>
     </button>`;
   };
-  return `<div class="mb-4 flex flex-wrap items-center gap-3">
+  return `<div class="alerts-horizon-control">
     <div role="tablist" aria-label="Alert time horizon" class="inline-flex rounded-2xl bg-slate-100 p-1 ring-1 ring-slate-200/80" data-alerts-horizon>
       ${tab(HORIZON.THROUGH, 'Till Today', throughCount)}
       ${tab(HORIZON.UPCOMING, 'Upcoming', upcomingCount)}
     </div>
-    <p class="text-xs text-slate-500">${horizon === HORIZON.UPCOMING
+    <p class="alerts-horizon-caption text-xs text-slate-500">${horizon === HORIZON.UPCOMING
       ? `Scheduled events from ${fmtDay(day)} onward, nearest first.`
       : `Retained events through ${fmtDay(day)}, newest first.`}</p>
   </div>`;
@@ -544,10 +583,6 @@ function horizonToggle(throughCount, upcomingCount, day) {
 // ---------------------------------------------------------------------------------------
 
 function coveragePanel(feeds, visibleCount) {
-  if (!feeds.length) {
-    return `<div class="mb-5 text-xs text-slate-400" data-alerts-coverage>Reading the feeds…</div>`;
-  }
-
   const box = (on) => `
     <span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-all ${
       on ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm' : 'border-slate-300 bg-white text-transparent group-hover:border-indigo-300'
@@ -584,17 +619,70 @@ function coveragePanel(feeds, visibleCount) {
       </button>`);
   }
 
-  return `
-    <section class="mb-5 rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-slate-100" data-alerts-coverage aria-label="Alert source filters">
-      <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-600">Sources</h2>
-          <p class="mt-0.5 text-xs text-slate-400">Select one or more feeds to focus the list.</p>
-        </div>
-        ${picked ? '<span class="text-[11px] font-semibold text-indigo-600">Custom selection</span>' : ''}
+  const selection = picked ? `${picked.size} selected` : 'All sources';
+  const selectedNames = picked ? feeds.filter((feed) => picked.has(feed.id)).map((feed) => feed.label).join(', ') : 'Every available source';
+  return `<details class="alerts-source-picker" data-alerts-sources ${sourcesOpen ? 'open' : ''}>
+    <summary class="alerts-layout-button" data-sources-summary aria-controls="alerts-source-panel" title="${escapeHtml(selectedNames)}">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h14M5 10h10M8 15h4" stroke-linecap="round"/></svg>
+      Sources <span class="alerts-selection" data-source-selection>${escapeHtml(selection)}</span>
+      <span class="alerts-source-chevron" aria-hidden="true">⌄</span>
+    </summary>
+    <section id="alerts-source-panel" class="alerts-source-panel" data-alerts-coverage aria-label="Alert source filters">
+      <div class="alerts-source-heading">
+        <div><h3 class="font-semibold text-slate-800">Filter by source</h3>
+          <p class="mt-1 text-xs text-slate-500">${escapeHtml(selectedNames)}. Select one or more feeds.</p></div>
+        <button type="button" class="alerts-layout-button" data-sources-close>Done</button>
       </div>
-      <div class="flex flex-wrap items-center gap-2 text-xs">${chips.join('')}</div>
-    </section>`;
+      <div class="flex flex-wrap items-center gap-2 text-xs">${feeds.length ? chips.join('') : 'Reading the feeds…'}</div>
+    </section>
+  </details>`;
+}
+
+/** Layout controls never recollect or rebuild rows. Source selections keep the picker open. */
+function wireWorkspace(ctx) {
+  const picker = ctx.root.querySelector('[data-alerts-sources]');
+  const summary = ctx.root.querySelector('[data-sources-summary]');
+  const focusButton = ctx.root.querySelector('[data-alerts-focus]');
+  const closeSources = (restore = false) => {
+    sourcesOpen = false;
+    picker.open = false;
+    if (restore) summary.focus({ preventScroll: true });
+  };
+  const onToggle = () => { if (picker.isConnected) sourcesOpen = picker.open; };
+  const onOutside = (event) => { if (picker.open && !picker.contains(event.target)) closeSources(); };
+  const setFocus = (next) => {
+    if (next) pageBeforeFocus = window.scrollY;
+    const position = captureTablePosition(ctx.root);
+    focusMode = next;
+    if (next) document.documentElement.dataset.alertsFocusMode = 'true';
+    else delete document.documentElement.dataset.alertsFocusMode;
+    focusButton.setAttribute('aria-pressed', String(next));
+    focusButton.querySelector('[data-alerts-focus-label]').textContent = next ? 'Exit focus' : 'Focus table';
+    focusButton.title = next ? 'Restore the app header and navigation (Escape)' : 'Hide the app header and navigation for more table space';
+    window.scrollTo({ top: next ? 0 : pageBeforeFocus, behavior: 'instant' });
+    fitStreamToViewport(ctx.root);
+    restoreTablePosition(ctx.root, position);
+  };
+  const onFocus = () => setFocus(!focusMode);
+  const onEscape = (event) => {
+    if (event.key !== 'Escape' || event.defaultPrevented || !ctx.root.contains(event.target)) return;
+    if (picker.open) { event.preventDefault(); closeSources(true); }
+    else if (focusMode) { event.preventDefault(); setFocus(false); focusButton.focus({ preventScroll: true }); }
+  };
+  const done = ctx.root.querySelector('[data-sources-close]');
+  const onDone = () => closeSources(true);
+  picker.addEventListener('toggle', onToggle);
+  focusButton.addEventListener('click', onFocus);
+  done.addEventListener('click', onDone);
+  document.addEventListener('pointerdown', onOutside);
+  ctx.root.addEventListener('keydown', onEscape);
+  return () => {
+    picker.removeEventListener('toggle', onToggle);
+    focusButton.removeEventListener('click', onFocus);
+    done.removeEventListener('click', onDone);
+    document.removeEventListener('pointerdown', onOutside);
+    ctx.root.removeEventListener('keydown', onEscape);
+  };
 }
 
 /**
@@ -641,13 +729,17 @@ function fitStreamToViewport(root) {
   apply();
   const onResize = () => apply();
   window.addEventListener('resize', onResize);
-  unfit = () => window.removeEventListener('resize', onResize);
+  // Source arrivals can wrap the status or toolbar without resizing the window. Observe only
+  // the chrome, not the table whose own height we set, to avoid a resize feedback loop.
+  const observer = new ResizeObserver(apply);
+  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-table-toolbar]')) observer.observe(node);
+  unfit = () => { window.removeEventListener('resize', onResize); observer.disconnect(); };
 }
 
 // Enough table to be worth having on a short window, and enough margin to keep the card's bottom
 // edge and its shadow off the fold.
 const MIN_STREAM_PX = 320;
-const STREAM_BOTTOM_GAP_PX = 24;
+const STREAM_BOTTOM_GAP_PX = 12;
 
 function wireHorizon(ctx) {
   const root = ctx.root.querySelector('[data-alerts-horizon]');
@@ -894,7 +986,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     nameAfter: mode === HORIZON.UPCOMING ? 1 : 2,
     dense: true,
     wrapHeads: true,
-    stickyHead: 'max(320px, calc(100vh - 560px))',
+    stickyHead: 'max(320px, calc(100vh - 260px))',
     // The timeline can exceed five thousand rows. Keep all of them in the data model for search,
     // filters, counts and export, while mounting only a bounded viewport window. Historical rows
     // News carries five lines including attribution. Its 115px natural height exceeded the old
