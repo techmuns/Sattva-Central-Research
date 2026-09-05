@@ -60,4 +60,31 @@ export const isLoaded = () => state.loaded;
 export const posts = () => state.posts;
 export const byId = (id) => state.byId.get(Number(id)) || null;
 export const meta = () => { const { posts, byId, ...metadata } = state; return metadata; };
+// ASKING THE RUNNER TO GO AND READ, BECAUSE NO CLOCK HERE CAN.
+//
+// Measured over 24 hours on this repository, GitHub delivers 7-9 scheduled runs a DAY whatever the
+// cron asks for: telegram-refresh at */30 and corporate-actions at */15 both landed 8, across a
+// 4x range of requested density. So a denser expression buys nothing and only makes the workflow
+// file dishonest, while `workflow_dispatch` is not throttled at all. The cadence therefore comes
+// from the reader opening the tab — the same demand signal market news already runs on.
+//
+// The source word matters: a refresh nobody pressed is filed as `auto`, because `lastAutomatic` is
+// the field that answers whether this feed keeps itself current, and filing an unattended fetch
+// under `button` would hide it from the one measurement that can see it.
+const DISPATCH_SOURCES = new Set(['button', 'auto', 'cron']);
+
+export async function startScrape(source = 'auto') {
+  const word = DISPATCH_SOURCES.has(source) ? source : 'auto';
+  try {
+    const res = await fetch(`api/telegram/refresh?source=${word}`, { method: 'POST', headers: { accept: 'application/json' } });
+    // Read the SHAPE of the reply, not the status. A static origin answers a POST with 501 rather
+    // than 404 — measured — and no Worker is not a failure of this feed: the committed capture is
+    // exactly as good, there is simply nothing here to ask.
+    const body = await res.json().catch(() => null);
+    return body && typeof body === 'object' ? body : { ok: false, reason: 'no-worker' };
+  } catch {
+    return { ok: false, reason: 'no-worker' };
+  }
+}
+
 export function onChange(fn) { subscribers.add(fn); return () => subscribers.delete(fn); }

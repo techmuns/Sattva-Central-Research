@@ -247,6 +247,7 @@ function paint(ctx) {
 
   let panel;
   if (onTelegram) {
+    maybeAutoRefreshTelegram();
     panel = telegramPanel(telegramTable);
   } else if (chatterPending) {
     panel = `<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-slate-100">Loading chatter…</div>`;
@@ -736,8 +737,35 @@ function openTelegramPost(r) {
     <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex font-semibold text-indigo-600">Open original in Telegram &rarr;</a>
   </div>`, { size: 'wide' });
 }
+// A CAPTURE NOBODY REFRESHES IS A FEED THAT ROTS, AND NO CLOCK HERE CAN REFRESH IT.
+//
+// GitHub delivers 7-9 scheduled runs a DAY on this repository whatever the cron asks for. So the
+// half-hourly cadence this feed is meant to have cannot come from its schedule, and it comes from
+// the reader instead: opening the Telegram section on a capture older than the window asks the
+// runner to go and read the channel. That is the same narrowing of "nothing dispatches on its own"
+// that market news runs on, and the two reasons it is safe are unchanged — one request to a public
+// page on our own free runner, declined at the edge when a run is already going.
+const TELEGRAM_AUTO_AFTER_MS = 25 * 60 * 1000;
+let telegramAutoAt = 0;
+
+function maybeAutoRefreshTelegram() {
+  const at = Date.parse(telegram.meta().capturedAt || '');
+  if (!Number.isFinite(at) || Date.now() - at < TELEGRAM_AUTO_AFTER_MS) return;
+  // One attempt per window per page, so a dispatch that keeps failing cannot become a loop that
+  // re-fires on every repaint — the page-load walk this codebase removed, one layer up.
+  if (Date.now() - telegramAutoAt < TELEGRAM_AUTO_AFTER_MS) return;
+  telegramAutoAt = Date.now();
+  telegram.startScrape('auto').catch(() => {});
+}
+
 function buildTelegramTable() {
-  const rows = telegram.posts();
+  // A MESSAGE WITH NOTHING TO READ IS NOT A ROW. Slightly over half of this channel's messages are
+  // images and forwarded media posted without a caption — 170 of the 327 in the shipped capture —
+  // and a row whose only content is "Open in Telegram to read" is a row that answers nothing on a
+  // page whose whole point is the report headline. They stay in the ARCHIVE, because they are real
+  // messages, they carry the publication dates the ordering rests on, and the newest of them is
+  // what anchors the channel's head; they are simply not listed.
+  const rows = telegram.posts().filter((r) => r.text || r.attachments.length);
   if (!rows.length) return null;
   const table = scoreTable({
     rows, key: (r) => r.key, watchKey: () => null, name: postLabel,
@@ -762,7 +790,7 @@ function telegramFootnotes() {
     t.historyNextId ? `Older history is incomplete; the next collection continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
   return `<div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
     <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} public message pages and embeds. ${escapeHtml(progress)}
-    ${formatNumber(t.limited || 0)} posts require Telegram to read their content; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
+    ${formatNumber(t.limited || 0)} messages in the archive are images or media with no caption and are not listed; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
     ${t.undated ? `${formatNumber(t.undated)} older records are awaiting publication dates. ` : ''}
     Gaps between message numbers are not treated as posts. Publication dates come from Telegram; collection and first-seen times are separate.
     This archive retains captured posts and does not claim to include content Telegram withholds from the public web.</p>
