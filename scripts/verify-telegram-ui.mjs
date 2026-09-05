@@ -177,7 +177,7 @@ try {
   assert(view.unique, 'row keys are unique');
   assert.equal(view.publishesTime, true);
   assert(view.actualTimes, 'source dates survive normalisation');
-  assert.equal(view.hidden, 1, 'a confirmed hidden post stays in the table');
+  assert.equal(view.hidden, 1, 'a confirmed hidden post stays in the archive');
   assert(view.heads.includes('Published (IST)'));
   assert(/original publication dates/i.test(view.description));
   assert.equal(view.span, 10);
@@ -221,11 +221,15 @@ try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(await download.path());
     const sheet = workbook.getWorksheet('Telegram');
-    assert.equal(sheet.rowCount, 9, 'headers + provenance + seven posts');
+    assert.equal(sheet.rowCount, view.drawn + 2, 'headers + provenance + every listed post');
+    const exportedIds = [];
+    sheet.eachRow((row, index) => { if (index > 2) exportedIds.push(row.getCell('B').value); });
+    assert.deepEqual(exportedIds, [500, 498, 496, 495, 493, 491],
+      'export matches readable rows, including the document-only post, while captionless media remains archived');
     assert.equal(sheet.getCell('C3').value, '2026-05-13T10:57:05.000Z');
     assert.equal(sheet.getCell('G3').value, capturedAt, 'collector time is a separate column');
-    assert.equal(sheet.getCell('A4').value, 'Content available in Telegram');
-    assert.equal(sheet.getCell('E5').value, 'Broker C sector update.pdf');
+    assert.equal(sheet.getCell('A4').value, 'Broker C sector update.pdf');
+    assert.equal(sheet.getCell('E4').value, 'Broker C sector update.pdf');
   }
   // `capturedAt` moves when the CHANNEL posts, not when the job ran, so the label may not claim it.
   assert(!/\bLive\b/i.test(view.pill), `the status label must not claim Live, got: ${view.pill}`);
