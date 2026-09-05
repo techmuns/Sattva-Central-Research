@@ -5,5 +5,13 @@
     "moneycontrolcom"
   ],
   "posts": [],
-  "failed": []
+  "failed": [],
+  "collection": {
+    "version": 1,
+    "optional": true,
+    "status": "disabled",
+    "reason": "not-enabled",
+    "lastAttemptAt": null,
+    "lastSuccessAt": null
+  }
 }
