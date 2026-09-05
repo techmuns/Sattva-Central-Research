@@ -122,8 +122,11 @@ function absorb(body, { fromStore = false } = {}) {
   );
   state.capturedAt = str(body?.capturedAt);
   state.origin = fromStore ? 'store' : 'snapshot';
-  state.reason = null;
-  state.message = null;
+  const collection = body?.collection;
+  state.reason = collection?.status && collection.status !== 'ok' ? collection.reason || 'unavailable' : null;
+  state.message = collection?.status === 'disabled'
+    ? 'X coverage is optional and is not connected.'
+    : state.reason ? 'X collection is unavailable or partial. Previously captured posts remain available.' : null;
   return true;
 }
 
@@ -194,6 +197,8 @@ export function countsByHandle() {
 
 export function meta() {
   const visible = rows();
+  const captured = Date.parse(state.capturedAt || '');
+  const stale = Number.isFinite(captured) && Date.now() - captured > 2 * 3600000;
   return {
     lastReadFailed: !!state.lastReadFailed,
     loaded: state.loaded,
@@ -204,8 +209,8 @@ export function meta() {
     capturedAt: state.capturedAt,
     checkedAt: state.checkedAt,
     origin: state.origin,
-    reason: state.reason,
-    message: state.message,
+    reason: state.reason || (stale ? 'stale' : !state.capturedAt ? 'no-capture' : null),
+    message: state.message || (stale ? 'X collection is overdue. Previously captured posts remain available.' : null),
   };
 }
 
