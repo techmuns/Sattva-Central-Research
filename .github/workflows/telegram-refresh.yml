@@ -50,7 +50,7 @@ jobs:
           fi
       - name: Verify collector contracts offline
         if: steps.existing.outputs.skip != 'true'
-        run: node scripts/verify-telegram.mjs
+        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs
       - name: Collect posts and resumable history
         if: steps.existing.outputs.skip != 'true'
         id: collect

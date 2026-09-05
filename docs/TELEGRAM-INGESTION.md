@@ -72,5 +72,6 @@ deployment or data write is required to test this change locally.
 
 - `node scripts/verify-telegram.mjs`: parsing, source dates, restricted posts, edits,
   resumable history, retention, source failures, retries and forward gap discovery.
+- `node scripts/verify-telegram-publishing.mjs`: offline PR scope, check and review gates.
 - `PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-telegram-ui.mjs`: browser
   dates, scopes, restricted content, search, modal, failed refresh retention and mobile.
