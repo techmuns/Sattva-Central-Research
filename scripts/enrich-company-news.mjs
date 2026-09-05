@@ -88,7 +88,7 @@ export async function enrichCompanyNews({ dataDir = DATA, baseUrl = BASE, fetche
   const docQueue = [...documentsByUrl.values()].filter(r => !r.articleBody && allowedHosts.has(new URL(r.url).hostname.replace(/^www\./, '')))
     .sort((a, b) => String(state.documents[a.url]?.lastAttemptAt || '').localeCompare(String(state.documents[b.url]?.lastAttemptAt || '')) ||
       String(b.firstSeenAt || '').localeCompare(String(a.firstSeenAt || '')));
-  let docsRead = 0;
+  let docsRead = 0, docsSucceeded = 0;
   for (const row of docQueue.slice(0, 8)) {
     if (Date.now() > deadline - 45000) break;
     docsRead++;
@@ -100,6 +100,7 @@ export async function enrichCompanyNews({ dataDir = DATA, baseUrl = BASE, fetche
       incoming.push({ ...row, date: officialDocumentDate(text) || row.date,
         articleBody: { text: text.slice(0, 6000), provenance: 'publisher-article-body', sourceUrl: row.url, fetchedAt: at, bounded: 'first-three-pdf-pages; 6000 characters' } });
       state.documents[row.url] = { lastAttemptAt: at, lastSuccessAt: at, error: null };
+      docsSucceeded++;
     } catch { state.documents[row.url] = { ...state.documents[row.url], lastAttemptAt: at, error: 'document-read-failed' }; }
   }
 
@@ -134,19 +135,19 @@ export async function enrichCompanyNews({ dataDir = DATA, baseUrl = BASE, fetche
       if (range.reconcile) checkpoint.lastReconciledAt = at;
     }
   }
-  const stale = jobs.filter(job => !state.queries[job.key]?.lastSuccessAt || now - Date.parse(state.queries[job.key].lastSuccessAt) > 24 * 3600000).length;
+  const stale = jobs.filter(job => !state.queries[job.key]?.lastSuccessAt || state.queries[job.key].error || state.queries[job.key].pending?.length || now - Date.parse(state.queries[job.key].lastSuccessAt) > 24 * 3600000).length;
   const coverage = { capturedAt: at, plannedQueries: jobs.length, attemptedQueries: attempted, completedQueries: completed,
     staleOrIncompleteQueries: stale, pagesFailed: Object.values(state.pages).filter(p => p.error).length,
-    documentsRead: docsRead, documentsPending: docQueue.length - docsRead,
+    documentsRead: docsRead, documentsPending: docQueue.length - docsSucceeded,
     note: 'Additive global and IR discovery; search-provider coverage is not exhaustive. Pending date partitions, document failures and stale queries remain retryable.' };
   writeJson(join(dir, 'discovery.json'), { ...state, coverage });
   const archive = commitCompanyNewsArchive({ dir, entities, articles: incoming, capturedAt: at });
   const byTicker = { ...head.byTicker };
-  for (const entity of entities) byTicker[entity.key] = [];
+  for (const entity of entities) delete byTicker[entity.key];
   const entityById = new Map(entities.map(e => [e.entityId, e]));
   for (const row of recentArchivedCompanyNews(dir, new Date(now - 30 * 86400000).toISOString().slice(0, 10))) {
     const entity = entityById.get(row.entityId);
-    if (entity) byTicker[entity.key].push(row);
+    if (entity) (byTicker[entity.key] ||= []).push(row);
   }
   writeJson(join(dataDir, 'news.json'), { ...head, byTicker, enrichmentCoverage: coverage,
     rowCount: Object.values(byTicker).reduce((n, rows) => n + rows.length, 0),

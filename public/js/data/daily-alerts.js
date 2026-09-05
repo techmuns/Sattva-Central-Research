@@ -62,7 +62,7 @@ import { readEntry, writeEntry } from '../core/store.js';
 import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
-import { attributionFor, newsSearchText } from './company-news-attribution.js';
+import { attributeNewsRow, attributionFor, newsSearchText } from './company-news-attribution.js';
 import { matchPortfolioNews, newsEventTopics } from './portfolio-news-matching.js';
 
 // ---------------------------------------------------------------------------------------
@@ -590,6 +590,14 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
     const row = { ...event.sourceRecord, title: feedId === 'ipos' ? `${event.company || ''}: ${event.headline}` : event.headline,
       url: event.url, summary: event.sourceRecord?.summary };
     const matches = matchPortfolioNews(row, portfolioEntities);
+    if (feedId === 'twitter') {
+      // A post may discuss the company only in an attached image/thread. Keep exact collector
+      // query context searchable as uncertain, without treating that query as article evidence.
+      for (const query of event.sourceRecord?.matchedQueries || []) {
+        const identity = portfolioEntities.find(e => e.entityId === query.entityId);
+        if (identity && !matches.some(m => m.entityId === identity.entityId)) matches.push(attributeNewsRow(row, identity));
+      }
+    }
     if (!matches.length) return [event];
     return matches.map(matched => ({ ...event, ...newsSignal(matched),
       ...(feedId === 'twitter' ? { aiEligible: false, importance: IMPORTANCE.LOW } : {}),

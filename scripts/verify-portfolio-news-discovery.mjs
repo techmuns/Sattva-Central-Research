@@ -29,6 +29,7 @@ assert(neco.relatedEntities.every(r => r.evidenceUrl.startsWith('https://www.nec
 assert(twitterSearchPlan(identities).queries.some(q => q.query === '"Datasel"'));
 assert(twitterSearchPlan(identities).queries.some(q => q.entityId === 'isin:INE000000001'));
 assert.equal(matchPortfolioNews({ title: 'Sterlite Power expansion and STL software library' }, identities).length, 0);
+assert.equal(matchPortfolioNews({ title: 'Jayaswal Neco Group promoters face allegations' }, identities).length, 0, 'query-only group abbreviation cannot assert a direct listed-company event');
 assert.equal(matchPortfolioNews({ title: 'Estonia dispute', summary: 'Datasel arbitration' }, identities).length, 0, 'snippet is not confirmed related coverage');
 const related = attributeNewsRow({ title: 'Datasel arbitration over faulty shells', url: 'https://publisher.example/datasel' }, neco);
 assert.equal(related.attribution.status, 'related');
@@ -59,6 +60,11 @@ assert.equal(mapPortfolioDiscoveryEvents('market-news', broad, [neco])[0].ticker
 const social = mapPortfolioDiscoveryEvents('twitter', [{ ...broad[0], headline: 'Datasel faulty shells controversy' }], identities)[0];
 assert.equal(social.ticker, 'JAYNECOIND');
 assert.equal(social.aiEligible, false);
+const imagePost = mapPortfolioDiscoveryEvents('twitter', [{ ...broad[0], headline: 'Controversy — see the attached image',
+  sourceRecord: { matchedQueries: [{ entityId: neco.entityId, query: 'Datasel' }] } }], identities)[0];
+assert.equal(imagePost.ticker, 'JAYNECOIND');
+assert.equal(imagePost.attribution.status, 'uncertain');
+assert.equal(imagePost.aiEligible, false);
 assert.equal(rank([{ ...social, feed: 'twitter' }]).cards.length, 0);
 const ipo = mapPortfolioDiscoveryEvents('ipos', [{ id: 'i1', company: 'EAAA India Alternatives Limited', headline: 'DRHP filing', day, url: 'https://example.test/drhp' }], identities)[0];
 assert.equal(ipo.ticker, 'EDELWEISS');
@@ -93,7 +99,7 @@ try {
   commitCompanyNewsArchive({ dir, entities: [entity], articles: [{ entityId: entity.entityId, ticker: entity.ticker,
     title: 'Old archive', date: '2026-06-01', url: 'https://example.test/old' }] });
   writeJson(join(scratch, 'news.json'), { byTicker: {}, capturedAt: `${day}T00:00:00Z`, empty: [entity.key] });
-  writeJson(join(scratch, 'market-news.json'), { articles: [{ title: 'Jayaswal Neco clarification', publisher: 'Fixture publisher', url: 'https://example.test/publisher', publishedAt: `${day}T01:00:00Z` }] });
+  writeJson(join(scratch, 'market-news.json'), { articles: [{ title: 'Jayaswal Neco Industries clarification', publisher: 'Fixture publisher', url: 'https://example.test/publisher', publishedAt: `${day}T01:00:00Z` }] });
   let fail = false;
   const fetcher = async input => {
     const url = new URL(input);
@@ -118,7 +124,8 @@ try {
   assert.equal(readJson(join(scratch, 'news.json')).capturedAt, `${day}T00:00:00Z`, 'supplement never launders core capture health');
   const checkpoint = readJson(join(dir, 'discovery.json')).queries[`${entity.entityId}|ALL|Datasel`].lastSuccessAt;
   fail = true;
-  await enrichCompanyNews({ ...options, now: now + 86400000 });
+  const failed = await enrichCompanyNews({ ...options, now: now + 3600000 });
+  assert.equal(failed.staleOrIncompleteQueries, 1, 'a recent prior success cannot hide a failed newest attempt');
   assert.equal(companyNewsArchiveRows(dir).length, 5, 'empty/error reads cannot retract retained articles');
   assert.equal(readJson(join(dir, 'discovery.json')).queries[`${entity.entityId}|ALL|Datasel`].lastSuccessAt, checkpoint);
 } finally { rmSync(scratch, { recursive: true, force: true }); }

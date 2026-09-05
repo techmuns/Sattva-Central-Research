@@ -185,7 +185,7 @@ const investorAdd = (e) => e.feed === 'investors' && e.direction === 'positive' 
 const investorCut = (e) => e.feed === 'investors' && e.direction === 'negative' && e.importance === 'high';
 const insiderBuy = (e) => e.feed === 'insider' && e.direction === 'positive' && e.importance === 'high';
 const insiderSell = (e) => e.feed === 'insider' && e.direction === 'negative' && e.importance === 'high';
-const trackedNews = (e) => e.feed === 'news' && (e.keywords || []).length > 0;
+const trackedNews = (e) => feedFamily(e) === 'news' && (e.keywords || []).length > 0;
 const materialFiling = (e) => feedFamily(e) === 'announcements' && e.importance === 'high';
 const resultEvent = (e) => e.feed === 'earnings' || e.feed === 'concalls';
 
@@ -195,7 +195,7 @@ const resultEvent = (e) => e.feed === 'earnings' || e.feed === 'concalls';
  * as nameable as a story's — and on the announcements feed it is the company's own statement of it.
  */
 const newsTopics = (events) =>
-  [...new Set(events.flatMap((e) => (e.feed === 'news' || feedFamily(e) === 'announcements' ? e.keywords || [] : [])))];
+  [...new Set(events.flatMap((e) => (feedFamily(e) === 'news' || feedFamily(e) === 'announcements' ? e.keywords || [] : [])))];
 
 /**
  * The patterns, in the order they are reported. `detect` returns the sentence it matched on, or
@@ -261,7 +261,7 @@ const CONFLUENCE = [
       if (!tape || !story) return null;
       const topics = newsTopics(events);
       const why = topics.length ? ` (${topics.join(', ')})` : '';
-      return `${tape.headline}, alongside ${story.feed === 'news' ? 'a tracked story' : 'a material filing'}${why}: ${story.headline}.`;
+      return `${tape.headline}, alongside ${feedFamily(story) === 'news' ? 'a tracked story' : 'a material filing'}${why}: ${story.headline}.`;
     },
   },
   {

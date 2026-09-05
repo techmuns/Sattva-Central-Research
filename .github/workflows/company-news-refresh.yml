@@ -58,6 +58,7 @@ jobs:
         run: FILINGS_SCOPE="$NEWS_SCOPE" FILINGS_BUDGET_MS=1680000 NEWS_OVERLAP_HOURS=48 node scripts/scrape-filings.mjs news
 
       - name: Install bounded official-document reader
+        continue-on-error: true
         run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
 
       - name: Enrich from global search, official IR pages and retained publisher feeds

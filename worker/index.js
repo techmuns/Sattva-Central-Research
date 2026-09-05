@@ -804,8 +804,12 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
   }
 
   const form = kind === 'domestic' ? url.searchParams.get('form') || 'all' : null;
+  const newsCountry = kind === 'news' ? (url.searchParams.get('country') || 'IN').toUpperCase() : null;
+  if (newsCountry && newsCountry !== 'ALL' && !/^[A-Z]{2}$/.test(newsCountry)) {
+    return json({ ok: false, reason: 'shape', message: 'News country must be a two-letter country code or ALL for unrestricted discovery.' }, 400);
+  }
   if (form && !Object.hasOwn(DOMESTIC_FORMS, form)) return json({ ok: false, reason: 'shape', message: 'Choose all, concalls, annual_report or earnings_report.' }, 400);
-  const cacheKey = edgeKey(`muns-${kind}?t=${encodeURIComponent(ticker)}&q=${encodeURIComponent(query || '')}&from=${from || ''}&to=${to || ''}${form ? `&form=${form}&schema=2` : kind === 'announcements' ? '&schema=2' : ''}`);
+  const cacheKey = edgeKey(`muns-${kind}?t=${encodeURIComponent(ticker)}&q=${encodeURIComponent(query || '')}&from=${from || ''}&to=${to || ''}${newsCountry ? `&country=${newsCountry}&schema=2` : ''}${form ? `&form=${form}&schema=2` : kind === 'announcements' ? '&schema=2' : ''}`);
   const cache = caches.default;
   const hit = await cache.match(cacheKey);
   if (hit) return revalidate(request, hit, 'hit');
@@ -813,7 +817,7 @@ async function handleMuns(request, env, ctx, kind, rawTicker = '') {
   let payload;
   let ttl = MUNS_TTL_S[kind];
   try {
-    if (kind === 'news') payload = { ok: true, kind, ...(await fetchNews({ query, country: url.searchParams.get('country') || 'IN', fromDate: from, toDate: to }, env)) };
+    if (kind === 'news') payload = { ok: true, kind, country: newsCountry, ...(await fetchNews({ query, country: newsCountry === 'ALL' ? null : newsCountry, fromDate: from, toDate: to }, env)) };
     else if (kind === 'announcements') payload = { ok: true, kind, ...(await fetchAnnouncements({ ticker, fromDate: from, toDate: to }, env)) };
     else if (kind === 'domestic') payload = { ok: true, kind, ...(await fetchDomesticFilings({ ticker, form }, env)) };
     else payload = { ok: true, kind, ...(await fetchInsiderTrades({ ticker, country: 'india', fromDate: from, toDate: to }, env)) };

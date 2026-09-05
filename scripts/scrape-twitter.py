@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""scrape-twitter.py — collect posts from the monitored X/Twitter accounts.
+"""scrape-twitter.py — monitored accounts plus reviewed portfolio terms across all authors.
 
     python3 scripts/scrape-twitter.py               read every handle in twitter-handles.json
     TWITTER_ADD=Reuters python3 scripts/scrape-twitter.py   also add that handle first
@@ -28,8 +28,8 @@ FOUR RULES, ALL OF THEM ONES THIS CODEBASE ALREADY HOLDS ELSEWHERE:
      existing file has posts, it exits 2 — the same "the upstream refused this runner" exit the
      market-news scraper uses, which the workflow turns into a warning rather than a red build.
   4. ONLY WHAT IS NEEDED IS STORED: id, handle, display name, text, time, url, one media url and
-     the source url. No engagement counts, no replies, no followers, no search — see the scope
-     limits in docs/DATA-CONTRACTS.md.
+     the source url and exact query context. No engagement-based retention or sentiment inference.
+     See docs/PORTFOLIO-NEWS-DISCOVERY.md for archival and attribution contracts.
 
 CREDENTIALS
     twscrape drives X as a logged-in user, so it needs at least one account. They are supplied as
@@ -39,7 +39,8 @@ CREDENTIALS
     writes nothing: no capture is changed, and the UI goes on saying the accounts are being added
     rather than inventing a failure about them.
 
-    OPTIONAL COVERAGE. The scheduled collector is disabled unless X_CAPTURE_ENABLED=true.
+    OPTIONAL COVERAGE. X_CAPTURE_ENABLED=false opts out; an existing X_COOKIES own-session
+    credential is preferred to the first configured login. No credential is printed or committed.
     A refused sign-in is a source outage, not a reason to rotate accounts or proxy around a block.
     The workflow records collection status separately while preserving all last-known posts.
 """
@@ -64,11 +65,9 @@ ARCHIVE_DIR = ROOT / "public" / "data" / "twitter-archive"
 # X's own rule, and the same one js/core/twitter-handles.js and worker/index.js enforce.
 HANDLE_RE = re.compile(r"^[A-Za-z0-9_]{1,15}$")
 
-# Per handle, per run. Small on purpose: the job runs often, the walk stops at the first post
-# already held, and a deep backfill is not what this feature is for.
+# Per monitored handle per run. Company searches have independent partitioned windows below.
 PER_HANDLE = int(os.environ.get("TWITTER_LIMIT", "20"))
-# The whole capture's ceiling, so the committed file cannot grow without bound. Same idea as
-# MCNEWS's KEEP: a bytes limit, not an editorial one.
+# The fast head's ceiling. Every observation is archived permanently before this limit applies.
 KEEP = int(os.environ.get("TWITTER_KEEP", "600"))
 
 
