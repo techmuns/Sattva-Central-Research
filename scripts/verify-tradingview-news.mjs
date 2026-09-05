@@ -161,6 +161,7 @@ try {
   globalThis.fetch = async input => input === 'data/news.json' ? Response.json(snapshot) : Response.json({ ok: true, articles: [] });
   await feed.refresh();
   assert(feed.rows().some(r => r.tradingViewId === 'new'), 'a live Muns empty read cannot hide independent TradingView observations');
+  assert.equal(feed.meta().origin, 'mixed', 'a Muns refresh does not certify the retained TradingView rows as live');
   snapshot = { ...captured, coversUniverse: true };
   delete snapshot.tradingViewCoverage;
   await feed.refreshSnapshot();

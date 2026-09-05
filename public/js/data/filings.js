@@ -222,7 +222,11 @@ export function createFeed(kind) {
       if (state.confirmedHere.has(t)) confirmed++;
       else if (state.fromSnapshot.has(t)) snapshot++;
     }
-    if (confirmed === covered) return 'live';
+    if (confirmed === covered) {
+      // A manual Muns refresh does not re-read independently captured TradingView headlines.
+      const retainedSupplement = kind === 'news' && [...state.rows.values()].some(rows => rows.some(row => row.tradingViewId));
+      return retainedSupplement ? 'mixed' : 'live';
+    }
     if (confirmed) return 'mixed';
     return snapshot === covered ? 'snapshot' : 'store';
   }
