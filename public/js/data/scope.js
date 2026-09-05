@@ -64,7 +64,16 @@ export function scopeAllowsTicker(scope, ticker, holdings = null) {
 }
 
 export function scopeMatcher(scope, holdings = null) {
-  return { has: (ticker) => scopeAllowsTicker(scope, ticker, holdings) };
+  // A matcher belongs to one filtering pass. Build membership once, not once per row: the
+  // retained alert pool has tens of thousands of rows and a 100+ company portfolio. Re-reading
+  // storage or allocating that entire Set for every row stalls the browser during feed updates.
+  // A new pass takes a fresh snapshot, so portfolio/watchlist edits still apply immediately.
+  const wanted = scopeTickers(scope, holdings);
+  const removed = wanted ? null : new Set(scopeLists.removed('universe').map(scopeLists.keyFor));
+  return { has: (ticker) => {
+    const t = String(ticker || '').trim().toUpperCase();
+    return !!t && (wanted ? wanted.has(t) : !removed.has(`ticker:${t}`));
+  } };
 }
 
 /**
@@ -76,12 +85,13 @@ export function scopeMatcher(scope, holdings = null) {
  * than filtering them to nothing.
  */
 export function filterByScope(rows, scope, holdings = null, tickerOf = (r) => r.ticker) {
+  const wanted = scopeMatcher(scope, holdings);
   return rows.filter((r) => {
     const t = tickerOf(r);
     // A tickerless row cannot match a narrowed list, but it remains part of Universe: there is no
     // symbol by which the editor could exclude it, and dropping it would turn an edit feature into
     // a silent data-loss rule for unresolved fund holdings and chatter rows.
-    return t ? scopeAllowsTicker(scope, t, holdings) : scope === UNIVERSE;
+    return t ? wanted.has(t) : scope === UNIVERSE;
   });
 }
 

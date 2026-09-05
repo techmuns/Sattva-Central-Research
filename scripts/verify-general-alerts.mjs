@@ -27,7 +27,9 @@ globalThis.fetch = async (input) => {
   const path = url.split('?')[0];
   if (broken.has(path)) return new Response('{}', { status: 503 });
   const json = (value) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
-  if (path === 'api/nse-announcements') { if (nseGate) await nseGate; return json({ rows: [nseRow, nseRow, undated, ...(revision > 1 ? [{ ...nseRow, url: 'https://example.test/new.pdf' }] : [])], capturedAt: '2026-09-04T07:00:00Z' }); }
+  if (path === 'api/nse-announcements') { if (nseGate) await nseGate; return json({ rows: [nseRow, nseRow, undated,
+    ...(revision > 1 ? [{ ...nseRow, url: 'https://example.test/new.pdf' }] : []),
+    ...(revision > 2 ? [{ ...nseRow, url: 'https://example.test/other-tab.pdf' }] : [])], capturedAt: '2026-09-04T07:00:00Z' }); }
   if (path === 'data/twitter-posts.json') return json({ capturedAt: '2026-09-04T07:00:00Z', handles: ['moneycontrolcom'], failed: [], posts: [
     { tweet_id: '1', handle: 'moneycontrolcom', text: 'IPO discussion, original words', created_at: '2026-09-03T20:10:00Z' },
     { tweet_id: '2', handle: 'moneycontrolcom', text: 'Undated original post', created_at: null },
@@ -84,7 +86,27 @@ for (const id of ['chatter-posts', 'company-documents', 'drhp-documents'])
 
 const previousCalls = calls.length;
 console.log('Checking scope and privacy');
-const portfolio = await alerts.collect({ ...options, scope: 'portfolio', load: false });
+let cachedPartials = 0;
+const portfolio = await alerts.collect({ ...options, scope: 'portfolio', load: false, onPartial: () => cachedPartials++ });
+assert.equal(cachedPartials, 0, 'cached scope changes assemble one completed report, not twenty full intermediate reports');
+const firstTechnical = (report) => report.feeds.find((f) => f.id === 'technicals').events[0];
+const cachedUniverse = await alerts.collect({ ...options, scope: 'universe', load: false });
+assert.equal(firstTechnical(cachedUniverse), firstTechnical(universe), 'unchanged feeds reuse normalized evidence, not only their network payload');
+const originalNow = Date.now;
+Date.now = () => originalNow() + 5 * 60_000;
+const afterIdle = await alerts.collect({ ...options, scope: 'universe', load: false });
+assert.equal(firstTechnical(afterIdle), firstTechnical(universe), 'returning after idle does not rebuild unchanged evidence on a timer');
+Date.now = originalNow;
+const singleDay = await alerts.collect({ ...options, includeHistory: false, scope: 'universe', load: false });
+assert(singleDay.events.every((e) => e.day === options.day), 'history cache cannot leak other dates into a daily report');
+const nextDay = await alerts.collect({ ...options, day: '2026-09-05', scope: 'universe', load: false });
+assert.equal(nextDay.feeds.find((f) => f.id === 'nse-filings').reachesToday, false, 'cached freshness re-ages when the requested IST day changes');
+const scope = await import('../public/js/data/scope.js');
+let membershipReads = 0;
+const book = Array.from({ length: 118 }, (_, i) => ({ get ticker() { membershipReads++; return `COMP${i}`; } }));
+const manyRows = Array.from({ length: 55000 }, (_, i) => ({ ticker: `COMP${i % 118}` }));
+assert.equal(scope.filterByScope(manyRows, 'portfolio', book).length, manyRows.length);
+assert(membershipReads <= book.length * 2, 'one holdings lookup per pass, independent of the number of records');
 const emptyWatchlist = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.equal(emptyWatchlist.events.length, 0, 'empty Watchlist never becomes Universe');
 const poolSubset = universe.events.filter((e) => ['STLTECH', 'RELIANCE'].includes(e.ticker));
@@ -125,7 +147,7 @@ let releaseNse;
 nseGate = new Promise((done) => { releaseNse = done; });
 const partials = [];
 const racing = alerts.collect({ ...options, scope: 'universe', refresh: true, onPartial: report => partials.push(report) });
-await new Promise((done) => setImmediate(done));
+for (let i = 0; i < 200 && !partials.length; i++) await new Promise((done) => setTimeout(done, 10));
 assert(partials.length > 0, 'fast sources produce updates while NSE is still checking');
 assert(partials.every(report => report.events.some(e => e.url === nseRow.url)), 'a slow refreshing source keeps its previous records in every partial');
 assert(partials.every(report => report.feeds.find(f => f.id === 'nse-filings').status === 'pending'), 'retained records do not imply a finished refresh');
@@ -136,6 +158,12 @@ revision++;
 console.log('Checking refresh and recovery');
 const refreshed = await alerts.collect({ ...options, scope: 'universe', refresh: true });
 assert(refreshed.events.some((e) => e.url === 'https://example.test/new.pdf'), 'a newer NSE filing reaches the pool');
+const off = alerts.onChange(() => {}); off();
+revision++;
+await (await import('../public/js/data/nse-filings.js')).refresh();
+const otherTabUpdate = await alerts.collect({ ...options, scope: 'universe', load: false });
+assert(otherTabUpdate.events.some((e) => e.url === 'https://example.test/other-tab.pdf'),
+  'source changes invalidate normalized evidence even after the alerts UI unsubscribes');
 for (const path of ['data/technicals.json', 'data/twitter-posts.json', 'data/market-news.json', 'data/earnings-calendar.json'])
   assert(calls.filter((c) => c === path).length >= 2, `${path} really revalidates`);
 broken.add('data/technicals.json');
