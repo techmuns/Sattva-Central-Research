@@ -38,7 +38,7 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     permissions:
       contents: write
     steps:
@@ -65,6 +65,11 @@ jobs:
         # Core search progress must still be committed when an independent enrichment source fails.
         continue-on-error: true
         run: node scripts/enrich-company-news.mjs
+
+      - name: Enrich active portfolio from public TradingView headlines
+        # Independent, bounded metadata read. Source refusals preserve the permanent archive.
+        continue-on-error: true
+        run: node scripts/enrich-tradingview-news.mjs
 
       - name: Upload company-news data
         if: always()

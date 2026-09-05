@@ -83,6 +83,54 @@ code change is not proof of a successful production X collection.
 
 ## Ranking and search
 
+### TradingView public headline enrichment
+
+`enrich-tradingview-news.mjs` runs in the existing three-hour company-news workflow, after the
+other enrichment stage, with a separate six-minute budget. Each run reads the same verified active
+Family portfolio. Newly added identities are enrolled automatically; removed identities stop
+being polled, but their archived observations remain. If the active book cannot be verified, the
+last verified book is retained and the source status explicitly warns that changes may be missing.
+
+NSE symbols come from the resolved book or the exact ISIN exchange directory; BSE symbols require
+that directory. Warrant lines reuse their issuer identity. Private/unmapped companies are listed
+in `company-news/tradingview.json`, never guessed by fuzzy names or assumed to have an NSE symbol.
+The BSE page can carry NSE tags for the same issuer; only independently mapped venue aliases are
+accepted. Tags widen discovery but cannot alone establish factual AI attribution.
+
+The anonymous symbol page was inspected on 6 September 2026. Its public
+`news-mediator.tradingview.com/public/view/v1/symbol` response carries a latest window (observed
+ceiling: 30), with no public next-page cursor. The collector mirrors that request, including the
+English/symbol filters, without credentials, subscription flags, hidden history routes, user-agent
+impersonation, proxies or article-body extraction. This website response is **not a supported or
+licensed data API** and may change or become unavailable. The operator explicitly requested this
+public-headline-only enrichment; the implementation makes no claim of a redistribution license.
+
+Only metadata displayed in the anonymous view is retained: headline, original publisher, original
+publication time, story ID, publisher link when supplied, TradingView link and source context.
+Items with `permission: provider` (masked behind a trial prompt) or unknown permissions are not
+extracted. A public headline's article may still be paywalled; the collector never opens it.
+Unknown dates remain unknown. All accessible topics are retained before ranking.
+
+Each symbol has attempt/success times, parse counts, restricted counts and bounded-window status.
+If the latest window does not span the previous successful read plus 48-hour overlap, a possible
+gap remains recorded; later quiet polls cannot erase it. This is not a claim of complete history.
+HTTP 401/403/429 stops the entire source walk with persisted backoff; there is no alternate-access
+attempt. Other failures preserve last-good news and remain explicit. Jobs rotate fairly by last
+attempt so a slow source or run budget does not permanently starve later holdings.
+
+Rows enter the permanent company archive before source checkpoints are acknowledged. Stable
+TradingView story IDs collapse cross-exchange copies and headline/URL corrections; publisher URL
+and exact publisher/headline/day matching deduplicate against existing sources. Discovery paths
+remain attached to merged records. `newsUpdatedAt` lets an independent enrichment refresh the
+browser without falsifying the existing core capture time. Current TradingView rows also survive
+a manual Muns refresh. No dashboard layout redesign or per-company TradingView browser fan-out.
+
+`verify-tradingview-news.mjs` tests the real collector using disposable local files and synthetic
+responses, including portfolio changes, tickerless BSE holdings, source refusals, bounded windows,
+source provenance, deduplication, retained history and independent browser revision updates.
+
+### Evidence remains separate from capture
+
 Exact reviewed matching makes existing publisher news and IPO records portfolio-scopable. The
 original issuer, headline, source and relationship evidence are retained. Headline or bounded
 official body event patterns add legal disputes, clarifications, analyst/investor days, IPOs and

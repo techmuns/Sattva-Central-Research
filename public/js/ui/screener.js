@@ -389,6 +389,7 @@ export function scoreTable(config) {
     // Industries" for a company whose feed has not loaded yet rather than echoing the symbol.
     watchName = null,
     name = (r) => r.name,
+    searchPlaceholder = 'Search company...',
     nameLabel = 'Company', // header for the identity column — set it when rows aren't companies
     sub = () => '',
     columns = [],
@@ -756,7 +757,7 @@ export function scoreTable(config) {
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <div class="relative max-w-md flex-1">
             <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input type="text" data-table-search placeholder="Search company..." value="${escapeHtml(view.q)}"
+            <input type="text" data-table-search placeholder="${escapeHtml(searchPlaceholder)}" value="${escapeHtml(view.q)}"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           ${filterDefs

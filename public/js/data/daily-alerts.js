@@ -1332,7 +1332,8 @@ function companyNewsState(day) {
     reachesToday: !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
     note: [capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
-      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.']
+      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.',
+      m.tradingViewCoverage ? `TradingView public headlines: ${m.tradingViewCoverage.mappedCompanies}/${m.tradingViewCoverage.activeCompanies} companies mapped; ${m.tradingViewCoverage.staleOrFailedSymbols} stale/failed symbol reads; ${m.tradingViewCoverage.possibleGapSymbols} possible window gaps; ${m.tradingViewCoverage.restrictedHeadlines} restricted headlines not extracted. Checked ${m.tradingViewCoverage.checkedAt}.${Date.now() - Date.parse(m.tradingViewCoverage.checkedAt) > 4 * 3600000 ? ' TradingView status is stale.' : ''}${m.tradingViewCoverage.portfolioError ? ' Portfolio changes could not be verified.' : ''}` : 'TradingView enrichment has not reported coverage yet.']
       .filter(Boolean).join(' ') || null,
   };
 }
