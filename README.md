@@ -93,6 +93,11 @@ deploy notes and the known gaps.
 
 **Public Chatter is live too**, off the SentimentDash API — mention counts and sentiment across ValuePickr, TradingQnA and Google News. The synthetic forum/Telegram corpus that used to fill it is deleted rather than relabelled.
 
+Public Chatter → Telegram retains posts from `@researchreportss`, including original
+publication dates and links for posts whose content is available only in Telegram.
+Collection resumes older history automatically and reports its actual check time.
+See [Telegram ingestion](docs/TELEGRAM-INGESTION.md) for coverage and operation.
+
 **Two more surfaces are genuinely live.**
 
 *Breakouts / Technical* scores 535 NSE-500 companies against a 16-rule, 24-point model from a

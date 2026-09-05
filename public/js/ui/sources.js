@@ -213,7 +213,6 @@ export function sourceGroups() {
   // capture that has not loaded drops its clause instead of reporting the channel as silent.
   const tgMeta = (() => { try { return telegramPosts.meta(); } catch { return null; } })();
   const tg = num(() => (tgMeta?.ok ? tgMeta.count : null));
-  const tgUnreadable = num(() => (tgMeta?.ok && tgMeta.span ? tgMeta.unreadable : null));
   const funds = (() => {
     try {
       return institutions.isLoaded() ? institutions.all() : [];
@@ -451,25 +450,10 @@ export function sourceGroups() {
         {
           name: 'Telegram — a public research channel',
           url: tgMeta?.channelUrl || null,
-          feeds:
-            'Posts from a public Telegram channel of broker research headlines, on this tab\'s <strong>Telegram</strong> section. ' +
-            'Reproduced as published &mdash; <strong>nothing scored, ranked, summarised, sentiment-tagged or mapped to a company</strong>, so the section is whole in every scope. ' +
-            '<strong>This feed publishes no post times.</strong> The channel\'s web preview is switched off by its owner and the Bot API has no history method at all, so the capture is read from each message\'s own page, which carries the text and no timestamp; rows therefore carry none and are ordered by Telegram\'s own message number, which rises with publication. ' +
-            'A document posted without a caption has nothing on its page to read' +
-            `${clause(tgUnreadable, ' &mdash; <n> of the ids reached were of that kind and are counted rather than guessed at')}. ` +
-            `Read by a scheduled Action and committed; the browser reads the file with one conditional GET${clause(tg, ', <n> posts in the capture now')}.`,
-          // A REQUEST, WORDED AS ONE. This field reaches the reader — the registry modal renders it
-          // and so does the beacon's per-source detail — and the rule is that a cron expression may
-          // never be printed as a cadence, because it is a request GitHub is measured not to honour
-          // (12 of 124 for a */20 here, and zero of ~11 after relaxing to */30). So it says what was
-          // asked for and that delivery is not guaranteed; the only honest figure the reader gets is
-          // the one the tab already prints, "Newest post · captured <when>".
-          cadence: 'Scheduled GitHub Action · half-hourly requested, delivery best-effort · no credential',
-          // `live` describes the PLUMBING — this feed is wired to a scheduled job that refreshes
-          // it — exactly as it does for every other row here. It must NOT be derived from
-          // `meta().ok`, which only says whether THIS BROWSER has loaded the module: the reader is
-          // on another tab nine times out of ten, Public Chatter has not mounted, and the registry
-          // would report a healthy committed feed as `pending`, which means "not built".
+          feeds: 'Retained posts from the public Telegram channel, with original publication dates, available text and original message links. ' +
+            'Posts whose content is restricted to Telegram remain visible as linked records. Older history resumes on each collection; no sentiment or company mapping is inferred. ' +
+            `The archive is read by a scheduled Action${clause(tg, ', <n> posts captured')}.`,
+          cadence: 'Scheduled GitHub Action · half-hourly requested, delivery best-effort · resumable history',
           status: 'live',
           file: 'public/data/telegram-posts.json · scripts/scrape-telegram.mjs',
         },
