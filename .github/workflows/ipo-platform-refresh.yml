@@ -1,0 +1,42 @@
+name: IPOPlatform collection
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ipo-platform-refresh.yml', 'scripts/collect-ipo-platform.mjs', 'scripts/lib/ipo-platform.mjs', 'worker/ipo-platform-collector.mjs', 'public/js/data/*ipo*shared.js']
+  pull_request:
+    paths: ['.github/workflows/ipo-platform-refresh.yml', 'scripts/collect-ipo-platform.mjs', 'scripts/lib/ipo-platform.mjs', 'worker/ipo-platform-collector.mjs', 'public/js/data/*ipo*shared.js']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ipo-platform-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  collect-platform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Collect all pages and preserve previous history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/collect-ipo-platform.mjs "$RUNNER_TEMP/ipo-platform-v1.json.gz"
+      - name: Publish validated immutable public-data capture
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/ipo-platform-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 30

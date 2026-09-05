@@ -75,10 +75,16 @@ export const KEYS = {
   nseFilings: 'nse-filings',
   // Separate from the HTTP response/ETag: a shrinking live window cannot erase retained rows.
   nseFilingsHistory: 'nse-filings:history',
+  // NSE + Screener's exchange-wide corporate-actions calendar. One retained snapshot serves all scopes.
+  corporateActions: 'corporate-actions',
   // X/Twitter posts from the monitored handles, which join the market-news list. Its own key
   // rather than a slice of `marketNews`: the two are separate captures with separate ETags, and a
   // post landing must not invalidate 600 publisher stories.
   twitterPosts: 'twitter-posts',
+  // Source-backed operating metrics extracted by Screener from company documents. One daily
+  // artifact covers the public universe and the synchronized portfolio; it is conditional and
+  // disk-backed because the series change far less often than a dashboard session.
+  screenerInsights: 'screener-insights',
   // Posts from the monitored public Telegram channel. Its own key rather than a slice of anything
   // else: it is a separate capture with its own ETag, and a post landing here must not invalidate
   // the chatter feed it shares a tab with.

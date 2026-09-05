@@ -178,6 +178,8 @@ scripts/
                                            keeps the book in step with techmuns/Sattva-Family
 .github/workflows/price-move-verify.yml    hourly through the Indian day; asks the Muns market-data
                                            endpoint about every flagged move the scrape could not verify
+.github/workflows/screener-concalls-refresh.yml  every 15 min incremental + daily full authenticated
+                                           Screener concall index; immutable Actions artifact, no commit
 .github/workflows/company-news-refresh.yml weekdays 09:00 + 19:00 IST; company-news universe capture
 .github/workflows/insider-trades-refresh.yml weekdays 19:00 IST; insider-trades universe capture
 .github/workflows/announcements-refresh.yml weekdays 20:00 IST; BSE date-indexed filings
@@ -1271,11 +1273,22 @@ capture: **all 123 book tickers, 1,217 articles, no failures.** The picker was c
 attention to avoid a cost that had already been paid.
 
 The 07:00 IST data refresh no longer captures company news or insider trades. Company news has its
-own `company-news-refresh.yml` at 09:00 and 19:00 IST; Insider Trades has
+own `company-news-refresh.yml`: portfolio identities run every three hours, every day, with a
+48-hour overlap, while the complete universe still runs at 09:00 and 19:00 IST on weekdays. Insider Trades has
 `insider-trades-refresh.yml` at 19:00 IST. This keeps long per-company walks from racing with EOD
 technicals or each other. GitHub schedules are best-effort, so a single post-paint watchdog checks
 the committed capture timestamps and dispatches only an overdue workflow. It never falls back to a
 forty-company page-load walk.
+
+**THE THIRTY-DAY COMPANY-NEWS FILE IS A HEAD, NOT A RETENTION LIMIT.** Before that head is rebuilt,
+every portfolio row is merged into `public/data/company-news/<YYYY-MM>.json`; its index holds the
+stable company identities and a watermark per reviewed query. An empty or smaller response never
+retracts a captured article. ISIN identities let private, BSE-only, demerged and unresolved-symbol
+holdings participate without being given a fake ticker. Warrant security lines map to the underlying
+company instead of duplicating its news. Identity enrichment lives in
+`scripts/company-news-identity-overrides.json` and is factual, reviewed data—former names, brands,
+subsidiaries, aliases and domains are never inferred from search results. Collection keeps every
+usable upstream row; keyword, materiality and scope readings happen only after capture.
 
 So News now loads like the other two — snapshot on mount, nothing per company — and the walk is
 still the Refresh button's. **The rule that survives is the one that was always doing the work: a
@@ -2850,13 +2863,13 @@ scID → ticker (1,319/1,319), ticker → market cap and industry, and (ticker, 
 result-day close (1,312/1,319). Every miss renders as an em dash and the coverage note under the
 table counts them. **A dash means "not joined"; it never means zero.**
 
-### The calendar has one meaning: scheduled results
+### The calendar has one meaning: scheduled earnings events
 
 The Earnings Hub keeps the two questions in separate views:
 
 | View | Source | Meaning |
 | --- | --- | --- |
-| **Earnings Calendar** | `/api/earnings-calendar` | who was scheduled on the selected date, past or future |
+| **Earnings Calendar** | `/api/earnings-calendar` | scheduled result publications and upcoming con-calls on the selected date, past or future; every row labels its event type |
 | **Earnings Reported** | `/api/earnings` | who has filed this quarter and what they reported |
 
 Do not select between them by date. On 2 Sep 2026 Moneycontrol's calendar listed Technocraft
@@ -2864,10 +2877,21 @@ Ventures and BSE-only Vivanta Industries, while the filings feed had only Techno
 today/past Calendar date to filings made a source-labelled screen display one row where the linked
 source displayed two.
 
-The calendar count and rows both use `indexId=All`. The first page comes from `/earnings-widget`
-and the Worker follows every `/pagination/earnings-pagination` page, so a complete response has
+The result count and rows both use `indexId=All`. The first page comes from `/earnings-widget` and
+the Worker follows every `/pagination/earnings-pagination` page. Screener's authenticated
+`/concalls/upcoming/` list is collected across every page every 15 minutes and appended as rows
+labelled **Con-call**; it is never relabelled as a result. A complete combined response has
 `scheduledCount === rows.length`. A live-count/captured-list race can still disagree; omit the
 rendered total in that state instead of presenting mixed observations as one fact.
+
+The mounted calendar revalidates its selected date every minute through `core/live.js`, pauses
+while hidden and checks immediately when visible again. Keep this visibility-aware poll when
+adding sources: a fresh backend is not a fresh open dashboard if its first response lives forever.
+
+**Calendar scope is permanent product memory, not a per-source choice.** Resolve each event to a
+ticker before the client calls `filterByScope()`. Portfolio and Watchlist include only matching
+tickers; Universe keeps unresolved events so coverage gaps remain visible. Never let a new calendar
+source bypass this path, and never guess a ticker merely to make a narrowed scope look fuller.
 
 The date strip has its own trap, and it is a UI one. It used to request a window around the
 **selected** date, so every click merged new chips in and slid the existing ones along; then the
@@ -3144,7 +3168,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Price a company the technicals feed is missing | `TECH_FILL_GAPS=1 node scripts/scrape-technicals.mjs` — fetches only what is absent or errored and merges, so it costs one request per gap |
 | Change the live-quote refresh | `handleLivePrices` in `worker/index.js` + the refresh bar in `js/tabs/breakouts.js` — read *The upstream is cache-backed* in `docs/DATA-CONTRACTS.md` first. `QUOTE_TTL_S` / `QUOTE_TIMEOUT_MS` / `QUOTE_POOL` / `QUOTE_BUDGET_MS` are **one setting, not four**; re-measure before changing any of them |
 | Change the live earnings feed | `worker/mc.mjs` (client + normaliser) then `worker/index.js` (`/api/earnings`) |
-| Change the results calendar | `fetchCalendarStrip()` / `fetchCalendarDay()` in `worker/mc.mjs`, then `/api/earnings-calendar` — preserve All-exchange count/list parity, complete pagination and the Akamai capture fallback in `docs/DATA-CONTRACTS.md` |
+| Change the earnings calendar | `fetchCalendarStrip()` / `fetchCalendarDay()` in `worker/mc.mjs`, `parseScreenerUpcomingPage()` in `scripts/lib/screener-concalls.mjs`, then `/api/earnings-calendar` — preserve event-type labels, shared Portfolio/Watchlist/Universe ticker filtering, complete pagination and both freshness contracts in `docs/DATA-CONTRACTS.md` |
 | Refresh the calendar capture | `node scripts/scrape-calendar.mjs` (`CAL_BACK`/`CAL_AHEAD` to widen) |
 | Change the chatter feed | `js/data/chatter-live.js` + `js/data/sentiment-shared.js` — the browser calls it DIRECTLY and must; read *There is no `/api/chatter`* in `docs/DATA-CONTRACTS.md` before adding a proxy. `changePct` there is mention volume, not price |
 | Change News or Insider | `worker/muns.mjs` + `js/data/filings-shared.js`, then the routes in `worker/index.js` — read *Three feeds whose SHAPE is not ours to pin* first |
@@ -3246,7 +3270,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Stop a feed re-downloading itself | `js/core/store.js` (client) + `worker/http.mjs` (ETag/304) — read *Never re-download what the reader already has* first |
 | Make tab switching faster | `scoreTable` streaming in `js/ui/screener.js`, the measurement-free scope toggle in `js/ui/components.js`, and committed `public/css/tailwind.css` — read *Performance on large tables* first and profile before changing them |
 | Change what the shell waits for at boot | `CRITICAL_SOURCES` / `DEFERRED_SOURCES` in `js/app.js` — a deferred file needs a consumer that awaits it |
-| Change what the Earnings Calendar shows for a date | `renderCalendar()` in `js/tabs/earnings-hub.js` plus `/api/earnings-calendar` — keep the Calendar scheduled and Earnings Reported filed |
+| Change what the Earnings Calendar shows for a date | `renderCalendar()` in `js/tabs/earnings-hub.js` plus `/api/earnings-calendar` — keep the Calendar scheduled, distinguish Result from Con-call, filter through `js/data/scope.js`, and keep Earnings Reported filed |
 | Change what counts as a content change | `withTag` / `VOLATILE_KEYS` in `worker/http.mjs`, and `structureTagOf` in `worker/index.js` |
 | Add a cached feed to the device store | give it a key in `KEYS` (`js/core/store.js`) and fetch it with `conditionalJson` — unless the upstream sends no ETag, as the Deep Dive reports do, in which case `readEntry` / `writeEntry` directly and say why in a comment |
 | Add a new JSON file | drop it in `public/data/`, add to `DATA_SOURCES` in `js/app.js`, document it in `docs/DATA-CONTRACTS.md` |

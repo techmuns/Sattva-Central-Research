@@ -6,6 +6,12 @@ on:
   schedule:
     - cron: "30 0 * * *"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan the S Screen changes without applying them
+        required: false
+        default: false
+        type: boolean
   repository_dispatch:
     types: [family-book-updated]
 concurrency:
@@ -25,13 +31,28 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Verify the sync contract
+        run: node scripts/verify-family-sync.mjs
       - name: Read the active shared holdings
         env:
           FAMILY_HOLDINGS_TOKEN: ${{ secrets.FAMILY_HOLDINGS_TOKEN }}
         run: node scripts/sync-family-book.mjs
-      - name: Verify the sync contract
-        run: node scripts/verify-family-sync.mjs
+      - name: Install pinned Screener browser runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/screener-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/screener-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Mirror the live portfolio into the existing S Screen watchlist
+        env:
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          SCREENER_SYNC_DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-browser/node_modules/playwright
+          DEBUG: ""
+          PWDEBUG: ""
+        run: node scripts/sync-screener-watchlist.mjs
       - name: Open or update the fallback snapshot PR
+        id: fallback_snapshot
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v8.1.1
         with:
           token: ${{ secrets.FAMILY_SYNC_PR_TOKEN || github.token }}
@@ -46,3 +67,6 @@ jobs:
             Names-only fallback snapshot from Family Office's active shared workbook.
             Review additions/removals and required checks before merging. No auto-merge or deployment.
             Live Portfolio scope does not wait for this PR.
+      - name: Report an unavailable fallback snapshot PR
+        if: steps.fallback_snapshot.outcome == 'failure'
+        run: echo "::warning::The live portfolio and S Screen sync succeeded, but the optional fallback snapshot PR could not be opened."

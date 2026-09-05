@@ -28,7 +28,9 @@ const CONFIG = {
     route: 'api/company-news/refresh?source=auto',
     run: 'api/company-news/run',
     maxAgeMs: 3 * 60 * 60 * 1000,
-    active: ({ hour }) => hour >= 8 && hour < 24,
+    // Portfolio capture runs around the clock. Weekend and overnight stories are still stories;
+    // an overdue schedule should recover without waiting for the next market session.
+    active: () => true,
     budgetMs: 35 * 60 * 1000,
   },
   marketNews: {
@@ -49,13 +51,22 @@ const CONFIG = {
     active: () => true,
     budgetMs: 20 * 60 * 1000,
   },
+  corporateActions: {
+    sourceId: 'screener',
+    route: 'api/corporate-actions-snapshot/refresh?source=auto',
+    run: 'api/corporate-actions-snapshot/run',
+    maxAgeMs: 35 * 60 * 1000,
+    active: () => true,
+    budgetMs: 30 * 60 * 1000,
+  },
   insider: {
     route: 'api/insider-snapshot/refresh?source=auto',
     run: 'api/insider-snapshot/run',
-    // One complete universe walk after disclosures settle, with on-demand recovery if the cron
-    // missed. Before 19:00 yesterday evening's snapshot is the newest complete daily cut.
-    due: (capture, clock) => clock.weekday && clock.hour >= 19 && istDay(capture?.capturedAt) !== clock.day,
-    budgetMs: 35 * 60 * 1000,
+    // Screener's four market-wide lists are cheap incremental page reads after bootstrap. A reader
+    // therefore recovers a missed scheduled run by age, rather than waiting for an end-of-day cut.
+    active: () => true,
+    maxAgeMs: 75 * 60 * 1000,
+    budgetMs: 55 * 60 * 1000,
   },
   technicals: {
     route: 'api/data-snapshot/refresh?source=auto',
@@ -135,10 +146,16 @@ export function refreshDue(name, capture, now = Date.now()) {
 export function freshnessOf(name, capture) {
   const owner = CONFIG[name]?.sourceId;
   const mine = owner ? capture?.sources?.[owner]?.capturedAt : null;
-  return mine || capture?.capturedAt || null;
+  if (owner && capture?.sources && Object.hasOwn(capture.sources, owner)) return mine || null;
+  return capture?.capturedAt || null;
 }
 
 async function applyLandedCapture(name) {
+  if (name === 'corporateActions') {
+    const feed = await import('./corporate-actions.js');
+    if (feed.isLoaded()) await feed.refresh();
+    return;
+  }
   if (name === 'companyFilings') {
     const capture = await import('./company-captures.js');
     await capture.loadCompanyCaptureIndex({ force: true });

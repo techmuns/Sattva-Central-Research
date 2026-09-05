@@ -314,7 +314,7 @@ function openCompanyDetail(company) {
           <strong class="text-slate-600">Current value is Finology's estimate of the position now, not an amount bought or sold.</strong>
           A dash means not disclosed, not zero.
         </p>
-        <div class="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+        <div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Company investor comparison table">
           <table class="min-w-[850px] w-full text-sm">
             <thead class="bg-slate-50">
               <tr>
@@ -735,7 +735,7 @@ function holdingsPanel() {
   // to every investor, above a table where the same facts are one hover away and already spelled
   // out in row 1 of the export. The disclosure did not go anywhere; the repetition did.
   return `
-    <div class="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+    <div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Investor holdings table">
       <table class="w-full text-sm">
         <thead class="bg-slate-50">
           <tr>

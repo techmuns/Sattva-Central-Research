@@ -40,7 +40,8 @@ import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime } from '../core/format.js';
 import * as live from '../core/live.js';
 import { state } from '../core/state.js';
-import { sourceGroups } from './sources.js';
+import { sourceGroups, portfolioSource } from './sources.js';
+import * as coverage from '../data/coverage.js';
 import { openTwitterSources } from './twitter-sources.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import * as ipoFilings from '../data/ipo-filings.js';
@@ -73,6 +74,7 @@ let open = false;
 let clock = null;
 let offHandles = null;
 let offIpos = null;
+let offPortfolio = null;
 
 /** Reads the registry — never a cached copy of it — and reduces it to what this widget draws. */
 function readEstate() {
@@ -199,8 +201,9 @@ function flowRail(estate) {
 
 function rowHtml(item, i) {
   const s = STATUS[item.status] || STATUS.pending;
+  const label = item.readLabel || s.label;
+  const cls = item.readState ? (item.readState === 'read' ? 'is-live' : item.readState === 'unchecked' ? 'is-pending' : 'is-mock') : s.cls;
   if (item.details) {
-    const cls = item.readState === 'read' ? 'is-live' : item.readState === 'unchecked' ? 'is-pending' : 'is-mock';
     return `<li><details data-beacon-source="${escapeHtml(item.id)}" class="beacon-source-details">
       <summary class="beacon-row ${cls}" aria-label="${escapeHtml(`${item.name}: ${item.readLabel}. Source details`)}">
         <span class="beacon-dot" aria-hidden="true"></span>
@@ -214,10 +217,10 @@ function rowHtml(item, i) {
   // title attribute raw — strip the tags and escape what is left. The cadence is the useful half.
   const detail = String(item.cadence || '').replace(/<[^>]*>/g, '');
   return `
-    <li class="beacon-row ${s.cls}" title="${escapeHtml(`${item.name} — ${s.label} · ${detail}`)}">
+    <li class="beacon-row ${cls}"${item.id ? ` data-beacon-source="${escapeHtml(item.id)}"` : ''}${item.readState ? ` data-beacon-read-state="${escapeHtml(item.readState)}"` : ''} title="${escapeHtml(`${item.name} — ${label} · ${detail}`)}">
       <span class="beacon-dot" style="animation-delay:${((i % 9) * 0.23).toFixed(2)}s" aria-hidden="true"></span>
       <span class="beacon-row-name">${escapeHtml(item.name)}</span>
-      <span class="beacon-row-status">${escapeHtml(s.label)}</span>
+      <span class="beacon-row-status">${escapeHtml(label)}</span>
     </li>`;
 }
 
@@ -384,6 +387,18 @@ function refreshIpoDetails() {
   if (list) list.scrollTop = scroll;
 }
 
+// Update only the portfolio row; leave scrolling and the other sources untouched.
+function refreshPortfolioStatus() {
+  const row = rootEl?.querySelector('[data-beacon-source="family-portfolio"]');
+  if (!row) return;
+  const source = portfolioSource();
+  row.dataset.beaconReadState = source.readState;
+  row.classList.toggle('is-live', source.readState === 'read');
+  row.classList.toggle('is-mock', source.readState !== 'read');
+  row.querySelector('.beacon-row-status').textContent = source.readLabel;
+  row.title = `${source.name} — ${source.readLabel} · ${source.cadence}`;
+}
+
 function focusGroup(id) {
   const group = [...rootEl.querySelectorAll('[data-beacon-group]')].find((el) => el.dataset.beaconGroup === id);
   if (!group) return;
@@ -414,7 +429,7 @@ export function openBeacon({ group } = {}) {
     const el = rootEl?.querySelector('[data-beacon-fresh]');
     if (el) el.textContent = freshnessText();
     // Age is recomputed even without a successful network response. Preserve disclosure state.
-    if (open) refreshIpoDetails();
+    if (open) { refreshIpoDetails(); refreshPortfolioStatus(); }
   }, 15000);
 
   document.addEventListener('click', onDocClick, true);
@@ -424,6 +439,7 @@ export function openBeacon({ group } = {}) {
     if (open) paintPanel();
   });
   offIpos = ipoFilings.onChange(() => { if (open) refreshIpoDetails(); });
+  offPortfolio = coverage.onChange(() => { if (open) refreshPortfolioStatus(); });
 }
 
 export function close() {
@@ -440,6 +456,8 @@ export function close() {
   offHandles = null;
   offIpos?.();
   offIpos = null;
+  offPortfolio?.();
+  offPortfolio = null;
   document.removeEventListener('click', onDocClick, true);
 }
 

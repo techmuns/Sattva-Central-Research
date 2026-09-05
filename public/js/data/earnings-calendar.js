@@ -1,4 +1,4 @@
-// data/earnings-calendar.js — the LIVE results calendar: who is scheduled to report, and when.
+// data/earnings-calendar.js — the LIVE earnings calendar: scheduled results and upcoming calls.
 //
 //   await loadDate('2026-08-13');   // strip + that date's companies
 //   strip()                         // [{ date, displayDate, count }], newest date first
@@ -6,14 +6,14 @@
 //   stripHas(iso) / scheduledCountFor(iso)
 //   defaultDate()                   // the nearest date that actually has companies on it
 //
-// TWO ENDPOINTS, ONE MATCHED ALL-EXCHANGE PAYLOAD
-//   The per-date COUNT comes from Moneycontrol's calendar JSON API and is complete. The company
-//   LIST comes from the widget and pagination endpoints used by the linked public calendar. The
-//   Worker follows all twenty-row pages. Both calls use `indexId=All`, so BSE-only companies are
-//   included and `scheduledCount` describes the same population as `rows`.
+// TWO SCHEDULES, ONE EVENT-TYPED PAYLOAD
+//   Scheduled result counts and rows come from Moneycontrol's All-exchange JSON/widget feeds. The
+//   Worker follows every twenty-row page. Upcoming con-calls come from Screener's authenticated,
+//   complete invitation index, collected every fifteen minutes. `scheduledCount` is Results plus
+//   Con-calls for the selected day, and every row says which event type it is.
 //
-//   This module answers scheduled results for every date. Filed results are deliberately kept in
-//   the adjacent Earnings Reported view; a past date does not change this calendar's meaning.
+//   Filed results are deliberately kept in the adjacent Earnings Reported view; a past date does
+//   not change this calendar's meaning.
 //
 // THE SNAPSHOT FALLBACK IS THE WORKER'S, NOT THIS MODULE'S
 //   There is a committed capture (public/data/earnings-calendar.json) and the Worker serves from it
@@ -25,6 +25,8 @@
 import { KEYS, conditionalJson } from '../core/store.js';
 
 const ENDPOINT = 'api/earnings-calendar';
+const LIVE_ID = 'earnings-calendar';
+const POLL_MS = 60_000;
 
 // Keyed by date AND by which representation was asked for: a strip-only answer must never be
 // handed to a caller that wanted the company list, or the empty `rows` would read as "nobody
@@ -69,7 +71,7 @@ export function stripHas(iso) {
   return stripCache.some((d) => d.date === iso);
 }
 
-/** The number Moneycontrol's calendar gives for one date, or null if the strip has not got it. */
+/** The combined number of scheduled result and con-call events for one date. */
 export function scheduledCountFor(iso) {
   const hit = stripCache.find((d) => d.date === iso);
   return hit && hit.count > 0 ? hit.count : null;
@@ -83,8 +85,39 @@ export function scheduledCountFor(iso) {
  *   key and `listRequested: false`, so no consumer can read its empty `rows` as "no companies".
  */
 export function loadDate(iso, { from, to, list = 'full' } = {}) {
+  return readDate(iso, { from, to, list });
+}
+
+function payloadFingerprint(payload) {
+  if (!payload) return null;
+  return JSON.stringify({
+    degraded: payload.degraded || null,
+    complete: payload.complete === true,
+    listSource: payload.listSource || null,
+    countSource: payload.countSource || null,
+    screenerUpcomingSource: payload.screenerUpcomingSource || null,
+    screenerUpcomingCheckedAt: payload.screenerUpcomingCheckedAt || null,
+    days: (payload.days || []).map((day) => [day.date, day.displayDate || null, day.resultCount ?? null, day.concallCount ?? null, day.count ?? null]),
+    rows: (payload.rows || []).map((row) => [
+      row.eventId || row.scId,
+      row.eventType || null,
+      row.name || null,
+      row.ticker || null,
+      row.resultDate,
+      row.quarter || null,
+      row.time || null,
+      row.exchange || null,
+      row.noticeUrl || null,
+      row.ltp ?? null,
+      row.changePct ?? null,
+      row.marketCap ?? null,
+    ]),
+  });
+}
+
+async function readDate(iso, { from, to, list = 'full' } = {}, { refresh = false } = {}) {
   const ck = cacheKey(iso, list);
-  if (byDate.has(ck)) return Promise.resolve(byDate.get(ck));
+  if (!refresh && byDate.has(ck)) return Promise.resolve(byDate.get(ck));
   if (inflight.has(ck)) return inflight.get(ck);
 
   const qs = new URLSearchParams({ date: iso });
@@ -100,9 +133,11 @@ export function loadDate(iso, { from, to, list = 'full' } = {}) {
       if (!payload?.ok) throw new Error(payload?.degraded || 'calendar feed returned no data');
       // The strip covers a window around whichever date was asked for, so later loads widen it
       // rather than replacing it — clicking around the strip must not make dates disappear.
+      const previous = byDate.get(ck);
+      const changed = previous && payloadFingerprint(previous) !== payloadFingerprint(payload);
       mergeStrip(payload.days || []);
       byDate.set(ck, payload);
-      subscribers.forEach((fn) => fn());
+      if (changed) subscribers.forEach((fn) => fn());
       failures.delete(iso);
       lastError = null;
       return payload;
@@ -116,6 +151,28 @@ export function loadDate(iso, { from, to, list = 'full' } = {}) {
 
   inflight.set(ck, p);
   return p;
+}
+
+/**
+ * Keep the selected schedule current while its tab is mounted.
+ *
+ * The shared live engine pauses hidden pages, re-checks immediately on return and preserves the
+ * last good response across a failed tick. `current()` is evaluated per tick so a date clicked
+ * after registration becomes the one that is refreshed; no poller remains pinned to an old day.
+ */
+export function startLive(live, current) {
+  if (!live || typeof current !== 'function') return () => {};
+  live.register(LIVE_ID, {
+    intervalMs: POLL_MS,
+    fetcher: async () => {
+      const request = current();
+      if (!request?.date) return null;
+      await readDate(request.date, { from: request.from, to: request.to, list: 'full' }, { refresh: true });
+      return null;
+    },
+  });
+  live.start(LIVE_ID);
+  return () => live.stop(LIVE_ID);
 }
 
 function mergeStrip(days) {

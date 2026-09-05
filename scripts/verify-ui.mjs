@@ -128,8 +128,41 @@ const downloadOrSkip = async (label, file) => {
 }
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--test-type'] });
-const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, acceptDownloads: true });
+// This suite stubs APIs with context routes. Playwright cannot intercept network
+// requests initiated inside a service worker, so keep that worker out of this
+// fixture and exercise it separately in verify-dashboard-performance-ui.mjs.
+const context = await browser.newContext({
+  viewport: { width: 1440, height: 1100 },
+  acceptDownloads: true,
+  serviceWorkers: 'block',
+});
 const page = await context.newPage();
+
+// Research requires a fresh private-portfolio exchange before submitting. Exercise the real
+// iframe/message contract with a local response, without opening a production Family session.
+const familyFixture = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));
+const familyHoldings = familyFixture.holdings.map(h => ({ isin: h.isin, ticker: h.ticker, name: h.name, sector: h.sector || 'Unclassified', weightPct: null }));
+const familyHtml = `<!doctype html><script>
+const holdings = ${JSON.stringify(familyHoldings).replaceAll('<', '\\u003c')};
+addEventListener('message', event => {
+  const m = event.data; if (event.source !== parent || m?.channel !== 'sattva-portfolio-v1') return;
+  const send = value => event.source.postMessage({ channel: m.channel, id: m.id, ...value }, event.origin);
+  if (m.type === 'hello') return send({ type: 'ready', capabilities: ['position-sizes'] });
+  if (m.type === 'cancel') return send({ type: 'error', message: 'Cancelled' });
+  if (!['read', 'positions'].includes(m.type)) return;
+  const checkedAt = new Date().toISOString(), bookAsOf = '2026-06-30', archiveVersion = 1;
+  send({ type: 'result', holdings, sizes: { basis: 'listed-market-value', complete: false, checkedAt, bookAsOf, archiveVersion },
+    reading: { status: 'limited', checkedAt, bookAsOf, archiveVersion, answer: 'Local test holdings are available; position sizes are not supplied by this fixture.' } });
+});
+</script>`;
+await context.route('**/research-bridge', route => route.fulfill({ contentType: 'text/html', body: familyHtml }));
+await context.route('**/api/family-portfolio', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({
+  ...familyFixture, ok: true, syncStatus: 'live', storage: 'shared', sourceRevision: 'a'.repeat(64),
+  sourceWorkbook: { fileKey: 'local-fixture', label: 'Local test workbook', uploadedAt: '2026-09-01T00:00:00Z' },
+  count: familyFixture.holdings.length, resolved: familyFixture.holdings.filter(h => h.ticker).length,
+  syncedAt: new Date().toISOString(),
+}) }));
+await context.route('**/api/capture-registration', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false,"reason":"local-fixture"}' }));
 
 // The route sweep reaches Public Chatter long before its dedicated block. Install the local feed
 // override before the first document loads so the dashboard and its lazy /posts detail requests
@@ -340,6 +373,7 @@ const routes = await page.evaluate(async () => {
       'tabs/super-investors.js',
       'tabs/news.js',
       'tabs/corp-announcements.js',
+      'tabs/corporate-actions.js',
       'tabs/nse-filings.js',
       'tabs/insider-trades.js',
     ],
@@ -733,7 +767,8 @@ if (!hasLiveRoute) {
 console.log('\n— earnings calendar —');
 await go('/#/research/earnings-hub?scope=universe', 800);
 await waitForPanel();
-ok('the tab offers Reported / Calendar', (await page.locator('[data-view]').count()) === 2);
+ok('the tab offers Reported / Calendar / Company Filings',
+  JSON.stringify(await page.locator('[data-view]').evaluateAll(nodes => nodes.map(node => node.dataset.view).sort())) === JSON.stringify(['calendar', 'filings', 'reported']));
 
 await page.locator('[data-view="calendar"]').click();
 // THE CALENDAR OPENS ON TODAY. Today can legitimately have no scheduled rows, so this waits for
@@ -874,6 +909,7 @@ if (calReady.failed) {
       found: !!payload,
       src: payload?.listSource ?? null,
       countSrc: payload?.countSource ?? null,
+      screenerSrc: payload?.screenerUpcomingSource ?? null,
       count: payload?.scheduledCount ?? null,
       rows: payload?.rows?.length ?? 0,
       complete: payload?.complete === true,
@@ -884,9 +920,9 @@ if (calReady.failed) {
   });
   // A captured half uses calm customer wording while remaining distinguishable from a fully live
   // read. The provenance details below still name the source precisely.
-  const anyCapture = calSource.src === 'snapshot' || calSource.countSrc === 'snapshot';
+  const anyCapture = calSource.src === 'snapshot' || calSource.countSrc === 'snapshot' || calSource.screenerSrc === 'artifact';
   if (calSource.src || calSource.countSrc) {
-    ok('a captured half is labelled as an updated schedule', anyCapture ? calSource.pill === 'Schedule updated' : ['Up to date', 'Updating'].includes(calSource.pill), `list=${calSource.src} counts=${calSource.countSrc} pill=${calSource.pill}`);
+    ok('a captured half is labelled as an updated schedule', anyCapture ? calSource.pill === 'Schedule updated' : ['Up to date', 'Updating'].includes(calSource.pill), `list=${calSource.src} counts=${calSource.countSrc} screener=${calSource.screenerSrc} pill=${calSource.pill}`);
   } else if (calSource.found) {
     ok('the payload names where the list came from', false, `listSource=${calSource.src}`);
   } else {
@@ -1391,7 +1427,7 @@ console.log('\n— AI alerts —');
     `${failedConfigGets} failed check(s), ${configGets - failedConfigGets} recovery check(s)`);
 
   const evidenceAudit = await evalSafe(async () => {
-    const { buildResearchEvidence, RESEARCH_EVIDENCE_CHAR_BUDGET } = await import('/js/research/estate.js');
+    const { buildResearchEvidence, RESEARCH_EVIDENCE_CHAR_BUDGET, DASHBOARD_RESEARCH_SOURCES } = await import('/js/research/estate.js');
     const { providerEvidenceChars } = await import('/js/research/evidence-shared.js');
     const packet = await buildResearchEvidence({
       question: 'Which companies in my portfolio have the strongest recent evidence across multiple tabs?',
@@ -1401,6 +1437,9 @@ console.log('\n— AI alerts —');
     return {
       catalog: packet.catalog.length,
       sources: packet.sources.length,
+      expected: DASHBOARD_RESEARCH_SOURCES.map(source => source.id).sort(),
+      catalogIds: packet.catalog.map(source => source.id).sort(),
+      sourceIds: packet.sources.map(source => source.id).sort(),
       ready: packet.selection.sourcesReady,
       statuses: packet.sources.map((source) => `${source.id}:${source.status}`),
       budget: RESEARCH_EVIDENCE_CHAR_BUDGET,
@@ -1415,8 +1454,9 @@ console.log('\n— AI alerts —');
       tokens: packet.selection.tokens,
     };
   });
-  ok('...assembles one status-bearing packet from all fourteen dashboard sources',
-    evidenceAudit.catalog === 14 && evidenceAudit.sources === 14 && evidenceAudit.ready > 0 &&
+  ok('...assembles one status-bearing packet from every registered dashboard source',
+    JSON.stringify(evidenceAudit.catalogIds) === JSON.stringify(evidenceAudit.expected) &&
+      JSON.stringify(evidenceAudit.sourceIds) === JSON.stringify(evidenceAudit.expected) && evidenceAudit.ready > 0 &&
       evidenceAudit.statuses.every((entry) => /:(ready|unavailable)$/.test(entry)),
     `${evidenceAudit.ready} ready · ${evidenceAudit.statuses.join(', ')}`);
   ok('...and keeps the provider-facing packet inside the local model budget',
@@ -1500,7 +1540,9 @@ console.log('\n— AI alerts —');
   await page.waitForFunction(() => /Dashboard evidence remains traceable/.test(document.querySelector('[data-research-transcript]')?.innerText || ''), null, { timeout: 25000 });
   const researchAnswer = await page.locator('[data-research-transcript]').innerText();
   ok('...submits the complete dashboard packet without claiming unsupported web research',
-    askRequest?.webResearch === false && askRequest?.evidence?.catalog?.length === 14 && askRequest?.evidence?.sources?.length === 14,
+    askRequest?.webResearch === false && askRequest?.requirePortfolio === true &&
+      askRequest?.evidence?.portfolio?.status === 'limited' &&
+      askRequest?.evidence?.catalog?.length === evidenceAudit.expected.length && askRequest?.evidence?.sources?.length === evidenceAudit.expected.length,
     `${askRequest?.evidence?.selection?.sourcesReady ?? 0} sources ready`);
   ok('...renders the streamed dashboard answer without a fabricated web source',
     /dashboard research/i.test(researchAnswer) &&
@@ -1538,12 +1580,13 @@ console.log('\n— AI alerts —');
   ok('leaving Ask Research mid-answer really does unmount it', awaySession && !(await page.locator('[data-research-input]').count()));
   const landedAway = await page
     .waitForFunction(() => {
-      const stored = JSON.parse(localStorage.getItem('sattva:ask-research:v1') || '[]');
-      return stored.some((session) => session.messages?.some((m) => m.role === 'assistant' && /OFF_TAB_ANSWER/.test(m.text)));
+      return document.querySelectorAll('[data-notification="research"]').length > 0;
     }, null, { timeout: 20000 })
     .then(() => true)
     .catch(() => false);
-  ok('...and the answer still arrives and is saved while another tab is on screen', landedAway);
+  ok('...and the answer still arrives while another tab is on screen', landedAway);
+  ok('...without persisting private portfolio conversations to device storage',
+    await page.evaluate(() => !/OFF_TAB_ANSWER|Dashboard evidence remains traceable/.test(localStorage.getItem('sattva:ask-research:v1') || '')));
   // Keeping it running silently would be a feature nobody can see, so it announces itself in the
   // alert stack — the same place a filed result does, under the tab it belongs to.
   ok('...and says so in the alert stack rather than finishing invisibly',
@@ -1556,7 +1599,7 @@ console.log('\n— AI alerts —');
     /OFF_TAB_ANSWER/.test(backText) && (await page.locator('[data-research-input]').inputValue()) === '',
     backText.replace(/\s+/g, ' ').slice(0, 120));
 
-  // A TYPED-BUT-UNSENT QUESTION IS THE READER'S WORK TOO. It survives leaving the tab and a reload.
+  // Private drafts survive same-page navigation but deliberately do not persist across reloads.
   await page.locator('[data-research-input]').fill('An unsent draft that must survive');
   await page.waitForTimeout(700);
   await page.evaluate(() => { location.hash = '#/research/breakouts?scope=portfolio'; });
@@ -1567,8 +1610,9 @@ console.log('\n— AI alerts —');
     (await page.locator('[data-research-input]').inputValue()) === 'An unsent draft that must survive');
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => !document.querySelector('[data-research-input]')?.disabled, null, { timeout: 15000 });
-  ok('...and a reload',
-    (await page.locator('[data-research-input]').inputValue()) === 'An unsent draft that must survive');
+  ok('...but private drafts disappear on reload rather than entering device storage',
+    (await page.locator('[data-research-input]').inputValue()) !== 'An unsent draft that must survive' &&
+    await page.evaluate(() => !/An unsent draft that must survive/.test(localStorage.getItem('sattva:ask-research:v1') || '')));
   await page.evaluate(() => {
     const input = document.querySelector('[data-research-input]');
     input.value = '';
@@ -1633,6 +1677,14 @@ console.log('\n— AI alerts —');
   });
 
   await page.unroute('**/api/research');
+  if (process.env.VERIFY_UI_STOP_AFTER_RESEARCH === '1') {
+    const own = [...new Set(errors)].filter(ownError);
+    ok('zero application console errors through the Research smoke checks', own.length === 0, own.slice(0, 3).join(' | '));
+    await browser.close();
+    await new Promise(resolve => ddStub.close(resolve));
+    console.log(`${failures} failures through Research; ${skipped} environment skips.`);
+    process.exit(failures ? 1 : 0);
+  }
 
   // EVERY TABLE TAB HONOURS `?company=` THE SAME WAY: the first paint after the parameter appears
   // opens the table searched for that company, which is what a citation deep-links to. Asserted on
@@ -1710,19 +1762,16 @@ console.log('\n— AI alerts —');
   ok('...and every research tab asked for is represented',
     ['Price & volume', 'Earnings', 'Con-calls', 'Public chatter', 'Investor activity', 'Announcements', 'Insider trades', 'Company news'].every((n) => panel.includes(n)),
     panel.replace(/\s+/g, ' ').slice(0, 120));
-  // A COUNT IS A FINISHED ANSWER; "has not looked" IS THE ABSENCE OF ONE. The compact chip prints a
-  // WORD for the second, never a number — a `0` under a feed that has not checked today is exactly
-  // the confusion this panel exists to prevent. The full wording lives in the chip's tooltip and in
-  // the modal's table; what is asserted here is that a behind feed never renders as a count.
+  // A COUNT IS A FINISHED ANSWER; "has not looked" IS THE ABSENCE OF ONE. A chip without a confirmed
+  // reading shows only the source name: no misleading zero and no customer-facing health jargon.
   const chipStates = await page.$$eval('[data-alerts-coverage] [data-feed]', (els) =>
     els.map((e) => ({ text: e.innerText.replace(/\s+/g, ' ').trim(), title: e.getAttribute('title') || '' })));
-  const behind = chipStates.filter((c) => /latest available capture/.test(c.title));
-  ok('...and a feed awaiting today’s capture uses calm wording rather than showing a zero',
-    behind.every((c) => /latest/.test(c.text) && !/\b\d+\b/.test(c.text)),
-    behind.length ? behind.map((c) => c.text).join(' | ') : 'every feed has looked at today');
-  ok('...and every chip carries the sentence its row used to print',
-    chipStates.length === 8 && chipStates.every((c) => c.title.length > 20),
-    `${chipStates.length} chips, shortest title ${Math.min(...chipStates.map((c) => c.title.length))} chars`);
+  ok('...and source filters omit feed-health labels from visible and hover text',
+    chipStates.every((c) => !/stale|unknown|incomplete|on-demand|not in scope|read failed/i.test(`${c.text} ${c.title}`)),
+    chipStates.map((c) => `${c.text} [${c.title}]`).join(' | '));
+  ok('...and every chip has a simple filtering hint',
+    chipStates.length === expectedScopedFeeds && chipStates.every((c) => /^Filter alerts to .+\.$/.test(c.title)),
+    `${chipStates.length} chips`);
   // AND ASSERTED AT THE RULE, because the check above passes vacuously on any day every feed has
   // looked at today — which is most days. `feedState` is exported for exactly this reason, the same
   // reason `moveSeverity` and `freshnessOf` are: a branch the shipped data cannot reach is a branch
@@ -1740,17 +1789,17 @@ console.log('\n— AI alerts —');
       some: of({ reachesToday: true, count: 30 }),
     };
   });
-  ok('a feed that has not looked at today never renders as a count, whatever it holds',
-    !/\d/.test(states.behind.short) && !/\d/.test(states.behindWithRows.short),
+  ok('a feed that has not looked at today renders no customer-facing detail',
+    states.behind.short === '' && states.behindWithRows.short === '',
     `count 0 -> "${states.behind.short}", count 7 -> "${states.behindWithRows.short}"`);
-  ok('...nor does one that could not be read, or one still reading',
-    !/\d/.test(states.failed.short) && !/\d/.test(states.pending.short) && !/\d/.test(states.unscoped.short),
+  ok('...and neither do failed, pending, or unscoped feeds',
+    states.failed.short === '' && states.pending.short === '' && states.unscoped.short === '',
     `failed "${states.failed.short}", pending "${states.pending.short}", unscoped "${states.unscoped.short}"`);
   // The one case that IS a number, and the one zero that is a real measurement rather than a gap.
   ok('...while a feed that looked and found nothing prints a real zero',
     states.nothing.short === '0' && states.some.short === '30',
     `nothing -> "${states.nothing.short}", 30 events -> "${states.some.short}"`);
-  ok('...and all five states stay distinguishable by their full wording',
+  ok('...while all five states remain distinguishable internally',
     new Set([states.behind.label, states.failed.label, states.pending.label, states.unscoped.label, states.nothing.label]).size === 5);
   // The status label must not bring back the long explainer overlay.
   await page.locator('[data-alerts-info]').first().click();
@@ -3003,11 +3052,12 @@ ok('call times render in IST regardless of the viewer’s zone', csTimes.some((t
 const csPending = await page.evaluate(async () => {
   const mod = await import('/js/data/concall-scans.js');
   const rows = mod.all();
-  const nulls = rows.filter((r) => r.resultScore == null);
+  const nulls = rows.filter((r) => r.analysisTracked !== false && r.resultScore == null);
+  const documentsOnly = rows.filter((r) => r.analysisTracked === false);
   const zeros = rows.filter((r) => r.resultScore === 0);
-  return { total: rows.length, nulls: nulls.length, zeros: zeros.length, analysed: rows.filter((r) => r.resultScore != null).length };
+  return { total: rows.length, nulls: nulls.length, documentsOnly: documentsOnly.length, zeros: zeros.length, analysed: rows.filter((r) => r.resultScore != null).length };
 });
-ok('unanalysed calls carry a null score, never a zero', csPending.nulls >= 0 && csPending.zeros === 0, `${csPending.nulls} pending of ${csPending.total}`);
+ok('unanalysed calls carry a null score, never a zero', csPending.nulls >= 0 && csPending.zeros === 0, `${csPending.nulls} pending · ${csPending.documentsOnly} document-only of ${csPending.total}`);
 await page.locator('#content-host select').first().selectOption('pending');
 await page.waitForTimeout(600);
 ok('...and the pending filter shows them as “pending”', (await rowCount()) === csPending.nulls && (csPending.nulls === 0 || /pending/i.test(await hostText())), `${await rowCount()} rows`);
@@ -3202,7 +3252,8 @@ await page.waitForSelector('[data-deep-dive]', { timeout: 25000 }).catch(() => {
 // wrong on the page. `rowCount()` already waits; this makes the button count wait too.
 const ddRows = await rowCount();
 const ddCells = await page.locator('[data-deep-dive]').count();
-ok('every scan row carries a Deep Dive button', ddCells > 200 && ddCells === ddRows, `${ddCells} buttons, ${ddRows} rows`);
+const ddTracked = await page.evaluate(async () => (await import('/js/data/concall-scans.js')).all().filter((row) => row.analysisTracked !== false).length);
+ok('every analysis-tracked row carries a Deep Dive button', ddCells > 200 && ddCells === ddTracked && ddCells <= ddRows, `${ddCells} buttons, ${ddTracked} analysis rows, ${ddRows} total rows`);
 ok('...and the column is headed Deep Dive', (await page.$$eval('#content-host thead th', (ts) => ts.map((t) => t.innerText.trim().toUpperCase()))).includes('DEEP DIVE'));
 ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.report === 0, `analyze=${ddHits.analyze} report=${ddHits.report}`);
 // Their free index is read once per document load and never again — not per row, not per repaint,
@@ -5662,7 +5713,8 @@ console.log('\n— news, announcements and insider trades —');
     !/Portfolio · [\d,]+ of [\d,]+/.test(await hostText()));
   const chipTitle = (await page.locator('[data-filings-info]').first().getAttribute('title')) || '';
   ok('...and the chip still reaches the denominator, in companies',
-    /of the book's [\d,]+ companies/.test(chipTitle), chipTitle.slice(0, 110));
+    /of [\d,]+ portfolio companies/.test(chipTitle) && /All [\d,]+ book lines resolve to a news identity/.test(chipTitle),
+    chipTitle.slice(0, 180));
   // The face follows the same three-hour window as the capture watchdog.
   const chipState = await evalSafe(async () => {
     const m = (await import('/js/data/filings.js')).news.meta();
@@ -7512,10 +7564,22 @@ const keywordRules = await page.evaluate(async () => {
     // The materiality rule on the news feed: topic yes, direction never.
     trackedIsHigh: alerts.newsSignal({ title: 'Advait Energy bags Rs 135-crore order', query: 'Advait Energy' }).importance === 'high',
     untrackedIsLow: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).importance === 'low',
+    untrackedKeepsNameEvidence: alerts.newsSignal({ title: 'A quiet day', query: 'Advait Energy' }).namesCompany === false,
     // BOTH HALVES OF "company name + keyword", or it is not an alert: a tracked word on a story
     // that does not carry the company is somebody else's order win under this company's name.
     unnamedStaysLow: alerts.newsSignal({ title: 'Some other firm bags Rs 135-crore order', query: 'Advait Energy' }).importance === 'low',
     unnamedKeepsItsKeywords: alerts.newsSignal({ title: 'Some other firm bags Rs 135-crore order', query: 'Advait Energy' }).keywords.includes('Order'),
+    unrelatedQueryIdentityIsNotSearchEvidence:
+      !alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
+        headline: 'Lululemon stock analysis', sourceRecord: { summary: 'Is Lululemon a buy?' } }).toLowerCase().includes('jayaswal'),
+    unrelatedPublisherTextRemainsSearchable:
+      alerts.eventSearchText({ feed: 'news', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', namesCompany: false,
+        headline: 'Lululemon stock analysis', sourceRecord: { summary: 'Is Lululemon a buy?' } }).toLowerCase().includes('lululemon'),
+    uncheckableNewsKeepsAssignedCompanySearch:
+      alerts.eventSearchText({ feed: 'news', company: 'A Company', ticker: 'ACOMPANY', namesCompany: null,
+        headline: 'Quarterly update' }).includes('ACOMPANY'),
+    otherFeedsKeepResolvedCompanySearch:
+      alerts.eventSearchText({ feed: 'announcements', company: 'Jayaswal Neco Industries', ticker: 'JAYNECOIND', headline: 'Press release' }).includes('JAYNECOIND'),
     uncheckableStillCounts: alerts.newsSignal({ title: 'Bags Rs 135-crore order' }).importance === 'high',
     // A standfirst is not a headline. Several outlets fill it with a related-links strip, so one
     // sidebar was tagging unrelated stories with whatever the sidebar happened to mention.

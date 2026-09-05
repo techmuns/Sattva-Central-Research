@@ -9,12 +9,15 @@ const identity = createAnnouncementIdentity(identityRows);
 assert.equal(filingTicker('SAHANA-SM'), 'SAHANA');
 assert.equal(identity.key({ isin: 'INEKAMATS001' }), identity.key({ scripCode: '539659', ticker: 'WRONG' }));
 assert.equal(identity.row({ scripCode: '539659', ticker: 'OLD' }).ticker, 'KAMATS');
+assert.equal(identity.key({ ticker: '539659' }), identity.key({ isin: 'INEKAMATS001' }), 'BSE watchlist codes join the same issuer as its announcements');
 assert.notEqual(identity.key({ isin: 'INEOTHER001', ticker: 'KAMATS' }), identity.key({ isin: 'INEKAMATS001' }));
 assert.equal(identity.find({ company: 'Vikram Kamats Hospitality Other Ltd' }), null, 'prefix names cannot match another issuer');
 const master = buildAnnouncementIdentities([{ ISIN_NUMBER: 'INE564S01019', SCRIP_CD: '539659', scrip_id: 'KAMATS', Scrip_Name: 'Vikram Kamats Hospitality Ltd' }]);
 const issuers = createAnnouncementIdentity(master.entries);
 assert.equal(issuers.find({ isin: 'INE564S13022' }).ticker, 'KAMATS', 'warrants join their verified equity issuer only for announcements');
 assert.equal(issuers.find({ isin: 'INE0R4713012' }).ticker, 'ALPEXSOLAR');
+assert.equal(issuers.find({ isin: 'INE935Q01015' }).ticker, 'FSC', 'delisted holdings retain their verified historical filing identity');
+assert.equal(issuers.key({ scripCode: '540798' }), issuers.key({ isin: 'INE935Q01015' }));
 assert.equal(mergeAnnouncements([{ ticker: 'ALPEXSOLAR-SM', date: '2026-09-04', url: 'https://example.test/a.pdf' }].map(issuers.row),
   [{ ticker: 'ALPEXSOLAR', date: '2026-09-04', url: 'https://example.test/a.pdf' }].map(issuers.row)).length, 1, 'quote aliases cannot duplicate the same announcement');
 

@@ -99,9 +99,10 @@ try {
 
   const archiveDir = join(scratch, 'archive');
   const oldTrade = { ticker: 'A', date: '2020-01-01', cells: { Insider: 'Person', Shares: '10' } };
-  archiveFilings(archiveDir, 'insider', [oldTrade, oldTrade]);
+  const distinctTrade = { ticker: 'A', date: '2020-01-01', cells: { Insider: 'Other Person', Shares: '10' } };
+  archiveFilings(archiveDir, 'insider', [oldTrade, oldTrade, distinctTrade]);
   archiveFilings(archiveDir, 'insider', [oldTrade]);
-  assert.equal(readJson(join(archiveDir, '2020-01.json')).rows.length, 2, 'archive retains old dates and true multiplicity without inflation');
+  assert.equal(readJson(join(archiveDir, '2020-01.json')).rows.length, 2, 'archive removes repeated events while retaining distinct trades');
   archiveFilings(archiveDir, 'insider', []);
   assert.equal(readJson(join(archiveDir, 'index.json')).rowCount, 2, 'empty capture never truncates the archive');
 

@@ -138,7 +138,8 @@ export function mergeScans(head = [], tail = []) {
 export function fingerprint(rows = []) {
   let total = 0;
   for (const r of rows) {
-    const tok = `${r.companyKey}|${r.when}|${r.resultScore ?? ''}|${r.sentimentTier ?? ''}|${r.notesReady ? 1 : 0}|${r.tags.length}`;
+    const documents = (r.documents || []).map((document) => `${document.type}:${document.url}`).sort().join(',');
+    const tok = `${r.companyKey}|${r.when}|${r.resultScore ?? ''}|${r.sentimentTier ?? ''}|${r.notesReady ? 1 : 0}|${r.tags.length}|${documents}`;
     let h = 0;
     for (let i = 0; i < tok.length; i++) h = (h * 31 + tok.charCodeAt(i)) | 0;
     total = (total + h) | 0;

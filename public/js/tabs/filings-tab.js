@@ -29,6 +29,7 @@ import { filterByScope, scopePossessive } from '../data/scope.js';
 import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
 import * as refreshRegistry from '../core/refresh.js';
+import { portfolioNewsEntities, newsRowEntityKey } from '../data/company-news-identity.js';
 
 const REASONS = {
   'no-route': {
@@ -92,7 +93,14 @@ export function makeFilingsTab(cfg) {
    * company. The other two feeds are per-ticker upstreams and ignore it.
    */
   function tickersFor(ctx) {
-    const book = coverage.holdings().filter((h) => h.ticker).map((h) => ({ ticker: h.ticker, name: h.name }));
+    const book = cfg.id === 'news'
+      ? portfolioNewsEntities(coverage.holdings()).map((entity) => ({
+          key: entity.key,
+          ticker: entity.ticker,
+          entityId: entity.entityId,
+          name: entity.name,
+        }))
+      : coverage.holdings().filter((h) => h.ticker).map((h) => ({ ticker: h.ticker, name: h.name }));
     if (ctx.scope === 'portfolio') return book;
     // The watchlist carries the name the row was starred under, which is exactly what the news
     // search needs — and it is the only name we have for a watched company outside the book.
@@ -102,7 +110,7 @@ export function makeFilingsTab(cfg) {
     // companies nothing else on this dashboard tracks would spend the rate limit on rows nobody can
     // act on. The book comes FIRST, so a walk cut short by LIVE_LIMIT has covered the holdings
     // rather than whatever the snapshot happens to list first — the same rule the scraper follows.
-    const seen = new Set(book.map((b) => String(b.ticker).toUpperCase()));
+    const seen = new Set(book.map((b) => String(b.key || b.ticker).toUpperCase()));
     const out = [...book];
     for (const r of cfg.feed.rows()) {
       const t = String(r.ticker || '').toUpperCase();
@@ -226,10 +234,10 @@ export function makeFilingsTab(cfg) {
     const scoped = tickersFor(ctx);
     const cov = {
       inScope: scoped.length,
-      withRows: new Set(rows.map((r) => String(r.ticker || '').toUpperCase()).filter(Boolean)).size,
-      askedEmpty: scoped.filter((c) => cfg.feed.wasAskedEmpty(c.ticker)).length,
-      failed: scoped.filter((c) => cfg.feed.failureFor(c.ticker)).length,
-      unlisted: ctx.scope === 'portfolio' ? coverage.meta().uncovered || 0 : 0,
+      withRows: new Set(rows.map((r) => cfg.id === 'news' ? newsRowEntityKey(r) : String(r.ticker || '').toUpperCase()).filter(Boolean)).size,
+      askedEmpty: scoped.filter((c) => cfg.feed.wasAskedEmpty(c.key || c.ticker)).length,
+      failed: scoped.filter((c) => cfg.feed.failureFor(c.key || c.ticker)).length,
+      unlisted: ctx.scope === 'portfolio' && cfg.id !== 'news' ? coverage.meta().uncovered || 0 : 0,
       noun: cfg.noun,
       windowDays: m.windowDays,
       coversUniverse: m.coversUniverse,
@@ -308,14 +316,14 @@ export function makeFilingsTab(cfg) {
       filters: cfg.filters ? cfg.filters(rows) : null,
       searchable: cfg.searchable,
       link: cfg.link === false ? null : cfg.link || ((r) => r.url || null),
-      initialSort: { key: 'Date', dir: 'desc' },
+      initialSort: cfg.initialSort || { key: 'Date', dir: 'desc' },
       initialView: view,
       // TWO UNITS, BOTH NAMED. Insider Trades can carry many disclosures for one portfolio
       // company, so a bare "1,295 of 1,295 shown" was understandably read as 1,295 companies.
       // Recompute both figures from the visible row DATA whenever search or a filter changes.
       countLabel: (visible) => {
         if (cfg.countLabel) return cfg.countLabel(visible, { scope: ctx.scope, holdings: coverage.holdings() });
-        const companies = new Set(visible.map((r) => String(r.ticker || '').toUpperCase()).filter(Boolean)).size;
+        const companies = new Set(visible.map((r) => cfg.id === 'news' ? newsRowEntityKey(r) : String(r.ticker || '').toUpperCase()).filter(Boolean)).size;
         const rowNoun = visible.length === 1 ? cfg.noun.replace(/s$/, '') : cfg.noun;
         const companyNoun =
           ctx.scope === 'portfolio'
@@ -502,7 +510,7 @@ const loadingHtml = () => `
 function pill(m, scope, rows) {
   const at = m.capturedAt ? Date.parse(m.capturedAt) : NaN;
   const age = Number.isFinite(at) ? Date.now() - at : null;
-  const maxAge = m.kind === 'announcements' ? 90 * 60 * 1000 : m.kind === 'news' ? 3 * 60 * 60 * 1000 : 6 * 60 * 60 * 1000;
+  const maxAge = m.kind === 'announcements' ? 90 * 60 * 1000 : m.kind === 'news' ? 3 * 60 * 60 * 1000 : 75 * 60 * 1000;
   const fresh = age !== null && age >= 0 && age <= maxAge;
   const tone = fresh ? 'text-emerald-700' : 'text-slate-500';
   // The face is calm and useful. Coverage/retry details remain in provenance while the watchdog
@@ -525,9 +533,16 @@ function pill(m, scope, rows) {
  * of three tabs across three scopes.
  */
 function scopeTitle(scope, rows, m) {
-  const n = new Set((rows || []).map((r) => String(r.ticker || '').toUpperCase()).filter(Boolean)).size;
+  const n = new Set((rows || []).map((r) => m.kind === 'news' ? newsRowEntityKey(r) : String(r.ticker || '').toUpperCase()).filter(Boolean)).size;
   const book = coverage.meta();
   if (scope === 'portfolio' && book?.count) {
+    if (m.kind === 'news' && m.portfolioEntities) {
+      return `${formatNumber(n)} of ${formatNumber(m.portfolioEntities)} portfolio companies appear on this feed. ` +
+        `All ${formatNumber(m.portfolioLines || book.count)} book lines resolve to a news identity, including all ${formatNumber(m.tickerlessPortfolioLines ?? m.tickerlessPortfolioEntities ?? 0)} lines without an NSE ticker` +
+        (m.tickerlessPortfolioLines && m.tickerlessPortfolioEntities && m.tickerlessPortfolioLines !== m.tickerlessPortfolioEntities
+          ? ` (${formatNumber(m.tickerlessPortfolioEntities)} distinct companies; warrant lines share the underlying company's identity).`
+          : '.');
+    }
     return `${formatNumber(n)} of the book's ${formatNumber(book.count)} companies appear on this feed.` +
       (book.uncovered ? ` ${formatNumber(book.uncovered)} carry no NSE symbol, so no feed here can ever show them.` : '') +
       '';
@@ -573,11 +588,20 @@ function coverageSentence(m, cov) {
   const n = (x) => escapeHtml(formatNumber(x));
   const co = (x, one, many) => `${x === 1 ? one : many}`;
 
+  if (m.kind === 'corporate-actions') {
+    const range = m.requestedFrom && m.requestedTo
+      ? ` between <strong>${escapeHtml(m.requestedFrom)}</strong> and <strong>${escapeHtml(m.requestedTo)}</strong>`
+      : '';
+    return ` The capture reads the combined NSE and Screener market-wide calendars${range}; ${n(cov.withRows)} of ${n(cov.inScope)}
+      ${co(cov.inScope, 'company', 'companies')} in scope have a published action in that range.`;
+  }
+
   if (cov.coversUniverse) {
     // Nothing was asked company by company here, so there is no company that went unasked. What
     // the reader is owed instead is that an absence in this feed is a real answer.
-    return ` The capture reads the whole exchange by date, so a company with nothing here filed
-      nothing in the last ${n(m.windowDays)} days — ${n(cov.withRows)} of ${n(cov.inScope)}
+    const period = m.coverageFrom ? `since <strong>${escapeHtml(m.coverageFrom)}</strong>` : `in the last ${n(m.windowDays)} days`;
+    return ` The capture reads the whole exchange by date, so a company with nothing here has no captured disclosure
+      ${period} — ${n(cov.withRows)} of ${n(cov.inScope)}
       ${co(cov.inScope, 'company', 'companies')} in scope filed something.`;
   }
 
@@ -730,8 +754,8 @@ export function coverageBlock(m) {
       m.coversUniverse
         ? `<p class="mt-2 text-xs"><strong>Read by date, not by company.</strong> The question asked was <em>what was filed on
              these dates</em>, across ${m.exchangeCompanies ? `all <strong>${escapeHtml(formatNumber(m.exchangeCompanies))}</strong> active listings` : 'the whole exchange'} —
-             not <em>what did these companies file</em>. So <strong>a company absent from this file filed nothing in the
-             window</strong>, rather than being one there was no request budget to ask about. That distinction is the entire
+             not <em>what did these companies file</em>. So <strong>a company absent from this file has no captured row
+             ${m.coverageFrom ? `since ${escapeHtml(m.coverageFrom)}` : 'in the verified window'}</strong>, rather than being one there was no request budget to ask about. That distinction is the entire
              reason this feed changed source.</p>`
         : `<p class="mt-2 text-xs">A company with no rows had <em>nothing in this window</em>; a company that could not be read is not
        listed at all. Those are different states and the pill counts them separately.</p>`

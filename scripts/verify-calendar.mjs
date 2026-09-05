@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import {
   CalendarPageBlocked,
+  CALENDAR_MAX_PAGES,
   fetchCalendarDay,
   fetchCalendarStrip,
   parseCalendarHtml,
@@ -68,6 +69,10 @@ ok('missing scheduled time is null while published numbers remain numeric', () =
   assert.equal(parsed[0].ltp, 1234.5);
   assert.equal(parsed[0].changePct, 1.25);
   assert.equal(parsed[0].marketCap, 9876.54);
+});
+
+ok('the page bound reserves room for the complete Screener artifact read', () => {
+  assert.equal(CALENDAR_MAX_PAGES, 40);
 });
 
 const allCompanies = Array.from({ length: 21 }, (_, i) => company(i + 1));

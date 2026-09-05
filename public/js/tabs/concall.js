@@ -1,10 +1,10 @@
 // tabs/concall.js — the Con-call tab.
 //
-// ONE VIEW, ONE PROVENANCE.
-//   Every earnings call held this quarter, live from StockScans, with their result score,
-//   sentiment tier and highlight bullets. The schedule of calls not yet held opens as an overlay
-//   off that table — "Upcoming Concalls", the same shape StockScans give it. Everything this tab
-//   renders lives in js/concall/scans.js; this module is the mount, the poller and the errors.
+// ONE VIEW, TWO EXPLICITLY SEPARATED PROVENANCES.
+//   Screener's authenticated market-wide document index supplies retained transcripts, recordings,
+//   presentations and summaries. StockScans supplies its current-quarter result score, sentiment
+//   tier and highlight bullets. The Worker joins them before this module receives the rows;
+//   js/concall/scans.js labels document-only history separately from analysis pending.
 //
 // WHAT USED TO BE HERE, AND WHY IT IS NOT
 //   This tab carried six sub-views behind a left rail. Two were live; the other four — Live Feed,
@@ -31,7 +31,7 @@ import { withCompanyDocuments } from '../ui/company-documents.js';
 export const meta = {
   id: 'concall',
   title: 'Con-call',
-  subtitle: 'Every earnings call held this quarter, with independent third-party analysis — and what is scheduled next.',
+  subtitle: 'The complete Screener concall document index, enriched with current-quarter third-party analysis.',
   // No sub-views: the shell hides the rail entirely when this is empty and the table spans the
   // full width. The schedule is an overlay, not a second page.
   subviews: [],

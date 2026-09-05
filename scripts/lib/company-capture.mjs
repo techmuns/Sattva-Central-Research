@@ -60,7 +60,7 @@ export function mergeDocuments(previous, incoming) {
   return [...rows.values()];
 }
 
-export function captureCompanies(dataDir, { announcements = false, holdings = null } = {}) {
+export function captureCompanies(dataDir, { announcements = false, holdings = null, registrations = null } = {}) {
   const book = holdings ?? readJson(join(dataDir, 'portfolio-companies.json'), {}).holdings ?? [];
   const identities = announcements ? readJson(join(dataDir, 'announcement-identities.json'), {}).entries || [] : [];
   const nse = announcements ? readJson(join(dataDir, 'filing-capture/nse-identities.json'), {}).directories || {} : {};
@@ -72,7 +72,8 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
     return { ...c, ticker: c.ticker || identity?.ticker || identity?.bseSymbol || null,
       announcementTicker: identity ? filingTicker(identity.ticker || identity.bseSymbol) : filingTicker(c.ticker), priority: true };
   });
-  const known = [...(announcements ? announcementBook : book), ...(Array.isArray(universe) ? universe : universe.companies || []), ...technicals];
+  const enrolled = announcements ? registrations ?? readJson(join(dataDir, 'filing-capture/registrations.json'), {}).companies ?? [] : [];
+  const known = [...(announcements ? announcementBook : book), ...enrolled.map(c => ({ ...c, priority: true })), ...(Array.isArray(universe) ? universe : universe.companies || []), ...technicals];
   const seen = new Map();
   const unresolved = [];
   for (const c of known) {
@@ -89,7 +90,7 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
 }
 
 /** Bounded, restartable capture. Dependencies are injectable for offline failure/recovery tests. */
-export async function captureCompanySources({ dir, companies, unresolved = [], portfolio = null, identitySources = null, request, now = Date.now,
+export async function captureCompanySources({ dir, companies, unresolved = [], portfolio = null, registration = null, identitySources = null, request, now = Date.now,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), budgetMs = 20 * 60000,
   spacingMs = 2500, concurrency = 3, backfillDays = 365, maxRequests = Infinity, onProgress = () => {} }) {
   const start = now(), to = day(start);
@@ -101,11 +102,12 @@ export async function captureCompanySources({ dir, companies, unresolved = [], p
   index.companies = companies;
   index.unresolved = unresolved;
   if (portfolio) index.portfolio = portfolio;
+  if (registration) index.registration = registration;
   if (identitySources) index.identitySources = identitySources;
   index.requestedFrom = from;
   index.requestedTo = to;
   index.lastRunAt = new Date(start).toISOString();
-  index.scope = 'Active shared portfolio, universe and technicals; device-only watchlist additions are not registered for company history capture.';
+  index.scope = 'Active shared portfolio, enrolled company identities, universe and technicals. Watchlist membership stays on the reader’s device.';
   const companyByTicker = new Map(companies.map(company => [company.ticker, company]));
   for (const kind of ['announcements', 'domestic']) {
     const entries = index.sources[kind] ||= {};

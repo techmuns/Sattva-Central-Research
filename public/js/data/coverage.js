@@ -16,12 +16,12 @@
 // deleted (see js/ui/shell.js), so "Portfolio" now means exactly one thing here: this book, used
 // to answer "is this one of mine?" in the research tabs.
 //
-// EVERY LINE IS KEPT, INCLUDING THE ONES NO FEED COVERS.
-//   Nineteen of the 142 have no NSE symbol: unlisted private holdings, warrant lines, the Vedanta
-//   demerger entities, four BSE-only companies and three whose symbol could not be found at all.
-//   They are still owned. Dropping them would make "Portfolio" quietly mean "the 123 we happen to
-//   have a feed for", and nothing on screen would say so. They travel with a `reason` instead, and
-//   the tabs surface them as held-but-not-covered.
+// EVERY LINE IS KEPT, INCLUDING THE ONES MOST FEEDS CANNOT COVER.
+//   Some holdings have no NSE symbol: unlisted private holdings, warrant lines, demerged entities,
+//   BSE-only companies and names whose symbol could not be resolved. They are still owned. Dropping
+//   them would make "Portfolio" quietly mean "the names we happen to have a ticker feed for". They
+//   travel with a `reason`; ticker-keyed tabs surface them as held-but-not-covered, while company
+//   News searches their stable ISIN identity by legal name.
 
 import { readEntry, writeEntry } from '../core/store.js';
 import { boundedJson, validateResolvedPortfolio, assertBookChange, assertRecentCheck } from './family-book-contract.js';

@@ -42,10 +42,12 @@ export function matchesSearch(card, query) {
   const words = normalize(query).split(' ').filter(Boolean);
   if (!words.length) return true;
   const text = normalize([
-    card.company, card.ticker, card.sector, card.insight, card.badge?.label,
+    card.company, card.ticker, card.sector, card.insight, card.contextSummary, card.badge?.label,
     ...(card.feedLabels || []),
     ...(card.confluence || []).flatMap((pattern) => [pattern.label, pattern.short, pattern.detail]),
     ...(card.events || []).flatMap((event) => [event.company, event.ticker, event.headline, event.feedLabel, event.feed, event.day, formatDay(event.day), event.time]),
+    ...(card.contextEvents || []).flatMap((event) => [event.headline, event.detail, event.feedLabel, event.metric, event.day]),
+    ...(card.upcomingEvents || []).flatMap((event) => [event.headline, event.detail, event.feedLabel, event.day]),
   ].join(' '));
   return words.every((word) => text.includes(word));
 }

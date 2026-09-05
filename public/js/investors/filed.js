@@ -399,7 +399,7 @@ function openInstitutionCompany(key) {
           <strong class="text-slate-600">Current value is Trendlyne's derivation, not an amount bought or sold.</strong>
           A dash means not disclosed, not zero.
         </p>
-        <div class="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+        <div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Company institution comparison table">
           <table class="min-w-[980px] w-full text-sm">
             <thead class="bg-slate-50"><tr>
               <th scope="col" class="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">Institution</th>

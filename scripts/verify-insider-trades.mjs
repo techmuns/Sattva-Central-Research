@@ -6,9 +6,10 @@ import { dirname, join } from 'node:path';
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mergeInsiderTrades } from '../public/js/data/insider-history.js';
+import { mergeInsiderTrades, insiderTradeIdentity } from '../public/js/data/insider-history.js';
 import { normaliseInsiderTrades } from '../public/js/data/filings-shared.js';
 import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
+import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, indexPriorScreenerTradeIdentities, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
 import { fetchInsiderTrades } from '../worker/muns.mjs';
 import { createFeed } from '../public/js/data/filings.js';
 import { clearAll, readEntry, writeEntry, KEYS } from '../public/js/core/store.js';
@@ -26,14 +27,16 @@ const unknown = trade('Undated', 'BSE', null);
 const window = { from: day(-365), to: day(0) };
 const reordered = { ...a, raw: a.cells, cells: Object.fromEntries(Object.entries(a.cells).reverse()) };
 const merged = mergeInsiderTrades([a, a, b, expired, unknown], [reordered, c], window);
-assert.equal(merged.length, 5, 'overlapping responses retain distinct events and source duplicate multiplicity');
-assert.equal(merged.filter((r) => r.cells.Insider === 'Alice').length, 2);
+assert.equal(merged.length, 4, 'overlapping responses retain distinct events once');
+assert.equal(merged.filter((r) => r.cells.Insider === 'Alice').length, 1);
 assert.deepEqual(mergeInsiderTrades(merged, [reordered, c], window), merged, 'repeat fetches are idempotent');
-assert.equal(mergeInsiderTrades([a], [a, a, a], window).length, 3, 'new identical disclosures are retained');
-assert.equal(mergeInsiderTrades([a], [trade('Alice', 'BSE')], window).length, 2, 'exchanges remain distinct');
+assert.equal(mergeInsiderTrades([a], [a, a, a], window).length, 1, 'identical disclosures are not repeated');
+assert.equal(mergeInsiderTrades([a], [trade('Alice', 'BSE')], window).length, 1, 'the same exchange disclosure is not doubled by provider labels');
 assert.equal(mergeInsiderTrades([a], [{ ...a, cells: { ...a.cells, Transaction: 'Disposal' } }], window).length, 2);
 assert.equal(mergeInsiderTrades([], [trade('Boundary', 'NSE', day(-365)), trade('Future', 'NSE', day(1))], window).length, 1);
-assert.deepEqual(mergeInsiderTrades([a, unknown], [], window), [a, unknown], 'empty responses cannot retract captured trades');
+const afterEmpty = mergeInsiderTrades([a, unknown], [], window);
+assert.equal(afterEmpty.length, 2, 'empty responses cannot retract captured trades');
+assert(afterEmpty.every((row) => row.cells['Trade Category'] === 'Insider trade'), 'legacy rows gain the implicit Screener category');
 
 const old = {
   kind: 'insider', capturedAt: new Date(now - 86400000).toISOString(), headers: ['Insider', 'Legacy'],
@@ -44,10 +47,10 @@ const next = {
   byTicker: { TEST: [a, c] }, empty: ['EMPTY'], failed: { FAILED: { reason: 'timeout' } },
 };
 const retained = mergeLastGoodFilings(next, old, ['TEST', 'EMPTY', 'FAILED']);
-assert.deepEqual(retained.byTicker.TEST, [a, c, b]);
-assert.deepEqual(retained.byTicker.EMPTY, [a], 'a successful empty capture keeps prior events');
+assert.deepEqual(retained.byTicker.TEST.map((row) => row.cells.Insider), ['Alice', 'Bob', 'Carol']);
+assert.deepEqual(retained.byTicker.EMPTY.map((row) => row.cells.Insider), ['Alice'], 'a successful empty capture keeps prior events');
 assert.deepEqual(retained.empty, []);
-assert.deepEqual(retained.byTicker.UNREACHED, [c], 'narrow captures preserve prior company coverage');
+assert.deepEqual(retained.byTicker.UNREACHED.map((row) => row.cells.Insider), ['Carol'], 'narrow captures preserve prior company coverage');
 assert.equal(retained.fallbackCount, 2);
 assert.equal(retained.fallback.FAILED.capturedAt, old.capturedAt);
 assert.equal(retained.freshCovered, 2);
@@ -56,6 +59,53 @@ assert(retained.headers.includes('Legacy') && retained.headers.includes('New') &
 assert.equal(old.byTicker.TEST.length, 3, 'merge does not mutate the prior snapshot');
 assert.equal(next.byTicker.TEST.length, 2);
 assert.equal(mergeLastGoodFilings({ ...next, byTicker: { TEST: [expired] }, empty: [], failed: {} }, null, ['TEST']).rowCount, 0);
+
+// The four Screener listings share a five-cell table but not the same cell semantics.
+const extracted = (ticker, company, person, date, type, value) => ({
+  pageUrl: 'https://www.screener.in/trades/example/?o=-2',
+  cells: [
+    { text: company, lines: [company], links: [{ href: `https://www.screener.in/company/${ticker}/`, text: company }] },
+    { text: person.join('\n'), lines: person, links: [] },
+    { text: date, lines: [date], dates: [] },
+    { text: type.join('\n'), lines: type, links: [] },
+    { text: value.join('\n'), lines: value, links: [] },
+  ],
+});
+const captureAt = '2026-09-05T06:30:00.000Z';
+const source = (id) => SCREENER_TRADE_SOURCES.find((item) => item.id === id);
+const screenerRows = [
+  normaliseScreenerTrade(source('bulk'), extracted('BULK', 'Bulk Ltd', ['Buyer LLP'], '04 Sep 2026', ['Buy'], ['11.71 crore', '1,59,657 @ 734']), { capturedAt: captureAt }),
+  normaliseScreenerTrade(source('block'), extracted('BLOCK', 'Block Ltd', ['Seller LLP'], '04 Sep 2026', ['S'], ['25.12 crore', '3,20,000 @ 785']), { capturedAt: captureAt }),
+  normaliseScreenerTrade(source('sast'), extracted('SAST', 'Sast Ltd', ['Acquirer'], '3 September 2026', ['Acq', 'Off Market'], ['17.17%', 'qty 8,67,000']), { capturedAt: captureAt }),
+  normaliseScreenerTrade(source('insiders'), extracted('INSIDER', 'Insider Ltd', ['Director Name', 'Promoter And Director'], 'yesterday', ['Bought', '10,000 Equity'], ['7.14 lacs']), { capturedAt: captureAt }),
+];
+assert.deepEqual(screenerRows.map((row) => row.cells['Trade Category']), ['Bulk deal', 'Block deal', 'SAST', 'Insider trade']);
+assert.deepEqual([screenerRows[0].cells['Trade Shares'], screenerRows[0].cells.Price], ['159657', '734']);
+assert.deepEqual([screenerRows[1].cells.Transaction, screenerRows[2].cells.Transaction], ['Sell', 'Acquisition']);
+assert.deepEqual([screenerRows[2].cells['Trade %'], screenerRows[2].cells.Mode], ['17.17', 'Off Market']);
+assert.deepEqual([screenerRows[3].date, screenerRows[3].cells.Category], ['2026-09-04', 'Promoter And Director']);
+const priorBulkIdentities = new Set([insiderTradeIdentity(screenerRows[0])]);
+assert.equal(hasScreenerTradeOverlap(priorBulkIdentities, [{ ...screenerRows[0], cells: { ...screenerRows[0].cells, Insider: 'New same-day seller' } }]), false, 'a matching date is not enough to stop a high-volume incremental walk');
+assert.equal(hasScreenerTradeOverlap(priorBulkIdentities, [screenerRows[0]]), true, 'an exact prior event establishes safe pagination overlap');
+const indexedPrior = indexPriorScreenerTradeIdentities([
+  ...screenerRows,
+  { ...screenerRows[0], sourceId: 'unknown' },
+]);
+assert.deepEqual(SCREENER_TRADE_SOURCES.map(({ id }) => indexedPrior.get(id).size), [1, 1, 1, 1], 'each source receives its own retained identity index');
+assert.equal(hasScreenerTradeOverlap(indexedPrior.get('bulk'), [screenerRows[0]]), true, 'the indexed identity drives incremental overlap');
+
+const captures = SCREENER_TRADE_SOURCES.map((item, index) => ({
+  id: item.id, label: item.label, url: `https://www.screener.in${item.path}?o=-2`, pagesRead: 1,
+  latestDate: screenerRows[index].date, oldestDate: screenerRows[index].date,
+  rows: index === 0 ? [screenerRows[index], structuredClone(screenerRows[index])] : [screenerRows[index]],
+}));
+const screenerSnapshot = buildScreenerTradesSnapshot(null, captures, { capturedAt: captureAt });
+const flattenSnapshot = (snapshot) => Object.values(snapshot.byTicker || {}).flat();
+assert.equal(screenerSnapshot.coversUniverse, true);
+assert.deepEqual(screenerSnapshot.categories, ['Bulk deal', 'Block deal', 'SAST', 'Insider trade']);
+assert.equal(screenerSnapshot.rowCount, 4, 'repeat listing rows are collapsed before publication');
+assert.equal(new Set(flattenSnapshot(screenerSnapshot).map(insiderTradeIdentity)).size, screenerSnapshot.rowCount);
+assert.throws(() => buildScreenerTradesSnapshot(null, captures.slice(1), { capturedAt: captureAt }), /All four/);
 
 // The user-supplied service contract is exercised without credentials or network access.
 const realFetch = globalThis.fetch;
@@ -158,9 +208,9 @@ const server = createServer((req, res) => {
 });
 try {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  for (const file of ['scripts/scrape-filings.mjs', 'scripts/lib/filings-snapshot.mjs', 'scripts/lib/company-capture.mjs', 'scripts/lib/filing-archive.mjs', 'worker/muns.mjs',
+  for (const file of ['scripts/scrape-filings.mjs', 'scripts/lib/filings-snapshot.mjs', 'scripts/lib/company-capture.mjs', 'scripts/lib/filing-archive.mjs', 'scripts/lib/company-news-archive.mjs', 'worker/muns.mjs',
     'scripts/lib/active-portfolio.mjs', 'public/js/data/family-book-contract.js',
-    'public/js/data/filings-shared.js', 'public/js/data/insider-history.js', 'public/js/data/announcements-shared.js', 'public/js/data/announcement-identity.js', 'public/js/data/domestic-filings-shared.js']) {
+    'public/js/data/filings-shared.js', 'public/js/data/insider-history.js', 'public/js/data/announcements-shared.js', 'public/js/data/announcement-identity.js', 'public/js/data/domestic-filings-shared.js', 'public/js/data/company-news-identity.js']) {
     await mkdir(dirname(join(scratch, file)), { recursive: true });
     await copyFile(new URL(`../${file}`, import.meta.url), join(scratch, file));
   }

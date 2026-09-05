@@ -1,15 +1,18 @@
-name: Filings coverage refresh
+name: Filings and four-category trades refresh
 
 env:
   FAMILY_HOLDINGS_LIVE: 'true'
 
-# Insider trades, domestic documents and additional company announcements share one paced job.
-# Every pass saves company checkpoints; the next pass resumes unfinished coverage.
-# The complete insider snapshot is reused for 18 hours; partial captures remain retryable.
+# The four Screener lists run every 30 minutes and always run first. The slower company-filings
+# checkpoint keeps its two-hour cadence without delaying ordinary trade refreshes. Screener is
+# incremental after a 30-day bootstrap and publishes only when all four lists parse successfully.
 
 on:
   schedule:
-    # All days, including weekend announcements and document uploads.
+    # Offset from the top of the hour, when GitHub's shared scheduler is busiest. The dashboard's
+    # watchdog dispatches this same workflow when a scheduled run is late.
+    - cron: "17,47 * * * *"
+    # Preserve the existing company-filings capture without putting it on the 30-minute cadence.
     - cron: "30 */2 * * *"
   workflow_dispatch:
     inputs:
@@ -27,7 +30,7 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 60
     permissions:
       contents: write
     steps:
@@ -36,16 +39,32 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install pinned Screener browser client
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: |
+          npm install --prefix "$RUNNER_TEMP/screener-browser" --no-save --package-lock=false playwright-core@1.62.1
+          test -x "$(command -v google-chrome)"
+          echo "SCREENER_CHROME_PATH=$(command -v google-chrome)" >> "$GITHUB_ENV"
+
+      - name: Capture all four Screener trade categories
+        id: insider
+        timeout-minutes: 45
+        if: ${{ !cancelled() }}
+        env:
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-browser/node_modules/playwright-core
+          # Browser diagnostics can include form values and cookies. Keep them disabled.
+          DEBUG: ""
+          PWDEBUG: ""
+        run: node scripts/scrape-screener-trades.mjs
+
       - name: Capture company announcements and domestic filings
         id: company
+        if: ${{ !cancelled() && github.event_name == 'schedule' && github.event.schedule == '30 */2 * * *' }}
         timeout-minutes: 25
         run: node scripts/capture-company-filings.mjs
-
-      - name: Capture insider trades
-        id: insider
-        timeout-minutes: 40
-        if: ${{ !cancelled() }}
-        run: FILINGS_SCOPE=universe FILINGS_MIN_INTERVAL_HOURS=18 FILINGS_TIMEOUT_MS=25000 node scripts/scrape-filings.mjs insider
 
       - name: Upload insider-trades data
         if: always()
@@ -58,7 +77,7 @@ jobs:
             public/data/filing-capture/
           if-no-files-found: warn
 
-      - name: Commit insider trades to main
+      - name: Commit filing and trade captures to main
         if: ${{ !cancelled() && github.ref == 'refs/heads/main' && (steps.company.outcome == 'success' || steps.insider.outcome == 'success') }}
         run: |
           git config user.name "github-actions[bot]"
@@ -80,8 +99,14 @@ jobs:
 
       # Run after snapshot publication: a bad source must mark the job failed without discarding
       # useful rows and checkpoints already collected by the successful capture steps.
-      - name: Check operational capture health
-        if: always()
+      - name: Check trade capture health
+        if: ${{ always() && steps.company.outcome == 'skipped' }}
+        env:
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
+        run: node scripts/check-filings-health.mjs insider
+
+      - name: Check filing and trade capture health
+        if: ${{ always() && steps.company.outcome != 'skipped' }}
         env:
           FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
         run: node scripts/check-filings-health.mjs company insider

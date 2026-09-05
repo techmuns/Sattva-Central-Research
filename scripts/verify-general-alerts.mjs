@@ -17,6 +17,10 @@ let revision = 1;
 let nseGate = null;
 const undated = { company: 'Unresolved issuer', ticker: null, publishedAt: null, subject: 'Undated filing', url: 'https://example.test/undated.pdf' };
 const nseRow = { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-03T20:00:00Z', subject: 'Analyst day', url: 'https://example.test/analyst.pdf', description: 'Entire source description' };
+const portfolioUpcomingFixture = [
+  { id: 'STLTECH|2026-09-10|AGM|day', companyKey: 'STLTECH', ticker: 'STLTECH', name: 'Sterlite Technologies', date: '2026-09-10', time: null, eventType: 'AGM', companyUrl: 'https://www.screener.in/company/STLTECH/', sourceUrl: 'https://www.screener.in/company/STLTECH/', observedAt: '2026-09-04T07:00:00Z' },
+  { id: '500001|2026-09-12|Postal ballot|day', companyKey: '500001', ticker: null, name: 'BSE-only portfolio company', date: '2026-09-12', time: null, eventType: 'Postal ballot', companyUrl: 'https://www.screener.in/company/500001/', sourceUrl: 'https://www.screener.in/company/500001/', observedAt: '2026-09-04T07:00:00Z' },
+];
 globalThis.fetch = async (input) => {
   const url = String(input); calls.push(url);
   if (/^https?:/.test(url)) return new Response('{}', { status: 503 });
@@ -28,7 +32,9 @@ globalThis.fetch = async (input) => {
     { tweet_id: '1', handle: 'moneycontrolcom', text: 'IPO discussion, original words', created_at: '2026-09-03T20:10:00Z' },
     { tweet_id: '2', handle: 'moneycontrolcom', text: 'Undated original post', created_at: null },
   ] });
-  const mapped = { 'api/earnings': 'data/earnings-live.json', 'api/concalls': 'data/concall-scans.json' }[path] || path;
+  if (path === 'api/concalls') return json({ ...read('data/concall-scans.json'), portfolioUpcoming: portfolioUpcomingFixture,
+    meta: { ...read('data/concall-scans.json').meta, screener: { status: 'ok', checkedAt: '2026-09-04T07:00:00Z', portfolioUpcomingAvailable: true } } });
+  const mapped = { 'api/earnings': 'data/earnings-live.json' }[path] || path;
   const file = resolve(root, mapped);
   assert(file.startsWith(root + sep), 'fixture path must stay in public');
   try { return json(read(mapped)); } catch { return new Response('{}', { status: 404 }); }
@@ -43,7 +49,7 @@ const ai = await import('../public/js/data/ai-alerts.js');
 coverage.prime({ holdings: [{ ticker: 'STLTECH', name: 'Sterlite Technologies' }, { ticker: 'RELIANCE', name: 'Reliance Industries' }] });
 
 const expected = ['technicals', 'earnings', 'concalls', 'chatter', 'investors', 'announcements', 'insider', 'news', 'market-news',
-  'nse-filings', 'twitter', 'ipos', 'earnings-calendar', 'scheduled-concalls', 'investor-positions', 'institutions', 'chatter-posts', 'company-documents', 'drhp-documents'];
+  'nse-filings', 'twitter', 'ipos', 'earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming', 'investor-positions', 'institutions', 'chatter-posts', 'company-documents', 'drhp-documents'];
 assert.deepEqual(alerts.FEEDS.map((f) => f.id), expected, 'explicit registry parity: adding a tab/source must update the pool contract');
 assert.equal(nseRecords([nseRow])[0].day, '2026-09-04', 'timestamps use IST, not their UTC date prefix');
 assert.equal(nseRecords([undated])[0].day, null, 'no invented date');
@@ -65,6 +71,7 @@ assert.equal((await import('../public/js/data/nse-filings.js')).meta().windowDay
 assert(universe.events.some((e) => e.id === 'tw:1' && e.day === '2026-09-04'));
 assert(universe.events.some((e) => e.id === 'tw:2' && !e.day));
 assert(universe.events.some((e) => e.kind === 'scheduled' && e.day > options.day));
+assert(!universe.events.some((e) => e.feed === 'screener-portfolio-upcoming'), 'portfolio-only calendar never leaks into Universe');
 assert(universe.events.some((e) => e.feed === 'technicals' && e.kind === 'price-reading' && e.importance === 'low'));
 assert(universe.events.some((e) => e.feed === 'investor-positions' && /Filing due/.test(e.detail) && e.direction === 'neutral'));
 assert(universe.events.some((e) => e.feed === 'institutions'));
@@ -81,7 +88,9 @@ const portfolio = await alerts.collect({ ...options, scope: 'portfolio', load: f
 const emptyWatchlist = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.equal(emptyWatchlist.events.length, 0, 'empty Watchlist never becomes Universe');
 const poolSubset = universe.events.filter((e) => ['STLTECH', 'RELIANCE'].includes(e.ticker));
-assert.deepEqual(portfolio.events.map((e) => e.id).sort(), poolSubset.map((e) => e.id).sort(), 'Portfolio is an exact view of the same pool');
+assert.deepEqual(portfolio.events.filter((e) => !e.portfolioOnly).map((e) => e.id).sort(), poolSubset.map((e) => e.id).sort(), 'Portfolio is an exact view of every market-wide source');
+assert.equal(portfolio.events.filter((e) => e.feed === 'screener-portfolio-upcoming').length, 2, 'the exact S Screen calendar includes tickered and BSE-only portfolio companies');
+assert.equal(portfolio.feeds.find((f) => f.id === 'screener-portfolio-upcoming').scopable, true);
 watchlist.toggle('STLTECH', 'Sterlite Technologies');
 const watched = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.deepEqual(watched.events.map((e) => e.id).sort(), universe.events.filter((e) => e.ticker === 'STLTECH').map((e) => e.id).sort());
@@ -95,6 +104,20 @@ const privateReport = await alerts.collect({ ...options, scope: 'portfolio', loa
 assert.equal(privateReport.events.filter((e) => e.private).length, 1);
 assert.equal(privateReport.events.find((e) => e.private).sourceRecord.isRead, true);
 assert([...storage.values()].every((value) => !String(value).includes('Private annual report')), 'private data never persists');
+const durableWindow = alerts.materializePublicAlertWindow({
+  day: options.day,
+  feeds: [{ id: 'earnings', events: [{}], count: 1, todayCount: 1 },
+    { id: 'company-documents', count: 1 }, { id: 'drhp-documents', count: 1 }],
+  events: [
+    { id: 'private', ticker: 'STLTECH', day: options.day, feed: 'company-documents', private: true },
+    { id: 'public', ticker: 'STLTECH', day: options.day, feed: 'earnings', headline: 'Public result',
+      sourceRecord: { privatePayload: true }, weightPct: 40, holdingWeightPct: 40 },
+  ],
+});
+assert.deepEqual(durableWindow.feeds.map((feed) => feed.id), ['earnings']);
+assert.deepEqual(durableWindow.events.map((event) => event.id), ['public']);
+assert.doesNotMatch(JSON.stringify(durableWindow), /privatePayload|sourceRecord|weightPct|company-documents|drhp-documents/,
+  'the actual durable alert serializer strips private events, source records, document feeds and holding weights');
 records.clearPrivateRecords();
 assert(!(await alerts.collect({ ...options, scope: 'universe', load: false })).events.some((e) => e.private));
 records.recordDocuments('company-documents', { rows: [privateRow] }, { ticker: 'STLTECH' });
@@ -130,6 +153,12 @@ assert.equal((await alerts.collect({ ...options, scope: 'universe', load: false 
 broken.clear();
 const recovered = await alerts.collect({ ...options, scope: 'universe', refresh: true });
 assert.equal(recovered.feeds.find((f) => f.id === 'technicals').status, 'ok');
+const cachedTomorrow = await alerts.readCachedAlertWindow({ scope: 'universe', holdings: [], day: '2026-09-05' });
+assert(cachedTomorrow?.events.length > 0, 'a completed public collection leaves a ready repeat-visit window');
+assert(cachedTomorrow.events.every((event) => event.day >= '2026-08-30' && event.day <= '2026-09-05'),
+  'the restored window is re-aged against the current IST day');
+assert(cachedTomorrow.events.every((event) => !event.private && event.sourceRecord == null &&
+  event.weightPct == null && event.holdingWeightPct == null), 'the restored ready view contains public alert fields only');
 assert(!calls.some((url) => /api\/(combined-filings|drhp-filings|super-investors\/|company-news\/|announcements\/|insider-trades\/)/.test(url)), 'no private or per-company fanout');
 
 // Expanding the collection pool must not quietly rewrite the existing AI prioritization policy.
@@ -137,4 +166,4 @@ const legacy = { day: options.day, scope: 'portfolio', events: [{ id: 'e', ticke
 const raw = records.record({ id: 'snapshot', row: {}, at: options.day, ticker: 'STLTECH', headline: 'Snapshot' });
 const before = ai.rankReport(legacy).cards;
 assert.deepEqual(ai.rankReport({ ...legacy, events: [...legacy.events, { ...raw, feed: 'institutions' }] }).cards, before);
-console.log(`PASS: 19 feed adapters; ${universe.events.length} retained records; scope parity, undated/upcoming, raw records, privacy, refresh/recovery and AI compatibility.`);
+console.log(`PASS: 20 feed adapters; ${universe.events.length} retained records; scope parity, undated/upcoming, raw records, privacy, refresh/recovery and AI compatibility.`);

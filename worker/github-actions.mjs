@@ -56,6 +56,7 @@ export const NEWS_WORKFLOW = 'market-news-refresh.yml';
 export const COMPANY_NEWS_WORKFLOW = 'company-news-refresh.yml';
 export const INSIDER_WORKFLOW = 'insider-trades-refresh.yml';
 export const ANNOUNCEMENTS_WORKFLOW = 'announcements-refresh.yml';
+export const CORPORATE_ACTIONS_WORKFLOW = 'corporate-actions-refresh.yml';
 export const DATA_WORKFLOW = 'technicals-refresh.yml';
 export const TWITTER_WORKFLOW = 'twitter-refresh.yml';
 export const DEPLOY_WORKFLOW = 'deploy.yml';

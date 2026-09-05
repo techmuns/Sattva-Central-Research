@@ -55,10 +55,10 @@ ok('the runtime research catalog covers every visible research tab, and nothing 
   assert.equal(new Set(DASHBOARD_RESEARCH_SOURCES.map((source) => source.id)).size, DASHBOARD_RESEARCH_SOURCES.length);
 });
 
-ok('earnings calendar evidence stays a paginated all-exchange schedule, separate from filed results', () => {
+ok('earnings calendar evidence keeps paginated results and upcoming calls separate from filed results', () => {
   assert.match(
     estateSource,
-    /id: 'earnings-calendar',[\s\S]*?read\(\{ plan \}\)[\s\S]*?scheduledRows[\s\S]*?All exchanges[\s\S]*?every published pagination page/
+    /id: 'earnings-calendar',[\s\S]*?read\(\{ plan \}\)[\s\S]*?scheduledRows[\s\S]*?Moneycontrol scheduled results plus Screener upcoming[\s\S]*?Result rows use Moneycontrol All exchanges[\s\S]*?every page of Screener/
   );
   const block = estateSource.match(/\n    id: 'earnings-calendar',\n    read[\s\S]*?\n  \},\n  \{\n    id: 'concall'/)?.[0] || '';
   assert.doesNotMatch(block, /earningsLive\.(?:load|dateRange|reportedOn)/);

@@ -63,6 +63,16 @@ assert.equal(assess(malformedRanges).status, 'degraded', 'malformed range metada
 const retained = structuredClone(healthy);
 retained.insider.fallback = { A: { capturedAt: recent, reason: 'timeout' } };
 assert(assess(retained).findings.some((f) => f.code === 'company-reads-incomplete'), 'last-good rows cannot mask the failed newest read');
+const exchangeInsider = structuredClone(healthy);
+exchangeInsider.insider = {
+  byTicker: { A: [{ ticker: 'A' }] }, rowCount: 1, capturedAt: recent, coversUniverse: true,
+  categories: ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'], failed: {}, failedCount: 0,
+  fallback: {}, fallbackCount: 0,
+  sources: ['bulk', 'block', 'sast', 'insiders'].map((id) => ({ id, ok: true, rowCount: 1, pagesRead: 2, coverageFrom: '2026-08-01' })),
+};
+assert.equal(assess(exchangeInsider).ok, true, 'all four market-wide Screener categories satisfy insider coverage');
+exchangeInsider.insider.sources.pop();
+assert(assess(exchangeInsider).findings.some((f) => f.code === 'trade-category-coverage-unverified'), 'a missing Screener category fails closed');
 const short = structuredClone(healthy);
 short.announcements.shortfall = [{ category: 'Result', collected: 1, declared: 2 }];
 assert(assess(short).findings.some((f) => f.code === 'pagination-shortfall'));
@@ -119,9 +129,11 @@ try {
   data = healthy;
   await promisify(execFile)(process.execPath, ['scripts/check-filings-health.mjs'], options);
   assert.equal(JSON.parse(readFileSync(report)).status, 'healthy');
-  for (const workflow of ['announcements-refresh.yml', 'insider-trades-refresh.yml']) {
-    const yaml = readFileSync(new URL(`../.github/workflows/${workflow}`, import.meta.url), 'utf8');
-    assert(yaml.indexOf('Check operational capture health') > yaml.indexOf('git push origin HEAD:main'), 'health gate runs after preserving/publishing captured progress');
+  const announcementsWorkflow = readFileSync(new URL('../.github/workflows/announcements-refresh.yml', import.meta.url), 'utf8');
+  assert(announcementsWorkflow.indexOf('Check operational capture health') > announcementsWorkflow.indexOf('git push origin HEAD:main'), 'announcement health gate runs after preserving/publishing captured progress');
+  const insiderWorkflow = readFileSync(new URL('../.github/workflows/insider-trades-refresh.yml', import.meta.url), 'utf8');
+  for (const gate of ['Check trade capture health', 'Check filing and trade capture health']) {
+    assert(insiderWorkflow.indexOf(gate) > insiderWorkflow.indexOf('git push origin HEAD:main'), `${gate} runs after preserving/publishing captured progress`);
   }
 } finally { await new Promise((resolve) => server.close(resolve)); rmSync(scratch, { recursive: true, force: true }); }
 console.log('PASS source health failures, fixed initial grace, stale checks, retained-data incidents, HTTP 503, read-only caching and workflow gate ordering');

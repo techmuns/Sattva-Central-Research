@@ -5,14 +5,16 @@ import { captureCompanies, captureCompanySources } from './lib/company-capture.m
 import { loadCapturePortfolio } from './lib/capture-portfolio.mjs';
 import { refreshNseIdentities } from './lib/nse-identities.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
+import { loadCaptureRegistrations } from './lib/capture-registrations.mjs';
 
 const dataDir = fileURLToPath(new URL('../public/data/', import.meta.url));
 const base = (process.env.FILINGS_BASE || 'https://sattva-central-research.tech-441.workers.dev').replace(/\/+$/, '');
-const [active, nseIdentities] = await Promise.all([loadCapturePortfolio(dataDir), refreshNseIdentities(dataDir)]);
-const scope = captureCompanies(dataDir, { announcements: true, holdings: active.holdings });
+const [active, nseIdentities, registered] = await Promise.all([loadCapturePortfolio(dataDir), refreshNseIdentities(dataDir), loadCaptureRegistrations(dataDir)]);
+const scope = captureCompanies(dataDir, { announcements: true, holdings: active.holdings, registrations: registered.companies });
 if (active.portfolio.error) console.warn(active.portfolio.error);
+if (registered.registration.error) console.warn(registered.registration.error);
 const result = await captureCompanySources({
-  dir: resolve(dataDir, 'filing-capture'), ...scope, portfolio: active.portfolio,
+  dir: resolve(dataDir, 'filing-capture'), ...scope, portfolio: active.portfolio, registration: registered.registration,
   identitySources: Object.fromEntries(Object.entries(nseIdentities.directories).map(([key, { checkedAt, error }]) => [key, { checkedAt, error }])),
   budgetMs: Number(process.env.COMPANY_CAPTURE_BUDGET_MS || 20 * 60000),
   request: async (kind, ticker, range, company) => {

@@ -29,9 +29,9 @@
 const STORAGE_KEY = 'sattva:watchlist';
 const MIGRATED_KEY = 'sattva:watchlist:shape';
 
-// NSE symbols are upper-case alphanumerics plus `&`, `-` and `.` (M&M, BAJAJ-AUTO, NIFTY.IT), and
-// they are short. A composite row key carries `|`, a space, a slash or a colon and fails this.
-const SYMBOL_RE = /^[A-Z][A-Z0-9&.\-]{0,19}$/;
+// NSE symbols may start with a digit (20MICRONS); BSE-only companies use six-digit codes.
+// Composite row keys containing `|`, a space, a slash or a colon remain invalid.
+const SYMBOL_RE = /^(?:(?=[A-Z0-9&._-]*[A-Z])[A-Z0-9][A-Z0-9&._-]{0,49}|\d{6})$/;
 
 const subscribers = new Set();
 const emit = () => subscribers.forEach((fn) => fn());
@@ -59,6 +59,9 @@ function read() {
   for (const item of parsed) {
     // v2 entries are objects; the legacy shape is a bare string.
     const ticker = normTicker(typeof item === 'string' ? item : item?.ticker);
+    // Legacy numeric row IDs were never accepted as companies; do not reinterpret them now
+    // that new, explicit company entries can use verified six-digit BSE identifiers.
+    if (typeof item === 'string' && /^\d+$/.test(ticker)) continue;
     if (!ticker || seen.has(ticker) || !SYMBOL_RE.test(ticker)) continue;
     seen.add(ticker);
     out.push({

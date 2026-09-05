@@ -13,6 +13,7 @@ const nseRow = { ticker: 'TCS', company: 'TCS Test Company', subject: 'NSE meeti
 let nseRows = [nseRow, { ...nseRow, ticker: null, company: 'Unresolved Company', url: 'https://example.test/unresolved.pdf' }];
 let fail = false;
 const hits = new Map();
+const enrollments = [];
 const bodies = {
   '/data/filing-capture/nse-identities.json': { version: 1, directories: { sme: { entries: [] }, equity: { entries: [] } } },
   '/data/announcement-identities.json': { version: 1, capturedAt: at, entries: [
@@ -36,16 +37,24 @@ import * as live from '/js/core/live.js';
 import * as coverage from '/js/data/coverage.js';
 import * as watchlist from '/js/core/watchlist.js';
 import {corporateAnnouncements as feed} from '/js/data/corporate-announcements.js';
+import {startWatchlistCapture,watchlistCapture} from '/js/data/watchlist-capture.js';
 coverage.prime({holdings:[{ticker:'TCS',name:'TCS Test Company'}, {isin:'INE564S01019',ticker:null,name:'Vikram Kamats Hospitality'}, {isin:'INE094B01013',ticker:null,name:'Ashika Credit Capital'}]}); watchlist.add('INFY','INFY Test Company');
 window.renderScope=(scope)=>{const root=document.querySelector('#root');root.innerHTML='';tab.render({root,scope,live,data:{universe:[{ticker:'TCS'},{ticker:'INFY'}]},params:{}});};
 window.stream=feed;window.destroyStream=()=>tab.destroy();window.renderScope('portfolio');
 window.addFutureHolding=()=>coverage.prime({holdings:[...coverage.holdings(),{isin:'INE000Z01019',ticker:null,name:'Future SME'}]});
+window.addWatch=watchlist.add;window.enrollment=watchlistCapture;startWatchlistCapture();
 </script></body></html>`;
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   hits.set(path, (hits.get(path) || 0) + 1);
   res.setHeader('cache-control', 'no-store');
   if (path === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  if (path === '/api/capture-registration' && req.method === 'POST') {
+    let body = ''; req.on('data', chunk => { body += chunk; }); req.on('end', () => {
+      const value = JSON.parse(body); enrollments.push(value);
+      res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ ok: true, registered: value.tickers, unresolved: [], pending: [], capacity: [] }));
+    }); return;
+  }
   if (path === '/api/nse-announcements' || path === '/data/nse-announcements.json') {
     res.setHeader('content-type', 'application/json');
     res.statusCode = fail ? 503 : 200; res.end(JSON.stringify(fail ? {} : { ok: true, capturedAt: at, rows: nseRows })); return;
@@ -68,6 +77,8 @@ try {
   await page.clock.install({ time: new Date(at) });
   await page.goto(origin);
   await page.waitForFunction(() => window.stream?.meta().archive?.loaded && window.stream.rows().some(r => r.title === 'Historical NSE filing'));
+  await page.waitForFunction(() => window.enrollment.status().remaining.length === 0);
+  assert.deepEqual(enrollments, [{ tickers: ['INFY'] }], 'existing watchlist enrolls automatically without sending its names or membership metadata');
   assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-table-filter], [data-watch-toggle], [data-document-tabs]').count(), 0);
   assert.match(await page.locator('[data-row-count]').innerText(), /^146 announcements · 3 companies with filings$/);
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
@@ -146,6 +157,13 @@ try {
   await page.evaluate(() => window.renderScope('watchlist'));
   await search.fill('new-holding');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 0);
+  await page.evaluate(() => window.addWatch('FUTURE'));
+  await page.waitForFunction(() => window.enrollment.status().remaining.length === 0);
+  assert(enrollments.some(batch => batch.tickers.includes('FUTURE')), 'a watchlist addition enrolls without reloading the page');
+  await page.evaluate(() => { window.addWatch('539659'); window.renderScope('watchlist'); });
+  await search.fill('KAMATS');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'a watched BSE code shows the issuer’s filings');
+  await search.fill('new-holding');
   await page.evaluate(() => window.renderScope('portfolio'));
   console.log('PASS a new portfolio holding and newly published NSE identity join the live feed without a page reload');
   fail = true; await page.evaluate(() => window.stream.refresh());

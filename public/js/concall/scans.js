@@ -1,11 +1,11 @@
-// concall/scans.js — the Con-call tab, live off StockScans.
+// concall/scans.js — the Con-call library: Screener documents plus live StockScans analysis.
 //
 //   renderScans(ctx)         the quarter's calls: result score, sentiment, highlights, links
 //   openScheduleModal(rows)  "Upcoming Concalls" — the schedule, as an overlay off that table
 //
-// This is the WHOLE tab now. It used to be two of six sub-views behind a left rail; the other
-// four ran on a synthetic transcript corpus with fictional speakers, and they are gone. One
-// screen, one provenance, no ribbon to explain which half you are looking at.
+// This is the WHOLE tab now. Screener supplies the retained market-wide document index; StockScans
+// supplies current-quarter analysis. The two are joined by ticker/date before rendering, and each
+// scored field remains explicitly attributed to StockScans rather than to Screener or this app.
 //
 // EVERYTHING SCORED HERE IS STOCKSCANS' OWN ANALYSIS.
 //   `resultScore` (0-100), `sentimentTier` (0-4) and the highlight bullets are theirs, rendered
@@ -65,6 +65,9 @@ const TONE = {
 const pendingPill = (what) =>
   `<span class="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-400 ring-1 ring-slate-200" title="The research provider has not published ${escapeHtml(what)} for this call yet. Not zero — not yet analysed.">pending</span>`;
 
+const documentsOnlyPill = () =>
+  '<span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 ring-1 ring-indigo-200" title="This historical call comes from Screener’s document index and is outside the analysis provider’s current-quarter scan.">documents</span>';
+
 function tierPill(tier, title) {
   if (!tier) return pendingPill(title || 'an assessment');
   return `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${TONE[tier.tone] || TONE.grey}">${escapeHtml(tier.label)}</span>`;
@@ -99,6 +102,27 @@ function whenCell(iso) {
   return `<span class="whitespace-nowrap" title="${escapeHtml(IST_FULL.format(d))} IST">${escapeHtml(IST_DATE.format(d))}<span class="ml-1 text-slate-400">${escapeHtml(IST_TIME.format(d))}</span></span>`;
 }
 
+function dateCell(row) {
+  if (row.analysisTracked !== false) return whenCell(row.when);
+  const date = row.publishedDate || row.date;
+  if (!date) return '<span class="text-slate-300">—</span>';
+  const d = new Date(`${date}T06:00:00Z`);
+  return Number.isNaN(d.getTime())
+    ? '<span class="text-slate-300">—</span>'
+    : `<span class="whitespace-nowrap" title="Published in Screener’s concall index; exact call time is not supplied.">${escapeHtml(IST_DATE.format(d))}<span class="ml-1 text-[10px] text-slate-400">published</span></span>`;
+}
+
+function documentLinks(row) {
+  const documents = row.documents || [];
+  if (!documents.length) return '<span class="text-slate-300">—</span>';
+  return `<div class="flex max-w-[300px] flex-wrap justify-end gap-1">${documents
+    .map(
+      (document) =>
+        `<a data-norow href="${escapeHtml(document.url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeHtml(document.type)} at its original source" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">${escapeHtml(document.type)}</a>`,
+    )
+    .join('')}</div>`;
+}
+
 // ---------------------------------------------------------------------------------------
 // The passive Live/Snapshot status pill
 // ---------------------------------------------------------------------------------------
@@ -126,7 +150,7 @@ export function wireLivePill(root, m) {
   if (!btn) return;
   btn.addEventListener('click', () => {
     const arrivals = feed.newArrivals();
-    const pending = feed.all().filter((r) => r.resultScore == null).length;
+    const pending = feed.all().filter((r) => r.analysisTracked !== false && r.resultScore == null).length;
     openModal(
       `<div class="px-7 py-6">
         <div class="mb-3 flex items-start justify-between gap-4">
@@ -193,6 +217,7 @@ export function wireLivePill(root, m) {
 export function renderScans(ctx, { disposers, tableView, onView }) {
   const m = feed.meta();
   const rows = feed.forScope(ctx.scope, coverage.holdings());
+  const screener = m?.screener || null;
   // Both read once for the whole paint rather than per row — see rememberedMap() in
   // data/deep-dive.js. `saved` is the stronger fact of the two: a report already on this device
   // opens with no run AND no request, so those rows are marked before their index has even landed.
@@ -216,22 +241,25 @@ export function renderScans(ctx, { disposers, tableView, onView }) {
     nameMaxPx: 250,
     stickyHead: 'max(320px, calc(100vh - 330px))',
     columns: [
-      { label: 'Call', get: (r) => whenCell(r.when), html: true, align: 'left', sortValue: (r) => r.when || '' },
+      { label: 'Call / Published', get: (r) => dateCell(r), html: true, align: 'left', sortValue: (r) => r.when || '' },
       { label: 'Filings', get: (r) => r.ticker ? `<a data-norow class="font-semibold text-indigo-600" href="${escapeHtml(domesticFilingsHref(r.ticker, { form: 'concalls', scope: ctx.scope }))}">Transcripts</a>` : '—', html: true, sortable: false },
+      { label: 'Documents', get: (r) => documentLinks(r), html: true, align: 'right', sortable: false },
       {
         // Their index, on their scale. `max: 100` and no tier colouring of our own — the badge
         // beside it is their label for that band.
         label: 'Result Score',
         get: (r) =>
-          r.resultScore == null
+          r.analysisTracked === false
+            ? documentsOnlyPill()
+            : r.resultScore == null
             ? pendingPill('a result score')
             : `<span class="font-semibold tabular-nums text-slate-900">${escapeHtml(r.resultScore.toFixed(1))}</span><span class="ml-1 text-[10px] text-slate-400">/100</span>`,
         html: true,
         align: 'right',
         sortValue: (r) => r.resultScore ?? -1,
       },
-      { label: 'Result', get: (r) => tierPill(r.resultTier, 'a result score'), html: true, align: 'right', sortValue: (r) => r.resultScore ?? -1 },
-      { label: 'Sentiment', get: (r) => tierPill(r.sentiment, 'a sentiment reading'), html: true, align: 'right', sortValue: (r) => r.sentimentTier ?? -1 },
+      { label: 'Result', get: (r) => r.analysisTracked === false ? '<span class="text-slate-300">—</span>' : tierPill(r.resultTier, 'a result score'), html: true, align: 'right', sortValue: (r) => r.resultScore ?? -1 },
+      { label: 'Sentiment', get: (r) => r.analysisTracked === false ? '<span class="text-slate-300">—</span>' : tierPill(r.sentiment, 'a sentiment reading'), html: true, align: 'right', sortValue: (r) => r.sentimentTier ?? -1 },
       {
         label: 'Highlights',
         get: (r) =>
@@ -245,7 +273,7 @@ export function renderScans(ctx, { disposers, tableView, onView }) {
         // An action, not a reading — so it does not sort, and it is not in the export either: a
         // workbook of "click here" cells would be a column of nothing.
         label: 'Deep Dive',
-        get: (r) => deepDiveButton(r, dived, saved),
+        get: (r) => r.analysisTracked === false ? '<span class="text-slate-300">—</span>' : deepDiveButton(r, dived, saved),
         html: true,
         align: 'right',
         sortable: false,
@@ -262,7 +290,7 @@ export function renderScans(ctx, { disposers, tableView, onView }) {
           { value: 'pending', label: 'Awaiting analysis' },
         ],
         match: (r, v) => {
-          if (v === 'pending') return r.resultScore == null;
+          if (v === 'pending') return r.analysisTracked !== false && r.resultScore == null;
           if (r.resultScore == null) return false;
           if (v === 'excellent') return r.resultScore >= 80;
           if (v === 'strong') return r.resultScore >= 60;
@@ -282,26 +310,39 @@ export function renderScans(ctx, { disposers, tableView, onView }) {
         ],
         match: (r, v) => String(r.sentimentTier) === v,
       },
+      {
+        label: 'Document',
+        options: [
+          { value: 'all', label: 'All documents' },
+          { value: 'Transcript', label: 'Transcript' },
+          { value: 'Recording', label: 'Recording' },
+          { value: 'Presentation', label: 'Presentation' },
+          { value: 'Summary', label: 'Summary' },
+        ],
+        match: (r, v) => (r.documents || []).some((document) => document.type === v),
+      },
     ],
-    searchable: (r) => `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.tags.join(' ')}`,
+    searchable: (r) => `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.tags.join(' ')} ${(r.documents || []).map((document) => document.type).join(' ')}`,
     // The way out to the provider's reader, which is the one thing the removed drill panel carried
     // that was not already on the row. Their reader is where the summary and the transcript live;
     // this tab is their index and links to it rather than reproducing it. `docUrl` builds their
     // DOCUMENT route — the company route needs a period this payload does not carry, and building
     // it short is what made every one of these links 404.
-    link: (r) => r.transcriptUrl,
-    initialSort: { key: 'Call', dir: 'desc' },
+    link: (r) => r.transcriptUrl || r.documents?.[0]?.url || r.screenerCompanyUrl || null,
+    initialSort: { key: 'Call / Published', dir: 'desc' },
     exportName: 'sattva-concall-scans',
     onExport: (visible) => exportScans(visible, m),
-    emptyMessage: scopePossessive(ctx.scope) ? `None of ${scopePossessive(ctx.scope)} has held a call this quarter.` : 'No calls match your filters.',
+    emptyMessage: scopePossessive(ctx.scope) ? `No concall document or current-quarter scan matches ${scopePossessive(ctx.scope)}.` : 'No calls match your filters.',
     initialView: tableView,
   });
   onView?.(table.view);
 
   ctx.root.innerHTML = `
     ${sectionHead({
-      title: 'Concall Scans',
-      description: `Every earnings call held this quarter, newest first. Times are IST. ${ATTRIBUTION}`,
+      title: 'Concall Library',
+      description: screener?.status === 'ok'
+        ? `Screener’s complete retained concall document index (${escapeHtml(formatNumber(screener.records || 0))} unique source records), newest first, joined without duplicate company/date rows to current-quarter analysis. Times are IST; “published” dates are labelled separately. ${ATTRIBUTION}`
+        : `Current-quarter analysis is available. Screener’s scheduled complete document index is temporarily unavailable on this origin, so historical Transcript / Recording / Presentation links will fill in after its next successful collection. ${ATTRIBUTION}`,
       meta: scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'calls', book: coverage.meta() }),
     })}
     ${table.html}
@@ -643,7 +684,7 @@ const dayMonthOf = (date) => {
 async function exportScans(rows, m) {
   const banner = {
     __banner:
-      `REAL DATA, NOT OURS. Con-call scans from a third-party research provider — quarter ${m?.quarter || ''}, ` +
+      `REAL DATA. Screener concall documents plus third-party current-quarter analysis — quarter ${m?.quarter || ''}, ` +
       `captured ${new Date().toISOString()}. The result score (0-100), the sentiment tier (0-4) and the highlight bullets are ` +
       `that provider's own analysis, reproduced unchanged; this dashboard adds no scoring of its own. Tier labels use their ` +
       `published bands. "pending" means the call is listed but not yet analysed — it is not a zero.`,
@@ -652,15 +693,16 @@ async function exportScans(rows, m) {
     filename: 'sattva-concall-scans',
     sheetName: 'Concall Scans',
     columns: [
-      { header: 'Call Date', key: 'd', width: 20, get: (r) => (r.__banner ? r.__banner : r.when) },
+      { header: 'Call / Published Date', key: 'd', width: 24, get: (r) => (r.__banner ? r.__banner : r.analysisTracked === false ? r.publishedDate : r.when) },
       { header: 'Ticker', key: 't', width: 14, get: (r) => (r.__banner ? '' : r.ticker || '') },
       { header: 'Company', key: 'c', width: 34, get: (r) => (r.__banner ? '' : r.name) },
       { header: 'Industry', key: 'i', width: 28, get: (r) => (r.__banner ? '' : r.industry || '') },
-      { header: 'Result Score (third-party)', key: 's', width: 24, get: (r) => (r.__banner ? '' : (r.resultScore ?? 'pending')) },
-      { header: 'Result Tier (third-party)', key: 'rt', width: 22, get: (r) => (r.__banner ? '' : r.resultTier?.label || 'pending') },
-      { header: 'Sentiment (third-party)', key: 'st', width: 22, get: (r) => (r.__banner ? '' : r.sentiment?.label || 'pending') },
+      { header: 'Result Score (third-party)', key: 's', width: 24, get: (r) => (r.__banner ? '' : r.analysisTracked === false ? '' : (r.resultScore ?? 'pending')) },
+      { header: 'Result Tier (third-party)', key: 'rt', width: 22, get: (r) => (r.__banner ? '' : r.analysisTracked === false ? '' : r.resultTier?.label || 'pending') },
+      { header: 'Sentiment (third-party)', key: 'st', width: 22, get: (r) => (r.__banner ? '' : r.analysisTracked === false ? '' : r.sentiment?.label || 'pending') },
       { header: 'Highlights (third-party)', key: 'h', width: 70, get: (r) => (r.__banner ? '' : r.tags.join(' | ')) },
       { header: 'Summary Link', key: 'u', width: 60, get: (r) => (r.__banner ? '' : r.transcriptUrl || '') },
+      { header: 'Documents', key: 'docs', width: 80, get: (r) => (r.__banner ? '' : (r.documents || []).map((document) => `${document.type}: ${document.url}`).join(' | ')) },
     ],
     rows: [banner, ...rows],
   });

@@ -15,6 +15,7 @@ const eventsFor = (ticker, company, day = '2026-09-04') => feeds.map((feed, i) =
 const events = Array.from({ length: 11 }, (_, i) => eventsFor(`A${String(i).padStart(2, '0')}`, i === 10 ? 'Zenith Manufacturing' : `Company ${String(i).padStart(2, '0')}`)).flat();
 events.find((e) => e.ticker === 'A01').time = null;
 events.push({ ...events[30], id: 'hidden-event', importance: 'low', headline: 'Lithium supply agreement hidden beyond the evidence preview' });
+events.push({ ...events[0], id: 'context-document', aiEligible: false, kind: 'document', importance: 'low', direction: 'neutral', headline: 'Material risk source document', detail: 'Underlying source record' });
 events.push(...eventsFor('OLD', 'Old signal', '2026-08-29'));
 events.push({ ...events[1], id: 'important-event', ticker: 'ZIMP', company: 'Important Company', direction: 'neutral' });
 const holdings = [...new Map(events.map(e => [e.ticker, { ticker: e.ticker, name: e.company }])).values()]
@@ -37,7 +38,7 @@ addEventListener('message',e=>{
 });
 </script>`;
 const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:24px;background:#f6f4fb;font-family:Arial,sans-serif"><main id="root" class="mx-auto max-w-7xl"></main>
-<script>window.fixtureEvents=${JSON.stringify(events)};window.reads=0;</script>
+<script>window.fixtureEvents=${JSON.stringify(events)};window.reads=0;window.holdStart=new URLSearchParams(location.search).has('hold');</script>
 <script type="module">
 import * as tab from '/js/tabs/ai-alerts.js';
 import * as coverage from '/js/data/coverage.js';
@@ -51,6 +52,13 @@ window.show();
 const fixtureModule = `
 export { currentDay as today } from '../ui/ai-alert-utils.js';
 import { currentDay } from '../ui/ai-alert-utils.js';
+import { readEntry, writeEntry } from '../core/store.js';
+const cacheKey='ai-alerts:public-window:v1';
+export async function readCachedAlertWindow({scope,holdings,day=currentDay()}){
+  const saved=await readEntry(cacheKey); if(!saved?.value)return null;
+  const wanted=new Set(holdings.map(h=>h.ticker));
+  return {...saved.value,day,scope,events:saved.value.events.filter(e=>scope==='universe'||wanted.has(e.ticker)),cacheSavedAt:saved.savedAt};
+}
 export async function collect({scope,onPartial,holdings,load=true}) {
   if(load) window.reads++;
   if(load && window.holdStart) await new Promise(done=>window.releaseStart=done);
@@ -59,7 +67,9 @@ export async function collect({scope,onPartial,holdings,load=true}) {
   const report=()=>({day:currentDay(),scope,events,feeds:${JSON.stringify(feeds.map((id) => ({ id, status: 'ok', reachesToday: true })))},pending:0});
   onPartial?.({...report(),events:window.partialEvents || events,pending:1});
   if(load && window.holdRead) await new Promise(done=>window.releaseRead=done);
-  return report();
+  const complete=report();
+  if(load)writeEntry(cacheKey,{value:{...complete,scope:'universe',events:window.fixtureEvents.filter(e=>e.ticker),feeds:complete.feeds}});
+  return complete;
 }`;
 const server = createServer((req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
@@ -105,6 +115,8 @@ try {
   await peer.evaluate(() => window.releasePositions());
   await settled();
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
+  assert.match(await card('A00').locator('[data-ai-context]').innerText(), /Related context/);
+  assert.equal(await card('A00').locator('[data-ai-context]').getAttribute('title'), 'Context only; it does not add alert priority.');
   assert.equal(await card('A10').count(), 0, 'target starts beyond the first page');
   const search = page.getByRole('searchbox', { name: 'Search AI Alerts' });
   await search.fill('lithium supply');
@@ -156,8 +168,11 @@ try {
   await page.locator('[data-ai-more]').click();
   assert.equal(await card('OLD').count(), 1);
   await search.fill('A00');
+  // A calendar-only refresh reuses the recent, verified in-memory position
+  // snapshot instead of asking Family for the same book again.
   await page.clock.runFor(2100);
   await settled();
+  assert.equal(await peer.evaluate(() => !!window.releasePositions), false, 'midnight re-age does not duplicate a fresh position read');
   assert.equal((await card('A00').locator('[data-ai-date] [data-ai-age]').innerText()).toLowerCase(), '1d');
   assert.deepEqual(await card('A00').locator('[data-ai-evidence] [data-ai-age]').allTextContents(), ['1d', '1d', '1d']);
   assert.equal(await search.inputValue(), 'A00');
@@ -195,22 +210,27 @@ try {
   assert(failed.results.some(r => /Fixture workbook unavailable/.test(r.error)), 'header Refresh reports the failure');
   assert.equal(await card('A00').count(), 1, 'a portfolio outage keeps alert evidence visible');
   assert.equal(await page.locator('[data-ai-holding-size]').count(), 0, 'unverified sizes are removed');
-  assert.match(await page.locator('[data-ai-error]').innerText(), /Showing available alerts/);
+  assert.equal(await page.locator('[data-ai-error]').count(), 0, 'portfolio outages do not show customer-facing error banners');
+  assert.equal(await page.locator('[data-ai-feed-status]').innerText(), 'Latest available');
+  assert.doesNotMatch(await page.locator('#root').innerText(), /temporarily unavailable|refresh unavailable|could not be checked|showing available alerts|try again|holding sizes unavailable/i);
   assert.equal(await page.evaluate(async () => (await import('/js/data/coverage.js')).meta().syncStatus), 'family-unavailable');
   // Background rechecks may send invalidated and then fail without ever sending
-  // positions-ready. Repeated failures must leave a warning, not a stuck spinner.
+  // positions-ready. Repeated failures keep a settled, quiet fallback rather than a stuck spinner.
   for (let attempt = 0; attempt < 2; attempt++) {
     await peer.evaluate(() => window.invalidate());
     await waitFor(page, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'pending');
     await page.evaluate(async () => { try { await (await import('/js/research/portfolio-bridge.js')).readPositionSizes(); } catch {} });
-    assert.equal(await page.locator('[data-ai-feed-status]').getAttribute('data-state'), 'error');
+    assert.equal(await page.locator('[data-ai-feed-status]').getAttribute('data-state'), 'complete');
+    assert.equal(await page.locator('[data-ai-feed-status]').innerText(), 'Latest available');
     assert.equal(await card('A00').count(), 1, 'a repeated background failure preserves the evidence');
   }
   await peer.evaluate(() => { window.failed = false; });
   await page.evaluate(() => window.refreshAlerts());
   await settled();
   assert.equal(await page.locator('[data-ai-error]').count(), 0);
-  await peer.evaluate(() => { window.holdPositions = true; });
+  // Clear the short-lived position cache so the existing late-reply/scope-race
+  // check still exercises a genuine read.
+  await peer.evaluate(() => { window.holdPositions = true; window.invalidate(); });
   await page.evaluate(() => { window.dispose(); document.querySelector('#root').innerHTML = ''; window.show(); });
   assert.equal(await card('A00').count(), 1, 'return visits immediately restore the last view');
   assert.equal(await search.inputValue(), 'A00');
@@ -252,6 +272,22 @@ try {
   await page.clock.runFor(86_400_000);
   await page.evaluate(() => { window.dispatchEvent(new Event('focus')); document.dispatchEvent(new Event('visibilitychange')); });
   assert.equal(await page.evaluate(() => window.reads), reads, 'destroy removes calendar timer and listeners');
+  await page.waitForFunction(async () => {
+    const db = await new Promise(resolve => { const r = indexedDB.open('sattva-cache'); r.onsuccess = () => resolve(r.result); });
+    const saved = await new Promise(resolve => { const r = db.transaction('payloads').objectStore('payloads').get('ai-alerts:public-window:v1'); r.onsuccess = () => resolve(r.result); });
+    db.close(); return !!saved;
+  });
+  const persisted = await page.evaluate(async () => {
+    const db = await new Promise(resolve => { const r = indexedDB.open('sattva-cache'); r.onsuccess = () => resolve(r.result); });
+    const saved = await new Promise(resolve => { const r = db.transaction('payloads').objectStore('payloads').get('ai-alerts:public-window:v1'); r.onsuccess = () => resolve(r.result); });
+    db.close(); return JSON.stringify(saved);
+  });
+  assert(!/weightPct|company-documents|drhp-documents/.test(persisted), 'ready snapshot excludes private holdings and private lookup metadata');
+  await page.goto(`${origin}/?hold=1`);
+  await page.locator('[data-ai-card]').first().waitFor({ timeout: 1000 });
+  assert.match(await page.locator('[data-ai-feed-status]').innerText(), /Ready/i);
+  assert.equal(await page.evaluate(() => !!window.releaseStart), true, 'live collection is still blocked while cached cards are ready');
+  console.log('PASS: reload restores a ready privacy-safe alert view before live collection completes.');
   assert.deepEqual(errors, []);
   console.log('PASS: responsive search/cards at 320–1440px, calendar cleanup and zero application errors.');
 } catch (error) {

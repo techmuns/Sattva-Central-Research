@@ -1,0 +1,47 @@
+name: Screener access check
+
+# Read-only diagnostic. The S Screen export is parsed in runner memory; no
+# downloaded artifact, saved session, watchlist mutation, or dashboard write.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screener-access-check
+  cancel-in-progress: false
+
+jobs:
+  access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install pinned Playwright runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/screener-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/screener-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify login and read one company page
+        env:
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-browser/node_modules/playwright
+          # Playwright debug logs can include form values. Never enable them here.
+          DEBUG: ""
+          PWDEBUG: ""
+        run: node scripts/check-screener-access.mjs
+      - name: Verify and plan the existing S Screen portfolio mirror
+        env:
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          SCREENER_SYNC_DRY_RUN: "true"
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/screener-browser/node_modules/playwright
+          DEBUG: ""
+          PWDEBUG: ""
+        run: node scripts/sync-screener-watchlist.mjs

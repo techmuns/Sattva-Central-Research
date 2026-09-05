@@ -28,15 +28,15 @@ which is exactly how a reader following an Ask Research citation ended up on a s
 money with nothing on the page that led back. **Portfolio here means the book of 142 company names
 and nothing else.** See §2 and `d3bba30` in git history.
 
-**Ask Research is the landing tab.** AI Alerts ranks the last seven days of company-specific events from all
-nine alert feeds into a concise portfolio priority queue. **All Alerts** keeps the complete
+**Ask Research is the landing tab.** AI Alerts ranks the last seven days of company-specific material events from the
+complete twenty-category All Alerts pool into a concise portfolio priority queue. **All Alerts** keeps the complete
 newest-first stream (News contributes company and market-wide feeds). Direction and importance stay
 separate, every General row states both reasons, and AI cards show the strongest evidence and next
 action without exposing score arithmetic. Both are derived views with no data source of their own.
 See §4c and §4e.
 
 **Ask Research** builds one bounded evidence packet from the runtime data modules behind every
-other research tab — fourteen sources, each one a tab the reader can actually open — recording a
+other research tab — sixteen sources, each one a tab the reader can actually open — recording a
 status for each so an unavailable feed cannot disappear silently. The Worker streams that packet through Muns'
 hosted LLM router and forwards each NDJSON text chunk as it arrives. The browser holds no provider
 credential; configure a Muns session-token secret. Conversation history is device-local, but each
@@ -67,8 +67,8 @@ This is the first thing to check before quoting any number off a screen.
 | **Retail chatter** — mentions and sentiment across ValuePickr, TradingQnA and Google News, 219 entries over a rolling 30 days | called direct from the browser, **not** proxied — see §5e | SentimentDash | **Live: twice daily upstream (01:30 / 13:30 UTC), hourly client poll** |
 | **NSE live announcements** — the exchange's own filings RSS, rebuilt every few minutes, resolved to a ticker so it can be **scoped to your Portfolio / Watchlist**. The one company-scoped live feed | `public/data/nse-announcements.json` (fallback) + live `/api/nse-announcements` | NSE, read by our **Worker** (the browser can't — CORS null); a full desktop user-agent or Akamai 430s it | Live off the exchange, edge-cached 90s; the snapshot refreshes hourly in Indian hours |
 | **Market-wide news** — five publishers in one list, every row bylined. A bounded head plus a shard per month, and **nothing is ever discarded** | `public/data/market-news.json` (head, ~430 KB) + `public/data/market-news/<YYYY-MM>.json` (archive, fetched only when a reader scrolls past the head) | Moneycontrol's listing page plus Business Standard, Mint, Economic Times and Investing.com RSS — all read with `curl` from a GitHub runner, because **three of the five answer a Worker with the same 24-byte 403** | Moneycontrol every 30 min in Indian hours and hourly outside (measured — see `docs/DATA-CONTRACTS.md`), **and on demand from the tab's Fetch button**; the RSS publishers hourly. Both jobs share one concurrency group because they merge into one file |
-| **Company news** | `public/data/news.json` | Muns company search through the Worker | 09:00 + 19:00 IST weekdays; watchdog recovery after 3h |
-| **Insider trades** | `public/data/insider-trades.json` | Muns filings through the Worker | 19:00 IST weekdays; watchdog recovery after 19:00 |
+| **Company news** | `public/data/news.json` (bounded 30-day head) + `public/data/company-news/<YYYY-MM>.json` (permanent portfolio archive) | Muns company-name and reviewed-alias searches through the Worker; every active book line resolves to a stable company identity, including companies without NSE symbols | Portfolio every 3h, every day, with a 48h overlap; universe 09:00 + 19:00 IST weekdays; watchdog recovery after 3h |
+| **Bulk, Block, SAST and Insider trades** | `public/data/insider-trades.json` | Authenticated Screener.in market-wide lists; retained Muns rows add exchange detail | Every 30 minutes; watchdog recovery after 75m |
 | **Corporate announcements** | `public/data/corp-announcements.json` | BSE date index, no credential | 20:00 IST weekdays; watchdog recovery after 75m |
 | scID → NSE ticker, industry, share count | `public/data/mc-ticker-map.json` (190 KB) | Moneycontrol price feed | Incremental, daily |
 | Close on each result date | `public/data/result-returns.json` (80 KB) | Yahoo Finance | Incremental, daily |
@@ -188,6 +188,8 @@ python3 -m http.server 8080 -d public
 # verify (Chromium is preinstalled — never run `playwright install`)
 node scripts/verify-calendar.mjs                # Moneycontrol calendar parser + pagination contract
 node scripts/verify-research.mjs                # Ask Research evidence + Worker contract
+node scripts/verify-company-news-archive.mjs    # identity coverage, append-only archive and overlap
+node scripts/verify-company-news-capture.mjs    # scheduled capture against a local news fixture
 node scripts/verify-ui.mjs                      # ~180 checks, exits non-zero on the first failure
 
 # refresh the live feeds
@@ -210,6 +212,8 @@ node scripts/sync-family-book.mjs               # FAMILY_REPO_TOKEN=… or FAMIL
 ```
 public/index.html          design tokens, fonts, compiled CSS link, #app, three overlay roots
                            (drill z-50 < workspace z-55 < modal z-60)
+public/sw.js               repeat-visit app shell: full ES-module graph + public-data SWR;
+                           never caches /api, Authorization or no-store requests
 public/css/tailwind.css    generated Tailwind utilities; committed and served directly
 public/js/
   app.js                   bootstrap: fetch the small JSON set once, prime the data modules, mount
@@ -258,6 +262,13 @@ all.
 **To add a data source:** three files, together — `docs/DATA-CONTRACTS.md`, the loader in
 `js/app.js` (or a lazy `js/data/*.js`), and the entry in `js/ui/sources.js` with an honest `status`.
 
+**To change shipped JavaScript or CSS:** bump `CACHE_NAME` in `public/sw.js`. The install step
+follows static imports from `js/app.js` and warms the whole graph, so there is no second asset list
+to maintain. Code is cache-first within that named version; the browser's service-worker update
+check installs the next graph atomically. Navigation HTML and public `/data/*` assets are
+stale-while-revalidate. `/api/*`, requests with `Authorization`, explicit `no-store` requests and
+private Family replies stay outside CacheStorage.
+
 ---
 
 ## 4c. AI Alerts
@@ -271,13 +282,30 @@ events and next action, and keep the score arithmetic out of the UI. They link t
 pre-filtered for that company. A compact header status still names stale or unread feeds so a partial
 queue cannot look fully current.
 
+`js/data/intelligence-graph.js` then reads **all** company-linked rows in the normalized pool,
+including `aiEligible: false` filings, documents, snapshots and schedules. It attaches at most three
+related context records by company, source health, time and topic, plus the next known milestones.
+This layer contributes zero points: a routine row can explain a material trigger but can never
+create a card. Unsupported company-news attribution is excluded. One small linked context sentence
+is the only added card UI.
+
+The completed public seven-day event window is materialised under
+`ai-alerts:public-window:v1` in the existing IndexedDB store. A hard reload can rank and paint that
+window before the live collectors settle, then swap in one complete refreshed report. The stored
+window is universe-wide so Portfolio and Watchlist are applied only against the current in-memory
+book on read. Its serializer drops private events, the private document feeds, source records and
+all holding-weight fields. Authenticated position sizes are reusable for 55 seconds only in the
+current page process; explicit Refresh bypasses that reuse and no private reply reaches storage.
+
 The model is deliberately deterministic rather than generative: the feeds already carry the
 structured facts needed to prioritise them, so a repeatable rule cannot invent a filing or silently
 change its mind. Single-feed neutral news noise stays below the threshold, and tickerless market
 news stays in All Alerts because it cannot honestly be attributed to a portfolio company.
-No position weight or conviction tier enters the ranking — there is no ledger here to take one
-from, and an invented weight must never decide what a real reader is told is urgent. `coverage.js`
-supplies the real 142-company membership and sector context.
+Inside the authenticated Family host, complete position weights order surfaced portfolio cards and
+appear as `% of listed portfolio`; they do not alter the score, priority, direction or certainty.
+The ranker reads them from `positionSizes.holdings`—never the public names-only coverage list—and
+falls back to evidence priority when the complete checked set is unavailable. `coverage.js`
+supplies membership and sector context only.
 
 ---
 
@@ -291,9 +319,9 @@ under the scope recorded on the generation, and those watchers sit at module lev
 while the tab is unmounted. An unsent draft is persisted with the conversation; a question
 interrupted by a page reload is handed back to the composer rather than re-sent, because a re-ask
 costs a model run.
-`js/research/estate.js` is the registry: fourteen adapters read the same modules as AI Alerts,
+`js/research/estate.js` is the registry: sixteen adapters read the same modules as AI Alerts,
 All Alerts, Earnings Hub, Con-call, Public Chatter, Breakouts, both Super Investor disclosures,
-both News feeds, exchange filings and Insider Trades. **Every source is a tab the reader can open**
+both News feeds, exchange filings, Insider Trades and Screener's source-backed Insights series. **Every source is a tab the reader can open**
 — the mock ledger was the fifteenth and cited itself as *Portfolio Analytics*, linking into a hidden
 workspace with no way back; `verify-research.mjs` now requires every route to start `#/research/`.
 Every adapter loads first
@@ -339,17 +367,18 @@ filed, this is what the technicals scrape measured. That is right for research a
 first thirty seconds of a morning, when the question is not *what does Moneycontrol have* but *what
 happened, and does any of it need me*. All Alerts is organised as one chronological timeline.
 
-`js/data/daily-alerts.js` takes the General readings; `js/tabs/daily-alerts.js` draws them. **It adds no
-data source** — every row comes from a feed that already has its own tab. The timeline asks for
-each feed's retained window, orders it newest-first by **Indian trading date and time**, and relies
-on the table kit's progressive body fill so the fixed-height internal scroller reaches older rows
-without blocking first paint. The date filter narrows that loaded history to today, 7 days, 30 days
-or older rows; it does not issue a new request.
+`js/data/daily-alerts.js` takes the General readings; `js/tabs/daily-alerts.js` draws them. Every row
+comes from a registered feed. The one portfolio-only addition is the authenticated S Screen forward
+calendar carried on the existing `/api/concalls` capture; it is never exposed in Universe or a
+personal Watchlist. **Till Today** orders retained history newest-first by **Indian trading date and
+time**. **Upcoming** shows scheduled rows from today forward, nearest-first, and collapses the same
+company/date/type when two calendars discover it. Both use the table kit's progressive body fill;
+their date filters only narrow loaded records and issue no new request.
 
-**All eight source tabs are represented.** Earnings Hub, Con-call, Public Chatter, Breakouts /
-Technical, Super Investors, News, Corp Announcements and Insider Trades. News contributes two feeds:
-the per-company search and the market-wide capture. Adding a source remains an entry in `FEEDS` plus
-a collector; no rendering behaviour is special-cased by feed id.
+**All twenty registered feed categories are represented.** They include the material readings plus
+raw NSE/IPO filings, earnings and call schedules, the portfolio calendar, investor/institutional
+snapshots, captured posts and session-only document lookups. Adding a source remains an entry in
+`FEEDS` plus a collector; no rendering behaviour is special-cased by feed id.
 
 **Direction and importance are independent readings.**
 
@@ -402,11 +431,11 @@ walk remains behind its owning tab's explicit control. It reports what changed b
 ids, never counts**: the day rolls over, captures land, stories drop off the end of a bounded cache,
 and a count cannot answer "did anything change" for a collection like that.
 
-**Feeds land one at a time and the page follows them.** The first version awaited all eight
+**Feeds land one at a time and the page follows them.** The first version awaited every feed
 together and the timeline sat blank for as long as the slowest — measured at 10–15 seconds on a
 static origin, because the chatter API is a direct call to somebody else's service and an
-unreachable host takes its own time to say so. Seven feeds that had already answered were held
-hostage by the one that had not. Now each settles independently and paints as it lands, coalesced
+unreachable host takes its own time to say so. Feeds that had already answered were held hostage
+by the one that had not. Now each settles independently and paints as it lands, coalesced
 into at most one repaint per 250 ms (a trailing throttle, not a debounce — a debounce would keep
 deferring while feeds kept landing). Measured after the change: first paint at **~250 ms**,
 everything settled by 3 s.

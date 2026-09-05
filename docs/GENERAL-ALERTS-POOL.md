@@ -14,7 +14,8 @@ No production collection jobs are dispatched by opening this page.
 | Source tab | All Alerts records |
 | --- | --- |
 | Earnings Hub | Filed results and every company/date in the captured calendar, enriched by the stable Moneycontrol ID-to-ticker map; loaded calendar dates also join |
-| Con-call | Held-call analysis, full source tags and scheduled calls |
+| Con-call | Held-call analysis, full source tags and market-wide scheduled calls |
+| Portfolio calendar | Upcoming AGMs, postal ballots, results, calls and other dated events from the authenticated S Screen dashboard; available only in Portfolio scope |
 | Public Chatter | Every company/topic summary, including unresolved topics; individual posts already requested in the source tab |
 | Breakouts / Technical | Every real technical snapshot, including unavailable-price rows and below-threshold price changes; material price/volume/breakout events retain existing labels |
 | Super Investors | Disclosed changes, every retained holding (including unchanged/filing-due states), and institutional/AMC disclosures |
@@ -37,10 +38,21 @@ identity, company identity if resolved, independent direction/importance labels 
 Collection does not truncate the evidence. Exact duplicates within a source are removed;
 cross-source evidence is kept separately.
 
+Company news is produced by a search endpoint, so the company/ticker on a row records the query
+that returned it rather than a claim made by the publisher. If neither the headline nor standfirst
+contains a distinctive word from that query, the row is retained (the check can miss a real brand
+or alias) but the query-assigned company/ticker is not indexed by All Alerts' free-text search. The
+publisher text remains searchable. This prevents an unrelated result used to pad a short upstream
+result set from appearing merely because the reader searched the company, without deleting a
+possibly genuine story or narrowing any other feed.
+
 `includeHistory: true` means **all available records**, including undated items and future scheduled
-dates. A date not supplied stays `day: null`, appears under "All available dates"/"Date not
-supplied", and is never stamped with today. UTC instants are converted to IST. Calendar and
-call schedules are labelled `kind: scheduled`; source snapshots are `kind: snapshot`, not trades.
+dates. The UI partitions that single retained pool into mutually exclusive **Till Today** and
+**Upcoming** views: an event dated after today is Upcoming, and a row dated today is Upcoming only
+while its source still explicitly labels it `kind: scheduled`. A date not supplied stays
+`day: null`, appears under "Date not supplied", and is never stamped with today. UTC instants are
+converted to IST. Calendar and call schedules are labelled `kind: scheduled`; source snapshots are
+`kind: snapshot`, not trades.
 A filing-due percentage is unknown, never zero, an exit or a sale. IPO stage observations name
 their capture date and do not claim that an old "Open" label is current today.
 
@@ -63,10 +75,14 @@ coverage by the upstream.
 
 ## AI compatibility boundary
 
-This change expands collection, not priority policy. New raw record kinds carry `aiEligible: false`
-so unchanged holdings, routine snapshots and schedules do not manufacture independent corroboration
-or silently change existing AI rankings. AI still reads the All Alerts collector and applies
-its existing policy to supported signals. Mapping the new evidence into ranking is the next phase.
+Raw record kinds carry `aiEligible: false`, so unchanged holdings, routine snapshots and schedules
+do not manufacture urgency or change existing AI scores. `intelligence-graph.js` now uses those
+records as a second, zero-score context pass after a supported material trigger already created a
+candidate. Exact company identity is mandatory; source health, date distance and topic overlap rank
+the context, independent feeds are preferred, unsupported query-assigned news identities are
+excluded, and future schedules remain explicitly future. AI Alerts shows at most one linked context
+sentence. Ask Research receives the same correlations. This is enrichment, not a second priority
+policy.
 
 ## Verification
 
@@ -75,6 +91,7 @@ replaced: registry parity, unresolved/undated/upcoming records, source preservat
 subsets, empty Watchlist, no per-company fanout, private-memory isolation, successful refresh,
 last-good recovery and unchanged AI scores for newly added raw observations.
 
-`scripts/verify-general-alerts-ui.mjs` runs a local browser with no external requests: source/search
-rendering, updates while mounted, scope changes, host logout, responsive widths, application errors
-and lifecycle disposal. It uses `PLAYWRIGHT_ROOT` and `CHROME_PATH` like the other focused UI tests.
+`scripts/verify-general-alerts-ui.mjs` runs a local browser with no external requests: time-horizon
+switching, portfolio-calendar isolation, source/search rendering, updates while mounted, scope
+changes, host logout, responsive widths, application errors and lifecycle disposal. It uses
+`PLAYWRIGHT_ROOT` and `CHROME_PATH` like the other focused UI tests.

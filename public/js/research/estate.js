@@ -12,7 +12,7 @@
 // which tabs the reader happened to have visited, and "anything about IIFL Finance?" could answer
 // differently on the first ask and the second.
 //
-// THE BUDGET IS SPENT ON ROWS, AND THAT IS ASSERTED. The rowless skeleton — fourteen statuses,
+// THE BUDGET IS SPENT ON ROWS, AND THAT IS ASSERTED. The rowless skeleton — sixteen statuses,
 // coverages, definitions and summaries — used to be measured on the wire packet, chrome included,
 // and on real data it alone exceeded the budget. So every row was pushed and immediately popped, and
 // the model was told, correctly, that `includedRows` was 0 everywhere: it answered that the dashboard
@@ -30,6 +30,7 @@ import * as coverage from '../data/coverage.js';
 import { filterByScope, scopeAllowsTicker } from '../data/scope.js';
 import * as alerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
+import * as screenerInsights from '../data/screener-insights.js';
 import * as earningsLive from '../data/earnings-live.js';
 import { domesticFilingsEvidence } from '../data/domestic-filings.js';
 import * as earningsCalendar from '../data/earnings-calendar.js';
@@ -42,20 +43,22 @@ import { news, announcements, insider } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
 import { researchEvidenceChars } from './evidence-shared.js';
 import { withoutPublisherName } from '../core/source-copy.js';
+import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
-  { id: 'daily-alerts', tab: 'All Alerts', route: '#/research/daily-alerts', description: 'Derived timeline across earnings, con-calls, chatter, technicals, investor activity, news, announcements and insider disclosures.' },
+  { id: 'daily-alerts', tab: 'All Alerts', route: '#/research/daily-alerts', description: 'The complete normalized top-of-funnel pool across all twenty dashboard feed categories, including raw filings, schedules, snapshots, documents, posts and market events.' },
+  { id: 'screener-insights', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'Source-backed yearly and quarterly operating metrics extracted by Screener from company filings and presentations; context only, never an alert trigger by itself.' },
   { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns.' },
   { id: 'company-filings', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=filings', description: 'Company document titles, periods and source links already read in Company Filings. PDF contents are not extracted.' },
-  { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Currently loaded all-exchange scheduled-results dates and company lists.' },
-  { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Held and scheduled earnings calls with StockScans scores, sentiment tiers and source tags.' },
+  { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=calendar', description: 'Currently loaded scheduled-result and upcoming-con-call dates and company lists.' },
+  { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Screener’s retained transcript, recording and presentation index, enriched with StockScans scores and sentiment where available.' },
   { id: 'public-chatter', tab: 'Public Chatter', route: '#/research/public-chatter', description: 'Retail mention counts and sentiment across ValuePickr, TradingQnA and Google News.' },
   { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
   { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'Analyst consensus and earnings surprise are unavailable until a real estimates feed is connected.' },
   { id: 'super-investors', tab: 'Super Investors', route: '#/research/super-investors/superstar-investors', description: 'Filed superstar-investor holdings and quarter-on-quarter disclosed changes.' },
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
-  { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Company-specific retained news for covered symbols.' },
+  { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Permanently retained company news, including portfolio companies without exchange symbols.' },
   { id: 'market-news', tab: 'News', route: '#/research/news', description: 'Market-wide Moneycontrol stories; intentionally not company-scopeable.' },
   { id: 'announcements', tab: 'Corp Announcements', route: '#/research/corp-announcements', description: 'BSE exchange-wide capture plus retained company/date lookups from BSE, NSE and DRHP.' },
   { id: 'insider-trades', tab: 'Insider Trades', route: '#/research/insider-trades', description: 'Insider and promoter disclosures in the upstream\'s own vocabulary.' },
@@ -71,7 +74,7 @@ const MATCH_ROW_LIMIT = 14;
 // packet. The low-latency Muns model has an 8K-token context and JSON tokenises at roughly 3.3
 // characters a token, so 13,000 characters is about 3,900 tokens of evidence; with the ~470-token
 // instruction, up to 3,000 characters of history and a 768-token answer the request stays near
-// 6K tokens. Measured on the shipped data, the fifteen-source skeleton is ~7,100 characters, so
+// 6K tokens. Measured on the shipped data, the sixteen-source skeleton is ~7,100 characters, so
 // this leaves ~5,900 for rows — about twenty. Raising it buys rows at the cost of first-token
 // latency. Lowering it towards the skeleton starves the rows — which is the failure
 // `ROW_RESERVE_SHARE` and the suite exist to catch, and the one this file shipped with for a day.
@@ -507,12 +510,36 @@ function alertRow(row) {
     ticker: row.ticker || null,
     company: clipped(row.company, 60),
     feed: row.feedLabel || row.feed || null,
+    kind: row.kind || null,
+    scheduledFor: row.scheduledFor || null,
     direction: row.direction || null,
     importance: row.importance || null,
     headline: clipped(row.headline, 160),
     detail: clipped(row.detail, 160),
     directionReason: clipped(row.signalReason || row.reason, 100),
     importanceReason: clipped(row.importanceReason, 100),
+    keywords: (row.keywords || []).slice(0, 8),
+  };
+}
+
+function screenerInsightRow(company, row) {
+  return {
+    ticker: company.ticker || null,
+    company: clipped(company.name, 60),
+    metric: clipped(row.metric, 140),
+    unit: row.unit || null,
+    periodicity: row.periodicity,
+    values: (row.values || []).slice(-8).map((point) => ({
+      period: point.period,
+      label: point.label,
+      value: point.value,
+      source: point.source ? {
+        title: clipped(point.source.title, 120),
+        quote: clipped(point.source.quote, 180),
+        page: point.source.page || null,
+        url: point.source.url || null,
+      } : null,
+    })),
   };
 }
 
@@ -644,12 +671,14 @@ const BUILDERS = [
       const scheduledRows = loaded.flatMap((payload) => payload.rows || []);
       const picked = chooseRows(scheduledRows, plan, (row) => ({
         date: row.resultDate || null,
+        eventType: row.eventType || 'Result',
         company: clipped(row.name, 130),
         ticker: row.ticker || null,
         industry: clipped(row.industry, 120),
         exchange: row.exchange === 'N' ? 'NSE' : row.exchange === 'B' ? 'BSE' : row.exchange || null,
         quarter: row.quarter || null,
         scheduledTime: row.time || null,
+        noticeUrl: row.noticeUrl || null,
         price: round(row.ltp),
         marketCapCr: round(row.marketCap),
       }));
@@ -659,16 +688,17 @@ const BUILDERS = [
         .sort()
         .at(-1) || null;
       return sourcePacket(this.id, {
-        source: 'Moneycontrol Earnings Calendar — all-exchange count, widget and pagination feeds',
+        source: 'Moneycontrol scheduled results plus Screener upcoming con-call invitations',
         asOf,
         rowCount: scheduledRows.length,
         coverage: {
           loadedDates: loaded.length,
           completeDates: loaded.filter((payload) => payload.complete).length,
+          screenerUpcomingRecords: Math.max(0, ...loaded.map((payload) => payload.screenerUpcomingRecords || 0)),
           strip: strip.map((item) => ({ date: item.date, scheduledCount: item.count })).slice(0, 14),
           note: strip.length ? 'Only schedule dates loaded in this browser are included; filed results are a separate Earnings Reported source.' : 'No scheduled-results date has been opened in this browser yet.',
         },
-        definition: 'Scheduled results, not filed results. Counts and rows use All exchanges; company rows follow every published pagination page.',
+        definition: 'Scheduled events, not filed results. Result rows use Moneycontrol All exchanges; Con-call rows use every page of Screener’s authenticated upcoming-invitation index. Event types remain distinct.',
         ...picked,
       });
     },
@@ -680,21 +710,24 @@ const BUILDERS = [
       const rows = concalls.forScope(scope, holdings);
       const meta = concalls.meta() || {};
       return sourcePacket(this.id, {
-        source: 'Research provider con-call scans (live)',
+        source: 'Screener concall documents plus research-provider scans',
         asOf: meta.fetchedAt || meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { total: meta.count, analysed: meta.analysed },
-        definition: 'Score, tier, sentiment and tags are the research provider\'s analysis; the dashboard adds none. A missing score is analysis pending, not zero.',
+        coverage: { total: meta.count, analysed: meta.analysed, screenerRecords: meta.screener?.records || 0, screenerPublishedTotal: meta.screener?.publishedTotal || 0 },
+        definition: 'Documents are Screener’s authenticated market-wide index. Score, tier, sentiment and tags are the research provider\'s analysis; the dashboard adds none. A missing score means pending only when analysisTracked is true; document-only history is not labelled pending.',
         ...chooseRows(rows, plan, (row) => ({
           ticker: row.ticker || null,
           company: clipped(row.name, 60),
           industry: clipped(row.industry, 60),
           when: row.when || null,
+          publishedDate: row.publishedDate || null,
+          analysisTracked: row.analysisTracked !== false,
           notesReady: row.notesReady ?? null,
           resultScore: row.resultScore ?? null,
           resultTier: row.resultTier?.label || row.resultTier || null,
           sentiment: row.sentiment?.label || row.sentiment || null,
           sourceTags: (row.tags || []).map((tag) => clipped(tag, 110)).slice(0, 4),
+          documents: (row.documents || []).map((document) => ({ type: document.type, url: document.url })).slice(0, 6),
         }), byDateDesc('when')),
       });
     },
@@ -797,7 +830,8 @@ const BUILDERS = [
     id: 'company-news',
     load: () => news.seed(),
     read({ scope, holdings, plan }) {
-      const rows = filterByScope(news.rows(), scope, holdings);
+      const all = news.rows();
+      const rows = filterCompanyNewsByScope(all, scope, holdings) ?? filterByScope(all, scope, holdings);
       const meta = news.meta();
       return sourcePacket(this.id, {
         source: 'Retained company news snapshot',
@@ -905,14 +939,36 @@ const BUILDERS = [
     },
   },
   {
+    id: 'screener-insights',
+    load: () => screenerInsights.load(),
+    read({ scope, holdings, plan }) {
+      const wanted = new Set((holdings || []).map((holding) => String(holding.ticker || '').toUpperCase()).filter(Boolean));
+      const companies = screenerInsights.all().filter((company) => {
+        if (scope === 'universe') return company.inUniverse || company.inPortfolio;
+        if (scope === 'portfolio') return company.inPortfolio || (company.ticker && wanted.has(company.ticker.toUpperCase()));
+        return company.ticker && wanted.has(company.ticker.toUpperCase());
+      });
+      const rows = companies.flatMap((company) => (company.rows || []).map((row) => screenerInsightRow(company, row)));
+      const meta = screenerInsights.meta() || {};
+      return sourcePacket(this.id, {
+        source: 'Screener Insights — figures extracted from company filings and presentations',
+        asOf: meta.checkedAt || null,
+        rowCount: rows.length,
+        coverage: { capturedCompanies: meta.companies, targetCompanies: meta.targets, metrics: meta.metrics, fullCoverage: meta.fullCoverage, companiesFailedInCapture: meta.failed, latestCollectorFailed: meta.collectorLatestFailed },
+        definition: 'Each value keeps its period, unit and source document. These are operating-series observations, not same-day events, forecasts or alert scores. Compare only values within the same metric and periodicity.',
+        ...chooseRows(rows, plan, (row) => row),
+      });
+    },
+  },
+  {
     // The dashboard's own cross-feed ranking, so "which companies have the strongest evidence across
     // tabs" is answered by the same deterministic model the AI Alerts tab shows — not by whichever
     // company happened to top each source's default ordering. The card's order is the reading; the
     // arithmetic behind it stays off every surface, this one included.
     id: 'ai-alerts',
     load: () => undefined,
-    async read({ scope, plan }) {
-      const report = await aiAlerts.collect({ scope, holdings: scopeHoldings(scope) });
+    async read({ scope, plan, portfolioPositions }) {
+      const report = await aiAlerts.collect({ scope, holdings: scopeHoldings(scope), positionSizes: portfolioPositions });
       const m = report.meta || {};
       const cards = report.cards || [];
       return sourcePacket(this.id, {
@@ -931,8 +987,12 @@ const BUILDERS = [
           positive: card.directions?.positive ?? null,
           negative: card.directions?.negative ?? null,
           highImportance: card.highCount ?? null,
+          holdingWeightPct: card.holdingWeightPct ?? null,
           conflicting: card.mixed ? true : null,
           insight: clipped(card.insight, 170),
+          relatedContext: clipped(card.contextSummary, 180),
+          contextSources: [...new Set([...(card.contextEvents || []), ...(card.upcomingEvents || [])].map((event) => event.feedLabel || event.feed))].slice(0, 5),
+          upcoming: (card.upcomingEvents || []).slice(0, 2).map((event) => ({ date: event.day, feed: event.feedLabel || event.feed, headline: clipped(event.headline, 120) })),
           latestEvent: card.topEvent ? { date: card.topEvent.day || null, feed: card.topEvent.feedLabel || card.topEvent.feed || null, headline: clipped(card.topEvent.headline, 140) } : null,
         })),
       });
@@ -982,7 +1042,7 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
     BUILDERS.map(async (builder) => {
       if (loadErrors.has(builder.id)) return failedPacket(builder.id, loadErrors.get(builder.id));
       try {
-        return await withTimeout(Promise.resolve().then(() => builder.read({ question, scope, holdings, plan })), tabOf(builder.id));
+        return await withTimeout(Promise.resolve().then(() => builder.read({ question, scope, holdings, plan, portfolioPositions })), tabOf(builder.id));
       } catch (error) {
         return failedPacket(builder.id, error);
       }

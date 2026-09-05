@@ -109,7 +109,7 @@ try {
   check('Con-call requests only the documented concalls form',queries.at(-1).form[0]==='concalls');
   check('an empty document response is qualified, not proof of no filing',/does not prove no filing exists/.test(await page.locator('[data-doc-results]').innerText()));
   await page.evaluate(()=>window.showDocuments('earnings_report')); await load();
-  check('Earnings Hub requests earnings reports, not fabricated earnings figures',queries.at(-1).form[0]==='earnings_report');
+  check('company documents request earnings reports, not fabricated earnings figures',queries.at(-1).form[0]==='earnings_report');
   await page.evaluate(()=>window.showDocuments());
   await page.locator('[data-doc-form-type]').selectOption('annual_report'); await load();
   check('annual reports are available from the corporate document view',queries.at(-1).form[0]==='annual_report' && /Annual report/.test(await page.locator('[data-doc-results]').innerText()));
@@ -135,13 +135,16 @@ try {
   check('mobile layout contains the lookup controls',await page.locator('[data-doc-load]').isVisible());
   await page.setViewportSize({width:1440,height:1000});
   await page.evaluate(()=>window.setTestSession('fixture.reader-a.session'));
-  for (const [name,form] of [['nse-filings','all'],['concall','concalls'],['earnings-hub','earnings_report']]) {
+  for (const [name,form] of [['nse-filings','all'],['concall','concalls']]) {
     await page.evaluate(name=>window.showTab(name),name);
     await page.locator('[data-doc-mode="documents"]').click();
     await page.locator('[data-doc-company]').waitFor();
     await load();
     check('the actual '+name+' tab reaches its assigned document form',queries.at(-1).form[0]===form);
   }
+  await page.evaluate(()=>window.showTab('earnings-hub'));
+  await page.locator('[data-view-toggle]').waitFor();
+  check('Earnings Hub has no redundant Filed earnings reports mode',await page.locator('[data-doc-mode]').count()===0);
   await page.evaluate(()=>window.showTab('corp-announcements'));
   await page.locator('[data-score-table]').waitFor();
   check('Corp Announcements opens its feed without duplicate document or IPO tabs',await page.locator('[data-document-tabs]').count()===0&&await page.locator('[data-score-table]').isVisible());

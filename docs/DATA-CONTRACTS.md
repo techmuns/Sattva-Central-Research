@@ -69,6 +69,77 @@ The three Super Investors files load at bootstrap and seed `js/data/investors.js
 
 ---
 
+## `public/data/corporate-actions.json` — LIVE
+
+NSE's exchange-wide corporate-actions calendar plus authenticated Screener action catalogues,
+captured every 15 minutes by
+`.github/workflows/corporate-actions-refresh.yml` through
+`scripts/scrape-corporate-actions.mjs`. The request covers the prior three years and the next year
+in one bounded view. NSE is the official base. Screener adds its bonus, rights, split, buyback and
+dividend records and their structured terms. The browser loads this file only when Corporate Actions opens, keeps it in
+the shared IndexedDB cache, and conditionally checks it every 90 seconds while visible.
+
+Each upstream has an independent last-good layer. An NSE refusal, timeout, empty response, format
+change, or drop of more than 25% of the prior NSE rows or companies exits without replacing the
+file. A Screener failure retains the prior Screener rows while a valid NSE refresh continues.
+Normal Screener reads stop once they reach known head records; a daily full crawl reconciles older
+backfills, corrections and deletions.
+The app-wide capture watchdog asks the fixed workflow to recover whenever Screener's successful
+layer is more than 35 minutes old, so a fresh NSE write cannot hide a stalled enrichment source.
+
+Illustrative shape (counts change on every capture):
+
+```jsonc
+{
+  "version": 1,
+  "capturedAt": "2026-09-04T19:52:40.891Z",
+  "source": "NSE + Screener corporate actions",
+  "requestedFrom": "2023-09-05",
+  "requestedTo": "2027-09-04",
+  "rowCount": 8871,
+  "companyCount": 2614,
+  "typeCounts": { "dividend": 7121, "bonus": 395 /* … */ },
+  "skipped": 0,
+  "excludedMeetings": 1396,
+  "duplicates": 0,
+  "crossSourceDuplicates": 5205,
+  "sourceCounts": { "nse": 5806, "screener": 8270, "enriched": 5205, "screenerOnly": 3065 },
+  "sources": {
+    "nse": { "state": "live", "capturedAt": "2026-09-04T20:47:57.926Z", "rowCount": 5806 },
+    "screener": { "state": "live", "capturedAt": "2026-09-04T20:41:25.042Z", "fullHistory": true, "rowCount": 8270 }
+  },
+  "rows": [ /* … */ ]
+}
+```
+
+| Row field | Type | Meaning |
+| --- | --- | --- |
+| `id` | string | Stable identity from ISIN/symbol, series, dates and purpose. |
+| `ticker` | string | NSE symbol. This is the watchlist join key and a portfolio join key. |
+| `company` | string | Company name as supplied by NSE. |
+| `isin`, `series` | string \| null | Exchange identifiers as supplied. |
+| `purpose` | string | Corporate-action purpose verbatim from NSE. |
+| `actionType` | enum | Derived navigation label: `dividend`, `distribution`, `bonus`, `rights`, `split`, `buyback`, `demerger`, `interest`, `redemption`, `capital-reduction`, or `other`. It is not a score. |
+| `faceValue` | string \| null | Face value as supplied; no numeric interpretation is imposed on the capture. |
+| `exDate`, `recordDate`, `bookClosureStart`, `bookClosureEnd` | date \| null | NSE dates normalized from `DD-Mmm-YYYY` to ISO; missing and invalid dates stay null. |
+| `source`, `sources` | string, array | `NSE`, `Screener`, or both. Both source identities remain on an enriched row. |
+| `sourceUrl` | URL | NSE action view for rows carrying NSE; Screener catalogue URL for Screener-only rows. |
+| `screenerUrl`, `screenerCompanyUrl` | URL \| null | Screener catalogue and company links when that source contributed. |
+| `screener` | object \| null | Original Screener identity plus structured `ratio`, `premium`, split face values, buyback end date/type/max price/amount, or dividend type/percent fields. |
+
+The file covers the sources' market-wide catalogues rather than the current book. Portfolio and Watchlist filter the
+same retained rows at paint time, so a newly added symbol does not wait for a new upstream capture.
+Portfolio matching also uses ISIN, so a symbol rename does not detach earlier actions from the book.
+Meeting-only AGM/EGM diary entries returned by the endpoint are counted in `excludedMeetings` and
+left out of this action feed; a meeting row that also declares an action remains.
+
+A Screener row enriches an NSE row only when the ticker, action type and ex date produce exactly
+one candidate from each source. The NSE purpose and URL remain authoritative while Screener's
+structured fields and links are attached. Ambiguous candidates and source-only actions stay as
+separate rows. Repeated collection is idempotent on stable source keys.
+
+---
+
 ## `public/data/technicals.json` — LIVE
 
 **The dashboard's one genuinely live feed.** Written by `scripts/scrape-technicals.mjs`, refreshed
@@ -792,7 +863,7 @@ The rules that make it safe to trust:
 
 ---
 
-## `GET /api/concalls` — LIVE, the con-call scan (StockScans)
+## `GET /api/concalls` — LIVE analysis plus the retained Screener concall index
 
 ```jsonc
 {
@@ -803,17 +874,47 @@ The rules that make it safe to trust:
              "tags": ["▲ Revenue guidance raised to high teens", "…"],
              "ssUrl": "as-…pdf", "pptSsUrl": "…pdf" }],
   "upcoming": [{ "ticker": "LANDMARK", "name": "Landmark Cars Ltd", "when": "2026-08-12T09:00:00+05:30" }],
+  "portfolioUpcoming": [{ "id": "JAYNECOIND|2026-08-19|AGM|day",
+                           "companyKey": "JAYNECOIND", "ticker": "JAYNECOIND",
+                           "name": "Jayaswal Neco", "date": "2026-08-19", "time": null,
+                           "eventType": "AGM", "companyUrl": "https://www.screener.in/company/JAYNECOIND/",
+                           "sourceUrl": "https://www.screener.in/company/JAYNECOIND/", "observedAt": "2026-08-11T…Z" }],
   "today":    { "day": "2026-08-12", "rows": [ … ] },
-  "meta": { "quarter": 202606, "total": 877, "headRows": 50, "tailRows": 827, "truncated": false,
+  "meta": { "quarter": 202606, "total": 4100, "stockscansTotal": 877,
+            "headRows": 50, "tailRows": 827, "truncated": false,
+            "screener": { "status": "ok", "checkedAt": "2026-08-11T…Z",
+                          "publishedTotal": 4189, "records": 4189, "fullHistory": true,
+                          "portfolioUpcomingAvailable": true, "portfolioUpcomingRecords": 27 },
             "fetchedAt": "2026-08-11T…Z", "contentTag": "2a4926653eb47e5e" }
 }
 ```
+
+The route is a union of two separately attributed sources. StockScans remains the only source of
+`resultScore`, `sentimentTier` and `tags`. Screener contributes its authenticated market-wide
+document index: Transcript, Recording, Presentation and Summary links. Multiple Screener entries
+for one company/publication date become one visible row with a de-duplicated `documents` array;
+when an unambiguous StockScans call for that ticker is within five days, those documents enrich the
+analysis row instead of creating another call. Historical Screener-only rows carry
+`analysisTracked:false`, so they render as document history and never as analysis pending.
+
+The client applies the normal shared ticker scope after this merge. Portfolio and Watchlist exclude
+unresolved numeric/BSE-only company pages; Universe retains them. Numeric Screener company paths
+are assigned a ticker only when the repository's collision-guarded company-name index resolves one
+unambiguously.
 
 `upcoming` retains every call StockScans have listed but not yet seen held. It is no longer exposed
 as a Con-call header control or overlay. `today` is a
 strict SUBSET of `upcoming`'s entries for the current date — the ones still ahead of now (43 of
 today's 64, in the pull above). Consumers must not merge it back into `upcoming`; that would
 double-count and then need de-duplicating for nothing.
+
+`portfolioUpcoming` is a separate, already-portfolio-scoped calendar read from the authenticated
+S Screen dashboard. It carries AGMs, postal ballots, results, timed calls and other labels exactly
+as scheduled evidence, with no directional or causal inference. The browser exposes it only in
+Portfolio scope, including numeric/BSE-only company paths that cannot be safely mapped to an NSE
+ticker. It must never be broadened into Universe or a personal Watchlist. When another calendar
+contains the same company/date/type, All Alerts' Upcoming view renders one entry and prefers this
+portfolio row's source link.
 
 The body carries **no "served at" stamp**, deliberately: it would differ on every request while
 the content did not, so the ETag would never match and the 304 this route depends on would never
@@ -882,6 +983,43 @@ Worker the same way it answers a laptop, unlike the Moneycontrol calendar page.
 
 **Consumed by** — `js/data/concall-scans.js` → the Con-call scan table. `upcoming` remains in the
 feed contract but is not rendered in the tab chrome.
+
+### Screener collection and freshness
+
+`.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
+`SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
+generated data. Every 15 minutes it reads the newest concall pages until it reaches records already
+in the previous complete artifact, then validates the exact dashboard id and `S Screen` name before
+capturing that portfolio's forward calendar. **Every run also replaces the entire market-wide,
+mutable `/concalls/upcoming/` list**, following all pages and reconciling Screener's published
+invitation total, so withdrawn or rescheduled events do not survive as a stale merged tail. At
+01:07 UTC daily, and on a manual full run, it follows every historical pagination page and
+reconciles the source's total.
+
+The collector refuses empty, ambiguous, truncated, duplicate, malformed or non-web-link captures;
+a genuinely empty market invitation list is valid only when Screener's own published total is zero.
+Public logs never contain credentials, cookies, page HTML or account details. Screener company,
+summary and S Screen forward-calendar links must be HTTPS. Historical document sources may retain
+the publisher's original HTTP URL, but remain inert outbound `noopener` links; publisher-specific
+ports are retained because the Worker never fetches these links. Script, data and credential-bearing
+URLs are rejected. Screener-owned URLs also reject custom ports.
+
+`worker/screener-concalls-collector.mjs` accepts only a successful main-branch run of this fixed
+workflow in this fixed repository, verifies GitHub's SHA-256 artifact digest, bounds compressed and
+expanded sizes, and never forwards the Worker GitHub token to the signed blob host. The edge holds
+that read for 60 seconds and shares it between `/api/concalls` and `/api/earnings-calendar`. A
+successful Actions capture therefore reaches the next calendar request, an already-open calendar
+on its one-minute poll, and an already-open Con-call tab on its 30-second poll—without a data
+commit or deployment. The existing
+`GH_DISPATCH_TOKEN` needs Actions read access, the same permission already used for the IPOPlatform
+artifact reader.
+
+GitHub schedules are best-effort, so both consuming routes compare the artifact timestamp and both
+forward-calendar schema markers with the 30-minute freshness window. A stale or missing artifact
+asks the same fixed workflow for an incremental `auto` run in `ctx.waitUntil()`. A 15-minute edge cooldown is
+written before dispatch, and `dispatchWorkflow()` independently declines a run already queued or in
+progress. No repository, workflow name, ref, publisher URL or credentials come from the browser
+request.
 
 ---
 
@@ -1044,7 +1182,7 @@ rendering the gaps as if complete.
 
 ---
 
-## `GET /api/earnings-calendar` — LIVE, who is *scheduled* to report
+## `GET /api/earnings-calendar` — LIVE scheduled results plus upcoming con-calls
 
 ```
 GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=none]
@@ -1056,15 +1194,29 @@ GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=n
   "date": "2026-08-13",
   "from": "2026-08-06", "to": "2026-08-27",   // strip window; defaults to date-7 .. date+14
   "asOnDate": "11/08/2026",                    // Moneycontrol's own "schedule as on"
-  "scheduledCount": 585,                       // complete All-exchange count for `date`
+  "scheduledCount": 587,                       // result + con-call events for `date`
+  "resultScheduledCount": 585,
+  "concallScheduledCount": 2,
   "listRequested": true,                       // false => `rows` is empty because nobody asked
   "pageSize": 20, "pagesFetched": 30, "requestsMade": 31, // includes bounded retries
-  "complete": true,                            // every published pagination page was read
-  "days": [{ "date": "2026-08-13", "displayDate": "13 Aug", "count": 585 }],
-  "rows": [{ "scId": "SE20", "name": "Solar Industries India", "ticker": "SOLARINDS",
+  "resultComplete": true, "concallComplete": true,
+  "complete": true,                            // both source lists are complete
+  "screenerUpcomingSource": "artifact",
+  "screenerUpcomingPublishedTotal": 151,
+  "screenerUpcomingRecords": 151,
+  "screenerUpcomingDuplicatesRemoved": 0,
+  "screenerUpcomingPagesFetched": 7,
+  "days": [{ "date": "2026-08-13", "displayDate": "13 Aug", "resultCount": 585,
+             "concallCount": 2, "count": 587 }],
+  "rows": [{ "eventId": "result:2026-08-13:SE20", "eventType": "Result",
+             "scId": "SE20", "name": "Solar Industries India", "ticker": "SOLARINDS",
              "industry": "Commodity Chemicals", "resultDate": "2026-08-13",
              "quarter": "Q1 FY26-27", "time": null, "ltp": 18770, "changePct": -1.2,
-             "marketCap": 169849.83, "mcUrl": "https://…" }]
+             "marketCap": 169849.83, "mcUrl": "https://…", "noticeUrl": null },
+           { "eventId": "concall:https://…pdf", "eventType": "Con-call",
+             "name": "Solar Industries India", "ticker": "SOLARINDS",
+             "resultDate": "2026-08-13", "time": "16:00:00",
+             "noticeUrl": "https://www.bseindia.com/…pdf" }]
 }
 ```
 
@@ -1072,7 +1224,8 @@ GET /api/earnings-calendar?date=YYYY-MM-DD&from=YYYY-MM-DD&to=YYYY-MM-DD[&list=n
 
 The dashboard asks for `list=full` on every selected date. `list=none` remains available to
 diagnostic and strip-only consumers; it skips the HTML pages, ticker-map asset read and identity
-look-ups.
+look-ups. It still reads the shared Screener artifact because upcoming calls are part of the date
+strip itself.
 
 It is a **different representation, not a cheaper one**, and it is treated as such throughout: its
 own edge-cache key, its own device-store key (`calendar:<date>:none`), `x-sattva-list-source:
@@ -1082,24 +1235,27 @@ reading `rows` must check `listRequested` first.
 
 `degraded` is null in this mode. Nothing failed; nothing was asked.
 
-**Two endpoints, one All-exchange population.**
+**Two event sources; every row says which.**
 
 | What | Where from | Complete? |
 | --- | --- | --- |
 | The count on each date | `api.moneycontrol.com/mcapi/v1/earnings/result-calendar?fromDate&toDate&indexId=All` | **Yes** — clean JSON and unpaginated |
 | First company-list page | `www.moneycontrol.com/earnings-widget?...&indexId=All&page=1` | Up to 20 rows |
 | Remaining company-list pages | `www.moneycontrol.com/pagination/earnings-pagination?...&indexId=All&page=N` | **Yes** — followed until the complete count is reached |
+| Upcoming con-call invitations | `www.screener.in/concalls/upcoming/?p=N` | **Yes** — every page, refreshed every 15 minutes |
 
 The public page's current JavaScript names both HTML routes. `fetchCalendarDay()` requests the
 first widget and every required pagination page, deduplicates by date plus `scId`, and rejects a
-response that names fewer companies than the count. `scheduledCount` and `rows.length` therefore
-match for a complete same-time read. A live-count/captured-list race may still disagree; in that
-case `believableCount()` omits the total rather than presenting two observations as one fact.
+response that names fewer companies than the count. The Worker then appends every Screener
+invitation for the selected date. `scheduledCount` and `rows.length` therefore match when both
+source lists are complete. A live-count/captured-list race may still disagree; in that case
+`believableCount()` omits the total rather than presenting two observations as one fact.
 
-**Identity is resolved live, always.** A company that has not reported yet is by definition absent
-from a map built from companies that have, so almost every calendar row would arrive with no ticker.
-The Worker resolves unknown identities within the external-subrequest budget left after pagination.
-Rows that cannot be resolved remain visible with a null ticker; they are never dropped.
+**Identity is resolved before scope filtering, always.** Moneycontrol misses are resolved live
+within the external-subrequest budget left after pagination. Screener names are resolved by the
+collector against the same collision-guarded repository company index. Rows that cannot be
+resolved remain visible with a null ticker in Universe and are excluded from Portfolio/Watchlist;
+they are never assigned by guesswork.
 
 ### It opens on today, in IST
 
@@ -1115,17 +1271,20 @@ navigation survive; this is only the answer to *"no date chosen yet"*.
 **Today is today in IST**, not in UTC. Every date on this tab is an Indian trading date, and
 `toISOString()` alone names *yesterday* between 18:30 IST and midnight.
 
-### Scheduled and filed results are separate views
+### Scheduled events and filed results are separate views
 
-The **Earnings Calendar** always renders this route's schedule, whether the selected date is past,
-present or future. The adjacent **Earnings Reported** view always renders published filings from
+The **Earnings Calendar** always renders this route's event schedule, whether the selected date is
+past, present or future. It labels Moneycontrol rows **Result** and Screener rows **Con-call**, so a
+call invitation never masquerades as a scheduled result. The adjacent **Earnings Reported** view
+always renders published filings from
 the Rapid Results feed. Switching the meaning of the calendar according to the date caused the
 screen to disagree with the linked source: on 2 Sep 2026 Moneycontrol scheduled Technocraft
 Ventures and BSE-only Vivanta Industries, while only Technocraft had filed at the time. The old UI
 therefore showed one row under “Earnings Calendar” where the source showed two.
 
-The two sources are never merged or subtracted. A schedule is an announced expectation; a filing
-is a published result, and companies can file a day either side of an announced date.
+The calendar schedule is never merged with or subtracted from the filed-results feed. A schedule is
+an announced expectation; a filing is a published result, and companies can file a day either side
+of an announced date.
 
 ### The Akamai wall — why the list is usually a capture
 
@@ -1134,7 +1293,7 @@ behind Akamai Bot Manager and can answer an ordinary client and a Cloudflare Wor
 If an expected non-empty page returns HTML with no company rows, it is a blocked response, not an
 empty calendar.
 
-So the list has two possible origins, and the payload names which one it used:
+So the Moneycontrol result list has two possible origins, and the payload names which one it used:
 
 | `listSource` | Where from | UI |
 | --- | --- | --- |
@@ -1145,18 +1304,29 @@ So the list has two possible origins, and the payload names which one it used:
 plain `Error` when the parsed row count is below the published total. Both prefer the dated capture
 over presenting a partial live list as complete.
 
+Screener carries separate provenance: `screenerUpcomingSource: 'artifact'`, its collection time,
+published total, unique-record count and page count. The artifact-backed half makes the calm status
+pill read **Schedule updated**. Missing or stale upcoming data marks the combined schedule as
+updating and asks the fixed workflow to refresh behind the existing cooldown.
+
 **The counts and the list fail independently, so each names its own origin** — `countSource`
 alongside `listSource`. Where the counts are live and the list is a capture (the usual state), a
 schedule that has moved since the capture shows up as the two disagreeing in front of the reader,
 rather than as two figures agreeing with each other and being wrong together. Cached 5 minutes at
 the edge — a schedule moves in hours, not ticks.
 
+While the Earnings Calendar is mounted, the browser revalidates the selected date every minute.
+The poll pauses while the page is hidden and checks immediately when the reader returns. A changed
+artifact repaints in place while retaining the selected scope and table view; an unchanged ETag
+costs no response body.
+
 ### Pagination coverage and Worker request bounds
 
 Each HTML page carries at most 20 companies. The all-exchange count determines how many pages are
 required; `fetchCalendarDay()` requests them in batches of at most six concurrent connections and
-deduplicates their rows. The 45-page guard keeps the request below the Workers Free-plan external-
-subrequest ceiling after the count request. Identity resolution spends only the remaining budget,
+deduplicates their rows. The 40-page guard keeps the request below the Workers Free-plan external-
+subrequest ceiling after the count request and a cold five-request Screener artifact read. Identity
+resolution spends only the remaining budget,
 so a busy calendar can never be truncated merely to preserve ticker enrichment.
 
 This was verified against 13 Aug 2026: the all-exchange count was 585, pages 1–29 each carried 20
@@ -1992,9 +2162,9 @@ exactly where it would be read as a price move.
 
 ---
 
-## News, Corporate Announcements and Insider Trades — LIVE, behind a credential
+## News, Corporate Announcements and company-level Insider Trades — LIVE, behind a credential
 
-Three feeds and company search from the Muns API, behind Worker routes. All need
+Three company-level feeds and company search from the Muns API, behind Worker routes. All need
 `Authorization: Bearer …`, so all are proxied — the token lives in `env.MUNS_TOKEN` and never
 reaches the browser, exactly as the Finology feed does on the same host.
 
@@ -2004,6 +2174,31 @@ reaches the browser, exactly as the Finology feed does on the same host.
 | `GET /api/announcements/{ticker}?from=&to=` | `GET devde.muns.io/filings/corp/announcements/{ticker}` | 900s | 365 days |
 | `GET /api/insider-trades/{ticker}?from=&to=` | `POST devde.muns.io/filings/data/insider_trades` | 900s | 365 days |
 | `GET /api/stock-search?q=` | `POST birdnest.muns.io/stock/search` | 300s | Query body fixes `user_index` at `124` |
+
+The 30-day value above is the **bounded first-paint window**, not the retention policy. Portfolio
+company news is additive and permanent:
+
+```
+public/data/news.json                    newest 30 days, loaded on first paint
+public/data/company-news/index.json      stable identities, query watermarks and archive manifest
+public/data/company-news/<YYYY-MM>.json  every portfolio article captured in that month
+public/data/company-news/undated.json    source rows without a readable publication date
+```
+
+Every established identity query starts 48 hours before its last successful observation. A newly
+added legal name, former name, brand, subsidiary or reviewed alias receives a 30-day initial
+backfill. Empty incremental responses add no rows and retract nothing. The archive is written before
+the head is derived, so an article leaving the 30-day UI window has already been retained.
+
+`scripts/company-news-identity-overrides.json` is the reviewed enrichment layer. The active Family
+book supplies ISIN, current name and ticker where one exists; overrides may supply `legalName`,
+`formerNames`, `brands`, `subsidiaries`, `aliases` and `officialDomains`. Every active security line
+maps to one identity. Warrant lines share the underlying company's identity, while private,
+BSE-only, demerged and unresolved-symbol companies retain their own ISIN identity and are searched
+by name. Those facts are never guessed from fuzzy article matches.
+
+No topic or materiality rule runs in the collector. Every usable upstream row reaches the archive;
+the News tab and alert layers apply scope, topic and materiality only after capture.
 
 On Insider Trades, the toolbar count is a count of **trade-disclosure rows**, not companies: one
 company can contribute many rows. It therefore reads *"1,295 of 1,295 trades shown"*. Company
@@ -2105,17 +2300,26 @@ lands, so every arrival shifted the indices and a cached row was moved under a k
 different article. Row keys here are content-derived, and `verify-ui.mjs` **compares** the rendered
 rows against the feed's rather than counting them.
 
-**Insider trades was right first time.** Fifteen columns, straight off the markdown table:
-`Company, Insider, Category, Security Type, Transaction, Trade Shares, Trade %, Trade Value,
-Post Holding Shares, Post Holding %, Mode, From Date, To Date, Broadcast Date, Source`. Rows that
-look duplicated in the visible columns are genuinely distinct filings — same day, same size,
-different insider, sometimes the opposite direction — which is why nothing here dedupes them.
+**Insider Trades is now four market-wide lists, not one per-company walk.** The scheduled capture
+authenticates to Screener.in and reads all four supplied newest-first listings: **Bulk deal, Block
+deal, SAST and Insider trade**. Their common five-cell presentation is normalised into the existing
+flexible row cells: value/quantity/price for Bulk and Block, percentage/quantity/mode for SAST, and
+person role/security/quantity for Insider. `Trade Category` is the one dashboard-owned field; it is
+what makes the four-way Category filter exact. Source-specific wording remains unchanged.
 
-**Insider responses now add to retained disclosures.** The supplied
-`POST https://devde.muns.io/filings/data/insider_trades` source is already the feed's upstream;
-it is called once per company, with `country: india` and explicit `fromDate` / `toDate` filters
-to avoid the unfiltered India path's 100-record cap. No second copy of the same source is fetched.
-The client also supports `country: USA` for Finviz, but this dashboard's universe remains Indian.
+The first successful run follows pagination back 30 days for every list. Later runs reread at least
+two newest pages and continue until they encounter an exact event identity from the previous source
+snapshot, so a high-volume burst of same-day rows cannot be mistaken for overlap merely because its
+date matches. `sources[].coverageFrom` preserves the initial complete boundary while
+`windowDays: 365` is the retention boundary; the UI does not pretend those are the same fact. All four
+lists must authenticate, retain the expected five headings and parse every visible row before the
+snapshot changes. A redirect to login, one missing list, a changed table shape or a pagination cap
+leaves the last good file untouched.
+
+The live `POST https://devde.muns.io/filings/data/insider_trades` path remains available for a
+company refresh and its fifteen exchange fields. It supplements the market-wide snapshot rather
+than owning scheduled coverage. `scripts/scrape-filings.mjs insider` refuses to overwrite a
+four-category snapshot; scheduled publication belongs to `scripts/scrape-screener-trades.mjs`.
 
 Scheduled captures and browser refreshes share `public/js/data/insider-history.js`. A successful
 empty or smaller response adds what it returned without deleting earlier events inside the
@@ -2124,12 +2328,13 @@ companies retain their prior capture timestamps through the existing fallback me
 news collapse guard does not discard a partial insider capture, and `FILINGS_FORCE` does not
 disable insider retention. Readable dates outside the requested window expire; undated rows stay.
 
-Overlap is matched using every row field except the redundant `raw` copy, with object keys sorted
-for comparison. Source labels, insider names, direction, quantities and document URLs all remain
-part of the match. The merge keeps the greatest observed multiplicity of identical rows, so
-repeated responses do not inflate counts and identical rows already present in one response are
-not collapsed. Without a stable filing ID, a corrected record is retained as a distinct variant.
-Headings are unioned in source order so columns from earlier responses remain visible/exportable.
+Overlap is matched on the economic event fields shared by both providers: trade category, ticker,
+date, person, normalised direction and share quantity. Provider label, URL and number formatting do
+not participate, so `Acquisition / 120000 / BSE` and `Bought / 1,20,000 Equity / Screener.in` render
+once. A Bulk event and a SAST event remain separate because their categories differ. Rows missing
+enough shared identity fall back to their complete sorted content rather than guessing. When two
+representations merge, detailed exchange cells and a direct Screener evidence URL are both retained.
+Headings are unioned in source order so columns from either provider remain visible/exportable.
 
 Browser history uses `insider-history:{ticker}` separately from the exact HTTP payload and ETag
 under `filings:insider:{ticker}`. Reloading after an empty or failed response therefore keeps prior
@@ -2151,7 +2356,7 @@ per field, keeps the untouched record beside the normalised one, and leaves anyt
 as `null` — which renders as an em dash saying the source did not carry it. **A date that will not
 parse stays blank and sorts last**; it is never given today's.
 
-**Insider trades is markdown, not JSON.** Its columns are unknown until a response arrives, so the
+**The supplemental Muns insider response is markdown, not JSON.** Its columns are unknown until a response arrives, so the
 table is built from `headers` at render time, in the source's order, under the source's headings.
 Nothing is renamed. Nothing is summed — a quantity written `1,20,000 (pledged)` is not a number.
 
@@ -2304,7 +2509,6 @@ modify the portfolio or produce earnings figures / transcript summaries from doc
 | --- | --- |
 | NSE Filings → Company NSE filings | India, all forms; only records with an explicit NSE source or an NSE document host are shown |
 | Con-call → Filed con-call documents | India, `form: ["concalls"]`; source links, not invented transcripts |
-| Earnings Hub → Filed earnings reports | India, `form: ["earnings_report"]`; separate from reported metrics and calendar |
 
 The reader selects one company inside the current Portfolio/Watchlist/Universe scope and a date
 range no longer than 366 elapsed days. Name searches return explicit company choices; ambiguous
@@ -2387,6 +2591,61 @@ source and pagination parameters; that directory's response and discovery/captur
 not been integrated or verified here.
 
 ### IPOs — native official filing feed (4 Sep 2026)
+
+#### IPOPlatform scheduled supplement (4 Sep 2026)
+
+`ipo-platform-refresh.yml` requests an hourly capture at minute 17, independently of open
+browsers. `scripts/collect-ipo-platform.mjs` reads the public SME/mainboard DataTables endpoint
+with stable ID ordering and full pagination, the `/ipo` lifecycle table, and both
+`/ipo/drhp-filed-{sme,mainboard}-ipos` lists. Company ID, name, board, source page, publisher
+status, supplied dates and observation time are retained; financial estimates, ratings and
+publisher prose are not imported. Yearless opening windows remain yearless, not inferred from
+an adjacent listing date. Original draft/refiling dates are separate; an original draft date
+is not assigned to a potentially refiled document. Unusable document links do not erase issuers.
+
+The job has read-only repository/Actions permissions. Its only output is a validated gzip
+artifact (`ipo-platform-v1.json.gz`, upload-artifact v7, `archive:false`), not commits to main,
+deployments or upstream writes. Each successful run restores and merges the previous successful
+capture for that branch. Source shrinkage above 10%, incomplete/changing pagination, duplicate
+page IDs, unparseable issuer rows, history restore failures and size-limit breaches fail closed.
+Absent issuers/documents retain their original observation times. A verified first-ever run can
+bootstrap from the public sources; an API error or expired prior artifact cannot masquerade as
+that case. Artifacts expire after 30 days: healthy runs carry history forward, but a prolonged
+outage needs archive recovery. This is rolling retention, not a permanent independent backup.
+
+`worker/ipo-platform-collector.mjs` reads only this repository/workflow's successful **main**
+captures using the existing `GH_DISPATCH_TOKEN` Actions credential. PR refs are test dependency
+injection only, never request parameters. It validates run provenance, artifact metadata,
+SHA-256, gzip and the capture schema. Signed blob redirects use a narrow HTTPS host allowlist;
+the GitHub credential is never sent to blob storage. Both compressed (2 MiB) and decompressed
+(12 MiB) bodies are stream-bounded with deadlines. A separate successful-run query preserves
+the previous good capture even during a long failure streak. It never dispatches a job.
+
+The existing `/api/ipo-filings` endpoint adds an eighth source and an optional `companies`
+directory. The seven-source bundled history stays backwards compatible. An exact official
+document URL suppresses its secondary IPOPlatform duplicate without changing official dates;
+distinct URLs are not assumed to be identical bytes. No PDF mirroring or fingerprint-based
+cross-host equivalence is claimed. Publisher document dates remain `documentDate`, with
+`filingDate:null`; the table visibly distinguishes them and Excel exports separate columns.
+General Alerts still relies on exchange filing dates rather than manufacturing dated events.
+
+The native IPO table offers **Filings** and **Issuer directory** views using the same screener
+kit. Directory status is publisher-reported as of the displayed observation, not proof that an
+issue is currently open or approved. Directory and filing history survive refresh/outage/reload
+in IndexedDB. The existing Data flowing in panel carries cadence and coverage details. Collector
+checks older than two hours, or a newer completed failed run, are dated/degraded even if the
+dashboard endpoint was just checked. Partial responses cache for 30 seconds, complete responses
+for five minutes. IPOPlatform supplements exchange discovery; it cannot guarantee completeness,
+independent document hosting, or instant publisher updates. Official feeds below stay on demand.
+
+Verification: `node scripts/verify-ipo-platform.mjs`, `node scripts/verify-ipo-filings.mjs`, and
+the existing IPO browser suite cover pagination, retained history, 100 idempotent replays,
+source dates, unsafe links, artifact security, outage behavior, directory export and layout.
+Hosted collection and artifact restoration must also pass on the PR; offline fixtures alone
+are not evidence of GitHub network reachability.
+
+The following describes the original official-source portion, with the scheduled supplement
+and directory behavior above taking precedence where noted.
 
 The primary IPOs tab now uses the **same `scoreTable` and `sectionHead` as NSE Filings**:
 white table, dashboard typography/avatars, newest-first dates, search, filing/board/source filters,
@@ -2613,9 +2872,9 @@ attempt, while `public/js/data/capture-watchdog.js` checks the committed timesta
 paint and dispatches only an overdue source. `GET /api/capture-status` reads five small metadata
 records from the deployed assets; the browser never downloads every feed merely to inspect age.
 The Worker declines in-flight runs and holds a per-source edge cooldown. The browser checks every
-15 minutes while the SPA is open and retries a due source no more than once per 30 minutes, so a
-dashboard opened before the 19:00 Insider Trades boundary still notices when that source becomes
-due without a broken credential creating a busy loop.
+15 minutes while the SPA is open and retries a due source no more than once per 30 minutes. The
+four-category trade capture is due after 75 minutes, so an open dashboard can recover a delayed
+GitHub schedule without waiting for an end-of-day boundary or creating a busy loop.
 
 For market news, an external clock can still keep the capture warm when nobody has the dashboard
 open. Any of these supplies one:
@@ -2659,8 +2918,8 @@ open. Any of these supplies one:
 one fetch after first paint — gated by the capture's real age, declined at the edge if a run is in
 flight, and never repeated in the same page. Market news is due after 45 minutes during the hours
 the publisher answers; company news after three hours; announcements after 75 minutes on weekdays;
-technicals after 07:15 IST on weekdays if today's capture is missing; insider trades at 19:00 IST
-on weekdays if today's capture is missing. An external scheduler is still useful to keep files warm
+technicals after 07:15 IST on weekdays if today's capture is missing; the four trade lists after
+75 minutes. An external scheduler is still useful to keep files warm
 when nobody is reading, but it is no longer the only recovery mechanism.
 
 **`GET /api/market-news/run` answers whether any of it is working**, via `lastAutomatic`: the most
@@ -3089,6 +3348,13 @@ and [SAHANA](https://www.nseindia.com/get-quote/equity/SAHANA/Sahana-System-Limi
 The two warrant ISINs in the saved Family book join their respective equity issuers for this
 company-announcement view only. This does not alter portfolio positions or quote-provider symbols.
 
+Future Supply Chain Solutions is retained as a historical filing identity after leaving the active
+directory. Its [NSE page](https://www.nseindia.com/get-quote/equity/FSC/Future-Supply-Chain-Solutions-Limited)
+confirms `FSC` / `INE935Q01015` and retains delisting/insolvency announcements; its
+[exchange-hosted filing](https://nsearchives.nseindia.com/corporate/FSC_01092021172712_20210901_StockExchangeFiling.pdf)
+confirms BSE code `540798` on page 1. The supplement records these sources and its verification date.
+It permits history capture and matching without relabelling the holding as currently traded.
+
 **`corp-announcements.json` remains the BSE date-indexed base capture.** Additional Muns company/date lookups are merged in the browser; they never overwrite that exchange-wide file.
 The per-company route reached 118 of 603 companies because it costs one request each against a
 ~60/minute cap. BSE publish the same filings indexed by date, so the whole exchange arrives in about
@@ -3184,13 +3450,15 @@ maximum observed multiplicity across responses. Manual lookups remain device-ret
 calendar validation, authentication, range-separated caching, overlap, empty/failure retention and
 restoring device history. Browser checks cover the form, scope identity, Source filter and export.
 
-### News and insider trades: snapshot first, live walk second
+### News and trades: snapshot first, live detail second
 
-These two are still per-ticker, capped at ~60 requests a minute. They now have separate workflows:
-company news at 09:00 and 19:00 IST, and insider trades at 19:00 IST on weekdays. Keeping them out
-of the 07:00 technicals job prevents two long walks from racing over the same files. If GitHub's
-best-effort schedule misses, the capture watchdog dispatches the same dedicated workflow once; the
-Worker declines duplicates and the browser watches the committed file.
+Company news uses per-company calls capped at ~60 requests a minute: portfolio identities run every
+three hours, every day, and full-universe top-ups run at 09:00 and 19:00 IST on weekdays. Trades use
+Screener's four market-wide date-ordered lists on a 30-minute schedule; the Muns per-ticker route
+remains an optional live detail path. Keeping both captures out of the 07:00 technicals job prevents
+long jobs from racing over the same files. If GitHub's best-effort schedule misses, the capture
+watchdog dispatches the overdue dedicated workflow; the Worker declines duplicates and the browser
+watches the committed file.
 
 **News is a search endpoint** — there is no "everything published today" request to make — so there
 is no axis to switch to the way announcements had one. It used to make the reader name companies
@@ -3198,9 +3466,15 @@ before it would show anything, on the reasoning that a live walk of the universe
 against a sixty-a-minute cap.
 
 That is still true of the *walk*, and irrelevant to what a scoped view paints: `scrape-filings.mjs`
-walks **the book first** and commits the result, so those rows are in `news.json` and cost one
-conditional GET. Measured on the shipped capture — 123 book tickers, 1,217 articles, no failures. So
-News loads like the other two feeds and the walk stays behind Refresh.
+walks **the complete book first**, including companies without an NSE ticker, and commits the
+result, so those rows are in `news.json` and cost one conditional GET. News loads like the other
+two feeds and the browser's smaller walk stays behind Refresh.
+
+`news.json` is only the bounded 30-day first-paint head. Every portfolio article first enters
+`public/data/company-news/<YYYY-MM>.json`, while `company-news/index.json` retains the company
+identity registry, per-alias success watermarks and shard manifest. Established queries overlap by
+48 hours; newly reviewed names backfill 30 days. Captured rows are append-only, and successful
+empty reads cannot retract them. Topic, materiality and portfolio filters run only in consumers.
 
 **On-open freshness re-reads the FILE; it never performs the forty-company walk.**
 `js/data/capture-watchdog.js` compares the capture timestamps with source-specific windows,
@@ -3210,20 +3484,18 @@ snapshot-derived company rows — including companies that became empty — whil
 company this session read live. Additive merging here would leave expired stories on screen until
 a reload and is therefore not a refresh.
 
-**A universe walk is merged per company, never accepted or rejected as one indivisible file.** A
+**The News universe walk is merged per company, never accepted or rejected as one indivisible file.** A
 fresh row or a fresh empty answer wins. A company that timed out or was never reached retains only
 its own last successful answer, with the original capture time in `fallback`; a company with no
 last-good answer remains explicitly failed. This closes the failure where 584 fresh answers were
-discarded because the previous file covered 585 companies, freezing every Insider Trades row on
-the older snapshot. A total outage and a collapse to less than half the prior with-rows count still
+discarded because the previous file covered 585 companies, freezing every News row on the older
+snapshot. A total outage and a collapse to less than half the prior with-rows count still
 fail closed and do not write.
 
-**A company that answered "nothing" is listed in `empty`, and that is what makes it COVERED.**
-The scrape used to write only companies that had something, so one with no trades vanished from the
-file — indistinguishable from one the run never reached. The browser counted those outstanding for
-ever: measured on the shipped insider capture, the tab reported **51 companies "have not been
-checked since"** that had all been checked and genuinely have no trades, and the strip kept offering
-to re-search them. `empty` closes that, `outstanding()` excludes it, and the four answers are now
+**A News company that answered "nothing" is listed in `empty`, and that is what makes it COVERED.**
+The per-company scrape used to write only companies that had something, so an empty result vanished
+from the file — indistinguishable from one the run never reached. `empty` closes that,
+`outstanding()` excludes it, and the four answers are now
 distinct in the file: **in `byTicker`** had something, **in `empty`** was asked and had nothing,
 **in `failed`** could not be read, **in none of the three** was never reached.
 
@@ -3238,16 +3510,15 @@ instead — but `keepRow` still drops them on the way to the table, because a ca
 this change is still a valid file and still holds 62 of them.
 
 ```
-public/data/news.json · insider-trades.json
+public/data/news.json
 {
   "kind": "announcements",
   "capturedAt": "2026-08-14T…Z", "from": "2025-08-14", "to": "2026-08-14", "windowDays": 365,
   "scope": "universe", "asked": 603, "covered": 561, "rowCount": 18422, "failedCount": 42,
   // `scope` MUST match the widest scope the tab offers. It was pinned to "book" in the scheduled
-  // workflow, so the capture held 123 companies while Universe offered 603 and Insider Trades read
-  // as a feed that had stopped working. Measured after: 603 asked, 226 with trades, 359 with none.
+  // workflow, so the capture held 123 companies while Universe offered 603 and the tab read as a
+  // feed that had stopped working.
   "withRows": 519, "emptyCount": 42,   // covered = withRows + emptyCount; never derive by subtraction
-  "headers": [],                       // insider trades only: the source's own column headings
   "byTicker": { "RELIANCE": [ … ] },   // had something in the window
   "empty":    [ "SKYGOLD", "OFSS" ],   // ASKED, and answered nothing — covered, and never re-walked
   // news only: the article's own instant where the upstream gave one, null where it gave a day.
@@ -3258,7 +3529,7 @@ public/data/news.json · insider-trades.json
 }
 ```
 
-**The three files are committed as empty placeholders** until the first scheduled run. They carry
+**New snapshot files are committed as empty placeholders** until the first scheduled run. They carry
 `capturedAt: null`, `covered: 0` and an empty `byTicker`, and they exist for two reasons: the shape
 is then documented in the repo, and the tabs fetch a 200 rather than a 404 — which otherwise breaks
 the zero-console-errors bar on every page load. **An empty placeholder is not a claim that these
@@ -3327,12 +3598,12 @@ An empty cache is the one exception: with nothing to paint, `load()` walks once 
 ### Refreshing it
 
 ```bash
-node scripts/scrape-filings.mjs                                       # news + insider, 603 companies
-node scripts/scrape-filings.mjs news                                  # one feed
-MUNS_TOKEN=…  node scripts/scrape-filings.mjs                         # straight at the upstream
+node scripts/scrape-filings.mjs news                                  # company News walk
+SCREENER_USERNAME=… SCREENER_PASSWORD=… PLAYWRIGHT_ROOT=… \
+  node scripts/scrape-screener-trades.mjs                             # all four trade lists
+MUNS_TOKEN=… node scripts/scrape-filings.mjs news                     # News straight at the upstream
 FILINGS_LIMIT=20 FILINGS_SCOPE=book node scripts/scrape-filings.mjs   # a smoke run
-FILINGS_BASE=http://127.0.0.1:8787 node scripts/scrape-filings.mjs    # against wrangler dev
-MUNS_TOKEN=… node scripts/scrape-filings.mjs                          # straight at the upstream
+FILINGS_BASE=http://127.0.0.1:8787 node scripts/scrape-filings.mjs news # against wrangler dev
 ```
 
 **It reads our own Worker by default and therefore needs no secret**, the same arrangement as the
@@ -3694,7 +3965,7 @@ offers only Indian results with valid NSE-shaped tickers.
 
 | Field | Meaning |
 | --- | --- |
-| `ticker` | **NSE symbol, upper case.** The join key, same as every file in this document. |
+| `ticker` | **Upper-case NSE symbol or six-digit BSE company code.** Digit-leading symbols such as `20MICRONS` are accepted. |
 | `name` | The display name of the row it was starred from, or `null` for a pre-v2 entry. It exists so a watched company can be *named* on a feed that does not carry it — printing the symbol back as though it were a name would be inventing one. |
 | `addedAt` | ISO timestamp. Drives the ordering: a watchlist is a working set, so newest first. |
 
@@ -3718,8 +3989,9 @@ did nothing is worse than a control that is not offered.
 **The legacy set is pruned, not reinterpreted.** An upgrading reader has an array of old row keys
 under this same key. Reading them all back as tickers would file `RELIANCE|2026-08-12|3` as a
 company — a value that meant something else, read as a measurement. The migration keeps only
-entries *shaped like* an NSE symbol (`/^[A-Z][A-Z0-9&.\-]{0,19}$/`) and drops the rest, once,
-recording that it ran under `sattva:watchlist:shape`. A dropped entry was never a company; it was
+entries *shaped like* an NSE symbol and drops composite row keys. Legacy bare numeric strings
+remain excluded; only explicit company objects can carry six-digit BSE codes. The migration
+records that it ran under `sattva:watchlist:shape`. A dropped entry was never a company; it was
 a row.
 
 ### `sattva:scope` — which of the three scopes is active
@@ -3770,8 +4042,24 @@ The score begins with the strongest event and then adds smaller company-level co
 
 Every contribution is returned as `{ label, points }` in `scoreBreakdown` for deterministic ordering and verification, but the score arithmetic is not rendered on the card.
 The derived `insight`, `metrics` and `badge` values are templates over those structured facts, not
-generated claims — see *The card's reading layer* below. `rankReport(report, { holdings })` is pure and exported so every product-rule branch can be
+generated claims — see *The card's reading layer* below. `rankReport(report, { holdings,
+positionSizes, insightCompanies })` is pure and exported so every product-rule branch can be
 verified with fixtures independently of what happens to be in today's capture.
+
+`holdings` is the public names-only coverage list. It decides membership and sector context; it
+does not contain money. In the authenticated Family host, `positionSizes.holdings` is the separately
+validated, complete positions response. Its weights only order already-surfaced cards and print as
+`% of listed portfolio`; they never add points, create an alert, change direction or survive in the
+public seven-day cache. If the private payload is incomplete or unavailable, evidence order wins.
+
+After scoring, `js/data/intelligence-graph.js` searches every same-company row in the full All Alerts
+pool, including `aiEligible: false` filings, documents, snapshots and schedules. A context row must
+come from a readable source and pass company, time and topic tests. Unsupported company attribution
+is rejected; slow Screener operating series require a shared topic, except that a material change can
+sit beside an earnings/con-call trigger. At most three independent-source-first context rows and two
+future milestones are attached. They contribute **zero priority points** and cannot originate a
+card. AI Alerts renders only one linked context sentence; Ask Research receives the same structured
+`relatedContext` and `upcoming` evidence.
 
 ### Cross-feed patterns — `confluenceOf(events, { feedById })`
 
@@ -3816,6 +4104,39 @@ never parsed back out of a sentence.
 `cardBadge(card)` names the action rather than the band: a directional disagreement reads
 `Reconcile`, because that changes what the reader does next and `Important` does not. The band
 itself stays on the card as `data-priority` and in the filter chips.
+
+### Screener company Insights — authenticated capture, context only
+
+Screener's company `#insights` tables are captured because they contain source-backed operating
+series that do not exist in the headline feeds: production, sales volumes, capacity and similar
+company-specific measures. Yearly and quarterly remain separate. Every point retains the period,
+display value, parsed numeric value when available, unit, and the tooltip's source title, bounded
+quote, page and HTTP(S) source URL. A missing section is recorded as a successful company read with
+zero rows; page text is data and is never treated as an instruction.
+
+`.github/workflows/screener-insights-refresh.yml` runs daily at 02:17 UTC using the existing
+Screener secrets. The first pass (and any pass after more than eight days without complete coverage)
+reads the complete 535-company universe plus the exact synchronized S Screen portfolio. Portfolio
+membership comes from Screener's full verified watchlist export, not the possibly paginated links
+visible on one page. Subsequent daily passes re-read every portfolio company and one stable seventh
+of the remaining universe with three browser pages and a short inter-company pause. A partial pass
+replaces companies it successfully checked, retains the last valid rows for failed/unvisited current
+targets, forgets removed targets and keeps `fullCoverage: false` when the latest check failed.
+
+The validated gzip artifact is `screener-insights-v1.json.gz`, retained for 30 days. Its public
+contract is bounded to 1,000 companies, 40 metrics per company, 16 points per series, 24 MB raw and
+4 MB compressed. It contains public company data only: no credential, cookies, account HTML,
+downloaded export or error text enters the artifact or logs. The Worker accepts only a digest-matched
+artifact from the fixed repository, workflow, ref and successful trusted run, follows only a bounded
+GitHub signed-download host, decompresses under the raw limit and re-validates the entire shape.
+
+`GET /api/screener-insights` serves that one shared capture with an ETag and five-minute edge cache.
+A missing/stale (older than 36 hours), incomplete or latest-failed capture requests one background
+workflow dispatch behind a 30-minute cooldown; it never blocks or empties the twenty All Alerts
+feeds. The browser keeps a conditional IndexedDB last-good copy under `screener-insights`. Ask
+Research reports the source unavailable until the first valid
+capture exists. Insights remain context-only everywhere: they cannot produce an All Alerts event or
+an AI Alerts card by themselves.
 
 ### `sattva:ai-muted:v1` — the archive, device-local
 
@@ -3895,8 +4216,8 @@ shipped capture, 40 of 603 companies clear 2x and 16 clear 3x.
 
 ## All Alerts history — DERIVED, no file and no route of its own
 
-`js/data/daily-alerts.js` writes nothing and introduces no route of its own. It calls the loaders of
-all eight research tabs and returns readings in one of two modes: the default one-day report, or `includeHistory: true`
+`js/data/daily-alerts.js` writes nothing and introduces no route of its own. It normalizes all
+twenty supported dashboard categories and returns readings in one of two modes: the default one-day report, or `includeHistory: true`
 for every retained row through the requested **Indian trading date**. All Alerts and AI Alerts use history
 mode; its table progressively paints the rows inside one fixed-height scroller, newest first.
 
@@ -3911,6 +4232,17 @@ mode; its table progressively paints the rows inside one fixed-height scroller, 
 | `insider` | Insider Trades | retained insider and promoter disclosures (up to 365 days in the current source contract) |
 | `news` | News | retained stories about a company in scope (30-day source window) |
 | `market-news` | News | retained market-wide stories — no company, so Universe only; bounded by the capture's keep limit |
+| `nse-filings` | NSE Filings | all retained NSE filings, including unresolved and undated rows |
+| `twitter` | News | captured posts from monitored X accounts; no inferred company mapping |
+| `ipos` | IPOs | retained official-source IPO filings and explicitly dated market observations |
+| `earnings-calendar` | Earnings Hub | captured scheduled result dates; a schedule is not a filing |
+| `scheduled-concalls` | Con-call | future calls returned by the con-call source; not held-call evidence |
+| `screener-portfolio-upcoming` | All Alerts | S Screen portfolio AGMs, ballots, results, calls and other scheduled events |
+| `investor-positions` | Super Investors | all retained disclosed positions, including unchanged and filing-due states |
+| `institutions` | Super Investors | institutional holdings and former holdings, preserving company-ownership vs fund-NAV meaning |
+| `chatter-posts` | Public Chatter | individual posts already requested in that tab; session/on-demand coverage only |
+| `company-documents` | Corp Announcements | combined-filings lookup results already requested in the session; private and on-demand |
+| `drhp-documents` | IPOs | private DRHP lookup results already requested in the session; not discovery |
 
 News appears twice because that tab owns company and market-wide feeds. Adding a source is an entry
 in `FEEDS` plus a collector — nothing else in the module is special-cased by feed id.
@@ -3975,6 +4307,8 @@ depending on what the feed is:
 | Earnings, Con-calls, Announcements, Insider, News, Market news | `capturedDay >= day` | rows carry their own date, so a later capture still covers an earlier day |
 | Price moves, Chatter | `snapshotDay === day`, **equals, not `>=`** | these are single capture views; chatter is a rolling snapshot |
 | Investor activity | `bookConfirmationDay === day` | moves are quarterly disclosure comparisons; each row follows the confirmation represented by its current investor book, not an older seed snapshot |
+| NSE filings, X posts, IPO filings, earnings calendar, scheduled calls, portfolio calendar, institutional/position snapshots | owning capture/confirmation day reaches `day` and is complete | rows keep their own event or scheduled date, while coverage belongs to the source check |
+| Chatter posts, company documents, private DRHP documents | `null` / on-demand | only records explicitly opened in this session are represented; silence makes no universe-wide claim |
 
 A feed nobody has heard from yet is `pending`, which the panel draws as *reading…* and never as
 *nothing today* — a half-finished read must not be allowed to give a finished answer.
@@ -4053,8 +4387,31 @@ critical while capture continues for known companies. No money, quantities or un
 are copied into the cache. New companies are registered before requests begin, so the next run can
 resume even if this one has no budget left. Valid removals lose portfolio priority; archived filings
 remain retained and companies still in Universe continue to be captured. Entries without a usable
-ticker remain explicitly unresolved; browser-only scope/watchlist additions are not transmitted to
-this public repository and therefore are **not registered for background capture**.
+ticker remain explicitly unresolved.
+
+Watchlist additions now enroll public company identities through `POST /api/capture-registration`.
+The request contains only ticker symbols; the server resolves ISINs and names from the verified BSE/NSE
+directories. It stores no account, device identifier, ownership, personal watchlist name or quantities.
+Personal membership and ordering remain in `sattva:watchlist`; removing a star changes that local
+scope without retracting shared company history. Existing watchlists enroll after the app opens.
+Acknowledgements persist on the device, are rechecked daily, and are accepted only after durable
+storage succeeds. Offline, rejected and unresolved registrations retry with bounded delays; diagnostic
+details remain behind the feed information control.
+
+Four SQLite Durable Object shards retain the issuer catalog across restarts, with 250 companies per
+shard and a six-request/minute caller rate limit. Each request accepts at most 50 verified ticker
+symbols and 8 KiB. Cross-origin submissions are rejected. Alias collisions and unknown identities
+cannot become guessed issuers; partial shard failures acknowledge only completed writes. Capacity
+limits remain explicit instead of silently dropping registrations. The binding and first SQLite
+migration are versioned in `wrangler.jsonc`; `worker/entry.js` exports the runtime class while route
+contracts remain importable in Node through `worker/index.js`.
+
+The scheduled company collector reads the public issuer catalog using `GET /api/capture-registration`
+and stores a last-verified copy in `filing-capture/registrations.json`. Registered issuers join the
+portfolio/universe capture queue with priority. An unavailable or unexpectedly shrunken registry
+preserves the previous catalog and makes operational health critical. Registration does not mean
+filings were already fetched: first reads and historical backfill still follow the existing paced
+schedule. No registration request dispatches a production workflow.
 
 `public/data/filing-capture/index.json` records each source/company independently: last attempt,
 last fully parsed success, response time, errors, failure count, next retry time, query symbol,
@@ -4086,17 +4443,19 @@ first; the explicit source-check button uses the authenticated API. Coverage det
 never-checked, overdue, backfilling and unregistered companies, and source-unavailable links.
 The source registry shows **Coverage gaps** while these conditions remain.
 
-Before applying recent display windows, the BSE and insider scrapers preserve records in
+Before applying recent display windows, the BSE and four-category trade scrapers preserve records in
 `public/data/announcements-archive/` and `public/data/insider-archive/`, partitioned by month with
 an index. There is no archive expiry. The migration seeds the existing real snapshots (3,180 BSE
 announcements and 2,185 insider rows); it cannot recover events the dashboard never captured.
 Read-only staging checks also seed RELIANCE and INFY (109 domestic documents and two recent
 NSE announcements); all other companies remain explicitly unchecked for the new sources.
-Insider exact-row multiplicity and source columns are preserved. The insider scan has a 30-minute
-budget and prioritizes failed, unreached and older company reads; it also has a global request gate; incomplete scans retain last-good data and explicit failures.
-A complete insider capture is reused for 18 hours between scheduled company-capture passes.
-Company capture runs before the longer insider pass; either successful capture can publish its
-saved progress even if the other step fails. Health checks run after that publication.
+Insider source columns are preserved, while repeat representations of the same economic event are
+collapsed across captures and providers. The four lists are captured every 30 minutes with a
+45-minute safety budget for the high-volume first bootstrap; ordinary overlapping refreshes finish
+far sooner. An incomplete or structurally changed list leaves the last-good snapshot untouched.
+Trades run first; the slower company-filings capture joins only the separate two-hour
+schedule. Either successful capture can publish its saved progress. Health checks run after that
+publication, and ordinary 30-minute trade runs are not failed by unrelated company-source gaps.
 
 The BSE job also runs every two hours on all days, overlapping two days and recovering from the
 last completed date if a scheduled run was missed. A source pagination shortfall or unknown
@@ -4105,14 +4464,14 @@ category prevents `coversUniverse: true` and does not advance `lastCompleteTo`.
 **Operational limit:** these jobs use the repository's existing snapshot publication pipeline once
 the change is approved and deployed. GitHub schedules are best-effort and have previously stalled;
 the browser watchdog detects an overdue company-capture report as an additional safety net.
-There is still no independent guaranteed scheduler: this Cloudflare account has no free cron slot.
-This change neither installs a production scheduler nor dispatches a production job. Deployment
-and any scheduler provisioning require separate, specific authorization. Analyst consensus remains
-unconnected, and exchange/provider omissions and unresolved company identities remain visible
-limitations. The dashboard must not advertise 100% completeness.
+The GitHub workflow is the independent scheduler for these committed captures. Four-category trades
+run at minutes 17 and 47 of every hour; the browser watchdog can dispatch the same workflow after a
+75-minute gap. GitHub schedules remain best-effort, so the capture time and verified coverage start
+stay visible. Analyst consensus remains unconnected, and exchange/provider omissions and unresolved
+company identities remain visible limitations. The dashboard must not advertise 100% completeness.
 
 Verification: `node scripts/verify-company-capture.mjs` exercises restart fairness, request pacing,
-time budgets, date gaps, partial/empty/auth failures, raw-universe scope, archive multiplicity,
+time budgets, date gaps, partial/empty/auth failures, raw-universe scope, archive event identity,
 missing static files, and coverage reporting. The existing domestic, announcement, insider and
 snapshot contract tests cover the upstream parsers and additive consumer behavior.
 

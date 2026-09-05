@@ -14,7 +14,7 @@ import * as alerts from '../data/ai-alerts.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
-import { privatePortfolioContext, readPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
+import { privatePortfolioContext, readPositionSizes, cachedPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
 export const meta = {
@@ -30,6 +30,7 @@ const PAGE_SIZE = 8;
 let ctxRef = null;
 let report = null;
 let loadToken = 0;
+let cacheToken = 0;
 let unsubs = [];
 let filter = 'all';
 let visibleLimit = PAGE_SIZE;
@@ -117,6 +118,18 @@ export function render(ctx) {
   }
 
   paint(ctx);
+  if (!report) {
+    const token = ++cacheToken;
+    void alerts.cached({
+      scope: ctx.scope,
+      holdings: coverage.holdings(),
+      positionSizes: cachedPositionSizes(),
+    }).then((cached) => {
+      if (token !== cacheToken || ctxRef !== ctx || report || !cached) return;
+      report = cached;
+      paint(ctxRef);
+    });
+  }
   recollect(ctx);
 }
 
@@ -129,6 +142,7 @@ export function destroy() {
   collecting = false;
   loadError = '';
   ctxRef = null;
+  cacheToken += 1;
   loadToken += 1;
   for (const off of unsubs) {
     try {
@@ -143,7 +157,6 @@ export function destroy() {
 async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
-  const keepResults = !!report;
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -154,17 +167,22 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
 
   // Public evidence can load while the private connector checks holding sizes.
   // A slow or unavailable size reader must not hold the first alert hostage.
-  let positions = Promise.resolve(null);
+  // An explicit Refresh must really check Family again. Navigation, calendar
+  // ageing and a quick tab return are the paths allowed to reuse the snapshot.
+  const heldSizes = forceRefresh ? null : cachedPositionSizes();
+  let positions = Promise.resolve(heldSizes);
   if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
-    const controller = new AbortController();
-    sizeController = controller;
-    sizesLoading = true;
-    positions = readPositionSizes(controller.signal).catch((err) => {
-      if (current()) sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
-      return null;
-    }).finally(() => {
-      if (current()) { sizesLoading = false; sizeController = null; }
-    });
+    if (!heldSizes) {
+      const controller = new AbortController();
+      sizeController = controller;
+      sizesLoading = true;
+      positions = readPositionSizes(controller.signal, { force: forceRefresh }).catch((err) => {
+        if (current()) sizeError = err?.message || 'Your active portfolio could not be read. Please refresh.';
+        return null;
+      }).finally(() => {
+        if (current()) { sizesLoading = false; sizeController = null; }
+      });
+    }
   }
   paint(ctx);
   try {
@@ -176,7 +194,7 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
         onPartial: (partial) => {
           // Refresh a populated view atomically; partial feeds otherwise remove
           // companies and reorder cards underneath the reader on every arrival.
-          if (!current() || keepResults) return;
+          if (!current() || report) return;
           report = partial;
           paint(ctxRef);
         },
@@ -216,12 +234,12 @@ function paint(ctx) {
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
   ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
-  ctx.root.querySelector('[data-ai-position-status]').innerHTML = refreshStatus() || positionStatus(ctx);
+  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx);
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
   // Identical results keep their DOM, expanded evidence and keyboard focus.
   for (const [selector, markup] of [
     ['[data-ai-toolbar]', report ? controls(matches, cards.length) : ''],
-    ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : (sizeError || loadError) ? '' : loadingPanel()],
+    ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : loadError ? quietFallbackPanel() : loadingPanel()],
   ]) {
     const node = ctx.root.querySelector(selector);
     if (node._markup !== markup) { node.innerHTML = markup; node._markup = markup; }
@@ -229,23 +247,17 @@ function paint(ctx) {
   wire(ctx, cards.length);
 }
 
-function refreshStatus() {
-  const error = loadError || sizeError;
-  if (error) return `<p data-ai-error class="mb-4 text-xs text-amber-700" role="status">${escapeHtml(error)} ${report ? 'Showing available alerts. ' : ''}Use Refresh to try again.</p>`;
-  return '';
-}
-
 function positionStatus(ctx) {
   if (ctx.scope !== 'portfolio') return '';
-  if (sizesLoading || awaitingBook !== null) return `<p class="mb-4 text-xs text-slate-500" role="status">${report ? 'Updating holdings in the background — current alerts remain available.' : 'Checking holding sizes…'}</p>`;
+  if (sizesLoading || awaitingBook !== null) return `<p class="mb-4 text-xs text-slate-500" role="status">${report ? 'Alerts are ready · Checking holding sizes quietly.' : 'Checking holding sizes…'}</p>`;
   const sizes = report?.meta?.positionSizes;
   if (sizes) {
     const prices = sizes.quotes?.notLive > 0 || sizes.quotes?.status !== 'live' ? 'Some prices use workbook marks' : 'Quote freshness varies by stock';
     return `<p data-ai-size-note class="mb-4 text-xs text-slate-500" title="${escapeHtml(`Portfolio checked ${sizes.checkedAt}. Quote batch ${sizes.quotes?.asOf || 'unavailable'}. Percentages include all held equities, ETFs and liquid positions in the listed book.`)}">
-      <strong class="font-semibold text-slate-700">${report.meta.sortedByHolding ? 'Largest holdings first' : 'Holding sizes unavailable · Ordered by alert priority'}</strong> · % of listed portfolio · Book ${fmtDay(sizes.bookAsOf)} · ${prices}
+      <strong class="font-semibold text-slate-700">${report.meta.sortedByHolding ? 'Largest holdings first' : 'Ordered by alert priority'}</strong> · % of listed portfolio · Book ${fmtDay(sizes.bookAsOf)} · ${prices}
     </p>`;
   }
-  return `<p class="mb-4 text-xs text-slate-500">Holding sizes unavailable · Ordered by alert priority${portfolioConnectionState() === 'locked' ? ' · <button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio</button>' : ''}</p>`;
+  return `<p class="mb-4 text-xs text-slate-500">Ordered by alert priority${portfolioConnectionState() === 'locked' ? ' · <button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio to include holding sizes</button>' : ''}</p>`;
 }
 
 function searchMarkup() {
@@ -298,8 +310,10 @@ function watchCalendar() {
 
 function head(ctx) {
   const m = report?.meta || {};
-  const status = (loadError || sizeError) ? { label: 'Refresh unavailable', tone: 'neutral', state: 'error' }
-    : report && (collecting || awaitingBook !== null) ? { label: 'Updating…', tone: 'neutral', state: 'pending' } : feedStatus(report);
+  // Connector and refresh failures stay available to the refresh controller for diagnostics, but
+  // this customer-facing queue falls back quietly instead of turning infrastructure into an alert.
+  const status = (loadError || sizeError) ? { label: report ? 'Latest available' : 'AI Alerts', tone: 'neutral', state: 'complete' }
+    : report && (collecting || awaitingBook !== null) ? { label: 'Ready · checking quietly', tone: 'neutral', state: 'pending' } : feedStatus(report);
   return sectionHead({
     title: 'AI Alerts',
     description: 'Important company signals from the last seven days.',
@@ -428,6 +442,19 @@ function metricsMarkup(card) {
     </div>`;
 }
 
+// One sentence, only when the complete top-of-funnel pool has genuinely related context. This is
+// deliberately not another panel: the card stays the same shape and the source remains one click
+// away. Context contributes no alert score (see intelligence-graph.js).
+function contextMarkup(card, scope) {
+  if (!card.contextSummary) return '';
+  const event = card.contextEvents?.[0] || card.upcomingEvents?.[0];
+  if (!event) return '';
+  const destination = evidenceDestination(event, scope);
+  return `<a data-ai-context href="${escapeHtml(destination.href)}" ${destination.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
+    aria-label="${escapeHtml(destination.ariaLabel)}" title="Context only; it does not add alert priority."
+    class="mt-2 block text-xs leading-relaxed text-slate-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${escapeHtml(card.contextSummary)}</a>`;
+}
+
 function cardMarkup(card, scope, day, archived = false) {
   const badge = card.badge || { id: 'important', label: 'Important', tone: 'neutral' };
   const tone = {
@@ -458,6 +485,7 @@ function cardMarkup(card, scope, day, archived = false) {
         ${Number.isFinite(card.holdingWeightPct) ? `<p data-ai-holding-size class="mt-1 text-xs font-semibold text-indigo-700">${card.holdingWeightPct > 0 && card.holdingWeightPct < 0.01 ? '&lt;0.01' : card.holdingWeightPct.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of listed portfolio</p>` : ''}
 
         <p data-ai-insight class="font-display mt-3 text-[17px] font-bold leading-snug text-slate-900">${escapeHtml(card.insight)}</p>
+        ${contextMarkup(card, scope)}
 
         ${confluenceMarkup(card)}
         ${metricsMarkup(card)}
@@ -679,5 +707,15 @@ function loadingPanel() {
     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100" data-ai-loading>
       <div class="flex items-center gap-3 text-sm font-semibold text-slate-600"><span class="h-2.5 w-2.5 animate-pulse rounded-full bg-indigo-500"></span>Reading and ranking the alert feeds…</div>
       <p class="mt-2 text-xs text-slate-400">Cards arrive as independent feeds finish; a slow source does not hold back the rest.</p>
+    </div>`;
+}
+
+function quietFallbackPanel() {
+  return `
+    <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100" data-ai-empty>
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-xl text-indigo-600 ring-1 ring-indigo-100">✦</div>
+      <h3 class="font-display mt-4 text-lg font-bold text-slate-900">Your AI Alerts will appear here</h3>
+      <p class="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">Open the complete alert stream to continue reviewing recent company events.</p>
+      <button type="button" data-ai-empty-general class="mt-5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700">Open All Alerts</button>
     </div>`;
 }

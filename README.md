@@ -1,14 +1,14 @@
 # Sattva Central Research
 
-An Indian-equities research dashboard: twelve tabs — Ask Research, AI and general alerts,
+An Indian-equities research dashboard: thirteen tabs — Ask Research, AI and general alerts,
 earnings, con-calls, public chatter, technical breakouts, superstar investors, news, corporate
-announcements, NSE filings and insider trades — under a global **Portfolio · Watchlist · Universe**
+announcements, IPOs, NSE filings and insider trades — under a global **Portfolio · Watchlist · Universe**
 scope toggle that applies to every one of them.
 
 **The public Portfolio snapshot is a list of company names, not a ledger.** The Portfolio scope filters the
 research tabs by Family Office's active shared workbook, through a protected names-only export.
 It refreshes on load, every minute while visible, and on Refresh; failed reads retain the saved
-book with an explicit warning. See [active holdings setup](docs/ACTIVE-FAMILY-HOLDINGS.md).
+book. Sources shows the portfolio connection as Connected or Not connected. See [active holdings setup](docs/ACTIVE-FAMILY-HOLDINGS.md).
 There are no quantities, costs or valuations in this public snapshot.
 A Portfolio Analytics workspace over an illustrative ledger used to exist and was
 deleted; it is in git history at `d3bba30` if a real ledger is ever wired.
@@ -27,6 +27,11 @@ See [the integration contract](docs/PORTFOLIO-INTEGRATION.md).
 portfolio company and surfaces the highest-signal evidence first. Materiality, recency, direction,
 real Portfolio membership, independent-feed corroboration, conflicts and sector clusters determine
 its internal ordering; cards show evidence and a next action without exposing score arithmetic.
+The shared company evidence graph also inspects every company-linked record in All Alerts—twenty
+feed categories in the current registry—and adds at most one concise, zero-score context line when
+time/topic proximity genuinely helps. Routine schedules, snapshots and documents can explain an
+alert but cannot create one. Screener's source-backed yearly/quarterly operating series use the same
+context-only boundary.
 Search covers company names, symbols, summaries and all underlying events, including evidence
 beyond the first page, within the selected scope and priority/archive filter. Each card shows its
 latest source signal date (not an AI generation timestamp, which is not recorded). Source times
@@ -40,21 +45,31 @@ copied into public files or browser storage.
 Alert evidence loads alongside holding-size checks. Completed AI Alerts remain visible during
 background refreshes and return visits, with search and pagination preserved; a completed refresh
 replaces the view together. All Alerts retains each source's existing records while it rechecks.
-Temporary Family Office failures retain the last verified company list with an unavailable status;
-expired access clears the private session. Private holding sizes remain in memory only.
+After the first complete collection, AI Alerts also keeps a seven-day public-event snapshot in
+IndexedDB so a hard reload can restore useful cards before the sources answer. That snapshot is
+deliberately universe-wide and is narrowed against the current in-memory scope on read; it contains
+no holding weights, Family replies, source records or private document-feed metadata.
+Temporary Family Office failures retain the last verified company list and quietly keep the latest
+available AI Alerts without exposing technical outage banners; expired access clears the private
+session. Private holding sizes remain in memory only.
 Stale feeds are penalised and named in a compact header warning. **All Alerts** keeps the complete
-newest-first, internally scrollable history from Earnings, Con-calls, Public Chatter, Breakouts /
-Technical, Super Investors, News, Corporate Announcements and Insider Trades, with date, direction,
-importance and feed filters. Both views reuse the same feeds and add no source of their own.
+newest-first, internally scrollable history from all twenty normalized feed categories—material
+signals plus raw filings, schedules, snapshots, documents and posts—with date, direction,
+importance and feed filters. AI Alerts reuses that pool and adds no event of its own.
 
 **Ask Research** is a conversational workspace that assembles a bounded evidence
 packet from every dashboard data module, reports source coverage and provenance, and keeps its
 conversation library on the reader's device. The Worker sends the bounded packet to Muns' hosted
 LLM router and forwards each NDJSON text chunk immediately, so answers render progressively without
-exposing the session token or waiting for the complete model response.
+exposing the session token or waiting for the complete model response. The same deterministic
+company correlations, authenticated holding weights and Screener operating context supplied to AI
+Alerts travel in the packet, so the two surfaces cannot produce competing attention models.
 
 Static runtime, no bundler, no framework, no npm dependencies for the app itself.
 Vanilla ES modules and a committed, precompiled Tailwind stylesheet. Hosted as a Cloudflare Worker.
+After first paint, a service worker warms the complete same-origin module graph. Repeat visits and
+tab switches therefore use the local app shell immediately while mutable public data revalidates in
+the background. Authenticated, `no-store` and `/api/*` responses are never put in that cache.
 
 ![Earnings Hub](docs/screenshots/earnings-hub.png)
 
@@ -74,9 +89,12 @@ deploy notes and the known gaps.
 daily Yahoo Finance EOD scrape plus NSE delivery data, refreshed weekdays at 07:00 IST by
 [a GitHub Action](.github/workflows/technicals-refresh.yml).
 
-**Earnings and con-call scans use real feeds.** Earnings Reported uses Moneycontrol and Con-call
-uses StockScans. Earnings Hub → Company Filings adds on-demand annual reports, earnings reports
-and transcripts from Screener.in through Muns. The old synthetic earnings corpus is no longer
+**Earnings and con-call scans use real feeds.** Earnings Reported uses Moneycontrol; Earnings
+Calendar combines Moneycontrol's scheduled results with Screener's complete upcoming con-call
+invitation list, keeping the two event types labelled and filtering both through Portfolio,
+Watchlist or Universe. Con-call uses StockScans plus Screener's retained document history. Earnings
+Hub → Company Filings adds on-demand annual reports, earnings reports and transcripts from
+Screener.in through Muns. The old synthetic earnings corpus is no longer
 served or loaded. Analyst consensus estimates remain **not connected**, so Earnings Surprise
 shows an unavailable state instead of invented beat/miss figures.
 

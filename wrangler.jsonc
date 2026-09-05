@@ -6,8 +6,12 @@
   // nothing reads it, and where it would look like it had been set correctly.
   "name": "sattva-central-research",
   "compatibility_date": "2026-05-23",
-  "main": "worker/index.js",
+  "main": "worker/entry.js",
   "assets": { "directory": "./public", "binding": "ASSETS" },
+  "durable_objects": {
+    "bindings": [{ "name": "CAPTURE_REGISTRY", "class_name": "CaptureRegistry" }]
+  },
+  "migrations": [{ "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] }],
 
   // WHICH REPOSITORY THE NEWS REFRESH BUTTON MAY START A RUN IN.
   //
@@ -39,6 +43,11 @@
   // a paid upstream, not billing-grade accounting; Cloudflare rate limits are intentionally
   // permissive and local to a location.
   "ratelimits": [
+    {
+      "name": "CAPTURE_REGISTRATION_LIMITER",
+      "namespace_id": "1702",
+      "simple": { "limit": 6, "period": 60 }
+    },
     {
       "name": "RESEARCH_RATE_LIMITER",
       "namespace_id": "1701",

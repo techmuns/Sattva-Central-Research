@@ -55,6 +55,8 @@ import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
 import * as records from './alert-records.js';
+import { readEntry, writeEntry } from '../core/store.js';
+import { portfolioNewsEntities } from './company-news-identity.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -67,6 +69,67 @@ import * as records from './alert-records.js';
 const IST_OFFSET_MS = 5.5 * 3600 * 1000;
 
 export const today = (now = Date.now()) => new Date(now + IST_OFFSET_MS).toISOString().slice(0, 10);
+
+// A compact, public-only materialized view for the one dashboard surface that
+// otherwise has to assemble every source before it can draw a useful card. It
+// deliberately carries no Family reply, holding weight, private document or
+// sourceRecord. Those stay memory-only; this cache is safe to survive a reload.
+export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
+export const ALERT_WINDOW_CACHE_DAYS = 7;
+
+function shiftDay(day, amount) {
+  const date = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return day;
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
+}
+
+export function materializePublicAlertWindow(report) {
+  const firstDay = shiftDay(report.day, -(ALERT_WINDOW_CACHE_DAYS - 1));
+  const privateFeeds = new Set(['company-documents', 'drhp-documents']);
+  return {
+    version: 1,
+    day: report.day,
+    feeds: (report.feeds || []).filter((feed) => !privateFeeds.has(feed.id)).map(({ events, count, todayCount, ...feed }) => feed),
+    events: (report.events || [])
+      .filter((event) => !event.private && event.ticker && event.day >= firstDay && event.day <= report.day)
+      .map(({ sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct,
+        holdingWeightPct: _holdingWeightPct, ...event }) => event),
+  };
+}
+
+function validAlertWindow(value, throughDay) {
+  const privateFeeds = new Set(['company-documents', 'drhp-documents']);
+  if (value?.version !== 1 || !/^\d{4}-\d{2}-\d{2}$/.test(value.day || '') ||
+      !Array.isArray(value.events) || !Array.isArray(value.feeds) || value.events.length > 100_000) return false;
+  const captured = Date.parse(`${value.day}T00:00:00Z`);
+  const through = Date.parse(`${throughDay}T00:00:00Z`);
+  return Number.isFinite(captured) && Number.isFinite(through) && captured <= through &&
+    through - captured < ALERT_WINDOW_CACHE_DAYS * 86_400_000 &&
+    value.feeds.every((feed) => !privateFeeds.has(feed?.id)) &&
+    value.events.every((event) => !event.private && event.sourceRecord == null &&
+      event.weightPct == null && event.holdingWeightPct == null &&
+      typeof event.ticker === 'string' && typeof event.feed === 'string');
+}
+
+/** Restore a ready public alert window, narrowed against the current in-memory scope. */
+export async function readCachedAlertWindow({ scope = 'portfolio', holdings = null, day = today() } = {}) {
+  const entry = await readEntry(ALERT_WINDOW_CACHE_KEY);
+  if (!validAlertWindow(entry?.value, day)) return null;
+  const wanted = scopeMatcher(scope, holdings || coverage.holdings());
+  const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
+  const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day && wanted.has(event.ticker));
+  const sameDay = entry.value.day === day;
+  return {
+    day,
+    scope,
+    includeHistory: true,
+    events,
+    feeds: entry.value.feeds.map((feed) => ({ ...feed, reachesToday: sameDay ? feed.reachesToday : false })),
+    pending: 0,
+    cacheSavedAt: entry.savedAt || null,
+  };
+}
 
 /** The IST clock time of an instant, as HH:MM, for a row that carries a real timestamp. */
 function istTime(value) {
@@ -246,9 +309,15 @@ export function newsSignal(row = {}) {
         DIRECTION.NEUTRAL,
         IMPORTANCE.LOW,
         'Publisher headline; not directionally graded.',
-        'Low: no tracked keyword matched, so this is general coverage rather than a watched event.'
+        reading.namesCompany === false
+          ? "Low: no tracked keyword matched, and the publisher text does not appear to name this company. Retained as an unverified result from the upstream company-name search."
+          : 'Low: no tracked keyword matched, so this is general coverage rather than a watched event.'
       ),
       keywords: [],
+      // Attribution and topic are independent. The old early return lost this field precisely on
+      // the untracked rows that make up most search spillover, leaving All Alerts unable to tell
+      // “the article names the company” from “the search API filed it under the company”.
+      namesCompany: reading.namesCompany,
     };
   }
   const labels = reading.labels;
@@ -299,10 +368,37 @@ export function newsSignal(row = {}) {
   };
 }
 
+/**
+ * The text All Alerts is allowed to match for one event.
+ *
+ * Company news is the exceptional feed: its ticker and company label come from the QUERY we sent,
+ * not from the article. The upstream sometimes fills the bottom of a short result set with recent
+ * stories about unrelated companies. Indexing that query-assigned label made a search for
+ * “Jayaswal” match a Lululemon headline even though neither the headline nor standfirst mentioned
+ * Jayaswal Neco.
+ *
+ * Do not delete or de-scope those rows. A name check is heuristic and can be false for a genuine
+ * brand/alias story, so the complete record stays in the retained stream and in the News source
+ * tab. We only stop unsupported metadata from satisfying the free-text search. The publisher's
+ * headline and standfirst remain searchable, which also means a brand-name search still finds an
+ * article that used the brand instead of the legal company name.
+ */
+export function eventSearchText(event = {}) {
+  const unsupportedCompanyAttribution = event.feed === 'news' && event.namesCompany === false;
+  const identity = unsupportedCompanyAttribution ? '' : `${event.company || ''} ${event.ticker || ''}`;
+  const publisherText = event.feed === 'news' ? event.sourceRecord?.summary || '' : '';
+  return `${event.day || ''} ${event.time || ''} ${identity} ${event.direction || ''} ${event.importance || ''} ${event.headline || ''} ${event.detail || ''} ${publisherText} ${event.signalReason || ''} ${event.importanceReason || ''} ${event.feedLabel || ''}`;
+}
+
 const numeric = (value) => {
   if (value == null || value === '') return null;
-  const n = Number(String(value).replace(/[^0-9.+-]/g, ''));
-  return Number.isFinite(n) ? n : null;
+  const text = String(value).trim();
+  if (!/\d/.test(text)) return null;
+  const n = Number(text.replace(/[^0-9.+-]/g, ''));
+  if (!Number.isFinite(n)) return null;
+  if (/\b(?:crore|cr)\b/i.test(text)) return n * 10_000_000;
+  if (/\b(?:lakh|lac|lacs)\b/i.test(text)) return n * 100_000;
+  return n;
 };
 
 /** Transaction direction plus comparable, stated thresholds; unknown transaction words stay neutral. */
@@ -321,10 +417,10 @@ export function insiderSignal(cells = {}) {
   } else if (/\binvoke\w*\b/.test(transactionWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Pledge creation/invocation in the upstream transaction wording.';
-  } else if (/\b(?:disposal|dispose\w*|sell|sale)\b/.test(transactionWords)) {
+  } else if (/\b(?:disposal|dispose\w*|sell|sold|sale)\b/.test(transactionWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Disposal/sale in the upstream transaction wording.';
-  } else if (/\b(?:acquisition|acquire\w*|buy|purchase)\b/.test(transactionWords)) {
+  } else if (/\b(?:acquisition|acquire\w*|buy|bought|purchase)\b/.test(transactionWords)) {
     direction = DIRECTION.POSITIVE;
     basis = 'Acquisition/purchase in the upstream transaction wording.';
   } else if (/\bpledge\b/.test(transactionWords)) {
@@ -341,10 +437,10 @@ export function insiderSignal(cells = {}) {
   } else if (/\b(?:invoke\w*|creat\w*)\b.*\bpledge\b|\bpledge\b/.test(modeWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Pledge creation/invocation in the upstream mode wording.';
-  } else if (/\b(?:disposal|dispose\w*|sell|sale)\b/.test(modeWords)) {
+  } else if (/\b(?:disposal|dispose\w*|sell|sold|sale)\b/.test(modeWords)) {
     direction = DIRECTION.NEGATIVE;
     basis = 'Disposal/sale in the upstream mode wording.';
-  } else if (/\b(?:acquisition|acquire\w*|buy|purchase)\b/.test(modeWords)) {
+  } else if (/\b(?:acquisition|acquire\w*|buy|bought|purchase)\b/.test(modeWords)) {
     direction = DIRECTION.POSITIVE;
     basis = 'Acquisition/purchase in the upstream mode wording.';
   }
@@ -463,7 +559,15 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     })
   );
 
-  return build();
+  const completed = build();
+  if (load) {
+    // Materialize from the already-settled source records; this starts no second
+    // read. Universe is used so the same public snapshot can be narrowed against
+    // the current Portfolio or Watchlist after a reload without persisting either.
+    const allPublic = assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
+    void writeEntry(ALERT_WINDOW_CACHE_KEY, { value: materializePublicAlertWindow(allPublic) });
+  }
+  return completed;
 }
 
 const LOADERS = {
@@ -555,6 +659,7 @@ function toFeedRow(feed, out, day) {
  */
 function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
   const wanted = scopeMatcher(scope, holdings);
+  const portfolioNewsIds = new Set(portfolioNewsEntities(holdings).map((entity) => entity.entityId));
   const feeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ).map((settled) => {
@@ -567,9 +672,20 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
       feed = toFeedRow(settled, current, day);
     }
     const all = feed.events;
-    const events = all.filter((event) => event.ticker ? wanted.has(event.ticker) : scope === 'universe');
-    const unresolved = all.filter((event) => !event.ticker).length;
-    const unscopable = scope !== 'universe' && ['market-news', 'twitter'].includes(feed.id);
+    // The S Screen calendar is already scoped by the exact synchronized portfolio membership.
+    // That fact lets BSE-only holdings survive even when they have no NSE ticker; it must not make
+    // the private portfolio schedule leak into Universe or the reader's personal watchlist.
+    // Company News has the same legitimate no-ticker case, but carries a stable ISIN entity id
+    // instead of being pre-scoped by its collector.
+    const events = all.filter((event) => {
+      if (event.portfolioOnly) return scope === 'portfolio';
+      if (event.ticker) return wanted.has(event.ticker);
+      if (feed.id === 'news' && scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
+      return scope === 'universe';
+    });
+    const unresolved = all.filter((event) => !event.ticker && !(feed.id === 'news' && event.entityId)).length;
+    const unscopable = (scope !== 'universe' && ['market-news', 'twitter'].includes(feed.id)) ||
+      (feed.portfolioOnly && scope !== 'portfolio');
     return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
       sourceCount: all.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };
@@ -777,7 +893,7 @@ function fromConcalls({ day, wanted, includeHistory }) {
   const degraded = !!m.degraded;
   const confirmedAt = degraded || m.origin === 'snapshot' ? m.fetchedAt : latestConfirmation(m.checkedAt, m.fetchedAt);
   const fetchedDay = istDay(confirmedAt);
-  const rows = concalls.all().filter((r) => inRequestedWindow(r.date || r.when, day, includeHistory) && inScope(wanted, r.ticker));
+  const rows = concalls.all().filter((r) => r.analysisTracked !== false && inRequestedWindow(r.date || r.when, day, includeHistory) && inScope(wanted, r.ticker));
   const events = rows.map((r) => {
     const sentiment = r.sentiment?.label || null;
     const direction = ['Bullish', 'Optimistic'].includes(sentiment)
@@ -1178,7 +1294,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
   const events = rows.map((r) => ({
     // THE TICKER IS PART OF THE IDENTITY. One story is returned by several companies' searches,
     // and a RELIANCE row and an HDFCBANK row about the same article are two rows, not one.
-    id: `news:${r.ticker || '?'}|${r.url || JSON.stringify([r.date, r.title, r.source])}`,
+    id: `news:${r.entityId || r.ticker || '?'}|${r.url || JSON.stringify([r.date, r.title, r.source])}`,
     sourceRecord: r,
     // THE TRACKED KEYWORDS ARE THIS FEED'S MATERIALITY RULE. Before them every story on the busiest
     // feed here was low-importance and neutral, so 11,060 rows of name-matched search results —
@@ -1192,6 +1308,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     time: istTime(r.publishedAt) || null,
     at: r.date,
     ticker: r.ticker || null,
+    entityId: r.entityId || null,
     company: r.company || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
     headline: r.title || 'Story',
     detail: r.source ? `Published by ${r.source}` : 'Publisher not carried',
