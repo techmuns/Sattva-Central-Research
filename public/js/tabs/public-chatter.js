@@ -33,9 +33,18 @@ export const meta = {
   id: 'public-chatter',
   title: 'Public Chatter',
   subtitle: 'What retail is actually discussing, across ValuePickr, TradingQnA and Google News.',
-  // No shell sub-view picker: Coverage and Not in coverage are simple tabs inside this page.
-  // They remain one feed and one provenance.
+  // No shell sub-view picker: Coverage, Not in coverage and Telegram are simple tabs inside this
+  // page.
   subviews: [],
+  // TWO OF THIS TAB'S THREE SECTIONS CARRY NO COMPANY AT ALL, so an empty watchlist is not an
+  // empty page. Without this the shell replaces the whole tab with its zero-watchlist panel and
+  // states, in those words, that "Public Chatter has nothing to show in this scope" — while the
+  // Telegram section holds a hundred-odd posts and the uncovered section holds every entry that
+  // resolved to no symbol, neither of which the scope can narrow. That is a false claim made by
+  // the chrome about content it is hiding, and it is the same reason Ask Research and IPOs declare
+  // this. The Coverage section keeps its own scope-aware empty state, which names the watchlist
+  // explicitly rather than blaming a filter the reader never set.
+  allowEmptyScope: true,
 };
 
 let renderToken = 0;
