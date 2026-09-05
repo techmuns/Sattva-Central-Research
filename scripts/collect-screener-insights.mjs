@@ -88,7 +88,11 @@ export async function exportPortfolioTargets(page) {
   const manageRows = await page.locator('button[onclick*="Watchlist.removeCompany"]').evaluateAll((buttons) => buttons.map((button) => {
     const container = button.closest('li, tr') || button.parentElement;
     const link = container?.querySelector('a[href^="/company/"]');
-    return { href: link?.getAttribute('href') || '', name: link?.textContent?.trim() || '' };
+    // Current Screener markup uses a span, not a company link. Read the public ID from
+    // the control's attribute only; never evaluate its handler or click the control.
+    const companyId = /removeCompany\(['"](\d+)['"]\)/.exec(button.getAttribute('onclick') || '')?.[1] || '';
+    const name = (link?.textContent || container?.querySelector('.shrink-text')?.textContent || '').trim();
+    return { companyId, href: link?.getAttribute('href') || '', name };
   }));
   if (manageRows.length !== records.length) throw Error('Watchlist URL inventory count mismatch');
   return { records, manageRows };
