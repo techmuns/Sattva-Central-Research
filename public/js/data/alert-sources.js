@@ -10,6 +10,7 @@ import * as ipoFilings from './ipo-filings.js';
 import { screenerUpcomingKey } from './screener-upcoming-shared.js';
 import { revalidatedJson } from '../core/store.js';
 import { documentRecords, record, istDay } from './alert-records.js';
+import { announcementSignal } from './filing-signals.js';
 
 let calendarCapture = null;
 let calendarTickers = {};
@@ -20,9 +21,14 @@ const confirmed = (asOf, day, incomplete = false, note = null) => ({
 const slugTicker = (value) => value && !String(value).toUpperCase().startsWith('SCRIP-') ? String(value).toUpperCase() : null;
 
 export function nseRecords(rows) {
-  return rows.map((r) => record({ id: `nse:${nse.rowKey(r)}`, row: r, at: r.publishedAt,
-    ticker: r.ticker, company: r.company, headline: r.subject || 'NSE filing', detail: r.description,
-    url: r.url, kind: 'filing' }));
+  return rows.map((r) => {
+    const event = record({ id: `nse:${nse.rowKey(r)}`, row: r, at: r.publishedAt,
+      ticker: r.ticker, company: r.company, headline: r.subject || 'NSE filing', detail: r.description,
+      url: r.url, kind: 'filing', ...announcementSignal({ ...r, title: r.subject }) });
+    // Official issuer identity/date/link are required. Raw unresolved records stay in All Alerts.
+    event.aiEligible = event.importance === 'high' && !!event.ticker && !!event.day && !!event.url;
+    return event;
+  });
 }
 
 export function ipoRecords(snapshots) {

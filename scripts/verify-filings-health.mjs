@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { assessFilingsHealth } from '../public/js/data/filings-health-shared.js';
+import { assessFilingsHealth, FILINGS_HEALTH_FILES } from '../public/js/data/filings-health-shared.js';
 import worker from '../worker/index.js';
 
 const now = Date.now(), recent = new Date(now - 60000).toISOString();
@@ -14,6 +14,9 @@ const healthy = {
   company: { version: 1, companies: [{ ticker: 'A' }], createdAt: recent, lastRunFinishedAt: recent, requestedFrom: from, requestedTo: to,
     sources: { announcements: { A: { lastSuccessAt: recent, recentCheckedAt: recent, ranges: [{ from, to }] } }, domestic: { A: { lastSuccessAt: recent } } } },
   announcements: { byTicker: {}, rowCount: 0, capturedAt: recent, coversUniverse: true, shortfall: [], failed: [] },
+  news: { version: 1, updatedAt: recent, entities: [{ entityId: 'isin:PRIVATE', key: 'ISIN:PRIVATE', queries: ['Private Alpha Ltd', 'AlphaBrand'] }],
+    queries: { 'isin:PRIVATE': Object.fromEntries(['Private Alpha Ltd', 'AlphaBrand'].map(q => [q, { lastAttemptAt: recent, lastSuccessAt: recent, lastResultCount: 0, error: null }])) } },
+  twitter: { posts: [], failed: [], capturedAt: recent, collection: { status: 'ok' } },
   insider: { byTicker: {}, rowCount: 0, empty: ['A'], capturedAt: recent, asked: 1, covered: 1, failed: {}, fallback: {} },
 };
 const assess = (value) => assessFilingsHealth(value, { now });
@@ -41,8 +44,8 @@ assert(assess(badTime).findings.some((f) => f.code === 'invalid-check-time'));
 const missing = structuredClone(healthy);
 delete missing.company.sources.domestic;
 assert.equal(assess(missing).ok, false);
-assert.equal(assess({}).critical, 3, 'missing files fail closed for each source independently');
-assert.equal(assess(null).critical, 3);
+assert.equal(assess({}).critical, 4, 'missing files fail closed for each source independently');
+assert.equal(assess(null).critical, 4);
 for (const [source, key, value] of [
   ['announcements', 'failed', [null]], ['announcements', 'rowCount', undefined],
   ['insider', 'asked', undefined], ['insider', 'asked', 0], ['insider', 'covered', 2],
@@ -82,12 +85,35 @@ assert.equal(assess(links).status, 'degraded', 'source-null slots remain visible
 assert.deepEqual(healthy, original, 'audit never changes a capture');
 assert.equal(assessFilingsHealth(auth, { now, sources: ['announcements'] }).ok, true, 'capture gates audit only their own sources');
 
+// Every reviewed identity query is mandatory even if the primary name returned zero new rows.
+for (const [label, mutate, code] of [
+  ['missing alias', b => { delete b.news.queries['isin:PRIVATE'].AlphaBrand; }, 'company-never-checked'],
+  ['blocked alias', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.error = { reason: 'unauthorised', message: 'secret' }; }, 'authentication-failed'],
+  ['stale alias in a fresh index', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.lastSuccessAt = new Date(now - 5 * 3600000).toISOString(); }, 'company-check-overdue'],
+  ['unfinished alias', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.lastAttemptAt = new Date(now).toISOString(); }, 'company-reads-incomplete'],
+  ['no identity registry', b => { b.news.entities = []; }, 'invalid-capture'],
+  ['null identity', b => { b.news.entities.push(null); }, 'invalid-capture'],
+  ['overdue job', b => { b.news.updatedAt = new Date(now - 5 * 3600000).toISOString(); }, 'capture-overdue'],
+]) {
+  const fixture = structuredClone(healthy); mutate(fixture);
+  const result = assess(fixture);
+  assert(!result.ok && result.findings.some(f => f.source === 'news' && f.code === code), label);
+  assert(!JSON.stringify(result).includes('secret'));
+}
+for (const fixture of [null, { posts: [], failed: [], capturedAt: null },
+  { posts: [{ text: 'retained' }], failed: [], capturedAt: recent, collection: { status: 'disabled' } },
+  { posts: [], failed: [], capturedAt: recent, collection: { status: 'unavailable' } }]) {
+  const result = assess({ ...healthy, twitter: fixture });
+  assert.equal(result.ok, true, 'optional X cannot take down primary-source health');
+  assert.equal(result.status, 'degraded', 'optional X cannot be mistaken for healthy coverage');
+}
+
 const originalCaches = globalThis.caches, originalFetch = globalThis.fetch;
 const cache = new Map(), jobs = [], assetReads = [];
 globalThis.caches = { default: { match: async (key) => cache.get(key.url)?.clone(), put: async (key, value) => cache.set(key.url, value.clone()) } };
 globalThis.fetch = async () => { throw new Error('Health endpoint must never call an upstream or dispatch a capture'); };
 let data = healthy;
-const paths = { '/data/filing-capture/index.json': 'company', '/data/corp-announcements.json': 'announcements', '/data/insider-trades.json': 'insider' };
+const paths = Object.fromEntries(Object.entries(FILINGS_HEALTH_FILES).map(([source, file]) => [`/data/${file}`, source]));
 const env = { ASSETS: { fetch: async (request) => {
   const path = new URL(request.url).pathname;
   assetReads.push(path);
@@ -103,9 +129,9 @@ try {
   assert.equal((await get('POST')).status, 405);
   assert.equal(assetReads.length, 0);
   assert.equal((await get()).status, 200);
-  assert.equal(assetReads.length, 3);
+  assert.equal(assetReads.length, 5);
   await get();
-  assert.equal(assetReads.length, 3, 'short health cache avoids repeatedly downloading large captures');
+  assert.equal(assetReads.length, 5, 'short health cache avoids repeatedly downloading large captures');
   cache.clear(); data = auth;
   const response = await get();
   assert.equal(response.status, 503);
@@ -129,6 +155,8 @@ try {
   data = healthy;
   await promisify(execFile)(process.execPath, ['scripts/check-filings-health.mjs'], options);
   assert.equal(JSON.parse(readFileSync(report)).status, 'healthy');
+  const newsWorkflow = readFileSync(new URL('../.github/workflows/company-news-refresh.yml', import.meta.url), 'utf8');
+  assert(newsWorkflow.indexOf('Check company-news capture health') > newsWorkflow.indexOf('git push origin HEAD:main'), 'news health gate preserves progress before failing incomplete captures');
   const announcementsWorkflow = readFileSync(new URL('../.github/workflows/announcements-refresh.yml', import.meta.url), 'utf8');
   assert(announcementsWorkflow.indexOf('Check operational capture health') > announcementsWorkflow.indexOf('git push origin HEAD:main'), 'announcement health gate runs after preserving/publishing captured progress');
   const insiderWorkflow = readFileSync(new URL('../.github/workflows/insider-trades-refresh.yml', import.meta.url), 'utf8');

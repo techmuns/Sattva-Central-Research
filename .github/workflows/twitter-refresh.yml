@@ -4,9 +4,8 @@ name: Twitter refresh
 # committed like every other feed here. The browser reads the committed file; nothing in the app
 # talks to x.com.
 #
-# WHY AN ACTION RATHER THAN A WORKER ROUTE — the same answer as the market-news feed. x.com is not
-# readable from a browser (no CORS, and it needs a logged-in session) or from a Cloudflare Worker,
-# and the retrieval library asked for is Python. A normal runner is the only reader that works.
+# Optional collection is off unless the operator sets X_CAPTURE_ENABLED=true. Core research never
+# depends on a scraping login. A blocked sign-in is recorded honestly; no proxy/account rotation.
 #
 # A DISPATCH MAY NAME ONE HANDLE. The dashboard's "Add Handle" control sends it, so an account
 # somebody just added is read now rather than at the next scheduled run. It is validated on the
@@ -46,6 +45,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python
+        if: vars.X_CAPTURE_ENABLED == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -54,17 +54,14 @@ jobs:
       # public/, in the Worker or in the Node scripts depends on Python. See the header of
       # scripts/scrape-twitter.py for why this is the exception to the no-dependencies rule.
       - name: Install twscrape
+        if: vars.X_CAPTURE_ENABLED == 'true'
         run: pip install --quiet twscrape
 
-      # EXIT CODES ARE THE INTERFACE.
-      #   0  read what it could and wrote a capture
-      #   2  every account failed and a good capture already exists — the file is untouched, which
-      #      is not a fault in this repository and must not be a red build
-      #   3  no X account is configured, so nothing could be read at all — a one-off setup step,
-      #      reported as a warning so the operator sees it without the run failing every 30 minutes
-      #   1  a real fault: the library changed, the runner broke, this code is wrong
+      # 0 = completed (possibly partial); 2 = failed reads with retained data; 3 = no sign-in.
+      # Preserve status and retained posts before reporting unexpected collector failures.
       - name: Collect posts
         id: collect
+        if: vars.X_CAPTURE_ENABLED == 'true'
         env:
           X_ACCOUNTS: ${{ secrets.X_ACCOUNTS }}
           TWITTER_ADD: ${{ github.event.inputs.handle || '' }}
@@ -74,20 +71,21 @@ jobs:
           code=$?
           set -e
           echo "code=$code" >> "$GITHUB_OUTPUT"
-          if [ "$code" = "2" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::warning title=No account could be read::The committed capture is unchanged."
-            exit 0
-          fi
-          if [ "$code" = "3" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::warning title=No X account could sign in::Either no X_ACCOUNTS secret is set (username:password:email:email_password, one per line), or the accounts it names could not sign in — X challenges datacentre addresses, so a runner is often refused where a home connection is not; twscrape takes a proxy for that. The committed capture is unchanged and no handle has been marked unreadable. Handles added in the dashboard stay listed as being added until a run reads them."
-            exit 0
-          fi
-          exit $code
+          exit 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Record optional collection status
+        env:
+          X_CAPTURE_ENABLED: ${{ vars.X_CAPTURE_ENABLED }}
+          TWITTER_EXIT_CODE: ${{ steps.collect.outputs.code }}
+        run: node scripts/record-twitter-status.mjs
 
       - name: Commit the capture
-        if: success() && steps.collect.outputs.skip != 'true' && github.ref == 'refs/heads/main'
+        if: success() && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -105,3 +103,7 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+
+      - name: Report unexpected collector failure
+        if: vars.X_CAPTURE_ENABLED == 'true' && steps.collect.outputs.code != '0' && steps.collect.outputs.code != '2' && steps.collect.outputs.code != '3'
+        run: exit 1

@@ -4,8 +4,10 @@ export const FILINGS_HEALTH_FILES = {
   company: 'filing-capture/index.json',
   announcements: 'corp-announcements.json',
   insider: 'insider-trades.json',
+  news: 'company-news/index.json',
+  twitter: 'twitter-posts.json',
 };
-export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 3 };
+export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 3, newsHours: 4, twitterHours: 2 };
 const object = (value) => value && typeof value === 'object' && !Array.isArray(value);
 const stamp = (value) => typeof value === 'string' ? Date.parse(value) : NaN;
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
@@ -23,8 +25,59 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
   for (const source of sources) {
     if (!Object.hasOwn(FILINGS_HEALTH_FILES, source)) throw new Error(`Unknown health source: ${source}`);
     const body = captures?.[source];
-    if (!object(body)) { add(source, 'capture-unavailable', 'critical'); continue; }
-    if (source === 'company') {
+    if (!object(body)) { add(source, 'capture-unavailable', source === 'twitter' ? 'warning' : 'critical'); continue; }
+    if (source === 'twitter') {
+      // Social coverage is optional. An unavailable login must never certify a quiet feed or
+      // make the primary research service unavailable. Only controlled codes leave this audit.
+      if (!Array.isArray(body.posts) || !Array.isArray(body.failed)) add(source, 'invalid-capture', 'warning');
+      const status = body.collection?.status;
+      if (status === 'disabled') add(source, 'optional-source-disabled', 'warning');
+      else if (status && status !== 'ok') add(source, 'optional-source-unavailable', 'warning');
+      else {
+        const time = stamp(body.capturedAt);
+        if (!Number.isFinite(time)) add(source, 'optional-source-never-captured', 'warning');
+        else if (time > now + 600000 || now - time > FILINGS_HEALTH_LIMITS.twitterHours * 3600000) add(source, 'optional-source-stale', 'warning');
+        if (body.failed?.length) add(source, 'optional-source-partial', 'warning', [], body.failed.length);
+      }
+    } else if (source === 'news') {
+      // Inspect every active legal-name/alias query, including tickerless holdings. A newly
+      // written index and thousands of retained articles cannot conceal an unvisited company.
+      if (body.version !== 1 || !Array.isArray(body.entities) || !body.entities.length || !object(body.queries)) {
+        add(source, 'invalid-capture', 'critical'); continue;
+      }
+      age(source, body.updatedAt, FILINGS_HEALTH_LIMITS.newsHours, 'capture-overdue');
+      const groups = new Map();
+      const group = (code, entity) => {
+        if (!groups.has(code)) groups.set(code, new Set());
+        groups.get(code).add(entity);
+      };
+      const seen = new Set();
+      for (const entity of body.entities) {
+        if (!object(entity) || typeof entity.entityId !== 'string' || !entity.entityId || seen.has(entity.entityId) ||
+            !Array.isArray(entity.queries) || !entity.queries.length || entity.queries.some((q) => typeof q !== 'string' || !q.trim())) {
+          group('invalid-capture', 'identity'); continue;
+        }
+        seen.add(entity.entityId);
+        const key = entity.key || entity.ticker || entity.entityId;
+        for (const query of new Set(entity.queries)) {
+          const entry = body.queries[entity.entityId]?.[query];
+          if (!object(entry) || !entry.lastSuccessAt) group('company-never-checked', key);
+          if (!object(entry)) continue;
+          if (entry.error) group(['no-token', 'unauthorised'].includes(entry.error.reason) ? 'authentication-failed' : 'source-read-failed', key);
+          if (entry.lastSuccessAt) {
+            const success = stamp(entry.lastSuccessAt);
+            if (!Number.isFinite(success) || success > now + 600000) group('invalid-check-time', key);
+            else if (now - success > FILINGS_HEALTH_LIMITS.newsHours * 3600000) group('company-check-overdue', key);
+          }
+          // A newer attempt without a matching success is unfinished even if a checkpoint forgot
+          // to include an error. Zero results from a completed query are valid, not a failure.
+          const attempt = stamp(entry.lastAttemptAt);
+          if (!Number.isFinite(attempt) || attempt > now + 600000) group('invalid-check-time', key);
+          else if (entry.lastSuccessAt && attempt > stamp(entry.lastSuccessAt)) group('company-reads-incomplete', key);
+        }
+      }
+      for (const [code, affected] of groups) add(source, code, 'critical', [...affected]);
+    } else if (source === 'company') {
       if (body.version !== 1 || !Array.isArray(body.companies) || !body.companies.length || body.companies.some((c) => !object(c) || typeof c.ticker !== 'string' || !/^[A-Z0-9&._-]{1,80}$/.test(c.ticker)) || !object(body.sources)) {
         add(source, 'invalid-capture', 'critical'); continue;
       }
