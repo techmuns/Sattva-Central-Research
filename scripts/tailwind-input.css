@@ -107,7 +107,8 @@ html[data-alerts-focus-mode="true"] [data-reading-layout="table"] [data-app-nav]
   .alerts-workspace [data-export-format] { display: none; }
   .alerts-workspace [data-export] { padding-left: 10px; padding-right: 10px; }
   .alerts-source-panel { padding: 12px; max-height: 50vh; }
-  .alerts-view-controls .alerts-layout-button { padding-left: 8px; padding-right: 8px; }
+  .alerts-view-controls .alerts-layout-button { padding-left: 8px; padding-right: 8px; font-size: 12px; gap: 6px; }
+  .alerts-view-controls .alerts-selection { font-size: 11px; padding-left: 4px; padding-right: 4px; }
   .alerts-workspace [data-table-toolbar] { padding-top: 8px; padding-bottom: 8px; }
   .alerts-workspace [data-table-toolbar] > div:first-child > div:first-child { flex-basis: 100%; max-width: none; }
   .alerts-workspace [data-table-filter], .alerts-workspace [data-watch-toggle] { flex: 1 1 calc(50% - 4px); min-width: 0; width: calc(50% - 4px); max-width: calc(50% - 4px); }

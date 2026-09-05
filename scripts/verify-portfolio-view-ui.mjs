@@ -318,6 +318,7 @@ try {
     await frame.locator('[data-alerts-focus]').click();
     const focused = await measure();
     assert.equal(focused.headerVisible, false);
+    assert(focused.controls <= (size.width >= 1024 ? 52 : 100), `view controls keep their compact row budget: ${JSON.stringify(focused)}`);
     assert(focused.visibleHeight > normal.visibleHeight + 60, `focus gains meaningful visible reading room: ${JSON.stringify({ normal, focused })}`);
     assert(focused.visibleHeight >= focused.viewport * (size.width >= 1024 ? 0.6 : 0.45), `focus leaves a useful reading area even with wrapped mobile controls: ${JSON.stringify(focused)}`);
     // The shared table case-folds its saved query on a source repaint. Verify the search term,
@@ -326,6 +327,12 @@ try {
     await frame.locator('[data-table-search]').fill('');
     if (size.width === 1440 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT });
     if (size.width === 390 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT.replace('.png', '-mobile.png') });
+    // Font fallback differs between macOS and Linux. Exercise wider control-label metrics too
+    // so a toolbar that only fits with the developer's system font cannot silently ship.
+    const widerFont = await frame.addStyleTag({ content: '.alerts-controls { font-family: Verdana, sans-serif; }' });
+    const fallback = await measure();
+    assert(fallback.controls <= (size.width >= 1024 ? 52 : 100), `fallback-font controls stay compact: ${JSON.stringify(fallback)}`);
+    await widerFont.evaluate(node => node.remove());
     await frame.locator('[data-alerts-focus]').press('Escape');
     assert.equal((await measure()).headerVisible, true, 'Escape restores the header and navigation');
     if (size.width === 1440 && process.env.ALERTS_LAYOUT_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_LAYOUT_SCREENSHOT });
