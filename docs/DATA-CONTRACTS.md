@@ -3179,9 +3179,9 @@ pages are public, so there is no secret to install and none to expire.
   "walkedFrom": 7140,          // the oldest id ever WALKED — what a backfill resumes from
   // COVERAGE IS DERIVED FROM THE SPAN, NEVER FROM A TALLY. These are the lowest and highest
   // message ids the capture holds; everything between them that is not a post is an id this route
-  // could not read. A running tally could not answer this honestly across runs — an hourly
-  // incremental walk touches ~60 ids, and writing its counts here would overwrite a 700-id
-  // measurement with "2 of 60 readable", reporting the last hour as though it described the channel.
+  // could not read. A running tally could not answer this honestly across runs — an incremental
+  // walk touches only MISS_RUN ids, and writing its counts here would overwrite a 700-id
+  // measurement with "2 of 60 readable", reporting one short walk as though it described the channel.
   "spanFrom": 93166,
   "spanTo": 93384,
   // This run only, for whoever reads the job log. Nested so it can never be mistaken for coverage.
@@ -3261,8 +3261,8 @@ not be read, and outside the span was never asked.
 The footnote states the span the capture holds and how many of those ids carried text, because a
 batch of caption-less PDFs would otherwise read as a quiet channel. It is computed from `spanFrom`,
 `spanTo` and the posts themselves, so it cannot drift: an earlier version tallied it per run, which
-would have let one hourly walk of sixty ids overwrite a seven-hundred-id measurement and report the
-last hour as though it described the channel. **This route genuinely cannot tell a caption-less document from
+would have let one incremental walk of sixty ids overwrite a seven-hundred-id measurement and report
+that short walk as though it described the channel. **This route genuinely cannot tell a caption-less document from
 a deleted message**, so it claims neither and reports both together as ids it could not read —
 *searched-and-empty*, *never-asked* and *could-not-be-read* stay three different answers, as they do
 on the filings snapshots.

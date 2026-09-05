@@ -90,7 +90,9 @@ const KEEP = Number(process.env.TELEGRAM_KEEP || 600);
 const MISS_RUN = Number(process.env.TELEGRAM_MISS_RUN || 60);
 
 // Ids to walk BACKWARDS from the head. Zero on a normal run — history does not change, so re-reading
-// it every hour would be spending somebody else's service to confirm what we already hold.
+// it on every scheduled run would be spending somebody else's service to confirm what we already
+// hold. Deliberately phrased without an interval: the cron is a request GitHub may not honour, so
+// no comment here should imply a run spacing this process cannot observe.
 const BACKFILL = Number(process.env.TELEGRAM_BACKFILL || 0);
 
 // Pacing. Telegram serves the landing page instead of the post when pushed, so this is correctness
@@ -516,8 +518,8 @@ async function main() {
       //
       // So ask a question that separates them, with positive evidence and one request: re-read an
       // id we KNOW is a post. If it still reads as a post, t.me is answering us properly and the
-      // channel is simply quiet. If it now reads blank, the same page that carried a post an hour
-      // ago carries nothing, and that is a refusal rather than a silence.
+      // channel is simply quiet. If it now reads blank, a page this capture holds as a real post
+      // carries nothing now, and that is a refusal rather than a silence.
       const control = Math.max(...byId.keys());
       const check = await readId(control, { signature });
       if (check.state === 'post') {
@@ -526,9 +528,9 @@ async function main() {
       }
       console.error(
         `Read ${blank} ids and not one carried a post, AND message ${control} — which this capture ` +
-        `holds as a real post — now reads as empty too. The same page answered differently an hour ` +
-        `ago, so this looks like t.me refusing this runner rather than a quiet channel. The capture ` +
-        `is unchanged.`,
+        `holds as a real post, first read ${byId.get(control)?.firstSeenAt || 'earlier'} — now reads as ` +
+        `empty too. The same page has answered two different ways, so this looks like t.me refusing ` +
+        `this runner rather than a quiet channel. The capture is unchanged.`,
       );
       return 4;
     }
@@ -562,9 +564,9 @@ async function main() {
     walkedFrom: walkedFrom || (posts.length ? Math.min(...posts.map((p) => Number(p.id))) : 0),
     // COVERAGE IS DERIVED FROM THE CAPTURE'S OWN SPAN, NOT FROM A RUNNING TALLY.
     // The tab states how much of this channel the route can see, and a tally cannot answer that
-    // honestly across runs: an hourly incremental walk touches ~60 ids, so writing its counts here
-    // would overwrite a 700-id measurement with "2 of 60 readable" and the footnote would report
-    // the last hour as though it described the channel. The span does not drift — it is
+    // honestly across runs: an incremental walk touches only MISS_RUN ids, so writing its counts
+    // here would overwrite a 700-id measurement with "2 of 60 readable" and the footnote would
+    // report one short walk as though it described the channel. The span does not drift — it is
     // recomputable from the file at any time, and it is a statement about the ids this capture
     // actually covers.
     spanFrom: posts.length ? Math.min(...posts.map((p) => Number(p.id))) : 0,
