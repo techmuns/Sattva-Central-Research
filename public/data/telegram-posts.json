@@ -6,7 +6,7 @@
   "route": "embed+permalink",
   "publishesTime": true,
   "capturedAt": "2026-09-05T19:42:17.907Z",
-  "lastCheckedAt": "2026-09-05T19:42:17.907Z",
+  "lastCheckedAt": "2026-09-05T19:46:42.375Z",
   "headId": 93384,
   "lowestId": 93006,
   "spanFrom": 93006,
@@ -14,17 +14,15 @@
   "historyNextId": 92881,
   "historyComplete": false,
   "discoveryNextId": 93465,
-  "retryIds": [
-    92882
-  ],
+  "retryIds": [],
   "lastRun": {
-    "at": "2026-09-05T19:42:17.907Z",
-    "status": "partial",
-    "scanned": 583,
-    "posts": 123,
+    "at": "2026-09-05T19:46:42.375Z",
+    "status": "ok",
+    "scanned": 62,
+    "posts": 1,
     "unavailable": 0,
-    "missing": 459,
-    "errors": 1,
+    "missing": 61,
+    "errors": 0,
     "error": null
   },
   "posts": [

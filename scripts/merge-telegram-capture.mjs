@@ -26,13 +26,17 @@ const checks = json('api', `repos/${repo}/commits/${pr.headRefOid}/check-runs`, 
 if (checks.some((c) => c.status !== 'completed' || !['success', 'neutral', 'skipped'].includes(c.conclusion))) {
   throw new Error('Another check is pending or failed; archive PR remains open');
 }
-const reviews = json('api', `repos/${repo}/pulls/${number}/reviews`);
-const inline = json('api', `repos/${repo}/pulls/${number}/comments`);
-const comments = json('api', `repos/${repo}/issues/${number}/comments`);
-if (reviews.some((r) => ['CHANGES_REQUESTED', 'COMMENTED'].includes(r.state)) || inline.length || comments.length) {
+const pages = (path) => json('api', path, '--paginate', '--slurp').flat();
+const reviews = pages(`repos/${repo}/pulls/${number}/reviews`);
+const inline = pages(`repos/${repo}/pulls/${number}/comments`);
+const comments = pages(`repos/${repo}/issues/${number}/comments`);
+const informational = (comment) =>
+  (comment.user?.login === 'cloudflare-workers-and-pages[bot]' && comment.body.startsWith('## Deploying with')) ||
+  (comment.user?.login === 'chatgpt-codex-connector[bot]' && comment.body.startsWith('You have reached your Codex usage limits for code reviews.'));
+if (reviews.some((r) => ['CHANGES_REQUESTED', 'COMMENTED'].includes(r.state)) || inline.length || comments.some((c) => !informational(c))) {
   console.log('Review feedback is present; leaving the archive PR open for review.');
   process.exit(0);
 }
 // GitHub enforces branch protection. No --admin and no bypass of required review/check gates.
 gh('pr', 'merge', String(number), '--squash', '--match-head-commit', pr.headRefOid);
-console.log(`Merged archive PR #${number} after Verify run ${run.databaseId}. No automated reviewer feedback was available.`);
+console.log(`Merged archive PR #${number} after Verify run ${run.databaseId}. Informational deployment/review-quota notices are not review approvals.`);

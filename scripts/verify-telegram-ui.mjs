@@ -88,7 +88,8 @@ const capture = {
   ],
 };
 
-const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body class="bg-slate-50 p-4"><main id="content-host"></main><div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div><script type="module">
+const shellStyles = [...readFileSync(resolve(root, 'index.html'), 'utf8').matchAll(/<style[^>]*>[\s\S]*?<\/style>/g)].map((m) => m[0]).join('');
+const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css">${shellStyles}</head><body class="bg-slate-50 p-4"><main id="content-host"></main><div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div><script type="module">
 import * as tab from '/js/tabs/public-chatter.js';
 import * as coverage from '/js/data/coverage.js';
 import * as watchlist from '/js/core/watchlist.js';
@@ -175,7 +176,7 @@ try {
   assert.equal(view.span, 10);
   assert.equal(view.readable, 7);
   assert.equal(view.unreadable, 3);
-  assert(/Older history.*automatically/i.test(view.footnotes));
+  assert(/Older history is incomplete/i.test(view.footnotes));
   assert(/awaiting retry/i.test(view.footnotes));
   assert(/Checked/i.test(view.pill), 'collector success time is visible');
   assert(await page.locator('[data-chatter-panel="telegram"]').innerText().then((t) => t.includes('13 May 2026')));

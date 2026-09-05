@@ -162,7 +162,7 @@ async function main() {
   await mkdir(dirname(cfg.out), { recursive: true });
   await writeFile(`${cfg.out}.tmp`, `${JSON.stringify(archive, null, 2)}\n`);
   await rename(`${cfg.out}.tmp`, cfg.out);
-  console.log(JSON.stringify({ posts: archive.posts.length, head: archive.headId, historyNextId: archive.historyNextId, retry: archive.retryIds.length, ...archive.lastRun }));
+  console.log(JSON.stringify({ retainedPosts: archive.posts.length, head: archive.headId, historyNextId: archive.historyNextId, retry: archive.retryIds.length, ...archive.lastRun }));
   if (archive.lastRun.status === 'failed') process.exitCode = 1;
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main().catch((err) => { console.error(err.message); process.exitCode = 1; });

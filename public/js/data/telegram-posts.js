@@ -23,6 +23,7 @@ function apply(res) {
       mediaType: ['document', 'photo', 'video'].includes(raw.mediaType) ? raw.mediaType : null,
       contentStatus: text || attachments.length || ['photo', 'video'].includes(raw.mediaType) ? 'available' : 'telegram-only' };
   }).filter(Boolean);
+  if (rows.length !== v.posts.length) throw new Error('Malformed Telegram posts; previous archive retained');
   const byId = new Map(rows.map((p) => [p.id, p]));
   const posts = [...byId.values()].sort((a, b) => b.id - a.id);
   const spanFrom = posts.at(-1)?.id || 0, spanTo = posts[0]?.id || 0;

@@ -695,9 +695,10 @@ export function telegramFreshness(capturedAt, now = Date.now()) {
 }
 const postLabel = (r) => r.text || r.attachments?.map((a) => a.name).join(', ') ||
   (r.mediaType ? `${r.mediaType[0].toUpperCase()}${r.mediaType.slice(1)} post` : 'Content available in Telegram');
-const telegramDate = (value) => value ? new Intl.DateTimeFormat('en-IN', {
+const TELEGRAM_DATE_FORMAT = new Intl.DateTimeFormat('en-IN', {
   day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata',
-}).format(new Date(value)) : 'Date not captured yet';
+});
+const telegramDate = (value) => value ? TELEGRAM_DATE_FORMAT.format(new Date(value)) : 'Date not captured yet';
 function telegramDescription() {
   const t = telegram.meta();
   return `Posts from ${escapeHtml(t.channel ? `@${t.channel}` : 'the public Telegram channel')}, newest first, with original publication dates in IST. ` +
@@ -758,7 +759,7 @@ function telegramFootnotes() {
   const t = telegram.meta();
   if (!t.ok) return '';
   const progress = t.historyComplete ? 'The historical scan has reached the start of the channel.' :
-    t.historyNextId ? `Older history is being collected automatically; the next pass continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
+    t.historyNextId ? `Older history is incomplete; the next collection continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
   return `<div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
     <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} public message pages and embeds. ${escapeHtml(progress)}
     ${formatNumber(t.limited || 0)} posts require Telegram to read their content; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
