@@ -2163,6 +2163,7 @@ console.log('\n— AI alerts —');
   ok('unticking the last feed returns to All rather than emptying the stream',
     (await alertDataCount()) === allRows && (await page.locator('[data-feed-toggle="__all"]').getAttribute('aria-checked')) === 'true',
     `${await alertDataCount()} rows back`);
+  await page.locator('[data-sources-close]').click();
   await go('/#/research/daily-alerts?scope=portfolio', 4500);
 
   ok('no legend strip competes with the stream', !/Red — alert/.test(await hostText()));
