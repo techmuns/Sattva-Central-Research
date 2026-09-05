@@ -4075,7 +4075,7 @@ destroyed rather than left painting into the content host.
 ## AI Alerts priority — DERIVED, no file and no route of its own
 
 `js/data/ai-alerts.js` consumes the retained report below and writes nothing. It takes company events
-from the latest seven Indian trading dates, deduplicates the same normalized headline within a feed,
+from the latest 14 Indian calendar dates, deduplicates the same normalized headline within a feed,
 groups by ticker and emits only companies scoring at least `MIN_SCORE` (64). `MUST_SEE_SCORE` (82)
 splits the surfaced queue into Must see and Important. Tickerless market stories stay in General
 Alerts: attaching them to an individual company would be an unsupported inference.
@@ -4100,7 +4100,7 @@ verified with fixtures independently of what happens to be in today's capture.
 does not contain money. In the authenticated Family host, `positionSizes.holdings` is the separately
 validated, complete positions response. Its weights only order already-surfaced cards and print as
 `% of listed portfolio`; they never add points, create an alert, change direction or survive in the
-public seven-day cache. If the private payload is incomplete or unavailable, evidence order wins.
+public 14-day cache. If the private payload is incomplete or unavailable, evidence order wins.
 
 After scoring, `js/data/intelligence-graph.js` searches every same-company row in the full All Alerts
 pool, including `aiEligible: false` filings, documents, snapshots and schedules. A context row must
