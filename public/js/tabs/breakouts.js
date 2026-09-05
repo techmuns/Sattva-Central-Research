@@ -17,6 +17,7 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatPct, formatRelativeTime, formatRupee } from '../core/format.js';
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as technicals from '../data/technicals.js';
+import * as refreshRegistry from '../core/refresh.js';
 import { ACTIVE_RULES } from '../scoring/tech-scoring.js';
 import { openTechnicalsDrill, fmtPoints } from './breakouts-drill.js';
 import * as coverage from '../data/coverage.js';
@@ -36,8 +37,24 @@ export const meta = {
 // Bumped on every render so a slow load that resolves after the user navigated away is
 // discarded instead of painting over whatever is now on screen.
 let renderToken = 0;
+let ctxRef = null;
+let refreshOff = null;
+let dataOff = null;
+let refreshQuotes = null;
+const tableViews = new Map();
 
 export function render(ctx) {
+  ctxRef = ctx;
+  refreshQuotes = null;
+  if (!refreshOff) refreshOff = refreshRegistry.register('technicals-view', {
+    label: 'Technicals', refresh: async () => {
+      if (ctxRef?.subview === 'earnings-surprise') return { skipped: true };
+      await technicals.refresh();
+      if (ctxRef?.subview === 'technical-scanner' && refreshQuotes) return refreshQuotes();
+      return { checked: 1, partial: !!technicals.meta()?.failures };
+    },
+  });
+  if (!dataOff) dataOff = technicals.onChange(() => { if (ctxRef) paint(ctxRef); });
   const token = ++renderToken;
   if (ctx.subview === 'earnings-surprise') { renderEarningsSurprise(ctx); return; }
   ctx.root.innerHTML = loadingHtml();
@@ -406,7 +423,7 @@ function renderScanner(ctx, rows) {
   const table = scoreTable({
     ...tableBase(rows, ctx),
     // `?company=` from a citation or an AI Alerts card opens the scanner searched for it.
-    initialView: ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null,
+    initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     showScore: true,
     score: scoreOf,
     showSignals: true,
@@ -460,6 +477,7 @@ function renderScanner(ctx, rows) {
 
   pill.wire(ctx.root);
   cards.wire(ctx.root);
+  tableViews.set(ctx.subview, table.view);
   table.wire(ctx.root);
   wireRefreshBar(ctx, table);
 }
@@ -669,6 +687,7 @@ function renderStrongBreakouts(ctx, rows) {
   });
 
   const table = scoreTable({
+    initialView: tableViews.get(ctx.subview) || null,
     ...tableBase(filtered, ctx),
     showScore: true,
     score: scoreOf,
@@ -697,6 +716,7 @@ function renderStrongBreakouts(ctx, rows) {
   `;
 
   pill.wire(ctx.root);
+  tableViews.set(ctx.subview, table.view);
   table.wire(ctx.root);
   wireChipBar(ctx.root, BREAKOUT_FILTERS, state, (param, next) => {
     ctx.setParams({ ...(ctx.params || {}), [param]: next.join(',') });
@@ -789,6 +809,7 @@ function renderFiiAccumulation(ctx, rows) {
   });
 
   const table = scoreTable({
+    initialView: tableViews.get(ctx.subview) || null,
     ...tableBase(filtered, ctx),
     showScore: true,
     score: (s) => {
@@ -822,6 +843,7 @@ function renderFiiAccumulation(ctx, rows) {
   `;
 
   pill.wire(ctx.root);
+  tableViews.set(ctx.subview, table.view);
   table.wire(ctx.root);
   wireChipBar(ctx.root, FII_FILTERS, state, (param, next) => {
     ctx.setParams({ ...(ctx.params || {}), [param]: next.join(',') });
@@ -950,7 +972,8 @@ function wireRefreshBar(ctx, table) {
   btn.classList.add('hover:bg-indigo-50', 'hover:text-indigo-700', 'hover:ring-indigo-200');
   btn.title = `Fetch live quotes for the top ${tickers.length} names on screen`;
   note.textContent = `EOD data below. Live quotes for the top ${tickers.length} names on demand.`;
-  btn.addEventListener('click', () => doRefresh({ btn, note, label, tickers, byTicker, table }));
+  refreshQuotes = () => doRefresh({ btn, note, label, tickers, byTicker, table });
+  btn.addEventListener('click', refreshQuotes);
 }
 
 /**
@@ -961,7 +984,7 @@ function wireRefreshBar(ctx, table) {
  * A control that reports success without changing what it names is worse than one that fails.
  */
 async function doRefresh({ btn, note, label, tickers, byTicker, table }) {
-  if (inFlight) return; // a second click during a slow refresh is not a second request
+  if (inFlight) return { pending: true }; // do not duplicate a local price refresh
   const ctl = new AbortController();
   inFlight = ctl;
   const timer = setTimeout(() => ctl.abort(new Error('client timeout')), CLIENT_TIMEOUT_MS);
@@ -980,7 +1003,7 @@ async function doRefresh({ btn, note, label, tickers, byTicker, table }) {
       // Static preview — no Worker. Say so once and stop offering the button.
       btn.title = 'Live quotes need the Cloudflare Worker (npx wrangler dev). Not available in a static preview.';
       note.textContent = 'Live quotes need the Worker — run `npx wrangler dev`. The EOD data below is unaffected.';
-      return; // stays disabled
+      return { failed: 1, error: 'Live quotes are unavailable.' }; // stays disabled
     }
 
     // Read the body BEFORE deciding this is a failure. The Worker puts the diagnosis in there —
@@ -997,12 +1020,14 @@ async function doRefresh({ btn, note, label, tickers, byTicker, table }) {
     // is not something a reader can check against the table without being told which eight.
     btn.title = missingTitle(payload) || `Fetch live quotes for the top ${tickers.length} names on screen`;
     btn.disabled = false;
+    return { checked: applied.length, partial: applied.length < tickers.length };
   } catch (err) {
     if (ctl.signal.aborted && !isTimeout(err)) return; // we navigated away; the tab is gone
     console.warn('[breakouts] live price refresh failed', err);
     note.textContent = failureNote(err);
     note.className = 'text-xs text-amber-700';
     btn.disabled = false;
+    return { failed: 1, error: String(err?.message || err) };
   } finally {
     clearTimeout(timer);
     if (inFlight === ctl) inFlight = null;
@@ -1126,6 +1151,10 @@ function failureNote(err) {
 }
 
 export function destroy() {
+  ctxRef = null; refreshQuotes = null;
+  refreshOff?.(); refreshOff = null;
+  dataOff?.(); dataOff = null;
+  tableViews.clear();
   // Invalidate any in-flight load so it can't paint after we're gone. The parsed+scored
   // technicals cache is intentionally kept — that's what makes tab re-entry instant.
   renderToken++;

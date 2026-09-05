@@ -13,6 +13,16 @@ There are no quantities, costs or valuations in this public snapshot.
 A Portfolio Analytics workspace over an illustrative ledger used to exist and was
 deleted; it is in git history at `d3bba30` if a real ledger is ever wired.
 
+**Refresh follows the current view.** It revalidates the data on screen, including technical
+captures and prices, institutional holdings, news and selected company documents. Existing rows,
+searches and filters remain usable while checks finish. Concurrent clicks share requests; a slow
+capture reports “Still updating…” and the final outcome appears when it finishes. Relevant existing
+capture jobs can be requested for older snapshots, using the Worker's fixed workflow allowlist and
+cooldowns. Their new data is picked up automatically. Failures and incomplete checks report a
+partial refresh instead of “Up to date”. “Latest available” means the available source responses
+were loaded; publication dates and EOD/capture dates remain authoritative. Refresh cannot promise
+coverage of every publisher or social post, nor turn EOD indicators into intraday indicators.
+
 **Portfolio-aware Ask Research** stays in Central Research. An authenticated,
 hidden Family connector revalidates the uploaded book and refreshes quotes for
 every question. All held listed ISINs, sectors and listed-market-value weights

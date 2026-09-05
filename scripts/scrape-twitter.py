@@ -39,12 +39,9 @@ CREDENTIALS
     writes nothing: no capture is changed, and the UI goes on saying the accounts are being added
     rather than inventing a failure about them.
 
-    X SIGN-IN FROM A CI RUNNER IS THE HARD PART, AND IT IS NOT A BUG HERE. Measured on this
-    repository's own runner: X's Cloudflare returned "403 - Sorry, you have been blocked. You are
-    unable to access x.com" to the login itself. Datacenter address ranges are challenged; a
-    residential address usually is not. twscrape takes a proxy for exactly this
-    (`API(proxy=...)`, or the TWS_PROXY environment variable), which is the supported way through
-    it. Nothing in this file pretends otherwise, and no handle is blamed for it.
+    OPTIONAL COVERAGE. The scheduled collector is disabled unless X_CAPTURE_ENABLED=true.
+    A refused sign-in is a source outage, not a reason to rotate accounts or proxy around a block.
+    The workflow records collection status separately while preserving all last-known posts.
 """
 
 import asyncio
@@ -148,7 +145,7 @@ async def add_accounts(api):
         try:
             await api.pool.add_account(parts[0], parts[1], parts[2], parts[3])
         except Exception as err:  # already present, or malformed — neither stops the run
-            print(f"  account {parts[0]}: {err}", file=sys.stderr)
+            print(f"  Account setup failed: {type(err).__name__}", file=sys.stderr)
     await api.pool.login_all()
     return True
 
@@ -170,7 +167,7 @@ async def active_accounts(api):
     in. That is a fact about THIS DEPLOYMENT, and it is never spent on a handle.
 
     None means twscrape did not expose the pool in a shape this understands — a version change
-    rather than a failure — and the run proceeds rather than refusing on a check of its own.
+    rather than a confirmed login. Stop instead of mislabelling monitored handles as missing.
     """
     try:
         info = await api.pool.accounts_info()
@@ -244,7 +241,7 @@ async def main():
     # THE CREDENTIAL EXISTS; DID IT WORK? See `active_accounts` for why these are different
     # questions and why answering only the first one slanders the handles.
     live = await active_accounts(api)
-    if live == 0:
+    if live is None or live == 0:
         print(
             "The configured X account(s) could not sign in, so nothing could be read. "
             "The committed capture is unchanged and no handle has been marked unreadable — "

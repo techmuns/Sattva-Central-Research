@@ -2081,7 +2081,8 @@ console.log('\n— AI alerts —');
     const scroller = document.querySelector('[data-table-scroll]');
     return {
       painted: document.querySelectorAll('#content-host tbody tr[data-row-key]').length,
-      pending: Number(document.querySelector('[data-score-table]')?.dataset.rowsPending || 0),
+      virtual: document.querySelector('[data-score-table]')?.hasAttribute('data-virtualized') || false,
+      total: Number(document.querySelector('[data-score-table]')?.dataset.virtualTotal || 0),
       top: scroller?.scrollTop || 0,
       scrollHeight: scroller?.scrollHeight || 0,
       clientHeight: scroller?.clientHeight || 0,
@@ -2089,27 +2090,30 @@ console.log('\n— AI alerts —');
     };
   });
   await page.locator('[data-table-scroll]').evaluate((el) => { el.scrollTop = el.scrollHeight; });
-  await page.waitForFunction((before) => document.querySelectorAll('#content-host tbody tr[data-row-key]').length > before,
-    scrollBefore.painted, { timeout: 3000 });
+  await page.waitForFunction((before) => {
+    const rows = document.querySelectorAll('#content-host tbody tr[data-row-key]');
+    return rows.length > 0 && rows[rows.length - 1]?.dataset.rowKey !== before;
+  }, scrollBefore.lastKey, { timeout: 3000 });
   const scrollHistory = await evalSafe(() => {
     const scroller = document.querySelector('[data-table-scroll]');
     const rows = [...document.querySelectorAll('#content-host tbody tr[data-row-key]')];
     return {
       painted: rows.length,
-      pending: Number(document.querySelector('[data-score-table]')?.dataset.rowsPending || 0),
+      virtualStart: Number(document.querySelector('[data-score-table]')?.dataset.virtualStart || 0),
       top: scroller?.scrollTop || 0,
       oldestPaintedDay: rows.at(-1)?.querySelector('[data-event-day]')?.dataset.eventDay || null,
       lastKey: rows.at(-1)?.dataset.rowKey || null,
     };
   });
-  ok('the history table starts with one page instead of painting its full data set',
-    scrollBefore.painted > 0 && scrollBefore.painted < allRows && scrollBefore.pending === allRows - scrollBefore.painted,
-    `${scrollBefore.painted} painted · ${scrollBefore.pending} pending · ${allRows} total`);
-  ok('scrolling the internal table appends the next chronological page',
+  ok('the history table keeps a bounded virtual window over its full data set',
+    scrollBefore.virtual && scrollBefore.painted > 0 && scrollBefore.painted <= 64 &&
+      scrollBefore.painted < allRows && scrollBefore.total === allRows,
+    `${scrollBefore.painted} mounted · ${scrollBefore.total} in model · ${allRows} shown`);
+  ok('scrolling the internal table moves that bounded window to older history',
     scrollHistory.top > scrollBefore.top && scrollBefore.scrollHeight > scrollBefore.clientHeight &&
-      scrollHistory.painted > scrollBefore.painted && scrollHistory.painted < allRows &&
-      scrollHistory.pending === allRows - scrollHistory.painted && scrollHistory.lastKey !== scrollBefore.lastKey,
-    `painted ${scrollBefore.painted} → ${scrollHistory.painted}; reached ${scrollHistory.oldestPaintedDay}; ${scrollHistory.pending} pending`);
+      scrollHistory.painted > 0 && scrollHistory.painted <= 64 && scrollHistory.painted < allRows &&
+      scrollHistory.virtualStart > 0 && scrollHistory.lastKey !== scrollBefore.lastKey,
+    `${scrollBefore.painted} → ${scrollHistory.painted} mounted; reached ${scrollHistory.oldestPaintedDay}; window starts ${scrollHistory.virtualStart}`);
   await page.locator('[data-table-scroll]').evaluate((el) => { el.scrollTop = 0; });
 
   const dateFilter = page.locator('select[aria-label="Date range"]');
@@ -5489,8 +5493,8 @@ console.log('\n— header status and live alerts —');
     }
     return l;
   })();
-  ok('refresh reports a result rather than just spinning', /Up to date|\d+ new|Refresh|Couldn|Still reading/i.test(label), label);
-  ok('...and never re-enables itself still claiming to be checking', !(await page.locator('[data-header-refresh]').isDisabled()));
+  ok('refresh reports a result rather than just spinning', /Latest available|\d+ new|Partly refreshed|Couldn|Still updating/i.test(label), label);
+  ok('...keeps pending work disabled and allows retry after completion', (await page.locator('[data-header-refresh]').isDisabled()) === /Still updating/.test(label));
 
   // The alert stack.
   const alerts = await evalSafe(async () => {

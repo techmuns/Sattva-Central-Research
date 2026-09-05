@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
+      - name: Verify refresh ownership and source targeting
+        run: node scripts/verify-refresh.mjs
       - name: Verify filings snapshot recovery
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
@@ -72,6 +74,8 @@ jobs:
         run: node scripts/verify-general-alerts.mjs
       - name: Verify AI alert search and calendar dates
         run: node scripts/verify-ai-alerts.mjs
+      - name: Verify material alert lifecycle and optional social coverage
+        run: node scripts/verify-alert-reliability.mjs && python3 scripts/verify-twitter-collection.py
       - name: Syntax-check JavaScript
         run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check && node --check public/sw.js
       - name: Validate the Worker bundle
@@ -94,6 +98,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-family-sync-ui.mjs
+      - name: Verify Screener Insights collector and last-good cache offline
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-screener-insights-ui.mjs
       - name: Verify one Family portfolio across the dashboard
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
@@ -102,6 +110,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-ai-alerts-ui.mjs
+      - name: Verify explicit refresh through the service worker
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-refresh-ui.mjs
       - name: Verify instant repeat visits and interaction cache boundaries
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -166,4 +166,8 @@ const legacy = { day: options.day, scope: 'portfolio', events: [{ id: 'e', ticke
 const raw = records.record({ id: 'snapshot', row: {}, at: options.day, ticker: 'STLTECH', headline: 'Snapshot' });
 const before = ai.rankReport(legacy).cards;
 assert.deepEqual(ai.rankReport({ ...legacy, events: [...legacy.events, { ...raw, feed: 'institutions' }] }).cards, before);
+const evidenceReads = calls.length;
+const evidenceRefresh = await alerts.refreshSources();
+assert(calls.slice(evidenceReads).includes('api/screener-insights'), 'Ask Research refresh includes company context outside the alert feed registry');
+assert(evidenceRefresh.failed > 0, 'unavailable context is reported instead of treating retained inputs as fresh');
 console.log(`PASS: 20 feed adapters; ${universe.events.length} retained records; scope parity, undated/upcoming, raw records, privacy, refresh/recovery and AI compatibility.`);

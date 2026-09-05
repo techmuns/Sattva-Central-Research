@@ -86,3 +86,18 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+
+      # Save partial progress first; an empty or failed newest query must still fail the run.
+      - name: Check company-news capture health
+        if: success()
+        env:
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/company-news-health.json
+        run: node scripts/check-filings-health.mjs news
+
+      - name: Upload company-news health report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: company-news-health
+          path: ${{ runner.temp }}/company-news-health.json
+          if-no-files-found: warn

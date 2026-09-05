@@ -29,6 +29,7 @@ import * as twitterNews from '../data/twitter-news.js';
 const STATUS = {
   active: { label: 'Active', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
   adding: { label: 'Adding…', cls: 'bg-amber-50 text-amber-700 ring-amber-200' },
+  disconnected: { label: 'Not connected', cls: 'bg-slate-100 text-slate-600 ring-slate-200' },
   'not-found': { label: 'Account not found', cls: 'bg-rose-50 text-rose-700 ring-rose-200' },
 };
 
@@ -64,7 +65,8 @@ function bodyHtml() {
   // `collected` is whether ANY capture exists, not whether this handle is in the committed list —
   // see the note on handles.all(). A run that added a handle and then could not sign in must not
   // leave it reading Active.
-  const list = handles.all({ failed, collected: !!m.capturedAt });
+  const list = handles.all({ failed, collected: !!m.capturedAt }).map(entry =>
+    m.reason || m.lastReadFailed || !m.capturedAt ? { ...entry, status: 'disconnected', reason: null } : entry);
   const counts = twitterNews.countsByHandle();
 
   return `

@@ -1969,7 +1969,7 @@ const CAPTURE_FILES = {
 // Read-only health signal for an independent uptime monitor. Never starts a capture or calls Muns.
 async function handleFilingsHealth(request, env, ctx) {
   if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
-  const key = edgeKey('filings-operational-health-v1');
+  const key = edgeKey('filings-operational-health-v2');
   const cache = caches.default;
   const hit = await cache.match(key);
   if (hit) {

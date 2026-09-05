@@ -364,7 +364,10 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *                instead of widening the table.
  *  dense         default false. true tightens horizontal cell padding for wide numeric tables.
  *  fillMode      'idle' (default) eventually paints every row; 'scroll' appends adaptive pages
- *                only as the reader approaches the bottom of the table.
+ *                near the bottom; 'virtual' keeps a bounded moving window for very long streams.
+ *  virtualRowHeight  fixed row height in px used by 'virtual' mode (default 72).
+ *  preindexSearch build an explicit searchable accessor's index in idle slices (default false).
+ *  onScrollActivity  optional callback fired from the table's passive scroll handler.
  *  scrollLabel   accessible name for the keyboard-focusable table scroller.
  *
  * Sorting, search, watchlist-only and the filter select are all handled internally; the table
@@ -444,6 +447,9 @@ export function scoreTable(config) {
     showWatchFilter = true,
     initialRowCount = 40,
     initialRowKey = null,
+    virtualRowHeight = 72,
+    preindexSearch = false,
+    onScrollActivity = null,
     scrollLabel = `${nameLabel} data table`,
   } = config;
 
@@ -482,6 +488,9 @@ export function scoreTable(config) {
   if (!showWatchFilter) view.watchOnly = false;
 
   const totalCount = rows.length;
+  // Array lookup is materially cheaper than recomputing 50k searchable strings on every
+  // keystroke. This per-instance index is filled in idle slices once the final feed paint mounts.
+  const searchTextIndex = searchable ? new Array(rows.length) : null;
   const countText = (visible) => {
     const custom = countLabel?.(visible, rows);
     return custom == null || custom === ''
@@ -489,8 +498,11 @@ export function scoreTable(config) {
       : String(custom);
   };
 
-  function haystack(row) {
-    return (searchable ? searchable(row) : `${name(row)} ${key(row)}`).toLowerCase();
+  function haystack(row, rowIndex = -1) {
+    if (rowIndex >= 0 && searchTextIndex?.[rowIndex] !== undefined) return searchTextIndex[rowIndex];
+    const value = String(searchable ? searchable(row) : `${name(row)} ${key(row)}`).toLowerCase();
+    if (rowIndex >= 0 && searchTextIndex) searchTextIndex[rowIndex] = value;
+    return value;
   }
 
   function sortValueFor(row, sortKey) {
@@ -511,8 +523,8 @@ export function scoreTable(config) {
     // did not, so an AI Alert link carrying `RKFORGE` could never match a haystack containing
     // `rkforge` even though the search box visibly held the right ticker.
     const needle = String(view.q || '').trim().toLowerCase();
-    let out = rows.filter((row) => {
-      if (needle && !haystack(row).includes(needle)) return false;
+    let out = rows.filter((row, rowIndex) => {
+      if (needle && !haystack(row, rowIndex).includes(needle)) return false;
       if (watched) {
         const wk = watchKeyOf(row);
         if (!wk || !watched.has(wk)) return false;
@@ -584,6 +596,9 @@ export function scoreTable(config) {
 
   // A slice of the body, so the first paint can put a screenful in the DOM and let the rest
   // follow. See FIRST_PAINT_ROWS below for why that is not merely a nicety.
+  const isVirtual = fillMode === 'virtual';
+  const VIRTUAL_ROW_HEIGHT = Math.max(48, Math.round(Number(virtualRowHeight) || 72));
+
   function bodyHtml(list, from = 0, to = list.length) {
     if (!list.length) {
       return `<tr><td colspan="${colCount}" class="px-4 py-12 text-center text-slate-400">${escapeHtml(emptyMessage)}</td></tr>`;
@@ -594,18 +609,21 @@ export function scoreTable(config) {
     for (let i = from; i < end; i++) {
       const row = list[i];
       const slug = String(key(row));
-      let html = rowHtmlCache.get(slug);
+      // A virtual row carries aria-rowindex, which is position-dependent. Only a screenful is
+      // generated at once, so bypassing the position-independent cache here is both correct and
+      // bounded. Other modes retain the cache that makes large sorts cheap.
+      let html = isVirtual ? undefined : rowHtmlCache.get(slug);
       if (html === undefined) {
         const wk = watchKeyOf(row);
-        html = rowHtml(row, slug, wk ? watched.has(wk) : false, wk, watchNameOf(row));
-        rowHtmlCache.set(slug, html);
+        html = rowHtml(row, slug, wk ? watched.has(wk) : false, wk, watchNameOf(row), isVirtual ? i : null);
+        if (!isVirtual) rowHtmlCache.set(slug, html);
       }
       out.push(html);
     }
     return out.join('');
   }
 
-  function rowHtml(row, slug, isWatched, watchSlug = null, watchLabel = null) {
+  function rowHtml(row, slug, isWatched, watchSlug = null, watchLabel = null, rowIndex = null) {
         const label = String(name(row));
         const { color, initials } = avatarFor(label);
         const sc = showScore && score ? score(row) : null;
@@ -621,9 +639,12 @@ export function scoreTable(config) {
         const rowLink = link ? link(row) : null;
         const dataTd = (c) =>
           `<td class="whitespace-nowrap ${PX} py-3 text-sm text-slate-700 ${c.align === 'right' ? 'text-right tabular-nums' : ''}">${c.html ? c.get(row) : escapeHtml(c.get(row))}</td>`;
+        const styles = [];
+        if (redFlag) styles.push('box-shadow: inset 3px 0 0 #f43f5e');
+        if (isVirtual) styles.push(`height:${VIRTUAL_ROW_HEIGHT}px`);
         return `
           <tr data-row-key="${escapeHtml(slug)}" class="row-line border-b border-slate-100 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${redFlag ? 'bg-rose-50/40 hover:bg-rose-50' : `${extraClass} hover:bg-slate-50`}"
-            ${redFlag ? 'style="box-shadow: inset 3px 0 0 #f43f5e"' : ''}>
+            ${rowIndex === null ? '' : `aria-rowindex="${rowIndex + 2}"`} ${styles.length ? `style="${styles.join(';')}"` : ''}>
             ${
               showRank
                 ? `<td class="${PX} py-3 text-sm font-medium text-slate-500">
@@ -680,15 +701,18 @@ export function scoreTable(config) {
   // is idle. Total work is unchanged; what changes is that none of it blocks the tab appearing.
   // Measured on the Earnings Hub, tab-to-tab: ~900ms of blocked main thread down to ~60ms.
   //
-  // THE ROWS STILL ALL ARRIVE. This is not virtualisation — nothing is unmounted, the DOM ends up
-  // holding every visible row, and Ctrl-F, screenshots and "N of M shown" behave as they did. The
-  // section carries `data-rows-pending` until the fill completes, so a test (or anything else)
-  // can wait for the settled table rather than racing it.
+  // In idle and scroll modes the rows still all arrive: nothing is unmounted and the DOM ends up
+  // holding every reached row. Virtual mode is deliberately different. It keeps the full filtered
+  // array for search, counts, sort, watchlist and export, but mounts only a moving screen-sized
+  // window between two spacer rows. That is the right contract for multi-thousand-row timelines,
+  // where retaining every reached row makes layout and the accessibility tree grow without bound.
   // The old adaptive ceiling reached 800 rows. HTML insertion looked cheap, but the style/layout
   // work landed on the next frame: traces showed 40–88ms layout blocks while a table filled. Keep
   // each background batch below a screenful so loading can never monopolise an interaction frame.
   const MIN_SLICE = fillMode === 'scroll' ? 16 : 20;
   const MAX_SLICE = fillMode === 'scroll' ? 40 : 80;
+  const VIRTUAL_WINDOW_ROWS = Math.max(24, Math.min(64, Math.round(Number(initialRowCount) || 32)));
+  const VIRTUAL_OVERSCAN_ROWS = Math.min(12, Math.floor(VIRTUAL_WINDOW_ROWS / 4));
 
   // requestIdleCallback where it exists, with a timeout so a busy or backgrounded tab still
   // finishes. Safari has no rIC, hence the fallback — a slower fill is fine, a stalled one is not.
@@ -705,14 +729,29 @@ export function scoreTable(config) {
 
   const initialList = visibleRows();
   const anchorIndex = initialRowKey === null ? -1 : initialList.findIndex((row) => String(key(row)) === initialRowKey);
-  const FIRST_PAINT_ROWS = Math.max(40, Math.min(initialList.length, Math.max(Number(initialRowCount) || 40, anchorIndex + 40)));
+  const initialVirtualStart = isVirtual && anchorIndex >= 0
+    ? Math.max(0, Math.min(Math.max(0, initialList.length - VIRTUAL_WINDOW_ROWS), anchorIndex - VIRTUAL_OVERSCAN_ROWS))
+    : 0;
+  const FIRST_PAINT_ROWS = isVirtual
+    ? Math.min(initialList.length, VIRTUAL_WINDOW_ROWS)
+    : Math.max(40, Math.min(initialList.length, Math.max(Number(initialRowCount) || 40, anchorIndex + 40)));
+
+  const spacerHtml = (rows, edge) => rows > 0
+    ? `<tr data-virtual-spacer="${edge}" aria-hidden="true"><td colspan="${colCount}" style="height:${rows * VIRTUAL_ROW_HEIGHT}px;padding:0;border:0"></td></tr>`
+    : '';
+  const virtualBodyHtml = (list, start) => {
+    if (!list.length) return bodyHtml(list);
+    const safeStart = Math.max(0, Math.min(Math.max(0, list.length - VIRTUAL_WINDOW_ROWS), start));
+    const end = Math.min(list.length, safeStart + VIRTUAL_WINDOW_ROWS);
+    return `${spacerHtml(safeStart, 'top')}${bodyHtml(list, safeStart, end)}${spacerHtml(list.length - end, 'bottom')}`;
+  };
 
   // Installed by wire(). Until then `updateRows` is a no-op that reports nothing changed, which
   // is the truth for an unmounted table.
   let updateRows = () => 0;
 
   const html = `
-    <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100" data-score-table${fillMode === 'scroll' ? ' data-scroll-paged' : ''}${initialList.length > FIRST_PAINT_ROWS ? ` data-rows-pending="${initialList.length - FIRST_PAINT_ROWS}"` : ''}>
+    <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100" data-score-table${fillMode === 'scroll' || isVirtual ? ' data-scroll-paged' : ''}${isVirtual ? ` data-virtualized data-virtual-total="${initialList.length}" data-virtual-start="${initialVirtualStart}"` : ''}${!isVirtual && initialList.length > FIRST_PAINT_ROWS ? ` data-rows-pending="${initialList.length - FIRST_PAINT_ROWS}"` : ''}>
       <div class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <div class="relative max-w-md flex-1">
@@ -757,10 +796,10 @@ export function scoreTable(config) {
         </div>
       </div>
 
-      <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto"` : ''}>
-        <table class="w-full text-sm">
+      <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto${isVirtual ? ';overflow-anchor:none' : ''}"` : ''}>
+        <table class="w-full text-sm"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
           <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-slate-50 shadow-[inset_0_-1px_0_rgb(226_232_240)]' : 'bg-slate-50/70'}">${headHtml()}</thead>
-          <tbody data-table-body>${bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
+          <tbody data-table-body>${isVirtual ? virtualBodyHtml(initialList, initialVirtualStart) : bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
         </table>
       </div>
     </section>`;
@@ -776,15 +815,43 @@ export function scoreTable(config) {
     const watchBtn = host.querySelector('[data-watch-toggle]');
     const watchIcon = host.querySelector('[data-watch-icon]');
     const watchCount = host.querySelector('[data-watch-count]');
+    const tableEl = host.querySelector('table');
 
     let current = initialList;
+    let virtualStart = initialVirtualStart;
 
     // ---- the background fill ----------------------------------------------------------
     let cancelFill = null;
     let filled = Math.min(FIRST_PAINT_ROWS, initialList.length);
     let slice = MIN_SLICE * 2;
+    let cancelSearchWarm = null;
+    let searchWarmAt = 0;
+
+    // Build the virtual stream's text index in short idle slices. A 50k-row first keystroke must
+    // not also be the moment all searchable strings are normalised. Only the final feed paint
+    // enables this work, so partial tables do not repeatedly build indexes they will soon discard.
+    function warmSearch(deadline) {
+      cancelSearchWarm = null;
+      const started = performance.now();
+      let worked = 0;
+      while (searchWarmAt < rows.length && (worked < 100 || (performance.now() - started < 4 && (!deadline || deadline.timeRemaining() > 1)))) {
+        haystack(rows[searchWarmAt], searchWarmAt);
+        searchWarmAt++;
+        worked++;
+      }
+      if (searchWarmAt < rows.length) cancelSearchWarm = scheduleSlice(warmSearch);
+    }
+
+    function startSearchWarm() {
+      if (isVirtual && preindexSearch && searchable && rows.length) cancelSearchWarm = scheduleSlice(warmSearch);
+    }
 
     function markPending(n) {
+      if (isVirtual) {
+        host.removeAttribute('data-rows-pending');
+        host.setAttribute('data-virtual-total', String(current.length));
+        return;
+      }
       if (n > 0) {
         host.setAttribute('data-rows-pending', String(n));
       } else {
@@ -800,6 +867,7 @@ export function scoreTable(config) {
 
     /** Append the next slice, then schedule the one after it. Idempotent and cancellable. */
     function pumpFill() {
+      if (isVirtual) return;
       cancelFill = null;
       if (filled >= current.length) {
         markPending(0);
@@ -824,6 +892,11 @@ export function scoreTable(config) {
 
     function startFill() {
       stopFill();
+      if (isVirtual) {
+        markPending(0);
+        attachScroll();
+        return;
+      }
       if (filled >= current.length) {
         markPending(0);
         return;
@@ -841,6 +914,7 @@ export function scoreTable(config) {
      * as if it were the whole table.
      */
     function flush() {
+      if (isVirtual) return;
       stopFill();
       if (filled >= current.length) {
         markPending(0);
@@ -858,13 +932,36 @@ export function scoreTable(config) {
     // its own scroll container, without it the page scrolls. Both, then.
     const scroller = host.querySelector('[data-table-scroll]');
     let scrollAttached = false;
-    let scrollQueued = false;
+    let scrollFrame = 0;
+
+    function paintVirtualWindow(start) {
+      const nextStart = Math.max(0, Math.min(Math.max(0, current.length - VIRTUAL_WINDOW_ROWS), Math.round(start) || 0));
+      if (nextStart === virtualStart && body.querySelector('tr[data-row-key]')) return;
+      virtualStart = nextStart;
+      // Do not retain markup for rows that have left the viewport. The data array remains complete;
+      // this cache is only a rendering optimisation and must be bounded just like the DOM.
+      rowHtmlCache.clear();
+      staleKeys.clear();
+      body.innerHTML = virtualBodyHtml(current, virtualStart);
+      host.setAttribute('data-virtual-start', String(virtualStart));
+      host.setAttribute('data-virtual-total', String(current.length));
+      tableEl?.setAttribute('aria-rowcount', String(current.length + 1));
+    }
 
     function onScroll() {
-      if (scrollQueued || filled >= current.length) return;
-      scrollQueued = true;
-      requestAnimationFrame(() => {
-        scrollQueued = false;
+      onScrollActivity?.();
+      if (scrollFrame || (!isVirtual && filled >= current.length)) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (isVirtual) {
+          if (!scroller || !current.length) return;
+          const visibleIndex = Math.max(0, Math.min(current.length - 1, Math.floor(scroller.scrollTop / VIRTUAL_ROW_HEIGHT)));
+          const windowEnd = virtualStart + VIRTUAL_WINDOW_ROWS;
+          if (visibleIndex < virtualStart + VIRTUAL_OVERSCAN_ROWS || visibleIndex >= windowEnd - VIRTUAL_OVERSCAN_ROWS) {
+            paintVirtualWindow(visibleIndex - VIRTUAL_OVERSCAN_ROWS);
+          }
+          return;
+        }
         const last = body.lastElementChild;
         if (filled >= current.length || !last) return;
         // Internal table scrollers should fill from their own geometry, not from the viewport's.
@@ -886,14 +983,17 @@ export function scoreTable(config) {
       if (scrollAttached) return;
       scrollAttached = true;
       scroller?.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('scroll', onScroll, { passive: true });
+      // A virtual table is always driven by its bounded internal scroller. Listening to window as
+      // well would double the work and is precisely the kind of global closure a live repaint can
+      // retain. Legacy fill modes still support page-scrolling tables without stickyHead.
+      if (!isVirtual || !stickyHead) window.addEventListener('scroll', onScroll, { passive: true });
     }
 
     function detachScroll() {
       if (!scrollAttached) return;
       scrollAttached = false;
       scroller?.removeEventListener('scroll', onScroll);
-      window.removeEventListener('scroll', onScroll);
+      if (!isVirtual || !stickyHead) window.removeEventListener('scroll', onScroll);
     }
 
     // Repaint has a fast path. Sorting and narrowing a filter both leave a row SET the DOM
@@ -909,6 +1009,16 @@ export function scoreTable(config) {
       stopFill();
       current = visibleRows();
       head.innerHTML = headHtml();
+
+      if (isVirtual) {
+        const visibleIndex = scroller ? Math.floor(scroller.scrollTop / VIRTUAL_ROW_HEIGHT) : 0;
+        virtualStart = -1; // the filtered/sorted row identities changed; force a bounded rebuild
+        paintVirtualWindow(visibleIndex - VIRTUAL_OVERSCAN_ROWS);
+        markPending(0);
+        countEl.textContent = countText(current);
+        if (watchCount) watchCount.textContent = String(watchlist.size());
+        return;
+      }
 
       // A Map keyed by row key CANNOT SURVIVE A DUPLICATE: the second `<tr>` displaces the first,
       // the first is then never visited by the removal loop, and it stays in the DOM for ever —
@@ -976,8 +1086,8 @@ export function scoreTable(config) {
         const row = byKey.get(slug);
         if (!row) continue;
         const wk = watchKeyOf(row);
-        const markup = rowHtml(row, slug, wk ? watched.has(wk) : false, wk, watchNameOf(row));
-        rowHtmlCache.set(slug, markup); // so a later sort reorders the NEW markup, not the old
+        const markup = rowHtml(row, slug, wk ? watched.has(wk) : false, wk, watchNameOf(row), isVirtual ? current.findIndex((item) => String(key(item)) === slug) : null);
+        if (!isVirtual) rowHtmlCache.set(slug, markup); // later sorts need fresh non-virtual markup
         const tr = trByKey.get(slug);
         if (!tr) continue; // filtered out of view — the cache above still has it right
         scratch.innerHTML = markup;
@@ -1076,10 +1186,15 @@ export function scoreTable(config) {
     });
 
     startFill();
+    startSearchWarm();
 
     return () => {
       stopFill();
+      if (cancelSearchWarm) cancelSearchWarm();
+      cancelSearchWarm = null;
       detachScroll();
+      if (scrollFrame) cancelAnimationFrame(scrollFrame);
+      scrollFrame = 0;
     };
   }
 

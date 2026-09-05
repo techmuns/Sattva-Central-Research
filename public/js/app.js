@@ -50,20 +50,22 @@ const DEFERRED_SOURCES = {
   filedHoldings: 'data/institution-holdings.json',
 };
 
-async function fetchAll(sources) {
+async function fetchAll(sources, options = {}) {
   const results = await Promise.all(
     // `revalidatedJson`, not a bare fetch: same `no-cache` semantics — revalidate every load, reuse
     // what is already on disk when the server answers 304 — plus in-flight sharing. That last part
     // matters here because the deferred pass and the Earnings Hub both want universe.json at the
     // same moment on a cold visit, and two concurrent requests cannot revalidate against each
     // other. It was 163KB twice.
-    Object.entries(sources).map(async ([key, path]) => [key, await revalidatedJson(path)])
+    Object.entries(sources).map(async ([key, path]) => [key, await revalidatedJson(path, options)])
   );
   return Object.fromEntries(results);
 }
 
 async function loadCritical() {
-  const data = await fetchAll(CRITICAL_SOURCES);
+  // Bootstrap can restore saved company identities immediately, including offline.
+  // The names-only Family poller rechecks them after mount; Refresh is network-first.
+  const data = await fetchAll(CRITICAL_SOURCES, { allowCached: true });
   primeCoverage(data.portfolioCompanies);
   await restoreLastGood();
   return data;

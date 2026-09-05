@@ -76,6 +76,11 @@ const server = createServer((req, res) => {
   try {
     if (pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (pathname === '/js/data/daily-alerts.js') { res.setHeader('content-type', 'text/javascript'); res.end(fixtureModule); return; }
+    if (pathname === '/js/data/capture-watchdog.js') {
+      res.setHeader('content-type', 'text/javascript');
+      res.end(`const listeners=new Set(); export const onCaptureLanded=fn=>{listeners.add(fn);return()=>listeners.delete(fn);}; window.landCapture=()=>listeners.forEach(fn=>fn('announcements'));`);
+      return;
+    }
     const path = resolve(root, '.' + pathname);
     if (!path.startsWith(root + sep)) throw Error('Invalid path');
     res.setHeader('content-type', { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' }[extname(path)] || 'application/octet-stream');
@@ -130,6 +135,18 @@ try {
   assert.equal(await card('A10').count(), 0);
   await page.locator('[data-ai-filter="archived"]').click();
   assert.equal(await card('A10').count(), 1, 'same search reaches archived cards');
+  await page.evaluate(async () => {
+    const old = window.fixtureEvents.find(e => e.ticker === 'A10');
+    window.fixtureEvents.push({ ...old, id: 'new-neutral-disclosure', feed: 'announcements',
+      headline: 'New investor day presentation', direction: 'neutral', url: 'https://example.test/investor-day.pdf' });
+    await window.refreshAlerts();
+  });
+  await settled();
+  assert.equal(await card('A10').count(), 0, 'new material evidence leaves the archived view');
+  await page.locator('[data-ai-filter="all"]').click();
+  assert.equal(await card('A10').count(), 1, 'new weaker disclosure revives the existing card');
+  await card('A10').locator('[data-ai-mute]').click();
+  await page.locator('[data-ai-filter="archived"]').click();
   await card('A10').locator('[data-ai-unmute]').click();
   await page.locator('[data-ai-filter="all"]').click();
   assert.equal(await card('A10').count(), 1);
@@ -159,6 +176,15 @@ try {
   await settled();
   assert.deepEqual(await search.evaluate((el) => [el === window.inputBefore, el === document.activeElement, el.selectionStart, el.selectionEnd]), [true, true, 1, 2]);
   assert.equal(await search.inputValue(), 'A00', 'feed completion preserves query and input');
+  const sourceReads = await page.evaluate(() => window.reads);
+  await page.evaluate(() => {
+    window.fixtureEvents = window.fixtureEvents.map(e => e.id === 'A00-announcements' ? { ...e, headline: 'Newly captured company announcement' } : e);
+    window.landCapture();
+  });
+  await settled();
+  assert.match(await card('A00').locator('[data-ai-evidence]').innerText(), /Newly captured company announcement/);
+  assert.equal(await page.evaluate(() => window.reads), sourceReads, 'a landed source updates AI Alerts without re-reading every feed');
+  assert.equal(await search.inputValue(), 'A00', 'source arrival preserves the active search');
   assert((await card('A00').locator('[data-ai-date]').innerText()).includes('04 Sept 2026 · 14:42 IST'));
   assert.equal(await card('A00').locator('[data-ai-date] time').getAttribute('datetime'), '2026-09-04T14:42:00+05:30');
   await search.fill('A01');

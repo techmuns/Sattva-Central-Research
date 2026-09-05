@@ -11,6 +11,8 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import * as screenerInsights from '../data/screener-insights.js';
+import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
@@ -41,6 +43,7 @@ let sizeError = '';
 let awaitingBook = null;
 let collecting = false;
 let loadError = '';
+let captureDirty = false;
 
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
@@ -84,6 +87,10 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
+    unsubs.push(onCaptureLanded(() => {
+      captureDirty = true;
+      if (ctxRef && !collecting) { captureDirty = false; void recollect(ctxRef, { load: false }); }
+    }));
     unsubs.push(onPortfolioConnection((connected) => {
       if (connected && ctxRef?.scope === 'portfolio' && !sizesLoading) void recollect(ctxRef);
       else if (!connected && portfolioConnectionState() === 'unavailable') portfolioUnavailable();
@@ -101,12 +108,13 @@ export function render(ctx) {
       refresh.register(REFRESH_ID, {
         label: 'AI Alerts',
         refresh: async () => {
-          const before = new Set((report?.cards || []).map((card) => `${card.ticker}:${card.topEvent?.id || ''}`));
+          const before = new Set((report?.cards || []).map((card) => `${card.ticker}:${card.evidenceKey || card.topEvent?.id || ''}`));
           await recollect(ctxRef, { refresh: true });
           if (sizeError || loadError) throw new Error(sizeError || loadError);
-          const added = (report?.cards || []).filter((card) => !before.has(`${card.ticker}:${card.topEvent?.id || ''}`)).length;
+          const added = (report?.cards || []).filter((card) => !before.has(`${card.ticker}:${card.evidenceKey || card.topEvent?.id || ''}`)).length;
           return { added, checked: (report?.feeds || []).filter((feed) => feed.status === 'ok').length,
-            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length };
+            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length,
+            partial: !screenerInsights.isLoaded() || !!screenerInsights.meta()?.latestReadFailed };
         },
       })
     );
@@ -134,6 +142,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  captureDirty = false;
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -154,7 +163,7 @@ export function destroy() {
   unsubs = [];
 }
 
-async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
+async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
   sizeController?.abort();
@@ -191,6 +200,7 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
         scope: ctx.scope,
         holdings: coverage.holdings(),
         refresh: forceRefresh,
+        load,
         onPartial: (partial) => {
           // Refresh a populated view atomically; partial feeds otherwise remove
           // companies and reorder cards underneath the reader on every arrival.
@@ -212,7 +222,10 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
     if (!current()) return;
     loadError = err?.message || 'The alert feeds could not be refreshed.';
   } finally {
-    if (current()) { collecting = false; paint(ctxRef); }
+    if (current()) {
+      collecting = false; paint(ctxRef);
+      if (captureDirty) { captureDirty = false; void recollect(ctxRef, { load: false }); }
+    }
   }
 }
 
@@ -353,7 +366,7 @@ export function feedStatus(rep) {
 }
 
 function controls(cards, visibleCount) {
-  const active = cards.filter((card) => !mute.isHidden(card.ticker, card.topEvent?.id || ''));
+  const active = cards.filter((card) => !mute.isHidden(card.ticker, card.evidenceKey || card.topEvent?.id || ''));
   const mustSee = active.filter((card) => card.priority === 'must-see').length;
   const important = active.length - mustSee;
   // Counted over what is ACTUALLY archived out of this view, not over the whole store: an entry
@@ -502,7 +515,7 @@ function cardMarkup(card, scope, day, archived = false) {
           ${archived
             ? `<button type="button" data-ai-unmute data-ticker="${escapeHtml(card.ticker)}"
                 class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 transition hover:ring-indigo-300">Restore</button>`
-            : `<button type="button" data-ai-mute data-ticker="${escapeHtml(card.ticker)}" data-seen="${escapeHtml(card.topEvent?.id || '')}"
+            : `<button type="button" data-ai-mute data-ticker="${escapeHtml(card.ticker)}" data-seen="${escapeHtml(card.evidenceKey || card.topEvent?.id || '')}"
                 class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:text-slate-900 hover:ring-slate-300">Archive</button>`}
           <button type="button" data-open-general data-ticker="${escapeHtml(card.ticker)}"
             class="rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-slate-700">Open</button>
@@ -595,11 +608,11 @@ export function safeSourceUrl(value) {
  * The cards this reader should see now: the chosen priority band, minus what they have muted.
  *
  * A MUTE IS CHECKED AGAINST THE EVIDENCE ON THE CARD RIGHT NOW, not against the ticker alone —
- * `ai-mute.js` explains why. A company whose strongest event has been overtaken by something newer
+ * `ai-mute.js` explains why. A company with new material evidence
  * comes back on its own, so muting can hide what has been read and can never hide what has not.
  */
 function filteredCards(cards) {
-  const archived = (card) => mute.isHidden(card.ticker, card.topEvent?.id || '');
+  const archived = (card) => mute.isHidden(card.ticker, card.evidenceKey || card.topEvent?.id || '');
   if (filter === 'archived') return cards.filter(archived);
   const byPriority = filter === 'all' ? cards : cards.filter((card) => card.priority === filter);
   return byPriority.filter((card) => !archived(card));
@@ -669,7 +682,7 @@ function emptyPanel(ctx) {
   // panel must not print the second over the first — that would be a claim about the feeds made on
   // the strength of a control the reader set, the same error as All Alerts' chip filter
   // emptying its own stream. So it says which, and offers the way back.
-  const archivedHere = (report?.cards || []).filter((card) => mute.isHidden(card.ticker, card.topEvent?.id || '')).length;
+  const archivedHere = (report?.cards || []).filter((card) => mute.isHidden(card.ticker, card.evidenceKey || card.topEvent?.id || '')).length;
   if (filter === 'archived') {
     return `
       <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100" data-ai-empty>

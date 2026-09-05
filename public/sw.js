@@ -6,7 +6,7 @@
 // lookups never cross the persistence boundary.
 
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-news-attribution-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-active-refresh-v6`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/data/portfolio-companies.json'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
@@ -147,6 +147,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const key = cacheKey(request, url);
+    // Explicit data revalidation must reach the server in THIS request. Returning
+    // the held body while updating it behind the scenes made Refresh one capture
+    // late and hid outages as successful checks. The feed owns its last-good rows.
+    if (url.pathname.startsWith('/data/') && !request.headers.has('x-sattva-bootstrap') && ['no-cache', 'reload'].includes(request.cache)) {
+      return (await fetchAndCache(cache, request, key)) || Response.error();
+    }
     const held = await cache.match(key);
     if (held) {
       if (revalidateInBackground(request, url)) event.waitUntil(fetchAndCache(cache, request, key));

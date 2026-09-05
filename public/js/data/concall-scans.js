@@ -224,7 +224,7 @@ export function startLive(live) {
       // A conditional GET. On an unchanged tick this is a 304 with no body at all and `status`
       // tells us so without touching a single row — the 450KB payload never crosses the wire.
       const out = await conditionalJson(LIVE_ENDPOINT, { key: STORE_KEY, optional: true });
-      if (!out.value?.rows?.length) return null;
+      if (!out.value?.rows?.length) throw Error('Con-call source could not be revalidated.');
       if (out.status === 304) {
         markChecked('live', out.checkedAt);
         return null;

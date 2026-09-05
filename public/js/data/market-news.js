@@ -279,7 +279,7 @@ export async function refresh() {
   const changed = await read();
   const added = [...state.byId.keys()].filter((k) => !before.has(k)).length;
   emit();
-  return { changed, added, total: state.articles.length, capturedAt: state.capturedAt };
+  return { changed, added, total: state.articles.length, capturedAt: state.capturedAt, checked: state.lastReadFailed ? 0 : 1, failed: state.lastReadFailed ? 1 : 0 };
 }
 
 /**
@@ -642,6 +642,7 @@ export function startLive(live) {
     intervalMs: POLL_MS,
     fetcher: async () => {
       const changed = await read();
+      if (state.lastReadFailed) throw Error('Market-news capture could not be revalidated.');
       if (!changed) return null;
       emit();
       return state;
