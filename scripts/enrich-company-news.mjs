@@ -111,10 +111,20 @@ export async function enrichCompanyNews({ dataDir = DATA, baseUrl = BASE, fetche
     if (Date.now() > deadline - 20000 || attempted >= maxQueries) break;
     attempted++;
     const checkpoint = state.queries[job.key] ||= {};
-    const range = checkpoint.pending?.length ? checkpoint.range : discoveryRange(checkpoint, now);
+    const range = checkpoint.pending?.length ? { ...checkpoint.range } : discoveryRange(checkpoint, now);
+    let ranges = null;
+    if (checkpoint.pending?.length) {
+      // A saturated historical day cannot monopolize this query forever. Poll current/outage
+      // coverage first, then resume old partitions. The incomplete leaf still blocks a green
+      // coverage claim, but no longer prevents discovery of newer international stories.
+      const overlapDay = new Date(now - 48 * 3600000).toISOString().slice(0, 10);
+      const catchup = { from: range.to < overlapDay ? range.to : overlapDay, to: at.slice(0, 10) };
+      ranges = [...new Map([catchup, ...checkpoint.pending].map(r => [`${r.from}|${r.to}`, r])).values()];
+      range.to = catchup.to;
+    }
     checkpoint.lastAttemptAt = at;
     checkpoint.range = range;
-    const result = await discoverNewsRange({ ...range, ranges: checkpoint.pending, maxReads: 5,
+    const result = await discoverNewsRange({ ...range, ranges, maxReads: 5,
       read: async ({ from, to }) => {
         if (Date.now() > deadline - 20000) throw Error('budget');
         await new Promise(resolve => setTimeout(resolve, gapMs));
@@ -132,6 +142,7 @@ export async function enrichCompanyNews({ dataDir = DATA, baseUrl = BASE, fetche
     if (result.complete) {
       completed++;
       checkpoint.lastSuccessAt = at;
+      checkpoint.coveredThrough = range.to;
       if (range.reconcile) checkpoint.lastReconciledAt = at;
     }
   }

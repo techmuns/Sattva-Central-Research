@@ -2,7 +2,8 @@
 // Reconcile 30 days weekly; success stamps only after the whole requested date partition completes.
 export function discoveryRange(state = {}, now = Date.now()) {
   const day = ms => new Date(ms).toISOString().slice(0, 10);
-  const success = Date.parse(state.lastSuccessAt || '');
+  // When an old backlog completes today, its read time is not the date through which it covered.
+  const success = Date.parse(state.coveredThrough || state.lastSuccessAt || '');
   const reconciled = Date.parse(state.lastReconciledAt || '');
   const reconcile = !Number.isFinite(reconciled) || now - reconciled >= 7 * 86400000;
   const from = !Number.isFinite(success) || reconcile ? now - 30 * 86400000 : success - 48 * 3600000;

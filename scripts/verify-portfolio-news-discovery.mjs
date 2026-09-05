@@ -80,6 +80,7 @@ assert.equal(officialDocumentDate('Folder /2025/02/ and unrelated 2024 date'), n
 assert.deepEqual(officialDocumentLinks('<a href="/a.pdf">Official &amp; filing</a><a href="javascript:evil.pdf">bad</a>', 'https://example.test/ir'), [{ url: 'https://example.test/a.pdf', title: 'Official & filing' }]);
 assert.equal(discoveryRange({ lastSuccessAt: `${day}T00:00:00Z` }, now).from, '2026-08-06');
 assert.equal(discoveryRange({ lastSuccessAt: `${day}T00:00:00Z`, lastReconciledAt: `${day}T00:00:00Z` }, now).from, '2026-09-03');
+assert.equal(discoveryRange({ lastSuccessAt: `${day}T00:00:00Z`, coveredThrough: '2026-08-30', lastReconciledAt: `${day}T00:00:00Z` }, now).from, '2026-08-28', 'completing an old partition does not skip the outage interval');
 const split = await discoverNewsRange({ from: '2026-09-01', to: '2026-09-03', limit: 2,
   read: async r => ({ articles: r.from === r.to ? [{ title: r.from }] : [{ title: r.from }, { title: r.to }] }) });
 assert(split.complete);
@@ -101,12 +102,14 @@ try {
   writeJson(join(scratch, 'news.json'), { byTicker: {}, capturedAt: `${day}T00:00:00Z`, empty: [entity.key] });
   writeJson(join(scratch, 'market-news.json'), { articles: [{ title: 'Jayaswal Neco Industries clarification', publisher: 'Fixture publisher', url: 'https://example.test/publisher', publishedAt: `${day}T01:00:00Z` }] });
   let fail = false;
+  const requestedRanges = [];
   const fetcher = async input => {
     const url = new URL(input);
     if (url.pathname === '/ir') return new Response('<a href="/statement.pdf">Clarification on media reports</a>');
     if (url.pathname.endsWith('.pdf')) return new Response('%PDF-fixture');
     assert.equal(url.hostname, 'fixture.test');
     assert.equal(url.searchParams.get('country'), 'ALL');
+    requestedRanges.push({ from: url.searchParams.get('from'), to: url.searchParams.get('to') });
     return fail ? new Response('{}', { status: 503 }) : Response.json({ ok: true, country: 'ALL', articles: [
       { title: 'Datasel arbitration', date: day, url: 'https://example.test/global' },
       { title: 'An unverified search result is still retained', date: day, url: 'https://example.test/uncertain' },
@@ -128,5 +131,11 @@ try {
   assert.equal(failed.staleOrIncompleteQueries, 1, 'a recent prior success cannot hide a failed newest attempt');
   assert.equal(companyNewsArchiveRows(dir).length, 5, 'empty/error reads cannot retract retained articles');
   assert.equal(readJson(join(dir, 'discovery.json')).queries[`${entity.entityId}|ALL|Datasel`].lastSuccessAt, checkpoint);
+  fail = false;
+  const later = now + 5 * 86400000;
+  requestedRanges.length = 0;
+  await enrichCompanyNews({ ...options, now: later });
+  assert.equal(requestedRanges[0].to, '2026-09-10', 'current discovery proceeds before an old incomplete partition');
+  assert(requestedRanges[0].from <= '2026-09-06', 'resumption covers the outage gap, not only the latest two days');
 } finally { rmSync(scratch, { recursive: true, force: true }); }
 console.log('PASS portfolio discovery: customer regressions, tickerless cards, cautious relations, social exclusion, feed dedupe, global recovery, official IR and append-only failure retention.');
