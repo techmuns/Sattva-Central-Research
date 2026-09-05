@@ -640,7 +640,7 @@ export function scoreTable(config) {
         // A CSS height on <tr> is only a minimum. Constrain each cell's content as well, so a
         // longer attribution/reason cannot change the physical stride behind virtual spacers.
         // Full text remains in the existing titles, row detail and model-backed export.
-        const td = (content, classes = '') => `<td class="${PX} ${isVirtual ? 'py-0' : 'py-3'} ${classes}">${isVirtual
+        const td = (content, classes = '') => `<td class="${PX} ${isVirtual ? '' : 'py-3'} ${classes}"${isVirtual ? ' style="padding-top:0;padding-bottom:0"' : ''}>${isVirtual
           ? `<div data-virtual-cell style="height:${VIRTUAL_ROW_HEIGHT - 1}px;display:flex;align-items:center;overflow:hidden"><div style="width:100%;min-width:0;max-height:${VIRTUAL_ROW_HEIGHT - 25}px;overflow:hidden">${content}</div></div>`
           : content}</td>`;
         const dataTd = (c) =>

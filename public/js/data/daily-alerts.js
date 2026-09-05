@@ -56,7 +56,7 @@ import { announcementSignal } from './filing-signals.js';
 export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
 import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
-import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
+import { ADDITIONAL_SOURCES, additionalSourceDependencies } from './alert-sources.js';
 import * as records from './alert-records.js';
 import { readEntry, writeEntry } from '../core/store.js';
 import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
@@ -396,12 +396,57 @@ const loadingFeeds = new Map();
 const loadErrors = new Map();
 const loadedFeeds = new Set();
 const listeners = new Set();
+// One normalized snapshot per public feed, not per tab/scope/filter. Keep source subscriptions
+// alive while the tab is unmounted so a change elsewhere cannot resurrect an old snapshot.
+// No poller or durable storage here; private document feeds are always read directly.
+const normalizedFeeds = new Map();
+const PRIVATE_FEEDS = new Set(['company-documents', 'drhp-documents']);
+let observingSources = false;
+function observeSources() {
+  if (observingSources) return;
+  observingSources = true;
+  const dependencies = [
+    [technicals, ['technicals']], [earnings, ['earnings']],
+    [concalls, ['concalls', 'scheduled-concalls', 'screener-portfolio-upcoming']],
+    [chatter, ['chatter', 'chatter-posts']], [investors, ['investors', 'investor-positions']],
+    [announcements, ['announcements']], [insider, ['insider']], [news, ['news']],
+    [marketNews, ['market-news']], [records, []], ...additionalSourceDependencies,
+  ];
+  for (const [source, ids] of dependencies) source.onChange?.(() => {
+    for (const id of ids) normalizedFeeds.delete(id);
+    listeners.forEach((fn) => fn());
+  });
+  // Some collectors resolve issuer names against the current in-memory portfolio.
+  coverage.onChange(({ changed }) => { if (changed) normalizedFeeds.clear(); });
+}
+
+function readFeed(feed, { day, includeHistory }) {
+  const cached = normalizedFeeds.get(feed.id);
+  if (cached?.day === day && cached.includeHistory === includeHistory) {
+    // Re-age the wall-clock discovery note without reclassifying thousands of unchanged stories.
+    return feed.id === 'news' ? { ...cached.row, ...companyNewsState(day) } : cached.row;
+  }
+  const out = COLLECTORS[feed.id]({ day, includeHistory, scope: 'universe', wanted: null }) || {};
+  const row = toFeedRow(feed, { ...out,
+    events: (out.events || []).filter((e) => includeHistory || eventDay(e) === day) }, day);
+  if (loadedFeeds.has(feed.id) && !PRIVATE_FEEDS.has(feed.id)) normalizedFeeds.set(feed.id, { day, includeHistory, row });
+  return row;
+}
+
 function loadFeed(id, refresh) {
   if (loadingFeeds.has(id)) return loadingFeeds.get(id);
   const pending = Promise.resolve().then(() => LOADERS[id]?.(refresh)).then(
-    () => { loadErrors.delete(id); loadedFeeds.add(id); },
+    () => {
+      // A loader may update freshness without publishing row changes (e.g. HTTP 304).
+      if (refresh || !loadedFeeds.has(id)) normalizedFeeds.delete(id);
+      loadErrors.delete(id); loadedFeeds.add(id);
+    },
     (error) => { loadErrors.set(id, String(error?.message || error)); throw error; },
-  ).finally(() => { loadingFeeds.delete(id); listeners.forEach((fn) => fn()); });
+  ).finally(() => {
+    // The bulk calendar adapter owns a capture outside earnings-calendar's event store.
+    if (id === 'earnings-calendar') normalizedFeeds.delete(id);
+    loadingFeeds.delete(id); listeners.forEach((fn) => fn());
+  });
   loadingFeeds.set(id, pending);
   return pending;
 }
@@ -409,6 +454,7 @@ function loadFeed(id, refresh) {
 /** Revalidate the evidence stores without building a large alerts report.
  * Ask Research needs fresh inputs for the next question, not a discarded timeline. */
 export async function refreshSources() {
+  observeSources();
   const context = screenerInsights.load({ refresh: true }).then(() => {
     if (screenerInsights.meta()?.latestReadFailed) throw Error('Company insights could not be refreshed.');
   });
@@ -430,6 +476,7 @@ export async function refreshSources() {
  * failed read is never an empty result.
  */
 export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null } = {}) {
+  observeSources();
   const book = holdings || coverage.holdings();
   const settledFeeds = new Map(); // feed id -> the finished feed row
   // Start with every source's current in-memory records. Refreshing one source
@@ -437,9 +484,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // status still says these records have not been rechecked by this collection.
   for (const feed of load ? FEEDS : []) {
     try {
-      const out = COLLECTORS[feed.id]({ day, scope: 'universe', wanted: null, includeHistory }) || {};
-      settledFeeds.set(feed.id, toFeedRow(feed, { ...out, status: 'pending',
-        events: (out.events || []).filter((e) => includeHistory || eventDay(e) === day) }, day));
+      settledFeeds.set(feed.id, { ...readFeed(feed, { day, includeHistory }), status: 'pending' });
     } catch { /* A source with no readable snapshot starts empty. */ }
   }
   const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds });
@@ -464,8 +509,8 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // page. `Promise.all` over independent reads is head-of-line blocking with a
   // tidy syntax.
   //
-  // So each feed loads, collects and reports independently, and `onPartial` fires every time one
-  // lands. Nothing rejects: a feed that throws becomes a row saying so, because a failed read is
+  // Each feed loads and collects independently; `onPartial` publishes a bounded cadence of
+  // progress while slower reads remain outstanding. Nothing rejects: a failed read is
   // never an empty result.
   await Promise.all(
     FEEDS.map(async (feed) => {
@@ -475,16 +520,15 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
       const args = { day, scope: 'universe', wanted: null, includeHistory };
       try {
         if (load) await loadFeed(feed.id, refresh);
-        out = COLLECTORS[feed.id](args) || {};
+        out = readFeed(feed, args);
         if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
         else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
       } catch (err) {
         // A failed refresh must not erase a last-good capture or masquerade as an empty feed.
-        try { out = COLLECTORS[feed.id](args) || {}; } catch { out = { events: [] }; }
+        try { out = readFeed(feed, args); } catch { out = toFeedRow(feed, { events: [] }, day); }
         out = { ...out, status: 'failed', reachesToday: false, note: `Read failed: ${String(err?.message || err)}. Retained records remain visible.` };
       }
-      out.events = (out.events || []).filter((e) => includeHistory || eventDay(e) === day);
-      settledFeeds.set(feed.id, toFeedRow(feed, out, day));
+      settledFeeds.set(feed.id, out);
       schedulePartial();
     })
   );
@@ -537,10 +581,9 @@ async function refreshFilings(feed, refresh) {
 
 // Read-only source notifications; the tab reassembles loaded records without triggering fetches.
 export function onChange(fn) {
-  const modules = [earnings, concalls, chatter, investors, announcements, insider, news, marketNews, records, ...additionalSubscriptions];
-  const off = modules.map((source) => source.onChange?.(fn)).filter(Boolean);
+  observeSources();
   listeners.add(fn);
-  return () => { listeners.delete(fn); off.forEach((unsubscribe) => unsubscribe()); };
+  return () => listeners.delete(fn);
 }
 
 const COLLECTORS = {
@@ -1250,10 +1293,6 @@ function fromTechnicals({ day, wanted, includeHistory }) {
 
 /** Company news published today. An editorial headline is not sentiment data, so it stays neutral. */
 function fromCompanyNews({ day, wanted, includeHistory }) {
-  const m = news.meta();
-  const capturedDay = istDay(m.capturedAt);
-  const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
-  const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
   const rows = news.rows().filter((r) => inRequestedWindow(r.publishedAt || r.date, day, includeHistory) && inScope(wanted, r.ticker));
 
   const events = rows.map((r) => ({
@@ -1281,8 +1320,15 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     url: r.url || null,
   }));
 
+  return { events, ...companyNewsState(day) };
+}
+
+function companyNewsState(day) {
+  const m = news.meta();
+  const capturedDay = istDay(m.capturedAt);
+  const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
+  const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
   return {
-    events,
     reachesToday: !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
     note: [capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,

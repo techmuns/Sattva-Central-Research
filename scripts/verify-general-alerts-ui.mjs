@@ -355,9 +355,10 @@ try {
     for (let step = 0; step < 24; step++) {
       await page.mouse.wheel(0, 180);
       await embedded.waitForFunction(top => document.querySelector('[data-table-scroll]').scrollTop > top, previous);
-      const sample = await scroller.evaluate(async el => {
+      const sample = await embedded.evaluate(async () => {
         await new Promise(requestAnimationFrame);
         await new Promise(requestAnimationFrame);
+        const el = document.querySelector('[data-table-scroll]');
         const rows = [...el.querySelectorAll('tr[data-row-key]')];
         const stride = parseFloat(rows[0].style.height);
         const origin = el.querySelector('tbody').getBoundingClientRect().top;
@@ -368,7 +369,7 @@ try {
           drift: rows.map(r => Math.abs(r.getBoundingClientRect().top - origin - (Number(r.getAttribute('aria-rowindex')) - 2) * stride)),
           visible: !!visible && visible.getBoundingClientRect().top < el.getBoundingClientRect().bottom };
       });
-      assert(sample.top > previous && sample.visible, `wheel advances through visible records inside ${size.width}px iframe`);
+      assert(sample.top > previous && sample.visible, `wheel advances through visible records inside ${size.width}px iframe (step ${step}, previous ${previous}): ${JSON.stringify(sample)}`);
       assert(sample.count <= 64 && sample.heights.every(h => Math.abs(h - sample.stride) <= 1), 'rendered heights match the virtual scroll stride');
       assert(Math.max(...sample.drift) <= 2, `window replacement must not jump rows: ${Math.max(...sample.drift)}px drift`);
       previous = sample.top;
