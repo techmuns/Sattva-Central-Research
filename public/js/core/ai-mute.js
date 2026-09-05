@@ -14,10 +14,9 @@
 //   nothing on screen saying so. That is the same failure as rendering a missing value as zero:
 //   an absence produced by our own bookkeeping, presented as an absence of events.
 //
-//   So a mute records WHICH evidence was dismissed (the card's strongest event id). The card stays
-//   hidden while that is still the strongest thing the feeds hold for it, and comes back by itself
-//   the moment something stronger arrives. Nothing is ever hidden for good, the count of hidden
-//   cards is always on screen, and one click restores them.
+//   A mute records the material evidence already read. A new material item or correction brings
+//   the company back even when its strongest older event is unchanged. Reordering, routine
+//   observations, and evidence aging out do not wake a dismissed card.
 //
 // IT IS ALSO TIME-BOUNDED. Beyond the alert window itself the record is meaningless — the events
 // it refers to have left the window — so it lapses rather than accumulating for ever.
@@ -33,19 +32,17 @@ const normTicker = (t) => String(t ?? '').trim().toUpperCase();
 let cache = null;
 
 function read() {
-  if (cache) return cache;
-  let raw = null;
-  try {
-    raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  } catch {
-    raw = null;
+  let raw = cache;
+  if (!raw) {
+    try { raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch { raw = null; }
   }
   const now = Date.now();
   const clean = {};
   for (const [ticker, entry] of Object.entries(raw && typeof raw === 'object' ? raw : {})) {
     if (!entry || typeof entry !== 'object') continue;
     const at = Date.parse(entry.at || '');
-    if (!Number.isFinite(at) || now - at > LAPSE_MS) continue;
+    if (!Number.isFinite(at) || at > now || now - at >= LAPSE_MS) continue;
     clean[normTicker(ticker)] = { at: entry.at, seen: entry.seen == null ? null : String(entry.seen) };
   }
   cache = clean;
@@ -63,7 +60,7 @@ function write(next) {
   emit();
 }
 
-/** Hide a company's card until its strongest evidence changes, or the window lapses. */
+/** Hide already-read evidence until a new material event arrives, or the window lapses. */
 export function hide(ticker, seenId = null) {
   const key = normTicker(ticker);
   if (!key) return;
@@ -82,14 +79,22 @@ export function show(ticker) {
 /**
  * Is this card hidden for the evidence it is currently carrying?
  *
- * `seenId` is the card's strongest event now. A different id means new evidence has overtaken what
- * the reader dismissed, so the card is shown again rather than silently suppressed.
+ * `seenId` is the serialized material-evidence list. Subset comparison tolerates old events
+ * leaving the rolling window. Legacy single-id dismissals cannot hide a new evidence list.
  */
 export function isHidden(ticker, seenId = null) {
   const entry = read()[normTicker(ticker)];
   if (!entry) return false;
-  if (entry.seen == null) return true;
-  return entry.seen === String(seenId ?? '');
+  if (entry.seen == null || !seenId) return false;
+  const evidence = (value) => {
+    try {
+      const list = JSON.parse(value);
+      return Array.isArray(list) && list.every((item) => typeof item === 'string') ? list : null;
+    } catch { return null; }
+  };
+  const current = evidence(seenId), seen = evidence(entry.seen);
+  if (current) return !!seen && current.length > 0 && current.every((item) => seen.includes(item));
+  return !seen && entry.seen === String(seenId);
 }
 
 export function count() {

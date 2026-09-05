@@ -51,12 +51,15 @@ import { isMove } from './finology-shared.js';
 import { announcements, insider, news } from './filings.js';
 import { insiderTradeSourceUrl } from './filings-shared.js';
 import { classifyStory } from './news-keywords.js';
+import { announcementSignal } from './filing-signals.js';
+export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
 import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
 import * as records from './alert-records.js';
 import { readEntry, writeEntry } from '../core/store.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
+import { attributionFor, newsSearchText } from './company-news-attribution.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -171,24 +174,6 @@ export const CHATTER_HIGH_CHANGE_PCT = 100;
 // whichever signal the other did not carry.
 export const VOLUME_X = 2;
 
-/**
- * Whether BSE's own `CRITICALNEWS` flag is treated as OUR materiality gate. It is not, and the
- * measurement is why.
- *
- * The flag is reproduced on every row and in the export, because it is theirs and a reader is owed
- * it. What it cannot be is the thing that decides what General Alerts calls important: measured on
- * the retained capture, it marks **1,147 of 3,942 filings — 29%** — and 1,074 of those carry no
- * tracked keyword and match no directional rule. 881 of them are **AGM notices**; the rest are
- * board-meeting intimations and new listings. It is a CALENDAR flag, not a materiality one, and
- * borrowing it made a third of the whole exchange high-importance — which is the same noise the
- * tracked keywords were brought in to remove, one tab over.
- *
- * So importance on this feed is our own stated rule (a tracked keyword, or the directional rule
- * below), and this constant exists so the decision is visible and reversible in one place rather
- * than buried in an expression. Flipping it to `true` restores the old behaviour exactly.
- */
-export const BSE_CRITICAL_IS_MATERIAL = false;
-
 export const DIRECTION = { POSITIVE: 'positive', NEGATIVE: 'negative', NEUTRAL: 'neutral' };
 export const IMPORTANCE = { HIGH: 'high', LOW: 'low' };
 
@@ -217,75 +202,6 @@ const signal = (direction, importance, signalReason, importanceReason) => ({
   reason: signalReason,
 });
 
-const textOf = (...parts) => parts.filter(Boolean).join(' ').toLowerCase();
-
-/** Conservative, visible rules over BSE's title/taxonomy. Neutral is the deliberate fallback. */
-export function announcementSignal(row = {}) {
-  const text = textOf(row.category, row.subCategory, row.title, row.headline);
-  const negative = [
-    ['rating downgrade', /\b(?:rating\s+)?downgrad(?:e|ed|ing)\b/],
-    ['default or insolvency', /\bdefault(?:ed)?\b|\binsolvenc\w*\b|\bbankrupt\w*\b|\bliquidat\w*\b|\bwinding[ -]?up\b/],
-    ['fraud or enforcement action', /\bfraud\w*\b|\bpenalt(?:y|ies)\b|\bfine\b|\bshow[ -]?cause\b|\btax demand\b|\bdemand notice\b/],
-    ['contract cancellation or suspension', /\b(?:order|contract)\s+(?:cancel\w*|terminat\w*)\b|\bsuspension\b/],
-    ['auditor resignation', /\bauditor\w*.{0,80}\bresign\w*\b|\bresign\w*.{0,80}\bauditor\w*\b/],
-  ].find(([, re]) => re.test(text));
-  // An approval is directional only when the filing also names a regulator or exchange. A client
-  // approving a drawing or an internal proposal is not the same event. BSE titles commonly put
-  // the noun first ("Receipt of In-Principle Approval from the Stock Exchanges"), so the action
-  // accepts both word orders while the context guard keeps the rule narrow.
-  const regulatoryApproval =
-    /\b(?:approval (?:received|granted)|approved by|receipt of.{0,80}\bapproval)\b/.test(text) &&
-    /\b(?:bse|nse|stock exchanges?|sebi|rbi|government|ministr(?:y|ies)|authorit(?:y|ies)|regulator\w*|nclt|courts?|drug controller|usfda|fda)\b/.test(text);
-  const positive = [
-    ['rating upgrade', /\b(?:rating\s+)?upgrad(?:e|ed|ing)\b/.test(text)],
-    ['shareholder distribution', /\bdividend\b|\bbonus (?:issue|share)\b|\bbuyback\b/.test(text)],
-    // A bare "order received" is also how adjudication, court and regulator notices are titled.
-    // Commercial context is required before that phrase can be called business won.
-    ['order or contract award', /\bcontract\s+(?:award\w*|won|received|secured)\b|\b(?:purchase|work|supply|export)\s+order\s+(?:award\w*|won|received|secured)\b|\border\s+(?:award\w*|won|secured)\b|\bawarded (?:an? )?(?:order|contract)\b/.test(text)],
-    ['regulatory approval or patent grant', regulatoryApproval || /\bpatent (?:granted|received)\b/.test(text)],
-    ['commercial production start', /\bcommercial production (?:commenc(?:ed|ement)|started|began)\b|\b(?:start|commencement) of (?:the )?commercial production\b/.test(text)],
-  ].find(([, matched]) => matched);
-  const matched = negative || positive;
-  const direction = negative ? DIRECTION.NEGATIVE : positive ? DIRECTION.POSITIVE : DIRECTION.NEUTRAL;
-
-  // THE SAME THIRTY KEYWORDS THE NEWS SURFACES FILTER BY, over the filing's own subject and BSE's
-  // own sub-category — "Award of Order / Receipt of Order", "Resignation of Director", "Credit
-  // Rating" are the exchange's words for exactly the things this desk tracks.
-  //
-  // NO `inTitle` GATE HERE, and that is deliberate rather than an oversight. That gate exists on
-  // the news feed because several publishers fill the standfirst with a related-links strip, so a
-  // match there is not evidence about the story. A filing has no such field: the subject and the
-  // sub-category are both the exchange's own description OF THIS FILING. Nor is there a
-  // `namesCompany` question — a BSE filing IS the company's own statement, so the company is
-  // certain in a way a name-matched search result never is.
-  const reading = classifyStory({ title: row.title || row.headline, summary: row.subCategory || '' });
-
-  // ONE PREDICATE, THREE STATED INPUTS — not two rules over one question. See
-  // BSE_CRITICAL_IS_MATERIAL above for why their flag is reproduced but does not gate this.
-  // Measured: this takes high importance from 1,271 of 3,942 filings (32%) to 446 (11%).
-  const critical = row.critical === true;
-  const high = reading.tracked || !!matched || (BSE_CRITICAL_IS_MATERIAL && critical);
-  return {
-    ...signal(
-      direction,
-      high ? IMPORTANCE.HIGH : IMPORTANCE.LOW,
-      matched ? `Rule-derived from the filing text: ${matched[0]}.` : 'No directional announcement rule matched; shown as neutral.',
-      high
-        ? `High: ${[
-            reading.tracked ? `matched the tracked ${reading.labels.length === 1 ? 'keyword' : 'keywords'} ${reading.labels.join(', ')}` : null,
-            matched ? 'a stated material announcement rule matched' : null,
-          ]
-            .filter(Boolean)
-            .join('; ')}.`
-        : `Low: no tracked keyword and no material rule matched.${critical ? " BSE marked this filing critical and that marker is reproduced on the row, but it covers routine calendar filings — AGM notices and board-meeting intimations — so it is not this dashboard's materiality gate." : ''}`
-    ),
-    keywords: reading.labels,
-    keywordIds: reading.ids,
-    keywordGroups: reading.groups,
-    critical,
-  };
-}
-
 /**
  * A company-news story's reading: TOPIC AND MATERIALITY, NEVER DIRECTION.
  *
@@ -303,39 +219,30 @@ export function announcementSignal(row = {}) {
  */
 export function newsSignal(row = {}) {
   const reading = classifyStory(row);
+  const attribution = reading.attribution;
+  const identityReading = { attribution, aiEligible: attribution.status === 'confirmed', namesCompany: reading.namesCompany };
   if (!reading.tracked) {
     return {
       ...signal(
         DIRECTION.NEUTRAL,
         IMPORTANCE.LOW,
         'Publisher headline; not directionally graded.',
-        reading.namesCompany === false
-          ? "Low: no tracked keyword matched, and the publisher text does not appear to name this company. Retained as an unverified result from the upstream company-name search."
+        attribution.status !== 'confirmed'
+          ? `Low: no tracked keyword matched. ${attribution.reason}`
           : 'Low: no tracked keyword matched, so this is general coverage rather than a watched event.'
       ),
       keywords: [],
       // Attribution and topic are independent. The old early return lost this field precisely on
       // the untracked rows that make up most search spillover, leaving All Alerts unable to tell
       // “the article names the company” from “the search API filed it under the company”.
-      namesCompany: reading.namesCompany,
+      ...identityReading,
     };
   }
   const labels = reading.labels;
   const named = reading.namesCompany;
   const where = reading.inTitle ? 'headline' : 'standfirst';
-  // BOTH HALVES, OR IT IS NOT AN ALERT. "Company name + keyword" is the desk's rule and a keyword
-  // on its own is only half of it: the search returns a name match, so a story that carries a
-  // tracked word and does not carry the company is a story about somebody else. Promoting it would
-  // put another company's order win at the top of this company's card — which is the exact noise
-  // the keywords were brought in to remove, re-introduced one layer up.
-  //
-  // The row is not dropped and the keywords are not withheld: it stays in the timeline, tagged, at
-  // low importance, and the reason says which half failed. Dropping it would be the heuristic
-  // deciding on the reader's behalf, and it is not good enough for that — see `namesCompany` in
-  // news-keywords.js, and note it cannot separate a company from a namesake that shares a generic
-  // industry word (a story about Indo Tech TRANSFORMERS reads as naming Transformers & Rectifiers).
-  // `null` — no search term to check against — still counts, because an unverifiable name is not a
-  // failed one.
+  // Identity and topic are separate. Unknown identity stays visible in company search, but cannot
+  // promote an event or count as independent AI corroboration. Absence of a name is NOT a mismatch.
   // AND THE KEYWORD HAS TO BE IN THE HEADLINE, NOT ONLY THE STANDFIRST.
   //
   // The publisher chose what to lead with; a standfirst is a paragraph that happened to contain the
@@ -348,7 +255,7 @@ export function newsSignal(row = {}) {
   //
   // The FILTER still matches both, and the chip says which — exploring a feed and asserting a
   // company needs attention are different jobs, and only the second is a claim.
-  const bothHalves = named !== false && reading.inTitle;
+  const bothHalves = named === true && reading.inTitle;
   return {
     ...signal(
       DIRECTION.NEUTRAL,
@@ -357,37 +264,28 @@ export function newsSignal(row = {}) {
       bothHalves
         ? `High: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')} in the ${where}` +
           (named === true ? ', and the story names the company.' : '.')
-        : named === false
-          ? `Low: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')}, but the story does not appear to name this company — the company's own name search returned it, and a keyword without the name is half the rule.`
+        : named !== true
+          ? `Low: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')}. ${attribution.reason}`
           : `Low: matched the tracked ${labels.length === 1 ? 'keyword' : 'keywords'} ${labels.join(', ')} only in the standfirst, which several outlets fill with a related-links strip rather than this story's own summary. The headline is what the publisher chose to lead with.`
     ),
     keywords: labels,
     keywordIds: reading.ids,
     keywordGroups: reading.groups,
-    namesCompany: named,
+    ...identityReading,
   };
 }
 
 /**
  * The text All Alerts is allowed to match for one event.
  *
- * Company news is the exceptional feed: its ticker and company label come from the QUERY we sent,
- * not from the article. The upstream sometimes fills the bottom of a short result set with recent
- * stories about unrelated companies. Indexing that query-assigned label made a search for
- * “Jayaswal” match a Lululemon headline even though neither the headline nor standfirst mentioned
- * Jayaswal Neco.
- *
- * Do not delete or de-scope those rows. A name check is heuristic and can be false for a genuine
- * brand/alias story, so the complete record stays in the retained stream and in the News source
- * tab. We only stop unsupported metadata from satisfying the free-text search. The publisher's
- * headline and standfirst remain searchable, which also means a brand-name search still finds an
- * article that used the brand instead of the legal company name.
+ * Confirmed and uncertain news retain company search recall. Only a reviewed mismatch loses the
+ * query identity from search; the article stays in the unassigned retained stream. The old rule
+ * excluded every missing-name result and hid real brand/spelling variants from company searches.
  */
 export function eventSearchText(event = {}) {
-  const unsupportedCompanyAttribution = event.feed === 'news' && event.namesCompany === false;
-  const identity = unsupportedCompanyAttribution ? '' : `${event.company || ''} ${event.ticker || ''}`;
-  const publisherText = event.feed === 'news' ? event.sourceRecord?.summary || '' : '';
-  return `${event.day || ''} ${event.time || ''} ${identity} ${event.direction || ''} ${event.importance || ''} ${event.headline || ''} ${event.detail || ''} ${publisherText} ${event.signalReason || ''} ${event.importanceReason || ''} ${event.feedLabel || ''}`;
+  const row = { ...event.sourceRecord, title: event.headline, company: event.company, ticker: event.ticker, attribution: event.attribution || event.sourceRecord?.attribution };
+  const identity = event.feed === 'news' ? newsSearchText(row) : `${event.company || ''} ${event.ticker || ''}`;
+  return `${event.day || ''} ${event.time || ''} ${identity} ${event.direction || ''} ${event.importance || ''} ${event.headline || ''} ${event.detail || ''} ${event.signalReason || ''} ${event.importanceReason || ''} ${event.feedLabel || ''}`;
 }
 
 const numeric = (value) => {
@@ -1317,7 +1215,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     at: r.date,
     ticker: r.ticker || null,
     entityId: r.entityId || null,
-    company: r.company || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
+    company: attributionFor(r).status === 'unrelated' ? 'Unrelated search result' : r.company || attributionFor(r).queryCompany || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
     headline: r.title || 'Story',
     detail: r.source ? `Published by ${r.source}` : 'Publisher not carried',
     url: r.url || null,

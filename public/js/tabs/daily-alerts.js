@@ -35,6 +35,7 @@ import * as alerts from '../data/daily-alerts.js';
 import * as coverage from '../data/coverage.js';
 import { scopeLabel } from '../data/scope.js';
 import * as records from '../data/alert-records.js';
+import { attributionLabel } from '../data/company-news-attribution.js';
 
 export const meta = {
   id: 'daily-alerts',
@@ -72,6 +73,9 @@ let picked = null;
 let collecting = 0;
 let sourceTimer = null;
 let sourceDirty = false;
+let tableDispose = null;
+let scrollQuietUntil = 0;
+let deferredPaintTimer = null;
 function sourceChanged() {
   sourceDirty = true;
   if (!ctxRef || sourceTimer || collecting) return;
@@ -83,6 +87,8 @@ function sourceChanged() {
 
 export function render(ctx) {
   ctxRef = ctx;
+  cancelDeferredPaint();
+  scrollQuietUntil = 0;
 
   // AI ALERTS LINKS TO THE COMPLETE EVIDENCE FOR ONE COMPANY. Seed the existing table search
   // rather than inventing a second company filter. Entering through that link resets an earlier
@@ -152,6 +158,11 @@ export function destroy() {
   loadToken++;
   clearTimeout(sourceTimer); sourceTimer = null; sourceDirty = false;
   cancelThrottledPaint();
+  cancelDeferredPaint();
+  if (tableDispose) tableDispose();
+  tableDispose = null;
+  if (unfit) unfit();
+  unfit = null;
   for (const off of unsubs) {
     try {
       off && off();
@@ -201,7 +212,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     if (token !== loadToken || !ctxRef) return;
     cancelThrottledPaint();
     report = next;
-    paint(ctxRef);
+    paintAfterScroll();
   } catch (err) {
     console.error('[daily-alerts] collect failed', err);
   } finally {
@@ -221,7 +232,7 @@ function throttledPaint() {
   paintTimer = setTimeout(() => {
     paintTimer = null;
     paintedAt = Date.now();
-    if (ctxRef) paint(ctxRef);
+    if (ctxRef) paintAfterScroll();
   }, wait);
 }
 
@@ -231,12 +242,41 @@ function cancelThrottledPaint() {
   paintedAt = Date.now();
 }
 
+// Live feeds are allowed to update while the reader scrolls; replacing the table during the
+// gesture is not. Keep coalescing data in memory and perform one trailing paint after 180ms of
+// quiet. Explicit controls (scope, horizon, feed selection) still paint immediately.
+const SCROLL_SETTLE_MS = 180;
+function noteTableScroll() {
+  scrollQuietUntil = performance.now() + SCROLL_SETTLE_MS;
+}
+
+function paintAfterScroll() {
+  if (!ctxRef) return;
+  const wait = scrollQuietUntil - performance.now();
+  if (wait <= 0) {
+    cancelDeferredPaint();
+    paint(ctxRef);
+    return;
+  }
+  if (deferredPaintTimer) return;
+  deferredPaintTimer = setTimeout(() => {
+    deferredPaintTimer = null;
+    paintAfterScroll();
+  }, wait + 16);
+}
+
+function cancelDeferredPaint() {
+  if (deferredPaintTimer) clearTimeout(deferredPaintTimer);
+  deferredPaintTimer = null;
+}
+
 
 // ---------------------------------------------------------------------------------------
 // Paint
 // ---------------------------------------------------------------------------------------
 
 function paint(ctx) {
+  cancelDeferredPaint();
   const day = report?.day || alerts.today();
   const events = report?.events || [];
   const feeds = report?.feeds || [];
@@ -276,13 +316,18 @@ function paint(ctx) {
   // Preserve the visible row across live repaints inside one horizon, but never carry a deep
   // history scroll offset into the much shorter forward calendar (or vice versa).
   const tablePosition = renderedHorizon === horizon ? captureTablePosition(ctx.root) : null;
-  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition);
+  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition, report?.pending === 0);
   tableViews[horizon] = table.view;
 
   // NO DESCRIPTION AND NO STAT STRIP. The four cards were the loudest version of
   // the problem: three of them counted rows the table beneath them already lists, and the fourth
   // printed a date the pill now carries. The pill is deliberately passive; full provenance stays
   // in the source registry and export — see the stat-strip opt-out rule in CLAUDE.md.
+  // scoreTable owns passive scroll handlers and a closure over its data. Dispose that instance
+  // before replacing its nodes; otherwise each partial feed repaint retains one more detached
+  // table and one more global scroll listener.
+  if (tableDispose) tableDispose();
+  tableDispose = null;
   ctx.root.innerHTML = `
     ${sectionHead({
       title: 'All Alerts',
@@ -297,7 +342,7 @@ function paint(ctx) {
     ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length)}
     ${table.html}`;
 
-  table.wire(ctx.root);
+  tableDispose = table.wire(ctx.root);
   wireHorizon(ctx);
   wireFeedFilter(ctx, available);
   fitStreamToViewport(ctx.root);
@@ -316,13 +361,20 @@ function paint(ctx) {
 function captureTablePosition(root) {
   const scroller = root.querySelector('[data-table-scroll]');
   if (!scroller) return null;
+  const top = scroller.scrollTop;
+  const left = scroller.scrollLeft;
+  const rendered = scroller.querySelectorAll('tbody tr[data-row-key]').length;
+  // At the beginning there is no anchor to preserve. Returning before any geometry reads avoids
+  // a forced layout on every live-feed paint and prevents a stale virtual-window key from being
+  // carried forward if the browser has just restored the internal scroller to zero.
+  if (top <= 1) return { top, left, rendered, key: null, offset: 0 };
   const rows = [...scroller.querySelectorAll('tbody tr[data-row-key]')];
   const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
   const anchor = rows.find((row) => row.getBoundingClientRect().bottom > boundary) || rows.at(-1) || null;
   return {
-    top: scroller.scrollTop,
-    left: scroller.scrollLeft,
-    rendered: rows.length,
+    top,
+    left,
+    rendered,
     key: anchor?.dataset.rowKey || null,
     offset: anchor ? anchor.getBoundingClientRect().top - boundary : 0,
   };
@@ -555,8 +607,9 @@ function coveragePanel(feeds, visibleCount) {
  * 110px short, which is the dead band this exists to remove. So the number is read from the
  * element itself, after the paint, rather than written down.
  *
- * Re-applied on resize, and the listener is returned to `unsubs` so it dies with the tab — a
- * window listener re-registered on every repaint is a leak that grows with every feed that lands.
+ * Re-applied on resize, and the one active listener is replaced on every paint and removed by
+ * destroy. Keeping superseded disposer closures in `unsubs` would be a smaller version of the
+ * same repaint leak this function is designed to avoid.
  */
 let unfit = null;
 function fitStreamToViewport(root) {
@@ -589,7 +642,6 @@ function fitStreamToViewport(root) {
   const onResize = () => apply();
   window.addEventListener('resize', onResize);
   unfit = () => window.removeEventListener('resize', onResize);
-  unsubs.push(unfit);
 }
 
 // Enough table to be worth having on a short window, and enough margin to keep the card's bottom
@@ -764,7 +816,7 @@ export function collapseUpcoming(events) {
   return [...merged.values()];
 }
 
-function eventsTable(ctx, events, day, mode, initialView, tablePosition = null) {
+function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, warmSearch = false) {
   const dateColumn = {
     label: 'Date / time',
     align: 'left',
@@ -779,6 +831,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null) 
     label: mode === HORIZON.UPCOMING ? 'What is scheduled' : 'What happened',
     get: (e) => `
       <div class="max-w-[560px]">
+        ${e.feed === 'news' ? `<div data-news-attribution="${escapeHtml(e.attribution?.status || 'uncertain')}" class="text-xs font-semibold text-slate-600" title="${escapeHtml(e.attribution?.reason || 'Company relationship unverified')}">${escapeHtml(attributionLabel(e))}</div>` : ''}
         <div class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${escapeHtml(e.headline)}</div>
         <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
         ${mode === HORIZON.UPCOMING ? '' : `<div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
@@ -842,9 +895,15 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null) 
     dense: true,
     wrapHeads: true,
     stickyHead: 'max(320px, calc(100vh - 560px))',
-    fillMode: 'scroll',
+    // The timeline can exceed five thousand rows. Keep all of them in the data model for search,
+    // filters, counts and export, while mounting only a bounded viewport window. Historical rows
+    // carry four text lines and are therefore taller than the two-line upcoming calendar rows.
+    fillMode: 'virtual',
+    virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 96,
+    preindexSearch: warmSearch,
+    onScrollActivity: noteTableScroll,
     rowClass: mode === HORIZON.UPCOMING ? null : alertRowClass,
-    initialRowCount: tablePosition?.rendered || 40,
+    initialRowCount: tablePosition?.rendered || 24,
     initialRowKey: tablePosition?.key || null,
     scrollLabel: mode === HORIZON.UPCOMING ? 'All Alerts upcoming events table' : 'All Alerts history table',
     columns,
@@ -976,6 +1035,9 @@ function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
       { header: 'Feed', key: 'feed', width: 18, get: cell((r) => r.feedLabel) },
       { header: 'Ticker', key: 'ticker', width: 14, get: cell((r) => r.ticker || '') },
       { header: 'Company', key: 'company', width: 32, get: cell((r) => r.company) },
+      { header: 'News relationship', key: 'newsRelationship', width: 26, get: cell((r) => r.feed === 'news' ? attributionLabel(r) : '') },
+      { header: 'Searched company (not attribution)', key: 'queryCompany', width: 32, get: cell((r) => r.attribution?.queryCompany || '') },
+      { header: 'News attribution evidence', key: 'newsEvidence', width: 60, get: cell((r) => r.attribution ? JSON.stringify(r.attribution) : '') },
       { header: upcoming ? 'What is scheduled' : 'What happened', key: 'headline', width: 60, get: cell((r) => r.headline) },
       { header: 'Detail', key: 'detail', width: 50, get: cell((r) => r.detail || '') },
       { header: 'Record type', key: 'kind', width: 16, get: cell((r) => r.kind || 'event') },

@@ -8,10 +8,34 @@ import { fileURLToPath } from 'node:url';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const data = (path) => JSON.parse(readFileSync(resolve(root, `data/${path}`)));
+const newsCases = JSON.parse(readFileSync(new URL('./fixtures/company-news-attribution.json', import.meta.url))).cases
+  .filter(test => ['accent', 'ticker-brand', 'no-keyword', 'snippet-only', 'reported-mismatch'].includes(test.id));
+const newsFixture = { capturedAt: '2026-09-04T08:00:00Z', entities: newsCases.map(test => ({ ...test.identity, key: test.identity.ticker })),
+  byTicker: Object.groupBy(newsCases.map(test => ({ date: '2026-09-04', company: test.identity.name,
+    ticker: test.identity.ticker, query: test.identity.name, source: 'Synthetic test publisher',
+    url: `https://example.test/${test.id}`, ...test.row })), row => row.ticker) };
 let version = 1;
 const calls = [];
 const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:16px;background:#f6f7fb"><button id="refresh">Refresh</button><main id="root"></main>
 <script>
+const activeListeners=new Map();
+const listenerSets=new WeakMap();
+const nativeAdd=EventTarget.prototype.addEventListener;
+const nativeRemove=EventTarget.prototype.removeEventListener;
+EventTarget.prototype.addEventListener=function(type,listener,options){
+  if(type==='scroll'||type==='resize'){
+    let byType=listenerSets.get(this);if(!byType){byType=new Map();listenerSets.set(this,byType);}
+    let listeners=byType.get(type);if(!listeners){listeners=new Set();byType.set(type,listeners);}
+    if(!listeners.has(listener)){listeners.add(listener);activeListeners.set(type,(activeListeners.get(type)||0)+1);}
+  }
+  return nativeAdd.call(this,type,listener,options);
+};
+EventTarget.prototype.removeEventListener=function(type,listener,options){
+  const listeners=listenerSets.get(this)?.get(type);
+  if(listeners?.delete(listener))activeListeners.set(type,Math.max(0,(activeListeners.get(type)||0)-1));
+  return nativeRemove.call(this,type,listener,options);
+};
+window.testListenerCount=(type)=>activeListeners.get(type)||0;
 window.testContext={session:{token:'local-fixture-only',email:'fixture@example.test'}};
 window.MunshotDashboardSDK={createClient:()=>({getContext:()=>window.testContext,onMessage:(fn)=>{window.testHostMessage=fn;return()=>{};}})};
 window.SATTVA_CHATTER_URL=location.origin+'/chatter';
@@ -19,7 +43,7 @@ window.SATTVA_CHATTER_URL=location.origin+'/chatter';
 import * as tab from '/js/tabs/daily-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
-coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'}]});
+coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'},{ticker:'NESTLEIND',name:'Nestle India'},{ticker:'DMART',name:'Avenue Supermarts'}]});
 window.show=(scope='universe')=>tab.render({root:document.querySelector('#root'),params:{},scope,data:{}});
 window.dispose=()=>tab.destroy();
 document.querySelector('#refresh').onclick=()=>refresh.refreshAll();
@@ -31,6 +55,7 @@ const server = createServer((req, res) => {
   const json = (value) => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value)); };
   try {
     if (url.pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+    if (url.pathname === '/data/news.json') { json(newsFixture); return; }
     if (url.pathname === '/api/earnings') { json(data('earnings-live.json')); return; }
     if (url.pathname === '/api/concalls') {
       const payload = data('concall-scans.json');
@@ -143,18 +168,28 @@ try {
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
   console.log('Verified undated search, scope changes and newly arrived filings');
 
-  // Regression: the upstream search padded Jayaswal Neco's result set with a current Investing.com
-  // batch. The rows remain retained, but a search for the company must be supported by publisher
-  // text rather than by the query-assigned company column. Keep this after the refresh assertion so
-  // the extra searches cannot let the tab's deliberate 90-second revalidation race that fixture.
+  // Stable recall cases and the exact user-reviewed mismatch, independent of today's capture.
   await page.locator('[data-table-search]').fill('jayaswal');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.toLowerCase().includes('jayaswal'));
   const jayaswalResults = await page.locator('tbody').innerText();
   assert(jayaswalResults.includes('Jayaswal Neco'), 'publisher-supported Jayaswal stories remain searchable');
-  assert(!jayaswalResults.includes('Lululemon'), 'query metadata cannot make the unrelated Lululemon story match Jayaswal');
+  assert(!jayaswalResults.includes('Lululemon stock analysis'), 'the reviewed mismatch does not match Jayaswal');
+  assert(jayaswalResults.includes('Indian manufacturer shares a business update'), 'snippet-only coverage remains in company search');
+  assert(jayaswalResults.includes('Possible match — unverified'), 'uncertainty is visible without a hover');
+  if (process.env.NEWS_ATTRIBUTION_SCREENSHOT) await page.screenshot({ path: process.env.NEWS_ATTRIBUTION_SCREENSHOT });
+  for (const [query, title] of [['NESTLEIND', 'Nestlé India'], ['Avenue Supermarts', 'DMart reports']]) {
+    await page.locator('[data-table-search]').fill(query);
+    await page.waitForFunction(text => document.querySelector('tbody')?.textContent.includes(text), title);
+  }
+  await page.evaluate(() => window.show('universe'));
+  await settled();
   await page.locator('[data-table-search]').fill('lululemon');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.toLowerCase().includes('lululemon'));
   assert((await page.locator('tbody').innerText()).includes('Lululemon'), 'the retained story remains searchable by its own publisher text');
+  assert((await page.locator('tbody').innerText()).includes('Unrelated search result'));
+  assert(!(await page.locator('tbody').innerText()).includes('JAYNECOIND'), 'the unrelated row is not labelled as the company');
+  await page.evaluate(() => window.show('portfolio'));
+  await settled();
 
   await page.locator('[data-table-search]').fill('Session-private fixture');
   await page.evaluate(async () => (await import('/js/data/alert-records.js')).recordDocuments('company-documents', {
@@ -204,6 +239,43 @@ try {
     ['high', 'low'].includes(signal.importance) &&
     /direction, (High|Low) priority/.test(signal.label)));
 
+  const virtualContract = await page.evaluate(() => {
+    const host = document.querySelector('[data-score-table]');
+    const rows = [...document.querySelectorAll('tbody tr[data-row-key]')];
+    return {
+      enabled: host?.hasAttribute('data-virtualized') || false,
+      mounted: rows.length,
+      total: Number(host?.dataset.virtualTotal || 0),
+      ariaRows: Number(host?.querySelector('table')?.getAttribute('aria-rowcount') || 0),
+      elements: document.querySelectorAll('*').length,
+      firstKey: rows[0]?.dataset.rowKey || null,
+      lastKey: rows.at(-1)?.dataset.rowKey || null,
+      scrollListeners: window.testListenerCount('scroll'),
+      resizeListeners: window.testListenerCount('resize'),
+    };
+  });
+  assert(virtualContract.enabled && virtualContract.mounted > 0 && virtualContract.mounted <= 64,
+    `virtual timeline mounts ${virtualContract.mounted} rows`);
+  assert(virtualContract.total > virtualContract.mounted && virtualContract.ariaRows === virtualContract.total + 1,
+    `full ${virtualContract.total}-row model remains represented to assistive technology`);
+  assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
+  assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
+  assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+
+  await page.locator('[data-table-scroll]').evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
+  await page.waitForFunction((firstKey) => {
+    const rows = document.querySelectorAll('tbody tr[data-row-key]');
+    return rows.length > 0 && rows[0]?.dataset.rowKey !== firstKey && Number(document.querySelector('[data-score-table]')?.dataset.virtualStart || 0) > 0;
+  }, virtualContract.firstKey);
+  const endWindow = await page.evaluate(() => ({
+    mounted: document.querySelectorAll('tbody tr[data-row-key]').length,
+    lastKey: [...document.querySelectorAll('tbody tr[data-row-key]')].at(-1)?.dataset.rowKey || null,
+  }));
+  assert(endWindow.mounted <= 64 && endWindow.lastKey !== virtualContract.lastKey,
+    `scrolling moves a bounded ${endWindow.mounted}-row window through full history`);
+  await page.locator('[data-table-scroll]').evaluate((scroller) => { scroller.scrollTop = 0; });
+  await page.waitForFunction(() => Number(document.querySelector('[data-score-table]')?.dataset.virtualStart || 0) === 0);
+
   // A source refresh can insert rows above the viewport. Preserve the visible event, not merely
   // its old pixel offset, so a reader never loses their place while the stream is live.
   const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
@@ -233,11 +305,27 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   if (process.env.GENERAL_ALERTS_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_SCREENSHOT });
   await page.evaluate(() => window.dispose());
+  assert.equal(await page.evaluate(() => window.testListenerCount('scroll')), 0, 'destroy removes the table scroll listener');
+  assert.equal(await page.evaluate(() => window.testListenerCount('resize')), 0, 'destroy removes the table resize listener');
   const count = calls.length;
   await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); });
   await page.waitForTimeout(400);
   assert.equal(calls.length, count, 'destroy removes source listeners and does not start another read');
   assert(!calls.some((p) => /\/api\/(combined-filings|drhp-filings|super-investors\/)/.test(p)), 'no per-company fanout');
+  await page.evaluate(async () => {
+    const newsTab = await import('/js/tabs/news.js');
+    window.disposeNews = newsTab.destroy;
+    newsTab.render({ root: document.querySelector('#root'), scope: 'portfolio', params: {}, data: {} });
+  });
+  await page.waitForSelector('[data-table-search]');
+  await page.locator('[data-table-search]').fill('jayaswal');
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Indian manufacturer shares a business update'));
+  const newsText = await page.locator('tbody').innerText();
+  assert(newsText.includes('Possible match — unverified'));
+  assert(!newsText.includes('Lululemon stock analysis'));
+  await page.locator('[data-table-search]').fill('Avenue Supermarts');
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('DMart reports'));
+  await page.evaluate(() => window.disposeNews());
   assert.deepEqual(errors, [], 'zero application errors');
   console.log('PASS: 20 normalized feed categories (19 visible in Universe), source updates, private-session clearing, filters, responsive layout and cleanup.');
 } finally { await browser.close(); await new Promise((done) => server.close(done)); }

@@ -1345,6 +1345,11 @@ endpoint (see *And a count of zero is not always a count*).
 
 ### THIRTY WORDS THAT MAKE A SEARCH FEED USABLE — the tracked-keyword rule
 
+**Attribution update:** `docs/GENERAL-ALERTS-POOL.md` supersedes the historical name-heuristic and
+unknown-name scoring rules below. `company-news-attribution.js` separates query provenance from
+confirmed/uncertain/reviewed-unrelated relationships. Uncertain news stays in company searches;
+only confirmed news can support AI scoring. Topic matching is not company verification.
+
 `public/js/data/news-keywords.js` is the desk's own vocabulary and the only definition of it. Both
 News surfaces filter by it, and General Alerts uses it as the materiality rule for company news.
 
