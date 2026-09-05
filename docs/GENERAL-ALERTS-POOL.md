@@ -38,13 +38,31 @@ identity, company identity if resolved, independent direction/importance labels 
 Collection does not truncate the evidence. Exact duplicates within a source are removed;
 cross-source evidence is kept separately.
 
-Company news is produced by a search endpoint, so the company/ticker on a row records the query
-that returned it rather than a claim made by the publisher. If neither the headline nor standfirst
-contains a distinctive word from that query, the row is retained (the check can miss a real brand
-or alias) but the query-assigned company/ticker is not indexed by All Alerts' free-text search. The
-publisher text remains searchable. This prevents an unrelated result used to pad a short upstream
-result set from appearing merely because the reader searched the company, without deleting a
-possibly genuine story or narrowing any other feed.
+Company news is produced by a search endpoint. `company-news-attribution.js` separates searched
+identity (`queryTicker`, `queryCompany`, `queryEntityId`) from article-supported identity
+(`companyTicker`, `companyName`) and carries evidence and a versioned `confirmed | uncertain |
+unrelated` status. Names use Unicode/accent normalization and whole phrases, including reviewed
+brands, aliases and former names from capture identity metadata. Short symbols need an exchange
+qualifier. Subsidiary-only and snippet-only mentions remain uncertain: snippets can contain related
+links, and a subsidiary event is not automatically a parent event. Only explicitly bounded
+`articleBody: {provenance: 'publisher-article-body', text}` is eligible as body evidence; raw HTML
+and arbitrary upstream content are never scanned as article bodies. This change adds no article
+fetches and does not claim to have verified article bodies in existing captures.
+
+Confirmed AND uncertain rows remain searchable by company/ticker in News and All Alerts. Possible
+matches are labelled, and News provides a counted optional relationship filter. Missing names never
+silently exclude coverage. Only an explicit reviewed article–company mismatch detaches the display
+identity; its raw archive remains untouched and the retained row remains searchable by headline in
+All Alerts / Universe. The initial reviewed mismatch is the user's exact Lululemon URL, title and
+summary against JAYNECOIND. Changed text invalidates that exclusion. There is no publisher blacklist,
+generic other-company rejection, or guarantee that every unverified search result is relevant.
+
+Only confirmed news can score, corroborate or enrich AI Alerts; legacy cached news without current
+attribution cannot bypass that rule. This is separate from All Alerts visibility and topic filters.
+Ask Research and exports carry query provenance, status and reasons so a query label is not presented
+as publisher-confirmed company evidence. Official filings and other feeds are unchanged. Stable
+recall/precision fixtures are checked by `scripts/verify-company-news-attribution.mjs` and browser
+coverage uses those same fixtures rather than relying on the day's changing captured headlines.
 
 `includeHistory: true` means **all available records**, including undated items and future scheduled
 dates. The UI partitions that single retained pool into mutually exclusive **Till Today** and
