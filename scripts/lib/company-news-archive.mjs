@@ -23,6 +23,9 @@ const clean = (value) => String(value || '').trim();
 const iso = (value) => new Date(value).toISOString();
 const day = (value) => iso(value).slice(0, 10);
 const uniq = (values) => [...new Set((values || []).map(clean).filter(Boolean))];
+const tradingViewAddress = value => {
+  try { return /(^|\.)tradingview\.com$/i.test(new URL(value).hostname); } catch { return false; }
+};
 
 const storyKey = (row) => row?.title && row?.source
   ? `${clean(row.date || row.publishedAt).slice(0, 10)} :: ${clean(row.source).toLowerCase()} :: ${clean(row.title).toLowerCase()}`
@@ -39,6 +42,7 @@ export function mergeCompanyNewsArticles(previous = [], incoming = []) {
   const rows = [];
   const byUrl = new Map();
   const byStory = new Map();
+  const byTradingViewId = new Map();
 
   const add = (value) => {
     const row = { ...value };
@@ -47,7 +51,8 @@ export function mergeCompanyNewsArticles(previous = [], incoming = []) {
     row.entityId = entity;
     const urlKey = row.url ? `${entity}|${canonicalArticleUrl(row.url)}` : null;
     const headlineKey = storyKey(row) ? `${entity}|${storyKey(row)}` : null;
-    const existingIndex = (urlKey && byUrl.get(urlKey)) ?? (headlineKey && byStory.get(headlineKey));
+    const tradingViewKey = row.tradingViewId ? `${entity}|${row.tradingViewId}` : null;
+    const existingIndex = (tradingViewKey && byTradingViewId.get(tradingViewKey)) ?? (urlKey && byUrl.get(urlKey)) ?? (headlineKey && byStory.get(headlineKey));
     if (existingIndex != null) {
       const existing = rows[existingIndex];
       const firstSeenAt = [existing.firstSeenAt, row.firstSeenAt].filter(Boolean).sort()[0] || null;
@@ -63,9 +68,18 @@ export function mergeCompanyNewsArticles(previous = [], incoming = []) {
         lastSeenAt,
         matchedQueries,
         query: existing.query || row.query || null,
+        ...(existing.tradingViewId || row.tradingViewId ? {
+          ...(existing.url && !tradingViewAddress(existing.url) && tradingViewAddress(row.url) ? { url: existing.url } : {}),
+          discoverySources: uniq([...(existing.discoverySources || []), existing.discoverySource,
+            ...(row.discoverySources || []), row.discoverySource]),
+          sourceUrls: uniq([...(existing.sourceUrls || []), existing.url, existing.tradingViewUrl,
+            ...(row.sourceUrls || []), row.url, row.tradingViewUrl]),
+          relatedSymbols: uniq([...(existing.relatedSymbols || []), ...(row.relatedSymbols || [])]),
+        } : {}),
       };
       if (urlKey) byUrl.set(urlKey, existingIndex);
       if (headlineKey) byStory.set(headlineKey, existingIndex);
+      if (tradingViewKey) byTradingViewId.set(tradingViewKey, existingIndex);
       return;
     }
     const index = rows.length;
@@ -73,6 +87,7 @@ export function mergeCompanyNewsArticles(previous = [], incoming = []) {
     rows.push(row);
     if (urlKey) byUrl.set(urlKey, index);
     if (headlineKey) byStory.set(headlineKey, index);
+    if (tradingViewKey) byTradingViewId.set(tradingViewKey, index);
   };
 
   previous.forEach(add);

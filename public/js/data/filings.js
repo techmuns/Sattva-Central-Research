@@ -177,6 +177,8 @@ export function createFeed(kind) {
       tickerlessPortfolioEntities: null,
       queryCoverage: null,
       enrichmentCoverage: null,
+      tradingViewCoverage: null,
+      snapshotUpdatedAt: null,
       capturedAt: null,
       oldestDataAt: null,
       fallbackCount: 0,
@@ -267,6 +269,7 @@ export function createFeed(kind) {
       tickerlessPortfolioEntities: state.tickerlessPortfolioEntities,
       queryCoverage: state.queryCoverage,
       enrichmentCoverage: state.enrichmentCoverage,
+      tradingViewCoverage: state.tradingViewCoverage,
       // WHAT THIS SESSION HAS NOT LOOKED AT, which is a statement about us and not a claim about
       // the upstream. These routes answer per company and have no index, so "is there anything
       // new?" cannot be answered without asking — the honest thing to print is how many companies
@@ -509,12 +512,12 @@ export function createFeed(kind) {
    * yesterday's rows as soon as the new deployment reaches the browser.
    */
   async function refreshSnapshot() {
-    const before = state.capturedAt;
+    const before = state.snapshotUpdatedAt || state.capturedAt;
     const available = await seedFromSnapshot({ replace: true });
     if (kind === 'insider') await seedFromDevice([...state.rows.keys()]);
     state.loaded = true;
     emit();
-    return { available, changed: !!state.capturedAt && state.capturedAt !== before, capturedAt: state.capturedAt };
+    return { available, changed: !!state.snapshotUpdatedAt && state.snapshotUpdatedAt !== before, capturedAt: state.capturedAt };
   }
 
   const rowCountNow = () => [...state.rows.values()].reduce((a, r) => a + r.length, 0);
@@ -527,6 +530,8 @@ export function createFeed(kind) {
   function storeRows(ticker, incoming) {
     const list = kind === 'insider'
       ? mergeInsiderTrades(state.rows.get(ticker) || [], incoming, { from: daysAgo(WINDOW_DAYS.insider), to: iso(Date.now()) })
+      : kind === 'news' ? dedupeArticles([...incoming, ...(state.rows.get(ticker) || [])
+        .filter(row => row.tradingViewId && (!row.date || row.date >= daysAgo(WINDOW_DAYS.news)))])
       : incoming;
     state.rows.set(ticker, list);
     if (kind === 'insider') {
@@ -560,7 +565,7 @@ export function createFeed(kind) {
     // The snapshot is seeded first because it supplies the companies the device has never seen; a
     // company the device DOES hold is newer whenever the server wrote those bytes here after the
     // file was captured, which is the normal case for anything the reader has refreshed.
-    const capturedAt = Date.parse(state.capturedAt || '') || 0;
+    const capturedAt = Date.parse(state.snapshotUpdatedAt || state.capturedAt || '') || 0;
     for (const t of tickers) {
       if (kind === 'insider') {
         const history = entries.get(KEYS.insiderHistory(t))?.value;
@@ -609,12 +614,16 @@ export function createFeed(kind) {
     if (!body || typeof body !== 'object') return false;
 
     const capturedAt = body.capturedAt || body.generated_at || null;
-    const nextCaptured = Date.parse(capturedAt || '');
-    const heldCaptured = Date.parse(state.capturedAt || '');
+    // An independent source may enrich a last-good core capture. Its revision changes the
+    // snapshot, not the core source's check time. Never make a failed Muns query look fresh.
+    const revisionAt = kind === 'news' && Date.parse(body.newsUpdatedAt || '') > (Date.parse(capturedAt || '') || 0)
+      ? body.newsUpdatedAt : capturedAt;
+    const nextCaptured = Date.parse(revisionAt || '');
+    const heldCaptured = Date.parse(state.snapshotUpdatedAt || state.capturedAt || '');
     // "Newer" is chronological, not merely different. A rollback or stale edge response must not
     // replace rows this browser has already proved came from a later capture.
     const newer = replace && Number.isFinite(nextCaptured) && (!Number.isFinite(heldCaptured) || nextCaptured > heldCaptured);
-    if (!replace || newer) state.capturedAt = capturedAt;
+    if (!replace || newer) { state.capturedAt = capturedAt; state.snapshotUpdatedAt = revisionAt; }
     if (!replace || newer) {
       state.oldestDataAt = body.oldestDataAt || capturedAt;
       state.fallbackCount = Number.isFinite(body.fallbackCount) ? body.fallbackCount : 0;
@@ -638,7 +647,8 @@ export function createFeed(kind) {
     state.tickerlessPortfolioEntities = Number.isFinite(body.tickerlessPortfolioEntities) ? body.tickerlessPortfolioEntities : null;
     state.queryCoverage = body.queryCoverage && typeof body.queryCoverage === 'object' ? body.queryCoverage : null;
     state.enrichmentCoverage = body.enrichmentCoverage || null;
-    if (kind === 'news') {
+    if (!replace || newer || nextCaptured === heldCaptured) state.tradingViewCoverage = body.tradingViewCoverage || null;
+    if (kind === 'news' && (!replace || newer || nextCaptured === heldCaptured)) {
       for (const entity of Array.isArray(body.entities) ? body.entities : []) {
         const key = String(entity?.key || entity?.ticker || entity?.entityId || '').toUpperCase();
         if (!key) continue;
