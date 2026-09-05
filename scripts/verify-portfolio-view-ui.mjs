@@ -284,11 +284,16 @@ try {
   for (const size of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(size);
     await frame.waitForTimeout(200);
+    // A cached first row can appear while the remaining sources are still being read. Measure
+    // the completed reading layout, not whichever partial-feed status wrapped on that tick.
+    await frame.waitForFunction(() => !/Reading \d+ more feeds?/.test(document.querySelector('[data-section-head]')?.textContent || ''), null, { timeout: 60000 });
     const measure = () => frame.evaluate(() => {
       const table = document.querySelector('[data-table-scroll]').getBoundingClientRect();
       return { top: table.top, height: table.height, bottom: table.bottom, viewport: innerHeight,
         visibleHeight: Math.max(0, Math.min(table.bottom, innerHeight) - Math.max(table.top, 0)),
         pageWidth: document.documentElement.scrollWidth, width: innerWidth,
+        controls: document.querySelector('[data-alerts-controls]').getBoundingClientRect().height,
+        toolbar: document.querySelector('[data-table-toolbar]').getBoundingClientRect().height,
         headerVisible: getComputedStyle(document.querySelector('[data-app-header]')).display !== 'none' };
     });
     const normal = await measure();
