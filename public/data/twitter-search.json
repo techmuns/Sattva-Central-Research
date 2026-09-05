@@ -7,12 +7,16 @@
     "isin:INE423A01024|ADANIENT": {
       "lastAttemptAt": "2026-09-05T20:35:14+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE674K01013|Aditya Birla Capital": {
+      "lastAttemptAt": "2026-09-05T22:29:10+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-05T20:35:14.712285+00:00"
+    "checkedAt": "2026-09-05T22:29:10.567711+00:00"
   }
 }
