@@ -3800,6 +3800,7 @@ const tg = await evalSafe(async () => {
     spanTo: m.spanTo,
     readable: m.readable,
     unreadable: m.unreadable,
+    pending: m.pending,
     panel: host.querySelector('[data-chatter-panel]')?.dataset.chatterPanel || '',
     heads,
     description: host.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim() || '',
@@ -3844,6 +3845,14 @@ if (!tg?.ok) {
   ok('...and our own first-seen time is never drawn as the post\'s time', tg.firstSeenNotDrawn !== false);
 
   // Coverage, so a batch of caption-less broker PDFs cannot read as a quiet channel.
+  // THE THREE STATES, KEPT APART. `unreadable` mixes the channel's caption-less documents with ids
+  // OUR run could not fetch, and the second is not the channel's silence. The footnote says which,
+  // in both directions — the zero case is a claim too.
+  ok('...and separates our own fetch failures from the channel having nothing to say',
+    tg.pending > 0
+      ? /are ours rather than the channel/i.test(tg.footnotes)
+      : /None of them is the third kind/i.test(tg.footnotes),
+    `pending=${tg.pending}`);
   ok('the footnote accounts for the ids this route could not read',
     /Coverage: this capture spans message/i.test(tg.footnotes) && /without a caption/i.test(tg.footnotes),
     tg.footnotes.slice(0, 150));

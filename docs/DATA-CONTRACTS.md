@@ -2987,6 +2987,14 @@ permalink page has og tags and nothing else — no `<time>`, no `datetime`, no w
    of documents, and every existence test during the head seek is a **window** test rather than a
    single id.
 
+**Three states, kept apart.** `unreadable` (the span minus the posts) mixes two very different
+things: ids where the channel published nothing this route can read, and ids **our own run could not
+fetch**. The second is not the channel's silence, so `retryIds` persists them, they are re-asked
+first on the next run, and `meta().pending` carries the count to the footnote — which states it in
+both directions, because "none of them is ours" is a claim too. Same shape as the insider snapshot's
+four states: in `posts` was read, inside the span but absent was read-and-empty, in `retryIds` could
+not be read, and outside the span was never asked.
+
 **Coverage is part of the capture, not an afterthought, and it is DERIVED rather than tallied.**
 The footnote states the span the capture holds and how many of those ids carried text, because a
 batch of caption-less PDFs would otherwise read as a quiet channel. It is computed from `spanFrom`,

@@ -62,6 +62,7 @@ function fresh() {
     headId: 0,
     spanFrom: 0,
     spanTo: 0,
+    pending: 0,
   };
 }
 
@@ -169,6 +170,10 @@ function apply(res) {
     // it cannot drift with the size of the last walk.
     spanFrom: int(v.spanFrom) || (posts.length ? posts[posts.length - 1].id : 0),
     spanTo: int(v.spanTo) || (posts.length ? posts[0].id : 0),
+    // Ids a run could not FETCH, carried by the scraper so they are re-asked. They sit inside the
+    // span and so are already counted as unreadable, but they are OUR failure rather than the
+    // channel's silence, and the two should be separable rather than merely both admitted to.
+    pending: Array.isArray(v.retryIds) ? v.retryIds.length : 0,
   };
   emit();
 }
@@ -214,6 +219,11 @@ export const meta = () => ({
   readable: state.posts.length,
   unreadable:
     state.spanFrom && state.spanTo ? Math.max(0, state.spanTo - state.spanFrom + 1 - state.posts.length) : 0,
+  // Of that `unreadable` figure, how many are ids a run could not fetch and will be re-asked —
+  // ours, not the channel's. Normally zero, because a transport failure usually resolves on the
+  // retry; when it is not zero the footnote says so rather than letting our own gap read as the
+  // channel's silence.
+  pending: state.pending,
 });
 
 export function onChange(fn) {

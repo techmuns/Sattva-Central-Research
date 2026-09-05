@@ -876,7 +876,11 @@ function telegramFootnotes() {
   );
   if (t.span) {
     parts.push(
-      `Coverage: this capture spans message ${escapeHtml(formatNumber(t.spanFrom))} to ${escapeHtml(formatNumber(t.spanTo))} — ${escapeHtml(formatNumber(t.span))} ids, of which ${escapeHtml(formatNumber(t.readable))} carried readable text and ${escapeHtml(formatNumber(t.unreadable))} did not. That last figure is every id with no post on it: documents posted without a caption, deleted messages, and any id a run could not fetch. This route cannot tell those apart, so it does not choose between them — and some of them are ours, not the channel's.`,
+      `Coverage: this capture spans message ${escapeHtml(formatNumber(t.spanFrom))} to ${escapeHtml(formatNumber(t.spanTo))} — ${escapeHtml(formatNumber(t.span))} ids, of which ${escapeHtml(formatNumber(t.readable))} carried readable text and ${escapeHtml(formatNumber(t.unreadable))} did not. That last figure is every id with no post on it: documents posted without a caption, deleted messages, and any id a run could not fetch. This route cannot tell the first two apart, so it does not choose between them.${
+        t.pending
+          ? ` ${escapeHtml(formatNumber(t.pending))} of them are the third kind — ids a run could not fetch, which are ours rather than the channel's, and are re-asked on the next run.`
+          : ' None of them is the third kind: every id in this span was reached.'
+      }`,
     );
   }
   parts.push(
