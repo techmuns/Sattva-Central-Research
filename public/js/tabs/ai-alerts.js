@@ -230,7 +230,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
 }
 
 function paint(ctx) {
-  const matches = (report?.cards || []).filter((card) => matchesSearch(card, query));
+  const matches = (query.trim() ? report?.allCards || [] : report?.cards || []).filter((card) => matchesSearch(card, query));
   const cards = filteredCards(matches);
   const shown = cards.slice(0, visibleLimit);
   // Keep the input node mounted while typing and while independent feeds deliver partials.
@@ -366,9 +366,9 @@ export function feedStatus(rep) {
 }
 
 function controls(cards, visibleCount) {
-  const active = cards.filter((card) => !mute.isHidden(card.ticker, card.evidenceKey || card.topEvent?.id || ''));
+  const active = cards.filter((card) => !mute.isHidden(card.key || card.ticker, card.evidenceKey || card.topEvent?.id || ''));
   const mustSee = active.filter((card) => card.priority === 'must-see').length;
-  const important = active.length - mustSee;
+  const important = active.filter(card => card.priority === 'important').length;
   // Counted over what is ACTUALLY archived out of this view, not over the whole store: an entry
   // whose evidence has been overtaken is no longer hiding anything, and reporting it as archived
   // would send the reader looking for a card that is already back on the page.
@@ -479,14 +479,14 @@ function cardMarkup(card, scope, day, archived = false) {
   const rest = card.events.length - events.length;
   const signal = latestSignal(card.events);
   return `
-    <article data-ai-card data-ticker="${escapeHtml(card.ticker)}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
+    <article data-ai-card data-ticker="${escapeHtml(card.ticker || '')}" data-entity-id="${escapeHtml(card.entityId || '')}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
       class="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 ${archived ? 'border-l-slate-200' : tone.edge} bg-white shadow-sm ring-1 ring-slate-100">
       <div class="flex-1 p-5">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <h3 class="font-display truncate text-lg font-extrabold leading-tight text-slate-900">${escapeHtml(card.company)}</h3>
             <div class="mt-0.5 truncate text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              ${escapeHtml(card.ticker)}${card.sector ? ` · ${escapeHtml(card.sector)}` : ''}${card.holding ? ' · In portfolio' : ''}
+              ${escapeHtml(card.ticker || 'No exchange ticker')}${card.sector ? ` · ${escapeHtml(card.sector)}` : ''}${card.holding ? ' · In portfolio' : ''}
             </div>
           </div>
           <span class="shrink-0 rounded-md px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ${tone.badge}">${escapeHtml(badge.label)}</span>
@@ -509,15 +509,15 @@ function cardMarkup(card, scope, day, archived = false) {
       </div>
       <footer class="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
         ${rest > 0
-          ? `<button type="button" data-open-general data-ticker="${escapeHtml(card.ticker)}" class="text-xs font-bold text-indigo-700 hover:text-indigo-900">${escapeHtml(formatNumber(rest))} more ${rest === 1 ? 'event' : 'events'} →</button>`
+          ? `<button type="button" data-open-general data-ticker="${escapeHtml(card.ticker || card.company)}" class="text-xs font-bold text-indigo-700 hover:text-indigo-900">${escapeHtml(formatNumber(rest))} more ${rest === 1 ? 'event' : 'events'} →</button>`
           : `<span class="text-xs text-slate-400">Everything on this company is above</span>`}
         <div class="flex shrink-0 items-center gap-2">
           ${archived
-            ? `<button type="button" data-ai-unmute data-ticker="${escapeHtml(card.ticker)}"
+            ? `<button type="button" data-ai-unmute data-ticker="${escapeHtml(card.key || card.ticker)}"
                 class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 transition hover:ring-indigo-300">Restore</button>`
-            : `<button type="button" data-ai-mute data-ticker="${escapeHtml(card.ticker)}" data-seen="${escapeHtml(card.evidenceKey || card.topEvent?.id || '')}"
+            : `<button type="button" data-ai-mute data-ticker="${escapeHtml(card.key || card.ticker)}" data-seen="${escapeHtml(card.evidenceKey || card.topEvent?.id || '')}"
                 class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:text-slate-900 hover:ring-slate-300">Archive</button>`}
-          <button type="button" data-open-general data-ticker="${escapeHtml(card.ticker)}"
+          <button type="button" data-open-general data-ticker="${escapeHtml(card.ticker || card.company)}"
             class="rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-slate-700">Open</button>
         </div>
       </footer>
@@ -612,7 +612,7 @@ export function safeSourceUrl(value) {
  * comes back on its own, so muting can hide what has been read and can never hide what has not.
  */
 function filteredCards(cards) {
-  const archived = (card) => mute.isHidden(card.ticker, card.evidenceKey || card.topEvent?.id || '');
+  const archived = (card) => mute.isHidden(card.key || card.ticker, card.evidenceKey || card.topEvent?.id || '');
   if (filter === 'archived') return cards.filter(archived);
   const byPriority = filter === 'all' ? cards : cards.filter((card) => card.priority === filter);
   return byPriority.filter((card) => !archived(card));
@@ -682,7 +682,7 @@ function emptyPanel(ctx) {
   // panel must not print the second over the first — that would be a claim about the feeds made on
   // the strength of a control the reader set, the same error as All Alerts' chip filter
   // emptying its own stream. So it says which, and offers the way back.
-  const archivedHere = (report?.cards || []).filter((card) => mute.isHidden(card.ticker, card.evidenceKey || card.topEvent?.id || '')).length;
+  const archivedHere = (report?.cards || []).filter((card) => mute.isHidden(card.key || card.ticker, card.evidenceKey || card.topEvent?.id || '')).length;
   if (filter === 'archived') {
     return `
       <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100" data-ai-empty>

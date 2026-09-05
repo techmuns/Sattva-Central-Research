@@ -9,6 +9,7 @@
 // facts that must be reviewed, so this module never manufactures them from fuzzy matches. The
 // capture's override file supplies them and every selected name becomes its own upstream search.
 
+import { reviewedNewsIdentity } from './company-news-reviewed.js';
 const clean = (value) => String(value || '').trim().replace(/\s+/g, ' ');
 const upper = (value) => clean(value).toUpperCase();
 
@@ -99,7 +100,7 @@ export function portfolioNewsEntities(holdings = [], overrides = []) {
     const base = group.find((holding) => !isWarrant(holding) && holding.ticker)
       || group.find((holding) => !isWarrant(holding))
       || group[0];
-    const override = overrideFor(group, overrides);
+    const override = reviewedNewsIdentity({ ticker: base.ticker, isin: base.isin, ...overrideFor(group, overrides) });
     const legalName = clean(override?.legalName || base.bookName || base.legalName || underlyingCompanyName(base.name));
     const name = clean(override?.name || underlyingCompanyName(base.name) || legalName);
     const ticker = upper(override?.ticker || base.ticker) || null;
@@ -112,7 +113,10 @@ export function portfolioNewsEntities(holdings = [], overrides = []) {
     const subsidiaries = uniq(override?.subsidiaries);
     const aliases = uniq(override?.aliases);
     const officialDomains = uniq(override?.officialDomains).map((domain) => domain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, ''));
-    const queries = uniqQueries([legalName, name, ...formerNames, ...brands, ...subsidiaries, ...aliases]);
+    const relatedEntities = (override?.relatedEntities || []).filter(r => r.name && r.relationship && /^https:\/\//.test(r.evidenceUrl || ''));
+    const searchAliases = uniq(override?.searchAliases);
+    const queries = uniqQueries([legalName, name, ...formerNames, ...brands, ...subsidiaries, ...aliases, ...searchAliases,
+      ...relatedEntities.flatMap(r => [r.name, ...(r.aliases || [])])]);
 
     entities.push({
       entityId,
@@ -125,7 +129,11 @@ export function portfolioNewsEntities(holdings = [], overrides = []) {
       brands,
       subsidiaries,
       aliases,
+      searchAliases,
       officialDomains,
+      officialPages: uniq(override?.officialPages),
+      evidenceUrls: uniq(override?.evidenceUrls),
+      relatedEntities,
       queries,
       portfolio: true,
     });

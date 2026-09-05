@@ -55,6 +55,8 @@ function fresh() {
     reason: null,
     message: null,
     origin: null,
+    archive: [],
+    archived: new Map(),
   };
 }
 
@@ -94,6 +96,7 @@ export function toArticle(post) {
     section: SECTION,
     premium: false,
     sourceUrl: httpUrl(post?.source_url) || null,
+    matchedQueries: Array.isArray(post?.matchedQueries) ? post.matchedQueries : [],
   };
 }
 
@@ -115,6 +118,7 @@ function absorb(body, { fromStore = false } = {}) {
 
   state.byId = next;
   state.posts = [...next.values()];
+  state.archive = Array.isArray(body?.archive) ? body.archive : [];
   state.failed = new Map(
     (Array.isArray(body?.failed) ? body.failed : [])
       .map((f) => [String(f?.handle || '').toLowerCase(), str(f?.reason) || 'could not be read'])
@@ -152,11 +156,33 @@ async function read() {
   }
 }
 
+async function readArchive() {
+  const queue = state.archive.filter(item => /^twitter-archive\/(?:\d{4}-\d{2}|undated)\.json$/.test(item.file || ''));
+  await Promise.all(Array.from({ length: Math.min(3, queue.length) }, async () => {
+    for (;;) {
+      const item = queue.shift();
+      if (!item) return;
+      try {
+        const result = await conditionalJson(`data/${item.file}`, { key: `twitter-archive:${item.file}`, optional: true });
+        if (!Array.isArray(result?.value?.posts)) throw Error('Archive unavailable');
+        for (const row of result.value.posts) {
+          const article = toArticle(row);
+          if (article) state.archived.set(article.id, article);
+        }
+      } catch {
+        state.reason ||= 'archive-unavailable';
+        state.message = 'Some retained X history could not be read. Available posts remain visible.';
+      }
+    }
+  }));
+}
+
 export function load() {
   if (loading) return loading;
   loading = (async () => {
     // The handle list decides which posts are shown, so both are read before the first paint.
     await Promise.all([read(), handles.load()]);
+    await readArchive();
     state.loaded = true;
     emit();
     return state;
@@ -173,12 +199,15 @@ export function load() {
  */
 export function rows() {
   const active = handles.activeKeys();
-  return state.posts.filter((p) => active.has(p.handleKey));
+  return [...new Map([...state.archived.values(), ...state.posts].map(p => [p.id, p])).values()]
+    .filter((p) => active.has(p.handleKey) || p.matchedQueries.length)
+    .sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
 }
 
 export async function refresh() {
   const before = new Set(state.byId.keys());
   await read();
+  await readArchive();
   const added = [...state.byId.keys()].filter((k) => !before.has(k)).length;
   emit();
   return { added, total: rows().length, capturedAt: state.capturedAt };

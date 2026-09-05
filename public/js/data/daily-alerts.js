@@ -62,7 +62,8 @@ import { readEntry, writeEntry } from '../core/store.js';
 import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
-import { attributionFor, newsSearchText } from './company-news-attribution.js';
+import { attributeNewsRow, attributionFor, newsSearchText } from './company-news-attribution.js';
+import { matchPortfolioNews, newsEventTopics } from './portfolio-news-matching.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -97,7 +98,7 @@ export function materializePublicAlertWindow(report) {
     day: report.day,
     feeds: (report.feeds || []).filter((feed) => !privateFeeds.has(feed.id)).map(({ events, count, todayCount, ...feed }) => feed),
     events: (report.events || [])
-      .filter((event) => !event.private && event.ticker && event.day >= firstDay && event.day <= report.day)
+      .filter((event) => !event.private && (event.ticker || event.entityId) && event.day >= firstDay && event.day <= report.day)
       .map(({ sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct,
         holdingWeightPct: _holdingWeightPct, ...event }) => event),
   };
@@ -114,7 +115,7 @@ function validAlertWindow(value, throughDay) {
     value.feeds.every((feed) => !privateFeeds.has(feed?.id)) &&
     value.events.every((event) => !event.private && event.sourceRecord == null &&
       event.weightPct == null && event.holdingWeightPct == null &&
-      typeof event.ticker === 'string' && typeof event.feed === 'string');
+      (typeof event.ticker === 'string' || typeof event.entityId === 'string') && typeof event.feed === 'string');
 }
 
 /** Restore a ready public alert window, narrowed against the current in-memory scope. */
@@ -123,7 +124,10 @@ export async function readCachedAlertWindow({ scope = 'portfolio', holdings = nu
   if (!validAlertWindow(entry?.value, day)) return null;
   const wanted = scopeMatcher(scope, holdings || coverage.holdings());
   const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
-  const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day && wanted.has(event.ticker));
+  const entityIds = new Set(portfolioNewsEntities(holdings || coverage.holdings()).map(e => e.entityId));
+  const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day &&
+    (!event.portfolioOnly || scope === 'portfolio') &&
+    (event.ticker ? wanted.has(event.ticker) : scope === 'universe' || scope === 'portfolio' && entityIds.has(event.entityId)));
   const sameDay = entry.value.day === day;
   return {
     day,
@@ -223,6 +227,14 @@ export function newsSignal(row = {}) {
   const reading = classifyStory(row);
   const attribution = reading.attribution;
   const identityReading = { attribution, aiEligible: attribution.status === 'confirmed', namesCompany: reading.namesCompany };
+  const eventTopics = newsEventTopics(row);
+  if (eventTopics.length && ['confirmed', 'related'].includes(attribution.status)) {
+    return { ...signal(DIRECTION.NEUTRAL, IMPORTANCE.HIGH,
+      'Reported topic; neither the allegation nor its financial impact is verified by this classification.',
+      `High: ${eventTopics.join(', ')} in the headline or bounded article body. ${attribution.reason}`),
+      keywords: [...new Set([...reading.labels, ...eventTopics])], ...identityReading,
+      reviewContext: attribution.status === 'related' };
+  }
   if (!reading.tracked) {
     return {
       ...signal(
@@ -568,9 +580,42 @@ function toFeedRow(feed, out, day) {
  * half-finished read must never be allowed to say. It carries no count at all, so the totals below
  * are of what has actually been read rather than of what is eventually expected.
  */
+const discoveryMappings = new WeakMap();
+export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
+  if (!['market-news', 'twitter', 'ipos'].includes(feedId)) return events;
+  const signature = JSON.stringify(portfolioEntities);
+  const cached = discoveryMappings.get(events);
+  if (cached?.feedId === feedId && cached.signature === signature) return cached.value;
+  const value = events.flatMap(event => {
+    const row = { ...event.sourceRecord, title: feedId === 'ipos' ? `${event.company || ''}: ${event.headline}` : event.headline,
+      url: event.url, summary: event.sourceRecord?.summary };
+    const matches = matchPortfolioNews(row, portfolioEntities);
+    if (feedId === 'twitter') {
+      // A post may discuss the company only in an attached image/thread. Keep exact collector
+      // query context searchable as uncertain, without treating that query as article evidence.
+      for (const query of event.sourceRecord?.matchedQueries || []) {
+        const identity = portfolioEntities.find(e => e.entityId === query.entityId);
+        if (identity && !matches.some(m => m.entityId === identity.entityId)) matches.push(attributeNewsRow(row, identity));
+      }
+    }
+    if (!matches.length) return [event];
+    return matches.map(matched => ({ ...event, ...newsSignal(matched),
+      ...(feedId === 'twitter' ? { aiEligible: false, importance: IMPORTANCE.LOW } : {}),
+      id: `${event.id}:entity:${matched.entityId}`, entityId: matched.entityId, ticker: matched.ticker,
+      company: matched.company, issuer: feedId === 'ipos' ? event.company : null,
+      sourceRecord: matched,
+      detail: [event.detail, feedId === 'twitter' ? 'Unverified social discussion; open the post and corroborate against primary sources.' : null,
+        matched.attribution.reason].filter(Boolean).join(' · '),
+    }));
+  });
+  discoveryMappings.set(events, { feedId, signature, value });
+  return value;
+}
+
 function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
   const wanted = scopeMatcher(scope, holdings);
-  const portfolioNewsIds = new Set(portfolioNewsEntities(holdings).map((entity) => entity.entityId));
+  const portfolioEntities = portfolioNewsEntities(holdings);
+  const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
   const feeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ).map((settled) => {
@@ -582,7 +627,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
       current.events = current.events.filter((e) => includeHistory || eventDay(e) === day);
       feed = toFeedRow(settled, current, day);
     }
-    const all = feed.events;
+    const all = mapPortfolioDiscoveryEvents(feed.id, feed.events, portfolioEntities);
     // The S Screen calendar is already scoped by the exact synchronized portfolio membership.
     // That fact lets BSE-only holdings survive even when they have no NSE ticker; it must not make
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
@@ -591,12 +636,11 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
     const events = all.filter((event) => {
       if (event.portfolioOnly) return scope === 'portfolio';
       if (event.ticker) return wanted.has(event.ticker);
-      if (feed.id === 'news' && scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
+      if (scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
       return scope === 'universe';
     });
-    const unresolved = all.filter((event) => !event.ticker && !(feed.id === 'news' && event.entityId)).length;
-    const unscopable = (scope !== 'universe' && ['market-news', 'twitter'].includes(feed.id)) ||
-      (feed.portfolioOnly && scope !== 'portfolio');
+    const unresolved = all.filter((event) => !event.ticker && !event.entityId).length;
+    const unscopable = feed.portfolioOnly && scope !== 'portfolio';
     return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
       sourceCount: all.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };
@@ -623,7 +667,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
       negative: events.filter((e) => e.direction === DIRECTION.NEGATIVE).length,
       neutral: events.filter((e) => e.direction === DIRECTION.NEUTRAL).length,
       highImportance: events.filter((e) => e.importance === IMPORTANCE.HIGH).length,
-      companies: new Set(events.map((e) => e.ticker).filter(Boolean)).size,
+      companies: new Set(events.map((e) => e.ticker || e.entityId).filter(Boolean)).size,
       days: eventDays.length,
       undated: events.filter((e) => !e.day).length,
       scheduled: events.filter((e) => e.kind === 'scheduled').length,
@@ -1200,7 +1244,9 @@ function fromTechnicals({ day, wanted, includeHistory }) {
 function fromCompanyNews({ day, wanted, includeHistory }) {
   const m = news.meta();
   const capturedDay = istDay(m.capturedAt);
-  const rows = news.rows().filter((r) => inRequestedWindow(r.date, day, includeHistory) && inScope(wanted, r.ticker));
+  const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
+  const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
+  const rows = news.rows().filter((r) => inRequestedWindow(r.publishedAt || r.date, day, includeHistory) && inScope(wanted, r.ticker));
 
   const events = rows.map((r) => ({
     // THE TICKER IS PART OF THE IDENTITY. One story is returned by several companies' searches,
@@ -1217,12 +1263,13 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     // reading the time off it worked on a live walk and returned undefined for every row that came
     // from the file. See `isoInstant` in filings-shared.js.
     time: istTime(r.publishedAt) || null,
-    at: r.date,
+    at: r.publishedAt || r.date,
     ticker: r.ticker || null,
     entityId: r.entityId || null,
     company: attributionFor(r).status === 'unrelated' ? 'Unrelated search result' : r.company || attributionFor(r).queryCompany || coverage.holdings().find((h) => h.ticker === r.ticker)?.name || r.ticker || 'Unresolved company',
     headline: r.title || 'Story',
-    detail: r.source ? `Published by ${r.source}` : 'Publisher not carried',
+    detail: [r.source ? `Published by ${r.source}` : 'Publisher not carried',
+      attributionFor(r).status === 'related' ? attributionFor(r).reason : null].filter(Boolean).join(' · '),
     url: r.url || null,
   }));
 
@@ -1230,7 +1277,9 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
     events,
     reachesToday: !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
-    note: capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
+    note: [capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
+      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.']
+      .filter(Boolean).join(' ') || null,
   };
 }
 
@@ -1245,7 +1294,7 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
 function fromMarketNews({ day, scope, includeHistory }) {
   const m = marketNews.meta();
   const capturedDay = istDay(m.capturedAt);
-  const scopable = scope === 'universe';
+  const scopable = true; // Reviewed portfolio matches are resolved centrally before scope filtering.
 
   const events = scopable
     ? marketNews

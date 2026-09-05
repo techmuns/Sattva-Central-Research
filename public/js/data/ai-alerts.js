@@ -15,7 +15,8 @@
 // within the selected filter; the materiality threshold and alert priority remain evidence-based.
 
 import * as generalAlerts from './daily-alerts.js';
-import { newsCanSupportAI } from './company-news-attribution.js';
+import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
+import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
 import { enrichCardFromAllAlerts } from './intelligence-graph.js';
@@ -43,7 +44,7 @@ const FEED_WEIGHT = {
   // 16 (today) + 12 (in the book) = 64, which is exactly MIN_SCORE. Recency controls ordering;
   // material portfolio disclosures remain visible for the whole 14-day review window.
   news: 6,
-  'market-news': 0,
+  'market-news': 6,
 };
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -79,7 +80,7 @@ function normalizedHeadline(value) {
     .slice(0, 140);
 }
 
-const feedFamily = (event) => event.feed === 'nse-filings' ? 'announcements' : event.feed;
+const feedFamily = (event) => event.feed === 'nse-filings' ? 'announcements' : event.feed === 'market-news' ? 'news' : event.feed;
 
 /** Syndicated links and duplicate exchange disclosures are not independent corroboration. */
 function dedupe(events) {
@@ -184,7 +185,7 @@ const investorAdd = (e) => e.feed === 'investors' && e.direction === 'positive' 
 const investorCut = (e) => e.feed === 'investors' && e.direction === 'negative' && e.importance === 'high';
 const insiderBuy = (e) => e.feed === 'insider' && e.direction === 'positive' && e.importance === 'high';
 const insiderSell = (e) => e.feed === 'insider' && e.direction === 'negative' && e.importance === 'high';
-const trackedNews = (e) => e.feed === 'news' && (e.keywords || []).length > 0;
+const trackedNews = (e) => feedFamily(e) === 'news' && (e.keywords || []).length > 0;
 const materialFiling = (e) => feedFamily(e) === 'announcements' && e.importance === 'high';
 const resultEvent = (e) => e.feed === 'earnings' || e.feed === 'concalls';
 
@@ -194,7 +195,7 @@ const resultEvent = (e) => e.feed === 'earnings' || e.feed === 'concalls';
  * as nameable as a story's — and on the announcements feed it is the company's own statement of it.
  */
 const newsTopics = (events) =>
-  [...new Set(events.flatMap((e) => (e.feed === 'news' || feedFamily(e) === 'announcements' ? e.keywords || [] : [])))];
+  [...new Set(events.flatMap((e) => (feedFamily(e) === 'news' || feedFamily(e) === 'announcements' ? e.keywords || [] : [])))];
 
 /**
  * The patterns, in the order they are reported. `detect` returns the sentence it matched on, or
@@ -260,7 +261,7 @@ const CONFLUENCE = [
       if (!tape || !story) return null;
       const topics = newsTopics(events);
       const why = topics.length ? ` (${topics.join(', ')})` : '';
-      return `${tape.headline}, alongside ${story.feed === 'news' ? 'a tracked story' : 'a material filing'}${why}: ${story.headline}.`;
+      return `${tape.headline}, alongside ${feedFamily(story) === 'news' ? 'a tracked story' : 'a material filing'}${why}: ${story.headline}.`;
     },
   },
   {
@@ -512,6 +513,7 @@ export function topEvidence(card, limit = 3) {
  * disagreement between sources is always stated because it changes what the reader should do next.
  */
 export function plainInsight(card) {
+  if (isRelatedNewsContext(card.topEvent)) return `Related-entity report: ${plainHeadline(card.topEvent)}. ${card.topEvent.attribution.reason}`;
   const lead = card.confluence?.[0];
   const conflict = card.mixed ? ' Sources disagree here, so check both before acting.' : '';
   if (lead) {
@@ -615,6 +617,8 @@ export function cardMetrics(card) {
  * `data-priority` and in the filter chips above it.
  */
 export function cardBadge(card) {
+  if (isRelatedNewsContext(card.topEvent)) return { id: 'related', label: 'Review relationship', tone: 'caution' };
+  if (card.priority === 'watch') return { id: 'watch', label: 'Company update', tone: 'neutral' };
   if (card.mixed) return { id: 'reconcile', label: 'Reconcile', tone: 'caution' };
   if (card.priority === 'must-see') return { id: 'must-see', label: 'Must see', tone: 'negative' };
   return { id: 'important', label: 'Important', tone: 'neutral' };
@@ -641,8 +645,8 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     // was sorting by size while `weights` was empty. Tests may still pass weighted holdings as a
     // direct pure-function fixture; the real session uses `positionSizes.holdings`.
     for (const h of positionSizes.holdings || holdings) {
-      if (h.ticker && Number.isFinite(h.weightPct)) {
-        const ticker = h.ticker.toUpperCase();
+      if (Number.isFinite(h.weightPct)) {
+        const ticker = h.ticker?.toUpperCase() || defaultCompanyNewsEntityId(h);
         weights.set(ticker, (weights.get(ticker) || 0) + h.weightPct);
       }
     }
@@ -653,39 +657,45 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       .filter((holding) => holding.ticker)
       .map((holding) => [String(holding.ticker).toUpperCase(), holding])
   );
+  const holdingByEntity = new Map(portfolioNewsEntities(holdings).map(entity => [entity.entityId,
+    holdings.find(h => entity.portfolioIsins.includes(String(h.isin || '').toUpperCase())) || entity]));
 
   const supportedReport = { ...report, events: (report?.events || []).filter(newsCanSupportAI) };
-  const recent = supportedReport.events.filter(
-    (event) => event.aiEligible !== false && event.ticker && validDay(event.day) && event.day >= firstDay && event.day <= day
+  const recent = (report?.events || []).filter(
+    (event) => (newsCanSupportAI(event) && event.aiEligible !== false || isRelatedNewsContext(event)) &&
+      (event.ticker || event.entityId) && validDay(event.day) && event.day >= firstDay && event.day <= day
   );
   const grouped = new Map();
   for (const event of recent) {
-    const ticker = String(event.ticker).toUpperCase();
+    const ticker = event.ticker ? String(event.ticker).toUpperCase() : event.entityId;
     const list = grouped.get(ticker);
     if (list) list.push(event);
     else grouped.set(ticker, [event]);
   }
 
-  let cards = [...grouped].map(([ticker, rawEvents]) => {
+  let cards = [...grouped].map(([key, rawEvents]) => {
+    const ticker = rawEvents.find(e => e.ticker)?.ticker || null;
+    const entityId = rawEvents.find(e => e.entityId)?.entityId || null;
     const events = dedupe(rawEvents);
     const scoredEvents = events
       .map((event) => ({ event, score: eventScore(event, day, feedById.get(event.feed)) }))
       .sort((a, b) => b.score.points - a.score.points || String(b.event.day).localeCompare(String(a.event.day)) || String(b.event.time || '').localeCompare(String(a.event.time || '')));
     const top = scoredEvents[0];
-    const directions = directionSummary(events);
+    const directEvents = events.filter(newsCanSupportAI);
+    const directions = directionSummary(directEvents);
     const feeds = [...new Set(events.map(feedFamily))];
     const feedLabels = [...new Set(events.map((event) => event.feedLabel || event.feed))];
     const highCount = events.filter((event) => event.importance === 'high').length;
     const hasMaterialNegative = events.some((event) => event.importance === 'high' && event.direction === 'negative');
-    const holding = holdingByTicker.get(ticker) || null;
+    const holding = holdingByTicker.get(ticker) || holdingByEntity.get(entityId) || null;
     const materialPortfolioEvent = !!holding && events.some((event) => event.importance === 'high' &&
-      !!event.url && (materialFiling(event) || (event.feed === 'news' && event.namesCompany === true)));
+      !!event.url && (materialFiling(event) || (feedFamily(event) === 'news' && event.namesCompany === true) || isRelatedNewsContext(event)));
     const mixed = directions.positive > 0 && directions.negative > 0;
     const scoreBreakdown = [...(top?.score.parts || [])];
 
     // THE NAMED PATTERNS, before the anonymous feed-count bonus below — they are the specific
     // reading of the same fact and are what the card actually shows the reader.
-    const confluence = confluenceOf(events, { feedById });
+    const confluence = confluenceOf(directEvents, { feedById });
     const confluencePoints = Math.min(
       CONFLUENCE_MAX,
       confluence.reduce((sum, pattern) => sum + pattern.points, 0)
@@ -698,18 +708,22 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     // Corroboration changes ordering but cannot make a routine event urgent on its own. The first
     // draft gave another feed twelve points and promoted nearly every well-covered company; six
     // keeps the independent confirmation valuable without rewarding mere data availability.
-    if (feeds.length > 1) scoreBreakdown.push({ label: `${feeds.length} independent feeds`, points: Math.min(12, (feeds.length - 1) * 6) });
-    if (highCount > 1) scoreBreakdown.push({ label: `${highCount} high-importance events`, points: Math.min(6, (highCount - 1) * 3) });
+    const independentFeeds = new Set(directEvents.map(feedFamily)).size;
+    const directHighCount = directEvents.filter(e => e.importance === 'high').length;
+    if (independentFeeds > 1) scoreBreakdown.push({ label: `${independentFeeds} independent feeds`, points: Math.min(12, (independentFeeds - 1) * 6) });
+    if (directHighCount > 1) scoreBreakdown.push({ label: `${directHighCount} high-importance events`, points: Math.min(6, (directHighCount - 1) * 3) });
     if (mixed) scoreBreakdown.push({ label: 'Conflicting directional evidence needs review', points: 6 });
     else if (directions.negative > 0) scoreBreakdown.push({ label: 'Consistent negative evidence', points: 4 });
     else if (directions.positive > 1) scoreBreakdown.push({ label: 'Repeated positive evidence', points: 3 });
 
     return {
+      key,
+      entityId,
       ticker,
-      company: top?.event.company || holding?.name || ticker,
+      company: top?.event.company || holding?.name || key,
       sector: holding?.sector || null,
       holding: !!holding,
-      holdingWeightPct: weights.get(ticker) ?? null,
+      holdingWeightPct: weights.get(key) ?? null,
       // Cards show the strongest evidence first. General Alerts remains the chronological record.
       events: scoredEvents.map((entry) => entry.event),
       topEvent: top?.event || events[0],
@@ -764,7 +778,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
   );
   const surfaced = cards.filter((card) => card.score >= MIN_SCORE || card.materialPortfolioEvent);
   const marketWide = (report?.events || []).filter(
-    (event) => !event.ticker && event.day && event.day >= firstDay && event.day <= day
+    (event) => !event.ticker && !event.entityId && event.day && event.day >= firstDay && event.day <= day
   ).length;
 
   return {

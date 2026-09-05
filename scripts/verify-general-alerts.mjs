@@ -95,7 +95,7 @@ watchlist.toggle('STLTECH', 'Sterlite Technologies');
 const watched = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.deepEqual(watched.events.map((e) => e.id).sort(), universe.events.filter((e) => e.ticker === 'STLTECH').map((e) => e.id).sort());
 assert.equal(calls.length, previousCalls, 'scope/filter changes require no extra fetch');
-assert.equal(portfolio.feeds.find((f) => f.id === 'twitter').scopable, false);
+assert.equal(portfolio.feeds.find((f) => f.id === 'twitter').scopable, true, 'reviewed company mentions can now be scoped; unresolved posts still stay in Universe');
 assert(portfolio.feeds.find((f) => f.id === 'nse-filings').unresolvedCount > 0, 'unresolved omissions are counted');
 
 const privateRow = { key: 'private-1', ticker: 'STLTECH', date: null, title: 'Private annual report', url: 'https://example.test/annual.pdf', isRead: true };

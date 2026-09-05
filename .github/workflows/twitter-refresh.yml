@@ -4,7 +4,7 @@ name: Twitter refresh
 # committed like every other feed here. The browser reads the committed file; nothing in the app
 # talks to x.com.
 #
-# Optional collection is off unless the operator sets X_CAPTURE_ENABLED=true. Core research never
+# Own-session collection can be opted out with X_CAPTURE_ENABLED=false. Core research never
 # depends on a scraping login. A blocked sign-in is recorded honestly; no proxy/account rotation.
 #
 # A DISPATCH MAY NAME ONE HANDLE. The dashboard's "Add Handle" control sends it, so an account
@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python
-        if: vars.X_CAPTURE_ENABLED == 'true'
+        if: vars.X_CAPTURE_ENABLED != 'false'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -54,16 +54,28 @@ jobs:
       # public/, in the Worker or in the Node scripts depends on Python. See the header of
       # scripts/scrape-twitter.py for why this is the exception to the no-dependencies rule.
       - name: Install twscrape
-        if: vars.X_CAPTURE_ENABLED == 'true'
-        run: pip install --quiet twscrape
+        if: vars.X_CAPTURE_ENABLED != 'false'
+        run: pip install --quiet twscrape==0.20.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Prepare every active portfolio identity search
+        if: vars.X_CAPTURE_ENABLED != 'false'
+        env:
+          FAMILY_HOLDINGS_LIVE: 'true'
+        run: node scripts/prepare-twitter-search.mjs
 
       # 0 = completed (possibly partial); 2 = failed reads with retained data; 3 = no sign-in.
       # Preserve status and retained posts before reporting unexpected collector failures.
       - name: Collect posts
         id: collect
-        if: vars.X_CAPTURE_ENABLED == 'true'
+        if: vars.X_CAPTURE_ENABLED != 'false'
         env:
           X_ACCOUNTS: ${{ secrets.X_ACCOUNTS }}
+          X_COOKIES: ${{ secrets.X_COOKIES }}
           TWITTER_ADD: ${{ github.event.inputs.handle || '' }}
         run: |
           set +e
@@ -73,14 +85,9 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-
       - name: Record optional collection status
         env:
-          X_CAPTURE_ENABLED: ${{ vars.X_CAPTURE_ENABLED }}
+          X_CAPTURE_ENABLED: ${{ vars.X_CAPTURE_ENABLED != 'false' && 'true' || 'false' }}
           TWITTER_EXIT_CODE: ${{ steps.collect.outputs.code }}
         run: node scripts/record-twitter-status.mjs
 
@@ -90,6 +97,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/twitter-posts.json public/data/twitter-handles.json
+          for file in public/data/twitter-search-plan.json public/data/twitter-search.json public/data/twitter-archive; do
+            if [ -e "$file" ]; then git add "$file"; fi
+          done
           if git diff --cached --quiet; then
             echo "No new posts."
             exit 0
@@ -105,5 +115,5 @@ jobs:
           exit 1
 
       - name: Report unexpected collector failure
-        if: vars.X_CAPTURE_ENABLED == 'true' && steps.collect.outputs.code != '0' && steps.collect.outputs.code != '2' && steps.collect.outputs.code != '3'
+        if: vars.X_CAPTURE_ENABLED != 'false' && steps.collect.outputs.code != '0' && steps.collect.outputs.code != '2' && steps.collect.outputs.code != '3'
         run: exit 1

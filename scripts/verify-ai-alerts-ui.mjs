@@ -43,7 +43,10 @@ const html = `<!doctype html><html><head><meta name="viewport" content="width=de
 import * as tab from '/js/tabs/ai-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
+import { currentDay } from '/js/ui/ai-alert-utils.js';
 coverage.prime({holdings:${JSON.stringify(holdings)}});
+window.primeCoverage=coverage.prime;
+window.currentDay=currentDay;
 window.show=(scope='portfolio')=>tab.render({root:document.querySelector('#root'),scope,params:{}});
 window.dispose=()=>tab.destroy();
 window.refreshAlerts=()=>refresh.refreshAll();
@@ -315,6 +318,40 @@ try {
   assert.match(await page.locator('[data-ai-feed-status]').innerText(), /Ready/i);
   assert.equal(await page.evaluate(() => !!window.releaseStart), true, 'live collection is still blocked while cached cards are ready');
   console.log('PASS: reload restores a ready privacy-safe alert view before live collection completes.');
+  await page.evaluate(() => {
+    window.holdStart = false; window.releaseStart(); window.dispose();
+    const currentDay = window.currentDay;
+    const holdings = [{ name: 'Private Robotics', ticker: null, isin: 'INE000009999' },
+      { name: 'Quiet Signals', ticker: 'QUIET', isin: 'INE000009998' }];
+    window.primeCoverage({ holdings });
+    window.fixtureEvents = [
+      { id: 'private-disclosure', ticker: null, entityId: 'isin:INE000009999', company: 'Private Robotics',
+        headline: 'Private Robotics investor day presentation', importance: 'high', direction: 'neutral',
+        feed: 'announcements', day: currentDay(), url: 'https://example.test/private.pdf' },
+      { id: 'quiet-reading', ticker: 'QUIET', company: 'Quiet Signals', headline: 'Routine quarterly reading',
+        importance: 'low', direction: 'neutral', feed: 'earnings', day: currentDay() },
+    ];
+    window.show('universe');
+  });
+  await settled();
+  await page.locator('[data-ai-filter="all"]').click();
+  await search.fill('');
+  assert.equal(await card('QUIET').count(), 0, 'low-ranking cards do not enter the default briefing');
+  await search.fill('Quiet Signals');
+  assert.equal(await card('QUIET').count(), 1, 'company search reaches eligible below-threshold cards');
+  assert.match(await card('QUIET').innerText(), /Company update/i);
+  assert.match(await page.locator('[data-ai-filter="important"]').innerText(), /0/, 'below-threshold search results do not inflate the Important count');
+  await search.fill('Private Robotics');
+  const privateCard = page.locator('[data-ai-card][data-entity-id="isin:INE000009999"]');
+  assert.equal(await privateCard.count(), 1);
+  assert.equal(await privateCard.getAttribute('data-ticker'), '');
+  assert.equal(await privateCard.locator('[data-open-general]').last().getAttribute('data-ticker'), 'Private Robotics');
+  await privateCard.locator('[data-ai-mute]').click();
+  assert.equal(await privateCard.count(), 0);
+  await page.locator('[data-ai-filter="archived"]').click();
+  assert.equal(await privateCard.count(), 1, 'tickerless dismissal uses its own stable entity identity');
+  await privateCard.locator('[data-ai-unmute]').click();
+  console.log('PASS: below-threshold company search and tickerless cards, links and dismissal.');
   assert.deepEqual(errors, []);
   console.log('PASS: responsive search/cards at 320–1440px, calendar cleanup and zero application errors.');
 } catch (error) {

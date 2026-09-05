@@ -3106,26 +3106,28 @@ shape `market-news.json` already produces — `id`, `title`, `summary`, `url`, `
 one sort, one search, one export, one card renderer with a single branch on `kind === 'twitter'`.
 The publisher feed is untouched: with no handles monitored, nothing about that tab differs.
 
-Five things it deliberately does not do, and each is a rule this codebase already holds:
+Current enrichment contract: [Portfolio news discovery](PORTFOLIO-NEWS-DISCOVERY.md).
+The following rules preserve source words while widening portfolio discovery:
 
-1. **Nothing is scored, ranked, summarised, sentiment-tagged or mapped to a company.** A post is
+1. **Posts are not sentiment-tagged or used as independent factual AI corroboration.** A post is
    somebody's own words and is reproduced; `title` is the post's text unedited, because a tweet has
    no headline and writing one would put this dashboard's words on somebody's post. `line-clamp`
    shortens what is DRAWN, so search and export still see every word.
-2. **Posts carry no ticker, so they are not filtered by one.** They appear under Universe scope
-   alongside the market-wide publisher feed and are absent from the narrowed scopes, for exactly
-   the reason market-wide news is: filtering rows that have no company BY company would report
-   *"your companies are not in the news"* when nothing on the row says whose it is.
+2. **Reviewed identity matches can be scoped in All Alerts.** Exact names and evidenced related
+   entities connect posts to holdings, including tickerless entities. Collector query-only matches
+   remain explicitly uncertain and searchable; unresolved posts stay in Universe. Social posts
+   never prove an allegation or financial exposure.
 3. **Deduplication is by the tweet id, in the scraper and in the browser, and `id` is namespaced
    `tw:<tweet_id>`** so it cannot collide with a Moneycontrol article id in the merged list. The
-   capture is capped, so a new post pushes the oldest off the end and the LENGTH DOES NOT MOVE —
+   fast head is capped, but all observations first enter permanent monthly archive shards.
+   A new post pushes the oldest off the head and the LENGTH DOES NOT MOVE —
    "did anything arrive" is answered by comparing id sets, never by counting.
 4. **The merged sort is by time.** `market-news.js` orders by Moneycontrol's own article id, which
    is correct within one publisher and meaningless across two; a story with no readable time keeps
    the publisher's own relative order rather than being dated with something invented.
-5. **A removed handle's posts vanish at once**, because the browser filters the capture by the list
-   that is monitored right now. The capture is only rewritten when the collector next runs, and a
-   control that appeared not to work until then would be worse than no control.
+5. **Handle-only posts follow the reader's current monitored list.** A search-discovered post
+   remains available independently of that list; unmonitoring an author cannot erase captured
+   company-query evidence. Archived source records are not deleted by display controls.
 
 **The handle list has two halves, like the Portfolio scope's.** The committed file is what the
 collector reads; a reader's own edits are a device-local overlay in
@@ -3150,18 +3152,18 @@ failures are never shown as the handle's failures: a deployment with no Worker o
 `GH_DISPATCH_TOKEN` cannot start a run, and that is a fact about the deployment — the account stays
 on the list reading `Adding…`, which is exactly what is true.
 
-**Setting it up on a deployment.** `twscrape` drives X as a signed-in user, so it needs at least one
-account: add a repository secret named **`X_ACCOUNTS`** (*Settings → Secrets and variables →
-Actions*), one per line as `username:password:email:email_password`. With none configured the job
-exits **3**, writes nothing and posts a warning rather than failing — no capture is damaged and the
-dashboard goes on saying the accounts are being added. Exit **2** means every account failed while a
-good capture exists, so the file is left alone. Exit **1** still means a real fault.
+**Deployment access.** The pinned `twscrape` collector uses an existing own-session `X_COOKIES`
+credential first, or the first `X_ACCOUNTS` login when no cookies are supplied. It never rotates
+accounts/proxies on refusal. `X_CAPTURE_ENABLED=false` opts out. Missing/failed sign-in exits **3**;
+failed reads retaining the last good capture exit **2**. Separate status metadata distinguishes
+disabled, unavailable, partial and successful coverage. Code availability does not prove live access.
 
 **`scripts/scrape-twitter.py` is the one Python script in this repository**, and the rule it breaks
 is narrow: the retrieval library asked for is Python, it runs on a GitHub runner only, and nothing
 in `public/`, the Worker or the Node scripts depends on it. What it produces is an ordinary
 committed capture. `TWITTER_LIMIT` (20) bounds the posts read per account per run; `TWITTER_KEEP`
-(600) is the capture's ceiling and is a bytes limit, not an editorial one.
+(600) bounds only the fast head, not the permanent archive. Company-name searches have separate
+overlapping windows, query checkpoints, timeouts and saturation/recovery handling.
 
 
 ### Telegram posts — a public research channel, on the Public Chatter tab

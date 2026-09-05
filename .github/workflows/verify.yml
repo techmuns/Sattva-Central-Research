@@ -24,6 +24,8 @@ jobs:
         run: node scripts/verify-company-news-attribution.mjs
       - name: Verify incremental company-news capture
         run: node scripts/verify-company-news-capture.mjs
+      - name: Verify portfolio discovery, customer misses and source recovery
+        run: node scripts/verify-portfolio-news-discovery.mjs && node scripts/verify-news-country.mjs && python3 scripts/verify-twitter-search.py
       - name: Verify research and portfolio evidence
         run: node scripts/verify-research.mjs
       - name: Verify private portfolio bridge

@@ -106,7 +106,9 @@ export function readCompanyNewsShard(dir, month) {
 
 export function companyNewsArchiveRows(dir) {
   const index = readCompanyNewsIndex(dir);
-  return (index.archive || []).flatMap((item) => readCompanyNewsShard(dir, item.month).articles || []);
+  // A later discovered publication date can place a new observation in an older month. Both
+  // observations stay archived, but readers see one canonical article with the resolved fields.
+  return mergeCompanyNewsArticles((index.archive || []).flatMap((item) => readCompanyNewsShard(dir, item.month).articles || []));
 }
 
 /**

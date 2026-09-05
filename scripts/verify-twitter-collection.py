@@ -12,7 +12,7 @@ spec.loader.exec_module(scraper)
 
 for live in [0, None]:
     collect = AsyncMock(side_effect=AssertionError("Must not read handles without a confirmed login"))
-    with patch.dict(sys.modules, {"twscrape": SimpleNamespace(API=lambda: object())}), \
+    with patch.dict(sys.modules, {"twscrape": SimpleNamespace(API=lambda **kwargs: object())}), \
          patch.dict(scraper.os.environ, {"TWITTER_ADD": ""}), \
          patch.object(scraper, "read_handles", return_value=({}, [{"handle": "fixture"}])), \
          patch.object(scraper, "add_accounts", AsyncMock(return_value=True)), \

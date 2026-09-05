@@ -15,7 +15,7 @@
 // happened to the Telegram section, whose new module is reachable from app.js but would never have
 // been requested. Nothing fails and nothing looks wrong; the feature simply is not there.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-telegram-section-and-alerts-14-days-v8`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-portfolio-news-telegram-and-alerts-v2`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/data/portfolio-companies.json'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';

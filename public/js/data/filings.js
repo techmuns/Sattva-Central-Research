@@ -176,6 +176,7 @@ export function createFeed(kind) {
       tickerlessPortfolioLines: null,
       tickerlessPortfolioEntities: null,
       queryCoverage: null,
+      enrichmentCoverage: null,
       capturedAt: null,
       oldestDataAt: null,
       fallbackCount: 0,
@@ -265,6 +266,7 @@ export function createFeed(kind) {
       tickerlessPortfolioLines: state.tickerlessPortfolioLines,
       tickerlessPortfolioEntities: state.tickerlessPortfolioEntities,
       queryCoverage: state.queryCoverage,
+      enrichmentCoverage: state.enrichmentCoverage,
       // WHAT THIS SESSION HAS NOT LOOKED AT, which is a statement about us and not a claim about
       // the upstream. These routes answer per company and have no index, so "is there anything
       // new?" cannot be answered without asking — the honest thing to print is how many companies
@@ -635,6 +637,7 @@ export function createFeed(kind) {
     state.tickerlessPortfolioLines = Number.isFinite(body.tickerlessPortfolioLines) ? body.tickerlessPortfolioLines : null;
     state.tickerlessPortfolioEntities = Number.isFinite(body.tickerlessPortfolioEntities) ? body.tickerlessPortfolioEntities : null;
     state.queryCoverage = body.queryCoverage && typeof body.queryCoverage === 'object' ? body.queryCoverage : null;
+    state.enrichmentCoverage = body.enrichmentCoverage || null;
     if (kind === 'news') {
       for (const entity of Array.isArray(body.entities) ? body.entities : []) {
         const key = String(entity?.key || entity?.ticker || entity?.entityId || '').toUpperCase();
