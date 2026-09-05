@@ -152,6 +152,29 @@ assert.equal(inventory.size, 3, 'a codeless watchlist company and internal unive
 assert.equal(inventory.get('ID:1274211').inPortfolio, true);
 assert.throws(() => buildInsightInventory([{ Company: 'Bad', 'Screener URL': '/login/' }], [{}], [{ href: '/company/A/', name: 'A' }]), /inventory-identity/);
 assert.throws(() => buildInsightInventory([{ Company: 'A', 'Screener URL': '/company/A/' }], [{}, {}], [{ href: '/company/B/', name: 'B' }]), /inventory-count/);
+const actualUniverse = JSON.parse(readFileSync(new URL('../public/data/universe.json', import.meta.url), 'utf8'));
+const spanRecords = [
+  { isin: 'INE000000001', name: 'Jayaswal Neco Industries', nseCode: 'JAYNECOIND', bseCode: '522285' },
+  { isin: 'INE000000002', name: 'BSE Only', nseCode: '', bseCode: '543619' },
+  { isin: 'INE000000003', name: 'Delisted', nseCode: '', bseCode: '' },
+];
+const spanRows = [
+  { companyId: '1596', href: '', name: 'Jayaswal Neco Industries Ltd' },
+  { companyId: '90001', href: '', name: 'BSE Only Limited' },
+  { companyId: '90002', href: '', name: 'Delisted Ltd' },
+];
+const spanInventory = buildInsightInventory(actualUniverse, spanRecords, spanRows);
+assert.equal(spanInventory.get('JAYNECOIND').ticker, 'JAYNECOIND', 'span-only row uses the exact exported NSE identity');
+assert.equal(spanInventory.get('543619').ticker, null, 'exported BSE code is not an NSE ticker');
+assert.equal(spanInventory.get('ID:90002').isin, 'INE000000003', 'codeless company keeps its exact exported ISIN and namespaced ID');
+assert.equal(spanInventory.get('JAYNECOIND').inPortfolio, true);
+assert.equal([...spanInventory.values()].filter(row => row.inUniverse).length, new Set(actualUniverse.map(row => screenerInsightIdentity(row['Screener URL']).companyKey)).size, 'the checked-in universe also survives real-shape inventory construction');
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, companyId: '1596' } : row)), /inventory-company-id/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, companyId: '' } : row)), /inventory-company-id/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, name: 'Unknown company' } : row)), /inventory-export-match/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[0].name } : row), spanRows), /inventory-export-match/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, name: spanRows[0].name } : row)), /inventory-export-match/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, href: 'https://evil.test/company/JAYNECOIND/' } : row)), /inventory-identity/);
 
 assert.equal(screenerInsightHealth(company, Date.parse('2026-09-07')), 'stale');
 assert.equal(insightEvents([{ ...company, checkedAt: '2026-09-05T17:30:00Z' }], '2026-09-05')[0].sourceStatus, 'ok', 'late Indian-day captures are not future-dated relative to an arbitrary noon clock');
