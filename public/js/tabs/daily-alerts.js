@@ -323,6 +323,7 @@ function paint(ctx) {
   }));
 
   const focus = captureFocus(ctx.root);
+  const sourceScrollTop = renderedHorizon === horizon ? ctx.root.querySelector('[data-alerts-coverage]')?.scrollTop || 0 : 0;
   // Preserve the visible row across live repaints inside one horizon, but never carry a deep
   // history scroll offset into the much shorter forward calendar (or vice versa).
   const tablePosition = renderedHorizon === horizon ? captureTablePosition(ctx.root) : null;
@@ -374,6 +375,9 @@ function paint(ctx) {
   wireHorizon(ctx);
   wireFeedFilter(ctx, available);
   workspaceDispose = wireWorkspace(ctx);
+  // A long picker scrolls on phones. Selecting a checkbox must not snap that panel back to
+  // its first source while the table below is being repainted for the new selection.
+  if (sourcesOpen) ctx.root.querySelector('[data-alerts-coverage]').scrollTop = sourceScrollTop;
   fitStreamToViewport(ctx.root);
   restoreTablePosition(ctx.root, tablePosition);
   renderedHorizon = horizon;

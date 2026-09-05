@@ -359,6 +359,16 @@ try {
     await page.waitForTimeout(300);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), `no page overflow at ${width}px`);
   }
+  await page.locator('[data-sources-summary]').click();
+  const lastSource = page.locator('[data-feed-toggle]').last();
+  await lastSource.scrollIntoViewIfNeeded();
+  const sourceOffset = await page.locator('[data-alerts-coverage]').evaluate(node => node.scrollTop);
+  assert(sourceOffset > 0, 'narrow source picker has a genuine scroll position to preserve');
+  await lastSource.click();
+  assert.equal(await page.locator('[data-alerts-coverage]').evaluate(node => node.scrollTop), sourceOffset,
+    'source selection preserves the picker scroll position');
+  await page.locator('[data-feed-toggle="__all"]').click();
+  await page.locator('[data-sources-close]').click();
   await page.setViewportSize({ width: 1440, height: 1000 });
   if (process.env.GENERAL_ALERTS_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_SCREENSHOT });
   await page.locator('[data-alerts-focus]').click();
