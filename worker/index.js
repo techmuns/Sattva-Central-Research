@@ -50,6 +50,7 @@ import {
   CORPORATE_ACTIONS_WORKFLOW,
   DATA_WORKFLOW,
   TWITTER_WORKFLOW,
+  TELEGRAM_WORKFLOW,
   DEPLOY_WORKFLOW,
 } from './github-actions.mjs';
 import { handleResearch } from './research.mjs';
@@ -220,6 +221,25 @@ export default {
     }
     if (url.pathname === '/api/twitter/run') {
       return handleWorkflowRunStatus(env, ctx, { workflow: TWITTER_WORKFLOW, cacheName: 'twitter-run-status' });
+    }
+    // TELEGRAM — the same shape, and the reason it exists is the schedule this repository cannot
+    // get from GitHub. `telegram-refresh.yml` asks for `*/30` and GitHub delivers a sixth of it, so
+    // a reliable half-hour has to come from a scheduler that works driving the trigger that works:
+    // `workflow_dispatch` is not throttled at all. An external cron POSTs here every 30 minutes,
+    // exactly as one already does for market news. Nothing in the request chooses what runs — the
+    // repository, the workflow and the ref are fixed on this Worker, a run already in flight is
+    // declined, and `?source=` is the same allowlist of three words rather than a string that
+    // reaches a run name. POST-only, so a prefetcher or a link preview cannot start a run.
+    if (url.pathname === '/api/telegram/refresh') {
+      if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a collection with POST.' }, 405);
+      return handleWorkflowDispatch(request, env, ctx, {
+        workflow: TELEGRAM_WORKFLOW,
+        cacheName: 'telegram-dispatch',
+        cooldownS: TELEGRAM_DISPATCH_COOLDOWN_S,
+      });
+    }
+    if (url.pathname === '/api/telegram/run') {
+      return handleWorkflowRunStatus(env, ctx, { workflow: TELEGRAM_WORKFLOW, cacheName: 'telegram-run-status' });
     }
     if (url.pathname === '/api/company-news/refresh') {
       if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a scrape with POST.' }, 405);
@@ -1710,6 +1730,16 @@ const DATA_DISPATCH_COOLDOWN_S = 60 * 60;
 // Short, because this one is usually a reader who has just added an account and is waiting to see
 // its posts. The duplicate-run guard in dispatchWorkflow is what stops a second run either way.
 const TWITTER_DISPATCH_COOLDOWN_S = 3 * 60;
+
+// THE COOLDOWN HAS TO BE SHORTER THAN THE CADENCE IT SERVES, OR IT DEFEATS IT.
+// This route exists so an external scheduler can drive a half-hourly refresh that GitHub's own
+// `schedule:` measurably does not deliver — twitter-refresh.yml's identical `*/30` fired 13 times
+// against the ~80 it asked for over 40 hours, 16%. A pinger firing every 30 minutes must therefore
+// pass every time, so 20 minutes leaves ten minutes of slack for jitter and still bounds a stuck
+// pinger to three runs an hour. A quiet run is ~2 minutes and ~120 requests, so that ceiling is
+// affordable; the in-flight check in dispatchWorkflow and the workflow's own concurrency group are
+// the first and third lines of defence either side of it.
+const TELEGRAM_DISPATCH_COOLDOWN_S = 20 * 60;
 const RUN_STATUS_TTL_S = 5; // so twenty readers watching one run cost GitHub four calls a minute
 // How far back `lastAutomatic` looks. Ten runs is about a day at the schedule's own cadence.
 const RUN_WINDOW = 10;

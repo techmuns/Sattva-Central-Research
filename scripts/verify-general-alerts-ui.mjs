@@ -310,7 +310,14 @@ try {
   const count = calls.length;
   await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); });
   await page.waitForTimeout(400);
-  assert.equal(calls.length, count, 'destroy removes source listeners and does not start another read');
+  // Name the request. A bare count mismatch here is unfalsifiable: it says something was read and
+  // never says what, so the only way to diagnose one is to reproduce it, which is precisely what a
+  // CI-only race does not allow.
+  assert.equal(
+    calls.length,
+    count,
+    `destroy removes source listeners and does not start another read (started: ${calls.slice(count).join(', ') || 'none'})`,
+  );
   assert(!calls.some((p) => /\/api\/(combined-filings|drhp-filings|super-investors\/)/.test(p)), 'no per-company fanout');
   await page.evaluate(async () => {
     const newsTab = await import('/js/tabs/news.js');

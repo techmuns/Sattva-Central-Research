@@ -130,6 +130,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-corporate-actions-ui.mjs
+      - name: Verify the Telegram section, its module graph and the no-times contract
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-telegram-ui.mjs
       - name: Verify IPO table, live refresh, Excel export and mobile layout
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

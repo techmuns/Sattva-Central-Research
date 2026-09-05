@@ -3527,6 +3527,15 @@ const chatterState = await evalSafe(async () => {
   };
 });
 
+// THE SECTION TABS ARE ASSERTED BEFORE THE FEED IS, and that ordering is the point. Public Chatter
+// now carries TWO independent feeds — the chatter API and the committed Telegram capture — and the
+// paint used to return early on a chatter failure and render the unavailable panel as the whole
+// page. That would have taken the Telegram section down with an outage in an upstream it does not
+// read: one feed's outage reported as another's absence. So the tab strip must be there whether or
+// not the chatter API answered, which in this sandbox it usually has not.
+ok('Public Chatter offers Coverage, Not in coverage and Telegram tabs',
+  chatterState.tabs.join(' | ') === 'Coverage | Not in coverage | Telegram', chatterState.tabs.join(' | '));
+
 if (!chatterState.ok) {
   // The chatter API is EXTERNAL and called straight from the browser, so unlike every other feed
   // this one does not need a Worker — it needs egress. A sandbox with no outbound network reports
@@ -3538,7 +3547,6 @@ if (!chatterState.ok) {
   ok('the chatter feed is live', chatterState.total > 0, `${chatterState.total} entries`);
   ok('...split into covered companies and everything else', chatterState.companies + chatterState.uncovered === chatterState.total,
     `${chatterState.companies} covered + ${chatterState.uncovered} not = ${chatterState.total}`);
-  ok('...offers simple Coverage and Not in coverage tabs', chatterState.tabs.join(' | ') === 'Coverage | Not in coverage', chatterState.tabs.join(' | '));
   ok('...opens on Coverage with only its table visible', chatterState.selectedTab === 'Coverage' && chatterState.panel === 'coverage' && chatterState.tables === 1,
     `${chatterState.selectedTab} · ${chatterState.panel} · ${chatterState.tables} table(s)`);
   ok('...with the four summary cards removed', chatterState.statCards === 0, `${chatterState.statCards} stat cards`);
@@ -3792,6 +3800,198 @@ const chatterAlert = await evalSafe(async () => {
 });
 ok('a chatter alert reports mentions, never a percentage', /4 mentions/.test(chatterAlert) && !/%/.test(chatterAlert), chatterAlert);
 ok('...and credits SentimentDash for the sentiment', /SentimentDash/.test(chatterAlert));
+
+// ---------------------------------------------------------------------------------------
+// 8a-ii. Telegram — the second, independent feed on the Public Chatter tab.
+//
+// Every check here is about a claim the feed makes rather than about whether it rendered:
+//
+//   • it survives the OTHER feed being down, which is the reason paint() was restructured;
+//   • it publishes no post times, so there is no time column and no em dash pretending to be one —
+//     the absence is stated in words, in the description and the footnote;
+//   • its coverage is stated, because a batch of caption-less broker PDFs would otherwise read as
+//     a quiet channel;
+//   • row keys are content-derived and unique, the trap that put one headline on screen three
+//     times in the News table;
+//   • the freshness label is green only when the capture's own age earns it, asserted at both
+//     sides of the boundary directly, because the shipped capture only ever has one age.
+// ---------------------------------------------------------------------------------------
+console.log('\n— public chatter · telegram —');
+
+await go('/#/research/public-chatter?scope=universe', 900);
+{
+  const until = Date.now() + 15000;
+  // eslint-disable-next-line no-constant-condition
+  while (Date.now() < until) {
+    const settled = await evalSafe(async () => (await import('/js/data/telegram-posts.js')).meta().loaded);
+    if (settled) break;
+    await page.waitForTimeout(400);
+  }
+}
+
+const tgTabBtn = page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' });
+if (await tgTabBtn.count()) {
+  await tgTabBtn.click();
+  await page.waitForTimeout(600);
+}
+
+const tg = await evalSafe(async () => {
+  const t = await import('/js/data/telegram-posts.js');
+  const host = document.querySelector('#content-host');
+  const m = t.meta();
+  const rows = t.posts();
+  const ids = rows.map((r) => r.id);
+  const keys = rows.map((r) => r.key);
+  const heads = [...host.querySelectorAll('[data-chatter-panel="telegram"] thead th')].map((th) => th.textContent.trim());
+  return {
+    loaded: m.loaded,
+    ok: m.ok,
+    reason: m.reason,
+    count: m.count,
+    channel: m.channel,
+    publishesTime: m.publishesTime,
+    span: m.span,
+    spanFrom: m.spanFrom,
+    spanTo: m.spanTo,
+    readable: m.readable,
+    unreadable: m.unreadable,
+    pending: m.pending,
+    panel: host.querySelector('[data-chatter-panel]')?.dataset.chatterPanel || '',
+    heads,
+    description: host.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim() || '',
+    footnotes: host.querySelector('[data-telegram-footnotes]')?.textContent?.replace(/\s+/g, ' ').trim() || '',
+    pill: host.querySelector('[data-telegram-live]')?.textContent?.replace(/\s+/g, ' ').trim() || '',
+    pillState: host.querySelector('[data-telegram-live]')?.dataset.telegramFreshness || '',
+    pillTag: host.querySelector('[data-telegram-live]')?.tagName || '',
+    idsDescending: ids.every((id, k) => k === 0 || ids[k - 1] > id),
+    uniqueKeys: new Set(keys).size === keys.length,
+    everyPostHasText: rows.every((r) => typeof r.text === 'string' && r.text.trim().length > 0),
+    noPublishedAt: rows.every((r) => r.publishedAt === null),
+    // A DATE CELL MUST NEVER CARRY `firstSeenAt`. That is when OUR scraper saw the post, and
+    // rendering it as the post's time would stamp our reading time onto somebody else's words.
+    firstSeenNotDrawn: !host.querySelector('[data-chatter-panel="telegram"]')?.textContent?.includes(rows[0]?.firstSeenAt || '\u0000'),
+    modalsOpen: document.querySelectorAll('#modal-overlay:not(.hidden)').length,
+  };
+});
+
+ok('the Telegram section renders whatever the chatter API did', tg?.panel === 'telegram', `panel=${tg?.panel}`);
+
+if (!tg?.ok) {
+  // No capture committed yet is a real, named state — and NOT a claim that the channel is quiet.
+  skip('the Telegram capture is present', `reason=${tg?.reason}`);
+  const named = await hostText();
+  ok('...and the tab says so rather than showing an empty list',
+    /not available|no capture|could not be read/i.test(named), named.slice(0, 100));
+} else {
+  ok('the Telegram capture is present', tg.count > 0, `${tg.count} posts from @${tg.channel}`);
+  ok('...every post carries text, so no empty row is drawn', tg.everyPostHasText);
+  ok('...ordered by message id, newest first', tg.idsDescending);
+  ok('...with unique, content-derived row keys', tg.uniqueKeys, `${tg.count} keys`);
+
+  // THE CENTRAL HONESTY CHECK FOR THIS FEED. The route publishes no time, so there must be no time
+  // column at all — a column of em dashes would say "we asked and were refused", when the truth is
+  // that this disclosure does not answer the question.
+  ok('this feed publishes no post times, and every post says so', tg.publishesTime === false && tg.noPublishedAt);
+  ok('...so the table carries NO time column rather than a column of dashes',
+    !tg.heads.some((h) => /time|date|when|posted/i.test(h)), tg.heads.join(' | ') || '(no heads)');
+  ok('...and the absence is stated in words, not left to be inferred',
+    /publishes no post times/i.test(tg.description) && /publishes none/i.test(tg.footnotes),
+    tg.description.slice(0, 90));
+  ok('...and our own first-seen time is never drawn as the post\'s time', tg.firstSeenNotDrawn !== false);
+
+  // Coverage, so a batch of caption-less broker PDFs cannot read as a quiet channel.
+  // THE THREE STATES, KEPT APART. `unreadable` mixes the channel's caption-less documents with ids
+  // OUR run could not fetch, and the second is not the channel's silence. The footnote says which,
+  // in both directions — the zero case is a claim too.
+  ok('...and separates our own fetch failures from the channel having nothing to say',
+    tg.pending > 0
+      ? /are ours rather than the channel/i.test(tg.footnotes)
+      : /None of them is the third kind/i.test(tg.footnotes),
+    `pending=${tg.pending}`);
+  ok('the footnote accounts for the ids this route could not read',
+    /Coverage: this capture spans message/i.test(tg.footnotes) && /without a caption/i.test(tg.footnotes),
+    tg.footnotes.slice(0, 150));
+  // The coverage figures are DERIVED from the capture's own span, so they must reconcile exactly —
+  // a tally carried across runs could not, which is why it is not one.
+  ok('...and the coverage figures reconcile with the span exactly',
+    tg.span === tg.spanTo - tg.spanFrom + 1 && tg.readable + tg.unreadable === tg.span && tg.readable === tg.count,
+    `${tg.readable} readable + ${tg.unreadable} unreadable = ${tg.span} ids (${tg.spanFrom}..${tg.spanTo})`);
+
+  ok('the Telegram status label is passive and opens no explainer',
+    tg.pillTag === 'SPAN' && tg.modalsOpen === 0, tg.pill);
+  // THE CENTRAL CLAIM CHECK FOR THIS LABEL. `capturedAt` moves when the CHANNEL posts, not when
+  // the job last looked, so nothing here may wear the word that means "confirmed just now".
+  ok('...and never claims to be Live, which this feed cannot know',
+    !/\bLive\b/i.test(tg.pill) && !/\bLive\b/i.test(tg.pillState), tg.pill);
+  ok('...it says the capture time is the newest POST, not the last check',
+    /newest post/i.test(tg.footnotes) && /not.*when the job last looked/i.test(tg.footnotes),
+    tg.footnotes.slice(-160));
+}
+
+// GREEN IS A CLAIM ABOUT DATA, so the threshold is asserted directly at both sides. The shipped
+// capture only ever has one age, so the stale branch cannot be produced by the fixture — the same
+// reason `freshnessOf` and `moveSeverity` are exported and tested as predicates.
+const tgFresh = await evalSafe(async () => {
+  const tab = await import('/js/tabs/public-chatter.js');
+  if (typeof tab.telegramFreshness !== 'function') return null;
+  const now = Date.parse('2026-09-05T12:00:00Z');
+  const at = (h) => new Date(now - h * 3600 * 1000).toISOString();
+  return {
+    fresh: tab.telegramFreshness(at(1), now).state,
+    justInside: tab.telegramFreshness(at(24 * 2), now).state,
+    justOutside: tab.telegramFreshness(at(24 * 4), now).state,
+    week: tab.telegramFreshness(at(24 * 14), now).state,
+    none: tab.telegramFreshness(null, now).state,
+    rubbish: tab.telegramFreshness('not a date', now).state,
+  };
+});
+if (!tgFresh) {
+  ok('the Telegram freshness rule is exported for direct assertion', false, 'telegramFreshness is not exported from js/tabs/public-chatter.js');
+} else {
+  ok('a 1-hour-old Telegram capture reads as captured', tgFresh.fresh === 'captured', tgFresh.fresh);
+  ok('...two days still does', tgFresh.justInside === 'captured', tgFresh.justInside);
+  ok('...four days reads as unchanged instead', tgFresh.justOutside === 'unchanged', tgFresh.justOutside);
+  ok('...a fortnight does too', tgFresh.week === 'unchanged', tgFresh.week);
+  ok('...and no capture is a THIRD state, never either of those',
+    tgFresh.none === 'unknown' && tgFresh.rubbish === 'unknown', `${tgFresh.none} / ${tgFresh.rubbish}`);
+}
+
+// AN EMPTY WATCHLIST IS NOT AN EMPTY PAGE HERE. Two of this tab's three sections carry no company
+// at all, so the shell's zero-watchlist panel would replace them while stating that Public Chatter
+// has nothing to show in this scope — a false claim by the chrome about the content it is hiding.
+// `allowEmptyScope` is what stops that, and this asserts the section is genuinely reachable and
+// unnarrowed rather than merely declared so.
+{
+  const emptied = await evalSafe(async () => {
+    const w = await import('/js/core/watchlist.js');
+    const had = w.size();
+    w.clear();
+    return { cleared: had, size: w.size() };
+  });
+  await go('/#/research/public-chatter?scope=watchlist', 1200);
+  const tgWl = await evalSafe(() => {
+    const host = document.querySelector('#content-host');
+    return {
+      tabs: [...host.querySelectorAll('[data-chatter-section-tabs] [role="tab"]')].map((b) => b.textContent.trim()),
+      shellPanel: /zero watchlist companies/i.test(host.innerText || ''),
+    };
+  });
+  ok('an empty watchlist does not hide the Telegram section behind the shell panel',
+    tgWl?.tabs?.includes('Telegram') && !tgWl.shellPanel,
+    `watchlist size ${emptied?.size} · tabs ${tgWl?.tabs?.join(' | ') || '(none)'}`);
+  if (tgWl?.tabs?.includes('Telegram')) {
+    await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
+    await page.waitForTimeout(600);
+    const wlRows = await evalSafe(async () => ({
+      drawn: document.querySelectorAll('[data-chatter-panel="telegram"] tbody tr').length,
+      held: (await import('/js/data/telegram-posts.js')).posts().length,
+    }));
+    ok('...and shows every post there, because the scope cannot narrow rows with no company',
+      wlRows && wlRows.held > 0 && wlRows.drawn === wlRows.held, `${wlRows?.drawn} drawn of ${wlRows?.held} held`);
+  }
+}
+
+await go('/#/research/public-chatter?scope=universe', 600);
 
 // ---------------------------------------------------------------------------------------
 // 8b. The book — 142 company lines, and the promise that none of them is silently missing.

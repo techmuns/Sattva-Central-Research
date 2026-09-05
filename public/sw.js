@@ -5,8 +5,17 @@
 // always network-only, so Family holdings, research answers and private document
 // lookups never cross the persistence boundary.
 
+// BUMP THIS ON EVERY CHANGE TO A FILE UNDER /js/, WITHOUT EXCEPTION.
+// `revalidateInBackground` below deliberately excludes /js/ — modules are treated as immutable and
+// the service-worker file plus this name ARE the code version boundary. So a returning reader with
+// a warm cache keeps the old module graph for ever unless this string changes: the browser only
+// re-installs when sw.js itself differs byte for byte, and only an install re-walks the graph and
+// only an activate evicts the previous cache. A feature can therefore be deployed, correct, and
+// completely invisible to everyone who has visited before — which is exactly what would have
+// happened to the Telegram section, whose new module is reachable from app.js but would never have
+// been requested. Nothing fails and nothing looks wrong; the feature simply is not there.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-alerts-14-days-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-telegram-section-and-alerts-14-days-v8`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/data/portfolio-companies.json'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';

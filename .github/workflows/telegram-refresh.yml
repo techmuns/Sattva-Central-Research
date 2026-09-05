@@ -1,0 +1,126 @@
+name: Telegram refresh
+
+# Posts from the public Telegram channel in scripts/scrape-telegram.mjs, captured on a schedule and
+# committed like every other feed here. The browser reads the committed file; nothing in the app
+# talks to t.me.
+#
+# WHY AN ACTION RATHER THAN A WORKER ROUTE, AND WHY NO CREDENTIAL AT ALL.
+#   t.me sends no `access-control-allow-origin`, so the browser cannot read it — measured with
+#   `curl -D-`. It sends no `ETag` and `cache-control: no-store` either, so there is nothing for a
+#   Worker to revalidate against and a proxy would buy only politeness. A runner reading it on a
+#   schedule and committing the result is the same shape as the market-news and X captures.
+#
+#   Unlike the X capture, this needs NO repository secret. The channel's message pages are public,
+#   so there is nothing to configure and nothing to expire. See the header of
+#   scripts/scrape-telegram.mjs for why the two richer routes (the t.me/s/ preview and the Bot API)
+#   are both shut for this channel.
+
+on:
+  schedule:
+    # Half-hourly, matching twitter-refresh.yml — AND THIS FILE MUST NOT PRETEND THAT IS WHAT
+    # ARRIVES. GitHub's scheduler is best-effort and sheds the densest crons first.
+    #
+    # THE MEASUREMENT FOR THIS EXACT CRON IS IN THIS REPOSITORY, so there is no need to reason from
+    # anywhere else: twitter-refresh.yml has run on `*/30` since 2026-09-03, and over the 39.96
+    # hours to 2026-09-05T13:08Z it fired **13 times against the ~80 it asked for — 16%**. That is
+    # 7.8 runs a day at a mean gap of 3h20m, ranging 1h44m to 5h23m. The market-news job saw the
+    # same thing from the other end: `*/20` delivered 10%, and relaxing it to `*/30` delivered zero
+    # of ~11 across 5.7 hours.
+    #
+    # So half-hourly is a REQUEST. What arrives is a few runs a day at an erratic spacing, and
+    # nothing on screen may quote this line as a cadence; the only honest figure the tab prints is
+    # when the newest post was actually captured.
+    #
+    # Asking for it anyway is still right: an unhonoured request costs nothing, and a run that
+    # finds nothing is cheap and silent — the walk is bounded at MISS_RUN ids past the known head,
+    # and the capture is rewritten, and therefore committed, only when a post has actually arrived.
+    #
+    # IF A RELIABLE HALF-HOUR IS EVER NEEDED, THE ANSWER IS NOT A DENSER CRON. `workflow_dispatch`
+    # is not throttled at all — measured at six dispatches in a day, each starting within seconds —
+    # so the cadence has to come from a scheduler that works driving the trigger that works, as
+    # market-news does through `worker/github-actions.mjs`. That is a Worker route and a token, and
+    # it is deliberately not built here until somebody needs it.
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "How many ids to walk BACK from the head as well (0 = incremental only)"
+        required: false
+        default: "0"
+      source:
+        description: "Who asked for this run — cron, auto, button, or manual"
+        required: false
+        default: "manual"
+
+run-name: Telegram refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }}${{ inputs.backfill != '0' && format(' · backfill {0}', inputs.backfill) || '' }})
+
+concurrency:
+  group: telegram-refresh
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # EXIT CODES ARE THE INTERFACE.
+      #   0  read the channel and wrote a capture
+      #   2  nothing new, or nothing could be read and a good capture already exists — the file is
+      #      untouched, which is the ordinary quiet-hour outcome here and must not be a red build
+      #   4  the run achieved nothing and that does not look like a quiet channel: t.me's landing
+      #      page could not be read at all, or nothing readable turned up across a whole window.
+      #      Surfaced as a WARNING rather than sharing code 2's "no new posts" wording, because
+      #      dressing a total failure in the words used for an ordinary evening is how a stopped
+      #      feed stays invisible. Still not a red build: the committed capture is unharmed
+      #   1  a real fault: the markup changed, the runner broke, or this code is wrong
+      - name: Collect posts
+        id: collect
+        env:
+          TELEGRAM_BACKFILL: ${{ github.event.inputs.backfill || '0' }}
+        run: |
+          set +e
+          node scripts/scrape-telegram.mjs
+          code=$?
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" = "2" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=No new posts::The committed capture is unchanged."
+            exit 0
+          fi
+          if [ "$code" = "4" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning title=This run achieved nothing — t.me may be refusing this runner::Either the channel's landing page could not be read at all, or not one id in a full window carried a post. On a channel that posts most weekdays that is the shape of a refusal rather than a quiet day, but the two are indistinguishable from one request, so this is a suspicion and not a diagnosis. The committed capture is unchanged and still correct. A RUN of these is the signal worth acting on; a single one is not."
+            exit 0
+          fi
+          exit $code
+
+      - name: Commit the capture
+        if: success() && steps.collect.outputs.skip != 'true' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/telegram-posts.json
+          if git diff --cached --quiet; then
+            echo "No change to commit."
+            exit 0
+          fi
+          git commit -m "Telegram refresh ($(date -u +'%Y-%m-%d %H:%M') UTC)"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          exit 1

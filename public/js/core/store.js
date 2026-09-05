@@ -85,6 +85,10 @@ export const KEYS = {
   // artifact covers the public universe and the synchronized portfolio; it is conditional and
   // disk-backed because the series change far less often than a dashboard session.
   screenerInsights: 'screener-insights',
+  // Posts from the monitored public Telegram channel. Its own key rather than a slice of anything
+  // else: it is a separate capture with its own ETag, and a post landing here must not invalidate
+  // the chatter feed it shares a tab with.
+  telegramPosts: 'telegram-posts',
 };
 
 // The in-memory tier. Always written, so a reader that lands during an IndexedDB round trip still
