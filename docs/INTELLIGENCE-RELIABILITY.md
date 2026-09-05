@@ -5,6 +5,14 @@ AI Alerts throughout the existing 14-day window. Recency still reduces their ran
 retention alone cannot create a Must see priority. A failed refresh does not retract known evidence.
 Routine news, unresolved identities, undated rows and context-only records have no retention bypass.
 
+The public 14-day alert window persists in IndexedDB and is re-scoped and re-aged on reload.
+First useful evidence can paint while remaining feeds, operating context and private holding
+sizes are still being checked. An early empty partial cannot block later cards or a delayed cache
+read. A populated view stays stable until its refresh completes; background progress is not ranked
+again when that view cannot use it. Portfolio invalidation cancels outstanding cache adoption.
+Private sizes and document records never enter the public alert cache. If browser storage is
+unavailable or cleared, the first visit must read the sources again.
+
 An archived card represents the material evidence already read. New material evidence or a changed
 headline/direction restores it even if an older event remains strongest. Reordering, routine arrivals
 and old events leaving the window do not restore it. Mutes expire after 14 days even in an open

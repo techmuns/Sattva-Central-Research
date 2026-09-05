@@ -58,6 +58,7 @@ import { currentDay } from '../ui/ai-alert-utils.js';
 import { readEntry, writeEntry } from '../core/store.js';
 const cacheKey='ai-alerts:public-window:v1';
 export async function readCachedAlertWindow({scope,holdings,day=currentDay()}){
+  if(new URLSearchParams(location.search).has('cacheRace')) await new Promise(done=>window.releaseCache=done);
   const saved=await readEntry(cacheKey); if(!saved?.value)return null;
   const wanted=new Set(holdings.map(h=>h.ticker));
   return {...saved.value,day,scope,events:saved.value.events.filter(e=>scope==='universe'||wanted.has(e.ticker)),cacheSavedAt:saved.savedAt};
@@ -68,7 +69,13 @@ export async function collect({scope,onPartial,holdings,load=true}) {
   const wanted=new Set(holdings.map(h=>h.ticker));
   const events=window.fixtureEvents.filter(e=>scope==='universe' || wanted.has(e.ticker));
   const report=()=>({day:currentDay(),scope,events,feeds:${JSON.stringify(feeds.map((id) => ({ id, status: 'ok', reachesToday: true })))},pending:0});
-  onPartial?.({...report(),events:window.partialEvents || events,pending:1});
+  const params=new URLSearchParams(location.search);
+  if(load && (params.has('emptyFirst') || params.has('cacheRace'))) {
+    onPartial?.({...report(),events:[],pending:2});
+    await new Promise(done=>window.releaseUseful=done);
+    window.holdRead=true;
+  }
+  if(!params.has('completeOnly')) onPartial?.({...report(),events:window.partialEvents || events,pending:1});
   if(load && window.holdRead) await new Promise(done=>window.releaseRead=done);
   const complete=report();
   if(load)writeEntry(cacheKey,{value:{...complete,scope:'universe',events:window.fixtureEvents.filter(e=>e.ticker),feeds:complete.feeds}});
@@ -112,6 +119,68 @@ const waitFor = async (target, condition) => {
 const settled = () => waitFor(page, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
 const card = (ticker) => page.locator(`[data-ai-card][data-ticker="${ticker}"]`);
 try {
+  // Empty sources often settle before a useful feed. Neither that early empty
+  // report nor a slow context/positions request may hold useful cards offscreen.
+  const loadingContext = await browser.newContext();
+  const loadingPage = await loadingContext.newPage();
+  loadingPage.on('pageerror', error => errors.push(error.message));
+  let releaseInsights;
+  await loadingPage.route('**/*', async route => {
+    const url = route.request().url();
+    if(url === `${origin}/api/screener-insights`) {
+      await new Promise(done => { releaseInsights = done; });
+      return route.fulfill({ status: 503, body: '{}' });
+    }
+    return url === `${familyOrigin}/research-bridge` ? route.fulfill({ contentType:'text/html', body:familyHtml })
+      : url.startsWith(origin) ? route.continue() : route.fulfill({ status:503, body:'{}' });
+  });
+  await loadingPage.clock.install({ time: '2026-09-04T08:00:00Z' });
+  await loadingPage.goto(`${origin}/?emptyFirst=1`);
+  await waitFor(loadingPage, () => !!window.releaseUseful);
+  const usefulStarted = Date.now();
+  await loadingPage.evaluate(() => window.releaseUseful());
+  await loadingPage.locator('[data-ai-card]').first().waitFor({ timeout: 1000 });
+  assert(await loadingPage.evaluate(() => !!window.releaseRead), 'useful partial appears while another feed remains pending');
+  console.log(`PASS: useful cards appear ${Date.now() - usefulStarted}ms after an empty first feed, with slow sources still pending.`);
+  await loadingPage.evaluate(() => { window.holdRead=false; window.releaseRead(); });
+  await waitFor(loadingPage, async () => {
+    const store = await import('/js/core/store.js');
+    const entry = await store.readEntry('ai-alerts:public-window:v1');
+    if (!entry) return false;
+    await store.writeEntry('ai-alerts:public-window:v1', entry);
+    return true;
+  });
+  releaseInsights?.();
+  await loadingPage.goto(`${origin}/?cacheRace=1`);
+  await waitFor(loadingPage, () => !!window.releaseUseful && !!window.releaseCache);
+  const cacheStarted = Date.now();
+  await loadingPage.evaluate(() => window.releaseCache());
+  await loadingPage.locator('[data-ai-card]').first().waitFor({ timeout: 1000 });
+  console.log(`PASS: disk-cached cards restore in ${Date.now() - cacheStarted}ms even after an empty live partial.`);
+  releaseInsights?.();
+  await loadingContext.close();
+
+  const coldContext = await browser.newContext();
+  const coldPage = await coldContext.newPage();
+  coldPage.on('pageerror', error => errors.push(error.message));
+  await coldPage.clock.install({ time: '2026-09-04T08:00:00Z' });
+  await coldPage.route('**/*', async route => {
+    const url = route.request().url();
+    if(url === `${origin}/api/screener-insights`) {
+      await new Promise(done => { releaseInsights = done; });
+      return route.fulfill({ status:503, body:'{}' });
+    }
+    return url === `${familyOrigin}/research-bridge` ? route.fulfill({ contentType:'text/html', body:familyHtml })
+      : url.startsWith(origin) ? route.continue() : route.fulfill({ status:503, body:'{}' });
+  });
+  await coldPage.goto(`${origin}/?completeOnly=1`);
+  await coldPage.locator('[data-ai-card]').first().waitFor({ timeout: 1000 });
+  assert(!await coldPage.evaluate(async () => (await import('/js/data/screener-insights.js')).isLoaded()),
+    'completed public evidence appears before optional Insights answers');
+  releaseInsights?.();
+  await coldContext.close();
+  console.log('PASS: a completed feed burst paints before context and holding sizes finish.');
+
   await page.clock.install({ time: '2026-09-04T18:29:00Z' });
   await page.clock.pauseAt('2026-09-04T18:29:58Z');
   await page.goto(origin);

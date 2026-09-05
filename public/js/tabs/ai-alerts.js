@@ -48,6 +48,7 @@ let captureDirty = false;
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
 onPortfolioInvalidation((version) => {
+  cacheToken += 1;
   if (version < 0) {
     // Universe/Watchlist cards also carry membership badges from the private
     // book, so revoke those cached annotations as well as Portfolio results.
@@ -201,10 +202,12 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
         holdings: coverage.holdings(),
         refresh: forceRefresh,
         load,
-        onPartial: (partial) => {
+        onPartial: report?.cards.length ? null : (partial) => {
           // Refresh a populated view atomically; partial feeds otherwise remove
           // companies and reorder cards underneath the reader on every arrival.
-          if (!current() || report) return;
+          // Empty/context-only sources often finish first. They must not close
+          // the fast path for a useful feed or the disk cache still being read.
+          if (!current() || report?.cards.length || !partial.cards.length) return;
           report = partial;
           paint(ctxRef);
         },
