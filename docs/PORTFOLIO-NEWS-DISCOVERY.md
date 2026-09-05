@@ -71,6 +71,8 @@ a fixed handle list. The default search order is Latest. Per-query date windows,
 timeouts and outstanding partitions are recorded in `twitter-search.json`. A cap or source refusal
 does not advance a successful checkpoint. Blocked/unknown authentication stops before attributing
 failures to monitored handles. Previously seen pinned posts no longer truncate the timeline walk.
+When historical partitions remain unfinished, an independent 48-hour preview still collects
+current posts. Preview success never clears the backlog or certifies complete historical coverage.
 
 All captured posts are deduplicated by ID into permanent monthly `twitter-archive` shards before
 the fast head is bounded. Both monitored authors and search-discovered posts remain readable;

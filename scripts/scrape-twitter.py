@@ -266,6 +266,22 @@ async def collect_searches(api, jobs, state, *, now=None, budget_seconds=480, li
         stamp = now.isoformat(timespec="seconds")
         checkpoint["lastAttemptAt"] = stamp
         try:
+            if checkpoint.get("pending"):
+                # A saturated historical hour must not starve current discoveries. This
+                # independent preview retains fresh posts but does NOT certify coverage or
+                # consume the historical checkpoint. Full recovery still walks pending below.
+                recent = now - timedelta(hours=48)
+                preview = f'{job["query"]} since_time:{int(recent.timestamp())} until_time:{int(now.timestamp())}'
+                async with asyncio.timeout(max(1, min(45, deadline - monotonic()))):
+                    async with aclosing(api.search(preview, limit=limit)) as results:
+                        async for tweet in results:
+                            record = shape(tweet, "unknown")
+                            if record["tweet_id"]:
+                                record["matchedQueries"] = [{"entityId": job["entityId"], "query": job["query"]}]
+                                posts.append(record)
+                checkpoint["lastDiscoveryAt"] = stamp
+                if monotonic() >= deadline:
+                    break
             last = datetime.fromisoformat(checkpoint["lastSuccessAt"]) if checkpoint.get("lastSuccessAt") else now - timedelta(days=7)
             pending = list(checkpoint.get("pending") or [{"from": (last - timedelta(hours=48)).isoformat(), "to": stamp}])
             window = pending.pop(0)

@@ -3,7 +3,7 @@ import asyncio
 import importlib.util
 import json
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -69,6 +69,15 @@ assert partial, "keep posts received before a source failure"
 assert len(failed.calls) == 1, "refusal stops collection rather than switching accounts or continuing a walk"
 assert json.dumps(checkpoint["pending"]) == saved, "failure never consumes an unfinished partition"
 assert not checkpoint.get("lastSuccessAt")
+
+later = now + timedelta(days=2)
+recovering = API([tweet(4)])
+recent = asyncio.run(scraper.collect_searches(recovering, jobs[:1], capped_state, now=later))
+assert len(recovering.calls) == 2, "current discovery and historical recovery are independent"
+assert f"until_time:{int(later.timestamp())}" in recovering.calls[0]
+assert checkpoint["pending"], "a fresh preview never clears the unfinished history"
+assert not checkpoint.get("lastSuccessAt"), "preview success is not certified complete coverage"
+assert recent and capped_state["coverage"]["incomplete"] == 1
 
 async def timeline(*args, **kwargs):
     yield tweet(1, "Pinned existing post")

@@ -43,7 +43,10 @@ const html = `<!doctype html><html><head><meta name="viewport" content="width=de
 import * as tab from '/js/tabs/ai-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
+import { currentDay } from '/js/ui/ai-alert-utils.js';
 coverage.prime({holdings:${JSON.stringify(holdings)}});
+window.primeCoverage=coverage.prime;
+window.currentDay=currentDay;
 window.show=(scope='portfolio')=>tab.render({root:document.querySelector('#root'),scope,params:{}});
 window.dispose=()=>tab.destroy();
 window.refreshAlerts=()=>refresh.refreshAll();
@@ -315,13 +318,12 @@ try {
   assert.match(await page.locator('[data-ai-feed-status]').innerText(), /Ready/i);
   assert.equal(await page.evaluate(() => !!window.releaseStart), true, 'live collection is still blocked while cached cards are ready');
   console.log('PASS: reload restores a ready privacy-safe alert view before live collection completes.');
-  await page.evaluate(async () => {
+  await page.evaluate(() => {
     window.holdStart = false; window.releaseStart(); window.dispose();
-    const coverage = await import('/js/data/coverage.js');
-    const { currentDay } = await import('/js/ui/ai-alert-utils.js');
+    const currentDay = window.currentDay;
     const holdings = [{ name: 'Private Robotics', ticker: null, isin: 'INE000009999' },
       { name: 'Quiet Signals', ticker: 'QUIET', isin: 'INE000009998' }];
-    coverage.prime({ holdings });
+    window.primeCoverage({ holdings });
     window.fixtureEvents = [
       { id: 'private-disclosure', ticker: null, entityId: 'isin:INE000009999', company: 'Private Robotics',
         headline: 'Private Robotics investor day presentation', importance: 'high', direction: 'neutral',
