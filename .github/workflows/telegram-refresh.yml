@@ -46,8 +46,14 @@ jobs:
           number=$(gh pr list --head codex/telegram-capture --state open --json number --jq '.[0].number // empty')
           if [ -n "$number" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "number=$number" >> "$GITHUB_OUTPUT"
             echo "Archive PR #$number is awaiting checks or review. Retaining its progress."
           fi
+      - name: Resume verification of the existing archive PR
+        if: steps.existing.outputs.number != '' && github.ref == 'refs/heads/main'
+        env:
+          TELEGRAM_PR_NUMBER: ${{ steps.existing.outputs.number }}
+        run: node scripts/merge-telegram-capture.mjs
       - name: Verify collector contracts offline
         if: steps.existing.outputs.skip != 'true'
         run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs

@@ -31,7 +31,7 @@ try {
   for (const scenario of ['ok', 'wrong-file', 'failed-ci', 'pending-check', 'review', 'inline', 'comment']) {
     const dir = await mkdtemp(join(root, 'case-'));
     const result = spawnSync(process.execPath, [resolve('scripts/merge-telegram-capture.mjs')], {
-      encoding: 'utf8', env: { ...process.env, PATH: `${root}:${process.env.PATH}`, GITHUB_REPOSITORY: 'test/repository', TELEGRAM_PR_NUMBER: '1', TEST_CASE: scenario, TEST_DIR: dir },
+      encoding: 'utf8', env: { ...process.env, PATH: `${root}:${process.env.PATH}`, GITHUB_REPOSITORY: 'test/repository', TELEGRAM_PR_NUMBER: '1', TELEGRAM_VERIFY_TIMEOUT_MS: '1000', TEST_CASE: scenario, TEST_DIR: dir },
     });
     let merged = null;
     try { merged = JSON.parse(await readFile(join(dir, 'merged'), 'utf8')); } catch {}
