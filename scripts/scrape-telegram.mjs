@@ -506,10 +506,29 @@ async function main() {
     // raise a warning instead of another routine notice, and an operator sees a run of them.
     // It is deliberately NOT a failure: the committed capture is still correct.
     if (readable === 0 && blank >= MISS_RUN) {
+      // A QUIET RUN AND A REFUSED RUN LOOK IDENTICAL FROM ABOVE THE HEAD, and the first is the
+      // ordinary case. An incremental run walks MISS_RUN ids past the newest post and, when the
+      // channel has said nothing since, every one of them is legitimately blank — so a rule of
+      // "nothing readable means we are being refused" fires on EVERY quiet run. Measured: it did,
+      // on the first one. A warning that cries wolf on the normal case is worse than no warning at
+      // all; it teaches the reader to ignore the one that matters, which is what the Breakouts
+      // pill's threshold exists to avoid.
+      //
+      // So ask a question that separates them, with positive evidence and one request: re-read an
+      // id we KNOW is a post. If it still reads as a post, t.me is answering us properly and the
+      // channel is simply quiet. If it now reads blank, the same page that carried a post an hour
+      // ago carries nothing, and that is a refusal rather than a silence.
+      const control = Math.max(...byId.keys());
+      const check = await readId(control, { signature });
+      if (check.state === 'post') {
+        console.log(`No new posts (walked ${scanned} ids past ${head}). Message ${control} still reads correctly, so the channel is quiet rather than closed to us. Capture unchanged.`);
+        return 2;
+      }
       console.error(
-        `Read ${blank} ids and not one carried a post. On a channel that posts most weekdays that is ` +
-        `the shape of t.me refusing this runner rather than a quiet day — the two are indistinguishable ` +
-        `from one request, so this is a suspicion and not a diagnosis. The capture is unchanged.`,
+        `Read ${blank} ids and not one carried a post, AND message ${control} — which this capture ` +
+        `holds as a real post — now reads as empty too. The same page answered differently an hour ` +
+        `ago, so this looks like t.me refusing this runner rather than a quiet channel. The capture ` +
+        `is unchanged.`,
       );
       return 4;
     }

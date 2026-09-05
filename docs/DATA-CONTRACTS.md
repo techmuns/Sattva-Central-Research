@@ -3025,9 +3025,16 @@ counting. `refresh()` returns the arrived ids for that reason.
 that does not look like a quiet channel — t.me's landing page unreadable, or nothing readable across
 a whole window while a capture is already held — raised as a **warning**, because dressing a total
 failure in the words used for an ordinary evening is how a stopped feed stays invisible; **1** a
-real fault. Only 1 is a red build, and 4 is a suspicion rather than a diagnosis: a refused runner
-and a silent channel are indistinguishable from one request, so a RUN of warnings is the signal, not
-a single one.
+real fault. Only 1 is a red build.
+
+**Telling a quiet channel from a refused runner takes positive evidence, and one request.** From
+above the head the two are identical: an incremental run walks `MISS_RUN` ids past the newest post,
+and when the channel has said nothing since, every one of them is legitimately blank. A rule of
+"nothing readable means we are being refused" therefore fires on **every quiet run** — measured, it
+did, on the first one — and a warning that cries wolf on the normal case teaches the reader to
+ignore the one that matters. So before raising it the run re-reads an id it KNOWS is a post: if that
+still reads correctly, t.me is answering properly and the channel is merely quiet (exit 2); if the
+page that carried a post an hour ago now carries nothing, that is a refusal (exit 4).
 
 **The capture is rewritten only when a post arrives**, so `capturedAt` says when the channel last
 said something this route could read — **not** when the job last looked. Nothing in the committed
