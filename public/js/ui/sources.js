@@ -136,6 +136,8 @@ function twitterSources() {
   let list = [];
   let failed = new Map();
   let counts = new Map();
+  const connection = twitterNews.meta();
+  const unavailable = !!(connection.reason || connection.lastReadFailed || !connection.capturedAt);
   try {
     failed = twitterNews.failedByKey();
     counts = twitterNews.countsByHandle();
@@ -143,7 +145,7 @@ function twitterSources() {
   } catch {
     list = [];
   }
-  const cadence = 'Every 30 minutes · GitHub Actions';
+  const cadence = unavailable ? 'Optional · not connected' : 'Every 30 minutes · GitHub Actions';
   if (!list.length) {
     return [
       {
@@ -165,13 +167,13 @@ function twitterSources() {
       name: `@${e.handle}`,
       url: `https://x.com/${encodeURIComponent(e.handle)}`,
       feeds:
-        e.status === 'not-found'
+        unavailable ? 'X is not connected. Previously captured posts remain available.' : e.status === 'not-found'
           ? `This account could not be read${e.reason ? ` — ${escapeHtml(e.reason)}` : ''}. It stays on the list and is tried again on the next run; it is <strong>absent</strong> from the feed rather than shown as an account with nothing to say.`
           : e.status === 'adding'
             ? 'Monitored by this browser. Its posts join the News feed once a collection run has read the account.'
             : `Posts join the market-wide News feed, marked <strong>Twitter / X</strong>${clause(n || null, ', <n> in the feed now')}. Reproduced as published — nothing scored, ranked or summarised.`,
       cadence,
-      status: e.status === 'active' ? 'live' : e.status === 'adding' ? 'adding' : 'unreadable',
+      status: unavailable ? 'pending' : e.status === 'active' ? 'live' : e.status === 'adding' ? 'adding' : 'unreadable',
       file: 'public/data/twitter-posts.json',
     };
   });

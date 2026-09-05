@@ -5,7 +5,7 @@ import { assessFilingsHealth, FILINGS_HEALTH_FILES } from '../public/js/data/fil
 
 const sources = process.argv.slice(2);
 const selected = sources.length ? sources : Object.keys(FILINGS_HEALTH_FILES);
-if (selected.some((source) => !Object.hasOwn(FILINGS_HEALTH_FILES, source))) throw new Error('Use company, announcements and/or insider.');
+if (selected.some((source) => !Object.hasOwn(FILINGS_HEALTH_FILES, source))) throw new Error(`Use ${Object.keys(FILINGS_HEALTH_FILES).join(', ')}.`);
 const captures = {};
 await Promise.all(selected.map(async (source) => {
   const file = FILINGS_HEALTH_FILES[source];

@@ -72,6 +72,8 @@ jobs:
         run: node scripts/verify-general-alerts.mjs
       - name: Verify AI alert search and calendar dates
         run: node scripts/verify-ai-alerts.mjs
+      - name: Verify material alert lifecycle and optional social coverage
+        run: node scripts/verify-alert-reliability.mjs
       - name: Syntax-check JavaScript
         run: find public/js worker scripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check && node --check public/sw.js
       - name: Validate the Worker bundle

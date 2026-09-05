@@ -19,6 +19,7 @@ import { newsCanSupportAI } from './company-news-attribution.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
 import { enrichCardFromAllAlerts } from './intelligence-graph.js';
+import { canonicalArticleUrl } from './filings-shared.js';
 
 export const WINDOW_DAYS = 7;
 export const MIN_SCORE = 64;
@@ -27,6 +28,7 @@ export const MUST_SEE_SCORE = 82;
 const FEED_WEIGHT = {
   earnings: 12,
   announcements: 10,
+  'nse-filings': 10,
   insider: 9,
   investors: 8,
   concalls: 8,
@@ -37,10 +39,8 @@ const FEED_WEIGHT = {
   // separate a fraud investigation from a namesake's film release. The keyword rule supplies that
   // separation, so news can carry weight — and it is kept small on purpose. Do the arithmetic: a
   // keyword-matched story on a book company, published today, scores 30 (high importance) + 6 +
-  // 16 (today) + 12 (in the book) = 64, which is exactly MIN_SCORE. So a single story surfaces a
-  // company on the day it breaks and drops below the line as it ages, and anything older needs a
-  // second feed to agree with it. That is the intended shape: news opens the door, it does not
-  // decide what is urgent.
+  // 16 (today) + 12 (in the book) = 64, which is exactly MIN_SCORE. Recency controls ordering;
+  // material portfolio disclosures remain visible for the whole seven-day review window.
   news: 6,
   'market-news': 0,
 };
@@ -76,15 +76,31 @@ function normalizedHeadline(value) {
     .slice(0, 140);
 }
 
-/** Keep one copy of a story per feed without erasing genuine cross-feed corroboration. */
+const feedFamily = (event) => event.feed === 'nse-filings' ? 'announcements' : event.feed;
+
+/** Syndicated links and duplicate exchange disclosures are not independent corroboration. */
 function dedupe(events) {
   const seen = new Set();
-  return events.filter((event) => {
-    const key = `${event.feed}:${normalizedHeadline(event.headline) || event.id}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+  // Prefer the useful copy when one exchange supplied a generic label and the other a full
+  // subject. Stable ordering also stops equivalent source arrival order changing read state.
+  return [...events].sort((a, b) => Number(b.importance === 'high') - Number(a.importance === 'high') ||
+    String(a.feed).localeCompare(String(b.feed)) || String(a.id).localeCompare(String(b.id))).filter((event) => {
+    const family = feedFamily(event);
+    const key = `${family}:${event.day}:${normalizedHeadline(event.headline) || event.id}`;
+    const link = event.url && ['announcements', 'news'].includes(family) ? `${family}:url:${canonicalArticleUrl(event.url)}` : null;
+    if (seen.has(key) || (link && seen.has(link))) return false;
+    seen.add(key); if (link) seen.add(link);
     return true;
   });
+}
+
+// Stable content identities for read/dismiss state. A new material item must resurface a company
+// even when an older, higher-scoring item remains on top. Routine observations do not wake it.
+export function materialEvidence(events = []) {
+  const material = events.filter((event) => event.importance === 'high');
+  return [...new Set((material.length ? material : events).map((event) => JSON.stringify([
+    feedFamily(event), event.id || null, event.day, event.headline, event.direction, event.importance,
+  ])))].sort();
 }
 
 function eventScore(event, day, feedState) {
@@ -166,7 +182,7 @@ const investorCut = (e) => e.feed === 'investors' && e.direction === 'negative' 
 const insiderBuy = (e) => e.feed === 'insider' && e.direction === 'positive' && e.importance === 'high';
 const insiderSell = (e) => e.feed === 'insider' && e.direction === 'negative' && e.importance === 'high';
 const trackedNews = (e) => e.feed === 'news' && (e.keywords || []).length > 0;
-const materialFiling = (e) => e.feed === 'announcements' && e.importance === 'high';
+const materialFiling = (e) => feedFamily(e) === 'announcements' && e.importance === 'high';
 const resultEvent = (e) => e.feed === 'earnings' || e.feed === 'concalls';
 
 /**
@@ -175,7 +191,7 @@ const resultEvent = (e) => e.feed === 'earnings' || e.feed === 'concalls';
  * as nameable as a story's — and on the announcements feed it is the company's own statement of it.
  */
 const newsTopics = (events) =>
-  [...new Set(events.flatMap((e) => (e.feed === 'news' || e.feed === 'announcements' ? e.keywords || [] : [])))];
+  [...new Set(events.flatMap((e) => (e.feed === 'news' || feedFamily(e) === 'announcements' ? e.keywords || [] : [])))];
 
 /**
  * The patterns, in the order they are reported. `detect` returns the sentence it matched on, or
@@ -263,7 +279,7 @@ const CONFLUENCE = [
     points: 10,
     detect: (events) => {
       const bad = events.filter((e) => e.direction === 'negative' && e.importance === 'high');
-      const feeds = [...new Set(bad.map((e) => e.feed))];
+      const feeds = [...new Set(bad.map(feedFamily))];
       if (feeds.length < 2) return null;
       return `High-importance negative readings on ${feeds.length} independent feeds: ${bad
         .slice(0, 2)
@@ -654,11 +670,13 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       .sort((a, b) => b.score.points - a.score.points || String(b.event.day).localeCompare(String(a.event.day)) || String(b.event.time || '').localeCompare(String(a.event.time || '')));
     const top = scoredEvents[0];
     const directions = directionSummary(events);
-    const feeds = [...new Set(events.map((event) => event.feed))];
+    const feeds = [...new Set(events.map(feedFamily))];
     const feedLabels = [...new Set(events.map((event) => event.feedLabel || event.feed))];
     const highCount = events.filter((event) => event.importance === 'high').length;
     const hasMaterialNegative = events.some((event) => event.importance === 'high' && event.direction === 'negative');
     const holding = holdingByTicker.get(ticker) || null;
+    const materialPortfolioEvent = !!holding && events.some((event) => event.importance === 'high' &&
+      !!event.url && (materialFiling(event) || (event.feed === 'news' && event.namesCompany === true)));
     const mixed = directions.positive > 0 && directions.negative > 0;
     const scoreBreakdown = [...(top?.score.parts || [])];
 
@@ -695,6 +713,8 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       directions,
       mixed,
       highCount,
+      materialPortfolioEvent,
+      evidenceKey: JSON.stringify(materialEvidence(events)),
       hasMaterialNegative,
       feedCount: feeds.length,
       feeds,
@@ -729,7 +749,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       // would push a company above the deliberately bounded 100-point scale.
       card.scoreBreakdown.push({ label: '100-point priority scale cap', points: card.score - unclamped });
     }
-    card.priority = card.score >= MUST_SEE_SCORE ? 'must-see' : card.score >= MIN_SCORE ? 'important' : 'watch';
+    card.priority = card.score >= MUST_SEE_SCORE ? 'must-see' : card.score >= MIN_SCORE || card.materialPortfolioEvent ? 'important' : 'watch';
     card.insight = plainInsight(card);
     card.metrics = cardMetrics(card);
     card.badge = cardBadge(card);
@@ -739,7 +759,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
   cards.sort(
     (a, b) => (weights.size ? (b.holdingWeightPct ?? -1) - (a.holdingWeightPct ?? -1) : 0) || b.score - a.score || b.highCount - a.highCount || String(b.topEvent?.day || '').localeCompare(String(a.topEvent?.day || '')) || a.company.localeCompare(b.company)
   );
-  const surfaced = cards.filter((card) => card.score >= MIN_SCORE);
+  const surfaced = cards.filter((card) => card.score >= MIN_SCORE || card.materialPortfolioEvent);
   const marketWide = (report?.events || []).filter(
     (event) => !event.ticker && event.day && event.day >= firstDay && event.day <= day
   ).length;

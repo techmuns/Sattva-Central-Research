@@ -130,6 +130,18 @@ try {
   assert.equal(await card('A10').count(), 0);
   await page.locator('[data-ai-filter="archived"]').click();
   assert.equal(await card('A10').count(), 1, 'same search reaches archived cards');
+  await page.evaluate(async () => {
+    const old = window.fixtureEvents.find(e => e.ticker === 'A10');
+    window.fixtureEvents.push({ ...old, id: 'new-neutral-disclosure', feed: 'announcements',
+      headline: 'New investor day presentation', direction: 'neutral', url: 'https://example.test/investor-day.pdf' });
+    await window.refreshAlerts();
+  });
+  await settled();
+  assert.equal(await card('A10').count(), 0, 'new material evidence leaves the archived view');
+  await page.locator('[data-ai-filter="all"]').click();
+  assert.equal(await card('A10').count(), 1, 'new weaker disclosure revives the existing card');
+  await card('A10').locator('[data-ai-mute]').click();
+  await page.locator('[data-ai-filter="archived"]').click();
   await card('A10').locator('[data-ai-unmute]').click();
   await page.locator('[data-ai-filter="all"]').click();
   assert.equal(await card('A10').count(), 1);
