@@ -54,9 +54,11 @@ import { sourceConnection, sourceSummary, sourceReadState } from './source-conne
 // quarter" is true forever; "877 of them" is true for about a day.
 // ---------------------------------------------------------------------------------------
 
-function capturedSourceState(kind) {
+function capturedSourceReadState(kind) {
   const status = companyCaptureStatus(kind);
-  return !status.available ? 'pending' : status.error || status.gaps.length || status.unresolved.length || status.unavailableLinks ? 'partial' : 'live';
+  if (!status.available || !status.total) return 'unchecked';
+  return sourceReadState({ at: status.updatedAt, failed: !!status.error,
+    partial: !!status.gaps.length || !!status.unresolved.length || !!status.unavailableLinks, maxAgeMs: 4 * 3600000 });
 }
 function capturedSourceCadence(kind) {
   const status = companyCaptureStatus(kind);
@@ -154,6 +156,7 @@ function twitterSources() {
     return [
       {
         name: 'No accounts monitored yet',
+        internal: true, // Empty editor state, not an additional data source.
         url: null,
         feeds:
           'Posts from X/Twitter accounts join the market-wide News feed as ordinary stories — same list, same search, ' +
@@ -358,7 +361,7 @@ export function sourceGroups() {
           feeds:
             'Annual report PDFs, earnings report PDFs and concall transcripts for an Indian ticker, read through the authenticated Muns domestic-filings service. Open Earnings Hub → Company Filings, or follow Reports / Transcripts from a company row. Documents keep their original source links. This source provides documents; it does not populate a financial quality score or analyst estimates.',
           cadence: capturedSourceCadence('domestic'),
-          status: capturedSourceState('domestic'),
+          status: 'live', readState: capturedSourceReadState('domestic'),
           file: 'worker/muns.mjs → POST /filings/domestic · /api/domestic-filings/{ticker} · public/js/tabs/company-filings.js',
         },
         {
@@ -536,7 +539,7 @@ export function sourceGroups() {
           url: 'https://devde.muns.io',
           feeds: 'Additional corporate announcements from BSE, NSE fallback and DRHP documents through the authenticated corporate-announcements endpoint. Scheduled captures cover the committed companies, and their retained history loads automatically. Results join BSE and live NSE announcements in one table with source labels and document links; matching disclosures are deduplicated. Saved lookup rows survive an empty or failed refresh. Coverage is limited to the companies and dates requested, not the whole NSE or DRHP universe.',
           cadence: capturedSourceCadence('announcements'),
-          status: capturedSourceState('announcements'),
+          status: 'live', readState: capturedSourceReadState('announcements'),
           file: 'worker/muns.mjs → GET /filings/corp/announcements/{ticker} · public/js/data/announcements-extra.js',
         },
         {
