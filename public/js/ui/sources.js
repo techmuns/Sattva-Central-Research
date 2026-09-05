@@ -9,7 +9,8 @@
 //   'live'    — a real feed is wired and refreshing on a schedule
 //   'static'  — real data, committed to the repo, refreshed by hand rather than on a cron
 //   'mock'    — placeholder data ships in the repo; the real source is named but not connected
-//   'pending' — nothing exists yet; named so the gap is visible rather than hidden
+// `readState` is separate: only a recent successful check can produce a Connected indicator.
+// Roadmap-only entries and credential plumbing are not customer-facing data sources.
 
 import { companyCaptureStatus } from '../data/company-captures.js';
 import { escapeHtml } from '../core/dom.js';
@@ -22,7 +23,7 @@ import * as chatter from '../data/chatter-live.js';
 import * as telegramPosts from '../data/telegram-posts.js';
 import * as institutions from '../data/institution-holdings.js';
 import * as technicals from '../data/technicals.js';
-import { announcements as annFeed } from '../data/filings.js';
+import { announcements as annFeed, news as newsFeed } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
 import * as nseFeed from '../data/nse-filings.js';
 import * as twitterNews from '../data/twitter-news.js';
@@ -33,6 +34,8 @@ import * as superInvestors from '../data/super-investors.js';
 import * as dailyAlerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
 import { ipoSourceGroup } from './ipo-sources.js';
+import { newsSourceItems, screenerInsightsSource } from './news-sources.js';
+import { sourceConnection, sourceSummary, sourceReadState } from './source-connections.js';
 
 // ---------------------------------------------------------------------------------------
 // NO FIGURE ON THIS SCREEN MAY BE TYPED BY HAND.
@@ -175,6 +178,8 @@ function twitterSources() {
             : `Posts join the market-wide News feed, marked <strong>Twitter / X</strong>${clause(n || null, ', <n> in the feed now')}. Reproduced as published — nothing scored, ranked or summarised.`,
       cadence,
       status: unavailable ? 'pending' : e.status === 'active' ? 'live' : e.status === 'adding' ? 'adding' : 'unreadable',
+      readState: sourceReadState({ at: connection.capturedAt, failed: unavailable || e.status === 'not-found',
+        partial: e.status === 'adding', maxAgeMs: 2 * 3600000 }),
       file: 'public/data/twitter-posts.json',
     };
   });
@@ -190,7 +195,7 @@ export function portfolioSource() {
     id: 'family-portfolio', name: 'Family Office portfolio', url: null,
     // Configured automatic feed; readState reports whether its latest check succeeded.
     status: 'live', readState: connected ? 'read' : 'unavailable',
-    readLabel: connected ? 'Connected' : 'Not connected',
+    readLabel: connected ? 'Connected' : 'Connection paused',
     feeds: connected ? 'Holdings synced from Family Office.' : 'Showing saved holdings until the connection returns.',
     cadence: 'Connection checked every minute.',
   };
@@ -228,7 +233,7 @@ export function sourceGroups() {
         }${f.periodLabels?.length ? `, ${formatNumber(f.periodLabels.length)} ${f.periodNoun || 'period'}s to ${escapeHtml(f.periodLabels[0])}` : ''})`)
         .join(' and ');
 
-    return [
+    const groups = [
     {
       // THE ALERT PAIR COMES FIRST because this is the only group whose whole point is that it
       // introduces NOTHING. A reader is owed "no new feed" before looking for a source that does
@@ -238,14 +243,14 @@ export function sourceGroups() {
       tabs: 'AI Alerts · All Alerts',
       items: [
         {
-          name: 'No source of its own — two views over the research feeds below',
+          name: 'Unified research intelligence — AI & All Alerts',
           feeds:
             `<strong>All Alerts</strong> retains the available records from ${dailyAlerts.FEEDS.length} source categories, including NSE filings, IPO history and tracked-issuer supplements, schedules, institutional holdings, X posts and session-only document lookups. Missing dates and unresolved companies remain visible in Universe; on-demand coverage is explicitly labelled. Date filters narrow the loaded pool without issuing requests. ` +
             '<strong>Positive / Negative / Neutral</strong> direction and <strong>High / Low</strong> importance are separate, and every row prints both reasons. Source sentiment is reproduced where it exists; insider and investor transactions use their own direction; announcements use the narrow rules documented here; news remains neutral. ' +
             `High thresholds include ±${dailyAlerts.MOVE_PCT}% price moves, ${dailyAlerts.INSIDER_HIGH_PCT}% or ₹${dailyAlerts.INSIDER_HIGH_VALUE / 10_000_000} crore insider activity, ${dailyAlerts.INVESTOR_HIGH_PP}pp investor changes, and ${dailyAlerts.CHATTER_HIGH_MENTIONS} mentions or ${dailyAlerts.CHATTER_HIGH_CHANGE_PCT}% mention change. ` +
             `Its panel distinguishes failed, stale and on-demand coverage from current data. <strong>AI Alerts</strong> applies its existing ${aiAlerts.WINDOW_DAYS}-day, ${aiAlerts.MIN_SCORE}-point policy to supported company signals; newly retained raw snapshots and schedules are not automatically ranked as corroboration. Broader AI interpretation is a separate phase. No illustrative portfolio weights are used.`,
           cadence: 'All Alerts revalidates on visit, Refresh and every 90 seconds while visible. Source updates reuse loaded records; no per-company walks or upstream job dispatches.',
-          status: 'live',
+          status: 'derived',
           file: 'js/data/ai-alerts.js · js/tabs/ai-alerts.js · js/data/daily-alerts.js · js/tabs/daily-alerts.js',
         },
       ],
@@ -306,6 +311,7 @@ export function sourceGroups() {
         },
         {
           name: 'TradingView — indicator overlay',
+          planned: true,
           url: 'https://in.tradingview.com/',
           feeds: 'Optional. When a scrape is wired up it overwrites RSI, ADX, EMA-50, SMA-50 and SMA-200 with the values an analyst sees on TradingView, and the drill panel re-points those rules\' Source chip accordingly. The file ships empty today.',
           cadence: 'Not yet scheduled',
@@ -357,6 +363,7 @@ export function sourceGroups() {
         },
         {
           name: 'Analyst consensus estimates',
+          planned: true,
           url: null,
           feeds:
             'No verified consensus feed is connected. EPS and revenue estimates, beat/miss tags, surprise percentages and the legacy earnings quality score are unavailable. Generated figures have been removed from the dashboard and Ask Research. Filing PDFs alone do not supply analyst estimates.',
@@ -478,6 +485,7 @@ export function sourceGroups() {
       tabs: 'Super Investors · Breakouts → FII Accumulation',
       items: [
         {
+          id: 'muns-company-news',
           name: 'Muns news API — company news',
           url: 'https://fastapi.muns.io',
           feeds:
@@ -582,7 +590,7 @@ export function sourceGroups() {
           url: 'https://devde.muns.io/api',
           feeds: '<strong>Company-specific document lookup, not a market-wide capture.</strong> The combined filings endpoint supplies BSE/NSE announcements, DRHP and Screener reports. Corp Announcements offers all documents and annual reports; NSE Filings retains only identified NSE documents; Con-call and Earnings Hub request their corresponding document forms. Sources, original document links and supplied read status are retained. Identical document links are deduplicated. Unknown dates and read flags are not invented. Requires the signed-in Munshot reader; personal read status is never stored in the shared cache.',
           cadence: 'On demand, one selected Indian company and up to one year per request. No background universe sweep. Authenticated response verification is still pending; request contract checked against the published API schema.',
-          status: 'pending',
+          status: 'ondemand', readState: 'unchecked',
           file: 'worker/combined-filings.mjs · public/js/ui/company-documents.js · public/js/data/combined-filings-shared.js',
         },
         {
@@ -590,7 +598,7 @@ export function sourceGroups() {
           url: 'https://devde.muns.io/api',
           feeds: '<strong>Prospectus documents, not an upcoming-IPO calendar.</strong> Corp Announcements → IPO / DRHP filings accepts a ticker or exact company name, including issuers without a listed symbol. Each returned filing retains its company, symbol, form, filing date, source and nested document links. It does not infer approval, listing or offer dates from a DRHP. This explicit lookup is independent of Portfolio / Watchlist scope and does not alter holdings.',
           cadence: 'On demand, up to 50 filings per company. No automatic IPO discovery or social-buzz monitoring. Requires the signed-in reader. Nested-document mapping is fixture-tested; a successful authenticated response still needs verification.',
-          status: 'pending',
+          status: 'ondemand', readState: 'unchecked',
           file: 'worker/drhp-filings.mjs · public/js/ui/drhp-documents.js · public/js/data/drhp-shared.js',
         },
         {
@@ -616,6 +624,7 @@ export function sourceGroups() {
         },
         {
           name: 'Ticker Finology — the credential',
+          internal: true,
           url: null,
           feeds:
             'That API requires <code class="rounded bg-slate-100 px-1">Authorization: Bearer …</code>, so unlike every other upstream here the browser cannot call it. The Worker holds the token in <code class="rounded bg-slate-100 px-1">env.MUNS_TOKEN</code> and adds the header server-side; <strong>nothing in <code class="rounded bg-slate-100 px-1">public/</code> has ever seen it</strong>, the same arrangement as the Munshot quote route. Set or renew it with <code class="rounded bg-slate-100 px-1">npx wrangler secret put MUNS_TOKEN</code>. With no token the view says so by name instead of showing an empty grid.',
@@ -631,7 +640,7 @@ export function sourceGroups() {
               fundBlurb('portfolio', 'holdings') ? ` Wired for ${fundBlurb('portfolio', 'holdings')}.` : ''
             } <strong>The percentage is % to NAV — how much of the FUND is in each company</strong>, which is the opposite measurement from the shareholding filings below and is never summed with them. Weights and values are the AMC's own published figures; the only figure computed here is the month-on-month change. The NSE symbol is ours, resolved from the dashboard's other feeds, and a line that could not be matched says so rather than guessing.`,
           cadence: 'Monthly · drop the new workbook in scripts/fixtures/ and re-run the importer',
-          status: 'live',
+          status: 'static',
           file: 'public/data/institution-holdings.json · scripts/import-amc-portfolio.mjs · scripts/lib/xlsx-read.mjs · scripts/lib/company-index.mjs',
         },
         {
@@ -642,7 +651,7 @@ export function sourceGroups() {
               fundBlurb('shareholding', 'Indian holdings') ? ` Wired for ${fundBlurb('shareholding', 'Indian holdings')}.` : ''
             } <strong>Share counts and percentages are the filings; the ₹ value is Trendlyne's own derivation</strong> (holding % × market cap), reproduced unchanged and attributed rather than recomputed. A blank percentage means the company has not filed yet, not that the position was sold.`,
           cadence: 'Quarterly, as filings arrive over the weeks after a quarter closes · re-run the scraper',
-          status: 'live',
+          status: 'static',
           file: 'public/data/institution-holdings.json · scripts/scrape-institution-holdings.mjs · scripts/lib/trendlyne.mjs',
         },
       ],
@@ -670,11 +679,53 @@ export function sourceGroups() {
       items: [portfolioSource()],
     },
   ];
+  // News is its own family, not buried inside shareholding flows. The five publisher rows
+  // replace the aggregate row, so sources are named individually without double-counting.
+  const flows = groups.find(g => g.title === 'Shareholding & flows');
+  const companyNews = flows.items.find(i => i.id === 'muns-company-news');
+  const m = newsFeed.meta();
+  companyNews.readState = sourceReadState({ at: m.capturedAt, failed: !!m.reason,
+    partial: !!m.failed || !!m.queryCoverage?.failed || m.queryCoverage?.succeeded < m.queryCoverage?.planned, maxAgeMs: 4 * 3600000 });
+  flows.items = flows.items.filter(i => !['Muns news API — company news', 'Market-wide news — five publishers'].includes(i.name));
+  groups.splice(groups.indexOf(flows), 0, { id: 'portfolio-news', title: 'News & company discovery', icon: '📰',
+    tabs: 'News · All Alerts · AI Alerts', items: [companyNews, ...newsSourceItems()] });
+  groups.find(g => g.title === 'Earnings & filings').items.push(screenerInsightsSource());
+  const x = twitterNews.meta();
+  groups.find(g => g.id === 'twitter').items.unshift({ id: 'x-portfolio-search', name: 'X — portfolio-wide company searches',
+    url: 'https://x.com/search', status: 'live', readState: x.reason || x.lastReadFailed ? 'unavailable' : 'unchecked',
+    cadence: 'Half-hourly scheduled capture · optional authenticated source',
+    feeds: 'Searches reviewed portfolio company names and aliases across authors, in addition to the monitored accounts. Previously captured posts stay retained.',
+    details: [x.reason ? 'The latest X collection has not established a working source connection. Earlier captured posts remain available.' : 'Account collection alone does not verify completion of every portfolio search.',
+      'The search checkpoint records completed queries, retries and access limits. Social discussion is discovery context, not a verified corporate event.'],
+    file: 'scripts/prepare-twitter-search.mjs · data/twitter-search.json' });
+  const snapshots = [
+    ['Yahoo Finance — EOD OHLCV', technicals.meta(), 96 * 3600000],
+    ['Live published-results feed', earningsLive.meta(), 10 * 60000],
+    ['Con-call scans — third-party research provider', concalls.meta(), 10 * 60000],
+    ['SentimentDash — mention counts and sentiment', chatter.meta(), 26 * 3600000],
+    ['Telegram — a public research channel', tgMeta, 2 * 3600000],
+    ['BSE — corporate announcements, indexed by date', annFeed.meta(), 4 * 3600000],
+    ['NSE — live exchange announcements', nseFeed.meta(), 15 * 60000],
+  ];
+  for (const [name, meta, maxAgeMs] of snapshots) {
+    const item = groups.flatMap(g => g.items).find(i => i.name === name);
+    if (!item) continue;
+    item.readState = sourceReadState({ at: meta?.fetchedAt || meta?.capturedAt || meta?.generated_at || meta?.checkedAt,
+      failed: !!meta?.reason || !!meta?.degraded || !!meta?.lastReadFailed || !!meta?.error,
+      partial: Number(meta?.failed) > 0 || (Array.isArray(meta?.failures) ? meta.failures.length > 0 : Number(meta?.failures) > 0), maxAgeMs });
+  }
+  // Keep roadmap and credential implementation details in the code/docs, outside the source
+  // count. Configured sources with a failed read remain listed with their actual read state.
+  return groups.map(g => ({ ...g, items: g.items.filter(i => !i.planned && !i.internal).map(i => {
+    if (i.name === 'Tracked news keywords (computed)' || i.name === 'Slug → NSE symbol (computed)' || i.name === 'ATR trend accumulator') i.status = 'derived';
+    return i;
+  }) })).filter(g => g.items.length);
 }
 
 const STATUS_CHIP = {
   live: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
   static: 'bg-blue-50 text-blue-700 ring-blue-200',
+  derived: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
   mock: 'bg-amber-50 text-amber-700 ring-amber-200',
   // Indigo is the brand/action colour and this status IS an action — a source that produces
   // nothing until the reader asks it to. It is deliberately not emerald: counting it among the
@@ -690,14 +741,15 @@ const STATUS_CHIP = {
   pending: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 export const STATUS_LABEL = {
-  live: 'Live',
-  static: 'Real · manual',
+  live: 'Scheduled',
+  static: 'Reference data',
+  derived: 'Computed',
   mock: 'Mock data',
-  partial: 'Coverage gaps',
+  partial: 'Partial coverage',
   ondemand: 'On demand',
   adding: 'Adding…',
-  unreadable: 'Not found',
-  pending: 'Not connected',
+  unreadable: 'Connection paused',
+  pending: 'Setup required',
 };
 
 // Renders the Sources modal body. Kept here (beside the data) so the two never drift.
@@ -705,9 +757,7 @@ export function sourcesModalHtml() {
   const groups = sourceGroups();
   const items = groups.flatMap((g) => g.items);
   const total = items.length;
-  const live = items.filter((i) => i.status === 'live').length;
-  const realStatic = items.filter((i) => i.status === 'static').length;
-  const onDemand = items.filter((i) => i.status === 'ondemand').length;
+  const summary = sourceSummary(groups);
 
   return `
     <div class="scrollbar-thin max-h-[80vh] overflow-y-auto px-7 py-6">
@@ -716,9 +766,8 @@ export function sourcesModalHtml() {
           <h2 class="font-display text-2xl font-bold text-slate-900">All Data Sources</h2>
           <p class="mt-1 text-sm text-slate-500">
             Every source that feeds this dashboard, grouped by the tabs it serves.
-            <span class="font-semibold text-slate-700">${live} of ${total}</span> are wired to a live feed today,
-            ${realStatic} more carry real data refreshed by hand${onDemand ? `, and ${onDemand} runs only when you ask it to` : ''} —
-            other sources show their connection status individually.
+            <span class="font-semibold text-slate-700">${summary.connected} connected · ${summary.automatic} automatic feeds · ${total} sources and services.</span>
+            Connection details keep source-check times separate from publication dates.
           </p>
         </div>
         <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Close">×</button>
@@ -737,11 +786,12 @@ export function sourcesModalHtml() {
             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
               ${g.items
                 .map((it) => {
-                  const chipState = it.readState ? (it.readState === 'read' ? 'live' : it.readState === 'unchecked' ? 'pending' : 'partial') : it.status;
+                  const connection = sourceConnection(it);
+                  const chipState = connection.connected ? 'live' : it.readState ? 'static' : it.status;
                   const inner = `
                     <div class="mb-1 flex items-start justify-between gap-2">
                       <span class="text-sm font-semibold text-slate-900 ${it.url ? 'group-hover:text-indigo-700' : ''}">${it.name}</span>
-                      <span class="inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ${STATUS_CHIP[chipState]}">${escapeHtml(it.readLabel || STATUS_LABEL[it.status])}</span>
+                      <span class="inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ${STATUS_CHIP[chipState]}">${escapeHtml(connection.label)}</span>
                     </div>
                     <div class="text-[11px] leading-snug text-slate-500">${it.feeds}</div>
                     <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-400">

@@ -658,6 +658,11 @@
         animation: beacon-ping 1.9s cubic-bezier(0, 0, 0.2, 1) infinite;
       }
       .beacon-live-dot-sm { height: 0.38rem; width: 0.38rem; }
+      .beacon-root:not(.has-connection) .beacon-live-dot { background: var(--brand-500); }
+      .beacon-root:not(.has-connection) .beacon-live-dot::after { animation: none; background: transparent; }
+      .beacon-root:not(.has-connection) .beacon-flow-line,
+      .beacon-root:not(.has-connection) .beacon-core-halo { animation-play-state: paused; }
+      .beacon-root:not(.has-connection) .beacon-flow-mote { display: none; }
 
       .beacon-launcher {
         display: inline-flex;
@@ -817,17 +822,15 @@
         overflow-wrap: anywhere;
       }
       .beacon-row:hover .beacon-row-name { color: var(--ink-900); }
-      /* Only the exceptions are labelled. Live is the majority and its dot, the pill above and the
-         legend below all say so; what a reader must never mistake is the mock, the manual and the
-         nothing-flows-until-you-ask, so those carry the word. */
+      /* Connection state is explicit on every row. Scheduling alone never earns a green dot. */
       .beacon-row-status {
         font-size: 0.5rem;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
         white-space: nowrap;
       }
-      .beacon-row.is-live .beacon-row-status { display: none; }
+      .beacon-row.is-live .beacon-row-status { display: block; }
       .beacon-row[data-beacon-read-state] .beacon-row-status { display: block; }
 
       .beacon-dot {
@@ -844,6 +847,10 @@
       .is-mock { --beacon-dot-color: var(--caution); }
       .is-unreadable { --beacon-dot-color: var(--negative); }
       .is-pending { --beacon-dot-color: #94a3b8; }
+      .is-scheduled { --beacon-dot-color: var(--brand-500); }
+      .is-saved { --beacon-dot-color: #64748b; }
+      .is-scheduled .beacon-row-status, .is-scheduled.beacon-legend-item { color: var(--brand-600); }
+      .is-saved .beacon-row-status, .is-saved.beacon-legend-item { color: #64748b; }
       .is-live .beacon-row-status, .is-live.beacon-legend-item { color: #047857; }
       .is-static .beacon-row-status, .is-static.beacon-legend-item { color: #1d4ed8; }
       .is-ondemand .beacon-row-status, .is-ondemand.beacon-legend-item { color: var(--brand-600); }

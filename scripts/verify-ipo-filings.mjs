@@ -93,7 +93,7 @@ await test('source registry lists each official feed and keeps connection count 
   assert(group.items.every((s) => s.status === 'live' && s.readState === 'read'));
   const failed = ipoSourceGroup({ ...presentationMeta, sources: payload.sources.map((s) => s.id === 'bse-sme' ? { ...s, status: 'failed', note: 'Source unavailable', count: 0 } : s) }, now());
   const bse = failed.items.find((s) => s.id === 'bse-sme');
-  assert.equal(bse.readLabel, 'Unavailable'); assert(!bse.details.some((line) => line.startsWith('0 documents')));
+  assert.equal(bse.readLabel, 'Connection paused'); assert.equal(bse.readState, 'unavailable'); assert(!bse.details.some((line) => line.startsWith('0 documents')));
   assert.equal(failed.items.filter((s) => s.status === 'live').length, group.items.length);
 });
 await test('source panel never labels unknown, cached, expired or future checks as newly read', () => {

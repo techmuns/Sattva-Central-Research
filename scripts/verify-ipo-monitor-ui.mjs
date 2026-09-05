@@ -58,10 +58,10 @@ try {
   await page.locator('[data-ipo-sources]').click();
   const ipoGroup = page.locator('[data-beacon-group="ipo-filings"]');
   check('source shortcut opens existing beacon at all eight IPO sources', await ipoGroup.isVisible() && await ipoGroup.locator('[data-beacon-source]').count() === 8 && await page.locator('[data-beacon-notes="ipo-filings"] > summary').evaluate((el) => el === document.activeElement));
-  check('live-feed and source totals are derived from the updated registry', await page.evaluate(async () => {
+  check('source totals are derived from the updated registry', await page.evaluate(async () => {
     const { sourceGroups } = await import('/js/ui/sources.js');
     const items = sourceGroups().flatMap((g) => g.items);
-    return document.querySelector('[data-beacon-launch-count]').textContent === `${items.filter((s) => s.status === 'live').length} live feeds` && !items.some((s) => s.name.includes('public IPO monitor'));
+    return document.querySelector('[data-beacon-launch-count]').textContent === `${items.length} research sources` && !items.some((s) => s.name.includes('public IPO monitor'));
   }));
   await page.locator('[data-beacon-notes="ipo-filings"] > summary').click();
   check('coverage limitations moved into expandable source-panel details', (await ipoGroup.innerText()).includes('hourly by GitHub Actions even while closed') && (await ipoGroup.innerText()).includes('BSE-only mainboard'));
