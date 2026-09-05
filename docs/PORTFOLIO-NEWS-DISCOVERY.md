@@ -7,8 +7,9 @@ response, not evidence that nothing happened; failed, stale or capped searches r
 ## Identity and evidence
 
 `public/js/data/company-news-reviewed.js` contains shared, primary-source-reviewed enrichment.
-`scripts/company-news-identity-overrides.json` remains the collector's existing ISIN-specific
-override input. Every active holding is searched, including tickerless lines. Warrants sharing an
+The four pre-existing ISIN-specific overrides moved unchanged into that shared registry;
+`scripts/company-news-identity-overrides.json` remains an optional collector/test override input.
+Every active holding is searched, including tickerless lines. Warrants sharing an
 underlying company keep all portfolio ISINs on one stable entity. Position sizes never enter public
 capture files or identity search plans.
 

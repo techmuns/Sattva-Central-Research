@@ -28,6 +28,9 @@ assert(!neco.subsidiaries.includes('Datasel'));
 assert(neco.relatedEntities.every(r => r.evidenceUrl.startsWith('https://www.necoindia.com/')));
 assert(twitterSearchPlan(identities).queries.some(q => q.query === '"Datasel"'));
 assert(twitterSearchPlan(identities).queries.some(q => q.entityId === 'isin:INE000000001'));
+assert.equal(matchPortfolioNews({ title: 'Kissht launches service' }, portfolioNewsEntities([
+  { isin: 'INE12F801023', name: 'OnEMI Technology Solutions', ticker: null },
+]))[0].attribution.status, 'confirmed', 'existing ISIN brands work in browser broad-feed mapping too');
 assert.equal(matchPortfolioNews({ title: 'Sterlite Power expansion and STL software library' }, identities).length, 0);
 assert.equal(matchPortfolioNews({ title: 'Jayaswal Neco Group promoters face allegations' }, identities).length, 0, 'query-only group abbreviation cannot assert a direct listed-company event');
 assert.equal(matchPortfolioNews({ title: 'Estonia dispute', summary: 'Datasel arbitration' }, identities).length, 0, 'snippet is not confirmed related coverage');

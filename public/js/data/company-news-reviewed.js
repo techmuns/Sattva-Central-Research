@@ -1,6 +1,12 @@
 // Reviewed search identities, shared by collectors and readers. A relationship widens discovery;
 // it NEVER turns the affiliate into an alias of the listed company or proves financial exposure.
 export const reviewedNewsIdentities = [
+  // Existing curated ISIN overrides, moved unchanged into the shared registry so publisher/X
+  // matching sees the same identities as scheduled company search.
+  { match: { isin: 'INE12F801023' }, brands: ['Kissht'] },
+  { match: { isin: 'INE526E01018' }, legalName: 'SPR Auto Technologies Ltd', formerNames: ['Shriram Pistons & Rings Ltd'] },
+  { match: { isin: 'INE879I01012' }, formerNames: ['DB Realty Ltd'] },
+  { match: { isin: 'INE010J01012' }, legalName: 'Tejas Networks Limited' },
   {
     match: { ticker: 'JAYNECOIND' },
     aliases: ['Jayaswal NECO Industries'],
@@ -41,10 +47,13 @@ export const reviewedNewsIdentities = [
 ];
 
 export function reviewedNewsIdentity(identity = {}) {
-  const match = reviewedNewsIdentities.find(entry => entry.match.ticker === String(identity.ticker || '').toUpperCase());
+  const isins = new Set([identity.isin, ...(identity.portfolioIsins || []),
+    String(identity.entityId || '').startsWith('isin:') ? identity.entityId.slice(5) : null].filter(Boolean).map(value => String(value).toUpperCase()));
+  const match = reviewedNewsIdentities.find(entry => entry.match.ticker && entry.match.ticker === String(identity.ticker || '').toUpperCase() || entry.match.isin && isins.has(entry.match.isin));
   if (!match) return identity;
   const out = { ...identity };
-  for (const field of ['aliases', 'searchAliases', 'officialDomains', 'officialPages', 'evidenceUrls', 'relatedEntities']) {
+  if (match.legalName && !out.legalName) out.legalName = match.legalName;
+  for (const field of ['brands', 'formerNames', 'aliases', 'searchAliases', 'officialDomains', 'officialPages', 'evidenceUrls', 'relatedEntities']) {
     out[field] = [...new Map([...(identity[field] || []), ...(match[field] || [])]
       .map(value => [typeof value === 'string' ? value.toLowerCase() : value.name.toLowerCase(), value])).values()];
   }
