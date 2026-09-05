@@ -1,3 +1,4 @@
+import * as refreshRegistry from '../core/refresh.js';
 import { escapeHtml as e } from '../core/dom.js';
 import { scoreTable, sectionHead } from '../ui/screener.js';
 import { pill } from '../ui/components.js';
@@ -95,8 +96,12 @@ export function render(ctx) {
     busy = true; paint();
     try { await feed.refresh(); } finally { busy = false; paint(); }
   }
+  const offRefresh = refreshRegistry.register('ipo-filings', { label: 'IPO filings', refresh: async () => {
+    await refresh();
+    return { checked: 1, failed: feed.meta().liveFailed ? 1 : 0, partial: feed.meta().degraded };
+  } });
   const unsubscribe = feed.onChange(paint);
-  dispose = () => { dead = true; unsubscribe(); tableDispose?.(); if (ctx.live) feed.stopLive(ctx.live); };
+  dispose = () => { offRefresh(); dead = true; unsubscribe(); tableDispose?.(); if (ctx.live) feed.stopLive(ctx.live); };
   paint();
   // A return visit uses the feed already in memory. `load()` restores the
   // retained device snapshot on a cold visit; only the poll cadence or the

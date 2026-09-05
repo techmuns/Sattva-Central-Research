@@ -7,6 +7,7 @@ import { state, subscribe, setScope, setRoute, saveLastRoute } from '../core/sta
 import * as router from '../core/router.js';
 import * as live from '../core/live.js';
 import * as watch from '../core/watch.js';
+import * as refreshRegistry from '../core/refresh.js';
 import { tabBar, segmentedToggle, statusControl, emptyState } from './components.js';
 import { closeDrill, closeModal, closeWorkspace, openModal, watchlistEmptyPanel } from './screener.js';
 import { SCOPES, scopeLabel } from '../data/scope.js';
@@ -222,9 +223,11 @@ function shellTemplate() {
  */
 function wireStaticHeader(root) {
   const status = statusControl({
-    getTimestamp: () => live.getLastDataTick() ?? state.dataLoadedAt,
+    getTimestamp: () => live.getLastDataTick(),
     subscribeTick: live.onGlobalTick,
-    onRefresh: () => watch.refreshNow(),
+    onRefresh: () => watch.refreshNow({ tab: state.tab, scope: state.scope, subview: state.subview, params: router.parseHash().params }),
+    getRefreshKey: () => JSON.stringify([state.tab, state.scope, state.subview, router.parseHash().params, refreshRegistry.registered().map((r) => r.id)]),
+    subscribeContext: (fn) => { const off = subscribe(fn); const offRegistry = refreshRegistry.onChange(fn); return () => { off(); offRegistry(); }; },
   });
   $('#status-mount', root).innerHTML = status.html;
   // NOT `chromeDisposers` — that list is flushed on every route change, and this control is part

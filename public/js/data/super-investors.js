@@ -292,15 +292,18 @@ export function invalidate() {
  * know whether anything has moved in the last six hours has a control that asks. It is wired to
  * the Live pill's modal in js/investors/live.js and to nothing automatic.
  */
-export async function refresh() {
-  const before = state.books.size;
-  invalidate();
-  await load();
-  // IGNORING THE WINDOW IS THE POINT. A reader who presses Refresh is saying "ask anyway", and a
-  // refresh that quietly skipped every book because the committed capture was recent would be a
-  // button that does nothing on the one occasion they were sure something had changed.
-  await revalidate({ ignoreWindow: true });
-  return { added: Math.max(0, state.books.size - before), checked: state.investors.length, failed: state.failures.size };
+let refreshPromise = null;
+export function refresh() {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const before = state.books.size;
+    // Keep the current books visible while revalidating. Invalidating first
+    // erased the table and could discard good books during an upstream outage.
+    await refreshSnapshot();
+    await revalidate({ ignoreWindow: true });
+    return { added: Math.max(0, state.books.size - before), checked: state.investors.length, failed: state.failures.size };
+  })().finally(() => { refreshPromise = null; });
+  return refreshPromise;
 }
 
 /**

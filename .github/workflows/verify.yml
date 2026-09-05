@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
+      - name: Verify refresh ownership and source targeting
+        run: node scripts/verify-refresh.mjs
       - name: Verify filings snapshot recovery
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
@@ -108,6 +110,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-ai-alerts-ui.mjs
+      - name: Verify explicit refresh through the service worker
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-refresh-ui.mjs
       - name: Verify instant repeat visits and interaction cache boundaries
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

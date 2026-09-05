@@ -265,7 +265,20 @@ export function clearAll() {
  *   450KB parse off the main thread on every unchanged tick, which is the only benefit the manual
  *   version had left.
  */
-export async function conditionalJson(path, { key, optional = false, signal, validate } = {}) {
+const conditionalInFlight = new Map();
+export function conditionalJson(path, options = {}) {
+  // Cancellation, validation and authenticated reads belong to their caller.
+  // Ordinary public poll and header reads share one bounded revalidation.
+  if (options.signal || options.validate || authHeaders(path).authorization) return readConditionalJson(path, options);
+  const requestKey = JSON.stringify([path, options.key, !!options.optional]);
+  if (conditionalInFlight.has(requestKey)) return conditionalInFlight.get(requestKey);
+  const pending = readConditionalJson(path, options).finally(() => conditionalInFlight.delete(requestKey));
+  conditionalInFlight.set(requestKey, pending);
+  return pending;
+}
+
+async function readConditionalJson(path, { key, optional = false, signal, validate } = {}) {
+  signal = signal || AbortSignal.timeout(20000);
   const stored = key ? await readEntry(key) : null;
 
   let res;
@@ -344,17 +357,18 @@ export async function conditionalJson(path, { key, optional = false, signal, val
  */
 const inFlightJson = new Map();
 
-export function revalidatedJson(path, { optional = false } = {}) {
-  const existing = inFlightJson.get(path);
+export function revalidatedJson(path, { optional = false, allowCached = false } = {}) {
+  const requestKey = `${allowCached ? 'bootstrap' : 'revalidate'}:${path}`;
+  const existing = inFlightJson.get(requestKey);
   if (existing) return optional ? existing.catch(() => null) : existing;
 
-  const p = fetch(path, { cache: 'no-cache' })
+  const p = fetch(path, { cache: 'no-cache', ...(allowCached ? { headers: { 'x-sattva-bootstrap': '1' } } : {}), signal: AbortSignal.timeout(20000) })
     .then((res) => {
       if (!res.ok) throw new Error(`${path} (${res.status})`);
       return res.json();
     })
-    .finally(() => inFlightJson.delete(path));
+    .finally(() => inFlightJson.delete(requestKey));
 
-  inFlightJson.set(path, p);
+  inFlightJson.set(requestKey, p);
   return optional ? p.catch(() => null) : p;
 }

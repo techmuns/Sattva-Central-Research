@@ -31,8 +31,9 @@ export function createCorporateActionsFeed({
 
   function absorb(payload, origin, checkedAt) {
     if (payload?.version !== 1 || !Array.isArray(payload.rows) || !payload.rows.length) return false;
-    held = payload.rows.filter((row) => row?.company && row?.purpose && row?.id);
-    if (!held.length) return false;
+    const next = payload.rows.filter((row) => row?.company && row?.purpose && row?.id);
+    if (!next.length) return false;
+    held = next;
     source = {
       capturedAt: payload.capturedAt || null,
       checkedAt: checkedAt || null,
@@ -80,10 +81,10 @@ export function createCorporateActionsFeed({
     if (refreshing) return refreshing;
     refreshing = (async () => {
       const before = new Set(held.map(corporateActionKey));
-      await fetchLatest();
+      const confirmed = await fetchLatest();
       loaded = true;
       emit();
-      return { added: held.filter((row) => !before.has(corporateActionKey(row))).length, total: held.length };
+      return { added: held.filter((row) => !before.has(corporateActionKey(row))).length, total: held.length, checked: confirmed ? 1 : 0, failed: confirmed ? 0 : 1 };
     })();
     void refreshing.finally(() => { refreshing = null; }).catch(() => {});
     return refreshing;
@@ -100,7 +101,7 @@ export function createCorporateActionsFeed({
     filterByScope: filterCorporateActionsByScope,
     onChange: (fn) => { subscribers.add(fn); return () => subscribers.delete(fn); },
     startLive: (live) => {
-      live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: async () => { await refresh(); return null; } });
+      live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: refresh });
       live.start(LIVE_ID);
     },
     stopLive: (live) => live.stop(LIVE_ID),

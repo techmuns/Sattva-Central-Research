@@ -1,3 +1,4 @@
+import * as refreshRegistry from '../core/refresh.js';
 // tabs/market-news-view.js — the Universe half of the News tab: market-wide stocks news.
 //
 // ONE TAB, TWO QUESTIONS, AND THE SCOPE TOGGLE PICKS WHICH.
@@ -1023,8 +1024,17 @@ function maybeAutoFetch(ctx) {
   fetchLatest(ctx, 'auto');
 }
 
+let unregisterRefresh = null;
+
 export function render(ctx) {
   ctxRef = ctx;
+  if (!unregisterRefresh) unregisterRefresh = refreshRegistry.register('market-news-view', {
+    label: 'News', refresh: async () => {
+      const results = await Promise.all([marketNews.refresh(), twitterNews.refresh()]);
+      return { added: results.reduce((n, r) => n + (r?.added || 0), 0), checked: 2,
+        failed: results.filter((r) => r?.failed).length + (twitterNews.meta().lastReadFailed ? 1 : 0) };
+    },
+  });
   disposers.forEach((d) => d && d());
   disposers = [];
   // Guard on `ctxRef`, which the lifecycle owns, rather than on anything captured at subscribe
@@ -1056,6 +1066,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  unregisterRefresh?.(); unregisterRefresh = null;
   ctxRef = null;
   fillStop?.();
   fillStop = null;

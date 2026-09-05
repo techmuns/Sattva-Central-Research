@@ -74,6 +74,14 @@ export function render(ctx) {
   if (ctxRef?.subview === 'institutions' && ctx.subview !== 'institutions') filedSection = 'institutions';
   renderToken++;
   ctxRef = ctx;
+  if (!liveUnregister) liveUnregister = refreshRegistry.register('superstar-investors', {
+    label: 'Investors', refresh: async () => {
+      if (ctxRef?.subview !== 'institutions') return liveInvestors.refresh();
+      await filed.refresh();
+      if (ctxRef?.subview === 'institutions') renderInstitutions(ctxRef);
+      return { checked: 1 };
+    },
+  });
   const view = { institutions: renderInstitutions }[ctx.subview] || renderIndividuals;
   view(ctx);
 }
@@ -138,12 +146,7 @@ function renderIndividuals(ctx) {
   // THE HEADER'S REFRESH BUTTON RE-READS THE BOOKS, and nothing else does. Ninety-one round trips
   // is not work to do on a page load: the grid is painted from the committed snapshot and this
   // device, and asking the server about all of it is what the reader presses a button for.
-  if (!liveUnregister) {
-    liveUnregister = refreshRegistry.register('superstar-investors', {
-      label: 'Superstar Investors',
-      refresh: () => liveInvestors.refresh(),
-    });
-  }
+
 
   // THE GUARD IS `ctxRef`, NOT A CAPTURED TOKEN. `renderToken` increments on every render — which a
   // scope toggle always causes — so a handler holding the value it had at subscribe time goes deaf

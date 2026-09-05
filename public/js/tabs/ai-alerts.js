@@ -11,6 +11,8 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import * as screenerInsights from '../data/screener-insights.js';
+import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
@@ -41,6 +43,7 @@ let sizeError = '';
 let awaitingBook = null;
 let collecting = false;
 let loadError = '';
+let captureDirty = false;
 
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
@@ -84,6 +87,10 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
+    unsubs.push(onCaptureLanded(() => {
+      captureDirty = true;
+      if (ctxRef && !collecting) { captureDirty = false; void recollect(ctxRef, { load: false }); }
+    }));
     unsubs.push(onPortfolioConnection((connected) => {
       if (connected && ctxRef?.scope === 'portfolio' && !sizesLoading) void recollect(ctxRef);
       else if (!connected && portfolioConnectionState() === 'unavailable') portfolioUnavailable();
@@ -106,7 +113,8 @@ export function render(ctx) {
           if (sizeError || loadError) throw new Error(sizeError || loadError);
           const added = (report?.cards || []).filter((card) => !before.has(`${card.ticker}:${card.evidenceKey || card.topEvent?.id || ''}`)).length;
           return { added, checked: (report?.feeds || []).filter((feed) => feed.status === 'ok').length,
-            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length };
+            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length,
+            partial: !screenerInsights.isLoaded() || !!screenerInsights.meta()?.latestReadFailed };
         },
       })
     );
@@ -134,6 +142,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  captureDirty = false;
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -154,7 +163,7 @@ export function destroy() {
   unsubs = [];
 }
 
-async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
+async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
   sizeController?.abort();
@@ -191,6 +200,7 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
         scope: ctx.scope,
         holdings: coverage.holdings(),
         refresh: forceRefresh,
+        load,
         onPartial: (partial) => {
           // Refresh a populated view atomically; partial feeds otherwise remove
           // companies and reorder cards underneath the reader on every arrival.
@@ -212,7 +222,10 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
     if (!current()) return;
     loadError = err?.message || 'The alert feeds could not be refreshed.';
   } finally {
-    if (current()) { collecting = false; paint(ctxRef); }
+    if (current()) {
+      collecting = false; paint(ctxRef);
+      if (captureDirty) { captureDirty = false; void recollect(ctxRef, { load: false }); }
+    }
   }
 }
 

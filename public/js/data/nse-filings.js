@@ -127,7 +127,7 @@ export function createNseFeed({
       if (gen !== generation) return { added: 0, total: 0 };
       await loadHistory();
       if (gen !== generation) return { added: 0, total: 0 };
-      return { added: held.filter((row) => !before.has(filingKey(row))).length, total: rows().length };
+      return { added: held.filter((row) => !before.has(filingKey(row))).length, total: rows().length, checked: 1, failed: source.degraded || indexFailed || failedDays.size ? 1 : 0 };
     })();
     refreshing = pending;
     void pending.finally(() => { if (refreshing === pending) refreshing = null; }).catch(() => {});
@@ -156,7 +156,7 @@ export function createNseFeed({
     forScope: (scope, holdings = [], list = rows()) => filterByScope(list, scope, holdings),
     onChange: (fn) => { subscribers.add(fn); return () => subscribers.delete(fn); },
     startLive: (live) => {
-      live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: async () => { await refresh(); return null; } });
+      live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: refresh });
       live.start(LIVE_ID, { fresh: true });
     },
     stopLive: (live) => live.stop(LIVE_ID),

@@ -1,3 +1,4 @@
+import * as refreshRegistry from '../core/refresh.js';
 import { escapeHtml as e } from '../core/dom.js';
 import { hostToken, onHostContext } from '../core/host-context.js';
 import { validateDrhpCompany } from '../data/drhp-shared.js';
@@ -35,10 +36,18 @@ export function mountDrhpDocuments({ root }) {
   clear();
   input.addEventListener('input', clear);
   const unsubscribe = onHostContext((_, changed) => { if (changed?.session) clear(); });
-  root.querySelector('[data-drhp-form]').addEventListener('submit', async (event) => {
-    event.preventDefault();
+  let pendingRead = null;
+  function submit(event) {
+    event?.preventDefault();
+    const key = JSON.stringify([...root.querySelectorAll('input, select')].map((el) => el.value));
+    if (pendingRead?.key === key) return pendingRead.promise;
+    const promise = readDocuments().finally(() => { if (pendingRead?.promise === promise) pendingRead = null; });
+    pendingRead = { key, promise };
+    return promise;
+  }
+  async function readDocuments() {
     const token = hostToken();
-    if (!token) { clear(); return; }
+    if (!token) { clear(); return { failed: 1, error: 'Sign in to refresh documents.' }; }
     let company;
     try { company = validateDrhpCompany(input.value); }
     catch (error) { say(error.message); return; }
@@ -46,7 +55,7 @@ export function mountDrhpDocuments({ root }) {
     controller?.abort(); controller = new AbortController();
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]);
     const current = () => !disposed && mine === generation && hostToken() === token;
-    button.disabled = true; results.innerHTML = ''; say(`Loading IPO / DRHP filings for ${company}…`);
+    button.disabled = true; say(`Loading IPO / DRHP filings for ${company}…`);
     try {
       const response = await fetch('api/drhp-filings', { method: 'POST', cache: 'no-store', signal,
         headers: { accept: 'application/json', 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ company }) });
@@ -59,7 +68,7 @@ export function mountDrhpDocuments({ root }) {
       say(`${rows.length} filings · ${documentCount} document links returned for “${company}”. Check the returned company identity below.${payload.limitReached ? ' The 50-filing limit was reached; this may not be the full history.' : ''}${payload.omittedRows ? ` ${payload.omittedRows} additional records exceed the display limit.` : ''}${payload.unmapped || payload.unmappedDocuments ? ` Warning: ${payload.unmapped || 0} filing record(s) and ${payload.unmappedDocuments || 0} document entry/entries could not be mapped; coverage may be incomplete.` : ''}`);
       if (!rows.length) {
         results.innerHTML = `<p class="rounded-2xl bg-white p-4 text-sm text-slate-600">${payload.unmapped ? 'The service returned unrecognised records. A usable filing history could not be displayed.' : 'No filings were returned. Check the ticker or exact company name; this does not prove that no prospectus or IPO exists.'}</p>`;
-        return;
+        return { checked: 1, partial: !!payload.unmapped };
       }
       results.innerHTML = rows.map((row) => `<article data-drhp-filing class="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
         <h3 class="break-words font-semibold text-slate-800">${e(row.company || 'Company name not supplied')}</h3>
@@ -67,8 +76,14 @@ export function mountDrhpDocuments({ root }) {
         <p class="mt-1 break-words text-xs text-slate-500">Source: ${e(row.source || 'Not supplied')}</p>
         ${row.documents.length ? `<ul class="mt-3 space-y-2">${row.documents.map((doc) => { const url = documentUrl(doc.url); return url ? `<li><a class="break-words text-sm text-indigo-600 hover:underline" href="${e(url)}" target="_blank" rel="noopener noreferrer">${e(doc.label)} ↗</a></li>` : ''; }).join('')}</ul>` : '<p class="mt-3 text-sm text-slate-500">No usable document links supplied.</p>'}
       </article>`).join('');
-    } catch (error) { if (current()) say(signal.aborted ? 'The IPO / DRHP lookup timed out. Retry later.' : error.message || 'The IPO / DRHP lookup failed.'); }
+      return { checked: 1, partial: !!(payload.limitReached || payload.omittedRows || payload.unmapped || payload.unmappedDocuments) };
+    } catch (error) { if (current()) say(signal.aborted ? 'The IPO / DRHP lookup timed out. Retry later.' : error.message || 'The IPO / DRHP lookup failed.'); return { failed: 1, error: error.message }; }
     finally { if (current()) button.disabled = false; }
-  });
-  return () => { disposed = true; generation++; controller?.abort(); unsubscribe(); };
+  }
+  const offRefresh = refreshRegistry.register('drhp-documents', { label: 'IPO documents', refresh: async () => {
+    if (!input.value.trim()) return { skipped: true };
+    return await submit() || { skipped: true };
+  } });
+  root.querySelector('[data-drhp-form]').addEventListener('submit', submit);
+  return () => { offRefresh(); disposed = true; generation++; controller?.abort(); unsubscribe(); };
 }
