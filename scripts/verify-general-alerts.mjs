@@ -155,8 +155,8 @@ const recovered = await alerts.collect({ ...options, scope: 'universe', refresh:
 assert.equal(recovered.feeds.find((f) => f.id === 'technicals').status, 'ok');
 const cachedTomorrow = await alerts.readCachedAlertWindow({ scope: 'universe', holdings: [], day: '2026-09-05' });
 assert(cachedTomorrow?.events.length > 0, 'a completed public collection leaves a ready repeat-visit window');
-assert(cachedTomorrow.events.every((event) => event.day >= '2026-08-30' && event.day <= '2026-09-05'),
-  'the restored window is re-aged against the current IST day');
+assert(cachedTomorrow.events.every((event) => event.day >= '2026-08-23' && event.day <= '2026-09-05'),
+  'the restored 14-day window is re-aged against the current IST day');
 assert(cachedTomorrow.events.every((event) => !event.private && event.sourceRecord == null &&
   event.weightPct == null && event.holdingWeightPct == null), 'the restored ready view contains public alert fields only');
 assert(!calls.some((url) => /api\/(combined-filings|drhp-filings|super-investors\/|company-news\/|announcements\/|insider-trades\/)/.test(url)), 'no private or per-company fanout');

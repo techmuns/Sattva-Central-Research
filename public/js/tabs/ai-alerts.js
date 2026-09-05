@@ -1,7 +1,7 @@
 // tabs/ai-alerts.js — THE SMALL, EXPLAINABLE READING LIST ABOVE ALL ALERTS.
 //
 // All Alerts is the complete chronological record. This tab deliberately is not: it groups
-// the last seven days by company, ranks the material company-specific evidence, and suppresses
+// the last 14 days by company, ranks the material company-specific evidence, and suppresses
 // names that do not cross the published threshold. The ranking lives in data/ai-alerts.js so the
 // product rules are pure, testable and available to exports or notifications later.
 
@@ -22,7 +22,7 @@ export { relativeAge } from '../ui/ai-alert-utils.js';
 export const meta = {
   id: 'ai-alerts',
   title: 'AI Alerts',
-  subtitle: 'Important portfolio events from the last seven days.',
+  subtitle: `Important portfolio events from the last ${alerts.WINDOW_DAYS} days.`,
   subviews: [],
 };
 
@@ -304,7 +304,7 @@ function watchCalendar() {
     for (const el of ctxRef.root.querySelectorAll('[data-ai-age]')) {
       el.textContent = relativeAge(el.dataset.day, day);
     }
-    // Re-rank and drop evidence that has left the seven-day window as well as updating labels.
+    // Re-rank and drop evidence that has left the 14-day window as well as updating labels.
     void recollect(ctxRef);
   };
   const schedule = () => {
@@ -329,7 +329,7 @@ function head(ctx) {
     : report && (collecting || awaitingBook !== null) ? { label: 'Ready · checking quietly', tone: 'neutral', state: 'pending' } : feedStatus(report);
   return sectionHead({
     title: 'AI Alerts',
-    description: 'Important company signals from the last seven days.',
+    description: `Important company signals from the last ${alerts.WINDOW_DAYS} days.`,
     meta: `<div class="flex flex-wrap items-center justify-end gap-2">
       <span data-ai-feed-status data-state="${status.state}">${pill({ label: status.label, tone: status.tone })}</span>
       ${report ? scopeSummary({
