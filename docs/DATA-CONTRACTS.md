@@ -3166,206 +3166,36 @@ committed capture. `TWITTER_LIMIT` (20) bounds the posts read per account per ru
 overlapping windows, query checkpoints, timeouts and saturation/recovery handling.
 
 
-### Telegram posts — a public research channel, on the Public Chatter tab
+### Telegram posts — retained channel history in Public Chatter
 
-**`public/data/telegram-posts.json`** — a committed capture, written by
-`scripts/scrape-telegram.mjs` on `.github/workflows/telegram-refresh.yml` (half-hourly, plus a
-`workflow_dispatch` that can ask for a backfill). **The cron is a request, not a promise** — GitHub
-sheds the densest schedules first, measured in this repository at 12 fired out of 124 for a `*/20` —
-so no surface quotes it as a cadence the reader will actually get. The source registry's `cadence`
-field reaches the reader — the registry modal and the beacon both render it — so it is worded as a
-request ("half-hourly requested, delivery best-effort"), never as a rate. The only honest figure on
-screen stays "when the newest post was captured", which the tab already prints. **It needs no credential**: the channel's message
-pages are public, so there is no secret to install and none to expire.
+`public/data/telegram-posts.json` is a retained archive from `@researchreportss`, collected
+by `scripts/scrape-telegram.mjs`. See [Telegram ingestion](TELEGRAM-INGESTION.md) for
+source limitations, local commands, scheduling and PR publication.
 
-```jsonc
-{
-  "source": "t.me public channel pages",
-  "channel": "researchreportss",
-  "channelUrl": "https://t.me/researchreportss",
-  "route": "permalink",        // WHICH route produced this, because the route decides what it CAN carry
-  "publishesTime": false,      // read by the UI rather than assumed — see below
-  "capturedAt": "2026-09-05T10:00:00Z",   // when the channel was last read AND something changed
-  "headId": 7540,              // the highest message id seen; where the next run starts
-  "lowestId": 7220,            // the oldest post KEPT, after the KEEP cap
-  "walkedFrom": 7140,          // the oldest id ever WALKED — what a backfill resumes from
-  // COVERAGE IS DERIVED FROM THE SPAN, NEVER FROM A TALLY. These are the lowest and highest
-  // message ids the capture holds; everything between them that is not a post is an id this route
-  // could not read. A running tally could not answer this honestly across runs — an incremental
-  // walk touches only MISS_RUN ids, and writing its counts here would overwrite a 700-id
-  // measurement with "2 of 60 readable", reporting one short walk as though it described the channel.
-  "spanFrom": 93166,
-  "spanTo": 93384,
-  // This run only, for whoever reads the job log. Nested so it can never be mistaken for coverage.
-  "lastRun": { "scanned": 401, "readable": 260, "unreadable": 141, "errors": 0 },
-  // Ids a run could not FETCH — not blanks, which are read and empty, but ids nothing is known
-  // about. Re-asked first on the next run. Without this the walk moves past them and the next run
-  // resumes above the head, so a post at that id is lost silently and the coverage count files it
-  // as one of the channel's caption-less documents. Read, read-and-empty and could-not-be-read
-  // stay three different answers here as they do on the filings snapshots.
-  "retryIds": [],
-  "posts": [
-    {
-      "id": 7529,              // THE deduplication key, Telegram's own message number
-      "text": "…",             // the post, verbatim
-      "url": "https://t.me/researchreportss/7529",
-      // NO per-post image field. `og:image` on a message page is the CHANNEL'S AVATAR, not the
-      // post's media — verified byte-identical across three text posts and the channel page. It is
-      // not captured, because filing a property of the channel as a property of the post would put
-      // one logo on six hundred rows as though each carried a picture.
-      "publishedAt": null,     // ALWAYS null on this route. Not missing — not published.
-      "firstSeenAt": "2026-09-05T10:00:00Z"   // when OUR scraper first read it. Never the post's time.
-    }
-  ]
-}
-```
+Schema version 2 stores `channel`, `channelUrl`, `route: "embed+permalink"`,
+`publishesTime`, `capturedAt` (archive content changed), `lastCheckedAt` (successful
+collector check), `lastRun` (check time/status/counts/error), `headId`, `spanFrom`,
+`spanTo`, `historyNextId`, `historyComplete`, `discoveryNextId`, `retryIds` and `posts`.
+Each post has `id`, `url`, nullable `text`, actual Telegram `publishedAt`, collector
+`firstSeenAt`, `contentStatus: "available" | "telegram-only"`, nullable `mediaType`
+and `attachments` (exposed document name/size only).
 
-**Three routes in, and only one of them is open for this channel.** This was measured, not assumed:
+A verified embed establishes existence and publication time even when Telegram hides
+its content. These rows remain in the table, with links to Telegram and no invented
+caption. Legacy text-only rows survive until their dates are recovered. The browser
+retains last-good rows on failed or malformed refreshes, sorts by message number,
+shows publication times in IST and exports source dates separately from first-seen times.
 
-| Route | Result |
-| --- | --- |
-| `t.me/s/<channel>` — the server-rendered preview: ids, ISO timestamps, `data-before` pagination, no credential | **302 to the plain page, zero messages.** The owner has the web preview switched off. Every third-party bridge built on it (RSSHub and friends) is shut with it — measured, `rsshub.app` additionally answers 403. |
-| The same endpoint on `@telegram`, as a control | **200, 127KB, 20 message blocks** — so the method works; this channel has it disabled. |
-| The Bot API | **There is no history method.** Verified against `core.telegram.org/bots/api`: no `getChatHistory`, no `getMessages`. A bot receives `channel_post` updates only for a channel it has been made an **admin** of, and only going forward. We do not own this channel. |
-| `t.me/<channel>/<id>` — the message permalink | **Open.** The page carries the post's full text in `og:description`. This is what the scraper reads. |
+No captured history is trimmed. The collector saves resumable cursors and failed IDs
+even on quiet runs. A range of absent IDs does not prove the channel has no newer posts;
+a separate forward sweep and an optional verified head hint support gap discovery.
+The UI distinguishes partial history and Telegram-only content from collection failure.
 
-**THIS FEED PUBLISHES NO POST TIMES, AND THAT IS SAID OUT LOUD EVERYWHERE IT SURFACES.** The
-permalink page has og tags and nothing else — no `<time>`, no `datetime`, no widget markup. So
-`publishedAt` is null on every post, and:
-
-- the section carries **no time column at all**, rather than six hundred identical em dashes. A
-  column of dashes says *we asked and were refused*; the honest statement is that this disclosure
-  does not answer that question. Same resolution as the AMC portfolios having no Qty column.
-- the description, the footnote, the source registry and **row 1 of the export** all state it in
-  words. The export matters most: a workbook leaves the page without its chrome.
-- ordering is by **message id**, which rises with publication — the same reason market news merges
-  on Moneycontrol's own article id rather than on a headline.
-- `firstSeenAt` is kept in its own field and never reaches a date cell. It is when the *scraper*
-  saw the post, a fact about us and not about the post, and the two may not be confused.
-
-**Three traps this feed measured, each of which produced a confident wrong answer first:**
-
-1. **A 200 that is not the page you asked for.** An id with no readable post answers **200** with
-   the channel's own landing page (~11,175 bytes), never a 404. So absence is read as
-   `og:description === og:title` — positive evidence — and never from the status code. Same class
-   as BSE's `strCat=-1` and Moneycontrol's interstitial.
-2. **Rate limiting wears that same costume.** An unpaced walk gets the landing page for ids that
-   genuinely have text: measured, a fast burst reported "no text" for id 7260 while a single paced
-   request returned *"Sharekhan sees 32% UPSIDE in Mahindra Logistics"*. An unpaced walk does not
-   fail, it **quietly under-reports**, so every miss is re-asked after a backoff before it is
-   believed. It also corrupted a head-id bisect into reporting 7263 where the head was 7540.
-3. **A run of misses does not mean the end of the channel.** Measured: 7530–7539 are ten
-   consecutive misses and **7540 is a real post**. Those ten are documents posted with no caption —
-   this channel's stock in trade is broker report PDFs, and a PDF with no caption has nothing on
-   its page to read. So the head walk needs `TELEGRAM_MISS_RUN` (60) well above any plausible run
-   of documents, and every existence test during the head seek is a **window** test rather than a
-   single id.
-
-**Three states, kept apart.** `unreadable` (the span minus the posts) mixes two very different
-things: ids where the channel published nothing this route can read, and ids **our own run could not
-fetch**. The second is not the channel's silence, so `retryIds` persists them, they are re-asked
-first on the next run, and `meta().pending` carries the count to the footnote — which states it in
-both directions, because "none of them is ours" is a claim too. Same shape as the insider snapshot's
-four states: in `posts` was read, inside the span but absent was read-and-empty, in `retryIds` could
-not be read, and outside the span was never asked.
-
-**Coverage is part of the capture, not an afterthought, and it is DERIVED rather than tallied.**
-The footnote states the span the capture holds and how many of those ids carried text, because a
-batch of caption-less PDFs would otherwise read as a quiet channel. It is computed from `spanFrom`,
-`spanTo` and the posts themselves, so it cannot drift: an earlier version tallied it per run, which
-would have let one incremental walk of sixty ids overwrite a seven-hundred-id measurement and report
-that short walk as though it described the channel. **This route genuinely cannot tell a caption-less document from
-a deleted message**, so it claims neither and reports both together as ids it could not read —
-*searched-and-empty*, *never-asked* and *could-not-be-read* stay three different answers, as they do
-on the filings snapshots.
-
-**Nothing is scored, ranked, summarised, sentiment-tagged or mapped to a company.** A channel post
-is somebody's own words, reproduced. The table truncates the text to one line at a fixed width and
-carries the whole post in the cell's tooltip; search and export see every word either way. **The pump-risk heuristic stays deleted** — its gate is calibrated for a firehose, and
-running it here would return "Clear" for every row, which is a fabricated clean bill of health
-rather than a real one.
-
-**Posts carry no company, so they are not filtered by one.** The section is whole in every scope,
-exactly as market-wide news and the uncovered half of Public Chatter are, and the reason is stated
-on screen rather than left as a silent inconsistency.
-
-**Deduplication is by message id, in the scraper and in the browser, and the row key is namespaced
-`tg:<id>`.** The capture is capped at `TELEGRAM_KEEP` (600), so a new post pushes the oldest off the
-end and the LENGTH DOES NOT MOVE — "did anything arrive" is answered by comparing id sets, never by
-counting. `refresh()` returns the arrived ids for that reason.
-
-**Exit codes are the interface**, and they are what the job reports on: **0** wrote a capture;
-**2** nothing new, the ordinary quiet-hours outcome, a notice; **4** the run achieved nothing and
-that does not look like a quiet channel — t.me's landing page unreadable, or nothing readable across
-a whole window while a capture is already held — raised as a **warning**, because dressing a total
-failure in the words used for an ordinary evening is how a stopped feed stays invisible; **1** a
-real fault. Only 1 is a red build.
-
-**Telling a quiet channel from a refused runner takes positive evidence, and one request.** From
-above the head the two are identical: an incremental run walks `MISS_RUN` ids past the newest post,
-and when the channel has said nothing since, every one of them is legitimately blank. A rule of
-"nothing readable means we are being refused" therefore fires on **every quiet run** — measured, it
-did, on the first one — and a warning that cries wolf on the normal case teaches the reader to
-ignore the one that matters. So before raising it the run re-reads an id it KNOWS is a post: if that
-still reads correctly, t.me is answering properly and the channel is merely quiet (exit 2); if the
-page that carried a post an hour ago now carries nothing, that is a refusal (exit 4).
-
-**The capture is rewritten only when a post arrives**, so `capturedAt` says when the channel last
-said something this route could read — **not** when the job last looked. Nothing in the committed
-file can answer the second question, because a run that finds nothing exits **2** and leaves the
-file untouched (a notice, not a red build). **The status label therefore never says "Live"**: that
-word claims the data was confirmed recently, and reading `capturedAt` as freshness gets it wrong in
-both directions — a quiet weekend would turn it amber over data checked twenty minutes ago, and a
-job that died a week ago would keep it green until its last capture aged out. The label states what
-is actually known — when the newest post it holds was captured — and past three days says the
-capture has not changed since then and that it cannot tell a quiet channel from a stopped job.
-
-**`walkedFrom` is not `lowestId`.** The first is how far down the channel the walk has actually
-been; the second is the oldest post still *kept* after the `KEEP` cap. Backfill resumes from
-`walkedFrom`, because resuming from `lowestId` re-read ids below the cap on every run, found real
-posts, and then sliced every one of them away — reporting them as arrivals each time. Widening
-history is a change to `TELEGRAM_KEEP`, not a longer walk.
-
-**A RELIABLE HALF-HOUR CANNOT COME FROM THE CRON, SO IT COMES FROM A DISPATCH.**
-`telegram-refresh.yml` asks for `*/30` and GitHub delivers a fraction of it — measured on the
-identical cron in `twitter-refresh.yml`, **13 runs against the ~80 requested over 39.96 hours, 16%**,
-at a mean gap of 3h20m ranging 1h44m to 5h23m. Tuning the expression does not help; the market-news
-job established that by relaxing `*/20` to `*/30` and getting *fewer* runs. **`workflow_dispatch` is
-not throttled at all**, so the cadence comes from a scheduler that works driving the trigger that
-works — the same arrangement market news already runs on:
-
-```
-URL      https://sattva-central-research.tech-441.workers.dev/api/telegram/refresh?source=cron
-Method   POST          (a GET is refused with 405)
-Body     none          no headers, no auth
-Every    30 minutes
-```
-
-**`GET /api/telegram/run`** watches it and is free, so it may be polled.
-
-Safe to expose, for the same reasons the market-news route is: nothing in the request chooses what
-runs — the repository, the workflow and the ref are fixed on the Worker — a run already in flight is
-declined by `dispatchWorkflow`, the workflow's own concurrency group serialises what gets through,
-and `?source=` is the same **allowlist of three words** (`cron` / `auto` / `button`) rather than a
-string that reaches a run name. The worst a hostile caller achieves is the same walk a scheduled run
-does.
-
-**`TELEGRAM_DISPATCH_COOLDOWN_S` is 20 minutes, and it is shorter than the cadence on purpose.** A
-cooldown at or above 30 minutes would defeat the pinger it exists to serve; twenty leaves ten
-minutes of slack for jitter while bounding a stuck pinger to three runs an hour, which at ~2 minutes
-and ~120 requests per run is affordable. It is per-colo and therefore best-effort, which is why it
-is the second line of defence and not the first.
-
-**No secret needs installing for this.** `GH_DISPATCH_TOKEN` is already configured on the deployed
-Worker — verified against the live `/api/market-news/run`, which answers `ok: true` with real run
-data rather than the `no-token` state. Where it is ever absent the route says so by name and prints
-the Cloudflare dashboard path that fixes it, rather than failing silently.
-
-**Wiring another channel.** `TELEGRAM_CHANNEL` selects it (validated against Telegram's own rule for
-a public username, 5–32 of `[A-Za-z0-9_]`, because the value reaches a URL). A capture for a
-different channel is never treated as history for this one. If a channel has its web preview
-**on**, the richer `t.me/s/` route becomes available and would fill `publishedAt` with a real
-timestamp; `route` and `publishesTime` exist so the UI reads which it got instead of assuming.
+The existing `POST /api/telegram/refresh` dispatch endpoint and
+`GET /api/telegram/run` status endpoint retain their fixed workflow allowlist and cooldown.
+The scheduled workflow publishes updates through `codex/telegram-capture` PRs after
+verification rather than pushing directly to main. Full content that Telegram withholds
+from its public web surfaces still needs an authenticated Telegram connection.
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 
