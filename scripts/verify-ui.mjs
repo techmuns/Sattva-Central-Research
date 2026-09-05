@@ -1726,6 +1726,7 @@ console.log('\n— AI alerts —');
   // ---------------------------------------------------------------------------------------
   console.log('\n— general alerts —');
   await go('/#/research/daily-alerts?scope=portfolio', 4500);
+  await page.locator('[data-sources-summary]').click();
 
   const daText = await hostText();
   // THE FOUR CARDS AND THE PARAGRAPH ARE ONE PILL NOW. Three of the cards counted rows the table
@@ -2132,6 +2133,7 @@ console.log('\n— AI alerts —');
   await settleTables();
   // Use two feeds whose retained snapshots carry history. The coverage chips answer the separate
   // "looked today?" question, so their current-day figures must not be reused as history totals.
+  if (!(await page.locator('[data-alerts-sources]').evaluate(node => node.open))) await page.locator('[data-sources-summary]').click();
   await page.locator('[data-feed-toggle="insider"]').click();
   await page.waitForTimeout(700);
   await settleTables();
