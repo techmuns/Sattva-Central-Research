@@ -61,9 +61,14 @@ export function mergeCompanyNewsArticles(previous = [], incoming = []) {
         ...(existing.matchedQueries || []), existing.query,
         ...(row.matchedQueries || []), row.query,
       ]);
+      // A corrected publication date may move a TradingView observation between shards.
+      // Shard traversal order cannot let the older observation undo its corrected headline.
+      const olderTradingViewObservation = (existing.tradingViewId || row.tradingViewId) &&
+        Date.parse(row.lastSeenAt || row.firstSeenAt || '') < Date.parse(existing.lastSeenAt || existing.firstSeenAt || '');
+      const [base, preferred] = olderTradingViewObservation ? [row, existing] : [existing, row];
       rows[existingIndex] = {
-        ...existing,
-        ...Object.fromEntries(Object.entries(row).filter(([, field]) => field !== null && field !== undefined && field !== '')),
+        ...base,
+        ...Object.fromEntries(Object.entries(preferred).filter(([, field]) => field !== null && field !== undefined && field !== '')),
         firstSeenAt,
         lastSeenAt,
         matchedQueries,

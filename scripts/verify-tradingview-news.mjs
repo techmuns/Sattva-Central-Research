@@ -67,6 +67,9 @@ assert(enriched[0].sourceUrls.includes(row.tradingViewUrl));
 assert(enriched[0].discoverySources.includes('publisher-feed'));
 const corrected = mergeCompanyNewsArticles(enriched, [{ ...row, title: 'Corrected Alpha Solar headline', tradingViewUrl: 'https://in.tradingview.com/news/new-path', url: 'https://publisher.example/corrected' }]);
 assert.equal(corrected.length, 1, 'stable provider ID survives title and URL corrections');
+const newest = { ...corrected[0], lastSeenAt: new Date(now + 1000).toISOString() };
+assert.equal(mergeCompanyNewsArticles([newest], [{ ...row, lastSeenAt: at }])[0].title, newest.title, 'older shard observations cannot undo a newer correction');
+assert.equal(mergeCompanyNewsArticles(enriched, [row])[0].url, syndicated.url, 'prefer the original publisher link when a later mirror only supplies its TradingView URL');
 assert.equal(attributeNewsRow({ ...row, title: 'A broad sector headline', relatedSymbols: ['NSE:ALPHA'] }, alpha).attribution.status, 'uncertain', 'feed symbol tags are discovery context, not direct-company evidence');
 
 const scratch = mkdtempSync(join(tmpdir(), 'tradingview-news-test-'));
