@@ -897,9 +897,10 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     stickyHead: 'max(320px, calc(100vh - 560px))',
     // The timeline can exceed five thousand rows. Keep all of them in the data model for search,
     // filters, counts and export, while mounting only a bounded viewport window. Historical rows
-    // carry four text lines and are therefore taller than the two-line upcoming calendar rows.
+    // News carries five lines including attribution. Its 115px natural height exceeded the old
+    // 96px virtual stride, causing a visible jump whenever a window replaced those taller rows.
     fillMode: 'virtual',
-    virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 96,
+    virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 120,
     preindexSearch: warmSearch,
     onScrollActivity: noteTableScroll,
     rowClass: mode === HORIZON.UPCOMING ? null : alertRowClass,

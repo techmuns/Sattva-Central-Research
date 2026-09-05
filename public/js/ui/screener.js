@@ -637,8 +637,14 @@ export function scoreTable(config) {
                   class="watch-star flex-shrink-0 text-base leading-none transition-colors ${isWatched ? 'text-amber-400' : 'text-slate-300 hover:text-amber-400'}">${isWatched ? '★' : '☆'}</button>`
           : '<span class="watch-star flex-shrink-0 text-base leading-none text-transparent" aria-hidden="true">☆</span>';
         const rowLink = link ? link(row) : null;
+        // A CSS height on <tr> is only a minimum. Constrain each cell's content as well, so a
+        // longer attribution/reason cannot change the physical stride behind virtual spacers.
+        // Full text remains in the existing titles, row detail and model-backed export.
+        const td = (content, classes = '') => `<td class="${PX} ${isVirtual ? 'py-0' : 'py-3'} ${classes}">${isVirtual
+          ? `<div data-virtual-cell style="height:${VIRTUAL_ROW_HEIGHT - 1}px;display:flex;align-items:center;overflow:hidden"><div style="width:100%;min-width:0;max-height:${VIRTUAL_ROW_HEIGHT - 25}px;overflow:hidden">${content}</div></div>`
+          : content}</td>`;
         const dataTd = (c) =>
-          `<td class="whitespace-nowrap ${PX} py-3 text-sm text-slate-700 ${c.align === 'right' ? 'text-right tabular-nums' : ''}">${c.html ? c.get(row) : escapeHtml(c.get(row))}</td>`;
+          td(c.html ? c.get(row) : escapeHtml(c.get(row)), `whitespace-nowrap text-sm text-slate-700 ${c.align === 'right' ? 'text-right tabular-nums' : ''}`);
         const styles = [];
         if (redFlag) styles.push('box-shadow: inset 3px 0 0 #f43f5e');
         if (isVirtual) styles.push(`height:${VIRTUAL_ROW_HEIGHT}px`);
@@ -647,41 +653,35 @@ export function scoreTable(config) {
             ${rowIndex === null ? '' : `aria-rowindex="${rowIndex + 2}"`} ${styles.length ? `style="${styles.join(';')}"` : ''}>
             ${
               showRank
-                ? `<td class="${PX} py-3 text-sm font-medium text-slate-500">
-                     <div class="flex items-center gap-1">${star}<span class="row-rank"></span></div>
-                   </td>`
+                ? td(`<div class="flex items-center gap-1">${star}<span class="row-rank"></span></div>`, 'text-sm font-medium text-slate-500')
                 : ''
             }
             ${leadCols.map(dataTd).join('')}
-            <td class="${PX} py-3">
-              <div class="flex items-center gap-2"${nameMaxPx ? ` style="max-width:${nameMaxPx}px"` : ''}>
+            ${td(`<div class="flex items-center gap-2"${nameMaxPx ? ` style="max-width:${nameMaxPx}px"` : ''}>
                 ${showRank ? '' : star}
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
                 <div class="min-w-0">
                   <div class="truncate font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
                   <div class="truncate text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</div>
                 </div>
-              </div>
-            </td>
+              </div>`)}
             ${
               sc
-                ? `<td class="${PX} py-3">
-                     <div class="flex items-center gap-2">
+                ? td(`<div class="flex items-center gap-2">
                        <span class="inline-flex min-w-[78px] items-center justify-center rounded-lg px-2.5 py-1 text-sm font-bold tabular-nums ${scoreBadgeClass(sc.pct)}">${escapeHtml(sc.points)}/${escapeHtml(sc.max)}</span>
                        ${redFlag ? `<span class="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-700 ring-1 ring-rose-200" title="${escapeHtml(sc.redFlag)}">⚠ Red Flag</span>` : ''}
-                     </div>
-                   </td>`
+                     </div>`)
                 : ''
             }
-            ${showSignals ? `<td class="${PX} py-3"><div class="flex items-center gap-1">${signals ? signalDots(signals(row)) : ''}</div></td>` : ''}
+            ${showSignals ? td(`<div class="flex items-center gap-1">${signals ? signalDots(signals(row)) : ''}</div>`) : ''}
             ${restCols.map(dataTd).join('')}
             ${
               link
-                ? `<td class="${PX} py-3 text-right">${
+                ? td(
                     rowLink
                       ? `<a href="${escapeHtml(rowLink)}" target="_blank" rel="noopener noreferrer" data-stop class="text-sm font-medium text-indigo-600 hover:text-indigo-800">↗</a>`
                       : ''
-                  }</td>`
+                  , 'text-right')
                 : ''
             }
           </tr>`;

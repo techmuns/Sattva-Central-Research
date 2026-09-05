@@ -84,7 +84,15 @@ for (const id of ['chatter-posts', 'company-documents', 'drhp-documents'])
 
 const previousCalls = calls.length;
 console.log('Checking scope and privacy');
-const portfolio = await alerts.collect({ ...options, scope: 'portfolio', load: false });
+let cachedPartials = 0;
+const portfolio = await alerts.collect({ ...options, scope: 'portfolio', load: false, onPartial: () => cachedPartials++ });
+assert.equal(cachedPartials, 0, 'cached scope changes assemble one completed report, not twenty full intermediate reports');
+const scope = await import('../public/js/data/scope.js');
+let membershipReads = 0;
+const book = Array.from({ length: 118 }, (_, i) => ({ get ticker() { membershipReads++; return `COMP${i}`; } }));
+const manyRows = Array.from({ length: 55000 }, (_, i) => ({ ticker: `COMP${i % 118}` }));
+assert.equal(scope.filterByScope(manyRows, 'portfolio', book).length, manyRows.length);
+assert(membershipReads <= book.length * 2, 'one holdings lookup per pass, independent of the number of records');
 const emptyWatchlist = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.equal(emptyWatchlist.events.length, 0, 'empty Watchlist never becomes Universe');
 const poolSubset = universe.events.filter((e) => ['STLTECH', 'RELIANCE'].includes(e.ticker));
@@ -125,7 +133,7 @@ let releaseNse;
 nseGate = new Promise((done) => { releaseNse = done; });
 const partials = [];
 const racing = alerts.collect({ ...options, scope: 'universe', refresh: true, onPartial: report => partials.push(report) });
-await new Promise((done) => setImmediate(done));
+for (let i = 0; i < 200 && !partials.length; i++) await new Promise((done) => setTimeout(done, 10));
 assert(partials.length > 0, 'fast sources produce updates while NSE is still checking');
 assert(partials.every(report => report.events.some(e => e.url === nseRow.url)), 'a slow refreshing source keeps its previous records in every partial');
 assert(partials.every(report => report.feeds.find(f => f.id === 'nse-filings').status === 'pending'), 'retained records do not imply a finished refresh');

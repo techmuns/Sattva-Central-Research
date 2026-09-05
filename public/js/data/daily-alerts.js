@@ -435,7 +435,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // Start with every source's current in-memory records. Refreshing one source
   // must not temporarily remove all the others from the timeline. The pending
   // status still says these records have not been rechecked by this collection.
-  for (const feed of FEEDS) {
+  for (const feed of load ? FEEDS : []) {
     try {
       const out = COLLECTORS[feed.id]({ day, scope: 'universe', wanted: null, includeHistory }) || {};
       settledFeeds.set(feed.id, toFeedRow(feed, { ...out, status: 'pending',
@@ -443,6 +443,17 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     } catch { /* A source with no readable snapshot starts empty. */ }
   }
   const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds });
+  // Feed promises often finish in one burst. Building/sorting the entire history after every
+  // promise made one cached refresh rebuild a 60k-row pool twenty times before yielding to input.
+  // Coalesce progress at the data boundary; throttling only the eventual DOM paint is too late.
+  let partialTimer = null;
+  const publishPartial = () => {
+    partialTimer = null;
+    try { onPartial?.(build()); } catch (err) { console.error('[daily-alerts] onPartial threw', err); }
+  };
+  const schedulePartial = () => {
+    if (load && onPartial && partialTimer === null) partialTimer = setTimeout(publishPartial, 80);
+  };
 
   // EACH FEED SETTLES ON ITS OWN AND THE PAGE PAINTS AS IT DOES.
   //
@@ -474,14 +485,11 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
       }
       out.events = (out.events || []).filter((e) => includeHistory || eventDay(e) === day);
       settledFeeds.set(feed.id, toFeedRow(feed, out, day));
-      try {
-        onPartial?.(build());
-      } catch (err) {
-        console.error('[daily-alerts] onPartial threw', err);
-      }
+      schedulePartial();
     })
   );
 
+  if (partialTimer !== null) clearTimeout(partialTimer);
   const completed = build();
   if (load) {
     // Materialize from the already-settled source records; this starts no second
