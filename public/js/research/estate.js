@@ -45,6 +45,7 @@ import * as marketNews from '../data/market-news.js';
 import { researchEvidenceChars } from './evidence-shared.js';
 import { withoutPublisherName } from '../core/source-copy.js';
 import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
+import { attributionFor } from '../data/company-news-attribution.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
@@ -858,11 +859,18 @@ const BUILDERS = [
         source: 'Retained company news snapshot',
         asOf: meta.capturedAt || meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { coveredCompanies: meta.covered, failedCompanies: meta.failed, windowDays: meta.windowDays, outstanding: meta.outstanding },
+        coverage: { coveredCompanies: meta.covered, failedCompanies: meta.failed, windowDays: meta.windowDays, outstanding: meta.outstanding,
+          confirmed: rows.filter(row => attributionFor(row).status === 'confirmed').length,
+          uncertain: rows.filter(row => attributionFor(row).status === 'uncertain').length,
+          attributionRule: 'Search provenance is not company attribution. Uncertain rows are possible coverage only; verify the article before making a company claim.' },
         ...chooseRows(rows, plan, (row) => ({
           date: row.date || null,
-          ticker: row.ticker || null,
-          company: clipped(row.query || row.company || row.ticker, 60),
+          ticker: attributionFor(row).companyTicker,
+          company: clipped(attributionFor(row).companyName, 60),
+          queryTicker: attributionFor(row).queryTicker,
+          queryCompany: clipped(attributionFor(row).queryCompany, 60),
+          attribution: attributionFor(row).status,
+          attributionReason: attributionFor(row).reason,
           title: clipped(row.title, 150),
           summary: clipped(row.summary, 200),
           publisher: row.source || null,

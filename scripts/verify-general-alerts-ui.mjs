@@ -8,6 +8,12 @@ import { fileURLToPath } from 'node:url';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const data = (path) => JSON.parse(readFileSync(resolve(root, `data/${path}`)));
+const newsCases = JSON.parse(readFileSync(new URL('./fixtures/company-news-attribution.json', import.meta.url))).cases
+  .filter(test => ['accent', 'ticker-brand', 'no-keyword', 'snippet-only', 'reported-mismatch'].includes(test.id));
+const newsFixture = { capturedAt: '2026-09-04T08:00:00Z', entities: newsCases.map(test => ({ ...test.identity, key: test.identity.ticker })),
+  byTicker: Object.groupBy(newsCases.map(test => ({ date: '2026-09-04', company: test.identity.name,
+    ticker: test.identity.ticker, query: test.identity.name, source: 'Synthetic test publisher',
+    url: `https://example.test/${test.id}`, ...test.row })), row => row.ticker) };
 let version = 1;
 const calls = [];
 const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:16px;background:#f6f7fb"><button id="refresh">Refresh</button><main id="root"></main>
@@ -19,7 +25,7 @@ window.SATTVA_CHATTER_URL=location.origin+'/chatter';
 import * as tab from '/js/tabs/daily-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
-coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'}]});
+coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'},{ticker:'NESTLEIND',name:'Nestle India'},{ticker:'DMART',name:'Avenue Supermarts'}]});
 window.show=(scope='universe')=>tab.render({root:document.querySelector('#root'),params:{},scope,data:{}});
 window.dispose=()=>tab.destroy();
 document.querySelector('#refresh').onclick=()=>refresh.refreshAll();
@@ -31,6 +37,7 @@ const server = createServer((req, res) => {
   const json = (value) => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value)); };
   try {
     if (url.pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+    if (url.pathname === '/data/news.json') { json(newsFixture); return; }
     if (url.pathname === '/api/earnings') { json(data('earnings-live.json')); return; }
     if (url.pathname === '/api/concalls') {
       const payload = data('concall-scans.json');
@@ -143,18 +150,28 @@ try {
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
   console.log('Verified undated search, scope changes and newly arrived filings');
 
-  // Regression: the upstream search padded Jayaswal Neco's result set with a current Investing.com
-  // batch. The rows remain retained, but a search for the company must be supported by publisher
-  // text rather than by the query-assigned company column. Keep this after the refresh assertion so
-  // the extra searches cannot let the tab's deliberate 90-second revalidation race that fixture.
+  // Stable recall cases and the exact user-reviewed mismatch, independent of today's capture.
   await page.locator('[data-table-search]').fill('jayaswal');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.toLowerCase().includes('jayaswal'));
   const jayaswalResults = await page.locator('tbody').innerText();
   assert(jayaswalResults.includes('Jayaswal Neco'), 'publisher-supported Jayaswal stories remain searchable');
-  assert(!jayaswalResults.includes('Lululemon'), 'query metadata cannot make the unrelated Lululemon story match Jayaswal');
+  assert(!jayaswalResults.includes('Lululemon stock analysis'), 'the reviewed mismatch does not match Jayaswal');
+  assert(jayaswalResults.includes('Indian manufacturer shares a business update'), 'snippet-only coverage remains in company search');
+  assert(jayaswalResults.includes('Possible match — unverified'), 'uncertainty is visible without a hover');
+  if (process.env.NEWS_ATTRIBUTION_SCREENSHOT) await page.screenshot({ path: process.env.NEWS_ATTRIBUTION_SCREENSHOT });
+  for (const [query, title] of [['NESTLEIND', 'Nestlé India'], ['Avenue Supermarts', 'DMart reports']]) {
+    await page.locator('[data-table-search]').fill(query);
+    await page.waitForFunction(text => document.querySelector('tbody')?.textContent.includes(text), title);
+  }
+  await page.evaluate(() => window.show('universe'));
+  await settled();
   await page.locator('[data-table-search]').fill('lululemon');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.toLowerCase().includes('lululemon'));
   assert((await page.locator('tbody').innerText()).includes('Lululemon'), 'the retained story remains searchable by its own publisher text');
+  assert((await page.locator('tbody').innerText()).includes('Unrelated search result'));
+  assert(!(await page.locator('tbody').innerText()).includes('JAYNECOIND'), 'the unrelated row is not labelled as the company');
+  await page.evaluate(() => window.show('portfolio'));
+  await settled();
 
   await page.locator('[data-table-search]').fill('Session-private fixture');
   await page.evaluate(async () => (await import('/js/data/alert-records.js')).recordDocuments('company-documents', {
@@ -238,6 +255,20 @@ try {
   await page.waitForTimeout(400);
   assert.equal(calls.length, count, 'destroy removes source listeners and does not start another read');
   assert(!calls.some((p) => /\/api\/(combined-filings|drhp-filings|super-investors\/)/.test(p)), 'no per-company fanout');
+  await page.evaluate(async () => {
+    const newsTab = await import('/js/tabs/news.js');
+    window.disposeNews = newsTab.destroy;
+    newsTab.render({ root: document.querySelector('#root'), scope: 'portfolio', params: {}, data: {} });
+  });
+  await page.waitForSelector('[data-table-search]');
+  await page.locator('[data-table-search]').fill('jayaswal');
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Indian manufacturer shares a business update'));
+  const newsText = await page.locator('tbody').innerText();
+  assert(newsText.includes('Possible match — unverified'));
+  assert(!newsText.includes('Lululemon stock analysis'));
+  await page.locator('[data-table-search]').fill('Avenue Supermarts');
+  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('DMart reports'));
+  await page.evaluate(() => window.disposeNews());
   assert.deepEqual(errors, [], 'zero application errors');
   console.log('PASS: 20 normalized feed categories (19 visible in Universe), source updates, private-session clearing, filters, responsive layout and cleanup.');
 } finally { await browser.close(); await new Promise((done) => server.close(done)); }

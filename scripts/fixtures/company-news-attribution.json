@@ -1,0 +1,25 @@
+{
+  "description": "Stable synthetic recall/precision cases, except the explicitly marked user-reported captured mismatch. Synthetic headlines are test inputs, not real reporting.",
+  "cases": [
+    {"id":"accent", "identity":{"ticker":"NESTLEIND","name":"Nestle India"}, "row":{"title":"Nestlé India reports quarterly earnings"}, "status":"confirmed"},
+    {"id":"ticker-brand", "identity":{"ticker":"DMART","name":"Avenue Supermarts"}, "row":{"title":"DMart reports quarterly earnings"}, "status":"confirmed"},
+    {"id":"brand", "identity":{"ticker":"BETALTD","name":"Private Beta Limited","brands":["BetaPay"]}, "row":{"title":"BetaPay launches a new product"}, "status":"confirmed"},
+    {"id":"former-name", "identity":{"ticker":"NEWCO","name":"New Identity Limited","formerNames":["Former Identity"]}, "row":{"title":"Former Identity receives regulatory approval"}, "status":"confirmed"},
+    {"id":"abbreviation", "identity":{"ticker":"LTL","name":"Long Test Laboratories","aliases":["LTL Labs"]}, "row":{"title":"LTL Labs announces quarterly earnings"}, "status":"confirmed"},
+    {"id":"short-ticker", "identity":{"ticker":"ITC","name":"ITC Limited"}, "row":{"title":"NSE:ITC reports quarterly earnings"}, "status":"confirmed"},
+    {"id":"no-keyword", "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Jayaswal Neco Industries shares an update"}, "status":"confirmed"},
+    {"id":"multiple-companies", "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Jayaswal Neco Industries and Example Steel discuss a joint venture"}, "status":"confirmed"},
+    {"id":"body-only", "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Indian manufacturer shares a business update", "articleBody":{"provenance":"publisher-article-body","text":"Jayaswal Neco Industries is the manufacturer discussed in this synthetic article."}}, "status":"confirmed"},
+    {"id":"snippet-only", "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Indian manufacturer shares a business update", "summary":"Jayaswal Neco Industries is the company covered in this synthetic snippet."}, "status":"uncertain"},
+    {"id":"unknown-brand", "identity":{"ticker":"BETALTD","name":"Private Beta Limited"}, "row":{"title":"BetaPay shares an update"}, "status":"uncertain"},
+    {"id":"subsidiary", "identity":{"ticker":"BETALTD","name":"Private Beta Limited","subsidiaries":["Beta Subsidiary"]}, "row":{"query":"Beta Subsidiary","title":"Beta Subsidiary receives regulatory approval"}, "status":"uncertain"},
+    {"id":"tickerless", "identity":{"entityId":"isin:TESTPRIVATE","name":"Private Beta Limited"}, "row":{"title":"Private Beta shares an update"}, "status":"confirmed"},
+    {"id":"substring-collision", "identity":{"ticker":"ABCORP","name":"Abco"}, "row":{"title":"Tabco launches a new product"}, "status":"uncertain"},
+    {"id":"sidebar-contamination", "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Other Company wins an order", "summary":"Related stories: Jayaswal Neco Industries reports quarterly earnings", "raw":{"content":"Jayaswal Neco Industries navigation link"}}, "status":"uncertain"},
+    {"id":"missing-name", "identity":{"ticker":"BETALTD","name":"Private Beta Limited"}, "row":{"title":"New factory opens"}, "status":"uncertain"},
+    {"id":"generic-name", "identity":{"name":"India Ltd"}, "row":{"title":"India approves a new project"}, "status":"uncertain"},
+    {"id":"common-word-ticker", "identity":{"ticker":"IDEA","name":"Vodafone Idea"}, "row":{"title":"A new idea wins regulatory approval"}, "status":"uncertain"},
+    {"id":"numeric-symbol", "identity":{"ticker":"500001","name":"Example Limited"}, "row":{"title":"Other Company wins an order worth 500001 dollars"}, "status":"uncertain"},
+    {"id":"reported-mismatch", "synthetic":false, "identity":{"ticker":"JAYNECOIND","name":"Jayaswal Neco Industries"}, "row":{"title":"Lululemon stock analysis: Is it a buy amid cheap valuation? By Investing.com", "summary":"Lululemon stock analysis: Is it a buy amid cheap valuation?", "url":"https://in.investing.com/news/stock-market-news/lululemon-stock-analysis-is-it-a-buy-amid-cheap-valuation-93CH-5582818", "source":"Investing.com India"}, "status":"unrelated"}
+  ]
+}
