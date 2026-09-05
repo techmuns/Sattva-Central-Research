@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
 import { parseWatchlistExport } from './lib/screener-watchlist.mjs';
-import { buildInsightInventory, insightInventoryDiagnostic } from './lib/screener-insights-inventory.mjs';
+import { buildInsightInventory, insightInventoryDiagnostic, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_COMPRESSED_LIMIT,
@@ -100,6 +100,7 @@ export async function exportPortfolioTargets(page) {
 }
 
 export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 12_000, previousCompany = null } = {}) {
+  if (item.unresolved) throw Error('Company page identity is unresolved');
   const response = await page.goto(item.companyUrl, { waitUntil: 'domcontentloaded' });
   const final = new URL(page.url());
   if (!response?.ok() || final.origin !== ORIGIN || screenerInsightIdentity(final.href)?.companyKey !== item.companyKey) throw Error('response');
@@ -168,7 +169,7 @@ async function main() {
   stage = 'target identity reconciliation';
   const universe = readData('universe');
   inventoryInputs = { universe, records, manageRows };
-  const targets = buildInsightInventory(universe, records, manageRows);
+  const targets = buildInsightInventory(universe, records, manageRows, { previousCompanies: previous?.companies || [] });
   inventoryInputs = undefined;
 
   const checkedAt = new Date().toISOString();
@@ -176,10 +177,11 @@ async function main() {
   const full = forceFull || !previous || !previous.fullCoverage || !Number.isFinite(previousAge) || previousAge > 8 * 86_400_000;
   const bucket = Math.floor(Date.now() / 86_400_000) % 7;
   const selected = [...targets.values()].filter((item) => full || item.inPortfolio || hashBucket(item.companyKey) === bucket);
+  const { readable, unresolvedKeys } = splitInsightReadTargets(selected);
   const previousByKey = new Map((previous?.companies || []).map((company) => [company.companyKey, company]));
   const succeeded = [];
-  let failedCount = 0;
-  const failedKeys = [];
+  let failedCount = unresolvedKeys.length;
+  const failedKeys = [...unresolvedKeys];
   let cursor = 0;
 
   stage = full ? 'full Insights crawl' : 'incremental Insights crawl';
@@ -188,8 +190,8 @@ async function main() {
     page.setDefaultTimeout(30_000);
     page.setDefaultNavigationTimeout(45_000);
     try {
-      while (cursor < selected.length) {
-        const item = selected[cursor++];
+      while (cursor < readable.length) {
+        const item = readable[cursor++];
         let success = false;
         for (let attempt = 1; attempt <= 2 && !success; attempt++) {
           try {
@@ -206,7 +208,7 @@ async function main() {
       await page.close();
     }
   };
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, selected.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, readable.length) }, worker));
 
   stage = 'capture validation';
   if (!succeeded.length) throw Error('No company could be checked');
@@ -230,7 +232,7 @@ async function main() {
 
   stage = 'artifact write';
   writeFileSync(output, bytes);
-  console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: selected.length, succeeded: succeeded.length, failed: failedCount, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
+  console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: selected.length, succeeded: succeeded.length, failed: failedCount, unresolved: unresolvedKeys.length, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
