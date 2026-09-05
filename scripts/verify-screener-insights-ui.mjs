@@ -47,6 +47,7 @@ try {
   const inventory = buildInsightInventory([{ Company: 'Test', 'Screener URL': '/company/TEST/' }], records, manageRows);
   assert.equal(inventory.size, 2, 'full export + management list includes the company absent from table view');
   assert.equal(inventory.get('ID:1234').ticker, null);
+  assert.equal(inventory.get('ID:1234').isin, 'INE000000002');
   mode = 'short-inventory';
   await assert.rejects(exportPortfolioTargets(page), /count mismatch/);
   mode = 'ok';

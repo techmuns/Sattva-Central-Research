@@ -523,6 +523,15 @@ function alertRow(row) {
   };
 }
 
+export function insightCompaniesForScope(companies, scope, holdings = []) {
+  const isins = new Set(holdings.map((holding) => holding.isin).filter(Boolean));
+  return companies.filter((company) => {
+    if (scope === 'portfolio' && company.isin && isins.has(company.isin)) return true;
+    if (company.ticker) return scopeAllowsTicker(scope, company.ticker, holdings);
+    return scope === 'universe';
+  });
+}
+
 export function screenerInsightRow(company, row, plan = { tokens: [] }) {
   const points = row.values || [];
   const latest = points.at(-1);
@@ -954,12 +963,7 @@ const BUILDERS = [
     id: 'screener-insights',
     load: () => screenerInsights.load(),
     read({ scope, holdings, plan }) {
-      const wanted = new Set((holdings || []).map((holding) => String(holding.ticker || '').toUpperCase()).filter(Boolean));
-      const companies = screenerInsights.all().filter((company) => {
-        if (scope === 'universe') return company.inUniverse || company.inPortfolio;
-        if (scope === 'portfolio') return company.inPortfolio || (company.ticker && wanted.has(company.ticker.toUpperCase()));
-        return company.ticker && wanted.has(company.ticker.toUpperCase());
-      });
+      const companies = insightCompaniesForScope(screenerInsights.all(), scope, holdings);
       const rows = companies.flatMap((company) => (company.rows || []).map((row) => screenerInsightRow(company, row, plan)));
       const meta = screenerInsights.meta() || {};
       return sourcePacket(this.id, {

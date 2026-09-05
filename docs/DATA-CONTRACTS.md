@@ -3963,6 +3963,10 @@ stage names distinguish export discovery, download, parsing, URL inventory and i
 `failedKeys` identifies failed targets; their retained records carry `readStatus: failed` until a
 successful replacement. Company age is tracked independently of the capture envelope: portfolio
 records expire for alert context after 36 hours, other universe records after eight days.
+An optional public ISIN is attached only through a unique exact export code/name match. Ask Research
+applies current holdings by ticker/verified ISIN, never the capture's potentially old `inPortfolio`
+flag. This prevents an exited holding leaking back into Portfolio scope and permits verified
+tickerless holdings without inventing a ticker.
 
 The validated gzip artifact is `screener-insights-v1.json.gz`, retained for 30 days. Its public
 contract is bounded to 1,000 companies, 40 metrics per company, 16 points per series, 24 MB raw and

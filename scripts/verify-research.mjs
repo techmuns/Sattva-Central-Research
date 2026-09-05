@@ -21,7 +21,7 @@ Object.defineProperty(globalThis, 'localStorage', {
     removeItem: (key) => memoryStorage.delete(key),
   },
 });
-const { DASHBOARD_RESEARCH_SOURCES, RESEARCH_EVIDENCE_CHAR_BUDGET, ROW_RESERVE_SHARE, fitEvidenceToBudget, queryPlan, chooseRows, screenerInsightRow } = await import('../public/js/research/estate.js');
+const { DASHBOARD_RESEARCH_SOURCES, RESEARCH_EVIDENCE_CHAR_BUDGET, ROW_RESERVE_SHARE, fitEvidenceToBudget, queryPlan, chooseRows, screenerInsightRow, insightCompaniesForScope } = await import('../public/js/research/estate.js');
 const { providerEvidenceChars } = await import('../public/js/research/evidence-shared.js');
 const estateSource = readFileSync(new URL('../public/js/research/estate.js', import.meta.url), 'utf8');
 const askResearchSource = readFileSync(new URL('../public/js/tabs/ask-research.js', import.meta.url), 'utf8');
@@ -63,6 +63,19 @@ ok('Insights keeps comparable periods, requested years, provenance and retained-
   assert(historical.values.some((point) => point.period === '2024-03-31'));
   assert.equal(historical.availablePoints, 10);
   assert(historical.includedPoints <= 8);
+});
+
+ok('Insights portfolio membership follows the current book, including verified tickerless ISINs', () => {
+  const companies = [
+    { ticker: 'EXITED', inPortfolio: true },
+    { ticker: 'NEW', inPortfolio: false },
+    { ticker: null, isin: 'INE000000001', inPortfolio: true },
+    { ticker: null, inPortfolio: true },
+  ];
+  const holdings = [{ ticker: 'NEW' }, { ticker: null, isin: 'INE000000001' }];
+  assert.deepEqual(insightCompaniesForScope(companies, 'portfolio', holdings), companies.slice(1, 3));
+  assert.equal(insightCompaniesForScope(companies, 'portfolio', []).length, 0);
+  assert.equal(insightCompaniesForScope(companies, 'universe', []).length, 4);
 });
 
 ok('the runtime research catalog covers every visible research tab, and nothing that is not one', () => {

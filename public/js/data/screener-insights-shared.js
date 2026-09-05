@@ -103,6 +103,7 @@ export function validateScreenerInsightCompanies(companies) {
         !identity || identity.companyKey !== companyKey ||
         (company.ticker !== null && company.ticker !== undefined && !TICKER.test(company.ticker)) ||
         (company.ticker || null) !== identity.ticker ||
+        (company.isin !== undefined && !/^INE[A-Z0-9]{9}$/.test(company.isin)) ||
         (company.readStatus !== undefined && !['ok', 'failed'].includes(company.readStatus)) ||
         typeof company.inPortfolio !== 'boolean' || typeof company.inUniverse !== 'boolean' ||
         !Number.isFinite(Date.parse(company.checkedAt || '')) || !Array.isArray(company.rows)) {
