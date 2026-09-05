@@ -200,7 +200,7 @@ try {
     await page.addScriptTag({ path: `${process.env.EXCELJS_ROOT}/dist/exceljs.min.js` });
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.locator('[data-chatter-panel="telegram"] [data-table-export]').click(),
+      page.locator('[data-chatter-panel="telegram"] [data-export]').click(),
     ]);
     const ExcelJS = (await import(`${process.env.EXCELJS_ROOT}/excel.js`)).default;
     const workbook = new ExcelJS.Workbook();
