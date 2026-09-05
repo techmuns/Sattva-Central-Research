@@ -26,7 +26,7 @@ await context.route('**/*', async (route) => {
   const url = new URL(route.request().url());
   if (url.origin === origin) {
     if (url.pathname === '/watchlist/10850427/') return route.fulfill({ contentType: 'text/html', body: '<a href="/dash/10850427/">S Screen</a><form action="/api/export/screen/?sublist_id=10850427" method="post"><button type="submit">Export</button></form><a href="/company/TEST/">One table row only</a>' });
-    if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: 'Name,ISIN Code,NSE Code,BSE Code\nTest,INE000000001,TEST,\nDelisted,INE000000002,,\n' });
+    if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: 'Name,ISIN Code,NSE Code,BSE Code\nTest Export Display,INE000000001,TEST,\nDelisted,INE000000002,,\n' });
     if (url.pathname === '/user/stocks/10850427/') return route.fulfill({ contentType: 'text/html', body: `<h1>Add companies to S Screen</h1><ul><li><span class="shrink-text">Test Ltd</span><button onclick="window.Watchlist.removeCompany('1')" type="button"><i class="icon-trash"></i></button></li>${mode === 'short-inventory' ? '' : '<li><span class="shrink-text">Delisted Ltd</span><button onclick="window.Watchlist.removeCompany(\'1234\')" type="button"><i class="icon-trash"></i></button></li>'}</ul><script>window.removalCalls=0;window.Watchlist={removeCompany:()=>window.removalCalls++};</script>` });
     if (url.pathname.startsWith('/company/')) {
       return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
@@ -50,6 +50,7 @@ try {
   assert.equal(await page.evaluate(() => window.removalCalls), 0, 'inventory never invokes mutation controls');
   const inventory = buildInsightInventory([{ Company: 'Test', 'Screener URL': '/company/TEST/' }], records, manageRows);
   assert.equal(inventory.size, 2, 'full export + management list includes the company absent from table view');
+  assert.equal(inventory.get('TEST').isin, 'INE000000001', 'different management/export display names do not block exact exported exchange codes');
   assert.equal(inventory.get('ID:1234').ticker, null);
   assert.equal(inventory.get('ID:1234').isin, 'INE000000002');
   mode = 'short-inventory';
