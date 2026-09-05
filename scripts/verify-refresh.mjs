@@ -48,7 +48,7 @@ assert.equal((await live.refreshAll({ ids: ['wanted'] }))[0].failed, 1);
 assert.equal(live.getLastDataTick(), last, 'a failed poll cannot advance freshness');
 live.stop('wanted'); live.stop('other');
 
-const { runCaptureWatchdog, captureNamesForView, resetForTest } = await import('../public/js/data/capture-watchdog.js');
+const { runCaptureWatchdog, captureNamesForView, resetForTest, onCaptureLanded } = await import('../public/js/data/capture-watchdog.js');
 assert.deepEqual(captureNamesForView({ tab: 'news', scope: 'portfolio' }), ['companyNews']);
 assert.deepEqual(captureNamesForView({ tab: 'news', scope: 'universe' }), ['marketNews']);
 assert.deepEqual(captureNamesForView({ tab: 'earnings-hub', params: { view: 'filings' } }), []);
@@ -69,6 +69,8 @@ resetForTest();
 // Fast-forward only the capture watch interval, keeping all requests mocked.
 const originalTimer = globalThis.setTimeout;
 let statusReads = 0, captureReads = 0;
+const landedReads = [];
+const offLanded = onCaptureLanded(() => landedReads.push(captureReads));
 const capturedAt = new Date(now).toISOString();
 globalThis.setTimeout = (fn, ms, ...args) => originalTimer(fn, ms === 30000 ? 0 : ms, ...args);
 globalThis.fetch = async (url) => {
@@ -88,8 +90,9 @@ try {
   const completed = await job.completion;
   assert.equal(captureReads, 2, 'unavailable updated bytes are retried before reporting completion');
   assert.equal(completed[0].outcome, 'landed');
+  assert.deepEqual(landedReads, [2], 'mounted reports are notified immediately after the source bytes arrive');
   assert.equal((await import('../public/js/data/market-news.js')).rows()[0].title, 'Fresh source story');
-} finally { globalThis.setTimeout = originalTimer; resetForTest(); }
+} finally { offLanded(); globalThis.setTimeout = originalTimer; resetForTest(); }
 
 const { conditionalJson } = await import('../public/js/core/store.js');
 const network = gate(); let requests = 0;

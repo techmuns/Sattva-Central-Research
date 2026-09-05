@@ -15,6 +15,8 @@ const ATTEMPT_COOLDOWN_MS = 30 * 60 * 1000;
 const attempts = new Map();
 const watchers = new Map();
 const dispatches = new Map();
+const landedListeners = new Set();
+export const onCaptureLanded = (fn) => { landedListeners.add(fn); return () => landedListeners.delete(fn); };
 let checkTimer = null;
 
 const CONFIG = {
@@ -253,7 +255,10 @@ export async function runCaptureWatchdog({ now = Date.now, watchRuns = true, nam
         .then((result) => {
           // A landed capture may legitimately become due later in a long session. Failed attempts
           // keep the cooldown so a broken credential cannot create a busy loop.
-          if (result?.outcome === 'landed') attempts.delete(name);
+          if (result?.outcome === 'landed') {
+            attempts.delete(name);
+            for (const fn of landedListeners) { try { fn(name); } catch (err) { console.warn('[capture-watchdog] view update failed', err); } }
+          }
           return result;
         })
         .finally(() => watchers.delete(name));

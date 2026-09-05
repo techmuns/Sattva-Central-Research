@@ -134,14 +134,8 @@ async function refreshView(view) {
       ? { checked: 1, partial: out.partial }
       : { partial: true, error: out.outcome === 'failed' || out.outcome === 'not-started' ? 'Source update failed.' : null });
   }
-  // Source modules emit their own updates. Consolidated AI reports materialize
-  // their evidence, so reassemble only if the same tab is still mounted.
-  if (completed?.some((out) => out.outcome === 'landed') &&
-      ['ai-alerts', 'daily-alerts', 'ask-research'].includes(view.tab) &&
-      registryIds.some((id) => refreshRegistry.registered().some((entry) => entry.id === id))) {
-    const refreshed = await refreshRegistry.refreshAll();
-    results.push(...refreshed.results);
-  }
+  // Each landed feed notifies its mounted view immediately. Consolidated
+  // reports reassemble from memory, without waiting for unrelated slower jobs.
   return refreshRegistry.summarize(results);
 }
 

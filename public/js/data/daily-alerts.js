@@ -494,6 +494,14 @@ function loadFeed(id, refresh) {
   return pending;
 }
 
+/** Revalidate the evidence stores without building a large alerts report.
+ * Ask Research needs fresh inputs for the next question, not a discarded timeline. */
+export async function refreshSources() {
+  const results = await Promise.allSettled(FEEDS.map((feed) => loadFeed(feed.id, true)));
+  return { checked: results.filter((r) => r.status === 'fulfilled').length,
+    failed: results.filter((r) => r.status === 'rejected').length };
+}
+
 // ---------------------------------------------------------------------------------------
 // Collect
 // ---------------------------------------------------------------------------------------

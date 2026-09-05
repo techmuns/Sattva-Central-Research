@@ -308,10 +308,8 @@ export function render(ctx) {
   ctxRef = ctx;
   if (!unregisterRefresh) unregisterRefresh = refreshRegistry.register('ask-research', {
     label: 'Research evidence', refresh: async () => {
-      const { collect } = await import('../data/daily-alerts.js');
-      const report = await collect({ scope: ctxRef?.scope || 'universe', refresh: true });
-      return { checked: report.feeds.filter((f) => f.status === 'ok').length,
-        failed: report.feeds.filter((f) => f.status === 'failed').length };
+      const { refreshSources } = await import('../data/daily-alerts.js');
+      return refreshSources();
     },
   });
   ensureSession();
