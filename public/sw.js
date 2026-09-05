@@ -15,7 +15,7 @@
 // happened to the Telegram section, whose new module is reachable from app.js but would never have
 // been requested. Nothing fails and nothing looks wrong; the feature simply is not there.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-portfolio-news-telegram-and-alerts-v3-auto-activate`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-05-portfolio-news-telegram-and-alerts-v4-no-redirect-in-cache`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/data/portfolio-companies.json'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
@@ -34,7 +34,29 @@ async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(input, { cache: 'reload', signal: controller.signal, ...init });
-    if (response.ok || response.type === 'opaque') await cache.put(input, response.clone());
+    // A REDIRECTED RESPONSE MAY NOT ANSWER A NAVIGATION, AND THIS CACHE ANSWERS EVERY NAVIGATION.
+    //
+    // Cloudflare's static assets 307 `/index.html` to `/` (html_handling: auto-trailing-slash), so
+    // `cacheOne('/index.html')` follows that hop and stores a response whose `redirected` flag is
+    // set. `cacheKey()` then hands exactly that entry to every navigation — and the spec forbids a
+    // service worker answering a navigation with a redirected response, so the browser fails the
+    // load outright: net::ERR_FAILED, a dead tab, no console error of ours.
+    //
+    // Measured against a server that reproduces the 307: the entry is stored `redirected: true`
+    // with url `/`, the next reload dies, and the load AFTER that succeeds only because the
+    // background revalidation has quietly overwritten it from the navigation's own request. So it
+    // self-heals — at the cost of one hard-failed page load per cache generation, per reader,
+    // which reads as the site being down rather than as anything to do with a deploy.
+    //
+    // A constructed Response carries no redirect flag. Rebuilding one costs nothing (the body is
+    // piped, not buffered) and it is done for every asset rather than special-casing index.html,
+    // because any path the host decides to redirect later lands in the same trap.
+    if (response.ok || response.type === 'opaque') {
+      const copy = response.clone();
+      await cache.put(input, copy.redirected
+        ? new Response(copy.body, { status: copy.status, statusText: copy.statusText, headers: copy.headers })
+        : copy);
+    }
     return response;
   } catch {
     return null;
