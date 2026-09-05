@@ -29,7 +29,6 @@ await context.route('**/*', async (route) => {
     if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: 'Name,ISIN Code,NSE Code,BSE Code\nTest,INE000000001,TEST,\nDelisted,INE000000002,,\n' });
     if (url.pathname === '/user/stocks/10850427/') return route.fulfill({ contentType: 'text/html', body: `<h1>Add companies to S Screen</h1><ul><li><a href="/company/TEST/">Test</a><button onclick="Watchlist.removeCompany('1')">Remove</button></li>${mode === 'short-inventory' ? '' : '<li><a href="/company/id/1234/">Delisted</a><button onclick="Watchlist.removeCompany(\'2\')">Remove</button></li>'}</ul>` });
     if (url.pathname.startsWith('/company/')) {
-      if (mode === 'consolidated' && !url.pathname.endsWith('/consolidated/')) return route.fulfill({ status: 302, headers: { location: `${url.pathname}consolidated/` } });
       return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
     }
     if (url.pathname === '/quarter/') return route.fulfill({ contentType: 'text/html', status: mode === 'failed-quarter' ? 503 : 200, body: mode === 'failed-quarter' ? 'Unavailable' : table('quarterly') });
@@ -57,8 +56,7 @@ try {
   const item = inventory.get('TEST');
   const company = await readInsightCompany(page, item, checkedAt);
   assert.equal(company.rows.length, 2, 'lazy quarterly table is loaded and parsed with yearly data');
-  mode = 'consolidated';
-  assert.equal((await readInsightCompany(page, item, checkedAt)).rows.length, 2, 'same-company consolidated redirects are allowed without accepting other entities');
+  assert.equal((await readInsightCompany(page, { ...item, companyUrl: `${item.companyUrl}consolidated/` }, checkedAt)).rows.length, 2, 'the consolidated page retains the same verified company identity');
   payload = { version: 1, sourceId: 'screener-insights', checkedAt, targetCount: 1, checkedCount: 1, failedCount: 0, fullCoverage: true, targetKeys: ['TEST'], companies: [company] };
   mode = 'failed-quarter';
   await assert.rejects(readInsightCompany(page, item, checkedAt, { tabTimeout: 300 }));
