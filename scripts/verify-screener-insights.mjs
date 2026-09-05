@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
-import { buildInsightInventory } from './lib/screener-insights-inventory.mjs';
+import { buildInsightInventory, insightInventoryDiagnostic } from './lib/screener-insights-inventory.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_ARTIFACT,
@@ -147,7 +147,7 @@ assert.doesNotThrow(() => validateScreenerInsightsCapture({ ...capture, companie
 const inventory = buildInsightInventory([
   { Company: 'Internal universe company', 'Screener URL': '/company/id/1286088/consolidated/' },
   { Company: 'Jayaswal Neco', 'Screener URL': '/company/JAYNECOIND/' },
-], [{ isin: 'INE000000001', name: 'Name without exchange codes', nseCode: '', bseCode: '' }], [{ href: '/company/id/1274211/', name: 'Retained company' }]);
+], [{ isin: 'INE000000001', name: 'Retained company', nseCode: '', bseCode: '' }], [{ href: '/company/id/1274211/', name: 'Retained company' }]);
 assert.equal(inventory.size, 3, 'a codeless watchlist company and internal universe ID both survive inventory');
 assert.equal(inventory.get('ID:1274211').inPortfolio, true);
 assert.throws(() => buildInsightInventory([{ Company: 'Bad', 'Screener URL': '/login/' }], [{}], [{ href: '/company/A/', name: 'A' }]), /inventory-identity/);
@@ -171,10 +171,24 @@ assert.equal(spanInventory.get('JAYNECOIND').inPortfolio, true);
 assert.equal([...spanInventory.values()].filter(row => row.inUniverse).length, new Set(actualUniverse.map(row => screenerInsightIdentity(row['Screener URL']).companyKey)).size, 'the checked-in universe also survives real-shape inventory construction');
 assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, companyId: '1596' } : row)), /inventory-company-id/);
 assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, companyId: '' } : row)), /inventory-company-id/);
-assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, name: 'Unknown company' } : row)), /inventory-export-match/);
-assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[0].name } : row), spanRows), /inventory-export-match/);
-assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, name: spanRows[0].name } : row)), /inventory-export-match/);
+const renamedManagement = spanRows.map((row, i) => i < 2 ? { ...row, name: `Different source display name ${i}` } : row);
+assert.equal(buildInsightInventory(actualUniverse, spanRecords, renamedManagement).get('JAYNECOIND').isin, 'INE000000001', 'authoritative export code/ISIN cannot be blocked by a different management display name');
+assert.doesNotThrow(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[0].name } : row), spanRows), 'duplicate display names are harmless when exact exchange codes identify different companies');
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 2 ? { ...row, name: 'Unknown codeless company' } : row)), /inventory-codeless-match/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, name: spanRows[2].name } : row)), /inventory-codeless-match/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[2].name } : row), spanRows), /inventory-codeless-match/, 'codeless records cannot borrow the identity of another export record with the same normalized name');
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, nseCode: spanRecords[0].nseCode } : row), spanRows), /inventory-ambiguous/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 0 ? { ...row, nseCode: 'bad/code' } : row), spanRows), /inventory-code/);
 assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, href: 'https://evil.test/company/JAYNECOIND/' } : row)), /inventory-identity/);
+const diagnosticInputs = { universe: actualUniverse, records: spanRecords, manageRows: spanRows };
+assert.deepEqual(insightInventoryDiagnostic(Error('inventory-codeless-match'), diagnosticInputs), {
+  reason: 'inventory-codeless-match', universeRows: actualUniverse.length, exportRows: 3, managementRows: 3,
+  codedRows: 2, codelessRows: 1, linkedManagementRows: 0,
+});
+const redacted = insightInventoryDiagnostic(Error('private-company https://secret.test/?token=credential'), diagnosticInputs);
+assert.equal(redacted.reason, 'inventory-unclassified');
+assert.doesNotMatch(JSON.stringify(redacted), /private-company|https:|token|credential|JAYNECOIND|INE000/);
+assert.equal(insightInventoryDiagnostic(Error('inventory-input')).exportRows, null);
 
 assert.equal(screenerInsightHealth(company, Date.parse('2026-09-07')), 'stale');
 assert.equal(insightEvents([{ ...company, checkedAt: '2026-09-05T17:30:00Z' }], '2026-09-05')[0].sourceStatus, 'ok', 'late Indian-day captures are not future-dated relative to an arbitrary noon clock');

@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
 import { parseWatchlistExport } from './lib/screener-watchlist.mjs';
-import { buildInsightInventory } from './lib/screener-insights-inventory.mjs';
+import { buildInsightInventory, insightInventoryDiagnostic } from './lib/screener-insights-inventory.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_COMPRESSED_LIMIT,
@@ -31,6 +31,7 @@ const MAX_PAGE_BYTES = 3 * 1024 * 1024;
 const CONCURRENCY = 3;
 let stage = 'configuration';
 let browser;
+let inventoryInputs;
 
 const readData = (name) => JSON.parse(readFileSync(new URL(`../public/data/${name}.json`, import.meta.url), 'utf8'));
 
@@ -165,7 +166,10 @@ async function main() {
   // be paginated and would silently turn "portfolio coverage" into "first page coverage".
   const { records, manageRows } = await exportPortfolioTargets(loginPage);
   stage = 'target identity reconciliation';
-  const targets = buildInsightInventory(readData('universe'), records, manageRows);
+  const universe = readData('universe');
+  inventoryInputs = { universe, records, manageRows };
+  const targets = buildInsightInventory(universe, records, manageRows);
+  inventoryInputs = undefined;
 
   const checkedAt = new Date().toISOString();
   const previousAge = Date.now() - Date.parse(previous?.checkedAt || '');
@@ -232,7 +236,8 @@ async function main() {
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   try {
     await main();
-  } catch {
+  } catch (error) {
+    if (stage === 'target identity reconciliation') console.error(JSON.stringify(insightInventoryDiagnostic(error, inventoryInputs)));
     console.error(`Screener Insights collection failed during ${stage}. No credentials, company names, URLs or page content were logged.`);
     process.exitCode = 1;
   } finally {
