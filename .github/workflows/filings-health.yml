@@ -29,10 +29,18 @@ jobs:
           FILINGS_HEALTH_BASE: https://sattva-central-research.tech-441.workers.dev
           FILINGS_HEALTH_REPORT: ${{ runner.temp }}/filings-health.json
         run: node scripts/check-filings-health.mjs
+      - name: Check independently published TradingView headlines
+        if: always()
+        env:
+          FILINGS_HEALTH_BASE: https://sattva-central-research.tech-441.workers.dev
+          TRADINGVIEW_HEALTH_REPORT: ${{ runner.temp }}/tradingview-health.json
+        run: node scripts/check-tradingview-news-health.mjs
       - name: Upload operational health report
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: filings-health
-          path: ${{ runner.temp }}/filings-health.json
+          path: |
+            ${{ runner.temp }}/filings-health.json
+            ${{ runner.temp }}/tradingview-health.json
           if-no-files-found: warn

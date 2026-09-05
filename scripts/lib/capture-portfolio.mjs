@@ -12,12 +12,15 @@ function project(book) {
       ...(h.reason ? { reason: h.reason } : {}) })) };
 }
 
-export async function loadCapturePortfolio(dataDir, { live = process.env.FAMILY_HOLDINGS_LIVE === 'true', fetcher = fetch, now = Date.now } = {}) {
-  const path = join(dataDir, 'portfolio-companies.json'), cache = join(dataDir, 'filing-capture/portfolio.json');
+export async function loadCapturePortfolio(dataDir, { live = process.env.FAMILY_HOLDINGS_LIVE === 'true', fetcher = fetch, now = Date.now,
+  cachePath = join(dataDir, 'filing-capture/portfolio.json') } = {}) {
+  const path = join(dataDir, 'portfolio-companies.json'), cache = cachePath;
   let book = readJson(path), origin = 'snapshot';
-  if (live) {
+  if (live) for (const savedPath of new Set([join(dataDir, 'filing-capture/portfolio.json'), cache])) {
     try {
-      const saved = validateResolvedPortfolio(readJson(cache), { fresh: false });
+      // A newly isolated collector may borrow a newer verified book read-only. Only its own
+      // checkpoint is written below; source isolation must not roll membership back on an outage.
+      const saved = validateResolvedPortfolio(readJson(savedPath), { fresh: false });
       assertBookChange(saved, book);
       const newerWorkbook = book.storage !== 'shared' || saved.asOf > book.asOf ||
         Date.parse(saved.sourceWorkbook.uploadedAt) > Date.parse(book.sourceWorkbook?.uploadedAt);

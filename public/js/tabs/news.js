@@ -205,6 +205,15 @@ const tab = makeFilingsTab({
            view is derived, so a successful empty search never retracts an article captured earlier. Companies without an NSE
            ticker are searched by legal name and remain linked to the portfolio by ISIN.</p>
 
+        <p class="mt-2 text-xs"><strong>TradingView enrichment.</strong> An independent background capture targets every 15 minutes,
+           around the clock, with automatic portfolio membership and permanent headline retention. Open dashboards revalidate
+           the published captures every two minutes while visible; these are snapshots, not a guaranteed real-time stream.
+           ${m.tradingViewCoverage ? `Last source check: ${escapeHtml(m.tradingViewCoverage.checkedAt)}.
+           ${m.tradingViewCoverage.staleOrFailedSymbols} stale/failed symbol reads; ${m.tradingViewCoverage.unresolvedCompanies} companies without a verified symbol;
+           ${m.tradingViewCoverage.possibleGapSymbols} possible public-window gaps.` : 'The first independent capture has not been published yet.'}
+           ${m.tradingViewHealth?.ok === false || m.tradingViewReadError ? 'Coverage needs attention; retained headlines are still shown.' : ''}
+           Restricted headlines are not extracted. A 45-minute stale threshold is checked independently.</p>
+
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">Why a search feed needs a topic filter</h3>
         <p class="mt-1 text-xs">The upstream is a <strong>search endpoint, not a feed</strong>: there is no request that returns
            everything published today, only one that answers a <strong>company-name query</strong>. Search engines can return

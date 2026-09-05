@@ -54,6 +54,7 @@ import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
 import { dedupeArticles } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
+import { withTradingViewNews } from './tradingview-news.js';
 
 // How many companies a live walk will ask about before it stops and says so. The upstreams allow
 // 60 requests a minute; forty keeps a cold start under a minute and well inside that budget.
@@ -845,6 +846,6 @@ export function createFeed(kind) {
 
 // One instance per feed, module-level so a second visit to the tab repaints instantly instead of
 // re-walking. Same reasoning as the super-investor feed.
-export const news = createFeed('news');
+export const news = withTradingViewNews(createFeed('news'));
 export const announcements = withAnnouncementLookups(withFilingArchive(createFeed('announcements'), 'announcements'));
 export const insider = withFilingArchive(createFeed('insider'), 'insider');

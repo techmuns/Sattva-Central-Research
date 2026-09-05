@@ -66,11 +66,6 @@ jobs:
         continue-on-error: true
         run: node scripts/enrich-company-news.mjs
 
-      - name: Enrich active portfolio from public TradingView headlines
-        # Independent, bounded metadata read. Source refusals preserve the permanent archive.
-        continue-on-error: true
-        run: node scripts/enrich-tradingview-news.mjs
-
       - name: Upload company-news data
         if: always()
         uses: actions/upload-artifact@v5
