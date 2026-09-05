@@ -98,6 +98,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-family-sync-ui.mjs
+      - name: Verify Screener Insights collector and last-good cache offline
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-screener-insights-ui.mjs
       - name: Verify one Family portfolio across the dashboard
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

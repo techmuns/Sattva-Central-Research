@@ -11,6 +11,7 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import * as screenerInsights from '../data/screener-insights.js';
 import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
@@ -112,7 +113,8 @@ export function render(ctx) {
           if (sizeError || loadError) throw new Error(sizeError || loadError);
           const added = (report?.cards || []).filter((card) => !before.has(`${card.ticker}:${card.evidenceKey || card.topEvent?.id || ''}`)).length;
           return { added, checked: (report?.feeds || []).filter((feed) => feed.status === 'ok').length,
-            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length };
+            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length,
+            partial: !screenerInsights.isLoaded() || !!screenerInsights.meta()?.latestReadFailed };
         },
       })
     );

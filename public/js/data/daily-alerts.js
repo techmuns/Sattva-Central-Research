@@ -44,6 +44,7 @@ import * as earnings from './earnings-live.js';
 import * as concalls from './concall-scans.js';
 import * as chatter from './chatter-live.js';
 import * as investors from './super-investors.js';
+import * as screenerInsights from './screener-insights.js';
 // ONE definition of what a filed-book change is — see `isMove` there. A negative filter here
 // (`action !== 'held'`) admitted every future state by default, which is how an outstanding
 // filing would have become a negative alert about a named investor.
@@ -395,7 +396,10 @@ function loadFeed(id, refresh) {
 /** Revalidate the evidence stores without building a large alerts report.
  * Ask Research needs fresh inputs for the next question, not a discarded timeline. */
 export async function refreshSources() {
-  const results = await Promise.allSettled(FEEDS.map((feed) => loadFeed(feed.id, true)));
+  const context = screenerInsights.load({ refresh: true }).then(() => {
+    if (screenerInsights.meta()?.latestReadFailed) throw Error('Company insights could not be refreshed.');
+  });
+  const results = await Promise.allSettled([...FEEDS.map((feed) => loadFeed(feed.id, true)), context]);
   return { checked: results.filter((r) => r.status === 'fulfilled').length,
     failed: results.filter((r) => r.status === 'rejected').length };
 }

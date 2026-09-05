@@ -21,7 +21,7 @@ Object.defineProperty(globalThis, 'localStorage', {
     removeItem: (key) => memoryStorage.delete(key),
   },
 });
-const { DASHBOARD_RESEARCH_SOURCES, RESEARCH_EVIDENCE_CHAR_BUDGET, ROW_RESERVE_SHARE, fitEvidenceToBudget, queryPlan } = await import('../public/js/research/estate.js');
+const { DASHBOARD_RESEARCH_SOURCES, RESEARCH_EVIDENCE_CHAR_BUDGET, ROW_RESERVE_SHARE, fitEvidenceToBudget, queryPlan, chooseRows, screenerInsightRow, insightCompaniesForScope } = await import('../public/js/research/estate.js');
 const { providerEvidenceChars } = await import('../public/js/research/evidence-shared.js');
 const estateSource = readFileSync(new URL('../public/js/research/estate.js', import.meta.url), 'utf8');
 const askResearchSource = readFileSync(new URL('../public/js/tabs/ask-research.js', import.meta.url), 'utf8');
@@ -39,6 +39,44 @@ const requestFor = (body) => new Request('https://dashboard.example/api/research
 });
 const parseEvents = async (response) =>
   (await response.text()).trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
+
+ok('company-specific question hits precede unrelated company rows before the sampling limit', () => {
+  const rows = Array.from({ length: 20 }, (_, i) => ({ ticker: 'TEST', metric: `Operating metric ${i}` }));
+  rows.push({ ticker: 'TEST', metric: 'Pellet production' });
+  const plan = { tickers: new Set(['TEST']), names: [], tokens: ['pellet', 'production'] };
+  const selected = chooseRows(rows, plan, (row) => row);
+  assert.equal(selected.rows[0].metric, 'Pellet production');
+  assert.equal(selected.rows.length, 14);
+  assert.equal(chooseRows(rows, { ...plan, tokens: [] }, (row) => row).rows[0].metric, 'Operating metric 0', 'generic company questions retain source order');
+});
+
+ok('Insights keeps comparable periods, requested years, provenance and retained-data health within a bounded row', () => {
+  const company = { ticker: 'TEST', name: 'Test', checkedAt: '2020-01-01', companyUrl: 'https://www.screener.in/company/TEST/', inPortfolio: true };
+  const row = { metric: 'Pellet production', unit: 'MT', periodicity: 'quarterly', values: [
+    '2024-03-31', '2024-06-30', '2024-09-30', '2024-12-31', '2025-03-31', '2025-06-30', '2025-09-30', '2025-12-31', '2026-03-31', '2026-06-30',
+  ].map((period) => ({ period, label: period, value: '100' })) };
+  const normal = screenerInsightRow(company, row);
+  assert.deepEqual(normal.values.map((point) => point.period), ['2025-06-30', '2026-03-31', '2026-06-30']);
+  assert.equal(normal.sourceHealth, 'stale');
+  assert.equal(normal.values[0].source.url, company.companyUrl);
+  const historical = screenerInsightRow(company, row, { tokens: ['2024'] });
+  assert(historical.values.some((point) => point.period === '2024-03-31'));
+  assert.equal(historical.availablePoints, 10);
+  assert(historical.includedPoints <= 8);
+});
+
+ok('Insights portfolio membership follows the current book, including verified tickerless ISINs', () => {
+  const companies = [
+    { ticker: 'EXITED', inPortfolio: true },
+    { ticker: 'NEW', inPortfolio: false },
+    { ticker: null, isin: 'INE000000001', inPortfolio: true },
+    { ticker: null, inPortfolio: true },
+  ];
+  const holdings = [{ ticker: 'NEW' }, { ticker: null, isin: 'INE000000001' }];
+  assert.deepEqual(insightCompaniesForScope(companies, 'portfolio', holdings), companies.slice(1, 3));
+  assert.equal(insightCompaniesForScope(companies, 'portfolio', []).length, 0);
+  assert.equal(insightCompaniesForScope(companies, 'universe', []).length, 4);
+});
 
 ok('the runtime research catalog covers every visible research tab, and nothing that is not one', () => {
   const tabs = new Set(DASHBOARD_RESEARCH_SOURCES.map((source) => source.tab));

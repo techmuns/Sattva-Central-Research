@@ -267,9 +267,9 @@ export function clearAll() {
  */
 const conditionalInFlight = new Map();
 export function conditionalJson(path, options = {}) {
-  // Caller-owned cancellation belongs to that request only. Ordinary poll and
-  // header reads share the same bounded revalidation instead of racing copies.
-  if (options.signal || authHeaders(path).authorization) return readConditionalJson(path, options);
+  // Cancellation, validation and authenticated reads belong to their caller.
+  // Ordinary public poll and header reads share one bounded revalidation.
+  if (options.signal || options.validate || authHeaders(path).authorization) return readConditionalJson(path, options);
   const requestKey = JSON.stringify([path, options.key, !!options.optional]);
   if (conditionalInFlight.has(requestKey)) return conditionalInFlight.get(requestKey);
   const pending = readConditionalJson(path, options).finally(() => conditionalInFlight.delete(requestKey));
@@ -277,7 +277,7 @@ export function conditionalJson(path, options = {}) {
   return pending;
 }
 
-async function readConditionalJson(path, { key, optional = false, signal } = {}) {
+async function readConditionalJson(path, { key, optional = false, signal, validate } = {}) {
   signal = signal || AbortSignal.timeout(20000);
   const stored = key ? await readEntry(key) : null;
 
@@ -308,6 +308,7 @@ async function readConditionalJson(path, { key, optional = false, signal } = {})
   // read; the body copy is what survives a cross-origin response whose ETag is not exposed.
   const headerTag = res.headers.get('etag');
   if (headerTag && stored?.tag === headerTag && stored.value) {
+    validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
@@ -323,9 +324,13 @@ async function readConditionalJson(path, { key, optional = false, signal } = {})
   // Same short-circuit, for the case where the ETag header was unreadable and the tag had to come
   // out of the body. The parse is already paid for, but the caller still learns nothing changed.
   if (tag && stored?.tag === tag && stored.value) {
+    validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
+  // Consumers with a strict contract must validate before malformed 200s can replace last-good
+  // bytes. Validation errors propagate to the consumer's existing stale/failure policy.
+  validate?.(value);
   if (key) writeEntry(key, { tag, value, savedAt: checkedAt });
   return { status: 200, value, tag, savedAt: checkedAt, checkedAt, fromStore: false };
 
