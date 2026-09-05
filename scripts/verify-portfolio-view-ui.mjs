@@ -18,6 +18,13 @@ const server = createServer((req, res) => {
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
+// A second local origin models Munshot without falling under the app's service-worker scope.
+const hostServer = createServer((_req, res) => {
+  res.setHeader('content-type', 'text/html');
+  res.end(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#334155"><main style="position:fixed;inset:16px;display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:white"><header style="height:48px;flex:none;padding:12px;box-sizing:border-box;font:14px system-ui">Local research host</header><iframe title="Research workspace" src="${origin}/#/research/daily-alerts?scope=portfolio" style="flex:1;width:100%;min-height:0;border:0"></iframe></main></body></html>`);
+});
+await new Promise(done => hostServer.listen(0, '127.0.0.1', done));
+const hostOrigin = `http://127.0.0.1:${hostServer.address().port}`;
 const familyOrigin = 'https://sattva-family.pages.dev';
 const onemi = { isin: 'INE12F801023', name: 'OnEMI Technology Solutions Ltd', ticker: 'KISSHT', sector: 'Financials', weightPct: 60 };
 const other = { isin: 'INE532F01054', name: 'Edelweiss', ticker: 'EDELWEISS', sector: 'Financials', weightPct: 30 };
@@ -84,6 +91,7 @@ await context.addInitScript(() => localStorage.setItem('sattva:scope-lists:v1', 
 await context.route('**/*', route => {
   const url = new URL(route.request().url());
   const json = body => route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+  if (url.origin === hostOrigin) return route.continue();
   if (url.origin === familyOrigin && url.pathname === '/research-bridge') return route.fulfill({ contentType:'text/html', body:familyHtml });
   if (url.origin !== origin) return route.fulfill({ status:503, body:'External network disabled' });
   if (url.pathname === '/data/portfolio-companies.json') return json({ asOf:'2026-06-30', count:1, resolved:1, holdings:[other] });
@@ -264,9 +272,80 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-research-input]')?.disabled === false);
   assert.equal(questions.length, 2, 'a recovered question can use the verified portfolio');
   assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('weightPct')), false);
+
+  // Actual shell inside a short host frame, not a tab-only fixture: this catches chrome growing
+  // back until the table has only two visible rows, despite a technically working scroll bar.
+  // The host is outside the app's service-worker scope, as it is in Munshot. A same-origin
+  // /layout-host navigation would correctly restore the app shell instead of a test wrapper.
+  await page.goto(hostOrigin);
+  const frame = await (await page.locator('iframe[title="Research workspace"]').elementHandle()).contentFrame();
+  await frame.waitForSelector('[data-alerts-workspace]');
+  await frame.waitForFunction(() => document.querySelector('[data-score-table]')?.dataset.virtualTotal > 0);
+  for (const size of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(size);
+    await frame.waitForTimeout(200);
+    // A cached first row can appear while the remaining sources are still being read. Measure
+    // the completed reading layout, not whichever partial-feed status wrapped on that tick.
+    await frame.waitForFunction(() => !/Reading \d+ more feeds?/.test(document.querySelector('[data-section-head]')?.textContent || ''), null, { timeout: 60000 });
+    const measure = () => frame.evaluate(() => {
+      const table = document.querySelector('[data-table-scroll]').getBoundingClientRect();
+      return { top: table.top, height: table.height, bottom: table.bottom, viewport: innerHeight,
+        visibleHeight: Math.max(0, Math.min(table.bottom, innerHeight) - Math.max(table.top, 0)),
+        pageWidth: document.documentElement.scrollWidth, width: innerWidth,
+        controls: document.querySelector('[data-alerts-controls]').getBoundingClientRect().height,
+        toolbar: document.querySelector('[data-table-toolbar]').getBoundingClientRect().height,
+        headerVisible: getComputedStyle(document.querySelector('[data-app-header]')).display !== 'none' };
+    });
+    const normal = await measure();
+    assert(normal.pageWidth <= normal.width + 2, `no horizontal page clipping at ${size.width}px`);
+    const clipped = await frame.evaluate(() => [...document.querySelectorAll('[data-alerts-workspace] button, [data-sources-summary], [data-table-search], [data-table-filter]')]
+      .filter(node => !node.closest('tbody') && node.getBoundingClientRect().width > 0)
+      .filter(node => node.getBoundingClientRect().left < 0 || node.getBoundingClientRect().right > innerWidth + 1)
+      .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
+    assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
+    if (size.width >= 1024) {
+      assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
+      assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
+      assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
+    }
+    await frame.locator('[data-sources-summary]').click();
+    const expanded = await measure();
+    assert.equal(expanded.height, normal.height, 'filters overlay, rather than consume, the reading space');
+    const panel = await frame.locator('[data-alerts-coverage]').boundingBox();
+    assert(panel.width <= normal.width, 'source picker stays within the host frame');
+    await frame.locator('[data-sources-close]').click();
+    await frame.locator('[data-table-search]').fill('KISSHT');
+    await frame.locator('[data-alerts-focus]').click();
+    const focused = await measure();
+    assert.equal(focused.headerVisible, false);
+    assert(focused.controls <= (size.width >= 1024 ? 52 : 100), `view controls keep their compact row budget: ${JSON.stringify(focused)}`);
+    assert(focused.visibleHeight > normal.visibleHeight + 60, `focus gains meaningful visible reading room: ${JSON.stringify({ normal, focused })}`);
+    assert(focused.visibleHeight >= focused.viewport * (size.width >= 1024 ? 0.6 : 0.45), `focus leaves a useful reading area even with wrapped mobile controls: ${JSON.stringify(focused)}`);
+    // The shared table case-folds its saved query on a source repaint. Verify the search term,
+    // not whether that asynchronous repaint has happened between fill and the layout click.
+    assert.equal((await frame.locator('[data-table-search]').inputValue()).toLowerCase(), 'kissht', 'layout controls preserve search');
+    await frame.locator('[data-table-search]').fill('');
+    if (size.width === 1440 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT });
+    if (size.width === 390 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT.replace('.png', '-mobile.png') });
+    // Font fallback differs between macOS and Linux. Exercise wider control-label metrics too
+    // so a toolbar that only fits with the developer's system font cannot silently ship.
+    const widerFont = await frame.addStyleTag({ content: '.alerts-controls { font-family: Verdana, sans-serif; }' });
+    const fallback = await measure();
+    assert(fallback.controls <= (size.width >= 1024 ? 52 : 100), `fallback-font controls stay compact: ${JSON.stringify(fallback)}`);
+    await widerFont.evaluate(node => node.remove());
+    await frame.locator('[data-alerts-focus]').press('Escape');
+    assert.equal((await measure()).headerVisible, true, 'Escape restores the header and navigation');
+    if (size.width === 1440 && process.env.ALERTS_LAYOUT_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_LAYOUT_SCREENSHOT });
+    console.log(`Table-first iframe ${size.width}x${size.height}: ${Math.round(normal.height)}px normal, ${Math.round(focused.height)}px focus (${normal.viewport}px inner viewport)`);
+  }
+  await frame.locator('[data-alerts-focus]').click();
+  await frame.evaluate(() => { location.hash = '#/research/news?scope=portfolio'; });
+  await frame.waitForFunction(() => document.querySelector('#app')?.dataset.readingLayout === 'standard');
+  assert.equal(await frame.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false, 'navigation out of All Alerts resets focus mode');
+  assert(await frame.locator('[data-app-nav]').isVisible(), 'other tabs retain their normal navigation');
   assert.deepEqual(errors, []);
   console.log('PASS: any-tab startup, OnEMI name/ticker/ISIN search, read-only ownership, uncovered holdings, legacy Watchlist migration, whole-book parity, additions/exits while open, Con-call and Earnings Calendar scope isolation across Portfolio/Watchlist/Universe, open-calendar refresh, all tabs, Ask exposure, outage status and verified recovery.');
 } catch(error) {
   if(page) console.error((await page.locator('body').innerText()).slice(-5000), errors);
   throw error;
-} finally { await browser.close(); await new Promise(done => server.close(done)); }
+} finally { await browser.close(); await new Promise(done => server.close(done)); await new Promise(done => hostServer.close(done)); }

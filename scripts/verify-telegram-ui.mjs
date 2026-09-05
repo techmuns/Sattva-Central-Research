@@ -165,12 +165,19 @@ try {
   });
 
   assert.equal(view.count, 7, 'every post in the capture is read');
-  assert.equal(view.drawn, 7, 'and every one of them is drawn');
+  // ARCHIVED IS NOT LISTED. A message with no caption is kept — it is a real message, it carries
+  // the publication date the ordering rests on, and the newest of them anchors the channel's head
+  // — but a row reading only "Open in Telegram to read" answers nothing on a page of report
+  // headlines, so it is not drawn. The two numbers are asserted against each other rather than
+  // typed, or this passes for the wrong reason the day the fixture gains another media post.
+  assert.equal(view.drawn, view.count - view.hidden, 'media-only posts are archived but not listed');
+  assert(view.hidden > 0, 'the fixture actually contains a media-only post, so the rule is exercised');
+  assert(view.drawn > 0, 'and the readable posts are still drawn');
   assert(view.descending, 'ordered by message id, newest first');
   assert(view.unique, 'row keys are unique');
   assert.equal(view.publishesTime, true);
   assert(view.actualTimes, 'source dates survive normalisation');
-  assert.equal(view.hidden, 1, 'a confirmed hidden post stays in the table');
+  assert.equal(view.hidden, 1, 'a confirmed hidden post stays in the archive');
   assert(view.heads.includes('Published (IST)'));
   assert(/original publication dates/i.test(view.description));
   assert.equal(view.span, 10);
@@ -182,12 +189,19 @@ try {
   assert(await page.locator('[data-chatter-panel="telegram"]').innerText().then((t) => t.includes('13 May 2026')));
   const search = page.locator('[data-chatter-panel="telegram"] [data-table-search]');
   assert.equal(await search.getAttribute('placeholder'), 'Search posts, reports or message number…');
+  // 499 is the caption-less image: archived, dated, counted — and never a row.
   await search.fill('499');
-  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1);
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 0,
+    'a caption-less image post is archived but never listed');
+  // 498 carries no text either and IS listed, because its attachment is the content. That pair is
+  // the whole rule: what decides a row is whether the message has something to read, not whether
+  // Telegram happened to put it in the text field.
+  await search.fill('498');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1,
+    'a document post with no caption is still listed');
   await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').click();
   await page.waitForSelector('[data-telegram-post-dialog]');
-  assert((await page.locator('[data-telegram-post-dialog]').innerText()).includes('does not expose its text'));
-  assert.equal(await page.locator('[data-telegram-post-dialog] a').getAttribute('href'), 'https://t.me/researchreportss/499');
+  assert.equal(await page.locator('[data-telegram-post-dialog] a').getAttribute('href'), 'https://t.me/researchreportss/498');
   await page.locator('[data-telegram-post-dialog] [data-modal-close]').click();
   await search.fill('sector update.pdf');
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1, 'attachment filenames are searchable');
@@ -207,11 +221,15 @@ try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(await download.path());
     const sheet = workbook.getWorksheet('Telegram');
-    assert.equal(sheet.rowCount, 9, 'headers + provenance + seven posts');
+    assert.equal(sheet.rowCount, view.drawn + 2, 'headers + provenance + every listed post');
+    const exportedIds = [];
+    sheet.eachRow((row, index) => { if (index > 2) exportedIds.push(row.getCell('B').value); });
+    assert.deepEqual(exportedIds, [500, 498, 496, 495, 493, 491],
+      'export matches readable rows, including the document-only post, while captionless media remains archived');
     assert.equal(sheet.getCell('C3').value, '2026-05-13T10:57:05.000Z');
     assert.equal(sheet.getCell('G3').value, capturedAt, 'collector time is a separate column');
-    assert.equal(sheet.getCell('A4').value, 'Content available in Telegram');
-    assert.equal(sheet.getCell('E5').value, 'Broker C sector update.pdf');
+    assert.equal(sheet.getCell('A4').value, 'Broker C sector update.pdf');
+    assert.equal(sheet.getCell('E4').value, 'Broker C sector update.pdf');
   }
   // `capturedAt` moves when the CHANNEL posts, not when the job ran, so the label may not claim it.
   assert(!/\bLive\b/i.test(view.pill), `the status label must not claim Live, got: ${view.pill}`);
@@ -239,18 +257,20 @@ try {
   await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
   await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr', { timeout: 20000 });
   const watchRows = await page.$$eval('[data-chatter-panel="telegram"] tbody tr', (r) => r.length);
-  assert.equal(watchRows, 7, 'an empty watchlist neither hides the section nor narrows it');
+  // Compared against what the Universe scope actually drew, not a typed number: the claim is that
+  // the watchlist does not NARROW this section, and only the two counts together say that.
+  assert.equal(watchRows, view.drawn, 'an empty watchlist neither hides the section nor narrows it');
 
   servedCapture = { ...capture, lastRun: { status: 'failed', error: 'upstream unavailable' } };
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   await page.waitForFunction(() => document.querySelector('[data-telegram-live]')?.textContent.includes('needs attention'));
-  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7, 'source failures retain the archive');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn, 'source failures retain the archive');
   servedCapture = { ...capture, posts: [] };
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
-  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7, 'empty refresh retains last-good rows');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn, 'empty refresh retains last-good rows');
   servedCapture = { error: 'malformed response' };
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
-  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7, 'malformed refresh cannot erase last-good rows');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn, 'malformed refresh cannot erase last-good rows');
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);

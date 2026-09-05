@@ -753,7 +753,7 @@ export function scoreTable(config) {
 
   const html = `
     <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100" data-score-table${fillMode === 'scroll' || isVirtual ? ' data-scroll-paged' : ''}${isVirtual ? ` data-virtualized data-virtual-total="${initialList.length}" data-virtual-start="${initialVirtualStart}"` : ''}${!isVirtual && initialList.length > FIRST_PAINT_ROWS ? ` data-rows-pending="${initialList.length - FIRST_PAINT_ROWS}"` : ''}>
-      <div class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
+      <div data-table-toolbar class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <div class="relative max-w-md flex-1">
             <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
@@ -786,13 +786,13 @@ export function scoreTable(config) {
             <span data-watch-count class="min-w-[18px] rounded-full bg-slate-200/70 px-1.5 py-0.5 text-center text-[10px] font-bold text-slate-500">${watchlist.size()}</span>
           </button>` : ''}
         </div>
-        <div class="flex items-center gap-3">
+        <div data-table-actions class="flex items-center gap-3">
           <div class="hidden text-xs text-slate-500 sm:block">
             <span data-row-count class="font-semibold text-slate-700">${escapeHtml(countText(initialList))}</span>
           </div>
-          <button type="button" data-export
+          <button type="button" data-export title="Export Excel"
             class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow">
-            <span>📊</span> Export Excel
+            <span aria-hidden="true">📊</span><span>Export<span data-export-format> Excel</span></span>
           </button>
         </div>
       </div>

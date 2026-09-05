@@ -142,10 +142,10 @@ export function mount(root) {
 
 function shellTemplate() {
   return `
-    <header class="mx-auto max-w-[1400px] px-6 pb-4 pt-8">
+    <header data-app-header data-app-frame class="mx-auto max-w-[1400px] px-6 pb-4 pt-8">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex flex-shrink-0 items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-lg font-extrabold text-white shadow-lg">SC</div>
+          <div data-brand-mark class="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-lg font-extrabold text-white shadow-lg">SC</div>
           <div class="min-w-0">
             <h1 class="font-display truncate text-2xl font-extrabold leading-tight text-slate-900">Sattva Central Research</h1>
             <p id="brand-subtitle" class="truncate text-sm text-slate-500">Research Central · Indian equities</p>
@@ -170,11 +170,11 @@ function shellTemplate() {
       </div>
     </header>
 
-    <nav class="mx-auto max-w-[1400px] px-6" aria-label="Research navigation">
+    <nav data-app-nav data-app-frame class="mx-auto max-w-[1400px] px-6" aria-label="Research navigation">
       <div id="tabbar-mount" class="min-w-0"></div>
     </nav>
 
-    <div class="mx-auto max-w-[1400px] px-6 py-6">
+    <div data-app-content data-app-frame class="mx-auto max-w-[1400px] px-6 py-6">
       <div id="subview-mount" class="mb-5"></div>
       <!-- #dashboard-main is the capture root the host asks for on dashboard.capture.visual
            (js/core/host-capture.js). It is the CONTENT region deliberately: the header's scope
@@ -292,6 +292,8 @@ function editScope(root, scope) {
 
 function renderRouteChrome(root, ws, tabModule, resolved) {
   disposeChrome();
+  // Table-first is an opt-in layout, not a redesign of the other research views.
+  root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
 
   const subtitleEl = $('#brand-subtitle', root);
   if (subtitleEl) subtitleEl.textContent = `${ws.label} · Indian equities`;

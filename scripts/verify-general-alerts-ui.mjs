@@ -115,6 +115,29 @@ try {
   await page.goto(origin);
   await settled();
   console.log('Rendered complete All Alerts pool');
+  const picker = page.locator('[data-alerts-sources]');
+  const sourceSummary = page.locator('[data-sources-summary]');
+  assert.equal(await picker.getAttribute('open'), null, 'source grid is collapsed on entry');
+  const streamBeforePicker = await page.locator('[data-table-scroll]').boundingBox();
+  await sourceSummary.press('Enter');
+  assert(await page.locator('[data-alerts-coverage]').isVisible(), 'source picker opens from the keyboard');
+  const streamWithPicker = await page.locator('[data-table-scroll]').boundingBox();
+  assert.equal(streamWithPicker.y, streamBeforePicker.y, 'opening source filters never pushes the table down');
+  assert.equal(streamWithPicker.height, streamBeforePicker.height, 'opening source filters does not shrink the reading area');
+  await page.locator('[data-feed-toggle="news"]').click();
+  assert.equal(await page.locator('[data-feed-toggle="news"]').getAttribute('aria-checked'), 'true');
+  assert.match(await sourceSummary.innerText(), /1 selected/);
+  assert(await page.locator('[data-alerts-coverage]').isVisible(), 'multi-select stays open across its row repaint');
+  await page.locator('[data-feed-toggle="announcements"]').click();
+  assert.match(await sourceSummary.innerText(), /2 selected/);
+  await page.locator('[data-sources-close]').click();
+  assert.equal(await picker.getAttribute('open'), null);
+  assert.match(await sourceSummary.innerText(), /2 selected/, 'collapsed control discloses the active filter');
+  await sourceSummary.press('Enter');
+  await page.locator('[data-feed-toggle="__all"]').click();
+  await page.locator('[data-feed-toggle="__all"]').press('Escape');
+  assert.equal(await picker.getAttribute('open'), null);
+  assert(await sourceSummary.evaluate(node => node === document.activeElement), 'Escape returns focus to the source control');
   assert.equal(await page.locator('[data-feed]').count(), 19, 'Universe hides the portfolio-only calendar');
   assert.equal(await page.locator('[data-horizon-toggle]').count(), 2);
   assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
@@ -139,20 +162,24 @@ try {
   await page.locator('[data-horizon-toggle="upcoming"]').click();
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('AGM scheduled'));
   assert.equal(await page.locator('[data-horizon-toggle="upcoming"]').getAttribute('aria-selected'), 'true');
+  await page.locator('[data-sources-summary]').click();
   assert((await page.locator('[data-alerts-coverage]').innerText()).includes('Portfolio calendar'));
   assert(!(await page.locator('[data-alerts-coverage]').innerText()).includes('Price & volume'), 'Upcoming hides sources that cannot schedule events');
   const upcomingHeaders = await page.locator('thead').innerText();
   assert(upcomingHeaders.includes('WHAT IS SCHEDULED'));
   assert(!upcomingHeaders.includes('DIRECTION') && !upcomingHeaders.includes('IMPORTANCE'));
   if (process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT });
+  await page.locator('[data-sources-close]').click();
   await page.locator('[data-horizon-toggle="through"]').click();
   await page.waitForFunction(() => document.querySelector('[data-horizon-toggle="through"]')?.getAttribute('aria-selected') === 'true');
   await page.evaluate(() => window.show('universe'));
   await settled();
+  await page.locator('[data-sources-summary]').click();
   const coverageText = await page.locator('[data-alerts-coverage]').innerText();
   assert(!/stale\s*\/\s*unknown|incomplete|on-demand|not in scope/i.test(coverageText), 'customer-facing source filters omit feed-health jargon');
   assert.equal(await page.locator('[data-feed][title*="stale" i], [data-feed][title*="unknown" i], [data-feed][title*="incomplete" i], [data-feed][title*="on-demand" i]').count(), 0,
     'feed-health jargon is also absent from hover text');
+  await page.locator('[data-sources-close]').click();
   await page.locator('[data-table-search]').fill('Undated retained item');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Undated retained item'));
   assert((await page.locator('tbody').innerText()).includes('Date not supplied'));
@@ -266,6 +293,19 @@ try {
   assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
   assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
   assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+  // The export button moved out of the table toolbar, but must still use the full filtered
+  // model. A local workbook stand-in counts rows without a CDN or a large artifact on disk.
+  await page.evaluate(() => {
+    window.exportedRows = 0;
+    window.ExcelJS = { Workbook: class {
+      constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array() }; }
+      addWorksheet() { return { addRow: () => { window.exportedRows++; }, getRow: () => ({}) }; }
+    } };
+  });
+  await page.locator('[data-alerts-table-actions] [data-export]').click();
+  await page.waitForFunction(() => window.exportedRows > 0);
+  assert.equal(await page.evaluate(() => window.exportedRows), virtualContract.total + 1,
+    'relocated export includes every matching record plus provenance, not just mounted rows');
 
   await page.locator('[data-table-scroll]').evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
   await page.waitForFunction((firstKey) => {
@@ -302,14 +342,38 @@ try {
   assert.equal(afterRefresh.key, beforeRefresh.key);
   assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
 
+  await page.locator('[data-alerts-focus]').click();
+  assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.alertsFocusMode), 'true');
+  const focusAnchor = await page.locator('[data-table-scroll]').evaluate((scroller, key) => {
+    const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find(node => node.dataset.rowKey === key);
+    return row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.querySelector('thead').offsetHeight;
+  }, beforeRefresh.key);
+  assert(Math.abs(focusAnchor - beforeRefresh.offset) <= 2, 'focus mode keeps the same reading anchor');
+  await page.locator('[data-table-scroll]').press('Escape');
+  assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false);
+
   for (const width of [1440, 1024, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.waitForTimeout(300);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), `no page overflow at ${width}px`);
   }
+  await page.locator('[data-sources-summary]').click();
+  const lastSource = page.locator('[data-feed-toggle]').last();
+  await lastSource.scrollIntoViewIfNeeded();
+  const sourceOffset = await page.locator('[data-alerts-coverage]').evaluate(node => node.scrollTop);
+  assert(sourceOffset > 0, 'narrow source picker has a genuine scroll position to preserve');
+  await lastSource.click();
+  assert.equal(await page.locator('[data-alerts-coverage]').evaluate(node => node.scrollTop), sourceOffset,
+    'source selection preserves the picker scroll position');
+  await page.locator('[data-feed-toggle="__all"]').click();
+  await page.locator('[data-sources-close]').click();
   await page.setViewportSize({ width: 1440, height: 1000 });
   if (process.env.GENERAL_ALERTS_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_SCREENSHOT });
+  await page.locator('[data-alerts-focus]').click();
   await page.evaluate(() => window.dispose());
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false, 'tab teardown restores navigation');
   assert.equal(await page.evaluate(() => window.testListenerCount('scroll')), 0, 'destroy removes the table scroll listener');
   assert.equal(await page.evaluate(() => window.testListenerCount('resize')), 0, 'destroy removes the table resize listener');
   const count = calls.length;

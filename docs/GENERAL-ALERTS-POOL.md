@@ -78,6 +78,23 @@ The default one-day `collect()` contract still selects that exact IST date. Date
 filters and table pagination change only the view. Excel export includes the original normalized
 source record as JSON alongside the readable columns.
 
+## Table-first reading layout
+
+All Alerts opts into a wider, compact app frame. Source filters start collapsed behind **Sources**;
+the control always states **All sources** or the number selected. The same source checkboxes open
+in an overlaid panel, so using them does not reduce the table's height. Selection persists across
+feed repaints. **Done**, Escape and an outside click close the panel; closing does not clear filters.
+
+**Focus table** hides only this app's brand header and navigation, not the embedding host's controls.
+**Exit focus** or Escape restores them. Search, filters, the current reading anchor, source counts,
+date/scope metadata and the complete export model survive layout changes. Leaving All Alerts resets
+focus mode. Other research tabs keep their existing layout. No source records, attribution rules,
+row font sizes, row heights or retention policies change.
+
+The table is sized from its actual position inside the host frame, including after window resizing
+or control/status wrapping. Existing virtual scrolling keeps the DOM bounded without truncating
+search or exports. On narrow screens the controls wrap and the table remains horizontally scrollable.
+
 ## Refresh and health
 
 Opening All Alerts revalidates bounded source captures. While the tab is visible it rechecks
