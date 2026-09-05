@@ -314,7 +314,9 @@ try {
     assert.equal(focused.headerVisible, false);
     assert(focused.visibleHeight > normal.visibleHeight + 60, `focus gains meaningful visible reading room: ${JSON.stringify({ normal, focused })}`);
     assert(focused.visibleHeight >= focused.viewport * (size.width >= 1024 ? 0.6 : 0.45), `focus leaves a useful reading area even with wrapped mobile controls: ${JSON.stringify(focused)}`);
-    assert.equal(await frame.locator('[data-table-search]').inputValue(), 'KISSHT', 'layout controls preserve search');
+    // The shared table case-folds its saved query on a source repaint. Verify the search term,
+    // not whether that asynchronous repaint has happened between fill and the layout click.
+    assert.equal((await frame.locator('[data-table-search]').inputValue()).toLowerCase(), 'kissht', 'layout controls preserve search');
     await frame.locator('[data-table-search]').fill('');
     if (size.width === 1440 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT });
     if (size.width === 390 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT.replace('.png', '-mobile.png') });
