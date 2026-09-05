@@ -54,7 +54,7 @@ function pointOf(cell, period, label) {
 
 function parseTable(container, periodicity) {
   const table = /<table\b[^>]*>([\s\S]*?)<\/table>/i.exec(container || '')?.[1];
-  if (!table) return [];
+  if (!table) throw Error('Screener insight table unavailable');
   const header = /<thead\b[^>]*>([\s\S]*?)<\/thead>/i.exec(table)?.[1] || '';
   const columns = [...header.matchAll(/<th\b([^>]*)>([\s\S]*?)<\/th>/gi)]
     .map((match) => ({ period: attr(match[1], 'data-date-key'), label: text(match[2]) }))
@@ -64,10 +64,10 @@ function parseTable(container, periodicity) {
   const rows = [];
   for (const match of body.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
     const cells = [...match[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map((cell) => cell[1]);
-    if (cells.length !== columns.length + 1) continue;
+    if (cells.length !== columns.length + 1) throw Error('Screener insight column mismatch');
     const unit = text(/<span\b[^>]*class=["'][^"']*\bsub\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i.exec(cells[0])?.[1]) || null;
     const metric = text(cells[0].replace(/<br\s*\/?>[\s\S]*$/i, ''));
-    if (!metric) continue;
+    if (!metric) throw Error('Screener insight metric unavailable');
     const values = columns.map((column, index) => pointOf(cells[index + 1], column.period, column.label)).filter(Boolean);
     if (!values.length) continue;
     rows.push({ periodicity, metric, unit, values });
@@ -83,6 +83,8 @@ export function parseScreenerInsightsPage(html) {
   const yearly = elementById(section, 'div', 'yearly-insights');
   const quarterly = elementById(section, 'div', 'quarterly-insights');
   if (!yearly && !quarterly) throw Error('Screener Insights tabs unavailable');
-  const rows = [...parseTable(yearly, 'yearly'), ...parseTable(quarterly, 'quarterly')];
+  const quarterlyExpected = /data-tab-id=["']quarterly-insights["']/i.test(section);
+  if (quarterlyExpected && !quarterly) throw Error('Screener quarterly Insights unavailable');
+  const rows = [...(yearly ? parseTable(yearly, 'yearly') : []), ...(quarterly ? parseTable(quarterly, 'quarterly') : [])];
   return { available: true, companyId, rows };
 }

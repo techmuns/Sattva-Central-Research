@@ -4,10 +4,13 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
+import { buildInsightInventory } from './lib/screener-insights-inventory.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_ARTIFACT,
   screenerInsightKey,
+  screenerInsightIdentity,
+  screenerInsightHealth,
   validateScreenerInsightsCapture,
 } from '../public/js/data/screener-insights-shared.js';
 import { enrichCardFromAllAlerts, insightEvents } from '../public/js/data/intelligence-graph.js';
@@ -59,7 +62,7 @@ assert.throws(() => validateScreenerInsightsCapture({ ...capture, companies: [{ 
 const partial = {
   ...capture,
   checkedAt: '2026-09-06T01:00:00.000Z',
-  checkedCount: 0,
+  checkedCount: 1,
   failedCount: 1,
   fullCoverage: false,
   companies: [],
@@ -73,6 +76,13 @@ const mine = seriesEvents.find((event) => event.metric.startsWith('Chhotedongar'
 assert.equal(mine.day, '2026-06-30');
 assert.equal(mine.changePct, 100);
 assert.equal(mine.aiEligible, false);
+const percentSeries = { ...company, rows: [{ ...company.rows[0], unit: '%', values: company.rows[0].values.map((point, i) => ({ ...point, numeric: i ? 40 : 20, value: i ? '40' : '20' })) }] };
+const percentEvent = insightEvents([percentSeries], '2026-09-05')[0];
+assert.equal(percentEvent.changePct, null);
+assert.equal(percentEvent.changePoints, 20);
+assert.match(percentEvent.detail, /20\.0 percentage points/);
+const negativeBase = { ...company, rows: [{ ...company.rows[0], values: company.rows[0].values.map((point, i) => ({ ...point, numeric: i ? 100 : -50 })) }] };
+assert.equal(insightEvents([negativeBase], '2026-09-05')[0].changePct, null);
 
 const trigger = {
   id: 'news-1', ticker: 'JAYNECOIND', company: 'Jayaswal Neco', feed: 'news', feedLabel: 'Company news',
@@ -106,6 +116,49 @@ const unrelated = enrichCardFromAllAlerts({ ...card, events: [{ ...trigger, head
   events: [{ ...trigger, headline: 'Defence procurement arbitration', keywords: ['Arbitration'] }],
 }, { insightCompanies: [company] });
 assert.equal(unrelated.contextEvents.length, 0, 'a large but unrelated operating metric does not clutter a news alert');
+
+const many = Array.from({ length: 10 }, (_, i) => ({ ...rawFiling, id: `filing-${i}`, headline: `Mine production clarification document ${i}`, feed: `filing-${i % 3}` }));
+const dense = enrichCardFromAllAlerts(card, { ...report, events: many, feeds: [0, 1, 2].map((i) => ({ id: `filing-${i}`, status: 'ok' })) });
+assert.equal(dense.contextEvents.length, 3, 'three distinct feeds must not overflow the second selection pass');
+assert.equal(new Set(dense.contextEvents.map((event) => event.feed)).size, 3);
+const duplicateDocs = enrichCardFromAllAlerts(card, { ...report, events: [
+  { ...rawFiling, url: 'https://exchange.test/doc.pdf?utm_source=feed#page=2' },
+  { ...rawFiling, id: 'copy-2', feed: 'news', headline: 'Another mine production clarification', url: 'https://exchange.test/doc.pdf' },
+] });
+assert.equal(duplicateDocs.contextEvents.length, 1, 'one underlying document cannot consume several context slots');
+const singleFeed = enrichCardFromAllAlerts(card, { ...report, events: many.map((event) => ({ ...event, feed: 'nse-filings' })) });
+assert.equal(singleFeed.contextEvents.length, 3, 'one feed still fills the bounded context budget');
+const falseMatch = enrichCardFromAllAlerts(card, { ...report, events: [{ ...rawFiling, headline: 'Jayaswal Neco board appoints a director' }] });
+assert.equal(falseMatch.contextEvents.length, 0, 'same company and same date alone do not establish event relevance');
+assert.equal(enrichCardFromAllAlerts({ ticker: null, events: [trigger] }, { ...report, events: [{ ...rawFiling, ticker: null }] }).contextEvents.length, 0, 'unresolved entities must not correlate through a blank ticker');
+assert.equal(enrichCardFromAllAlerts({ ticker: 'JAYNECOIND', events: [] }, report).contextEvents.length, 0);
+const calendar = enrichCardFromAllAlerts(card, { ...report, events: [20, 3, 10].map((days) => ({ ...scheduled, id: `calendar-${days}`, headline: `Milestone ${days}`, day: `2026-09-${String(days + 5).padStart(2, '0')}` })) });
+assert.deepEqual(calendar.upcomingEvents.map((event) => event.day), ['2026-09-08', '2026-09-15'], 'nearest milestones come first independently of context rank');
+
+assert.deepEqual(screenerInsightIdentity('https://www.screener.in/company/id/1286088/consolidated/'), { companyKey: 'ID:1286088', ticker: null, companyUrl: 'https://www.screener.in/company/id/1286088/' });
+assert.equal(screenerInsightIdentity('/company/543619/').ticker, null);
+for (const url of ['/company/id/ABC/', '/company/%ZZ/', '/company/A/?secret=1', 'https://evil.test/company/A/']) assert.equal(screenerInsightIdentity(url), null);
+const internalCompany = { ...company, ...screenerInsightIdentity('/company/id/1286088/'), name: 'Internal ID company' };
+assert.doesNotThrow(() => validateScreenerInsightsCapture({ ...capture, companies: [internalCompany], targetKeys: [internalCompany.companyKey] }, Date.parse(checkedAt)));
+const inventory = buildInsightInventory([
+  { Company: 'Internal universe company', 'Screener URL': '/company/id/1286088/consolidated/' },
+  { Company: 'Jayaswal Neco', 'Screener URL': '/company/JAYNECOIND/' },
+], [{ isin: 'INE000000001', name: 'Name without exchange codes', nseCode: '', bseCode: '' }], [{ href: '/company/id/1274211/', name: 'Retained company' }]);
+assert.equal(inventory.size, 3, 'a codeless watchlist company and internal universe ID both survive inventory');
+assert.equal(inventory.get('ID:1274211').inPortfolio, true);
+assert.throws(() => buildInsightInventory([{ Company: 'Bad', 'Screener URL': '/login/' }], [{}], [{ href: '/company/A/', name: 'A' }]), /inventory-identity/);
+assert.throws(() => buildInsightInventory([{ Company: 'A', 'Screener URL': '/company/A/' }], [{}, {}], [{ href: '/company/B/', name: 'B' }]), /inventory-count/);
+
+assert.equal(screenerInsightHealth(company, Date.parse('2026-09-07')), 'stale');
+assert.equal(insightEvents([{ ...company, checkedAt: '2026-09-05T17:30:00Z' }], '2026-09-05')[0].sourceStatus, 'ok', 'late Indian-day captures are not future-dated relative to an arbitrary noon clock');
+assert.equal(screenerInsightHealth({ ...company, inPortfolio: false }, Date.parse('2026-09-07')), 'ok');
+const failedRead = mergeScreenerInsightsCapture({ ...partial, checkedCount: 1, failedKeys: ['JAYNECOIND'] }, capture, Date.parse('2026-09-06T02:00:00Z'));
+assert.equal(failedRead.companies[0].readStatus, 'failed');
+assert.equal(insightEvents(failedRead.companies, '2026-09-06')[0].sourceStatus, 'failed');
+assert.equal(enrichCardFromAllAlerts(card, { ...report, events: [trigger] }, { insightCompanies: failedRead.companies }).contextEvents.length, 0);
+assert.throws(() => validateScreenerInsightsCapture({ ...capture, failedKeys: ['UNKNOWN'] }, Date.parse(checkedAt)));
+assert.throws(() => parseScreenerInsightsPage('<section id="insights"><div id="yearly-insights"></div></section>'), /table unavailable/);
+assert.throws(() => parseScreenerInsightsPage(html.replace('data-date-key="2026-06-30"', 'data-removed="2026-06-30"')), /column mismatch/);
 
 function artifactFetch({ digest = null, host = 'https://example.blob.core.windows.net/capture', event = 'schedule' } = {}) {
   const bytes = gzipSync(JSON.stringify(capture));

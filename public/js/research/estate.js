@@ -31,6 +31,7 @@ import { filterByScope, scopeAllowsTicker } from '../data/scope.js';
 import * as alerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
 import * as screenerInsights from '../data/screener-insights.js';
+import { screenerInsightHealth } from '../data/screener-insights-shared.js';
 import * as earningsLive from '../data/earnings-live.js';
 import { domesticFilingsEvidence } from '../data/domestic-filings.js';
 import * as earningsCalendar from '../data/earnings-calendar.js';
@@ -265,17 +266,17 @@ function compactRow(value) {
 }
 
 /**
- * Three tiers, in order: rows for the companies the question named (in the source's own order),
+ * Three tiers, in order: rows for the companies the question named (question matches first),
  * then token hits (best first), then the source's default ordering. `rowTiers` travels beside the
  * rows so the budget allocator can fill tier by tier across every source — a company's fourth
  * alert lands before another company's first result.
  */
-function chooseRows(rows, plan, mapRow, compare = null) {
+export function chooseRows(rows, plan, mapRow, compare = null) {
   const mapped = (rows || []).map(mapRow).filter(Boolean);
   const scored = mapped.map((row, index) => ({ row, index, score: rowScore(row, plan) }));
   const tierOf = (item) => (item.score >= COMPANY_SCORE ? 0 : item.score > 0 ? 1 : 2);
   const byDefault = (a, b) => (compare ? compare(a.row, b.row) : 0) || a.index - b.index;
-  scored.sort((a, b) => tierOf(a) - tierOf(b) || (tierOf(a) === 1 ? b.score - a.score : 0) || byDefault(a, b));
+  scored.sort((a, b) => tierOf(a) - tierOf(b) || b.score - a.score || byDefault(a, b));
   const matchedRows = scored.filter((item) => item.score > 0).length;
   const picked = scored.slice(0, matchedRows ? MATCH_ROW_LIMIT : DEFAULT_ROW_LIMIT);
   return {
@@ -522,23 +523,34 @@ function alertRow(row) {
   };
 }
 
-function screenerInsightRow(company, row) {
+export function screenerInsightRow(company, row, plan = { tokens: [] }) {
+  const points = row.values || [];
+  const latest = points.at(-1);
+  const years = new Set(plan.tokens.filter((token) => /^(?:19|20)\d{2}$/.test(token)));
+  const historical = plan.tokens.some((token) => /^(?:history|historical|trend|trends)$/.test(token));
+  const samePeriodLastYear = latest?.period?.replace(/^\d{4}/, (year) => String(Number(year) - 1));
+  const selected = historical ? points.slice(-8) : points.filter((point, index) =>
+    index >= points.length - 2 || point.period === samePeriodLastYear || years.has(point.period.slice(0, 4))).slice(-8);
   return {
     ticker: company.ticker || null,
     company: clipped(company.name, 60),
     metric: clipped(row.metric, 140),
     unit: row.unit || null,
     periodicity: row.periodicity,
-    values: (row.values || []).slice(-8).map((point) => ({
+    checkedAt: company.checkedAt,
+    sourceHealth: screenerInsightHealth(company),
+    availablePoints: points.length,
+    includedPoints: selected.length,
+    values: selected.map((point) => ({
       period: point.period,
       label: point.label,
       value: point.value,
-      source: point.source ? {
-        title: clipped(point.source.title, 120),
-        quote: clipped(point.source.quote, 180),
-        page: point.source.page || null,
-        url: point.source.url || null,
-      } : null,
+      source: {
+        title: clipped(point.source?.title, 120) || 'Screener Insights',
+        quote: clipped(point.source?.quote, 180),
+        page: point.source?.page || null,
+        url: point.source?.url || company.companyUrl,
+      },
     })),
   };
 }
@@ -948,13 +960,13 @@ const BUILDERS = [
         if (scope === 'portfolio') return company.inPortfolio || (company.ticker && wanted.has(company.ticker.toUpperCase()));
         return company.ticker && wanted.has(company.ticker.toUpperCase());
       });
-      const rows = companies.flatMap((company) => (company.rows || []).map((row) => screenerInsightRow(company, row)));
+      const rows = companies.flatMap((company) => (company.rows || []).map((row) => screenerInsightRow(company, row, plan)));
       const meta = screenerInsights.meta() || {};
       return sourcePacket(this.id, {
         source: 'Screener Insights — figures extracted from company filings and presentations',
         asOf: meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { capturedCompanies: meta.companies, targetCompanies: meta.targets, metrics: meta.metrics, fullCoverage: meta.fullCoverage, companiesFailedInCapture: meta.failed, latestCollectorFailed: meta.collectorLatestFailed },
+        coverage: { capturedCompanies: meta.companies, targetCompanies: meta.targets, metrics: meta.metrics, fullCoverage: meta.fullCoverage, companiesFailedInCapture: meta.failed, latestCollectorFailed: meta.collectorLatestFailed, latestReadFailed: meta.latestReadFailed, staleCompanies: meta.staleCompanies, missingCompanies: meta.missingCompanies },
         definition: 'Each value keeps its period, unit and source document. These are operating-series observations, not same-day events, forecasts or alert scores. Compare only values within the same metric and periodicity.',
         ...chooseRows(rows, plan, (row) => row),
       });

@@ -8,13 +8,14 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
 import { parseWatchlistExport } from './lib/screener-watchlist.mjs';
+import { buildInsightInventory } from './lib/screener-insights-inventory.mjs';
 import {
   mergeScreenerInsightsCapture,
-  safeInsightUrl,
   SCREENER_INSIGHTS_COMPRESSED_LIMIT,
   SCREENER_INSIGHTS_ID,
   SCREENER_INSIGHTS_LIMIT,
   screenerInsightKey,
+  validateScreenerInsightCompanies,
 } from '../public/js/data/screener-insights-shared.js';
 import { readScreenerInsightsCollector } from '../worker/screener-insights-collector.mjs';
 import {
@@ -23,7 +24,6 @@ import {
 } from './lib/screener-upcoming.mjs';
 
 const output = process.argv[2];
-if (!output) throw Error('Provide a staging artifact output path');
 const ORIGIN = 'https://www.screener.in';
 const WATCHLIST = `${ORIGIN}/watchlist/${SCREENER_PORTFOLIO_WATCHLIST_ID}/`;
 const MAX_PAGE_BYTES = 3 * 1024 * 1024;
@@ -32,20 +32,6 @@ let stage = 'configuration';
 let browser;
 
 const readData = (name) => JSON.parse(readFileSync(new URL(`../public/data/${name}.json`, import.meta.url), 'utf8'));
-
-function identity(url) {
-  const safe = safeInsightUrl(url, { screener: true });
-  if (!safe) return null;
-  const parsed = new URL(safe);
-  const match = /^\/company\/([^/]+)\/(?:consolidated\/)?$/.exec(parsed.pathname);
-  if (!match) return null;
-  const companyKey = decodeURIComponent(match[1]).toUpperCase();
-  return {
-    companyKey,
-    ticker: /^\d+$/.test(companyKey) || !/^[A-Z0-9&-]{1,30}$/.test(companyKey) ? null : companyKey,
-    companyUrl: `${ORIGIN}/company/${encodeURIComponent(companyKey)}/`,
-  };
-}
 
 function hashBucket(value) {
   let hash = 2166136261;
@@ -64,14 +50,17 @@ async function readPrevious() {
   }))?.capture || null;
 }
 
-async function exportPortfolioTargets(page, portfolioByIsin) {
+export async function exportPortfolioTargets(page) {
+  stage = 'watchlist identity verification';
   const response = await page.goto(WATCHLIST, { waitUntil: 'domcontentloaded' });
   if (!response?.ok() || new URL(page.url()).pathname !== `/watchlist/${SCREENER_PORTFOLIO_WATCHLIST_ID}/` ||
       !(await page.getByText(SCREENER_PORTFOLIO_WATCHLIST_NAME, { exact: true }).count())) throw Error('S Screen watchlist identity could not be verified');
   const form = page.locator('form[action^="/api/export/screen/"]').first();
+  stage = 'watchlist export discovery';
   const action = await form.getAttribute('action');
   const exportUrl = new URL(action || '', ORIGIN);
   if (exportUrl.searchParams.get('sublist_id') !== SCREENER_PORTFOLIO_WATCHLIST_ID) throw Error('Unexpected watchlist export target');
+  stage = 'watchlist export download';
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     form.locator('button[type="submit"], input[type="submit"]').first().click(),
@@ -79,22 +68,56 @@ async function exportPortfolioTargets(page, portfolioByIsin) {
   if (await download.failure()) throw Error('Watchlist export download failed');
   const chunks = [];
   const stream = await download.createReadStream();
-  for await (const chunk of stream) chunks.push(chunk);
-  await download.delete().catch(() => {});
-  const records = parseWatchlistExport(Buffer.concat(chunks));
-  const targets = records.map((record) => {
-    const known = portfolioByIsin.get(record.isin);
-    const companyKey = record.nseCode || known?.ticker || record.bseCode;
-    const name = record.name || known?.bookName || known?.name;
-    return companyKey ? { ...identity(`${ORIGIN}/company/${encodeURIComponent(companyKey)}/`), name, inUniverse: false, inPortfolio: true } : null;
-  }).filter((row) => row?.companyKey && row.name);
-  if (!records.length || targets.length !== records.length || new Set(targets.map((row) => row.companyKey)).size !== targets.length) {
-    throw Error('S Screen export could not be mapped completely');
+  let bytes = 0;
+  for await (const chunk of stream) {
+    bytes += chunk.length;
+    if (bytes > MAX_PAGE_BYTES) throw Error('Watchlist export exceeds its limit');
+    chunks.push(chunk);
   }
-  return targets;
+  await download.delete().catch(() => {});
+  stage = 'watchlist export parsing';
+  const records = parseWatchlistExport(Buffer.concat(chunks));
+  // The full export determines membership. The verified management page supplies URLs for
+  // delisted/internal-ID companies whose export legitimately has no exchange code.
+  stage = 'watchlist company URL inventory';
+  const managePath = `/user/stocks/${SCREENER_PORTFOLIO_WATCHLIST_ID}/`;
+  const manage = await page.goto(`${ORIGIN}${managePath}`, { waitUntil: 'domcontentloaded' });
+  if (!manage?.ok() || page.url() !== `${ORIGIN}${managePath}` ||
+      (await page.locator('h1').first().textContent())?.trim() !== `Add companies to ${SCREENER_PORTFOLIO_WATCHLIST_NAME}`) throw Error('Watchlist URL inventory identity failed');
+  const manageRows = await page.locator('button[onclick*="Watchlist.removeCompany"]').evaluateAll((buttons) => buttons.map((button) => {
+    const container = button.closest('li, tr') || button.parentElement;
+    const link = container?.querySelector('a[href^="/company/"]');
+    return { href: link?.getAttribute('href') || '', name: link?.textContent?.trim() || '' };
+  }));
+  if (manageRows.length !== records.length) throw Error('Watchlist URL inventory count mismatch');
+  return { records, manageRows };
+}
+
+export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 12_000 } = {}) {
+  const response = await page.goto(item.companyUrl, { waitUntil: 'domcontentloaded' });
+  const final = new URL(page.url());
+  if (!response?.ok() || final.origin !== ORIGIN || final.pathname !== new URL(item.companyUrl).pathname) throw Error('response');
+  if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw Error('session');
+  const section = page.locator('#insights');
+  if (await section.count()) {
+    const quarterly = section.locator('[data-tab-id="quarterly-insights"]');
+    if (await quarterly.count()) {
+      if (await quarterly.getAttribute('data-loaded') !== 'true') await quarterly.click();
+      // A lazy-tab timeout is a failed company read, never an empty quarterly series.
+      await section.locator('#quarterly-insights table').waitFor({ state: 'attached', timeout: tabTimeout });
+    }
+  }
+  const html = await page.content();
+  if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw Error('oversized');
+  const parsed = parseScreenerInsightsPage(html);
+  const rows = parsed.rows.map((row) => ({ ...row, id: screenerInsightKey({ companyKey: item.companyKey, ...row }) }));
+  const company = { ...item, checkedAt, readStatus: 'ok', rows };
+  validateScreenerInsightCompanies([company]);
+  return company;
 }
 
 async function main() {
+  if (!output) throw Error('Provide a staging artifact output path');
   const username = process.env.SCREENER_USERNAME;
   const password = process.env.SCREENER_PASSWORD;
   if (!username || !password || !process.env.PLAYWRIGHT_ROOT) throw Error('Missing collector configuration');
@@ -132,17 +155,11 @@ async function main() {
   if (!hasSession || !(await loginPage.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw Error('Authentication not verified');
 
   stage = 'target inventory';
-  const universeTargets = readData('universe').map((row) => ({ ...identity(row['Screener URL']), name: row.Company, inUniverse: true, inPortfolio: false })).filter((row) => row.companyKey);
-  const portfolioByIsin = new Map((readData('portfolio-companies').holdings || []).map((holding) => [holding.isin, holding]));
   // Use Screener's own full export instead of links rendered on the dashboard page: the latter can
   // be paginated and would silently turn "portfolio coverage" into "first page coverage".
-  const watchlistTargets = await exportPortfolioTargets(loginPage, portfolioByIsin);
-  const targets = new Map();
-  for (const item of [...universeTargets, ...watchlistTargets]) {
-    const old = targets.get(item.companyKey);
-    targets.set(item.companyKey, { ...old, ...item, name: old?.name || item.name, inUniverse: !!(old?.inUniverse || item.inUniverse), inPortfolio: !!(old?.inPortfolio || item.inPortfolio) });
-  }
-  if (targets.size < universeTargets.length || watchlistTargets.length < 1) throw Error('Screener Insights target inventory is incomplete');
+  const { records, manageRows } = await exportPortfolioTargets(loginPage);
+  stage = 'target identity reconciliation';
+  const targets = buildInsightInventory(readData('universe'), records, manageRows);
 
   const checkedAt = new Date().toISOString();
   const previousAge = Date.now() - Date.parse(previous?.checkedAt || '');
@@ -151,6 +168,7 @@ async function main() {
   const selected = [...targets.values()].filter((item) => full || item.inPortfolio || hashBucket(item.companyKey) === bucket);
   const succeeded = [];
   let failedCount = 0;
+  const failedKeys = [];
   let cursor = 0;
 
   stage = full ? 'full Insights crawl' : 'incremental Insights crawl';
@@ -164,25 +182,10 @@ async function main() {
         let success = false;
         for (let attempt = 1; attempt <= 2 && !success; attempt++) {
           try {
-            const response = await page.goto(item.companyUrl, { waitUntil: 'domcontentloaded' });
-            const final = new URL(page.url());
-            if (!response?.ok() || final.origin !== ORIGIN || final.pathname !== new URL(item.companyUrl).pathname) throw Error('response');
-            const section = page.locator('#insights');
-            if (await section.count()) {
-              const quarterly = section.locator('[data-tab-id="quarterly-insights"]');
-              if (await quarterly.count()) {
-                if (await quarterly.getAttribute('data-loaded') !== 'true') await quarterly.click();
-                await section.locator('#quarterly-insights table').waitFor({ state: 'attached', timeout: 12_000 }).catch(() => {});
-              }
-            }
-            const html = await page.content();
-            if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw Error('oversized');
-            const parsed = parseScreenerInsightsPage(html);
-            const rows = parsed.rows.map((row) => ({ ...row, id: screenerInsightKey({ companyKey: item.companyKey, ...row }) }));
-            succeeded.push({ ...item, checkedAt, rows });
+            succeeded.push(await readInsightCompany(page, item, checkedAt));
             success = true;
           } catch {
-            if (attempt === 2) failedCount += 1;
+            if (attempt === 2) { failedCount += 1; failedKeys.push(item.companyKey); }
             else await page.waitForTimeout(600);
           }
         }
@@ -195,6 +198,7 @@ async function main() {
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, selected.length) }, worker));
 
   stage = 'capture validation';
+  if (!succeeded.length) throw Error('No company could be checked');
   const targetKeys = [...targets.keys()].sort();
   const current = {
     version: 1,
@@ -203,6 +207,7 @@ async function main() {
     targetCount: targetKeys.length,
     checkedCount: selected.length,
     failedCount,
+    failedKeys,
     fullCoverage: full && failedCount === 0 && succeeded.length === targetKeys.length,
     targetKeys,
     companies: succeeded,
@@ -217,11 +222,13 @@ async function main() {
   console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: selected.length, succeeded: succeeded.length, failed: failedCount, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
 }
 
-try {
-  await main();
-} catch {
-  console.error(`Screener Insights collection failed during ${stage}. No credentials, company names, URLs or page content were logged.`);
-  process.exitCode = 1;
-} finally {
-  await browser?.close().catch(() => {});
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  try {
+    await main();
+  } catch {
+    console.error(`Screener Insights collection failed during ${stage}. No credentials, company names, URLs or page content were logged.`);
+    process.exitCode = 1;
+  } finally {
+    await browser?.close().catch(() => {});
+  }
 }
