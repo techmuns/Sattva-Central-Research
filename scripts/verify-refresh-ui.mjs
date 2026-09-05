@@ -66,6 +66,7 @@ try {
     if (!navigator.serviceWorker.controller) await new Promise(done => navigator.serviceWorker.addEventListener('controllerchange', done, { once: true }));
     await window.read();
   });
+  assert.equal(await page.getByRole('button', { name: 'Refresh', exact: true }).count(), 1, 'Refresh keeps a stable accessible name while its status changes');
   assert.equal(await page.locator('#rows').textContent(), 'Jayaswal source revision 1');
   revision = 2;
   await page.locator('[data-header-refresh]').click();
