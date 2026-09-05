@@ -5,6 +5,7 @@
 // trigger exists: what else, across every normalized feed, is close enough in company, time and
 // topic to help a human understand it?
 import { screenerInsightHealth } from './screener-insights-shared.js';
+import { newsCanSupportAI } from './company-news-attribution.js';
 
 export const CONTEXT_LOOKBACK_DAYS = 180;
 export const UPCOMING_CONTEXT_DAYS = 45;
@@ -67,6 +68,7 @@ function overlapWith(event, triggers) {
 }
 
 function sourceReadable(event, feedById) {
+  if (!newsCanSupportAI(event)) return false;
   if (event.feed === 'screener-insights') return event.sourceStatus === 'ok';
   const feed = feedById.get(event.feed);
   return !!feed && ['ok', 'on-demand'].includes(feed.status);

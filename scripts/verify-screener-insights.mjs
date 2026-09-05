@@ -126,6 +126,10 @@ const duplicateDocs = enrichCardFromAllAlerts(card, { ...report, events: [
   { ...rawFiling, id: 'copy-2', feed: 'news', headline: 'Another mine production clarification', url: 'https://exchange.test/doc.pdf' },
 ] });
 assert.equal(duplicateDocs.contextEvents.length, 1, 'one underlying document cannot consume several context slots');
+const candidateNews = { ...rawFiling, feed: 'news', headline: 'Mine production clarification from company', kind: 'news' };
+assert.equal(enrichCardFromAllAlerts(card, { ...report, events: [candidateNews] }).contextEvents.length, 0, 'old cached news without confirmed attribution cannot provide context');
+assert.equal(enrichCardFromAllAlerts(card, { ...report, events: [{ ...candidateNews, attribution: { version: 1, status: 'confirmed' } }] }).contextEvents.length, 1);
+assert.equal(enrichCardFromAllAlerts(card, { ...report, events: [{ ...candidateNews, attribution: { version: 1, status: 'uncertain' } }] }).contextEvents.length, 0);
 const singleFeed = enrichCardFromAllAlerts(card, { ...report, events: many.map((event) => ({ ...event, feed: 'nse-filings' })) });
 assert.equal(singleFeed.contextEvents.length, 3, 'one feed still fills the bounded context budget');
 const falseMatch = enrichCardFromAllAlerts(card, { ...report, events: [{ ...rawFiling, headline: 'Jayaswal Neco board appoints a director' }] });
