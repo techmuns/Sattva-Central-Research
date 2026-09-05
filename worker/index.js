@@ -1743,7 +1743,11 @@ const TWITTER_DISPATCH_COOLDOWN_S = 3 * 60;
 // pinger to three runs an hour. A quiet run is ~2 minutes and ~120 requests, so that ceiling is
 // affordable; the in-flight check in dispatchWorkflow and the workflow's own concurrency group are
 // the first and third lines of defence either side of it.
-const TELEGRAM_DISPATCH_COOLDOWN_S = 20 * 60;
+// BELOW the cadence it serves, never equal to it. At twenty minutes a twenty-minute pinger races
+// its own cooldown and roughly every other ping is declined, so the feed refreshes half as often as
+// the schedule claims — an edge guard silently halving the thing it exists to protect. Ten minutes
+// still absorbs a stuck pinger and a reader reopening the tab.
+const TELEGRAM_DISPATCH_COOLDOWN_S = 10 * 60;
 const RUN_STATUS_TTL_S = 5; // so twenty readers watching one run cost GitHub four calls a minute
 // How far back `lastAutomatic` looks. Ten runs is about a day at the schedule's own cadence.
 const RUN_WINDOW = 10;

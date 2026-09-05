@@ -21,7 +21,16 @@ export function config(env = process.env) {
     discovery: integer(env, 'TELEGRAM_DISCOVERY', 20, 0, 1000),
     delay: integer(env, 'TELEGRAM_DELAY_MS', 420, 0, 60000),
     budget: integer(env, 'TELEGRAM_BUDGET_MS', 540000, 1000, 3600000),
-    headHint: integer(env, 'TELEGRAM_HEAD_HINT', 0, 0, 2147483647) };
+    headHint: integer(env, 'TELEGRAM_HEAD_HINT', 0, 0, 2147483647),
+    // How far one hop of the head search reaches, and how finely it samples. Sized from this
+    // channel rather than guessed: its deleted runs are HUNDREDS of ids wide (93385..93799 is one
+    // unbroken run of "Post not found"), so a test that samples more coarsely than that can land
+    // wholly inside a gap and conclude the channel has ended.
+    jumpSpan: integer(env, 'TELEGRAM_JUMP_SPAN', 2000, 100, 100000),
+    jumpSamples: integer(env, 'TELEGRAM_JUMP_SAMPLES', 40, 4, 400),
+    // The share of the run the head search may spend. It must never take the whole budget:
+    // finding the head and then having no requests left to READ it writes the capture unchanged.
+    jumpShare: Number(env.TELEGRAM_JUMP_SHARE ?? 0.4) };
 }
 
 export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
@@ -116,6 +125,54 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       if ((await visit(id)).state === 'post') { control = true; break; }
     }
     if (!control) throw new Error('Known messages could not be confirmed; archive retained');
+    // A LINEAR SWEEP CANNOT CATCH UP WITH A CHANNEL IT HAS FALLEN BEHIND.
+    //
+    // The resumable discovery sweep below advances `cfg.discovery` ids per run, and GitHub
+    // delivers 7-9 scheduled runs a DAY on this repository whatever the cron asks for (measured
+    // across six workflows spanning a 4x range of requested density). This archive's head was
+    // 93384, dated 2026-05-13, while the channel's was 102828, dated 2026-09-04 — 9,444 ids of
+    // mostly-deleted space between them. At twenty ids a run that gap closes in about fifty days,
+    // during which the tab keeps presenting May's posts as the newest and nothing says otherwise.
+    //
+    // So the head is SEARCHED for rather than walked to. Existence is decidable per id on the
+    // embed route, which is what makes a search possible at all: `highestIn` samples a span and
+    // the gallop climbs while whole spans keep answering. Nine thousand ids cost a couple of
+    // hundred requests rather than nine thousand.
+    //
+    // IT DELIBERATELY DOES NOT PIN THE HEAD EXACTLY. A bisect after the gallop cost as much again
+    // and bought a dozen ids: the gallop leaves `peak` within one span of the true head, the
+    // ordinary forward scan covers what is immediately above it, and the next run's gallop closes
+    // the rest. Spending the budget on precision here is what starved the run that found the head
+    // of the requests it needed to record it — measured, a run that located 102816 and then had
+    // nothing left to read it with, so the capture was written unchanged.
+    const searchDeadline = started + Math.floor(cfg.budget * cfg.jumpShare);
+    const searchSpent = () => now() >= searchDeadline;
+    const exists = async (id) => {
+      try { return (parseEmbed(await page(`${cfg.channel}/${id}?embed=1&mode=tme`), cfg.channel, id)).state === 'post'; }
+      catch { return false; }
+    };
+    const highestIn = async (lowest, highest) => {
+      const step = Math.max(1, Math.floor((highest - lowest) / cfg.jumpSamples));
+      let best = 0;
+      for (let id = lowest; id <= highest && !outOfTime() && !searchSpent(); id += step) if (await exists(id)) best = id;
+      return best;
+    };
+    let peak = head;
+    while (!outOfTime() && !searchSpent()) {
+      const hit = await highestIn(peak + 1, peak + cfg.jumpSpan);
+      if (!hit) break;
+      peak = hit;
+    }
+    if (peak > head) {
+      const wasHead = head;
+      console.log(`Head search moved the channel head ${wasHead} -> ${peak}.`);
+      await visit(peak);
+      // The ids between the old head and the new one are unread history, not a hole to step over.
+      // Pointing the resumable sweep at the top of the gap means the NEWEST of them are read
+      // first, so one run puts the top of the channel on screen and later runs fill downwards.
+      next = Math.max(head, wasHead);
+    }
+
     const from = head + 1;
     let end = from + cfg.forward - 1;
     let scanOk = true, scannedTo = from - 1;
