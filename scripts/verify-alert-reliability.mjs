@@ -31,6 +31,7 @@ assert(rank([story], '2026-09-05').cards[0].score < rank([story]).cards[0].score
 assert.equal(rank([story], '2026-09-11').cards.length, 0, 'events expire after the stated seven-day window');
 assert.equal(rank([{ ...story, importance: 'low' }], '2026-09-05').cards.length, 0, 'routine news gets no retention bypass');
 assert.equal(rank([{ ...story, aiEligible: false }]).cards.length, 0, 'uncertain or context-only news never bypasses eligibility');
+assert.equal(rank([{ ...story, day: '2026-09-31' }], '2026-10-01').cards.length, 0, 'invalid source dates cannot manufacture a material alert');
 
 for (const title of ['Analyst Day presentation', 'Investor Presentation', 'Capital Markets Day disclosure']) {
   const signal = announcementSignal({ title });

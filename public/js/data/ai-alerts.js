@@ -46,6 +46,8 @@ const FEED_WEIGHT = {
 };
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+const validDay = (day) => /^\d{4}-\d{2}-\d{2}$/.test(day || '') &&
+  Number.isFinite(Date.parse(day)) && new Date(day).toISOString().slice(0, 10) === day;
 
 function shiftDay(day, amount) {
   const d = new Date(`${day}T00:00:00Z`);
@@ -653,7 +655,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
 
   const supportedReport = { ...report, events: (report?.events || []).filter(newsCanSupportAI) };
   const recent = supportedReport.events.filter(
-    (event) => event.aiEligible !== false && newsCanSupportAI(event) && event.ticker && event.day && event.day >= firstDay && event.day <= day
+    (event) => event.aiEligible !== false && event.ticker && validDay(event.day) && event.day >= firstDay && event.day <= day
   );
   const grouped = new Map();
   for (const event of recent) {
