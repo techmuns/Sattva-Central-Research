@@ -151,15 +151,24 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       try { return (parseEmbed(await page(`${cfg.channel}/${id}?embed=1&mode=tme`), cfg.channel, id)).state === 'post'; }
       catch { return false; }
     };
-    const highestIn = async (lowest, highest) => {
-      const step = Math.max(1, Math.floor((highest - lowest) / cfg.jumpSamples));
+    const highestIn = async (lowest, highest, samples = cfg.jumpSamples) => {
+      const step = Math.max(1, Math.floor((highest - lowest) / samples));
       let best = 0;
       for (let id = lowest; id <= highest && !outOfTime() && !searchSpent(); id += step) if (await exists(id)) best = id;
       return best;
     };
+    // A SPARSE MISS IS NOT A MISSING SPAN, AND BELIEVING ONE IS EXACTLY HOW THE OLD SEEK DIED.
+    // Its window test read "not found" 17-44% of the time below the true head, and a search that
+    // stops at the first lie stops for ever: one `postNear(98304) -> NOT FOUND` put the ceiling
+    // under the real head and the bisect could never climb back. This gallop samples every
+    // jumpSpan/jumpSamples ids — fifty by default — and existence in older stretches of this
+    // channel runs at 17%, so a span CAN read empty while holding posts. So an empty span is
+    // re-asked once at four times the resolution before it is allowed to end the climb. The cost
+    // is paid only when the search is about to stop, which is the one place it is worth paying.
     let peak = head;
     while (!outOfTime() && !searchSpent()) {
-      const hit = await highestIn(peak + 1, peak + cfg.jumpSpan);
+      let hit = await highestIn(peak + 1, peak + cfg.jumpSpan);
+      if (!hit) hit = await highestIn(peak + 1, peak + cfg.jumpSpan, cfg.jumpSamples * 4);
       if (!hit) break;
       peak = hit;
     }
