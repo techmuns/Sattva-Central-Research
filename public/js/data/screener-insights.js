@@ -1,7 +1,7 @@
 // Screener's source-backed company operating metrics, captured server-side for the portfolio and
 // universe. These are slow-moving series and context only: they do not create alerts themselves.
 import { conditionalJson, KEYS, readEntry } from '../core/store.js';
-import { validateScreenerInsightsCapture } from './screener-insights-shared.js';
+import { screenerInsightHealth, validateScreenerInsightsCapture } from './screener-insights-shared.js';
 
 const ENDPOINT = 'api/screener-insights';
 let cache = null;
@@ -25,6 +25,7 @@ function ingest(payload, checkedAt = Date.now()) {
       collectorLatestFailed: payload.source?.collectorLatestFailed === true,
       collectorLatestConclusion: payload.source?.collectorLatestConclusion || null,
       collectorRunUrl: payload.source?.collectorRunUrl || null,
+      latestReadFailed: false,
     },
   };
   listeners.forEach((fn) => fn());
@@ -41,9 +42,17 @@ export async function load({ refresh = false } = {}) {
         try { ingest(stored.value, stored.savedAt); } catch { /* fetch a valid replacement */ }
       }
     }
-    const out = await conditionalJson(ENDPOINT, { key: KEYS.screenerInsights, optional: true });
-    if (out.status === 200 && out.value) ingest(out.value, out.checkedAt);
-    else if (out.status === 304 && cache) cache.meta.browserCheckedAt = out.checkedAt;
+    try {
+      const out = await conditionalJson(ENDPOINT, { key: KEYS.screenerInsights, optional: true, validate: validateScreenerInsightsCapture });
+      if (out.status === 200 && out.value) ingest(out.value, out.checkedAt);
+      else if (out.status === 304 && cache) {
+        cache.meta.browserCheckedAt = out.checkedAt;
+        cache.meta.latestReadFailed = false;
+      } else throw Error('Screener Insights could not be refreshed.');
+    } catch {
+      // Preserve last-good values without passing off a failed read as a fresh source check.
+      if (cache) { cache.meta.latestReadFailed = true; listeners.forEach((fn) => fn()); }
+    }
     if (!cache) throw Error('Screener Insights capture is not available yet.');
     return cache;
   })().finally(() => { pending = null; });
@@ -51,9 +60,16 @@ export async function load({ refresh = false } = {}) {
 }
 
 export const isLoaded = () => !!cache;
-export const all = () => cache?.companies || [];
-export const meta = () => cache?.meta || null;
-export const company = (ticker) => cache?.byTicker.get(String(ticker || '').toUpperCase()) || null;
+export const all = () => cache?.meta.latestReadFailed ? cache.companies.map((company) => ({ ...company, readStatus: 'failed' })) : cache?.companies || [];
+export const meta = () => cache ? {
+  ...cache.meta,
+  staleCompanies: cache.companies.filter((company) => screenerInsightHealth(company) !== 'ok').length,
+  missingCompanies: Math.max(0, cache.meta.targets - cache.companies.length),
+} : null;
+export const company = (ticker) => {
+  const item = cache?.byTicker.get(String(ticker || '').toUpperCase()) || null;
+  return item && cache.meta.latestReadFailed ? { ...item, readStatus: 'failed' } : item;
+};
 export const forTickers = (tickers) => {
   const wanted = tickers instanceof Set ? tickers : new Set((tickers || []).map((ticker) => String(ticker).toUpperCase()));
   return all().filter((item) => item.ticker && wanted.has(item.ticker.toUpperCase()));

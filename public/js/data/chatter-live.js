@@ -332,7 +332,7 @@ export function startLive(live) {
       // A tick that fails leaves whatever is on screen alone. The tab reported the failure the
       // first time it happened; replacing a good table with an error because one poll missed
       // would be worse than saying nothing.
-      if (!feed.ok) return null;
+      if (!feed.ok) throw Error('Public Chatter could not be revalidated.');
       if (feed.fromStore) {
         // Revalidated, unchanged. Move "last checked" and nothing else — that is a different fact
         // from "last scraped", and conflating them would age the data backwards.

@@ -1,3 +1,4 @@
+import * as refreshRegistry from '../core/refresh.js';
 import { sectionHead, scoreTable } from '../ui/screener.js';
 import { exportRows } from '../ui/export.js';
 import { escapeHtml } from '../core/dom.js';
@@ -15,6 +16,8 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
   let controller = null;
   let tableDispose = null;
   let shownKey = null;
+  let tableView = null;
+  let pendingRead = null;
   let companies = [];
   ctx.root.innerHTML = `${sectionHead({ title: 'Company Filings', description: 'Annual reports, earnings reports and concall transcripts from Screener.in.', controls })}
     <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
@@ -42,13 +45,20 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
   const status = ctx.root.querySelector('[data-document-status]');
   const target = ctx.root.querySelector('[data-document-table]');
 
-  async function fetchDocuments({ live = false } = {}) {
+  function fetchDocuments(options = {}) {
+    const key = `${form.elements.ticker.value.trim().toUpperCase()}|${form.elements.form.value}|${!!options.live}`;
+    if (pendingRead?.key === key) return pendingRead.promise;
+    const promise = readDocuments(options).finally(() => { if (pendingRead?.promise === promise) pendingRead = null; });
+    pendingRead = { key, promise };
+    return promise;
+  }
+  async function readDocuments({ live = false } = {}) {
     controller?.abort();
     const active = new AbortController();
     controller = active;
     const ticker = form.elements.ticker.value.trim().toUpperCase();
     const type = form.elements.form.value;
-    if (shownKey !== `${ticker}|${type}`) { tableDispose?.(); target.innerHTML = ''; }
+    if (shownKey !== `${ticker}|${type}`) { tableDispose?.(); tableView = null; target.innerHTML = ''; }
     if (ctx.scope !== 'universe' && !companies.some((c) => c.ticker === ticker)) {
       status.textContent = 'Choose a company in this scope, or switch to Universe.';
       return;
@@ -68,6 +78,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
         (result.skipped ? ` ${result.skipped} entries could not be read; this response may be incomplete.` : '') +
         (result.unavailableLinks ? ` The source lists ${result.unavailableLinks} unavailable document links.` : '');
       const table = scoreTable({
+        initialView: tableView,
         rows: result.documents, key: (r) => `${r.form}|${r.url}`, name: (r) => r.title, nameLabel: 'Document',
         watchKey: (r) => r.ticker, watchName: (r) => companies.find((c) => c.ticker === r.ticker)?.name || r.ticker,
         sub: (r) => r.ticker, link: (r) => r.url, showScore: false, showRank: false,
@@ -91,12 +102,19 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
       tableDispose?.();
       shownKey = `${ticker}|${type}`;
       target.innerHTML = table.html;
+      tableView = table.view;
       tableDispose = table.wire(target);
+      return { checked: 1, failed: result.stale ? 1 : 0, partial: !!result.skipped };
     } catch (err) {
       if (disposed || active !== controller) return;
       status.textContent = err.name === 'AbortError' ? 'The document request timed out. Please try again.' : err.message;
+      return { failed: 1, error: err.message };
     } finally { clearTimeout(timer); }
   }
+  const offRefresh = refreshRegistry.register('domestic-documents', { label: 'Company filings', refresh: async () => {
+    if (!form.elements.ticker.value.trim()) return { skipped: true };
+    return await fetchDocuments({ live: true }) || { skipped: true };
+  } });
   form.addEventListener('submit', (event) => { event.preventDefault(); void fetchDocuments(); });
   form.querySelector('[data-refresh-documents]').addEventListener('click', () => { if (form.reportValidity()) void fetchDocuments({ live: true }); });
   void Promise.all([whenDeferredData(), loadCompanyCaptureIndex()]).then(() => {
@@ -107,5 +125,5 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
     ctx.root.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('domestic', companies.map((c) => c.ticker));
     if (ctx.params?.company) void fetchDocuments();
   });
-  return () => { disposed = true; controller?.abort(); tableDispose?.(); };
+  return () => { offRefresh(); disposed = true; controller?.abort(); tableDispose?.(); };
 }

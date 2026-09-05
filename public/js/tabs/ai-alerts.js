@@ -1,7 +1,7 @@
 // tabs/ai-alerts.js — THE SMALL, EXPLAINABLE READING LIST ABOVE ALL ALERTS.
 //
 // All Alerts is the complete chronological record. This tab deliberately is not: it groups
-// the last seven days by company, ranks the material company-specific evidence, and suppresses
+// the last 14 days by company, ranks the material company-specific evidence, and suppresses
 // names that do not cross the published threshold. The ranking lives in data/ai-alerts.js so the
 // product rules are pure, testable and available to exports or notifications later.
 
@@ -11,6 +11,8 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import * as screenerInsights from '../data/screener-insights.js';
+import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
@@ -20,7 +22,7 @@ export { relativeAge } from '../ui/ai-alert-utils.js';
 export const meta = {
   id: 'ai-alerts',
   title: 'AI Alerts',
-  subtitle: 'Important portfolio events from the last seven days.',
+  subtitle: `Important portfolio events from the last ${alerts.WINDOW_DAYS} days.`,
   subviews: [],
 };
 
@@ -41,6 +43,7 @@ let sizeError = '';
 let awaitingBook = null;
 let collecting = false;
 let loadError = '';
+let captureDirty = false;
 
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
@@ -84,6 +87,10 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
+    unsubs.push(onCaptureLanded(() => {
+      captureDirty = true;
+      if (ctxRef && !collecting) { captureDirty = false; void recollect(ctxRef, { load: false }); }
+    }));
     unsubs.push(onPortfolioConnection((connected) => {
       if (connected && ctxRef?.scope === 'portfolio' && !sizesLoading) void recollect(ctxRef);
       else if (!connected && portfolioConnectionState() === 'unavailable') portfolioUnavailable();
@@ -106,7 +113,8 @@ export function render(ctx) {
           if (sizeError || loadError) throw new Error(sizeError || loadError);
           const added = (report?.cards || []).filter((card) => !before.has(`${card.ticker}:${card.evidenceKey || card.topEvent?.id || ''}`)).length;
           return { added, checked: (report?.feeds || []).filter((feed) => feed.status === 'ok').length,
-            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length };
+            failed: (report?.feeds || []).filter((feed) => feed.status === 'failed').length,
+            partial: !screenerInsights.isLoaded() || !!screenerInsights.meta()?.latestReadFailed };
         },
       })
     );
@@ -134,6 +142,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  captureDirty = false;
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -154,7 +163,7 @@ export function destroy() {
   unsubs = [];
 }
 
-async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
+async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
   sizeController?.abort();
@@ -191,6 +200,7 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
         scope: ctx.scope,
         holdings: coverage.holdings(),
         refresh: forceRefresh,
+        load,
         onPartial: (partial) => {
           // Refresh a populated view atomically; partial feeds otherwise remove
           // companies and reorder cards underneath the reader on every arrival.
@@ -212,7 +222,10 @@ async function recollect(ctx, { refresh: forceRefresh = false } = {}) {
     if (!current()) return;
     loadError = err?.message || 'The alert feeds could not be refreshed.';
   } finally {
-    if (current()) { collecting = false; paint(ctxRef); }
+    if (current()) {
+      collecting = false; paint(ctxRef);
+      if (captureDirty) { captureDirty = false; void recollect(ctxRef, { load: false }); }
+    }
   }
 }
 
@@ -291,7 +304,7 @@ function watchCalendar() {
     for (const el of ctxRef.root.querySelectorAll('[data-ai-age]')) {
       el.textContent = relativeAge(el.dataset.day, day);
     }
-    // Re-rank and drop evidence that has left the seven-day window as well as updating labels.
+    // Re-rank and drop evidence that has left the 14-day window as well as updating labels.
     void recollect(ctxRef);
   };
   const schedule = () => {
@@ -316,7 +329,7 @@ function head(ctx) {
     : report && (collecting || awaitingBook !== null) ? { label: 'Ready · checking quietly', tone: 'neutral', state: 'pending' } : feedStatus(report);
   return sectionHead({
     title: 'AI Alerts',
-    description: 'Important company signals from the last seven days.',
+    description: `Important company signals from the last ${alerts.WINDOW_DAYS} days.`,
     meta: `<div class="flex flex-wrap items-center justify-end gap-2">
       <span data-ai-feed-status data-state="${status.state}">${pill({ label: status.label, tone: status.tone })}</span>
       ${report ? scopeSummary({

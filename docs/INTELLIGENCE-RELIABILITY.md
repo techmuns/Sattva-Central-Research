@@ -1,13 +1,13 @@
 # Research data reliability
 
 Material, company-attributed portfolio news and linked exchange disclosures remain eligible for
-AI Alerts throughout the existing seven-day window. Recency still reduces their ranking score;
+AI Alerts throughout the existing 14-day window. Recency still reduces their ranking score;
 retention alone cannot create a Must see priority. A failed refresh does not retract known evidence.
 Routine news, unresolved identities, undated rows and context-only records have no retention bypass.
 
 An archived card represents the material evidence already read. New material evidence or a changed
 headline/direction restores it even if an older event remains strongest. Reordering, routine arrivals
-and old events leaving the window do not restore it. Mutes expire after seven days even in an open
+and old events leaving the window do not restore it. Mutes expire after 14 days even in an open
 tab. Old single-event mutes cannot suppress the new evidence-set representation.
 
 `filing-signals.js` applies the same materiality rules to BSE and NSE. Explicit investor/analyst day

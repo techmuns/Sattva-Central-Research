@@ -11,6 +11,7 @@ export const SCREENER_INSIGHTS_FRESH_MS = 36 * 60 * 60 * 1000;
 export const SCREENER_INSIGHTS_MAX_COMPANIES = 1_000;
 export const SCREENER_INSIGHTS_MAX_METRICS = 40;
 export const SCREENER_INSIGHTS_MAX_POINTS = 16;
+export const SCREENER_INSIGHTS_UNIVERSE_FRESH_MS = 8 * 86_400_000;
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const TICKER = /^[A-Z0-9&-]{1,30}$/;
@@ -28,11 +29,38 @@ export function safeInsightUrl(value, { screener = false } = {}) {
   }
 }
 
+/** Screener's internal IDs are namespaced: they are not BSE codes or NSE tickers. */
+export function screenerInsightIdentity(value) {
+  const safe = safeInsightUrl(value, { screener: true });
+  if (!safe) return null;
+  const url = new URL(safe);
+  if (url.search || url.hash) return null;
+  const match = /^\/company\/(?:(id)\/)?([^/]+)\/(?:consolidated\/)?$/.exec(url.pathname);
+  if (!match) return null;
+  let symbol;
+  try { symbol = decodeURIComponent(match[2]).toUpperCase(); } catch { return null; }
+  if (!TICKER.test(symbol) || (match[1] && !/^\d+$/.test(symbol))) return null;
+  return {
+    companyKey: match[1] ? `ID:${symbol}` : symbol,
+    ticker: match[1] || /^\d+$/.test(symbol) ? null : symbol,
+    companyUrl: `https://www.screener.in/company/${match[1] ? 'id/' : ''}${encodeURIComponent(symbol)}/`,
+  };
+}
+
+export function screenerInsightHealth(company, now = Date.now()) {
+  const age = now - Date.parse(company?.checkedAt || '');
+  if (company?.readStatus === 'failed') return 'failed';
+  const maxAge = company?.inPortfolio ? SCREENER_INSIGHTS_FRESH_MS : SCREENER_INSIGHTS_UNIVERSE_FRESH_MS;
+  return !Number.isFinite(age) || age < -60_000 || age > maxAge ? 'stale' : 'ok';
+}
+
 export const screenerInsightKey = (row = {}) =>
   `${String(row.companyKey || '').toUpperCase()}|${row.periodicity || ''}|${String(row.metric || '').trim().toLowerCase()}`;
 
 function validPoint(point) {
-  return !!point && DAY.test(point.period || '') && typeof point.label === 'string' && point.label.length <= 40 &&
+  const period = point?.period || '';
+  const parsed = Date.parse(`${period}T00:00:00Z`);
+  return !!point && DAY.test(period) && Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === period && typeof point.label === 'string' && point.label.length <= 40 &&
     typeof point.value === 'string' && point.value.length <= 80 &&
     (point.numeric === null || point.numeric === undefined || Number.isFinite(point.numeric)) &&
     (!point.source || (
@@ -69,11 +97,14 @@ export function validateScreenerInsightCompanies(companies) {
   for (const company of companies) {
     const companyKey = String(company?.companyKey || '').toUpperCase();
     const url = safeInsightUrl(company?.companyUrl, { screener: true });
-    const companyPath = url ? /^\/company\/([^/]+)\/(?:consolidated\/)?$/.exec(new URL(url).pathname) : null;
+    const identity = screenerInsightIdentity(url);
     if (!companyKey || companyKey.length > 80 || keys.has(companyKey) || typeof company.name !== 'string' ||
         !company.name.trim() || company.name.length > 300 || !url ||
-        !companyPath || decodeURIComponent(companyPath[1]).toUpperCase() !== companyKey ||
+        !identity || identity.companyKey !== companyKey ||
         (company.ticker !== null && company.ticker !== undefined && !TICKER.test(company.ticker)) ||
+        (company.ticker || null) !== identity.ticker ||
+        (company.isin !== undefined && !/^INE[A-Z0-9]{9}$/.test(company.isin)) ||
+        (company.readStatus !== undefined && !['ok', 'failed'].includes(company.readStatus)) ||
         typeof company.inPortfolio !== 'boolean' || typeof company.inUniverse !== 'boolean' ||
         !Number.isFinite(Date.parse(company.checkedAt || '')) || !Array.isArray(company.rows)) {
       throw Error('Invalid Screener insight company');
@@ -87,18 +118,23 @@ export function validateScreenerInsightCompanies(companies) {
 export function validateScreenerInsightsCapture(capture, now = Date.now()) {
   const checkedAt = Date.parse(capture?.checkedAt || '');
   if (capture?.version !== 1 || capture.sourceId !== SCREENER_INSIGHTS_ID || !Number.isFinite(checkedAt) ||
-      checkedAt > now + 60_000 || !Number.isSafeInteger(capture.targetCount) || capture.targetCount < 1 ||
+      checkedAt > now + 60_000 || !Number.isSafeInteger(capture.targetCount) || capture.targetCount < 1 || capture.targetCount > SCREENER_INSIGHTS_MAX_COMPANIES ||
       !Number.isSafeInteger(capture.checkedCount) || capture.checkedCount < 0 || capture.checkedCount > capture.targetCount ||
-      !Number.isSafeInteger(capture.failedCount) || capture.failedCount < 0 || typeof capture.fullCoverage !== 'boolean' ||
+      !Number.isSafeInteger(capture.failedCount) || capture.failedCount < 0 || capture.failedCount > capture.checkedCount || typeof capture.fullCoverage !== 'boolean' ||
       !Array.isArray(capture.companies) || capture.companies.length > capture.targetCount ||
       !Array.isArray(capture.targetKeys) || capture.targetKeys.length !== capture.targetCount ||
       new Set(capture.targetKeys).size !== capture.targetKeys.length ||
       capture.targetKeys.some((key) => typeof key !== 'string' || !key || key.length > 80)) {
     throw Error('Invalid Screener insights capture');
   }
+  if (capture.failedKeys !== undefined && (!Array.isArray(capture.failedKeys) ||
+      capture.failedKeys.length !== capture.failedCount || new Set(capture.failedKeys).size !== capture.failedKeys.length ||
+      capture.failedKeys.some((key) => !capture.targetKeys.includes(key)))) throw Error('Invalid Screener insight failures');
   validateScreenerInsightCompanies(capture.companies);
+  if (capture.companies.some((company) => Date.parse(company.checkedAt) > checkedAt + 60_000)) throw Error('Invalid Screener insight observation time');
   if (capture.companies.some((company) => !capture.targetKeys.includes(company.companyKey))) throw Error('Unexpected Screener insight company');
-  if (capture.fullCoverage && (capture.failedCount || capture.companies.length !== capture.targetCount)) throw Error('Incomplete Screener insights capture');
+  if (capture.fullCoverage && (capture.failedCount || capture.companies.length !== capture.targetCount ||
+      capture.companies.some((company) => company.readStatus === 'failed'))) throw Error('Incomplete Screener insights capture');
   return capture;
 }
 
@@ -108,12 +144,15 @@ export function mergeScreenerInsightsCapture(current, previous = null, now = Dat
   if (!previous) return current;
   validateScreenerInsightsCapture(previous, now);
   const targets = new Set(current.targetKeys);
-  const companies = new Map(previous.companies.filter((company) => targets.has(company.companyKey)).map((company) => [company.companyKey, company]));
+  const failed = new Set(current.failedKeys || []);
+  const companies = new Map(previous.companies.filter((company) => targets.has(company.companyKey)).map((company) => [company.companyKey,
+    failed.has(company.companyKey) ? { ...company, readStatus: 'failed' } : company]));
   for (const company of current.companies) companies.set(company.companyKey, company);
   const merged = {
     ...current,
     companies: [...companies.values()].sort((a, b) => a.name.localeCompare(b.name)),
   };
-  merged.fullCoverage = merged.failedCount === 0 && merged.companies.length === merged.targetCount;
+  merged.fullCoverage = merged.failedCount === 0 && merged.companies.length === merged.targetCount &&
+    merged.companies.every((company) => screenerInsightHealth(company, now) === 'ok');
   return validateScreenerInsightsCapture(merged, now);
 }

@@ -476,7 +476,7 @@ export function createFeed(kind) {
     const before = rowCountNow();
     // The scheduled capture may have moved since this page loaded, and that costs one conditional
     // GET rather than forty. Do it first, so the walk only asks about what the file still lacks.
-    await seedFromSnapshot({ replace: true });
+    const available = await seedFromSnapshot({ replace: true });
     if (kind === 'insider') await seedFromDevice([...state.rows.keys()]);
     // FOR A DATE-INDEXED FEED, RE-READING THE FILE *IS* THE REFRESH. There is no per-company route
     // behind it to ask again, and walking one would be forty requests against an upstream this feed
@@ -485,7 +485,7 @@ export function createFeed(kind) {
     if (state.coversUniverse) {
       state.lastRefreshAt = Date.now();
       emit();
-      return { added: Math.max(0, rowCountNow() - before), checked: state.rows.size, failed: state.failures.size };
+      return { added: Math.max(0, rowCountNow() - before), checked: available ? 1 : 0, failed: available ? state.failures.size : 1, partial: !!state.fallbackCount };
     }
     const queue = state.wanted.length ? state.wanted : [...state.rows.keys()];
     state.truncated = Math.max(0, queue.length - LIVE_LIMIT);
@@ -496,7 +496,7 @@ export function createFeed(kind) {
     await walk(queue.slice(0, LIVE_LIMIT), { force: true });
     state.lastRefreshAt = Date.now();
     emit();
-    return { added: Math.max(0, rowCountNow() - before), checked: Math.min(queue.length, LIVE_LIMIT), failed: state.failures.size };
+    return { added: Math.max(0, rowCountNow() - before), checked: Math.min(queue.length, LIVE_LIMIT), failed: state.failures.size, partial: state.truncated > 0 || !available };
   }
 
   /**

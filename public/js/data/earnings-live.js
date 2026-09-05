@@ -416,7 +416,7 @@ export function startLive(live) {
       // `structureTag` in the reply is what tells us whether the rows underneath those prices are
       // still the rows we hold.
       const out = await conditionalJson(pricesEndpointFor(st), { key: priceStoreKey(st), optional: true });
-      if (!out.value?.prices) return null;
+      if (!out.value?.prices) throw Error('Earnings prices could not be revalidated.');
       // A tick that arrives for the basis the user has since switched away from is dropped rather
       // than folded in — it would overwrite the active cache with the other comparison.
       if (st !== subType || (out.value.meta?.subType || st) !== st) return null;
@@ -424,7 +424,8 @@ export function startLive(live) {
       // not apply them or let a matching structure tag short-circuit away the degraded state.
       if (out.value.degraded) {
         const healthChanged = markProjectionChecked(out.value, out.checkedAt);
-        return healthChanged ? cache : null;
+        if (healthChanged) notify();
+        throw Error(out.value.degraded);
       }
 
       const held = structureTagFor(st);
@@ -444,7 +445,8 @@ export function startLive(live) {
       const failure = structuralRefreshFailure(full, st, out.value.structureTag);
       if (failure) {
         const healthChanged = markStructuralRefreshFailed(failure, full.checkedAt || out.checkedAt);
-        return healthChanged ? cache : null;
+        if (healthChanged) notify();
+        throw Error(failure);
       }
       const structural = hasStructuralChange(full.value);
       ingest(full.value, { live: true, origin: 'live', checkedAt: full.checkedAt });
@@ -473,7 +475,8 @@ export async function refresh() {
   await load();
   const st = subType;
   const out = await conditionalJson(pricesEndpointFor(st), { key: priceStoreKey(st), optional: true });
-  if (!out.value?.prices || st !== subType || (out.value.meta?.subType || st) !== st) return cache;
+  if (!out.value?.prices) throw Error('Earnings prices could not be revalidated.');
+  if (st !== subType || (out.value.meta?.subType || st) !== st) return cache;
   if (out.value.degraded) {
     const healthChanged = markProjectionChecked(out.value, out.checkedAt);
     if (healthChanged) notify();

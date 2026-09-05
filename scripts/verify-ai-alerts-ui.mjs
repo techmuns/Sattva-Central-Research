@@ -16,7 +16,7 @@ const events = Array.from({ length: 11 }, (_, i) => eventsFor(`A${String(i).padS
 events.find((e) => e.ticker === 'A01').time = null;
 events.push({ ...events[30], id: 'hidden-event', importance: 'low', headline: 'Lithium supply agreement hidden beyond the evidence preview' });
 events.push({ ...events[0], id: 'context-document', aiEligible: false, kind: 'document', importance: 'low', direction: 'neutral', headline: 'Material risk source document', detail: 'Underlying source record' });
-events.push(...eventsFor('OLD', 'Old signal', '2026-08-29'));
+events.push(...eventsFor('OLD', 'Old signal', '2026-08-22'));
 events.push({ ...events[1], id: 'important-event', ticker: 'ZIMP', company: 'Important Company', direction: 'neutral' });
 const holdings = [...new Map(events.map(e => [e.ticker, { ticker: e.ticker, name: e.company }])).values()]
   .map((h, i, list) => ({ ...h, isin: `INE${String(i).padStart(9, '0')}`, sector: 'Test', weightPct: 100 / list.length }));
@@ -76,6 +76,11 @@ const server = createServer((req, res) => {
   try {
     if (pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (pathname === '/js/data/daily-alerts.js') { res.setHeader('content-type', 'text/javascript'); res.end(fixtureModule); return; }
+    if (pathname === '/js/data/capture-watchdog.js') {
+      res.setHeader('content-type', 'text/javascript');
+      res.end(`const listeners=new Set(); export const onCaptureLanded=fn=>{listeners.add(fn);return()=>listeners.delete(fn);}; window.landCapture=()=>listeners.forEach(fn=>fn('announcements'));`);
+      return;
+    }
     const path = resolve(root, '.' + pathname);
     if (!path.startsWith(root + sep)) throw Error('Invalid path');
     res.setHeader('content-type', { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' }[extname(path)] || 'application/octet-stream');
@@ -171,6 +176,15 @@ try {
   await settled();
   assert.deepEqual(await search.evaluate((el) => [el === window.inputBefore, el === document.activeElement, el.selectionStart, el.selectionEnd]), [true, true, 1, 2]);
   assert.equal(await search.inputValue(), 'A00', 'feed completion preserves query and input');
+  const sourceReads = await page.evaluate(() => window.reads);
+  await page.evaluate(() => {
+    window.fixtureEvents = window.fixtureEvents.map(e => e.id === 'A00-announcements' ? { ...e, headline: 'Newly captured company announcement' } : e);
+    window.landCapture();
+  });
+  await settled();
+  assert.match(await card('A00').locator('[data-ai-evidence]').innerText(), /Newly captured company announcement/);
+  assert.equal(await page.evaluate(() => window.reads), sourceReads, 'a landed source updates AI Alerts without re-reading every feed');
+  assert.equal(await search.inputValue(), 'A00', 'source arrival preserves the active search');
   assert((await card('A00').locator('[data-ai-date]').innerText()).includes('04 Sept 2026 · 14:42 IST'));
   assert.equal(await card('A00').locator('[data-ai-date] time').getAttribute('datetime'), '2026-09-04T14:42:00+05:30');
   await search.fill('A01');
@@ -178,7 +192,8 @@ try {
   assert.equal(await card('A01').locator('[data-ai-date] time').getAttribute('datetime'), '2026-09-04');
   await page.locator('[data-ai-clear]').click();
   await page.locator('[data-ai-more]').click();
-  assert.equal(await card('OLD').count(), 1);
+  assert.equal(await card('OLD').count(), 1, 'day-14 evidence remains available before midnight');
+  assert.match(await page.locator('#root').innerText(), /14-day window/);
   await search.fill('A00');
   // A calendar-only refresh reuses the recent, verified in-memory position
   // snapshot instead of asking Family for the same book again.

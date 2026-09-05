@@ -21,8 +21,9 @@ import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
 import { enrichCardFromAllAlerts } from './intelligence-graph.js';
 import { canonicalArticleUrl } from './filings-shared.js';
+import { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
+export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
-export const WINDOW_DAYS = 7;
 export const MIN_SCORE = 64;
 export const MUST_SEE_SCORE = 82;
 
@@ -41,7 +42,7 @@ const FEED_WEIGHT = {
   // separation, so news can carry weight — and it is kept small on purpose. Do the arithmetic: a
   // keyword-matched story on a book company, published today, scores 30 (high importance) + 6 +
   // 16 (today) + 12 (in the book) = 64, which is exactly MIN_SCORE. Recency controls ordering;
-  // material portfolio disclosures remain visible for the whole seven-day review window.
+  // material portfolio disclosures remain visible for the whole 14-day review window.
   news: 6,
   'market-news': 6,
 };
@@ -134,7 +135,7 @@ function eventScore(event, day, feedState) {
 // carries its own points, and writes a sentence out of the ACTUAL matched events rather than a
 // template with the company's name dropped in. `confluenceOf()` is pure and exported for exactly
 // the reason `moveSeverity` is: a pattern that needs a marquee investor and a volume spike on the
-// same company inside seven days will not appear in most days' captures, so waiting for one to
+// same company inside 14 days will not appear in most days' captures, so waiting for one to
 // occur is not a test.
 //
 // FOUR RULES THIS LAYER OBEYS, AND THEY ARE THE SAME ONES THE REST OF THE FILE DOES:
@@ -143,7 +144,7 @@ function eventScore(event, day, feedState) {
 //    card and already links to its own source. If a pattern cannot describe itself out of the
 //    evidence it matched, it does not fire.
 // 2. CO-OCCURRENCE IS NOT CAUSATION, AND THE WORDING MUST NOT SMUGGLE IT IN. Two things happening
-//    to one company inside a week is what has been measured, and that is all the sentence may say.
+//    to one company inside the review window is what has been measured, and that is all the sentence may say.
 //    A volume spike on the day a fund's book was published does not mean the fund did the buying —
 //    a filed shareholding is a QUARTERLY disclosure and the trade behind it may be months old, so
 //    the accumulation pattern says "and a tracked investor's latest book shows", never "bought
@@ -311,7 +312,7 @@ const CONFLUENCE = [
 /**
  * Every named pattern this company's recent events satisfy, strongest first.
  *
- * Pure and exported: a marquee investor and a volume spike landing on one company inside a week is
+ * Pure and exported: a marquee investor and a volume spike landing on one company inside the review window is
  * exactly the case a fixture has to supply, because most days' captures do not contain one.
  */
 export function confluenceOf(events, { feedById = new Map() } = {}) {

@@ -1,3 +1,4 @@
+import * as refreshRegistry from '../core/refresh.js';
 // One caller-private company lookup, placed beside each related exchange/analysis view.
 // It does not fan out over the universe or mingle user read flags with public feed caches.
 import { escapeHtml } from '../core/dom.js';
@@ -103,16 +104,24 @@ export function mountCompanyDocuments(ctx, options) {
   };
   root.querySelectorAll('input, select').forEach((element) => element.addEventListener('input', cancelSelection));
 
-  async function submit(event) {
+  let pendingRead = null;
+  function submit(event) {
     event?.preventDefault();
+    const key = JSON.stringify([...root.querySelectorAll('input, select')].map((el) => el.value));
+    if (pendingRead?.key === key) return pendingRead.promise;
+    const promise = readDocuments().finally(() => { if (pendingRead?.promise === promise) pendingRead = null; });
+    pendingRead = { key, promise };
+    return promise;
+  }
+  async function readDocuments() {
     const token = hostToken();
-    if (!token) { clear(); return; }
+    if (!token) { clear(); return { failed: 1, error: 'Sign in to refresh documents.' }; }
     const mine = ++generation;
     controller?.abort(); controller = new AbortController();
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]);
     const current = () => !disposed && mine === generation && hostToken() === token;
     loadButton.disabled = true;
-    results.innerHTML = ''; suggestions.innerHTML = '';
+    suggestions.innerHTML = '';
     try {
       const query = input.value.trim();
       let company = candidates.get(query.toUpperCase()) || [...candidates.values()].find((item) => item.name.toLowerCase() === query.toLowerCase());
@@ -160,9 +169,14 @@ export function mountCompanyDocuments(ctx, options) {
       });
       tableView = table.view; results.innerHTML = table.html; table.wire(results);
       results.querySelector('[data-table-search]').placeholder = 'Search documents…';
-    } catch (error) { if (current()) say(signal.aborted ? 'The document request timed out. Retry or narrow the range.' : error.message || 'Documents could not be loaded.'); }
+      return { checked: 1, partial: !!payload.unmapped };
+    } catch (error) { if (current()) say(signal.aborted ? 'The document request timed out. Retained documents remain visible; retry or narrow the range.' : error.message || 'Documents could not be loaded.'); return { failed: 1, error: error.message }; }
     finally { if (current()) loadButton.disabled = false; }
   }
+  const offRefresh = refreshRegistry.register('company-documents', { label: 'Company documents', refresh: async () => {
+    if (!input.value.trim()) return { skipped: true };
+    return await submit() || { skipped: true };
+  } });
   root.querySelector('[data-doc-form]').addEventListener('submit', submit);
-  return () => { disposed = true; generation++; controller?.abort(); unsubscribe(); };
+  return () => { offRefresh(); disposed = true; generation++; controller?.abort(); unsubscribe(); };
 }

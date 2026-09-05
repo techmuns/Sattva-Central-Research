@@ -27,77 +27,72 @@
 // captures it and the browser picks the file up for free. Anything newer than the last capture is
 // what the button is for, and the tab says so rather than leaving the reader to guess.
 
-const entries = new Map(); // id -> { id, label, refresh, lastResult, lastAt, running }
+const entries = new Map();
 const subscribers = new Set();
-const emit = () => subscribers.forEach((fn) => fn());
+const emit = () => subscribers.forEach((fn) => { try { fn(); } catch (err) { console.warn('[refresh] subscriber failed', err); } });
 
-/**
- * Register a feed the Refresh button should drive. Returns a disposer.
- *
- * Registering twice under one id replaces the entry rather than adding a second — a tab that
- * re-mounts must not leave a stale closure behind that refreshes an unmounted feed's state.
- */
 export function register(id, { label, refresh }) {
   if (typeof refresh !== 'function') throw new TypeError(`refresh.register("${id}") needs a refresh function`);
-  entries.set(id, { id, label: label || id, refresh, lastResult: null, lastAt: null, running: false });
+  const entry = { id, label: label || id, refresh, lastResult: null, lastAt: null, running: false, pending: null };
+  entries.set(id, entry);
   emit();
   return () => {
-    entries.delete(id);
-    emit();
+    // Disposing an old mount must not unregister its replacement.
+    if (entries.get(id) === entry) { entries.delete(id); emit(); }
   };
 }
 
 export const registered = () => [...entries.values()].map(({ id, label, lastResult, lastAt, running }) => ({ id, label, lastResult, lastAt, running }));
-
-export function onChange(fn) {
-  subscribers.add(fn);
-  return () => subscribers.delete(fn);
-}
-
-/** When this feed last completed a refresh in this session, or null if it never has. */
+export function onChange(fn) { subscribers.add(fn); return () => subscribers.delete(fn); }
+/** Last wholly successful check; a failed attempt cannot advance it. */
 export const lastRefreshAt = (id) => entries.get(id)?.lastAt ?? null;
-
-/** Is a refresh in flight for this feed? The tab disables its own control while one is. */
 export const isRunning = (id) => entries.get(id)?.running === true;
 
-/**
- * Refresh one feed by id. Never throws — a failure is recorded and reported, because the button
- * that calls this must say what happened rather than leaving a spinner.
- */
-export async function refreshOne(id) {
-  const entry = entries.get(id);
-  if (!entry || entry.running) return { id, added: 0, checked: 0, skipped: true };
+function run(entry) {
+  if (entry.pending) return entry.pending;
   entry.running = true;
+  entry.pending = Promise.resolve().then(() => entry.refresh()).then((out) => {
+    const result = { id: entry.id, label: entry.label, added: 0, checked: 0, failed: 0, ...(!out ? { skipped: true } : out) };
+    entry.lastResult = result;
+    if (!result.error && !result.failed && !result.partial && !result.pending && !result.skipped) entry.lastAt = Date.now();
+    return result;
+  }, (err) => {
+    const result = { id: entry.id, label: entry.label, added: 0, checked: 0, failed: 1, error: String(err?.message || err) };
+    entry.lastResult = result;
+    return result;
+  }).finally(() => { entry.running = false; entry.pending = null; emit(); });
   emit();
-  try {
-    const out = (await entry.refresh()) || {};
-    entry.lastResult = { added: out.added || 0, checked: out.checked || 0, failed: out.failed || 0 };
-    entry.lastAt = Date.now();
-    return { id, ...entry.lastResult };
-  } catch (err) {
-    entry.lastResult = { added: 0, checked: 0, failed: 0, error: String(err?.message || err) };
-    entry.lastAt = Date.now();
-    return { id, added: 0, checked: 0, error: entry.lastResult.error };
-  } finally {
-    entry.running = false;
-    emit();
-  }
+  return entry.pending;
 }
 
-/**
- * Refresh every registered feed, concurrently, and report the total.
- *
- * REGISTRATION IS BY MOUNTED TAB, so this is not "walk everything the dashboard can read" — it is
- * "re-read what is on screen". A reader on News does not pay for ninety-one investor books, and
- * the button stays a bounded, predictable cost rather than a lottery.
- */
-export async function refreshAll() {
-  // A feed already walking is not refreshed again — but it is not "nothing to do" either. Reporting
-  // zero for it would let the button say "Up to date" over a walk that is still in flight, which is
-  // the same class of lie as saying it after a check that never completed.
-  const skipped = [...entries.values()].filter((e) => e.running).length;
-  const due = [...entries.values()].filter((e) => !e.running);
-  if (!due.length) return { announced: 0, results: [], skipped };
-  const results = await Promise.all(due.map((e) => refreshOne(e.id)));
-  return { announced: results.reduce((a, r) => a + (r.added || 0), 0), results, skipped };
+/** Join existing work, including work started by a tab-local control. */
+export function refreshOne(id) {
+  const entry = entries.get(id);
+  return entry ? run(entry) : Promise.resolve({ id, skipped: true });
+}
+
+/** Capture the mounted callbacks now; late results cannot select another tab's work. */
+export function refreshAll() {
+  const due = [...entries.values()];
+  return Promise.all(due.map(run)).then((results) => ({
+    announced: results.reduce((sum, result) => sum + (result.added || 0), 0), results, skipped: 0,
+  }));
+}
+
+/** Result vocabulary shared by the header and tab controls. Captures are dated,
+ * so a successful read never promises that every publisher has been checked live. */
+export function summarize(results = []) {
+  const failed = results.filter((r) => r.error || r.failed).length;
+  const partial = !results.length || results.some((r) => r.partial || r.truncated || r.skipped);
+  const pending = results.some((r) => r.pending);
+  const announced = results.reduce((sum, r) => sum + (r.added || 0), 0);
+  const checked = results.reduce((sum, r) => sum + (r.checked || 0), 0);
+  return { results, failed, partial, pending, announced, checked };
+}
+
+export function resultLabel({ failed = 0, partial = false, pending = false, announced = 0, checked = 0 } = {}) {
+  if (pending) return 'Still updating…';
+  if (failed) return checked || announced ? 'Partly refreshed' : 'Couldn’t refresh';
+  if (partial) return 'Partly refreshed';
+  return announced ? `${announced} new` : 'Latest available';
 }

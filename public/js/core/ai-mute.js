@@ -21,8 +21,9 @@
 // IT IS ALSO TIME-BOUNDED. Beyond the alert window itself the record is meaningless — the events
 // it refers to have left the window — so it lapses rather than accumulating for ever.
 
+import { AI_ALERT_WINDOW_MS as LAPSE_MS } from './alert-window.js';
+
 const STORAGE_KEY = 'sattva:ai-muted:v1';
-const LAPSE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const subscribers = new Set();
 const emit = () => subscribers.forEach((fn) => fn());

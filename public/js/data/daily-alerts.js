@@ -44,6 +44,7 @@ import * as earnings from './earnings-live.js';
 import * as concalls from './concall-scans.js';
 import * as chatter from './chatter-live.js';
 import * as investors from './super-investors.js';
+import * as screenerInsights from './screener-insights.js';
 // ONE definition of what a filed-book change is — see `isMove` there. A negative filter here
 // (`action !== 'held'`) admitted every future state by default, which is how an outstanding
 // filing would have become a negative alert about a named investor.
@@ -58,6 +59,8 @@ import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSubscriptions } from './alert-sources.js';
 import * as records from './alert-records.js';
 import { readEntry, writeEntry } from '../core/store.js';
+import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
+export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
 import { attributionFor, newsSearchText } from './company-news-attribution.js';
 import { matchPortfolioNews, newsEventTopics } from './portfolio-news-matching.js';
@@ -79,7 +82,6 @@ export const today = (now = Date.now()) => new Date(now + IST_OFFSET_MS).toISOSt
 // deliberately carries no Family reply, holding weight, private document or
 // sourceRecord. Those stay memory-only; this cache is safe to survive a reload.
 export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
-export const ALERT_WINDOW_CACHE_DAYS = 7;
 
 function shiftDay(day, amount) {
   const date = new Date(`${day}T00:00:00Z`);
@@ -402,6 +404,17 @@ function loadFeed(id, refresh) {
   ).finally(() => { loadingFeeds.delete(id); listeners.forEach((fn) => fn()); });
   loadingFeeds.set(id, pending);
   return pending;
+}
+
+/** Revalidate the evidence stores without building a large alerts report.
+ * Ask Research needs fresh inputs for the next question, not a discarded timeline. */
+export async function refreshSources() {
+  const context = screenerInsights.load({ refresh: true }).then(() => {
+    if (screenerInsights.meta()?.latestReadFailed) throw Error('Company insights could not be refreshed.');
+  });
+  const results = await Promise.allSettled([...FEEDS.map((feed) => loadFeed(feed.id, true)), context]);
+  return { checked: results.filter((r) => r.status === 'fulfilled').length,
+    failed: results.filter((r) => r.status === 'rejected').length };
 }
 
 // ---------------------------------------------------------------------------------------
