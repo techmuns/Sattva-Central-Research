@@ -30,6 +30,7 @@ function makeRecord(id, { intervalMs, fetcher, synthetic }) {
     timer: null,
     running: false, // start() called (tab mounted)
     inFlight: false,
+    pending: null,
     errorCount: 0,
     lastData: null,
     lastTick: null,
@@ -117,9 +118,10 @@ export function onGlobalTick(cb) {
  * `tick()` reschedules in its own `finally`, so a poller that was mid-interval when this ran comes
  * back on its normal cadence rather than drifting or stopping.
  */
-export function refreshAll() {
-  const due = [...pollers.values()].filter((p) => p.running && !p.synthetic);
-  return Promise.all(due.map((p) => tick(p).catch(() => {})));
+export function refreshAll({ ids = null, exclude = [] } = {}) {
+  const due = [...pollers.values()].filter((p) => p.running && !p.synthetic &&
+    (!ids || ids.includes(p.id)) && !exclude.includes(p.id));
+  return Promise.all(due.map((p) => tick(p)));
 }
 
 function clearTimer(poller) {
@@ -148,12 +150,20 @@ function scheduleWhenDue(poller) {
   scheduleTick(poller, dueIn(poller));
 }
 
-async function tick(poller) {
-  if (!poller.running || document.hidden || poller.inFlight) return;
+function tick(poller) {
+  if (poller.pending) return poller.pending;
+  if (!poller.running || document.hidden) return Promise.resolve({ id: poller.id, skipped: true });
+  clearTimer(poller);
+  poller.pending = performTick(poller).finally(() => { poller.pending = null; });
+  return poller.pending;
+}
+
+async function performTick(poller) {
   poller.inFlight = true;
   poller.lastAttemptAt = Date.now();
   try {
     const data = await poller.fetcher();
+    if (data?.error || data?.failed) throw new Error(data.error || 'Some source checks failed.');
     poller.inFlight = false;
     poller.errorCount = 0;
     poller.lastError = null;
@@ -163,12 +173,14 @@ async function tick(poller) {
     if (!poller.synthetic) lastDataTick = poller.lastTick;
     for (const cb of poller.listeners) safeNotify(cb, data, null);
     for (const cb of globalTickListeners) safeNotify(cb, lastGlobalTick);
+    return { id: poller.id, checked: 1 };
   } catch (err) {
     poller.inFlight = false;
     poller.errorCount += 1;
     poller.lastError = err;
-    console.error(`[live] poller "${poller.id}" failed (attempt ${poller.errorCount})`, err);
-    // Never throw into the UI — subscribers just keep showing the last good data.
+    console.warn(`[live] poller "${poller.id}" failed (attempt ${poller.errorCount})`, err);
+    // Keep the last good rows, but report the failed attempt to explicit callers.
+    return { id: poller.id, failed: 1, error: String(err?.message || err) };
   } finally {
     if (poller.running) {
       const backoff = Math.min(poller.intervalMs * 2 ** poller.errorCount, 60000);

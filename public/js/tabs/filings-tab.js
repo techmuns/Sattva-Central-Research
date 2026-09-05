@@ -417,7 +417,7 @@ export function makeFilingsTab(cfg) {
     // THE RESULT LIVES IN `refreshLabel`, NOT ON A NODE. Rows land while the walk runs and every
     // arrival repaints the panel, so whichever button was pressed is long gone by the time there
     // is anything to report.
-    refreshLabel = out.error ? 'Couldn’t check' : out.added ? `${formatNumber(out.added)} new` : 'Up to date';
+    refreshLabel = refreshRegistry.resultLabel(refreshRegistry.summarize([out]));
     if (ctxRef) paint(ctxRef);
     labelReset = setTimeout(() => {
       refreshLabel = 'Check for new';

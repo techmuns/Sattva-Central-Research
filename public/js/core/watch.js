@@ -30,11 +30,9 @@ import * as concalls from '../data/concall-scans.js';
 import * as chatter from '../data/chatter-live.js';
 import * as marketNews from '../data/market-news.js';
 import * as refreshRegistry from './refresh.js';
+import { runCaptureWatchdog, captureNamesForView } from '../data/capture-watchdog.js';
 import { withoutPublisherName } from './source-copy.js';
 
-// How long the header's Refresh waits for the per-company feeds before saying they are still
-// going. Long enough for a warm walk to finish, short enough that the button is not dead.
-const ON_DEMAND_WAIT_MS = 12_000;
 import * as coverage from '../data/coverage.js';
 import * as notifications from '../ui/notifications.js';
 import { formatCroreCompact, formatPct } from './format.js';
@@ -91,44 +89,60 @@ export function ensureRunning() {
 }
 
 /**
- * Force every running poller to check now. Resolves to what changed, so the button can say
- * something true rather than just spinning for a moment.
+ * Refresh the mounted view and its relevant captures. Keep unrelated pollers on
+ * their normal cadence and carry every failure through to the header.
  */
-export async function refreshNow() {
-  const before = notifications.announcedCount();
-  // TWO KINDS OF FEED, AND THE BUTTON DRIVES BOTH.
-  //
-  //   the POLLERS — the results feed and the con-call scan. Conditional, cheap, already ticking,
-  //   and the source of every alert. `engine.refreshAll()` ticks the running ones.
-  //
-  //   the ON-DEMAND feeds — News, Corporate Announcements, Insider Trades, Superstar Investors.
-  //   One request per company, so they must not tick at all; this button is the only thing that
-  //   reads them. Registered by whichever tab is mounted, so the cost stays bounded.
-  //
-  // Both are awaited together and the counts are summed, because the reader pressed one button and
-  // is owed one answer.
-  const pollers = (async () => {
-    if (!engine) return null;
-    ensureRunning();
-    return engine.refreshAll();
-  })();
+const refreshes = new Map();
+const POLLERS_BY_TAB = {
+  'earnings-hub': ['earnings-live', 'earnings-calendar'],
+  concall: ['concall-scans'],
+  'public-chatter': ['chatter-live'],
+  ipos: ['ipo-filings'],
+  'nse-filings': ['nse-filings'],
+};
 
-  // A WALK OF FORTY COMPANIES DOES NOT FIT IN A BUTTON'S PATIENCE, and the button must not lie
-  // about that. It waits a bounded time for the on-demand feeds and then reports `pending` if they
-  // are still going — "Still reading…" is a true statement and "Couldn't check" would not be, on
-  // work that is proceeding perfectly well. The tab's own strip shows the walk as it lands.
-  const STILL_RUNNING = Symbol('pending');
-  const onDemand = refreshRegistry.refreshAll();
-  const bounded = await Promise.race([
-    Promise.all([pollers, onDemand]).then(([, o]) => o),
-    new Promise((resolve) => setTimeout(() => resolve(STILL_RUNNING), ON_DEMAND_WAIT_MS)),
-  ]);
-  // The feeds' own onChange fires synchronously inside the tick, so by here the announcements
-  // have already been made.
-  const announced = notifications.announcedCount() - before;
-  if (bounded === STILL_RUNNING) return { announced, pending: true };
-  // A feed that was already walking when the button was pressed is still walking now.
-  return { announced: announced + (bounded?.announced || 0), pending: (bounded?.skipped || 0) > 0 };
+export function refreshNow(view = {}) {
+  const key = JSON.stringify([view, refreshRegistry.registered().map((r) => r.id)]);
+  if (refreshes.has(key)) return refreshes.get(key);
+  const task = refreshView(view).finally(() => refreshes.delete(key));
+  refreshes.set(key, task);
+  return task;
+}
+
+async function refreshView(view) {
+  const registered = refreshRegistry.registered();
+  const registryIds = registered.map((r) => r.id);
+  const documents = registryIds.some((id) => id.endsWith('-documents'));
+  const ids = documents ? [] : [...(POLLERS_BY_TAB[view.tab] || [])];
+  if (view.scope === 'portfolio') ids.push('family-portfolio');
+  const names = documents ? [] : captureNamesForView(view);
+  // Start the on-screen reads immediately. Background alert pollers retain their
+  // normal cadence; clicking one tab must not wait on an unrelated source.
+  const reading = Promise.all([
+    engine?.refreshAll({ ids, exclude: registryIds }) || [],
+    refreshRegistry.refreshAll(),
+  ]).then(([polled, onDemand]) => [...polled, ...onDemand.results]);
+  const captures = names.length ? runCaptureWatchdog({ names, source: 'button' }) : Promise.resolve(null);
+  const [results, capture] = await Promise.all([reading, captures]);
+  if (capture?.ok === false) results.push({ failed: 1, error: 'The background source update could not be checked.' });
+  for (const out of capture?.started || []) {
+    if (out.ok === false) results.push({ failed: 1, error: `Source update unavailable: ${out.reason || 'unknown'}` });
+  }
+  const completed = await capture?.completion;
+  for (const out of completed || []) {
+    results.push(out.outcome === 'landed'
+      ? { checked: 1, partial: out.partial }
+      : { partial: true, error: out.outcome === 'failed' || out.outcome === 'not-started' ? 'Source update failed.' : null });
+  }
+  // Source modules emit their own updates. Consolidated AI reports materialize
+  // their evidence, so reassemble only if the same tab is still mounted.
+  if (completed?.some((out) => out.outcome === 'landed') &&
+      ['ai-alerts', 'daily-alerts', 'ask-research'].includes(view.tab) &&
+      registryIds.some((id) => refreshRegistry.registered().some((entry) => entry.id === id))) {
+    const refreshed = await refreshRegistry.refreshAll();
+    results.push(...refreshed.results);
+  }
+  return refreshRegistry.summarize(results);
 }
 
 // ---------------------------------------------------------------------------------------

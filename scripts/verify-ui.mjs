@@ -5289,8 +5289,8 @@ console.log('\n— header status and live alerts —');
     }
     return l;
   })();
-  ok('refresh reports a result rather than just spinning', /Up to date|\d+ new|Refresh|Couldn|Still reading/i.test(label), label);
-  ok('...and never re-enables itself still claiming to be checking', !(await page.locator('[data-header-refresh]').isDisabled()));
+  ok('refresh reports a result rather than just spinning', /Latest available|\d+ new|Partly refreshed|Couldn|Still updating/i.test(label), label);
+  ok('...keeps pending work disabled and allows retry after completion', (await page.locator('[data-header-refresh]').isDisabled()) === /Still updating/.test(label));
 
   // The alert stack.
   const alerts = await evalSafe(async () => {

@@ -1,3 +1,4 @@
+import * as refreshRegistry from '../core/refresh.js';
 import { pauseFamilySession } from '../data/family-session.js';
 // tabs/ask-research.js — a dashboard-wide conversational research workspace.
 
@@ -295,6 +296,8 @@ function template(scope) {
     </section>`;
 }
 
+let unregisterRefresh = null;
+
 export function render(ctx) {
   cleanupUi();
   // A scope change changes the evidence universe. Do not let an answer assembled under the old
@@ -303,6 +306,14 @@ export function render(ctx) {
   // the ctx actually being painted, so a generation can never outlive the scope on screen.
   abortOtherScopeGenerations(ctx.scope);
   ctxRef = ctx;
+  if (!unregisterRefresh) unregisterRefresh = refreshRegistry.register('ask-research', {
+    label: 'Research evidence', refresh: async () => {
+      const { collect } = await import('../data/daily-alerts.js');
+      const report = await collect({ scope: ctxRef?.scope || 'universe', refresh: true });
+      return { checked: report.feeds.filter((f) => f.status === 'ok').length,
+        failed: report.feeds.filter((f) => f.status === 'failed').length };
+    },
+  });
   ensureSession();
   ctx.root.innerHTML = template(ctx.scope);
   uiDispose = wire(ctx.root);
@@ -334,6 +345,7 @@ function paintPortfolioConnection() {
 }
 
 export function destroy() {
+  unregisterRefresh?.(); unregisterRefresh = null;
   // Deliberately does NOT abort: an answer the reader asked for keeps being written while they
   // look at another tab, and lands in the conversation when they come back. See
   // `abortGenerations` above for what does cancel one.

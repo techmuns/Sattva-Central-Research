@@ -7,6 +7,7 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatRelativeTime, toneForValue } from '../core/format.js';
 import { scopeLabel } from '../data/scope.js';
 import * as watchlist from '../core/watchlist.js';
+import { resultLabel } from '../core/refresh.js';
 
 // Semantic tones (positive/negative/caution) describe a data outcome; brand/accent are the
 // indigo→purple chrome colours. Never use a semantic tone to mean "branded".
@@ -540,7 +541,7 @@ export function skeleton({ rows = 4, variant = 'rows' } = {}) {
  *
  * `onRefresh` returns `{ announced }` so the button can report a result instead of just spinning.
  */
-export function statusControl({ getTimestamp, subscribeTick = null, onRefresh = null }) {
+export function statusControl({ getTimestamp, subscribeTick = null, onRefresh = null, getRefreshKey = () => 'view', subscribeContext = null }) {
   const html = `
     <div class="flex items-center gap-1.5">
       <span data-status-pill title="Most recent server confirmation from an active feed"
@@ -553,12 +554,12 @@ export function statusControl({ getTimestamp, subscribeTick = null, onRefresh = 
         <span class="text-emerald-300">·</span>
         <span data-live-time class="tabular-nums font-medium text-emerald-600">—</span>
       </span>
-      <button type="button" data-header-refresh title="Check every live feed for new data now"
+      <button type="button" data-header-refresh title="Refresh the current view from its latest available sources"
         class="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200 disabled:cursor-wait disabled:opacity-60">
         <svg data-header-refresh-icon width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
         </svg>
-        <span data-header-refresh-label>Refresh</span>
+        <span data-header-refresh-label role="status" aria-live="polite">Refresh</span>
       </button>
     </div>`;
 
@@ -576,61 +577,61 @@ export function statusControl({ getTimestamp, subscribeTick = null, onRefresh = 
     const interval = setInterval(refresh, 15000);
     const unsubscribe = subscribeTick ? subscribeTick(refresh) : null;
 
-    // A REFRESH THAT NEVER RETURNS IS THE EXACT FAILURE THIS BUTTON EXISTS TO PREVENT.
-    //
-    // `refreshAll()` awaits every running poller's fetcher, and an upstream that accepts the
-    // connection without answering leaves that promise pending for ever. The button was then
-    // stuck on "Checking…" AND disabled — no result, no retry, and the one control on the page
-    // whose whole job is to say whether the data was confirmed saying nothing at all.
-    //
-    // So the wait is bounded, and both failure modes report themselves. "Couldn't check" is a
-    // result; a spinner is not. What must never happen is the third option the old code took on
-    // the error path: printing "Up to date" after a check that did not complete, which claims a
-    // freshness nothing confirmed — the same rule that governs `meta.checkedAt`.
-    const REFRESH_TIMEOUT_MS = 15000;
-    const TIMED_OUT = Symbol('timeout');
-    let resetTimer = null;
-    async function doRefresh() {
-      if (btn.disabled) return;
-      btn.disabled = true;
-      clearTimeout(resetTimer);
-      icon.classList.add('spin-slow');
-      label.textContent = 'Checking…';
-      let announced = 0;
-      let pending = false;
-      let failed = false;
-      let timer = null;
-      try {
-        const outcome = await Promise.race([
-          Promise.resolve(onRefresh?.()),
-          new Promise((resolve) => { timer = setTimeout(() => resolve(TIMED_OUT), REFRESH_TIMEOUT_MS); }),
-        ]);
-        if (outcome === TIMED_OUT) failed = true;
-        // `pending` is a THIRD outcome and not a failure: the per-company feeds are one request per
-        // company, so a walk can still be running perfectly well when the button's patience runs
-        // out. Saying "Couldn't check" about work that is proceeding is the same class of lie as
-        // saying "Up to date" about a check that did not complete.
-        else ({ announced = 0, pending = false } = outcome || {});
-      } catch (err) {
-        console.error('[status] refresh failed', err);
-        failed = true;
-      } finally {
-        clearTimeout(timer);
-      }
-      icon.classList.remove('spin-slow');
-      // Say what happened. "Up to date" is a real answer and the common one — a spinner that
-      // vanishes leaves the reader unsure whether anything was checked at all.
-      label.textContent = failed ? 'Couldn’t check' : pending ? 'Still reading…' : announced ? `${announced} new` : 'Up to date';
+    const attempts = new Map();
+    let disposed = false;
+    const draw = () => {
+      if (disposed) return;
+      const attempt = attempts.get(getRefreshKey());
+      btn.disabled = !!attempt?.running;
+      btn.setAttribute('aria-busy', String(!!attempt?.running));
+      icon.classList.toggle('spin-slow', !!attempt?.running);
+      label.textContent = attempt?.label || 'Refresh';
+      btn.title = attempt?.detail || 'Refresh the current view from its latest available sources';
       refresh();
-      btn.disabled = false;
-      resetTimer = setTimeout(() => { label.textContent = 'Refresh'; }, 4000);
+    };
+    const offContext = subscribeContext?.(draw);
+    async function doRefresh() {
+      const key = getRefreshKey();
+      if (attempts.get(key)?.running) return;
+      const attempt = { running: true, label: 'Checking…', timer: null };
+      attempts.set(key, attempt);
+      draw();
+      // The page stays interactive during a long capture. Keep its real promise
+      // and show the eventual outcome; a timeout of our patience is not success.
+      attempt.timer = setTimeout(() => {
+        attempt.label = 'Still updating…';
+        attempt.detail = 'Sources are still updating. Existing data remains available; new captures will appear automatically.';
+        draw();
+      }, 12000);
+      try {
+        const outcome = await onRefresh?.() || {};
+        attempt.label = resultLabel(outcome);
+        attempt.detail = outcome.failed || outcome.partial
+          ? 'Some sources could not be fully refreshed. Retained data remains visible; check the source dates in this view.'
+          : 'Latest available data loaded. Source timestamps show when each publisher was checked; scheduled and end-of-day data keep their own dates.';
+      } catch (err) {
+        attempt.label = 'Couldn’t refresh';
+        attempt.detail = 'The refresh could not finish. Existing data remains available. Please retry.';
+        console.warn('[status] refresh failed', err);
+      } finally {
+        clearTimeout(attempt.timer);
+        attempt.running = false;
+        draw();
+        if (!disposed && /^(Latest available|\d+ new)$/.test(attempt.label)) attempt.timer = setTimeout(() => {
+          if (attempts.get(key) === attempt) attempts.delete(key);
+          draw();
+        }, 8000);
+      }
     }
     btn.addEventListener('click', doRefresh);
 
     return () => {
+      disposed = true;
       clearInterval(interval);
-      clearTimeout(resetTimer);
+      for (const attempt of attempts.values()) clearTimeout(attempt.timer);
+      btn.removeEventListener('click', doRefresh);
       unsubscribe?.();
+      offContext?.();
     };
   }
 
