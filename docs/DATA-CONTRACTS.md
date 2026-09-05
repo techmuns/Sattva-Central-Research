@@ -3891,8 +3891,11 @@ After scoring, `js/data/intelligence-graph.js` searches every same-company row i
 pool, including `aiEligible: false` filings, documents, snapshots and schedules. A context row must
 come from a readable source and pass company, time and topic tests. Unsupported company attribution
 is rejected; slow Screener operating series require a shared topic, except that a material change can
-sit beside an earnings/con-call trigger. At most three independent-source-first context rows and two
-future milestones are attached. They contribute **zero priority points** and cannot originate a
+sit beside an earnings/con-call trigger. Matching names, generic filing vocabulary and dates alone
+are not topic matches. Identical dated headlines and canonical document URLs are deduplicated
+across feeds after relevance ranking; feed diversity is not proof of independent corroboration.
+At most three distinct-feed-first context rows and the nearest two future milestones are attached.
+They contribute **zero priority points** and cannot originate a
 card. AI Alerts renders only one linked context sentence; Ask Research receives the same structured
 `relatedContext` and `upcoming` evidence.
 
@@ -3947,16 +3950,32 @@ series that do not exist in the headline feeds: production, sales volumes, capac
 company-specific measures. Yearly and quarterly remain separate. Every point retains the period,
 display value, parsed numeric value when available, unit, and the tooltip's source title, bounded
 quote, page and HTTP(S) source URL. A missing section is recorded as a successful company read with
-zero rows; page text is data and is never treated as an instruction.
+zero rows only if the company has no previously captured series; unexpectedly vanished Insights
+retain the previous series as failed/stale. Page text is data and is never treated as an instruction.
 
 `.github/workflows/screener-insights-refresh.yml` runs daily at 02:17 UTC using the existing
 Screener secrets. The first pass (and any pass after more than eight days without complete coverage)
-reads the complete 535-company universe plus the exact synchronized S Screen portfolio. Portfolio
-membership comes from Screener's full verified watchlist export, not the possibly paginated links
-visible on one page. Subsequent daily passes re-read every portfolio company and one stable seventh
+reads the complete configured universe plus the synchronized S Screen portfolio. The full watchlist
+export verifies the cardinality of the full management list, whose unique company URLs provide
+target identities, including delisted companies with no exchange code in their export. Never infer
+full coverage from one paginated table page. `/company/id/<id>/` is supported as `ID:<id>` with a
+null ticker; it is never interpreted as a BSE code. Invalid universe URLs fail inventory instead of
+silently dropping a target. Source coverage describes the verified Screener watchlist, not holdings
+unavailable on Screener. Subsequent daily passes re-read every portfolio company and one stable seventh
 of the remaining universe with three browser pages and a short inter-company pause. A partial pass
 replaces companies it successfully checked, retains the last valid rows for failed/unvisited current
 targets, forgets removed targets and keeps `fullCoverage: false` when the latest check failed.
+Each company must pass row validation before it replaces its last-good record. A missing quarterly
+table, expired session, malformed column layout or oversized series is a failed company read, not
+an empty successful update. A run with no successful company reads publishes no artifact. Safe
+stage names distinguish export discovery, download, parsing, URL inventory and identity reconciliation.
+`failedKeys` identifies failed targets; their retained records carry `readStatus: failed` until a
+successful replacement. Company age is tracked independently of the capture envelope: portfolio
+records expire for alert context after 36 hours, other universe records after eight days.
+An optional public ISIN is attached only through a unique exact export code/name match. Ask Research
+applies current holdings by ticker/verified ISIN, never the capture's potentially old `inPortfolio`
+flag. This prevents an exited holding leaking back into Portfolio scope and permits verified
+tickerless holdings without inventing a ticker.
 
 The validated gzip artifact is `screener-insights-v1.json.gz`, retained for 30 days. Its public
 contract is bounded to 1,000 companies, 40 metrics per company, 16 points per series, 24 MB raw and
@@ -3968,10 +3987,20 @@ GitHub signed-download host, decompresses under the raw limit and re-validates t
 `GET /api/screener-insights` serves that one shared capture with an ETag and five-minute edge cache.
 A missing/stale (older than 36 hours), incomplete or latest-failed capture requests one background
 workflow dispatch behind a 30-minute cooldown; it never blocks or empties the twenty All Alerts
-feeds. The browser keeps a conditional IndexedDB last-good copy under `screener-insights`. Ask
+feeds. The browser keeps a conditional IndexedDB last-good copy under `screener-insights`, validating
+new bodies and cached ETag hits before they can replace a good record. Malformed HTTP 200s and
+transport failures retain values across reloads while reporting the failed read. Ask
 Research reports the source unavailable until the first valid
 capture exists. Insights remain context-only everywhere: they cannot produce an All Alerts event or
 an AI Alerts card by themselves.
+
+Ask Research sorts question matches within named-company rows before applying its row limit.
+Insights normally contributes the latest, preceding and same-period-prior-year observations;
+explicit year requests and history/trend questions expand that bounded selection (at most eight
+points). Included/available counts, company check time, source health and document/page provenance
+travel with the row. Omitted observations are not missing data and stale values are not current
+source confirmations. `verify-screener-insights-ui.mjs` exercises the real collector export and
+lazy-tab helpers plus invalid-response/offline IndexedDB recovery using intercepted local fixtures.
 
 ### `sattva:ai-muted:v1` — the archive, device-local
 

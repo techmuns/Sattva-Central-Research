@@ -265,7 +265,7 @@ export function clearAll() {
  *   450KB parse off the main thread on every unchanged tick, which is the only benefit the manual
  *   version had left.
  */
-export async function conditionalJson(path, { key, optional = false, signal } = {}) {
+export async function conditionalJson(path, { key, optional = false, signal, validate } = {}) {
   const stored = key ? await readEntry(key) : null;
 
   let res;
@@ -295,6 +295,7 @@ export async function conditionalJson(path, { key, optional = false, signal } = 
   // read; the body copy is what survives a cross-origin response whose ETag is not exposed.
   const headerTag = res.headers.get('etag');
   if (headerTag && stored?.tag === headerTag && stored.value) {
+    validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
@@ -310,9 +311,13 @@ export async function conditionalJson(path, { key, optional = false, signal } = 
   // Same short-circuit, for the case where the ETag header was unreadable and the tag had to come
   // out of the body. The parse is already paid for, but the caller still learns nothing changed.
   if (tag && stored?.tag === tag && stored.value) {
+    validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
+  // Consumers with a strict contract must validate before malformed 200s can replace last-good
+  // bytes. Validation errors propagate to the consumer's existing stale/failure policy.
+  validate?.(value);
   if (key) writeEntry(key, { tag, value, savedAt: checkedAt });
   return { status: 200, value, tag, savedAt: checkedAt, checkedAt, fromStore: false };
 
