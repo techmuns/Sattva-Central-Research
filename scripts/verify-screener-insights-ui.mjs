@@ -84,6 +84,15 @@ try {
   apiMode = 'ok';
   await page.evaluate(() => window.insights.load({ refresh: true }));
   assert.equal(await page.evaluate(() => window.insights.meta().latestReadFailed), false, 'successful revalidation clears the read failure');
+  assert.equal(await page.evaluate(async () => {
+    const { conditionalJson } = await import('/js/core/store.js');
+    let validated = 0;
+    await Promise.all([
+      conditionalJson('api/screener-insights', { key: 'fixture-validation-boundary' }),
+      conditionalJson('api/screener-insights', { key: 'fixture-validation-boundary', validate: () => { validated++; } }),
+    ]);
+    return validated;
+  }), 1, 'a concurrent unvalidated caller cannot bypass a consumer-owned validator');
   console.log('PASS: real browser inventory/export, internal IDs, lazy tabs, session failure, partial retention and invalid-response/offline cache recovery.');
 } finally {
   await browser.close();
