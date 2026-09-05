@@ -829,6 +829,18 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
     load,
     onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() })) : null,
   });
+  if (!onPartial) {
+    await insightRead;
+    return rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() });
+  }
+  // A fast burst can finish before General Alerts' coalesced progress timer.
+  // Publish its completed evidence now: optional operating context must not
+  // hold the first cards behind a slow API or the private position-size check.
+  const insights = screenerInsights.all();
+  const ready = rankReport(report, { holdings: book, positionSizes, insightCompanies: insights });
+  try { onPartial?.(ready); } catch (err) { console.error('[ai-alerts] onPartial threw', err); }
   await insightRead;
-  return rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() });
+  const updatedInsights = screenerInsights.all();
+  return updatedInsights.length === insights.length && updatedInsights.every((company, i) => company === insights[i])
+    ? ready : rankReport(report, { holdings: book, positionSizes, insightCompanies: updatedInsights });
 }

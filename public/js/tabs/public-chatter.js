@@ -685,247 +685,103 @@ function buildOtherTable(rows) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Telegram — the second, independent feed on this tab
-// ---------------------------------------------------------------------------------------
-//
-// THE SYNTHETIC TELEGRAM SUB-VIEW THIS REPLACES WAS DELETED FOR FABRICATION, NOT FOR BEING
-// TELEGRAM. The header of this file records why the old one went: fictional handles putting
-// invented words in named people's mouths, and a pump-risk gate calibrated for a firehose. Those
-// objections are about made-up data, and none of them survives a real feed. What comes back is the
-// channel's own posts, reproduced; what stays deleted is the pump-risk heuristic and every other
-// judgement of ours over somebody else's words.
-//
-// THIS FEED PUBLISHES NO POST TIMES, AND THERE IS THEREFORE NO TIME COLUMN.
-// The route the capture is read on carries the post text and no timestamp of any kind. A column of
-// six hundred identical em dashes would say "we asked and were refused"; the honest statement is
-// that this disclosure does not answer that question, so the column is absent and the description
-// and footnote say so in words. Same resolution as the AMC portfolios having no Qty column.
-//
-// POSTS CARRY NO COMPANY, SO THEY ARE NOT FILTERED BY ONE. The section is whole in every scope,
-// exactly as market-wide news and the uncovered half of this tab are, and the reason is stated on
-// screen rather than left as a silent inconsistency.
-
-/**
- * THIS LABEL MAY NOT SAY "LIVE", AND THE REASON IS THE WHOLE POINT.
- *
- * A green Live is a claim that the data on screen was confirmed recently. This feed cannot make
- * that claim. The capture is rewritten ONLY when a post arrives — a run that finds nothing exits
- * without touching the file — so `capturedAt` moves when the CHANNEL posts, not when the job last
- * looked. Reading it as freshness gets both directions wrong: a quiet weekend would turn the label
- * amber over data that was checked twenty minutes ago, and a job that stopped running a week ago
- * would keep the label green for as long as its last capture stayed inside the window.
- *
- * So the label states the one thing this feed actually knows: when the newest post it holds was
- * captured. Past `TELEGRAM_UNCHANGED_AFTER_MS` it says the capture has not changed since then and
- * says, in words, that it cannot tell a quiet channel from a stopped job — because it cannot.
- */
+// Telegram — retained posts with source dates and collection progress.
+// The timestamp is from Telegram's embed. Missing content is a linked post, never invented text.
 const TELEGRAM_UNCHANGED_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
-
 export function telegramFreshness(capturedAt, now = Date.now()) {
-  if (!capturedAt) return { state: 'unknown', ageMs: null };
-  const ms = new Date(capturedAt).getTime();
-  if (!Number.isFinite(ms)) return { state: 'unknown', ageMs: null };
-  const ageMs = now - ms;
+  if (!capturedAt || !Number.isFinite(Date.parse(capturedAt))) return { state: 'unknown', ageMs: null };
+  const ageMs = now - Date.parse(capturedAt);
   return { state: ageMs <= TELEGRAM_UNCHANGED_AFTER_MS ? 'captured' : 'unchanged', ageMs };
 }
-
+const postLabel = (r) => r.text || r.attachments?.map((a) => a.name).join(', ') ||
+  (r.mediaType ? `${r.mediaType[0].toUpperCase()}${r.mediaType.slice(1)} post` : 'Content available in Telegram');
+const TELEGRAM_DATE_FORMAT = new Intl.DateTimeFormat('en-IN', {
+  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata',
+});
+const telegramDate = (value) => value ? TELEGRAM_DATE_FORMAT.format(new Date(value)) : 'Date not captured yet';
 function telegramDescription() {
   const t = telegram.meta();
-  const channel = t.channel ? `@${t.channel}` : 'the monitored public channel';
-  return (
-    `Posts from ${escapeHtml(channel)} on Telegram, reproduced as published and newest first. ` +
-    `This feed publishes no post times, so the rows carry none and are ordered by message number, which rises with publication. ` +
-    `Nothing here is scored, ranked or given a sentiment, and a post carries no company — so nothing here is narrowed by the scope toggle.`
-  );
+  return `Posts from ${escapeHtml(t.channel ? `@${t.channel}` : 'the public Telegram channel')}, newest first, with original publication dates in IST. ` +
+    'Read captured text here and open reports or restricted content in Telegram. Posts appear in every portfolio scope.';
 }
-
-/** The passive status label. Never a bare "Live": the word is earned against the capture's age. */
 function telegramHeadMeta() {
   const t = telegram.meta();
-  const { state, ageMs } = telegramFreshness(t.capturedAt);
-  const tone =
-    state === 'unchanged'
-      ? 'bg-amber-50 text-amber-700 ring-amber-100'
-      : 'bg-slate-50 text-slate-600 ring-slate-200';
-  const dot = state === 'unchanged' ? 'bg-amber-500' : 'bg-slate-400';
-  // Never "Live". See telegramFreshness above: nothing here can vouch for when the feed was last
-  // checked, only for when the newest post it holds arrived.
-  const label = state === 'unknown' ? 'No capture yet' : 'Newest post';
-  const detail =
-    state === 'unknown'
-      ? 'nothing captured'
-      : `${escapeHtml(formatNumber(t.count))} post${t.count === 1 ? '' : 's'} · captured ${escapeHtml(formatRelativeTime(new Date(t.capturedAt)))}${state === 'unchanged' ? ' · unchanged since' : ''}`;
-  return `
-    <div class="flex flex-wrap items-center justify-end gap-2">
-      <span data-telegram-live data-telegram-freshness="${escapeHtml(state)}"
-        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${tone}">
-        <span class="h-1.5 w-1.5 rounded-full ${dot}"></span>
-        <span>${escapeHtml(label)}</span>
-        <span class="font-medium opacity-80">${detail}</span>
-      </span>
-    </div>`;
+  const failed = t.reason || ['failed', 'partial'].includes(t.lastRun?.status);
+  const stale = t.lastCheckedAt && Date.now() - Date.parse(t.lastCheckedAt) > 6 * 3600000;
+  const warning = failed || stale;
+  const state = failed ? 'partial' : t.lastCheckedAt ? (stale ? 'stale' : 'checked') : 'unknown';
+  const label = failed ? 'Collection needs attention' : t.lastCheckedAt ? `Checked ${formatRelativeTime(new Date(t.lastCheckedAt))}` : 'Check time unavailable';
+  return `<div class="flex flex-wrap items-center gap-2">
+    <span data-telegram-live data-telegram-freshness="${state}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${warning ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-slate-50 text-slate-600 ring-slate-200'}">
+      ${escapeHtml(formatNumber(t.count || 0))} posts · ${escapeHtml(label)}
+    </span>
+  </div>`;
 }
-
-/** The panel body: an honest pending state, or the table. */
 function telegramPanel(table) {
   const t = telegram.meta();
-  if (!t.loaded) {
-    return `<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-slate-100">Loading Telegram posts…</div>`;
-  }
-  // A read that failed is not a channel that posted nothing. The two are named separately, because
-  // reporting an outage as silence is the error this codebase keeps closing.
-  if (!t.ok) {
-    const body =
-      t.reason === 'no-capture'
-        ? 'No capture has been committed yet. The scheduled job writes <code class="rounded bg-slate-100 px-1">public/data/telegram-posts.json</code>; until it has run once there is nothing to show. This is not a statement about the channel.'
-        : 'The committed capture could not be read from this browser. Returning to this tab asks again; the read is not cached as an answer.';
-    return `
-      <div data-telegram-unavailable class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-100">
-        <p class="font-display text-base font-bold text-slate-900">Telegram posts are not available</p>
-        <p class="mt-2 text-sm leading-relaxed text-slate-600">${body}</p>
-      </div>`;
-  }
-  if (!t.count) {
-    return `
-      <div data-telegram-empty class="rounded-2xl bg-white p-8 text-sm text-slate-600 shadow-sm ring-1 ring-slate-100">
-        The capture holds no readable posts. Every message id it reached carried nothing this route can read — a document posted without a caption, a deleted message, or an id the run could not fetch. Which of those it was is not something this route can tell you, so it does not guess.
-      </div>`;
-  }
-  return table ? table.html : '';
+  if (!t.loaded) return '<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400">Loading Telegram posts…</div>';
+  if (!t.ok) return '<div data-telegram-unavailable class="rounded-2xl bg-white p-8 text-sm text-slate-600">Telegram posts are not available. The archive could not be read; returning to this tab will retry.</div>';
+  if (!t.count) return '<div data-telegram-empty class="rounded-2xl bg-white p-8 text-sm text-slate-600">No posts have been captured yet.</div>';
+  return table?.html || '';
 }
-
+function openTelegramPost(r) {
+  openModal(`<div data-telegram-post-dialog class="scrollbar-thin max-h-[82vh] overflow-y-auto p-6">
+    <div class="flex items-start justify-between gap-4">
+      <div><h2 class="font-display text-xl font-bold text-slate-900">Telegram · Message ${r.id}</h2>
+      <p class="mt-1 text-xs text-slate-500">${escapeHtml(telegramDate(r.publishedAt))}${r.publishedAt ? ' IST' : ''}</p></div>
+      <button type="button" data-modal-close aria-label="Close post" class="text-2xl text-slate-400">&times;</button>
+    </div>
+    <p class="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">${escapeHtml(r.text || 'Telegram confirms this post exists, but does not expose its text on the public web. Open the original to read it.')}</p>
+    ${r.attachments.map((a) => `<p class="mt-3 text-sm text-slate-600">${escapeHtml(a.name)}${a.size ? ` · ${escapeHtml(a.size)}` : ''}</p>`).join('')}
+    <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex font-semibold text-indigo-600">Open original in Telegram &rarr;</a>
+  </div>`, { size: 'wide' });
+}
 function buildTelegramTable() {
   const rows = telegram.posts();
   if (!rows.length) return null;
   const table = scoreTable({
-    rows,
-    // Content-derived, never positional: the capture is capped and grows at the head, so an index
-    // in the key would make one key mean a different post on the next paint. That is exactly what
-    // put the same headline on screen three times in the News table.
-    key: (r) => r.key,
-    // A post carries no company, so there is nothing to star. A star that matched nothing for ever
-    // is worse than a control that is not offered.
-    watchKey: () => null,
-    // Their words, unedited. `nameMaxPx` clamps what is DRAWN; search and export see every word.
-    name: (r) => r.text,
-    sub: (r) => `Message ${r.id}`,
-    searchable: (r) => r.text || '',
-    dense: true,
-    wrapHeads: true,
-    showAvatar: false,
-    showRank: false,
-    nameMaxPx: 720,
-    // The identity column holds a POST, not a company. Left at the kit's defaults it is headed
-    // "Company" and a search miss reads "No companies match your filters" — naming a noun this
-    // feed does not have and blaming filters for an empty result.
-    nameLabel: 'Post',
-    emptyMessage: 'No posts match your search.',
-    // NO WATCHLIST FILTER. Every row's watchKey is null by design (a post carries no company), so
-    // the toolbar would render the ☆ control with the reader's real watchlist count on it and
-    // clicking it would empty the section — a control that looks live and can only ever hide
-    // everything.
-    showWatchFilter: false,
-    initialView: tableViews.telegram,
-    exportName: 'telegram-posts',
-    onExport: (visible) => exportTelegramRows(visible),
-    stickyHead: 'max(320px, calc(100vh - 420px))',
-    onRowClick: (r) => {
-      if (r.url) window.open(r.url, '_blank', 'noopener,noreferrer');
-    },
+    rows, key: (r) => r.key, watchKey: () => null, name: postLabel,
+    sub: (r) => `Message ${r.id}${r.contentStatus === 'telegram-only' ? ' · Open in Telegram to read' : r.mediaType ? ` · ${r.mediaType}` : ''}`,
+    searchable: (r) => `${postLabel(r)} ${r.id} ${r.publishedAt || ''} ${r.attachments.map((a) => a.name).join(' ')}`,
+    searchPlaceholder: 'Search posts, reports or message number…',
+    dense: true, wrapHeads: true, showAvatar: false, showRank: false, nameMaxPx: 620,
+    nameLabel: 'Post', emptyMessage: 'No posts match your search.', showWatchFilter: false,
+    initialView: tableViews.telegram, exportName: 'telegram-posts', onExport: exportTelegramRows,
+    stickyHead: 'max(320px, calc(100vh - 420px))', onRowClick: openTelegramPost,
     columns: [
-      {
-        label: 'Open',
-        html: true,
-        // Explicitly unsortable. Left sortable, the kit renders it as a clickable header and,
-        // with no sortValue, sorts on whatever digits it can scrape out of this cell's MARKUP —
-        // ordering the feed by the numbers inside an anchor tag.
-        sortable: false,
-        get: (r) =>
-          r.url
-            ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700">Telegram &rarr;</a>`
-            : '<span class="text-slate-400">no link</span>',
-      },
+      { label: 'Published (IST)', get: (r) => telegramDate(r.publishedAt), sortable: true, sortValue: (r) => r.publishedAt ? Date.parse(r.publishedAt) : null },
+      { label: 'Open', html: true, sortable: false, get: (r) => `<a data-stop href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700">Telegram &rarr;</a>` },
     ],
   });
-  return {
-    html: table.html,
-    wire: (root) => {
-      const off = table.wire(root);
-      return () => {
-        tableViews.telegram = table.view ?? tableViews.telegram;
-        off?.();
-      };
-    },
-  };
+  return { html: table.html, wire: (root) => { const off = table.wire(root); return () => { tableViews.telegram = table.view ?? tableViews.telegram; off?.(); }; } };
 }
-
-/**
- * Coverage, stated rather than implied.
- *
- * This route reads a post's text off its own page, and a document posted with no caption has no
- * text on that page at all. Those ids are counted, never guessed at: this route genuinely cannot
- * tell a caption-less PDF from a deleted message, so it claims neither and reports both together
- * as ids it could not read. Without this line a batch of broker PDFs reads as a quiet channel.
- */
 function telegramFootnotes() {
   const t = telegram.meta();
   if (!t.ok) return '';
-  const parts = [];
-  parts.push(
-    `Source: the public Telegram channel ${escapeHtml(t.channel ? `@${t.channel}` : '(not reported)')}, read from its own message pages.`,
-  );
-  if (t.span) {
-    parts.push(
-      `Coverage: this capture spans message ${escapeHtml(formatNumber(t.spanFrom))} to ${escapeHtml(formatNumber(t.spanTo))} — ${escapeHtml(formatNumber(t.span))} ids, of which ${escapeHtml(formatNumber(t.readable))} carried readable text and ${escapeHtml(formatNumber(t.unreadable))} did not. That last figure is every id with no post on it: documents posted without a caption, deleted messages, and any id a run could not fetch. This route cannot tell the first two apart, so it does not choose between them.${
-        t.pending
-          ? ` ${escapeHtml(formatNumber(t.pending))} of them are the third kind — ids a run could not fetch, which are ours rather than the channel's, and are re-asked on the next run.`
-          : ' None of them is the third kind: every id in this span was reached.'
-      }`,
-    );
-  }
-  parts.push(
-    'Times: this feed publishes none, so no row carries one and the order is by message number.',
-  );
-  parts.push(
-    `Newest post captured ${t.capturedAt ? escapeHtml(formatRelativeTime(new Date(t.capturedAt))) : 'not reported'}. The capture is rewritten only when a post arrives, so that is when the channel last said something this route could read — <strong>not</strong> when the job last looked, which nothing here can tell you.`,
-  );
-  return `
-    <div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
-      <p><strong class="font-semibold text-slate-600">Footnotes.</strong> ${parts.join(' ')}</p>
-    </div>`;
+  const progress = t.historyComplete ? 'The historical scan has reached the start of the channel.' :
+    t.historyNextId ? `Older history is incomplete; the next collection continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
+  return `<div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
+    <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} public message pages and embeds. ${escapeHtml(progress)}
+    ${formatNumber(t.limited || 0)} posts require Telegram to read their content; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
+    ${t.undated ? `${formatNumber(t.undated)} older records are awaiting publication dates. ` : ''}
+    Gaps between message numbers are not treated as posts. Publication dates come from Telegram; collection and first-seen times are separate.
+    This archive retains captured posts and does not claim to include content Telegram withholds from the public web.</p>
+  </div>`;
 }
-
-/** A workbook leaves the page without its chrome, so row 1 carries the whole provenance. */
 function exportTelegramRows(rows) {
   const t = telegram.meta();
-  const banner = {
-    __banner: true,
-    text:
-      `NOT OUR WORDS. These are posts published by the public Telegram channel ` +
-      `${t.channel ? `@${t.channel}` : '(not reported)'}, reproduced unedited. This dashboard adds no score, ` +
-      `no ranking, no sentiment and no company mapping. THIS FEED PUBLISHES NO POST TIMES: the ` +
-      `"Message" column is Telegram's own message number, which rises with publication and is the ` +
-      `only ordering this route supports — it is not a date. "First seen" is when OUR scraper first ` +
-      `read the post, a fact about us and not about the post. ` +
-      `COVERAGE: this is not the whole channel. The capture spans message ${t.spanFrom || '?'} to ` +
-      `${t.spanTo || '?'} — ${t.span || 0} ids — of which ${t.readable || 0} carried readable text and ` +
-      `${t.unreadable || 0} did not, being documents posted without a caption, deleted messages, or ` +
-      `ids a run could not fetch, which this route cannot tell apart. Captured ` +
-      `${t.capturedAt || 'time not reported'} (when the newest post arrived, NOT when the feed was ` +
-      `last checked); exported ${new Date().toISOString()}.`,
-  };
-  const value = (row, get) => (row.__banner ? '' : get(row));
-  return exportRows({
-    filename: `sattva-telegram-posts-${todayStamp()}`,
-    sheetName: 'Telegram',
+  const banner = { __banner: true, text: `Posts from @${t.channel}. Publication times come from Telegram (UTC in this export); first seen is the collector's time. Missing content must be opened in Telegram. History ${t.historyComplete ? 'scanned to the beginning' : 'still being collected'}. Last successful check: ${t.lastCheckedAt || 'not recorded'}.` };
+  const value = (r, fn) => r.__banner ? '' : fn(r);
+  return exportRows({ filename: `sattva-telegram-posts-${todayStamp()}`, sheetName: 'Telegram',
     columns: [
-      { header: 'Post', key: 'text', width: 90, get: (r) => (r.__banner ? r.text : r.text || '') },
-      { header: 'Message', key: 'id', width: 12, get: (r) => value(r, (x) => x.id ?? '') },
-      { header: 'Link', key: 'url', width: 46, get: (r) => value(r, (x) => x.url || '') },
-      { header: 'First seen (ours, not the post time)', key: 'first_seen', width: 34, get: (r) => value(r, (x) => x.firstSeenAt || '') },
-    ],
-    rows: [banner, ...rows],
-  });
+      { header: 'Post', key: 'text', width: 90, get: (r) => r.__banner ? r.text : postLabel(r) },
+      { header: 'Message', key: 'id', width: 12, get: (r) => value(r, (p) => p.id) },
+      { header: 'Published (UTC)', key: 'publishedAt', width: 28, get: (r) => value(r, (p) => p.publishedAt || '') },
+      { header: 'Content access', key: 'contentStatus', width: 22, get: (r) => value(r, (p) => p.contentStatus) },
+      { header: 'Attachments', key: 'attachments', width: 40, get: (r) => value(r, (p) => p.attachments.map((a) => a.name).join('; ')) },
+      { header: 'Link', key: 'url', width: 46, get: (r) => value(r, (p) => p.url) },
+      { header: 'First seen (collector)', key: 'firstSeenAt', width: 28, get: (r) => value(r, (p) => p.firstSeenAt || '') },
+    ], rows: [banner, ...rows] });
 }
 
 
