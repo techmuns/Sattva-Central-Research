@@ -3162,8 +3162,10 @@ committed capture. `TWITTER_LIMIT` (20) bounds the posts read per account per ru
 `scripts/scrape-telegram.mjs` on `.github/workflows/telegram-refresh.yml` (half-hourly, plus a
 `workflow_dispatch` that can ask for a backfill). **The cron is a request, not a promise** — GitHub
 sheds the densest schedules first, measured in this repository at 12 fired out of 124 for a `*/20` —
-so no surface quotes it as a cadence the reader will actually get, and the only honest figure on
-screen stays "when the newest post was captured". **It needs no credential**: the channel's message
+so no surface quotes it as a cadence the reader will actually get. The source registry's `cadence`
+field reaches the reader — the registry modal and the beacon both render it — so it is worded as a
+request ("half-hourly requested, delivery best-effort"), never as a rate. The only honest figure on
+screen stays "when the newest post was captured", which the tab already prints. **It needs no credential**: the channel's message
 pages are public, so there is no secret to install and none to expire.
 
 ```jsonc

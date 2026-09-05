@@ -456,7 +456,13 @@ export function sourceGroups() {
             'A document posted without a caption has nothing on its page to read' +
             `${clause(tgUnreadable, ' &mdash; <n> of the ids reached were of that kind and are counted rather than guessed at')}. ` +
             `Read by a scheduled Action and committed; the browser reads the file with one conditional GET${clause(tg, ', <n> posts in the capture now')}.`,
-          cadence: 'Every 30 minutes, best-effort · GitHub Actions · no credential required',
+          // A REQUEST, WORDED AS ONE. This field reaches the reader — the registry modal renders it
+          // and so does the beacon's per-source detail — and the rule is that a cron expression may
+          // never be printed as a cadence, because it is a request GitHub is measured not to honour
+          // (12 of 124 for a */20 here, and zero of ~11 after relaxing to */30). So it says what was
+          // asked for and that delivery is not guaranteed; the only honest figure the reader gets is
+          // the one the tab already prints, "Newest post · captured <when>".
+          cadence: 'Scheduled GitHub Action · half-hourly requested, delivery best-effort · no credential',
           // `live` describes the PLUMBING — this feed is wired to a scheduled job that refreshes
           // it — exactly as it does for every other row here. It must NOT be derived from
           // `meta().ok`, which only says whether THIS BROWSER has loaded the module: the reader is
