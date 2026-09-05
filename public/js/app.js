@@ -152,11 +152,68 @@ async function boot() {
   // It warms the complete module graph for future tab switches and repeat visits,
   // while the service worker explicitly excludes authenticated and no-store reads.
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    // A NEW WORKER IS NOT A NEW DASHBOARD UNTIL THE DOCUMENT RELOADS, AND NOBODY TELLS THE READER.
+    //
+    // sw.js serves /js/ cache-first and excludes it from background revalidation, so the modules a
+    // page is running are fixed for the life of that document. Installing a new worker does not
+    // change them: `skipWaiting()` and `clients.claim()` swap which worker answers the NEXT
+    // request, they do not re-execute the module graph already imported. So the first visit after
+    // a deploy upgrades the cache and still paints the old build, and only a SECOND reload shows
+    // the new one — measured, on this app: the cache flipped on reload 1 and the new section
+    // appeared on reload 2.
+    //
+    // That is the failure the comment block in sw.js warns about, arrived at from the other side:
+    // the cache name WAS bumped, the worker DID install, and the feature was still invisible to
+    // everyone who had visited before. A version boundary nothing acts on is not a boundary.
+    //
+    // `controllerchange` fires exactly when the claim lands. It also fires on a FIRST install,
+    // where the page already holds the newest modules and a reload would be a pointless flash —
+    // `hadController` is what tells the two apart.
+    const hadController = !!navigator.serviceWorker.controller;
+    let upgrading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || upgrading) return;
+      upgrading = true;
+      applyWorkerUpgrade();
+    });
     const register = () => navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .catch((err) => console.warn('[app] repeat-visit cache unavailable', err));
     if (typeof requestIdleCallback === 'function') requestIdleCallback(register, { timeout: 2000 });
     else setTimeout(register, 0);
   }
+}
+
+
+/**
+ * Reload onto the newly activated worker — but never over the top of a metered run.
+ *
+ * Ask Research holds the only work here that a reload destroys rather than defers: the answer is
+ * streaming from a paid model call and the question is already in the transcript, so a reload
+ * mid-answer costs the run and leaves that question with nothing under it. Everything else a
+ * reload discards is cheap and rebuilt on the way back — a scroll position, a search term, a
+ * committed snapshot that is already on the device.
+ *
+ * So this waits rather than prompting. A banner asking the reader to reload would put the cost of
+ * our deployment model on them, which is the thing being fixed; and it would still have to be
+ * declined during an answer. If a generation never settles the update simply lands on the reader's
+ * next natural visit, which is exactly where it landed before this existed.
+ */
+function applyWorkerUpgrade() {
+  const busy = async () => {
+    try {
+      const { hasWorkInFlight } = await import('./tabs/ask-research.js');
+      return hasWorkInFlight();
+    } catch {
+      return false;   // a module that will not load cannot be holding a run open.
+    }
+  };
+  const attempt = async () => {
+    if (await busy()) return;
+    clearInterval(timer);
+    location.reload();
+  };
+  const timer = setInterval(attempt, 5000);
+  attempt();
 }
 
 boot();

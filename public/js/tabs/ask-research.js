@@ -187,6 +187,19 @@ function isBusy(session) {
 }
 
 /**
+ * A METERED RUN IS THE ONE THING A RELOAD CANNOT GIVE BACK.
+ *
+ * `destroy()` deliberately does not abort a generation, so an answer survives the reader looking
+ * at another tab — but nothing survives the document going away, and the question is already in
+ * the transcript by then, so a reload mid-answer costs a real model run and leaves a user message
+ * with nothing under it. The service-worker upgrade in `app.js` is the only thing here that can
+ * reload the page without the reader asking, so it asks this first and waits.
+ */
+export function hasWorkInFlight() {
+  return generations.size > 0;
+}
+
+/**
  * AN ANSWER IN FLIGHT OUTLIVES THE TAB IT WAS ASKED FROM.
  *
  * `destroy()` used to abort every running generation, so pressing Send and then looking at another
