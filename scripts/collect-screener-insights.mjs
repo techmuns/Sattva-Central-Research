@@ -15,6 +15,7 @@ import {
   SCREENER_INSIGHTS_ID,
   SCREENER_INSIGHTS_LIMIT,
   screenerInsightKey,
+  screenerInsightIdentity,
   validateScreenerInsightCompanies,
 } from '../public/js/data/screener-insights-shared.js';
 import { readScreenerInsightsCollector } from '../worker/screener-insights-collector.mjs';
@@ -93,10 +94,10 @@ export async function exportPortfolioTargets(page) {
   return { records, manageRows };
 }
 
-export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 12_000 } = {}) {
+export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 12_000, previousCompany = null } = {}) {
   const response = await page.goto(item.companyUrl, { waitUntil: 'domcontentloaded' });
   const final = new URL(page.url());
-  if (!response?.ok() || final.origin !== ORIGIN || final.pathname !== new URL(item.companyUrl).pathname) throw Error('response');
+  if (!response?.ok() || final.origin !== ORIGIN || screenerInsightIdentity(final.href)?.companyKey !== item.companyKey) throw Error('response');
   if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw Error('session');
   const section = page.locator('#insights');
   if (await section.count()) {
@@ -111,6 +112,7 @@ export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 1
   if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw Error('oversized');
   const parsed = parseScreenerInsightsPage(html);
   const rows = parsed.rows.map((row) => ({ ...row, id: screenerInsightKey({ companyKey: item.companyKey, ...row }) }));
+  if (!rows.length && previousCompany?.rows?.length) throw Error('Previously captured Insights disappeared');
   const company = { ...item, checkedAt, readStatus: 'ok', rows };
   validateScreenerInsightCompanies([company]);
   return company;
@@ -166,6 +168,7 @@ async function main() {
   const full = forceFull || !previous || !previous.fullCoverage || !Number.isFinite(previousAge) || previousAge > 8 * 86_400_000;
   const bucket = Math.floor(Date.now() / 86_400_000) % 7;
   const selected = [...targets.values()].filter((item) => full || item.inPortfolio || hashBucket(item.companyKey) === bucket);
+  const previousByKey = new Map((previous?.companies || []).map((company) => [company.companyKey, company]));
   const succeeded = [];
   let failedCount = 0;
   const failedKeys = [];
@@ -182,7 +185,7 @@ async function main() {
         let success = false;
         for (let attempt = 1; attempt <= 2 && !success; attempt++) {
           try {
-            succeeded.push(await readInsightCompany(page, item, checkedAt));
+            succeeded.push(await readInsightCompany(page, item, checkedAt, { previousCompany: previousByKey.get(item.companyKey) }));
             success = true;
           } catch {
             if (attempt === 2) { failedCount += 1; failedKeys.push(item.companyKey); }

@@ -28,7 +28,10 @@ await context.route('**/*', async (route) => {
     if (url.pathname === '/watchlist/10850427/') return route.fulfill({ contentType: 'text/html', body: '<a href="/dash/10850427/">S Screen</a><form action="/api/export/screen/?sublist_id=10850427" method="post"><button type="submit">Export</button></form><a href="/company/TEST/">One table row only</a>' });
     if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: 'Name,ISIN Code,NSE Code,BSE Code\nTest,INE000000001,TEST,\nDelisted,INE000000002,,\n' });
     if (url.pathname === '/user/stocks/10850427/') return route.fulfill({ contentType: 'text/html', body: `<h1>Add companies to S Screen</h1><ul><li><a href="/company/TEST/">Test</a><button onclick="Watchlist.removeCompany('1')">Remove</button></li>${mode === 'short-inventory' ? '' : '<li><a href="/company/id/1234/">Delisted</a><button onclick="Watchlist.removeCompany(\'2\')">Remove</button></li>'}</ul>` });
-    if (url.pathname.startsWith('/company/')) return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
+    if (url.pathname.startsWith('/company/')) {
+      if (mode === 'consolidated' && !url.pathname.endsWith('/consolidated/')) return route.fulfill({ status: 302, headers: { location: `${url.pathname}consolidated/` } });
+      return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
+    }
     if (url.pathname === '/quarter/') return route.fulfill({ contentType: 'text/html', status: mode === 'failed-quarter' ? 503 : 200, body: mode === 'failed-quarter' ? 'Unavailable' : table('quarterly') });
   }
   if (url.origin === 'http://insights.test') {
@@ -54,6 +57,8 @@ try {
   const item = inventory.get('TEST');
   const company = await readInsightCompany(page, item, checkedAt);
   assert.equal(company.rows.length, 2, 'lazy quarterly table is loaded and parsed with yearly data');
+  mode = 'consolidated';
+  assert.equal((await readInsightCompany(page, item, checkedAt)).rows.length, 2, 'same-company consolidated redirects are allowed without accepting other entities');
   payload = { version: 1, sourceId: 'screener-insights', checkedAt, targetCount: 1, checkedCount: 1, failedCount: 0, fullCoverage: true, targetKeys: ['TEST'], companies: [company] };
   mode = 'failed-quarter';
   await assert.rejects(readInsightCompany(page, item, checkedAt, { tabTimeout: 300 }));
@@ -64,6 +69,7 @@ try {
   await assert.rejects(readInsightCompany(page, item, checkedAt), /session/);
   mode = 'no-insights';
   assert.equal((await readInsightCompany(page, item, checkedAt)).rows.length, 0, 'a verified page with no section differs from a broken table');
+  await assert.rejects(readInsightCompany(page, item, checkedAt, { previousCompany: company }), /disappeared/, 'an unexpectedly vanished section cannot erase captured history');
 
   await page.goto('http://insights.test/');
   await page.waitForFunction(() => window.insights);

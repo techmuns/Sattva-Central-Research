@@ -68,7 +68,8 @@ function parseTable(container, periodicity) {
     const unit = text(/<span\b[^>]*class=["'][^"']*\bsub\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i.exec(cells[0])?.[1]) || null;
     const metric = text(cells[0].replace(/<br\s*\/?>[\s\S]*$/i, ''));
     if (!metric) throw Error('Screener insight metric unavailable');
-    const values = columns.map((column, index) => pointOf(cells[index + 1], column.period, column.label)).filter(Boolean);
+    const values = columns.map((column, index) => pointOf(cells[index + 1], column.period, column.label)).filter(Boolean)
+      .sort((a, b) => a.period.localeCompare(b.period));
     if (!values.length) continue;
     rows.push({ periodicity, metric, unit, values });
   }

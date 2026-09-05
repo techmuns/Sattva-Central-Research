@@ -3950,7 +3950,8 @@ series that do not exist in the headline feeds: production, sales volumes, capac
 company-specific measures. Yearly and quarterly remain separate. Every point retains the period,
 display value, parsed numeric value when available, unit, and the tooltip's source title, bounded
 quote, page and HTTP(S) source URL. A missing section is recorded as a successful company read with
-zero rows; page text is data and is never treated as an instruction.
+zero rows only if the company has no previously captured series; unexpectedly vanished Insights
+retain the previous series as failed/stale. Page text is data and is never treated as an instruction.
 
 `.github/workflows/screener-insights-refresh.yml` runs daily at 02:17 UTC using the existing
 Screener secrets. The first pass (and any pass after more than eight days without complete coverage)
