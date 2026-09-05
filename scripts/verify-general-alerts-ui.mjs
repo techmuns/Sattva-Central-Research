@@ -54,6 +54,11 @@ const server = createServer((req, res) => {
   calls.push(url.pathname);
   const json = (value) => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value)); };
   try {
+    if (url.pathname === '/embed') {
+      res.setHeader('content-type', 'text/html');
+      res.end(`<!doctype html><html><body style="margin:0;overflow:hidden;background:#475569"><main style="position:fixed;inset:16px 16px 16px 64px;display:flex;flex-direction:column;background:white"><header style="height:48px;flex:none">Local dashboard host</header><iframe title="Research dashboard" src="/" style="width:100%;flex:1;min-height:0;border:0"></iframe></main></body></html>`);
+      return;
+    }
     if (url.pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (url.pathname === '/data/news.json') { json(newsFixture); return; }
     if (url.pathname === '/api/earnings') { json(data('earnings-live.json')); return; }
@@ -93,16 +98,16 @@ const errors = [];
 page.on('pageerror', (error) => errors.push(error.message));
 page.on('console', (message) => { if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) errors.push(message.text()); });
 await page.route('**/*', (route) => route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
-const settled = async () => {
+const settled = async (target = page) => {
   try {
-    await page.waitForFunction(() => {
+    await target.waitForFunction(() => {
       const chips = [...document.querySelectorAll('[data-feed]')];
       const panel = document.querySelector('#root');
       return chips.length > 15 && chips.every((c) => !c.textContent.includes('reading…')) && !/Reading \d+ more feeds?/.test(panel?.textContent || '');
     }, null, { timeout: Number(process.env.GENERAL_ALERTS_SETTLE_MS || 90000) });
   } catch (error) {
-    const pending = await page.locator('[data-feed]').evaluateAll((chips) => chips.map((chip) => chip.textContent.trim()).filter((label) => label.includes('reading…')));
-    const state = await page.locator('#root').innerText().catch(() => 'root unavailable');
+    const pending = await target.locator('[data-feed]').evaluateAll((chips) => chips.map((chip) => chip.textContent.trim()).filter((label) => label.includes('reading…')));
+    const state = await target.locator('#root').innerText().catch(() => 'root unavailable');
     throw new Error(`All Alerts did not settle; pending feeds: ${pending.join(', ') || 'controls unavailable'}; page: ${state.slice(0, 500) || 'empty'}; errors: ${errors.join(' | ') || 'none'}`, { cause: error });
   }
 };
@@ -333,6 +338,46 @@ try {
   await page.locator('[data-table-search]').fill('Avenue Supermarts');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('DMart reports'));
   await page.evaluate(() => window.disposeNews());
+
+  // Exercise the actual tab inside a short host iframe, with real wheel input. Checking DOM
+  // bounds alone misses a virtual stride smaller than the rendered news-attribution rows.
+  await page.goto(`${origin}/embed`);
+  const embedded = await (await page.locator('iframe').elementHandle()).contentFrame();
+  await settled(embedded);
+  for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
+    await page.setViewportSize(size);
+    const scroller = embedded.locator('[data-table-scroll]');
+    await scroller.evaluate(el => { el.scrollTop = 0; el.scrollIntoView({ block: 'end' }); });
+    const box = await scroller.boundingBox();
+    await page.mouse.move(box.x + 200, Math.min(size.height - 40, box.y + box.height / 2));
+    let previous = 0;
+    const starts = new Set();
+    for (let step = 0; step < 24; step++) {
+      await page.mouse.wheel(0, 180);
+      await embedded.waitForFunction(top => document.querySelector('[data-table-scroll]').scrollTop > top, previous);
+      const sample = await embedded.evaluate(async () => {
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+        const el = document.querySelector('[data-table-scroll]');
+        const rows = [...el.querySelectorAll('tr[data-row-key]')];
+        const stride = parseFloat(rows[0].style.height);
+        const origin = el.querySelector('tbody').getBoundingClientRect().top;
+        const boundary = el.getBoundingClientRect().top + el.querySelector('thead').offsetHeight;
+        const visible = rows.find(r => r.getBoundingClientRect().bottom > boundary);
+        return { top: el.scrollTop, start: el.closest('[data-score-table]').dataset.virtualStart,
+          count: rows.length, stride, heights: rows.map(r => r.getBoundingClientRect().height),
+          drift: rows.map(r => Math.abs(r.getBoundingClientRect().top - origin - (Number(r.getAttribute('aria-rowindex')) - 2) * stride)),
+          visible: !!visible && visible.getBoundingClientRect().top < el.getBoundingClientRect().bottom };
+      });
+      assert(sample.top > previous && sample.visible, `wheel advances through visible records inside ${size.width}px iframe (step ${step}, previous ${previous}): ${JSON.stringify(sample)}`);
+      assert(sample.count <= 64 && sample.heights.every(h => Math.abs(h - sample.stride) <= 1), 'rendered heights match the virtual scroll stride');
+      assert(Math.max(...sample.drift) <= 2, `window replacement must not jump rows: ${Math.max(...sample.drift)}px drift`);
+      previous = sample.top;
+      starts.add(sample.start);
+    }
+    assert(starts.size >= 2, 'wheel crosses multiple virtual windows');
+  }
+  await embedded.evaluate(() => window.dispose());
   assert.deepEqual(errors, [], 'zero application errors');
-  console.log('PASS: 20 normalized feed categories (19 visible in Universe), source updates, private-session clearing, filters, responsive layout and cleanup.');
+  console.log('PASS: source updates, privacy, filters, cleanup and native iframe wheel scrolling with stable virtual geometry.');
 } finally { await browser.close(); await new Promise((done) => server.close(done)); }

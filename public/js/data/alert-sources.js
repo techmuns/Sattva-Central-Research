@@ -176,4 +176,8 @@ export const ADDITIONAL_SOURCES = [
     load: null, read: ({ day }) => privateDocuments('drhp-documents', day) },
 ];
 
-export const additionalSubscriptions = [nse, twitter, institutions, calendar, ipoFilings];
+export const additionalSourceDependencies = [
+  [nse, ['nse-filings']], [twitter, ['twitter']], [institutions, ['institutions']],
+  [calendar, ['earnings-calendar']], [ipoFilings, ['ipos']],
+];
+export const additionalSubscriptions = additionalSourceDependencies.map(([source]) => source);
