@@ -18,6 +18,24 @@ let version = 1;
 const calls = [];
 const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:16px;background:#f6f7fb"><button id="refresh">Refresh</button><main id="root"></main>
 <script>
+const activeListeners=new Map();
+const listenerSets=new WeakMap();
+const nativeAdd=EventTarget.prototype.addEventListener;
+const nativeRemove=EventTarget.prototype.removeEventListener;
+EventTarget.prototype.addEventListener=function(type,listener,options){
+  if(type==='scroll'||type==='resize'){
+    let byType=listenerSets.get(this);if(!byType){byType=new Map();listenerSets.set(this,byType);}
+    let listeners=byType.get(type);if(!listeners){listeners=new Set();byType.set(type,listeners);}
+    if(!listeners.has(listener)){listeners.add(listener);activeListeners.set(type,(activeListeners.get(type)||0)+1);}
+  }
+  return nativeAdd.call(this,type,listener,options);
+};
+EventTarget.prototype.removeEventListener=function(type,listener,options){
+  const listeners=listenerSets.get(this)?.get(type);
+  if(listeners?.delete(listener))activeListeners.set(type,Math.max(0,(activeListeners.get(type)||0)-1));
+  return nativeRemove.call(this,type,listener,options);
+};
+window.testListenerCount=(type)=>activeListeners.get(type)||0;
 window.testContext={session:{token:'local-fixture-only',email:'fixture@example.test'}};
 window.MunshotDashboardSDK={createClient:()=>({getContext:()=>window.testContext,onMessage:(fn)=>{window.testHostMessage=fn;return()=>{};}})};
 window.SATTVA_CHATTER_URL=location.origin+'/chatter';
@@ -221,6 +239,43 @@ try {
     ['high', 'low'].includes(signal.importance) &&
     /direction, (High|Low) priority/.test(signal.label)));
 
+  const virtualContract = await page.evaluate(() => {
+    const host = document.querySelector('[data-score-table]');
+    const rows = [...document.querySelectorAll('tbody tr[data-row-key]')];
+    return {
+      enabled: host?.hasAttribute('data-virtualized') || false,
+      mounted: rows.length,
+      total: Number(host?.dataset.virtualTotal || 0),
+      ariaRows: Number(host?.querySelector('table')?.getAttribute('aria-rowcount') || 0),
+      elements: document.querySelectorAll('*').length,
+      firstKey: rows[0]?.dataset.rowKey || null,
+      lastKey: rows.at(-1)?.dataset.rowKey || null,
+      scrollListeners: window.testListenerCount('scroll'),
+      resizeListeners: window.testListenerCount('resize'),
+    };
+  });
+  assert(virtualContract.enabled && virtualContract.mounted > 0 && virtualContract.mounted <= 64,
+    `virtual timeline mounts ${virtualContract.mounted} rows`);
+  assert(virtualContract.total > virtualContract.mounted && virtualContract.ariaRows === virtualContract.total + 1,
+    `full ${virtualContract.total}-row model remains represented to assistive technology`);
+  assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
+  assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
+  assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+
+  await page.locator('[data-table-scroll]').evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
+  await page.waitForFunction((firstKey) => {
+    const rows = document.querySelectorAll('tbody tr[data-row-key]');
+    return rows.length > 0 && rows[0]?.dataset.rowKey !== firstKey && Number(document.querySelector('[data-score-table]')?.dataset.virtualStart || 0) > 0;
+  }, virtualContract.firstKey);
+  const endWindow = await page.evaluate(() => ({
+    mounted: document.querySelectorAll('tbody tr[data-row-key]').length,
+    lastKey: [...document.querySelectorAll('tbody tr[data-row-key]')].at(-1)?.dataset.rowKey || null,
+  }));
+  assert(endWindow.mounted <= 64 && endWindow.lastKey !== virtualContract.lastKey,
+    `scrolling moves a bounded ${endWindow.mounted}-row window through full history`);
+  await page.locator('[data-table-scroll]').evaluate((scroller) => { scroller.scrollTop = 0; });
+  await page.waitForFunction(() => Number(document.querySelector('[data-score-table]')?.dataset.virtualStart || 0) === 0);
+
   // A source refresh can insert rows above the viewport. Preserve the visible event, not merely
   // its old pixel offset, so a reader never loses their place while the stream is live.
   const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
@@ -250,6 +305,8 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 });
   if (process.env.GENERAL_ALERTS_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_SCREENSHOT });
   await page.evaluate(() => window.dispose());
+  assert.equal(await page.evaluate(() => window.testListenerCount('scroll')), 0, 'destroy removes the table scroll listener');
+  assert.equal(await page.evaluate(() => window.testListenerCount('resize')), 0, 'destroy removes the table resize listener');
   const count = calls.length;
   await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); });
   await page.waitForTimeout(400);
