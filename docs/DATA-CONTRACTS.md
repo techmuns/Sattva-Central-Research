@@ -3159,8 +3159,11 @@ committed capture. `TWITTER_LIMIT` (20) bounds the posts read per account per ru
 ### Telegram posts — a public research channel, on the Public Chatter tab
 
 **`public/data/telegram-posts.json`** — a committed capture, written by
-`scripts/scrape-telegram.mjs` on `.github/workflows/telegram-refresh.yml` (every two hours, plus a
-`workflow_dispatch` that can ask for a backfill). **It needs no credential**: the channel's message
+`scripts/scrape-telegram.mjs` on `.github/workflows/telegram-refresh.yml` (half-hourly, plus a
+`workflow_dispatch` that can ask for a backfill). **The cron is a request, not a promise** — GitHub
+sheds the densest schedules first, measured in this repository at 12 fired out of 124 for a `*/20` —
+so no surface quotes it as a cadence the reader will actually get, and the only honest figure on
+screen stays "when the newest post was captured". **It needs no credential**: the channel's message
 pages are public, so there is no secret to install and none to expire.
 
 ```jsonc

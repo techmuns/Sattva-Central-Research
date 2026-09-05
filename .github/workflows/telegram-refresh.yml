@@ -17,12 +17,24 @@ name: Telegram refresh
 
 on:
   schedule:
-    # Every two hours. GitHub's scheduler is best-effort and sheds the densest crons first —
-    # measured elsewhere in this repository at 12 fired out of 124 scheduled for a */20 — so this
-    # asks for a cadence it might actually get rather than one that looks impressive in the file.
-    # The capture is rewritten only when a post arrives, so a run that finds nothing costs one
-    # bounded walk and no commit.
-    - cron: "0 */2 * * *"
+    # Half-hourly, matching twitter-refresh.yml — AND THIS FILE MUST NOT PRETEND THAT IS WHAT
+    # ARRIVES. GitHub's scheduler is best-effort and sheds the densest crons first. Measured in
+    # this repository on the market-news job: `*/20` fired 12 times out of 124 scheduled (10%),
+    # and RELAXING it to `*/30` did not help — that fired zero times out of ~11 across the next
+    # 5.7 hours. So half-hourly is a REQUEST, the delivered cadence is historically far sparser and
+    # erratic, and nothing on screen may quote this line as a promise; the only honest figure the
+    # tab prints is when the newest post was actually captured.
+    #
+    # Asking for it anyway is still right: an unhonoured request costs nothing, and a run that
+    # finds nothing is cheap and silent — the walk is bounded at MISS_RUN ids past the known head,
+    # and the capture is rewritten, and therefore committed, only when a post has actually arrived.
+    #
+    # IF A RELIABLE HALF-HOUR IS EVER NEEDED, THE ANSWER IS NOT A DENSER CRON. `workflow_dispatch`
+    # is not throttled at all — measured at six dispatches in a day, each starting within seconds —
+    # so the cadence has to come from a scheduler that works driving the trigger that works, as
+    # market-news does through `worker/github-actions.mjs`. That is a Worker route and a token, and
+    # it is deliberately not built here until somebody needs it.
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       backfill:

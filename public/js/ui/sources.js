@@ -456,7 +456,7 @@ export function sourceGroups() {
             'A document posted without a caption has nothing on its page to read' +
             `${clause(tgUnreadable, ' &mdash; <n> of the ids reached were of that kind and are counted rather than guessed at')}. ` +
             `Read by a scheduled Action and committed; the browser reads the file with one conditional GET${clause(tg, ', <n> posts in the capture now')}.`,
-          cadence: 'Every 2 hours · GitHub Actions · no credential required',
+          cadence: 'Every 30 minutes, best-effort · GitHub Actions · no credential required',
           // `live` describes the PLUMBING — this feed is wired to a scheduled job that refreshes
           // it — exactly as it does for every other row here. It must NOT be derived from
           // `meta().ok`, which only says whether THIS BROWSER has loaded the module: the reader is
