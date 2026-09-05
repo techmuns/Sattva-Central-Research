@@ -119,6 +119,23 @@ const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const started = Date.now();
+
+// A HARD CEILING, BECAUSE THE COOPERATIVE ONE IS NOT ENOUGH. `outOfTime()` is checked between ids,
+// so the budget bounds the WALK but not the request in flight when it expires: three attempts at a
+// 20s fetch timeout plus backoff is over a minute for one id, and a throttled upstream makes that
+// the common case rather than the worst one. Measured: a run given ten minutes was still going at
+// seventeen. The runner's own `timeout-minutes` would eventually kill it, but a kill loses the
+// posts the run had already read, which is the one outcome worth avoiding. This fires at the
+// budget plus a grace period and exits 4 — nothing readable was committed, the capture is
+// untouched, and the job says so — rather than leaving the process to be killed from outside.
+const WATCHDOG_GRACE_MS = Number(process.env.TELEGRAM_WATCHDOG_GRACE_MS || 90 * 1000);
+const watchdog = setTimeout(() => {
+  console.error(`Hard stop: the run exceeded its budget by ${Math.round(WATCHDOG_GRACE_MS / 1000)}s of grace. Capture untouched.`);
+  process.exit(4);
+}, Number(process.env.TELEGRAM_BUDGET_MS || 9 * 60 * 1000) + WATCHDOG_GRACE_MS);
+// Unref'd so it never keeps an otherwise-finished process alive; a hung fetch keeps the loop alive
+// on its own, which is exactly the case this has to fire in.
+watchdog.unref?.();
 const outOfTime = () => Date.now() - started > BUDGET_MS;
 const outOfSeekTime = () => Date.now() - started > BUDGET_MS * SEEK_SHARE;
 
@@ -279,10 +296,13 @@ async function loadExisting() {
       // The lowest id ever WALKED, which is not the lowest id KEPT. Backfill has to resume from
       // the former; resuming from the latter re-walks ground already covered — see walkBack().
       walkedFrom: Number(raw.walkedFrom) || 0,
+      // Ids a previous run could not fetch. Re-asked first on the next run, so a transport failure
+      // costs a delay rather than a post.
+      retryIds: Array.isArray(raw.retryIds) ? raw.retryIds.map(Number).filter(Boolean) : [],
       channel: raw.channel || null,
     };
   } catch {
-    return { posts: [], headId: 0, lowestId: 0, walkedFrom: 0, channel: null };
+    return { posts: [], headId: 0, lowestId: 0, walkedFrom: 0, retryIds: [], channel: null };
   }
 }
 
@@ -301,21 +321,25 @@ async function main() {
   // trusted, and a capture written from it would be a guess.
   const signature = await channelSignature();
   if (!signature) {
-    console.error(`Could not read https://t.me/${CHANNEL} at all. Not touching the capture.`);
-    return 2;
+    // NOT exit 2. Two is the routine quiet-hours outcome and the job reports it as "no new posts";
+    // filing "t.me could not be reached at all" under that wording would dress a total failure as
+    // an ordinary evening. Four is the code that says the fault looks like ours.
+    console.error(`Could not read https://t.me/${CHANNEL} at all — no landing page, so nothing in this run could be trusted. Capture untouched.`);
+    return 4;
   }
 
   const existing = await loadExisting();
   // A capture for a DIFFERENT channel is not history for this one. Starting from its head would
   // walk the wrong ids and merging its posts would file another channel's words under ours.
   const sameChannel = !existing.channel || existing.channel === CHANNEL;
-  const prior = sameChannel ? existing : { posts: [], headId: 0, lowestId: 0, walkedFrom: 0 };
+  const prior = sameChannel ? existing : { posts: [], headId: 0, lowestId: 0, walkedFrom: 0, retryIds: [] };
   if (!sameChannel) console.warn(`Existing capture is for @${existing.channel}; starting fresh for @${CHANNEL}.`);
 
   const byId = new Map(prior.posts.map((p) => [Number(p.id), p]));
   const beforeIds = new Set(byId.keys());
 
   let scanned = 0;
+  const retry = new Set(prior.retryIds || []);
   let walkedFrom = prior.walkedFrom || 0;
   let readable = 0;
   let blank = 0;
@@ -327,6 +351,14 @@ async function main() {
     scanned++;
     const r = await readId(id, { signature });
     await sleep(DELAY_MS);
+    // AN ID THAT FAILED TRANSPORT IS WRITTEN DOWN, NOT DROPPED. It is not a blank — nothing was
+    // read, so nothing is known about it — and the walk moves past it either way. Without a record
+    // the next run resumes above the head and never asks again, so a post at that id is lost
+    // silently, with the coverage count filing it as a caption-less document of the channel's. The
+    // three states this codebase keeps apart are read, read-and-empty, and could-not-be-read; this
+    // is the third, and it stays retryable.
+    retry.delete(id);
+    if (r.state === 'error') retry.add(id);
     if (r.state === 'post') {
       readable++;
       const prev = byId.get(id);
@@ -436,6 +468,13 @@ async function main() {
     }
   };
 
+  // Ids a previous run could not fetch come first: they are the only work that can LOSE a post,
+  // and there are never many of them.
+  for (const id of [...retry].sort((a, b) => b - a)) {
+    if (outOfTime()) break;
+    await visit(id);
+  }
+
   if (coldStart) { await walkBack(); await walkForward(); }
   else { await walkForward(); await walkBack(); }
 
@@ -478,8 +517,10 @@ async function main() {
     return 2;
   }
   if (!byId.size) {
-    console.error(`Read nothing at all across ${scanned} ids (${errors} errors). Not writing an empty capture.`);
-    return 2;
+    // Same reasoning: nothing read AND nothing held is not a quiet channel, it is a run that
+    // achieved nothing, and it must not be reported in the words used for an ordinary one.
+    console.error(`Read nothing at all across ${scanned} ids (${errors} errors) and hold no prior capture. Not writing an empty one.`);
+    return 4;
   }
 
   // Newest first, by id — the only ordering axis this route publishes, and monotonic with
@@ -512,6 +553,8 @@ async function main() {
     // This run only, for whoever is reading the job log. Deliberately nested so it can never be
     // mistaken for the coverage figures above.
     lastRun: { scanned, readable, unreadable: blank, errors },
+    // Carried forward so a transport failure is retried rather than silently costing a post.
+    retryIds: [...retry].sort((a, b) => b - a).slice(0, 200),
     posts,
   };
 
@@ -529,6 +572,6 @@ async function main() {
 }
 
 main().then(
-  (code) => process.exit(code),
-  (err) => { console.error(err); process.exit(1); }
+  (code) => { clearTimeout(watchdog); process.exit(code); },
+  (err) => { clearTimeout(watchdog); console.error(err); process.exit(1); }
 );

@@ -109,6 +109,9 @@ public/
       deep-dive.js            transport for the Concall Deep Dive dashboard — a click costs a run,
                               so nothing in here fires on its own
       universe.js             screener-export -> legacy universe shape adapter
+      telegram-posts.js       posts from the monitored public Telegram channel, on Public Chatter's
+                              Telegram section. Ordered by MESSAGE ID because the route publishes no
+                              times; coverage is derived from the capture's span, never tallied
       twitter-news.js         X/Twitter posts, converted into the EXISTING news article shape so
                               they join the same News list — not a second feed
       filings.js              the News / Announcements / Insider feed: snapshot first, then a
@@ -159,6 +162,10 @@ scripts/
                               RSS, merged into the SAME capture (curl: two of the four 403 on fetch)
   lib/news-store.mjs          THE MARKET-NEWS CAPTURE ON DISK — a bounded head plus a shard per
                               month. Both news scrapers write through it and both MERGE
+  scrape-telegram.mjs         posts from a public TELEGRAM channel, read from each message's own
+                              page. No credential and no dependency: the channel's t.me/s/ preview
+                              is off and the Bot API has no history method, so the permalink is the
+                              only way in — and it publishes NO post times
   scrape-twitter.py           THE ONE PYTHON SCRIPT — posts from the monitored X accounts, via
                               twscrape, on a runner. Read the section below before touching it
   scrape-institution-holdings.mjs  REAL filed shareholdings, per fund, off Trendlyne
@@ -179,6 +186,8 @@ scripts/
 .github/workflows/rss-news-refresh.yml     hourly; the four RSS publishers. Shares the
                                            `market-news-capture` concurrency group with
                                            market-news-refresh.yml — both merge into one file
+.github/workflows/telegram-refresh.yml     every 2 hours + workflow_dispatch; posts from the public
+                                           Telegram channel. Needs no secret
 .github/workflows/twitter-refresh.yml      every 30 min + workflow_dispatch from the dashboard when
                                            a reader adds an account; posts from the monitored handles
 worker/index.js               asset serving + POST /api/live-prices + GET /api/earnings
@@ -3222,7 +3231,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Add an Ask Research source that fetches nothing | give its builder an explicit `load: null` in `js/research/estate.js` — a builder with neither a `load()` nor that declaration is raised as a registry error, because an omitted one used to throw and wear the upstream's clothes |
 | Change what appears in the News feed from X | `js/data/twitter-news.js` (the conversion) + `feedRows()` / `postBody()` in `js/tabs/market-news-view.js` — read *X/Twitter is a SOURCE in the News feed* first; it must stay ONE list |
 | Change the Telegram section, or what it says about times | `telegramPanel()` / `telegramDescription()` / `telegramFootnotes()` / `buildTelegramTable()` in `js/tabs/public-chatter.js` — read *Telegram posts* in `docs/DATA-CONTRACTS.md` first. The route publishes **no post times**, so there is no time column and the absence is stated in words; `telegramFreshness` is exported and pure so the suite asserts both sides of the boundary directly |
-| Change how Telegram posts are collected | `scripts/scrape-telegram.mjs` + `.github/workflows/telegram-refresh.yml` — Node 22, no dependency, **no credential**. The exit codes are the interface (0 wrote, 2 nothing new or nothing readable, 1 a real fault). Read the header before touching the discriminator: an absent id answers **200** with the channel page, and so does a rate-limited request |
+| Change how Telegram posts are collected | `scripts/scrape-telegram.mjs` + `.github/workflows/telegram-refresh.yml` — Node 22, no dependency, **no credential**. The exit codes are the interface (0 wrote, 2 nothing new, **4 nothing readable at all — the shape of a refused runner, raised as a warning**, 1 a real fault). Read the header before touching the discriminator: an absent id answers **200** with the channel page, and so does a rate-limited request, and the channel's OWN description is what an empty id's page carries |
 | Point the Telegram feed at another channel | `TELEGRAM_CHANNEL` (validated against Telegram's own 5–32 `[A-Za-z0-9_]` rule, because it reaches a URL). A capture for a different channel is never treated as history for this one. A channel whose web preview is **on** unlocks the richer `t.me/s/` route, which publishes real timestamps — `route` and `publishesTime` in the capture exist so the UI reads which it got rather than assuming |
 | Change the X account list, or how a handle is read | `js/core/twitter-handles.js` + `js/ui/twitter-sources.js` — the 1–15 `[A-Za-z0-9_]` rule is also in `worker/index.js` and `scripts/scrape-twitter.py` and the three may not disagree |
 | Change how X posts are collected | `scripts/scrape-twitter.py` + `.github/workflows/twitter-refresh.yml` — the exit codes are the interface (0 wrote, 2 nothing readable, 3 no credential, 1 a real fault) |

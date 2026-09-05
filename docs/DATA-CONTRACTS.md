@@ -2924,6 +2924,12 @@ pages are public, so there is no secret to install and none to expire.
   "spanTo": 93384,
   // This run only, for whoever reads the job log. Nested so it can never be mistaken for coverage.
   "lastRun": { "scanned": 401, "readable": 260, "unreadable": 141, "errors": 0 },
+  // Ids a run could not FETCH — not blanks, which are read and empty, but ids nothing is known
+  // about. Re-asked first on the next run. Without this the walk moves past them and the next run
+  // resumes above the head, so a post at that id is lost silently and the coverage count files it
+  // as one of the channel's caption-less documents. Read, read-and-empty and could-not-be-read
+  // stay three different answers here as they do on the filings snapshots.
+  "retryIds": [],
   "posts": [
     {
       "id": 7529,              // THE deduplication key, Telegram's own message number
@@ -3005,6 +3011,15 @@ on screen rather than left as a silent inconsistency.
 `tg:<id>`.** The capture is capped at `TELEGRAM_KEEP` (600), so a new post pushes the oldest off the
 end and the LENGTH DOES NOT MOVE — "did anything arrive" is answered by comparing id sets, never by
 counting. `refresh()` returns the arrived ids for that reason.
+
+**Exit codes are the interface**, and they are what the job reports on: **0** wrote a capture;
+**2** nothing new, the ordinary quiet-hours outcome, a notice; **4** the run achieved nothing and
+that does not look like a quiet channel — t.me's landing page unreadable, or nothing readable across
+a whole window while a capture is already held — raised as a **warning**, because dressing a total
+failure in the words used for an ordinary evening is how a stopped feed stays invisible; **1** a
+real fault. Only 1 is a red build, and 4 is a suspicion rather than a diagnosis: a refused runner
+and a silent channel are indistinguishable from one request, so a RUN of warnings is the signal, not
+a single one.
 
 **The capture is rewritten only when a post arrives**, so `capturedAt` says when the channel last
 said something this route could read — **not** when the job last looked. Nothing in the committed
