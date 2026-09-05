@@ -304,6 +304,7 @@ try {
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
     assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
     if (size.width >= 1024) {
+      assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
       assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }
