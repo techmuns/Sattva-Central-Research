@@ -2051,7 +2051,7 @@ console.log('\n— AI alerts —');
   // DOM. Its toolbar count is the complete filtered DATA set — the same set search, filters and
   // export use — whereas `rowCount()` is only the current scroll page.
   const alertDataCount = async () => {
-    const text = await page.locator('[data-score-table] [data-row-count]').innerText();
+    const text = await page.locator('#content-host [data-row-count]').innerText();
     return Number((text.match(/[\d,]+/) || ['0'])[0].replace(/,/g, ''));
   };
   const allChecked = await page.locator('[data-feed-toggle="__all"]').getAttribute('aria-checked');
