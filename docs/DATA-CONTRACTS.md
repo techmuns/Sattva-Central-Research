@@ -3316,6 +3316,41 @@ been; the second is the oldest post still *kept* after the `KEEP` cap. Backfill 
 posts, and then sliced every one of them away — reporting them as arrivals each time. Widening
 history is a change to `TELEGRAM_KEEP`, not a longer walk.
 
+**A RELIABLE HALF-HOUR CANNOT COME FROM THE CRON, SO IT COMES FROM A DISPATCH.**
+`telegram-refresh.yml` asks for `*/30` and GitHub delivers a fraction of it — measured on the
+identical cron in `twitter-refresh.yml`, **13 runs against the ~80 requested over 39.96 hours, 16%**,
+at a mean gap of 3h20m ranging 1h44m to 5h23m. Tuning the expression does not help; the market-news
+job established that by relaxing `*/20` to `*/30` and getting *fewer* runs. **`workflow_dispatch` is
+not throttled at all**, so the cadence comes from a scheduler that works driving the trigger that
+works — the same arrangement market news already runs on:
+
+```
+URL      https://sattva-central-research.tech-441.workers.dev/api/telegram/refresh?source=cron
+Method   POST          (a GET is refused with 405)
+Body     none          no headers, no auth
+Every    30 minutes
+```
+
+**`GET /api/telegram/run`** watches it and is free, so it may be polled.
+
+Safe to expose, for the same reasons the market-news route is: nothing in the request chooses what
+runs — the repository, the workflow and the ref are fixed on the Worker — a run already in flight is
+declined by `dispatchWorkflow`, the workflow's own concurrency group serialises what gets through,
+and `?source=` is the same **allowlist of three words** (`cron` / `auto` / `button`) rather than a
+string that reaches a run name. The worst a hostile caller achieves is the same walk a scheduled run
+does.
+
+**`TELEGRAM_DISPATCH_COOLDOWN_S` is 20 minutes, and it is shorter than the cadence on purpose.** A
+cooldown at or above 30 minutes would defeat the pinger it exists to serve; twenty leaves ten
+minutes of slack for jitter while bounding a stuck pinger to three runs an hour, which at ~2 minutes
+and ~120 requests per run is affordable. It is per-colo and therefore best-effort, which is why it
+is the second line of defence and not the first.
+
+**No secret needs installing for this.** `GH_DISPATCH_TOKEN` is already configured on the deployed
+Worker — verified against the live `/api/market-news/run`, which answers `ok: true` with real run
+data rather than the `no-token` state. Where it is ever absent the route says so by name and prints
+the Cloudflare dashboard path that fixes it, rather than failing silently.
+
 **Wiring another channel.** `TELEGRAM_CHANNEL` selects it (validated against Telegram's own rule for
 a public username, 5–32 of `[A-Za-z0-9_]`, because the value reaches a URL). A capture for a
 different channel is never treated as history for this one. If a channel has its web preview
