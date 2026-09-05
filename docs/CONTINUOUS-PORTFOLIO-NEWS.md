@@ -13,7 +13,7 @@ TradingView is additive public-headline discovery, not an exhaustive or guarante
 
 ## Limits and operations
 
-GitHub's scheduler and the existing deployment pipeline can delay publication. The public source has a bounded latest-news window and no observed public pagination cursor; rapid news bursts or upstream omissions can still create gaps. Detected gaps stay recorded, not cleared by the next quiet poll. More frequent collection is risk reduction, not a promise that every story has been seen.
+[GitHub's scheduler](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) and the existing deployment pipeline can delay publication. The public source has a bounded latest-news window and no observed public pagination cursor; rapid news bursts or upstream omissions can still create gaps. Detected gaps stay recorded, not cleared by the next quiet poll. More frequent collection is risk reduction, not a promise that every story has been seen.
 
 Read `data/tradingview-news/latest.json` for published coverage and `data/tradingview-news/tradingview.json` for per-symbol checkpoints, errors and backoff. `node scripts/check-tradingview-news-health.mjs` checks a local snapshot; setting `FILINGS_HEALTH_BASE` reads a deployed snapshot without dispatching anything. A production retry/manual dispatch still requires explicit authorization. Scheduled recovery is automatic.
 

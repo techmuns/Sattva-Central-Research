@@ -112,7 +112,9 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
     listening = false;
   }
   async function initialize(method, args) {
+    const epoch = generation;
     await Promise.all([base[method](...args), loaded ? null : readSnapshot()]);
+    if (epoch !== generation) return;
     if (!loaded) { loaded = true; lastAttempt = now(); }
     watch();
   }

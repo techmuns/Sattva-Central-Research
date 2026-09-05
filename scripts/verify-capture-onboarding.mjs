@@ -29,6 +29,13 @@ try {
   assert.equal(active.holdings.length, 7, 'a new shared holding is onboarded without a snapshot PR');
   assert.doesNotMatch(readFileSync(join(dir, 'filing-capture/portfolio.json'), 'utf8'), /quantity|account|marketValue|private-field/);
   assert.deepEqual(readJson(join(dir, 'portfolio-companies.json')), snapshot, 'reviewed fallback is not rewritten');
+  const independentCache = join(dir, 'tradingview-news/portfolio.json');
+  const borrowed = await loadCapturePortfolio(dir, { live: true, fetcher: unavailable, cachePath: independentCache });
+  assert.equal(borrowed.holdings.length, 7, 'a new isolated lane borrows the latest verified core book during an outage');
+  const independent = await loadCapturePortfolio(dir, { live: true, fetcher: async () => Response.json(incoming), cachePath: independentCache });
+  assert.equal(independent.portfolio.status, 'live');
+  assert.equal(readJson(independentCache).holdings.length, 7);
+  assert.doesNotMatch(readFileSync(independentCache, 'utf8'), /quantity|account|marketValue|private-field/);
   active = await loadCapturePortfolio(dir, { live: true, fetcher: unavailable });
   assert.equal(active.portfolio.status, 'last-verified');
   assert.equal(active.holdings.length, 7, 'outage cannot roll back newly registered holdings');
