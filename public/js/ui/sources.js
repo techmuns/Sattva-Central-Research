@@ -18,6 +18,7 @@ import * as coverage from '../data/coverage.js';
 import * as concalls from '../data/concall-scans.js';
 import * as earningsLive from '../data/earnings-live.js';
 import * as chatter from '../data/chatter-live.js';
+import * as telegramPosts from '../data/telegram-posts.js';
 import * as institutions from '../data/institution-holdings.js';
 import * as technicals from '../data/technicals.js';
 import { announcements as annFeed } from '../data/filings.js';
@@ -190,6 +191,11 @@ export function sourceGroups() {
   const si = { count: num(() => superInvestors.meta().loadedBooks) };
   const chat = num(() => chatter.all().length);
   const chatResolved = num(() => chatter.companies().length);
+  // Read from the module the Telegram section reads. `num()` returns null rather than 0, so a
+  // capture that has not loaded drops its clause instead of reporting the channel as silent.
+  const tgMeta = (() => { try { return telegramPosts.meta(); } catch { return null; } })();
+  const tg = num(() => (tgMeta?.ok ? tgMeta.count : null));
+  const tgUnreadable = num(() => (tgMeta?.ok && tgMeta.span ? tgMeta.unreadable : null));
   const funds = (() => {
     try {
       return institutions.isLoaded() ? institutions.all() : [];
@@ -405,6 +411,20 @@ export function sourceGroups() {
           cadence: 'Re-scraped twice daily, 01:30 and 13:30 UTC · this page polls hourly',
           status: 'live',
           file: 'public/js/data/chatter-live.js · window.SATTVA_CHATTER_URL in index.html',
+        },
+        {
+          name: 'Telegram — a public research channel',
+          url: tgMeta?.channelUrl || null,
+          feeds:
+            'Posts from a public Telegram channel of broker research headlines, on this tab\'s <strong>Telegram</strong> section. ' +
+            'Reproduced as published &mdash; <strong>nothing scored, ranked, summarised, sentiment-tagged or mapped to a company</strong>, so the section is whole in every scope. ' +
+            '<strong>This feed publishes no post times.</strong> The channel\'s web preview is switched off by its owner and the Bot API has no history method at all, so the capture is read from each message\'s own page, which carries the text and no timestamp; rows therefore carry none and are ordered by Telegram\'s own message number, which rises with publication. ' +
+            'A document posted without a caption has nothing on its page to read' +
+            `${clause(tgUnreadable, ' &mdash; <n> of the ids reached were of that kind and are counted rather than guessed at')}. ` +
+            `Read by a scheduled Action and committed; the browser reads the file with one conditional GET${clause(tg, ', <n> posts in the capture now')}.`,
+          cadence: 'Every 2 hours · GitHub Actions · no credential required',
+          status: tgMeta?.ok ? 'live' : 'pending',
+          file: 'public/data/telegram-posts.json · scripts/scrape-telegram.mjs',
         },
         {
           name: 'Slug → NSE symbol (computed)',

@@ -1519,6 +1519,14 @@ generated text, which is the only version worth having. Their contracts are in t
 
 ---
 
+## `public/data/mock/chatter-telegram.json` — DELETED (was MOCK)
+
+> **This file and the module below no longer exist**, and everything under this heading describes
+> what they did before they were removed at `ce2aa18..`. It is kept for the reasoning, not as a
+> contract. **Do not read it as documentation of the Telegram feed this dashboard now has** — that
+> one is real, is described under *Telegram posts* below, has no pump-risk heuristic and no
+> fictional handles, and shares nothing with this but the word.
+
 ## `public/data/mock/chatter-telegram.json` — MOCK
 
 25 public groups. Same envelope, `groups[]`.
@@ -1966,7 +1974,10 @@ Measured on a real 219-entry run: **45 covered, 174 not, 8 of them in the book.*
 The synthetic corpus this tab used to render is deleted, not parked under a ribbon — the same
 resolution the Con-call tab reached. Gone with it:
 
-- **The Telegram sub-view**, because no live Telegram source exists.
+- **The Telegram sub-view**, because the corpus behind it was invented and no live Telegram
+  source existed at the time. A real one has since been wired — see *Telegram posts* below —
+  and it is a different thing in every respect that mattered: the posts are the channel's own,
+  reproduced, with no fictional handles and no heuristic of ours over them.
 - **The pump-risk heuristic**, because its gate is `MIN_MESSAGES_24H = 120` and this feed carries
   ~600 posts per scrape across 219 entries — the busiest entry in a real run had 22 mentions in
   *thirty days*. Every row would score "Clear", which is not a clean bill of health but a
@@ -2884,6 +2895,126 @@ is narrow: the retrieval library asked for is Python, it runs on a GitHub runner
 in `public/`, the Worker or the Node scripts depends on it. What it produces is an ordinary
 committed capture. `TWITTER_LIMIT` (20) bounds the posts read per account per run; `TWITTER_KEEP`
 (600) is the capture's ceiling and is a bytes limit, not an editorial one.
+
+
+### Telegram posts — a public research channel, on the Public Chatter tab
+
+**`public/data/telegram-posts.json`** — a committed capture, written by
+`scripts/scrape-telegram.mjs` on `.github/workflows/telegram-refresh.yml` (every two hours, plus a
+`workflow_dispatch` that can ask for a backfill). **It needs no credential**: the channel's message
+pages are public, so there is no secret to install and none to expire.
+
+```jsonc
+{
+  "source": "t.me public channel pages",
+  "channel": "researchreportss",
+  "channelUrl": "https://t.me/researchreportss",
+  "route": "permalink",        // WHICH route produced this, because the route decides what it CAN carry
+  "publishesTime": false,      // read by the UI rather than assumed — see below
+  "capturedAt": "2026-09-05T10:00:00Z",   // when the channel was last read AND something changed
+  "headId": 7540,              // the highest message id seen; where the next run starts
+  "lowestId": 7220,
+  // COVERAGE IS DERIVED FROM THE SPAN, NEVER FROM A TALLY. These are the lowest and highest
+  // message ids the capture holds; everything between them that is not a post is an id this route
+  // could not read. A running tally could not answer this honestly across runs — an hourly
+  // incremental walk touches ~60 ids, and writing its counts here would overwrite a 700-id
+  // measurement with "2 of 60 readable", reporting the last hour as though it described the channel.
+  "spanFrom": 93166,
+  "spanTo": 93384,
+  // This run only, for whoever reads the job log. Nested so it can never be mistaken for coverage.
+  "lastRun": { "scanned": 401, "readable": 260, "unreadable": 141, "errors": 0 },
+  "posts": [
+    {
+      "id": 7529,              // THE deduplication key, Telegram's own message number
+      "text": "…",             // the post, verbatim
+      "url": "https://t.me/researchreportss/7529",
+      // NO per-post image field. `og:image` on a message page is the CHANNEL'S AVATAR, not the
+      // post's media — verified byte-identical across three text posts and the channel page. It is
+      // not captured, because filing a property of the channel as a property of the post would put
+      // one logo on six hundred rows as though each carried a picture.
+      "publishedAt": null,     // ALWAYS null on this route. Not missing — not published.
+      "firstSeenAt": "2026-09-05T10:00:00Z"   // when OUR scraper first read it. Never the post's time.
+    }
+  ]
+}
+```
+
+**Three routes in, and only one of them is open for this channel.** This was measured, not assumed:
+
+| Route | Result |
+| --- | --- |
+| `t.me/s/<channel>` — the server-rendered preview: ids, ISO timestamps, `data-before` pagination, no credential | **302 to the plain page, zero messages.** The owner has the web preview switched off. Every third-party bridge built on it (RSSHub and friends) is shut with it — measured, `rsshub.app` additionally answers 403. |
+| The same endpoint on `@telegram`, as a control | **200, 127KB, 20 message blocks** — so the method works; this channel has it disabled. |
+| The Bot API | **There is no history method.** Verified against `core.telegram.org/bots/api`: no `getChatHistory`, no `getMessages`. A bot receives `channel_post` updates only for a channel it has been made an **admin** of, and only going forward. We do not own this channel. |
+| `t.me/<channel>/<id>` — the message permalink | **Open.** The page carries the post's full text in `og:description`. This is what the scraper reads. |
+
+**THIS FEED PUBLISHES NO POST TIMES, AND THAT IS SAID OUT LOUD EVERYWHERE IT SURFACES.** The
+permalink page has og tags and nothing else — no `<time>`, no `datetime`, no widget markup. So
+`publishedAt` is null on every post, and:
+
+- the section carries **no time column at all**, rather than six hundred identical em dashes. A
+  column of dashes says *we asked and were refused*; the honest statement is that this disclosure
+  does not answer that question. Same resolution as the AMC portfolios having no Qty column.
+- the description, the footnote, the source registry and **row 1 of the export** all state it in
+  words. The export matters most: a workbook leaves the page without its chrome.
+- ordering is by **message id**, which rises with publication — the same reason market news merges
+  on Moneycontrol's own article id rather than on a headline.
+- `firstSeenAt` is kept in its own field and never reaches a date cell. It is when the *scraper*
+  saw the post, a fact about us and not about the post, and the two may not be confused.
+
+**Three traps this feed measured, each of which produced a confident wrong answer first:**
+
+1. **A 200 that is not the page you asked for.** An id with no readable post answers **200** with
+   the channel's own landing page (~11,175 bytes), never a 404. So absence is read as
+   `og:description === og:title` — positive evidence — and never from the status code. Same class
+   as BSE's `strCat=-1` and Moneycontrol's interstitial.
+2. **Rate limiting wears that same costume.** An unpaced walk gets the landing page for ids that
+   genuinely have text: measured, a fast burst reported "no text" for id 7260 while a single paced
+   request returned *"Sharekhan sees 32% UPSIDE in Mahindra Logistics"*. An unpaced walk does not
+   fail, it **quietly under-reports**, so every miss is re-asked after a backoff before it is
+   believed. It also corrupted a head-id bisect into reporting 7263 where the head was 7540.
+3. **A run of misses does not mean the end of the channel.** Measured: 7530–7539 are ten
+   consecutive misses and **7540 is a real post**. Those ten are documents posted with no caption —
+   this channel's stock in trade is broker report PDFs, and a PDF with no caption has nothing on
+   its page to read. So the head walk needs `TELEGRAM_MISS_RUN` (60) well above any plausible run
+   of documents, and every existence test during the head seek is a **window** test rather than a
+   single id.
+
+**Coverage is part of the capture, not an afterthought, and it is DERIVED rather than tallied.**
+The footnote states the span the capture holds and how many of those ids carried text, because a
+batch of caption-less PDFs would otherwise read as a quiet channel. It is computed from `spanFrom`,
+`spanTo` and the posts themselves, so it cannot drift: an earlier version tallied it per run, which
+would have let one hourly walk of sixty ids overwrite a seven-hundred-id measurement and report the
+last hour as though it described the channel. **This route genuinely cannot tell a caption-less document from
+a deleted message**, so it claims neither and reports both together as ids it could not read —
+*searched-and-empty*, *never-asked* and *could-not-be-read* stay three different answers, as they do
+on the filings snapshots.
+
+**Nothing is scored, ranked, summarised, sentiment-tagged or mapped to a company.** A channel post
+is somebody's own words, reproduced. `line-clamp` shortens what is DRAWN; search and export see
+every word. **The pump-risk heuristic stays deleted** — its gate is calibrated for a firehose, and
+running it here would return "Clear" for every row, which is a fabricated clean bill of health
+rather than a real one.
+
+**Posts carry no company, so they are not filtered by one.** The section is whole in every scope,
+exactly as market-wide news and the uncovered half of Public Chatter are, and the reason is stated
+on screen rather than left as a silent inconsistency.
+
+**Deduplication is by message id, in the scraper and in the browser, and the row key is namespaced
+`tg:<id>`.** The capture is capped at `TELEGRAM_KEEP` (600), so a new post pushes the oldest off the
+end and the LENGTH DOES NOT MOVE — "did anything arrive" is answered by comparing id sets, never by
+counting. `refresh()` returns the arrived ids for that reason.
+
+**The capture is rewritten only when a post arrives**, so `capturedAt` is the age of the newest post
+found and not of the last check — which is why the status label's threshold is 24 hours, read from
+the data rather than from the cron. A run that finds nothing exits **2**, leaves the file untouched
+and is a notice rather than a red build.
+
+**Wiring another channel.** `TELEGRAM_CHANNEL` selects it (validated against Telegram's own rule for
+a public username, 5–32 of `[A-Za-z0-9_]`, because the value reaches a URL). A capture for a
+different channel is never treated as history for this one. If a channel has its web preview
+**on**, the richer `t.me/s/` route becomes available and would fill `publishedAt` with a real
+timestamp; `route` and `publishesTime` exist so the UI reads which it got instead of assuming.
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 

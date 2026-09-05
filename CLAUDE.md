@@ -469,10 +469,18 @@ These are not style preferences — they are why the dashboard can be trusted:
    sit against real, named investors, both under an unmissable ribbon. Synthetic *speech, views or
    rationale* attributed to a named real person are not fine at any labelling level, because a
    screenshot travels without the ribbon and the quote survives as something they said. So:
-   con-call speakers and analysts are fictional, forum and Telegram handles are fictional, and
+   con-call speakers and analysts are fictional, forum handles are fictional, and
    `superinvestors.json` carries positions with **no** `rationale` / `quote` / `thesis` field —
    deliberately, so there is nothing to render. If a field would read as something a real person
    said or thought, drop the field.
+
+   **The Telegram feed is the other side of this rule and does not weaken it.** Public Chatter's
+   Telegram section carries a real public channel's actual posts, reproduced verbatim and linked
+   back to the message they came from. That is the only honest way to put somebody's words on this
+   dashboard: quote them, attribute them, link them, and add no judgement of ours. The synthetic
+   Telegram groups with invented handles that this rule was written about are deleted and stay
+   deleted, and so does the pump-risk heuristic that scored them. Reproducing is allowed;
+   inventing, summarising and scoring are not.
 6. **Synthetic numbers must be unmistakable wherever they surface.** Earnings Hub is the
    reference: an amber ribbon on every sub-view, a freshness card reading "Mock data · generated
    `<date>` · not a filing time" rather than a fake filing time, an amber note in the drill, an
@@ -3213,6 +3221,9 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change how a reader REACHES provenance | the footer in `layout()` + `wireStaticHeader()` in `js/ui/shell.js` (the registry), and `methodFooter()` + `wireMethod()` in `js/tabs/filings-tab.js` (a tab's own coverage) — read *An explanation with no door* first. The doors go BELOW the content; the header button and the active pill stay gone |
 | Add an Ask Research source that fetches nothing | give its builder an explicit `load: null` in `js/research/estate.js` — a builder with neither a `load()` nor that declaration is raised as a registry error, because an omitted one used to throw and wear the upstream's clothes |
 | Change what appears in the News feed from X | `js/data/twitter-news.js` (the conversion) + `feedRows()` / `postBody()` in `js/tabs/market-news-view.js` — read *X/Twitter is a SOURCE in the News feed* first; it must stay ONE list |
+| Change the Telegram section, or what it says about times | `telegramPanel()` / `telegramDescription()` / `telegramFootnotes()` / `buildTelegramTable()` in `js/tabs/public-chatter.js` — read *Telegram posts* in `docs/DATA-CONTRACTS.md` first. The route publishes **no post times**, so there is no time column and the absence is stated in words; `telegramFreshness` is exported and pure so the suite asserts both sides of the boundary directly |
+| Change how Telegram posts are collected | `scripts/scrape-telegram.mjs` + `.github/workflows/telegram-refresh.yml` — Node 22, no dependency, **no credential**. The exit codes are the interface (0 wrote, 2 nothing new or nothing readable, 1 a real fault). Read the header before touching the discriminator: an absent id answers **200** with the channel page, and so does a rate-limited request |
+| Point the Telegram feed at another channel | `TELEGRAM_CHANNEL` (validated against Telegram's own 5–32 `[A-Za-z0-9_]` rule, because it reaches a URL). A capture for a different channel is never treated as history for this one. A channel whose web preview is **on** unlocks the richer `t.me/s/` route, which publishes real timestamps — `route` and `publishesTime` in the capture exist so the UI reads which it got rather than assuming |
 | Change the X account list, or how a handle is read | `js/core/twitter-handles.js` + `js/ui/twitter-sources.js` — the 1–15 `[A-Za-z0-9_]` rule is also in `worker/index.js` and `scripts/scrape-twitter.py` and the three may not disagree |
 | Change how X posts are collected | `scripts/scrape-twitter.py` + `.github/workflows/twitter-refresh.yml` — the exit codes are the interface (0 wrote, 2 nothing readable, 3 no credential, 1 a real fault) |
 | Set up X collection on a deployment | add an **`X_ACCOUNTS`** repository secret (*Settings → Secrets and variables → Actions*), one `username:password:email:email_password` per line. The dashboard's Add Handle control additionally needs `GH_DISPATCH_TOKEN` on the Worker, and says `Adding…` rather than failing without it |

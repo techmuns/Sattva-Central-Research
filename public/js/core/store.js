@@ -79,6 +79,10 @@ export const KEYS = {
   // rather than a slice of `marketNews`: the two are separate captures with separate ETags, and a
   // post landing must not invalidate 600 publisher stories.
   twitterPosts: 'twitter-posts',
+  // Posts from the monitored public Telegram channel. Its own key rather than a slice of anything
+  // else: it is a separate capture with its own ETag, and a post landing here must not invalidate
+  // the chatter feed it shares a tab with.
+  telegramPosts: 'telegram-posts',
 };
 
 // The in-memory tier. Always written, so a reader that lands during an IndexedDB round trip still

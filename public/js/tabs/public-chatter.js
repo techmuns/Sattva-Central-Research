@@ -27,6 +27,7 @@ import { formatDate, formatNumber, formatRelativeTime, formatTime } from '../cor
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
 import * as coverage from '../data/coverage.js';
+import * as telegram from '../data/telegram-posts.js';
 
 export const meta = {
   id: 'public-chatter',
@@ -40,7 +41,7 @@ export const meta = {
 let renderToken = 0;
 let disposers = [];
 let paintDisposers = [];
-let tableViews = { covered: null, other: null };
+let tableViews = { covered: null, other: null, telegram: null };
 let chatterSection = 'coverage';
 let mentionRequestToken = 0;
 // A company deep-link from a General Alerts chatter row: `?company=TICKER&open=mentions`. Tracked at
@@ -53,6 +54,11 @@ let openedFor = null;
 const SECTIONS = [
   { id: 'coverage', label: 'Coverage' },
   { id: 'not-in-coverage', label: 'Not in coverage' },
+  // A THIRD SECTION OVER A SECOND, INDEPENDENT FEED. The first two are two readings of one chatter
+  // payload; this one is a committed capture of a public Telegram channel and shares nothing with
+  // them but the page. That independence is load-bearing in `paint()`: either feed may be down
+  // without taking the other's section with it.
+  { id: 'telegram', label: 'Telegram' },
 ];
 
 function windowLabel(window = '30d') {
@@ -80,7 +86,7 @@ export function render(ctx) {
   const wantMentions = ctx?.params?.open === 'mentions';
   if (requestedCompany && requestedCompany !== routeCompany) {
     chatterSection = 'coverage';
-    tableViews = { covered: { q: requestedCompany }, other: tableViews.other };
+    tableViews = { covered: { q: requestedCompany }, other: tableViews.other, telegram: tableViews.telegram };
   }
   routeCompany = requestedCompany || null;
 
@@ -116,6 +122,24 @@ export function render(ctx) {
       );
     });
 
+  // THE TELEGRAM CAPTURE SETTLES ON ITS OWN CLOCK AND IS NEVER AWAITED WITH THE CHATTER FEED.
+  // `Promise.all` over two independent reads is head-of-line blocking with a tidy syntax — the
+  // General Alerts timeline sat blank for as long as its slowest feed until that was unpicked, and
+  // the two feeds here are even less related: one is a cross-origin call to somebody else's API,
+  // the other a committed file on our own origin. Whichever answers first paints, and a reader who
+  // opened the Telegram section is not made to wait on an API that section does not read.
+  telegram
+    .load()
+    .catch(() => null)
+    .then(() => {
+      if (token !== renderToken) return;
+      paint(ctx);
+      disposers.push(
+        telegram.onChange(() => {
+          if (token === renderToken) paint(ctx);
+        }),
+      );
+    });
 }
 
 export function destroy() {
@@ -137,7 +161,7 @@ function cleanup() {
       console.error('[chatter] cleanup failed', err);
     }
   }
-  tableViews = { covered: null, other: null };
+  tableViews = { covered: null, other: null, telegram: null };
 }
 
 function clearPaint() {
@@ -175,20 +199,17 @@ const loadingHtml = () => `
 function paint(ctx) {
   clearPaint();
   const m = chatter.meta();
-
-  // A failed read is not an empty result. `unavailablePanel` names the state and, where an
-  // operator can fix it, the command that does — the same split the Superstar Investors view
-  // makes between "configure this" and "wait for this".
-  if (!m?.ok) {
-    ctx.root.innerHTML = `
-      ${sectionHead({ title: 'Public Chatter', description: meta.subtitle })}
-      ${unavailablePanel(m?.reason, m?.url)}`;
-    return;
-  }
-
-  const covered = chatter.forScope(ctx.scope);
-  const other = chatter.uncovered();
+  const chatterOk = !!m?.ok;
   const activeSection = SECTIONS.some((item) => item.id === chatterSection) ? chatterSection : SECTIONS[0].id;
+  const onTelegram = activeSection === 'telegram';
+
+  // THE TAB NO LONGER DIES WITH ONE FEED, AND THAT IS THE WHOLE REASON THIS FUNCTION WAS
+  // RESTRUCTURED. It used to return early on `!m.ok` and render the unavailable panel as the entire
+  // page. With a second, unrelated feed on the tab that would mean the chatter API being down took
+  // the Telegram section down with it — an outage in one upstream reported as an absence in
+  // another, which is the error class this codebase keeps closing. The section tabs are therefore
+  // painted unconditionally, and a failure is scoped to the sections that actually read the feed
+  // that failed.
   const sectionTabs = tabBar({
     tabs: SECTIONS,
     activeId: activeSection,
@@ -199,36 +220,53 @@ function paint(ctx) {
       ctx.root.querySelector('[data-chatter-section-tabs] [role="tab"][aria-selected="true"]')?.focus();
     },
   });
-  const cards = activeSection === 'coverage' ? buildTopCards(covered) : null;
-  const coveredTable = activeSection === 'coverage' ? buildCoveredTable(covered) : null;
-  const otherTable = activeSection === 'not-in-coverage' ? buildOtherTable(other) : null;
-  const panel =
-    activeSection === 'coverage'
-      ? `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : emptyCovered(ctx.scope)}`
-      : `${sectionHead({
-          title: 'Not in our coverage',
-          description:
-            'Entries whose slug does not resolve to a symbol in our universe or the book. This is a statement about OUR coverage, not about them — the list mixes Indian companies we do not carry, foreign names and bare themes, and we do not guess which is which. Shown in full in every scope, because a holding cannot be filtered out of a list that has no tickers.',
-        })}${otherTable.html}`;
+
+  const covered = chatterOk ? chatter.forScope(ctx.scope) : [];
+  const other = chatterOk ? chatter.uncovered() : [];
+
+  const cards = chatterOk && activeSection === 'coverage' ? buildTopCards(covered) : null;
+  const coveredTable = chatterOk && activeSection === 'coverage' ? buildCoveredTable(covered) : null;
+  const otherTable = chatterOk && activeSection === 'not-in-coverage' ? buildOtherTable(other) : null;
+  const telegramTable = onTelegram ? buildTelegramTable() : null;
+
+  let panel;
+  if (onTelegram) {
+    panel = telegramPanel(telegramTable);
+  } else if (!chatterOk) {
+    panel = unavailablePanel(m?.reason, m?.url);
+  } else if (activeSection === 'coverage') {
+    panel = `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : emptyCovered(ctx.scope)}`;
+  } else {
+    panel = `${sectionHead({
+      title: 'Not in our coverage',
+      description:
+        'Entries whose slug does not resolve to a symbol in our universe or the book. This is a statement about OUR coverage, not about them — the list mixes Indian companies we do not carry, foreign names and bare themes, and we do not guess which is which. Shown in full in every scope, because a holding cannot be filtered out of a list that has no tickers.',
+    })}${otherTable.html}`;
+  }
 
   ctx.root.innerHTML = `
     ${sectionHead({
       title: 'Public Chatter',
-      description: description(m.window),
-      meta: `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: covered.length, noun: `mentioned · ${m.window}`, book: coverage.meta() })}</div>`,
+      description: onTelegram ? telegramDescription() : chatterOk ? description(m.window) : meta.subtitle,
+      meta: onTelegram
+        ? telegramHeadMeta()
+        : chatterOk
+          ? `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: covered.length, noun: `mentioned · ${m.window}`, book: coverage.meta() })}</div>`
+          : '',
     })}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-chatter-section-tabs>
       ${sectionTabs.html}
     </div>
     <div role="tabpanel" aria-label="${escapeHtml(SECTIONS.find((item) => item.id === activeSection)?.label || '')}" data-chatter-panel="${escapeHtml(activeSection)}">
       ${panel}
-      ${chatterFootnotes(m)}
+      ${onTelegram ? telegramFootnotes() : chatterOk ? chatterFootnotes(m) : ''}
     </div>`;
 
   paintDisposers.push(sectionTabs.wire(ctx.root.querySelector('[data-chatter-section-tabs]')));
   if (cards) cards.wire(ctx.root);
   if (coveredTable) paintDisposers.push(coveredTable.wire(ctx.root));
   if (otherTable) paintDisposers.push(otherTable.wire(ctx.root));
+  if (telegramTable) paintDisposers.push(telegramTable.wire(ctx.root));
 }
 
 /**
@@ -627,6 +665,216 @@ function buildOtherTable(rows) {
     },
   };
 }
+
+// ---------------------------------------------------------------------------------------
+// Telegram — the second, independent feed on this tab
+// ---------------------------------------------------------------------------------------
+//
+// THE SYNTHETIC TELEGRAM SUB-VIEW THIS REPLACES WAS DELETED FOR FABRICATION, NOT FOR BEING
+// TELEGRAM. The header of this file records why the old one went: fictional handles putting
+// invented words in named people's mouths, and a pump-risk gate calibrated for a firehose. Those
+// objections are about made-up data, and none of them survives a real feed. What comes back is the
+// channel's own posts, reproduced; what stays deleted is the pump-risk heuristic and every other
+// judgement of ours over somebody else's words.
+//
+// THIS FEED PUBLISHES NO POST TIMES, AND THERE IS THEREFORE NO TIME COLUMN.
+// The route the capture is read on carries the post text and no timestamp of any kind. A column of
+// six hundred identical em dashes would say "we asked and were refused"; the honest statement is
+// that this disclosure does not answer that question, so the column is absent and the description
+// and footnote say so in words. Same resolution as the AMC portfolios having no Qty column.
+//
+// POSTS CARRY NO COMPANY, SO THEY ARE NOT FILTERED BY ONE. The section is whole in every scope,
+// exactly as market-wide news and the uncovered half of this tab are, and the reason is stated on
+// screen rather than left as a silent inconsistency.
+
+/** Green is a claim about DATA, so it is earned against the capture's own age, never against a cron. */
+const TELEGRAM_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
+export function telegramFreshness(capturedAt, now = Date.now()) {
+  if (!capturedAt) return { state: 'unknown', ageMs: null };
+  const ms = new Date(capturedAt).getTime();
+  if (!Number.isFinite(ms)) return { state: 'unknown', ageMs: null };
+  const ageMs = now - ms;
+  return { state: ageMs <= TELEGRAM_STALE_AFTER_MS ? 'live' : 'stale', ageMs };
+}
+
+function telegramDescription() {
+  const t = telegram.meta();
+  const channel = t.channel ? `@${t.channel}` : 'the monitored public channel';
+  return (
+    `Posts from ${escapeHtml(channel)} on Telegram, reproduced as published and newest first. ` +
+    `This feed publishes no post times, so the rows carry none and are ordered by message number, which rises with publication. ` +
+    `Nothing here is scored, ranked or given a sentiment, and a post carries no company — so the list is whole in every scope.`
+  );
+}
+
+/** The passive status label. Never a bare "Live": the word is earned against the capture's age. */
+function telegramHeadMeta() {
+  const t = telegram.meta();
+  const { state, ageMs } = telegramFreshness(t.capturedAt);
+  const tone =
+    state === 'live'
+      ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+      : state === 'stale'
+        ? 'bg-amber-50 text-amber-700 ring-amber-100'
+        : 'bg-slate-50 text-slate-600 ring-slate-200';
+  const dot = state === 'live' ? 'bg-emerald-500' : state === 'stale' ? 'bg-amber-500' : 'bg-slate-400';
+  const label =
+    state === 'live' ? 'Live' : state === 'stale' ? 'Ageing' : 'No capture yet';
+  const detail =
+    state === 'unknown'
+      ? 'nothing captured'
+      : `${escapeHtml(formatNumber(t.count))} post${t.count === 1 ? '' : 's'} · read ${escapeHtml(formatRelativeTime(new Date(t.capturedAt)))}`;
+  return `
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <span data-telegram-live data-telegram-freshness="${escapeHtml(state)}"
+        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${tone}">
+        <span class="h-1.5 w-1.5 rounded-full ${dot}"></span>
+        <span>${escapeHtml(label)}</span>
+        <span class="font-medium opacity-80">${detail}</span>
+      </span>
+    </div>`;
+}
+
+/** The panel body: an honest pending state, or the table. */
+function telegramPanel(table) {
+  const t = telegram.meta();
+  if (!t.loaded) {
+    return `<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-slate-100">Loading Telegram posts…</div>`;
+  }
+  // A read that failed is not a channel that posted nothing. The two are named separately, because
+  // reporting an outage as silence is the error this codebase keeps closing.
+  if (!t.ok) {
+    const body =
+      t.reason === 'no-capture'
+        ? 'No capture has been committed yet. The scheduled job writes <code class="rounded bg-slate-100 px-1">public/data/telegram-posts.json</code>; until it has run once there is nothing to show. This is not a statement about the channel.'
+        : 'The committed capture could not be read from this browser. The page will retry on its own.';
+    return `
+      <div data-telegram-unavailable class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-100">
+        <p class="font-display text-base font-bold text-slate-900">Telegram posts are not available</p>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">${body}</p>
+      </div>`;
+  }
+  if (!t.count) {
+    return `
+      <div data-telegram-empty class="rounded-2xl bg-white p-8 text-sm text-slate-600 shadow-sm ring-1 ring-slate-100">
+        The capture holds no readable posts. Every message id it reached carried a document with no caption, which this route cannot read — that is a limit of the route, not a quiet channel.
+      </div>`;
+  }
+  return table ? table.html : '';
+}
+
+function buildTelegramTable() {
+  const rows = telegram.posts();
+  if (!rows.length) return null;
+  const table = scoreTable({
+    rows,
+    // Content-derived, never positional: the capture is capped and grows at the head, so an index
+    // in the key would make one key mean a different post on the next paint. That is exactly what
+    // put the same headline on screen three times in the News table.
+    key: (r) => r.key,
+    // A post carries no company, so there is nothing to star. A star that matched nothing for ever
+    // is worse than a control that is not offered.
+    watchKey: () => null,
+    // Their words, unedited. `nameMaxPx` clamps what is DRAWN; search and export see every word.
+    name: (r) => r.text,
+    sub: (r) => `Message ${r.id}`,
+    searchable: (r) => r.text || '',
+    dense: true,
+    wrapHeads: true,
+    showAvatar: false,
+    showRank: false,
+    nameMaxPx: 720,
+    initialView: tableViews.telegram,
+    exportName: 'telegram-posts',
+    onExport: (visible) => exportTelegramRows(visible),
+    stickyHead: 'max(320px, calc(100vh - 420px))',
+    onRowClick: (r) => {
+      if (r.url) window.open(r.url, '_blank', 'noopener,noreferrer');
+    },
+    columns: [
+      {
+        label: 'Open',
+        html: true,
+        get: (r) =>
+          r.url
+            ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-indigo-700">Telegram &rarr;</a>`
+            : '<span class="text-slate-400">no link</span>',
+      },
+    ],
+  });
+  return {
+    html: table.html,
+    wire: (root) => {
+      const off = table.wire(root);
+      return () => {
+        tableViews.telegram = table.view ?? tableViews.telegram;
+        off?.();
+      };
+    },
+  };
+}
+
+/**
+ * Coverage, stated rather than implied.
+ *
+ * This route reads a post's text off its own page, and a document posted with no caption has no
+ * text on that page at all. Those ids are counted, never guessed at: this route genuinely cannot
+ * tell a caption-less PDF from a deleted message, so it claims neither and reports both together
+ * as ids it could not read. Without this line a batch of broker PDFs reads as a quiet channel.
+ */
+function telegramFootnotes() {
+  const t = telegram.meta();
+  if (!t.ok) return '';
+  const parts = [];
+  parts.push(
+    `Source: the public Telegram channel ${escapeHtml(t.channel ? `@${t.channel}` : '(not reported)')}, read from its own message pages.`,
+  );
+  if (t.span) {
+    parts.push(
+      `Coverage: this capture spans message ${escapeHtml(formatNumber(t.spanFrom))} to ${escapeHtml(formatNumber(t.spanTo))} — ${escapeHtml(formatNumber(t.span))} ids, of which ${escapeHtml(formatNumber(t.readable))} carried readable text and ${escapeHtml(formatNumber(t.unreadable))} did not. Those are documents posted without a caption, and deleted messages, which this route cannot tell apart and so does not choose between.`,
+    );
+  }
+  parts.push(
+    'Times: this feed publishes none, so no row carries one and the order is by message number.',
+  );
+  parts.push(
+    `Last read: ${t.capturedAt ? escapeHtml(formatRelativeTime(new Date(t.capturedAt))) : 'not reported'}. The capture is rewritten only when a post arrives, so its age is the age of the newest post found, not of the last check.`,
+  );
+  return `
+    <div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
+      <p><strong class="font-semibold text-slate-600">Footnotes.</strong> ${parts.join(' ')}</p>
+    </div>`;
+}
+
+/** A workbook leaves the page without its chrome, so row 1 carries the whole provenance. */
+function exportTelegramRows(rows) {
+  const t = telegram.meta();
+  const banner = {
+    __banner: true,
+    text:
+      `NOT OUR WORDS. These are posts published by the public Telegram channel ` +
+      `${t.channel ? `@${t.channel}` : '(not reported)'}, reproduced unedited. This dashboard adds no score, ` +
+      `no ranking, no sentiment and no company mapping. THIS FEED PUBLISHES NO POST TIMES: the ` +
+      `"Message" column is Telegram's own message number, which rises with publication and is the ` +
+      `only ordering this route supports — it is not a date. "First seen" is when OUR scraper first ` +
+      `read the post, a fact about us and not about the post. Captured ` +
+      `${t.capturedAt || 'time not reported'}; exported ${new Date().toISOString()}.`,
+  };
+  const value = (row, get) => (row.__banner ? '' : get(row));
+  return exportRows({
+    filename: `sattva-telegram-posts-${todayStamp()}`,
+    sheetName: 'Telegram',
+    columns: [
+      { header: 'Post', key: 'text', width: 90, get: (r) => (r.__banner ? r.text : r.text || '') },
+      { header: 'Message', key: 'id', width: 12, get: (r) => value(r, (x) => x.id ?? '') },
+      { header: 'Link', key: 'url', width: 46, get: (r) => value(r, (x) => x.url || '') },
+      { header: 'First seen (ours, not the post time)', key: 'first_seen', width: 34, get: (r) => value(r, (x) => x.firstSeenAt || '') },
+    ],
+    rows: [banner, ...rows],
+  });
+}
+
 
 function unavailablePanel(reason, url) {
   // Every message here has to point at the thing that is actually wrong. The first version of this

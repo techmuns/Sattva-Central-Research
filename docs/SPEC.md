@@ -381,11 +381,16 @@ Deep Dive — were removed rather than kept behind a ribbon; see `docs/HANDOFF.m
 
 ### Public Chatter — `public-chatter`
 Community sentiment.
-- Simple in-page tabs: **Coverage** (default) and **Not in coverage**, each owning its table and its own sentiment selector
+- Simple in-page tabs: **Coverage** (default), **Not in coverage** — each owning its table and its own sentiment selector — and **Telegram**
+- **Telegram** is a second, independent feed on the tab: posts from a public research channel, reproduced as published, ordered by message number because the route publishes no post times. Either feed may be down without taking the other's section with it
 - Clicking a company or its mention count opens the underlying mentions, newest first, with a direct link to every source item
 - No summary-card row; coverage, posts, market mood and scrape timing appear as footnotes below the tables
 - Real-time ValuePickr thread crawler with dedup
-- Telegram channel ingestion via bot API
+- ~~Telegram channel ingestion via bot API~~ — **built, by a different route.** Posts from a
+  public channel now have their own section on this tab. Not via the Bot API, which was never
+  possible as written: it has no history method at all, and a bot reads a channel only once it
+  has been made an admin of it. The capture is read from each message's own public page. See
+  *Telegram posts* in `docs/DATA-CONTRACTS.md` for what that route can and cannot carry.
 - NLP sentiment scoring per post
 - Ticker-level chatter velocity alerts
 - Spam / promotional post filtering
