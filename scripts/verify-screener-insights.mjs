@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
-import { buildInsightInventory, insightInventoryDiagnostic } from './lib/screener-insights-inventory.mjs';
+import { buildInsightInventory, insightInventoryDiagnostic, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_ARTIFACT,
@@ -174,9 +174,21 @@ assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.
 const renamedManagement = spanRows.map((row, i) => i < 2 ? { ...row, name: `Different source display name ${i}` } : row);
 assert.equal(buildInsightInventory(actualUniverse, spanRecords, renamedManagement).get('JAYNECOIND').isin, 'INE000000001', 'authoritative export code/ISIN cannot be blocked by a different management display name');
 assert.doesNotThrow(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[0].name } : row), spanRows), 'duplicate display names are harmless when exact exchange codes identify different companies');
-assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 2 ? { ...row, name: 'Unknown codeless company' } : row)), /inventory-codeless-match/);
-assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, name: spanRows[2].name } : row)), /inventory-codeless-match/);
-assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[2].name } : row), spanRows), /inventory-codeless-match/, 'codeless records cannot borrow the identity of another export record with the same normalized name');
+const unresolvedKey = 'ISIN:INE000000003';
+for (const [records, rows] of [
+  [spanRecords, spanRows.map((row, i) => i === 2 ? { ...row, name: 'Unknown codeless company' } : row)],
+  [spanRecords, spanRows.map((row, i) => i === 1 ? { ...row, name: spanRows[2].name } : row)],
+  [spanRecords.map((row, i) => i === 1 ? { ...row, name: spanRecords[2].name } : row), spanRows],
+]) {
+  const unresolvedInventory = buildInsightInventory(actualUniverse, records, rows);
+  const split = splitInsightReadTargets([...unresolvedInventory.values()]);
+  assert.deepEqual(split.unresolvedKeys, [unresolvedKey], 'missing or ambiguous codeless names become an explicit coverage gap');
+  assert.equal(split.readable.length, unresolvedInventory.size - 1, 'an unresolved identity does not block verified companies');
+  assert.equal(unresolvedInventory.get(unresolvedKey).companyUrl, undefined, 'no company page is guessed');
+  assert.equal(unresolvedInventory.get(unresolvedKey).ticker, undefined, 'an ISIN is never fabricated into a ticker');
+}
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 2 ? { ...row, isin: 'invalid' } : row), spanRows), /inventory-isin/);
+assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 2 ? { ...row, isin: spanRecords[0].isin } : row), spanRows), /inventory-isin/);
 assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 1 ? { ...row, nseCode: spanRecords[0].nseCode } : row), spanRows), /inventory-ambiguous/);
 assert.throws(() => buildInsightInventory(actualUniverse, spanRecords.map((row, i) => i === 0 ? { ...row, nseCode: 'bad/code' } : row), spanRows), /inventory-code/);
 assert.throws(() => buildInsightInventory(actualUniverse, spanRecords, spanRows.map((row, i) => i === 0 ? { ...row, href: 'https://evil.test/company/JAYNECOIND/' } : row)), /inventory-identity/);
@@ -189,6 +201,27 @@ const redacted = insightInventoryDiagnostic(Error('private-company https://secre
 assert.equal(redacted.reason, 'inventory-unclassified');
 assert.doesNotMatch(JSON.stringify(redacted), /private-company|https:|token|credential|JAYNECOIND|INE000/);
 assert.equal(insightInventoryDiagnostic(Error('inventory-input')).exportRows, null);
+const identityGapCapture = { ...capture, targetCount: 2, checkedCount: 2, failedCount: 1, failedKeys: [unresolvedKey],
+  fullCoverage: false, targetKeys: ['JAYNECOIND', unresolvedKey] };
+assert.doesNotThrow(() => validateScreenerInsightsCapture(identityGapCapture, Date.parse(checkedAt)));
+assert.throws(() => validateScreenerInsightsCapture({ ...identityGapCapture, fullCoverage: true }, Date.parse(checkedAt)), /Incomplete/);
+assert.equal(enrichCardFromAllAlerts(card, report, { insightCompanies: identityGapCapture.companies }).contextEvents.some(row => row.feed === 'screener-insights'), true, 'verified company Insights remain eligible when another identity is unresolved');
+const resolvedGapCompany = { ...company, ...screenerInsightIdentity('/company/id/90002/'), name: 'Resolved company', rows: [] };
+const resolvedGap = mergeScreenerInsightsCapture({ ...capture, targetCount: 2, checkedCount: 2, failedKeys: [],
+  targetKeys: ['JAYNECOIND', resolvedGapCompany.companyKey], companies: [company, resolvedGapCompany] }, identityGapCapture, Date.parse(checkedAt));
+assert.equal(resolvedGap.fullCoverage, true, 'a later verified identity replaces the unresolved target and restores complete coverage');
+assert.equal(resolvedGap.targetKeys.includes(unresolvedKey), false);
+const knownIdentity = { ...resolvedGapCompany, isin: spanRecords[2].isin };
+const unmatchedNames = spanRows.map((row, i) => i === 2 ? { ...row, name: 'Source renamed company' } : row);
+const reusedPage = buildInsightInventory(actualUniverse, spanRecords, unmatchedNames, { previousCompanies: [knownIdentity] });
+assert.equal(reusedPage.get(knownIdentity.companyKey).companyUrl, knownIdentity.companyUrl, 'exact verified ISIN reuses a known page for revalidation without a name guess');
+assert.equal(reusedPage.has(unresolvedKey), false);
+const retainedKnownPage = mergeScreenerInsightsCapture({ ...resolvedGap, companies: [company], failedCount: 1,
+  failedKeys: [knownIdentity.companyKey], fullCoverage: false }, resolvedGap, Date.parse(checkedAt));
+assert.equal(retainedKnownPage.companies.find(row => row.companyKey === knownIdentity.companyKey).readStatus, 'failed');
+for (const previousCompanies of [[knownIdentity, knownIdentity], [{ ...knownIdentity, companyUrl: 'https://evil.test/company/id/90002/' }]]) {
+  assert.equal(buildInsightInventory(actualUniverse, spanRecords, unmatchedNames, { previousCompanies }).has(unresolvedKey), true, 'ambiguous or invalid previous identities remain unresolved');
+}
 
 assert.equal(screenerInsightHealth(company, Date.parse('2026-09-07')), 'stale');
 assert.equal(insightEvents([{ ...company, checkedAt: '2026-09-05T17:30:00Z' }], '2026-09-05')[0].sourceStatus, 'ok', 'late Indian-day captures are not future-dated relative to an arbitrary noon clock');
@@ -201,8 +234,8 @@ assert.throws(() => validateScreenerInsightsCapture({ ...capture, failedKeys: ['
 assert.throws(() => parseScreenerInsightsPage('<section id="insights"><div id="yearly-insights"></div></section>'), /table unavailable/);
 assert.throws(() => parseScreenerInsightsPage(html.replace('data-date-key="2026-06-30"', 'data-removed="2026-06-30"')), /column mismatch/);
 
-function artifactFetch({ digest = null, host = 'https://example.blob.core.windows.net/capture', event = 'schedule' } = {}) {
-  const bytes = gzipSync(JSON.stringify(capture));
+function artifactFetch({ digest = null, host = 'https://example.blob.core.windows.net/capture', event = 'schedule', payload = capture } = {}) {
+  const bytes = gzipSync(JSON.stringify(payload));
   const goodDigest = createHash('sha256').update(bytes).digest('hex');
   const run = { id: 10, head_branch: 'main', head_repository: { full_name: 'techmuns/Sattva-Central-Research' }, event, status: 'completed', conclusion: 'success' };
   return async (url, init = {}) => {
@@ -219,6 +252,11 @@ function artifactFetch({ digest = null, host = 'https://example.blob.core.window
 
 const artifact = await readScreenerInsightsCollector({ token: 'test-token', now: () => Date.parse(checkedAt), fetcher: artifactFetch() });
 assert.equal(artifact.capture.companies.length, 1);
+const gapArtifact = await readScreenerInsightsCollector({ token: 'test-token', now: () => Date.parse(checkedAt), fetcher: artifactFetch({ payload: identityGapCapture }) });
+assert.equal(gapArtifact.source.fullCoverage, false);
+assert.equal(gapArtifact.source.targets, 2);
+assert.equal(gapArtifact.source.companies, 1);
+assert.deepEqual(gapArtifact.capture.failedKeys, [unresolvedKey], 'the artifact reader preserves the identity gap instead of reporting full coverage');
 for (const options of [{ digest: '0'.repeat(64) }, { host: 'https://evil.test/capture' }, { event: 'pull_request' }]) {
   await assert.rejects(readScreenerInsightsCollector({ token: 'test-token', now: () => Date.parse(checkedAt), fetcher: artifactFetch(options) }));
 }

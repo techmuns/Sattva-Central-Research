@@ -2,7 +2,7 @@ import { screenerInsightIdentity } from '../../public/js/data/screener-insights-
 import { normalizeCompanyName } from './screener-watchlist.mjs';
 
 const FAILURE_CODES = new Set(['inventory-input', 'inventory-identity', 'inventory-count', 'inventory-company-id',
-  'inventory-codeless-match', 'inventory-code', 'inventory-ambiguous']);
+  'inventory-codeless-match', 'inventory-code', 'inventory-ambiguous', 'inventory-isin']);
 
 // Public workflow logs contain bounded aggregate counts and fixed reason codes only. Never
 // serialize the error itself: upstream messages can contain URLs, names or account details.
@@ -17,9 +17,16 @@ export function insightInventoryDiagnostic(error, { universe, records, manageRow
   };
 }
 
+export function splitInsightReadTargets(selected) {
+  return {
+    readable: selected.filter(target => !target.unresolved),
+    unresolvedKeys: selected.filter(target => target.unresolved).map(target => target.companyKey),
+  };
+}
+
 // Exact, collision-checked joins only. In particular, an internal Screener ID must never be
 // converted to an exchange symbol, and a missing code must not kill otherwise valid companies.
-export function buildInsightInventory(universe, records, manageRows) {
+export function buildInsightInventory(universe, records, manageRows, { previousCompanies = [] } = {}) {
   if (!Array.isArray(universe) || !universe.length || !Array.isArray(records) || !records.length || !Array.isArray(manageRows)) throw Error('inventory-input');
   const targets = new Map();
   const add = (identity, name, membership) => {
@@ -48,8 +55,11 @@ export function buildInsightInventory(universe, records, manageRows) {
     }
   }
   const keys = new Set();
+  const isins = new Set();
   const usedCodelessRows = new Set();
   for (const record of records) {
+    if (!/^INE[A-Z0-9]{9}$/.test(record.isin || '') || isins.has(record.isin)) throw Error('inventory-isin');
+    isins.add(record.isin);
     const code = record.nseCode || record.bseCode;
     let identity;
     if (code) {
@@ -59,10 +69,23 @@ export function buildInsightInventory(universe, records, manageRows) {
       const nameKey = normalizeCompanyName(record.name);
       const matches = nameKey ? manageRows.filter(row => normalizeCompanyName(row.name) === nameKey) : [];
       if (matches.length !== 1 || usedCodelessRows.has(matches[0]) ||
-          records.filter(row => normalizeCompanyName(row.name) === nameKey).length !== 1) throw Error('inventory-codeless-match');
-      const row = matches[0];
-      usedCodelessRows.add(row);
-      identity = screenerInsightIdentity(row.href || `/company/id/${row.companyId}/`);
+          records.filter(row => normalizeCompanyName(row.name) === nameKey).length !== 1) {
+        // An exact ISIN may reuse a previously validated page, which will be rechecked by
+        // the collector. If that read fails, its existing last-good series remains retained.
+        const previousMatches = previousCompanies.filter(company => company.isin === record.isin &&
+          screenerInsightIdentity(company.companyUrl)?.companyKey === company.companyKey);
+        if (previousMatches.length === 1) identity = screenerInsightIdentity(previousMatches[0].companyUrl);
+        else {
+          // Membership and ISIN are known; the page is not. Never guess a URL or ticker.
+          const companyKey = `ISIN:${record.isin}`;
+          targets.set(companyKey, { companyKey, isin: record.isin, unresolved: true, inPortfolio: true, inUniverse: false });
+          continue;
+        }
+      } else {
+        const row = matches[0];
+        usedCodelessRows.add(row);
+        identity = screenerInsightIdentity(row.href || `/company/id/${row.companyId}/`);
+      }
     }
     if (!identity || keys.has(identity.companyKey)) throw Error('inventory-ambiguous');
     keys.add(identity.companyKey);

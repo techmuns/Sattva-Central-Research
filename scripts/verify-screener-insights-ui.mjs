@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exportPortfolioTargets, readInsightCompany } from './collect-screener-insights.mjs';
-import { buildInsightInventory } from './lib/screener-insights-inventory.mjs';
+import { buildInsightInventory, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
 import { mergeScreenerInsightsCapture } from '../public/js/data/screener-insights-shared.js';
 
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
@@ -26,7 +26,7 @@ await context.route('**/*', async (route) => {
   const url = new URL(route.request().url());
   if (url.origin === origin) {
     if (url.pathname === '/watchlist/10850427/') return route.fulfill({ contentType: 'text/html', body: '<a href="/dash/10850427/">S Screen</a><form action="/api/export/screen/?sublist_id=10850427" method="post"><button type="submit">Export</button></form><a href="/company/TEST/">One table row only</a>' });
-    if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: 'Name,ISIN Code,NSE Code,BSE Code\nTest Export Display,INE000000001,TEST,\nDelisted,INE000000002,,\n' });
+    if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: `Name,ISIN Code,NSE Code,BSE Code\nTest Export Display,INE000000001,TEST,\n${mode === 'unmatched-codeless' ? 'Unknown codeless name' : 'Delisted'},INE000000002,,\n` });
     if (url.pathname === '/user/stocks/10850427/') return route.fulfill({ contentType: 'text/html', body: `<h1>Add companies to S Screen</h1><ul><li><span class="shrink-text">Test Ltd</span><button onclick="window.Watchlist.removeCompany('1')" type="button"><i class="icon-trash"></i></button></li>${mode === 'short-inventory' ? '' : '<li><span class="shrink-text">Delisted Ltd</span><button onclick="window.Watchlist.removeCompany(\'1234\')" type="button"><i class="icon-trash"></i></button></li>'}</ul><script>window.removalCalls=0;window.Watchlist={removeCompany:()=>window.removalCalls++};</script>` });
     if (url.pathname.startsWith('/company/')) {
       return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
@@ -53,6 +53,15 @@ try {
   assert.equal(inventory.get('TEST').isin, 'INE000000001', 'different management/export display names do not block exact exported exchange codes');
   assert.equal(inventory.get('ID:1234').ticker, null);
   assert.equal(inventory.get('ID:1234').isin, 'INE000000002');
+  mode = 'unmatched-codeless';
+  const unmatchedExport = await exportPortfolioTargets(page);
+  const gapInventory = buildInsightInventory([{ Company: 'Test', 'Screener URL': '/company/TEST/' }], unmatchedExport.records, unmatchedExport.manageRows);
+  const gapPlan = splitInsightReadTargets([...gapInventory.values()]);
+  assert.deepEqual(gapPlan.readable.map(row => row.companyKey), ['TEST']);
+  assert.deepEqual(gapPlan.unresolvedKeys, ['ISIN:INE000000002']);
+  const beforeUnresolvedUrl = page.url();
+  await assert.rejects(readInsightCompany(page, gapInventory.get(gapPlan.unresolvedKeys[0]), checkedAt), /unresolved/);
+  assert.equal(page.url(), beforeUnresolvedUrl, 'an unresolved identity is never navigated to a fabricated company page');
   mode = 'short-inventory';
   await assert.rejects(exportPortfolioTargets(page), /count mismatch/);
   mode = 'ok';
@@ -72,9 +81,15 @@ try {
   assert.equal((await readInsightCompany(page, item, checkedAt)).rows.length, 0, 'a verified page with no section differs from a broken table');
   await assert.rejects(readInsightCompany(page, item, checkedAt, { previousCompany: company }), /disappeared/, 'an unexpectedly vanished section cannot erase captured history');
 
+  payload = { ...payload, targetCount: gapInventory.size, checkedCount: gapInventory.size,
+    failedCount: gapPlan.unresolvedKeys.length, failedKeys: gapPlan.unresolvedKeys,
+    targetKeys: [...gapInventory.keys()], fullCoverage: false };
   await page.goto('http://insights.test/');
   await page.waitForFunction(() => window.insights);
   await page.evaluate(() => window.insights.load());
+  assert.deepEqual(await page.evaluate(() => ({ available: window.insights.all().length, missing: window.insights.meta().missingCompanies,
+    failed: window.insights.meta().failed, fullCoverage: window.insights.meta().fullCoverage, readFailed: window.insights.meta().latestReadFailed })),
+  { available: 1, missing: 1, failed: 1, fullCoverage: false, readFailed: false }, 'partial identity coverage stays explicit while verified company data remains usable');
   apiMode = 'invalid';
   await page.evaluate(() => window.insights.load({ refresh: true }));
   assert.deepEqual(await page.evaluate(() => ({ count: window.insights.all().length, failed: window.insights.meta().latestReadFailed })), { count: 1, failed: true });
