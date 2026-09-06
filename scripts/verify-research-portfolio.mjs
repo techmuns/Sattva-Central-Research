@@ -17,6 +17,8 @@ try {
     const packet = await page.evaluate(async question => research.buildResearchEvidence({ question, scope: 'portfolio', prepared }), test.question);
     const packetMs = Date.now() - started;
     const failures = [];
+    const attention = packet.sources.find(s => s.id === 'ai-alerts');
+    if (attention?.coverage?.windowDays && !attention.definition.includes(`${attention.coverage.windowDays}-day`)) failures.push('alert_window_definition_mismatch');
     const target = book.holdings.find(h => h.isin === test.id.split(':')[0]);
     if (!packet.selection.companies.some(c => target.ticker ? c.ticker === target.ticker : c.isin === target.isin)) failures.push('company_not_resolved');
     if (packet.selection.companies.some(c => target.ticker ? c.ticker !== target.ticker : c.isin !== target.isin)) failures.push('unrequested_company_selected');

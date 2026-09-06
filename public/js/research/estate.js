@@ -1076,7 +1076,7 @@ const BUILDERS = [
         asOf: report.day || null,
         rowCount: cards.length,
         coverage: { windowDays: aiAlerts.WINDOW_DAYS, firstDay: m.firstDay, activeCompanies: m.activeCompanies, surfaced: m.surfacedCompanies, suppressed: m.suppressedCompanies },
-        definition: 'Deterministic seven-day priority over All Alerts: importance, materiality, recency, book membership, multi-feed corroboration, repeats. rank is the reading; no score is published. Not a recommendation.',
+        definition: `Deterministic ${aiAlerts.WINDOW_DAYS}-day priority over All Alerts: importance, materiality, recency, book membership, multi-feed corroboration, repeats. rank is the reading; no score is published. Not a recommendation.`,
         ...chooseRows(cards, plan, (card, index) => ({
           rank: index + 1,
           ticker: card.ticker || null,
