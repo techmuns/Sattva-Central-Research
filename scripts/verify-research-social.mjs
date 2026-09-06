@@ -83,7 +83,8 @@ try {
   assert(tg.rows.length > 0 && tg.rows.every(r => r.ticker === 'JAYNECOIND'));
   assert.equal(tg.dataQuality, 'partial');
   assert.match(tg.note, /history incomplete/);
-  assert(tg.rows.some(r => r.messageId === 18 && r.attachments[0].name.endsWith('.pdf')), 'document names are searchable without claiming PDF contents');
+  const documentPacket = await build('Show Telegram PDF attachments for Jayaswal Neco');
+  assert(documentPacket.sources.find(s => s.id === 'telegram').rows.some(r => r.messageId === 18 && r.attachments[0].name.endsWith('.pdf')), 'document names are searchable without claiming PDF contents');
   const undatedPacket = await build('Show undated Telegram messages for JAYNECOIND');
   const undated = undatedPacket.sources.find(s => s.id === 'telegram').rows.find(r => r.messageId === 17);
   assert(undated && !undated.publishedAt, 'undated messages must not receive collection time as publication time');
