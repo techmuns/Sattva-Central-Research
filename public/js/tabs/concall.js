@@ -60,10 +60,10 @@ function renderFeed(ctx) {
     .load()
     .then(() => {
       if (token !== renderToken) return;
-      paint(ctx);
+      paint(ctx, token);
       unsubscribe = feed.onChange(() => {
         if (token !== renderToken) return;
-        paint(ctx);
+        paint(ctx, token);
       });
       mountDisposers.push(feed.startLive(ctx.live));
     })
@@ -106,11 +106,20 @@ function disposePanel() {
   panelDisposers = [];
 }
 
-function paint(ctx) {
+function paint(ctx, token = renderToken) {
   // `renderScans` rebuilds the panel, so its listeners go with it — dispose before repainting or
   // every live tick would stack another set on the new DOM.
   disposePanel();
-  scans.renderScans(ctx, { disposers: panelDisposers, tableView, onView: (v) => (tableView = v) });
+  scans.renderScans(ctx, {
+    disposers: panelDisposers,
+    tableView,
+    onView: (v) => (tableView = v),
+    // The free Deep Dive index arrives after first paint. Repaint once so exact, transcript-backed
+    // result/view/headline fields can fill without waiting for the 30-second con-call tick.
+    onInsights: () => {
+      if (token === renderToken && ctx.root.isConnected) paint(ctx, token);
+    },
+  });
 }
 
 function loadingHtml() {

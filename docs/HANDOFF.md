@@ -152,7 +152,7 @@ Awaited` row is excluded from moves and is never misreported as an exit.
 | --- | --- | --- |
 | **Additional corporate announcements** | Corp Announcements continuous feed | Scheduled Muns BSE/NSE/DRHP captures join BSE and live NSE announcements. Exchange ISIN/BSE-code identities now include BSE-only, renamed and newly listed holdings, with NSE SME aliases translated for company requests. History loads automatically and portfolio backfill has priority within the paced job. The counter reports companies with filings, not complete coverage. See `docs/DATA-CONTRACTS.md` → Corporate announcements are read by DATE. |
 | **Company filings** — annual reports, earnings reports and transcripts | Earnings Hub → Company Filings; Reports/Transcripts links in results and con-call scans | Authenticated Muns `/filings/domestic` proxy to Screener.in; scheduled company capture, 15-minute edge cache, shared/device history and original document links. No PDF extraction or analyst estimates. See `docs/DATA-CONTRACTS.md` → Domestic company filings. |
-| **Concall Deep Dive** — a per-company report on one call | The **Deep Dive** column on the Con-call tab | A separate Cloudflare Worker runs its own LLM pipeline and returns the report; this dashboard triggers it, mirrors its progress and lays out the result. Nothing is stored in `public/data/` and nothing is committed. Reading the reports they already hold is free and happens once per visit; **starting a new run costs real compute**, so that never fires without a click and a confirm. See §5c. |
+| **Concall Deep Dive** — a per-company report on one call | The **Deep Dive** column on the Con-call tab | A separate analysis service runs its own LLM pipeline and returns the report; this dashboard triggers it, mirrors its progress and lays out the result. Nothing is stored in `public/data/` and nothing is committed. Reading reports they already hold is free and happens once per visit; **starting a new run costs real compute**, so it fires only from the explicit Deep Dive row-button click. See §5c. |
 
 ### Synthetic earnings data is test-only
 
@@ -784,8 +784,8 @@ Five things to know before touching it:
   is a known gap on their side, not something this dashboard can fix from the browser — an
   anonymous reader clicking through an 877-row table would be spending the owner's money, and the
   URL is now in the page source. **Put auth on that endpoint** — a shared secret, an allowlisted
-  origin, a rate limit. Everything on this side (confirm step, no auto-dispatch, reattach instead
-  of re-run) is courtesy, not a control.
+  origin, a rate limit. Everything on this side (dispatch only from the explicit row button,
+  no render/poller dispatch, exact-row reattach, no force/re-run control) is courtesy, not a control.
 - **Reads are free, and the column uses that.** `GET /api/summary` lists the reports they already
   hold; it is fetched once per page load and the rows it names get a filled *Deep Dive ✓* button
   that opens the report at no cost. Making a reader pay to discover an answer already exists would
@@ -795,17 +795,23 @@ Five things to know before touching it:
   IndexedDB under their slug (`KEYS.deepDiveReport`), with a small localStorage index so the table
   can mark the free rows synchronously. Reopening paints from there with **no request at all** and
   re-checks behind it, and a re-check that fails — including `unknown`, which is their expiry —
-  leaves our copy exactly where it is. Before this, that expiry sent the reader to the confirm step,
+  leaves our copy exactly where it is. Before this, that expiry sent the reader to a new-run screen,
   so the only way back to an analysis already read was to pay for it again. The ribbon says which
   copy is on screen and when it was last confirmed, because a stored paint may not claim a freshness
   it has not got.
 - **The report is theirs end to end.** Nothing on that panel is computed or re-scored here; it
-  renders sections in their own key order, lays each out by its shape rather than by a hard-coded
-  field list, and links to their own rendering. It also carries real transcript quotes from named
+  renders sections in their own key order and lays each out by its shape rather than by a hard-coded
+  field list. It also carries real transcript quotes from named
   people — real speech, lifted by their pipeline, with the filed transcript linked in the
-  provenance strip. And it checks that the report it received is about the company whose row was
-  clicked, rather than assuming — a check that now also gates what may be written to the store, so
-  a contradicting report can never be served from disk under our ticker.
+  provenance strip. It checks both ticker and the report's own call date/source against the row,
+  and only an exact match can be saved or fill that row later.
+
+The free summary index also supplies Deep Dive's own `result`, `verdict`, `headline` and `tags`.
+Document-only gaps show those values unchanged only for transcript-backed, quarter-confirmed
+reports where that ticker has one distinct call date in the quarter. Ambiguous joins remain blank;
+the 0–100 score is never invented, and a Deep Dive verdict is visibly labelled as a view rather
+than passed off as the scan provider's sentiment tier. The uniqueness check uses the complete
+library before Portfolio, Watchlist or Universe filtering.
 
 ---
 
@@ -1114,10 +1120,10 @@ the single place a gap is written down. The ones that matter most:
   service credential would be the better shape.
 - **The Deep Dive endpoint is unauthenticated and metered.** `POST /api/analyze` on the Concall Deep
   Dive Worker has no auth and CORS is open, and every accepted call starts a real LLM run. This page
-  therefore never dispatches without an explicit click and a confirm step — but that is a courtesy,
-  not a control: anyone who learns the URL can spend against it from anywhere, with or without this
-  dashboard. The fix belongs on that Worker (a shared secret, an allowlisted origin, a rate limit),
-  and it should land before that URL goes anywhere public.
+  therefore dispatches only from an explicit Deep Dive row-button click, never from render or a
+  poller — but that is a courtesy, not a control: anyone who learns the URL can spend against it
+  from anywhere, with or without this dashboard. The fix belongs on that Worker (a shared secret,
+  an allowlisted origin, a rate limit).
 - **There is no ledger, by decision rather than omission.** Portfolio Analytics and its synthetic
   transactions are deleted (§2, §5); the only portfolio data here is the book of 142 company names.
   A real ledger would be a new product decision — quantities, costs and a source for both — and the

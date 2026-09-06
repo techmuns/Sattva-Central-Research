@@ -1,4 +1,5 @@
 // Display helpers keep calendar ages independent of a cached report's collection date.
+import { isRelatedNewsContext } from '../data/company-news-attribution.js';
 const DAY_MS = 86_400_000;
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 export const currentDay = (now = Date.now()) => new Date(now + 5.5 * 3600_000).toISOString().slice(0, 10);
@@ -31,6 +32,37 @@ export function latestSignal(events = []) {
   const timed = sameDay.every((event) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(event.time)));
   const time = timed ? sameDay.map((event) => event.time).sort().at(-1) : null;
   return { day, time, datetime: time ? `${day}T${time}:00+05:30` : day };
+}
+
+/** Only a noteworthy source event advances an alert's default reading order.
+ * Routine observations and a refreshed capture timestamp cannot make old news new. */
+function alertSignals(card) {
+  const events = card?.events || [];
+  const material = events.filter(event => event.importance === 'high' && (event.aiEligible !== false || isRelatedNewsContext(event)));
+  return material.length ? material : events;
+}
+
+export function latestAlertSignal(card) {
+  return latestSignal(alertSignals(card));
+}
+
+/** Keep the event that advanced the card visible, even when older evidence scores higher. */
+export function latestAlertEvent(card) {
+  return alertSignals(card).filter(event => Number.isFinite(dayMillis(event.day))).sort((a, b) =>
+    b.day.localeCompare(a.day) || String(latestSignal([b])?.time || '').localeCompare(String(latestSignal([a])?.time || '')))[0] || null;
+}
+
+export function sortAlertCards(cards, order = 'newest') {
+  const dated = new Map(cards.map(card => [card, latestAlertSignal(card)]));
+  const recent = (a, b) => {
+    const left = dated.get(a), right = dated.get(b);
+    return String(right?.day || '').localeCompare(String(left?.day || '')) ||
+      String(right?.time || '').localeCompare(String(left?.time || ''));
+  };
+  return [...cards].sort((a, b) =>
+    (order === 'holdings' ? (b.holdingWeightPct ?? -1) - (a.holdingWeightPct ?? -1) : 0) ||
+    (order === 'priority' ? b.score - a.score : 0) || recent(a, b) ||
+    b.score - a.score || String(a.key || a.ticker || a.entityId || a.company).localeCompare(String(b.key || b.ticker || b.entityId || b.company)));
 }
 
 function normalize(value) {

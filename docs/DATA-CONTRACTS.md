@@ -1046,9 +1046,9 @@ Worker, nothing is cached in `public/data/`, and nothing is committed.**
 `public/index.html`. That Worker has no custom domain, so the address is whatever Cloudflare
 assigned it and nothing can derive it — which is why it is written down rather than constructed.
 
-`baseUrl()` reads `localStorage['sattva:deepdive-base']` **first** and falls back to the global, so
-a reader (or the verification suite) can point the column somewhere else without touching the
-page. If neither is set the column renders a *Connect* step instead of a broken button.
+`baseUrl()` reads `localStorage['sattva:deepdive-base']` **first** and falls back to the global; the
+override exists for the verification stub. Neither value is shown or editable in the panel. If
+neither is set the panel says Deep Dive is unavailable and starts nothing.
 
 ### The three routes it uses — and only one of them costs anything
 
@@ -1090,7 +1090,7 @@ finished report is written to IndexedDB and reopening paints from there before a
 | Where | What |
 | --- | --- |
 | IndexedDB, `deepdive:<slug>` (`KEYS.deepDiveReport`) | the report **body**, exactly as they returned it |
-| `localStorage['sattva:deepdive-reports']` | a small index — `slug -> { ticker, company, quarter, savedAt }` — read synchronously on every table paint so the rows that open for free are marked without an async read. Capped at `MAX_SAVED` (60), oldest out, body and index together |
+| `localStorage['sattva:deepdive-reports']` | a small index — `slug -> { ticker, company, quarter, recordId, callDate, summary, savedAt }` — read synchronously on every table paint so only the exact call row opens/fills from the saved report. `summary` is a compact selection of the provider's own list fields, not a local analysis. Capped at `MAX_SAVED` (60), oldest out, body and index together |
 
 This is the only entry in `KEYS` that is **not** fetched through `conditionalJson`: their
 `GET /api/report` sends no ETag and wraps the body in a status envelope, so there is no validator to
@@ -1108,47 +1108,67 @@ Three rules make that safe, and they are the store's usual ones:
 - **What is kept is their bytes under their slug.** Nothing is patched, trimmed or recomputed.
 - **A failed re-check never deletes a report we hold.** `unknown` means their store has dropped it,
   which is precisely when this device's copy is the only one left; a network error means we could
-  not ask. Neither is a reason to show a confirm step that asks the reader to buy back an analysis
-  they have already read. Only a slug with **no** saved copy falls through to that step.
+  not ask. Neither is a reason to replace the saved report with a new run.
 - **A stored paint may not claim a freshness it has not confirmed.** `origin` (`store` / `live`) is
   where the bytes on screen came from and `checkedAt` is when the dashboard last confirmed them —
   the same two facts `deliveryNote()` prints for the polled feeds. A re-check moves the second, not
   the first, so an unchanged report still reads *"shown from the copy saved on this device"*. When
   their copy is gone the ribbon says so outright.
-- **A report that contradicts the row is never filed under that row's ticker.** It still renders,
-  under the rose banner below, but writing it to the store would make every later open of that row
-  serve another company's analysis from disk with no upstream left to correct it.
+- **A report that contradicts the company or call is never filed against the row.** A ticker
+  contradiction is a company mismatch. A source URL match is exact; otherwise the report's own
+  `meta.sources.concall_date` must exactly match the row date. A mismatch still renders
+  under a warning, but never fills the row or enters its saved/remembered index.
 
-`slug` is **always theirs**, derived server-side. Never construct one here. It is remembered per
-ticker in `localStorage` under `sattva:deepdive-slugs` so closing the panel and reopening
-reattaches to a run in flight rather than dispatching a second one, and `<BASE>/#/report/<slug>`
-deep-links to their own rendering.
+`slug` is **always theirs**, derived server-side. Never construct one here. It is remembered with
+the exact visible `recordId` in `localStorage` under `sattva:deepdive-slugs`, so closing and
+reopening that call reattaches without allowing another row for the same ticker to inherit it.
 
 ### A DISPATCH COSTS MONEY; A READ DOES NOT. The integration is built on that line
 
 Their `POST /api/analyze` is **unauthenticated** and every accepted call dispatches a real LLM +
 compute run. The reads are plain GETs with no pipeline behind them. So:
 
-- **Nothing that costs a run ever fires on its own.** No poller registers this, no row triggers it
-  on render, the cell is a button and nothing else, and the first click opens a **confirm** step
-  that says a run costs compute before anything is sent. "Re-run from scratch" on a finished report
-  returns to that same confirm step rather than dispatching on the click.
+- **Nothing that costs a run fires on render or from a poller.** The Deep Dive row button is itself
+  the explicit command: its one click opens live progress and dispatches exactly once. There is no
+  second setup/connection/force screen, no service URL is printed, and a finished report has no
+  force/re-run control that could spend from an incidental click.
 - **The free index IS fetched unprompted**, once per page load — never polled, never per row. It
   is what lets a row say *"report ready"* instead of making the reader pay to find out. Rows it
   names get a filled button and open through `resume(slug)`, which only polls.
 - Reopening a panel uses `resume(slug)` too. Their API would dedup a second `POST` anyway, but not
   asking at all is the version that cannot cost a run through a bug of ours.
-- The dot on an outlined button means *this browser* has dispatched a run for that ticker; the
+- The dot on an outlined button means *this browser* has dispatched a run for that exact row; the
   filled button means a finished report opens for free. Different facts, different marks. The
   filled state is reached two ways — their index says they hold a report, or this device does — and
   the second is stronger, because it needs no network at all and is known synchronously, so those
   rows are filled on first paint rather than upgraded when `/api/summary` lands.
 
+### Filling document-only result/view/highlight gaps
+
+The free summary index already publishes Concall Deep Dive's own `result`, `verdict`, `headline`
+and `tags`. The Con-call table may reproduce those fields in an otherwise blank Screener row only
+when all of the following are true:
+
+- `quarter_confirmed === true` and `transcript_available === true`;
+- the report quarter equals the Indian reporting quarter implied by the row's call/publication date;
+- every library row for that ticker and quarter has one distinct date.
+
+That last check runs against the complete market-wide library before Portfolio, Watchlist or
+Universe filtering. A narrower scope therefore cannot make an ambiguous ticker/quarter look
+unique. Two possible dates means no join and the cells stay blank. A saved report is stronger: its
+body was checked against the exact row's source URL or call date before `recordId` was written.
+
+Deep Dive publishes no equivalent to StockScans' 0–100 score, and its investment verdict is not a
+management-sentiment tier. The score remains blank/documents-only; the other fields are visibly
+labelled `DD · …`, and the column is **Sentiment / View**. Nothing is re-scored, translated into a
+StockScans band, or generated by this dashboard.
+
 ### The report is theirs, and the renderer never pretends otherwise
 
 Same rule as the StockScans scores above and the Trendlyne holding values below: we reproduce, we
-do not recompute. The panel adds no scoring, no re-banding and no judgement, says whose analysis it
-is at the top of every finished report, and links to their own rendering of it.
+do not recompute. The panel adds no scoring, no re-banding and no judgement, and says whose analysis
+it is at the top of every finished report. Primary transcript/presentation links remain in
+provenance; the analysis-service address itself is not shown.
 
 **The renderer is shape-driven, not field-driven.** `report`'s schema lives in *their* repo and is
 expected to grow, so sections render **in their own key order** — reordering them would be this
@@ -3926,9 +3946,16 @@ verified with fixtures independently of what happens to be in today's capture.
 
 `holdings` is the public names-only coverage list. It decides membership and sector context; it
 does not contain money. In the authenticated Family host, `positionSizes.holdings` is the separately
-validated, complete positions response. Its weights only order already-surfaced cards and print as
+validated, complete positions response. Its weights can order already-surfaced cards and print as
 `% of listed portfolio`; they never add points, create an alert, change direction or survive in the
-public 14-day cache. If the private payload is incomplete or unavailable, evidence order wins.
+public 14-day cache. The UI defaults to the newest noteworthy source event (IST date, then known
+source time), with explicit remembered choices for Largest holdings and Highest priority. The
+newest noteworthy event leads the evidence preview. Holding sizes arriving cannot switch the sort;
+incomplete or unavailable sizes fall back to newest order. Identity matching uses ticker and verified
+ISIN/entity aliases consistently for both immediate snapshot decoration and completed ranking.
+Family positions use the latest adopted workbook marks with `valuation: 'workbook'` and an opaque
+`sourceRevision`; catalog revalidation is independent of quote loading. The supplied book period
+remains distinct from `checkedAt`. Positions and weights remain memory-only in Research.
 
 After scoring, `js/data/intelligence-graph.js` searches every same-company row in the full All Alerts
 pool, including `aiEligible: false` filings, documents, snapshots and schedules. A context row must

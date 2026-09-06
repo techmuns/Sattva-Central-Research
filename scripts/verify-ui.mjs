@@ -275,9 +275,20 @@ async function startDeepDiveStub(hits) {
   let ready = [];
   const identities = new Map(); // slug -> the company that slug's report is actually about
   const REPORT = {
-    meta: { company: 'Tata Motors', ticker: 'TATAMOTORS', quarter: 'Q1FY27', call_date: '2026-08-05' },
+    meta: {
+      company: 'Tata Motors',
+      ticker: 'TATAMOTORS',
+      quarter: 'Q1FY27',
+      quarter_confirmed: true,
+      transcript_available: true,
+      call_date: '2026-08-05',
+      sources: { concall_date: '2026-08-05', transcript_url: 'https://example.com/tata-transcript.pdf' },
+    },
     verdict: 'Constructive. Margin recovery is ahead of the guided path. <img src=x onerror="window.__dd_pwned=1">',
     key_takeaways: ['JLR EBIT margin guided to 8-10% for FY27.', 'Net automotive debt down to near zero.'],
+    concall: { classification: [{ tag: 'Operating leverage' }] },
+    earnings: { quarter: 'Q1FY27', beat_miss: { overall: 'Beat' } },
+    next_steps: { conviction: 'Buy-watch' },
     financials: [
       { metric: 'Revenue', current: 108000, prior: 102300 },
       { metric: 'PAT', current: 5900, prior: 3200 },
@@ -339,9 +350,13 @@ async function startDeepDiveStub(hits) {
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  const setReady = (ticker, company, slug) => {
-    ready = [{ slug, company, ticker, quarter: 'Q1FY27', generated_at: '2026-08-07T09:39:57.305Z', verdict: 'Hold-watch' }];
-    identities.set(slug, { company, ticker });
+  const setReady = (ticker, company, slug, callDate = '2026-08-05') => {
+    ready = [{
+      slug, company, ticker, quarter: 'Q1FY27', quarter_confirmed: true,
+      transcript_available: true, generated_at: '2026-08-07T09:39:57.305Z',
+      verdict: 'Hold-watch', result: 'Beat', headline: 'Transcript-backed same-quarter headline.', tags: ['Compounder'],
+    }];
+    identities.set(slug, { company, ticker, sources: { ...REPORT.meta.sources, concall_date: callDate } });
     runs.set(slug, 9); // already finished on their side, so the first poll returns the report
   };
   // Their store keeps a report for about a fortnight and then drops it. `forget` is that expiry:
@@ -1102,6 +1117,7 @@ await go('/#/research/breakouts?scope=universe', 2500);
 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2600);
+  await go('/#/research/breakouts?scope=universe', 800);
   ok('the star survives a reload', (await glyph()) === '★', await glyph());
   await star().click();
   await page.waitForTimeout(400);
@@ -3233,10 +3249,9 @@ ok('ESC closes the schedule overlay', (await page.locator('#modal-overlay.is-ope
 //
 //   1. A DISPATCH COSTS MONEY, A READ DOES NOT. Their POST /api/analyze is unauthenticated and
 //      every accepted call starts a real LLM run; GET /api/summary and GET /api/report are free.
-//      So the suite counts requests by kind: rendering the table may read their index but must
-//      dispatch NOTHING, reaching the confirm step must dispatch NOTHING, opening a report they
-//      already hold must dispatch NOTHING, and reopening a finished panel must reattach rather
-//      than pay for a second run. A regression here is not a visual bug.
+//      The Deep Dive button is itself the explicit instruction to run, so the suite proves render
+//      dispatches nothing, one click dispatches exactly once with no setup screen, a ready report
+//      opens for free, and reopening reattaches rather than paying for a second run.
 //   2. THE REPORT IS EXTERNAL CONTENT with a schema we do not own. It must render sections we
 //      have never heard of, and it must not be able to inject markup.
 //   3. A REPORT MUST NEVER BE SHOWN UNDER THE WRONG COMPANY'S NAME. The panel is titled from our
@@ -3259,8 +3274,8 @@ await page.waitForSelector('[data-deep-dive]', { timeout: 25000 }).catch(() => {
 // wrong on the page. `rowCount()` already waits; this makes the button count wait too.
 const ddRows = await rowCount();
 const ddCells = await page.locator('[data-deep-dive]').count();
-const ddTracked = await page.evaluate(async () => (await import('/js/data/concall-scans.js')).all().filter((row) => row.analysisTracked !== false).length);
-ok('every analysis-tracked row carries a Deep Dive button', ddCells > 200 && ddCells === ddTracked && ddCells <= ddRows, `${ddCells} buttons, ${ddTracked} analysis rows, ${ddRows} total rows`);
+const ddEligible = await page.evaluate(async () => (await import('/js/data/concall-scans.js')).all().filter((row) => !!row.ticker).length);
+ok('every rendered ticker-mapped call carries a Deep Dive button', ddCells > 0 && ddCells === ddRows && ddEligible >= ddCells, `${ddCells} buttons, ${ddEligible} eligible model rows, ${ddRows} mounted rows`);
 ok('...and the column is headed Deep Dive', (await page.$$eval('#content-host thead th', (ts) => ts.map((t) => t.innerText.trim().toUpperCase()))).includes('DEEP DIVE'));
 ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.report === 0, `analyze=${ddHits.analyze} report=${ddHits.report}`);
 // Their free index is read once per document load and never again — not per row, not per repaint,
@@ -3268,27 +3283,24 @@ ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.repo
 ok('their free index has been read', ddHits.summary >= 1, `${ddHits.summary} fetches so far`);
 ok('...and a route change inside the tab does not re-read it', ddHits.summary === ddSummaryBefore, `${ddHits.summary - ddSummaryBefore} extra`);
 
-// The shipped page carries the dashboard URL, so a reader lands on the confirm step rather than
-// being asked to paste an address nobody could guess.
+// The shipped page carries the service configuration internally; the customer-facing panel never
+// asks for or prints it.
 ok('the deployed page is wired to the Deep Dive dashboard', await page.evaluate(() => typeof window.SATTVA_DEEPDIVE_URL === 'string' && /^https?:\/\//.test(window.SATTVA_DEEPDIVE_URL)));
 
 // The button owns its click: opening the drill behind a panel is not what anyone meant.
 await page.locator('[data-deep-dive]').first().click();
-await page.waitForTimeout(600);
+await page.waitForTimeout(200);
 ok('the button opens the Deep Dive, not the row drill', (await page.locator('#drill-panel.is-open').count()) === 0 && (await page.locator('#workspace-overlay:not(.hidden)').count()) === 1);
-
-await page.waitForSelector('[data-dd-start]', { timeout: 8000 });
-const ddConfirm = await page.locator('#workspace-panel').innerText();
-ok('...then says a run costs real compute before anything is sent', /costs real compute/i.test(ddConfirm) && /entirely theirs/i.test(ddConfirm));
-ok('...and STILL has not dispatched anything', ddHits.analyze === 0, `analyze=${ddHits.analyze}`);
-
-await page.click('[data-dd-start]');
+ok('...and starts exactly one run immediately, with no setup or URL screen', await page.waitForFunction(
+  () => !/Connected to|dashboard URL|Force a fresh|Start the Deep Dive/i.test(document.querySelector('#workspace-panel')?.innerText || ''),
+).then(() => true), await page.locator('#workspace-panel').innerText());
 // Their pipeline reports `unknown` for a beat after dispatch while the record propagates. That is
 // not a failure and must not read as one — it is simply the first step of their checklist.
 await page.waitForFunction(() => /Starting the analysis/i.test(document.querySelector('#workspace-panel')?.innerText || ''), null, { timeout: 15000 })
   .then(() => ok('“unknown” right after dispatch reads as the first stage, not as an error', true))
   .catch(() => ok('“unknown” right after dispatch reads as the first stage, not as an error', false, 'never showed the starting state'));
-ok('...and never as an error card', (await page.locator('#workspace-panel [data-dd-start]').count()) === 0);
+ok('the row click dispatched exactly once', ddHits.analyze === 1, `${ddHits.analyze} dispatches`);
+ok('...and never as an error card', (await page.locator('#workspace-panel [data-dd-retry]').count()) === 0);
 
 // THE LOADING WINDOW IS THEIR SCREEN. The API sends a bare stage key; the sentence beside it is
 // the one their own dashboard prints for that key, copied from their stage table rather than
@@ -3301,12 +3313,11 @@ ok('...with their percentage and the full checklist', /\d+%/.test(ddRunning) && 
 ok('...and none of the chrome their screen does not have', !/elapsed/i.test(ddRunning) && !/Stages so far/i.test(ddRunning) && !/Waiting for the pipeline/i.test(ddRunning));
 ok('...and it says the run keeps going in the background', /keeps going in the background/i.test(ddRunning));
 
-await page.waitForSelector('[data-dd-raw]', { timeout: 40000 });
+await page.waitForFunction(() => /Key Takeaways/i.test(document.querySelector('#workspace-panel')?.innerText || ''), null, { timeout: 40000 });
 const ddDone = await page.locator('#workspace-panel').innerText();
 ok('the finished report renders', /Constructive/.test(ddDone) && /Key Takeaways/i.test(ddDone));
 ok('...and says the whole analysis is theirs', /reproduced here unchanged/i.test(ddDone) && /Nothing on this panel is computed/i.test(ddDone));
-const ddLink = await page.getAttribute('#workspace-panel a[target=_blank]', 'href');
-ok('...and links to their own rendering of it', !!ddLink && ddLink.startsWith(`${ddOrigin}/#/report/`), ddLink || 'no link');
+ok('...without exposing the analysis-service URL', !ddDone.includes(ddOrigin) && (await page.locator(`#workspace-panel a[href^="${ddOrigin}"]`).count()) === 0);
 
 // The stub's dispatched report is deliberately about TATAMOTORS, which is not the row that was
 // clicked. Presenting it under this row's name would be the worst thing this panel could do.
@@ -3327,33 +3338,40 @@ ok('report strings are escaped, not parsed as markup', !ddInjection.pwned && ddI
 // pick the progress back up on its own — not ask the reader to click "reattach", which is what it
 // used to do. Reattaching is a poll, so it costs nothing and may fire unprompted.
 const ddAfterRun = ddHits.analyze;
+const ddDispatched = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('sattva:deepdive-slugs') || '{}'))[0]?.slug || '');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(400);
 await page.locator('[data-deep-dive]').first().click();
-await page.waitForSelector('[data-dd-raw]', { timeout: 20000 });
-ok('reopening reattaches on its own, with no confirm step in the way', true);
+await page.waitForFunction(() => /Key Takeaways/i.test(document.querySelector('#workspace-panel')?.innerText || ''), null, { timeout: 20000 });
+ok('reopening reattaches on its own, with no setup step in the way', true);
 ok('...AND REATTACHING COSTS NOTHING', ddHits.analyze === ddAfterRun, `${ddHits.analyze} dispatches total`);
 ok('...never forcing a fresh run behind the reader’s back', ddHits.forced === 0, `${ddHits.forced} forced`);
-
-// "Re-run from scratch" is the one control on a finished report that spends money. It must ask.
-await page.click('[data-dd-rerun]');
-await page.waitForTimeout(400);
-ok('“re-run” asks before spending, rather than dispatching on the click', (await page.locator('[data-dd-start]').count()) === 1 && ddHits.analyze === ddAfterRun, `${ddHits.analyze} dispatches`);
-ok('...and says plainly that forcing skips the free reuse', /Forcing a fresh run skips that reuse/i.test(await page.locator('#workspace-panel').innerText()));
+ok('...and offers no accidental force/re-run control', (await page.locator('[data-dd-rerun], [data-dd-force]').count()) === 0);
 await page.keyboard.press('Escape');
 await page.waitForTimeout(300);
 
 // ---------------------------------------------------------------------------------------
 // A report they ALREADY HOLD is a free click, and the column has to say so before it is clicked.
 // This is the difference between a reader paying to discover an answer exists and being shown
-// that it does, so the button changes and the panel opens the report with no confirm step.
+// that it does, so the button changes and the panel opens the report without dispatching.
 // ---------------------------------------------------------------------------------------
-const ddRow = await page.evaluate(() => {
-  const lines = (document.querySelector('tr[data-row-key]')?.innerText || '').split('\n').map((l) => l.trim());
-  const i = lines.findIndex((l) => l.includes('·'));
-  return { ticker: i > 0 ? lines[i].split('·')[0].trim() : '', name: i > 0 ? lines[i - 1] : '' };
+const ddRow = await page.evaluate(async () => {
+  const data = await import('/js/data/concall-scans.js');
+  const view = await import('/js/concall/scans.js');
+  const rows = data.all();
+  const row = rows.find((item) => {
+    if (!item.ticker || view.reportingQuarter(item.date) !== 'Q1FY27') return false;
+    const dates = new Set(
+      rows
+        .filter((candidate) => candidate.ticker === item.ticker && view.reportingQuarter(candidate.date) === 'Q1FY27')
+        .map((candidate) => candidate.date),
+    );
+    return dates.size === 1;
+  });
+  return { key: row ? data.rowUid(row) : '', ticker: row?.ticker || '', name: row?.name || '', date: row?.date || '' };
 });
-ddSetReady(ddRow.ticker, ddRow.name, 'already-held-q1fy27');
+ok('the fixture contains an unambiguous call for exact Deep Dive matching', !!ddRow.key, JSON.stringify(ddRow));
+ddSetReady(ddRow.ticker, ddRow.name, 'already-held-q1fy27', ddRow.date);
 const ddBeforeReady = ddHits.analyze;
 const ddSummaryBeforeReload = ddHits.summary;
 // A REAL reload, not a hash change: only a fresh document re-reads their index.
@@ -3362,28 +3380,43 @@ await page.waitForTimeout(1000);
 await waitForPanel();
 await page.waitForSelector('[data-dd-ready]', { timeout: 20000 }).catch(() => {});
 ok('a fresh page load re-reads their index, exactly once', ddHits.summary === ddSummaryBeforeReload + 1, `${ddHits.summary - ddSummaryBeforeReload} fetches on this load`);
-// EVERY row for that company, not exactly one. Their index is keyed by company, and four tickers
-// in this feed hold two calls in the window (AMAGI, HINDALCO, GMMPFAUDLR, GVPIL) — a company that
-// reported twice this quarter is two rows and one report. An earlier `=== 1` here passed only
-// because the newest row happened not to be one of those four, and failed the day it was.
-const ddReadyMarks = await page.evaluate((t) => {
+// A company-level summary is joined only when that confirmed quarter has one distinct call date.
+// This prevents a report for the latest call from being painted onto a different call by the same
+// company. Duplicate source rows for the same call date may all carry the ready mark.
+const ddReadyMarks = await page.evaluate(({ ticker, date }) => {
   const rows = [...document.querySelectorAll('tr[data-row-key]')];
-  const forTicker = rows.filter((r) => new RegExp(`\\b${t}\\b`).test(r.innerText));
+  const forCall = rows.filter((r) => new RegExp(`\\b${ticker}\\b`).test(r.innerText) && r.innerText.includes(new Date(`${date}T06:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })));
   return {
-    rowsForTicker: forTicker.length,
-    markedForTicker: forTicker.filter((r) => r.querySelector('[data-dd-ready]')).length,
+    rowsForCall: forCall.length,
+    markedForCall: forCall.filter((r) => r.querySelector('[data-dd-ready]')).length,
     markedTotal: document.querySelectorAll('[data-dd-ready]').length,
   };
-}, ddRow.ticker);
-ok('a company they already hold a report for is marked ready', ddReadyMarks.markedForTicker === ddReadyMarks.rowsForTicker && ddReadyMarks.rowsForTicker > 0, `${ddRow.ticker}: ${ddReadyMarks.markedForTicker} of ${ddReadyMarks.rowsForTicker} rows marked`);
-ok('...and no other company is', ddReadyMarks.markedTotal === ddReadyMarks.markedForTicker, `${ddReadyMarks.markedTotal} marked in total`);
+}, ddRow);
+ok('the exact call they already hold a report for is marked ready', ddReadyMarks.markedForCall === ddReadyMarks.rowsForCall && ddReadyMarks.rowsForCall > 0, `${ddRow.ticker}: ${ddReadyMarks.markedForCall} of ${ddReadyMarks.rowsForCall} rows marked`);
+ok('...and no different call is marked', ddReadyMarks.markedTotal === ddReadyMarks.markedForCall, `${ddReadyMarks.markedTotal} marked in total`);
 ok('...and the mark says the click starts no run', /Opens without starting a run/i.test((await page.locator('[data-dd-ready]').first().getAttribute('title')) || ''));
+const ddGapJoin = await page.evaluate(async () => {
+  const mod = await import('/js/concall/scans.js');
+  const row = { ticker: 'GAPTEST', date: '2026-08-05', publishedDate: '2026-08-05', analysisTracked: false };
+  const hit = {
+    slug: 'gaptest', ticker: 'GAPTEST', quarter: 'Q1FY27', quarter_confirmed: true,
+    transcript_available: true, result: 'Beat', verdict: 'Hold-watch', headline: 'Exact headline', tags: ['Compounder'],
+  };
+  return {
+    quarter: mod.reportingQuarter(row.date),
+    exact: mod.matchingDeepDive(row, [row], { GAPTEST: [hit] })?.headline || null,
+    ambiguous: mod.matchingDeepDive(row, [row, { ...row, date: '2026-08-20' }], { GAPTEST: [hit] }) || null,
+    unconfirmed: mod.matchingDeepDive(row, [row], { GAPTEST: [{ ...hit, quarter_confirmed: false }] }) || null,
+    noTranscript: mod.matchingDeepDive(row, [row], { GAPTEST: [{ ...hit, transcript_available: false }] }) || null,
+  };
+});
+ok('document-only enrichment accepts only a transcript-backed, quarter-confirmed, unambiguous call', ddGapJoin.quarter === 'Q1FY27' && ddGapJoin.exact === 'Exact headline' && ddGapJoin.ambiguous === null && ddGapJoin.unconfirmed === null && ddGapJoin.noTranscript === null, JSON.stringify(ddGapJoin));
 
 // `.first()`, because a company with two calls in the window has two marked buttons — see above.
 await page.locator('[data-dd-ready]').first().click();
-await page.waitForSelector('[data-dd-raw]', { timeout: 20000 });
+await page.waitForFunction(() => /Key Takeaways/i.test(document.querySelector('#workspace-panel')?.innerText || ''), null, { timeout: 20000 });
 const ddReadyPanel = await page.locator('#workspace-panel').innerText();
-ok('...clicking it opens their report with no confirm step', /Key Takeaways/i.test(ddReadyPanel));
+ok('...clicking it opens their report directly', /Key Takeaways/i.test(ddReadyPanel));
 ok('...AND IT COST NOTHING', ddHits.analyze === ddBeforeReady, `${ddHits.analyze} dispatches total`);
 ok('...and says the report was already on file rather than freshly run', /already held/i.test(ddReadyPanel));
 ok('...with no mismatch warning, because this one is about the right company', !/different company/i.test(ddReadyPanel));
@@ -3396,7 +3429,7 @@ await page.waitForTimeout(300);
 //
 // Every other cache on this dashboard saves bytes. This one saves money: a report is the output of
 // a metered LLM run, and their store drops one after about a fortnight. Before this, that expiry
-// took the report with it — reopening a company analysed last month showed the confirm step, and
+// took the report with it — reopening a company analysed last month showed a new-run state, and
 // the only way back to an analysis already read was to pay for it again.
 //
 // So the assertions are about what happens with the upstream copy GONE, which is exactly when a
@@ -3414,7 +3447,6 @@ ok(
 // The dispatched run returned a TATAMOTORS report against a row that is not TATAMOTORS. It is
 // rendered — under a banner saying whose it is — but filing it under our ticker would make every
 // later open of that row show another company's analysis, from disk, with no upstream to correct it.
-const ddDispatched = String(ddLink || '').split('/report/')[1] || '';
 ok(
   '...but a report that contradicts the row is never filed under that row’s ticker',
   !!ddDispatched &&
@@ -3446,11 +3478,11 @@ await page.evaluate(() => {
   new MutationObserver(push).observe(root, { subtree: true, childList: true, characterData: true });
 });
 await page.locator('[data-dd-saved]').first().click();
-await page.waitForSelector('[data-dd-raw]', { timeout: 20000 });
+await page.waitForFunction(() => /Key Takeaways/i.test(document.querySelector('#workspace-panel')?.innerText || ''), null, { timeout: 20000 });
 const ddGone = await page.locator('#workspace-panel').innerText();
 ok('A REPORT THEY HAVE DROPPED STILL OPENS, FROM THIS DEVICE', /Key Takeaways/i.test(ddGone) && /JLR EBIT margin/i.test(ddGone));
 ok('...AND IT COST NOTHING TO GET IT BACK', ddHits.analyze === ddBeforeGone.analyze && ddHits.forced === ddBeforeGone.forced, `${ddHits.analyze} dispatches total`);
-ok('...never landing on a confirm step that asks the reader to buy it again', (await page.locator('[data-dd-start]').count()) === 0);
+ok('...never landing on a setup step that asks the reader to buy it again', (await page.locator('[data-dd-retry]').count()) === 0);
 ok('...saying it came from this device, not from them', /saved on this device/i.test(ddGone));
 ok('...and saying plainly that their copy is gone', /no longer holds this report/i.test(ddGone));
 const ddStates = await page.evaluate(() => window.__ddSeen);

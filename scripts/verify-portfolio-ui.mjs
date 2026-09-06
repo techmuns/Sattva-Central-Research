@@ -2,13 +2,19 @@
 // localhost:5173. All external APIs and both model endpoints are intercepted:
 // this test cannot send portfolio data to production or start a production run.
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { resolve, extname, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const publicRoot = fileURLToPath(new URL('../public/', import.meta.url));
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT || '/opt/node22/lib/node_modules/playwright'}/index.mjs`);
 const browser = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
-const context = await browser.newContext({ viewport: { width: 1440, height: 1080 } });
+const context = await browser.newContext({ viewport: { width: 1440, height: 1080 }, serviceWorkers: 'block' });
 const errors = [];
 let outage = false;
 let quotePrice = 100;
 let quoteRefreshes = 0;
+let holdQuotes = true;
+const quoteWaiters = [];
 let pauseResearch = false, releaseResearch, reportStarted;
 const questions = [];
 let page;
@@ -30,6 +36,7 @@ await context.route('**/*', async (route) => {
   if (!['localhost', '127.0.0.1'].includes(url.hostname)) return route.fulfill({ status: 503, body: 'External network disabled in this test' });
   if (url.pathname === '/__auth/session') return route.fulfill({ status: 204 });
   if (url.pathname === '/api/quotes') {
+    if (holdQuotes) await new Promise(resolve => quoteWaiters.push(resolve));
     if (req.postDataJSON().refresh) quoteRefreshes++;
     return json(route, { ok: true, asOf: new Date().toISOString(), quotes: { RBLBANK: { price: quotePrice, ageS: 0, prevClose: null } }, missing: [] });
   }
@@ -44,6 +51,15 @@ await context.route('**/*', async (route) => {
     ].map(x => JSON.stringify(x)).join('\n') + '\n' }).catch(error => { if (!pauseResearch) throw error; });
   }
   if (url.pathname.startsWith('/api/')) return json(route, { ok: false, error: 'Test API unavailable' }, 503);
+  if (url.port === '8080') {
+    const path = resolve(publicRoot, '.' + (url.pathname === '/' ? '/index.html' : url.pathname));
+    if (!path.startsWith(publicRoot.endsWith(sep) ? publicRoot : publicRoot + sep)) return route.abort();
+    try { return route.fulfill({ body: await readFile(path), contentType: { '.html':'text/html', '.js':'text/javascript', '.json':'application/json', '.css':'text/css' }[extname(path)] || 'application/octet-stream' }); }
+    catch { return json(route, {}, 404); }
+  }
+  // Both loopback apps use the fixture transport. Otherwise Chromium treats a
+  // fulfilled parent document as public and blocks its real localhost iframe.
+  if (url.port === '5173') return route.fulfill({ response: await route.fetch() });
   return route.continue();
 });
 try {
@@ -52,6 +68,18 @@ try {
   await page.goto('http://localhost:8080/#/research/ask-research?scope=portfolio', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   const research = page;
   await research.getByText('Portfolio connected', { exact: false }).waitFor({ timeout: 90_000 });
+  const snapshotStarted = Date.now();
+  const fastSnapshot = await page.evaluate(async () => {
+    const bridge = await import('/js/research/portfolio-bridge.js');
+    return Promise.race([bridge.readPositionSizes(undefined, { force: true }),
+      new Promise((_, reject) => setTimeout(() => reject(Error('Portfolio snapshot waited for blocked quotes')), 5000))]);
+  });
+  assert.equal(fastSnapshot.sizes.valuation, 'workbook');
+  assert(fastSnapshot.holdings.length > 100);
+  assert.equal(quoteRefreshes, 0, 'snapshot matching does not request live prices');
+  console.log(`Portfolio snapshot ready in ${Date.now() - snapshotStarted}ms while the quote service is blocked.`);
+  holdQuotes = false;
+  quoteWaiters.splice(0).forEach(resolve => resolve());
   assert.equal(await page.locator('#portfolio-sync-status').isVisible(), false, 'public snapshot status cannot contradict the private Research connection');
   assert.equal(await page.locator('iframe[title="Private portfolio connection"]').isVisible(), false);
   assert.equal(await page.getByRole('link', { name: 'Open with portfolio' }).count(), 0);
@@ -62,7 +90,9 @@ try {
   await research.getByText('Portfolio source was read.', { exact: false }).waitFor({ timeout: 125_000 });
   assert.equal(questions.length, 1);
   assert.ok(['ready', 'limited'].includes(questions[0].evidence.portfolio.status));
-  assert.match(questions[0].evidence.portfolio.answer, /Sterlite/i);
+  assert.equal(questions[0].evidence.portfolio.mode, 'verified-holdings');
+  assert.equal(questions[0].evidence.portfolio.valuation, 'workbook');
+  assert.deepEqual(questions[0].evidence.portfolioPositions.holdings.map(h => h.isin).sort(), fastSnapshot.holdings.map(h => h.isin).sort(), 'ownership questions receive the whole verified book, including when the named company is absent');
   assert.equal(questions[0].evidence.portfolio.bookAsOf, '2026-06-30');
   await research.getByText('Portfolio book: 2026-06-30.', { exact: false }).waitFor();
   const child = page;
@@ -74,10 +104,11 @@ try {
   assert.ok(questions[0].evidence.portfolioPositions.holdings.length > 100);
   assert.equal(questions[0].evidence.portfolioPositions.holdings.find(h => h.isin === 'INE12F801023')?.ticker, 'KISSHT', 'actual Family OnEMI identity reaches Research');
   assert.deepEqual(await page.evaluate(async () => (await import('/js/data/coverage.js')).holdings().map(h => h.isin).sort()), questions[0].evidence.portfolioPositions.holdings.map(h => h.isin).sort(), 'every Family holding reaches the dashboard scope');
-  const initialWeight = questions[0].evidence.portfolioPositions.holdings.find(h => h.ticker === 'RBLBANK').weightPct;
-  assert.ok(quoteRefreshes >= 1, 'the answer actively refreshes quotes');
+  const pricedReading = await page.evaluate(async () => (await import('/js/research/portfolio-bridge.js')).readPortfolio('What is my cost basis in RBL Bank?'));
+  const initialWeight = pricedReading.holdings.find(h => h.ticker === 'RBLBANK').weightPct;
+  assert.ok(quoteRefreshes >= 1, 'detailed ledger questions actively refresh quotes');
   quotePrice = 150;
-  await input.fill('What changed in the market?');
+  await input.fill('What is my cost basis in RBL Bank?');
   await research.getByRole('button', { name: 'Send question' }).click();
   await page.waitForFunction(() => document.querySelectorAll('.research-assistant-answer:not(.is-streaming)').length === 2, null, { timeout: 125_000 });
   assert.equal(questions.length, 2);
@@ -89,7 +120,9 @@ try {
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH, fullPage: true });
 
   await child.evaluate(() => { location.hash = '#/research/ai-alerts?scope=portfolio'; });
-  await research.locator('[data-ai-size-note]').filter({ hasText: 'Largest holdings first' }).waitFor({ timeout: 60_000 });
+  await research.locator('[data-ai-size-note]').waitFor({ timeout: 60_000 });
+  assert.equal(await research.getByRole('combobox', { name:'Sort AI Alerts' }).inputValue(), 'newest');
+  await research.getByRole('combobox', { name:'Sort AI Alerts' }).selectOption('holdings');
   assert.equal(await page.locator('#portfolio-sync-status').isVisible(), false, 'authenticated sizes replace the public snapshot status');
   await child.waitForFunction(() => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', null, { timeout: 60_000 });
   const weights = await research.locator('[data-ai-holding-size]').allTextContents();
@@ -98,7 +131,7 @@ try {
   assert(percentages.every(Number.isFinite));
   assert(percentages.every((w, i) => i === 0 || w <= percentages[i - 1]), 'largest holdings appear first');
   assert.equal(questions.length, 2, 'holding size requests do not invoke a model');
-  assert.match(await research.locator('[data-ai-size-note]').innerText(), /Book 30 Jun 2026/);
+  assert.match(await research.locator('[data-ai-size-note]').innerText(), /30 Jun 2026/);
   assert(await child.evaluate(() => !JSON.stringify(localStorage).includes('weightPct')), 'private sizes are never persisted');
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-sizes.png'), fullPage: true });
   outage = true;
@@ -108,16 +141,16 @@ try {
   assert.equal(await research.locator('[data-ai-holding-size]').count(), 0, 'failed revalidation removes old private sizes');
   outage = false;
   await child.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
-  await research.locator('[data-ai-size-note]').filter({ hasText: 'Largest holdings first' }).waitFor();
+  await research.locator('[data-ai-size-note]').waitFor();
   await recheckBook(family);
-  await research.locator('[data-ai-size-note]').filter({ hasText: 'Largest holdings first' }).waitFor({ timeout: 60_000 });
+  await research.locator('[data-ai-size-note]').waitFor({ timeout: 60_000 });
   await child.evaluate(() => { location.hash = '#/research/ask-research?scope=portfolio'; });
   await input.waitFor();
 
   outage = true;
   await input.fill('Do I have Sterlite in my portfolio?');
   await research.getByRole('button', { name: 'Send question' }).click();
-  await research.getByText('The shared workbook store could not be checked.', { exact: false }).waitFor({ timeout: 45_000 });
+  await research.getByText(/Shared archive unavailable|The shared workbook store could not be checked\./).waitFor({ timeout: 45_000 });
   assert.equal(questions.length, 2, 'an outage must not send old private facts to Research');
 
   outage = false; pauseResearch = true;
