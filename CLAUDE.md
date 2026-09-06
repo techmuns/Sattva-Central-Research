@@ -28,7 +28,9 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
    The source entry is `scripts/tailwind-input.css`; the content/font config is
    `tailwind.config.cjs`. Commit the generated stylesheet. The on-demand CLI is a maintenance
    tool, not an app dependency or a deployment step.
-5. Light theme only.
+5. Support light and dark themes. The header toggle remembers the reader's choice; without a
+   saved choice, follow the operating system. Use the shared theme tokens for surfaces, text,
+   borders and semantic states, including dialogs and new tabs. Printing stays light.
 6. **Current data and continuous history are a standing user requirement across every tab.**
    Opening or returning to the dashboard must automatically revalidate the relevant feeds;
    background collection must retain history and recover missed intervals where possible.

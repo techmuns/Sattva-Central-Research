@@ -804,7 +804,7 @@ export function scoreTable(config) {
 
       <div class="table-scroll-surface scrollbar-thin overflow-x-auto" data-table-scroll tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}" ${stickyHead ? `style="max-height:${stickyHead};overflow-y:auto${isVirtual ? ';overflow-anchor:none' : ''}"` : ''}>
         <table class="w-full text-sm"${isVirtual ? ` aria-rowcount="${initialList.length + 1}"` : ''}>
-          <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-slate-50 shadow-[inset_0_-1px_0_rgb(226_232_240)]' : 'bg-slate-50/70'}">${headHtml()}</thead>
+          <thead data-table-head class="sticky top-0 z-10 ${stickyHead ? 'bg-slate-50 table-sticky-head' : 'bg-slate-50/70'}">${headHtml()}</thead>
           <tbody data-table-body>${isVirtual ? virtualBodyHtml(initialList, initialVirtualStart) : bodyHtml(initialList, 0, FIRST_PAINT_ROWS)}</tbody>
         </table>
       </div>
