@@ -291,6 +291,11 @@ try {
   servedArtifact = null;
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn + 1, 'older static capture cannot regress a newer artifact');
+  servedArtifact = { ...capture, route:'mtproto', lastRun:{at:new Date(Date.parse(freshAt)+1000).toISOString(),status:'failed'},
+    apiSafety:{paused:true,reason:'account-attention',failures:1}, posts:[post(501,'New API report'),...capture.posts] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert((await page.locator('[data-telegram-live]').innerText()).includes('Account collection paused for review'));
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(),view.drawn+1,'account pause retains every visible row');
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);

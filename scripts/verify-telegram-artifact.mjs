@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { gzipSync } from 'node:zlib';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { validateTelegramCapture, TELEGRAM_REPO, TELEGRAM_ARTIFACT } from '../public/js/data/telegram-shared.js';
 import { readTelegramCollector } from '../worker/telegram-collector.mjs';
 const at = '2026-09-06T01:00:00.000Z';
@@ -10,6 +14,22 @@ const raw = { schemaVersion:2, channel:'researchreportss', route:'mtproto', last
   posts:[{id:500,text:'Report',publishedAt:at,session:'NEVER-PUBLISH',sender:{phone:'NEVER-PUBLISH'}}],
   session:'NEVER-PUBLISH',api_hash:'NEVER-PUBLISH' };
 const capture=validateTelegramCapture(raw);
+const safety = {paused:false,reason:'rate-limit',failures:1,nextAttemptAt:new Date(Date.now()+86400000).toISOString()};
+const scratch=mkdtempSync(join(tmpdir(),'telegram-safety-'));
+try {
+  for(const apiSafety of [safety,{paused:true,reason:'account-attention',failures:1,nextAttemptAt:null}]) {
+    const input=join(scratch,'input.json'), restored=join(scratch,'restored.json'), packed=join(scratch,'capture.gz');
+    // A connection error may happen while the retained archive still has the public-page route.
+    writeFileSync(input,JSON.stringify({...raw,route:'embed+permalink',apiSafety:{...apiSafety,session:'NEVER-PUBLISH'}}));
+    for(const args of [['failed',input],['restore',input,restored],['pack',restored,packed]])
+      execFileSync(process.execPath,['scripts/telegram-artifact.mjs',...args],{env:{...process.env,GITHUB_ACTIONS:'false'}});
+    const roundTrip=JSON.parse(gunzipSync(readFileSync(packed)));
+    assert.deepEqual(roundTrip.apiSafety,apiSafety,'safety state survives health stamping, archive restore and publication');
+    assert(!JSON.stringify(roundTrip).includes('NEVER-PUBLISH'));
+  }
+} finally {rmSync(scratch,{recursive:true,force:true});}
+assert.equal(validateTelegramCapture({...raw,apiSafety:{...safety,nextAttemptAt:'invalid'}}).apiSafety.paused,true);
+assert.equal(validateTelegramCapture({...raw,apiSafety:{reason:'unknown'}}).apiSafety.paused,true);
 assert(!JSON.stringify(capture).includes('NEVER-PUBLISH'));
 assert.equal(capture.apiState.newestSyncedId,500);
 assert.throws(()=>validateTelegramCapture({...raw,channel:'another_channel'}));

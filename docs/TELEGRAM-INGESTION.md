@@ -51,6 +51,35 @@ sending, contact access, read receipts, private-group export or file downloads. 
 publication dates, document filenames/sizes and original links are retained. Captionless
 messages are archived; rows appear when captured text or a named document is available.
 
+### Account safeguards
+
+Telegram can restrict unofficial API clients; read-only collection cannot guarantee an
+account will never be banned. If protecting a primary account requires avoiding that
+residual risk, leave it disconnected and use public-page collection. A separate account
+isolates the primary account's session but does not remove Telegram's restrictions.
+The session is an account credential with broader capabilities than this collector uses;
+it is **not a read-only-scoped token**.
+
+API runs are restricted to `main` and share one concurrency group. Each run reads at most
+100 recent messages, 300 catch-up messages and 200 historical messages (180 by default).
+History waits until head catch-up is complete. Additional history pages are spaced by two
+seconds. There is a persisted five-minute minimum between successful collection runs;
+the requested scheduled interval is ten minutes. These are conservative implementation
+limits, not a Telegram guarantee of account safety.
+
+Automatic request retries and flood-wait sleeps are disabled. A Telegram flood wait is
+saved in `apiSafety.nextAttemptAt` with 60 seconds of grace. Later runs check the saved
+gate **before connecting or reading credentials**. Connection failures back off from
+15 minutes up to six hours. Revoked, duplicated, unauthorized, restricted or invalid
+sessions pause indefinitely for operator review. Existing posts and checkpoints survive;
+the UI shows the pause. No automatic login or replacement session is created.
+
+After diagnosing an account pause, an operator can explicitly authorize a production
+workflow dispatch with `resume_api: true`. That input clears only an account-review pause;
+it cannot bypass a pending flood wait. The dashboard cannot send this input. Never run
+the same session concurrently on another machine. Missing or invalid published archives
+fail closed rather than discarding the persisted pause.
+
 ## Connect the free official API
 
 The API is free **but requires a Telegram user account**, your own API ID/hash and a
@@ -88,13 +117,16 @@ public-page collection continues, with its limitations visible.
 
 - `node scripts/verify-telegram.mjs`: public parsing, gaps, retention and checkpoints.
 - `python3 scripts/verify-telegram-api.py`: API head/history, large bursts, quiet checks,
-  interrupted catch-up, documents and the public-channel boundary. No network/login.
+  interrupted catch-up, documents, the public-channel boundary and no-connection pause
+  enforcement, including operator-resume flood-wait protection. No network/login.
 - `node scripts/verify-telegram-artifact.mjs`: artifact trust/digest/host/size boundaries,
-  credential stripping, actual Worker route, conditional caching and failure handling.
+  credential stripping, persisted account waits, actual Worker route, conditional caching
+  and failure handling.
 - `node scripts/verify-telegram-publishing.mjs`: archive-only PR scope and review/check gates.
 - `PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-telegram-ui.mjs`: static fallback,
   artifact arrival without deployment, dates, search/export, errors and mobile layout.
 
 Official references: [Telegram API credentials](https://core.telegram.org/api/obtaining_api_id),
+[Telegram API errors and required waits](https://core.telegram.org/api/errors),
 [history API](https://core.telegram.org/method/messages.getHistory),
 [Telethon sessions](https://docs.telethon.dev/en/stable/concepts/sessions.html).
