@@ -784,6 +784,14 @@ function syncSendState() {
   send.classList.toggle('is-busy', isBusy(session));
   send.querySelector('span').textContent = busy ? 'Stop' : 'Send';
   send.setAttribute('aria-label', busy ? 'Stop answer' : 'Send question');
+  // Mobile hides the text label, so the icon must also describe cancellation.
+  const mode = busy ? 'stop' : 'send';
+  if (send.dataset.mode !== mode) {
+    send.dataset.mode = mode;
+    send.querySelector('svg').innerHTML = busy
+      ? '<rect x="5" y="5" width="10" height="10" rx="1" fill="currentColor" stroke="none"/>'
+      : '<path d="m4 10 11-6-3 12-2.3-4.1L4 10Z" stroke-linejoin="round"/><path d="m9.7 11.9 2.4-3.1" stroke-linecap="round"/>';
+  }
 }
 
 function autoSize(input) {

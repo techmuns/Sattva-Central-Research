@@ -144,6 +144,7 @@ try {
   await send.click();
   await page.locator('.is-streaming .research-answer-body').waitFor();
   const stopStarted = Date.now();
+  assert.equal(await page.getByRole('button', { name: 'Stop answer' }).locator('svg rect').count(), 1, 'mobile cancellation uses a stop icon');
   await page.getByRole('button', { name: 'Stop answer' }).click();
   await send.waitFor();
   assert(Date.now() - stopStarted < 1000, 'Stop restores the composer immediately');
