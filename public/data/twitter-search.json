@@ -87,12 +87,16 @@
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
       "lastAttemptAt": "2026-09-06T17:52:54+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE0HOQ01053|GROWW": {
+      "lastAttemptAt": "2026-09-06T18:26:47+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-06T17:52:54.329601+00:00"
+    "checkedAt": "2026-09-06T18:26:47.290570+00:00"
   }
 }
