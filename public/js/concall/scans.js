@@ -121,6 +121,9 @@ export function matchingDeepDive(row, allRows, map = readyReports) {
   return dates.size === 1 ? hit : null;
 }
 
+/** Every named company can be sent to Deep Dive; an exchange ticker is helpful, not required. */
+export const deepDiveEligible = (row) => !!(String(row?.name || '').trim() || String(row?.ticker || '').trim());
+
 const callDateCache = new WeakMap();
 function callDates(allRows) {
   let index = callDateCache.get(allRows);
@@ -382,7 +385,7 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
         // An action, not a reading — so it does not sort, and it is not in the export either: a
         // workbook of "click here" cells would be a column of nothing.
         label: 'Deep Dive',
-        get: (r) => (r.ticker ? deepDiveButton(r, dived, saved, savedByTicker, allRows) : '<span class="text-slate-300">—</span>'),
+        get: (r) => (deepDiveEligible(r) ? deepDiveButton(r, dived, saved, savedByTicker, allRows) : '<span class="text-slate-300">—</span>'),
         html: true,
         align: 'right',
         sortable: false,

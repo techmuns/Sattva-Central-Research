@@ -1687,8 +1687,10 @@ plus rules that only arise when you can make another service *do work*:
 1. **Separate what costs money from what does not, and hold that line everywhere.** `POST
    /api/analyze` is unauthenticated and every accepted call starts a real LLM run; `GET
    /api/summary` and `GET /api/report` are free. So **nothing that costs a run ever fires on render
-   or from a poller**. The Deep Dive row button is the explicit run command: that one click opens
-   live progress and dispatches exactly once, with no second setup/URL/force screen. There is no
+   or from a poller**. Every named call row gets the action; a ticker is sent when available but
+   is not required, because the service also accepts the company name. The Deep Dive row button
+   is the explicit run command: that one click opens live progress and dispatches exactly once,
+   with no second setup/URL/force screen. There is no
    re-run control in the report, so an incidental click inside a finished analysis cannot force a
    paid refresh. Reopening calls `resume(slug)`, which only polls; their API would dedup a second
    `POST` anyway, but not asking at all is the version that cannot cost a duplicate run.

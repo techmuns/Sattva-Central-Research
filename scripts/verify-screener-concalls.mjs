@@ -17,7 +17,8 @@ import {
 } from '../public/js/data/screener-concalls-shared.js';
 import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calendar-shared.js';
 import { filterByScope } from '../public/js/data/scope.js';
-import { matchingDeepDive, reportingQuarter } from '../public/js/concall/scans.js';
+import { deepDiveEligible, matchingDeepDive, reportingQuarter } from '../public/js/concall/scans.js';
+import * as deepDiveData from '../public/js/data/deep-dive.js';
 import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
 
 const observedAt = '2026-09-05T01:00:00.000Z';
@@ -150,6 +151,9 @@ test('Screener history enriches matching analysis without duplicate rows and sco
 });
 
 test('Deep Dive fills document-only gaps only for a confirmed, transcript-backed, unambiguous call', () => {
+  assert.equal(deepDiveEligible({ name: 'Unlisted Example Ltd', ticker: null }), true, 'a missing exchange ticker does not remove the Deep Dive action');
+  assert.equal(deepDiveEligible({ name: ' ', ticker: 'LISTED' }), true, 'a ticker remains a valid fallback identity');
+  assert.equal(deepDiveEligible({ name: '', ticker: null }), false, 'a row with no company identity cannot be dispatched');
   assert.equal(reportingQuarter('2026-03-31'), 'Q3FY26');
   assert.equal(reportingQuarter('2026-04-01'), 'Q4FY26');
   assert.equal(reportingQuarter('2026-07-01'), 'Q1FY27');
@@ -182,6 +186,44 @@ test('Deep Dive fills document-only gaps only for a confirmed, transcript-backed
     null,
     'two calls for one ticker and quarter are ambiguous even when the current scope hides one',
   );
+});
+
+test('a tickerless company can dispatch and reattach by exact call row', async () => {
+  const localStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const originalFetch = globalThis.fetch;
+  const storage = new Map();
+  const requests = [];
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, String(value)),
+      removeItem: (key) => storage.delete(key),
+    },
+  });
+  globalThis.fetch = async (url, init = {}) => {
+    requests.push({ url: String(url), body: init.body ? JSON.parse(init.body) : null });
+    if (init.method === 'POST') return Response.json({ ok: true, slug: 'unlisted-example', status: 'done' });
+    return Response.json({ ok: true, slug: 'unlisted-example', status: 'done', report: { meta: { company: 'Unlisted Example Ltd' } } });
+  };
+
+  try {
+    deepDiveData.setBaseUrl('https://deep-dive.test');
+    const out = await deepDiveData.start({
+      company: 'Unlisted Example Ltd',
+      ticker: null,
+      recordId: 'screener-row-without-ticker',
+      date: '2026-08-05',
+    });
+    assert.equal(out.slug, 'unlisted-example');
+    assert.deepEqual(requests[0].body, { company: 'Unlisted Example Ltd', force: false }, 'the service receives the company name without an invented ticker');
+    assert.equal(deepDiveData.remembered(null, 'screener-row-without-ticker')?.slug, 'unlisted-example');
+    assert.equal(deepDiveData.rememberedByRecord()['screener-row-without-ticker']?.slug, 'unlisted-example');
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (localStorageDescriptor) Object.defineProperty(globalThis, 'localStorage', localStorageDescriptor);
+    else delete globalThis.localStorage;
+  }
 });
 
 test('incremental captures retain the complete baseline and reject malformed or duplicate data', () => {

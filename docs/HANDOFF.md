@@ -772,7 +772,9 @@ transcript PDFs were ever wired, pointed at real text.
 The last column hands one company to **Concall Deep Dive**, a separate Cloudflare Worker running
 its own LLM pipeline over that call. We dispatch, mirror its progress in its own words, and lay
 out the report it returns. `js/data/deep-dive.js` is the transport, `js/concall/deep-dive.js` the
-panel; full contract in `docs/DATA-CONTRACTS.md`.
+panel; full contract in `docs/DATA-CONTRACTS.md`. Every named call row gets the action: a resolved
+ticker is sent when available, while Screener-only rows dispatch by company name and retain their
+in-flight slug against the exact row id.
 
 Five things to know before touching it:
 
