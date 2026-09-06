@@ -124,6 +124,7 @@ Local Chrome results, not production measurements:
 | Scenario | Before | After |
 | --- | ---: | ---: |
 | Cached reopen in iframe, deliberately delayed 8-second check | 8,423 ms | 82 ms |
+| Complete 8,846-row disk cache in iframe, same 8-second delay | — | 107 ms |
 | First Corporate Actions portfolio visit in the full local app | — | 146 ms |
 | Switch to all 8,846 actions | — | 45 ms; 40 rows mounted |
 | Full-universe search / sort | — | 28 / 24 ms |
@@ -135,6 +136,7 @@ This proves the cached-data handoff locally, not cold-download speed or surround
 
 `verify-corporate-actions-ui.mjs` now runs the slow-response iframe regression with the real live
 engine, one-request assertion, retained focused controls, storage-poisoning and failure/recovery
-checks. `verify-corporate-actions.mjs` additionally covers delayed reads, concurrent callers, new
+checks, plus restoration of the complete committed capture under the same slow-network condition.
+`verify-corporate-actions.mjs` additionally covers delayed reads, concurrent callers, new
 records, identical responses, rollback rejection, invalidation races and unavailable storage.
 The existing full-data window/search/export and app-shell offline/private-cache tests also pass.

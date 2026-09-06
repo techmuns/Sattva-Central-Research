@@ -162,8 +162,30 @@ try {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.evaluate(() => window.destroyTab());
   assert(await page.evaluate(() => window.pollStopped));
+
+  // Exercise the disk-clone/validation cost too: all real retained fields and rows,
+  // not only the small semantic fixture above. External traffic remains blocked.
+  responseCapture = JSON.parse(readFileSync(resolve(root, 'data/corporate-actions.json'), 'utf8'));
+  await page.evaluate(() => window.feed.refresh());
+  await page.evaluate(async () => {
+    const store = await import('/js/core/store.js');
+    await store.writeEntry(store.KEYS.corporateActions, await store.readEntry(store.KEYS.corporateActions));
+  });
+  await page.setViewportSize({ width: 1200, height: 850 });
+  delayMs = 8000;
+  const fullStart = performance.now();
+  await page.goto(`${origin}/embed`);
+  const fullFrame = await (await page.locator('iframe').elementHandle()).contentFrame();
+  await fullFrame.locator('[data-score-table]').waitFor({ timeout: 2000 });
+  await fullFrame.evaluate(() => window.renderScope('universe'));
+  console.log(`Full ${responseCapture.rows.length}-row cached iframe ready: ${Math.round(performance.now() - fullStart)}ms (network check delayed 8000ms)`);
+  assert.equal(await fullFrame.evaluate(() => window.feed.rows().length), responseCapture.rows.length);
+  assert.match(await fullFrame.locator('[data-filings-info]').innerText(), /Checking/);
+  assert(await fullFrame.locator('tbody tr[data-row-key]').count() <= 100);
+  await fullFrame.waitForFunction(() => !window.feed.meta().checking);
+  delayMs = 0;
   assert.deepEqual(errors, []);
-  console.log('PASS corporate actions table, scope filters, new holdings, failure retention, mobile layout and polling cleanup');
+  console.log('PASS corporate actions cache-first iframe, complete capture, scope filters, new holdings, failure retention, mobile layout and polling cleanup');
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));
