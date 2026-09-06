@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export async function researchLocalBrowser() {
+export async function researchLocalBrowser({ intercept = null } = {}) {
   const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
   const root = fileURLToPath(new URL('../../public', import.meta.url));
   const server = createServer((req, res) => {
@@ -26,8 +26,9 @@ export async function researchLocalBrowser() {
   try {
     browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
     const context = await browser.newContext({ serviceWorkers: 'block' });
-    await context.route('**/*', route => {
+    await context.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if (intercept && await intercept(route, url)) return;
       if (url.origin !== origin || url.pathname.startsWith('/api/')) return route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false,"error":"Isolated evaluation: API unavailable"}' });
       return route.continue();
     });

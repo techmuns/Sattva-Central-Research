@@ -98,6 +98,9 @@ export function render(ctx) {
     tableViews = { covered: { q: requestedCompany }, other: tableViews.other, telegram: tableViews.telegram };
   }
   routeCompany = requestedCompany || null;
+  if (ctx?.params?.section === 'telegram') {
+    chatterSection = 'telegram';
+  }
 
   ctx.root.innerHTML = loadingHtml();
 

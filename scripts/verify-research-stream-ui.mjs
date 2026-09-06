@@ -28,7 +28,9 @@ const readingAnswer = `Jayaswal Neco has a new company statement to review along
 
 **What needs attention:** Confirm the scope of the filing, distinguish direct company statements from related-entity reporting, and check the next disclosed milestone. No guidance or price target is established by these readings. [Dashboard: Corp Announcements]
 
-**Next milestone:** A meeting is scheduled for 9 September; the notice does not establish that it has already occurred. [Dashboard: Corp Announcements]`;
+**Next milestone:** A meeting is scheduled for 9 September; the notice does not establish that it has already occurred. [Dashboard: Corp Announcements]
+
+Public discussion remains unverified. [Dashboard: Telegram] [Dashboard: Public Chatter posts]`;
 const activeResponses = new Set();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -277,9 +279,11 @@ try {
   const answerArticle = page.locator('.research-assistant-answer').last();
   assert.equal(await answerArticle.locator('.research-answer-heading').count(), 5, 'bold section labels become readable headings');
   assert.equal(await answerArticle.locator('.research-cite-unresolved').count(), 0, 'slash spacing in a valid tab citation still resolves');
-  assert.equal(await answerArticle.locator('.research-answer-references a').count(), 4, 'repeated citations share one source reference');
+  assert.equal(await answerArticle.locator('.research-answer-references a').count(), 6, 'repeated citations share one source reference');
   assert.equal(await answerArticle.getByRole('link', { name: 'Source 1: News', exact: true }).count(), 2);
   assert.equal(await answerArticle.getByRole('link', { name: 'Source 3: Breakouts / Technical', exact: true }).getAttribute('href'), '#/research/breakouts?scope=portfolio&company=JAYNECOIND');
+  assert.equal(await answerArticle.getByRole('link', { name: 'Source 5: Telegram', exact: true }).getAttribute('href'), '#/research/public-chatter?section=telegram&scope=portfolio&company=JAYNECOIND');
+  assert.equal(await answerArticle.getByRole('link', { name: 'Source 6: Public Chatter posts', exact: true }).getAttribute('href'), '#/research/public-chatter?open=mentions&scope=portfolio&company=JAYNECOIND');
   assert.match(await answerArticle.locator('.research-answer-freshness').innerText(), /2026-08-31/);
   assert.equal(await answerArticle.locator('.research-answer-context').evaluate(node => node.open), false, 'detailed provenance is available without crowding the answer');
   await answerArticle.locator('.research-answer-context > summary').click();

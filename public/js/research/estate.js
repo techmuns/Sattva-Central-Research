@@ -37,6 +37,7 @@ import { domesticFilingsEvidence, loadCapturedDomesticFilings } from '../data/do
 import * as earningsCalendar from '../data/earnings-calendar.js';
 import * as concalls from '../data/concall-scans.js';
 import * as chatter from '../data/chatter-live.js';
+import * as telegram from '../data/telegram-posts.js';
 import * as technicals from '../data/technicals.js';
 import * as investors from '../data/super-investors.js';
 import * as institutions from '../data/institution-holdings.js';
@@ -46,6 +47,7 @@ import { researchEvidenceChars } from './evidence-shared.js';
 import { withoutPublisherName } from '../core/source-copy.js';
 import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 import { attributionFor } from '../data/company-news-attribution.js';
+import { telegramCompanyRows, chatterPostEvidence, postExcerpt } from './social.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
@@ -56,6 +58,8 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=calendar', description: 'Currently loaded scheduled-result and upcoming-con-call dates and company lists.' },
   { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Screener’s retained transcript, recording and presentation index, enriched with StockScans scores and sentiment where available.' },
   { id: 'public-chatter', tab: 'Public Chatter', route: '#/research/public-chatter', description: 'Retail mention counts and sentiment across ValuePickr, TradingQnA and Google News.' },
+  { id: 'chatter-posts', tab: 'Public Chatter posts', route: '#/research/public-chatter?open=mentions', description: 'Question-selected company posts from the same detail reader as Public Chatter; source text and links, with bounded topic coverage.' },
+  { id: 'telegram', tab: 'Telegram', route: '#/research/public-chatter?section=telegram', description: 'Retained public-channel text and document names mentioning companies in scope. Attachment contents are not extracted.' },
   { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
   { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'Analyst consensus and earnings surprise are unavailable until a real estimates feed is connected.' },
   { id: 'super-investors', tab: 'Super Investors', route: '#/research/super-investors/superstar-investors', description: 'Filed superstar-investor holdings and quarter-on-quarter disclosed changes.' },
@@ -448,7 +452,16 @@ export function fitEvidenceToBudget(evidence, charBudget = RESEARCH_EVIDENCE_CHA
     const add = (rows, tiers, matchedRows, target) => {
       (rows || []).forEach((row, rowIndex) => {
         const tier = Array.isArray(tiers) && tiers[rowIndex] != null ? tiers[rowIndex] : rowIndex < count(matchedRows) ? 1 : 2;
-        candidates.push({ sourceIndex, rowIndex, priority: tier * 1000 + rowIndex, row: boundedMetadata(row), target });
+        const bounded = boundedMetadata(row);
+        // Preserve a useful literal post excerpt instead of silently reducing it to metadata's
+        // 200-character allowance. These characters still spend the shared provider budget.
+        if (['telegram', 'chatter-posts'].includes(source.id)) {
+          if (row.text) bounded.text = clipped(row.text, 704);
+          // A truncated address is a broken citation, not a shorter source link.
+          if (row.url && /^https?:\/\//i.test(row.url) && row.url.length <= 2048) bounded.url = row.url;
+          else delete bounded.url;
+        }
+        candidates.push({ sourceIndex, rowIndex, priority: tier * 1000 + rowIndex, row: bounded, target });
       });
     };
     add(source?.rows, source?.rowTiers, source?.matchedRows, 'rows');
@@ -854,6 +867,54 @@ const BUILDERS = [
     },
   },
   {
+    id: 'chatter-posts',
+    load: () => chatter.load(),
+    read({ plan, chatterDetail: detail }) {
+      if (chatter.meta()?.ok !== true && !chatter.companies().length) throw new Error('Public Chatter company topics are unavailable.');
+      return sourcePacket(this.id, {
+        source: 'Public Chatter company detail — ValuePickr, TradingQnA, Google News',
+        asOf: detail.asOf, rowCount: detail.rows.length, coverage: detail.coverage,
+        dataQuality: detail.failures || chatter.meta()?.ok !== true ? 'partial' : 'source-reported',
+        definition: 'Unverified discussion excerpts, not filings or established facts. Up to 6 company topics read per question, up to 1000 posts per topic; dates belong to posts. Missing or sampled posts do not mean no discussion.',
+        note: detail.failures ? 'Some post reads failed; retained posts remain dated to their original capture. Coverage is incomplete.' : 'Source text is excerpted; open each original URL for the complete post. Unmapped topics cannot establish portfolio-company coverage.',
+        ...chooseRows(detail.rows, plan, row => ({ ticker: row.ticker, company: row.company, topic: row.topic,
+          date: row.at, source: row.sourceLabel || row.source, author: row.author || row.handle,
+          text: row.text, textTruncated: row.textTruncated, url: row.url,
+          capturedAt: row.capturedAt, checkedAt: row.checkedAt }), byDateDesc('date')),
+      });
+    },
+  },
+  {
+    id: 'telegram',
+    load: () => telegram.refresh(),
+    read({ scope, holdings, plan }) {
+      const meta = telegram.meta();
+      if (!meta.ok) throw new Error('Telegram capture is unavailable.');
+      const identities = scope === 'universe'
+        ? companyIndex(null).filter(entry => !entry.ticker || scopeAllowsTicker(scope, entry.ticker, holdings))
+        : holdings;
+      const rows = telegramCompanyRows(telegram.posts(), identities);
+      const matchedPosts = new Set(rows.map(row => row.id)).size;
+      return sourcePacket(this.id, {
+        source: `Telegram public channel @${meta.channel}`,
+        asOf: meta.lastCheckedAt || meta.capturedAt,
+        rowCount: rows.length,
+        dataQuality: meta.reason || meta.lastRun?.status !== 'ok' || !meta.historyComplete || meta.limited || meta.pending ? 'partial' : 'source-reported',
+        definition: 'Unverified channel discussion; a company mention does not verify a claim. Text and document names only; attachment contents unread. publishedAt is publication time; firstSeenAt is observation time. Undated posts have no inferred date.',
+        note: `${meta.reason ? `${clipped(meta.reason, 65)} ` : meta.lastRun?.status !== 'ok' ? 'Latest collection not successful. ' : ''}Captured channel only; history ${meta.historyComplete ? 'collector reports complete' : 'incomplete'}. ${meta.limited || 0} posts require Telegram to read. Unmatched posts are not assigned to portfolio companies.`,
+        coverage: { archivedPosts: meta.count, matchedPosts, unmatchedPosts: meta.count - matchedPosts,
+          historyComplete: meta.historyComplete, restrictedPosts: meta.limited, undatedPosts: meta.undated,
+          pendingIds: meta.pending, lastCheckedAt: meta.lastCheckedAt, latestVerifiedAt: meta.latestVerifiedAt,
+          lastRunStatus: meta.lastRun?.status, channel: meta.channel },
+        ...chooseRows(rows, plan, row => ({ ticker: row.ticker, isin: row.isin, company: row.company,
+          messageId: row.id, publishedAt: row.publishedAt, firstSeenAt: row.firstSeenAt,
+          ...postExcerpt(row.text, [row.mentionMatch, ...plan.tokens]), url: row.url,
+          attachments: row.attachments, mediaType: row.mediaType, identityBasis: row.identityBasis }),
+        (a, b) => b.messageId - a.messageId),
+      });
+    },
+  },
+  {
     id: 'technicals',
     load: () => technicals.load(),
     read({ scope, holdings, plan }) {
@@ -1146,6 +1207,10 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
   const holdings = scopeHoldings(scope);
   // Phase two: the question, resolved once against everything that loaded.
   const plan = queryPlan(question, companyIndex(deferred), { scope, holdings, history, portfolioPositions });
+  // Resolve the question before fetching company-specific discussion. Finish bounded I/O before
+  // synchronous estate ranking: a busy main thread must not consume the network deadline before
+  // even an immediate post response has a chance to be handled.
+  const chatterDetail = await withResearchDeadline(chatterPostEvidence(chatter, chatter.forScope(scope), plan), 'Public Chatter posts', { signal });
   // Phase three: a single cached collection shared by both alert adapters.
   // Loading again here used to add another slowest-feed wait and sort the same
   // large timeline twice. rankReport is the AI Alerts tab's own deterministic reading.
@@ -1160,12 +1225,12 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
       if (builder.id === 'company-filings') {
         try { await documentRead; } catch (error) { documentError = error; }
       }
-      const packet = await withResearchDeadline(Promise.resolve().then(() => builder.read({ question, scope, holdings, plan, portfolioPositions, alertReport })), tabOf(builder.id), { signal });
+      const packet = await withResearchDeadline(Promise.resolve().then(() => builder.read({ question, scope, holdings, plan, portfolioPositions, alertReport, chatterDetail })), tabOf(builder.id), { signal });
       const error = documentError || loadErrors.get(builder.id);
       if (error) {
         if (!packet.rowCount) return failedPacket(builder.id, error);
         packet.dataQuality = 'partial';
-        packet.note = String(error.message || error);
+        packet.note = [String(error.message || error), packet.note].filter(Boolean).join(' ');
       }
       return packet;
     } catch (error) {
