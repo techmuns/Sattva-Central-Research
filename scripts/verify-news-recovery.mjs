@@ -20,15 +20,17 @@ let posts = 0, gets = 0, mode = 'ok';
 const github = async (url, options = {}) => {
   const u = new URL(url);
   assert.equal(u.hostname, 'api.github.com');
-  assert.equal(options.redirect, 'error');
+  assert.equal(options.redirect, 'manual', 'Cloudflare accepts manual; error fails before sending a request');
   if (options.method === 'POST') {
     posts++;
     assert.equal(JSON.parse(options.body).ref, 'main');
+    if (mode === 'redirect-post') return new Response(null, { status: 307, headers: { location: 'https://untrusted.example/' } });
     if (mode === 'ambiguous') return new Response('', { status: 503 });
     if (mode === 'lost-response') throw new TypeError('Connection closed after request');
     return new Response(null, { status: 204 });
   }
   gets++;
+  if (mode === 'redirect-get') return new Response(null, { status: 302, headers: { location: 'https://untrusted.example/' } });
   assert.equal(u.searchParams.get('branch'), 'main', 'unrelated branches never influence dispatch eligibility');
   if (mode === 'unavailable') return new Response('', { status: 500 });
   if (mode === 'malformed') return Response.json({ message: 'not a runs list' });
@@ -43,7 +45,14 @@ const github = async (url, options = {}) => {
 mode = 'transient'; gets = 0;
 assert.equal((await latestRun(github, cfg, 'fixture.yml')).length, 1);
 assert.equal(gets, 2, 'safe GET retries a transient failure');
-for (const failure of ['unavailable', 'malformed', 'rate-limited', 'long-retry']) {
+mode = 'redirect-get'; gets = 0; posts = 0;
+await assert.rejects(latestRun(github, cfg, 'fixture.yml'), e => e.code === 'redirect-refused');
+assert.equal(gets, 1, 'redirects are refused without following or retrying');
+assert.equal(posts, 0);
+mode = 'redirect-post'; posts = 0;
+await assert.rejects(dispatchWorkflow(github, cfg, 'fixture.yml', 'main'), e => e.code === 'redirect-refused');
+assert.equal(posts, 1, 'redirected dispatch is never repeated or sent to another host');
+for (const failure of ['unavailable', 'malformed', 'rate-limited', 'long-retry', 'redirect-get']) {
   mode = failure; posts = 0;
   await assert.rejects(dispatchWorkflow(github, cfg, 'fixture.yml', 'main'));
   assert.equal(posts, 0, `${failure} status must fail closed`);

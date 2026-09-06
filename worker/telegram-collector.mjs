@@ -64,7 +64,10 @@ export async function readTelegramCollector({
     return JSON.parse(await boundedText(response, signal, 512 * 1024));
   };
   const runPath = `/actions/workflows/${TELEGRAM_WORKFLOW}/runs?branch=${encodeURIComponent(ref)}`;
-  const trusted = (run) => positiveId(run.id) && run.name === 'Telegram collection' && run.head_branch === ref &&
+  // GitHub's REST `name` contains run-name when configured. The collection prefix marks
+  // artifact-producing runs; legacy "Telegram refresh (...)" runs have no such artifact.
+  const trusted = (run) => positiveId(run.id) && (run.name === 'Telegram collection' ||
+    (typeof run.name === 'string' && run.name.startsWith('Telegram collection (') && run.name.endsWith(')'))) && run.head_branch === ref &&
     run.head_repository?.full_name === TELEGRAM_REPO &&
     (['schedule', 'push', 'workflow_dispatch'].includes(run.event) || (ref !== 'main' && run.event === 'pull_request'));
   const recent = await json(`${runPath}&per_page=10`);

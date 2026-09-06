@@ -123,7 +123,7 @@ async function call(fetchImpl, { token, url, method = 'GET', body = null, deadli
     try {
       const res = await fetchImpl(url, {
         method,
-        redirect: 'error',
+        redirect: 'manual',
         headers: {
           accept: 'application/vnd.github+json',
           'x-github-api-version': '2022-11-28',
@@ -137,6 +137,11 @@ async function call(fetchImpl, { token, url, method = 'GET', body = null, deadli
         signal: AbortSignal.timeout(Math.min(REQ_TIMEOUT_MS, left)),
       });
 
+      // Workerd supports manual redirects; never follow a redirect carrying the token.
+      if (res.status >= 300 && res.status < 400) {
+        await res.body?.cancel();
+        throw fail('GitHub redirected the request; redirect refused.', 'redirect-refused', { url });
+      }
       if (res.status === 401) throw fail('GitHub rejected the token.', 'unauthorised', { url });
       if (res.status === 429) throw fail('GitHub rate limit reached.', 'rate-limited', { url });
       if (res.status === 403) {

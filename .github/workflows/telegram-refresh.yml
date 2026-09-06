@@ -10,6 +10,10 @@ on:
         description: 'Older messages/IDs to collect this run (0 disables history)'
         required: false
         default: '180'
+      resume_api:
+        description: 'Resume API collection once after reviewing a pause (operator only)'
+        type: boolean
+        default: false
       head_hint:
         description: 'Optional verified message number for the public-page fallback'
         required: false
@@ -19,15 +23,16 @@ on:
         required: false
         default: 'manual'
 
-run-name: Telegram refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
+run-name: Telegram collection (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
 concurrency:
-  group: telegram-refresh-${{ github.ref_name }}
+  group: telegram-account-collection
   cancel-in-progress: false
 permissions:
   contents: read
   actions: read
 jobs:
   collect:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -61,6 +66,7 @@ jobs:
         continue-on-error: true
         env:
           TELEGRAM_CREDENTIALS: ${{ secrets.TELEGRAM_CREDENTIALS }}
+          TELEGRAM_API_REVIEWED_RESUME: ${{ inputs.resume_api == true && '1' || '0' }}
           TELEGRAM_OUT: ${{ runner.temp }}/telegram-posts.json
           TELEGRAM_BACKFILL: ${{ inputs.backfill || '180' }}
           TELEGRAM_HEAD_HINT: ${{ inputs.head_hint || '0' }}

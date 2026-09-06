@@ -5,13 +5,48 @@ No joins, sent messages, read receipts, contact reads or attachment downloads.
 import asyncio
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 CHANNEL = 'researchreportss'
 
 def stamp(value=None):
     return (value or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+
+def safety_after_error(error, previous=None, now=None):
+    now = now or datetime.now(timezone.utc)
+    name = type(error).__name__
+    failures = min(12, int((previous or {}).get('failures', 0)) + 1)
+    if 'Flood' in name or 'SlowModeWait' in name:
+        seconds = getattr(error, 'seconds', None)
+        if isinstance(seconds, int) and 0 <= seconds <= 2147483647:
+            return {'paused': False, 'reason': 'rate-limit', 'failures': failures,
+                    'nextAttemptAt': stamp(now + timedelta(seconds=seconds + 60))}
+        return {'paused': True, 'reason': 'account-attention', 'failures': failures}
+    if getattr(error, 'code', None) in (401, 403) or name in {'AuthKeyDuplicatedError', 'AuthKeyUnregisteredError', 'AuthKeyInvalidError',
+                'SessionRevokedError', 'SessionExpiredError', 'UserDeactivatedError',
+                'UserDeactivatedBanError', 'PhoneNumberBannedError', 'ApiIdInvalidError',
+                'ChannelPrivateError', 'ChatAdminRequiredError', 'UsernameInvalidError',
+                'UsernameNotOccupiedError', 'BotMethodInvalidError', 'FrozenMethodInvalidError',
+                'UserRestrictedError', 'ValueError'}:
+        return {'paused': True, 'reason': 'account-attention', 'failures': failures}
+    return {'paused': False, 'reason': 'connection', 'failures': failures,
+            'nextAttemptAt': stamp(now + timedelta(minutes=min(360, 15 * 2 ** (failures - 1))))}
+
+def held_capture(prior, now=None):
+    now = now or datetime.now(timezone.utc)
+    safety = prior.get('apiSafety') or {}
+    until = safety.get('nextAttemptAt')
+    held = bool(safety.get('paused'))
+    if until:
+        try:
+            held = held or datetime.fromisoformat(until.replace('Z', '+00:00')) > now
+        except (ValueError, TypeError):
+            held = True  # Malformed safety state is not permission to contact Telegram.
+    if not held:
+        return None
+    return {**prior, 'latestVerifiedAt': None,
+            'lastRun': {'at': stamp(now), 'status': 'failed', 'error': 'Account collection paused'}}
 
 def normalize(message, old=None):
     old = old or {}
@@ -28,7 +63,12 @@ def normalize(message, old=None):
             'attachments': attachments, 'mediaType': media,
             'contentStatus': 'available' if text or attachments or media in ('photo', 'video') else 'telegram-only'}
 
-async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
+async def collect(client, entity, prior, history_limit=180, forward_limit=300, now=lambda: datetime.now(timezone.utc)):
+    held = held_capture(prior, now())
+    if held:
+        return held
+    if not 0 <= history_limit <= 200 or not 1 <= forward_limit <= 300:
+        raise ValueError('API collection exceeds the conservative per-run limit')
     if getattr(entity, 'username', '').lower() != CHANNEL or not getattr(entity, 'broadcast', False):
         raise ValueError('Configured source is not the expected public channel')
     posts = {p['id']: p for p in prior.get('posts', [])}
@@ -40,6 +80,7 @@ async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
     synced = api.get('newestSyncedId', 0)
     count = 0
     failure = None
+    safety = None
     def keep(m):
         nonlocal count
         if not isinstance(m.id, int) or m.id <= 0 or not getattr(m, 'date', None):
@@ -62,14 +103,14 @@ async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
             # Oldest-first catch-up advances only through messages actually read. A burst larger
             # than the run limit (or a flood wait mid-page) cannot skip the middle on the next run.
             async for message in client.iter_messages(entity, min_id=synced, max_id=newest + 1,
-                                                       reverse=True, limit=forward_limit):
+                                                       reverse=True, limit=forward_limit, wait_time=2):
                 keep(message)
                 synced = max(synced, message.id)
         if synced >= newest:
-            latest_verified = stamp()
-        if history_limit and not history_done:
+            latest_verified = stamp(now())
+        if history_limit and not history_done and latest_verified:
             received = 0
-            async for message in client.iter_messages(entity, offset_id=history_offset, limit=history_limit):
+            async for message in client.iter_messages(entity, offset_id=history_offset, limit=history_limit, wait_time=2):
                 keep(message)
                 history_offset = message.id
                 received += 1
@@ -79,7 +120,8 @@ async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
     except Exception as error:
         # Log the class only: RPC exception strings/session objects can contain account details.
         failure = type(error).__name__
-    at = stamp()
+        safety = safety_after_error(error, prior.get('apiSafety'), now())
+    at = stamp(now())
     rows = sorted(posts.values(), key=lambda p: p['id'], reverse=True)
     status = 'failed' if failure else 'ok' if latest_verified else 'partial'
     result = {**prior, 'schemaVersion': 2, 'source': 'Telegram API', 'channel': CHANNEL,
@@ -89,6 +131,8 @@ async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
               'lastCheckedAt': latest_verified or prior.get('lastCheckedAt'),
               'latestVerifiedAt': latest_verified,
               'historyNextId': max(0, history_offset - 1), 'historyComplete': history_done,
+              'apiSafety': safety or {'paused': False, 'reason': 'cooldown', 'failures': 0,
+                                         'nextAttemptAt': stamp(now() + timedelta(minutes=5))},
               'retryIds': [], 'apiState': {'newestSyncedId': synced, 'historyOffsetId': history_offset, 'historyComplete': history_done},
               'lastRun': {'at': at, 'status': status, 'posts': count, 'error': failure}}
     return result
@@ -103,20 +147,31 @@ async def main():
     prior = json.loads(path.read_text())
     if prior.get('channel') != CHANNEL or not isinstance(prior.get('posts'), list):
         raise ValueError('Invalid existing public archive')
+    safety = prior.get('apiSafety') or {}
+    if os.environ.get('TELEGRAM_API_REVIEWED_RESUME') == '1' and safety.get('paused') and safety.get('reason') == 'account-attention':
+        # Operator review can clear an account pause, never shorten a server-mandated wait.
+        prior = {**prior, 'apiSafety': None}
+    held = held_capture(prior)
+    if held:
+        write_atomic(path, held)
+        print('Telegram account collection is paused; no connection attempted.')
+        return 0
     client = None
     try:
+        if os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_REF') != 'refs/heads/main':
+            raise ValueError('Account collection is restricted to main')
+        limit = int(os.environ.get('TELEGRAM_BACKFILL', '180'))
+        if not 0 <= limit <= 200:
+            raise ValueError('Invalid history limit')
         from telethon import TelegramClient
         from telethon.sessions import StringSession
         credentials = json.loads(os.environ['TELEGRAM_CREDENTIALS'])
         client = TelegramClient(StringSession(credentials['session']), int(credentials['api_id']), credentials['api_hash'],
-                                flood_sleep_threshold=0, request_retries=1, connection_retries=2,
+                                flood_sleep_threshold=0, request_retries=0, connection_retries=1, auto_reconnect=False,
                                 timeout=20, receive_updates=False)
         await client.connect()
         if not await client.is_user_authorized():
             raise ValueError('Telegram session requires reconnecting')
-        limit = int(os.environ.get('TELEGRAM_BACKFILL', '180'))
-        if not 0 <= limit <= 100000:
-            raise ValueError('Invalid history limit')
         entity = await client.get_entity(CHANNEL)
         result = await asyncio.wait_for(collect(client, entity, prior, limit), timeout=540)
         write_atomic(path, result)
@@ -125,6 +180,7 @@ async def main():
     except Exception as error:
         # Preserve the entire previous archive on connection/timeout errors.
         write_atomic(path, {**prior, 'latestVerifiedAt': None,
+                           'apiSafety': safety_after_error(error, prior.get('apiSafety')),
                            'lastRun': {'at': stamp(), 'status': 'failed', 'error': type(error).__name__}})
         print(f'Telegram API connection failed ({type(error).__name__}); prior archive retained.')
         return 1
