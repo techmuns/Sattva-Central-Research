@@ -1,169 +1,150 @@
 {
-  "_provenance": "The family office's listed direct-equity book, read from techmuns/Sattva-Family (src/data/sattvaData.ts) by scripts/sync-family-book.mjs. One line per equity ISIN across every holding entity; ETF and liquid-fund units are counted under excluded and not carried. Names are the custodian's own wording and may be truncated — the ISIN is the identity. No quantity, cost or value is carried on purpose. scripts/resolve-portfolio-companies.mjs reads this file and writes public/data/portfolio-companies.json.",
-  "source": "techmuns/Sattva-Family · src/data/sattvaData.ts",
-  "asOf": "2026-06-30",
-  "sourceCommit": {
-    "sha": "4dc9f970e8e64da84789ae8c6522fcff2d2287cb",
-    "date": "2026-07-27T15:21:39Z"
+  "_provenance": "Active shared Family Office holdings. Names and identifiers only; no quantities, values or accounts.",
+  "schemaVersion": 1,
+  "source": "Sattva Family Office active holdings",
+  "storage": "shared",
+  "sourceWorkbook": {
+    "fileKey": "up-fy27-till-q2-aug",
+    "label": "Copy of 4.grandfather consolidated for 2026-2027_Aug_Lat",
+    "uploadedAt": "2026-09-01T10:54:54.237Z"
   },
-  "fetchedAt": "2026-09-03T10:45:44.583Z",
-  "positions": 333,
+  "asOf": "2027-03-31",
+  "checkedAt": "2026-09-06T04:58:49.147Z",
+  "revision": "0e767a3929de3cd038455c882018f2d96a0b6115df2de010e4fc542548809b8e",
+  "positions": 900,
+  "count": 118,
   "excluded": {
-    "etf": 4,
-    "liquid": 3,
+    "etf": 3,
+    "liquid": 4,
     "other": 0
   },
-  "count": 142,
   "lines": [
     {
       "isin": "INE004A01022",
       "name": "Protean eGov Technologies Ltd",
-      "sector": "Information Technology"
+      "sector": "Information Technology",
+      "ticker": "PROTEAN"
     },
     {
       "isin": "INE00M901018",
       "name": "Interarch Building Products Ltd",
-      "sector": "Industrials"
-    },
-    {
-      "isin": "INE00R701025",
-      "name": "Dalmia Bharat Ltd",
-      "sector": "Materials"
-    },
-    {
-      "isin": "INE010J01012",
-      "name": "TEJAS NETWORKS LIMIT",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE016Q01014",
-      "name": "Ceinsys Tech Ltd",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE019A01038",
-      "name": "JSW STEEL Ltd",
-      "sector": "Materials"
-    },
-    {
-      "isin": "INE01EA01019",
-      "name": "Vishal Mega Mart Ltd",
-      "sector": "Consumer Discretionary"
+      "sector": "Industrials",
+      "ticker": "INTERARCH"
     },
     {
       "isin": "INE01IU01018",
-      "name": "SKY GOLD LIMITED",
-      "sector": "Consumer Discretionary"
+      "name": "Sky Gold Limited",
+      "sector": "Consumer Discretionary",
+      "ticker": "SKYGOLD"
     },
     {
       "isin": "INE024F01011",
       "name": "Shilchar Technologies Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "SHILCTECH"
     },
     {
       "isin": "INE027A01015",
-      "name": "RASHTRIYA CHEMICALS",
-      "sector": "Materials"
-    },
-    {
-      "isin": "INE02IJ01035",
-      "name": "Azad Engineering Ltd",
-      "sector": "Industrials"
+      "name": "Rashtriya Chemicals",
+      "sector": "Materials",
+      "ticker": "RCF"
     },
     {
       "isin": "INE036B01030",
       "name": "Gujarat Ambuja Exports Limited",
-      "sector": "Consumer Staples"
-    },
-    {
-      "isin": "INE040A01034",
-      "name": "HDFC BANK Ltd",
-      "sector": "Financials"
+      "sector": "Consumer Staples",
+      "ticker": "GAEL"
     },
     {
       "isin": "INE049B01025",
       "name": "Wockhardt Ltd",
-      "sector": "Healthcare"
+      "sector": "Healthcare",
+      "ticker": "WOCKPHARMA"
     },
     {
-      "isin": "INE053A01029",
-      "name": "Indian Hotels Company Ltd",
-      "sector": "Consumer Discretionary"
+      "isin": "INE067A01029",
+      "name": "Cg Power and Ind Sol",
+      "sector": "Unclassified"
     },
     {
-      "isin": "INE069I01010",
-      "name": "Embassy Developments Ltd",
-      "sector": "Real Estate"
+      "isin": "INE071D01033",
+      "name": "Menon Bearings Ltd",
+      "sector": "Unclassified"
     },
     {
-      "isin": "INE070A01015",
-      "name": "Shree Cements Ltd",
-      "sector": "Materials"
+      "isin": "INE073K01018",
+      "name": "Sona Blw Precision Forgings Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE077F01035",
-      "name": "GOCL CORPORATION",
-      "sector": "Materials"
+      "name": "GOCL Corporation",
+      "sector": "Materials",
+      "ticker": "GOCLCORP"
     },
     {
       "isin": "INE07RO01027",
-      "name": "SUPRIYA LIFESCIENCE",
-      "sector": "Healthcare"
-    },
-    {
-      "isin": "INE07T201019",
-      "name": "Restaurant Brands Asia Ltd",
-      "sector": "Consumer Discretionary"
+      "name": "Supriya Lifescience",
+      "sector": "Healthcare",
+      "ticker": "SUPRIYA"
     },
     {
       "isin": "INE082A01010",
       "name": "Kopran Limited",
-      "sector": "Healthcare"
+      "sector": "Healthcare",
+      "ticker": "KOPRAN"
     },
     {
       "isin": "INE083K01017",
       "name": "Bengal and Assam Company Limited",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "BENGALASM"
+    },
+    {
+      "isin": "INE084101034",
+      "name": "Indo-Mim Limited",
+      "sector": "Unclassified"
+    },
+    {
+      "isin": "INE089C01029",
+      "name": "Sterlite Technologies Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE08NE01025",
       "name": "Sanstar Ltd",
-      "sector": "Unclassified"
+      "sector": "Unclassified",
+      "ticker": "SANSTAR"
     },
     {
       "isin": "INE08U801020",
-      "name": "SAMHI HOTELS LIMITED",
-      "sector": "Consumer Discretionary"
+      "name": "Samhi Hotels Limited",
+      "sector": "Consumer Discretionary",
+      "ticker": "SAMHI"
     },
     {
       "isin": "INE094B01013",
-      "name": "Ashika Credit Capital Ltd",
-      "sector": "Financials"
+      "name": "Ashika Global Securities Limited",
+      "sector": "Financials",
+      "ticker": "ASHIKA"
     },
     {
       "isin": "INE0ALI01010",
       "name": "Advait Energy Transitions Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "ADVAIT"
     },
     {
       "isin": "INE0BYP01024",
       "name": "Oswal Pumps Limited",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "OSWALPUMPS"
     },
     {
       "isin": "INE0CAZ01013",
       "name": "Urban Company Ltd",
-      "sector": "Consumer Discretionary"
-    },
-    {
-      "isin": "INE0CT101020",
-      "name": "Meghmani Organics",
-      "sector": "Materials"
-    },
-    {
-      "isin": "INE0DQN01013",
-      "name": "Nisus Finance Services Co Ltd",
-      "sector": "Unclassified"
+      "sector": "Consumer Discretionary",
+      "ticker": "URBANCO"
     },
     {
       "isin": "INE0EDU01014",
@@ -171,44 +152,16 @@
       "sector": "Financials"
     },
     {
-      "isin": "INE0HF201011",
-      "name": "Fabtech Technologies Ltd",
-      "sector": "Healthcare"
-    },
-    {
       "isin": "INE0HOQ01053",
       "name": "Billionbrains Garage Ventures Ltd",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE0I0T01010",
-      "name": "Virtuoso Optoelectronics Ltd",
-      "sector": "Industrials"
-    },
-    {
-      "isin": "INE0JUS01029",
-      "name": "HARSHA",
-      "sector": "Industrials"
-    },
-    {
-      "isin": "INE0KCE01017",
-      "name": "Eureka Forbes Ltd",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE0LEX01011",
-      "name": "Sahana Systems Ltd",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE0LGX01024",
-      "name": "Insolation Energy Ltd",
-      "sector": "Unclassified"
+      "sector": "Unclassified",
+      "ticker": "GROWW"
     },
     {
       "isin": "INE0M4D01010",
       "name": "Standard Engineering Technology Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "SETL"
     },
     {
       "isin": "INE0N0J01014",
@@ -218,12 +171,14 @@
     {
       "isin": "INE0O6601022",
       "name": "Kross Limited",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "KROSS"
     },
     {
       "isin": "INE0OC301013",
-      "name": "TURTLEMINT FINTECH SOLUTIONS LIMITED",
-      "sector": "Financials"
+      "name": "Turtlemint Fintech Solutions Limited",
+      "sector": "Financials",
+      "ticker": "TURTLEMINT"
     },
     {
       "isin": "INE0R4701017",
@@ -236,13 +191,8 @@
       "sector": "Industrials"
     },
     {
-      "isin": "INE0S3G01027",
-      "name": "Pace Digitek Ltd",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE0S4R01014",
-      "name": "Crizac Ltd",
+      "isin": "INE0SII01026",
+      "name": "Quality Power Electrical Equipments Ltd",
       "sector": "Unclassified"
     },
     {
@@ -251,109 +201,114 @@
       "sector": "Industrials"
     },
     {
-      "isin": "INE0U3I01011",
-      "name": "UNIMECH AEROSPACE",
+      "isin": "INE0V9N01017",
+      "name": "Prizor Viztech Limited",
+      "sector": "Unclassified"
+    },
+    {
+      "isin": "INE0Z4F01028",
+      "name": "Atlanta Electricals",
       "sector": "Unclassified"
     },
     {
       "isin": "INE101A01026",
-      "name": "MAHINDRA & MAHINDRA LIMITED",
-      "sector": "Consumer Discretionary"
+      "name": "Mahindra & Mahindra Limited",
+      "sector": "Consumer Discretionary",
+      "ticker": "M&M"
     },
     {
       "isin": "INE103A01014",
-      "name": "MANGALORE PETROCHEMICALS AND REFINERY LIMITED",
-      "sector": "Unclassified"
+      "name": "Mangalore Petrochemicals and Refinery Limited",
+      "sector": "Unclassified",
+      "ticker": "MRPL"
     },
     {
       "isin": "INE109A01011",
       "name": "Shipping Corporation of India Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "SCI"
     },
     {
       "isin": "INE119201023",
       "name": "Park Medi World Ltd",
-      "sector": "Healthcare"
-    },
-    {
-      "isin": "INE121E01018",
-      "name": "JSW Energy Ltd",
-      "sector": "Energy"
-    },
-    {
-      "isin": "INE128A01029",
-      "name": "EVEREADY",
-      "sector": "Consumer Discretionary"
+      "sector": "Healthcare",
+      "ticker": "PARKHOSPS"
     },
     {
       "isin": "INE12F801023",
       "name": "OnEMI Technology Solutions Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "KISSHT"
+    },
+    {
+      "isin": "INE12Z301012",
+      "name": "Sotefin Bharat Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE142M01025",
       "name": "Tata Technologies Ltd",
-      "sector": "Unclassified"
+      "sector": "Unclassified",
+      "ticker": "TATATECH"
     },
     {
       "isin": "INE148I01020",
       "name": "Sammaan Capital Ltd",
-      "sector": "Financials"
-    },
-    {
-      "isin": "INE154A01025",
-      "name": "ITC LTD",
-      "sector": "Consumer Staples"
-    },
-    {
-      "isin": "INE155Z01011",
-      "name": "Macpower CNC Machines Ltd",
-      "sector": "Unclassified"
+      "sector": "Financials",
+      "ticker": "SAMMAANCAP"
     },
     {
       "isin": "INE15B701018",
       "name": "Pine Labs Limited",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "PINELABS"
     },
     {
       "isin": "INE168A01041",
-      "name": "J & K BANK LTD.",
-      "sector": "Financials"
+      "name": "J & K Bank Ltd.",
+      "sector": "Financials",
+      "ticker": "J&KBANK"
+    },
+    {
+      "isin": "INE18UN01038",
+      "name": "Gaja Alternative Asset Management Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE1C6T01020",
       "name": "Emmvee Photovoltaic Power Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "EMMVEE"
     },
     {
       "isin": "INE1CDF01017",
       "name": "Vedanta Aluminium Metal Limited",
-      "sector": "Materials"
+      "sector": "Materials",
+      "ticker": "VAML"
     },
     {
       "isin": "INE1CLE01013",
       "name": "Vedanta Iron and Steel Limited",
-      "sector": "Materials"
+      "sector": "Materials",
+      "ticker": "VISL"
     },
     {
       "isin": "INE1NPP01017",
-      "name": "SIEMENS ENERGY INDIA",
-      "sector": "Industrials"
-    },
-    {
-      "isin": "INE1SY401010",
-      "name": "Raymond Realty Ltd",
-      "sector": "Unclassified"
+      "name": "Siemens Energy India",
+      "sector": "Industrials",
+      "ticker": "ENRIN"
     },
     {
       "isin": "INE1YPB01014",
       "name": "Allcargo Global Limited",
-      "sector": "Unclassified"
+      "sector": "Unclassified",
+      "ticker": "AGL"
     },
     {
       "isin": "INE205A01025",
-      "name": "VEDANTA LIMITED",
-      "sector": "Materials"
+      "name": "Vedanta Limited",
+      "sector": "Materials",
+      "ticker": "VEDL"
     },
     {
       "isin": "INE220J01025",
@@ -361,159 +316,167 @@
       "sector": "Unclassified"
     },
     {
-      "isin": "INE236E01022",
-      "name": "Ellenbarrie Industrial Gases Ltd",
-      "sector": "Unclassified"
-    },
-    {
       "isin": "INE237A01036",
       "name": "Kotak Mahindra Bank Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "KOTAKBANK"
     },
     {
       "isin": "INE239C01020",
-      "name": "STYLAM INDUSTRIES",
-      "sector": "Materials"
-    },
-    {
-      "isin": "INE262H01021",
-      "name": "PERSISTENT SYSTEMS L",
-      "sector": "Information Technology"
+      "name": "Stylam Industries",
+      "sector": "Materials",
+      "ticker": "STYLAMIND"
     },
     {
       "isin": "INE267A01025",
       "name": "Hindustan Zinc Ltd",
-      "sector": "Materials"
-    },
-    {
-      "isin": "INE285K01026",
-      "name": "TECHNO ELECTRIC & ENGINEERING COMPANY LTD",
-      "sector": "Industrials"
+      "sector": "Materials",
+      "ticker": "HINDZINC"
     },
     {
       "isin": "INE291A01017",
-      "name": "GARWARE HI-TECH FILM",
-      "sector": "Materials"
+      "name": "Garware Hi-Tech Film",
+      "sector": "Materials",
+      "ticker": "GRWRHITECH"
+    },
+    {
+      "isin": "INE303R01014",
+      "name": "Kalyan Jewellers India Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE310A01015",
       "name": "Nilkamal",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "NILKAMAL"
     },
     {
       "isin": "INE330T01021",
       "name": "Happy Forgings Ltd",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "HAPPYFORGE"
     },
     {
-      "isin": "INE332A01027",
-      "name": "THOMAS COOK (INDIA)",
+      "isin": "INE338H01029",
+      "name": "Concord Biotech Ltd",
       "sector": "Unclassified"
     },
     {
       "isin": "INE338I01027",
       "name": "Motilal Oswal Financial Services Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "MOTILALOFS"
     },
     {
       "isin": "INE376G01013",
       "name": "Biocon Ltd",
-      "sector": "Healthcare"
+      "sector": "Healthcare",
+      "ticker": "BIOCON"
     },
     {
       "isin": "INE377N01017",
       "name": "Waaree Energies Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "WAAREEENER"
     },
     {
       "isin": "INE399G01023",
       "name": "Ramkrishna Forgings Ltd",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "RKFORGE"
     },
     {
-      "isin": "INE410P01011",
-      "name": "NARAYANA HRUDAYALAYA LTD",
-      "sector": "Healthcare"
+      "isin": "INE415I01015",
+      "name": "Kiri Industries Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE417T01026",
-      "name": "PB FINTECH LIMITED",
-      "sector": "Financials"
-    },
-    {
-      "isin": "INE418H01029",
-      "name": "ALLCARGO LOGISTICS",
-      "sector": "Unclassified"
+      "name": "PB Fintech Limited",
+      "sector": "Financials",
+      "ticker": "POLICYBZR"
     },
     {
       "isin": "INE423A01024",
       "name": "Adani Enterprises Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "ADANIENT"
     },
     {
       "isin": "INE425Y01011",
-      "name": "RPSG VENTURES LIMITE",
-      "sector": "Unclassified"
+      "name": "RPSG Ventures Limite",
+      "sector": "Unclassified",
+      "ticker": "RPSGVENT"
     },
     {
       "isin": "INE476A01022",
-      "name": "CANARA BANK",
-      "sector": "Financials"
+      "name": "Canara Bank",
+      "sector": "Financials",
+      "ticker": "CANBK"
     },
     {
       "isin": "INE482D01024",
-      "name": "CARYSIL LIMITED",
-      "sector": "Consumer Discretionary"
+      "name": "Carysil Limited",
+      "sector": "Consumer Discretionary",
+      "ticker": "CARYSIL"
     },
     {
-      "isin": "INE483S01020",
-      "name": "AvenuesAI Ltd",
+      "isin": "INE500L01026",
+      "name": "S H Kelkar & Company Ltd",
       "sector": "Unclassified"
     },
     {
-      "isin": "INE498Q01014",
-      "name": "Vintage Coffee and Beverages Ltd",
-      "sector": "Consumer Staples"
+      "isin": "INE508G01029",
+      "name": "Time Technoplast Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE522F01014",
       "name": "Coal India Ltd",
-      "sector": "Energy"
+      "sector": "Energy",
+      "ticker": "COALINDIA"
     },
     {
       "isin": "INE526E01018",
-      "name": "SHRIRAM PIST. & RING",
-      "sector": "Consumer Discretionary"
+      "name": "Shriram Pist. & Ring",
+      "sector": "Consumer Discretionary",
+      "ticker": "SHRIPISTON"
     },
     {
       "isin": "INE530B01024",
       "name": "IIFL Finance",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "IIFL"
     },
     {
       "isin": "INE532F01054",
       "name": "Edelweiss Financial Services Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "EDELWEISS"
     },
     {
       "isin": "INE540H01012",
       "name": "Voltamp Transformers Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "VOLTAMP"
     },
     {
       "isin": "INE546Y01022",
-      "name": "PRAXIS HOME RETAILS LIMITED",
-      "sector": "Consumer Discretionary"
+      "name": "Praxis Home Retails Limited",
+      "sector": "Consumer Discretionary",
+      "ticker": "PRAXIS"
     },
     {
       "isin": "INE548A01028",
-      "name": "HFCL LIMITED",
-      "sector": "Communication Services"
+      "name": "HFCL Limited",
+      "sector": "Communication Services",
+      "ticker": "HFCL"
     },
     {
       "isin": "INE555B01013",
       "name": "Axiscades Technologies Ltd",
-      "sector": "Information Technology"
+      "sector": "Information Technology",
+      "ticker": "AXISCADES"
     },
     {
       "isin": "INE564S01019",
@@ -522,93 +485,102 @@
     },
     {
       "isin": "INE564S13022",
-      "name": "VIKRAM KAMATS HOSPITALITY LIMITED WARRANTS",
+      "name": "Vikram Kamats Hospitality Limited Warrants",
       "sector": "Consumer Discretionary"
     },
     {
-      "isin": "INE571B01036",
-      "name": "JAY BHARAT MARUTI LTD",
-      "sector": "Unclassified"
-    },
-    {
       "isin": "INE572E01012",
-      "name": "PNB HOUSING FIN LTD",
-      "sector": "Financials"
+      "name": "PNB Housing Fin Ltd",
+      "sector": "Financials",
+      "ticker": "PNBHOUSING"
     },
     {
       "isin": "INE591G01025",
-      "name": "COFORGE LIMITED",
-      "sector": "Information Technology"
+      "name": "Coforge Limited",
+      "sector": "Information Technology",
+      "ticker": "COFORGE"
     },
     {
       "isin": "INE597J01018",
       "name": "Shalby Limited",
-      "sector": "Healthcare"
+      "sector": "Healthcare",
+      "ticker": "SHALBY"
     },
     {
       "isin": "INE615H01020",
-      "name": "TITAGARH RAIL SYSTEMS Ltd",
-      "sector": "Industrials"
+      "name": "Titagarh Rail Systems Ltd",
+      "sector": "Industrials",
+      "ticker": "TITAGARH"
     },
     {
       "isin": "INE622H01018",
       "name": "Indo Farm Equipment Ltd",
-      "sector": "Industrials"
-    },
-    {
-      "isin": "INE633B01018",
-      "name": "Polyplex Corporation Ltd",
-      "sector": "Unclassified"
+      "sector": "Industrials",
+      "ticker": "INDOFARM"
     },
     {
       "isin": "INE659A01023",
       "name": "Sudarshan Chemical Industries Ltd",
-      "sector": "Materials"
+      "sector": "Materials",
+      "ticker": "SUDARSCHEM"
     },
     {
       "isin": "INE665A01038",
       "name": "Swan Corp Ltd",
-      "sector": "Unclassified"
+      "sector": "Unclassified",
+      "ticker": "SWANCORP"
     },
     {
       "isin": "INE674K01013",
       "name": "Aditya Birla Capital Limited",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "ABCAPITAL"
     },
     {
       "isin": "INE679V01027",
       "name": "Aditya Vision Limited",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "AVL"
+    },
+    {
+      "isin": "INE685T01010",
+      "name": "Horizon Industrial Parks Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE694L01019",
       "name": "Vedanta Power Limited",
-      "sector": "Energy"
+      "sector": "Energy",
+      "ticker": "VEDPOWER"
     },
     {
       "isin": "INE700A01033",
-      "name": "JUBILANT PHARMOVA LT",
-      "sector": "Healthcare"
+      "name": "Jubilant Pharmova LT",
+      "sector": "Healthcare",
+      "ticker": "JUBLPHARMA"
     },
     {
       "isin": "INE704J01044",
       "name": "Vedanta Oil and Gas Limited",
-      "sector": "Energy"
+      "sector": "Energy",
+      "ticker": "VOGL"
     },
     {
       "isin": "INE722B01019",
-      "name": "PRAVEG LIMITED",
-      "sector": "Unclassified"
+      "name": "Praveg Limited",
+      "sector": "Unclassified",
+      "ticker": "PRAVEG"
     },
     {
-      "isin": "INE732I01021",
-      "name": "ANGEL ONE LIMITED",
-      "sector": "Financials"
+      "isin": "INE728Z01015",
+      "name": "Softtech Engineers Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE736A01011",
       "name": "Central Depository Services Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "CDSL"
     },
     {
       "isin": "INE741B01027",
@@ -616,114 +588,114 @@
       "sector": "Materials"
     },
     {
-      "isin": "INE758E01017",
-      "name": "Jio Financial Services Ltd",
-      "sector": "Financials"
-    },
-    {
       "isin": "INE758T01015",
       "name": "Eternal",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "ETERNAL"
     },
     {
-      "isin": "INE763I01026",
-      "name": "Transformers and Rectifiers India Ltd",
+      "isin": "INE774D01024",
+      "name": "Mahindra & Mahindra Financial Services Ltd",
       "sector": "Unclassified"
     },
     {
       "isin": "INE811K01011",
       "name": "Prestige Estate Projects Limited",
-      "sector": "Real Estate"
+      "sector": "Real Estate",
+      "ticker": "PRESTIGE"
     },
     {
       "isin": "INE818H01020",
-      "name": "LT FOODS LIMITED",
-      "sector": "Consumer Staples"
+      "name": "LT Foods Limited",
+      "sector": "Consumer Staples",
+      "ticker": "LTFOODS"
+    },
+    {
+      "isin": "INE850D01014",
+      "name": "Godrej Agrovet Ltd",
+      "sector": "Unclassified"
     },
     {
       "isin": "INE854B01010",
       "name": "Jayaswal Neco Industries Ltd",
-      "sector": "Materials"
+      "sector": "Materials",
+      "ticker": "JAYNECOIND"
     },
     {
       "isin": "INE855B01025",
       "name": "Rain Industries Ltd",
-      "sector": "Unclassified"
+      "sector": "Unclassified",
+      "ticker": "RAIN"
     },
     {
       "isin": "INE858B01029",
       "name": "ISGEC Heavy Engineering Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "ISGEC"
     },
     {
       "isin": "INE860D01013",
-      "name": "SANJIVANI PARANTERAL LIMITED",
+      "name": "Sanjivani Paranteral Limited",
       "sector": "Healthcare"
     },
     {
-      "isin": "INE878I01022",
-      "name": "Bafna Pharmaceuticals Ltd",
-      "sector": "Unclassified"
-    },
-    {
       "isin": "INE879I01012",
-      "name": "VALOR ESTATE LIMITED",
-      "sector": "Real Estate"
+      "name": "Valor Estate Limited",
+      "sector": "Real Estate",
+      "ticker": "DBREALTY"
     },
     {
       "isin": "INE881D01027",
-      "name": "ORACLE FINANCIAL SERVICES SOFTWARE LIMITED",
-      "sector": "Information Technology"
+      "name": "Oracle Financial Services Software Limited",
+      "sector": "Information Technology",
+      "ticker": "OFSS"
     },
     {
       "isin": "INE914E01040",
-      "name": "ALANKIT LIMITED",
-      "sector": "Unclassified"
-    },
-    {
-      "isin": "INE918Z01012",
-      "name": "Kaynes Technology India Ltd",
-      "sector": "Information Technology"
+      "name": "Alankit Limited",
+      "sector": "Unclassified",
+      "ticker": "ALANKIT"
     },
     {
       "isin": "INE935Q01015",
-      "name": "FUTURE SUPPLY CHAIN SOLUTIONS LIMITED",
+      "name": "Future Supply Chain Solutions Limited",
       "sector": "Unclassified"
-    },
-    {
-      "isin": "INE953L01027",
-      "name": "Jana Small Finance Bank",
-      "sector": "Financials"
     },
     {
       "isin": "INE953O01021",
       "name": "Sansera Engineering Ltd",
-      "sector": "Consumer Discretionary"
+      "sector": "Consumer Discretionary",
+      "ticker": "SANSERA"
     },
     {
       "isin": "INE955I01044",
-      "name": "SEJAL GLASS LIMITED",
-      "sector": "Materials"
+      "name": "Sejal Glass Limited",
+      "sector": "Materials",
+      "ticker": "SEJALLTD"
     },
     {
       "isin": "INE958L01034",
-      "name": "STRING METAVERSE Ltd",
+      "name": "String Metaverse Ltd",
       "sector": "Unclassified"
     },
     {
       "isin": "INE976G01028",
       "name": "RBL Bank Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "RBLBANK"
     },
     {
       "isin": "INE976I01016",
       "name": "Tata Capital Ltd",
-      "sector": "Financials"
+      "sector": "Financials",
+      "ticker": "TATACAP"
     },
     {
       "isin": "INE993A01026",
       "name": "Man Industries (India) Ltd",
-      "sector": "Industrials"
+      "sector": "Industrials",
+      "ticker": "MANINDS"
     }
-  ]
+  ],
+  "fetchedAt": "2026-09-06T04:58:49.147Z"
 }
