@@ -172,7 +172,8 @@ third-party disclosure with the user's holding, and invented a citation page.
 Its faster first tokens are not grounds for declaring it customer-ready.
 
 The [recorded run manifest](ASK-RESEARCH-EVALUATION-2026-09-06.json) contains the
-117 request IDs, exact answer hashes, timings, original automated signals,+citation-validation replay and known factual failures across the five runs.
+117 request results, exact answer hashes, timings, original automated signals,
+citation-validation replay and known factual failures across the five runs.
 Raw packets and answers are kept privately under
 `.research-evaluation/2026-09-06/`, not committed. Runs span different revisions
 and must not be combined into a single release completion-rate claim.
