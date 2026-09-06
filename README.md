@@ -33,9 +33,10 @@ coverage of every publisher or social post, nor turn EOD indicators into intrada
 
 **Portfolio-aware Ask Research** stays in Central Research. An authenticated,
 hidden Family connector revalidates the uploaded book and refreshes quotes for
-every question. All held listed ISINs, sectors and listed-market-value weights
-accompany the dated question-specific reading, including fund units and unresolved
-symbols. An expired session can be unlocked inside Research; no second dashboard
+every question. News, research, ownership and weight questions use its direct structured
+reader without an extra model call. Cost, tax, quantity and account questions retain
+the detailed Ask Sattva tools. Every held listed ISIN, sector and listed-market-value
+weight accompanies the answer, including fund units and unresolved symbols. An expired session can be unlocked inside Research; no second dashboard
 is needed. Missing access or a failed archive recheck stops the answer. Existing
 public conversation history remains visible; portfolio-connected conversations
 stay in memory only, with no private data in public assets or localStorage.
@@ -77,11 +78,20 @@ importance and feed filters. AI Alerts reuses that pool and adds no event of its
 
 **Ask Research** is a conversational workspace that assembles a bounded evidence
 packet from every dashboard data module, reports source coverage and provenance, and keeps its
-conversation library on the reader's device. The Worker sends the bounded packet to Muns' hosted
+public conversation library on the reader's device; portfolio conversations remain in memory.
+Source stores warm on entry and load alongside the holdings check under a six-second deadline.
+All Alerts and AI Alerts share one collection. Named-company documents load from retained
+captures even without a prior tab visit; follow-ups reuse the named issuer and comparisons
+reserve space for each company. Slow or failed sources retain dated records with explicit
+coverage limits. The Worker sends the bounded packet to Muns' hosted
 LLM router and forwards each NDJSON text chunk immediately, so answers render progressively without
 exposing the session token or waiting for the complete model response. The same deterministic
 company correlations, authenticated holding weights and Screener operating context supplied to AI
 Alerts travel in the packet, so the two surfaces cannot produce competing attention models.
+Only the active answer repaints during streaming, earlier messages and scroll position stay
+stable, Stop cancels the request, and interrupted partial answers remain visibly incomplete.
+See the [2,016-question bank](docs/ASK-RESEARCH-QUESTIONS.md) and
+[performance and evaluation notes](docs/ASK-RESEARCH-PERFORMANCE.md).
 
 Static runtime, no bundler, no framework, no npm dependencies for the app itself.
 Vanilla ES modules and a committed, precompiled Tailwind stylesheet. Hosted as a Cloudflare Worker.
@@ -153,9 +163,12 @@ that it now contains a Muns token; this prevents a genuine Anthropic credential 
 another service. For local Worker
 development, put the token in the gitignored `.dev.vars`; for production, configure the dedicated
 secret with `npx wrangler secret put MUNS_LLM_TOKEN`. Do not put it in `public/` or browser storage.
-Conversation history is stored locally, while each submitted question and its bounded dashboard
-evidence packet are streamed through `https://fastapi.muns.io/query-router` using the low-latency
-`local_llm` route. `MUNS_LLM_TYPE=hosted_llm` remains available as an explicit operator override.
+Public conversation history is stored locally; private conversations are memory-only.
+Each question and its bounded dashboard evidence stream through `https://fastapi.muns.io/query-router`.
+Compact prompts use `local_llm`; prompts exceeding 20,000 characters use the existing `hosted_llm`
+route to avoid overflowing the small model's context. `MUNS_LLM_TYPE=hosted_llm` can select the hosted
+route for every request. Full holdings use a lossless column schema; no holding is removed to fit
+research rows, and the 60,000-character validated holdings bound remains separate.
 Every dashboard source keeps its status and provenance while ranked row samples share a
 13,000-character budget measured on the packet the model receives (`public/js/research/evidence-shared.js`,
 shared with the Worker) and sized for the local model's context window; a company named in the
