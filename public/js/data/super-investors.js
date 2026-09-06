@@ -1,70 +1,17 @@
-// data/super-investors.js — the live super-investor feed, off Ticker Finology via our Worker.
+// Super-investor feed: saved books paint first, then the active investor view checks
+// source freshness. General Alerts uses the bulk snapshot without per-investor fanout.
+// Books are fetched four at a time; arrivals are coalesced before repainting.
 //
-//   load()              the list, then every book, painting as they arrive
-//   list()              [{ name, slug, bio, imageUrl }]
-//   book(slug)          one normalised portfolio, or null if it has not landed
-//   books()             every book that has landed
-//   movesFor(slug)      quarter-over-quarter changes for one investor
-//   allMoves()          the same across every loaded book
-//   meta()              what loaded, what failed, where the paint came from, and when
-//   onChange(fn)        fires as each book lands, so the grid fills in progressively
+// `load()` reads the device cache and committed snapshot, then checks the list.
+// `watchFreshness()` keeps an active investor view current within the Worker's
+// six-hour source cache, including late corrections, resumes and reconnects.
+// `refresh()` explicitly checks every book. Failed reads retain last-good data and
+// cannot overwrite good device-cache entries. Origin, source age and coverage are
+// separate facts; none is a guarantee of complete upstream filings.
 //
-// LOADED ONCE PER PAGE, NEVER POLLED. Shareholding data changes when a company files, which is
-// once a quarter. A poller here would re-scrape somebody else's service every thirty seconds to
-// re-learn a number that moves four times a year.
-//
-// THE DEVICE IS READ BEFORE THE NETWORK IS ASKED ANYTHING.
-//   Ninety investors means ninety-one requests: the list, then one page per book. Conditional
-//   fetching already made the BYTES nearly free on a second visit — every unchanged book is a
-//   bodyless 304 — but a 304 is still a round trip, and ninety-one of them four at a time is
-//   twenty-three sequential waits before the grid is full. That is the delay, and no amount of
-//   caching at the HTTP layer removes it, because the wait is latency and not bandwidth.
-//
-//   So `load()` reads what it already has before it asks for anything. The device comes first, then
-//   the COMMITTED SNAPSHOT — `public/data/super-investors.json`, every book in one 414KB file
-//   (69KB over the wire) written by scripts/scrape-super-investors.mjs — for whatever the device
-//   does not hold. Only then does a background pass revalidate.
-//
-//   THE SNAPSHOT IS THE HALF THAT HELPS A FIRST VISIT, and it is the half that was missing. A
-//   device cache does nothing at all for a reader who has never opened the tab, and that reader is
-//   the one who waited: ninety-one requests, four at a time, each of which may be a live scrape on
-//   somebody else's service. Every other bulk feed in this dashboard is served from a committed
-//   file for exactly this reason.
-//
-//   Between them: a first visit is one request, a return visit is none, and a book the snapshot
-//   could not capture is fetched live and is absent rather than empty in the meantime.
-//
-//   THE STORE AND THE SNAPSHOT BOTH HOLD THE SERVER'S OWN BYTES — never a locally patched copy —
-//   which is the entire basis for trusting a paint that asked nobody. `meta().origin` distinguishes
-//   all three: `snapshot` for the committed file, `store` for this device's cache, `live` only once
-//   every painted book has been confirmed against the server in this session.
-//
-// A FAILED BOOK IS NOT AN EMPTY BOOK. `ok: false` from the Worker carries a `reason`, and this
-// module keeps it per investor. The card says "could not be read" and names why; it never shows a
-// holdings count of zero for a book that failed to load.
-//
-// THREE THINGS THAT MADE A RETURN VISIT SLOW, AND WHAT REPLACED THEM.
-//   1. EVERY BOOK WAS RE-ASKED ON EVERY PAGE LOAD. The revalidation pass walked all ninety-one
-//      unconditionally, so a reader who opened the tab twice in a minute paid ninety-one round
-//      trips to be told nothing had changed. A book confirmed inside the current window is now left
-//      alone, and THE WINDOW COMES FROM THE FILING CALENDAR rather than from a number of hours: a
-//      book is assembled from shareholding patterns companies file once a quarter, so outside a
-//      filing season there is nothing that can have changed it. See `revalidateWindowMs`. Three
-//      things are always asked for regardless — a book never read, a book carrying the server's
-//      `stale` flag, and a book whose confirmation predates the most recent quarter end.
-//   2. NINETY-ONE INDEXEDDB TRANSACTIONS BEFORE FIRST PAINT. `readEntry` per book, each opening
-//      its own transaction. `readEntries` does the lot in one.
-//   3. NINETY FULL REPAINTS OF THE ACTIVE PANEL. Every arriving book emitted, and the tab rebuilt
-//      whichever directory, quarterly summary or positions table was selected on each emit.
-//      Arrivals are now coalesced into at most one repaint per EMIT_COALESCE_MS, which turns that
-//      into a handful. The walk's final emit is still immediate, so the settled state is never
-//      left waiting behind a timer.
-//
-// NONE OF THAT MAY BUY SPEED WITH A FRESHNESS CLAIM WE CANNOT SUPPORT. `meta().origin` still reads
-// `store` for as long as any painted book is unconfirmed — which, with the skip above, is the
-// normal state of a quick return visit — and `meta().checkedAt` reports the OLDEST confirmation
-// behind what is on screen rather than the newest. `refresh()` is the escape hatch, wired to a
-// re-read control in the Live pill's modal, and it asks for everything again.
+// Normalisation is shared with the Worker. Quarter comparisons, per-book moves,
+// allHoldings and summaries preserve disclosure notes rather than treating blanks
+// or pending filings as trades.
 
 import { conditionalJson, readEntries, KEYS, isPersistent } from '../core/store.js';
 import { normalisePortfolio, isPortfolioPayload, deriveMoves, summarise, quarterOrder, filedPair, isFiledQuarter } from './finology-shared.js';
@@ -83,41 +30,11 @@ const SNAPSHOT_PATH = 'data/super-investors.json';
 // these is a cache read of a few milliseconds and the ceiling stops mattering.
 const CONCURRENCY = 4;
 
-// HOW OFTEN A BOOK IS WORTH ASKING ABOUT AGAIN, WHICH IS A QUESTION ABOUT THE FILING CALENDAR.
-//
-// A super-investor's book is assembled from the shareholding patterns companies file with the
-// exchanges, and those are filed once a quarter. Nothing else moves it. So the window is derived
-// from where the calendar is rather than from a flat number of hours:
-//
-//   IN SEASON   a quarter has ended within FILING_SEASON_DAYS, so companies are still filing and
-//               a book genuinely gains lines from one day to the next.
-//   OUT OF      every company that is going to file for this quarter has, and the next thing that
-//   SEASON      can change any book is the next quarter end. Asking again before then cannot learn
-//               anything, so the hold is long.
-//
-// AND ONE HARD RULE ABOVE BOTH: a confirmation older than the most recent quarter end is always
-// re-asked, whatever the elapsed time says. Without it a long hold could straddle a quarter
-// boundary and keep serving last quarter's book into the new one — the exact failure the window is
-// meant to prevent, arrived at by being too clever about avoiding requests.
-const DAY_MS = 24 * 60 * 60 * 1000;
-const FILING_SEASON_DAYS = 60;
-const REVALIDATE_IN_SEASON_MS = 24 * 60 * 60 * 1000;
-const REVALIDATE_OUT_OF_SEASON_MS = 30 * DAY_MS;
-
-/** The most recent 31 Mar / 30 Jun / 30 Sep / 31 Dec, in ms. */
-function lastQuarterEnd(now = Date.now()) {
-  const d = new Date(now);
-  const y = d.getUTCFullYear();
-  const ends = [Date.UTC(y - 1, 11, 31), Date.UTC(y, 2, 31), Date.UTC(y, 5, 30), Date.UTC(y, 8, 30), Date.UTC(y, 11, 31)];
-  let last = ends[0];
-  for (const e of ends) if (e <= now) last = e;
-  return last;
-}
-
-function revalidateWindowMs(now = Date.now()) {
-  const sinceQuarterEnd = now - lastQuarterEnd(now);
-  return sinceQuarterEnd <= FILING_SEASON_DAYS * DAY_MS ? REVALIDATE_IN_SEASON_MS : REVALIDATE_OUT_OF_SEASON_MS;
-}
+// Match the Worker's six-hour source cache year-round: late filings and corrections
+// can arrive outside filing season. This is a freshness bound, not a completeness claim.
+const REVALIDATE_MS = 6 * 60 * 60 * 1000;
+const AUTO_RETRY_MS = 15 * 60 * 1000;
+let lastAutoAttempt = -Infinity;
 
 // Books arrive faster than a repaint of the panel takes. Long enough to absorb a burst, short
 // enough that the grid still visibly fills rather than appearing in one jump.
@@ -272,7 +189,7 @@ function originNow() {
 /** The oldest moment anything on screen was confirmed by the server. */
 function oldestCheckedAt() {
   let oldest = state.checkedAt;
-  for (const slug of state.unconfirmed) {
+  for (const { slug } of state.investors) {
     const at = state.confirmedAt.get(slug);
     if (at != null && (oldest == null || at < oldest)) oldest = at;
   }
@@ -283,6 +200,7 @@ function oldestCheckedAt() {
 export function invalidate() {
   state = fresh();
   loading = null;
+  lastAutoAttempt = -Infinity;
   generation++;
   bump();
 }
@@ -423,13 +341,8 @@ export function load() {
       state.loaded = true;
       state.origin = 'store';
       emit({ now: true });
-      // AND NOTHING IS WALKED. Confirming ninety books is ninety round trips, each of which may be
-      // a live scrape upstream, and it is work nobody asked for over a grid that is already
-      // complete and already labelled with where it came from. `refresh()` is what asks — the
-      // header's Refresh button, and *Re-read everything now* in the Live pill's modal.
-      //
-      // The LIST is a single request and does tell us something a snapshot cannot: whether an
-      // investor has been added or removed. That one is worth making, and it is one.
+      // Bulk consumers stop at the list; the active investor view separately binds
+      // watchFreshness() to revalidate due books without blocking this cached paint.
       confirmList();
       return state;
     }
@@ -667,12 +580,11 @@ async function revalidate({ ignoreWindow = false } = {}) {
  * first-visit walk skips them, because a book in memory there has just been fetched.
  *
  * WHAT THE REVALIDATION PASS DOES *NOT* ASK FOR is the change that made a return visit quick. A
- * book confirmed inside the current window — see `revalidateWindowMs`, which is derived from the
+ * book confirmed inside the current window — within the
  * filing calendar rather than from a number of hours — cannot have anything new to tell us, so the
  * request would spend a round trip receiving bytes already on this device. Three exceptions, each
  * of which would otherwise strand a reader on something worse than a slow paint: a book we do not
- * have at all, a book the Worker served from its last-good copy during an outage, and a book whose
- * confirmation predates the most recent quarter end.
+ * have at all, a failed read, or a book the Worker served as stale during an outage.
  */
 async function walkBooks({ force = false, ignoreWindow = false } = {}) {
   const gen = generation;
@@ -698,15 +610,33 @@ async function walkBooks({ force = false, ignoreWindow = false } = {}) {
 }
 
 function needsRevalidation(slug) {
-  if (!state.books.has(slug)) return true; // never read: there is nothing to skip
-  if (state.staleBooks.has(slug)) return true; // a last-good copy is exactly what wants replacing
-  const at = state.confirmedAt.get(slug);
-  if (at == null) return true; // no idea when it was confirmed, so treat it as unconfirmed
-  const now = Date.now();
-  // A quarter has ended since this copy was confirmed, so a filing season it knows nothing about
-  // has begun. Elapsed time is not allowed to overrule that.
-  if (at < lastQuarterEnd(now)) return true;
-  return now - at >= revalidateWindowMs(now);
+  if (!state.books.has(slug) || state.staleBooks.has(slug) || state.failures.has(slug)) return true;
+  const sourceAt = Date.parse(state.books.get(slug).fetchedAt || '');
+  const confirmedAt = state.confirmedAt.get(slug);
+  if (!Number.isFinite(sourceAt) || confirmedAt == null) return true;
+  return Date.now() - Math.min(sourceAt, confirmedAt) >= REVALIDATE_MS;
+}
+
+/** Active-view lifecycle only; General Alerts' snapshot reads do not fan out over books. */
+export function watchFreshness() {
+  const check = () => {
+    if (document.visibilityState !== 'visible' || !state.loaded || !state.listOk || state.revalidating) return;
+    if (Date.now() - lastAutoAttempt < AUTO_RETRY_MS) return;
+    const listDue = !state.checkedAt || Date.now() - state.checkedAt >= REVALIDATE_MS;
+    if (!listDue && !state.investors.some((i) => needsRevalidation(i.slug))) return;
+    lastAutoAttempt = Date.now();
+    void revalidate();
+  };
+  const events = ['pageshow', 'focus', 'online'];
+  for (const event of events) window.addEventListener(event, check);
+  document.addEventListener('visibilitychange', check);
+  const interval = setInterval(check, 60_000);
+  check();
+  return () => {
+    clearInterval(interval);
+    for (const event of events) window.removeEventListener(event, check);
+    document.removeEventListener('visibilitychange', check);
+  };
 }
 
 /**

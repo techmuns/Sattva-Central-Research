@@ -3567,25 +3567,14 @@ Three rules, and they are the filings snapshot's rules:
 
 ### How often a book is worth asking about again
 
-A book is assembled from shareholding patterns companies file **once a quarter**, so the
-revalidation window is derived from the filing calendar rather than from a flat number of hours:
+Books are checked against the Worker's six-hour source cache year-round. Late filings and
+corrections can arrive outside filing season, so calendar season alone cannot justify a long hold.
 
-| Where the calendar is | Window |
-| --- | --- |
-| within 60 days of a quarter end — companies are still filing | 24 hours |
-| outside that — nothing can change until the next quarter end | 30 days |
-
-Above both: **a confirmation older than the most recent quarter end is always re-asked**, whatever
-the elapsed time says. Without that a long hold could straddle a quarter boundary and keep serving
-last quarter's book into the new one.
-
-**And no book is re-read on a page load at all.** `load()` paints from the device and the snapshot
-and makes exactly **one** request — a conditional GET of the investor LIST, which is the one thing
-a snapshot cannot answer (an investor added or dropped). Confirming ninety books is ninety round
-trips, and it is work the reader asks for: `refresh()` is registered with `js/core/refresh.js`, so
-the header's Refresh button drives it. It ignores the window deliberately — a refresh that silently
-skipped every book because the capture was recent would be a button that does nothing on the one
-occasion the reader was sure something had changed.
+`load()` paints from saved data immediately and checks the investor list. When the investor view
+is active, `watchFreshness()` checks due books on opening, returning, reconnecting and once a minute
+while visible. Recent source reads are skipped; failed/stale books are retried at most once per
+15 minutes. Closing the view removes its listeners and timer. Other tabs retain the bulk-snapshot
+path. The header's manual Refresh still checks every book without waiting for the normal window.
 
 ### The Worker exists to hold the token
 
@@ -3686,7 +3675,10 @@ Shared changes count distinct investor slugs per source company identifier. Norm
 collapses duplicate company rows; conflicting cells become incomplete data. A group containing
 a new/removed disclosure has no complete percentage-point sum, so no partial sum is displayed.
 Stake changes are not labelled buys or sells: changes in share capital can alter percentages.
-Source links support inspection, but this feed remains a third-party aggregation, not an
+Active investor views revalidate books automatically on open, visible checks, resume and reconnect,
+using the Worker's six-hour source cache and bounded 15-minute retry interval. Other tabs retain
+their bulk snapshot path. Malformed or failed book responses cannot replace good device-cache
+entries. Source links support inspection, but this feed remains a third-party aggregation, not an
 independent verification of every exchange filing. An empty result describes available data only.
 
 The 6 September 2026 audit of the 4 September capture found 90 books, 87 supporting Jun 2026 vs

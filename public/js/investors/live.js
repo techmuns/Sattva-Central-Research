@@ -60,6 +60,7 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
   const m = feed.meta();
 
   if (!m.ok) return renderUnavailable(ctx, m);
+  disposers.push(feed.watchFreshness());
 
   const rows = scopedHoldings(ctx);
   const quarters = feed.quarterLabels();
@@ -139,7 +140,7 @@ function quarterSummaryBlock(ctx, m) {
     : `No ${what} found in the available ${scope} disclosures for ${q.latest} vs ${q.prior}.`;
   const sourceDates = feed.books().map((b) => Date.parse(b.fetchedAt || ''));
   const sourceDate = sourceDates.length && sourceDates.every(Number.isFinite)
-    ? new Date(Math.min(...sourceDates)).toISOString().slice(0, 10) : 'unavailable';
+    ? new Date(Math.min(...sourceDates)).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : 'unavailable';
 
   const panels = [
     rankedList({
@@ -230,7 +231,7 @@ function quarterSummaryBlock(ctx, m) {
       <div class="mb-3 rounded-xl bg-white px-4 py-3 text-xs text-slate-500 ring-1 ring-slate-200" data-si-coverage>
         <p><strong>${escapeHtml(scope)} companies</strong> · ${q.comparableBooks} of ${m.total} tracked books have the same comparison pair · ${q.coveredBooks} contain data in this scope.</p>
         <p class="mt-1">${q.loadedBooks} books loaded · ${q.missingBooks} unavailable · ${q.excludedBooks.length} excluded for missing comparison quarters · ${q.counts.awaiting} incomplete positions in this scope.</p>
-        <p class="mt-1">Ticker Finology · oldest source read: ${escapeHtml(sourceDate)} · ${m.origin === 'live' ? 'Feed checked this session' : 'Saved data'}${m.failedBooks ? ` · ${m.failedBooks} book reads failed` : ''}${m.stale ? ' · Source serving older data' : ''}${m.confirming || m.pending ? ' · Updates still loading' : ''}. Results cover available disclosures and may change as data arrives.</p>
+        <p class="mt-1">Ticker Finology · oldest source read: ${escapeHtml(sourceDate)} · ${m.origin === 'live' ? 'Feed checked this session' : 'Saved data'}${m.failedBooks ? ` · ${m.failedBooks} book reads failed` : ''}${m.stale ? ' · Source serving older data' : ''}${sourceDates.some((at) => !Number.isFinite(at) || Date.now() - at >= 6 * 3600000) ? ' · Source check overdue' : ''}${m.confirming || m.pending ? ' · Updates still loading' : ''}. Results cover available disclosures and may change as data arrives.</p>
         ${ctx.scope !== 'universe' ? `<button type="button" data-si-universe class="mt-2 font-semibold text-indigo-600 hover:underline">View Universe: ${universe.consensusBuyCount} ${universe.consensusBuyCount === 1 ? 'company' : 'companies'} with shared increases or new disclosures</button>` : ''}
       </div>
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">${panels.map((p) => p.html).join('')}</div>

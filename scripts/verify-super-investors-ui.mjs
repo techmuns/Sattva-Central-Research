@@ -103,6 +103,11 @@ try {
   await page.waitForFunction(() => !!window.testSI);
   assert.equal(await page.evaluate(() => testSI.feed.books().length), 3, 'repeat visit restores validated device books');
   assert.equal(await page.evaluate(() => testSI.feed.book('one').holdings.find(h => h.companySlug === 'PENDING').quarterlyNotes['Jun 2026']), 'Filing Due');
+  books.one.holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Jun 2026'] = 1.8;
+  await page.clock.setSystemTime(new Date(Date.parse(at) + 7 * 3600000));
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await page.waitForFunction(() => testSI.feed.book('one').holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Jun 2026'] === 1.8);
+  assert.match(await page.locator('[data-ranked-list="si-adds"]').innerText(), /0.80 pp/, 'resume automatically picks up late corrections');
   assert.deepEqual(errors, []);
   console.log('PASS investor scope, identity, disclosure notes, shared changes, drill evidence, missing books, outages and mobile layout');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
