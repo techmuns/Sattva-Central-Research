@@ -741,14 +741,9 @@ function openTelegramPost(r) {
     <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex font-semibold text-indigo-600">Open original in Telegram &rarr;</a>
   </div>`, { size: 'wide' });
 }
-// A CAPTURE NOBODY REFRESHES IS A FEED THAT ROTS, AND NO CLOCK HERE CAN REFRESH IT.
-//
-// GitHub delivers 7-9 scheduled runs a DAY on this repository whatever the cron asks for. So the
-// half-hourly cadence this feed is meant to have cannot come from its schedule, and it comes from
-// the reader instead: opening the Telegram section on a capture older than the window asks the
-// runner to go and read the channel. That is the same narrowing of "nothing dispatches on its own"
-// that market news runs on, and the two reasons it is safe are unchanged — one request to a public
-// page on our own free runner, declined at the edge when a run is already going.
+// The first overdue reader request arms the persistent channel timer. Later alarms keep collecting
+// with the browser closed. Reader requests remain useful for bootstrap and recovery, and share
+// the timer's durable cooldown and active-run checks.
 const TELEGRAM_AUTO_AFTER_MS = 10 * 60 * 1000;
 let telegramAutoAt = 0;
 
