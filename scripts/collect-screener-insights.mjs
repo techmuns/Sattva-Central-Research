@@ -105,6 +105,8 @@ export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 1
   if (item.unresolved) throw Error('Company page identity is unresolved');
   const response = await page.goto(item.companyUrl, { waitUntil: 'domcontentloaded' });
   const final = new URL(page.url());
+  if ([401, 403, 429].includes(response?.status())) throw Error('source-blocked');
+  if (final.origin === ORIGIN && final.pathname.startsWith('/login/')) throw Error('session');
   if (!response?.ok() || final.origin !== ORIGIN || screenerInsightIdentity(final.href)?.companyKey !== item.companyKey) throw Error('response');
   if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw Error('session');
   const section = page.locator('#insights');
@@ -234,7 +236,7 @@ async function main() {
 
   stage = 'artifact write';
   writeFileSync(output, bytes);
-  console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: current.checkedCount, succeeded: succeeded.length, failed: failedCount, deferred: deferredKeys.length, deadlineReached: batch.deadlineReached, unresolved: unresolvedKeys.length, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
+  console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: current.checkedCount, succeeded: succeeded.length, failed: failedCount, deferred: deferredKeys.length, deadlineReached: batch.deadlineReached, sourceBlocked: batch.sourceBlocked, unresolved: unresolvedKeys.length, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

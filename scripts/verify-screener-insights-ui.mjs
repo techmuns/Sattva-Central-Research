@@ -30,6 +30,7 @@ await context.route('**/*', async (route) => {
     if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: `Name,ISIN Code,NSE Code,BSE Code\nTest Export Display,INE000000001,TEST,\n${mode === 'unmatched-codeless' ? 'Unknown codeless name' : 'Delisted'},INE000000002,,\n` });
     if (url.pathname === '/user/stocks/10850427/') return route.fulfill({ contentType: 'text/html', body: `<h1>Add companies to S Screen</h1><ul><li><span class="shrink-text">Test Ltd</span><button onclick="window.Watchlist.removeCompany('1')" type="button"><i class="icon-trash"></i></button></li>${mode === 'short-inventory' ? '' : '<li><span class="shrink-text">Delisted Ltd</span><button onclick="window.Watchlist.removeCompany(\'1234\')" type="button"><i class="icon-trash"></i></button></li>'}</ul><script>window.removalCalls=0;window.Watchlist={removeCompany:()=>window.removalCalls++};</script>` });
     if (url.pathname.startsWith('/company/')) {
+      if (mode === 'rate-limited') return route.fulfill({ status: 429, body: 'Too many requests' });
       return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
     }
     if (url.pathname === '/quarter/') return route.fulfill({ contentType: 'text/html', status: mode === 'failed-quarter' ? 503 : 200, body: mode === 'failed-quarter' ? 'Unavailable' : table('quarterly') });
@@ -83,6 +84,8 @@ try {
   await Promise.allSettled(attempts);
   assert.deepEqual(stopped.failedKeys, [item.companyKey]);
   assert.equal(context.pages().length, pageCount, 'timed-out company attempts close their actual browser pages');
+  mode = 'rate-limited';
+  await assert.rejects(readInsightCompany(page, item, checkedAt), /source-blocked/);
   const retained = mergeScreenerInsightsCapture({ ...payload, companies: [], failedCount: 1, failedKeys: ['TEST'], fullCoverage: false }, payload);
   assert.equal(retained.companies[0].rows.length, 2);
   assert.equal(retained.companies[0].readStatus, 'failed');

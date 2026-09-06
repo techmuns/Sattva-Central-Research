@@ -300,6 +300,15 @@ assert.equal(retryBounded.succeeded.length, 1, 'later companies survive an earli
 assert.equal(retryBounded.failureCounts.timeout, 1);
 assert.equal(retryBounded.deadlineReached, false);
 assert.deepEqual(retryBounded.deferredKeys, []);
+const denied = await collectInsightBatch([{ companyKey: 'FIRST' }, { companyKey: 'DENIED' }, { companyKey: 'LATER' }], target => {
+  if (target.companyKey === 'FIRST') return company;
+  throw Error('source-blocked');
+}, { maxDurationMs: 2_000, concurrency: 1, delayMs: 0 });
+assert.equal(denied.sourceBlocked, true);
+assert.equal(denied.deadlineReached, false);
+assert.deepEqual(denied.failedKeys, ['DENIED']);
+assert.deepEqual(denied.deferredKeys, ['LATER'], 'source denial stops new requests while retaining completed data');
+assert.equal(denied.succeeded.length, 1);
 
 const workflow = readFileSync(new URL('../.github/workflows/screener-insights-refresh.yml', import.meta.url), 'utf8');
 const collector = readFileSync(new URL('./collect-screener-insights.mjs', import.meta.url), 'utf8');

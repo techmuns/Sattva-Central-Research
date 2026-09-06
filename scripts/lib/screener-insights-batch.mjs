@@ -58,7 +58,8 @@ export async function collectInsightBatch(targets, readCompany, {
           succeeded.push(company);
           success = true;
         } catch (error) {
-          failure = deadline.signal.aborted ? 'deadline' : timeout.signal.aborted || error?.name === 'TimeoutError' ? 'timeout' :
+          if (['source-blocked', 'session'].includes(error?.message) && !deadline.signal.aborted) deadline.abort(Error('source-blocked'));
+          failure = deadline.signal.reason?.message === 'source-blocked' ? 'source-blocked' : deadline.signal.aborted ? 'deadline' : timeout.signal.aborted || error?.name === 'TimeoutError' ? 'timeout' :
             ['response', 'session', 'oversized'].includes(error?.message) ? error.message : 'read-or-validation';
         } finally {
           clearTimeout(timer);
@@ -81,5 +82,6 @@ export async function collectInsightBatch(targets, readCompany, {
     progress();
   }
   return { succeeded, failedKeys, deferredKeys: targets.filter(target => !attemptedKeys.has(target.companyKey)).map(target => target.companyKey),
-    attemptedCount: attemptedKeys.size, deadlineReached: deadline.signal.aborted, failureCounts };
+    attemptedCount: attemptedKeys.size, deadlineReached: deadline.signal.reason?.message === 'crawl-deadline',
+    sourceBlocked: deadline.signal.reason?.message === 'source-blocked', failureCounts };
 }
