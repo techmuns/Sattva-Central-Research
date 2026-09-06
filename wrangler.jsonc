@@ -11,13 +11,11 @@
   "durable_objects": {
     "bindings": [
       { "name": "CAPTURE_REGISTRY", "class_name": "CaptureRegistry" },
-      { "name": "TELEGRAM_SCHEDULER", "class_name": "TelegramScheduler" }
+      // Alias the existing namespace; the channel timer uses a distinct fixed object name.
+      { "name": "TELEGRAM_SCHEDULER", "class_name": "CaptureRegistry" }
     ]
   },
-  "migrations": [
-    { "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] },
-    { "tag": "telegram-scheduler-v1", "new_sqlite_classes": ["TelegramScheduler"] }
-  ],
+  "migrations": [{ "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] }],
 
   // WHICH REPOSITORY THE NEWS REFRESH BUTTON MAY START A RUN IN.
   //

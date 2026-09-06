@@ -22,8 +22,10 @@ before dispatch; the requested cadence is not a guarantee of runner start/comple
 Quiet checks use `lastRun.at` rather than content-change time. This is polling,
 **not instantaneous streaming**, and public-source completeness remains a separate limit.
 
-The timer uses SQLite storage available on the existing Workers Free plan; it consumes
-no cron-trigger slot. A durable attempt claim and the next alarm are written before
+The timer uses a separate named object in the existing SQLite `CaptureRegistry` namespace,
+available on the existing Workers Free plan; it consumes no cron-trigger slot and requires
+no namespace migration. Company shards never arm timers and share no data with the channel
+object. A durable attempt claim and the next alarm are written before
 external requests, preventing immediate duplicates after a restart or an ambiguous POST.
 Failures back off from ten minutes to an hour, keeping the next alarm scheduled. Neither
 GitHub credentials nor Telegram credentials are persisted in the timer. Only the fixed

@@ -14,8 +14,8 @@ const origin = `http://127.0.0.1:${port}`;
 const config = join(scratch, 'wrangler.json');
 const fixture = join(scratch, 'entry.mjs');
 writeFileSync(fixture, `
-import { TelegramScheduler } from ${JSON.stringify(resolve('worker/telegram-scheduler-object.mjs'))};
-export class TestScheduler extends TelegramScheduler {
+import { CaptureRegistry } from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
+export class TestScheduler extends CaptureRegistry {
   constructor(ctx, env) {
     super(ctx, env);
     this.schedule.fetcher = async (url, init) => {
@@ -41,6 +41,11 @@ export class TestScheduler extends TelegramScheduler {
 export default {async fetch(request,env) {
   const stub=env.TEST_TIMER.getByName('test-channel');
   const path=new URL(request.url).pathname;
+  if(path==='/company') {
+    const registry=env.TEST_TIMER.getByName('company-shard');
+    await registry.register([{isin:'INE002A01018',ticker:'RELIANCE',name:'Reliance Industries'}]);
+    return Response.json({...await registry.inspect(),companies:await registry.list()});
+  }
   if(request.method==='POST' && path==='/start') return Response.json(await stub.request('auto'));
   if(request.method==='POST' && path==='/soon') {await stub.soon();return new Response('ok');}
   return Response.json(await stub.inspect());
@@ -79,6 +84,10 @@ try {
   assert.equal(results.filter(result=>result.dispatched).length,1);
   const first=await read();
   assert.equal(first.posts,1); assert(first.alarm>Date.now());
+  const company=await (await fetch(`${origin}/company`)).json();
+  assert.equal(company.companies.length,1);
+  assert.equal(company.alarm,null,'company registry objects never arm collection');
+  assert.equal(company.enabled,false); assert.equal(company.posts,0,'distinct objects isolate registry data from the channel timer');
   await stop(); await start();
   assert.deepEqual(await read(),first,'actual SQL storage, alarm and claim survive full runtime restart');
   await post('/soon');
