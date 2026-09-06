@@ -21,7 +21,8 @@ recomputing unchanged derived data on the browser's main thread.
 4. **Medium impact — repeated work during interactions.** Sort accessors run once per record;
    searchable text warms in short idle slices. Live row patches invalidate their search entries.
    AI context enrichment indexes the complete pool by ticker once per ranking operation instead
-   of scanning the whole pool once per company. No context or ranking rule is removed.
+   of scanning the whole pool once per company. All Alerts yields to browser input before and
+   between feed-normalization batches. No context or ranking rule is removed.
 5. **Lifecycle and usability.** Table observers/listeners are disposed on navigation/repaint.
    Stars preserve scroll position, variable-height content is measured rather than clipped,
    and the search control has an accessible name and a usable minimum width. The service-worker
