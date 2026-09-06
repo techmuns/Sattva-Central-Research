@@ -102,7 +102,11 @@ export async function startScrape(source = 'auto') {
 export function onChange(fn) { subscribers.add(fn); return () => subscribers.delete(fn); }
 
 export function startLive(live) {
-  live.register('telegram-posts', { intervalMs: 60000, fetcher: refresh });
+  live.register('telegram-posts', { intervalMs: 60000, fetcher: async () => {
+    const arrived = await refresh();
+    if (state.reason) throw new Error(state.reason);
+    return arrived;
+  } });
   live.start('telegram-posts');
   return () => live.stop('telegram-posts');
 }

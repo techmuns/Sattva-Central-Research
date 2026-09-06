@@ -1,4 +1,3 @@
-import { readTelegramCollector } from './telegram-collector.mjs';
 // Cloudflare Worker entry point.
 //
 // The dashboard is static assets (./public), served through the ASSETS binding. This Worker
@@ -31,6 +30,7 @@ import { readTelegramCollector } from './telegram-collector.mjs';
 // waste in the system. So each response carries a content-derived ETag, and a request that
 // arrives with a matching `If-None-Match` gets a 304 with no body at all.
 
+import { readTelegramCollector } from './telegram-collector.mjs';
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
