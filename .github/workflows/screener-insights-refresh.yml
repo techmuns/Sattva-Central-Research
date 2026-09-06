@@ -11,7 +11,7 @@ on:
         type: string
         default: 'manual'
       full:
-        description: 'Re-read every company in the universe and portfolio'
+        description: 'Reconcile the full inventory; fresh records and persisted cooldowns are always respected'
         required: false
         type: boolean
         default: false
@@ -42,6 +42,7 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/screener-insights-browser" --no-save --package-lock=false playwright@1.62.1
           node "$RUNNER_TEMP/screener-insights-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Collect portfolio and universe Insights
+        id: collect
         env:
           GH_TOKEN: ${{ github.token }}
           SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
@@ -50,12 +51,23 @@ jobs:
           SCREENER_FULL_REFRESH: ${{ inputs.full == true }}
           DEBUG: ''
           PWDEBUG: ''
-        run: node scripts/collect-screener-insights.mjs "$RUNNER_TEMP/screener-insights-v1.json.gz"
+        run: node scripts/collect-screener-insights.mjs "$RUNNER_TEMP/screener-insights-v1.json.gz" "$RUNNER_TEMP/screener-insights-state-v1.json.gz"
+      - name: Preserve collection state and cooldown even after failure
+        if: ${{ always() && steps.collect.outcome != 'skipped' && steps.collect.outcome != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: screener-insights-state-v1.json.gz
+          path: ${{ runner.temp }}/screener-insights-state-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
       - name: Publish validated immutable public-data capture
+        if: ${{ always() && steps.collect.outcome != 'skipped' && steps.collect.outcome != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: screener-insights-v1.json.gz
           path: ${{ runner.temp }}/screener-insights-v1.json.gz
           archive: false
-          if-no-files-found: error
+          # A failure before the first successful company has state, not fabricated company data.
+          if-no-files-found: ignore
           retention-days: 30

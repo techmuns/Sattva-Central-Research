@@ -1102,13 +1102,13 @@ async function handleScreenerInsights(request, env, ctx) {
     const capture = { ...result.capture, source: result.source };
     const checkedAt = Date.parse(capture.checkedAt || '');
     const stale = !Number.isFinite(checkedAt) || Date.now() - checkedAt > SCREENER_INSIGHTS_FRESH_MS || result.source.collectorLatestFailed;
-    if (stale) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, !capture.fullCoverage));
+    if (stale && !result.source.collection?.coolingDown) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, !capture.fullCoverage));
     const { body, tag } = withTag(capture);
     const response = tagged(body, tag, SCREENER_INSIGHTS_TTL_S);
     ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
     return revalidate(request, response, 'miss');
-  } catch {
-    ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, true));
+  } catch (error) {
+    if (!(Date.parse(error?.insightsCooldownUntil || '') > Date.now())) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, true));
     return json({ ok: false, reason: 'unavailable', message: 'Screener Insights capture is not available yet.' }, 503);
   }
 }
