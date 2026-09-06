@@ -111,12 +111,136 @@
     "isin:INE482D01024|Carysil": {
       "lastAttemptAt": "2026-09-06T21:29:57+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE482D01024|CARYSIL": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 23,
+      "error": null,
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE736A01011|Central Depository Services": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 31,
+      "error": null,
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE736A01011|CDSL": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 104,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-06T22:10:33+00:00",
+      "pending": [
+        {
+          "from": "2026-08-28T22:10:33.467294+00:00",
+          "to": "2026-09-02T10:10:33.233647+00:00"
+        },
+        {
+          "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-06T22:10:33+00:00"
+        }
+      ]
+    },
+    "isin:INE067A01029|Cg Power and Ind Sol": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 0,
+      "error": null,
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE067A01029|CG Power & Ind": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 0,
+      "error": null,
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE067A01029|CGPOWER": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 87,
+      "error": null,
+      "lastSuccessAt": "2026-09-06T22:10:33+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE522F01014|Coal India": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 100,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-06T22:10:33+00:00",
+      "pending": [
+        {
+          "from": "2026-08-28T22:10:33.467294+00:00",
+          "to": "2026-09-02T10:10:33.233647+00:00"
+        },
+        {
+          "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-06T22:10:33+00:00"
+        }
+      ]
+    },
+    "isin:INE522F01014|COALINDIA": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 102,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-06T22:10:33+00:00",
+      "pending": [
+        {
+          "from": "2026-08-28T22:10:33.467294+00:00",
+          "to": "2026-09-02T10:10:33.233647+00:00"
+        },
+        {
+          "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-06T22:10:33+00:00"
+        }
+      ]
+    },
+    "isin:INE591G01025|Coforge": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 105,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-06T22:10:33+00:00",
+      "pending": [
+        {
+          "from": "2026-08-28T22:10:33.467294+00:00",
+          "to": "2026-09-02T10:10:33.233647+00:00"
+        },
+        {
+          "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-06T22:10:33+00:00"
+        }
+      ]
+    },
+    "isin:INE591G01025|COFORGE": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "lastResultCount": 106,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-06T22:10:33+00:00",
+      "pending": [
+        {
+          "from": "2026-08-28T22:10:33.467294+00:00",
+          "to": "2026-09-02T10:10:33.233647+00:00"
+        },
+        {
+          "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-06T22:10:33+00:00"
+        }
+      ]
+    },
+    "isin:INE338H01029|Concord Biotech": {
+      "lastAttemptAt": "2026-09-06T22:10:33+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
-    "attempted": 1,
-    "incomplete": 229,
-    "checkedAt": "2026-09-06T21:29:57.576618+00:00"
+    "attempted": 11,
+    "incomplete": 224,
+    "checkedAt": "2026-09-06T22:10:33.467294+00:00"
   }
 }
