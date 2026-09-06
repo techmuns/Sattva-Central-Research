@@ -247,7 +247,7 @@ try {
   await page.getByRole('textbox', { name:'Ask about the dashboard' }).fill('What should I know?');
   await page.getByRole('button', { name:'Send question' }).click();
   await page.getByText('Fixture answer.', { exact:false }).waitFor();
-  await page.waitForFunction(() => document.querySelector('[data-research-input]')?.disabled === false);
+  await page.waitForFunction(() => document.querySelector('[data-research-send]')?.dataset.mode === 'send');
   assert.deepEqual(questions[0].evidence.portfolioPositions.holdings.map(h => h.isin).sort(), replacement.map(h => h.isin).sort());
   assert.equal(questions[0].evidence.portfolioPositions.holdings.find(h => h.ticker === 'KISSHT').weightPct, 60);
   // A connected iframe can lose workbook access between questions. Background
@@ -269,7 +269,7 @@ try {
   assert.match(await connectionBadge.innerText(), /Portfolio connected/);
   assert.equal(await page.getByRole('textbox', { name:'Ask about the dashboard' }).inputValue(), 'Read my portfolio again');
   await page.getByRole('button', { name:'Send question' }).click();
-  await page.waitForFunction(() => document.querySelector('[data-research-input]')?.disabled === false);
+  await page.waitForFunction(() => document.querySelector('[data-research-send]')?.dataset.mode === 'send');
   assert.equal(questions.length, 2, 'a recovered question can use the verified portfolio');
   assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('weightPct')), false);
 

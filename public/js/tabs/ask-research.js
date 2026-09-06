@@ -552,7 +552,7 @@ function paintSidebar() {
     });
     const body = el('span', { class: 'min-w-0 flex-1 text-left' });
     body.appendChild(el('strong', { class: 'research-session-title' }, session.title));
-    body.appendChild(el('span', { class: `research-session-meta ${session.status === 'needs-attention' ? 'text-rose-500' : ''}` }, busy ? session.phase || 'Answering…' : session.status === 'needs-attention' ? 'Needs attention' : timeLabel(session.updatedAt)));
+    body.appendChild(el('span', { class: `research-session-meta ${session.status === 'needs-attention' ? 'text-rose-500' : ''}` }, busy ? 'Answering…' : session.status === 'needs-attention' ? 'Needs attention' : timeLabel(session.updatedAt)));
     button.appendChild(body);
     const remove = el('button', {
       type: 'button',
