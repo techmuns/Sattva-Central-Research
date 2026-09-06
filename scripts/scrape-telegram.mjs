@@ -37,7 +37,10 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
   if (prior.channel && prior.channel.toLowerCase() !== cfg.channel) throw new Error('Existing archive belongs to another channel; use a separate TELEGRAM_OUT');
   const started = now(), deadline = started + cfg.budget;
   const stamp = () => new Date(now()).toISOString();
-  const outOfTime = () => now() + Math.max(1000, cfg.delay) >= deadline;
+  if (Date.parse(prior.publicSafety?.nextAttemptAt) > started) return { ...prior, latestVerifiedAt: null,
+    lastRun: { at: stamp(), status: 'partial', error: 'Waiting for the public source retry deadline.' } };
+  let publicSafety = null;
+  const outOfTime = () => publicSafety || now() + Math.max(1000, cfg.delay) >= deadline;
   const byId = new Map((prior.posts || []).map((p) => [positiveId(p.id), p]));
   byId.delete(0);
   const retry = new Set((prior.retryIds || []).filter(positiveId).map(Number));
@@ -49,6 +52,7 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
   const observed = new Map();
 
   async function page(path) {
+    if (publicSafety) throw new Error('Public source requests paused');
     let error;
     for (let attempt = 0; attempt < 3; attempt++) {
       const remaining = deadline - now();
@@ -56,13 +60,20 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       try {
         const response = await fetcher(`https://t.me/${path}`, { headers: { 'user-agent': 'Mozilla/5.0', accept: 'text/html' }, signal: AbortSignal.timeout(Math.min(15000, remaining)) });
         if (!response.ok) {
-          if (response.status === 429) throw new Error('Telegram rate limit');
+          if (response.status === 429 || response.status === 403) {
+            const retryAfter = response.headers.get('retry-after');
+            const retryAt = /^\d+$/.test(retryAfter || '') ? now() + Number(retryAfter) * 1000 : Date.parse(retryAfter);
+            publicSafety = { reason: response.status === 429 ? 'rate-limit' : 'source-refused',
+              nextAttemptAt: new Date(Math.max(now() + (response.status === 429 ? 1800000 : 3600000), Number.isFinite(new Date(retryAt + 60000).getTime()) ? retryAt + 60000 : 0)).toISOString() };
+            throw new Error('Public source requests paused');
+          }
           throw new Error(`Telegram HTTP ${response.status}`);
         }
         const html = await response.text();
         await sleep(Math.min(cfg.delay, Math.max(0, deadline - now())));
         return html;
       } catch (err) {
+        if (publicSafety) throw err;
         error = err;
         if (attempt < 2) await sleep(Math.min(1000 * (attempt + 1), Math.max(0, deadline - now())));
       }
@@ -204,13 +215,16 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
     if (!next && prior.schemaVersion !== 2) next = head;
     for (let i = 0; i < cfg.history && next > 0 && !outOfTime(); i++, next--) await visit(next);
   } catch (err) { failure = String(err.message || err); }
+  if (publicSafety) failure = 'Public source requests paused';
   const posts = [...byId.values()].sort((a, b) => b.id - a.id);
   const changed = JSON.stringify(posts) !== JSON.stringify(prior.posts || []);
   const status = failure ? 'failed' : checked && stats.errors === 0 ? 'ok' : 'partial';
   return { schemaVersion: 2, source: 'Telegram public embeds and message pages', channel: cfg.channel,
     channelUrl: `https://t.me/${cfg.channel}`, route: 'embed+permalink', publishesTime: true,
     capturedAt: changed ? stamp() : prior.capturedAt || null,
-    lastCheckedAt: checked ? stamp() : prior.lastCheckedAt || null,
+    lastCheckedAt: checked && !publicSafety ? stamp() : prior.lastCheckedAt || null,
+    publicSafety,
+    apiSafety: prior.apiSafety || null,
     headId: head, lowestId: posts.at(-1)?.id || 0, spanFrom: posts.at(-1)?.id || 0, spanTo: posts[0]?.id || 0,
     historyNextId: next, historyComplete: next === 0 && retry.size === 0 && !failure,
     discoveryNextId: discoveryNext, retryIds: [...retry].sort((a, b) => b - a),

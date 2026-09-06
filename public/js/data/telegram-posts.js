@@ -35,7 +35,7 @@ function apply(res) {
     channel: v.channel, channelUrl: `https://t.me/${v.channel}`, route: str(v.route),
     publishesTime: posts.some((p) => p.publishedAt), capturedAt: date(v.capturedAt),
     lastCheckedAt: date(v.lastCheckedAt), checkedAt: res.checkedAt ? new Date(res.checkedAt).toISOString() : null,
-    lastRun: v.lastRun || null, apiSafety: v.apiSafety || null, latestVerifiedAt: v.route === 'mtproto' ? date(v.latestVerifiedAt) : null, delivery: v.delivery || null, historyNextId: int(v.historyNextId), historyComplete: v.historyComplete === true,
+    lastRun: v.lastRun || null, apiSafety: v.apiSafety || null, publicSafety: v.publicSafety || null, latestVerifiedAt: v.route === 'mtproto' ? date(v.latestVerifiedAt) : null, delivery: v.delivery || null, historyNextId: int(v.historyNextId), historyComplete: v.historyComplete === true,
     origin: res.fromStore ? 'store' : 'live', headId: int(v.headId), spanFrom, spanTo,
     span: spanFrom ? spanTo - spanFrom + 1 : 0,
     readable: posts.length, unreadable: spanFrom ? spanTo - spanFrom + 1 - posts.length : 0,

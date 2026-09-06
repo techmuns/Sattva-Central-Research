@@ -1,12 +1,20 @@
 import { DurableObject } from 'cloudflare:workers';
+import { TelegramSchedule } from './telegram-scheduler.mjs';
 import { CAPTURE_REGISTRY_LIMIT, CAPTURE_REGISTRATION_BATCH, registeredCompany } from '../public/js/data/capture-registration-shared.js';
 
 // Each shard coordinates one bounded set of issuer registrations. No reader identity is stored.
 export class CaptureRegistry extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
+    // The timer's fixed researchreportss-main-v1 object has its own storage, separate from every
+    // company-registry shard. Reuse the provisioned class so preview version uploads need no
+    // namespace migration. Construction and company operations never arm a timer.
+    this.schedule = new TelegramSchedule(ctx.storage, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS companies (isin TEXT PRIMARY KEY, ticker TEXT NOT NULL, name TEXT NOT NULL)');
   }
+  status() { return this.schedule.status(); }
+  request(source) { return this.schedule.request(source); }
+  async alarm() { await this.schedule.request('cron'); }
   list() {
     return this.ctx.storage.sql.exec('SELECT isin, ticker, name FROM companies ORDER BY isin').toArray();
   }

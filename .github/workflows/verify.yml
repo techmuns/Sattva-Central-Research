@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: "22"
       - name: Verify Telegram parsing, retention and resumable collection
-        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && python3 scripts/verify-telegram-api.py
+        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && node scripts/verify-telegram-scheduler.mjs && python3 scripts/verify-telegram-api.py
       - name: Verify investor quarterly evidence and aggregation
         run: node scripts/verify-super-investors.mjs
       - name: Verify refresh ownership and source targeting
@@ -94,7 +94,7 @@ jobs:
       - name: Validate the Worker bundle
         run: npx --yes wrangler@4 deploy --dry-run
       - name: Verify durable company registry in the local Worker runtime
-        run: node scripts/verify-capture-registry-runtime.mjs
+        run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15

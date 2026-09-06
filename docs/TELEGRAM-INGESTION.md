@@ -14,12 +14,29 @@ or browser. One-minute edge caching and ETags bound repeated reads.
 
 The static `public/data/telegram-posts.json` paints first. Public Chatter polls the artifact
 once a minute while mounted and visible, retaining newer data if an older static file or
-failed response arrives. Ten-minute GitHub checks are requested; active readers also
-request an overdue check via the existing POST-only, ten-minute-cooled-down dispatch
-route. Quiet checks use `lastRun.at` rather than content-change time, avoiding needless
-runs when the channel has not posted. This is polling, **not instantaneous streaming**.
-GitHub schedules are best effort. The Cloudflare account currently has no spare cron
-trigger; no always-on timing guarantee is claimed.
+failed response arrives. The production `POST /api/telegram/refresh` starts a persistent
+Cloudflare Durable Object timer for this channel and coordinates reader requests with
+that timer. Its alarms request a collection every ten minutes without an open browser.
+GitHub's own ten-minute schedule remains a fallback. Recent and active runs are checked
+before dispatch; the requested cadence is not a guarantee of runner start/completion time.
+Quiet checks use `lastRun.at` rather than content-change time. This is polling,
+**not instantaneous streaming**, and public-source completeness remains a separate limit.
+
+The timer uses a separate named object in the existing SQLite `CaptureRegistry` namespace,
+available on the existing Workers Free plan; it consumes no cron-trigger slot and requires
+no namespace migration. Company shards never arm timers and share no data with the channel
+object. A durable attempt claim and the next alarm are written before
+external requests, preventing immediate duplicates after a restart or an ambiguous POST.
+Failures back off from ten minutes to an hour, keeping the next alarm scheduled. Neither
+GitHub credentials nor Telegram credentials are persisted in the timer. Only the fixed
+repository, `main` branch and Telegram collection workflow can be dispatched. Preview
+hosts cannot activate collection. The initial ordinary dashboard auto-refresh arms the
+timer; deployment alone does not prove it has started. `GET /api/telegram/schedule` is a
+read-only report of activation, next attempt and last result, and never starts work.
+The existing GitHub token can still expire or be revoked; the status then reports failure.
+An operator can disable the timer with Worker variable `TELEGRAM_SCHEDULER_DISABLED=true`;
+the next request/alarm cancels recurrence. Changing production configuration requires the
+operator's authorization.
 
 Collection no longer waits for an archive PR, CI or a site deployment. A separate daily
 `telegram-archive.yml` backs the artifact up through `codex/telegram-capture`, verifies
@@ -37,6 +54,11 @@ public embeds with permalink Open Graph text. A matching message identity and so
 timestamp are required. Missing IDs are not interpreted as documents or deletions.
 Forward sampling and resumable historical scans help discovery but cannot prove the
 latest channel message has been found. The UI explicitly says it has not been verified.
+HTTP 429 and 403 stop all public requests immediately. A retained `publicSafety` deadline
+respects `Retry-After` plus one minute, with minimum waits of thirty minutes for rate limits
+and one hour for refusal. Subsequent runs wait before making any public request. A successful
+check after that deadline clears the pause; waiting and failed checks do not refresh the
+last successful source-check time. Captured history is retained throughout.
 
 With `TELEGRAM_CREDENTIALS`, `collect-telegram.py` uses Telethon 1.44.0 and the official
 MTProto API. It asks for the newest 100 messages directly, re-reads recent edits, catches
@@ -123,6 +145,10 @@ public-page collection continues, with its limitations visible.
   credential stripping, persisted account waits, actual Worker route, conditional caching
   and failure handling.
 - `node scripts/verify-telegram-publishing.mjs`: archive-only PR scope and review/check gates.
+- `node scripts/verify-telegram-scheduler.mjs`: durable claims, recent/active run exclusion,
+  outage recovery, preview boundaries and read-only status.
+- `node scripts/verify-telegram-scheduler-runtime.mjs`: actual local workerd RPC, concurrent
+  claims, storage/alarm persistence across restart and a recurring alarm without readers.
 - `PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-telegram-ui.mjs`: static fallback,
   artifact arrival without deployment, dates, search/export, errors and mobile layout.
 
