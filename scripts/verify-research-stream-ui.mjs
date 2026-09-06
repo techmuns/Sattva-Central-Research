@@ -14,6 +14,7 @@ const root = fileURLToPath(new URL('../public', import.meta.url));
 const questions = [], timings = [], errors = [];
 let holdAnswer = false;
 let failAnswer = false;
+let emptyStreamsRemaining = 0;
 const activeResponses = new Set();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -28,6 +29,7 @@ const server = createServer(async (req, res) => {
     const send = event => res.write(JSON.stringify(event) + '\n');
     const failThisAnswer = failAnswer;
     send({ type: 'start' });
+    if (emptyStreamsRemaining > 0) { emptyStreamsRemaining--; res.end(); return; }
     const first = setTimeout(() => send({ type: 'text', text: 'The latest available company update is dated 6 September. ' }), 100);
     const second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: 'Read the source filing alongside the news. [Dashboard: News]' }), 900);
     const finish = setTimeout(() => { if (!holdAnswer) { send({ type: 'done' }); res.end(); } }, 1700);
@@ -180,6 +182,24 @@ try {
   assert(questions.at(-1).evidence.sources.some(s => s.rows.some(r => r.ticker === 'JAYNECOIND')), 'other evidence survives a stalled feed');
   for (const route of parked) await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
   await slow.close();
+
+  // Exact customer screenshot: HTTP 200 closes without text or done. Recover
+  // once before any answer; a second closure must stop, not retry forever.
+  const screenshotQuestion = 'any new updates on jayaswal neco?';
+  emptyStreamsRemaining = 1;
+  const beforeRetry = questions.length;
+  const completedBefore = await page.locator('.research-assistant-answer:not(.is-streaming)').count();
+  await submit(screenshotQuestion);
+  await page.waitForFunction(n => document.querySelectorAll('.research-assistant-answer:not(.is-streaming)').length > n, completedBefore);
+  assert.equal(questions.length - beforeRetry, 2, 'an empty transport reconnects once');
+  assert.deepEqual(questions.at(-1).evidence, questions.at(-2).evidence, 'reconnection retains the verified question context');
+  assert.equal(await input.inputValue(), '');
+  emptyStreamsRemaining = 2;
+  const beforeFailure = questions.length;
+  await submit(screenshotQuestion);
+  await page.getByText('The answer ended before a complete response arrived.', { exact: true }).waitFor();
+  assert.equal(questions.length - beforeFailure, 2, 'persistent empty responses have a bounded retry');
+  assert.equal(await input.inputValue(), screenshotQuestion, 'persistent failure keeps the question');
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ passed: true, timings, assertions: ['progressive HTTP stream', 'exact user regression', 'no duplicate model', 'fresh complete holdings', 'follow-up retrieval', 'company switch', 'stable transcript and scroll', 'private storage', 'failed archive', 'workbook invalidation', 'Stop', 'partial recovery', 'mobile'] }, null, 2));
 } finally {

@@ -266,8 +266,8 @@ ok('the Muns request preserves evidence and selects low-latency local streaming 
   assert.equal(request.llm_type, 'local_llm');
   assert.equal(request.stream, true);
   assert.equal(request.temperature, 0.2);
-  assert.equal(request.max_tokens, 1024);
-  assert.match(request.query, /Complete the answer within 450 words/);
+  assert.equal(request.max_tokens, 2048);
+  assert.match(request.query, /Complete the answer within 250 words/);
   assert.match(request.query, /DASHBOARD_EVIDENCE object is the only source of dashboard facts/);
   assert.match(request.query, /USER: Earlier question/);
   assert.match(request.query, /QUESTION:\nWhat changed\?/);
@@ -304,7 +304,7 @@ try {
     assert.equal(requested.llm_type, 'local_llm');
     assert.equal(requested.stream, true);
     assert.match(requested.query, /QUESTION:\nWhat changed\?/);
-    return new Response('{"text":"Earnings"}\n{"text":" improved. [Dashboard: Earnings Hub]"}\n', {
+    return new Response([JSON.stringify({ text: '<research-answer>\nEarnings' }), JSON.stringify({ text: ' improved. [Dashboard: Earnings Hub]\n</research-answer>' })].join('\n'), {
       status: 200,
       headers: { 'content-type': 'application/x-ndjson' },
     });
@@ -321,7 +321,7 @@ try {
     assert.equal(response.status, 200);
     assert.deepEqual(events.filter((event) => event.type === 'text').map((event) => event.text), [
       'Earnings',
-      ' improved. [Dashboard: Earnings Hub]',
+      ' improved. [Dashboard: Earnings Hub]\n',
     ]);
     assert.equal(events.at(-1).type, 'done');
   });
@@ -332,7 +332,7 @@ try {
 try {
   let releaseProvider;
   globalThis.fetch = async () => new Promise((resolve) => {
-    releaseProvider = () => resolve(new Response('{"text":"Ready"}\n', {
+    releaseProvider = () => resolve(new Response(JSON.stringify({ text: '<research-answer>\nReady\n</research-answer>' }), {
       status: 200,
       headers: { 'content-type': 'application/x-ndjson' },
     }));

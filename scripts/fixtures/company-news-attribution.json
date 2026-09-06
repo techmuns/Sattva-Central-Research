@@ -2,7 +2,7 @@
   "description": "Stable synthetic recall/precision cases, except the explicitly marked user-reported captured mismatch. Synthetic headlines are test inputs, not real reporting.",
   "cases": [
     {"id":"accent", "identity":{"ticker":"NESTLEIND","name":"Nestle India"}, "row":{"title":"Nestlé India reports quarterly earnings"}, "status":"confirmed"},
-    {"id":"ticker-brand", "identity":{"ticker":"DMART","name":"Avenue Supermarts"}, "row":{"title":"DMart reports quarterly earnings"}, "status":"confirmed"},
+    {"id":"ticker-brand", "identity":{"ticker":"DMART","name":"Avenue Supermarts","brands":["DMart"]}, "row":{"title":"DMart reports quarterly earnings"}, "status":"confirmed"},
     {"id":"brand", "identity":{"ticker":"BETALTD","name":"Private Beta Limited","brands":["BetaPay"]}, "row":{"title":"BetaPay launches a new product"}, "status":"confirmed"},
     {"id":"former-name", "identity":{"ticker":"NEWCO","name":"New Identity Limited","formerNames":["Former Identity"]}, "row":{"title":"Former Identity receives regulatory approval"}, "status":"confirmed"},
     {"id":"abbreviation", "identity":{"ticker":"LTL","name":"Long Test Laboratories","aliases":["LTL Labs"]}, "row":{"title":"LTL Labs announces quarterly earnings"}, "status":"confirmed"},

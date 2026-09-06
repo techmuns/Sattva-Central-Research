@@ -1,5 +1,9 @@
 # Ask Research performance and evaluation
 
+The portfolio-focused release gates and executable quality scenarios are in
+[Customer readiness](ASK-RESEARCH-CUSTOMER-READINESS.md). Retrieval tests alone
+do not certify customer readiness.
+
 The reported failure was a Jayaswal Neco news question waiting on Family's
 question-specific model read until the 125-second bridge timeout, before any
 research request started. The previous path then awaited up to 14 seconds for
@@ -97,5 +101,8 @@ two-turn follow-ups, and issuer switches against the packet actually submitted:
 | Responsiveness | Records click-to-first-text and completion separately, cold and warm |
 
 The automated retrieval and transport tests do **not** establish live-model answer
-quality. No live provider benchmark, private customer-book evaluation, or manual
-production run was performed for these measurements.
+quality. Those original measurements used fixtures. Subsequent real-provider
+tests are recorded in [customer-readiness evaluation](ASK-RESEARCH-CUSTOMER-READINESS.md);
+they exposed factual and latency failures and do not certify customer readiness.
+The authenticated customer-book path remains unverified; no manual production
+research run was performed.

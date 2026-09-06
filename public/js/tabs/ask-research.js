@@ -876,18 +876,33 @@ async function submitCurrent() {
     setPhase(session, 'Writing from dashboard evidence…');
 
     generation.evidenceMs = Math.round(performance.now() - generation.startedAt);
-    const response = await fetch('api/research', {
+    const requestOptions = {
       method: 'POST',
       headers: { accept: 'application/x-ndjson', 'content-type': 'application/json', ...authHeaders('api/research') },
       body: JSON.stringify({ question, requirePortfolio: true, scope: evidence.scope, webResearch: false, history, evidence }),
       signal: generation.controller.signal,
-    });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `Research request failed (HTTP ${response.status}).`);
+    };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch('api/research', requestOptions);
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.message || `Research request failed (HTTP ${response.status}).`);
+        }
+        if (!response.body) throw interruptedAnswer();
+        await consumeStream(response.body, session, generation);
+        break;
+      } catch (error) {
+        // Reconnect once only before any answer has arrived. A partial answer,
+        // explicit provider/auth error, cancellation or changed book never
+        // triggers a hidden duplicate inference or mixes two responses.
+        if (attempt || session.streamText.trim() || generation.controller.signal.aborted ||
+            !(error.retryable || error instanceof TypeError)) throw error;
+        session.streamText = '';
+        generation.firstTextMs = undefined;
+        setPhase(session, 'The connection closed before an answer arrived. Reconnecting once…');
+      }
     }
-    if (!response.body) throw new Error('The research response had no stream.');
-    await consumeStream(response.body, session, generation);
   } catch (error) {
     const index = session.messages.lastIndexOf(userMessage);
     const keepPartial = session.streamText.trim() && !generation.controller.signal.aborted && !generation.portfolioChanged;
@@ -926,6 +941,10 @@ async function submitCurrent() {
   }
 }
 
+function interruptedAnswer() {
+  return Object.assign(new Error('The answer ended before a complete response arrived.'), { retryable: true });
+}
+
 async function consumeStream(stream, session, generation) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -938,7 +957,7 @@ async function consumeStream(stream, session, generation) {
     try { event = JSON.parse(line); }
     catch { throw new Error('The answer stream was malformed.'); }
     if (event.type === 'text' && typeof event.text === 'string') {
-      if (generation.firstTextMs === undefined && event.text) generation.firstTextMs = Math.round(performance.now() - generation.startedAt);
+      if (generation.firstTextMs === undefined && event.text.trim()) generation.firstTextMs = Math.round(performance.now() - generation.startedAt);
       if (session.streamText.length + event.text.length > MAX_MESSAGE_CHARS) throw new Error('The answer exceeded its display limit. Please ask a narrower question.');
       session.streamText += event.text;
       queueStreamPaint(session, generation);
@@ -968,7 +987,7 @@ async function consumeStream(stream, session, generation) {
     reader.releaseLock();
   }
   if (streamError) throw new Error(streamError);
-  if (!done || !session.streamText.trim()) throw new Error('The answer ended before a complete response arrived.');
+  if (!done || !session.streamText.trim()) throw interruptedAnswer();
 
   session.messages.push({
     role: 'assistant',

@@ -38,7 +38,7 @@ jobs:
       - name: Verify source connections and scheduled pipeline health
         run: node scripts/verify-source-connections.mjs && node scripts/verify-workflow-health.mjs
       - name: Verify research and portfolio evidence
-        run: node scripts/verify-research.mjs && node scripts/verify-research-retrieval.mjs
+        run: node scripts/verify-research.mjs && node scripts/verify-research-retrieval.mjs && node scripts/verify-research-evaluation.mjs
       - name: Verify private portfolio bridge
         run: node scripts/verify-portfolio-bridge.mjs
       - name: Verify additive insider trades
@@ -127,6 +127,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-stream-ui.mjs
+      - name: Verify company evidence across the complete saved portfolio
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-research-portfolio.mjs
       - name: Verify stable alert refresh, portfolio failures and navigation
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

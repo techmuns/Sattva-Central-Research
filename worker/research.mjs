@@ -6,6 +6,7 @@
 
 import { providerEvidence, researchEvidenceChars, PORTFOLIO_POSITIONS_MAX_CHARS } from '../public/js/research/evidence-shared.js';
 import { questionNeedsPortfolio, validPositionSizes } from '../public/js/research/portfolio-bridge.js';
+import { finalAnswerFilter } from './research-answer.mjs';
 
 const MUNS_LLM_BASE = 'https://fastapi.muns.io';
 const MUNS_LLM_PATH = '/query-router';
@@ -14,7 +15,7 @@ const DEFAULT_LLM_TYPE = 'local_llm';
 // packet. Choose the existing hosted route before overflowing its context.
 const LOCAL_PROMPT_CHAR_LIMIT = 20_000;
 const DEFAULT_TEMPERATURE = 0.2;
-const DEFAULT_MAX_TOKENS = 1024;
+const DEFAULT_MAX_TOKENS = 2048;
 const MAX_BODY_BYTES = 180_000;
 // Measured on the PROVIDER-FACING shape (evidence-shared.js), exactly as the browser measures its
 // budget — 13,000 there, with slack here so a packet the browser fitted is never refused. The raw
@@ -47,7 +48,7 @@ The separate portfolio reading, when ready or limited, comes from the authentica
 
 Quote feeds are batched and can retain older symbols. When per-symbol freshness is unverified, say so; never describe every price as fresh or live merely because the batch was checked recently.
 
-Each source's rows are a bounded SAMPLE of its in-scope data: includedRows of its rowCount rows are present and the rest were left out for size, so a row that is not shown is not an absent fact, and a source with rowCount above zero is not empty. companyRows counts the rows about the companies named in selection.companies. If selection.companies names a company, answer about that company from its rows across every source; if it is marked inScope false, say it is outside the active scope rather than absent from the dashboard.
+Each source's rows are a bounded SAMPLE of its in-scope data: includedRows of its rowCount rows are present and the rest were left out for size, so a row that is not shown is not an absent fact, and a source with rowCount above zero is not empty. companyRows counts the retrieved matches for selection.companies; zero means no matching records retrieved, NEVER that the company has no events, investors, risks or future milestones. For a named-company question, unrelated company rows are normally excluded. Do not use source-wide ranks, counts or summaries as facts about the named holding. If a company is marked inScope false, say it is outside the active scope rather than absent from the dashboard.
 
 All Alerts is the normalized top-of-funnel record across every dashboard feed category. Its raw schedules, snapshots, documents and posts are context, not automatically important or directional. AI Alerts is the deterministic attention reading over that pool: a card needs a separately eligible material trigger; relatedContext and upcoming rows contribute zero priority points. Use those rows to explain or corroborate a trigger, never to manufacture one. Treat temporal proximity and topic overlap as correlation, not causation. A scheduled event is future, a filing/document is source evidence, and a holdings snapshot is not a trade.
 
@@ -55,11 +56,13 @@ Screener Insights contains slow-moving source-backed operating series. Keep its 
 
 For portfolio attention questions, lead with the most material current development and explain why it matters in the context of the user's holding. Use holdingWeightPct only when supplied by the authenticated complete position set. A larger weight raises attention and answer order, but never changes an event's factual importance, direction or certainty. Explicitly distinguish what happened, the evidence that supports it, the observed market reaction, the user's exposure, and the next known milestone. If evidence conflicts, state the conflict instead of averaging it away.
 
-Lead immediately with the most relevant finding, its publication date, and why it matters to this holding. For latest/today questions, compare event dates with generatedAt; a recent retrieval of an old event is not new news. If only old records are available, say that plainly. Give the strongest supported developments first, then risks or conflicting evidence and the next dated milestone. Avoid generic company descriptions and repeated setup. For every material dashboard claim, cite the owning page in the form [Dashboard: Page name]. If a page could not be read, say so when it materially limits the answer. Do not claim the evidence is exhaustive beyond the catalog and coverage notes it carries.
+Lead immediately with the most relevant finding, its publication date, and why it matters to this holding. For latest/today questions, compare event dates with generatedAt; a recent retrieval of an old event is not new news. Prefer a direct company statement over indirect related-entity context or reference-page stock quotes. If only old records are available, say that plainly. Give the strongest supported developments first, then risks or conflicting evidence and the next dated milestone. Avoid generic company descriptions and repeated setup. For every material dashboard claim, copy the exact source.tab in [Dashboard: Page name]; do not move a Con-call claim to Earnings Hub. Different entities, periods or metrics need not contradict each other. Never invent a rename, subsidiary relationship or explanation for two different names; report identity uncertainty when the supplied identity evidence does not resolve it. If a page could not be read, say so when it materially limits the answer. Do not claim the evidence is exhaustive beyond the catalog and coverage notes it carries.
 
 Do not use general or remembered world knowledge as a substitute for missing dashboard data. If the supplied evidence cannot answer the question, say what is missing.
 
-Prefer a concise synthesis with short headings or bullets only when they improve scanability. Complete the answer within 450 words. Do not give personalised investment advice or tell the reader to buy, sell, or deploy capital.`;
+For a specific metric, filing, guidance or ownership question, answer that question directly with its necessary caveats; do not append every other dashboard observation. For third-party investor questions, use the Super Investors record; the user's own holdings cannot establish whether that investor sold. Non-disclosure does not establish why a position disappeared, even when a disclosure threshold is described.
+
+Prefer a concise synthesis with short headings or bullets only when they improve scanability. Complete the answer within 250 words. Do not give personalised investment advice or tell the reader to buy, sell, or deploy capital.`;
 
 const encoder = new TextEncoder();
 
@@ -211,13 +214,14 @@ export function buildMunsRequest(input, env = {}) {
     `ACTIVE_SCOPE: ${input.scope}`,
     `QUESTION:\n${input.question}`,
     `DASHBOARD_EVIDENCE:\n${JSON.stringify(providerEvidence(input.evidence))}`,
+    'OUTPUT CONTRACT: Write only the final answer for the customer, within 250 words. No planning or reasoning narration. Put <research-answer> on its own line before the answer and </research-answer> after it. Start with the answer to the question, not an introduction. Use the exact [Dashboard: Page name] citation after every factual paragraph. Weight is a percentage of the listed portfolio, never ownership of the company. Never invent causal connections or explanations for discrepancies. Conflicting amounts remain unresolved; retain both with their sources. Uncertain or related news attribution and queryTicker/queryCompany do not prove an event happened to the holding. Do not tell the user a forecast, market reaction, guidance or correlation that the evidence does not establish.',
   ].join('\n\n');
   return {
     query,
     llm_type: env.MUNS_LLM_TYPE === 'hosted_llm' || query.length > LOCAL_PROMPT_CHAR_LIMIT ? 'hosted_llm' : DEFAULT_LLM_TYPE,
     stream: true,
     temperature: DEFAULT_TEMPERATURE,
-    max_tokens: DEFAULT_MAX_TOKENS,
+    max_tokens: env.MUNS_LLM_TYPE === 'hosted_llm' || query.length > LOCAL_PROMPT_CHAR_LIMIT ? 3072 : DEFAULT_MAX_TOKENS,
   };
 }
 
@@ -273,15 +277,18 @@ async function consumeMunsStream(stream, controller) {
   let wroteText = false;
   let textChars = 0;
   let providerStreamFailure = null;
+  const final = finalAnswerFilter(text => {
+    textChars += text.length;
+    if (textChars > 8_000) throw new Error('The answer exceeded its length limit. Please ask a narrower question.');
+    wroteText ||= !!text.trim();
+    ndjson(controller, { type: 'text', text });
+  });
 
   const consumeRaw = (raw) => {
     try {
       const event = JSON.parse(raw);
       if (typeof event?.text === 'string' && event.text) {
-        textChars += event.text.length;
-        if (textChars > 8_000) { providerStreamFailure = 'The answer exceeded its length limit. Please ask a narrower question.'; return; }
-        wroteText = true;
-        ndjson(controller, { type: 'text', text: event.text });
+        final.push(event.text);
       } else if (event?.error) {
         providerStreamFailure = String(event.error?.message || event.error).slice(0, 260);
       }
@@ -313,6 +320,9 @@ async function consumeMunsStream(stream, controller) {
     reader.releaseLock();
   }
 
+  if (!providerStreamFailure && !final.finish().complete) providerStreamFailure = wroteText
+    ? 'The provider stopped before finishing the answer. Please try again.'
+    : 'The provider returned no final answer. Please try again.';
   return { providerStreamFailure, wroteText };
 }
 

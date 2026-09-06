@@ -39,6 +39,10 @@ assert.equal(attributeNewsRow({ ...mismatch.row, summary: 'Updated text could no
 assert.equal(attributeNewsRow({ ...mismatch.row, title: 'Jayaswal Neco Industries and Lululemon announce a joint venture' }, mismatch.identity).attribution.status, 'confirmed', 'never a publisher or Lululemon keyword blacklist');
 assert.equal(attributeNewsRow(mismatch.row, { ticker: 'LULU', name: 'Lululemon' }).attribution.status, 'confirmed', 'reviewed exclusions are company-specific');
 assert.equal(attributionFor({ title: 'Unknown article' }).status, 'uncertain');
+const ashika = { ticker: 'ASHIKA', name: 'Ashika Credit Capital', entityId: 'isin:INE094B01013' };
+assert.equal(attributeNewsRow({ title: 'Ashika Ranganath’s emerald green gown grabs attention' }, ashika).attribution.status, 'uncertain', 'a person sharing a ticker word is not confirmed company news');
+assert.equal(attributeNewsRow({ title: 'ASHIKA reports quarterly earnings' }, ashika).attribution.status, 'confirmed');
+assert.equal(attributeNewsRow({ title: 'Ashika Credit Capital reports quarterly earnings' }, ashika).attribution.status, 'confirmed');
 
 const base = { id: 'earnings', day, ticker: 'JAYNECOIND', company: 'Jayaswal Neco Industries', feed: 'earnings', feedLabel: 'Earnings', importance: 'high', direction: 'neutral', headline: 'Quarterly results' };
 const feeds = ['earnings', 'news'].map(id => ({ id, status: 'ok', reachesToday: true }));

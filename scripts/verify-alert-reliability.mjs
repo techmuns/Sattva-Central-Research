@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Deterministic customer-failure replays. No upstream calls or production mutations.
 import assert from 'node:assert/strict';
+import { ATTRIBUTION_VERSION } from '../public/js/data/company-news-attribution.js';
 import { withTwitterCollectionStatus } from './record-twitter-status.mjs';
 const storage = new Map();
 globalThis.localStorage = { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) };
@@ -14,7 +15,7 @@ const story = {
   id: 'news:one', ticker: 'JAYNECOIND', company: holdings[0].name, day: '2026-09-04',
   feed: 'news', headline: 'Jayaswal Neco announces capacity expansion', importance: 'high',
   direction: 'neutral', namesCompany: true, aiEligible: true, url: 'https://publisher.example/story',
-  attribution: { version: 1, status: 'confirmed', companyTicker: 'JAYNECOIND' },
+  attribution: { version: ATTRIBUTION_VERSION, status: 'confirmed', companyTicker: 'JAYNECOIND' },
 };
 const rank = (events, day = '2026-09-04', status = 'ok') => rankReport({ day, scope: 'portfolio', events,
   feeds: ['news', 'announcements', 'nse-filings', 'earnings'].map(id => ({ id, status, reachesToday: status === 'ok' })),
