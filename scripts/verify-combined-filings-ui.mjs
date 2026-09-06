@@ -135,13 +135,14 @@ try {
   check('mobile layout contains the lookup controls',await page.locator('[data-doc-load]').isVisible());
   await page.setViewportSize({width:1440,height:1000});
   await page.evaluate(()=>window.setTestSession('fixture.reader-a.session'));
-  for (const [name,form] of [['nse-filings','all'],['concall','concalls']]) {
-    await page.evaluate(name=>window.showTab(name),name);
-    await page.locator('[data-doc-mode="documents"]').click();
-    await page.locator('[data-doc-company]').waitFor();
-    await load();
-    check('the actual '+name+' tab reaches its assigned document form',queries.at(-1).form[0]===form);
-  }
+  await page.evaluate(()=>window.showTab('nse-filings'));
+  await page.locator('[data-doc-mode="documents"]').click();
+  await page.locator('[data-doc-company]').waitFor();
+  await load();
+  check('the actual nse-filings tab reaches its assigned document form',queries.at(-1).form[0]==='all');
+  await page.evaluate(()=>window.showTab('concall'));
+  await page.locator('[data-score-table]').waitFor();
+  check('Con-call opens directly without the redundant Filed con-call documents mode',await page.locator('[data-document-tabs]').count()===0&&await page.locator('[data-score-table]').isVisible());
   await page.evaluate(()=>window.showTab('earnings-hub'));
   await page.locator('[data-view-toggle]').waitFor();
   check('Earnings Hub has no redundant Filed earnings reports mode',await page.locator('[data-doc-mode]').count()===0);
