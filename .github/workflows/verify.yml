@@ -38,7 +38,9 @@ jobs:
       - name: Verify source connections and scheduled pipeline health
         run: node scripts/verify-source-connections.mjs && node scripts/verify-workflow-health.mjs
       - name: Verify research and portfolio evidence
-        run: node scripts/verify-research.mjs && node scripts/verify-research-retrieval.mjs && node scripts/verify-research-catalysts.mjs && node scripts/verify-research-evaluation.mjs && node scripts/verify-research-preview.mjs
+        run: node scripts/verify-research.mjs && node scripts/verify-research-claude.mjs && node scripts/verify-research-retrieval.mjs && node scripts/verify-research-catalysts.mjs && node scripts/verify-research-evaluation.mjs && node scripts/verify-research-preview.mjs
+      - name: Verify Claude streaming in the native local Worker runtime
+        run: node scripts/verify-research-claude-runtime.mjs
       - name: Verify private portfolio bridge
         run: node scripts/verify-portfolio-bridge.mjs
       - name: Verify additive insider trades

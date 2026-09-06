@@ -33,8 +33,9 @@
     "GH_REPO": "techmuns/Sattva-Central-Research",
     "GH_REF": "main",
 
-    // Ask Research streams the low-latency model through Muns' query router. The session credential
-    // is a Worker secret: prefer `MUNS_LLM_TOKEN`, with existing Muns tokens as fallbacks.
+    // Ask Research prefers direct Claude Sonnet 5 when the CLAUDE_API_KEY Worker
+    // secret is present. The key is never a build variable or browser credential.
+    // Muns remains the route only for environments without that dedicated key.
     "MUNS_LLM_BASE": "https://fastapi.muns.io",
     // Compact prompts use the local route; research.mjs automatically routes larger
     // complete-portfolio prompts to hosted_llm before overflowing the small context.

@@ -24,8 +24,8 @@ const report = { generatedAt: new Date().toISOString(), mode: 'real-provider-loc
 if (snapshot) report.mode = 'real-provider-saved-dashboard-synthetic-ownership';
 const save = () => writeFileSync(resolve(directory, 'model-results.json'), JSON.stringify(report, null, 2), { mode: 0o600 });
 if (!endpoint && !researchConfigured(process.env)) {
-  report.status = 'blocked'; report.blockers = ['No local Muns provider credential. No model calls made.']; save();
-  console.log('BLOCKED: real-model evaluation needs a local Muns credential. No readiness pass was recorded.'); process.exitCode = 2;
+  report.status = 'blocked'; report.blockers = ['No local research provider credential. No model calls made.']; save();
+  console.log('BLOCKED: real-model evaluation needs a local CLAUDE_API_KEY or Muns credential. No readiness pass was recorded.'); process.exitCode = 2;
 } else {
   for (const test of scenarios) {
     const body = test.body ? structuredClone(test.body) : scenarioBody(test);

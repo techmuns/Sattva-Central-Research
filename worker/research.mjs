@@ -1,4 +1,4 @@
-// worker/research.mjs — Ask Research's server-only Muns LLM bridge.
+// worker/research.mjs — Ask Research's server-only provider boundary.
 //
 // The browser assembles a bounded evidence packet through the dashboard's canonical data modules.
 // This route keeps the provider credential off the device, applies the final evidence-only
@@ -8,6 +8,7 @@ import { providerEvidence, researchEvidenceChars, PORTFOLIO_POSITIONS_MAX_CHARS 
 import { questionNeedsPortfolio, validPositionSizes } from '../public/js/research/portfolio-bridge.js';
 import { finalAnswerFilter } from './research-answer.mjs';
 import { researchHistory } from '../public/js/research/history.js';
+import { streamClaudeChat } from './research-claude.mjs';
 
 const MUNS_LLM_BASE = 'https://fastapi.muns.io';
 const MUNS_LLM_PATH = '/query-router';
@@ -73,16 +74,22 @@ const responseJson = (body, status = 200) =>
 const ndjson = (controller, event) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
 
 export function researchConfigured(env) {
+  if (researchProvider(env) === 'claude') return String(env.CLAUDE_API_KEY).trim().length > 10;
   return researchToken(env).length > 10;
+}
+
+export function researchProvider(env) {
+  return String(env?.CLAUDE_API_KEY || '').trim() ? 'claude' : 'muns';
 }
 
 function researchToken(env) {
   const token = env?.MUNS_LLM_TOKEN || env?.MUNS_NEWS_TOKEN || env?.MUNS_TOKEN;
-  if (token) return String(token).trim();
+  if (token) return /^sk-ant-/i.test(String(token).trim()) ? '' : String(token).trim();
   // Never forward a genuine Anthropic credential to Muns. This exact opt-in exists only because
   // the current deployment was confirmed to hold a Muns token under the former binding name.
   if (env?.MUNS_LLM_LEGACY_ANTHROPIC_BINDING === 'confirmed-muns-token') {
-    return String(env?.ANTHROPIC_API_KEY || '').trim();
+    const legacy = String(env?.ANTHROPIC_API_KEY || '').trim();
+    return /^sk-ant-/i.test(legacy) ? '' : legacy;
   }
   return '';
 }
@@ -320,6 +327,13 @@ function researchStream(request, env, input) {
       ndjson(controller, { type: 'phase', phase: 'Writing from dashboard evidence' });
 
       try {
+        if (researchProvider(env) === 'claude') {
+          const result = await streamClaudeChat(request, env, input, SYSTEM_INSTRUCTIONS, upstreamCancellation.signal,
+            text => ndjson(controller, { type: 'text', text }));
+          if (result.providerStreamFailure) ndjson(controller, { type: 'error', reason: 'provider', message: result.providerStreamFailure });
+          else ndjson(controller, { type: 'done' });
+          return;
+        }
         const upstream = await streamMunsChat(request, env, buildMunsRequest(input, env), upstreamCancellation.signal);
         if (!upstream.ok) {
           const detail = await readBoundedText(upstream.body, MAX_UPSTREAM_ERROR_BYTES);
@@ -343,7 +357,7 @@ function researchStream(request, env, input) {
         ndjson(controller, {
           type: 'error',
           reason: timedOut ? 'timeout' : request.signal.aborted ? 'cancelled' : 'network',
-          message: timedOut ? 'Research took too long. Please try a narrower question.' : request.signal.aborted ? 'Research was cancelled.' : 'The research provider could not be reached.',
+          message: timedOut ? 'The answer service took too long. Your question and source readings are saved; you can retry.' : request.signal.aborted ? 'Research was cancelled.' : 'The answer service could not be reached. Your source readings are still available.',
         });
       } finally {
         if (!cancelled) rawController.close();
@@ -367,6 +381,7 @@ export async function handleResearch(request, env) {
   if (request.method === 'GET') {
     return responseJson({
       configured: researchConfigured(env),
+      provider: researchConfigured(env) ? researchProvider(env) : null,
       webResearchAvailable: false,
       history: 'device',
     });
@@ -374,7 +389,7 @@ export async function handleResearch(request, env) {
   if (request.method !== 'POST') return responseJson({ error: 'method_not_allowed' }, 405);
   if (!sameOrigin(request)) return responseJson({ error: 'forbidden_origin', message: 'Research requests must come from this dashboard.' }, 403);
   if (!researchConfigured(env)) {
-    return responseJson({ error: 'not_configured', message: 'Ask Research is not configured on this server. Add a Muns LLM session token.' }, 503);
+    return responseJson({ error: 'not_configured', message: 'Ask Research is not configured on this server. Check the server-side research credential.' }, 503);
   }
   if (!(await applyRateLimit(request, env))) {
     return responseJson({ error: 'rate_limited', message: 'Too many research requests. Please wait a minute and try again.' }, 429);
