@@ -15,12 +15,23 @@ const safeUrl = value => {
 };
 
 /** Exchange codes come from the current verified book / exact ISIN directory, never names. */
-export function tradingViewTargets(entities, directory = []) {
+export function tradingViewTargets(entities, directory = [], { nseEntries = null, previousEntries = {} } = {}) {
   const identities = createAnnouncementIdentity(directory);
+  const nseIdentities = nseEntries?.length ? createAnnouncementIdentity(nseEntries) : null;
+  // Reviewed provider-specific spellings, NOT a general substitution rule for exchanges.
+  const bseAliases = { 'INE168A01041': 'J_KBANK', 'INE101A01026': 'M_M', 'INE774D01024': 'M_MFIN' };
   return entities.map(entity => {
-    const hit = identities.find({ isin: entity.entityId?.startsWith('isin:') ? entity.entityId.slice(5) : entity.portfolioIsins?.[0], ticker: entity.ticker });
-    const nse = filingTicker(hit ? hit.ticker : entity.ticker);
-    const bse = upper(hit?.bseSymbol);
+    const identity = { isin: entity.entityId?.startsWith('isin:') ? entity.entityId.slice(5) : entity.portfolioIsins?.[0], ticker: entity.ticker };
+    const hit = identities.find(identity);
+    // The merged directory's `ticker` also contains BSE-only names. It is not evidence of
+    // an NSE listing. Prefer the actual NSE membership directory when one is available.
+    const historical = hit?.historical && previousEntries[`${entity.entityId}|NSE:${filingTicker(hit.ticker)}`]?.lastSuccessAt
+      ? hit.ticker : null;
+    // A newly added verified book ticker need not wait for the next directory refresh. That
+    // fallback is allowed only when no merged identity exists, never for known BSE-only rows.
+    const nse = filingTicker(nseIdentities ? nseIdentities.find(identity)?.ticker || historical || (!hit ? entity.ticker : null)
+      : hit ? hit.ticker : entity.ticker);
+    const bse = upper(bseAliases[hit?.isin] || hit?.bseSymbol);
     const symbols = [...new Set([
       token(nse) && !/^\d+$/.test(nse) ? `NSE:${nse}` : null,
       token(bse) ? `BSE:${bse}` : null,
@@ -86,15 +97,16 @@ export function parseTradingViewNews(body, symbol, now = Date.now(), issuerSymbo
     oldestReturnedAt: times.length ? new Date(Math.min(...times) * 1000).toISOString() : null };
 }
 
-export async function readTradingViewNews(symbol, { fetcher = fetch, now = Date.now(), issuerSymbols = [symbol] } = {}) {
+async function readOnce(symbol, { fetcher, now, issuerSymbols, timeoutMs }) {
   const response = await fetcher(tradingViewNewsUrl(symbol), { redirect: 'error',
-    signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json' } });
+    signal: AbortSignal.timeout(timeoutMs), headers: { Accept: 'application/json' } });
   if (!response.ok) {
     const error = Error(`http-${response.status}`);
     error.status = response.status;
     const retry = response.headers.get('retry-after');
     const seconds = /^\d+$/.test(retry || '') ? Number(retry) : (Date.parse(retry || '') - now) / 1000;
     error.retryAfterMs = Number.isFinite(seconds) && seconds > 0 ? Math.min(86400000, seconds * 1000) : null;
+    await response.body?.cancel().catch(() => {}); // Never obscure a refusal with a body-close error.
     throw error;
   }
   if (!/application\/json/i.test(response.headers.get('content-type') || '')) throw Error('non-json-news-response');
@@ -107,4 +119,27 @@ export async function readTradingViewNews(symbol, { fetcher = fetch, now = Date.
     parts.push(Buffer.from(part));
   }
   return parseTradingViewNews(JSON.parse(Buffer.concat(parts).toString('utf8')), symbol, now, issuerSymbols);
+}
+
+/** Retry only transient reads, inside ONE 15-second deadline. Refusals, unsupported symbols,
+ * changed schemas and malformed metadata are not reasons to hammer the public page. */
+export async function readTradingViewNews(symbol, { fetcher = fetch, now = Date.now(), issuerSymbols = [symbol],
+  clock = Date.now, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)), random = Math.random,
+  budgetMs = 15000 } = {}) {
+  const started = clock();
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (clock() - started >= budgetMs) throw lastError || Error('news-read-budget-exhausted');
+    try {
+      return await readOnce(symbol, { fetcher, now: now + clock() - started, issuerSymbols,
+        timeoutMs: Math.max(1, Math.ceil(Math.min(7500, budgetMs - (clock() - started)))) });
+    } catch (error) {
+      lastError = error;
+      const transient = [408, 500, 502, 503, 504].includes(error.status) ||
+        ['TypeError', 'AbortError', 'TimeoutError'].includes(error.name);
+      const delay = error.retryAfterMs || 750 + Math.floor(random() * 500);
+      if (!transient || attempt === 1 || delay + 1000 >= budgetMs - (clock() - started)) throw error;
+      await sleep(delay);
+    }
+  }
 }

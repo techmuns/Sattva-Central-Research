@@ -1,0 +1,61 @@
+name: News capture recovery
+
+# Schedules are best-effort. Completion events from independent collectors provide extra
+# catch-up opportunities even when a news cron is delayed. This is NOT a streaming SLA or
+# an independent scheduler: a GitHub-wide outage still needs an external operational alert.
+on:
+  schedule:
+    - cron: "3,18,33,48 * * * *"
+  workflow_run:
+    workflows:
+      - TradingView portfolio news
+      - Market news refresh
+      - RSS news refresh
+      - Company news refresh
+      - Twitter refresh
+      - Telegram refresh
+      - Corporate actions refresh
+      - Corporate announcements refresh
+      - Filings and four-category trades refresh
+      - NSE announcements refresh
+      - Screener concall collection
+      - Filings operational health
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: news-capture-recovery
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Never execute the triggering workflow's branch, head SHA or artifacts with write permissions.
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Reconcile overdue news captures
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          X_CAPTURE_ENABLED: ${{ vars.X_CAPTURE_ENABLED }}
+          NEWS_RECOVERY_REPORT: ${{ runner.temp }}/news-recovery.json
+        run: node scripts/recover-news-captures.mjs --apply
+      - name: Retain recovery decisions
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: news-recovery
+          path: ${{ runner.temp }}/news-recovery.json
+          if-no-files-found: warn
