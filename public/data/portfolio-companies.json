@@ -1,20 +1,21 @@
 {
-  "_provenance": "The family office's listed direct-equity book, one line per equity ISIN, read from techmuns/Sattva-Family · src/data/sattvaData.ts by scripts/sync-family-book.mjs and resolved to NSE symbols by scripts/resolve-portfolio-companies.mjs. This is the COVERAGE list that the Portfolio scope filters every research tab by, and the only portfolio information the dashboard holds — it is not a ledger: no quantity, no cost, no value, no valuation. A line with ticker: null is still a real holding; it either is not an NSE-listed equity or could not be resolved, and the UI shows it as held-but-not-covered rather than dropping it.",
-  "asOf": "2026-06-30",
-  "source": "techmuns/Sattva-Family · src/data/sattvaData.ts",
-  "sourceCommit": {
-    "sha": "4dc9f970e8e64da84789ae8c6522fcff2d2287cb",
-    "date": "2026-07-27T15:21:39Z"
+  "_provenance": "The family office's listed direct-equity book, one line per equity ISIN, read from Sattva Family Office active holdings by scripts/sync-family-book.mjs and resolved to NSE symbols by scripts/resolve-portfolio-companies.mjs. This is the COVERAGE list that the Portfolio scope filters every research tab by, and the only portfolio information the dashboard holds — it is not a ledger: no quantity, no cost, no value, no valuation. A line with ticker: null is still a real holding; it either is not an NSE-listed equity or could not be resolved, and the UI shows it as held-but-not-covered rather than dropping it.",
+  "asOf": "2027-03-31",
+  "source": "Sattva Family Office active holdings",
+  "sourceCommit": null,
+  "sourceWorkbook": {
+    "fileKey": "up-fy27-till-q2-aug",
+    "label": "Copy of 4.grandfather consolidated for 2026-2027_Aug_Lat",
+    "uploadedAt": "2026-09-01T10:54:54.237Z"
   },
-  "sourceWorkbook": null,
-  "sourceRevision": null,
-  "storage": null,
-  "syncedAt": "2026-09-03T10:45:44.583Z",
-  "count": 142,
-  "resolved": 124,
-  "unlisted": 10,
-  "bseOnly": 5,
-  "unresolved": 3,
+  "sourceRevision": "0e767a3929de3cd038455c882018f2d96a0b6115df2de010e4fc542548809b8e",
+  "storage": "shared",
+  "syncedAt": "2026-09-06T04:58:49.147Z",
+  "count": 118,
+  "resolved": 105,
+  "unlisted": 3,
+  "bseOnly": 4,
+  "unresolved": 6,
   "holdings": [
     {
       "isin": "INE423A01024",
@@ -24,7 +25,7 @@
       "ticker": "ADANIENT",
       "listed": true,
       "matchedName": "Adani Enterprises Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE674K01013",
@@ -33,8 +34,8 @@
       "sector": "Financials",
       "ticker": "ABCAPITAL",
       "listed": true,
-      "matchedName": "Aditya Birla Capital Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Aditya Birla Capital Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE679V01027",
@@ -43,8 +44,8 @@
       "sector": "Consumer Discretionary",
       "ticker": "AVL",
       "listed": true,
-      "matchedName": "Aditya Vision Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Aditya Vision Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0ALI01010",
@@ -53,18 +54,18 @@
       "sector": "Industrials",
       "ticker": "ADVAIT",
       "listed": true,
-      "matchedName": "ADVAIT ENERGY",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Advait Energy Transitions Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE914E01040",
       "name": "Alankit Limited",
-      "bookName": "ALANKIT LIMITED",
+      "bookName": "Alankit Limited",
       "sector": "Unclassified",
       "ticker": "ALANKIT",
       "listed": true,
-      "matchedName": "Alankit",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Alankit Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE1YPB01014",
@@ -73,18 +74,8 @@
       "sector": "Unclassified",
       "ticker": "AGL",
       "listed": true,
-      "matchedName": "ALLCARGO GLOBAL LIMITED",
-      "matchedBy": "confirmed:yahoo"
-    },
-    {
-      "isin": "INE418H01029",
-      "name": "Allcargo Logistics",
-      "bookName": "ALLCARGO LOGISTICS",
-      "sector": "Unclassified",
-      "ticker": "ALLCARGO",
-      "listed": true,
-      "matchedName": "ALLCARGO LOGISTICS LTD",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Allcargo Global Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0R4701017",
@@ -106,34 +97,24 @@
       "reason": "warrants, not the equity line"
     },
     {
-      "isin": "INE732I01021",
-      "name": "Angel One Limited",
-      "bookName": "ANGEL ONE LIMITED",
-      "sector": "Financials",
-      "ticker": "ANGELONE",
-      "listed": true,
-      "matchedName": "Angel One Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
       "isin": "INE094B01013",
       "name": "Ashika Credit Capital",
-      "bookName": "Ashika Credit Capital Ltd",
+      "bookName": "Ashika Global Securities Limited",
       "sector": "Financials",
-      "ticker": null,
+      "ticker": "ASHIKA",
       "listed": true,
-      "exchange": "BSE",
-      "bseSymbol": null,
-      "reason": "listed on the BSE only — every feed wired here is keyed by NSE symbol"
+      "matchedName": "Ashika Global Securities Limited",
+      "matchedBy": "family:isin"
     },
     {
-      "isin": "INE483S01020",
-      "name": "AvenuesAI Ltd",
-      "bookName": "AvenuesAI Ltd",
+      "isin": "INE0Z4F01028",
+      "name": "Atlanta Electricals Ltd",
+      "bookName": "Atlanta Electricals",
       "sector": "Unclassified",
-      "ticker": null,
-      "listed": false,
-      "reason": "unlisted — private company, held directly"
+      "ticker": "ATLANTAELE",
+      "listed": true,
+      "matchedName": "Atlanta Electricals Ltd",
+      "matchedBy": "exact:stockscans"
     },
     {
       "isin": "INE555B01013",
@@ -142,28 +123,8 @@
       "sector": "Information Technology",
       "ticker": "AXISCADES",
       "listed": true,
-      "matchedName": "AXISCADES Technologies Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE02IJ01035",
-      "name": "Azad Engineering",
-      "bookName": "Azad Engineering Ltd",
-      "sector": "Industrials",
-      "ticker": "AZAD",
-      "listed": true,
-      "matchedName": "Azad Engineering Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE878I01022",
-      "name": "Bafna Pharmaceuticals",
-      "bookName": "Bafna Pharmaceuticals Ltd",
-      "sector": "Unclassified",
-      "ticker": "BAFNAPH",
-      "listed": true,
-      "matchedName": "Bafna Pharma",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Axiscades Technologies Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE083K01017",
@@ -172,8 +133,8 @@
       "sector": "Financials",
       "ticker": "BENGALASM",
       "listed": true,
-      "matchedName": "BENGAL & ASSAM CO. LTD.",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Bengal and Assam Company Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0HOQ01053",
@@ -183,7 +144,7 @@
       "ticker": "GROWW",
       "listed": true,
       "matchedName": "Billionbrains Garage Ventures Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE376G01013",
@@ -193,37 +154,27 @@
       "ticker": "BIOCON",
       "listed": true,
       "matchedName": "Biocon Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE476A01022",
       "name": "Canara Bank",
-      "bookName": "CANARA BANK",
+      "bookName": "Canara Bank",
       "sector": "Financials",
       "ticker": "CANBK",
       "listed": true,
       "matchedName": "Canara Bank",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE482D01024",
       "name": "Carysil Limited",
-      "bookName": "CARYSIL LIMITED",
+      "bookName": "Carysil Limited",
       "sector": "Consumer Discretionary",
       "ticker": "CARYSIL",
       "listed": true,
-      "matchedName": "Carysil Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE016Q01014",
-      "name": "Ceinsys Tech",
-      "bookName": "Ceinsys Tech Ltd",
-      "sector": "Unclassified",
-      "ticker": "CEINSYS",
-      "listed": true,
-      "matchedName": "Ceinsys Tech Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Carysil Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE736A01011",
@@ -232,8 +183,18 @@
       "sector": "Financials",
       "ticker": "CDSL",
       "listed": true,
-      "matchedName": "Central Depository Services (India) Ltd",
-      "matchedBy": "prefix:stockscans"
+      "matchedName": "Central Depository Services Ltd",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE067A01029",
+      "name": "CG Power & Ind",
+      "bookName": "Cg Power and Ind Sol",
+      "sector": "Unclassified",
+      "ticker": "CGPOWER",
+      "listed": true,
+      "matchedName": "CG Power & Ind",
+      "matchedBy": "prefix:screener"
     },
     {
       "isin": "INE522F01014",
@@ -242,17 +203,27 @@
       "sector": "Energy",
       "ticker": "COALINDIA",
       "listed": true,
-      "matchedName": "Coal India",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Coal India Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE591G01025",
       "name": "Coforge Limited",
-      "bookName": "COFORGE LIMITED",
+      "bookName": "Coforge Limited",
       "sector": "Information Technology",
       "ticker": "COFORGE",
       "listed": true,
-      "matchedName": "Coforge Ltd",
+      "matchedName": "Coforge Limited",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE338H01029",
+      "name": "Concord Biotech Ltd",
+      "bookName": "Concord Biotech Ltd",
+      "sector": "Unclassified",
+      "ticker": "CONCORDBIO",
+      "listed": true,
+      "matchedName": "Concord Biotech Ltd",
       "matchedBy": "exact:stockscans"
     },
     {
@@ -267,26 +238,6 @@
       "reason": "listed on the BSE only — every feed wired here is keyed by NSE symbol"
     },
     {
-      "isin": "INE0S4R01014",
-      "name": "Crizac Ltd",
-      "bookName": "Crizac Ltd",
-      "sector": "Unclassified",
-      "ticker": "CRIZAC",
-      "listed": true,
-      "matchedName": "Crizac Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE00R701025",
-      "name": "Dalmia Bharat",
-      "bookName": "Dalmia Bharat Ltd",
-      "sector": "Materials",
-      "ticker": "DALBHARAT",
-      "listed": true,
-      "matchedName": "Dalmia Bharat Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
       "isin": "INE532F01054",
       "name": "Edelweiss Financial Services",
       "bookName": "Edelweiss Financial Services Ltd",
@@ -294,27 +245,7 @@
       "ticker": "EDELWEISS",
       "listed": true,
       "matchedName": "Edelweiss Financial Services Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE236E01022",
-      "name": "Ellenbarrie Industrial Gases",
-      "bookName": "Ellenbarrie Industrial Gases Ltd",
-      "sector": "Unclassified",
-      "ticker": "ELLEN",
-      "listed": true,
-      "matchedName": "Ellenbarrie Industrial Gases Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE069I01010",
-      "name": "Embassy Developments",
-      "bookName": "Embassy Developments Ltd",
-      "sector": "Real Estate",
-      "ticker": "EMBDL",
-      "listed": true,
-      "matchedName": "Embassy Developments Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE1C6T01020",
@@ -324,7 +255,7 @@
       "ticker": "EMMVEE",
       "listed": true,
       "matchedName": "Emmvee Photovoltaic Power Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE758T01015",
@@ -333,38 +264,8 @@
       "sector": "Consumer Discretionary",
       "ticker": "ETERNAL",
       "listed": true,
-      "matchedName": "Eternal Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE0KCE01017",
-      "name": "Eureka Forbes",
-      "bookName": "Eureka Forbes Ltd",
-      "sector": "Unclassified",
-      "ticker": "EUREKAFORB",
-      "listed": true,
-      "matchedName": "Eureka Forbes Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE128A01029",
-      "name": "Eveready",
-      "bookName": "EVEREADY",
-      "sector": "Consumer Discretionary",
-      "ticker": "EVEREADY",
-      "listed": true,
-      "matchedName": "Eveready Ind",
-      "matchedBy": "prefix:moneycontrol"
-    },
-    {
-      "isin": "INE0HF201011",
-      "name": "Fabtech Technologies",
-      "bookName": "Fabtech Technologies Ltd",
-      "sector": "Healthcare",
-      "ticker": "FABTECH",
-      "listed": true,
-      "matchedName": "Fabtech Technologies Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Eternal",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0EDU01014",
@@ -388,21 +289,30 @@
     {
       "isin": "INE935Q01015",
       "name": "Future Supply Chain Solutions",
-      "bookName": "FUTURE SUPPLY CHAIN SOLUTIONS LIMITED",
+      "bookName": "Future Supply Chain Solutions Limited",
       "sector": "Unclassified",
       "ticker": null,
       "listed": true,
       "reason": "no symbol found on either exchange — delisted after insolvency"
     },
     {
+      "isin": "INE18UN01038",
+      "name": "Gaja Alternative Asset Management Ltd",
+      "bookName": "Gaja Alternative Asset Management Ltd",
+      "sector": "Unclassified",
+      "ticker": null,
+      "listed": true,
+      "reason": "no NSE symbol found in the data on disk"
+    },
+    {
       "isin": "INE291A01017",
       "name": "Garware Hi-Tech Film",
-      "bookName": "GARWARE HI-TECH FILM",
+      "bookName": "Garware Hi-Tech Film",
       "sector": "Materials",
       "ticker": "GRWRHITECH",
       "listed": true,
-      "matchedName": "Garware Hi Tech",
-      "matchedBy": "prefix:screener"
+      "matchedName": "Garware Hi-Tech Film",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE741B01027",
@@ -418,12 +328,22 @@
     {
       "isin": "INE077F01035",
       "name": "GOCL Corporation",
-      "bookName": "GOCL CORPORATION",
+      "bookName": "GOCL Corporation",
       "sector": "Materials",
       "ticker": "GOCLCORP",
       "listed": true,
-      "matchedName": "GOCL CORPORATION LIMITED",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "GOCL Corporation",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE850D01014",
+      "name": "Godrej Agrovet Ltd",
+      "bookName": "Godrej Agrovet Ltd",
+      "sector": "Unclassified",
+      "ticker": "GODREJAGRO",
+      "listed": true,
+      "matchedName": "Godrej Agrovet Ltd",
+      "matchedBy": "exact:stockscans"
     },
     {
       "isin": "INE036B01030",
@@ -432,8 +352,8 @@
       "sector": "Consumer Staples",
       "ticker": "GAEL",
       "listed": true,
-      "matchedName": "GUJARAT AMBUJA EXPORTS LT",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Gujarat Ambuja Exports Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE330T01021",
@@ -443,37 +363,17 @@
       "ticker": "HAPPYFORGE",
       "listed": true,
       "matchedName": "Happy Forgings Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE0JUS01029",
-      "name": "Harsha",
-      "bookName": "HARSHA",
-      "sector": "Industrials",
-      "ticker": "HARSHA",
-      "listed": true,
-      "matchedName": "HARSHA ENGINEERS INT LTD",
-      "matchedBy": "confirmed:yahoo"
-    },
-    {
-      "isin": "INE040A01034",
-      "name": "HDFC Bank",
-      "bookName": "HDFC BANK Ltd",
-      "sector": "Financials",
-      "ticker": "HDFCBANK",
-      "listed": true,
-      "matchedName": "HDFC Bank Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE548A01028",
       "name": "HFCL Limited",
-      "bookName": "HFCL LIMITED",
+      "bookName": "HFCL Limited",
       "sector": "Communication Services",
       "ticker": "HFCL",
       "listed": true,
-      "matchedName": "HFCL Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "HFCL Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE267A01025",
@@ -483,7 +383,16 @@
       "ticker": "HINDZINC",
       "listed": true,
       "matchedName": "Hindustan Zinc Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE685T01010",
+      "name": "Horizon Industrial Parks Ltd",
+      "bookName": "Horizon Industrial Parks Ltd",
+      "sector": "Unclassified",
+      "ticker": null,
+      "listed": true,
+      "reason": "no NSE symbol found in the data on disk"
     },
     {
       "isin": "INE530B01024",
@@ -492,18 +401,8 @@
       "sector": "Financials",
       "ticker": "IIFL",
       "listed": true,
-      "matchedName": "IIFL Finance Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE053A01029",
-      "name": "Indian Hotels Company",
-      "bookName": "Indian Hotels Company Ltd",
-      "sector": "Consumer Discretionary",
-      "ticker": "INDHOTEL",
-      "listed": true,
-      "matchedName": "Indian Hotels Co Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "IIFL Finance",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE622H01018",
@@ -513,17 +412,17 @@
       "ticker": "INDOFARM",
       "listed": true,
       "matchedName": "Indo Farm Equipment Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
-      "isin": "INE0LGX01024",
-      "name": "Insolation Energy",
-      "bookName": "Insolation Energy Ltd",
+      "isin": "INE084101034",
+      "name": "Indo-Mim Limited",
+      "bookName": "Indo-Mim Limited",
       "sector": "Unclassified",
-      "ticker": "INA",
+      "ticker": "INDOMIM",
       "listed": true,
-      "matchedName": "Insolation Ener",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Indo-MIM",
+      "matchedBy": "exact:moneycontrol"
     },
     {
       "isin": "INE00M901018",
@@ -532,8 +431,8 @@
       "sector": "Industrials",
       "ticker": "INTERARCH",
       "listed": true,
-      "matchedName": "Interarch Build",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Interarch Building Products Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE858B01029",
@@ -542,38 +441,18 @@
       "sector": "Industrials",
       "ticker": "ISGEC",
       "listed": true,
-      "matchedName": "ISGEC Heavy Engineering  Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE154A01025",
-      "name": "ITC Ltd",
-      "bookName": "ITC LTD",
-      "sector": "Consumer Staples",
-      "ticker": "ITC",
-      "listed": true,
-      "matchedName": "ITC",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "ISGEC Heavy Engineering Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE168A01041",
       "name": "J&K Bank",
-      "bookName": "J & K BANK LTD.",
+      "bookName": "J & K Bank Ltd.",
       "sector": "Financials",
       "ticker": "J&KBANK",
       "listed": true,
-      "matchedName": "J & K Bank",
-      "matchedBy": "exact:screener"
-    },
-    {
-      "isin": "INE953L01027",
-      "name": "Jana Small Finance Bank",
-      "bookName": "Jana Small Finance Bank",
-      "sector": "Financials",
-      "ticker": "JSFB",
-      "listed": true,
-      "matchedName": "Jana Small Finance Bank Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "J & K Bank Ltd.",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0SMY01017",
@@ -586,73 +465,43 @@
       "matchedBy": "confirmed:yahoo"
     },
     {
-      "isin": "INE571B01036",
-      "name": "Jay Bharat Maruti",
-      "bookName": "JAY BHARAT MARUTI LTD",
-      "sector": "Unclassified",
-      "ticker": "JAYBARMARU",
-      "listed": true,
-      "matchedName": "Jay BharatMarut",
-      "matchedBy": "prefix:moneycontrol"
-    },
-    {
       "isin": "INE854B01010",
       "name": "Jayaswal Neco Industries",
       "bookName": "Jayaswal Neco Industries Ltd",
       "sector": "Materials",
       "ticker": "JAYNECOIND",
       "listed": true,
-      "matchedName": "Jayaswal Neco",
-      "matchedBy": "prefix:moneycontrol"
-    },
-    {
-      "isin": "INE758E01017",
-      "name": "Jio Financial Services",
-      "bookName": "Jio Financial Services Ltd",
-      "sector": "Financials",
-      "ticker": "JIOFIN",
-      "listed": true,
-      "matchedName": "Jio Financial Services Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE121E01018",
-      "name": "JSW Energy",
-      "bookName": "JSW Energy Ltd",
-      "sector": "Energy",
-      "ticker": "JSWENERGY",
-      "listed": true,
-      "matchedName": "JSW Energy Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE019A01038",
-      "name": "JSW Steel",
-      "bookName": "JSW STEEL Ltd",
-      "sector": "Materials",
-      "ticker": "JSWSTEEL",
-      "listed": true,
-      "matchedName": "JSW Steel Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Jayaswal Neco Industries Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE700A01033",
       "name": "Jubilant Pharmova",
-      "bookName": "JUBILANT PHARMOVA LT",
+      "bookName": "Jubilant Pharmova LT",
       "sector": "Healthcare",
       "ticker": "JUBLPHARMA",
       "listed": true,
-      "matchedName": "Jubilant Pharmo",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Jubilant Pharmova LT",
+      "matchedBy": "family:isin"
     },
     {
-      "isin": "INE918Z01012",
-      "name": "Kaynes Technology India",
-      "bookName": "Kaynes Technology India Ltd",
-      "sector": "Information Technology",
-      "ticker": "KAYNES",
+      "isin": "INE303R01014",
+      "name": "Kalyan Jewellers India Ltd",
+      "bookName": "Kalyan Jewellers India Ltd",
+      "sector": "Unclassified",
+      "ticker": "KALYANKJIL",
       "listed": true,
-      "matchedName": "Kaynes Technology India Ltd",
+      "matchedName": "Kalyan Jewellers India Ltd",
+      "matchedBy": "exact:stockscans"
+    },
+    {
+      "isin": "INE415I01015",
+      "name": "Kiri Industries Ltd",
+      "bookName": "Kiri Industries Ltd",
+      "sector": "Unclassified",
+      "ticker": "KIRIINDUS",
+      "listed": true,
+      "matchedName": "Kiri Industries Ltd",
       "matchedBy": "exact:stockscans"
     },
     {
@@ -662,8 +511,8 @@
       "sector": "Healthcare",
       "ticker": "KOPRAN",
       "listed": true,
-      "matchedName": "Kopran",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Kopran Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE237A01036",
@@ -673,7 +522,7 @@
       "ticker": "KOTAKBANK",
       "listed": true,
       "matchedName": "Kotak Mahindra Bank Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0O6601022",
@@ -682,37 +531,37 @@
       "sector": "Consumer Discretionary",
       "ticker": "KROSS",
       "listed": true,
-      "matchedName": "Kross Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Kross Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE818H01020",
       "name": "LT Foods Limited",
-      "bookName": "LT FOODS LIMITED",
+      "bookName": "LT Foods Limited",
       "sector": "Consumer Staples",
       "ticker": "LTFOODS",
       "listed": true,
-      "matchedName": "LT Foods",
-      "matchedBy": "exact:moneycontrol"
-    },
-    {
-      "isin": "INE155Z01011",
-      "name": "Macpower CNC Machines",
-      "bookName": "Macpower CNC Machines Ltd",
-      "sector": "Unclassified",
-      "ticker": "MACPOWER",
-      "listed": true,
-      "matchedName": "Macpower CNC Machines Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "LT Foods Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE101A01026",
       "name": "Mahindra & Mahindra",
-      "bookName": "MAHINDRA & MAHINDRA LIMITED",
+      "bookName": "Mahindra & Mahindra Limited",
       "sector": "Consumer Discretionary",
       "ticker": "M&M",
       "listed": true,
-      "matchedName": "Mahindra & Mahindra Ltd",
+      "matchedName": "Mahindra & Mahindra Limited",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE774D01024",
+      "name": "Mahindra & Mahindra Financial Services Ltd",
+      "bookName": "Mahindra & Mahindra Financial Services Ltd",
+      "sector": "Unclassified",
+      "ticker": "M&MFIN",
+      "listed": true,
+      "matchedName": "Mahindra & Mahindra Financial Services Ltd",
       "matchedBy": "exact:stockscans"
     },
     {
@@ -723,26 +572,26 @@
       "ticker": "MANINDS",
       "listed": true,
       "matchedName": "Man Industries (India) Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE103A01014",
       "name": "Mangalore Petrochemicals and Refinery",
-      "bookName": "MANGALORE PETROCHEMICALS AND REFINERY LIMITED",
+      "bookName": "Mangalore Petrochemicals and Refinery Limited",
       "sector": "Unclassified",
       "ticker": "MRPL",
       "listed": true,
-      "matchedName": "MANGALORE REFINERY & PETROCHEMICALS",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Mangalore Petrochemicals and Refinery Limited",
+      "matchedBy": "family:isin"
     },
     {
-      "isin": "INE0CT101020",
-      "name": "Meghmani Organics",
-      "bookName": "Meghmani Organics",
-      "sector": "Materials",
-      "ticker": "MOL",
+      "isin": "INE071D01033",
+      "name": "Menon Bearings Ltd",
+      "bookName": "Menon Bearings Ltd",
+      "sector": "Unclassified",
+      "ticker": "MENONBE",
       "listed": true,
-      "matchedName": "Meghmani Organics Ltd",
+      "matchedName": "Menon Bearings Ltd",
       "matchedBy": "exact:stockscans"
     },
     {
@@ -753,17 +602,7 @@
       "ticker": "MOTILALOFS",
       "listed": true,
       "matchedName": "Motilal Oswal Financial Services Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE410P01011",
-      "name": "Narayana Hrudayalaya",
-      "bookName": "NARAYANA HRUDAYALAYA LTD",
-      "sector": "Healthcare",
-      "ticker": "NH",
-      "listed": true,
-      "matchedName": "Narayana Hrudayalaya Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE310A01015",
@@ -773,16 +612,7 @@
       "ticker": "NILKAMAL",
       "listed": true,
       "matchedName": "Nilkamal",
-      "matchedBy": "exact:moneycontrol"
-    },
-    {
-      "isin": "INE0DQN01013",
-      "name": "Nisus Finance Services",
-      "bookName": "Nisus Finance Services Co Ltd",
-      "sector": "Unclassified",
-      "ticker": null,
-      "listed": true,
-      "reason": "no symbol found on either exchange — an SME line, check the current name"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE12F801023",
@@ -791,18 +621,18 @@
       "sector": "Financials",
       "ticker": "KISSHT",
       "listed": true,
-      "matchedName": "OnEMI Technology Solutions Limited",
-      "matchedBy": "confirmed:nse"
+      "matchedName": "OnEMI Technology Solutions Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE881D01027",
       "name": "Oracle Financial Services Software",
-      "bookName": "ORACLE FINANCIAL SERVICES SOFTWARE LIMITED",
+      "bookName": "Oracle Financial Services Software Limited",
       "sector": "Information Technology",
       "ticker": "OFSS",
       "listed": true,
-      "matchedName": "ORACLE FIN SERV SOFT LTD.",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Oracle Financial Services Software Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0BYP01024",
@@ -811,18 +641,8 @@
       "sector": "Industrials",
       "ticker": "OSWALPUMPS",
       "listed": true,
-      "matchedName": "Oswal Pumps Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE0S3G01027",
-      "name": "Pace Digitek",
-      "bookName": "Pace Digitek Ltd",
-      "sector": "Unclassified",
-      "ticker": "PACEDIGITK",
-      "listed": true,
-      "matchedName": "Pace Digitek Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Oswal Pumps Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE119201023",
@@ -832,27 +652,17 @@
       "ticker": "PARKHOSPS",
       "listed": true,
       "matchedName": "Park Medi World Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE417T01026",
       "name": "PB Fintech Limited",
-      "bookName": "PB FINTECH LIMITED",
+      "bookName": "PB Fintech Limited",
       "sector": "Financials",
       "ticker": "POLICYBZR",
       "listed": true,
-      "matchedName": "PB Fintech Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE262H01021",
-      "name": "Persistent Systems",
-      "bookName": "PERSISTENT SYSTEMS L",
-      "sector": "Information Technology",
-      "ticker": "PERSISTENT",
-      "listed": true,
-      "matchedName": "Persistent Systems Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "PB Fintech Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE15B701018",
@@ -861,48 +671,38 @@
       "sector": "Financials",
       "ticker": "PINELABS",
       "listed": true,
-      "matchedName": "Pine Labs Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Pine Labs Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE572E01012",
       "name": "PNB Housing Fin",
-      "bookName": "PNB HOUSING FIN LTD",
+      "bookName": "PNB Housing Fin Ltd",
       "sector": "Financials",
       "ticker": "PNBHOUSING",
       "listed": true,
-      "matchedName": "PNB Housing Fin",
-      "matchedBy": "exact:moneycontrol"
-    },
-    {
-      "isin": "INE633B01018",
-      "name": "Polyplex Corporation",
-      "bookName": "Polyplex Corporation Ltd",
-      "sector": "Unclassified",
-      "ticker": "POLYPLEX",
-      "listed": true,
-      "matchedName": "Polyplex Corp",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "PNB Housing Fin Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE722B01019",
       "name": "Praveg Limited",
-      "bookName": "PRAVEG LIMITED",
+      "bookName": "Praveg Limited",
       "sector": "Unclassified",
       "ticker": "PRAVEG",
       "listed": true,
-      "matchedName": "PRAVEG",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Praveg Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE546Y01022",
       "name": "Praxis Home Retails",
-      "bookName": "PRAXIS HOME RETAILS LIMITED",
+      "bookName": "Praxis Home Retails Limited",
       "sector": "Consumer Discretionary",
       "ticker": "PRAXIS",
       "listed": true,
-      "matchedName": "Praxis Home Ret",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Praxis Home Retails Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE811K01011",
@@ -911,8 +711,17 @@
       "sector": "Real Estate",
       "ticker": "PRESTIGE",
       "listed": true,
-      "matchedName": "Prestige Estate",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Prestige Estate Projects Limited",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE0V9N01017",
+      "name": "Prizor Viztech Limited",
+      "bookName": "Prizor Viztech Limited",
+      "sector": "Unclassified",
+      "ticker": null,
+      "listed": true,
+      "reason": "no NSE symbol found in the data on disk"
     },
     {
       "isin": "INE004A01022",
@@ -922,6 +731,16 @@
       "ticker": "PROTEAN",
       "listed": true,
       "matchedName": "Protean eGov Technologies Ltd",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE0SII01026",
+      "name": "Quality Power Electrical Equipments Ltd",
+      "bookName": "Quality Power Electrical Equipments Ltd",
+      "sector": "Unclassified",
+      "ticker": "QPOWER",
+      "listed": true,
+      "matchedName": "Quality Power Electrical Equipments Ltd",
       "matchedBy": "exact:stockscans"
     },
     {
@@ -931,8 +750,8 @@
       "sector": "Unclassified",
       "ticker": "RAIN",
       "listed": true,
-      "matchedName": "RAIN INDUSTRIES LIMITED",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Rain Industries Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE399G01023",
@@ -942,27 +761,17 @@
       "ticker": "RKFORGE",
       "listed": true,
       "matchedName": "Ramkrishna Forgings Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE027A01015",
       "name": "Rashtriya Chemicals",
-      "bookName": "RASHTRIYA CHEMICALS",
+      "bookName": "Rashtriya Chemicals",
       "sector": "Materials",
       "ticker": "RCF",
       "listed": true,
-      "matchedName": "Rashtriya Chem",
-      "matchedBy": "prefix:moneycontrol"
-    },
-    {
-      "isin": "INE1SY401010",
-      "name": "Raymond Realty",
-      "bookName": "Raymond Realty Ltd",
-      "sector": "Unclassified",
-      "ticker": "RAYMONDREL",
-      "listed": true,
-      "matchedName": "Raymond Realty Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Rashtriya Chemicals",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE976G01028",
@@ -972,47 +781,37 @@
       "ticker": "RBLBANK",
       "listed": true,
       "matchedName": "RBL Bank Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE07T201019",
-      "name": "Restaurant Brands Asia",
-      "bookName": "Restaurant Brands Asia Ltd",
-      "sector": "Consumer Discretionary",
-      "ticker": "RBA",
-      "listed": true,
-      "matchedName": "Restaurant Brands Asia Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE425Y01011",
       "name": "RPSG Ventures",
-      "bookName": "RPSG VENTURES LIMITE",
+      "bookName": "RPSG Ventures Limite",
       "sector": "Unclassified",
       "ticker": "RPSGVENT",
       "listed": true,
-      "matchedName": "RPSG VENTURES",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "RPSG Ventures Limite",
+      "matchedBy": "family:isin"
     },
     {
-      "isin": "INE0LEX01011",
-      "name": "Sahana Systems",
-      "bookName": "Sahana Systems Ltd",
+      "isin": "INE500L01026",
+      "name": "S H Kelkar & Company Ltd",
+      "bookName": "S H Kelkar & Company Ltd",
       "sector": "Unclassified",
-      "ticker": "SAHANA-SM",
+      "ticker": "SHK",
       "listed": true,
-      "matchedName": "SAHANA SYSTEM LIMITED",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "S H Kelkar & Company Ltd",
+      "matchedBy": "exact:stockscans"
     },
     {
       "isin": "INE08U801020",
       "name": "Samhi Hotels Limited",
-      "bookName": "SAMHI HOTELS LIMITED",
+      "bookName": "Samhi Hotels Limited",
       "sector": "Consumer Discretionary",
       "ticker": "SAMHI",
       "listed": true,
-      "matchedName": "Samhi Hotels Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Samhi Hotels Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE148I01020",
@@ -1022,12 +821,12 @@
       "ticker": "SAMMAANCAP",
       "listed": true,
       "matchedName": "Sammaan Capital Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE860D01013",
       "name": "Sanjivani Paranteral",
-      "bookName": "SANJIVANI PARANTERAL LIMITED",
+      "bookName": "Sanjivani Paranteral Limited",
       "sector": "Healthcare",
       "ticker": null,
       "listed": true,
@@ -1043,7 +842,7 @@
       "ticker": "SANSERA",
       "listed": true,
       "matchedName": "Sansera Engineering Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE08NE01025",
@@ -1052,18 +851,18 @@
       "sector": "Unclassified",
       "ticker": "SANSTAR",
       "listed": true,
-      "matchedName": "SANSTAR LIMITED",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Sanstar Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE955I01044",
       "name": "Sejal Glass Limited",
-      "bookName": "SEJAL GLASS LIMITED",
+      "bookName": "Sejal Glass Limited",
       "sector": "Materials",
       "ticker": "SEJALLTD",
       "listed": true,
-      "matchedName": "Sejal Glass Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Sejal Glass Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE597J01018",
@@ -1072,8 +871,8 @@
       "sector": "Healthcare",
       "ticker": "SHALBY",
       "listed": true,
-      "matchedName": "Shalby Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Shalby Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE024F01011",
@@ -1083,7 +882,7 @@
       "ticker": "SHILCTECH",
       "listed": true,
       "matchedName": "Shilchar Technologies Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE109A01011",
@@ -1092,62 +891,92 @@
       "sector": "Industrials",
       "ticker": "SCI",
       "listed": true,
-      "matchedName": "Shipping Corp",
-      "matchedBy": "prefix:moneycontrol"
-    },
-    {
-      "isin": "INE070A01015",
-      "name": "Shree Cements",
-      "bookName": "Shree Cements Ltd",
-      "sector": "Materials",
-      "ticker": "SHREECEM",
-      "listed": true,
-      "matchedName": "Shree Cements",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Shipping Corporation of India Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE526E01018",
       "name": "Shriram Pistons & Rings",
-      "bookName": "SHRIRAM PIST. & RING",
+      "bookName": "Shriram Pist. & Ring",
       "sector": "Consumer Discretionary",
       "ticker": "SHRIPISTON",
       "listed": true,
-      "matchedName": "SPR AUTO TECHNOLOGIES LTD (renamed from Shriram Pistons & Rings)",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Shriram Pist. & Ring",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE1NPP01017",
       "name": "Siemens Energy India",
-      "bookName": "SIEMENS ENERGY INDIA",
+      "bookName": "Siemens Energy India",
       "sector": "Industrials",
       "ticker": "ENRIN",
       "listed": true,
-      "matchedName": "SIEMENS ENERGY INDIA LTD",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Siemens Energy India",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE01IU01018",
       "name": "Sky Gold Limited",
-      "bookName": "SKY GOLD LIMITED",
+      "bookName": "Sky Gold Limited",
       "sector": "Consumer Discretionary",
       "ticker": "SKYGOLD",
       "listed": true,
-      "matchedName": "Sky Gold",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Sky Gold Limited",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE728Z01015",
+      "name": "Softtech Engineers Ltd",
+      "bookName": "Softtech Engineers Ltd",
+      "sector": "Unclassified",
+      "ticker": "SOFTTECH",
+      "listed": true,
+      "matchedName": "Softtech Engine",
+      "matchedBy": "prefix:moneycontrol"
+    },
+    {
+      "isin": "INE073K01018",
+      "name": "Sona BLW Precision Forgings Ltd",
+      "bookName": "Sona Blw Precision Forgings Ltd",
+      "sector": "Unclassified",
+      "ticker": "SONACOMS",
+      "listed": true,
+      "matchedName": "Sona BLW Precision Forgings Ltd",
+      "matchedBy": "exact:stockscans"
+    },
+    {
+      "isin": "INE12Z301012",
+      "name": "Sotefin Bharat Ltd",
+      "bookName": "Sotefin Bharat Ltd",
+      "sector": "Unclassified",
+      "ticker": null,
+      "listed": true,
+      "reason": "no NSE symbol found in the data on disk"
     },
     {
       "isin": "INE0M4D01010",
       "name": "Standard Engineering Technology",
       "bookName": "Standard Engineering Technology Ltd",
       "sector": "Industrials",
-      "ticker": null,
-      "listed": false,
-      "reason": "unlisted — private company, held directly"
+      "ticker": "SETL",
+      "listed": true,
+      "matchedName": "Standard Engineering Technology Ltd",
+      "matchedBy": "family:isin"
+    },
+    {
+      "isin": "INE089C01029",
+      "name": "Sterlite Technologies Ltd",
+      "bookName": "Sterlite Technologies Ltd",
+      "sector": "Unclassified",
+      "ticker": "STLTECH",
+      "listed": true,
+      "matchedName": "Sterlite Technologies Ltd",
+      "matchedBy": "exact:stockscans"
     },
     {
       "isin": "INE958L01034",
       "name": "String Metaverse",
-      "bookName": "STRING METAVERSE Ltd",
+      "bookName": "String Metaverse Ltd",
       "sector": "Unclassified",
       "ticker": null,
       "listed": true,
@@ -1156,12 +985,12 @@
     {
       "isin": "INE239C01020",
       "name": "Stylam Industries",
-      "bookName": "STYLAM INDUSTRIES",
+      "bookName": "Stylam Industries",
       "sector": "Materials",
       "ticker": "STYLAMIND",
       "listed": true,
-      "matchedName": "Stylam Industries Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Stylam Industries",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE659A01023",
@@ -1171,17 +1000,17 @@
       "ticker": "SUDARSCHEM",
       "listed": true,
       "matchedName": "Sudarshan Chemical Industries Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE07RO01027",
       "name": "Supriya Lifescience",
-      "bookName": "SUPRIYA LIFESCIENCE",
+      "bookName": "Supriya Lifescience",
       "sector": "Healthcare",
       "ticker": "SUPRIYA",
       "listed": true,
-      "matchedName": "Supriya Lifescience Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Supriya Lifescience",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE665A01038",
@@ -1190,8 +1019,8 @@
       "sector": "Unclassified",
       "ticker": "SWANCORP",
       "listed": true,
-      "matchedName": "SWAN CORP LIMITED",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Swan Corp Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE976I01016",
@@ -1201,7 +1030,7 @@
       "ticker": "TATACAP",
       "listed": true,
       "matchedName": "Tata Capital Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE142M01025",
@@ -1211,76 +1040,37 @@
       "ticker": "TATATECH",
       "listed": true,
       "matchedName": "Tata Technologies Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
-      "isin": "INE285K01026",
-      "name": "Techno Electric & Engineering",
-      "bookName": "TECHNO ELECTRIC & ENGINEERING COMPANY LTD",
-      "sector": "Industrials",
-      "ticker": "TECHNOE",
-      "listed": true,
-      "matchedName": "Techno Electric & Engineering Company Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE010J01012",
-      "name": "Tejas Networks",
-      "bookName": "TEJAS NETWORKS LIMIT",
+      "isin": "INE508G01029",
+      "name": "Time Technoplast Ltd",
+      "bookName": "Time Technoplast Ltd",
       "sector": "Unclassified",
-      "ticker": "TEJASNET",
+      "ticker": "TIMETECHNO",
       "listed": true,
-      "matchedName": "Tejas Networks Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE332A01027",
-      "name": "Thomas Cook (India)",
-      "bookName": "THOMAS COOK (INDIA)",
-      "sector": "Unclassified",
-      "ticker": "THOMASCOOK",
-      "listed": true,
-      "matchedName": "Thomas Cook (India) Ltd",
+      "matchedName": "Time Technoplast Ltd",
       "matchedBy": "exact:stockscans"
     },
     {
       "isin": "INE615H01020",
       "name": "Titagarh Rail Systems",
-      "bookName": "TITAGARH RAIL SYSTEMS Ltd",
+      "bookName": "Titagarh Rail Systems Ltd",
       "sector": "Industrials",
       "ticker": "TITAGARH",
       "listed": true,
       "matchedName": "Titagarh Rail Systems Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE763I01026",
-      "name": "Transformers and Rectifiers India",
-      "bookName": "Transformers and Rectifiers India Ltd",
-      "sector": "Unclassified",
-      "ticker": "TARIL",
-      "listed": true,
-      "matchedName": "Transformers & Rectifiers India Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0OC301013",
       "name": "Turtlemint Fintech Solutions",
-      "bookName": "TURTLEMINT FINTECH SOLUTIONS LIMITED",
+      "bookName": "Turtlemint Fintech Solutions Limited",
       "sector": "Financials",
-      "ticker": null,
-      "listed": false,
-      "reason": "unlisted — private company, held directly"
-    },
-    {
-      "isin": "INE0U3I01011",
-      "name": "Unimech Aerospace",
-      "bookName": "UNIMECH AEROSPACE",
-      "sector": "Unclassified",
-      "ticker": "UNIMECH",
+      "ticker": "TURTLEMINT",
       "listed": true,
-      "matchedName": "Unimech Aerospa",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Turtlemint Fintech Solutions Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE0CAZ01013",
@@ -1290,63 +1080,67 @@
       "ticker": "URBANCO",
       "listed": true,
       "matchedName": "Urban Company Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE879I01012",
       "name": "Valor Estate Limited",
-      "bookName": "VALOR ESTATE LIMITED",
+      "bookName": "Valor Estate Limited",
       "sector": "Real Estate",
       "ticker": "DBREALTY",
       "listed": true,
-      "matchedName": "VALOR ESTATE LIMITED",
-      "matchedBy": "confirmed:yahoo"
+      "matchedName": "Valor Estate Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE1CDF01017",
       "name": "Vedanta Aluminium Metal",
       "bookName": "Vedanta Aluminium Metal Limited",
       "sector": "Materials",
-      "ticker": null,
-      "listed": false,
-      "reason": "demerged entity — not listed as at the book date"
+      "ticker": "VAML",
+      "listed": true,
+      "matchedName": "Vedanta Aluminium Metal Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE1CLE01013",
       "name": "Vedanta Iron and Steel",
       "bookName": "Vedanta Iron and Steel Limited",
       "sector": "Materials",
-      "ticker": null,
-      "listed": false,
-      "reason": "demerged entity — not listed as at the book date"
+      "ticker": "VISL",
+      "listed": true,
+      "matchedName": "Vedanta Iron and Steel Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE205A01025",
       "name": "Vedanta Limited",
-      "bookName": "VEDANTA LIMITED",
+      "bookName": "Vedanta Limited",
       "sector": "Materials",
       "ticker": "VEDL",
       "listed": true,
-      "matchedName": "Vedanta Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedName": "Vedanta Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE704J01044",
       "name": "Vedanta Oil and Gas",
       "bookName": "Vedanta Oil and Gas Limited",
       "sector": "Energy",
-      "ticker": null,
-      "listed": false,
-      "reason": "demerged entity — not listed as at the book date"
+      "ticker": "VOGL",
+      "listed": true,
+      "matchedName": "Vedanta Oil and Gas Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE694L01019",
       "name": "Vedanta Power Limited",
       "bookName": "Vedanta Power Limited",
       "sector": "Energy",
-      "ticker": null,
-      "listed": false,
-      "reason": "demerged entity — not listed as at the book date"
+      "ticker": "VEDPOWER",
+      "listed": true,
+      "matchedName": "Vedanta Power Limited",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE564S01019",
@@ -1362,41 +1156,11 @@
     {
       "isin": "INE564S13022",
       "name": "Vikram Kamats Hospitality — warrants",
-      "bookName": "VIKRAM KAMATS HOSPITALITY LIMITED WARRANTS",
+      "bookName": "Vikram Kamats Hospitality Limited Warrants",
       "sector": "Consumer Discretionary",
       "ticker": null,
       "listed": false,
       "reason": "warrants, not the equity line"
-    },
-    {
-      "isin": "INE498Q01014",
-      "name": "Vintage Coffee and Beverages",
-      "bookName": "Vintage Coffee and Beverages Ltd",
-      "sector": "Consumer Staples",
-      "ticker": "VINCOFE",
-      "listed": true,
-      "matchedName": "Vintage Coffee & Beverages Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE0I0T01010",
-      "name": "Virtuoso Optoelectronics",
-      "bookName": "Virtuoso Optoelectronics Ltd",
-      "sector": "Industrials",
-      "ticker": "VOEPL",
-      "listed": true,
-      "matchedName": "Virtuoso Optoelectronics Ltd",
-      "matchedBy": "exact:stockscans"
-    },
-    {
-      "isin": "INE01EA01019",
-      "name": "Vishal Mega Mart",
-      "bookName": "Vishal Mega Mart Ltd",
-      "sector": "Consumer Discretionary",
-      "ticker": "VMM",
-      "listed": true,
-      "matchedName": "Vishal Mega Mart Ltd",
-      "matchedBy": "exact:stockscans"
     },
     {
       "isin": "INE540H01012",
@@ -1405,8 +1169,8 @@
       "sector": "Industrials",
       "ticker": "VOLTAMP",
       "listed": true,
-      "matchedName": "Voltamp Trans",
-      "matchedBy": "prefix:moneycontrol"
+      "matchedName": "Voltamp Transformers Ltd",
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE377N01017",
@@ -1416,7 +1180,7 @@
       "ticker": "WAAREEENER",
       "listed": true,
       "matchedName": "Waaree Energies Ltd",
-      "matchedBy": "exact:stockscans"
+      "matchedBy": "family:isin"
     },
     {
       "isin": "INE049B01025",
@@ -1425,8 +1189,8 @@
       "sector": "Healthcare",
       "ticker": "WOCKPHARMA",
       "listed": true,
-      "matchedName": "Wockhardt",
-      "matchedBy": "exact:moneycontrol"
+      "matchedName": "Wockhardt Ltd",
+      "matchedBy": "family:isin"
     }
   ]
 }
