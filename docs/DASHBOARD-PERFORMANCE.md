@@ -102,3 +102,42 @@ Reproduce with `PLAYWRIGHT_ROOT=/path/to/playwright CHROME_PATH=/path/to/chrome 
 scripts/verify-tab-performance-ui.mjs`. Optional `TAB_PERF_PROFILE=1` prints CPU sample hotspots;
 `TAB_PERF_ROUTES` selects comma-separated routes. CI runs the complete sweep without timing
 thresholds tied to a particular machine, while enforcing structural/data correctness.
+
+## Corporate Actions: cached data readiness (6 September 2026)
+
+The next report identified a different bottleneck from table size: `load()` restored the device
+cache but withheld `isLoaded` and its change notification until the network revalidation ended.
+The request has a 20-second timeout. A repeat visit therefore waited even with every record on disk.
+The committed exchange-wide file contains 8,846 rows (8.74 MB uncompressed); a cold device still
+needs its first download. No source rows or fields have been reduced to achieve the following gains.
+
+The feed now publishes valid saved rows immediately, with a visible checking/capture-age status.
+Load, polling and manual refresh share one check. Successful new captures still replace the view;
+unchanged 200/304 responses retain row identity, search focus and reading position. Invalid, empty
+and older responses keep the last-good table and cannot overwrite its persistent cache. A failed
+attempt does not advance the successful-check timestamp. Invalidation ignores late completions.
+"Up to date" requires both source layers to report live, recent captures, Screener to confirm its
+retained full-history baseline, and a successful current file check; a partial, retained or failed
+layer remains explicitly unconfirmed.
+
+Local Chrome results, not production measurements:
+
+| Scenario | Before | After |
+| --- | ---: | ---: |
+| Cached reopen in iframe, deliberately delayed 8-second check | 8,423 ms | 82 ms |
+| Complete 8,846-row disk cache in iframe, same 8-second delay | — | 107 ms |
+| First Corporate Actions portfolio visit in the full local app | — | 146 ms |
+| Switch to all 8,846 actions | — | 45 ms; 40 rows mounted |
+| Full-universe search / sort | — | 28 / 24 ms |
+
+The isolated post-fix DevTools trace showed LCP 148 ms and CLS 0.00 while the eight-second request
+was **still pending**. Render-blocking savings were 0 ms. INP was not established by that trace.
+The accessibility snapshot retained named search/filter/export/source controls and visible data.
+This proves the cached-data handoff locally, not cold-download speed or surrounding-host latency.
+
+`verify-corporate-actions-ui.mjs` now runs the slow-response iframe regression with the real live
+engine, one-request assertion, retained focused controls, storage-poisoning and failure/recovery
+checks, plus restoration of the complete committed capture under the same slow-network condition.
+`verify-corporate-actions.mjs` additionally covers delayed reads, concurrent callers, new
+records, identical responses, rollback rejection, invalidation races and unavailable storage.
+The existing full-data window/search/export and app-shell offline/private-cache tests also pass.

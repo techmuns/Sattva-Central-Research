@@ -59,12 +59,84 @@ const feed = createCorporateActionsFeed({
   read: async () => network.shift(),
 });
 await feed.load();
+await feed.refresh(); // join the cache-first load's background check
 assert.equal(feed.rows().length, 2, 'a network failure retains the last stored snapshot');
 assert.match(feed.meta().degraded, /retained copy/);
 const refreshed = await feed.refresh();
 assert.equal(refreshed.added, 1);
 assert.equal(feed.rows().length, 3);
 assert.deepEqual(feed.filterByScope(feed.rows(), 'portfolio', [{ ticker: 'GAMMA' }]).map((row) => row.ticker), ['GAMMA'], 'new portfolio symbols are selected from the same exchange-wide capture');
+
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((done) => { resolve = done; });
+  return { promise, resolve };
+};
+const staleCheck = deferred();
+let reads = 0;
+let savedReads = 0;
+const instant = createCorporateActionsFeed({
+  readSaved: async () => { savedReads += 1; return { savedAt: 1, value: capture }; },
+  read: () => { reads += 1; return staleCheck.promise; },
+});
+const cached = await Promise.race([instant.load(), new Promise((_, reject) => {
+  const timer = setTimeout(() => reject(new Error('Cached load waited for the network')), 250);
+  timer.unref();
+})]);
+assert.equal(cached.rows.length, 2);
+assert.equal(instant.isLoaded(), true);
+assert.equal(instant.meta().checking, true);
+assert.equal(instant.meta().origin, 'store');
+const poll = instant.refresh();
+assert.equal(instant.refresh(), poll, 'manual/live/load checks share one in-flight request');
+await instant.load();
+assert.equal(reads, 1);
+assert.equal(savedReads, 1);
+staleCheck.resolve({ status: 200, value: newer, checkedAt: 10 });
+await poll;
+assert.equal(instant.meta().checking, false);
+assert.equal(instant.rows().length, 3, 'new rows publish after the retained first paint');
+
+let response = { status: 200, value: capture, checkedAt: 20 };
+const durable = createCorporateActionsFeed({ readSaved: async () => null, read: async () => response, now: () => 50 });
+await durable.load();
+const originalRows = durable.rows();
+response = { status: 200, value: structuredClone(capture), checkedAt: 21 };
+await durable.refresh();
+assert.equal(durable.rows(), originalRows, 'identical 200 preserves table identity');
+response = { status: 304, value: response.value, checkedAt: 22 };
+await durable.refresh();
+assert.equal(durable.rows(), originalRows, '304 preserves table identity');
+assert.equal(durable.meta().checkedAt, 22);
+for (const value of [null, { ...capture, rows: [] }, { ...capture, rows: [...capture.rows, {}] },
+  { ...capture, rowCount: 1 }, { ...capture, capturedAt: '2026-09-03T00:00:00Z' }]) {
+  response = { status: 200, value, checkedAt: 30 };
+  assert.equal((await durable.refresh()).failed, 1);
+  assert.equal(durable.rows(), originalRows, 'failed, partial or older payload cannot erase retained rows');
+  assert.equal(durable.meta().checkedAt, 22, 'failure cannot advance the last successful check');
+  assert.equal(durable.meta().attemptedAt, 50);
+}
+response = { status: 200, value: newer, checkedAt: 40 };
+assert.equal((await durable.refresh()).added, 1);
+assert.equal(durable.meta().degraded, null);
+
+// Neither a late disk read nor a late network result may resurrect invalidated state.
+for (const stage of ['disk', 'network']) {
+  const waiting = deferred();
+  const guarded = createCorporateActionsFeed({
+    readSaved: () => stage === 'disk' ? waiting.promise : Promise.resolve(null),
+    read: () => stage === 'network' ? waiting.promise : Promise.resolve({ status: 200, value: capture }),
+  });
+  const loading = guarded.load();
+  await new Promise(setImmediate);
+  guarded.invalidate();
+  waiting.resolve(stage === 'disk' ? { value: capture } : { status: 200, value: capture });
+  await loading;
+  assert.equal(guarded.isLoaded(), false);
+  assert.deepEqual(guarded.rows(), []);
+}
+const unavailableStorage = createCorporateActionsFeed({ readSaved: async () => { throw new Error('disabled'); }, read: async () => ({ status: 200, value: capture }) });
+assert.equal((await unavailableStorage.load()).rows.length, 2, 'first visits still load all records when storage is unavailable');
 
 if (process.argv[2]) {
   const body = JSON.parse(await fs.readFile(process.argv[2], 'utf8'));
