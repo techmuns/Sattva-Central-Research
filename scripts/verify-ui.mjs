@@ -3274,8 +3274,12 @@ await page.waitForSelector('[data-deep-dive]', { timeout: 25000 }).catch(() => {
 // wrong on the page. `rowCount()` already waits; this makes the button count wait too.
 const ddRows = await rowCount();
 const ddCells = await page.locator('[data-deep-dive]').count();
-const ddEligible = await page.evaluate(async () => (await import('/js/data/concall-scans.js')).all().filter((row) => !!row.ticker).length);
-ok('every rendered ticker-mapped call carries a Deep Dive button', ddCells > 0 && ddCells === ddRows && ddEligible >= ddCells, `${ddCells} buttons, ${ddEligible} eligible model rows, ${ddRows} mounted rows`);
+const ddEligible = await page.evaluate(async () => {
+  const data = await import('/js/data/concall-scans.js');
+  const view = await import('/js/concall/scans.js');
+  return data.all().filter(view.deepDiveEligible).length;
+});
+ok('every rendered named call carries a Deep Dive button, ticker or not', ddCells > 0 && ddCells === ddRows && ddEligible >= ddCells, `${ddCells} buttons, ${ddEligible} eligible model rows, ${ddRows} mounted rows`);
 ok('...and the column is headed Deep Dive', (await page.$$eval('#content-host thead th', (ts) => ts.map((t) => t.innerText.trim().toUpperCase()))).includes('DEEP DIVE'));
 ok('THE TABLE DISPATCHES NOTHING ON RENDER', ddHits.analyze === 0 && ddHits.report === 0, `analyze=${ddHits.analyze} report=${ddHits.report}`);
 // Their free index is read once per document load and never again — not per row, not per repaint,

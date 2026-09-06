@@ -1128,6 +1128,9 @@ reopening that call reattaches without allowing another row for the same ticker 
 Their `POST /api/analyze` is **unauthenticated** and every accepted call dispatches a real LLM +
 compute run. The reads are plain GETs with no pipeline behind them. So:
 
+- **Every named Con-call row has the action.** A resolved exchange ticker is sent when available,
+  but it is not an eligibility gate: Screener-only companies can dispatch by company name. Their
+  in-flight slug is stored by exact `recordId`, so a tickerless row also reattaches after closing.
 - **Nothing that costs a run fires on render or from a poller.** The Deep Dive row button is itself
   the explicit command: its one click opens live progress and dispatches exactly once. There is no
   second setup/connection/force screen, no service URL is printed, and a finished report has no

@@ -127,12 +127,22 @@ export function setBaseUrl(url) {
 
 export const configured = () => !!baseUrl();
 
-// ticker -> { slug, at }. A run takes minutes; remembering the slug means closing the panel and
-// coming back reattaches to the job in flight rather than dispatching a second one.
+const recordSlugKey = (recordId) => `row:${recordId}`;
+
+// Exact row -> { slug, at, recordId, date }. A run takes minutes; remembering the slug means
+// closing the panel and coming back reattaches to the job in flight rather than dispatching a
+// second one. Older installations keyed this map by ticker, so the fallback retains only a legacy
+// entry that names this same row; another call by the company can never inherit it.
 export const remembered = (ticker, recordId = null) => {
-  const entry = ticker ? read(LS_SLUGS, {})[String(ticker).toUpperCase()] || null : null;
-  if (!entry || !recordId) return entry;
-  return entry.recordId === recordId ? entry : null;
+  const all = read(LS_SLUGS, {});
+  if (recordId) {
+    const exact = all[recordSlugKey(recordId)];
+    if (exact) return exact;
+    const legacy = ticker ? all[String(ticker).toUpperCase()] : null;
+    if (legacy?.recordId === recordId) return legacy;
+    return Object.values(all).find((entry) => entry?.recordId === recordId) || null;
+  }
+  return ticker ? all[String(ticker).toUpperCase()] || null : null;
 };
 
 /**
@@ -152,9 +162,11 @@ export function rememberedByRecord() {
 }
 
 function remember(ticker, slug, { recordId = null, date = null } = {}) {
-  if (!ticker || !slug) return;
+  if (!slug || (!ticker && !recordId)) return;
   const all = read(LS_SLUGS, {});
-  all[String(ticker).toUpperCase()] = { slug, at: Date.now(), recordId, date };
+  const entry = { slug, at: Date.now(), recordId, date };
+  if (recordId) all[recordSlugKey(recordId)] = entry;
+  else all[String(ticker).toUpperCase()] = entry;
   write(LS_SLUGS, all);
 }
 
@@ -353,8 +365,8 @@ async function call(path, init) {
 }
 
 /** Ask whether a fresh report already exists, without dispatching anything. */
-export async function peek(ticker) {
-  const known = remembered(ticker);
+export async function peek(ticker, recordId = null) {
+  const known = remembered(ticker, recordId);
   if (!known?.slug) return null;
   try {
     return await call(`/api/report?slug=${encodeURIComponent(known.slug)}`);
