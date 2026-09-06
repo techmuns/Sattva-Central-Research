@@ -1,13 +1,6 @@
-// Bounded company reads. A slow or stalled source must leave time for artifact publication.
-export function orderInsightTargets(targets, previous = null) {
-  const companies = new Map((previous?.companies || []).map(company => [company.companyKey, company]));
-  const failed = new Set(previous?.failedKeys || []);
-  const lastAttempt = target => Date.parse(companies.get(target.companyKey)?.checkedAt ||
-    (failed.has(target.companyKey) ? previous?.checkedAt : '')) || 0;
-  return [...targets].sort((a, b) => Number(b.inPortfolio) - Number(a.inPortfolio) ||
-    lastAttempt(a) - lastAttempt(b) || a.companyKey.localeCompare(b.companyKey));
-}
-
+// Sequential bounded company reads. A source refusal stops the run without a login/retry loop.
+import { INSIGHTS_STOP_CODES } from '../../public/js/data/screener-insights-state.js';
+import { INSIGHTS_COMPANY_PAUSE_MS, INSIGHTS_MAX_COMPANIES_PER_RUN, insightFailureCode } from './screener-insights-control.mjs';
 function abortable(read, signal) {
   return new Promise((resolve, reject) => {
     const abort = () => reject(signal.reason);
@@ -18,70 +11,77 @@ function abortable(read, signal) {
 }
 
 export async function collectInsightBatch(targets, readCompany, {
-  maxDurationMs = 10 * 60_000, attemptTimeoutMs = 20_000, concurrency = 3,
-  maxAttempts = 2, delayMs = 200, progressIntervalMs = 60_000, onProgress = () => {},
+  maxDurationMs = 10 * 60_000, attemptTimeoutMs = 30_000, concurrency = 1,
+  maxCompanies = INSIGHTS_MAX_COMPANIES_PER_RUN, delayMs = INSIGHTS_COMPANY_PAUSE_MS,
+  progressIntervalMs = 60_000, onProgress = () => {}, onCheckpoint = () => {}, signal: externalSignal,
 } = {}) {
-  for (const value of [maxDurationMs, attemptTimeoutMs, concurrency, maxAttempts, progressIntervalMs]) {
+  for (const value of [maxDurationMs, attemptTimeoutMs, maxCompanies, progressIntervalMs]) {
     if (!Number.isSafeInteger(value) || value < 1) throw Error('Invalid Insights batch limit');
   }
+  if (concurrency !== 1) throw Error('Insights reads must be sequential');
   if (!Number.isSafeInteger(delayMs) || delayMs < 0) throw Error('Invalid Insights batch delay');
   const deadline = new AbortController();
   const deadlineTimer = setTimeout(() => deadline.abort(Error('crawl-deadline')), maxDurationMs);
   const attemptedKeys = new Set();
   const succeeded = [];
   const failedKeys = [];
+  const failures = [];
   const failureCounts = {};
+  let stop = null;
+  let consecutiveFailures = 0;
   let cursor = 0;
+  const batchSignal = externalSignal ? AbortSignal.any([deadline.signal, externalSignal]) : deadline.signal;
+  const result = () => ({ succeeded: [...succeeded], failedKeys: [...failedKeys], failures: [...failures],
+    deferredKeys: targets.filter(target => !attemptedKeys.has(target.companyKey)).map(target => target.companyKey),
+    attemptedCount: attemptedKeys.size, deadlineReached: deadline.signal.aborted, interrupted: batchSignal.aborted,
+    sourceBlocked: INSIGHTS_STOP_CODES.includes(stop?.code), stop, failureCounts: { ...failureCounts } });
   const snapshot = () => ({ targets: targets.length, attempted: attemptedKeys.size, succeeded: succeeded.length,
     failed: failedKeys.length, deferred: targets.length - attemptedKeys.size, failureCounts: { ...failureCounts } });
   const progress = () => { try { onProgress(snapshot()); } catch { /* diagnostics cannot discard data */ } };
   const progressTimer = setInterval(progress, progressIntervalMs);
   const pause = ms => new Promise(resolve => {
-    if (deadline.signal.aborted) return resolve();
-    const finish = () => { clearTimeout(timer); deadline.signal.removeEventListener('abort', finish); resolve(); };
+    if (batchSignal.aborted) return resolve();
+    const finish = () => { clearTimeout(timer); batchSignal.removeEventListener('abort', finish); resolve(); };
     const timer = setTimeout(finish, ms);
-    deadline.signal.addEventListener('abort', finish, { once: true });
+    batchSignal.addEventListener('abort', finish, { once: true });
   });
   const worker = async () => {
-    while (cursor < targets.length && !deadline.signal.aborted) {
+    while (cursor < targets.length && cursor < maxCompanies && !batchSignal.aborted && !stop) {
+      // Include a quiet boundary after login/inventory and before every subsequent company.
+      await pause(delayMs);
+      if (batchSignal.aborted) break;
       const target = targets[cursor++];
       attemptedKeys.add(target.companyKey);
-      let success = false;
-      let failure = 'read-or-validation';
-      for (let attempt = 0; attempt < maxAttempts && !success && !deadline.signal.aborted; attempt++) {
-        const timeout = new AbortController();
-        const timer = setTimeout(() => timeout.abort(Error('company-timeout')), attemptTimeoutMs);
-        const signal = AbortSignal.any([deadline.signal, timeout.signal]);
-        try {
-          const company = await abortable(() => readCompany(target, { signal }), signal);
-          signal.throwIfAborted();
-          succeeded.push(company);
-          success = true;
-        } catch (error) {
-          if (['source-blocked', 'session'].includes(error?.message) && !deadline.signal.aborted) deadline.abort(Error('source-blocked'));
-          failure = deadline.signal.reason?.message === 'source-blocked' ? 'source-blocked' : deadline.signal.aborted ? 'deadline' : timeout.signal.aborted || error?.name === 'TimeoutError' ? 'timeout' :
-            ['response', 'session', 'oversized'].includes(error?.message) ? error.message : 'read-or-validation';
-        } finally {
-          clearTimeout(timer);
-        }
-        if (!success && attempt + 1 < maxAttempts) await pause(delayMs);
-      }
-      if (!success) {
+      const timeout = new AbortController();
+      const timer = setTimeout(() => timeout.abort(Error('company-timeout')), attemptTimeoutMs);
+      const signal = AbortSignal.any([batchSignal, timeout.signal]);
+      try {
+        const company = await abortable(() => readCompany(target, { signal }), signal);
+        signal.throwIfAborted();
+        succeeded.push(company);
+        consecutiveFailures = 0;
+      } catch (error) {
+        const failure = deadline.signal.aborted ? 'deadline' : externalSignal?.aborted ? 'interrupted'
+          : timeout.signal.aborted ? 'timeout' : insightFailureCode(error);
         failedKeys.push(target.companyKey);
+        failures.push({ companyKey: target.companyKey, code: failure });
         failureCounts[failure] = (failureCounts[failure] || 0) + 1;
+        consecutiveFailures++;
+        // A timed-out read may still be closing its page; do not overlap it with a new read.
+        if (INSIGHTS_STOP_CODES.includes(failure) || ['timeout', 'internal'].includes(failure) || consecutiveFailures >= 3) stop = { code: failure, retryAt: error?.retryAt || null };
+      } finally {
+        clearTimeout(timer);
       }
-      await pause(delayMs);
+      await onCheckpoint(result());
     }
   };
   progress();
   try {
-    await Promise.all(Array.from({ length: Math.min(concurrency, targets.length) }, worker));
+    await worker();
   } finally {
     clearTimeout(deadlineTimer);
     clearInterval(progressTimer);
     progress();
   }
-  return { succeeded, failedKeys, deferredKeys: targets.filter(target => !attemptedKeys.has(target.companyKey)).map(target => target.companyKey),
-    attemptedCount: attemptedKeys.size, deadlineReached: deadline.signal.reason?.message === 'crawl-deadline',
-    sourceBlocked: deadline.signal.reason?.message === 'source-blocked', failureCounts };
+  return result();
 }

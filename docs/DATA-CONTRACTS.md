@@ -4027,20 +4027,27 @@ zero rows only if the company has no previously captured series; unexpectedly va
 retain the previous series as failed/stale. Page text is data and is never treated as an instruction.
 
 `.github/workflows/screener-insights-refresh.yml` runs daily at 02:17 UTC using the existing
-Screener secrets. The first pass (and any pass after more than eight days without complete coverage)
-reads the complete configured universe plus the synchronized S Screen portfolio. The full watchlist
+Screener secrets. Every eligible pass reconciles the complete configured universe plus the
+synchronized S Screen portfolio, then selects only missing, failed-and-retry-due or refresh-due
+companies (24 hours for portfolio, seven days for universe). The full watchlist
 export verifies the cardinality of the full management list, whose unique company URLs provide
 target identities, including delisted companies with no exchange code in their export. Never infer
 full coverage from one paginated table page. `/company/id/<id>/` is supported as `ID:<id>` with a
 null ticker; it is never interpreted as a BSE code. Invalid universe URLs fail inventory instead of
 silently dropping a target. Source coverage describes the verified Screener watchlist, not holdings
-unavailable on Screener. Subsequent daily passes re-read every portfolio company and one stable seventh
-of the remaining universe with three browser pages and a short inter-company pause. A partial pass
+unavailable on Screener. A single company read runs at a time, with a three-second quiet boundary
+before each company and a one-second pause before requesting its quarterly table. Each run is
+limited to 120 companies and ten minutes, leaving time for publication within the 25-minute job.
+Never-read gaps lead (portfolio first on ties), followed by oldest due dates; a partial capture
+does not restart the full inventory. The legacy `full` input cannot bypass freshness or cooldowns.
+A partial pass
 replaces companies it successfully checked, retains the last valid rows for failed/unvisited current
 targets, forgets removed targets and keeps `fullCoverage: false` when the latest check failed.
 Each company must pass row validation before it replaces its last-good record. A missing quarterly
 table, expired session, malformed column layout or oversized series is a failed company read, not
-an empty successful update. A run with no successful company reads publishes no artifact. Safe
+an empty successful update. A run with no new successful company reads retains the old capture
+without advancing its check time; before the first valid company it publishes operational state
+only, not a fabricated empty capture. Safe
 stage names distinguish export discovery, download, parsing, URL inventory and identity reconciliation.
 `failedKeys` identifies failed targets; their retained records carry `readStatus: failed` until a
 successful replacement. Company age is tracked independently of the capture envelope: portfolio
@@ -4054,8 +4061,22 @@ The validated gzip artifact is `screener-insights-v1.json.gz`, retained for 30 d
 contract is bounded to 1,000 companies, 40 metrics per company, 16 points per series, 24 MB raw and
 4 MB compressed. It contains public company data only: no credential, cookies, account HTML,
 downloaded export or error text enters the artifact or logs. The Worker accepts only a digest-matched
-artifact from the fixed repository, workflow, ref and successful trusted run, follows only a bounded
+artifact from the fixed repository, workflow and ref, including checkpoints published by failed or
+cancelled trusted runs. It follows only a bounded
 GitHub signed-download host, decompresses under the raw limit and re-validates the entire shape.
+
+`screener-insights-state-v1.json.gz` is a separate, strictly validated operational artifact (256 KB
+maximum), also retained for 30 days. It contains fixed diagnostic codes, timestamps, counts and
+per-company retry eligibility, never raw errors or session data. Restore happens before browser
+startup; unreadable or expired state fails closed. During a persisted cooldown, a run republishes
+the same state/data without login or other Screener requests and without changing their timestamps.
+Rate limits, denied access, expired sessions and server unavailability stop the run immediately;
+Retry-After seconds and HTTP dates are respected, with bounded exponential default cooldowns.
+Timeouts stop rather than overlap a still-closing page; three consecutive other failures also stop.
+Each settled company atomically checkpoints its data/state locally. Workflow `always()` upload
+steps preserve those checkpoints on ordinary collection failure. A complete runner loss before
+artifact upload cannot be guaranteed recoverable; soft deadlines avoid relying on the hard limit.
+See [Insights collection](SCREENER-INSIGHTS-COLLECTION.md) for exact retry defaults and verification.
 
 `GET /api/screener-insights` serves that one shared capture with an ETag and five-minute edge cache.
 A missing/stale (older than 36 hours), incomplete or latest-failed capture requests one background
@@ -4064,7 +4085,9 @@ feeds. The browser keeps a conditional IndexedDB last-good copy under `screener-
 new bodies and cached ETag hits before they can replace a good record. Malformed HTTP 200s and
 transport failures retain values across reloads while reporting the failed read. Ask
 Research reports the source unavailable until the first valid
-capture exists. Insights remain context-only everywhere: they cannot produce an All Alerts event or
+capture exists. Its existing evidence packet also carries the latest collection outcome, safe
+failure reason, cooldown expiry and actual attempt/deferred counts. A green cooldown-only workflow
+does not clear the persisted source failure. Insights remain context-only everywhere: they cannot produce an All Alerts event or
 an AI Alerts card by themselves.
 
 Ask Research sorts question matches within named-company rows before applying its row limit.
