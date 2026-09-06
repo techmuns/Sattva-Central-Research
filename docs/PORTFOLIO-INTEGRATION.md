@@ -3,7 +3,7 @@
 ## Active contract
 
 1. Keep Ask Research in Central Research. Its hidden Family `/research-bridge`
-   frame supplies the active PortfolioContext and Ask Sattva tool loop;
+   frame supplies the active PortfolioContext and, when needed, the Ask Sattva tool loop;
    no ledger is copied to Research's public assets or repository.
 2. Use a versioned, request-correlated postMessage channel, exact origin and
    source-window checks on both ends, bounded requests/replies, and timeouts.
@@ -13,9 +13,11 @@
    for the Family context to adopt that archive version. Reject replies if the
    book changes during the read. Preserve workbook date, quote timestamp, partial
    quote coverage and source failures; a recent check is not a current book date.
-4. Reuse Ask Sattva's existing query/read tools and answer verification without
-   creating a second conversation in its library. Include the resulting dated
-   portfolio reading alongside the research evidence, with explicit size limits.
+4. Use a fresh `positions` request for news, research, ownership and weight questions,
+   avoiding a redundant model analysis before Research can start. Preserve Ask Sattva's
+   query/read tools and verification for costs, tax, quantities and account-level questions
+   (including follow-ups), without creating a second conversation in its library.
+   Include the resulting dated context alongside research evidence with explicit size limits.
    Every question also carries all held listed ISINs, sectors and weights, even when
    it does not say “my portfolio”. Supplemental analysis can be unavailable without
    suppressing verified holdings. A missing authenticated holdings read stops the answer.
@@ -24,8 +26,9 @@
 5. Use the active book's ISINs for Research's portfolio filter, preserving unknown
    symbols and fund holdings. Never infer ownership from a sampled research feed.
 6. Test transport isolation, stale/changed/failed reads, evidence budgets and
-   source parity. Open coordinated PRs in both repositories, wait for CI/review,
-   and leave both unmerged. Deployment requires separate user authorization.
+   source parity. Follow the current user repository workflow for PR review and merging.
+   Manual production actions require explicit authorization; an authorized merge may
+   trigger the repository's existing deployment pipeline.
 
 ## What this does not promise
 

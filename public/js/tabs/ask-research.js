@@ -9,9 +9,9 @@ import * as scopeLists from '../core/scope-lists.js';
 import { state, subscribe } from '../core/state.js';
 import * as notifications from '../ui/notifications.js';
 import { scopeLabel } from '../data/scope.js';
-import { buildResearchEvidence, researchSuggestions, resolveQuestionCompanies, DASHBOARD_RESEARCH_SOURCES } from '../research/estate.js';
+import { buildResearchEvidence, prepareResearchSources, researchSuggestions, resolveQuestionCompanies, DASHBOARD_RESEARCH_SOURCES } from '../research/estate.js';
 import { renderResearchAnswer, renderResearchSources } from '../research/renderer.js';
-import { connectPortfolio, portfolioConnected, privatePortfolioContext, readPortfolio, onPortfolioInvalidation, portfolioConnectionState, onPortfolioConnection, unlockPortfolio, FAMILY_ORIGIN } from '../research/portfolio-bridge.js';
+import { connectPortfolio, portfolioConnected, privatePortfolioContext, readResearchPortfolio, onPortfolioInvalidation, portfolioConnectionState, onPortfolioConnection, unlockPortfolio, FAMILY_ORIGIN } from '../research/portfolio-bridge.js';
 
 export const meta = {
   id: 'ask-research',
@@ -330,6 +330,7 @@ export function render(ctx) {
   uiDispose = wire(ctx.root);
   paintAll();
   paintPortfolioConnection();
+  void prepareResearchSources().catch(() => {});
   connectPortfolio().then(() => { if (ctxRef === ctx) paintPortfolioConnection(); });
   ensureConfig().then(() => {
     if (ctxRef === ctx) paintComposer();
@@ -392,7 +393,9 @@ function wire(root) {
       paintAll();
       root.querySelector('[data-research-input]')?.focus();
     } else if (event.target.closest('[data-research-send]')) {
-      submitCurrent();
+      const generation = generations.get(activeId);
+      if (generation) generation.controller.abort();
+      else submitCurrent();
     } else if (suggestion) {
       const session = currentSession();
       if (!session) return;
@@ -574,7 +577,7 @@ function paintTranscript() {
     transcript.appendChild(stack);
   }
 
-  if (!showOpening && (followLive || isBusy(session))) {
+  if (!showOpening && followLive) {
     transcript.style.scrollBehavior = 'auto';
     transcript.scrollTop = transcript.scrollHeight;
     requestAnimationFrame(() => {
@@ -701,6 +704,10 @@ function messageNode(message) {
   const companies = message.companies || [];
   renderResearchAnswer(body, message.text, { cite: citeResolver(companies) });
   article.appendChild(body);
+  if (message.incomplete) article.appendChild(el('p', { class: 'text-xs text-slate-500' }, 'Incomplete answer — the connection stopped. Your question is ready to retry below.'));
+  if (Number.isFinite(message.timings?.firstTextMs)) {
+    article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Answer started in ${(message.timings.firstTextMs / 1000).toFixed(1)}s · ${message.dashboardSources?.length || 0} dashboard pages read`));
+  }
   if (message.portfolio) {
     const p = message.portfolio;
     const checked = new Date(p.checkedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
@@ -708,7 +715,7 @@ function messageNode(message) {
     article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Portfolio book: ${p.bookAsOf}. Quotes: ${quotes}. Checked ${checked} IST. Snapshot for this answer, not a live refresh.`));
     if (p.sourceErrors?.length) article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Sources not read: ${p.sourceErrors.join(', ')}.`));
     const details = el('details');
-    details.appendChild(el('summary', { class: 'research-cite' }, 'Portfolio source reading · Ask Sattva'));
+    details.appendChild(el('summary', { class: 'research-cite' }, p.mode === 'verified-holdings' ? 'Verified portfolio context' : 'Portfolio source reading · Ask Sattva'));
     const reading = el('div', { class: 'research-answer-body' });
     renderResearchAnswer(reading, p.answer, { cite: citeResolver() });
     details.appendChild(reading);
@@ -725,7 +732,7 @@ function messageNode(message) {
 }
 
 function streamNode(session) {
-  const article = el('article', { class: 'research-assistant-answer is-streaming', 'aria-live': 'off' });
+  const article = el('article', { class: 'research-assistant-answer is-streaming', 'aria-live': 'off', 'data-session-id': session.id });
   const label = el('div', { class: 'research-answer-label' });
   label.appendChild(el('span', { class: 'research-live-dot', 'aria-hidden': 'true' }));
   label.appendChild(el('span', {}, 'Dashboard research'));
@@ -771,10 +778,12 @@ function syncSendState() {
   const session = currentSession();
   const send = root?.querySelector('[data-research-send]');
   if (!send || !session) return;
-  const disabled = !configState?.configured || isBusy(session) || !session.draft.trim();
+  const busy = isBusy(session);
+  const disabled = !busy && (!configState?.configured || !session.draft.trim());
   send.disabled = disabled;
   send.classList.toggle('is-busy', isBusy(session));
-  send.querySelector('span').textContent = isBusy(session) ? 'Working' : 'Send';
+  send.querySelector('span').textContent = busy ? 'Stop' : 'Send';
+  send.setAttribute('aria-label', busy ? 'Stop answer' : 'Send question');
 }
 
 function autoSize(input) {
@@ -785,6 +794,8 @@ function autoSize(input) {
 
 function setPhase(session, phase) {
   session.phase = phase;
+  const generation = generations.get(session.id);
+  if (generation) { queueStreamPaint(session, generation); return; }
   if (activeId === session.id) {
     paintComposer();
     paintTranscript();
@@ -823,7 +834,7 @@ async function submitCurrent() {
   // The scope is captured here, once. Everything downstream reads `generation.scope` rather than
   // `ctxRef`, which is null the moment the reader looks at another tab — and a packet built under
   // "whatever scope is mounted right now" would change meaning mid-answer.
-  const generation = { controller: new AbortController(), paintQueued: false, scope: ctxRef?.scope || state.scope, question };
+  const generation = { controller: new AbortController(), paintQueued: false, scope: ctxRef?.scope || state.scope, question, startedAt: performance.now() };
   generations.set(session.id, generation);
   watchEvidenceInvalidation();
   setPhase(session, 'Opening every dashboard source…');
@@ -832,35 +843,31 @@ async function submitCurrent() {
 
   const resumePortfolioSync = pauseFamilySession();
   try {
-    setPhase(session, 'Refreshing your portfolio…');
-    const family = await readPortfolio(question, generation.controller.signal);
+    const history = session.messages.slice(0, -1).filter(message => !message.incomplete).map((message) => ({ role: message.role, text: message.text }));
+    setPhase(session, 'Checking your holdings and reading dashboard sources…');
+    const prepared = prepareResearchSources();
+    const family = await readResearchPortfolio(question, generation.controller.signal, history);
     if (generation.controller.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
 
     generation.portfolio = family.holdings ? family.reading : null;
-    // A cancellation takes effect NOW, not when the evidence build happens to finish. The build
-    // can take ten seconds on a cold page, and a scope change during it used to leave the
-    // composer empty and the phase running until then — the reader's question looked lost.
-    const aborted = new Promise((_, reject) => {
-      generation.controller.signal.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')), { once: true });
+    const evidence = await buildResearchEvidence({
+      question,
+      history,
+      prepared,
+      signal: generation.controller.signal,
+      scope: generation.scope,
+      portfolio: family.reading,
+      portfolioPositions: { sizes: family.sizes, holdings: family.holdings },
+      onProgress: ({ completed, total, source }) => {
+        if (!generation.controller.signal.aborted) setPhase(session, `Reading ${source} · ${completed} of ${total}`);
+      },
     });
-    const evidence = await Promise.race([
-      buildResearchEvidence({
-        question,
-        scope: generation.scope,
-        portfolio: family.reading,
-        portfolioPositions: { sizes: family.sizes, holdings: family.holdings },
-        onProgress: ({ completed, total, source }) => {
-          if (!generation.controller.signal.aborted) setPhase(session, `Reading ${source} · ${completed} of ${total}`);
-        },
-      }),
-      aborted,
-    ]);
     if (generation.controller.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     session.streamDashboard = dashboardSources(evidence);
     session.streamCompanies = (evidence.selection?.companies || []).map((company) => ({ ticker: company.ticker, name: company.name }));
     setPhase(session, 'Writing from dashboard evidence…');
 
-    const history = session.messages.slice(0, -1).map((message) => ({ role: message.role, text: message.text }));
+    generation.evidenceMs = Math.round(performance.now() - generation.startedAt);
     const response = await fetch('api/research', {
       method: 'POST',
       headers: { accept: 'application/x-ndjson', 'content-type': 'application/json', ...authHeaders('api/research') },
@@ -875,7 +882,10 @@ async function submitCurrent() {
     await consumeStream(response.body, session, generation);
   } catch (error) {
     const index = session.messages.lastIndexOf(userMessage);
-    if (index >= 0) session.messages.splice(index, 1);
+    const keepPartial = session.streamText.trim() && !generation.controller.signal.aborted && !generation.portfolioChanged;
+    if (keepPartial) session.messages.push({ role: 'assistant', text: session.streamText, incomplete: true, portfolio: generation.portfolio,
+      dashboardSources: session.streamDashboard, companies: session.streamCompanies, webResearch: false });
+    else if (index >= 0) session.messages.splice(index, 1);
     session.draft = originalDraft;
     session.streamText = '';
     session.streamSources = [];
@@ -914,42 +924,40 @@ async function consumeStream(stream, session, generation) {
   let buffer = '';
   let done = false;
   let streamError = null;
-  while (true) {
-    const part = await reader.read();
-    if (part.done) break;
-    buffer += decoder.decode(part.value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      let event;
-      try {
-        event = JSON.parse(line);
-      } catch {
-        throw new Error('The answer stream was malformed.');
-      }
-      if (event.type === 'text' && typeof event.text === 'string') {
-        session.streamText += event.text;
-        queueStreamPaint(session, generation);
-      } else if (event.type === 'phase' && event.phase) {
-        setPhase(session, event.phase);
-      } else if (event.type === 'sources') {
-        session.streamSources = Array.isArray(event.sources) ? event.sources : [];
-      } else if (event.type === 'done') {
-        done = true;
-      } else if (event.type === 'error') {
-        streamError = event.message || 'Research could not be completed.';
+  const consumeEvent = (line) => {
+    if (!line.trim()) return;
+    let event;
+    try { event = JSON.parse(line); }
+    catch { throw new Error('The answer stream was malformed.'); }
+    if (event.type === 'text' && typeof event.text === 'string') {
+      if (generation.firstTextMs === undefined && event.text) generation.firstTextMs = Math.round(performance.now() - generation.startedAt);
+      if (session.streamText.length + event.text.length > MAX_MESSAGE_CHARS) throw new Error('The answer exceeded its display limit. Please ask a narrower question.');
+      session.streamText += event.text;
+      queueStreamPaint(session, generation);
+    } else if (event.type === 'phase' && event.phase) setPhase(session, event.phase);
+    else if (event.type === 'sources') session.streamSources = Array.isArray(event.sources) ? event.sources : [];
+    else if (event.type === 'done') done = true;
+    else if (event.type === 'error') streamError = event.message || 'Research could not be completed.';
+  };
+  try {
+    while (!done && !streamError) {
+      const part = await reader.read();
+      if (generation.controller.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+      if (part.done) break;
+      buffer += decoder.decode(part.value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      if (buffer.length > 64_000) throw new Error('The answer stream was malformed.');
+      for (const line of lines) {
+        consumeEvent(line);
+        if (done || streamError) break;
       }
     }
-  }
-  if (buffer.trim()) {
-    try {
-      const event = JSON.parse(buffer);
-      if (event.type === 'done') done = true;
-      if (event.type === 'error') streamError = event.message || 'Research could not be completed.';
-    } catch {
-      throw new Error('The answer stream ended mid-event.');
-    }
+    buffer += decoder.decode();
+    if (!done && !streamError && buffer.trim()) consumeEvent(buffer);
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
   }
   if (streamError) throw new Error(streamError);
   if (!done || !session.streamText.trim()) throw new Error('The answer ended before a complete response arrived.');
@@ -962,6 +970,7 @@ async function consumeStream(stream, session, generation) {
     webSources: session.streamSources,
     companies: session.streamCompanies || [],
     portfolio: generation.portfolio,
+    timings: { evidenceMs: generation.evidenceMs, firstTextMs: generation.firstTextMs, totalMs: Math.round(performance.now() - generation.startedAt) },
   });
   session.messages = session.messages.slice(-MAX_MESSAGES);
   session.updatedAt = new Date().toISOString();
@@ -980,6 +989,25 @@ function queueStreamPaint(session, generation) {
   generation.paintQueued = true;
   requestAnimationFrame(() => {
     generation.paintQueued = false;
-    if (activeId === session.id && ctxRef) paintTranscript();
+    if (activeId !== session.id || !ctxRef || generations.get(session.id) !== generation) return;
+    paintComposer();
+    const transcript = ctxRef.root.querySelector('[data-research-transcript]');
+    const article = transcript?.querySelector('.is-streaming');
+    if (!article || article.dataset.sessionId !== session.id) { paintTranscript(); return; }
+    const followLive = transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
+    if (session.streamText) {
+      article.querySelector('.research-thinking')?.remove();
+      let body = article.querySelector('.research-answer-body');
+      if (!body) { body = el('div', { class: 'research-answer-body' }); article.appendChild(body); }
+      if (generation.paintedText !== session.streamText || generation.paintedBody !== body) {
+        renderResearchAnswer(body, session.streamText, { cite: citeResolver(session.streamCompanies || []) });
+        generation.paintedText = session.streamText;
+        generation.paintedBody = body;
+      }
+    } else {
+      const status = article.querySelector('.research-thinking strong');
+      if (status) status.textContent = session.phase || 'Reading the dashboard';
+    }
+    if (followLive) transcript.scrollTop = transcript.scrollHeight;
   });
 }

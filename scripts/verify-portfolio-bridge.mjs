@@ -42,7 +42,9 @@ const largeReading = { ...reading, answer: 'x'.repeat(5400) };
 const fitted = fitEvidenceToBudget({ portfolio: largeReading, portfolioPositions: sizeReply, sources: DASHBOARD_RESEARCH_SOURCES.map(s => ({ ...s, status: 'ready', source: 'provider', asOf: '2026-09-04', rowCount: 20, summary: { info: 'a'.repeat(2000) }, rows: Array.from({ length: 20 }, (_, i) => ({ ticker: `STOCK${i}`, value: i })) })) });
 assert.deepEqual(fitted.portfolio, largeReading, 'portfolio caveats and figures may not be silently truncated');
 assert.ok(researchEvidenceChars(fitted) <= 13000);
-assert.deepEqual(providerEvidence(fitted).portfolioPositions, sizeReply);
+const modelPositions = providerEvidence(fitted).portfolioPositions;
+assert.deepEqual(modelPositions.holdings.map(row => Object.fromEntries(modelPositions.columns.map((key, i) => [key, row[i]]))), sizeReply.holdings);
+assert.deepEqual(modelPositions.sizes, sizeReply.sizes);
 assert.ok(providerEvidenceChars(fitted) > researchEvidenceChars(fitted));
 assert.equal(validateResearchBody({ question: 'What changed?', requirePortfolio: true, evidence: { sources: [], portfolio: reading } }).error, 'invalid_portfolio_positions');
 assert.equal(validateResearchBody({ question: 'What changed?', requirePortfolio: true, evidence: { sources: [], portfolio: reading, portfolioPositions: sizeReply } }).ok, true);
@@ -196,4 +198,29 @@ assert.equal(elements.find(e => e.tag === 'dialog').open, false, 'successful sig
 const source = readFileSync(new URL('../public/js/tabs/ask-research.js', import.meta.url), 'utf8');
 assert.match(source, /filter\(\(session\) => !session.private\)/, 'private conversations never enter standalone localStorage');
 assert.match(source, /generation\.portfolio/);
+
+for (const question of ['What is the latest info on jayaswal neco for me?', 'What needs my attention today?', 'Which are my smallest holdings?', 'Do I own Sterlite?', 'What is IIFL Finance revenue?']) {
+  assert.equal(bridge.needsPortfolioAnalysis(question), false, question);
+}
+for (const question of ['What is my cost basis in Sterlite?', 'Show my unrealised P&L', 'How many RBL shares do I own?', 'Compare my tax lots', 'What are my account balances?', 'What is my total NAV?']) {
+  assert.equal(bridge.needsPortfolioAnalysis(question), true, question);
+}
+assert.equal(bridge.needsPortfolioAnalysis('And what about its tax?', []), true);
+assert.equal(bridge.needsPortfolioAnalysis('And for IIFL?', [{ role: 'user', text: 'What is my cost basis in Sterlite?' }]), true);
+let legacyReads = 0, directReads = 0;
+responder = m => {
+  if (m.type === 'read') legacyReads++;
+  if (m.type === 'positions') directReads++;
+  emit({ ...m, type: 'result', ...sizeReply, sizes: { ...sizeReply.sizes, checkedAt: new Date().toISOString() }, reading: { ...reading, checkedAt: new Date().toISOString() } });
+};
+const direct = await bridge.readResearchPortfolio('What is the latest info on jayaswal neco for me?');
+assert.equal(direct.reading.mode, 'verified-holdings');
+assert.equal(directReads, 1, 'news uses a fresh structured holdings check');
+assert.equal(legacyReads, 0, 'news does not wait for the Family model');
+assert.equal(validateResearchBody({ question: 'Latest news?', requirePortfolio: true, evidence: { portfolio: direct.reading, portfolioPositions: { sizes: direct.sizes, holdings: direct.holdings }, sources: [] } }).ok, true);
+await bridge.readResearchPortfolio('What is my cost basis?');
+assert.equal(legacyReads, 1, 'detailed ledger questions retain their verified tools');
+responder = m => emit({ ...m, type: 'error', message: 'Fixture archive unavailable' });
+await assert.rejects(bridge.readResearchPortfolio('Latest news?'), /Fixture archive unavailable/);
+assert.equal(legacyReads, 1, 'failure does not silently add a second model or reuse stale holdings');
 console.log('Portfolio bridge: transport, privacy, ownership, freshness, refusal and evidence-budget checks passed.');

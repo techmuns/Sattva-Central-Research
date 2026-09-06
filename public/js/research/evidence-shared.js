@@ -17,6 +17,15 @@
 
 const UI_ONLY_SOURCE_FIELDS = new Set(['route', 'description']);
 
+// A column schema removes five repeated JSON keys per holding without sampling
+// away any ISIN, unresolved symbol, fund or weight from the complete denominator.
+export function providerPositions(positions) {
+  if (!Array.isArray(positions?.holdings)) return positions;
+  const columns = ['isin', 'ticker', 'name', 'sector', 'weightPct'];
+  return { sizes: positions.sizes, columns,
+    holdings: positions.holdings.map(holding => columns.map(key => holding[key] ?? null)) };
+}
+
 /**
  * The provider-facing packet: everything analytical, none of the browser's chrome.
  *
@@ -32,7 +41,7 @@ export function providerEvidence(evidence = {}) {
     scope: evidence?.scope,
     scopeDefinition: evidence?.scopeDefinition,
     portfolio: evidence?.portfolio,
-    portfolioPositions: evidence?.portfolioPositions,
+    portfolioPositions: providerPositions(evidence?.portfolioPositions),
     selection: {
       tokens: Array.isArray(selection.tokens) ? selection.tokens : [],
       companies: Array.isArray(selection.companies) ? selection.companies : [],
