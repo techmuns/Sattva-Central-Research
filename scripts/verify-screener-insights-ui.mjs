@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { exportPortfolioTargets, readInsightCompany } from './collect-screener-insights.mjs';
+import { exportPortfolioTargets, readInsightCompany, readInsightCompanyAttempt } from './collect-screener-insights.mjs';
+import { collectInsightBatch } from './lib/screener-insights-batch.mjs';
 import { buildInsightInventory, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
 import { mergeScreenerInsightsCapture } from '../public/js/data/screener-insights-shared.js';
 
@@ -72,6 +73,16 @@ try {
   payload = { version: 1, sourceId: 'screener-insights', checkedAt, targetCount: 1, checkedCount: 1, failedCount: 0, fullCoverage: true, targetKeys: ['TEST'], companies: [company] };
   mode = 'failed-quarter';
   await assert.rejects(readInsightCompany(page, item, checkedAt, { tabTimeout: 300 }));
+  const attempts = [];
+  const pageCount = context.pages().length;
+  const stopped = await collectInsightBatch([item], (target, { signal }) => {
+    const attempt = readInsightCompanyAttempt(context, target, checkedAt, { signal });
+    attempts.push(attempt);
+    return attempt;
+  }, { maxDurationMs: 2_000, attemptTimeoutMs: 150, maxAttempts: 1, concurrency: 1, delayMs: 0 });
+  await Promise.allSettled(attempts);
+  assert.deepEqual(stopped.failedKeys, [item.companyKey]);
+  assert.equal(context.pages().length, pageCount, 'timed-out company attempts close their actual browser pages');
   const retained = mergeScreenerInsightsCapture({ ...payload, companies: [], failedCount: 1, failedKeys: ['TEST'], fullCoverage: false }, payload);
   assert.equal(retained.companies[0].rows.length, 2);
   assert.equal(retained.companies[0].readStatus, 'failed');

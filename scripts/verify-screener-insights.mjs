@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
 import { buildInsightInventory, insightInventoryDiagnostic, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
+import { collectInsightBatch, orderInsightTargets } from './lib/screener-insights-batch.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_ARTIFACT,
@@ -55,6 +56,13 @@ const capture = validateScreenerInsightsCapture({
   version: 1, sourceId: 'screener-insights', checkedAt, targetCount: 1, checkedCount: 1,
   failedCount: 0, fullCoverage: true, targetKeys: ['JAYNECOIND'], companies: [company],
 }, Date.parse('2026-09-05T02:00:00.000Z'));
+const deferredCapture = { ...capture, targetCount: 2, checkedCount: 1, deferredCount: 1, deferredKeys: ['UNREAD'],
+  targetKeys: ['JAYNECOIND', 'UNREAD'], fullCoverage: false };
+assert.doesNotThrow(() => validateScreenerInsightsCapture(deferredCapture, Date.parse(checkedAt)));
+for (const overrides of [{ deferredCount: 2 }, { deferredKeys: ['OUTSIDE'] }, { checkedCount: 2 },
+  { failedCount: 1, failedKeys: ['UNREAD'] }]) {
+  assert.throws(() => validateScreenerInsightsCapture({ ...deferredCapture, ...overrides }, Date.parse(checkedAt)), /deferrals/);
+}
 assert.equal(capture.companies[0].rows.length, 2);
 assert.throws(() => validateScreenerInsightsCapture({ ...capture, targetKeys: ['OTHER'] }));
 assert.throws(() => validateScreenerInsightsCapture({ ...capture, companies: [{ ...company, companyUrl: 'https://evil.example/company/JAYNECOIND/' }] }));
@@ -260,6 +268,38 @@ assert.deepEqual(gapArtifact.capture.failedKeys, [unresolvedKey], 'the artifact 
 for (const options of [{ digest: '0'.repeat(64) }, { host: 'https://evil.test/capture' }, { event: 'pull_request' }]) {
   await assert.rejects(readScreenerInsightsCollector({ token: 'test-token', now: () => Date.parse(checkedAt), fetcher: artifactFetch(options) }));
 }
+
+const ordered = orderInsightTargets([
+  { companyKey: 'UNIVERSE-NEW', inPortfolio: false },
+  { companyKey: 'PORTFOLIO-DONE', inPortfolio: true },
+  { companyKey: 'PORTFOLIO-FAILED', inPortfolio: true },
+  { companyKey: 'PORTFOLIO-DEFERRED', inPortfolio: true },
+], { checkedAt, failedKeys: ['PORTFOLIO-FAILED'], companies: [{ companyKey: 'PORTFOLIO-DONE', checkedAt }] });
+assert.equal(ordered[0].companyKey, 'PORTFOLIO-DEFERRED', 'unvisited portfolio companies lead repeated reads');
+assert.equal(ordered.at(-1).companyKey, 'UNIVERSE-NEW', 'portfolio reads lead the broader universe');
+const progress = [];
+const bounded = await collectInsightBatch([{ companyKey: 'FIRST' }, { companyKey: 'STALLED' }, { companyKey: 'LATER' }],
+  target => target.companyKey === 'FIRST' ? company : new Promise(() => {}),
+  { maxDurationMs: 200, attemptTimeoutMs: 1_000, concurrency: 1, maxAttempts: 1, delayMs: 0,
+    progressIntervalMs: 50, onProgress: counts => progress.push(counts) });
+assert.equal(bounded.succeeded.length, 1, 'a stalled source cannot discard completed reads');
+assert.equal(bounded.attemptedCount, 2);
+assert.deepEqual(bounded.failedKeys, ['STALLED']);
+assert.deepEqual(bounded.deferredKeys, ['LATER'], 'unstarted companies are deferred, never counted as checked');
+assert.equal(bounded.deadlineReached, true);
+assert.equal(bounded.failureCounts.deadline, 1);
+assert.doesNotMatch(JSON.stringify(progress), /FIRST|STALLED|LATER|companyUrl|isin|companyKey/);
+let attempts = 0;
+const retryBounded = await collectInsightBatch([{ companyKey: 'TIMEOUT' }, { companyKey: 'GOOD' }], target => {
+  if (target.companyKey === 'GOOD') return company;
+  attempts++;
+  return new Promise(() => {});
+}, { maxDurationMs: 2_000, attemptTimeoutMs: 25, maxAttempts: 2, concurrency: 1, delayMs: 0 });
+assert.equal(attempts, 2, 'per-company retries remain bounded');
+assert.equal(retryBounded.succeeded.length, 1, 'later companies survive an earlier per-company timeout');
+assert.equal(retryBounded.failureCounts.timeout, 1);
+assert.equal(retryBounded.deadlineReached, false);
+assert.deepEqual(retryBounded.deferredKeys, []);
 
 const workflow = readFileSync(new URL('../.github/workflows/screener-insights-refresh.yml', import.meta.url), 'utf8');
 const collector = readFileSync(new URL('./collect-screener-insights.mjs', import.meta.url), 'utf8');
