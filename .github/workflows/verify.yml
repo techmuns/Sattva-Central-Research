@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
       - name: Verify Telegram parsing, retention and resumable collection
         run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs
+      - name: Verify investor quarterly evidence and aggregation
+        run: node scripts/verify-super-investors.mjs
       - name: Verify refresh ownership and source targeting
         run: node scripts/verify-refresh.mjs
       - name: Verify filings snapshot recovery
@@ -103,6 +105,10 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/family-browser" --no-save --package-lock=false playwright@1.62.1 exceljs@4.4.0
           node "$RUNNER_TEMP/family-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify investor scope, disclosure evidence and incomplete data
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-super-investors-ui.mjs
       - name: Verify portfolio reload, offline, resume and cache behaviour
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -19,7 +19,7 @@
 // credential for the operator to renew, everything else is a service to wait for. The Worker
 // route turns that code into something the panel can say out loud.
 
-import { isSlug, normaliseList, normalisePortfolio } from '../public/js/data/finology-shared.js';
+import { isSlug, normaliseList, normalisePortfolio, isPortfolioPayload } from '../public/js/data/finology-shared.js';
 
 export { isSlug };
 
@@ -146,5 +146,7 @@ export async function fetchInvestorList(fetchImpl, token, base) {
 /** GET /super-investors/{slug} -> one investor's book, quarter by quarter. */
 export async function fetchInvestorPortfolio(fetchImpl, token, slug, base) {
   if (!isSlug(slug)) throw fail(`"${slug}" is not a valid investor slug.`, 'bad-slug');
-  return normalisePortfolio(await call(fetchImpl, token, `/super-investors/${encodeURIComponent(slug)}`, base), slug);
+  const body = await call(fetchImpl, token, `/super-investors/${encodeURIComponent(slug)}`, base);
+  if (!isPortfolioPayload(body, slug)) throw fail('The source returned an incomplete portfolio payload.', 'shape');
+  return normalisePortfolio(body, slug);
 }

@@ -3638,10 +3638,10 @@ measurements and the four independent fixes.
 
 | field | on | meaning |
 | --- | --- | --- |
-| `filedQuarters` | portfolio | `quarters` minus every open period — the only columns a comparison may use. A quarter closes in **March, June, September or December**; a label parsing to any other month is the current, open period. A label that does not parse as a date at all is treated as filed. |
+| `filedQuarters` | portfolio | `quarters` minus every open period — the only columns a comparison may use. A quarter closes in **March, June, September or December**; a label parsing to any other month is the current, open period. The period must also have ended by the current UTC date. Unknown dates and future quarter ends are ineligible. |
 | `openQuarters` | portfolio | the rest, rendered in the table and reported as `pending` by `deriveMoves`, never dropped |
-| `quarterlyNotes` | holding | the source's own non-numeric cell text, kept where they gave one (`"Filing Due"`). Empty on a normal book. Same purpose as `parseChange`'s `note` on Trendlyne. |
-| `awaiting` | move action | no filed percentage for the latest **filed** quarter, and either their note says the filing is outstanding or `valueCr > 0` says the position is still worth something. **Not a move**, never an alert, never worded as a sale. |
+| `quarterlyNotes` | holding | Source non-numeric cell text (`"Filing Due"`), preserved on repeated normalisation. Missing keys, invalid percentages and conflicting duplicate cells also carry explicit notes. Same purpose as `parseChange`'s `note` on Trendlyne. |
+| `awaiting` | move action | Either comparison cell carries an incomplete-data note, or a missing latest percentage lacks an explicit zero current value. Labelled **Incomplete data**. **Not a move**, never an alert, never worded as a sale. |
 
 `isMove(action)` is the one definition of what counts as a change (`new`, `exited`, `added`,
 `trimmed`). `classifyHolding(h, latest, prior)` is the one classifier — `js/investors/live.js` used
@@ -3670,11 +3670,33 @@ those carrying a value, and says how many of each. Summing all history produced 
 `0 holdings` beside `₹793 Cr book`; the count and the total now use the same set.
 
 Clicking a company in the cross-book Quarterly Changes summary reads `allHoldings()` for that exact
-company and keeps each investor row whose own latest/prior pair contains a disclosure. The popup
+company identity and uses the same selected quarter pair as the summary. The popup
 therefore includes unchanged current holders as well as movers, and prints investor, action, prior
 stake, latest stake, derived change and current `valueCr`. A row absent from both compared quarters
 is historical rather than part of this quarter and is excluded; a one-quarter current row remains
 with no fabricated comparison.
+
+`investor-quarterly.js` aggregates one shared, consecutive closed quarter pair. Books lacking
+either column are counted as excluded, and unloaded books are counted separately. The summary
+shows the selected company scope, comparison period, source-read age and incomplete positions.
+Portfolio and Watchlist match source symbols where available, otherwise complete normalised
+company names; a shared 12-character prefix is not an identity.
+
+Shared changes count distinct investor slugs per source company identifier. Normalisation
+collapses duplicate company rows; conflicting cells become incomplete data. A group containing
+a new/removed disclosure has no complete percentage-point sum, so no partial sum is displayed.
+Stake changes are not labelled buys or sells: changes in share capital can alter percentages.
+Source links support inspection, but this feed remains a third-party aggregation, not an
+independent verification of every exchange filing. An empty result describes available data only.
+
+The 6 September 2026 audit of the 4 September capture found 90 books, 87 supporting Jun 2026 vs
+Mar 2026 and 26 Universe companies with shared increases/new disclosures. The screenshot's
+Portfolio filter did not establish a Universe-wide absence. A fresh read of the dashboard API
+confirmed Aavas at 2.13% vs 1.65% for Abu Dhabi Investment Authority, with MIT newly disclosed at
+1.10%. These dated observations are regression examples, not expected future totals.
+
+Run `node scripts/verify-super-investors.mjs` and
+`PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-super-investors-ui.mjs`; both gate PR CI.
 
 The complete `allHoldings()` result renders in the separate **Data Table** tab, positioned after
 Quarterly Changes. **All Investors** contains the investor-card directory only. Search, investor

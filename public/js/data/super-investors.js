@@ -67,7 +67,9 @@
 // re-read control in the Live pill's modal, and it asks for everything again.
 
 import { conditionalJson, readEntries, KEYS, isPersistent } from '../core/store.js';
-import { normalisePortfolio, deriveMoves, summarise, quarterOrder, round2, filedPair, isFiledQuarter } from './finology-shared.js';
+import { normalisePortfolio, isPortfolioPayload, deriveMoves, summarise, quarterOrder, filedPair, isFiledQuarter } from './finology-shared.js';
+
+import { summariseQuarter } from './investor-quarterly.js';
 
 const LIST_PATH = 'api/super-investors';
 const bookPath = (slug) => `api/super-investors/${encodeURIComponent(slug)}`;
@@ -163,7 +165,7 @@ function fresh() {
 export const isLoaded = () => state.loaded;
 export const list = () => state.investors;
 export const book = (slug) => state.books.get(slug) || null;
-export const books = () => [...state.books.values()];
+export const books = () => [...state.books.values()].filter((b) => state.investors.some((i) => i.slug === b.slug));
 export const failureFor = (slug) => state.failures.get(slug) || null;
 
 export function onChange(fn) {
@@ -225,9 +227,9 @@ export function meta() {
     message: state.message,
     total: state.investors.length,
     dropped: state.dropped,
-    loadedBooks: state.books.size,
-    failedBooks: state.failures.size,
-    pending: Math.max(0, state.investors.length - state.books.size - state.failures.size),
+    loadedBooks: state.investors.filter((i) => state.books.has(i.slug)).length,
+    failedBooks: state.investors.filter((i) => state.failures.has(i.slug)).length,
+    pending: state.investors.filter((i) => !state.books.has(i.slug) && !state.failures.has(i.slug)).length,
     inFlight: state.inFlight,
     fetchedAt: state.fetchedAt,
     // The OLDEST confirmation behind what is on screen, not the newest. With the revalidation skip
@@ -330,7 +332,7 @@ export async function refreshSnapshot() {
   if (Number.isFinite(heldAt) && incomingAt <= heldAt) return state;
 
   const incomingSlugs = new Set(body.investors.map((i) => i?.slug).filter(Boolean));
-  const incomingBooks = new Set(Object.entries(body.books || {}).filter(([, value]) => value && value.ok !== false).map(([slug]) => slug));
+  const incomingBooks = new Set(Object.entries(body.books || {}).filter(([slug, value]) => isPortfolioPayload(value, slug)).map(([slug]) => slug));
   // A deployment snapshot can be newer than the file that seeded this page and still older than
   // a book the Worker confirmed on this device. Preserve any list entry backed by such a book;
   // otherwise an intermediate deploy rolls a newly added investor and its moves backwards.
@@ -374,7 +376,7 @@ export async function refreshSnapshot() {
   // make a fully replaced snapshot look stale after a successful refresh.
   state.checkedAt = incomingAt;
   for (const [slug, value] of Object.entries(body.books || {})) {
-    if (!value || value.ok === false) continue;
+    if (!isPortfolioPayload(value, slug)) continue;
     const confirmed = Number(state.confirmedAt.get(slug));
     if (Number.isFinite(confirmed) && confirmed > incomingAt) continue;
     state.books.set(slug, normalisePortfolio(value, slug));
@@ -517,7 +519,7 @@ async function seedFromStore(gen) {
   for (const i of state.investors) {
     const hit = stored.get(KEYS.investorBook(i.slug));
     const value = hit?.value;
-    if (!value || value.ok === false) continue;
+    if (!isPortfolioPayload(value, i.slug)) continue;
     // Re-normalised rather than trusted: these bytes were written by whatever version of the Worker
     // was live when they were cached, and the shape guard is what makes that safe.
     state.books.set(i.slug, normalisePortfolio(value, i.slug));
@@ -566,7 +568,7 @@ async function seedFromSnapshot(gen) {
   const at = Date.parse(body.capturedAt || '') || null;
   let added = 0;
   for (const [slug, value] of Object.entries(body.books || {})) {
-    if (!value || value.ok === false || state.books.has(slug)) continue;
+    if (!isPortfolioPayload(value, slug) || state.books.has(slug)) continue;
     state.books.set(slug, normalisePortfolio(value, slug));
     state.fromSnapshot.add(slug);
     state.unconfirmed.add(slug);
@@ -601,7 +603,7 @@ async function confirmList() {
   if (body.fetchedAt) state.fetchedAt = body.fetchedAt;
   state.stale = body.stale === true;
   state.staleReason = body.stale === true ? body.staleReason || null : null;
-  if (body.investors.length !== state.investors.length) {
+  if (JSON.stringify(body.investors) !== JSON.stringify(state.investors)) {
     state.investors = body.investors;
     bump();
     emit({ now: true });
@@ -637,7 +639,7 @@ async function revalidate({ ignoreWindow = false } = {}) {
       state.stale = body.stale === true;
       state.staleReason = body.stale === true ? body.staleReason || null : null;
       // An investor added or removed upstream since the cached read.
-      if (body.investors.length !== state.investors.length) {
+      if (JSON.stringify(body.investors) !== JSON.stringify(state.investors)) {
         state.investors = body.investors;
         bump();
       }
@@ -717,10 +719,20 @@ export async function loadBook(slug, { force = false, gen = generation } = {}) {
   const had = state.books.get(slug);
   if (had && !force) return had;
 
-  let res;
+  let res, readFailure;
   try {
-    res = await conditionalJson(bookPath(slug), { key: KEYS.investorBook(slug), optional: true });
-  } catch {
+    res = await conditionalJson(bookPath(slug), {
+      key: KEYS.investorBook(slug), optional: true,
+      validate: (body) => {
+        if (!isPortfolioPayload(body, slug)) {
+          const error = new Error(body?.message || 'The investor book could not be read.');
+          error.code = body?.reason || 'shape';
+          throw error;
+        }
+      },
+    });
+  } catch (error) {
+    readFailure = error;
     res = null;
   }
   // A re-read replaced the state while this was in flight. The bytes are already in the device
@@ -736,12 +748,11 @@ export async function loadBook(slug, { force = false, gen = generation } = {}) {
     // It also must not be recorded as CONFIRMED. Nothing vouched for those bytes — the request
     // failed — so the slug stays in `unconfirmed`, `meta().origin` keeps saying `store`, and the
     // next visit asks again instead of resting on a six-hour skip it never earned.
-    if (had) return false;
     state.failures.set(slug, {
-      reason: body?.reason || 'unreachable',
-      message: body?.message || 'This investor’s book could not be read.',
+      reason: readFailure?.code || body?.reason || 'unreachable',
+      message: readFailure?.message || body?.message || 'This investor’s book could not be read.',
     });
-    return null;
+    return had ? false : null;
   }
   // The server answered, so whatever it said about these bytes is now confirmed as of this moment.
   state.confirmedAt.set(slug, res.checkedAt || Date.now());
@@ -755,6 +766,7 @@ export async function loadBook(slug, { force = false, gen = generation } = {}) {
     state.fromSnapshot.delete(slug);
     // `fromStore` is the conditional layer reporting a 304 — the server confirmed the bytes we
     // already had, so there is nothing to re-normalise and nothing to repaint.
+    state.failures.delete(slug);
     if (res.fromStore) return false;
     state.books.set(slug, normalisePortfolio(body, slug));
     state.failures.delete(slug);
@@ -815,7 +827,7 @@ function derived() {
   const moves = [];
   const holdings = [];
   const seenQuarters = [];
-  for (const b of state.books.values()) {
+  for (const b of books()) {
     const investor = displayName(b);
     for (const q of b.quarters) if (!seenQuarters.includes(q)) seenQuarters.push(q);
 
@@ -830,6 +842,8 @@ function derived() {
         company: h.company,
         companySlug: h.companySlug,
         quarterlyHoldings: h.quarterlyHoldings,
+        quarterlyNotes: h.quarterlyNotes,
+        fetchedAt: b.fetchedAt,
         quarters: b.quarters,
         latest: latest || null,
         pct: latest ? h.quarterlyHoldings[latest] : null,
@@ -875,110 +889,11 @@ export const totalsFor = (slug) => {
   return b ? summarise(b) : null;
 };
 
-/**
- * THE QUARTER, ROLLED UP ACROSS EVERY COMPARABLE BOOK.
- *
- * The page exists so a reader does not have to open ninety books one at a time, and this is the
- * function that answers that. It is a roll-up of `deriveMoves` — counting and grouping their
- * numbers — and it invents nothing beyond the percentage-point subtraction that module already
- * documents as the one derived figure here.
- *
- * FOUR THINGS IT DELIBERATELY WILL NOT DO, each of which is the obvious feature request:
- *
- *  1. **No rupee size on any move.** `valueCr` is Finology's derivation of what a position is
- *     WORTH NOW, not what was traded. Ranking "largest buys" by it would answer "who holds the
- *     biggest position that also grew", and print a rupee figure for a trade nobody disclosed.
- *     Increases and reductions are therefore ranked in PERCENTAGE POINTS of the company, which is
- *     the only size the filing actually states.
- *  2. **No size at all on a new or exited position.** `deriveMoves` leaves `deltaPp` null for both
- *     on purpose — a position appearing is a change of disclosure, not a move of "the whole
- *     holding" — so new entrants are ranked by the stake they now disclose, and exits carry no
- *     figure. Sorting them into the increase/reduction lists would fabricate the very number that
- *     module refuses to state.
- *  3. **"Exited" is not "sold".** Below the disclosure threshold a real holding vanishes from the
- *     shareholding pattern. The wording on every surface is "no longer disclosed".
- *  4. **Consensus is a COUNT, not a signal.** `consensusBuys` says how many tracked investors
- *     added or newly disclosed the same company. It is not a recommendation, it is not weighted,
- *     and it is not scored — this dashboard adds no model to somebody else's filings.
- *
- * AND THE BOOKS ARE NOT ALL ON THE SAME QUARTER. `deriveMoves` compares each book's own two most
- * recent quarters, so across ninety investors this can span several (latest, prior) pairs. That is
- * a fact about their publishing, not an error, and `pairs` reports it so the UI can say so rather
- * than implying one clean quarter boundary.
- *
- * `include(company)` narrows to the scope the view is showing. It is passed in rather than read
- * here so the summary and the table below it filter through ONE predicate — two predicates over
- * the same question is the shape that had the filings tabs reporting different companies in two
- * places on one screen.
- */
+/** Compare the same consecutive closed quarters across the active investor list. */
 export function quarterSummary({ include = null, limit = 5 } = {}) {
-  const all = derived().moves;
-  const moves = include ? all.filter((m) => include(m.company)) : all;
-
-  // `awaiting` is counted so an outstanding filing is VISIBLE rather than merely absent. It is not
-  // a move and never joins a buy or exit group; the head prints it as its own clause, because
-  // "three positions have not filed yet" and "three positions were sold" are different answers and
-  // the reader is owed the first rather than a quietly shorter list.
-  const counts = { new: 0, exited: 0, added: 0, trimmed: 0, held: 0, awaiting: 0 };
-  for (const m of moves) if (counts[m.action] != null) counts[m.action] += 1;
-
-  // Grouped on the company, carrying who did what — the roll-up a reader would otherwise do by
-  // opening every book. `companySlug` rides along so a row can link out to Finology's own page.
-  const group = (actions) => {
-    const byCompany = new Map();
-    for (const m of moves) {
-      if (!actions.includes(m.action)) continue;
-      if (!byCompany.has(m.company)) byCompany.set(m.company, { company: m.company, companySlug: m.companySlug, investors: [] });
-      byCompany.get(m.company).investors.push({ investor: m.investor, slug: m.slug, action: m.action, deltaPp: m.deltaPp, now: m.now });
-    }
-    return [...byCompany.values()]
-      .filter((c) => c.investors.length > 1)
-      // Most investors first. The tie-break sums only the moves that HAVE a size — a company two
-      // investors newly disclosed sums to 0pp and must not therefore rank below one with a single
-      // measured +0.1pp; `sized` keeps that visible instead of letting a null read as zero.
-      .map((c) => ({
-        ...c,
-        count: c.investors.length,
-        sized: c.investors.filter((i) => i.deltaPp != null).length,
-        sumPp: round2(c.investors.reduce((a, i) => a + (i.deltaPp ?? 0), 0)),
-      }))
-      .sort((a, b) => b.count - a.count || Math.abs(b.sumPp) - Math.abs(a.sumPp));
-  };
-
-  const byAction = (action) => moves.filter((m) => m.action === action);
-
-  // Every (latest, prior) pair the comparable books were measured across.
-  const pairs = [];
-  for (const m of moves) {
-    if (!pairs.some((p) => p.latest === m.latest && p.prior === m.prior)) pairs.push({ latest: m.latest, prior: m.prior });
-  }
-
-  // A book with one published quarter is not comparable and contributes nothing — counted, so the
-  // panel can say so rather than letting it read as an investor who did nothing.
-  let comparableBooks = 0;
-  let singleQuarterBooks = 0;
-  for (const b of state.books.values()) (b.quarters.length > 1 ? comparableBooks++ : singleQuarterBooks++);
-
-  return {
-    counts,
-    total: moves.length,
-    pairs,
-    comparableBooks,
-    singleQuarterBooks,
-    // Books that actually contributed a move to THIS (possibly scoped) set. Under a narrowed
-    // scope `comparableBooks` alone would read as though all of them had — "5 new across 87
-    // comparable books" is true and sounds like 87 investors moved on five companies.
-    contributingBooks: new Set(moves.map((m) => m.slug)).size,
-    consensusBuys: group(['new', 'added']).slice(0, limit),
-    consensusExits: group(['exited', 'trimmed']).slice(0, limit),
-    // Ranked by the stake they now disclose — a filed figure — never by a change they did not make.
-    newEntrants: byAction('new').sort((a, b) => (b.now ?? 0) - (a.now ?? 0)),
-    topAdds: byAction('added').sort((a, b) => b.deltaPp - a.deltaPp),
-    topTrims: byAction('trimmed').sort((a, b) => a.deltaPp - b.deltaPp),
-    // No sort key exists for these and none is invented: an exit has no size, so they come out in
-    // book order rather than ranked by a figure that would have to be made up.
-    exits: byAction('exited'),
-  };
+  return summariseQuarter(books().filter((b) => state.investors.some((i) => i.slug === b.slug)), {
+    include, limit, investors: state.investors,
+  });
 }
 
 /**
@@ -990,7 +905,7 @@ export function quarterSummary({ include = null, limit = 5 } = {}) {
  */
 export function overlaps() {
   const byCompany = new Map();
-  for (const b of state.books.values()) {
+  for (const b of books()) {
     const [latest] = filedPair(b.quarters);
     if (!latest) continue;
     for (const h of b.holdings) {
