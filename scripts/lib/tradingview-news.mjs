@@ -27,7 +27,10 @@ export function tradingViewTargets(entities, directory = [], { nseEntries = null
     // an NSE listing. Prefer the actual NSE membership directory when one is available.
     const historical = hit?.historical && previousEntries[`${entity.entityId}|NSE:${filingTicker(hit.ticker)}`]?.lastSuccessAt
       ? hit.ticker : null;
-    const nse = filingTicker(nseIdentities ? nseIdentities.find(identity)?.ticker || historical : hit ? hit.ticker : entity.ticker);
+    // A newly added verified book ticker need not wait for the next directory refresh. That
+    // fallback is allowed only when no merged identity exists, never for known BSE-only rows.
+    const nse = filingTicker(nseIdentities ? nseIdentities.find(identity)?.ticker || historical || (!hit ? entity.ticker : null)
+      : hit ? hit.ticker : entity.ticker);
     const bse = upper(bseAliases[hit?.isin] || hit?.bseSymbol);
     const symbols = [...new Set([
       token(nse) && !/^\d+$/.test(nse) ? `NSE:${nse}` : null,

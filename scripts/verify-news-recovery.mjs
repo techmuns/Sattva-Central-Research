@@ -83,6 +83,8 @@ const holdings = [{ isin: 'INE000000001', ticker: 'ALPHA', name: 'Alpha Solar' }
 const entities = portfolioNewsEntities(holdings);
 const directory = [{ ...holdings[0] }, { ...holdings[1], bseSymbol: 'BETA' }];
 assert.deepEqual(tradingViewTargets(entities, directory, { nseEntries: [directory[0]] })[1].symbols, ['BSE:BETA'], 'BSE ticker does not invent an NSE listing');
+assert.deepEqual(tradingViewTargets(entities, [directory[0]], { nseEntries: [directory[0]] })[1].symbols, ['NSE:BETA'],
+  'new verified portfolio tickers do not wait for the next directory refresh');
 assert.deepEqual(tradingViewTargets(entities, [{ ...directory[1], historical: true }], {
   nseEntries: [directory[0]], previousEntries: { [`${entities[1].entityId}|NSE:BETA`]: { lastSuccessAt: iso(now) } },
 })[1].symbols, ['NSE:BETA', 'BSE:BETA'], 'a proven historical venue keeps collecting even after leaving the current exchange directory');
