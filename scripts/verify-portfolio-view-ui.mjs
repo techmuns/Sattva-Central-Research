@@ -12,7 +12,7 @@ const server = createServer((req, res) => {
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
-    res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' }[extname(file)] || 'application/octet-stream');
+    res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
     res.end(readFileSync(file));
   } catch { res.writeHead(404); res.end(); }
 });
@@ -304,6 +304,8 @@ try {
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
     assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
     if (size.width >= 1024) {
+      const brand = await frame.locator('[data-brand-mark] img').evaluate(async image => { await image.decode(); return image.getBoundingClientRect().width; });
+      assert(brand >= 180, 'the full wordmark remains legible in the compact table header');
       assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
       assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
@@ -336,6 +338,7 @@ try {
     await frame.locator('[data-alerts-focus]').press('Escape');
     assert.equal((await measure()).headerVisible, true, 'Escape restores the header and navigation');
     if (size.width === 1440 && process.env.ALERTS_LAYOUT_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_LAYOUT_SCREENSHOT });
+    if (size.width === 1024 && process.env.ALERTS_LAYOUT_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_LAYOUT_SCREENSHOT.replace('.png', '-tablet.png') });
     console.log(`Table-first iframe ${size.width}x${size.height}: ${Math.round(normal.height)}px normal, ${Math.round(focused.height)}px focus (${normal.viewport}px inner viewport)`);
   }
   await frame.locator('[data-alerts-focus]').click();
