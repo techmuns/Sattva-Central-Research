@@ -7,7 +7,9 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
 
 ## Hard rules
 
-1. **Work on `main` only. Never create a branch.** Commit and push to `main` when done.
+1. **Follow `AGENTS.md`: create a `codex/*` branch and pull request for every change.**
+   Never commit, push or reset directly on `main`. Address review feedback and merge after
+   required checks pass, respecting review gates and the user's production-action limits.
 2. **No deployment build step, no bundler, no framework, no npm dependencies for the app itself.**
    Vanilla ES modules, served as static files. If you find yourself adding a `package.json`
    for the front-end, stop — that's out of contract.
@@ -27,6 +29,13 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
    `tailwind.config.cjs`. Commit the generated stylesheet. The on-demand CLI is a maintenance
    tool, not an app dependency or a deployment step.
 5. Light theme only.
+6. **Current data and continuous history are a standing user requirement across every tab.**
+   Opening or returning to the dashboard must automatically revalidate the relevant feeds;
+   background collection must retain history and recover missed intervals where possible.
+   “Connected” is not proof of freshness or completeness. Never conceal stale, failed or
+   partial checks behind “Up to date”. This explicitly includes NSE Filings and all four
+   Insider Trades categories. Follow `AGENTS.md` and the acceptance criteria in
+   `docs/INTELLIGENCE-RELIABILITY.md`; disclose any unverified coverage or source limitations.
 
 ---
 
