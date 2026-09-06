@@ -1,5 +1,49 @@
 # Research data reliability
 
+## Standing product requirement: current on opening, no silent data loss
+
+On 6 September 2026 the user established this requirement for the entire dashboard:
+opening the app should show up-to-date information, and data must not be silently
+missed as time advances. The user explicitly included both **NSE Filings** and
+**Insider Trades**, covering bulk deals, block deals, SAST and insider disclosures.
+It applies to all tabs and to Portfolio, Watchlist and Universe.
+
+This is an acceptance requirement for ongoing work, not a statement that every
+existing feed already satisfies it. Cached data may paint immediately while the
+app checks for updates, but its age and incomplete checks must remain truthful.
+“Current” means checked against the configured source within its documented
+publication and collection cadence; end-of-day and periodic feeds retain their
+actual as-of dates. A new publication is not required for a successful check.
+
+Future data and UI changes must preserve these criteria:
+
+| Area | Required behavior and evidence |
+| --- | --- |
+| Opening and returning | Revalidate relevant feeds automatically on first open, revisiting a stale view, resuming after sleep and reconnecting. Continue checks while visible at the source's documented cadence; preserve usable rows, searches and filters while updating. |
+| Collection without readers | Scheduled or durable collection continues with no dashboard open. A browser poll or demand-triggered watchdog alone cannot establish continuous coverage. Verify successful source reads and that captured data reaches the reader-facing endpoint. |
+| Coverage | Track successful reads separately for required sources, companies, categories and pages. All four Insider Trades categories must be accounted for. Distinguish a verified empty result from an unchecked, failed or partial result; retain unresolved identities for reconciliation. |
+| Recovery | Persist progress and retained records across interrupted runs. Re-read an overlapping interval or resume pagination to reconcile missed and late-arriving records wherever upstream history allows. Mark an unrecoverable interval as a gap. |
+| History | Merge and deduplicate without losing distinct events or later corrections. Navigation, date rollover, filtering, a bounded first page and refresh failures must not delete retained shared history. Make archive coverage and any retention limits explicit. |
+| Honest status | Keep connection, last successful source check, source publication time and archive coverage distinct. A cache read, deployment, job start or successful subset must not advance the source's success timestamp or hide a newer failed attempt. “Up to date” requires successful, sufficiently recent checks of the relevant coverage. |
+| Failure handling | Keep the last good rows during an outage, indicate stale/partial/unavailable coverage accurately, and retry through the configured collection policy. Detect overdue or incomplete collection independently of a user's visit. |
+
+When implementing or changing these paths, verify locally or in staging the
+relevant cases: a new record after initial load, reopening after inactivity, an
+interrupted collection followed by recovery, a failed source/category/page,
+source responses with zero new rows, date rollover and records outside the initial
+display window. Successful checks must retain old evidence and expose new records;
+partial checks must remain visibly partial. Repository CI and a healthy connection
+alone do not prove complete upstream coverage.
+
+The known limits in [Filings operations](FILINGS-OPERATIONS.md) still apply. NSE's
+latest-window feed and best-effort scheduled captures do not establish a complete
+exchange archive. Finite retained windows and upstream availability must remain
+explicit until a verified collection/backfill path closes the gap. This rule does
+not itself change production schedules, start captures, provision monitors or
+certify that no records have been missed.
+
+## Alert evidence retention
+
 Material, company-attributed portfolio news and linked exchange disclosures remain eligible for
 AI Alerts throughout the existing 14-day window. Recency still reduces their ranking score;
 retention alone cannot create a Must see priority. A failed refresh does not retract known evidence.
