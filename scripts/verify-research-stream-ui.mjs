@@ -332,6 +332,9 @@ try {
     result.citationAttached = node.querySelector('.research-cite').parentElement.classList.contains('research-citation-anchor');
     renderResearchAnswer(node, '# Summary\n\n**Revenue**: 120\n\n**Risks**\n\nStill unresolved.');
     result.headingVariants = [...node.querySelectorAll('h3')].map(heading => heading.textContent);
+    renderResearchAnswer(node, '**Keep these words [Dashboard: News]** and `[Dashboard: News]`', { compactCitations: true, cite: () => ({ href: '#/research/news', label: 'News' }) });
+    result.nestedCitationText = node.querySelector('strong')?.textContent;
+    result.literalCode = node.querySelector('code')?.textContent;
     node.remove(); return result;
   });
   assert.equal(safeRender.unsafe, 0);
@@ -342,6 +345,8 @@ try {
   assert.equal(safeRender.externalTarget, '_blank', 'external portfolio sources preserve the research conversation');
   assert(safeRender.citationAttached, 'short citation markers stay attached to the preceding word');
   assert.deepEqual(safeRender.headingVariants, ['Summary', 'Revenue:', 'Risks']);
+  assert(safeRender.nestedCitationText.startsWith('Keep these words'), 'citations inside bold prose never swallow the surrounding words');
+  assert.equal(safeRender.literalCode, '[Dashboard: News]', 'code examples remain literal text');
   assert(safeRender.text.includes('Zero is 0, missing is unavailable.'));
 
   // A proxy that never sends a terminal event is bounded by a browser deadline.

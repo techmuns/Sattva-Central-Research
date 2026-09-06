@@ -9,7 +9,7 @@ import { el, empty } from '../core/dom.js';
 // returns `{ href, title, label }` for a page it recognises, and the citation renders as an anchor
 // into that tab — deep-linked to the company where the tab can seed its search. An unrecognised
 // name stays as the model wrote it: a link that went nowhere would be worse than none.
-const CITATION = /\[Dashboard:\s*([^\]\n]+?)\s*\]/;
+const CITATION = /^\[Dashboard:\s*([^\]\n]+?)\s*\]$/;
 
 function appendInline(parent, text, cite = null) {
   const source = String(text || '');
