@@ -211,10 +211,13 @@ let legacyReads = 0, directReads = 0;
 responder = m => {
   if (m.type === 'read') legacyReads++;
   if (m.type === 'positions') directReads++;
-  emit({ ...m, type: 'result', ...sizeReply, sizes: { ...sizeReply.sizes, checkedAt: new Date().toISOString() }, reading: { ...reading, checkedAt: new Date().toISOString() } });
+  emit({ ...m, type: 'result', ...sizeReply, sizes: { ...sizeReply.sizes, valuation: 'workbook', sourceRevision: 'monthly-v2', checkedAt: new Date().toISOString() }, reading: { ...reading, checkedAt: new Date().toISOString() } });
 };
 const direct = await bridge.readResearchPortfolio('What is the latest info on jayaswal neco for me?');
 assert.equal(direct.reading.mode, 'verified-holdings');
+assert.equal(direct.reading.valuation, 'workbook');
+assert.equal(direct.reading.sourceRevision, 'monthly-v2');
+assert.match(direct.reading.answer, /uploaded workbook marks/);
 assert.equal(directReads, 1, 'news uses a fresh structured holdings check');
 assert.equal(legacyReads, 0, 'news does not wait for the Family model');
 assert.equal(validateResearchBody({ question: 'Latest news?', requirePortfolio: true, evidence: { portfolio: direct.reading, portfolioPositions: { sizes: direct.sizes, holdings: direct.holdings }, sources: [] } }).ok, true);

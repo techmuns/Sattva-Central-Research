@@ -52,10 +52,25 @@ Routine news, unresolved identities, undated rows and context-only records have 
 The public 14-day alert window persists in IndexedDB and is re-scoped and re-aged on reload.
 First useful evidence can paint while remaining feeds, operating context and private holding
 sizes are still being checked. An early empty partial cannot block later cards or a delayed cache
-read. A populated view stays stable until its refresh completes; background progress is not ranked
-again when that view cannot use it. Portfolio invalidation cancels outstanding cache adoption.
+read. Partial refreshes add new material arrivals while retaining previously visible companies and
+evidence the unfinished sources have not revalidated yet. Source-change notifications update the
+open view from loaded data without another network fan-out. Portfolio invalidation cancels
+outstanding cache adoption, and a verified position snapshot removes exited companies immediately.
 Private sizes and document records never enter the public alert cache. If browser storage is
 unavailable or cleared, the first visit must read the sources again.
+
+AI Alerts defaults to **Newest first**, using the latest noteworthy source event's IST date/time.
+Routine observations and refresh timestamps cannot make an older material event new. That event
+leads the evidence preview even when older evidence has a higher score. **Largest holdings** and
+**Highest priority** are explicit local sort choices; only the choice persists, never private sizes.
+Receiving holding weights cannot silently switch the selected ordering. Size sorting falls back to
+newest evidence when complete valuations are unavailable. Period-only source dates remain period-only.
+
+Family's position reader revalidates the shared workbook catalog and reuses the adopted book when
+its revision is unchanged. Changed revisions must be adopted before a positions reply. Workbook
+weights do not wait for live quotes, historical archive reconstruction or a model; the existing
+question-answer path still verifies its quote batch. Replies retain the workbook period, check time,
+valuation basis and source revision. A checked workbook is not a live broker connection.
 
 An archived card represents the material evidence already read. New material evidence or a changed
 headline/direction restores it even if an older event remains strongest. Reordering, routine arrivals

@@ -26,6 +26,7 @@ export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
 export const MIN_SCORE = 64;
 export const MUST_SEE_SCORE = 82;
+export const onChange = generalAlerts.onChange;
 
 const FEED_WEIGHT = {
   earnings: 12,
@@ -630,6 +631,21 @@ function directionSummary(events) {
   return count;
 }
 
+// Both the first checked snapshot and the completed rank use the same identity
+// aliases, including tickerless securities and grouped warrant ISINs.
+function positionSnapshotIndex({ holdings, sizes }) {
+  const index = new Map();
+  for (const entity of portfolioNewsEntities(holdings)) {
+    const rows = holdings.filter(holding => entity.portfolioIsins.includes(String(holding.isin || '').toUpperCase()) ||
+      defaultCompanyNewsEntityId(holding) === entity.entityId);
+    const weight = sizes.complete && rows.every(row => Number.isFinite(row.weightPct))
+      ? rows.reduce((sum, row) => sum + row.weightPct, 0) : null;
+    const keys = new Set([entity.ticker, entity.entityId, ...rows.flatMap(row => [row.ticker?.toUpperCase(), defaultCompanyNewsEntityId(row)])].filter(Boolean));
+    for (const key of keys) index.set(key, weight === null ? null : (index.get(key) || 0) + weight);
+  }
+  return index;
+}
+
 /**
  * Pure ranking function. It is exported because the scoring thresholds and noise suppression are
  * product rules; testing only whatever today's capture happens to contain would leave branches
@@ -638,19 +654,9 @@ function directionSummary(events) {
 export function rankReport(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all() } = {}) {
   const day = report?.day || generalAlerts.today();
   const firstDay = shiftDay(day, -(WINDOW_DAYS - 1));
-  const weights = new Map();
-  if (report?.scope === 'portfolio' && positionSizes?.sizes.complete) {
-    // The authenticated positions payload owns weights. `coverage.holdings()` intentionally does
-    // not persist them, so reading only that public identity list made the production path claim it
-    // was sorting by size while `weights` was empty. Tests may still pass weighted holdings as a
-    // direct pure-function fixture; the real session uses `positionSizes.holdings`.
-    for (const h of positionSizes.holdings || holdings) {
-      if (Number.isFinite(h.weightPct)) {
-        const ticker = h.ticker?.toUpperCase() || defaultCompanyNewsEntityId(h);
-        weights.set(ticker, (weights.get(ticker) || 0) + h.weightPct);
-      }
-    }
-  }
+  // Private weights never come from the persisted names-only coverage list.
+  const weights = report?.scope === 'portfolio' && positionSizes?.sizes.complete
+    ? positionSnapshotIndex({ ...positionSizes, holdings: positionSizes.holdings || holdings }) : new Map();
   const feedById = new Map((report?.feeds || []).map((feed) => [feed.id, feed]));
   const holdingByTicker = new Map(
     (holdings || [])
@@ -723,7 +729,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       company: top?.event.company || holding?.name || key,
       sector: holding?.sector || null,
       holding: !!holding,
-      holdingWeightPct: weights.get(key) ?? null,
+      holdingWeightPct: weights.get(key) ?? weights.get(entityId) ?? null,
       // Cards show the strongest evidence first. General Alerts remains the chronological record.
       events: scoredEvents.map((entry) => entry.event),
       topEvent: top?.event || events[0],
@@ -808,6 +814,49 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       cacheSavedAt: report?.cacheSavedAt || null,
     },
   };
+}
+
+/** Publish new material arrivals while preserving evidence not yet revalidated. */
+export function mergePartialReport(previous, next) {
+  if (!previous || previous.scope !== next.scope || previous.day !== next.day) return next;
+  const key = card => card.key || card.ticker || card.entityId;
+  const existingVisible = new Set(previous.cards.map(key));
+  const arrivingVisible = new Set(next.cards.map(key));
+  const all = new Map(previous.allCards.map(card => [key(card), card]));
+  for (const card of next.allCards) {
+    const old = all.get(key(card));
+    // A restored public window may know more than the first few live feeds.
+    // Only replace a card once its material evidence is covered by the new read.
+    const incoming = new Set(materialEvidence(card.events));
+    if (old && (materialEvidence(old.events).some(event => !incoming.has(event)) ||
+        existingVisible.has(key(card)) && !arrivingVisible.has(key(card)))) continue;
+    all.set(key(card), card);
+  }
+  const allCards = [...all.values()];
+  const cards = allCards.filter(card => existingVisible.has(key(card)) || arrivingVisible.has(key(card)));
+  return { ...next, allCards, cards, meta: { ...next.meta,
+    activeCompanies: allCards.length, surfacedCompanies: cards.length,
+    mustSee: cards.filter(card => card.priority === 'must-see').length,
+    important: cards.filter(card => card.priority === 'important').length,
+  } };
+}
+
+/** Apply a newly checked private snapshot without another feed read or ranking pass. */
+export function withPositionSnapshot(report, snapshot) {
+  if (!report || report.scope !== 'portfolio' || !snapshot) return report;
+  const byKey = positionSnapshotIndex(snapshot);
+  const identity = card => [card.key, card.ticker, card.entityId].find(key => byKey.has(key));
+  const decorate = card => ({ ...card, holding: true,
+    holdingWeightPct: byKey.get(identity(card)) ?? null });
+  const retained = card => identity(card) !== undefined;
+  const cards = report.cards.filter(retained).map(decorate);
+  const allCards = report.allCards.filter(retained).map(decorate);
+  return { ...report, cards, allCards, meta: { ...report.meta,
+    positionSizes: snapshot.sizes, sortedByHolding: false,
+    activeCompanies: allCards.length, surfacedCompanies: cards.length,
+    mustSee: cards.filter(card => card.priority === 'must-see').length,
+    important: cards.filter(card => card.priority === 'important').length,
+  } };
 }
 
 /** A privacy-safe ready view while the live source modules revalidate. */

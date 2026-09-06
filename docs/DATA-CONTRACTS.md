@@ -3926,9 +3926,16 @@ verified with fixtures independently of what happens to be in today's capture.
 
 `holdings` is the public names-only coverage list. It decides membership and sector context; it
 does not contain money. In the authenticated Family host, `positionSizes.holdings` is the separately
-validated, complete positions response. Its weights only order already-surfaced cards and print as
+validated, complete positions response. Its weights can order already-surfaced cards and print as
 `% of listed portfolio`; they never add points, create an alert, change direction or survive in the
-public 14-day cache. If the private payload is incomplete or unavailable, evidence order wins.
+public 14-day cache. The UI defaults to the newest noteworthy source event (IST date, then known
+source time), with explicit remembered choices for Largest holdings and Highest priority. The
+newest noteworthy event leads the evidence preview. Holding sizes arriving cannot switch the sort;
+incomplete or unavailable sizes fall back to newest order. Identity matching uses ticker and verified
+ISIN/entity aliases consistently for both immediate snapshot decoration and completed ranking.
+Family positions use the latest adopted workbook marks with `valuation: 'workbook'` and an opaque
+`sourceRevision`; catalog revalidation is independent of quote loading. The supplied book period
+remains distinct from `checkedAt`. Positions and weights remain memory-only in Research.
 
 After scoring, `js/data/intelligence-graph.js` searches every same-company row in the full All Alerts
 pool, including `aiEligible: false` filings, documents, snapshots and schedules. A context row must

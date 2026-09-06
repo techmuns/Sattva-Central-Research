@@ -252,7 +252,7 @@ export function needsPortfolioAnalysis(question, history = []) {
 
 export async function readResearchPortfolio(question, signal, history = []) {
   if (needsPortfolioAnalysis(question, history)) return readPortfolio(question, signal);
-  // Force an archive/quote recheck, coalescing with an already-running check.
+  // Recheck the workbook revision, coalescing with an already-running check.
   // A failed read never falls back to cached ownership or an extra model call.
   const reply = await readPositionSizes(signal, { force: true });
   if (!reply) throw new Error(state === 'locked' ? 'Unlock your portfolio above to answer with your holdings.' : 'Your portfolio connection is unavailable. Please try again; no old holdings were used.');
@@ -260,8 +260,9 @@ export async function readResearchPortfolio(question, signal, history = []) {
   return { ...reply, reading: {
     status: sizes.complete ? 'ready' : 'limited',
     mode: 'verified-holdings',
-    answer: `Verified ${reply.holdings.length} listed holdings from the authenticated Family book. The complete position set supplies ownership, sectors and ${sizes.complete ? 'listed-market-value weights' : 'unavailable weights'}. Costs, tax, account balances and returns were not read.`,
+    answer: `Verified ${reply.holdings.length} listed holdings from the authenticated Family book. The complete position set supplies ownership, sectors and ${sizes.complete ? 'listed-market-value weights' : 'unavailable weights'}.${sizes.valuation === 'workbook' ? ' Weights use uploaded workbook marks, not live quotes.' : ''} Costs, tax, account balances and returns were not read.`,
     bookAsOf: sizes.bookAsOf, checkedAt: sizes.checkedAt, archiveVersion: sizes.archiveVersion,
+    valuation: sizes.valuation, sourceRevision: sizes.sourceRevision,
     quotes: sizes.quotes, sourceErrors: sizes.sourceErrors,
   } };
 }

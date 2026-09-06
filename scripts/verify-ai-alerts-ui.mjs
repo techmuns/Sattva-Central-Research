@@ -13,6 +13,7 @@ const eventsFor = (ticker, company, day = '2026-09-04') => feeds.map((feed, i) =
   headline: `${company}: material risk ${i + 1}`, direction: 'negative', importance: 'high', tab: 'daily-alerts',
 }));
 const events = Array.from({ length: 11 }, (_, i) => eventsFor(`A${String(i).padStart(2, '0')}`, i === 10 ? 'Zenith Manufacturing' : `Company ${String(i).padStart(2, '0')}`)).flat();
+events.filter(e => e.ticker === 'A10').forEach(e => { e.time = '08:00'; });
 events.find((e) => e.ticker === 'A01').time = null;
 events.push({ ...events[30], id: 'hidden-event', importance: 'low', headline: 'Lithium supply agreement hidden beyond the evidence preview' });
 events.push({ ...events[0], id: 'context-document', aiEligible: false, kind: 'document', importance: 'low', direction: 'neutral', headline: 'Material risk source document', detail: 'Underlying source record' });
@@ -23,6 +24,7 @@ const holdings = [...new Map(events.map(e => [e.ticker, { ticker: e.ticker, name
 const familyOrigin = 'https://sattva-family.pages.dev';
 const familyHtml = `<script>
 window.book=${JSON.stringify(holdings)}; window.holdPositions=true; window.failed=false; window.version=1;
+window.book=window.book.map(h=>({...h,weightPct:h.ticker==='A09'?60:40/(window.book.length-1)}));
 const send=data=>parent.postMessage({channel:'sattva-portfolio-v1',...data},'*');
 window.invalidate=()=>send({type:'invalidated',version:++window.version});
 window.ready=()=>send({type:'positions-ready',version:window.version});
@@ -53,6 +55,7 @@ window.refreshAlerts=()=>refresh.refreshAll();
 window.show();
 </script></body></html>`;
 const fixtureModule = `
+const listeners=new Set(); export const onChange=fn=>{listeners.add(fn);return()=>listeners.delete(fn);}; window.feedChanged=()=>listeners.forEach(fn=>fn());
 export { currentDay as today } from '../ui/ai-alert-utils.js';
 import { currentDay } from '../ui/ai-alert-utils.js';
 import { readEntry, writeEntry } from '../core/store.js';
@@ -189,9 +192,22 @@ try {
   const peer = await (await page.locator('iframe').elementHandle()).contentFrame();
   await waitFor(peer, () => !!window.releasePositions);
   assert.equal(await page.locator('[data-ai-card]').count(), 8, 'cold-load evidence does not wait for holding sizes');
+  assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A00');
   await peer.evaluate(() => window.releasePositions());
   await settled();
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
+  assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A00', 'weights arriving cannot silently change newest-first order');
+  const sortControl = page.getByRole('combobox', { name: 'Sort AI Alerts' });
+  assert.equal(await sortControl.inputValue(), 'newest');
+  const readsBeforeSort = await page.evaluate(() => window.reads);
+  await sortControl.selectOption('holdings');
+  assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A09');
+  assert.match(await card('A09').locator('[data-ai-holding-size]').innerText(), /60%/);
+  await sortControl.selectOption('priority');
+  await sortControl.selectOption('newest');
+  assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A00');
+  assert.equal(await page.evaluate(() => window.reads), readsBeforeSort, 'sort changes are instant local views with no network reads');
+  assert.equal(await page.evaluate(() => localStorage.getItem('sattva:ai-alerts:sort:v1')), 'newest');
   assert.match(await card('A00').locator('[data-ai-context]').innerText(), /Related context/);
   assert.equal(await card('A00').locator('[data-ai-context]').getAttribute('title'), 'Context only; it does not add alert priority.');
   assert.equal(await card('A10').count(), 0, 'target starts beyond the first page');
@@ -235,6 +251,23 @@ try {
   console.log('PASS: search beyond pagination and preview, priority, archive/restore and clear search.');
 
   await page.evaluate(() => {
+    window.savedFixture = window.fixtureEvents;
+    window.fixtureEvents = [...window.fixtureEvents, { ...window.fixtureEvents.find(e => e.ticker === 'A09'),
+      id:'latest-material-event', time:'18:00', headline:'A09 new material disclosure', url:'https://example.test/newest.pdf' }];
+    window.holdRead = true;
+    void window.refreshAlerts();
+  });
+  await waitFor(page, () => !!window.releaseRead);
+  assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A09', 'newest material event reaches the top before a slow feed finishes');
+  assert.match(await card('A09').locator('[data-ai-evidence] li').first().innerText(), /A09 new material disclosure/, 'the new event is visible in the preview');
+  assert.equal(await card('A00').count(), 1, 'new live evidence does not erase the previous card');
+  await page.evaluate(() => { window.holdRead = false; window.releaseRead(); });
+  await settled();
+  await page.evaluate(async () => { window.fixtureEvents = window.savedFixture; await window.refreshAlerts(); });
+  await settled();
+  console.log('PASS: newest-first default, explicit persistent size/priority sorting and smooth live arrivals.');
+
+  await page.evaluate(() => {
     window.originalCard = document.querySelector('[data-ai-card]');
     window.holdRead = true; window.partialEvents = [];
     void window.refreshAlerts();
@@ -253,10 +286,19 @@ try {
     window.fixtureEvents = window.fixtureEvents.map(e => e.id === 'A00-announcements' ? { ...e, headline: 'Newly captured company announcement' } : e);
     window.landCapture();
   });
+  await page.clock.runFor(120);
   await settled();
   assert.match(await card('A00').locator('[data-ai-evidence]').innerText(), /Newly captured company announcement/);
   assert.equal(await page.evaluate(() => window.reads), sourceReads, 'a landed source updates AI Alerts without re-reading every feed');
   assert.equal(await search.inputValue(), 'A00', 'source arrival preserves the active search');
+  await page.evaluate(() => {
+    window.fixtureEvents = window.fixtureEvents.map(e => e.id === 'A00-announcements' ? { ...e, headline: 'Live source company announcement' } : e);
+    window.feedChanged();
+  });
+  await page.clock.runFor(120);
+  await settled();
+  assert.match(await card('A00').locator('[data-ai-evidence]').innerText(), /Live source company announcement/);
+  assert.equal(await page.evaluate(() => window.reads), sourceReads, 'active source notifications use already loaded evidence');
   assert((await card('A00').locator('[data-ai-date]').innerText()).includes('04 Sept 2026 · 14:42 IST'));
   assert.equal(await card('A00').locator('[data-ai-date] time').getAttribute('datetime'), '2026-09-04T14:42:00+05:30');
   await search.fill('A01');
@@ -382,8 +424,11 @@ try {
     db.close(); return JSON.stringify(saved);
   });
   assert(!/weightPct|company-documents|drhp-documents/.test(persisted), 'ready snapshot excludes private holdings and private lookup metadata');
+  await page.evaluate(() => localStorage.setItem('sattva:ai-alerts:sort:v1', 'holdings'));
   await page.goto(`${origin}/?hold=1`);
   await page.locator('[data-ai-card]').first().waitFor({ timeout: 1000 });
+  assert.equal(await page.getByRole('combobox', { name: 'Sort AI Alerts' }).inputValue(), 'holdings', 'sort preference survives a full reload');
+  await page.getByRole('combobox', { name: 'Sort AI Alerts' }).selectOption('newest');
   assert.match(await page.locator('[data-ai-feed-status]').innerText(), /Ready/i);
   assert.equal(await page.evaluate(() => !!window.releaseStart), true, 'live collection is still blocked while cached cards are ready');
   console.log('PASS: reload restores a ready privacy-safe alert view before live collection completes.');
