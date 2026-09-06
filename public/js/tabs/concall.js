@@ -26,7 +26,6 @@ import { escapeHtml } from '../core/dom.js';
 import * as scans from '../concall/scans.js';
 import { stopDeepDive } from '../concall/deep-dive.js';
 import * as feed from '../data/concall-scans.js';
-import { withCompanyDocuments } from '../ui/company-documents.js';
 
 export const meta = {
   id: 'concall',
@@ -120,4 +119,5 @@ function loadingHtml() {
     <div class="skeleton-shimmer h-[520px] rounded-2xl bg-slate-100"></div>`;
 }
 
-export const { render, destroy } = withCompanyDocuments({ render: renderFeed, destroy: destroyFeed }, { form: 'concalls', feedLabel: 'Con-call analysis', label: 'Filed con-call documents' });
+export const render = renderFeed;
+export const destroy = destroyFeed;
