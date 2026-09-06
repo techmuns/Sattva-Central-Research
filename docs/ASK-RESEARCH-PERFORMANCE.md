@@ -164,3 +164,28 @@ tests are recorded in [customer-readiness evaluation](ASK-RESEARCH-CUSTOMER-READ
 they exposed factual and latency failures and do not certify customer readiness.
 The authenticated customer-book path remains unverified; no manual production
 research run was performed.
+
+## Telegram and Public Chatter evidence
+
+Ask Research registers Telegram, Public Chatter summaries and Public Chatter posts separately.
+The Telegram adapter reads the tab's retained public-channel archive and revalidates its published
+capture while sources warm. It matches full company names, reviewed aliases or explicit symbols
+against the active scope, including named holdings without tickers. A mention establishes only
+which company is discussed, not whether the claim is true. Unmatched messages remain in the
+Telegram tab; Ask Research discloses their count without assigning them to a holding.
+
+Company questions read the matching Public Chatter detail endpoints automatically; visiting the
+tab first is unnecessary. Portfolio-wide questions sample up to six company topics, with one topic
+per company before repeats. Summaries cover all resolved topics in scope. Topic reads run together
+under a 1.5-second deadline, reuse checks for one minute and retain dated posts on a failed refresh.
+This reads the existing dashboard APIs and never dispatches a new Telegram collection run.
+
+Original URLs, publication dates, literal excerpts, attachment names and source coverage travel in
+the provider packet. Missing dates stay missing; PDF/image contents are not extracted. Partial
+channel history, restricted content, failed topic reads and post-count limits are disclosed. The
+shared evidence budget still samples rows: inclusion is not a claim to read every post or all Telegram.
+
+`scripts/verify-research-social.mjs` exercises the real browser adapters against isolated fixtures,
+including issuer isolation, small holdings, tickerless names, late mentions in long posts, warm
+reuse, new captured posts, outages, wrong-topic responses and recovery. It verifies the provider
+packet, not the model's interpretation or live upstream completeness.

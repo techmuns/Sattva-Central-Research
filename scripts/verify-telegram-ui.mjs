@@ -97,7 +97,7 @@ const live={register(){},start(){},stop(){},subscribe(){return()=>{};}};
 coverage.prime({holdings:[{ticker:'TCS',name:'Tata Consultancy Services'}]});
 watchlist.clear();
 window.tab=tab;
-window.renderScope=(scope)=>{const root=document.querySelector('#content-host');tab.destroy();root.innerHTML='';tab.render({root,scope,live,data:{universe:[]},params:{}});};
+window.renderScope=(scope,params={})=>{const root=document.querySelector('#content-host');tab.destroy();root.innerHTML='';tab.render({root,scope,live,data:{universe:[]},params});};
 window.renderScope('universe');
 </script></body></html>`;
 
@@ -145,6 +145,8 @@ try {
 
   const tabs = await page.$$eval('#content-host [data-chatter-section-tabs] [role="tab"]', (els) => els.map((e) => e.textContent.trim()));
   assert.deepEqual(tabs, ['Coverage', 'Not in coverage', 'Telegram'], 'the three in-page sections');
+  await page.evaluate(() => window.renderScope('portfolio', { section: 'telegram', company: 'JAYNECOIND' }));
+  await page.locator('[data-chatter-section-tabs] [role="tab"][aria-selected="true"]', { hasText: 'Telegram' }).waitFor();
 
   await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
   await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr', { timeout: 20000 });

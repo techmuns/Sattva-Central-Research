@@ -649,7 +649,7 @@ function openingState(scope) {
 
   const promises = el('div', { class: 'research-opening-promises' });
   for (const item of [
-    ['Every tab', 'Earnings, calls, chatter, technicals, filings, investor books and both alert feeds.'],
+    ['Every tab', 'Earnings, calls, Telegram, public chatter, technicals, filings, investor books and both alert feeds.'],
     ['Traceable', 'Material figures name the dashboard page they came from.'],
     ['Evidence-led', 'Answers stay grounded in the dashboard packet sent with each question.'],
   ]) {
