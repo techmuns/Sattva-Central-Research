@@ -17,7 +17,7 @@ export function filterCorporateActionsByScope(rows, scope, holdings = []) {
 
 export function createCorporateActionsFeed({
   now = Date.now,
-  read = () => conditionalJson('data/corporate-actions.json', { key: KEYS.corporateActions, optional: true }),
+  read = null,
   readSaved = () => readEntry(KEYS.corporateActions),
 } = {}) {
   let held = [];
@@ -25,15 +25,35 @@ export function createCorporateActionsFeed({
   let loaded = false;
   let loading = null;
   let refreshing = null;
+  let restoring = null;
+  let generation = 0;
+  let lastPayload = null;
   const subscribers = new Set();
   const emit = () => subscribers.forEach((fn) => fn());
   const safe = async (fn) => { try { return await fn(); } catch { return null; } };
 
+  function validate(payload) {
+    if (payload?.version !== 1 || !Array.isArray(payload.rows) || !payload.rows.length ||
+      payload.rows.some((row) => !row?.company || !row?.purpose || !row?.id) ||
+      (payload.rowCount != null && payload.rowCount !== payload.rows.length)) throw new Error('Invalid corporate actions capture');
+    const previousAt = Date.parse(source.capturedAt || '');
+    const nextAt = Date.parse(payload.capturedAt || '');
+    if (Number.isFinite(previousAt) && (!Number.isFinite(nextAt) || nextAt < previousAt)) throw new Error('Older corporate actions capture');
+  }
+  const readLatest = read || (() => conditionalJson('data/corporate-actions.json', {
+    key: KEYS.corporateActions, optional: true, validate,
+  }));
+
   function absorb(payload, origin, checkedAt) {
-    if (payload?.version !== 1 || !Array.isArray(payload.rows) || !payload.rows.length) return false;
-    const next = payload.rows.filter((row) => row?.company && row?.purpose && row?.id);
-    if (!next.length) return false;
-    held = next;
+    try { validate(payload); } catch { return false; }
+    // A 304 (or identical 200) confirms freshness, not a new table. Keep references
+    // so the renderer can update its status without replacing focused controls.
+    if (payload !== lastPayload) {
+      const identical = held.length === payload.rows.length && held.every((row, index) =>
+        row === payload.rows[index] || JSON.stringify(row) === JSON.stringify(payload.rows[index]));
+      if (!identical) held = payload.rows;
+      lastPayload = payload;
+    }
     source = {
       capturedAt: payload.capturedAt || null,
       checkedAt: checkedAt || null,
@@ -51,46 +71,63 @@ export function createCorporateActionsFeed({
     return true;
   }
 
-  async function fetchLatest() {
-    const result = await safe(read);
-    if (result && [200, 304].includes(result.status) && absorb(result.value, 'live', result.checkedAt || now())) return true;
-    source = { ...source, checkedAt: now(), degraded: 'The latest capture could not be confirmed; showing the retained copy.' };
-    return false;
-  }
-
-  async function build() {
-    const saved = await safe(readSaved);
-    if (saved?.value) absorb(saved.value, 'store', saved.savedAt);
-    await fetchLatest();
-    loaded = true;
-    if (!held.length) source = { ...source, reason: 'unreachable' };
-    emit();
-    return { rows: held, meta: meta() };
+  function restore() {
+    if (!restoring) {
+      const mine = generation;
+      restoring = safe(readSaved).then((saved) => {
+        if (mine !== generation) return;
+        if (saved?.value && absorb(saved.value, 'store', saved.savedAt)) {
+          loaded = true;
+          emit();
+        }
+      });
+    }
+    return restoring;
   }
 
   function load() {
     if (loaded) return Promise.resolve({ rows: held, meta: meta() });
     if (!loading) {
-      loading = build();
-      void loading.finally(() => { loading = null; }).catch(() => {});
+      const check = refresh();
+      const pending = (async () => {
+        await restore();
+        // A usable retained capture is ready now. Only a true cache miss waits
+        // for the network; background revalidation still publishes new records.
+        if (!loaded) await check;
+        return { rows: held, meta: meta() };
+      })();
+      loading = pending;
+      void pending.finally(() => { if (loading === pending) loading = null; }).catch(() => {});
     }
     return loading;
   }
 
   function refresh() {
     if (refreshing) return refreshing;
-    refreshing = (async () => {
-      const before = new Set(held.map(corporateActionKey));
-      const confirmed = await fetchLatest();
+    const mine = generation;
+    const pending = (async () => {
+      await restore();
+      if (mine !== generation) return { skipped: true };
+      if (loaded) emit();
+      const before = new Set(held.map((row) => row.id));
+      const result = await safe(readLatest);
+      if (mine !== generation) return { skipped: true };
+      const confirmed = !!(result && [200, 304].includes(result.status) && absorb(result.value, 'live', result.checkedAt || now()));
+      if (!confirmed) source = { ...source, attemptedAt: now(), degraded: 'The latest capture could not be confirmed; showing the retained copy.' };
       loaded = true;
-      emit();
-      return { added: held.filter((row) => !before.has(corporateActionKey(row))).length, total: held.length, checked: confirmed ? 1 : 0, failed: confirmed ? 0 : 1 };
+      if (!held.length) source = { ...source, reason: 'unreachable' };
+      return { added: held.filter((row) => !before.has(row.id)).length, total: held.length, checked: confirmed ? 1 : 0, failed: confirmed ? 0 : 1 };
     })();
-    void refreshing.finally(() => { refreshing = null; }).catch(() => {});
+    refreshing = pending;
+    void pending.finally(() => {
+      if (refreshing !== pending) return;
+      refreshing = null;
+      emit();
+    }).catch(() => {});
     return refreshing;
   }
 
-  const meta = () => ({ ...source, kind: 'corporate-actions', count: held.length, coversUniverse: true, windowDays: null });
+  const meta = () => ({ ...source, checking: !!refreshing, kind: 'corporate-actions', count: held.length, coversUniverse: true, windowDays: null });
   return {
     load, refresh, rows: () => held, all: () => held, meta,
     isLoaded: () => loaded,
@@ -105,7 +142,10 @@ export function createCorporateActionsFeed({
       live.start(LIVE_ID);
     },
     stopLive: (live) => live.stop(LIVE_ID),
-    invalidate: () => { held = []; source = {}; loaded = false; loading = null; refreshing = null; },
+    invalidate: () => {
+      generation += 1;
+      held = []; source = {}; loaded = false; loading = null; refreshing = null; restoring = null; lastPayload = null;
+    },
   };
 }
 

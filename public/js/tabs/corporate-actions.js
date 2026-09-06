@@ -98,17 +98,19 @@ const tab = makeFilingsTab({
   },
   status: (meta) => {
     const at = Date.parse(meta.capturedAt || '');
+    const nseAt = Date.parse(meta.sources?.nse?.capturedAt || '');
     const screenerAt = Date.parse(meta.sources?.screener?.capturedAt || '');
-    const screenerLive = meta.sources?.screener?.state === 'live' && Number.isFinite(screenerAt);
-    const fresh = Number.isFinite(at) && Date.now() - at <= 35 * 60 * 1000;
-    const label = !Number.isFinite(at)
-      ? 'NSE + Screener · Updating'
-      : screenerLive && fresh
-        ? 'NSE + Screener · Up to date'
-        : meta.sources?.screener?.state === 'retained' && Number.isFinite(screenerAt)
-          ? `NSE current · Screener retained ${formatRelativeTime(screenerAt)}`
-          : fresh ? 'NSE current · Screener updating' : `Actions updated ${formatRelativeTime(at)}`;
-    return `<span class="text-xs font-semibold ${fresh ? 'text-emerald-700' : 'text-slate-500'}">${escapeHtml(label)}</span>`;
+    const recent = (time) => Number.isFinite(time) && Date.now() >= time && Date.now() - time <= 35 * 60 * 1000;
+    const fresh = meta.origin === 'live' && !meta.checking && !meta.degraded &&
+      meta.sources?.nse?.state === 'live' && recent(nseAt) &&
+      meta.sources?.screener?.state === 'live' && recent(screenerAt);
+    const age = Number.isFinite(at) ? ` · Captured ${formatRelativeTime(at)}` : '';
+    const label = meta.checking
+      ? `Checking for updates${age}`
+      : meta.degraded ? `Update unavailable · Retained data${age}`
+        : fresh ? 'NSE + Screener · Up to date'
+          : `Retained data · Source freshness unconfirmed${age}`;
+    return `<span data-filings-info class="text-xs font-semibold ${fresh ? 'text-emerald-700' : 'text-slate-500'}">${escapeHtml(label)}</span>`;
   },
   emptyMessage: 'No corporate actions match this scope and filter.',
   columns: () => [
