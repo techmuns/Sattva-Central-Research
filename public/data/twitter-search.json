@@ -19,12 +19,16 @@
     "isin:INE679V01027|Aditya Vision": {
       "lastAttemptAt": "2026-09-06T04:54:38+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE0ALI01010|Advait Energy Transitions": {
+      "lastAttemptAt": "2026-09-06T07:35:40+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-06T04:54:38.310826+00:00"
+    "checkedAt": "2026-09-06T07:35:40.463876+00:00"
   }
 }
