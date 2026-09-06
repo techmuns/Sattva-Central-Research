@@ -18,7 +18,6 @@ import { formatRelativeTime } from '../core/format.js';
 import { scopeBook, scopeLabel } from '../data/scope.js';
 import * as coverage from '../data/coverage.js';
 import * as feed from '../data/nse-filings.js';
-import { withCompanyDocuments } from '../ui/company-documents.js';
 
 export const meta = {
   id: 'nse-filings',
@@ -226,4 +225,4 @@ function loadingHtml() {
     <div class="skeleton-shimmer h-[520px] rounded-2xl bg-slate-100"></div>`;
 }
 
-export const { render, destroy } = withCompanyDocuments({ render: renderFeed, destroy: destroyFeed }, { form: 'all', source: 'NSE', feedLabel: 'NSE live & captured history', label: 'Company NSE filings' });
+export { renderFeed as render, destroyFeed as destroy };
