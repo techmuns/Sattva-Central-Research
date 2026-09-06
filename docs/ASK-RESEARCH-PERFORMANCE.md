@@ -29,11 +29,25 @@ source loading and separately collected the alert feeds twice.
    exact weights without repeating field names. Prompts over 20,000 characters use
    Muns' existing hosted route; smaller prompts use the local route. This is a
    conservative character threshold, not a provider-token-count guarantee.
-6. Forward NDJSON text immediately. Bound event and answer sizes, preserve fragmented
+6. Show up to three literal, confirmed company headlines from the selected packet
+   before inference, with source dates and partial/unavailable coverage. The source
+   preview is labelled separately from generated prose and does not advance answer
+   timing. Document periods remain periods, not invented publication dates.
+7. Apply the server's existing 12-message / 3,000-character history bound before
+   upload too. Long on-screen conversations cannot grow the research request past
+   the body limit. Failed exchanges do not enter model history.
+8. Forward NDJSON text immediately. Bound event and answer sizes, preserve fragmented
    UTF-8, and cancel upstream inference when the reader stops. Only the active answer
    repaints once per animation frame. Earlier messages and user scroll remain stable.
-   Show click-to-first-text timing. Network failures preserve a labelled partial
-   answer; scope/book invalidations discard it and restore the question.
+   Show click-to-first-text timing. Completion preserves earlier DOM nodes and scroll
+   position. Stop and network failures keep labelled partial text. Empty failures keep
+   the question and available source preview in the conversation with an inline retry.
+   Manual retries revalidate holdings and replace the failed attempt. Scope/book
+   invalidations discard the invalidated partial text and preview.
+9. A browser deadline releases a model request after 55 seconds even if a stalled
+   proxy never forwards the server's own terminal event. Server connection checks
+   have an eight-second bound and an explicit Reconnect action. A next question
+   can be typed during streaming; success, Stop, failure and retry preserve it.
 
 These deadlines bound Research's waiting for dashboard sources, not remote Family
 archive/quote latency or model inference. A failed authenticated book recheck still
@@ -46,6 +60,7 @@ publication dates, book dates and quote limitations remain authoritative.
 node scripts/verify-research.mjs
 node scripts/verify-research-retrieval.mjs
 node scripts/verify-portfolio-bridge.mjs
+node scripts/verify-research-preview.mjs
 PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-research-stream-ui.mjs
 ```
 
@@ -61,11 +76,27 @@ Family model no longer blocks this question and that text paints before completi
 The test also covers complete holdings, source inclusion, private storage, issuer
 switching, failed archive checks, workbook invalidation and mobile layout.
 
-The retrieval suite checks all 14 company question categories for all 124 resolved
-names in the saved public book: **1,736 cases**. It also checks weight-based ranking,
+The retrieval suite checks all 14 company question categories for all 142
+names in the saved public book, including tickerless holdings: **1,988 cases**. It also checks weight-based ranking,
 unresolved funds in the denominator, comparison fairness, follow-ups, lossless prompt
 compaction, model routing, stalled sources, upstream cancellation and UTF-8 splitting.
 CI runs these tests along with the existing portfolio, source, alert and Worker checks.
+
+The conversation recovery browser run on 6 September measured source preview display
+at **786 ms** with a deliberately delayed model, first answer text at **2,414 ms
+cold / 866 ms warm**, and **7,106 ms** with a stalled optional source. These are
+local fixture measurements, not production model latency. It additionally checks
+no welcome-screen reset, source titles against the exact packet, next-draft and IME
+handling, bounded hangs, manual retry with a fresh book, and connection recovery.
+The 426 saved-portfolio packet scenarios now check literal preview attribution too,
+in a separate CI job so this exhaustive sweep cannot crowd the UI checks out of
+their 15-minute job budget.
+
+The provider prompt, model routing and final-answer framing have not changed in
+this conversation recovery work. The 117 real-model evaluation requests documented
+in Customer readiness remain the latest model-quality evidence. Their unresolved
+factual/citation errors and hosted first-answer latency still prevent a customer-ready
+claim; fast literal source display is not a substitute for those acceptance gates.
 
 ## Question bank and answer-quality review
 

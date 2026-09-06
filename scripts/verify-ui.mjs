@@ -1433,7 +1433,8 @@ console.log('\n— AI alerts —');
     (await page.locator('[data-research-web]').count()) === 0 && /Evidence-led/.test(askText));
   const failedConfigGets = configGets;
   ok('...fails closed when the configuration check is temporarily unavailable',
-    failedConfigGets > 0 && (await page.locator('[data-research-input]').isDisabled()));
+    failedConfigGets > 0 && (await page.locator('[data-research-send]').isDisabled()) &&
+      (await page.locator('[data-research-reconnect]').count()) === 1);
   configShouldFail = false;
   await go('/#/research/daily-alerts?scope=portfolio', 300);
   await go('/#/research/ask-research?scope=portfolio', 500);

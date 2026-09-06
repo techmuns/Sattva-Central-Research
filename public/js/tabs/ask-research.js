@@ -11,6 +11,8 @@ import * as notifications from '../ui/notifications.js';
 import { scopeLabel } from '../data/scope.js';
 import { buildResearchEvidence, prepareResearchSources, researchSuggestions, resolveQuestionCompanies, DASHBOARD_RESEARCH_SOURCES } from '../research/estate.js';
 import { renderResearchAnswer, renderResearchSources } from '../research/renderer.js';
+import { researchPreview } from '../research/preview.js';
+import { researchHistory } from '../research/history.js';
 import { connectPortfolio, portfolioConnected, privatePortfolioContext, readResearchPortfolio, onPortfolioInvalidation, portfolioConnectionState, onPortfolioConnection, unlockPortfolio, FAMILY_ORIGIN } from '../research/portfolio-bridge.js';
 
 export const meta = {
@@ -25,6 +27,7 @@ const STORAGE_KEY = 'sattva:ask-research:v1';
 const MAX_SESSIONS = 24;
 const MAX_MESSAGES = 80;
 const MAX_MESSAGE_CHARS = 8_000;
+const ANSWER_TIMEOUT_MS = 55_000;
 
 let sessions = loadSessions();
 let activeId = sessions[0]?.id || null;
@@ -76,6 +79,9 @@ function normaliseSession(raw) {
         .map((message) => ({
           role: message.role,
           text: message.text.slice(0, MAX_MESSAGE_CHARS),
+          incomplete: message.incomplete === true,
+          error: typeof message.error === 'string' ? message.error.slice(0, 500) : null,
+          stopped: message.stopped === true,
           // Keep the provenance of answers saved before the Muns migration. New requests are
           // dashboard-only, but rewriting an older answer's origin would be misleading.
           webResearch: message.webResearch === true,
@@ -394,8 +400,16 @@ function wire(root) {
       root.querySelector('[data-research-input]')?.focus();
     } else if (event.target.closest('[data-research-send]')) {
       const generation = generations.get(activeId);
-      if (generation) generation.controller.abort();
+      if (generation) { generation.stopped = true; generation.controller.abort(); }
       else submitCurrent();
+    } else if (event.target.closest('[data-research-retry]')) {
+      const session = currentSession();
+      const pending = session?.messages.at(-1);
+      if (pending?.incomplete) submitCurrent(session.messages.at(-2)?.text);
+    } else if (event.target.closest('[data-research-reconnect]')) {
+      configState = null;
+      paintComposer();
+      ensureConfig().then(paintComposer);
     } else if (suggestion) {
       const session = currentSession();
       if (!session) return;
@@ -417,7 +431,7 @@ function wire(root) {
     draftSave = setTimeout(persistSessions, 400);
   };
   const onKeydown = (event) => {
-    if (event.key !== 'Enter' || event.shiftKey) return;
+    if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
     event.preventDefault();
     submitCurrent();
   };
@@ -450,7 +464,9 @@ async function ensureConfig() {
   // keep their explanatory state visible, but let the next mount retry instead of wedging the SPA.
   if (configState && configState.retryable !== true) return configState;
   if (configPromise) return configPromise;
-  configPromise = fetch('api/research', { headers: { accept: 'application/json', ...authHeaders('api/research') }, cache: 'no-store' })
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), 8000);
+  configPromise = fetch('api/research', { headers: { accept: 'application/json', ...authHeaders('api/research') }, cache: 'no-store', signal: controller.signal })
     .then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const body = await response.json();
@@ -458,7 +474,7 @@ async function ensureConfig() {
         configured: body?.configured === true,
         webResearchAvailable: body?.webResearchAvailable === true,
         retryable: false,
-        message: body?.configured ? '' : 'Ask Research is not configured on this server. Add the server-side Muns session token to enable answers.',
+        message: body?.configured ? '' : 'Ask Research is temporarily unavailable. Your question will stay here while you reconnect.',
       };
       return configState;
     })
@@ -467,11 +483,12 @@ async function ensureConfig() {
         configured: false,
         webResearchAvailable: false,
         retryable: true,
-        message: 'Ask Research needs the Cloudflare Worker runtime and its server-side Muns session token.',
+        message: 'Could not connect to Ask Research. Your question is saved here; try reconnecting.',
       };
       return configState;
     })
     .finally(() => {
+      clearTimeout(deadline);
       configPromise = null;
     });
   return configPromise;
@@ -535,7 +552,7 @@ function paintSidebar() {
     });
     const body = el('span', { class: 'min-w-0 flex-1 text-left' });
     body.appendChild(el('strong', { class: 'research-session-title' }, session.title));
-    body.appendChild(el('span', { class: `research-session-meta ${session.status === 'needs-attention' ? 'text-rose-500' : ''}` }, busy ? session.phase || 'Answering…' : session.status === 'needs-attention' ? 'Needs attention' : timeLabel(session.updatedAt)));
+    body.appendChild(el('span', { class: `research-session-meta ${session.status === 'needs-attention' ? 'text-rose-500' : ''}` }, busy ? 'Answering…' : session.status === 'needs-attention' ? 'Needs attention' : timeLabel(session.updatedAt)));
     button.appendChild(body);
     const remove = el('button', {
       type: 'button',
@@ -704,7 +721,16 @@ function messageNode(message) {
   const companies = message.companies || [];
   renderResearchAnswer(body, message.text, { cite: citeResolver(companies) });
   article.appendChild(body);
-  if (message.incomplete) article.appendChild(el('p', { class: 'text-xs text-slate-500' }, 'Incomplete answer — the connection stopped. Your question is ready to retry below.'));
+  if (message.incomplete) {
+    const recovery = el('div', { class: 'research-recovery', role: 'status' });
+    recovery.appendChild(el('strong', {}, message.stopped ? 'Answer stopped' : message.text ? 'Incomplete answer' : 'Answer interrupted'));
+    recovery.appendChild(el('p', {}, message.error || 'You can retry this question using fresh portfolio readings.'));
+    if (message === currentSession()?.messages.at(-1)) recovery.appendChild(el('button', {
+      type: 'button', class: 'research-retry-button', 'data-research-retry': '',
+    }, 'Retry answer'));
+    article.appendChild(recovery);
+  }
+  if (message.preview) article.appendChild(previewNode(message.preview, { open: !!message.incomplete }));
   if (Number.isFinite(message.timings?.firstTextMs)) {
     article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Answer started in ${(message.timings.firstTextMs / 1000).toFixed(1)}s · ${message.dashboardSources?.length || 0} dashboard pages read`));
   }
@@ -737,6 +763,7 @@ function streamNode(session) {
   label.appendChild(el('span', { class: 'research-live-dot', 'aria-hidden': 'true' }));
   label.appendChild(el('span', {}, 'Dashboard research'));
   article.appendChild(label);
+  if (session.streamPreview) article.appendChild(previewNode(session.streamPreview, { open: true }));
   if (session.streamText) {
     const body = el('div', { class: 'research-answer-body' });
     renderResearchAnswer(body, session.streamText, { cite: citeResolver(session.streamCompanies || []) });
@@ -747,6 +774,29 @@ function streamNode(session) {
     ]));
   }
   return article;
+}
+
+function previewNode(preview, { open = false } = {}) {
+  const details = el('details', { class: 'research-evidence-preview', 'data-research-preview': '' });
+  details.open = open;
+  details.appendChild(el('summary', {}, 'Source readings'));
+  details.appendChild(el('p', { class: 'research-evidence-note' }, 'Selected dashboard headlines, before the generated answer. Coverage may be partial; dates belong to each source.'));
+  if (!preview.items.length) details.appendChild(el('p', { class: 'research-evidence-note' }, 'No confirmed company headlines in these selected readings. This does not establish that there are no updates.'));
+  for (const item of preview.items) {
+    const reading = el('div', { class: 'research-evidence-item' });
+    reading.appendChild(el('div', { class: 'research-evidence-meta' }, [item.company, item.date || (item.period ? `Period: ${item.period}` : 'Date unavailable'), item.publisher].filter(Boolean).join(' · ')));
+    reading.appendChild(el('p', {}, item.title));
+    const target = citeResolver(item.ticker ? [{ ticker: item.ticker, name: item.company }] : [])(item.tab);
+    if (target) reading.appendChild(el('a', { class: 'research-cite', href: target.href }, item.tab));
+    if (item.quality) reading.appendChild(el('span', { class: 'research-evidence-meta' }, ` ${item.quality} source readings`));
+    details.appendChild(reading);
+  }
+  const coverage = el('details', { class: 'research-evidence-coverage' });
+  coverage.appendChild(el('summary', {}, 'Source dates and coverage'));
+  for (const source of preview.sources) coverage.appendChild(el('p', {},
+    `${source.tab} · ${source.source}: ${source.status}${source.quality ? ` / ${source.quality}` : ''} · source as of ${source.asOf || 'unavailable'} · ${source.included} selected readings`));
+  details.appendChild(coverage);
+  return details;
 }
 
 function paintComposer() {
@@ -761,14 +811,17 @@ function paintComposer() {
   const configured = configState?.configured === true;
 
   if (input.value !== session.draft) input.value = session.draft;
-  input.disabled = busy || !configured;
-  input.placeholder = configured ? 'Ask about anything in these reports…' : 'Assistant is not configured';
+  input.disabled = false;
+  input.placeholder = configured ? busy ? 'Write your next question…' : 'Ask about anything in these reports…' : 'Assistant is not configured';
   autoSize(input);
   composer.classList.toggle('is-disabled', !configured);
 
   notice.classList.toggle('hidden', configured || configState === null);
   notice.textContent = configState?.message || '';
-  phase.textContent = session.error || (busy ? session.phase : '');
+  if (configState && !configured) notice.appendChild(el('button', {
+    type: 'button', class: 'research-retry-button', 'data-research-reconnect': '',
+  }, 'Reconnect'));
+  phase.textContent = busy ? session.phase : '';
   phase.classList.toggle('text-rose-600', !!session.error);
   syncSendState();
 }
@@ -820,24 +873,30 @@ function dashboardSources(evidence) {
   return [...byTab.values()];
 }
 
-async function submitCurrent() {
+async function submitCurrent(retryQuestion) {
   const session = currentSession();
   if (!session || isBusy(session) || !configState?.configured) return;
-  const question = session.draft.trim();
+  const question = String(retryQuestion ?? session.draft).trim();
   if (!question) return;
 
-  const originalDraft = session.draft;
+  const originalDraft = retryQuestion ?? session.draft;
+  // Retry replaces only the last failed attempt. Its partial answer and failed
+  // question must not enter the next model's history as a completed exchange.
+  if (session.messages.at(-1)?.incomplete && session.messages.at(-2)?.role === 'user' &&
+      session.messages.at(-2).text === question) session.messages.splice(-2);
   session.private = session.private || privatePortfolioContext();
   const userMessage = { role: 'user', text: question };
   session.messages.push(userMessage);
   if (session.messages.filter((message) => message.role === 'user').length === 1) session.title = shortTitle(question);
   session.updatedAt = new Date().toISOString();
-  session.draft = '';
+  if (retryQuestion === undefined) session.draft = '';
   session.error = null;
   session.status = 'answering';
   session.streamText = '';
   session.streamSources = [];
   session.streamDashboard = [];
+  session.streamCompanies = [];
+  session.streamPreview = null;
 
   // The scope is captured here, once. Everything downstream reads `generation.scope` rather than
   // `ctxRef`, which is null the moment the reader looks at another tab — and a packet built under
@@ -873,13 +932,20 @@ async function submitCurrent() {
     if (generation.controller.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     session.streamDashboard = dashboardSources(evidence);
     session.streamCompanies = (evidence.selection?.companies || []).map((company) => ({ ticker: company.ticker, name: company.name }));
+    session.streamPreview = researchPreview(evidence);
     setPhase(session, 'Writing from dashboard evidence…');
 
     generation.evidenceMs = Math.round(performance.now() - generation.startedAt);
+    // A stalled browser/proxy must not leave Stop spinning indefinitely even
+    // if the server's own deadline never reaches this connection.
+    generation.deadline = setTimeout(() => {
+      generation.timedOut = true;
+      generation.controller.abort();
+    }, ANSWER_TIMEOUT_MS);
     const requestOptions = {
       method: 'POST',
       headers: { accept: 'application/x-ndjson', 'content-type': 'application/json', ...authHeaders('api/research') },
-      body: JSON.stringify({ question, requirePortfolio: true, scope: evidence.scope, webResearch: false, history, evidence }),
+      body: JSON.stringify({ question, requirePortfolio: true, scope: evidence.scope, webResearch: false, history: researchHistory(history), evidence }),
       signal: generation.controller.signal,
     };
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -904,32 +970,53 @@ async function submitCurrent() {
       }
     }
   } catch (error) {
-    const index = session.messages.lastIndexOf(userMessage);
-    const keepPartial = session.streamText.trim() && !generation.controller.signal.aborted && !generation.portfolioChanged;
-    if (keepPartial) session.messages.push({ role: 'assistant', text: session.streamText, incomplete: true, portfolio: generation.portfolio,
-      dashboardSources: session.streamDashboard, companies: session.streamCompanies, webResearch: false });
-    else if (index >= 0) session.messages.splice(index, 1);
-    session.draft = originalDraft;
+    const invalidated = generation.portfolioChanged || (generation.controller.signal.aborted && !generation.stopped && !generation.timedOut);
+    const keepReadings = !invalidated;
+    session.error = generation.portfolioChanged ? 'The Family workbook changed while this answer was being written. Retry to read the new book.'
+      : generation.timedOut ? 'The answer is taking too long. Your question and available readings are saved here; retry when you are ready.'
+      : generation.stopped ? null
+      : error?.name === 'AbortError' ? 'The research scope changed. Retry using the current scope.'
+      : error?.message || 'Research could not be completed.';
+    userMessage.incomplete = true;
+    session.messages.push({ role: 'assistant', text: keepReadings ? session.streamText : '', incomplete: true,
+      stopped: !!generation.stopped, error: session.error,
+      portfolio: keepReadings ? generation.portfolio : null,
+      preview: keepReadings ? session.streamPreview : null,
+      dashboardSources: keepReadings ? session.streamDashboard : [],
+      companies: keepReadings ? session.streamCompanies : [], webResearch: false });
+    // A next question typed during streaming is the reader's work too.
+    if (!session.draft.trim()) session.draft = originalDraft;
     session.streamText = '';
     session.streamSources = [];
     session.streamDashboard = [];
     session.streamCompanies = [];
-    session.status = error?.name === 'AbortError' && !generation.portfolioChanged ? 'idle' : 'needs-attention';
-    session.error = generation.portfolioChanged ? 'The Family workbook changed while this answer was being written. Send the question again to read the new book.' : error?.name === 'AbortError' ? null : error?.message || 'Research could not be completed.';
+    session.streamPreview = null;
+    session.status = generation.stopped ? 'idle' : 'needs-attention';
     session.phase = '';
     persistSessions();
   } finally {
+    clearTimeout(generation.deadline);
     resumePortfolioSync();
     generations.delete(session.id);
     if (session.status === 'answering') session.status = 'idle';
-    if (activeId === session.id && ctxRef) paintAll();
+    if (activeId === session.id && ctxRef) {
+      const transcript = ctxRef.root.querySelector('[data-research-transcript]');
+      const article = transcript?.querySelector('.is-streaming');
+      const followLive = transcript && transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
+      if (article?.dataset.sessionId === session.id) {
+        article.replaceWith(messageNode(session.messages.at(-1)));
+        if (followLive) transcript.scrollTop = transcript.scrollHeight;
+        paintComposer();
+        paintSidebar();
+      } else paintAll();
+    }
     else if (ctxRef) paintSidebar();
     // AN ANSWER THAT ARRIVED WHILE THE READER WAS ELSEWHERE HAS TO SAY SO, or keeping it running
     // is a feature nobody can see. This is a fact that arrived and one the reader asked for by
     // name, which is exactly what the alert stack is for; `key` is the session and the message
     // count, so a repaint cannot re-announce it. Nothing is pushed for a cancellation, and nothing
     // while the tab is on screen — the transcript is already showing it.
-    if (!ctxRef && session.messages.at(-1)?.role === 'assistant') {
+    if (!ctxRef && session.messages.at(-1)?.role === 'assistant' && !session.messages.at(-1).incomplete) {
       notifications.push({
         key: `research:${session.id}:${session.messages.length}`,
         kind: 'research',
@@ -996,6 +1083,7 @@ async function consumeStream(stream, session, generation) {
     dashboardSources: session.streamDashboard,
     webSources: session.streamSources,
     companies: session.streamCompanies || [],
+    preview: session.streamPreview,
     portfolio: generation.portfolio,
     timings: { evidenceMs: generation.evidenceMs, firstTextMs: generation.firstTextMs, totalMs: Math.round(performance.now() - generation.startedAt) },
   });
@@ -1005,6 +1093,7 @@ async function consumeStream(stream, session, generation) {
   session.streamSources = [];
   session.streamDashboard = [];
   session.streamCompanies = [];
+  session.streamPreview = null;
   session.status = 'idle';
   session.phase = '';
   session.error = null;
@@ -1022,6 +1111,9 @@ function queueStreamPaint(session, generation) {
     const article = transcript?.querySelector('.is-streaming');
     if (!article || article.dataset.sessionId !== session.id) { paintTranscript(); return; }
     const followLive = transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
+    if (session.streamPreview && !article.querySelector('[data-research-preview]')) {
+      article.querySelector('.research-answer-label').after(previewNode(session.streamPreview, { open: true }));
+    }
     if (session.streamText) {
       article.querySelector('.research-thinking')?.remove();
       let body = article.querySelector('.research-answer-body');
