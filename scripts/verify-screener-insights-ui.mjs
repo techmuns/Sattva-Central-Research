@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { exportPortfolioTargets, readInsightCompany } from './collect-screener-insights.mjs';
+import { exportPortfolioTargets, readInsightCompany, readInsightCompanyAttempt } from './collect-screener-insights.mjs';
+import { collectInsightBatch } from './lib/screener-insights-batch.mjs';
 import { buildInsightInventory, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
 import { mergeScreenerInsightsCapture } from '../public/js/data/screener-insights-shared.js';
 
@@ -29,6 +30,7 @@ await context.route('**/*', async (route) => {
     if (url.pathname === '/api/export/screen/') return route.fulfill({ headers: { 'content-type': 'text/csv', 'content-disposition': 'attachment; filename="watchlist.csv"' }, body: `Name,ISIN Code,NSE Code,BSE Code\nTest Export Display,INE000000001,TEST,\n${mode === 'unmatched-codeless' ? 'Unknown codeless name' : 'Delisted'},INE000000002,,\n` });
     if (url.pathname === '/user/stocks/10850427/') return route.fulfill({ contentType: 'text/html', body: `<h1>Add companies to S Screen</h1><ul><li><span class="shrink-text">Test Ltd</span><button onclick="window.Watchlist.removeCompany('1')" type="button"><i class="icon-trash"></i></button></li>${mode === 'short-inventory' ? '' : '<li><span class="shrink-text">Delisted Ltd</span><button onclick="window.Watchlist.removeCompany(\'1234\')" type="button"><i class="icon-trash"></i></button></li>'}</ul><script>window.removalCalls=0;window.Watchlist={removeCompany:()=>window.removalCalls++};</script>` });
     if (url.pathname.startsWith('/company/')) {
+      if (mode === 'rate-limited') return route.fulfill({ status: 429, body: 'Too many requests' });
       return route.fulfill({ contentType: 'text/html', body: mode === 'expired-session' ? '<h1>Sign in</h1>' : mode === 'no-insights' ? '<a href="/logout/">Logout</a><h1>Test</h1>' : `<a href="/logout/">Logout</a><section id="insights">${table('yearly')}<button data-tab-id="quarterly-insights" onclick="fetch('/quarter/').then(r=>r.text()).then(html=>this.insertAdjacentHTML('afterend',html))">Quarterly</button></section>` });
     }
     if (url.pathname === '/quarter/') return route.fulfill({ contentType: 'text/html', status: mode === 'failed-quarter' ? 503 : 200, body: mode === 'failed-quarter' ? 'Unavailable' : table('quarterly') });
@@ -72,6 +74,18 @@ try {
   payload = { version: 1, sourceId: 'screener-insights', checkedAt, targetCount: 1, checkedCount: 1, failedCount: 0, fullCoverage: true, targetKeys: ['TEST'], companies: [company] };
   mode = 'failed-quarter';
   await assert.rejects(readInsightCompany(page, item, checkedAt, { tabTimeout: 300 }));
+  const attempts = [];
+  const pageCount = context.pages().length;
+  const stopped = await collectInsightBatch([item], (target, { signal }) => {
+    const attempt = readInsightCompanyAttempt(context, target, checkedAt, { signal });
+    attempts.push(attempt);
+    return attempt;
+  }, { maxDurationMs: 2_000, attemptTimeoutMs: 150, maxAttempts: 1, concurrency: 1, delayMs: 0 });
+  await Promise.allSettled(attempts);
+  assert.deepEqual(stopped.failedKeys, [item.companyKey]);
+  assert.equal(context.pages().length, pageCount, 'timed-out company attempts close their actual browser pages');
+  mode = 'rate-limited';
+  await assert.rejects(readInsightCompany(page, item, checkedAt), /source-blocked/);
   const retained = mergeScreenerInsightsCapture({ ...payload, companies: [], failedCount: 1, failedKeys: ['TEST'], fullCoverage: false }, payload);
   assert.equal(retained.companies[0].rows.length, 2);
   assert.equal(retained.companies[0].readStatus, 'failed');
