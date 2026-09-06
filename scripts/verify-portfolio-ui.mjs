@@ -90,7 +90,9 @@ try {
   await research.getByText('Portfolio source was read.', { exact: false }).waitFor({ timeout: 125_000 });
   assert.equal(questions.length, 1);
   assert.ok(['ready', 'limited'].includes(questions[0].evidence.portfolio.status));
-  assert.match(questions[0].evidence.portfolio.answer, /Sterlite/i);
+  assert.equal(questions[0].evidence.portfolio.mode, 'verified-holdings');
+  assert.equal(questions[0].evidence.portfolio.valuation, 'workbook');
+  assert(questions[0].evidence.portfolioPositions.holdings.some(h => /Sterlite/i.test(h.name)));
   assert.equal(questions[0].evidence.portfolio.bookAsOf, '2026-06-30');
   await research.getByText('Portfolio book: 2026-06-30.', { exact: false }).waitFor();
   const child = page;
@@ -102,10 +104,11 @@ try {
   assert.ok(questions[0].evidence.portfolioPositions.holdings.length > 100);
   assert.equal(questions[0].evidence.portfolioPositions.holdings.find(h => h.isin === 'INE12F801023')?.ticker, 'KISSHT', 'actual Family OnEMI identity reaches Research');
   assert.deepEqual(await page.evaluate(async () => (await import('/js/data/coverage.js')).holdings().map(h => h.isin).sort()), questions[0].evidence.portfolioPositions.holdings.map(h => h.isin).sort(), 'every Family holding reaches the dashboard scope');
-  const initialWeight = questions[0].evidence.portfolioPositions.holdings.find(h => h.ticker === 'RBLBANK').weightPct;
-  assert.ok(quoteRefreshes >= 1, 'the answer actively refreshes quotes');
+  const pricedReading = await page.evaluate(async () => (await import('/js/research/portfolio-bridge.js')).readPortfolio('What is my cost basis in RBL Bank?'));
+  const initialWeight = pricedReading.holdings.find(h => h.ticker === 'RBLBANK').weightPct;
+  assert.ok(quoteRefreshes >= 1, 'detailed ledger questions actively refresh quotes');
   quotePrice = 150;
-  await input.fill('What changed in the market?');
+  await input.fill('What is my cost basis in RBL Bank?');
   await research.getByRole('button', { name: 'Send question' }).click();
   await page.waitForFunction(() => document.querySelectorAll('.research-assistant-answer:not(.is-streaming)').length === 2, null, { timeout: 125_000 });
   assert.equal(questions.length, 2);
@@ -147,7 +150,7 @@ try {
   outage = true;
   await input.fill('Do I have Sterlite in my portfolio?');
   await research.getByRole('button', { name: 'Send question' }).click();
-  await research.getByText('The shared workbook store could not be checked.', { exact: false }).waitFor({ timeout: 45_000 });
+  await research.getByText(/Shared archive unavailable|The shared workbook store could not be checked\./).waitFor({ timeout: 45_000 });
   assert.equal(questions.length, 2, 'an outage must not send old private facts to Research');
 
   outage = false; pauseResearch = true;

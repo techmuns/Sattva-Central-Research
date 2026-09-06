@@ -239,6 +239,33 @@ function enqueueRead(read, signal) {
 export function readPortfolio(question, signal) {
   return forConsumer(enqueueRead(() => readPortfolioNow(question, signal), signal), signal);
 }
+
+// Research already has a model. Only questions requiring the private ledger's
+// tools need a second analysis; news, ownership and weight questions use the
+// authenticated structured read directly. Follow-ups retain the ledger route.
+export function needsPortfolioAnalysis(question, history = []) {
+  const detailed = /\b(costs?|cost basis|p[&/]?l|pnl|profit and loss|unreali[sz]ed|reali[sz]ed|tax(?:es|ation)?|capital gains?|lots?|quantit(?:y|ies)|units?|how many|invested|investment amount|purchase|bought|sold|transactions?|trades? i|my trades|accounts?|entities|entity|nav|net worth|rupees?|crores?|lakhs?|cash balance|private assets?|unlisted|xirr|irr|cagr|my returns?|our returns?|my gains?|our gains?|my profits?|my losses?|how much (?:have|did|do|am|is my|money|cash|capital))\b|[₹]/i;
+  if (detailed.test(question)) return true;
+  return /^(and |what about |how about )|\b(it|its|they|them|their|those|these|that|same)\b/i.test(question) &&
+    history.filter(m => m.role === 'user').slice(-1).some(m => detailed.test(m.text));
+}
+
+export async function readResearchPortfolio(question, signal, history = []) {
+  if (needsPortfolioAnalysis(question, history)) return readPortfolio(question, signal);
+  // Recheck the workbook revision, coalescing with an already-running check.
+  // A failed read never falls back to cached ownership or an extra model call.
+  const reply = await readPositionSizes(signal, { force: true });
+  if (!reply) throw new Error(state === 'locked' ? 'Unlock your portfolio above to answer with your holdings.' : 'Your portfolio connection is unavailable. Please try again; no old holdings were used.');
+  const { sizes } = reply;
+  return { ...reply, reading: {
+    status: sizes.complete ? 'ready' : 'limited',
+    mode: 'verified-holdings',
+    answer: `Verified ${reply.holdings.length} listed holdings from the authenticated Family book. The complete position set supplies ownership, sectors and ${sizes.complete ? 'listed-market-value weights' : 'unavailable weights'}.${sizes.valuation === 'workbook' ? ' Weights use uploaded workbook marks, not live quotes.' : ''} Costs, tax, account balances and returns were not read.`,
+    bookAsOf: sizes.bookAsOf, checkedAt: sizes.checkedAt, archiveVersion: sizes.archiveVersion,
+    valuation: sizes.valuation, sourceRevision: sizes.sourceRevision,
+    quotes: sizes.quotes, sourceErrors: sizes.sourceErrors,
+  } };
+}
 export function readPositionSizes(signal, { force = false } = {}) {
   if (signal?.aborted) return Promise.reject(cancelled());
   const cached = force ? null : cachedPositionSizes();

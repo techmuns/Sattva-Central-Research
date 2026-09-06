@@ -463,6 +463,12 @@ export async function refreshSources() {
     failed: results.filter((r) => r.status === 'rejected').length };
 }
 
+/** Load the shared feed stores without assembling or sorting any timeline. */
+export async function prepareSources({ refresh = false } = {}) {
+  observeSources();
+  return Promise.allSettled(FEEDS.map(feed => loadFeed(feed.id, refresh)));
+}
+
 // ---------------------------------------------------------------------------------------
 // Collect
 // ---------------------------------------------------------------------------------------

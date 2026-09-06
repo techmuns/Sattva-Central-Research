@@ -33,7 +33,7 @@ import * as aiAlerts from '../data/ai-alerts.js';
 import * as screenerInsights from '../data/screener-insights.js';
 import { screenerInsightHealth } from '../data/screener-insights-shared.js';
 import * as earningsLive from '../data/earnings-live.js';
-import { domesticFilingsEvidence } from '../data/domestic-filings.js';
+import { domesticFilingsEvidence, loadCapturedDomesticFilings } from '../data/domestic-filings.js';
 import * as earningsCalendar from '../data/earnings-calendar.js';
 import * as concalls from '../data/concall-scans.js';
 import * as chatter from '../data/chatter-live.js';
@@ -68,18 +68,14 @@ export const DASHBOARD_RESEARCH_SOURCES = [
 
 const SOURCE_BY_ID = new Map(DASHBOARD_RESEARCH_SOURCES.map((source) => [source.id, source]));
 const tabOf = (id) => SOURCE_BY_ID.get(id)?.tab || id;
-const LOADER_TIMEOUT_MS = 14_000;
+export const LOADER_TIMEOUT_MS = 6_000;
 const DEFAULT_ROW_LIMIT = 8;
 const MATCH_ROW_LIMIT = 14;
 
-// Characters of the PROVIDER-FACING packet — see evidence-shared.js for why it is not the wire
-// packet. The low-latency Muns model has an 8K-token context and JSON tokenises at roughly 3.3
-// characters a token, so 13,000 characters is about 3,900 tokens of evidence; with the ~470-token
-// instruction, up to 3,000 characters of history and a 768-token answer the request stays near
-// 6K tokens. Measured on the shipped data, the sixteen-source skeleton is ~7,100 characters, so
-// this leaves ~5,900 for rows — about twenty. Raising it buys rows at the cost of first-token
-// latency. Lowering it towards the skeleton starves the rows — which is the failure
-// `ROW_RESERVE_SHARE` and the suite exist to catch, and the one this file shipped with for a day.
+// Research rows have their own provider-facing allowance. The complete private
+// holdings set is validated separately and compacted without dropping entries.
+// The Worker routes larger combined prompts away from the small model's context
+// window; this row budget must never be spent on repeating the full ledger.
 export const RESEARCH_EVIDENCE_CHAR_BUDGET = 13_000;
 // The share of the budget that rows are guaranteed. The skeleton is trimmed before a row is refused.
 export const ROW_RESERVE_SHARE = 0.4;
@@ -185,7 +181,7 @@ function companyIndex(deferred) {
  * one company in the index starts with. The words a company match consumed are removed from the
  * ranking tokens, so "finance" does not go on to score every Financial Services row as a hit.
  */
-export function queryPlan(question, index = [], { scope = 'universe', holdings = null } = {}) {
+export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolioPositions = null } = {}) {
   const text = ` ${cleanText(question)} `;
   const tokens = queryTokens(question);
   const tokenSet = new Set(tokens);
@@ -214,6 +210,30 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
     if (companies.length >= 6) break;
   }
 
+  // A follow-up searches the last named company again; conversation text alone
+  // cannot retrieve fresh company rows. An explicit new company always wins.
+  const portfolioWide = /\b(portfolio|holdings|positions|stocks|book)\b/i.test(question) && !/\b(it|its|they|them|their|that|same)\b/i.test(question);
+  if (!companies.length && !portfolioWide && /^(and |what about |how about )|\b(it|its|they|them|their|those|these|that|same)\b/i.test(question)) {
+    for (const message of history.filter(m => m.role === 'user').slice(-6).reverse()) {
+      const prior = queryPlan(message.text, index, { scope, holdings });
+      if (!prior.companies.length) continue;
+      for (const company of prior.companies) companies.push({ ...company, aliases: entries.find(e => e.ticker === company.ticker)?.aliases || [] });
+      break;
+    }
+  }
+  if (!companies.length && portfolioPositions?.sizes?.complete && /\b(largest|biggest|top|smallest|smaller|small|bottom)\b.*\b(holdings?|positions?|stocks?|investments?)\b/i.test(question)) {
+    const small = /\b(smallest|smaller|small|bottom)\b/i.test(question);
+    const large = /\b(largest|biggest|top)\b/i.test(question);
+    const singular = /\b(?:largest|biggest|smallest)\s+(?:holding|position|stock|investment)\b/i.test(question);
+    const limit = Math.min(12, Math.max(1, Number(question.match(/\b(?:top|bottom|largest|smallest|biggest)\s+(\d+)\b/i)?.[1] || (singular ? 1 : 5))));
+    const descending = [...portfolioPositions.holdings].sort((a, b) => b.weightPct - a.weightPct || a.isin.localeCompare(b.isin));
+    const ranked = small && large ? [descending[0], descending.at(-1)].filter(Boolean) : (small ? descending.reverse() : descending).slice(0, limit);
+    // Rank the complete denominator before testing ticker coverage; a fund or
+    // unresolved holding must not silently be replaced by a different company.
+    for (const holding of ranked) if (holding.ticker && !companies.some(c => c.ticker === holding.ticker)) {
+      companies.push({ ticker: holding.ticker, name: holding.name, inScope: scopeAllowsTicker(scope, holding.ticker, holdings), aliases: entries.find(e => e.ticker === holding.ticker)?.aliases || [cleanName(holding.name)] });
+    }
+  }
   return {
     tokens: tokens.filter((token) => !consumed.has(token)),
     companies: companies.map(({ ticker, name, inScope }) => ({ ticker, name, inScope })),
@@ -279,6 +299,17 @@ export function chooseRows(rows, plan, mapRow, compare = null) {
   const byDefault = (a, b) => (compare ? compare(a.row, b.row) : 0) || a.index - b.index;
   scored.sort((a, b) => tierOf(a) - tierOf(b) || b.score - a.score || byDefault(a, b));
   const matchedRows = scored.filter((item) => item.score > 0).length;
+  // Give each named company a turn before taking a second row from one issuer.
+  // This matters for comparisons and the smallest holdings in a ranked question.
+  const companyOrder = new Map([...plan.tickers].map((ticker, i) => [ticker, i]));
+  const seen = new Map();
+  for (const item of scored) {
+    const ticker = String(item.row.ticker || '').toUpperCase();
+    item.companyPass = seen.get(ticker) || 0;
+    seen.set(ticker, item.companyPass + 1);
+    item.companyOrder = companyOrder.get(ticker) ?? companyOrder.size;
+  }
+  if (companyOrder.size > 1) scored.sort((a, b) => tierOf(a) - tierOf(b) || (tierOf(a) === 0 ? a.companyPass - b.companyPass || a.companyOrder - b.companyOrder : 0) || b.score - a.score || byDefault(a, b));
   const picked = scored.slice(0, matchedRows ? MATCH_ROW_LIMIT : DEFAULT_ROW_LIMIT);
   return {
     rows: picked.map((item) => compactRow(item.row) || {}),
@@ -423,12 +454,16 @@ function failedPacket(id, error) {
   };
 }
 
-function withTimeout(promise, title) {
+export function withResearchDeadline(promise, title, { timeoutMs = LOADER_TIMEOUT_MS, signal } = {}) {
   let timer;
+  let abort;
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${title} did not answer within ${Math.round(LOADER_TIMEOUT_MS / 1000)} seconds.`)), LOADER_TIMEOUT_MS);
+    timer = setTimeout(() => reject(new Error(`${title} is still updating; this answer uses the available dated records.`)), timeoutMs);
+    abort = () => reject(new DOMException('Cancelled', 'AbortError'));
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
   });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  return Promise.race([promise, timeout]).finally(() => { clearTimeout(timer); signal?.removeEventListener('abort', abort); });
 }
 
 function scopeHoldings(scope) {
@@ -687,10 +722,10 @@ const BUILDERS = [
     // reads whichever dates the Earnings Hub tab has already fetched, and says so in its coverage —
     // that is what `description` means by "currently loaded".
     load: null,
-    read({ plan }) {
+    read({ scope, holdings, plan }) {
       const strip = earningsCalendar.strip();
       const loaded = strip.map((item) => earningsCalendar.forDate(item.date)).filter(Boolean);
-      const scheduledRows = loaded.flatMap((payload) => payload.rows || []);
+      const scheduledRows = filterByScope(loaded.flatMap((payload) => payload.rows || []), scope, holdings);
       const picked = chooseRows(scheduledRows, plan, (row) => ({
         date: row.resultDate || null,
         eventType: row.eventType || 'Result',
@@ -941,8 +976,8 @@ const BUILDERS = [
   {
     id: 'daily-alerts',
     load: () => undefined,
-    async read({ scope, plan }) {
-      const report = await alerts.collect({ scope, holdings: scopeHoldings(scope), includeHistory: true });
+    async read({ plan, alertReport }) {
+      const report = await alertReport;
       const m = report.meta || {};
       return sourcePacket(this.id, {
         source: 'Derived from the research tabs\' own feeds',
@@ -991,8 +1026,8 @@ const BUILDERS = [
     // arithmetic behind it stays off every surface, this one included.
     id: 'ai-alerts',
     load: () => undefined,
-    async read({ scope, plan, portfolioPositions }) {
-      const report = await aiAlerts.collect({ scope, holdings: scopeHoldings(scope), positionSizes: portfolioPositions });
+    async read({ holdings, plan, portfolioPositions, alertReport }) {
+      const report = aiAlerts.rankReport(await alertReport, { holdings, positionSizes: portfolioPositions });
       const m = report.meta || {};
       const cards = report.cards || [];
       return sourcePacket(this.id, {
@@ -1024,54 +1059,79 @@ const BUILDERS = [
   },
 ];
 
-export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, onProgress = null, charBudget = RESEARCH_EVIDENCE_CHAR_BUDGET } = {}) {
-  const deferred = await whenDeferredData();
+// Warm the source stores while the reader is typing and while Family verifies
+// ownership. This state contains only loader outcomes, never a portfolio packet.
+let preparing = null;
+let lastPrepared = null;
+const SOURCE_RECHECK_MS = 60_000;
+export function prepareResearchSources({ onProgress = null } = {}) {
+  if (preparing) return preparing;
+  if (lastPrepared && Date.now() - lastPrepared.startedAt < SOURCE_RECHECK_MS) return Promise.resolve(lastPrepared);
+  const startedAt = Date.now();
+  const refresh = !!lastPrepared;
+  preparing = (async () => {
+    const loadErrors = new Map();
+    let completed = 0;
+    // Phase one: start every loader together, including the extra All Alerts
+    // feeds. Nothing awaits the full deferred bootstrap before starting I/O.
+    const deferredRead = withResearchDeadline(whenDeferredData(), 'Company index').catch(() => null);
+    const alertRead = withResearchDeadline(alerts.prepareSources({ refresh }), 'All Alerts').catch(error => {
+      loadErrors.set('daily-alerts', error);
+      loadErrors.set('ai-alerts', error);
+    });
+    await Promise.all(BUILDERS.map(async builder => {
+      try {
+        if (builder.load === undefined) throw new Error(`Registry error: source "${builder.id}" declares neither a load() nor an explicit load: null.`);
+        if (builder.load) await withResearchDeadline(Promise.resolve().then(() => builder.load()), tabOf(builder.id));
+      } catch (error) { loadErrors.set(builder.id, error); }
+      finally {
+        completed++;
+        try { onProgress?.({ completed, total: BUILDERS.length, source: tabOf(builder.id) }); }
+        catch (error) { console.error('[research] progress callback failed', error); }
+      }
+    }));
+    await alertRead;
+    const result = { deferred: await deferredRead, loadErrors, startedAt };
+    lastPrepared = result;
+    return result;
+  })().finally(() => { preparing = null; });
+  return preparing;
+}
+
+export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, history = [], prepared = null, signal, onProgress = null, charBudget = RESEARCH_EVIDENCE_CHAR_BUDGET } = {}) {
+  const { deferred, loadErrors } = await withResearchDeadline(prepared || prepareResearchSources({ onProgress }), 'Dashboard sources', { signal, timeoutMs: LOADER_TIMEOUT_MS + 1000 });
+  if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+  // Resolve scope only AFTER the authenticated reader has adopted its book.
   const holdings = scopeHoldings(scope);
-  let completed = 0;
-  const progress = (id) => {
-    completed += 1;
-    try {
-      onProgress?.({ completed, total: BUILDERS.length, source: tabOf(id) });
-    } catch (error) {
-      console.error('[research] progress callback failed', error);
-    }
-  };
-
-  // Phase one: every load in parallel, each under its own deadline. A source that fails here is
-  // reported as unavailable and never holds the others back.
-  const loadErrors = new Map();
-  await Promise.all(
-    BUILDERS.map(async (builder) => {
-      try {
-        // `load: null` is a source that declares it has nothing to fetch — see earnings-calendar.
-        // A builder that carries NEITHER a function nor that declaration is a registry bug, and it
-        // is raised as one here rather than being quietly skipped: the whole reason this went
-        // unnoticed is that "could not be read" is a legitimate state, so our own mistake wore the
-        // upstream's clothes.
-        if (builder.load === undefined) throw new Error(`Registry error: source "${builder.id}" declares neither a load() nor an explicit \`load: null\`.`);
-        if (builder.load) await withTimeout(Promise.resolve().then(() => builder.load()), tabOf(builder.id));
-      } catch (error) {
-        loadErrors.set(builder.id, error);
-      } finally {
-        progress(builder.id);
-      }
-    })
-  );
-
   // Phase two: the question, resolved once against everything that loaded.
-  const plan = queryPlan(question, companyIndex(deferred), { scope, holdings });
+  const plan = queryPlan(question, companyIndex(deferred), { scope, holdings, history, portfolioPositions });
+  // Phase three: a single cached collection shared by both alert adapters.
+  // Loading again here used to add another slowest-feed wait and sort the same
+  // large timeline twice. rankReport is the AI Alerts tab's own deterministic reading.
+  const alertReport = alerts.collect({ scope, holdings, includeHistory: true, load: false });
+  // Read the named companies' retained document index even on a first visit.
+  // This is a bounded saved-source lookup, never a new scrape or PDF analysis.
+  const documentRead = withResearchDeadline(Promise.all(plan.companies.filter(c => c.inScope).map(c => loadCapturedDomesticFilings(c.ticker))), 'Company filings', { signal, timeoutMs: 1500 });
 
-  // Phase three: reads are filters over the caches.
-  const packets = await Promise.all(
-    BUILDERS.map(async (builder) => {
-      if (loadErrors.has(builder.id)) return failedPacket(builder.id, loadErrors.get(builder.id));
-      try {
-        return await withTimeout(Promise.resolve().then(() => builder.read({ question, scope, holdings, plan, portfolioPositions })), tabOf(builder.id));
-      } catch (error) {
-        return failedPacket(builder.id, error);
+  const packets = await Promise.all(BUILDERS.map(async builder => {
+    try {
+      let documentError;
+      if (builder.id === 'company-filings') {
+        try { await documentRead; } catch (error) { documentError = error; }
       }
-    })
-  );
+      const packet = await withResearchDeadline(Promise.resolve().then(() => builder.read({ question, scope, holdings, plan, portfolioPositions, alertReport })), tabOf(builder.id), { signal });
+      const error = documentError || loadErrors.get(builder.id);
+      if (error) {
+        if (!packet.rowCount) return failedPacket(builder.id, error);
+        packet.dataQuality = 'partial';
+        packet.note = String(error.message || error);
+      }
+      return packet;
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      return failedPacket(builder.id, error);
+    }
+  }));
 
   // Registry order is priority order: when the budget runs out mid-pass, the sources listed first
   // — the dashboard's own cross-feed rankings — are the ones that got their next row.

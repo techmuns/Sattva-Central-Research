@@ -32,6 +32,8 @@
     // Ask Research streams the low-latency model through Muns' query router. The session credential
     // is a Worker secret: prefer `MUNS_LLM_TOKEN`, with existing Muns tokens as fallbacks.
     "MUNS_LLM_BASE": "https://fastapi.muns.io",
+    // Compact prompts use the local route; research.mjs automatically routes larger
+    // complete-portfolio prompts to hosted_llm before overflowing the small context.
     "MUNS_LLM_TYPE": "local_llm",
     // The operator confirmed this old binding now contains a Muns token, not an Anthropic key.
     // Remove this migration opt-in after `MUNS_LLM_TOKEN` is installed.

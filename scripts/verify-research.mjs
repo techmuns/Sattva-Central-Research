@@ -96,7 +96,7 @@ ok('the runtime research catalog covers every visible research tab, and nothing 
 ok('earnings calendar evidence keeps paginated results and upcoming calls separate from filed results', () => {
   assert.match(
     estateSource,
-    /id: 'earnings-calendar',[\s\S]*?read\(\{ plan \}\)[\s\S]*?scheduledRows[\s\S]*?Moneycontrol scheduled results plus Screener upcoming[\s\S]*?Result rows use Moneycontrol All exchanges[\s\S]*?every page of Screener/
+    /id: 'earnings-calendar',[\s\S]*?read\(\{ scope, holdings, plan \}\)[\s\S]*?scheduledRows[\s\S]*?Moneycontrol scheduled results plus Screener upcoming[\s\S]*?Result rows use Moneycontrol All exchanges[\s\S]*?every page of Screener/
   );
   const block = estateSource.match(/\n    id: 'earnings-calendar',\n    read[\s\S]*?\n  \},\n  \{\n    id: 'concall'/)?.[0] || '';
   assert.doesNotMatch(block, /earningsLive\.(?:load|dateRange|reportedOn)/);
@@ -266,7 +266,7 @@ ok('the Muns request preserves evidence and selects low-latency local streaming 
   assert.equal(request.llm_type, 'local_llm');
   assert.equal(request.stream, true);
   assert.equal(request.temperature, 0.2);
-  assert.equal(request.max_tokens, 768);
+  assert.equal(request.max_tokens, 1024);
   assert.match(request.query, /Complete the answer within 450 words/);
   assert.match(request.query, /DASHBOARD_EVIDENCE object is the only source of dashboard facts/);
   assert.match(request.query, /USER: Earlier question/);
