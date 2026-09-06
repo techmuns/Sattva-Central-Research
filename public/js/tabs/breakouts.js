@@ -41,9 +41,11 @@ let ctxRef = null;
 let refreshOff = null;
 let dataOff = null;
 let refreshQuotes = null;
+let tableOff = null;
 const tableViews = new Map();
 
 export function render(ctx) {
+  tableOff?.(); tableOff = null;
   ctxRef = ctx;
   refreshQuotes = null;
   if (!refreshOff) refreshOff = refreshRegistry.register('technicals-view', {
@@ -88,6 +90,7 @@ function loadingHtml() {
 }
 
 function paint(ctx) {
+  tableOff?.(); tableOff = null;
   const rows = technicals.forScope(ctx.scope, coverage.holdings());
   const view = {
     'strong-breakouts': renderStrongBreakouts,
@@ -478,7 +481,7 @@ function renderScanner(ctx, rows) {
   pill.wire(ctx.root);
   cards.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
-  table.wire(ctx.root);
+  tableOff = table.wire(ctx.root);
   wireRefreshBar(ctx, table);
 }
 
@@ -717,7 +720,7 @@ function renderStrongBreakouts(ctx, rows) {
 
   pill.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
-  table.wire(ctx.root);
+  tableOff = table.wire(ctx.root);
   wireChipBar(ctx.root, BREAKOUT_FILTERS, state, (param, next) => {
     ctx.setParams({ ...(ctx.params || {}), [param]: next.join(',') });
   });
@@ -844,7 +847,7 @@ function renderFiiAccumulation(ctx, rows) {
 
   pill.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
-  table.wire(ctx.root);
+  tableOff = table.wire(ctx.root);
   wireChipBar(ctx.root, FII_FILTERS, state, (param, next) => {
     ctx.setParams({ ...(ctx.params || {}), [param]: next.join(',') });
   });
@@ -1151,6 +1154,7 @@ function failureNote(err) {
 }
 
 export function destroy() {
+  tableOff?.(); tableOff = null;
   ctxRef = null; refreshQuotes = null;
   refreshOff?.(); refreshOff = null;
   dataOff?.(); dataOff = null;

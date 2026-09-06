@@ -88,7 +88,7 @@ const tab = makeFilingsTab({
   filters,
   link: false,
   showWatchFilter: false,
-  fillMode: 'scroll',
+  fillMode: 'auto',
   preserveReadingPosition: true,
   initialSort: { key: 'Ex date', dir: 'desc' },
   stickyHead: 'max(320px, calc(100vh - 260px))',

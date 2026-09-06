@@ -82,7 +82,7 @@ try {
   assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-table-filter], [data-watch-toggle], [data-document-tabs]').count(), 0);
   assert.match(await page.locator('[data-row-count]').innerText(), /^146 announcements · 3 companies with filings$/);
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
-  assert.equal(await page.locator('[data-scroll-paged]').count(), 1);
+  assert(await page.locator('tbody tr[data-row-key]').count() <= 160, 'table DOM stays bounded');
   console.log('PASS clean portfolio stream, source deduplication and automatic BSE/company/NSE history');
   const search = page.locator('[data-table-search]');
   await search.fill('KAMATS');

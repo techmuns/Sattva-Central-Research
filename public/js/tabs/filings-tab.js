@@ -215,11 +215,19 @@ export function makeFilingsTab(cfg) {
 
     const rows = (cfg.filterByScope || filterByScope)(all, ctx.scope, coverage.holdings());
     if (cfg.preserveReadingPosition) {
-      const nextRows = JSON.stringify([ctx.scope, m.reason, rows]);
+      const sameRows = renderedRows?.scope === ctx.scope && renderedRows.reason === m.reason &&
+        renderedRows.rows.length === rows.length && rows.every((row, i) => row === renderedRows.rows[i]);
       // Archive/check status can change several times in one poll without changing a filing.
       // Keep the mounted search field and rows intact for those notifications.
-      if (nextRows === renderedRows && ctx.root.querySelector('[data-score-table]')) return;
-      renderedRows = nextRows;
+      if (sameRows && ctx.root.querySelector('[data-score-table]')) {
+        // Keep freshness honest without throwing away the focused search field or scroll window.
+        const info = ctx.root.querySelector('[data-filings-info]');
+        if (info) info.outerHTML = cfg.status ? cfg.status(m) : pill(m, ctx.scope, rows);
+        const busy = ctx.root.querySelector('[data-filings-busy]');
+        if (busy) busy.innerHTML = busyStrip(m);
+        return;
+      }
+      renderedRows = { scope: ctx.scope, reason: m.reason, rows };
     }
     disposers.forEach((dispose) => dispose && dispose());
     disposers = [];
@@ -308,7 +316,7 @@ export function makeFilingsTab(cfg) {
       wrapHeads: true,
       nameMaxPx: cfg.nameMaxPx || 460,
       stickyHead: cfg.stickyHead || 'max(320px, calc(100vh - 300px))',
-      fillMode: cfg.fillMode || 'idle',
+      fillMode: cfg.fillMode || 'auto',
       initialRowCount: oldRows.length || 40,
       initialRowKey: position?.key || null,
       showWatchFilter: cfg.showWatchFilter !== false,
@@ -365,7 +373,7 @@ export function makeFilingsTab(cfg) {
         // the description happen to be, and both change as companies are added. A control that
         // moves when you use it reads as a different page.
       })}
-      ${busyStrip(m)}
+      <div data-filings-busy>${busyStrip(m)}</div>
       ${cfg.aboveTable?.(ctx, m) || ''}
       ${table.html}
       ${methodFooter(cfg)}`;

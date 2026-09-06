@@ -30,6 +30,7 @@ export const meta = {
 let renderToken = 0;
 let unsubscribe = null;
 let tableView = null;
+let tableOff = null;
 // The live engine is owned by the app, not the tab. Captured on mount so destroy() — which takes no
 // ctx — can stop the poller it started; folding it into the render closure would leak the poller
 // past the tab, and app-wide polling of a per-scope table is not what this feed is for.
@@ -72,6 +73,7 @@ function destroyFeed() {
 }
 
 function cleanup() {
+  tableOff?.(); tableOff = null;
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
@@ -203,7 +205,7 @@ function paint(ctx) {
     ${historyWarning}
     ${table.html}
   `;
-  table.wire(ctx.root);
+  tableOff?.(); tableOff = table.wire(ctx.root);
   if (selection) {
     const search = ctx.root.querySelector('[data-table-search]');
     search.focus({ preventScroll: true });

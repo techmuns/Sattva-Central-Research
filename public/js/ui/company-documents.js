@@ -54,6 +54,7 @@ export function mountCompanyDocuments(ctx, options) {
   let generation = 0;
   let disposed = false;
   let tableView = null;
+  let tableOff = null;
   const book = coverage.holdings();
   const candidates = new Map();
   const entries = ctx.scope === 'watchlist' ? watchlist.all() : ctx.scope === 'portfolio' ? book : [...(ctx.data?.universe || []), ...book];
@@ -167,7 +168,8 @@ export function mountCompanyDocuments(ctx, options) {
         link: (row) => documentUrl(row.url), countNoun: 'documents', initialSort: { key: 'Date', dir: 'desc' }, initialView: tableView,
         emptyMessage: 'No matching documents were returned for this company, source and date range. This does not prove no filing exists.',
       });
-      tableView = table.view; results.innerHTML = table.html; table.wire(results);
+      tableOff?.();
+      tableView = table.view; results.innerHTML = table.html; tableOff = table.wire(results);
       results.querySelector('[data-table-search]').placeholder = 'Search documents…';
       return { checked: 1, partial: !!payload.unmapped };
     } catch (error) { if (current()) say(signal.aborted ? 'The document request timed out. Retained documents remain visible; retry or narrow the range.' : error.message || 'Documents could not be loaded.'); return { failed: 1, error: error.message }; }
@@ -178,5 +180,5 @@ export function mountCompanyDocuments(ctx, options) {
     return await submit() || { skipped: true };
   } });
   root.querySelector('[data-doc-form]').addEventListener('submit', submit);
-  return () => { offRefresh(); disposed = true; generation++; controller?.abort(); unsubscribe(); };
+  return () => { tableOff?.(); offRefresh(); disposed = true; generation++; controller?.abort(); unsubscribe(); };
 }

@@ -74,6 +74,7 @@ const tab = makeFilingsTab({
     'The latest stories for every company in scope, from the scheduled capture — no company to pick first. ' +
     'Refresh re-searches whatever the capture has not covered. Switch to Universe for the complete market-wide publisher feed.',
   feed,
+  preserveReadingPosition: true,
   noun: 'articles',
   // The scrape records a company it searched and found nothing for as a single all-null row. That
   // is a statement about the SEARCH, not an article, and it must not become a row: the company is

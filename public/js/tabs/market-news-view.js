@@ -25,6 +25,7 @@ import * as refreshRegistry from '../core/refresh.js';
 // Headlines and standfirsts are theirs, reproduced; the article stays on their site.
 
 import { sectionHead, openModal } from '../ui/screener.js';
+import { mountWindowedList } from '../ui/windowed-list.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatRelativeTime } from '../core/format.js';
 import { withoutPublisherName } from '../core/source-copy.js';
@@ -122,10 +123,8 @@ function pill(m) {
 // section chip, which is exactly backwards for content whose headline IS the row.
 //
 // What the kit's discipline still buys, and is kept by hand here:
-//   • A SCREENFUL FIRST, then the rest under requestIdleCallback. 600 cards is far more DOM than
-//     600 table rows, so mounting all of it up front would block the main thread on every visit.
-//     `data-rows-pending` on the section is the honest signal that stories are outstanding, and the
-//     suite waits on it rather than sleeping.
+//   • A BOUNDED, measured screenful throughout the visit. All stories remain in the model for
+//     searching/export; natural heights preserve the complete standfirst and image layout.
 //   • KEYS DERIVED FROM CONTENT — the publisher's article id — never a position.
 //   • Every string escaped. These are somebody else's headlines arriving over the network.
 //
@@ -473,73 +472,25 @@ function listHtml(rows) {
 }
 
 /**
- * Append the remainder in idle slices.
- *
- * Not virtualisation: every story ends up in the DOM, so Ctrl-F, screenshots and the accessibility
- * tree behave normally. The timeout matters — a backgrounded tab never goes idle, and without it
- * the list would sit at 24 stories until the reader came back.
+ * Mount a measured window. Headlines, summaries and posts keep their natural heights; the full
+ * retained array still backs the search, filters, counts and export. No offscreen image fanout.
  */
 function fillRest(root, rows, wantScroll) {
   const host = root.querySelector('[data-news-scroll]');
   const section = root.querySelector('[data-mcnews-list]');
   if (!host || !section) return () => {};
 
-  // Restoring a scroll offset is only possible once the rows it points into exist, so the request
-  // is carried through the fill and dropped the moment the reader scrolls for themselves. See
-  // CLAUDE.md: if you rebuild a scrolling container, you own restoring its scroll position.
-  let want = wantScroll || 0;
-  let lastSet = 0;
-  const settle = () => {
-    if (!want || host.scrollTop >= want) return;
-    host.scrollTop = want;
-    lastSet = host.scrollTop;
-  };
-  const onScroll = () => {
-    if (Math.abs(host.scrollTop - lastSet) > 2) want = 0;
-  };
-  host.addEventListener('scroll', onScroll, { passive: true });
-  settle();
-
-  let at = FIRST_PAINT;
-  let handle = null;
-  let cancelled = false;
-  const idle = window.requestIdleCallback || ((fn) => setTimeout(() => fn({ timeRemaining: () => 8 }), 16));
-  const cancelIdle = window.cancelIdleCallback || clearTimeout;
-  const stop = () => {
-    cancelled = true;
-    if (handle) cancelIdle(handle);
-    handle = null;
-    host.removeEventListener('scroll', onScroll);
-  };
-
-  if (rows.length <= FIRST_PAINT) {
-    section.removeAttribute('data-rows-pending');
-    return stop;
-  }
-
-  const step = () => {
-    if (cancelled) return;
-    const slice = rows.slice(at, at + 40);
-    if (!slice.length) {
-      section.removeAttribute('data-rows-pending');
-      settle();
-      host.removeEventListener('scroll', onScroll);
-      return;
-    }
-    host.insertAdjacentHTML('beforeend', slice.map(cardHtml).join(''));
-    at += slice.length;
-    settle();
-    const left = rows.length - at;
-    if (left > 0) {
-      section.setAttribute('data-rows-pending', String(left));
-      handle = idle(step, { timeout: 400 });
-    } else {
-      section.removeAttribute('data-rows-pending');
-      host.removeEventListener('scroll', onScroll);
-    }
-  };
-  handle = idle(step, { timeout: 400 });
-  return stop;
+  section.removeAttribute('data-rows-pending');
+  host.tabIndex = 0; host.setAttribute('role', 'region'); host.setAttribute('aria-label', 'Market news stories');
+  const windowed = mountWindowedList({ scroller: host, content: host, items: rows,
+    key: r => String(r.id || r.url), rowSelector: '[data-news-key]', estimateHeight: 150,
+    initialKey: wantScroll?.key || null,
+    renderRows: (list, from, to) => list.slice(from, to).map(cardHtml).join(''),
+    spacerHtml: (height, edge) => `<div data-window-spacer="${edge}" aria-hidden="true" style="height:${height}px;border:0;padding:0"></div>`,
+    onWindow: (start, total) => { section.dataset.virtualStart = start; section.dataset.virtualTotal = total; },
+  });
+  if (wantScroll?.key) host.scrollTop -= wantScroll.offset || 0;
+  return () => windowed.destroy();
 }
 
 /** "Mint 105, Business Standard 156, …" — for the export banner and the provenance panel. */
@@ -739,7 +690,10 @@ function paint(ctx) {
   }
 
   // A capture landing must not throw the reader back to the top of the list.
-  const keep = ctx.root.querySelector('[data-news-scroll]')?.scrollTop || 0;
+  const previous = ctx.root.querySelector('[data-news-scroll]');
+  const top = previous?.getBoundingClientRect().top || 0;
+  const anchor = previous && [...previous.querySelectorAll('[data-news-key]')].find(row => row.getBoundingClientRect().bottom > top);
+  const keep = anchor ? { key: anchor.dataset.newsKey, offset: anchor.getBoundingClientRect().top - top } : null;
   const filtered = visibleRows(rows);
   ctx.root.innerHTML = `
     ${sectionHead({ title: 'News', description: DESCRIPTION, meta: pill(m) })}

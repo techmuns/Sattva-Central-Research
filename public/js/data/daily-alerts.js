@@ -485,6 +485,13 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   observeSources();
   const book = holdings || coverage.holdings();
   const settledFeeds = new Map(); // feed id -> the finished feed row
+  // A warm estate can still require cold normalization. Do not make a tab click synchronously
+  // classify every source before the shell can paint. Yield between source-sized batches too;
+  // this changes scheduling only, never the records, coverage or private-data filtering.
+  const yieldForInput = () => typeof window === 'undefined' ? Promise.resolve()
+    : new Promise(resolve => setTimeout(resolve, 0));
+  await yieldForInput();
+  let batchStarted = performance.now();
   // Start with every source's current in-memory records. Refreshing one source
   // must not temporarily remove all the others from the timeline. The pending
   // status still says these records have not been rechecked by this collection.
@@ -492,6 +499,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     try {
       settledFeeds.set(feed.id, { ...readFeed(feed, { day, includeHistory }), status: 'pending' });
     } catch { /* A source with no readable snapshot starts empty. */ }
+    if (performance.now() - batchStarted >= 8) { await yieldForInput(); batchStarted = performance.now(); }
   }
   const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds });
   // Feed promises often finish in one burst. Building/sorting the entire history after every
@@ -526,6 +534,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
       const args = { day, scope: 'universe', wanted: null, includeHistory };
       try {
         if (load) await loadFeed(feed.id, refresh);
+        await yieldForInput();
         out = readFeed(feed, args);
         if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
         else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
