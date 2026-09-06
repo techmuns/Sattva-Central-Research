@@ -52,7 +52,7 @@ assert(first.lastCheckedAt);
 const second = await collect(first, settings, source);
 assert.deepEqual(second.posts.map((p) => p.id), [10, 9, 8, 7]);
 assert.equal(second.historyNextId, 6, 'quiet runs still advance history');
-const failed = await collect(second, settings, upstream(messages, { fail: new Set([11, 6]), status: 429 }));
+const failed = await collect(second, settings, upstream(messages, { fail: new Set([11, 6]), status: 503 }));
 assert.equal(failed.lastRun.status, 'partial');
 assert.deepEqual(failed.retryIds, [11, 6]);
 assert.equal(failed.lastCheckedAt, second.lastCheckedAt, 'a partial forward check cannot move success time');
@@ -61,6 +61,23 @@ assert.equal(failed.historyNextId, 4, 'transport failures are retried separately
 const recovered = await collect(failed, { ...settings, history: 0 }, source);
 assert(recovered.posts.some((p) => p.id === 6), 'a later run recovers a failed ID after the history cursor moved on');
 assert.deepEqual(recovered.retryIds, []);
+for (const status of [429, 403]) {
+  let calls = 0;
+  const refused = await collect(second, settings, { ...source, fetcher: async () => {
+    calls++; return new Response('Please wait', { status, headers: { 'retry-after': '7200' } });
+  } });
+  assert.equal(calls, 1, 'stop all public requests immediately on throttling or refusal');
+  assert.equal(refused.lastRun.status, 'failed');
+  assert.equal(Date.parse(refused.publicSafety.nextAttemptAt), source.now() + 7260000);
+  assert.equal(refused.lastCheckedAt, second.lastCheckedAt);
+  assert.deepEqual(refused.posts, second.posts);
+  const held = await collect(refused, settings, { ...source, fetcher: async () => { throw Error('must not connect'); } });
+  assert.equal(held.lastRun.status, 'partial');
+  assert.equal(held.publicSafety.nextAttemptAt, refused.publicSafety.nextAttemptAt);
+  const resumed = await collect(held, { ...settings, history: 0 }, { ...source, now: () => source.now() + 7260001 });
+  assert.equal(resumed.publicSafety, null);
+  assert.equal(resumed.lastRun.status, 'ok');
+}
 const down = await collect(second, settings, { ...source, fetcher: async () => new Response('outage', { status: 503 }) });
 assert.equal(down.lastRun.status, 'failed');
 assert.deepEqual(down.posts, second.posts);

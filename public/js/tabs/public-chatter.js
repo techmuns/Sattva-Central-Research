@@ -713,7 +713,8 @@ function telegramHeadMeta() {
   const warning = failed || stale;
   const state = failed ? 'partial' : t.lastCheckedAt ? (stale ? 'stale' : 'checked') : 'unknown';
   const paused = t.apiSafety?.paused || (failed && Date.parse(t.apiSafety?.nextAttemptAt || '') > Date.now());
-  const label = paused ? (t.apiSafety?.paused ? 'Account collection paused for review' : `Account collection paused until ${telegramDate(t.apiSafety.nextAttemptAt)}`) : failed ? 'Collection needs attention' : t.lastCheckedAt ? `Checked ${formatRelativeTime(new Date(t.lastCheckedAt))}` : 'Check time unavailable';
+  const publicPaused = t.route !== 'mtproto' && Date.parse(t.publicSafety?.nextAttemptAt || '') > Date.now();
+  const label = publicPaused ? `Public source retry after ${telegramDate(t.publicSafety.nextAttemptAt)}` : paused ? (t.apiSafety?.paused ? 'Account collection paused for review' : `Account collection paused until ${telegramDate(t.apiSafety.nextAttemptAt)}`) : failed ? 'Collection needs attention' : t.lastCheckedAt ? `Checked ${formatRelativeTime(new Date(t.lastCheckedAt))}` : 'Check time unavailable';
   return `<div class="flex flex-wrap items-center gap-2">
     <span data-telegram-live data-telegram-freshness="${state}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${warning ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-slate-50 text-slate-600 ring-slate-200'}">
       ${escapeHtml(formatNumber(t.count || 0))} archived · ${escapeHtml(formatNumber(t.listed || 0))} readable · ${escapeHtml(label)}

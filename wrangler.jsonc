@@ -9,9 +9,15 @@
   "main": "worker/entry.js",
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "durable_objects": {
-    "bindings": [{ "name": "CAPTURE_REGISTRY", "class_name": "CaptureRegistry" }]
+    "bindings": [
+      { "name": "CAPTURE_REGISTRY", "class_name": "CaptureRegistry" },
+      { "name": "TELEGRAM_SCHEDULER", "class_name": "TelegramScheduler" }
+    ]
   },
-  "migrations": [{ "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] }],
+  "migrations": [
+    { "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] },
+    { "tag": "telegram-scheduler-v1", "new_sqlite_classes": ["TelegramScheduler"] }
+  ],
 
   // WHICH REPOSITORY THE NEWS REFRESH BUTTON MAY START A RUN IN.
   //

@@ -20,16 +20,19 @@ try {
   for(const apiSafety of [safety,{paused:true,reason:'account-attention',failures:1,nextAttemptAt:null}]) {
     const input=join(scratch,'input.json'), restored=join(scratch,'restored.json'), packed=join(scratch,'capture.gz');
     // A connection error may happen while the retained archive still has the public-page route.
-    writeFileSync(input,JSON.stringify({...raw,route:'embed+permalink',apiSafety:{...apiSafety,session:'NEVER-PUBLISH'}}));
+    const publicSafety = { reason:'rate-limit', nextAttemptAt:safety.nextAttemptAt };
+    writeFileSync(input,JSON.stringify({...raw,route:'embed+permalink',publicSafety:{...publicSafety,session:'NEVER-PUBLISH'},apiSafety:{...apiSafety,session:'NEVER-PUBLISH'}}));
     for(const args of [['failed',input],['restore',input,restored],['pack',restored,packed]])
       execFileSync(process.execPath,['scripts/telegram-artifact.mjs',...args],{env:{...process.env,GITHUB_ACTIONS:'false'}});
     const roundTrip=JSON.parse(gunzipSync(readFileSync(packed)));
     assert.deepEqual(roundTrip.apiSafety,apiSafety,'safety state survives health stamping, archive restore and publication');
+    assert.deepEqual(roundTrip.publicSafety,publicSafety,'public source retry deadlines survive every publication step');
     assert(!JSON.stringify(roundTrip).includes('NEVER-PUBLISH'));
   }
 } finally {rmSync(scratch,{recursive:true,force:true});}
 assert.equal(validateTelegramCapture({...raw,apiSafety:{...safety,nextAttemptAt:'invalid'}}).apiSafety.paused,true);
 assert.equal(validateTelegramCapture({...raw,apiSafety:{reason:'unknown'}}).apiSafety.paused,true);
+assert.throws(()=>validateTelegramCapture({...raw,publicSafety:{reason:'rate-limit',nextAttemptAt:'invalid'}}));
 assert(!JSON.stringify(capture).includes('NEVER-PUBLISH'));
 assert.equal(capture.apiState.newestSyncedId,500);
 assert.throws(()=>validateTelegramCapture({...raw,channel:'another_channel'}));
