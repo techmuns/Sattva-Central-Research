@@ -31,6 +31,7 @@
 // arrives with a matching `If-None-Match` gets a 304 with no body at all.
 
 import { readTelegramCollector } from './telegram-collector.mjs';
+import { TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from './telegram-scheduler.mjs';
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
@@ -223,17 +224,24 @@ export default {
     if (url.pathname === '/api/twitter/run') {
       return handleWorkflowRunStatus(env, ctx, { workflow: TWITTER_WORKFLOW, cacheName: 'twitter-run-status' });
     }
-    // TELEGRAM — the same shape, and the reason it exists is the schedule this repository cannot
-    // get from GitHub. `telegram-refresh.yml` asks for `*/30` and GitHub delivers a sixth of it, so
-    // a reliable half-hour has to come from a scheduler that works driving the trigger that works:
-    // `workflow_dispatch` is not throttled at all. An external cron POSTs here every 30 minutes,
-    // exactly as one already does for market news. Nothing in the request chooses what runs — the
-    // repository, the workflow and the ref are fixed on this Worker, a run already in flight is
-    // declined, and `?source=` is the same allowlist of three words rather than a string that
-    // reaches a run name. POST-only, so a prefetcher or a link preview cannot start a run.
+    // A refresh starts the persistent channel timer. Subsequent alarms continue without readers.
+    // GETs remain read-only; preview deployments cannot arm a production collector.
     if (url.pathname === '/api/telegram/posts') return handleTelegramPosts(request, env, ctx);
+    if (url.pathname === '/api/telegram/schedule') {
+      if (request.method !== 'GET') return json({ ok: false, reason: 'method' }, 405);
+      if (!env.TELEGRAM_SCHEDULER) return json({ ok: false, enabled: false, reason: 'unavailable' }, 503);
+      try {
+        return json({ ok: true, ...await env.TELEGRAM_SCHEDULER.getByName(TELEGRAM_SCHEDULER_NAME).status() });
+      } catch { return json({ ok: false, enabled: false, reason: 'unavailable' }, 503); }
+    }
     if (url.pathname === '/api/telegram/refresh') {
       if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a collection with POST.' }, 405);
+      if (env.TELEGRAM_SCHEDULER) {
+        if (url.hostname !== TELEGRAM_PRODUCTION_HOST) return json({ ok: false, reason: 'not-production' }, 403);
+        try { return json(await env.TELEGRAM_SCHEDULER.getByName(TELEGRAM_SCHEDULER_NAME).request(sourceOf(url))); }
+        catch { return json({ ok: false, dispatched: false, reason: 'scheduler-unavailable' }, 503); }
+      }
+      // Compatibility for deployments that have not installed the binding yet.
       return handleWorkflowDispatch(request, env, ctx, {
         workflow: TELEGRAM_WORKFLOW,
         cacheName: 'telegram-dispatch',
@@ -1102,13 +1110,13 @@ async function handleScreenerInsights(request, env, ctx) {
     const capture = { ...result.capture, source: result.source };
     const checkedAt = Date.parse(capture.checkedAt || '');
     const stale = !Number.isFinite(checkedAt) || Date.now() - checkedAt > SCREENER_INSIGHTS_FRESH_MS || result.source.collectorLatestFailed;
-    if (stale) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, !capture.fullCoverage));
+    if (stale && !result.source.collection?.coolingDown) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, !capture.fullCoverage));
     const { body, tag } = withTag(capture);
     const response = tagged(body, tag, SCREENER_INSIGHTS_TTL_S);
     ctx?.waitUntil?.(cache.put(cacheKey, response.clone()));
     return revalidate(request, response, 'miss');
-  } catch {
-    ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, true));
+  } catch (error) {
+    if (!(Date.parse(error?.insightsCooldownUntil || '') > Date.now())) ctx?.waitUntil?.(dispatchScreenerInsightsRefresh(env, true));
     return json({ ok: false, reason: 'unavailable', message: 'Screener Insights capture is not available yet.' }, 503);
   }
 }

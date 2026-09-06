@@ -25,6 +25,8 @@ export function validateTelegramCapture(v, now = Date.now()) {
       contentStatus: p.text || attachments.length || ['photo', 'video'].includes(p.mediaType) ? 'available' : 'telegram-only' };
   }).sort((a, b) => b.id - a.id);
   const api = v.route === 'mtproto';
+  if (v.publicSafety && (!['rate-limit', 'source-refused'].includes(v.publicSafety.reason) ||
+      typeof v.publicSafety.nextAttemptAt !== 'string' || !Number.isFinite(Date.parse(v.publicSafety.nextAttemptAt)))) throw Error('Invalid public source retry deadline');
   return { schemaVersion: 2, source: api ? 'Telegram API' : 't.me public channel pages', channel: v.channel,
     channelUrl: 'https://t.me/researchreportss', route: api ? 'mtproto' : 'embed+permalink', publishesTime: true,
     capturedAt: stamp(v.capturedAt, now), lastCheckedAt: stamp(v.lastCheckedAt, now),
@@ -32,6 +34,7 @@ export function validateTelegramCapture(v, now = Date.now()) {
     historyNextId: positive(v.historyNextId) ? v.historyNextId : 0, historyComplete: v.historyComplete === true,
     discoveryNextId: positive(v.discoveryNextId) ? v.discoveryNextId : 0,
     retryIds: (v.retryIds || []).filter(positive),
+    publicSafety: v.publicSafety ? { reason: v.publicSafety.reason, nextAttemptAt: v.publicSafety.nextAttemptAt } : null,
     apiSafety: v.apiSafety ? { paused: v.apiSafety.paused === true || !['rate-limit', 'connection', 'cooldown', 'account-attention'].includes(v.apiSafety.reason) || !!(v.apiSafety.nextAttemptAt && !Number.isFinite(Date.parse(v.apiSafety.nextAttemptAt))),
       reason: ['rate-limit', 'connection', 'cooldown', 'account-attention'].includes(v.apiSafety.reason) ? v.apiSafety.reason : 'account-attention',
       nextAttemptAt: typeof v.apiSafety.nextAttemptAt === 'string' && Number.isFinite(Date.parse(v.apiSafety.nextAttemptAt)) ? v.apiSafety.nextAttemptAt : null,

@@ -25,6 +25,7 @@ function ingest(payload, checkedAt = Date.now()) {
       collectorLatestFailed: payload.source?.collectorLatestFailed === true,
       collectorLatestConclusion: payload.source?.collectorLatestConclusion || null,
       collectorRunUrl: payload.source?.collectorRunUrl || null,
+      collection: payload.source?.collection || null,
       latestReadFailed: false,
     },
   };

@@ -296,6 +296,11 @@ try {
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   assert((await page.locator('[data-telegram-live]').innerText()).includes('Account collection paused for review'));
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(),view.drawn+1,'account pause retains every visible row');
+  servedArtifact = { ...capture, route:'embed+permalink', lastRun:{at:new Date(Date.parse(freshAt)+2000).toISOString(),status:'partial'},
+    publicSafety:{reason:'rate-limit',nextAttemptAt:new Date(Date.now()+3600000).toISOString()}, posts:[post(501,'New API report'),...capture.posts] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert((await page.locator('[data-telegram-live]').innerText()).includes('Public source retry after'));
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(),view.drawn+1,'public source backoff retains every visible row');
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);

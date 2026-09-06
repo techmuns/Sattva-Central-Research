@@ -6,7 +6,8 @@ import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
 import { buildInsightInventory, insightInventoryDiagnostic, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
-import { collectInsightBatch, orderInsightTargets } from './lib/screener-insights-batch.mjs';
+import { collectInsightBatch } from './lib/screener-insights-batch.mjs';
+import { insightError } from './lib/screener-insights-control.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_ARTIFACT,
@@ -246,14 +247,15 @@ assert.throws(() => parseScreenerInsightsPage(html.replace('data-date-key="2026-
 function artifactFetch({ digest = null, host = 'https://example.blob.core.windows.net/capture', event = 'schedule', payload = capture } = {}) {
   const bytes = gzipSync(JSON.stringify(payload));
   const goodDigest = createHash('sha256').update(bytes).digest('hex');
-  const run = { id: 10, head_branch: 'main', head_repository: { full_name: 'techmuns/Sattva-Central-Research' }, event, status: 'completed', conclusion: 'success' };
+  const run = { id: 10, path: '.github/workflows/screener-insights-refresh.yml', head_branch: 'main', head_repository: { full_name: 'techmuns/Sattva-Central-Research' }, event, status: 'completed', conclusion: 'success' };
   return async (url, init = {}) => {
     if (!url.startsWith('https://api.github.com/')) {
       assert.equal(init.headers, undefined, 'the GitHub credential is never forwarded to the signed artifact host');
       return new Response(bytes);
     }
     if (url.includes('/runs?')) return Response.json({ total_count: 1, workflow_runs: [run] });
-    if (url.includes('/runs/10/artifacts')) return Response.json({ artifacts: [{ id: 20, name: SCREENER_INSIGHTS_ARTIFACT, expired: false, workflow_run: { id: 10 }, size_in_bytes: bytes.length, digest: `sha256:${digest || goodDigest}` }] });
+    if (url.endsWith('/runs/10')) return Response.json(run);
+    if (url.includes('/actions/artifacts?')) return Response.json({ artifacts: url.includes('state-v1') ? [] : [{ id: 20, name: SCREENER_INSIGHTS_ARTIFACT, expired: false, workflow_run: { id: 10, head_branch: 'main' }, size_in_bytes: bytes.length, digest: `sha256:${digest || goodDigest}` }] });
     if (url.endsWith('/artifacts/20/zip')) return new Response(null, { status: 302, headers: { location: host } });
     throw Error(`Unexpected test URL ${url}`);
   };
@@ -270,14 +272,6 @@ for (const options of [{ digest: '0'.repeat(64) }, { host: 'https://evil.test/ca
   await assert.rejects(readScreenerInsightsCollector({ token: 'test-token', now: () => Date.parse(checkedAt), fetcher: artifactFetch(options) }));
 }
 
-const ordered = orderInsightTargets([
-  { companyKey: 'UNIVERSE-NEW', inPortfolio: false },
-  { companyKey: 'PORTFOLIO-DONE', inPortfolio: true },
-  { companyKey: 'PORTFOLIO-FAILED', inPortfolio: true },
-  { companyKey: 'PORTFOLIO-DEFERRED', inPortfolio: true },
-], { checkedAt, failedKeys: ['PORTFOLIO-FAILED'], companies: [{ companyKey: 'PORTFOLIO-DONE', checkedAt }] });
-assert.equal(ordered[0].companyKey, 'PORTFOLIO-DEFERRED', 'unvisited portfolio companies lead repeated reads');
-assert.equal(ordered.at(-1).companyKey, 'UNIVERSE-NEW', 'portfolio reads lead the broader universe');
 const progress = [];
 const bounded = await collectInsightBatch([{ companyKey: 'FIRST' }, { companyKey: 'STALLED' }, { companyKey: 'LATER' }],
   target => target.companyKey === 'FIRST' ? company : new Promise(() => {}),
@@ -296,14 +290,14 @@ const retryBounded = await collectInsightBatch([{ companyKey: 'TIMEOUT' }, { com
   attempts++;
   return new Promise(() => {});
 }, { maxDurationMs: 2_000, attemptTimeoutMs: 25, maxAttempts: 2, concurrency: 1, delayMs: 0 });
-assert.equal(attempts, 2, 'per-company retries remain bounded');
-assert.equal(retryBounded.succeeded.length, 1, 'later companies survive an earlier per-company timeout');
+assert.equal(attempts, 1, 'a stalled company is not retried in the same run');
+assert.equal(retryBounded.succeeded.length, 0, 'a timed-out page must finish closing before another run can read later companies');
 assert.equal(retryBounded.failureCounts.timeout, 1);
 assert.equal(retryBounded.deadlineReached, false);
-assert.deepEqual(retryBounded.deferredKeys, []);
+assert.deepEqual(retryBounded.deferredKeys, ['GOOD']);
 const denied = await collectInsightBatch([{ companyKey: 'FIRST' }, { companyKey: 'DENIED' }, { companyKey: 'LATER' }], target => {
   if (target.companyKey === 'FIRST') return company;
-  throw Error('source-blocked');
+  throw insightError('access-denied');
 }, { maxDurationMs: 2_000, concurrency: 1, delayMs: 0 });
 assert.equal(denied.sourceBlocked, true);
 assert.equal(denied.deadlineReached, false);
@@ -318,9 +312,10 @@ assert.match(workflow, /actions\/upload-artifact@v7/);
 assert.match(workflow, /archive:\s*false/);
 assert.doesNotMatch(workflow, /git push|contents:\s*write/);
 assert.match(collector, /delete process\.env\.SCREENER_PASSWORD/);
-assert.match(collector, /inPortfolio \|\| hashBucket/);
+assert.match(collector, /runInsightCollection/);
 assert.match(collector, /parseWatchlistExport/, 'portfolio coverage comes from Screener\'s complete watchlist export');
 assert.doesNotMatch(collector, /locator\('a\[href\^="\/company\/"\]'\)\.evaluateAll/, 'the collector must not infer full portfolio coverage from rendered page links');
 assert.doesNotMatch(collector, /console\.(?:log|error)\([^\n]*(?:item\.|companyUrl|company\.name)/);
 
 console.log('PASS: source-backed Screener series parsing, validation, incremental retention, context-only correlation and collector privacy.');
+await import('./verify-screener-insights-control.mjs');

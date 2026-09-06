@@ -1040,7 +1040,7 @@ const BUILDERS = [
         source: 'Screener Insights — figures extracted from company filings and presentations',
         asOf: meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { capturedCompanies: meta.companies, targetCompanies: meta.targets, metrics: meta.metrics, fullCoverage: meta.fullCoverage, companiesFailedInCapture: meta.failed, latestCollectorFailed: meta.collectorLatestFailed, latestReadFailed: meta.latestReadFailed, staleCompanies: meta.staleCompanies, missingCompanies: meta.missingCompanies },
+        coverage: { capturedCompanies: meta.companies, targetCompanies: meta.targets, metrics: meta.metrics, fullCoverage: meta.fullCoverage, companiesFailedInCapture: meta.failed, latestCollectorFailed: meta.collectorLatestFailed, latestReadFailed: meta.latestReadFailed, staleCompanies: meta.staleCompanies, missingCompanies: meta.missingCompanies, collection: meta.collection },
         definition: 'Each value keeps its period, unit and source document. These are operating-series observations, not same-day events, forecasts or alert scores. Compare only values within the same metric and periodicity.',
         ...chooseRows(rows, plan, (row) => row),
       });
