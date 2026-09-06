@@ -17,6 +17,7 @@ let revision = 1;
 let nseGate = null;
 const undated = { company: 'Unresolved issuer', ticker: null, publishedAt: null, subject: 'Undated filing', url: 'https://example.test/undated.pdf' };
 const nseRow = { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-03T20:00:00Z', subject: 'Analyst day', url: 'https://example.test/analyst.pdf', description: 'Entire source description' };
+const outsideNseRow = { ...nseRow, company: 'Hexaware Technologies', ticker: 'HEXT', subject: 'Chief executive transition', url: 'https://example.test/hexaware-ceo.pdf' };
 const portfolioUpcomingFixture = [
   { id: 'STLTECH|2026-09-10|AGM|day', companyKey: 'STLTECH', ticker: 'STLTECH', name: 'Sterlite Technologies', date: '2026-09-10', time: null, eventType: 'AGM', companyUrl: 'https://www.screener.in/company/STLTECH/', sourceUrl: 'https://www.screener.in/company/STLTECH/', observedAt: '2026-09-04T07:00:00Z' },
   { id: '500001|2026-09-12|Postal ballot|day', companyKey: '500001', ticker: null, name: 'BSE-only portfolio company', date: '2026-09-12', time: null, eventType: 'Postal ballot', companyUrl: 'https://www.screener.in/company/500001/', sourceUrl: 'https://www.screener.in/company/500001/', observedAt: '2026-09-04T07:00:00Z' },
@@ -27,7 +28,7 @@ globalThis.fetch = async (input) => {
   const path = url.split('?')[0];
   if (broken.has(path)) return new Response('{}', { status: 503 });
   const json = (value) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
-  if (path === 'api/nse-announcements') { if (nseGate) await nseGate; return json({ rows: [nseRow, nseRow, undated,
+  if (path === 'api/nse-announcements') { if (nseGate) await nseGate; return json({ rows: [nseRow, nseRow, undated, outsideNseRow,
     ...(revision > 1 ? [{ ...nseRow, url: 'https://example.test/new.pdf' }] : []),
     ...(revision > 2 ? [{ ...nseRow, url: 'https://example.test/other-tab.pdf' }] : [])], capturedAt: '2026-09-04T07:00:00Z' }); }
   if (path === 'data/twitter-posts.json') return json({ capturedAt: '2026-09-04T07:00:00Z', handles: ['moneycontrolcom'], failed: [], posts: [
@@ -119,6 +120,25 @@ assert.deepEqual(watched.events.map((e) => e.id).sort(), universe.events.filter(
 assert.equal(calls.length, previousCalls, 'scope/filter changes require no extra fetch');
 assert.equal(portfolio.feeds.find((f) => f.id === 'twitter').scopable, true, 'reviewed company mentions can now be scoped; unresolved posts still stay in Universe');
 assert(portfolio.feeds.find((f) => f.id === 'nse-filings').unresolvedCount > 0, 'unresolved omissions are counted');
+
+// A named public issuer is researchable even when the current view excludes it.
+// The optional research request must not mutate the view or broaden private calendar access.
+const scopeLists = await import('../public/js/core/scope-lists.js');
+const outsideCompany = { ticker: 'HEXT', name: 'Hexaware Technologies' };
+const beforeRequestedCalls = calls.length;
+scopeLists.remove('universe', outsideCompany, [outsideCompany]);
+try {
+  for (const view of ['portfolio', 'watchlist', 'universe']) {
+    const ordinary = await alerts.collect({ ...options, scope: view, load: false });
+    assert(!ordinary.events.some(event => event.url === outsideNseRow.url), `${view}: ordinary display exclusions remain in effect`);
+    const requested = await alerts.collect({ ...options, scope: view, load: false, requestedCompanies: [outsideCompany] });
+    assert(requested.events.some(event => event.url === outsideNseRow.url && event.ticker === 'HEXT'), `${view}: explicit research includes retained public evidence outside the view`);
+    if (view !== 'portfolio') assert(!requested.events.some(event => event.portfolioOnly), `${view}: requested public identity cannot admit the private portfolio calendar`);
+    const restored = await alerts.collect({ ...options, scope: view, load: false });
+    assert.deepEqual(restored.events.map(event => event.id).sort(), ordinary.events.map(event => event.id).sort(), 'a question does not persistently add its issuer to the active list');
+  }
+} finally { scopeLists.reset('universe'); }
+assert.equal(calls.length, beforeRequestedCalls, 'explicit public identity expansion reuses the retained pool without starting a scrape');
 
 const privateRow = { key: 'private-1', ticker: 'STLTECH', date: null, title: 'Private annual report', url: 'https://example.test/annual.pdf', isRead: true };
 records.recordDocuments('company-documents', { rows: [privateRow, privateRow] }, { ticker: 'STLTECH', name: 'Sterlite Technologies' });

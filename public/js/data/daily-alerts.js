@@ -481,7 +481,7 @@ export async function prepareSources({ refresh = false } = {}) {
  * nothing else. A failure becomes a `feeds[]` row saying so — the same rule as everywhere here, a
  * failed read is never an empty result.
  */
-export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null } = {}) {
+export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null, requestedCompanies = [] } = {}) {
   observeSources();
   const book = holdings || coverage.holdings();
   const settledFeeds = new Map(); // feed id -> the finished feed row
@@ -501,7 +501,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     } catch { /* A source with no readable snapshot starts empty. */ }
     if (performance.now() - batchStarted >= 8) { await yieldForInput(); batchStarted = performance.now(); }
   }
-  const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds });
+  const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds, requestedCompanies });
   // Feed promises often finish in one burst. Building/sorting the entire history after every
   // promise made one cached refresh rebuild a 60k-row pool twenty times before yielding to input.
   // Coalesce progress at the data boundary; throttling only the eventual DOM paint is too late.
@@ -678,9 +678,14 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
   return value;
 }
 
-function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
-  const wanted = scopeMatcher(scope, holdings);
-  const portfolioEntities = portfolioNewsEntities(holdings);
+function assemble({ day, scope, holdings, includeHistory, settledFeeds, requestedCompanies = [] }) {
+  const scoped = scopeMatcher(scope, holdings);
+  const requested = new Set(requestedCompanies.map(company => company.ticker).filter(Boolean));
+  const requestedEntities = new Set(portfolioNewsEntities(requestedCompanies).map(entity => entity.entityId));
+  // Research can name a public issuer outside the selected view. The view still controls
+  // private portfolio-only feeds; public identity expansion must not change that boundary.
+  const wanted = { has: ticker => scoped.has(ticker) || requested.has(ticker) };
+  const portfolioEntities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
   const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
   const feeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
@@ -702,6 +707,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds }) {
     const events = all.filter((event) => {
       if (event.portfolioOnly) return scope === 'portfolio';
       if (event.ticker) return wanted.has(event.ticker);
+      if (event.entityId && requestedEntities.has(event.entityId)) return true;
       if (scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
       return scope === 'universe';
     });
