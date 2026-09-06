@@ -92,7 +92,7 @@ try {
   assert.ok(['ready', 'limited'].includes(questions[0].evidence.portfolio.status));
   assert.equal(questions[0].evidence.portfolio.mode, 'verified-holdings');
   assert.equal(questions[0].evidence.portfolio.valuation, 'workbook');
-  assert(questions[0].evidence.portfolioPositions.holdings.some(h => /Sterlite/i.test(h.name)));
+  assert.deepEqual(questions[0].evidence.portfolioPositions.holdings.map(h => h.isin).sort(), fastSnapshot.holdings.map(h => h.isin).sort(), 'ownership questions receive the whole verified book, including when the named company is absent');
   assert.equal(questions[0].evidence.portfolio.bookAsOf, '2026-06-30');
   await research.getByText('Portfolio book: 2026-06-30.', { exact: false }).waitFor();
   const child = page;
