@@ -321,7 +321,7 @@ live.onGlobalTick(cb);    // header Live pill
 ## 7. Tabs and planned features
 
 ### Ask Research — `ask-research` (server-configured, single view)
-A two-column conversation workspace and the default landing tab. Every question builds a bounded
+A compact conversation workspace with on-demand history and the default landing tab. Every question builds a bounded
 runtime packet through the canonical data modules behind the other Research Central tabs.
 **Every source is a tab the reader can open** — the mock ledger used to be the fifteenth and cited
 itself as *Portfolio Analytics*, linking into a hidden workspace with no way back; both are
@@ -330,13 +330,14 @@ Every registered source contributes its status, coverage,
 as-of metadata and provenance; question-matched rows are included within the Worker request bound,
 so one slow or unavailable feed is reported rather than silently omitted.
 
-The Worker sends the packet to Muns' `/query-router` with `llm_type: local_llm` and `stream: true`
-for the shortest first-token delay. Operators can explicitly select `hosted_llm` with
-`MUNS_LLM_TYPE` when answer quality matters more than latency.
-It forwards each upstream NDJSON text chunk immediately, while the answer cites material dashboard
-claims by page. A Muns session token is a Worker secret; the browser never receives it, and the paid
-route is same-origin, size-bounded and rate-limited. Conversation history stays in device
-`localStorage`; the provider has no web-search contract, so the workspace makes no web-research
+With `CLAUDE_API_KEY` configured, the Worker sends the packet directly to Claude Sonnet 5 with
+streaming and thinking disabled, and caches only shared instructions. It forwards answer text
+immediately and validates the provider's completion reason. Environments without the key retain
+the Muns router; a failed Claude call never silently falls back to it. Retrieved source findings
+remain prominently readable when an answer fails. Claims cite their owning dashboard page.
+Credentials are Worker secrets; the browser never receives them, and the paid route is
+same-origin, size-bounded and rate-limited. Private portfolio conversations remain in memory;
+non-private history uses device `localStorage`. The workspace makes no web-research
 claim or control. An answer in flight is not tied to the tab being on screen: leaving Ask Research
 lets it finish, saves it to the conversation and announces it in the alert stack, while a scope or
 scope-membership change still cancels it so an answer cannot land under a scope it was not built

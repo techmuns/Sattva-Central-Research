@@ -35,7 +35,7 @@ const activeResponses = new Set();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/api/research') {
-    if (req.method === 'GET') { res.setHeader('content-type', 'application/json'); res.end('{"configured":true}'); return; }
+    if (req.method === 'GET') { res.setHeader('content-type', 'application/json'); res.end('{"configured":true,"provider":"claude"}'); return; }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = JSON.parse(raw);
     const validated = validateResearchBody(body);
@@ -234,6 +234,8 @@ try {
   assert.equal(await page.locator('.research-opening').count(), 0, 'empty failure never resets the conversation to the welcome screen');
   assert.equal(await page.locator('.research-user-bubble').last().innerText(), screenshotQuestion);
   assert(await page.locator('.research-assistant-answer').last().locator('[data-research-preview]').isVisible(), 'source readings remain available after an empty failure');
+  assert.equal(await page.locator('.research-assistant-answer').last().locator(':scope > [data-research-preview] > summary').innerText(), 'Findings from your sources', 'retrieved leads remain outside collapsed portfolio details when the model fails');
+  assert.match(await page.locator('[data-research-provider-note]').textContent(), /Claude \(Anthropic\)/, 'the data-flow disclosure names the active provider');
 
   // Hold the model before its first token. Source readings must paint honestly
   // before it, and typing/IME composition cannot submit or erase a next draft.

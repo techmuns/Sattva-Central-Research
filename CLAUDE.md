@@ -206,8 +206,9 @@ scripts/
 worker/index.js               asset serving + POST /api/live-prices + GET /api/earnings
                               (+ ?fields=prices) + /api/earnings-calendar + /api/concalls
                               + /api/super-investors (+ /{slug})
-worker/research.mjs           Ask Research's provider bridge: holds the Muns LLM token, bounds the request on
+worker/research.mjs           Ask Research's provider bridge: selects the server-only Claude or Muns credential, bounds the request on
                               public/js/research/evidence-shared.js and streams the answer back as NDJSON
+worker/research-claude.mjs    direct Claude Messages SSE adapter, cached instructions and explicit completion
 worker/http.mjs               content ETags, 304s and CORS — shared with any local stand-in
 worker/mc.mjs                 the Moneycontrol client + normaliser, shared with scripts/
 worker/stockscans.mjs         the StockScans con-call client (vocabulary lives in public/js/data/)
@@ -2394,22 +2395,36 @@ threw, the packet was well-formed and under bound, and the suite asserted only i
    in lower case resolves to its ticker and leads every source that carries it. **Asserting the size
    of a packet says nothing about whether it carries evidence.**
 
-`worker/research.mjs` is the provider boundary. A Muns session token is a Worker secret and must
-never enter `public/`, browser storage, a request payload or a committed config file. The route is
-same-origin, request-bounded and rate-limited. It calls `fastapi.muns.io/query-router` with
-`llm_type: local_llm` and `stream: true`, then forwards every upstream NDJSON text chunk to the
-browser immediately. That provider contract has no web-search option, so the UI must not offer or
-claim one. The browser preserves every source's status, coverage and provenance, then shares the
-remaining provider-facing budget (`RESEARCH_EVIDENCE_CHAR_BUDGET`, 13,000 characters — about 3,900
-tokens of JSON, sized for the local model's 8K-token context beside the instruction, the bounded
-history and a 768-token answer; the fourteen-source skeleton measures ~6,700 on the shipped data, so
-roughly twenty rows fit) across question-ranked rows. UI-only routes and the duplicate catalog
-stay in the browser rather than being repeated in the model prompt, and they are not charged against
-the budget.
+`worker/research.mjs` is the same-origin, request-bounded, rate-limited provider boundary.
+**A dedicated `CLAUDE_API_KEY` Worker secret selects direct Claude** through
+`worker/research-claude.mjs`, using `claude-sonnet-5`, streaming, 2,048 output tokens and
+explicitly disabled thinking. Non-default sampling parameters are not supported by Sonnet 5.
+Only the shared system instructions have a five-minute prompt-cache breakpoint; customer
+holdings, source readings and conversation history are sent fresh and not marked for caching.
+The entire canonical provider-facing evidence packet is preserved. The key goes only to the
+fixed Anthropic Messages endpoint; redirects are refused. Credentials never enter `public/`,
+browser storage, a request payload or committed config.
+
+Forward SSE text deltas immediately, without Muns' final-answer XML framing. Ignore thinking
+and other non-text deltas; a normal completion requires `message_stop`, `end_turn` and nonempty
+text. EOF, truncation, malformed frames and errors remain failures with partial text retained.
+Abort a Claude request that has not produced answer text in 20 seconds; the total provider
+deadline remains 45 seconds, bounded by the browser's 55-second guard. Cancel on browser stop.
+Do not silently fall back to another provider after a Claude error. Timeout copy must preserve
+the user's question and findings, not blame the breadth of a simple question. If no answer
+arrived, show the saved literal findings outside the collapsed portfolio details.
+
+Environments without the dedicated Claude key retain Muns' `/query-router`, with larger
+prompts routed to `hosted_llm` and compact ones to `local_llm`. The Muns final-answer filter
+still applies only to that provider. Neither route performs web search. Config reports the
+active provider so the History drawer accurately discloses where questions and readings go.
+UI-only routes and the duplicate source catalog stay in the browser.
 
 The former `ANTHROPIC_API_KEY` binding is never sent to Muns unless
 `MUNS_LLM_LEGACY_ANTHROPIC_BINDING=confirmed-muns-token` explicitly records that an operator replaced
-its value with a Muns token. Remove that migration opt-in after installing `MUNS_LLM_TOKEN`.
+its value with a Muns token. Values starting `sk-ant-` are rejected even under that legacy opt-in
+or any Muns token binding. Never replace the legacy binding with a real Claude key; use the
+dedicated `CLAUDE_API_KEY`. Remove the migration opt-in after installing `MUNS_LLM_TOKEN`.
 
 **AN ANSWER IN FLIGHT OUTLIVES THE TAB IT WAS ASKED FROM.** `destroy()` used to abort every running
 generation, so pressing Send and then looking at another tab — the obvious thing to do while fifteen
@@ -2438,7 +2453,7 @@ the assistant ignored it. Re-asking costs a real model run, so it is never re-se
 the phase line says why it is there.
 
 Conversation history is stored on the device, but each submitted question and bounded evidence
-packet are sent to the Muns-hosted model. The UI says both halves. Model prose is
+packet are sent to the configured model (Claude or Muns). The UI names the active provider. Model prose is
 untrusted: render it through
 `js/research/renderer.js`'s DOM-based subset, never by assigning it to `innerHTML`.
 

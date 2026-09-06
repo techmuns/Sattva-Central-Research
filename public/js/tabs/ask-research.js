@@ -287,7 +287,7 @@ function template(scope) {
           <button type="button" data-research-history-close aria-label="Close conversation history">×</button>
         </div>
         <div class="research-session-list scrollbar-thin" data-research-sessions></div>
-        <p class="research-history-note">${privatePortfolioContext() ? 'Portfolio conversations stay in memory until this page closes.' : 'Conversation history stays on this device.'} Questions and selected source readings go to the Muns-hosted model.</p>
+        <p class="research-history-note">${privatePortfolioContext() ? 'Portfolio conversations stay in memory until this page closes.' : 'Conversation history stays on this device.'} <span data-research-provider-note>Questions and selected source readings are sent securely to the configured AI provider.</span></p>
       </dialog>
       <div class="research-layout">
         <div class="research-thread">
@@ -519,6 +519,7 @@ async function ensureConfig() {
       const body = await response.json();
       configState = {
         configured: body?.configured === true,
+        provider: body?.provider === 'claude' ? 'claude' : body?.provider === 'muns' ? 'muns' : null,
         webResearchAvailable: body?.webResearchAvailable === true,
         retryable: false,
         message: body?.configured ? '' : 'Ask Research is temporarily unavailable. Your question will stay here while you reconnect.',
@@ -763,10 +764,13 @@ function messageNode(message) {
     }, 'Retry answer'));
     article.appendChild(recovery);
   }
+  // A failed generation must not bury useful findings inside portfolio details.
+  const showFindings = message.incomplete && !message.text.trim() && message.preview?.items?.length;
+  if (showFindings) article.appendChild(previewNode(message.preview, { open: true, retained: true }));
   const context = el('details', { class: 'research-answer-context' });
   context.appendChild(el('summary', {}, 'Source readings & portfolio context'));
-  if (message.preview) context.appendChild(previewNode(message.preview, { open: true }));
-  if (message.incomplete) context.open = true;
+  if (message.preview && !showFindings) context.appendChild(previewNode(message.preview, { open: true }));
+  if (message.incomplete && !showFindings) context.open = true;
   if (Number.isFinite(message.timings?.firstTextMs)) {
     context.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Answer started in ${(message.timings.firstTextMs / 1000).toFixed(1)}s · ${message.dashboardSources?.length || 0} dashboard pages read`));
   }
@@ -833,11 +837,13 @@ function streamNode(session) {
   return article;
 }
 
-function previewNode(preview, { open = false } = {}) {
+function previewNode(preview, { open = false, retained = false } = {}) {
   const details = el('details', { class: 'research-evidence-preview', 'data-research-preview': '' });
   details.open = open;
-  details.appendChild(el('summary', {}, 'Source readings'));
-  details.appendChild(el('p', { class: 'research-evidence-note' }, 'Matching dashboard headlines and excerpts, before the generated answer. Discussion claims are unverified; coverage may be partial.'));
+  details.appendChild(el('summary', {}, retained ? 'Findings from your sources' : 'Source readings'));
+  details.appendChild(el('p', { class: 'research-evidence-note' }, retained
+    ? 'These retrieved headlines and excerpts remain available while the generated answer is unavailable. Discussion claims are unverified; coverage may be partial.'
+    : 'Matching dashboard headlines and excerpts, before the generated answer. Discussion claims are unverified; coverage may be partial.'));
   if (!preview.items.length) details.appendChild(el('p', { class: 'research-evidence-note' }, 'No matching headlines or excerpts in these selected readings. This does not establish that there are no updates.'));
   for (const item of preview.items) {
     const reading = el('div', { class: 'research-evidence-item' });
@@ -868,6 +874,12 @@ function paintComposer() {
   const phase = root.querySelector('[data-research-phase]');
   const busy = isBusy(session);
   const configured = configState?.configured === true;
+  const providerNote = root.querySelector('[data-research-provider-note]');
+  if (providerNote) providerNote.textContent = configState?.provider === 'claude'
+    ? 'Questions and selected source readings are sent securely to Claude (Anthropic) for the answer.'
+    : configState?.provider === 'muns'
+      ? 'Questions and selected source readings are sent securely to the Muns-hosted model for the answer.'
+      : 'Questions and selected source readings are sent securely to the configured AI provider.';
 
   if (input.value !== session.draft) input.value = session.draft;
   input.disabled = false;

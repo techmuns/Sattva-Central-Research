@@ -4,6 +4,26 @@ Status on 6 September 2026: **not yet certified for customer use**. Retrieval an
 application tests are separate from real-model quality, live data completeness,
 and the authenticated customer's book. An unavailable test is not a pass.
 
+## Direct Claude transport (6 September 2026)
+
+The dedicated `CLAUDE_API_KEY` now selects direct Claude Sonnet 5 instead of the
+Muns router. Thinking is disabled for immediate evidence synthesis; only shared
+instructions are prompt-cached. Streaming checks cover all byte boundaries,
+explicit completion, truncation, rate limits, malformed responses, cancellation,
+concurrent requests and credential isolation. All 50 existing scenario packets
+retain their full provider evidence on this path. Failed generation keeps literal
+findings visible without presenting them as a generated answer.
+
+These are simulated provider checks, not Claude accuracy or latency measurements.
+The native local workerd check also validates request options and actual incremental
+response delivery. An isolated remote-development preview uses only the research
+handler and the saved Claude secret, with no production storage or capture routes.
+On 6 September its Anthropic Models API probe returned HTTP 401
+`authentication_error`; no real Claude answer or latency pass was obtained. The
+credential must be corrected and verified before activating this route. Earlier
+Muns timings are not Claude benchmarks. A local key and the existing evaluation
+runner (`HANDOFF.md`), or an isolated preview, can complete the remaining evaluation.
+
 ## Portfolio scenarios
 
 The existing [question bank](ASK-RESEARCH-QUESTIONS.md) contains 14 categories for
