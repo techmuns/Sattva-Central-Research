@@ -7,7 +7,16 @@ import { modelScenarios, scenarioBody } from './lib/research-model-scenarios.mjs
 
 const encoder = new TextEncoder();
 const env = { CLAUDE_API_KEY: 'synthetic-claude-credential', MUNS_TOKEN: 'must-not-be-used', ANTHROPIC_API_KEY: 'legacy-muns-token', MUNS_LLM_LEGACY_ANTHROPIC_BINDING: 'confirmed-muns-token' };
-const body = { question: 'Any upside in Indraprastha Gas?', scope: 'portfolio', history: [], evidence: { sources: [] } };
+// The reported customer miss, represented as a controlled packet: a broker
+// claim in discussion alongside a routine notice, not an independently verified target.
+const body = { question: 'Any upside in Indraprastha Gas?', scope: 'portfolio', history: [], evidence: { sources: [
+  { id: 'telegram', tab: 'Telegram', status: 'ready', source: 'SYNTHETIC discussion fixture', dataQuality: 'partial', rows: [
+    { ticker: 'IGL', company: 'Indraprastha Gas', date: '2026-09-03', text: 'Geojit sees 14% UPSIDE in Indraprastha Gas Ltd. — volume growth amid margin pressure', attribution: 'unverified-discussion' },
+  ] },
+  { id: 'nse-filings', tab: 'NSE Filings', status: 'ready', source: 'SYNTHETIC notice fixture', rows: [
+    { ticker: 'IGL', company: 'Indraprastha Gas', date: '2026-09-03', title: 'Notice of shareholders meeting' },
+  ] },
+] } };
 const request = (value = body, signal) => new Request('https://dashboard.example/api/research', { method: 'POST', headers: { origin: 'https://dashboard.example', 'content-type': 'application/json' }, body: JSON.stringify(value), signal });
 const frame = value => `event: ${value.type}\ndata: ${JSON.stringify(value)}\n\n`;
 const start = frame({ type: 'message_start', message: { role: 'assistant' } });
@@ -98,6 +107,8 @@ try {
     assert.equal(options.redirect, 'manual');
     assert.equal(options.headers.authorization, undefined);
     assert(!options.body.includes('must-not-be-used'));
+    const supplied = JSON.parse(JSON.parse(options.body).messages[0].content).DASHBOARD_EVIDENCE;
+    assert(supplied.sources.some(source => source.id === 'telegram' && source.rows.some(row => /14% UPSIDE/.test(row.text))), 'the retrieved upside lead must reach Claude');
     return response(new ReadableStream({ start(controller) { providerController = controller; controller.enqueue(encoder.encode(start + open + token('Geojit reportedly sees '))); } }));
   };
   const output = await handleResearch(request(), env);
