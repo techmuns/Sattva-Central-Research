@@ -33,6 +33,8 @@ const follow = queryPlan('And what are its risks?', companies, { history: [{ rol
 assert(follow.tickers.has('BIG'));
 const next = queryPlan('What about Small Company?', companies, { history: [{ role: 'user', text: 'Latest info on Big Company?' }] });
 assert(next.tickers.has('SMALL') && !next.tickers.has('BIG'));
+assert.equal(queryPlan('What about my portfolio overall?', companies, { history: [{ role: 'user', text: 'Latest info on Big Company?' }] }).tickers.size, 0, 'a portfolio-wide question does not inherit a single issuer');
+assert(queryPlan('How does it affect my other holdings?', companies, { history: [{ role: 'user', text: 'Latest info on Big Company?' }] }).tickers.has('BIG'), 'a cross-holding impact question retains its explicit pronoun reference');
 const smaller = queryPlan('What changed in my smallest 2 holdings?', companies, { portfolioPositions: positions, holdings: companies });
 assert.deepEqual([...smaller.tickers], ['SMALL'], 'unmapped smallest fund is not silently replaced with BIG');
 assert.deepEqual([...queryPlan('Latest news on my largest holding?', companies, { portfolioPositions: positions, holdings: companies }).tickers], ['BIG']);

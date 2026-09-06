@@ -14,7 +14,7 @@ const DEFAULT_LLM_TYPE = 'local_llm';
 // packet. Choose the existing hosted route before overflowing its context.
 const LOCAL_PROMPT_CHAR_LIMIT = 20_000;
 const DEFAULT_TEMPERATURE = 0.2;
-const DEFAULT_MAX_TOKENS = 768;
+const DEFAULT_MAX_TOKENS = 1024;
 const MAX_BODY_BYTES = 180_000;
 // Measured on the PROVIDER-FACING shape (evidence-shared.js), exactly as the browser measures its
 // budget — 13,000 there, with slack here so a packet the browser fitted is never refused. The raw

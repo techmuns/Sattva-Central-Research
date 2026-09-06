@@ -266,7 +266,7 @@ ok('the Muns request preserves evidence and selects low-latency local streaming 
   assert.equal(request.llm_type, 'local_llm');
   assert.equal(request.stream, true);
   assert.equal(request.temperature, 0.2);
-  assert.equal(request.max_tokens, 768);
+  assert.equal(request.max_tokens, 1024);
   assert.match(request.query, /Complete the answer within 450 words/);
   assert.match(request.query, /DASHBOARD_EVIDENCE object is the only source of dashboard facts/);
   assert.match(request.query, /USER: Earlier question/);

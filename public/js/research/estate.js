@@ -212,7 +212,8 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
 
   // A follow-up searches the last named company again; conversation text alone
   // cannot retrieve fresh company rows. An explicit new company always wins.
-  if (!companies.length && /^(and |what about |how about )|\b(it|its|they|them|their|those|these|that|same)\b/i.test(question)) {
+  const portfolioWide = /\b(portfolio|holdings|positions|stocks|book)\b/i.test(question) && !/\b(it|its|they|them|their|that|same)\b/i.test(question);
+  if (!companies.length && !portfolioWide && /^(and |what about |how about )|\b(it|its|they|them|their|those|these|that|same)\b/i.test(question)) {
     for (const message of history.filter(m => m.role === 'user').slice(-6).reverse()) {
       const prior = queryPlan(message.text, index, { scope, holdings });
       if (!prior.companies.length) continue;
