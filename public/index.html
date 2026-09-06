@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sattva Central Research</title>
     <meta name="description" content="Sattva Central Research — an Indian equities research and portfolio analytics dashboard." />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='50%25' stop-color='%23a855f7'/%3E%3Cstop offset='100%25' stop-color='%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='16' y='22' font-family='sans-serif' font-size='15' font-weight='800' fill='white' text-anchor='middle'%3ESC%3C/text%3E%3C/svg%3E"
-    />
+    <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg" />
+    <link rel="preload" as="image" href="/assets/brand/sattva-ventures-wordmark.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -374,16 +372,16 @@
       .research-spark {
         display: inline-flex;
         height: 2.25rem;
-        width: 2.25rem;
+        width: 3rem;
         flex: 0 0 auto;
         align-items: center;
         justify-content: center;
         border-radius: 0.8rem;
-        color: white;
-        background: linear-gradient(135deg, var(--brand-500), var(--brand-mid) 60%, var(--brand-end));
-        box-shadow: 0 8px 20px -10px rgba(99, 102, 241, 0.8);
+        padding: 0.35rem;
+        border: 1px solid #e2e8f0;
+        background: white;
+        box-shadow: 0 5px 15px -10px rgba(58, 54, 134, 0.25);
       }
-      .research-spark svg { width: 1.2rem; height: 1.2rem; }
       .research-estate-chip {
         display: inline-flex;
         flex: 0 0 auto;
@@ -495,19 +493,15 @@
       body:has(.research-workspace.is-reading-view) #source-beacon-root { visibility: hidden; }
       .research-transcript { min-height: 0; flex: 1 1 auto; overflow-y: auto; overflow-anchor: none; padding: 1.5rem clamp(1rem, 3vw, 2.5rem); }
       .research-opening { max-width: 54rem; margin: 0 auto; padding: clamp(1rem, 4vh, 3.25rem) 0 2rem; text-align: center; }
-      .research-opening-icon {
-        display: inline-flex;
-        height: 3.4rem;
-        width: 3.4rem;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid rgba(199, 210, 254, 0.8);
-        border-radius: 1.1rem;
-        color: #6366f1;
-        background: linear-gradient(135deg, #eef2ff, #faf5ff 55%, #fdf2f8);
-        box-shadow: 0 14px 30px -20px rgba(99, 102, 241, 0.8);
-      }
-      .research-opening-icon svg { width: 1.6rem; height: 1.6rem; }
+      .sattva-wordmark { display: block; max-width: 100%; height: auto; object-fit: contain; mix-blend-mode: multiply; clip-path: inset(0 0.3% 0 0); }
+      .sattva-mark { display: block; max-width: 100%; height: auto; object-fit: contain; }
+      .sattva-product-brand { flex: 0 1 18rem; min-width: 0; max-width: 100%; }
+      [data-app-header] > div { flex-wrap: wrap; }
+      .sattva-product-brand .sattva-wordmark { width: 18rem; }
+      .sattva-product-caption { margin-top: 0.4rem; color: #64748b; font-size: 0.8125rem; font-weight: 600; line-height: 1.3; letter-spacing: 0.01em; }
+      .research-opening-brand { width: min(100%, 23rem); margin: 0 auto; }
+      .sattva-loading-brand { width: min(100%, 20rem); margin: 0 auto 1.25rem; }
+      @media (max-width: 639px) { .sattva-product-brand { flex-basis: auto; width: 16.5rem; } }
       .research-opening-promises { display: grid; margin-top: 1.35rem; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; text-align: left; }
       .research-promise { display: flex; align-items: flex-start; gap: 0.5rem; border: 1px solid #f1f5f9; border-radius: 0.75rem; padding: 0.65rem; background: rgba(248, 250, 252, 0.72); }
       .research-promise-dot { width: 0.42rem; height: 0.42rem; flex: 0 0 auto; margin-top: 0.25rem; border-radius: 9999px; background: linear-gradient(135deg, var(--brand-500), var(--brand-mid)); }
@@ -521,7 +515,7 @@
       .research-assistant-answer { margin: 0 0 1.75rem; padding: 0 0 1.75rem; border-bottom: 1px solid #edf0f5; }
       .research-assistant-answer.is-streaming { border-left-color: rgba(168, 85, 247, 0.42); }
       .research-answer-label { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; color: #6366f1; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-      .research-mini-spark { font-size: 0.75rem; }
+      .research-mini-spark { width: 1.75rem; height: 0.85rem; }
       .research-live-dot { width: 0.4rem; height: 0.4rem; border-radius: 9999px; background: #a855f7; box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1); animation: research-pulse 1.4s ease-in-out infinite; }
       @keyframes research-pulse { 50% { opacity: 0.38; transform: scale(0.72); } }
       .research-answer-body { max-width: 72ch; color: #334155; font-size: 0.9375rem; line-height: 1.8; overflow-wrap: anywhere; }
@@ -657,30 +651,23 @@
       }
       .beacon-root > * { pointer-events: auto; }
 
-      /* The Sattva square: the same brand ramp as the header logo, because it is the same mark —
-         that is what makes the diagram legible as "into THIS dashboard". */
+      /* The compact Sattva Ventures mark also identifies the source flow's destination. */
       .beacon-mark {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         height: 1.6rem;
-        width: 1.6rem;
+        width: 2.3rem;
         flex: 0 0 auto;
         border-radius: 0.5rem;
-        font-family: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, sans-serif;
-        font-size: 0.6rem;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        color: #fff;
-        background: linear-gradient(135deg, var(--brand-500), var(--brand-mid) 55%, var(--brand-end));
-        box-shadow: 0 6px 16px -8px rgba(99, 102, 241, 0.9);
+        padding: 0.2rem;
+        background: white;
       }
       .beacon-mark-lg {
         height: 2.4rem;
-        width: 2.4rem;
+        width: 3.2rem;
         border-radius: 0.8rem;
-        font-size: 0.82rem;
-        box-shadow: 0 10px 26px -10px rgba(99, 102, 241, 0.95), 0 0 0 4px rgba(255, 255, 255, 0.9);
+        box-shadow: 0 6px 20px -10px rgba(58, 54, 134, 0.35), 0 0 0 4px rgba(255, 255, 255, 0.9);
       }
 
       /* The green dot. Emerald is semantic on this dashboard and here it means one thing: feeds
@@ -1052,7 +1039,7 @@
   <body class="text-slate-800">
     <div id="app">
       <!-- Shell (header, rail, tabs, content host) is mounted by js/ui/shell.js. -->
-      <div class="mx-auto max-w-lg px-6 py-24 text-center text-sm text-slate-400">Loading Sattva Central Research…</div>
+      <div class="mx-auto max-w-lg px-6 py-24 text-center text-sm text-slate-400"><img class="sattva-wordmark sattva-loading-brand" src="/assets/brand/sattva-ventures-wordmark.png" width="2704" height="302" alt="Sattva Ventures" />Loading Sattva Central Research…</div>
     </div>
 
     <!-- Overlay layer, owned by ui/screener.js. Both are singletons: any tab can open the

@@ -263,7 +263,7 @@ function template(scope) {
         <div>
           <div class="flex items-center gap-2">
             <span class="research-spark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 1.4 4.2L18 9l-4.6 1.8L12 15l-1.4-4.2L6 9l4.6-1.8L12 3Z" stroke-linejoin="round"/><path d="m19 15 .7 2.1L22 18l-2.3.9L19 21l-.7-2.1L16 18l2.3-.9L19 15Z" stroke-linejoin="round"/></svg>
+              <img class="sattva-mark" src="/assets/brand/sattva-ventures-mark.svg" width="420" height="174" alt="" />
             </span>
             <h2 class="font-display text-xl font-extrabold text-slate-900">Ask Research</h2>
           </div>
@@ -638,12 +638,7 @@ function updateReadingControls() {
 
 function openingState(scope) {
   const wrap = el('div', { class: 'research-opening' });
-  const icon = el('span', { class: 'research-opening-icon', 'aria-hidden': 'true' });
-  icon.appendChild(el('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7' }, [
-    el('path', { d: 'm12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z', 'stroke-linejoin': 'round' }),
-    el('path', { d: 'M5 15v4m-2-2h4M19 14v5m-2.5-2.5h5', 'stroke-linecap': 'round' }),
-  ]));
-  wrap.appendChild(icon);
+  wrap.appendChild(el('img', { class: 'sattva-wordmark research-opening-brand', src: '/assets/brand/sattva-ventures-wordmark.png', width: '2704', height: '302', alt: 'Sattva Ventures' }));
   wrap.appendChild(el('h3', { class: 'font-display mt-5 text-2xl font-extrabold tracking-tight text-slate-900' }, 'Research the whole picture'));
   wrap.appendChild(el('p', { class: 'mt-2 max-w-2xl text-sm leading-6 text-slate-500' }, `Ask one question across every dashboard tab in ${scopeLabel(scope)} scope. Ask Research checks each source, preserves its period and provenance, and never turns missing data into a number.`));
 
@@ -746,7 +741,7 @@ function messageNode(message) {
   }
   const article = el('article', { class: 'research-assistant-answer' });
   const label = el('div', { class: 'research-answer-label' });
-  label.appendChild(el('span', { class: 'research-mini-spark', 'aria-hidden': 'true' }, '✦'));
+  label.appendChild(el('img', { class: 'research-mini-spark sattva-mark', src: '/assets/brand/sattva-ventures-mark.svg', width: '420', height: '174', alt: '', 'aria-hidden': 'true' }));
   label.appendChild(el('span', {}, message.webResearch ? 'Dashboard + web research' : 'Dashboard research'));
   article.appendChild(label);
   const body = el('div', { class: 'research-answer-body' });
@@ -813,6 +808,7 @@ function messageNode(message) {
 function streamNode(session) {
   const article = el('article', { class: 'research-assistant-answer is-streaming', 'aria-live': 'off', 'data-session-id': session.id });
   const label = el('div', { class: 'research-answer-label' });
+  label.appendChild(el('img', { class: 'research-mini-spark sattva-mark', src: '/assets/brand/sattva-ventures-mark.svg', width: '420', height: '174', alt: '', 'aria-hidden': 'true' }));
   label.appendChild(el('span', { class: 'research-live-dot', 'aria-hidden': 'true' }));
   label.appendChild(el('span', {}, 'Dashboard research'));
   article.appendChild(label);

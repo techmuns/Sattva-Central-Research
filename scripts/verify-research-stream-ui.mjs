@@ -57,7 +57,7 @@ const server = createServer(async (req, res) => {
   const file = resolve(root, `.${url.pathname === '/' ? '/index.html' : url.pathname}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
-    res.setHeader('content-type', { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html' }[extname(file)] || 'application/octet-stream');
+    res.setHeader('content-type', { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
     res.end(readFileSync(file));
   } catch { res.writeHead(404); res.end(); }
 });
@@ -105,6 +105,15 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${origin}/#/research/ask-research?scope=portfolio`);
   await page.getByText('Portfolio connected', { exact: false }).waitFor();
+  if (process.env.SCREENSHOT_PATH) {
+    await page.locator('.research-opening-brand').evaluate(image => image.decode());
+    await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-welcome.png'), fullPage: true });
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-welcome-tablet.png'), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-welcome-mobile.png'), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 1050 });
+  }
   const family = page.frames().find(frame => frame.url().startsWith(familyOrigin));
   assert(family);
   const input = page.getByRole('textbox', { name: 'Ask about the dashboard' });
