@@ -185,4 +185,26 @@ assert.equal(stateOnly.capture, null);
 assert.equal(stateOnly.state.reason, 'access-denied');
 for (const failure of [{ wrongPath: true }, { expired: true }, { corrupt: true }]) await assert.rejects(readScreenerInsightsCollector({ token: 'fixture', fetcher: artifactFixture(failure), now: () => clock }));
 
+// The real Worker route must not create repeated Actions jobs while the source is cooling down,
+// including when the first source attempt failed and no company artifact exists yet.
+const worker = (await import('../worker/index.js')).default;
+const originalFetch = globalThis.fetch, originalCaches = globalThis.caches, originalNow = Date.now;
+try {
+  Date.now = () => clock;
+  for (const emptyCapture of [false, true]) {
+    const requests = [], pending = [];
+    const fixture = artifactFixture({ emptyCapture });
+    globalThis.fetch = (url, init = {}) => { requests.push({ url: String(url), method: init.method || 'GET' }); return fixture(String(url), init); };
+    globalThis.caches = { default: { match: async () => undefined, put: async () => {} } };
+    const response = await worker.fetch(new Request('https://fixture.invalid/api/screener-insights'), { GH_DISPATCH_TOKEN: 'fixture' }, { waitUntil: promise => pending.push(promise) });
+    await Promise.all(pending);
+    assert.equal(response.status, emptyCapture ? 503 : 200);
+    assert(requests.every(request => request.method === 'GET' && !request.url.includes('/dispatches')), 'cooldown suppresses dashboard-triggered workflow dispatch');
+  }
+} finally {
+  globalThis.fetch = originalFetch;
+  globalThis.caches = originalCaches;
+  Date.now = originalNow;
+}
+
 console.log('PASS: sequential due-only resume, no-read persistent cooldowns, Retry-After, first-read failure, checkpoint retention and secure failed-run artifact recovery.');

@@ -14,7 +14,11 @@ export async function readScreenerInsightsCollector({ allowMissing = false, now 
   const data = await read({ name: SCREENER_INSIGHTS_ARTIFACT, compressedLimit: SCREENER_INSIGHTS_COMPRESSED_LIMIT,
     rawLimit: SCREENER_INSIGHTS_LIMIT, validate: value => validateScreenerInsightsCapture(value, now()) });
   const state = control?.value || null;
-  if (!data && !allowMissing) throw Error('No Screener Insights capture is available');
+  if (!data && !allowMissing) {
+    const error = Error('No Screener Insights capture is available');
+    error.insightsCooldownUntil = state?.cooldownUntil || null;
+    throw error;
+  }
   if (!data) return { capture: null, state, source: null };
   const capture = data.value;
   // A setup/restore failure may publish no artifacts, but must not disappear from source health.

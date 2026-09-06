@@ -4081,7 +4081,9 @@ See [Insights collection](SCREENER-INSIGHTS-COLLECTION.md) for exact retry defau
 `GET /api/screener-insights` serves that one shared capture with an ETag and five-minute edge cache.
 A missing/stale (older than 36 hours), incomplete or latest-failed capture requests one background
 workflow dispatch behind a 30-minute cooldown; it never blocks or empties the twenty All Alerts
-feeds. The browser keeps a conditional IndexedDB last-good copy under `screener-insights`, validating
+feeds. Persisted collection cooldowns also suppress demand-triggered workflow dispatches, including
+before the first valid capture. The browser keeps a conditional IndexedDB last-good copy under
+`screener-insights`, validating
 new bodies and cached ETag hits before they can replace a good record. Malformed HTTP 200s and
 transport failures retain values across reloads while reporting the failed read. Ask
 Research reports the source unavailable until the first valid
