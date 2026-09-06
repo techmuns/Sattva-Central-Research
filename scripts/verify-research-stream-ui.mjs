@@ -328,6 +328,7 @@ try {
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-answer.png'), fullPage: true });
   for (const size of [{ width: 1024, height: 768 }, { width: 390, height: 844 }, { width: 320, height: 640 }, { width: 390, height: 520 }]) {
     await page.setViewportSize(size);
+    const widerHeaderFont = size.width === 1024 ? await page.addStyleTag({ content: '[data-app-header] { font-family: Verdana, sans-serif; }' }) : null;
     const layout = await page.evaluate(() => {
       const transcript = document.querySelector('[data-research-transcript]').getBoundingClientRect();
       const composer = document.querySelector('[data-research-composer]').getBoundingClientRect();
@@ -336,6 +337,7 @@ try {
     assert(layout.pageWidth <= size.width + 1 && layout.pageHeight <= size.height + 1, 'the conversation fits the frame without a second page scrollbar');
     assert(layout.bottom <= size.height && layout.right <= size.width, 'the composer stays reachable in short and narrow viewports');
     assert(layout.transcriptHeight >= size.height * (size.height <= 640 ? 0.42 : 0.6), `answers retain useful reading space: ${JSON.stringify({ size, layout })}`);
+    if (widerHeaderFont) await widerHeaderFont.evaluate(node => node.remove());
     if (size.width === 390 && size.height === 844 && process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-answer-mobile.png'), fullPage: true });
   }
   await page.setViewportSize({ width: 1440, height: 1050 });

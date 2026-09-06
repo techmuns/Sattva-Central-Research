@@ -563,6 +563,12 @@
         .research-toolbar-actions > button span { display: none; }
         .research-opening { padding-top: 1.5rem; }
       }
+      @media (min-width: 960px) and (max-width: 1199px) {
+        #app:has(.research-workspace) > [data-app-header] > div { flex-wrap: nowrap; }
+        #app:has(.research-workspace) .sattva-product-brand { flex-shrink: 1; }
+        #app:has(.research-workspace) .theme-toggle span { display: none; }
+        #app:has(.research-workspace) .theme-toggle { width: 2.25rem; padding: 0; }
+      }
       @media (max-width: 560px) {
         #app:has(.research-workspace) > [data-app-header] > div { gap: 0.4rem; }
         #app:has(.research-workspace) > [data-app-header], #app:has(.research-workspace) > [data-app-nav], #app:has(.research-workspace) > [data-app-content] { padding-left: 0.5rem; padding-right: 0.5rem; }
