@@ -15,6 +15,7 @@ const questions = [], timings = [], errors = [];
 let holdAnswer = false;
 let failAnswer = false;
 let emptyStreamsRemaining = 0;
+let firstDelayMs = 100;
 const activeResponses = new Set();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -30,9 +31,9 @@ const server = createServer(async (req, res) => {
     const failThisAnswer = failAnswer;
     send({ type: 'start' });
     if (emptyStreamsRemaining > 0) { emptyStreamsRemaining--; res.end(); return; }
-    const first = setTimeout(() => send({ type: 'text', text: 'The latest available company update is dated 6 September. ' }), 100);
-    const second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: 'Read the source filing alongside the news. [Dashboard: News]' }), 900);
-    const finish = setTimeout(() => { if (!holdAnswer) { send({ type: 'done' }); res.end(); } }, 1700);
+    const first = setTimeout(() => send({ type: 'text', text: 'The latest available company update is dated 6 September. ' }), firstDelayMs);
+    const second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: 'Read the source filing alongside the news. [Dashboard: News]' }), firstDelayMs + 800);
+    const finish = setTimeout(() => { if (!holdAnswer) { send({ type: 'done' }); res.end(); } }, firstDelayMs + 1600);
     activeResponses.add(res);
     res.on('close', () => { clearTimeout(first); clearTimeout(second); clearTimeout(finish); activeResponses.delete(res); });
     return;
@@ -125,6 +126,8 @@ try {
   assert(await page.evaluate(() => savedAnswerNode.isConnected), 'streaming never rebuilds earlier answers');
   assert.equal(await page.locator('[data-research-transcript]').evaluate(node => node.scrollTop), 0, 'new tokens respect a reader scrolling back');
   await page.waitForFunction(() => document.querySelectorAll('.research-assistant-answer:not(.is-streaming)').length === 2);
+  assert(await page.evaluate(() => savedAnswerNode.isConnected), 'completion also preserves earlier message nodes');
+  assert.equal(await page.locator('[data-research-transcript]').evaluate(node => node.scrollTop), 0, 'completion respects a reader scrolling back');
   assert.equal(await family.evaluate(() => legacyReads), 0, 'the timed-out Family model path was never called');
   assert((await family.evaluate(() => positionReads)) >= 2, 'each question revalidates its holdings');
   assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('weightPct') || JSON.stringify(localStorage).includes('jayaswal neco')), false, 'private context and questions stay out of storage');
@@ -132,6 +135,8 @@ try {
   await family.evaluate(() => { window.failed = true; });
   await submit('What changed at IIFL Finance?');
   await page.getByText('Fixture archive check failed', { exact: false }).waitFor();
+  assert(await page.locator('.research-user-bubble').last().innerText().then(text => text === 'What changed at IIFL Finance?'), 'failed holdings read keeps the user question visible');
+  assert.equal(await page.locator('.research-assistant-answer').last().locator('[data-research-preview]').count(), 0, 'unverified holdings never produce a portfolio preview');
   assert.equal(questions.length, 2, 'an invalid private book never reaches the model');
   assert.equal(await input.inputValue(), 'What changed at IIFL Finance?', 'failed question is recoverable');
   await family.evaluate(() => { window.failed = false; });
@@ -149,6 +154,7 @@ try {
   assert.equal(await page.getByRole('button', { name: 'Stop answer' }).locator('svg rect').count(), 1, 'mobile cancellation uses a stop icon');
   await page.getByRole('button', { name: 'Stop answer' }).click();
   await send.waitFor();
+  assert(await page.locator('.research-assistant-answer').last().innerText().then(text => text.includes('Answer stopped') && text.includes('latest available company update')), 'Stop preserves already streamed text');
   assert(Date.now() - stopStarted < 1000, 'Stop restores the composer immediately');
   assert.equal(await input.inputValue(), 'What changed at IIFL Finance?');
   holdAnswer = false;
@@ -200,8 +206,80 @@ try {
   await page.getByText('The answer ended before a complete response arrived.', { exact: true }).waitFor();
   assert.equal(questions.length - beforeFailure, 2, 'persistent empty responses have a bounded retry');
   assert.equal(await input.inputValue(), screenshotQuestion, 'persistent failure keeps the question');
+  assert.equal(await page.locator('.research-opening').count(), 0, 'empty failure never resets the conversation to the welcome screen');
+  assert.equal(await page.locator('.research-user-bubble').last().innerText(), screenshotQuestion);
+  assert(await page.locator('.research-assistant-answer').last().locator('[data-research-preview]').isVisible(), 'source readings remain available after an empty failure');
+
+  // Hold the model before its first token. Source readings must paint honestly
+  // before it, and typing/IME composition cannot submit or erase a next draft.
+  await page.setViewportSize({ width: 1440, height: 1050 });
+  await page.getByRole('button', { name: 'Start a new research conversation' }).click();
+  firstDelayMs = 2500;
+  const previewStarted = Date.now();
+  await submit(screenshotQuestion);
+  const livePreview = page.locator('.is-streaming [data-research-preview]');
+  await livePreview.waitFor({ timeout: 10_000 });
+  timings.push({ scenario: 'source readings before delayed model', evidenceVisibleMs: Date.now() - previewStarted });
+  assert.equal(await page.locator('.is-streaming .research-answer-body').count(), 0, 'literal source preview is never presented as model prose');
+  assert((await livePreview.innerText()).includes('before the generated answer'));
+  assert((await livePreview.locator('.research-evidence-item').count()) > 0, 'exact company question has useful confirmed headlines');
+  if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-preview.png'), fullPage: true });
+  const packet = questions.at(-1).evidence;
+  for (const title of await livePreview.locator('.research-evidence-item > p').allTextContents()) {
+    assert(packet.sources.some(s => s.rows.some(r => (r.title || r.headline) === title)), 'preview quotes a reading in the verified packet verbatim');
+  }
+  await input.fill('What changed at IIFL Finance?');
+  await input.dispatchEvent('keydown', { key: 'Enter', isComposing: true });
+  const requestsWhileWriting = questions.length;
+  await page.locator('.research-assistant-answer:not(.is-streaming)').waitFor();
+  assert.equal(questions.length, requestsWhileWriting, 'typing does not start a second model');
+  assert.equal(await input.inputValue(), 'What changed at IIFL Finance?', 'completed answer preserves a next draft');
+
+  firstDelayMs = 100;
+  failAnswer = true;
+  await send.click();
+  await input.fill('Any earnings updates for Jayaswal Neco?');
+  await page.getByText('Fixture model disconnected', { exact: true }).waitFor();
+  assert.equal(await input.inputValue(), 'Any earnings updates for Jayaswal Neco?', 'failed answer preserves a next draft');
+  const messagesBeforeRetry = await page.locator('.research-user-bubble').count();
+  const holdingsBeforeRetry = await family.evaluate(() => positionReads);
+  failAnswer = false;
+  await page.getByRole('button', { name: 'Retry answer', exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector('.is-streaming'));
+  assert.equal(await page.locator('.research-user-bubble').count(), messagesBeforeRetry, 'manual retry replaces only the failed attempt');
+  assert.equal(await input.inputValue(), 'Any earnings updates for Jayaswal Neco?', 'manual retry preserves the next draft');
+  assert((await family.evaluate(() => positionReads)) > holdingsBeforeRetry, 'manual retry revalidates holdings');
+  assert.equal(questions.at(-1).question, 'What changed at IIFL Finance?');
+  assert.equal(questions.at(-1).history.length, 2, 'only the preceding completed exchange enters model history');
+  assert(!questions.at(-1).history.some(m => /What changed at IIFL Finance/.test(m.text)), 'failed question is not included as model history');
+
+  // A proxy that never sends a terminal event is bounded by a browser deadline.
+  await page.clock.install();
+  holdAnswer = true;
+  await send.click();
+  await page.locator('.is-streaming .research-answer-body').waitFor();
+  await page.clock.fastForward(56_000);
+  await page.getByText('The answer is taking too long.', { exact: false }).waitFor();
+  assert(await send.isEnabled(), 'a stalled stream releases the composer');
+  assert(await page.locator('.research-assistant-answer').last().innerText().then(text => text.includes('latest available company update')), 'timeout retains labelled partial text');
+  holdAnswer = false;
+  assert.equal(await page.evaluate(() => JSON.stringify(localStorage).includes('weightPct') || JSON.stringify(localStorage).includes('Any earnings updates')), false, 'preview and recovery keep private conversations out of storage');
+
+  // Initial server connection failures can recover without refreshing the app.
+  const disconnected = await context.newPage();
+  disconnected.on('pageerror', error => errors.push(error.message));
+  let configFailures = 1;
+  await disconnected.route('**/api/research', route => configFailures-- > 0
+    ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : route.continue());
+  await disconnected.goto(`${origin}/#/research/ask-research?scope=portfolio`);
+  await disconnected.getByRole('button', { name: 'Reconnect', exact: true }).waitFor();
+  await disconnected.getByRole('textbox', { name: 'Ask about the dashboard' }).fill(screenshotQuestion);
+  await disconnected.getByRole('button', { name: 'Reconnect', exact: true }).click();
+  await disconnected.waitForFunction(() => !document.querySelector('[data-research-send]').disabled);
+  assert.equal(await disconnected.getByRole('textbox', { name: 'Ask about the dashboard' }).inputValue(), screenshotQuestion);
+  await disconnected.close();
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: true, timings, assertions: ['progressive HTTP stream', 'exact user regression', 'no duplicate model', 'fresh complete holdings', 'follow-up retrieval', 'company switch', 'stable transcript and scroll', 'private storage', 'failed archive', 'workbook invalidation', 'Stop', 'partial recovery', 'mobile'] }, null, 2));
+  console.log(JSON.stringify({ passed: true, timings, assertions: ['progressive HTTP stream', 'exact user regression', 'no duplicate model', 'fresh complete holdings', 'follow-up retrieval', 'company switch', 'stable transcript and scroll through completion', 'private storage', 'failed archive', 'workbook invalidation', 'Stop preserves text', 'partial recovery', 'mobile', 'source preview before inference', 'visible empty failure', 'next draft and IME input', 'manual retry revalidates holdings', 'browser deadline', 'connection recovery'] }, null, 2));
 } finally {
   await browser.close();
   for (const response of activeResponses) response.destroy();

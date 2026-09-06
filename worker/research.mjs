@@ -7,6 +7,7 @@
 import { providerEvidence, researchEvidenceChars, PORTFOLIO_POSITIONS_MAX_CHARS } from '../public/js/research/evidence-shared.js';
 import { questionNeedsPortfolio, validPositionSizes } from '../public/js/research/portfolio-bridge.js';
 import { finalAnswerFilter } from './research-answer.mjs';
+import { researchHistory } from '../public/js/research/history.js';
 
 const MUNS_LLM_BASE = 'https://fastapi.muns.io';
 const MUNS_LLM_PATH = '/query-router';
@@ -22,8 +23,6 @@ const MAX_BODY_BYTES = 180_000;
 // body is bounded separately by MAX_BODY_BYTES.
 const MAX_EVIDENCE_CHARS = 14_000;
 const MAX_QUESTION_CHARS = 1_500;
-const MAX_HISTORY_MESSAGES = 12;
-const MAX_HISTORY_CHARS = 3_000;
 const MAX_UPSTREAM_ERROR_BYTES = 8_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 
@@ -145,23 +144,6 @@ async function readRequestJson(request) {
   }
 }
 
-function cleanHistory(input) {
-  if (!Array.isArray(input)) return [];
-  const out = [];
-  let chars = 0;
-  // Spend the bounded context window from the newest exchange backwards. A follow-up needs the
-  // immediately preceding answer more than an older turn that merely appeared first in the slice.
-  for (const item of input.slice(-MAX_HISTORY_MESSAGES).reverse()) {
-    const role = item?.role === 'assistant' ? 'assistant' : item?.role === 'user' ? 'user' : null;
-    const text = typeof item?.text === 'string' ? item.text.trim().slice(0, 2_000) : '';
-    if (!role || !text || chars >= MAX_HISTORY_CHARS) continue;
-    const kept = text.slice(0, MAX_HISTORY_CHARS - chars);
-    chars += kept.length;
-    out.push({ role, text: kept });
-  }
-  return out.reverse();
-}
-
 export function validateResearchBody(body) {
   const question = typeof body?.question === 'string' ? body.question.trim() : '';
   if (!question) return { ok: false, status: 400, error: 'missing_question', message: 'Enter a question to research.' };
@@ -200,7 +182,7 @@ export function validateResearchBody(body) {
     // still submit this flag instead of claiming an external search happened when it did not.
     webResearch: false,
     evidence,
-    history: cleanHistory(body.history),
+    history: researchHistory(body.history),
   };
 }
 

@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { researchQuestionBank } from './lib/research-questions.mjs';
 import { researchLocalBrowser } from './lib/research-local-browser.mjs';
 import { validateResearchBody } from '../worker/research.mjs';
+import { researchPreview } from '../public/js/research/preview.js';
 const book = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));
 const cases = researchQuestionBank(book.holdings).filter(c => ['latest', 'earnings', 'filings'].includes(c.category));
 const { page, close } = await researchLocalBrowser();
@@ -20,6 +21,12 @@ try {
     const attention = packet.sources.find(s => s.id === 'ai-alerts');
     if (attention?.coverage?.windowDays && !attention.definition.includes(`${attention.coverage.windowDays}-day`)) failures.push('alert_window_definition_mismatch');
     const target = book.holdings.find(h => h.isin === test.id.split(':')[0]);
+    const preview = researchPreview(packet);
+    if (preview.items.length > 3) failures.push('preview_unbounded');
+    for (const item of preview.items) {
+      if (!packet.selection.companies.some(c => c.name === item.company)) failures.push('preview_wrong_company');
+      if (!packet.sources.some(s => s.rows.some(r => (r.title || r.headline) === item.title))) failures.push('preview_not_literal_source');
+    }
     if (!packet.selection.companies.some(c => target.ticker ? c.ticker === target.ticker : c.isin === target.isin)) failures.push('company_not_resolved');
     if (packet.selection.companies.some(c => target.ticker ? c.ticker !== target.ticker : c.isin !== target.isin)) failures.push('unrequested_company_selected');
     // This suite has no authenticated Family book. Validate the bounded packet
