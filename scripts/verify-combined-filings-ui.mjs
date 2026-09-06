@@ -136,10 +136,8 @@ try {
   await page.setViewportSize({width:1440,height:1000});
   await page.evaluate(()=>window.setTestSession('fixture.reader-a.session'));
   await page.evaluate(()=>window.showTab('nse-filings'));
-  await page.locator('[data-doc-mode="documents"]').click();
-  await page.locator('[data-doc-company]').waitFor();
-  await load();
-  check('the actual nse-filings tab reaches its assigned document form',queries.at(-1).form[0]==='all');
+  await page.locator('[data-score-table]').waitFor();
+  check('NSE Filings opens its retained feed without the removed company-document mode',await page.locator('[data-document-tabs], [data-doc-company]').count()===0);
   await page.evaluate(()=>window.showTab('concall'));
   await page.locator('[data-score-table]').waitFor();
   check('Con-call opens directly without the redundant Filed con-call documents mode',await page.locator('[data-document-tabs]').count()===0&&await page.locator('[data-score-table]').isVisible());
@@ -193,8 +191,8 @@ try {
   await page.setViewportSize({width:390,height:844});
   check('IPO controls and document cards fit a mobile viewport',await page.locator('[data-drhp-load]').isVisible()&&await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.evaluate(()=>window.showTab('nse-filings'));
-  await page.locator('[data-doc-mode="documents"]').click();
-  check('leaving the DRHP component restores NSE company documents and removes IPO results',await page.locator('[data-doc-company]').isVisible()&&await page.locator('[data-drhp-results]').count()===0);
+  await page.locator('[data-score-table]').waitFor();
+  check('leaving the DRHP component restores the NSE feed and removes IPO results',await page.locator('[data-table-search]').isVisible()&&await page.locator('[data-doc-company], [data-drhp-results]').count()===0);
   check('the document views have no browser runtime errors',errors.length===0);
   console.log(`\n${checks} combined filings browser checks passed.`);
 } finally { await browser?.close(); await new Promise(done=>server.close(done)); }

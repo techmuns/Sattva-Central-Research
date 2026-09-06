@@ -60,6 +60,9 @@ try {
   await page.clock.install({ time: new Date('2026-09-04T06:00:00Z') });
   await page.goto(origin);
   await page.locator('[data-table-search]').waitFor();
+  check('NSE Filings opens directly without the removed Company NSE filings control',
+    await page.getByRole('button', { name: 'Company NSE filings', exact: true }).count() === 0 &&
+    await page.locator('[data-document-tabs], [data-doc-company]').count() === 0);
   await page.locator('[data-table-search]').fill('sterlite');
   await page.waitForFunction(() => document.querySelector('[data-row-count]')?.textContent === '1 of 1 filings shown');
   check('Sterlite is searchable in Portfolio despite absence from the live window', /Sterlite Technologies/.test(await page.locator('tbody').innerText()));
@@ -73,6 +76,7 @@ try {
   check('polling does not interrupt typing in the search field', await page.locator('[data-table-search]').evaluate((el) => document.activeElement === el));
   await page.reload();
   await page.locator('[data-table-search]').waitFor();
+  check('reopening NSE Filings does not restore the redundant mode switcher', await page.locator('[data-document-tabs]').count() === 0);
   await page.locator('[data-table-search]').fill('sterlite');
   check('a page reload retains live-only device history', /Sterlite Technologies/.test(await page.locator('tbody').innerText()));
   await page.locator('[data-table-search]').fill('not-a-real-company');
