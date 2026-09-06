@@ -80,6 +80,22 @@ function fail(message, code, extra = {}) {
   return err;
 }
 
+async function responseText(response, maximum = 2 * 1024 * 1024) {
+  if (Number(response.headers.get('content-length')) > maximum) {
+    await response.body?.cancel();
+    throw fail('GitHub response exceeds the read budget.', 'invalid-response');
+  }
+  if (!response.body) return '';
+  const decoder = new TextDecoder();
+  let text = '', size = 0;
+  for await (const part of response.body) {
+    size += part.byteLength;
+    if (size > maximum) throw fail('GitHub response exceeds the read budget.', 'invalid-response');
+    text += decoder.decode(part, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
 /**
  * `owner/repo` -> `{ owner, repo }`, or a named failure.
  *
@@ -94,16 +110,20 @@ export function parseRepo(value) {
 }
 
 /** One authenticated request. Returns `{ status, body }`; throws only for a named failure. */
-async function call(fetchImpl, { token, url, method = 'GET', body = null, deadlineAt, now = Date.now }) {
+async function call(fetchImpl, { token, url, method = 'GET', body = null, deadlineAt, now = Date.now, sleepImpl = sleep }) {
   if (!token) throw fail('No GitHub token is configured on the Worker.', 'no-token');
 
   let last = null;
-  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+  // A lost POST response may already have started a runner. Dispatch has no idempotency key:
+  // do not blindly retry it. The next bounded recovery check reconciles GitHub's run list.
+  const attempts = method === 'GET' ? ATTEMPTS : 1;
+  for (let attempt = 0; attempt < attempts; attempt++) {
     const left = deadlineAt - now();
     if (left <= 0) break;
     try {
       const res = await fetchImpl(url, {
         method,
+        redirect: 'error',
         headers: {
           accept: 'application/vnd.github+json',
           'x-github-api-version': '2022-11-28',
@@ -118,10 +138,11 @@ async function call(fetchImpl, { token, url, method = 'GET', body = null, deadli
       });
 
       if (res.status === 401) throw fail('GitHub rejected the token.', 'unauthorised', { url });
+      if (res.status === 429) throw fail('GitHub rate limit reached.', 'rate-limited', { url });
       if (res.status === 403) {
         // 403 here is a permissions or rate-limit answer, and the two have different fixes.
         const remaining = res.headers.get('x-ratelimit-remaining');
-        if (remaining === '0') throw fail('GitHub rate limit reached for this token.', 'rate-limited', { url });
+        if (remaining === '0' || res.headers.get('retry-after')) throw fail('GitHub rate limit reached for this token.', 'rate-limited', { url });
         throw fail('The token is not allowed to do this.', 'forbidden', { url });
       }
       if (res.status === 404) {
@@ -135,34 +156,45 @@ async function call(fetchImpl, { token, url, method = 'GET', body = null, deadli
       }
       if (res.status === 422) {
         // Workflow disabled, or the ref does not exist. Their message is the useful part.
-        const detail = await res.text().catch(() => '');
+        const detail = await responseText(res, 8192).catch(() => '');
         throw fail(`GitHub refused the request: ${detail.slice(0, 300)}`, 'refused', { url });
       }
       if (TRANSIENT_STATUS.has(res.status)) {
         last = fail(`GitHub answered ${res.status}.`, 'upstream', { url, status: res.status });
-        await sleep(BACKOFF_MS);
+        await res.body?.cancel();
+        if (method !== 'GET') throw fail('Dispatch outcome is uncertain; check runs before trying again.', 'dispatch-uncertain', { url });
+        const retry = res.headers.get('retry-after');
+        const delay = /^\d+$/.test(retry || '') ? Number(retry) * 1000 : Date.parse(retry || '') - now();
+        const wait = Math.max(BACKOFF_MS, Number.isFinite(delay) ? delay : 0);
+        if (attempt === attempts - 1 || now() + wait >= deadlineAt) break;
+        await sleepImpl(wait);
         continue;
       }
       if (!res.ok) throw fail(`GitHub answered ${res.status}.`, 'upstream', { url, status: res.status });
 
       // 204 (a dispatch) has no body at all, which is success and must not be parsed.
       if (res.status === 204) return { status: 204, body: null };
-      return { status: res.status, body: await res.json() };
+      return { status: res.status, body: JSON.parse(await responseText(res)) };
     } catch (err) {
       if (err.code && err.code !== 'upstream') throw err; // an answer, not a blip
+      if (method !== 'GET') throw fail('Dispatch outcome is uncertain; check runs before trying again.', 'dispatch-uncertain', { url });
       last = err.name === 'TimeoutError' || err.name === 'AbortError' ? fail('GitHub did not answer in time.', 'timeout', { url }) : err.code ? err : fail(String(err?.message || err), 'unreachable', { url });
-      if (attempt < ATTEMPTS - 1) await sleep(BACKOFF_MS);
+      if (attempt < attempts - 1) await sleepImpl(BACKOFF_MS);
     }
   }
   throw last || fail('GitHub could not be reached.', 'unreachable');
 }
 
 /** Runs of one workflow, newest first. A free read — this is the half that may be polled. */
-export async function latestRun(fetchImpl, { token, owner, repo, base = API, now = Date.now }, workflow, { perPage = 3 } = {}) {
-  const url = `${base}/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=${perPage}`;
-  const { body } = await call(fetchImpl, { token, url, deadlineAt: now() + DEADLINE_MS, now });
-  const runs = Array.isArray(body?.workflow_runs) ? body.workflow_runs : [];
-  return runs.map(shapeRun);
+export async function latestRun(fetchImpl, { token, owner, repo, base = API, now = Date.now, ref = 'main', sleepImpl }, workflow, { perPage = 3, status = null } = {}) {
+  const query = new URLSearchParams({ per_page: String(Math.max(1, Math.min(100, perPage))), branch: ref });
+  if (status) query.set('status', status);
+  const url = `${base}/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?${query}`;
+  const { body } = await call(fetchImpl, { token, url, deadlineAt: now() + DEADLINE_MS, now, sleepImpl });
+  if (!Array.isArray(body?.workflow_runs) || body.workflow_runs.some(run => !Number.isInteger(run?.id) ||
+      !['completed', ...ACTIVE_STATUSES].includes(run?.status)))
+    throw fail('GitHub run list is invalid; refusing to infer no active runs.', 'invalid-runs');
+  return body.workflow_runs.map(shapeRun);
 }
 
 /**
@@ -186,7 +218,8 @@ function shapeRun(r) {
   };
 }
 
-export const isInFlight = (run) => !!run && (run.status === 'queued' || run.status === 'in_progress' || run.status === 'waiting' || run.status === 'requested' || run.status === 'pending');
+const ACTIVE_STATUSES = ['queued', 'in_progress', 'waiting', 'requested', 'pending'];
+export const isInFlight = run => !!run && ACTIVE_STATUSES.includes(run.status);
 
 /**
  * Start a run. THE ONE CALL IN THIS FILE THAT COSTS ANYBODY ANYTHING.
@@ -195,19 +228,26 @@ export const isInFlight = (run) => !!run && (run.status === 'queued' || run.stat
  * which is not a failure and must not be reported as one.
  */
 export async function dispatchWorkflow(fetchImpl, cfg, workflow, ref, inputs = null) {
-  const { token, owner, repo, base = API, now = Date.now } = cfg;
+  const { token, owner, repo, base = API, now = Date.now, sleepImpl } = cfg;
 
   // ASK BEFORE STARTING. Their concurrency group would queue a duplicate harmlessly, so this is
   // not about correctness upstream — it is about this dashboard never being the thing that started
   // a run nobody needed.
-  const existing = await latestRun(fetchImpl, cfg, workflow, { perPage: 1 }).catch(() => null);
-  if (existing && isInFlight(existing[0])) return { dispatched: false, run: existing[0] };
+  // A newer completed run can hide an older queued/waiting one. Query each active status,
+  // scoped to the target branch, rather than checking just the most recent run. Fail closed
+  // when ANY read fails. Workflow concurrency remains the final race-condition guard.
+  const checks = await Promise.allSettled(ACTIVE_STATUSES.map(status =>
+    latestRun(fetchImpl, { ...cfg, ref }, workflow, { perPage: 1, status })));
+  const failed = checks.find(check => check.status === 'rejected');
+  if (failed) throw failed.reason;
+  const existing = checks.flatMap(check => check.value).find(isInFlight);
+  if (existing) return { dispatched: false, run: existing };
 
   const url = `${base}/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`;
   // `inputs` carries who asked — the workflow puts it in its own run name, so the runs list says
   // whether the cadence is holding on its own or whether every refresh was somebody pressing a
   // button. That question was answered wrongly twice for want of exactly this.
   const body = inputs ? { ref, inputs } : { ref };
-  await call(fetchImpl, { token, url, method: 'POST', body, deadlineAt: now() + DEADLINE_MS, now });
+  await call(fetchImpl, { token, url, method: 'POST', body, deadlineAt: now() + DEADLINE_MS, now, sleepImpl });
   return { dispatched: true, run: null };
 }
