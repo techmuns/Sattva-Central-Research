@@ -17,6 +17,7 @@ import {
 } from '../public/js/data/screener-concalls-shared.js';
 import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calendar-shared.js';
 import { filterByScope } from '../public/js/data/scope.js';
+import { matchingDeepDive, reportingQuarter } from '../public/js/concall/scans.js';
 import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
 
 const observedAt = '2026-09-05T01:00:00.000Z';
@@ -146,6 +147,41 @@ test('Screener history enriches matching analysis without duplicate rows and sco
   const holdings = [{ ticker: 'DHOOTTRANS' }];
   assert.deepEqual(filterByScope(enriched, 'portfolio', holdings).map((item) => item.ticker), ['DHOOTTRANS']);
   assert.deepEqual(filterByScope(enriched, 'universe', holdings).map((item) => item.ticker).sort(), ['DHOOTTRANS', 'LEAPIND']);
+});
+
+test('Deep Dive fills document-only gaps only for a confirmed, transcript-backed, unambiguous call', () => {
+  assert.equal(reportingQuarter('2026-03-31'), 'Q3FY26');
+  assert.equal(reportingQuarter('2026-04-01'), 'Q4FY26');
+  assert.equal(reportingQuarter('2026-07-01'), 'Q1FY27');
+  assert.equal(reportingQuarter('2026-10-01'), 'Q2FY27');
+
+  const documentOnly = {
+    rowUid: 'screener:GAPTEST:2026-08-05',
+    ticker: 'GAPTEST',
+    date: '2026-08-05',
+    publishedDate: '2026-08-05',
+    analysisTracked: false,
+  };
+  const exact = {
+    slug: 'gaptest-q1fy27',
+    ticker: 'GAPTEST',
+    quarter: 'Q1FY27',
+    quarter_confirmed: true,
+    transcript_available: true,
+    result: 'Beat',
+    verdict: 'Positive',
+    headline: 'Margins expanded on stronger execution.',
+  };
+  const reports = { GAPTEST: [exact] };
+
+  assert.equal(matchingDeepDive(documentOnly, [documentOnly], reports), exact);
+  assert.equal(matchingDeepDive(documentOnly, [documentOnly], { GAPTEST: [{ ...exact, quarter_confirmed: false }] }), null);
+  assert.equal(matchingDeepDive(documentOnly, [documentOnly], { GAPTEST: [{ ...exact, transcript_available: false }] }), null);
+  assert.equal(
+    matchingDeepDive(documentOnly, [documentOnly, { ...documentOnly, rowUid: 'screener:GAPTEST:2026-08-20', date: '2026-08-20' }], reports),
+    null,
+    'two calls for one ticker and quarter are ambiguous even when the current scope hides one',
+  );
 });
 
 test('incremental captures retain the complete baseline and reject malformed or duplicate data', () => {

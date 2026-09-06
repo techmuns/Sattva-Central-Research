@@ -1679,18 +1679,19 @@ inferring one.
 
 ### Triggering someone else's pipeline — the Deep Dive rule
 
-The Con-call table's last column dispatches a run on a **separate** dashboard, watches it, and
-renders the report it produces. Everything in *Reproducing someone else's analysis* applies —
-reproduce, never recompute; say whose it is on every surface; link to their own rendering — plus
-three that only arise when you can make another service *do work*:
+The Con-call table's last column dispatches a run on a **separate** analysis service, watches it,
+and renders the report it produces. Everything in *Reproducing someone else's analysis* applies —
+reproduce, never recompute; say whose it is on every surface; retain the primary filing links —
+plus rules that only arise when you can make another service *do work*:
 
 1. **Separate what costs money from what does not, and hold that line everywhere.** `POST
    /api/analyze` is unauthenticated and every accepted call starts a real LLM run; `GET
-   /api/summary` and `GET /api/report` are free. So **nothing that costs a run ever fires on its
-   own** — no poller, no peek on render, the cell is a button, the first click confirms, and
-   "Re-run from scratch" returns to that confirm step rather than dispatching on the click.
-   Reopening calls `resume(slug)`, which only polls; their API would dedup a second `POST` anyway,
-   but not asking at all is the version that cannot cost a run through a bug of ours.
+   /api/summary` and `GET /api/report` are free. So **nothing that costs a run ever fires on render
+   or from a poller**. The Deep Dive row button is the explicit run command: that one click opens
+   live progress and dispatches exactly once, with no second setup/URL/force screen. There is no
+   re-run control in the report, so an incidental click inside a finished analysis cannot force a
+   paid refresh. Reopening calls `resume(slug)`, which only polls; their API would dedup a second
+   `POST` anyway, but not asking at all is the version that cannot cost a duplicate run.
    **The free index, by contrast, IS fetched unprompted** — once per page load, never polled — so
    a row can say *"report ready"* instead of making the reader pay to discover it exists. Getting
    that backwards in either direction is the bug: polling their trigger, or charging for an answer
@@ -1719,21 +1720,22 @@ three that only arise when you can make another service *do work*:
    add next month arrives laid out rather than dropped. Escape every string and only ever make an
    anchor from an `http(s)` value — this is external content and none of it may reach the DOM as
    markup.
-4. **Never show one company's report under another's name.** The panel is titled from our row and
-   the report from theirs; a slug is resolved from three places — their index, this browser's memory
-   of a dispatch, this device's saved reports — so if `report.meta.ticker` contradicts the row, say
-   so loudly rather than retitling it. Nothing that fails that check is ever written to the store:
-   rendering it under a banner is recoverable, filing it under our ticker would serve another
-   company's analysis from disk with no upstream left to correct it.
+4. **Never show one company's or one call's report under another row.** The panel is titled from our
+   row and the report identifies itself through `meta.ticker` and `meta.sources.concall_date`. A
+   ticker contradiction or a call date different from the selected row is called out; only an
+   exact source-URL match or the exact same date may be filed against the row. The
+   remembered and saved indexes carry the row id, not just the ticker, so two calls by one company
+   cannot reattach to each other's work. Rendering a mismatch under a banner is recoverable; filing
+   it under the row would keep serving the wrong call from disk with no upstream left to correct it.
 5. **What cost money to produce is kept, and a failed re-check never deletes it.** Everywhere else
    here a cache saves bytes; this one saves a metered run. Their store drops a report after about a
    fortnight, and before this that expiry took ours with it — reopening a company analysed last
-   month landed on the confirm step, so the only way back to an analysis already read was to pay for
+   month landed on a new-run screen, so the only way back to an analysis already read was to pay for
    it again. Now every finished report goes to IndexedDB under their slug, reopening paints from
    there with **no request at all**, and the re-check happens behind it. `unknown` from that check
    means their copy is gone, which is exactly when ours is the only one left; a network error means
-   we could not ask. Neither may drop the reader onto a confirm step — only a slug with **no** saved
-   copy falls through to one.
+   we could not ask. Neither may replace the saved report with a new run; only a row click with no
+   exact saved or ready copy dispatches.
 6. **A free read must not wear a metered read's clothes.** Reattaching used to open on the run
    screen — *"Starting the analysis… 5%"* and the seven-step checklist — over a plain GET on a
    report finished an hour earlier. Nothing was being spent and the screen said otherwise, and a
@@ -1741,10 +1743,19 @@ three that only arise when you can make another service *do work*:
    being started, and only a status their API reports as in flight promotes it. Derive the screen
    and the request branch from **one** resolved value, so the sentence and the behaviour cannot
    drift apart.
+7. **A company match is not enough to fill a call's blank analysis.** The free summary index carries
+   Concall Deep Dive's own `result`, `verdict`, `headline` and `tags`. A document-only row may show
+   those fields unchanged only when `quarter_confirmed` and `transcript_available` are both true,
+   the report quarter matches the quarter implied by the call date, and every row for that ticker in
+   that quarter has one distinct call date. More than one date is ambiguous, so every candidate
+   stays blank. Deep Dive publishes no 0–100 equivalent and its verdict is not StockScans' sentiment
+   tier: no score is filled, and the badge is visibly `DD · …` under **Sentiment / View**. Portfolio,
+   Watchlist and Universe narrow rows after this market-wide identity check, so a narrower scope can
+   never make an ambiguous report appear exact.
 
-The base URL is `window.SATTVA_DEEPDIVE_URL` in `index.html`; `localStorage['sattva:deepdive-base']`
-overrides it, which is how `verify-ui.mjs` points the whole run at a stub so a verification never
-touches — or spends against — the real dashboard.
+The base URL is internal configuration in `window.SATTVA_DEEPDIVE_URL`; it is never printed or
+editable in the customer-facing panel. `localStorage['sattva:deepdive-base']` still overrides it so
+`verify-ui.mjs` can point the whole run at a stub and never touch — or spend against — production.
 
 ### One tab, one provenance — and how it got that way
 
@@ -3442,7 +3453,7 @@ It covers, beyond the checklist below:
   static-file loader is still using `cache: 'no-store'`
 - **a Deep Dive report survives the upstream forgetting it**: with the slug answering `unknown`,
   their index naming nothing and this browser's dispatch record cleared, the row is still marked
-  free to open, the report still renders off the device, no confirm step appears, nothing is
+  free to open, the report still renders off the device, no new run appears, nothing is
   dispatched, the panel never shows the run screen on the way, and the ribbon says both that the
   copy is this device's and that theirs is gone
 - **the super-investor feed does not re-ask for what it has**: the list route reports

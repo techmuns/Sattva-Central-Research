@@ -6,8 +6,8 @@
 // THE REPORT IS SOMEBODY ELSE'S ANALYSIS AND THE PANEL NEVER PRETENDS OTHERWISE.
 //   Every heading, verdict, number and quote in it comes from the Concall Deep Dive pipeline.
 //   This file lays it out; it computes nothing, re-bands nothing, drops nothing and adds no
-//   judgement. An "Open on Concall Deep Dive ↗" link sits at the top of every finished report so
-//   their own rendering — the canonical one — is always one click away. Same rule as the
+//   judgement. The filed transcript/presentation links stay in the provenance strip; the service
+//   URL and connection mechanics do not enter the customer-facing panel. Same rule as the
 //   StockScans scores in the table behind it.
 //
 //   That includes the QUOTED SPEECH. A finished report carries transcript quotes attributed to
@@ -39,8 +39,8 @@
 //   there with no request at all, then re-checks them in the background: unchanged is the common
 //   case and repaints nothing, a newer report replaces it, and a failure — including their store
 //   having dropped the report after its fortnight — leaves our copy exactly where it is. Dropping
-//   to the confirm step in that last case, which is what this did before, asked the reader to spend
-//   a fresh run to get back something we were holding the whole time.
+//   to a new-run state in that last case, which would ask the reader to spend a fresh run to get
+//   back something we were holding the whole time.
 //
 // WHY THE REPORT RENDERER IS SHAPE-DRIVEN AND NOT FIELD-DRIVEN
 //   `report.schema.json` lives in that repo, not this one, and the payload is expected to grow.
@@ -54,7 +54,7 @@
 //   It is also EXTERNAL CONTENT, so every string is escaped and only http(s) links are ever
 //   turned into anchors. Nothing from that API reaches the DOM as markup.
 
-import { openWorkspace, closeWorkspace, refreshWorkspace, openModal } from '../ui/screener.js';
+import { openWorkspace, closeWorkspace, refreshWorkspace } from '../ui/screener.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatRelativeTime } from '../core/format.js';
 import * as api from '../data/deep-dive.js';
@@ -66,25 +66,26 @@ let live = null;
 /**
  * Open the panel for one call row.
  *
- * `ready` is that company's row from their `/api/summary` index, when they already hold a report
- * for it. That case skips the confirm step and opens the report straight away, because there is
- * nothing to confirm: fetching a finished report is a plain GET and costs nobody anything. Every
- * other row lands on the confirm step, because a dispatch starts a real pipeline run.
+ * `ready` is that call's row from their `/api/summary` index, when they already hold a report for
+ * it. That case opens the report straight away. Otherwise the row click itself is the instruction
+ * to start the Deep Dive: the workspace opens on live progress and dispatches exactly once. There
+ * is no second setup/confirmation click and no service URL in the customer-facing panel.
  *
  * `onRecorded(slug)` fires the moment a run gets its id, so the table behind can mark the row.
  *
  * NO URL MIRRORING, DELIBERATELY — and this is the one workspace that opts out of the kit's usual
  * `ctx.setParamsQuiet()` contract. Reopening from the URL has to happen after every paint, and the
  * Con-call tab repaints on every live tick; a reopen mid-run would tear down a job that has been
- * going for ten minutes. There is also little to link to: the report's canonical address is on the
- * Deep Dive dashboard itself, and every finished panel carries that link.
+ * going for ten minutes. The service address is internal configuration and never enters the
+ * panel.
  */
-export function openDeepDive(row, { onRecorded = null, onSaved = null, ready = null } = {}) {
+export function openDeepDive(row, { onRecorded = null, onSaved = null, ready = null, saved: savedHint = null } = {}) {
   stop();
   const ticker = row.ticker || null;
   const company = row.name || ticker || '';
-  const known = api.remembered(ticker);
-  const saved = api.savedFor(ticker);
+  const recordId = row.rowUid || null;
+  const known = api.remembered(ticker, recordId);
+  const saved = savedHint || api.savedForRecord(recordId);
 
   // A report this device holds, a run this browser started, or a report their index says exists.
   // Any of the three means there is a slug to open, and opening one is free — so the panel goes
@@ -98,10 +99,13 @@ export function openDeepDive(row, { onRecorded = null, onSaved = null, ready = n
   live = {
     ticker,
     company,
+    recordId,
+    date: row.date || row.publishedDate || null,
+    documentUrls: (row.documents || []).map((document) => document?.url).filter(Boolean),
     onRecorded,
     onSaved,
     ready,
-    phase: !api.configured() ? 'connect' : attachSlug ? 'opening' : 'confirm',
+    phase: !api.configured() ? 'unavailable' : attachSlug ? 'opening' : 'running',
     progress: null,
     displayPct: 0,
     report: null,
@@ -139,9 +143,13 @@ export function openDeepDive(row, { onRecorded = null, onSaved = null, ready = n
   // rule: the one thing that must never fire on its own is a dispatch. If the run is still going
   // the reader lands straight on its live progress; if it finished while the panel was closed they
   // land on the report; if the slug has aged out upstream, the copy on this device is what they
-  // land on. Before this, reopening showed a confirm panel with a "Reattach to it" link — the run
+  // land on. Before this, reopening showed a setup panel with a "Reattach to it" link — the run
   // was never lost, but you had to know to ask for it.
   if (attachSlug && api.configured()) reopen(attachSlug);
+  else if (api.configured()) {
+    const owner = live;
+    queueMicrotask(() => live === owner && run());
+  }
 }
 
 /**
@@ -194,10 +202,8 @@ const stop = stopDeepDive;
 function renderPanel() {
   if (!live) return '';
   switch (live.phase) {
-    case 'connect':
-      return connectPanel();
-    case 'confirm':
-      return confirmPanel();
+    case 'unavailable':
+      return unavailablePanel();
     case 'opening':
       return openingPanel();
     case 'running':
@@ -211,60 +217,14 @@ function renderPanel() {
   }
 }
 
-function connectPanel() {
+function unavailablePanel() {
   return `
-    <div class="mx-auto max-w-2xl px-6 py-10">
-      <h3 class="font-display text-lg font-bold text-slate-900">Connect the Deep Dive dashboard</h3>
+    <div class="mx-auto max-w-2xl px-6 py-16 text-center">
+      <h3 class="font-display text-lg font-bold text-slate-900">Deep Dive is temporarily unavailable</h3>
       <p class="mt-2 text-sm leading-relaxed text-slate-600">
-        Concall Deep Dive runs on its own Cloudflare Worker, and its URL is assigned per deployment — nobody in this
-        repo can know it, so it is not committed here. Paste it once and it is remembered in this browser.
+        The analysis service is not configured for this deployment. No run was started.
       </p>
-      <label class="mt-5 block text-xs font-bold uppercase tracking-wider text-slate-500" for="dd-base">Dashboard URL</label>
-      <input id="dd-base" type="url" spellcheck="false" placeholder="https://concall-sattva.your-subdomain.workers.dev"
-        class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-400 focus:outline-none" />
-      <p data-dd-connect-error class="mt-2 hidden text-xs text-rose-700"></p>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button data-dd-save class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90">Save and continue</button>
-        <button data-dd-cancel class="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">Cancel</button>
-      </div>
-      <p class="mt-6 text-xs leading-relaxed text-slate-500">
-        To set it for everyone instead of just this browser, add
-        <code class="rounded bg-slate-100 px-1">window.SATTVA_DEEPDIVE_URL = '…'</code> in
-        <code class="rounded bg-slate-100 px-1">public/index.html</code>.
-      </p>
-    </div>`;
-}
-
-function confirmPanel() {
-  const known = api.remembered(live.ticker);
-  const rerun = !!live.rerun;
-  return `
-    <div class="mx-auto max-w-2xl px-6 py-10">
-      <h3 class="font-display text-lg font-bold text-slate-900">${rerun ? 'Re-run the Deep Dive on' : 'Run a Deep Dive on'} ${escapeHtml(live.company)}</h3>
-      <p class="mt-2 text-sm leading-relaxed text-slate-600">
-        This asks the <strong>Concall Deep Dive</strong> dashboard to analyse this company's latest call. The analysis is
-        entirely theirs — this page triggers it, shows its progress, and displays what it returns.
-      </p>
-      <div class="mt-4 rounded-xl bg-amber-50 p-4 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
-        <strong>A run costs real compute.</strong> Each dispatch starts an LLM pipeline on their side and takes several
-        minutes. A report produced in the last fortnight is reused automatically and costs nothing, which is what
-        usually happens on a second click.
-        ${rerun ? '<strong> Forcing a fresh run skips that reuse, so this one will cost a full run.</strong>' : ''}
-      </div>
-      ${
-        known?.slug && !rerun
-          ? `<p class="mt-3 text-xs text-slate-500">A previous run for this company is on record (<code class="rounded bg-slate-100 px-1">${escapeHtml(known.slug)}</code>). <button data-dd-resume class="font-semibold text-indigo-600 hover:underline">Reattach to it</button> instead of starting a new one.</p>`
-          : ''
-      }
-      <div class="mt-5 flex flex-wrap items-center gap-2">
-        <button data-dd-start class="rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90">${rerun ? 'Yes, start a fresh run' : 'Start the Deep Dive'}</button>
-        <label class="flex items-center gap-1.5 text-xs text-slate-600">
-          <input type="checkbox" data-dd-force class="rounded border-slate-300" ${rerun ? 'checked' : ''} />
-          Force a fresh run, ignoring any cached report
-        </label>
-        ${rerun && live.report ? '<button data-dd-back class="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">Back to the report</button>' : ''}
-      </div>
-      <p class="mt-6 text-xs text-slate-500">Connected to <code class="rounded bg-slate-100 px-1">${escapeHtml(api.baseUrl())}</code> · <button data-dd-reconnect class="font-semibold text-indigo-600 hover:underline">change</button></p>
+      <button data-dd-close class="mt-5 rounded-lg bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200">Close</button>
     </div>`;
 }
 
@@ -361,15 +321,13 @@ function runningPanel() {
 }
 
 function errorPanel() {
-  const url = api.reportUrl(live.slug);
   return `
     <div class="mx-auto max-w-2xl px-6 py-10">
       <h3 class="font-display text-lg font-bold text-slate-900">The Deep Dive did not finish</h3>
       <div class="mt-3 rounded-xl bg-rose-50 p-4 text-sm leading-relaxed text-rose-900 ring-1 ring-rose-200">${escapeHtml(live.error || 'Unknown error.')}</div>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button data-dd-start class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:opacity-90">Try again</button>
-        ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="rounded-lg px-4 py-2 text-sm font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-50">Open on Concall Deep Dive ↗</a>` : ''}
-        <button data-dd-reconnect class="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">Change dashboard URL</button>
+        <button data-dd-retry class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:opacity-90">Try again</button>
+        <button data-dd-close class="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">Close</button>
       </div>
     </div>`;
 }
@@ -386,7 +344,7 @@ function errorPanel() {
  * ticker it contradicts, so nothing that fails this check is ever written to the store.
  */
 function identityMismatch(report) {
-  if (!api.conflictsWith(report, live.ticker)) return '';
+  if (!api.conflictsWith(report, live.ticker)) return callMismatch(report);
   const theirs = String(report?.meta?.ticker || '').toUpperCase();
   const ours = String(live.ticker || '').toUpperCase();
   return `
@@ -394,8 +352,31 @@ function identityMismatch(report) {
       <strong>This report is for a different company.</strong> The row opened was
       <strong>${escapeHtml(live.company)}</strong> (${escapeHtml(ours)}), but Concall Deep Dive returned a report for
       <strong>${escapeHtml(String(report?.meta?.company || theirs))}</strong> (${escapeHtml(theirs)}).
-      Read it as that company's, not this one's — and the link above goes to their copy, which is the one to trust.
+      Read it as that company's, not this one's. It is not stored against the selected row.
     </div>`;
+}
+
+const dateOnly = (value) => /^\d{4}-\d{2}-\d{2}/.exec(String(value || ''))?.[0] || null;
+
+function callMismatch(report) {
+  const callDate = dateOnly(report?.meta?.sources?.concall_date || report?.meta?.call_date);
+  const rowDate = dateOnly(live.date);
+  if (!callDate || !rowDate || callDate === rowDate) return '';
+  return `
+    <div class="mb-5 rounded-2xl bg-amber-50 p-4 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
+      <strong>This is the company’s latest-call report, not the document row that was clicked.</strong>
+      The selected row is dated ${escapeHtml(live.date)}, while Concall Deep Dive analysed the call dated
+      ${escapeHtml(callDate)}. It is shown for reference but is not used to fill that row’s result, view or highlights.
+    </div>`;
+}
+
+/** File a report against a row only when its own provenance identifies that same call. */
+function reportMatchesTarget(report) {
+  if (!report || api.conflictsWith(report, live.ticker)) return false;
+  const sourceUrls = [report?.meta?.sources?.transcript_url, report?.meta?.sources?.ppt_url].filter(Boolean);
+  if (sourceUrls.some((url) => live.documentUrls.includes(url))) return true;
+  const callDate = dateOnly(report?.meta?.sources?.concall_date || report?.meta?.call_date);
+  return !!callDate && callDate === dateOnly(live.date);
 }
 
 /**
@@ -429,21 +410,14 @@ function deliveryLine() {
 }
 
 function reportPanel() {
-  const url = api.reportUrl(live.slug);
   const report = live.report;
   return `
     <div class="px-6 py-6">
       ${identityMismatch(report)}
       <div class="mb-5 flex flex-wrap items-center gap-3 rounded-2xl bg-indigo-50/60 p-4 ring-1 ring-indigo-100">
         <div data-dd-ribbon class="min-w-0 flex-1 text-xs leading-relaxed text-slate-700">${ribbonText()}</div>
-        ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="flex-shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:opacity-90">Open on Concall Deep Dive ↗</a>` : ''}
       </div>
-      ${report ? renderReport(report) : '<p class="text-sm text-slate-500">The run finished but returned no report body. Their own page above will have it.</p>'}
-      <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-        <button data-dd-rerun class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">Re-run from scratch…</button>
-        <button data-dd-raw class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">View raw JSON</button>
-        <span class="text-[11px] text-slate-400">Re-running starts a fresh pipeline run and asks first.</span>
-      </div>
+      ${report ? renderReport(report) : '<p class="text-sm text-slate-500">The run finished but returned no report body.</p>'}
     </div>`;
 }
 
@@ -756,57 +730,8 @@ function wirePanel(panel) {
   if (!live) return;
   const on = (sel, fn) => panel.querySelector(sel)?.addEventListener('click', fn);
 
-  on('[data-dd-cancel]', () => closeWorkspace());
   on('[data-dd-close]', () => closeWorkspace());
-  on('[data-dd-reconnect]', () => {
-    live.phase = 'connect';
-    refreshWorkspace();
-  });
-  on('[data-dd-start]', () => run({ force: !!panel.querySelector('[data-dd-force]')?.checked }));
-  // "Re-run" goes BACK TO THE CONFIRM STEP rather than dispatching. It is the one control on a
-  // finished report that spends money, and a single stray click on it should not be able to.
-  on('[data-dd-rerun]', () => {
-    live.phase = 'confirm';
-    live.rerun = true;
-    refreshWorkspace();
-  });
-  on('[data-dd-resume]', () => run({ resume: true }));
-  on('[data-dd-back]', () => {
-    live.rerun = false;
-    live.phase = 'done';
-    refreshWorkspace();
-  });
-  on('[data-dd-raw]', () =>
-    openModal(
-      `<div class="px-6 py-5">
-         <div class="mb-3 flex items-start justify-between gap-4">
-           <h2 class="font-display text-lg font-bold text-slate-900">Report as returned</h2>
-           <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
-         </div>
-         <pre class="scrollbar-thin max-h-[60vh] overflow-auto rounded-xl bg-slate-900 p-4 text-xs leading-relaxed text-slate-100">${escapeHtml(JSON.stringify(live.report, null, 2))}</pre>
-       </div>`,
-      { size: 'wide' }
-    )
-  );
-
-  const save = panel.querySelector('[data-dd-save]');
-  if (save) {
-    const input = panel.querySelector('#dd-base');
-    const err = panel.querySelector('[data-dd-connect-error]');
-    input?.focus();
-    const commit = () => {
-      const url = api.setBaseUrl(input.value);
-      if (!url) {
-        err.textContent = 'Enter the dashboard URL, for example https://concall-sattva.your-subdomain.workers.dev';
-        err.classList.remove('hidden');
-        return;
-      }
-      live.phase = 'confirm';
-      refreshWorkspace();
-    };
-    save.addEventListener('click', commit);
-    input?.addEventListener('keydown', (e) => e.key === 'Enter' && commit());
-  }
+  on('[data-dd-retry]', () => run());
 }
 
 async function run({ force = false, resume = false, slug = null, auto = false, background = false } = {}) {
@@ -823,7 +748,7 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
   // as many words that no run is being started, so the flag that decides which screen to show has
   // to be the same one that decides whether a dispatch happens — not a separate reading of the same
   // intent that could drift into showing that sentence over a `POST /api/analyze`.
-  const resumeSlug = resume ? slug || api.remembered(live.ticker)?.slug : null;
+  const resumeSlug = resume ? slug || api.remembered(live.ticker, live.recordId)?.slug : null;
 
   // A dispatch opens on the pipeline screen because a pipeline is what it starts. A reattach opens
   // on `opening`, and a re-check behind a report we already have changes nothing on screen at all.
@@ -862,7 +787,10 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
     // `resumeSlug` only ever polls; `api.start` is the single path in this file that can dispatch.
     const out = resumeSlug
       ? await api.resume(resumeSlug, { onProgress, signal: controller.signal })
-      : await api.start({ company: live.company, ticker: live.ticker, force }, { onProgress, signal: controller.signal });
+      : await api.start(
+          { company: live.company, ticker: live.ticker, recordId: live.recordId, date: live.date, force },
+          { onProgress, signal: controller.signal },
+        );
     if (!live || live.controller !== controller) return;
 
     const wasStored = live.origin === 'store';
@@ -884,7 +812,7 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
     // Never filed under our ticker when the report contradicts it — see `conflictsWith`. Only
     // written when the bytes are actually new: re-storing an identical report would restamp
     // "saved on this device <when>" with a time nothing happened at.
-    if (changed && out.report && !api.conflictsWith(out.report, live.ticker)) {
+    if (changed && out.report && reportMatchesTarget(out.report)) {
       const onSaved = live.onSaved;
       const savedSlug = out.slug;
       live.savedSlug = savedSlug;
@@ -893,6 +821,8 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
         ticker: live.ticker,
         company: live.company,
         quarter: live.ready?.quarter || out.report?.meta?.quarter || null,
+        recordId: live.recordId,
+        callDate: out.report?.meta?.sources?.concall_date || out.report?.meta?.call_date || null,
         report: out.report,
         partial: out.partial,
       }).then((stored) => {
@@ -902,7 +832,7 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
           live.savedAt = Date.now();
           if (live.phase === 'done') updateRibbon();
         }
-        onSaved?.(savedSlug);
+        onSaved?.({ slug: savedSlug, report: out.report });
       });
     }
 
@@ -919,7 +849,7 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
     // A REPORT WE ALREADY HOLD IS NEVER THROWN AWAY BECAUSE A LATER REQUEST FAILED. `unknown` here
     // means their store has dropped it, which is precisely when this device's copy is the only one
     // left; a network failure means we could not ask. Neither is a reason to show the reader a
-    // confirm step that asks them to buy back an analysis they have already read.
+    // new-run state that asks them to buy back an analysis they have already read.
     if (live.report) {
       live.revalidating = false;
       live.upstreamGone = err?.code === 'unknown';
@@ -932,8 +862,7 @@ async function run({ force = false, resume = false, slug = null, auto = false, b
     // anybody: the slug this browser remembered has aged out upstream. Offer to start a run.
     if (auto && err?.code === 'unknown') {
       live.slug = null;
-      live.phase = 'confirm';
-      refreshWorkspace();
+      run();
       return;
     }
     live.error = String(err.message || err);
