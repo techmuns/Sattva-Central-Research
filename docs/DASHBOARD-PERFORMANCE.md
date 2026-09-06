@@ -64,6 +64,9 @@ to about 750. Most sampled table searches/sorts were 16–34 ms after warm-up.
 | INP | Not established | No production field percentile; scripted interaction times are not INP |
 | Render-blocking/cache insight savings | 0 ms | Not the measured bottleneck; no speculative resource removal |
 
+Interpretation follows the [Web Vitals definitions](https://web.dev/articles/vitals) and
+[Chrome performance tooling documentation](https://developer.chrome.com/docs/devtools/performance).
+
 The full-universe first AI build still took roughly 3–4 seconds after other feeds had loaded;
 first Insider preparation roughly 1.2 seconds. Background announcement work also caused one
 719 ms search sample. Bounded rendering fixes DOM/scroll pressure, but does **not** eliminate all
