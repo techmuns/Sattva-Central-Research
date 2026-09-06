@@ -69,10 +69,14 @@ export function scenarioBody(test, now = new Date()) {
   } };
 }
 
-export function checkModelAnswer(test, answer) {
+export function checkModelAnswer(test, answer, body = null) {
+  const normalizePage = value => value.toLowerCase().replace(/\s*\/\s*/g, '/').trim();
+  const pages = body && new Set(['Ask Sattva', ...body.evidence.sources.map(s => s.tab)].filter(Boolean).map(normalizePage));
+  const citations = [...answer.matchAll(/\[Dashboard: ([^\]]+)\]/g)].map(m => m[1]);
   return [
     ...test.must.filter(pattern => !new RegExp(pattern, 'i').test(answer)).map(pattern => `missing:${pattern}`),
     ...test.forbidden.filter(pattern => new RegExp(pattern, 'i').test(answer)).map(pattern => `forbidden:${pattern}`),
     ...(!/\[Dashboard: [^\]]+\]/.test(answer) ? ['missing:dashboard-citation'] : []),
+    ...(pages ? citations.filter(page => !pages.has(normalizePage(page))).map(page => `unknown_citation:${page}`) : []),
   ];
 }

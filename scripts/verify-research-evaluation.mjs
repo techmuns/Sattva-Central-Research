@@ -32,6 +32,7 @@ for (const text of ['Provider draft only.', '<research-answer>\n', '<research-an
 }
 assert.deepEqual(checkModelAnswer(latest, 'Jayaswal Neco: on 5 September 2026, a ₹73 crore order was reported. [Dashboard: News]'), []);
 assert(checkModelAnswer(latest, 'A guaranteed ₹73 crore order on 5 September 2026. [Dashboard: News]').some(x => x.startsWith('forbidden:')));
+assert(checkModelAnswer(latest, 'A ₹73 crore order on 5 September 2026. [Dashboard: News / Technicals]', scenarioBody(latest)).some(x => x.startsWith('unknown_citation:')), 'invented combined page citations cannot pass');
 const directory = mkdtempSync(join(tmpdir(), 'research-eval-'));
 try {
   // Clean environment deliberately prevents a configured developer workstation

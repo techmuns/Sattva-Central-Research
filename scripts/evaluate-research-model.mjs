@@ -59,14 +59,15 @@ if (!endpoint && !researchConfigured(process.env)) {
       } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
     } catch { errors.push('request_failed'); }
     if (terminal !== 'done') errors.push('incomplete_answer');
-    errors.push(...checkModelAnswer(test, answer));
+    const complete = terminal === 'done' && errors.length === 0;
+    errors.push(...checkModelAnswer(test, answer, body));
     const answerHash = createHash('sha256').update(answer).digest('hex');
-    report.results.push({ id: test.id, question: test.question, body, answer, answerHash, review: test.review || 'Review every claim against the exact supplied packet.', firstTextMs, totalMs: performance.now() - started, errors, manualReview: 'pending' });
+    report.results.push({ id: test.id, question: test.question, body, answer, answerHash, review: test.review || 'Review every claim against the exact supplied packet.', complete, firstTextMs, totalMs: performance.now() - started, errors, manualReview: 'pending' });
     save();
     console.log(`${report.results.length}/${scenarios.length} ${test.id}: ${errors.length ? 'NEEDS REVIEW' : 'tripwires passed; factual review pending'}`);
   }
   const percentile = (field, p) => { const values = report.results.map(r => r[field]).filter(Number.isFinite).sort((a, b) => a - b); return values.length ? values[Math.ceil(values.length * p) - 1] : null; };
-  report.metrics = { completed: report.results.length, tripwireFailures: report.results.filter(r => r.errors.length).length, firstTextP50Ms: percentile('firstTextMs', .5), firstTextP95Ms: percentile('firstTextMs', .95), completionP95Ms: percentile('totalMs', .95) };
+  report.metrics = { attempted: report.results.length, completed: report.results.filter(r => r.complete).length, tripwireFailures: report.results.filter(r => r.errors.length).length, firstTextP50Ms: percentile('firstTextMs', .5), firstTextP95Ms: percentile('firstTextMs', .95), requestP95Ms: percentile('totalMs', .95) };
   report.status = 'manual-review-required'; save();
   console.log(JSON.stringify(report.metrics));
   if (report.metrics.tripwireFailures) process.exitCode = 1;
