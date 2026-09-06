@@ -150,17 +150,29 @@ function queryTokens(question) {
  */
 function companyIndex(deferred) {
   const byTicker = new Map();
-  const add = (ticker, name) => {
+  const heldNameOwners = new Map();
+  for (const holding of coverage.holdings()) for (const name of [holding.name, holding.bookName].filter(Boolean)) {
+    const normalized = cleanName(name);
+    if (!heldNameOwners.has(normalized)) heldNameOwners.set(normalized, new Set());
+    heldNameOwners.get(normalized).add(holding.ticker || holding.isin);
+  }
+  const add = (ticker, name, isin = null) => {
     const t = String(ticker || '').trim().toUpperCase();
-    if (!t) return;
+    if (!t && !isin) return;
+    const key = t || isin;
     const n = String(name || '').replace(/\s+/g, ' ').trim();
-    if (!byTicker.has(t)) byTicker.set(t, { ticker: t, name: n || t, aliases: new Set() });
-    const entry = byTicker.get(t);
+    // Saved feeds can still call a renamed/demerged company by another held
+    // company's name, or spell an SME symbol differently. The active book's
+    // identity wins; do not add a second, apparently outside-scope company.
+    const owners = heldNameOwners.get(cleanName(n));
+    if (owners && !owners.has(key)) return;
+    if (!byTicker.has(key)) byTicker.set(key, { ticker: t || null, ...(isin ? { isin } : {}), name: n || t, aliases: new Set() });
+    const entry = byTicker.get(key);
     if (!n) return;
     entry.aliases.add(n);
     if (entry.name === t || n.length > entry.name.length) entry.name = n;
   };
-  for (const h of coverage.holdings()) add(h.ticker, h.name);
+  for (const h of coverage.holdings()) add(h.ticker, h.name, h.isin);
   for (const w of watchlist.all()) add(w.ticker, w.name);
   for (const row of Array.isArray(deferred?.universe) ? deferred.universe : []) {
     add(String(row?.['Screener URL'] || '').match(/\/company\/([^/]+)/)?.[1], row?.Company);
@@ -191,22 +203,28 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
     const ticker = String(entry?.ticker || '').toUpperCase();
     const aliases = [...new Set([entry?.name, ...(entry?.aliases || [])].map(cleanName).filter((alias) => alias.length >= 3))];
     const leads = [...new Set(aliases.map((alias) => alias.split(' ')[0]).filter((word) => word.length >= 5 && !GENERIC_LEAD.has(word)))];
-    for (const lead of leads) leadOwners.set(lead, (leadOwners.get(lead) || new Set()).add(ticker));
-    return { ticker, name: entry?.name || ticker, aliases, leads };
+    for (const lead of leads) leadOwners.set(lead, (leadOwners.get(lead) || new Set()).add(ticker || entry.isin));
+    return { ticker: ticker || null, ...(entry.isin ? { isin: entry.isin } : {}), name: entry?.name || ticker, aliases, leads };
   });
 
   const companies = [];
   const consumed = new Set();
+  // Resolve explicit phrases before trying lead words. "Birla" inside "Aditya
+  // Birla Capital" must not select Birla Corporation. Longer held identities
+  // such as a demerged company or warrant must not silently become the parent.
+  const phrases = entries.flatMap(entry => entry.aliases.filter(alias => text.includes(` ${alias} `)).map(alias => ({ entry, alias })));
+  const coveredByPhrase = word => phrases.some(p => p.alias.split(' ').includes(word));
+  const outsidePhrases = [...phrases].sort((a, b) => b.alias.length - a.alias.length).reduce((remaining, p) => remaining.replaceAll(` ${p.alias} `, ' '), text);
   for (const entry of entries) {
-    if (!entry.ticker) continue;
-    const lower = entry.ticker.toLowerCase();
-    const bySymbol = capitals.has(entry.ticker) || (tokenSet.has(lower) && !WORD_TICKERS.has(entry.ticker));
-    const phrase = entry.aliases.find((alias) => text.includes(` ${alias} `));
-    const lead = !bySymbol && !phrase ? entry.leads.find((word) => tokenSet.has(word) && leadOwners.get(word)?.size === 1) : null;
+    if (!entry.ticker && !entry.isin) continue;
+    const lower = entry.ticker?.toLowerCase();
+    const bySymbol = !!lower && (!coveredByPhrase(lower) || outsidePhrases.includes(` ${lower} `)) && (capitals.has(entry.ticker) || (tokenSet.has(lower) && !WORD_TICKERS.has(entry.ticker)));
+    const phrase = entry.aliases.find(alias => text.includes(` ${alias} `) && !phrases.some(p => p.entry !== entry && p.alias.length > alias.length && ` ${p.alias} `.includes(` ${alias} `) && !text.replaceAll(` ${p.alias} `, ' ').includes(` ${alias} `)));
+    const lead = !bySymbol && !phrase ? entry.leads.find(word => tokenSet.has(word) && leadOwners.get(word)?.size === 1 && !coveredByPhrase(word)) : null;
     if (!bySymbol && !phrase && !lead) continue;
     if (bySymbol) consumed.add(lower);
     for (const word of (phrase || lead || '').split(' ')) if (word) consumed.add(word);
-    companies.push({ ticker: entry.ticker, name: entry.name, inScope: scopeAllowsTicker(scope, entry.ticker, holdings), aliases: entry.aliases });
+    companies.push({ ...entry, inScope: entry.ticker ? scopeAllowsTicker(scope, entry.ticker, holdings) : scope === 'universe' || scope === 'portfolio' && (holdings || []).some(h => h.isin === entry.isin) });
     if (companies.length >= 6) break;
   }
 
@@ -217,7 +235,7 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
     for (const message of history.filter(m => m.role === 'user').slice(-6).reverse()) {
       const prior = queryPlan(message.text, index, { scope, holdings });
       if (!prior.companies.length) continue;
-      for (const company of prior.companies) companies.push({ ...company, aliases: entries.find(e => e.ticker === company.ticker)?.aliases || [] });
+      for (const company of prior.companies) companies.push({ ...company, aliases: entries.find(e => company.ticker ? e.ticker === company.ticker : e.isin === company.isin)?.aliases || [] });
       break;
     }
   }
@@ -230,14 +248,15 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
     const ranked = small && large ? [descending[0], descending.at(-1)].filter(Boolean) : (small ? descending.reverse() : descending).slice(0, limit);
     // Rank the complete denominator before testing ticker coverage; a fund or
     // unresolved holding must not silently be replaced by a different company.
-    for (const holding of ranked) if (holding.ticker && !companies.some(c => c.ticker === holding.ticker)) {
-      companies.push({ ticker: holding.ticker, name: holding.name, inScope: scopeAllowsTicker(scope, holding.ticker, holdings), aliases: entries.find(e => e.ticker === holding.ticker)?.aliases || [cleanName(holding.name)] });
+    for (const holding of ranked) if (!companies.some(c => c.isin === holding.isin)) {
+      companies.push({ isin: holding.isin, ticker: holding.ticker, name: holding.name, inScope: holding.ticker ? scopeAllowsTicker(scope, holding.ticker, holdings) : scope === 'portfolio' || scope === 'universe', aliases: entries.find(e => holding.ticker ? e.ticker === holding.ticker : e.isin === holding.isin)?.aliases || [cleanName(holding.name)] });
     }
   }
   return {
     tokens: tokens.filter((token) => !consumed.has(token)),
-    companies: companies.map(({ ticker, name, inScope }) => ({ ticker, name, inScope })),
-    tickers: new Set(companies.map((company) => company.ticker)),
+    companies: companies.map(({ ticker, isin, name, inScope }) => ({ ticker, ...(isin ? { isin } : {}), name, inScope })),
+    tickers: new Set(companies.map(company => company.ticker).filter(Boolean)),
+    isins: new Set(companies.map(company => company.isin).filter(Boolean)),
     names: [...new Set(companies.flatMap((company) => company.aliases))],
   };
 }
@@ -255,16 +274,21 @@ function rowValues(row) {
   return out;
 }
 
-function rowScore(row, plan) {
-  let score = 0;
+function companyMatch(row, plan) {
+  // Search provenance is not attribution, and an explicit different symbol
+  // cannot be overruled by an old alias or a company name in article text.
+  if (row?.attribution && row.attribution !== 'confirmed') return false;
+  if (row?.isin && plan.isins?.size) return plan.isins.has(row.isin);
   const ticker = String(row?.ticker || '').toUpperCase();
-  if (ticker && plan.tickers.has(ticker)) score += COMPANY_SCORE;
+  if (ticker) return plan.tickers.has(ticker);
+  const name = cleanName(row?.company || row?.name || '');
+  return !!name && plan.names.some(alias => cleanName(alias) === name);
+}
+
+function rowScore(row, plan) {
+  let score = companyMatch(row, plan) ? COMPANY_SCORE : 0;
   if (!plan.names.length && !plan.tokens.length) return score;
   const values = rowValues(row);
-  if (!score && plan.names.length) {
-    const text = ` ${values.map(cleanText).join(' | ')} `;
-    if (plan.names.some((name) => text.includes(` ${name} `))) score += COMPANY_SCORE;
-  }
   for (const token of plan.tokens) {
     if (values.some((value) => value === token)) score += 3;
     else if (values.some((value) => value.includes(token))) score += 1;
@@ -294,8 +318,9 @@ function compactRow(value) {
  */
 export function chooseRows(rows, plan, mapRow, compare = null) {
   const mapped = (rows || []).map(mapRow).filter(Boolean);
-  const scored = mapped.map((row, index) => ({ row, index, score: rowScore(row, plan) }));
-  const tierOf = (item) => (item.score >= COMPANY_SCORE ? 0 : item.score > 0 ? 1 : 2);
+  const scored = mapped.map((row, index) => ({ row, index, score: rowScore(row, plan), company: companyMatch(row, plan) }));
+  // Many keyword hits cannot promote an unrelated row into company evidence.
+  const tierOf = item => item.company ? 0 : item.score > 0 ? 1 : 2;
   const byDefault = (a, b) => (compare ? compare(a.row, b.row) : 0) || a.index - b.index;
   scored.sort((a, b) => tierOf(a) - tierOf(b) || b.score - a.score || byDefault(a, b));
   const matchedRows = scored.filter((item) => item.score > 0).length;
@@ -546,6 +571,7 @@ function alertRow(row) {
     time: row.time || null,
     ticker: row.ticker || null,
     company: clipped(row.company, 60),
+    attribution: row.attribution?.status || null,
     feed: row.feedLabel || row.feed || null,
     kind: row.kind || null,
     scheduledFor: row.scheduledFor || null,
@@ -901,6 +927,7 @@ const BUILDERS = [
         ...chooseRows(rows, plan, (row) => ({
           date: row.date || null,
           ticker: attributionFor(row).companyTicker,
+          isin: attributionFor(row).status === 'confirmed' ? /^isin:(.+)$/.exec(attributionFor(row).queryEntityId || '')?.[1] : null,
           company: clipped(attributionFor(row).companyName, 60),
           queryTicker: attributionFor(row).queryTicker,
           queryCompany: clipped(attributionFor(row).queryCompany, 60),
@@ -1111,7 +1138,7 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
   const alertReport = alerts.collect({ scope, holdings, includeHistory: true, load: false });
   // Read the named companies' retained document index even on a first visit.
   // This is a bounded saved-source lookup, never a new scrape or PDF analysis.
-  const documentRead = withResearchDeadline(Promise.all(plan.companies.filter(c => c.inScope).map(c => loadCapturedDomesticFilings(c.ticker))), 'Company filings', { signal, timeoutMs: 1500 });
+  const documentRead = withResearchDeadline(Promise.all(plan.companies.filter(c => c.inScope && c.ticker).map(c => loadCapturedDomesticFilings(c.ticker))), 'Company filings', { signal, timeoutMs: 1500 });
 
   const packets = await Promise.all(BUILDERS.map(async builder => {
     try {

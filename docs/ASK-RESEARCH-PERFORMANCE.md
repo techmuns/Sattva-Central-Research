@@ -1,5 +1,9 @@
 # Ask Research performance and evaluation
 
+The portfolio-focused release gates and executable quality scenarios are in
+[Customer readiness](ASK-RESEARCH-CUSTOMER-READINESS.md). Retrieval tests alone
+do not certify customer readiness.
+
 The reported failure was a Jayaswal Neco news question waiting on Family's
 question-specific model read until the 125-second bridge timeout, before any
 research request started. The previous path then awaited up to 14 seconds for

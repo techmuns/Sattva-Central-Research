@@ -8,16 +8,31 @@ globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} }
 const { queryPlan, chooseRows, fitEvidenceToBudget, withResearchDeadline } = await import('../public/js/research/estate.js');
 const book = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url), 'utf8'));
 const cases = researchQuestionBank(book.holdings);
-const index = book.holdings.filter(h => h.ticker);
+const index = book.holdings;
 let questionsChecked = 0;
-for (const test of cases.filter(c => c.ticker)) {
+for (const test of cases) {
   const plan = queryPlan(test.question, index, { scope: 'portfolio', holdings: book.holdings });
-  assert(plan.tickers.has(test.ticker), `${test.category}: ${test.company} must resolve to ${test.ticker}`);
+  assert(test.ticker ? plan.tickers.has(test.ticker) : plan.isins.has(test.id.split(':')[0]), `${test.category}: ${test.company} must retain its identity`);
   questionsChecked++;
 }
 assert.equal(cases.length, book.holdings.length * 14);
 assert.equal(new Set(cases.map(c => c.id)).size, cases.length, 'every case is unique including unknown symbols');
 assert(cases.some(c => c.ticker === null));
+
+const ambiguousIndex = [...index, { ticker: 'BIRLACORPN', name: 'Birla Corporation' }];
+assert.deepEqual(queryPlan('Latest on Aditya Birla Capital?', ambiguousIndex).companies.map(c => c.ticker), ['ABCAPITAL']);
+const demerged = queryPlan('Latest on Vedanta Iron and Steel?', index, { scope: 'portfolio', holdings: index });
+assert.equal(demerged.companies.length, 1);
+assert.equal(demerged.companies[0].isin, 'INE1CLE01013');
+assert.equal(demerged.companies[0].inScope, true);
+const misleading = [
+  { ticker: 'OTHER', company: 'Allcargo Logistics', title: 'earnings order revenue profit expansion refinancing' },
+  { ticker: null, queryTicker: 'ALLCARGO', queryCompany: 'Allcargo Logistics', attribution: 'uncertain', title: 'earnings order revenue profit expansion refinancing' },
+  { ticker: 'ALLCARGO', company: 'Allcargo Logistics', attribution: 'confirmed', title: 'Actual company disclosure' },
+];
+const exact = chooseRows(misleading, { tickers: new Set(['ALLCARGO']), names: ['allcargo logistics'], tokens: ['earnings', 'order', 'revenue', 'profit', 'expansion', 'refinancing'] }, r => r);
+assert.equal(exact.companyRows, 1, 'keywords and query metadata cannot create company attribution');
+assert.equal(exact.rows[0].title, 'Actual company disclosure', 'confirmed company evidence precedes uncertain search results');
 
 const companies = [
   { isin: 'INE000000001', ticker: 'BIG', name: 'Big Company', sector: 'Steel', weightPct: 80 },
@@ -83,7 +98,7 @@ try {
   assert(!malformedEvents.some(e => e.type === 'done'));
   globalThis.fetch = async () => new Response(new ReadableStream({
     start(controller) {
-      const bytes = new TextEncoder().encode('{"text":"₹ steel"}\n');
+      const bytes = new TextEncoder().encode(JSON.stringify({ text: '<research-answer>\n₹ steel</research-answer>' }) + '\n');
       for (const byte of bytes) controller.enqueue(Uint8Array.of(byte));
       controller.close();
     },

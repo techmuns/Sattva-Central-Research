@@ -6,6 +6,7 @@
 
 import { providerEvidence, researchEvidenceChars, PORTFOLIO_POSITIONS_MAX_CHARS } from '../public/js/research/evidence-shared.js';
 import { questionNeedsPortfolio, validPositionSizes } from '../public/js/research/portfolio-bridge.js';
+import { finalAnswerFilter } from './research-answer.mjs';
 
 const MUNS_LLM_BASE = 'https://fastapi.muns.io';
 const MUNS_LLM_PATH = '/query-router';
@@ -14,7 +15,7 @@ const DEFAULT_LLM_TYPE = 'local_llm';
 // packet. Choose the existing hosted route before overflowing its context.
 const LOCAL_PROMPT_CHAR_LIMIT = 20_000;
 const DEFAULT_TEMPERATURE = 0.2;
-const DEFAULT_MAX_TOKENS = 1024;
+const DEFAULT_MAX_TOKENS = 2048;
 const MAX_BODY_BYTES = 180_000;
 // Measured on the PROVIDER-FACING shape (evidence-shared.js), exactly as the browser measures its
 // budget — 13,000 there, with slack here so a packet the browser fitted is never refused. The raw
@@ -211,13 +212,14 @@ export function buildMunsRequest(input, env = {}) {
     `ACTIVE_SCOPE: ${input.scope}`,
     `QUESTION:\n${input.question}`,
     `DASHBOARD_EVIDENCE:\n${JSON.stringify(providerEvidence(input.evidence))}`,
+    'OUTPUT CONTRACT: Write only the final answer for the customer, within 250 words. No planning or reasoning narration. Put <research-answer> on its own line before the answer and </research-answer> after it. Start with the answer to the question, not an introduction. Use the exact [Dashboard: Page name] citation after every factual paragraph. Weight is a percentage of the listed portfolio, never ownership of the company. Never invent causal connections or explanations for discrepancies. Conflicting amounts remain unresolved; retain both with their sources. Uncertain or related news attribution and queryTicker/queryCompany do not prove an event happened to the holding. Do not tell the user a forecast, market reaction, guidance or correlation that the evidence does not establish.',
   ].join('\n\n');
   return {
     query,
     llm_type: env.MUNS_LLM_TYPE === 'hosted_llm' || query.length > LOCAL_PROMPT_CHAR_LIMIT ? 'hosted_llm' : DEFAULT_LLM_TYPE,
     stream: true,
     temperature: DEFAULT_TEMPERATURE,
-    max_tokens: DEFAULT_MAX_TOKENS,
+    max_tokens: env.MUNS_LLM_TYPE === 'hosted_llm' || query.length > LOCAL_PROMPT_CHAR_LIMIT ? 3072 : DEFAULT_MAX_TOKENS,
   };
 }
 
@@ -273,15 +275,18 @@ async function consumeMunsStream(stream, controller) {
   let wroteText = false;
   let textChars = 0;
   let providerStreamFailure = null;
+  const final = finalAnswerFilter(text => {
+    textChars += text.length;
+    if (textChars > 8_000) throw new Error('The answer exceeded its length limit. Please ask a narrower question.');
+    wroteText ||= !!text.trim();
+    ndjson(controller, { type: 'text', text });
+  });
 
   const consumeRaw = (raw) => {
     try {
       const event = JSON.parse(raw);
       if (typeof event?.text === 'string' && event.text) {
-        textChars += event.text.length;
-        if (textChars > 8_000) { providerStreamFailure = 'The answer exceeded its length limit. Please ask a narrower question.'; return; }
-        wroteText = true;
-        ndjson(controller, { type: 'text', text: event.text });
+        final.push(event.text);
       } else if (event?.error) {
         providerStreamFailure = String(event.error?.message || event.error).slice(0, 260);
       }
@@ -313,6 +318,9 @@ async function consumeMunsStream(stream, controller) {
     reader.releaseLock();
   }
 
+  if (!providerStreamFailure && !final.finish().complete) providerStreamFailure = wroteText
+    ? 'The provider stopped before finishing the answer. Please try again.'
+    : 'The provider returned no final answer. Please try again.';
   return { providerStreamFailure, wroteText };
 }
 

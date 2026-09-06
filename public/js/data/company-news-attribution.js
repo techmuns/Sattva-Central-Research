@@ -1,7 +1,7 @@
 // Company identity is not the search query and a missing name is not a negative fact.
 // Pure, shared by snapshot/live readers, search, exports, research and AI ranking.
 import { reviewedNewsIdentity } from './company-news-reviewed.js';
-export const ATTRIBUTION_VERSION = 1;
+export const ATTRIBUTION_VERSION = 2;
 export const normalizeNewsText = (value) => String(value || '').normalize('NFKD')
   .replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ')
   .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
@@ -58,8 +58,10 @@ export function companyNewsAttribution(row = {}, identity = {}) {
   if (queryTicker) {
     const key = normalizeNewsText(queryTicker);
     for (const [field, text] of [['title', title], ['summary', summary], ['articleBody', body]]) {
+      const original = String(field === 'articleBody' ? row.articleBody?.text || '' : row[field] || '');
+      const uppercaseSymbol = original.match(/\b[A-Z][A-Z0-9&.-]+\b/g)?.includes(queryTicker);
       // Short/common symbols need an exchange qualifier, e.g. NSE:ITC, to confirm identity.
-      if ((key.replace(/ /g, '').length >= 4 && !/^\d+$/.test(key) && !ambiguousSymbols.has(key) && phrase(text, key)) ||
+      if ((uppercaseSymbol && key.replace(/ /g, '').length >= 4 && !/^\d+$/.test(key) && !ambiguousSymbols.has(key) && phrase(text, key)) ||
           phrase(text, `nse ${key}`) || phrase(text, `bse ${key}`)) {
         evidence.push({ field, match: queryTicker, kind: 'ticker' });
       }
