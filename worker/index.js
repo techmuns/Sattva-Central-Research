@@ -30,6 +30,7 @@
 // waste in the system. So each response carries a content-derived ETag, and a request that
 // arrives with a matching `If-None-Match` gets a 304 with no body at all.
 
+import { readTelegramCollector } from './telegram-collector.mjs';
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
@@ -230,6 +231,7 @@ export default {
     // repository, the workflow and the ref are fixed on this Worker, a run already in flight is
     // declined, and `?source=` is the same allowlist of three words rather than a string that
     // reaches a run name. POST-only, so a prefetcher or a link preview cannot start a run.
+    if (url.pathname === '/api/telegram/posts') return handleTelegramPosts(request, env, ctx);
     if (url.pathname === '/api/telegram/refresh') {
       if (request.method !== 'POST') return json({ ok: false, reason: 'method', message: 'Start a collection with POST.' }, 405);
       return handleWorkflowDispatch(request, env, ctx, {
@@ -2074,4 +2076,22 @@ function json(obj, status = 200) {
 /** Cache keys live on a hostname that cannot resolve, so an entry can never be confused for a fetch. */
 function edgeKey(path) {
   return new Request(`https://cache.invalid/${path}`, { method: 'GET' });
+}
+
+// Fresh immutable captures do not wait for an archive PR or a static-site rebuild.
+async function handleTelegramPosts(request, env, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method' }, 405);
+  const key = edgeKey('telegram/posts-v1');
+  const hit = await caches.default.match(key);
+  if (hit) return revalidate(request, hit, 'hit');
+  try {
+    const result = await readTelegramCollector({ token: env.GH_DISPATCH_TOKEN,
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(20000)]) });
+    const body = JSON.stringify({ ...result.capture, delivery: result.source });
+    const response = tagged(body, contentTag(body), 60);
+    ctx.waitUntil(caches.default.put(key, response.clone()));
+    return revalidate(request, response, 'live');
+  } catch {
+    return json({ ok: false, reason: 'capture-unavailable', message: 'Latest collection unavailable; retain the saved archive.' }, 503);
+  }
 }

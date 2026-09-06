@@ -1,5 +1,6 @@
 // Retained public Telegram messages. Source dates, collector checks and browser reads stay separate.
 import { conditionalJson, KEYS } from '../core/store.js';
+const LIVE = 'api/telegram/posts';
 const SNAPSHOT = 'data/telegram-posts.json';
 const str = (v) => typeof v === 'string' && v.trim() ? v.trim() : null;
 const date = (v) => str(v) && Number.isFinite(Date.parse(v)) ? v : null;
@@ -12,6 +13,7 @@ const emit = () => subscribers.forEach((fn) => fn());
 function apply(res) {
   const v = res?.value;
   if (!v || !Array.isArray(v.posts) || !/^[A-Za-z0-9_]{5,32}$/.test(v.channel)) throw new Error('Telegram capture could not be read');
+  if (state.ok && state.channel !== v.channel) throw new Error('Unexpected Telegram channel; previous archive retained');
   if (state.ok && state.channel === v.channel && !v.posts.length && state.count) throw new Error('Empty Telegram refresh; previous archive retained');
   const rows = v.posts.map((raw) => {
     const id = int(raw?.id), text = str(raw?.text);
@@ -24,19 +26,23 @@ function apply(res) {
       contentStatus: text || attachments.length || ['photo', 'video'].includes(raw.mediaType) ? 'available' : 'telegram-only' };
   }).filter(Boolean);
   if (rows.length !== v.posts.length) throw new Error('Malformed Telegram posts; previous archive retained');
-  const byId = new Map(rows.map((p) => [p.id, p]));
+  // A static fallback or out-of-order response cannot roll back a newer artifact.
+  if (state.ok && Date.parse(v.lastRun?.at || v.lastCheckedAt || 0) < Date.parse(state.lastRun?.at || state.lastCheckedAt || 0)) return;
+  const byId = new Map([...state.posts, ...rows].map((p) => [p.id, p]));
   const posts = [...byId.values()].sort((a, b) => b.id - a.id);
   const spanFrom = posts.at(-1)?.id || 0, spanTo = posts[0]?.id || 0;
   state = { loaded: true, ok: true, reason: null, posts, byId, count: posts.length,
     channel: v.channel, channelUrl: `https://t.me/${v.channel}`, route: str(v.route),
     publishesTime: posts.some((p) => p.publishedAt), capturedAt: date(v.capturedAt),
     lastCheckedAt: date(v.lastCheckedAt), checkedAt: res.checkedAt ? new Date(res.checkedAt).toISOString() : null,
-    lastRun: v.lastRun || null, historyNextId: int(v.historyNextId), historyComplete: v.historyComplete === true,
+    lastRun: v.lastRun || null, latestVerifiedAt: v.route === 'mtproto' ? date(v.latestVerifiedAt) : null, delivery: v.delivery || null, historyNextId: int(v.historyNextId), historyComplete: v.historyComplete === true,
     origin: res.fromStore ? 'store' : 'live', headId: int(v.headId), spanFrom, spanTo,
     span: spanFrom ? spanTo - spanFrom + 1 : 0,
     readable: posts.length, unreadable: spanFrom ? spanTo - spanFrom + 1 - posts.length : 0,
     pending: Array.isArray(v.retryIds) ? v.retryIds.length : 0,
     limited: posts.filter((p) => p.contentStatus === 'telegram-only').length,
+    listed: posts.filter((p) => p.text || p.attachments.length).length,
+    newestPublishedAt: posts.find((p) => p.publishedAt)?.publishedAt || null,
     undated: posts.filter((p) => !p.publishedAt).length };
   emit();
 }
@@ -54,6 +60,13 @@ export function load() {
 export async function refresh() {
   const before = new Set(state.byId.keys());
   loading = null; await load();
+  try {
+    const res = await conditionalJson(LIVE, { key: 'telegram-artifact-v1', optional: true });
+    if (res.value) apply(res);
+    else if (![404, 405, 501].includes(res.status)) {
+      state = { ...state, reason: 'Latest collection unavailable; saved archive retained.' }; emit();
+    }
+  } catch { state = { ...state, reason: 'Latest collection could not be read; archive retained.' }; emit(); }
   return [...state.byId.keys()].filter((id) => !before.has(id));
 }
 export const isLoaded = () => state.loaded;
@@ -88,3 +101,13 @@ export async function startScrape(source = 'auto') {
 }
 
 export function onChange(fn) { subscribers.add(fn); return () => subscribers.delete(fn); }
+
+export function startLive(live) {
+  live.register('telegram-posts', { intervalMs: 60000, fetcher: async () => {
+    const arrived = await refresh();
+    if (state.reason) throw new Error(state.reason);
+    return arrived;
+  } });
+  live.start('telegram-posts');
+  return () => live.stop('telegram-posts');
+}

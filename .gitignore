@@ -17,3 +17,8 @@ node_modules/
 # it is the exception), and running it leaves a bytecode cache beside it. Machine-local, never read
 # by anything, and it must not travel to a runner.
 __pycache__/
+
+# Telegram login state stays outside the repository, even if a helper is run incorrectly.
+*.session
+*.session-journal
+telegram-credentials*.json

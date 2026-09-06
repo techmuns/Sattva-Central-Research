@@ -102,11 +102,18 @@ window.renderScope('universe');
 </script></body></html>`;
 
 let servedCapture = capture;
+let servedArtifact = null;
 const TYPES = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 const server = createServer((request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
   response.setHeader('cache-control', 'no-store');
   if (pathname === '/') { response.setHeader('content-type', 'text/html'); response.end(html); return; }
+  if (pathname === '/api/telegram/posts') {
+    response.setHeader('content-type', 'application/json');
+    response.statusCode = servedArtifact ? 200 : 404;
+    response.end(JSON.stringify(servedArtifact || { error: 'no artifact' }));
+    return;
+  }
   if (pathname === '/data/telegram-posts.json') {
     response.setHeader('content-type', 'application/json');
     response.end(JSON.stringify(servedCapture));
@@ -164,6 +171,8 @@ try {
     };
   });
 
+  assert(view.pill.includes('7 archived') && view.pill.includes('6 readable'));
+  assert((await page.locator('[data-telegram-source-status]').innerText()).includes('has not been verified'));
   assert.equal(view.count, 7, 'every post in the capture is read');
   // ARCHIVED IS NOT LISTED. A message with no caption is kept — it is a real message, it carries
   // the publication date the ordering rests on, and the newest of them anchors the channel's head
@@ -271,6 +280,17 @@ try {
   servedCapture = { error: 'malformed response' };
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn, 'malformed refresh cannot erase last-good rows');
+  // A fresh artifact arrives without a static build. Older snapshots cannot undo it.
+  const freshAt = new Date().toISOString();
+  servedCapture = capture;
+  servedArtifact = { ...capture, route: 'mtproto', lastRun: { at: freshAt, status: 'ok' },
+    lastCheckedAt: freshAt, latestVerifiedAt: freshAt, posts: [post(501, 'New API report'), ...capture.posts] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn + 1);
+  assert((await page.locator('[data-telegram-source-status]').innerText()).includes('Latest channel post verified'));
+  servedArtifact = null;
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn + 1, 'older static capture cannot regress a newer artifact');
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);
