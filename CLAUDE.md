@@ -2320,6 +2320,19 @@ to happen to contain every case.
 
 ## Ask Research — dashboard evidence, streamed immediately
 
+**Current retrieval contract (6 September 2026):** the registry has 21 source
+entries, including distinct Telegram, Public Chatter posts, NSE Filings, Corporate
+Actions and IPOs. Explicit company research searches retained public records beyond
+the displayed scope, while private portfolio-only feeds retain their scope gate.
+`query-context.js` supplies a 60-day default priority window and event vocabulary;
+older/undated records stay labelled and available. The provider row allowance is
+18,000 characters (Worker bound 19,000), separate from full authenticated positions.
+Larger combined prompts use the existing hosted route. Source and topic relevance
+apply before shared row allocation; literal source previews appear before inference.
+See `docs/INTELLIGENCE-RELIABILITY.md` for the investor use case and acceptance tests.
+This contract supersedes the historical fourteen-source and 13,000-character details
+below. The source registry, source-loading order and truthful sampling rules remain.
+
 `js/research/estate.js` is a runtime registry, not a second copy of the data. Every adapter reads
 the same module as its owning tab and always returns a catalog/status entry, even when that source
 cannot be read. Row samples are question-ranked and bounded, while coverage, units, periods, as-of

@@ -122,3 +122,34 @@ navigation, date rollover and portfolio synchronization using local fixtures.
 
 These checks test data handling and failure detection. They do not prove exhaustive upstream news
 coverage or delivery to any separate Morning CIO product.
+
+
+## Dashboard-first investment research
+
+Recorded on 6 September 2026 after the Hexaware CEO retrieval miss. Research is
+used to investigate company-specific stock movements, potential catalysts and
+risks for an Indian family office, usually over the last month or two.
+
+- Search the dashboard's retained source records before declaring evidence missing.
+  An explicitly named company is searchable across the retained public sources
+  even when it is outside the selected Portfolio or Watchlist. Display membership
+  is context, not an ownership assertion or a research exclusion. Private
+  portfolio-only sources keep their original scope and authentication boundaries.
+- Prefer the last 60 days by default; honor requested periods and retain older
+  context with its actual dates. A source read time is never an event date.
+- Resolve company aliases conservatively and recognize ordinary event vocabulary
+  such as CEO/chief executive, orders/contracts, capital raising/QIP and regulatory
+  actions. Keep issuer attribution distinct from the truth of a reported claim.
+- Relevant excerpts must survive the shared context budget. Every source keeps
+  status and sampling counts; empty, unavailable and omitted evidence differ.
+  Do not let aggregate alert rows replace searchable original-source records.
+- Show dated literal source readings before inference. Answer the specific question
+  first; ownership context belongs where the question or investment implication
+  calls for it. Do not expose retrieval variables as customer-facing prose.
+- Distinguish reported leads, confirmed events, effective dates, observed stock
+  returns and possible explanations. Repeated versions of one report are not
+  independent confirmation. Never assert causation from proximity alone.
+- Regression tests must include evidence already visible elsewhere in the dashboard,
+  outside-scope companies, aliases, competing newer routine rows, long excerpts,
+  source failures, retained history and context-budget pressure. Model-answer
+  evaluation is a separate gate from deterministic retrieval verification.

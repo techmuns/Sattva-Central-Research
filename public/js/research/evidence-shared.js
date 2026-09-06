@@ -45,6 +45,9 @@ export function providerEvidence(evidence = {}) {
     selection: {
       tokens: Array.isArray(selection.tokens) ? selection.tokens : [],
       companies: Array.isArray(selection.companies) ? selection.companies : [],
+      topics: selection.topics,
+      window: selection.window,
+      searchScope: selection.searchScope,
       sourcesRegistered: selection.sourcesRegistered,
       sourcesReady: selection.sourcesReady,
       sourcesUnavailable: selection.sourcesUnavailable,

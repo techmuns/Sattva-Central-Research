@@ -103,7 +103,7 @@ ok('earnings calendar evidence keeps paginated results and upcoming calls separa
 });
 
 ok('every source loads before any source reads, so the company index is built from the whole estate', () => {
-  assert.match(estateSource, /Phase one:[\s\S]*?loadErrors[\s\S]*?Phase two:[\s\S]*?queryPlan\(question, companyIndex\(deferred\)[\s\S]*?Phase three:/);
+  assert.match(estateSource, /Phase one:[\s\S]*?loadErrors[\s\S]*?Phase two:[\s\S]*?identities = companyIndex\(deferred\)[\s\S]*?queryPlan\(question, identities[\s\S]*?Phase three:/);
 });
 
 ok('Public Chatter evidence preserves failure state and separately samples unresolved topics', () => {
