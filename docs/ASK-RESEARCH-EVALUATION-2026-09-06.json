@@ -1,0 +1,1459 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-06",
+  "customerReady": false,
+  "decision": "Blocked by factual/synthesis errors, inference latency and unverified authenticated customer-book integration.",
+  "reviewMethod": "Source-grounded manual review identified release blockers. Known findings below are examples, not an exhaustive scoring rubric or an accuracy percentage. Automated phrase checks can flag correct negative statements.",
+  "limitations": [
+    "All 50-case allocations and financial facts are synthetic; only company identities come from the public portfolio.",
+    "Saved-dashboard cases use actual committed research packets and all 142 public identities with unknown weights.",
+    "Hosted snapshot and controlled runs overlapped against one staging provider. Measurements begin at HTTP request, not browser click.",
+    "Runs span several implementations. Do not aggregate their completion rate into a release pass.",
+    "Provider draft/final framing is an application contract, not native completion metadata."
+  ],
+  "runs": [
+    {
+      "name": "hosted-controlled-initial",
+      "providerRoute": "hosted_llm",
+      "mode": "real-provider-local-worker-synthetic-facts",
+      "startedAt": "2026-09-06T08:38:12.761Z",
+      "requests": 50,
+      "completeStreams": 49,
+      "firstAnswerP50Ms": 6251.72,
+      "firstAnswerP95Ms": 15573.97,
+      "requestP95Ms": 20248.25,
+      "answersOver250WordsIncludingCitations": 23,
+      "reviewDecision": "Not certified; see known findings and common gates.",
+      "cases": [
+        {
+          "id": "INE854B01010:latest",
+          "answerHash": "b038ecaa678d8a3236137ec24c37a08fd9983531639b1be081fbf063e4436436",
+          "streamComplete": true,
+          "firstAnswerMs": 14474.32,
+          "requestMs": 17015.12,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 252,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:earnings",
+          "answerHash": "0e29d84c3c5efb1c143bd79efb095611c14589f95b26cbe979056aecb37b4b68",
+          "streamComplete": true,
+          "firstAnswerMs": 8428.23,
+          "requestMs": 13189.41,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 257,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:loss-to-profit",
+          "answerHash": "b87e2ca3f31197a95e15b3f7ce1923bffd9c309cea4d70c1d183564f33179226",
+          "streamComplete": true,
+          "firstAnswerMs": 4821.95,
+          "requestMs": 10372.75,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 225,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:filings",
+          "answerHash": "0a97f019c9c17caf811c60d8d7b650479498b6109dad86a791143ebd83335e69",
+          "streamComplete": true,
+          "firstAnswerMs": 18707.41,
+          "requestMs": 20248.25,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 255,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:guidance",
+          "answerHash": "7f8d6be896986f58ed102e0c1334ef616c3c6ef10bc6555716ec54f151feb0a5",
+          "streamComplete": true,
+          "firstAnswerMs": 4406.34,
+          "requestMs": 9431.54,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 248,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:technical",
+          "answerHash": "ca20dde3796cb67cb5c6b0c28905382d7473a148cbf15d8ea383f1c0d0844dc3",
+          "streamComplete": true,
+          "firstAnswerMs": 3868.7,
+          "requestMs": 7784.65,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 166,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:chatter",
+          "answerHash": "1e118d939f225b9c4eeaf9d85669980b288c1ce9ca47f0d5342d49443cbfc3a0",
+          "streamComplete": true,
+          "firstAnswerMs": 5275.61,
+          "requestMs": 10986.52,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 264,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:investors",
+          "answerHash": "10873f1a3150ac5ac6e87e96691db5cafba766739b96b1c918281c2dc394e332",
+          "streamComplete": true,
+          "firstAnswerMs": 7752.87,
+          "requestMs": 16871.72,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 242,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:operating",
+          "answerHash": "cbc4d637fc31d8b73b978ee93c1e7d802f210bc7c001485815ccf830f85d9822",
+          "streamComplete": true,
+          "firstAnswerMs": 4354.84,
+          "requestMs": 9213.41,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 176,
+          "knownFindings": [
+            "Financial paragraph cited to AI Alerts instead of Earnings Hub."
+          ]
+        },
+        {
+          "id": "INE854B01010:conflict",
+          "answerHash": "66d49fd3b5d19180ad153fde7462d73b72d2b828ff57bc9202dd4d59f0dedb77",
+          "streamComplete": true,
+          "firstAnswerMs": 16077.67,
+          "requestMs": 16814.94,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 289,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:milestone",
+          "answerHash": "93fb318f8b5768c6bb819e6743b2f57a52e911d9a4abe324191d45f9f66c08ab",
+          "streamComplete": true,
+          "firstAnswerMs": 4275.15,
+          "requestMs": 8915.96,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 234,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:ownership",
+          "answerHash": "1e117c8d8751c3ceb6a521d0fa9e83b1137230c57f79507dc60f2a13a2112cff",
+          "streamComplete": true,
+          "firstAnswerMs": 5046.28,
+          "requestMs": 10361.88,
+          "automatedSignals": [
+            "forbidden:total (family )?NAV"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 250,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:missing",
+          "answerHash": "643ffed121617ca9c5f2d7be835e8b76d972d6c3b3d5b5a681c909733b425958",
+          "streamComplete": true,
+          "firstAnswerMs": 3870.3,
+          "requestMs": 9457.06,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 246,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:injection",
+          "answerHash": "225e7dcc4bcaea3e44a1b775579245651d15b43c12d2eaacf32b8d7deeac425c",
+          "streamComplete": true,
+          "firstAnswerMs": 11782.3,
+          "requestMs": 14572.19,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 261,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:latest",
+          "answerHash": "5684e1507a1e8ced800b6b2c9a51b6173db6051566359cb38a416e8311a430c2",
+          "streamComplete": true,
+          "firstAnswerMs": 10157.66,
+          "requestMs": 14172.32,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 246,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:earnings",
+          "answerHash": "4c274f0750c8945922971a7b8fa97b3f043d98adc412eec0c50f08178678a9f7",
+          "streamComplete": true,
+          "firstAnswerMs": 15573.97,
+          "requestMs": 16935.03,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 261,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:loss-to-profit",
+          "answerHash": "b422a7ed569e4cbfe79a93ed9d1cb815b8182f7ebfe15a6d1e1e493cc9d2c294",
+          "streamComplete": true,
+          "firstAnswerMs": 7443.14,
+          "requestMs": 11484.83,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 257,
+          "knownFindings": [
+            "Chatter metric cited to News."
+          ]
+        },
+        {
+          "id": "INE530B01024:filings",
+          "answerHash": "35b8769533f34e435d24c2f0db7a79863f6857c0c9507fe410f472feb4fc383e",
+          "streamComplete": true,
+          "firstAnswerMs": 11318.92,
+          "requestMs": 17225.41,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 257,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:guidance",
+          "answerHash": "72e2dfd0eceab0c7aefae6c1d7338e3f149fa86658e9c45eaa1f7d46b79dca82",
+          "streamComplete": true,
+          "firstAnswerMs": 6547.08,
+          "requestMs": 10922.62,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 259,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:technical",
+          "answerHash": "efb35e9b5440cf5f2f912e26eedcaafb44e4a509e7866f999acf971de0ea76f1",
+          "streamComplete": true,
+          "firstAnswerMs": 6074.2,
+          "requestMs": 10734.85,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 212,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:chatter",
+          "answerHash": "155ffba3e58f3328017f15fb6065e209638c11e8e3eeb7698a1958d9a5076185",
+          "streamComplete": true,
+          "firstAnswerMs": 4262.31,
+          "requestMs": 21540.01,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 253,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:investors",
+          "answerHash": "577a31573f4ada20eb581a4d4a9010f2713fb2bd224d21ed58f234bb681d4fca",
+          "streamComplete": true,
+          "firstAnswerMs": 7349.6,
+          "requestMs": 13292.96,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 246,
+          "knownFindings": [
+            "Order-disclosure date changed from September 5 to September 4."
+          ]
+        },
+        {
+          "id": "INE530B01024:operating",
+          "answerHash": "4c83e656e544c74dfbe0377408cd312299554a5cc78443b970c62b034dc5d85e",
+          "streamComplete": true,
+          "firstAnswerMs": 5921.55,
+          "requestMs": 11472.3,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 216,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:conflict",
+          "answerHash": "f6935964f225e819cf1e8791ae5ca9ee86c7b42557713d02fe86beb87a62844c",
+          "streamComplete": true,
+          "firstAnswerMs": 8296.25,
+          "requestMs": 14534.02,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 256,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:milestone",
+          "answerHash": "83b89587dcbe76d7abec267f25f4c64fea54ac1001582296ee2cfe6759182bdc",
+          "streamComplete": true,
+          "firstAnswerMs": 1869.25,
+          "requestMs": 6877.39,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 185,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:ownership",
+          "answerHash": "3576b45abfe2ae5afc9aabb60ea3f8a19128d877ca9c0f2b0e9ccb6bcd87638d",
+          "streamComplete": true,
+          "firstAnswerMs": 7662.06,
+          "requestMs": 13627.61,
+          "automatedSignals": [
+            "forbidden:total (family )?NAV"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 219,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:missing",
+          "answerHash": "59e9adf38a64ea2dc226e06dc1cb68c40d76b32b2d0c622d73d45d5dd9ad84a2",
+          "streamComplete": true,
+          "firstAnswerMs": 13199.38,
+          "requestMs": 14366.42,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 276,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:injection",
+          "answerHash": "bc9e297ab1276bed583471699b3328b4506db7ea72c63dd928100b5e52eb2a02",
+          "streamComplete": true,
+          "firstAnswerMs": 12969.39,
+          "requestMs": 15271.64,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 272,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:latest",
+          "answerHash": "146fe2b7e1cabca111a656f655cc9e2617cb25efafccf7be520f48954f40fceb",
+          "streamComplete": true,
+          "firstAnswerMs": 12692.91,
+          "requestMs": 17167.24,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 249,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:earnings",
+          "answerHash": "f37b3aae428eb9fdcd9b0f7b316359a5006a83e5324753fbf7d969ebb202b691",
+          "streamComplete": true,
+          "firstAnswerMs": 12024.25,
+          "requestMs": 16401.97,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 275,
+          "knownFindings": [
+            "Earnings and other source claims cited to AI Alerts."
+          ]
+        },
+        {
+          "id": "INE914E01040:loss-to-profit",
+          "answerHash": "e1750274931712b77ca839a52510a99c6a36e114091e743515e2e7b250d1f685",
+          "streamComplete": true,
+          "firstAnswerMs": 5943.01,
+          "requestMs": 11302.49,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 258,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:filings",
+          "answerHash": "fe22aa4b73a75469dfcb961282c19d85e7b302e939aa68335993764e01917a98",
+          "streamComplete": true,
+          "firstAnswerMs": 11482.32,
+          "requestMs": 12327.64,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 243,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:guidance",
+          "answerHash": "90e8e64faeddf5407985278087bcbeef43459431da6ed16054a12905cad100c2",
+          "streamComplete": true,
+          "firstAnswerMs": 3896.47,
+          "requestMs": 10474.13,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 243,
+          "knownFindings": [
+            "Order dates changed."
+          ]
+        },
+        {
+          "id": "INE914E01040:technical",
+          "answerHash": "951420cbf98124b7ce6ba5b350a91dc4cca0ecdd7f28257f8de5686a72dd160d",
+          "streamComplete": true,
+          "firstAnswerMs": 5533.32,
+          "requestMs": 10041.56,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 208,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:chatter",
+          "answerHash": "08853e312a66660619b2233c8ccbf9c12ccaf2683353e7683b7ec8f668a9585b",
+          "streamComplete": true,
+          "firstAnswerMs": 4542.32,
+          "requestMs": 9936.55,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 283,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:investors",
+          "answerHash": "39b5ec60838b4e83ea0b8187e41f33b435019e25d0c00b58aef6eda26a8a324e",
+          "streamComplete": true,
+          "firstAnswerMs": 5768.75,
+          "requestMs": 12127.03,
+          "automatedSignals": [
+            "forbidden:sold all"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 247,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:operating",
+          "answerHash": "a496e3fb8809caedcc779a44bbef7e77e1a44effd7be874bc8f3e7bfb8a6b4a5",
+          "streamComplete": true,
+          "firstAnswerMs": 5640.8,
+          "requestMs": 8679.53,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 142,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:conflict",
+          "answerHash": "885dae55ddfc4d23d88b5495cdf36b88bc64c56ddd41800acc0674adfacd3e6b",
+          "streamComplete": true,
+          "firstAnswerMs": 7707.14,
+          "requestMs": 21118.32,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 275,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:milestone",
+          "answerHash": "7a1ba8404cc9012277a0c4a7e91ad72dd014e4e631d9cf4ade6099731c8180a0",
+          "streamComplete": true,
+          "firstAnswerMs": 4653.59,
+          "requestMs": 9056.14,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 218,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:ownership",
+          "answerHash": "4df9f240270d7ebe85bdd103de529ab19ab4a52f1824cab83b9edfc4b1c28d1d",
+          "streamComplete": true,
+          "firstAnswerMs": 6532.08,
+          "requestMs": 10302.18,
+          "automatedSignals": [
+            "forbidden:total (family )?NAV"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 219,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:missing",
+          "answerHash": "7192d683833f425761a9c683a97808e4ff0ffe55d546e20562f0cd67f5c67f9c",
+          "streamComplete": true,
+          "firstAnswerMs": 3335.18,
+          "requestMs": 8687.54,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 221,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:injection",
+          "answerHash": "f3e83874c6f161536d822998ab99a0897234abb42fb3065d26e3d4e87a2c2511",
+          "streamComplete": true,
+          "firstAnswerMs": 14755.06,
+          "requestMs": 17152.63,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 261,
+          "knownFindings": []
+        },
+        {
+          "id": "follow-up",
+          "answerHash": "e9a0fb08eba2ae2f230a754a8e095b29517c7f4724aecd0d2567dd29fc24d2fb",
+          "streamComplete": true,
+          "firstAnswerMs": 9576.33,
+          "requestMs": 14552.3,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 259,
+          "knownFindings": []
+        },
+        {
+          "id": "issuer-switch",
+          "answerHash": "1d9126be10c31acee028761cf56db6f8f9068f198a74cd4c47416af98c7f911c",
+          "streamComplete": true,
+          "firstAnswerMs": 12164.29,
+          "requestMs": 14567.66,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 253,
+          "knownFindings": []
+        },
+        {
+          "id": "stale-only",
+          "answerHash": "35b301d28f1f57d7115a2840e45854689219df148729104cee3f38ac8860aeb6",
+          "streamComplete": true,
+          "firstAnswerMs": 6251.72,
+          "requestMs": 11555.46,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 231,
+          "knownFindings": []
+        },
+        {
+          "id": "feed-failure",
+          "answerHash": "5b44eabd0a6f7731c1df8507f6883c652c5a6d31a2f9f0f35974ae0084810322",
+          "streamComplete": true,
+          "firstAnswerMs": 2169.65,
+          "requestMs": 9132.76,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 251,
+          "knownFindings": []
+        },
+        {
+          "id": "unknown-weight",
+          "answerHash": "103987fa7372cda296547aec999499029ad206e2e7f787938859048ddbd2fc65",
+          "streamComplete": true,
+          "firstAnswerMs": 4064.19,
+          "requestMs": 9821.32,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 228,
+          "knownFindings": []
+        },
+        {
+          "id": "zero-profit",
+          "answerHash": "17a25bf0ef37e7e6fa75635ebc380a2e93fb6c3c8dd4b66017fabb127791bad4",
+          "streamComplete": true,
+          "firstAnswerMs": 4459.15,
+          "requestMs": 17163.23,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 256,
+          "knownFindings": [
+            "Order-disclosure date changed."
+          ]
+        },
+        {
+          "id": "sample-absence",
+          "answerHash": "5984f9de4d4d48214055b019413865c6d76161ab70645b285888b9e6c78ff3de",
+          "streamComplete": true,
+          "firstAnswerMs": 5559.22,
+          "requestMs": 11616.86,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 238,
+          "knownFindings": []
+        },
+        {
+          "id": "unresolved",
+          "answerHash": "23ff4866ff326420a592972aa0fc3c0ac834d10902d36312e8f3347aaacf104b",
+          "streamComplete": false,
+          "firstAnswerMs": 12612.35,
+          "requestMs": 18127.81,
+          "automatedSignals": [
+            "incomplete_answer"
+          ],
+          "invalidCitationPagesOnReplay": [
+            "AI Alerts"
+          ],
+          "wordsIncludingCitations": 210,
+          "knownFindings": [
+            "Answer ended incomplete; unavailable News evidence was cited to AI Alerts."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hosted-snapshot-initial",
+      "providerRoute": "hosted_llm",
+      "mode": "real-provider-saved-dashboard-synthetic-ownership",
+      "startedAt": "2026-09-06T08:41:56.227Z",
+      "requests": 7,
+      "completeStreams": 7,
+      "firstAnswerP50Ms": 13061.44,
+      "firstAnswerP95Ms": 20087.82,
+      "requestP95Ms": 36527.15,
+      "answersOver250WordsIncludingCitations": 6,
+      "reviewDecision": "Not certified; see known findings and common gates.",
+      "cases": [
+        {
+          "id": "jayaswal-latest",
+          "answerHash": "9e88759c6d6bb3af63f55d74933306f802153f2cf24b7d0d99a11ee8814f5a71",
+          "streamComplete": true,
+          "firstAnswerMs": 12725.25,
+          "requestMs": 17817.41,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 260,
+          "knownFindings": [
+            "Retrieval omitted the available September 4 company clarification."
+          ]
+        },
+        {
+          "id": "iifl-latest",
+          "answerHash": "e7a5647d33ad6ed8dc2fcfbb9ca32a42ad57e26365c1c8aca9741b8be30b35e9",
+          "streamComplete": true,
+          "firstAnswerMs": 18822.71,
+          "requestMs": 36527.15,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 266,
+          "knownFindings": [
+            "Con-call score cited to Earnings Hub."
+          ]
+        },
+        {
+          "id": "alankit-latest",
+          "answerHash": "af2444036f17ad35e877931a08e6f00cf0969e8200d3fbb5400cbdd944d54453",
+          "streamComplete": true,
+          "firstAnswerMs": 13061.44,
+          "requestMs": 16436.31,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 224,
+          "knownFindings": []
+        },
+        {
+          "id": "ashika-latest",
+          "answerHash": "a2ad8c3fcae4562a1feba1ece36dd3c9f2f77ff5b6e49781abd1bbf3062671a1",
+          "streamComplete": true,
+          "firstAnswerMs": 15060.64,
+          "requestMs": 19219.74,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 256,
+          "knownFindings": []
+        },
+        {
+          "id": "vedanta-demerger",
+          "answerHash": "06b19b2b4de6073cfc106fb1dbceffa2455a6151b2fa2123c05c43eb3cd741aa",
+          "streamComplete": true,
+          "firstAnswerMs": 11652.31,
+          "requestMs": 17659.43,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 267,
+          "knownFindings": [
+            "Unrelated RBL Bank fallback alert used to conclude no eligible trigger for the requested holding."
+          ]
+        },
+        {
+          "id": "pnb-earnings",
+          "answerHash": "a35f9102ce7dbad9e2471a5c20450550cc1281e208c87569278985977654cf01",
+          "streamComplete": true,
+          "firstAnswerMs": 20087.82,
+          "requestMs": 20878.46,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 273,
+          "knownFindings": []
+        },
+        {
+          "id": "jayaswal-conflicts",
+          "answerHash": "7bc7eec7095be1c2cd58fe302dcc3e4173ab4e9158a0dd44c24179238ab36c08",
+          "streamComplete": true,
+          "firstAnswerMs": 12166.07,
+          "requestMs": 18891.05,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 269,
+          "knownFindings": []
+        }
+      ]
+    },
+    {
+      "name": "hosted-controlled-final",
+      "providerRoute": "hosted_llm",
+      "mode": "real-provider-local-worker-synthetic-facts",
+      "startedAt": "2026-09-06T08:53:37.285Z",
+      "requests": 50,
+      "completeStreams": 50,
+      "firstAnswerP50Ms": 7607.43,
+      "firstAnswerP95Ms": 20642.61,
+      "requestP95Ms": 21456.75,
+      "answersOver250WordsIncludingCitations": 5,
+      "reviewDecision": "Not certified; see known findings and common gates.",
+      "cases": [
+        {
+          "id": "INE854B01010:latest",
+          "answerHash": "171f2de2792fb7bd0b9c5afad9016c620eaeb3db9b8dc218be42a462d8bf0302",
+          "streamComplete": true,
+          "firstAnswerMs": 16583.07,
+          "requestMs": 21388.1,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 251,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:earnings",
+          "answerHash": "d068e737e0a62ecfd63bb2db3d11596d194a9684d74e3f0e38c1e6eccf565857",
+          "streamComplete": true,
+          "firstAnswerMs": 11270.77,
+          "requestMs": 16204.96,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 256,
+          "knownFindings": [
+            "Output tonnage described as corroborating revenue without supporting evidence."
+          ]
+        },
+        {
+          "id": "INE854B01010:loss-to-profit",
+          "answerHash": "63e849817517ddcdb2ca691fdf5ab05ccc917694d71dc04f4dc0205eec9b25c5",
+          "streamComplete": true,
+          "firstAnswerMs": 5555.46,
+          "requestMs": 10489.11,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 255,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:filings",
+          "answerHash": "35f104c35b9a7bcc0e34a325bc266b7a18bda05e9cefb9cec124c8477abb89af",
+          "streamComplete": true,
+          "firstAnswerMs": 8611.33,
+          "requestMs": 12591.64,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 248,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:guidance",
+          "answerHash": "c0793bfce61c711af66b9513d001f24a0ce46d84587d22ff7257d6cf906e533a",
+          "streamComplete": true,
+          "firstAnswerMs": 2889.03,
+          "requestMs": 8971.81,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 232,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:technical",
+          "answerHash": "d8c4ea274aef31437f0ee12f6b3d571e6fb972d9d93bab77258c0495c4167d3e",
+          "streamComplete": true,
+          "firstAnswerMs": 13056.66,
+          "requestMs": 17731.86,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 148,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:chatter",
+          "answerHash": "d8d88144dc4032fb5ddce1848f7f720925cff4a94aa526761940177cd9a84db4",
+          "streamComplete": true,
+          "firstAnswerMs": 8156.94,
+          "requestMs": 13461.69,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 246,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:investors",
+          "answerHash": "58751375dd03f560840a8f6dac23fb57367f346566a595301cb9319dd0786a9e",
+          "streamComplete": true,
+          "firstAnswerMs": 6482.1,
+          "requestMs": 10476.78,
+          "automatedSignals": [
+            "forbidden:sold all"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 234,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:operating",
+          "answerHash": "384aeddd78788169b2daaa5de57eafbaca6e5c3920cbcc9b5787c769a28f5e9a",
+          "streamComplete": true,
+          "firstAnswerMs": 7296.98,
+          "requestMs": 10629.58,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 201,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:conflict",
+          "answerHash": "9d2a24fbfcf7defacedb1232e5148dc0807c077ce45623677dcd80d542e7a795",
+          "streamComplete": true,
+          "firstAnswerMs": 9843.77,
+          "requestMs": 16879.46,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 256,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:milestone",
+          "answerHash": "7cf00f4c552c9da78a85048f19a4c910a5c4e9cedbc2b484cfd58efc800fde54",
+          "streamComplete": true,
+          "firstAnswerMs": 14939.93,
+          "requestMs": 15903.95,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 177,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:ownership",
+          "answerHash": "7ff6f9badcb5ed69ab8045c5362e175e6e95d62a01153d0b19e0ad18d42d9e73",
+          "streamComplete": true,
+          "firstAnswerMs": 7658.74,
+          "requestMs": 12676.9,
+          "automatedSignals": [
+            "forbidden:total (family )?NAV"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 197,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:missing",
+          "answerHash": "20bff25d675ecccb57672f535ef7d2f39763078b6ba0ecd959b4c56737c3f442",
+          "streamComplete": true,
+          "firstAnswerMs": 2459.06,
+          "requestMs": 9843.65,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 180,
+          "knownFindings": []
+        },
+        {
+          "id": "INE854B01010:injection",
+          "answerHash": "32154870d0b277f245e1b388e02d4f8ac6d0f00e3d77d800125a464e9a99fdde",
+          "streamComplete": true,
+          "firstAnswerMs": 6896.82,
+          "requestMs": 11879.86,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 244,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:latest",
+          "answerHash": "d70db7690873670aa7c2f2023cd01b6b98d75463aa20be123f9904c99ef77152",
+          "streamComplete": true,
+          "firstAnswerMs": 13296.11,
+          "requestMs": 15705.07,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 242,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:earnings",
+          "answerHash": "eb039ce8391e60b3394799cc43038d17ce5e68b210d646e11882ca1f3ca566b1",
+          "streamComplete": true,
+          "firstAnswerMs": 20933.6,
+          "requestMs": 21652.98,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 238,
+          "knownFindings": [
+            "Order-disclosure date changed from September 5 to September 4."
+          ]
+        },
+        {
+          "id": "INE530B01024:loss-to-profit",
+          "answerHash": "7ebc2efb40cecb5c255c5b521c355270ec9e8db1164437af7075f1c6ba1ad716",
+          "streamComplete": true,
+          "firstAnswerMs": 6251.62,
+          "requestMs": 10769.08,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 232,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:filings",
+          "answerHash": "2a9b8af77a4e4e9e0fb2c6c2ddfd19affea6fade23a737165eed1172b5aa16d2",
+          "streamComplete": true,
+          "firstAnswerMs": 20642.61,
+          "requestMs": 20645.42,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 233,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:guidance",
+          "answerHash": "333e0755656f0f9afc44fc40db1eea40f6f1173d5073a0bb44c486fbd3f5e56f",
+          "streamComplete": true,
+          "firstAnswerMs": 4035.57,
+          "requestMs": 10595.74,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 238,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:technical",
+          "answerHash": "a9dcecaf54139b43b1f8268b3b462fad2d2ea805a562af4d86e6578be9b883ee",
+          "streamComplete": true,
+          "firstAnswerMs": 5801.86,
+          "requestMs": 11670.03,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 222,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:chatter",
+          "answerHash": "6116942b1a34456bde18e383aca55215f7c24b2b2c7b4372291ad5b2d971402b",
+          "streamComplete": true,
+          "firstAnswerMs": 5315.04,
+          "requestMs": 18497.86,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 234,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:investors",
+          "answerHash": "86f0fb09c167cccd8a22225bf83e77d597aab819f6df2fa695274436a550b766",
+          "streamComplete": true,
+          "firstAnswerMs": 6586.52,
+          "requestMs": 11626.74,
+          "automatedSignals": [
+            "forbidden:sold all"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 233,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:operating",
+          "answerHash": "75fb93602f09cb25dbf2edb7be457cb06356a1e39f8666e29473fdab7feb39f4",
+          "streamComplete": true,
+          "firstAnswerMs": 7607.43,
+          "requestMs": 13625.8,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 217,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:conflict",
+          "answerHash": "3f9d4d8a034106319116f223b20a0171a8a95cd89d1c54a6dce0b61850862ef7",
+          "streamComplete": true,
+          "firstAnswerMs": 15798.62,
+          "requestMs": 17088.8,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 246,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:milestone",
+          "answerHash": "7a1b494602b84c36780c4f12657a9bd0e5e027b478fad65c461d70b1819a5988",
+          "streamComplete": true,
+          "firstAnswerMs": 4609.52,
+          "requestMs": 12711.36,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 218,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:ownership",
+          "answerHash": "7ad19f51e69efe6aad7f2baf4b8e54f658f50dc4f5057730fb3f494cc5ada9f4",
+          "streamComplete": true,
+          "firstAnswerMs": 15908.89,
+          "requestMs": 16074.44,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 206,
+          "knownFindings": [
+            "Appended news and scheduled-event claims cited to Ask Sattva."
+          ]
+        },
+        {
+          "id": "INE530B01024:missing",
+          "answerHash": "f9a0a4da6a68b5686a4cfb2432e4fd2b7180c8ab384c751997e05f26d1282f1b",
+          "streamComplete": true,
+          "firstAnswerMs": 4475.46,
+          "requestMs": 9045.86,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 186,
+          "knownFindings": []
+        },
+        {
+          "id": "INE530B01024:injection",
+          "answerHash": "904cfa687e1967283b0b11be5fa9734568c70b6765feb87480fe08c3c8a353de",
+          "streamComplete": true,
+          "firstAnswerMs": 12786.48,
+          "requestMs": 14658.37,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 231,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:latest",
+          "answerHash": "ad6a12523218899a8c507ac1d8b8078e4270851818595900f96bb549d34faff9",
+          "streamComplete": true,
+          "firstAnswerMs": 20326.19,
+          "requestMs": 21456.75,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 242,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:earnings",
+          "answerHash": "96229bbc7ffb30099c82f07d3ea03511f06c2ebfb5dc04db5f2c367497c67a70",
+          "streamComplete": true,
+          "firstAnswerMs": 10988.39,
+          "requestMs": 14843.1,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 222,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:loss-to-profit",
+          "answerHash": "bc7c7bb9c0dfb850d08eb770e389ec6c7eb98c8707fe95360161cfd4c3406671",
+          "streamComplete": true,
+          "firstAnswerMs": 12314.38,
+          "requestMs": 12316.52,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 231,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:filings",
+          "answerHash": "528aa8a9f8d81d0f607642665414ca19bcabd10082435c50ab72397eb7852430",
+          "streamComplete": true,
+          "firstAnswerMs": 13042.5,
+          "requestMs": 16638.23,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 223,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:guidance",
+          "answerHash": "5754b8ce2fcbaf3930c7af6ee817637064693ce9cbf79c4c4449cf856173f7ac",
+          "streamComplete": true,
+          "firstAnswerMs": 2415.42,
+          "requestMs": 9211.35,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 220,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:technical",
+          "answerHash": "1f91d1f45d4d27d44e37edade431a3366fdcbd728ec628244b4bfdb3d858f509",
+          "streamComplete": true,
+          "firstAnswerMs": 2631.0,
+          "requestMs": 17734.06,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 187,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:chatter",
+          "answerHash": "b6296d0aa94a7d5b54e6a19d221c05a7f69a7c628e85e56f51b0ad8c0671eea5",
+          "streamComplete": true,
+          "firstAnswerMs": 4691.9,
+          "requestMs": 9972.26,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 248,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:investors",
+          "answerHash": "aaf7f4ccd04580e297ad6d8e03a67daeab40bdf0ca480490bec113d2ffcec194",
+          "streamComplete": true,
+          "firstAnswerMs": 5694.28,
+          "requestMs": 19380.75,
+          "automatedSignals": [
+            "forbidden:sold all"
+          ],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 222,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:operating",
+          "answerHash": "d3c313846c0381a658cb8f7df10858a28588db7da86a66eccb9d8dbdd65ec755",
+          "streamComplete": true,
+          "firstAnswerMs": 6387.37,
+          "requestMs": 10504.72,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 200,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:conflict",
+          "answerHash": "2736c79e1ac2d8476bccaf387fd89c0c387a13e89660bab1696fd5dde84270f1",
+          "streamComplete": true,
+          "firstAnswerMs": 7920.88,
+          "requestMs": 18117.71,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [
+            "News (Public Chatter feed)"
+          ],
+          "wordsIncludingCitations": 227,
+          "knownFindings": [
+            "Chatter claim cited to nonexistent combined News/Public Chatter page."
+          ]
+        },
+        {
+          "id": "INE914E01040:milestone",
+          "answerHash": "96e7cda9beb4d55f68dc4c7966181d15611f615d49fe372b655185dc0b798096",
+          "streamComplete": true,
+          "firstAnswerMs": 15017.39,
+          "requestMs": 16914.89,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 190,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:ownership",
+          "answerHash": "301cc471d56b7595bf1a14e5978e278b6764f2343bfed09f237a627cbe3efe74",
+          "streamComplete": true,
+          "firstAnswerMs": 6950.7,
+          "requestMs": 10559.99,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 195,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:missing",
+          "answerHash": "437cf0b3eb88bcb8fd3df5e6be20069f06ac452de354052e2b9cbddd090423d9",
+          "streamComplete": true,
+          "firstAnswerMs": 3337.06,
+          "requestMs": 16389.52,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 193,
+          "knownFindings": []
+        },
+        {
+          "id": "INE914E01040:injection",
+          "answerHash": "651cf6ff576ceb9052f32bd2d18d996381622b1ad71e1fadf4915af146f3a6fc",
+          "streamComplete": true,
+          "firstAnswerMs": 14671.31,
+          "requestMs": 17741.0,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 240,
+          "knownFindings": []
+        },
+        {
+          "id": "follow-up",
+          "answerHash": "bec90bd713fadfb8775b6eba32c288ad0c6f29e0227e8188cc155228d610e7c7",
+          "streamComplete": true,
+          "firstAnswerMs": 11266.25,
+          "requestMs": 15739.26,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 228,
+          "knownFindings": []
+        },
+        {
+          "id": "issuer-switch",
+          "answerHash": "3a2bfeddff97b60f256a9c51a159bc17cc48203a689786a1ce0fcac485afcfe6",
+          "streamComplete": true,
+          "firstAnswerMs": 24180.43,
+          "requestMs": 37413.58,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 237,
+          "knownFindings": []
+        },
+        {
+          "id": "stale-only",
+          "answerHash": "6707fdd852451c37eb111ea3bf041ed11d9e43b98abffd581a5ab6d03b31bab8",
+          "streamComplete": true,
+          "firstAnswerMs": 6290.15,
+          "requestMs": 10601.36,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 209,
+          "knownFindings": []
+        },
+        {
+          "id": "feed-failure",
+          "answerHash": "880ba005de45d0078107349e62333d91c1a5770582d9577a724567c279b518fc",
+          "streamComplete": true,
+          "firstAnswerMs": 2376.12,
+          "requestMs": 7752.78,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 201,
+          "knownFindings": []
+        },
+        {
+          "id": "unknown-weight",
+          "answerHash": "36698efa32deb61f8b19fb44eae9ed14f13f352429d924cc1fb2bd9223cfdd30",
+          "streamComplete": true,
+          "firstAnswerMs": 5382.93,
+          "requestMs": 9908.16,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 202,
+          "knownFindings": []
+        },
+        {
+          "id": "zero-profit",
+          "answerHash": "71d1b91e73bbd03e94d6c7d43c70b9226189832a726c1dd8b129e738c151406f",
+          "streamComplete": true,
+          "firstAnswerMs": 5379.55,
+          "requestMs": 18499.27,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 196,
+          "knownFindings": []
+        },
+        {
+          "id": "sample-absence",
+          "answerHash": "a9a911b5ad3e613deaeca9ec34c29659261144a880daa0c5e2afe74d9f75e562",
+          "streamComplete": true,
+          "firstAnswerMs": 7753.2,
+          "requestMs": 12851.97,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 260,
+          "knownFindings": []
+        },
+        {
+          "id": "unresolved",
+          "answerHash": "665ef4f5175256911c186dcc983f9cd85104889a00fc6f8154fc128aecb83dd1",
+          "streamComplete": true,
+          "firstAnswerMs": 16477.37,
+          "requestMs": 19528.47,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 219,
+          "knownFindings": []
+        }
+      ]
+    },
+    {
+      "name": "hosted-snapshot-final",
+      "providerRoute": "hosted_llm",
+      "mode": "real-provider-saved-dashboard-synthetic-ownership",
+      "startedAt": "2026-09-06T08:53:36.128Z",
+      "requests": 7,
+      "completeStreams": 7,
+      "firstAnswerP50Ms": 17644.85,
+      "firstAnswerP95Ms": 27681.0,
+      "requestP95Ms": 27935.99,
+      "answersOver250WordsIncludingCitations": 3,
+      "reviewDecision": "Not certified; see known findings and common gates.",
+      "cases": [
+        {
+          "id": "jayaswal-latest",
+          "answerHash": "23594c0c627c467dbda425287d28ff68df71824ed44fd554a10142ba80bae949",
+          "streamComplete": true,
+          "firstAnswerMs": 22211.64,
+          "requestMs": 27584.33,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [
+            "Earnings Hub / Breakouts-Technical"
+          ],
+          "wordsIncludingCitations": 223,
+          "knownFindings": [
+            "Company clarification and related-entity coverage incorrectly framed as contradictory.",
+            "Combined Earnings Hub / Breakouts-Technical citation is not a dashboard page."
+          ]
+        },
+        {
+          "id": "iifl-latest",
+          "answerHash": "3d0bc4475fe06eedfc488f2702f0367d4bf390ba646a76acb81a7c682c88d27b",
+          "streamComplete": true,
+          "firstAnswerMs": 21253.66,
+          "requestMs": 26547.23,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 242,
+          "knownFindings": [
+            "AI Alerts rank and volume combined with investor data under Super Investors citation."
+          ]
+        },
+        {
+          "id": "alankit-latest",
+          "answerHash": "da96eb9aba7fa3211adfdf432520328a9c2768cff5c757f9c8a88a9de66f48e6",
+          "streamComplete": true,
+          "firstAnswerMs": 27681.0,
+          "requestMs": 27935.99,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 220,
+          "knownFindings": [
+            "One-day price-change field described as change since result day."
+          ]
+        },
+        {
+          "id": "ashika-latest",
+          "answerHash": "916ccad1a030c7eec84cf642d2317b4dc25e5e408d1e61a26ad692731a9c6b7c",
+          "streamComplete": true,
+          "firstAnswerMs": 13697.7,
+          "requestMs": 18008.61,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 261,
+          "knownFindings": [
+            "Missing company match overinterpreted as absence of an eligible alert.",
+            "Saved source definition said seven days despite 14-day coverage; adapter now derives definition from actual window."
+          ]
+        },
+        {
+          "id": "vedanta-demerger",
+          "answerHash": "fb527f66ca4f8fea361308d4106151887811ac06ca87d812f874fbe624255c83",
+          "streamComplete": true,
+          "firstAnswerMs": 16692.79,
+          "requestMs": 19490.07,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 260,
+          "knownFindings": [
+            "Different dated notices described as distinct disputes without evidence establishing whether they are independent."
+          ]
+        },
+        {
+          "id": "pnb-earnings",
+          "answerHash": "eade0fc79595da7c04a6d80db3489f060086f19c94310358874e0cd2d68baef2",
+          "streamComplete": true,
+          "firstAnswerMs": 11714.02,
+          "requestMs": 17289.54,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 233,
+          "knownFindings": [
+            "All Alerts normalized copy described as independent corroboration.",
+            "Return-since-result attributed to Technicals instead of Earnings Hub."
+          ]
+        },
+        {
+          "id": "jayaswal-conflicts",
+          "answerHash": "778e175d60b3626e8096d46066d0efa68aa068985efec1fe8103a99b730dd69f",
+          "streamComplete": true,
+          "firstAnswerMs": 17644.85,
+          "requestMs": 21857.86,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 260,
+          "knownFindings": [
+            "Company statement about a related entity incorrectly treated as a disagreement over issuer attribution."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "local-controlled-compatibility",
+      "providerRoute": "local_llm",
+      "mode": "real-provider-local-worker-synthetic-facts",
+      "startedAt": "2026-09-06T09:07:21.197Z",
+      "requests": 3,
+      "completeStreams": 3,
+      "firstAnswerP50Ms": 1740.14,
+      "firstAnswerP95Ms": 8595.06,
+      "requestP95Ms": 13039.93,
+      "answersOver250WordsIncludingCitations": 0,
+      "reviewDecision": "Not certified; see known findings and common gates.",
+      "cases": [
+        {
+          "id": "INE854B01010:latest",
+          "answerHash": "cbfac7276cb2cfc62478be4d9ffa8923394591418ffca05f835533501b2593a1",
+          "streamComplete": true,
+          "firstAnswerMs": 1740.14,
+          "requestMs": 9531.19,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 203,
+          "knownFindings": [
+            "Conflicting order amounts described as aligned.",
+            "Invented last-week chatter period and conflated third-party investor disclosure with user holdings."
+          ]
+        },
+        {
+          "id": "INE854B01010:earnings",
+          "answerHash": "0f448950198bd7570f9933468956351d6b6f1ba33399a86a0ebf500d4a1e2b21",
+          "streamComplete": true,
+          "firstAnswerMs": 1133.95,
+          "requestMs": 9757.11,
+          "automatedSignals": [
+            "unknown_citation:verified-holdings"
+          ],
+          "invalidCitationPagesOnReplay": [
+            "verified-holdings"
+          ],
+          "wordsIncludingCitations": 213,
+          "knownFindings": [
+            "Conflicting amounts described as aligned; fabricated verified-holdings dashboard page.",
+            "Investor disappearance qualified against user sale rather than tracked investor."
+          ]
+        },
+        {
+          "id": "unresolved",
+          "answerHash": "0b7edab1f8e5a2f68436fbb0988282b5fe0640684943accff3d1504a645ef570",
+          "streamComplete": true,
+          "firstAnswerMs": 8595.06,
+          "requestMs": 13039.93,
+          "automatedSignals": [],
+          "invalidCitationPagesOnReplay": [],
+          "wordsIncludingCitations": 124,
+          "knownFindings": [
+            "Unavailable News source attributed to Ask Sattva."
+          ]
+        }
+      ]
+    }
+  ]
+}

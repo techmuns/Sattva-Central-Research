@@ -22,6 +22,10 @@ and APIs blocked. For each packet it checks:
 - A source with matching company rows contributes that company's evidence.
 - Confirmed company news in the independently inspected source store survives
   selection, even if the adapter incorrectly reports no matching rows.
+- Latest-company questions retain the newest dated, confirmed development, when
+  available (119 of the saved portfolio names had such evidence in this run).
+- A named-company question excludes unrelated fallback rows; related coverage
+  retains its label and cannot become confirmed company evidence.
 - The packet fits the Worker's real validation budget; browser code throws no errors.
 
 The sweep exposed and drove fixes for shared-word matches (Aditya Birla Capital
@@ -31,8 +35,15 @@ displacing confirmed company evidence. Matching keywords no longer makes a row
 company-attributed. An explicit different ticker cannot be overridden by a name
 in the text. All Alerts retains news-attribution status in its research rows.
 The final local sweep passed all 426 packets with zero browser exceptions;
-packet construction p95 was 624 ms on the development machine (warm saved data,
+packet construction p95 was 679 ms on the development machine (warm saved data,
 excluding the initial source preparation, Family and model).
+
+The exact question "any new updates on jayaswal neco?" previously ranked a
+generic stock-price reference page ahead of the September 4 company statement
+about financial impact from Datasel. Generic update vocabulary no longer scores
+as a topic hit, and dated developments precede reference pages. The statement
+now survives into the packet and appears in the real answer. Tickerless Vedanta
+questions also no longer receive unrelated RBL Bank default alert rows.
 
 A news-attribution regression also caught a person sharing a ticker word:
 an article about Ashika Ranganath had been labelled Ashika Credit Capital news.
@@ -105,10 +116,75 @@ unchanged. A missing final marker produces a labelled failure, never a false suc
 Three initial real hosted probes (latest, conflicting sources and earnings)
 produced complete, cited final answers after this change. Their first-answer p50
 was 9.18 seconds and p95 10.94 seconds; completion p95 was 21.86 seconds. This tiny
-sample is an investigation result, not a readiness pass. A full 50-scenario run
-and manual review are required below. The small provider rejected a 9,069-token
+sample is an investigation result, not a readiness pass. The small provider rejected a 9,069-token
 full-portfolio prompt against its 8,192-token context limit; full context must
 continue to use the hosted route.
+
+### Measured failures, not a customer-readiness pass
+
+The first 50 controlled hosted requests returned 49 complete streams and one
+incomplete response. First-answer p95 was 15.57 seconds; request-duration p95 was
+20.25 seconds. Five automated checks flagged answers: four were wording false
+positives (correct denials mentioning NAV or a sale), and one was an incomplete
+answer. Factual review separately found wrong dates, wrong owning-page citations,
+and unnecessary unrelated material even among answers that passed phrase checks.
+
+The second 50-question hosted run completed all 50 streams. First-answer p50
+was 7.61 seconds, p95 20.64 seconds; request-duration p95 was 21.46 seconds.
+Four original phrase checks flagged correct denials of company ownership/NAV or
+sales. Factual review still found an IIFL order disclosure dated September 4
+instead of September 5, a news claim cited to Ask Sattva, and an Alankit chatter
+claim cited to a nonexistent combined News/Public Chatter page. The revised
+citation validator identifies the last case on replay without new model calls.
+Thus 50 completed streams must not be described as 50 accurate answers.
+Answers above 250 words (counting citation text) fell from 23/50 to 5/50;
+that is a concision improvement, not a factual-accuracy score.
+
+Seven real saved-dashboard questions were tested before and after the final
+retrieval changes, using all 142 public portfolio identities with unknown weights.
+All seven final hosted streams completed; first-answer p50 was 17.64 seconds,
+p95 27.68 seconds, and request-duration p95 27.94 seconds. A controlled-fixture run
+was active concurrently against the same provider, so these are not single-user
+idle-service latency measurements. They still fail the proposed responsiveness
+gate. Neither run used authenticated customer allocations.
+
+The final saved-data review found these release blockers:
+
+| Scenario | Material problem still observed |
+| --- | --- |
+| Jayaswal latest / conflicting sources | The answer retrieved the direct company statement, but incorrectly called that statement and related-entity coverage contradictory. It also invented a combined citation page in the latest answer. |
+| IIFL latest | A paragraph combined AI Alerts priority/volume with investor data under a Super Investors citation. |
+| Alankit latest | The model described a one-day price-change field as a return since result day, while also giving the actual result-day return separately. |
+| Ashika latest | Identity uncertainty was preserved, but the answer overstated absence of an eligible alert from a missing company match. The test also exposed a stale seven-day source description, now derived from the actual alert window. |
+| Vedanta Iron and Steel | Multiple dated notices were described as distinct disputes without evidence establishing whether some concern the same matter. |
+| PNB Housing earnings | A normalized copy in All Alerts was called independent corroboration, and a result-day return was attributed to Technicals rather than its owning Earnings Hub row. |
+
+These are factual/synthesis failures, not just formatting preferences. Strengthening
+instructions reduced some errors but did not eliminate them. The evaluation runner
+now also rejects citations to nonexistent/combined page names; semantic citation
+correctness still needs factual review. No overall accuracy percentage is claimed.
+
+Three additional controlled requests tested the actual small-model route after
+the hosted runs. All completed, with first-answer times of 1.74, 1.13 and 8.60
+seconds; request-duration p95 was 13.04 seconds. Factual review rejected them:
+the small model described conflicting order amounts as aligned, confused a
+third-party disclosure with the user's holding, and invented a citation page.
+Its faster first tokens are not grounds for declaring it customer-ready.
+
+The [recorded run manifest](ASK-RESEARCH-EVALUATION-2026-09-06.json) contains the
+117 request IDs, exact answer hashes, timings, original automated signals,+citation-validation replay and known factual failures across the five runs.
+Raw packets and answers are kept privately under
+`.research-evaluation/2026-09-06/`, not committed. Runs span different revisions
+and must not be combined into a single release completion-rate claim.
+
+The public query-router schema exposes route selection, streaming, temperature
+and output length; it does not expose a model name, reasoning control, separate
+final-answer channel, or completion reason. The backend repository is not among
+the available local projects. The next provider work is to expose a fast model
+with an adequate full-book context, a separate final-answer stream, explicit
+completion/truncation metadata and latency telemetry, then rerun these fixtures
+without weakening the release gates. The consumer must not silently invent an
+unsupported model parameter or drop holdings to fit the small context.
 
 ## Release gates still required
 
@@ -123,9 +199,8 @@ continue to use the hosted route.
 | Current information | Read-only inspection confirms relevant scheduled source checks and coverage. Do not equate deployment timestamps with source freshness or guarantee exhaustive upstream history. |
 
 The authenticated customer's actual weight ranking and full Family/browser
-integration remain unverified. Initial measured provider latency exceeds the
-proposed responsiveness gate, so readiness remains closed while the larger
-evaluation runs. No production research queries, manual production deployments,
+integration remain unverified. Measured inference latency and factual failures
+keep readiness closed. No production research queries, manual production deployments,
 scrapes or capture retries are part of these tests. The existing merge pipeline
 may deploy the reviewed changes.
 
