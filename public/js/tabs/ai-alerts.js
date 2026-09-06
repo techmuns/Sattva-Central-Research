@@ -15,7 +15,7 @@ import * as screenerInsights from '../data/screener-insights.js';
 import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
-import { currentDay, relativeAge, formatDay as fmtDay, latestSignal, matchesSearch } from '../ui/ai-alert-utils.js';
+import { currentDay, relativeAge, formatDay as fmtDay, latestAlertSignal, latestAlertEvent, sortAlertCards, matchesSearch } from '../ui/ai-alert-utils.js';
 import { privatePortfolioContext, readPositionSizes, cachedPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
@@ -28,6 +28,10 @@ export const meta = {
 
 const REFRESH_ID = 'ai-alerts';
 const PAGE_SIZE = 8;
+const SORT_KEY = 'sattva:ai-alerts:sort:v1';
+const SORTS = { newest: 'Newest first', holdings: 'Largest holdings', priority: 'Highest priority' };
+let sortOrder = 'newest';
+try { const saved = localStorage.getItem(SORT_KEY); if (Object.hasOwn(SORTS, saved)) sortOrder = saved; } catch { /* Session preference still works. */ }
 
 let ctxRef = null;
 let report = null;
@@ -44,6 +48,18 @@ let awaitingBook = null;
 let collecting = false;
 let loadError = '';
 let captureDirty = false;
+let sourceTimer = null;
+function sourceChanged() {
+  if (!ctxRef) return;
+  captureDirty = true;
+  if (collecting || sourceTimer !== null) return;
+  sourceTimer = setTimeout(() => {
+    sourceTimer = null;
+    if (!ctxRef || collecting) return;
+    captureDirty = false;
+    void recollect(ctxRef, { load: false });
+  }, 100);
+}
 
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
@@ -88,10 +104,8 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
-    unsubs.push(onCaptureLanded(() => {
-      captureDirty = true;
-      if (ctxRef && !collecting) { captureDirty = false; void recollect(ctxRef, { load: false }); }
-    }));
+    unsubs.push(onCaptureLanded(sourceChanged));
+    unsubs.push(alerts.onChange(sourceChanged));
     unsubs.push(onPortfolioConnection((connected) => {
       if (connected && ctxRef?.scope === 'portfolio' && !sizesLoading) void recollect(ctxRef);
       else if (!connected && portfolioConnectionState() === 'unavailable') portfolioUnavailable();
@@ -143,6 +157,8 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  clearTimeout(sourceTimer);
+  sourceTimer = null;
   captureDirty = false;
   sizeController?.abort();
   sizeController = null;
@@ -180,6 +196,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   // An explicit Refresh must really check Family again. Navigation, calendar
   // ageing and a quick tab return are the paths allowed to reuse the snapshot.
   const heldSizes = forceRefresh ? null : cachedPositionSizes();
+  let checkedSnapshot = heldSizes;
   let positions = Promise.resolve(heldSizes);
   if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
     if (!heldSizes) {
@@ -194,6 +211,14 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       });
     }
   }
+  positions = positions.then(snapshot => {
+    if (current() && snapshot) {
+      checkedSnapshot = snapshot;
+      report = alerts.withPositionSnapshot(report, snapshot);
+      paint(ctxRef);
+    }
+    return snapshot;
+  });
   paint(ctx);
   try {
     const [next, positionSizes] = await Promise.all([
@@ -202,13 +227,9 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
         holdings: coverage.holdings(),
         refresh: forceRefresh,
         load,
-        onPartial: report?.cards.length ? null : (partial) => {
-          // Refresh a populated view atomically; partial feeds otherwise remove
-          // companies and reorder cards underneath the reader on every arrival.
-          // Empty/context-only sources often finish first. They must not close
-          // the fast path for a useful feed or the disk cache still being read.
-          if (!current() || report?.cards.length || !partial.cards.length) return;
-          report = partial;
+        onPartial: (partial) => {
+          if (!current() || !partial.cards.length) return;
+          report = alerts.withPositionSnapshot(alerts.mergePartialReport(report, partial), checkedSnapshot);
           paint(ctxRef);
         },
       }),
@@ -234,7 +255,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
 
 function paint(ctx) {
   const matches = (query.trim() ? report?.allCards || [] : report?.cards || []).filter((card) => matchesSearch(card, query));
-  const cards = filteredCards(matches);
+  const cards = sortAlertCards(filteredCards(matches), ctx.scope === 'portfolio' ? sortOrder : sortOrder === 'holdings' ? 'newest' : sortOrder);
   const shown = cards.slice(0, visibleLimit);
   // Keep the input node mounted while typing and while independent feeds deliver partials.
   // Replacing the whole root loses the caret, keyboard focus and IME composition.
@@ -265,15 +286,16 @@ function paint(ctx) {
 
 function positionStatus(ctx) {
   if (ctx.scope !== 'portfolio') return '';
-  if (sizesLoading || awaitingBook !== null) return `<p class="mb-4 text-xs text-slate-500" role="status">${report ? 'Alerts are ready · Checking holding sizes quietly.' : 'Checking holding sizes…'}</p>`;
   const sizes = report?.meta?.positionSizes;
+  if ((sizesLoading || awaitingBook !== null) && !sizes) return sortOrder === 'holdings'
+    ? `<p class="mb-4 text-xs text-slate-500" role="status">Loading portfolio sizes · Newest alerts shown meanwhile.</p>` : '';
   if (sizes) {
-    const prices = sizes.quotes?.notLive > 0 || sizes.quotes?.status !== 'live' ? 'Some prices use workbook marks' : 'Quote freshness varies by stock';
-    return `<p data-ai-size-note class="mb-4 text-xs text-slate-500" title="${escapeHtml(`Portfolio checked ${sizes.checkedAt}. Quote batch ${sizes.quotes?.asOf || 'unavailable'}. Percentages include all held equities, ETFs and liquid positions in the listed book.`)}">
-      <strong class="font-semibold text-slate-700">${report.meta.sortedByHolding ? 'Largest holdings first' : 'Ordered by alert priority'}</strong> · % of listed portfolio · Book ${fmtDay(sizes.bookAsOf)} · ${prices}
+    return `<p data-ai-size-note class="mb-4 text-xs text-slate-500" title="${escapeHtml(`Portfolio checked ${sizes.checkedAt}. ${sizes.valuation === 'workbook' ? 'Weights use the latest uploaded workbook marks.' : 'Weights use available prices; quote freshness varies.'} Percentages include held equities, ETFs and liquid positions in the listed book.`)}">
+      Workbook period · ${fmtDay(sizes.bookAsOf)}${sizes.valuation === 'workbook' ? ' · Snapshot weights' : ''}
     </p>`;
   }
-  return `<p class="mb-4 text-xs text-slate-500">Ordered by alert priority${portfolioConnectionState() === 'locked' ? ' · <button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio to include holding sizes</button>' : ''}</p>`;
+  return portfolioConnectionState() === 'locked' ? `<p class="mb-4 text-xs text-slate-500"><button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio to include holding sizes</button></p>`
+    : sortOrder === 'holdings' ? `<p class="mb-4 text-xs text-slate-500">Portfolio sizes unavailable · Newest alerts shown.</p>` : '';
 }
 
 function searchMarkup() {
@@ -391,7 +413,12 @@ function controls(cards, visibleCount) {
         ${options.map((option) => `<button type="button" data-ai-filter="${option.id}" aria-pressed="${filter === option.id}"
           class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === option.id ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:text-indigo-700 hover:ring-indigo-200'}">${escapeHtml(option.label)}</button>`).join('')}
       </div>
-      <div class="flex items-center gap-3 text-xs text-slate-500">
+      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+        <label class="flex items-center gap-2">Sort
+          <select data-ai-sort aria-label="Sort AI Alerts" class="rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+            ${Object.entries(SORTS).filter(([value]) => value !== 'holdings' || ctxRef?.scope === 'portfolio').map(([value, label]) => `<option value="${value}" ${value === (ctxRef?.scope !== 'portfolio' && sortOrder === 'holdings' ? 'newest' : sortOrder) ? 'selected' : ''}>${label}</option>`).join('')}
+          </select>
+        </label>
         ${filter === 'archived' && archived ? `<button type="button" data-ai-unmute-all class="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200">Restore all</button>` : ''}
         <span role="status" aria-live="polite" aria-atomic="true"><strong class="font-semibold text-slate-700">${escapeHtml(formatNumber(visibleCount))}</strong> ${visibleCount === 1 ? 'company' : 'companies'} ${query.trim() ? 'matching in this view' : 'in this view'}</span>
       </div>
@@ -478,9 +505,10 @@ function cardMarkup(card, scope, day, archived = false) {
     caution: { edge: 'border-l-amber-500', badge: 'bg-white text-amber-700 ring-amber-300' },
     neutral: { edge: 'border-l-slate-300', badge: 'bg-white text-slate-600 ring-slate-200' },
   }[badge.tone] || { edge: 'border-l-slate-300', badge: 'bg-white text-slate-600 ring-slate-200' };
-  const events = alerts.topEvidence(card, 3);
+  const newest = latestAlertEvent(card);
+  const events = alerts.topEvidence(newest ? { ...card, events: [newest, ...card.events.filter(event => event !== newest)] } : card, 3);
   const rest = card.events.length - events.length;
-  const signal = latestSignal(card.events);
+  const signal = latestAlertSignal(card);
   return `
     <article data-ai-card data-ticker="${escapeHtml(card.ticker || '')}" data-entity-id="${escapeHtml(card.entityId || '')}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
       class="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 ${archived ? 'border-l-slate-200' : tone.edge} bg-white shadow-sm ring-1 ring-slate-100">
@@ -495,7 +523,7 @@ function cardMarkup(card, scope, day, archived = false) {
           <span class="shrink-0 rounded-md px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider ring-1 ${tone.badge}">${escapeHtml(badge.label)}</span>
         </div>
 
-        <p data-ai-date class="mt-2 text-xs leading-relaxed text-slate-500" title="Date of the newest source event behind this alert. Times are shown only when every event on that date has a source time; all dates use IST.">
+        <p data-ai-date class="mt-2 text-xs leading-relaxed text-slate-500" title="Date of the newest noteworthy source event behind this alert. Source dates and times use IST; refreshing the page does not make an old event new.">
           ${signal ? `Latest signal · <time datetime="${escapeHtml(signal.datetime)}"><span data-ai-age data-day="${signal.day}" class="font-semibold capitalize text-slate-600">${relativeAge(signal.day, day)}</span> · ${fmtDay(signal.day)}${signal.time ? ` · ${signal.time} IST` : ''}</time>` : 'Signal date unavailable'}
         </p>
         ${Number.isFinite(card.holdingWeightPct) ? `<p data-ai-holding-size class="mt-1 text-xs font-semibold text-indigo-700">${card.holdingWeightPct > 0 && card.holdingWeightPct < 0.01 ? '&lt;0.01' : card.holdingWeightPct.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of listed portfolio</p>` : ''}
@@ -622,6 +650,15 @@ function filteredCards(cards) {
 }
 
 function wire(ctx, total) {
+  const sort = ctx.root.querySelector('[data-ai-sort]');
+  if (sort) sort.onchange = () => {
+    if (!Object.hasOwn(SORTS, sort.value)) return;
+    sortOrder = sort.value;
+    try { localStorage.setItem(SORT_KEY, sortOrder); } catch { /* Keep the session preference. */ }
+    visibleLimit = PAGE_SIZE;
+    paint(ctxRef);
+    ctxRef?.root.querySelector('[data-ai-sort]')?.focus({ preventScroll: true });
+  };
   const click = (selector, handler) => { const node = ctx.root.querySelector(selector); if (node) node.onclick = handler; };
   click('[data-ai-unlock]', unlockPortfolio);
   click('[data-ai-empty-clear]', clearSearch);

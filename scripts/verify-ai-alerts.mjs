@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { currentDay, relativeAge, formatDay, latestSignal, matchesSearch } from '../public/js/ui/ai-alert-utils.js';
+import { currentDay, relativeAge, formatDay, latestSignal, latestAlertSignal, latestAlertEvent, sortAlertCards, matchesSearch } from '../public/js/ui/ai-alert-utils.js';
 
 assert.equal(currentDay(Date.parse('2026-09-04T18:29:59Z')), '2026-09-04');
 assert.equal(currentDay(Date.parse('2026-09-04T18:30:00Z')), '2026-09-05');
@@ -38,8 +38,25 @@ assert(!matchesSearch(card, 'unrelated bank'));
 assert(!matchesSearch(card, 'mahindra missing-keyword'));
 console.log('PASS: AI alert search, source date precision, IST rollover, invalid dates and calendar ages across timezones.');
 
+const sorting = [
+  { key: 'OLDER', score: 98, holdingWeightPct: 50, events: [{ day: '2026-09-03', time: '14:00', importance: 'high' }, { day: '2026-09-06', importance: 'low' }] },
+  { key: 'NEW', score: 65, holdingWeightPct: 10, events: [{ day: '2026-09-05', time: '14:00', importance: 'high' }] },
+  { key: 'NEWER', score: 64, holdingWeightPct: 2, events: [{ day: '2026-09-05', time: '15:00', importance: 'high' }] },
+  { key: 'UNKNOWN', score: 99, holdingWeightPct: null, events: [{ day: 'invalid', importance: 'high' }] },
+];
+assert.equal(latestAlertSignal(sorting[0]).day, '2026-09-03', 'routine newer data cannot resurface an older noteworthy alert');
+assert.equal(latestAlertEvent(sorting[0]).day, '2026-09-03');
+const related = { day: '2026-09-06', feed: 'news', importance: 'high', aiEligible: false,
+  attribution: { version: 1, status: 'related', relationships: [{ relationship: 'subsidiary of a related entity', evidenceUrl: 'https://example.test/relationship' }] } };
+assert.equal(latestAlertSignal({ events: [...sorting[0].events, related] }).day, related.day, 'reviewed relationship evidence retains its actual event date');
+assert.deepEqual(sortAlertCards(sorting).map(c => c.key), ['NEWER', 'NEW', 'OLDER', 'UNKNOWN']);
+assert.deepEqual(sortAlertCards(sorting, 'holdings').map(c => c.key), ['OLDER', 'NEW', 'NEWER', 'UNKNOWN']);
+assert.deepEqual(sortAlertCards(sorting, 'priority').map(c => c.key), ['UNKNOWN', 'OLDER', 'NEW', 'NEWER']);
+assert.equal(sorting[0].key, 'OLDER', 'sorting is a view and does not mutate source ranking');
+assert.deepEqual(sortAlertCards(sorting.map(c => ({ ...c, holdingWeightPct: null })), 'holdings').map(c => c.key), ['NEWER', 'NEW', 'OLDER', 'UNKNOWN']);
+
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
-const { rankReport } = await import('../public/js/data/ai-alerts.js');
+const { rankReport, mergePartialReport, withPositionSnapshot } = await import('../public/js/data/ai-alerts.js');
 const sizeHoldings = [
   { ticker: 'LARGE', name: 'Large holding', weightPct: 20 },
   { ticker: 'SMALL', name: 'Small holding', weightPct: 5 },
@@ -64,6 +81,23 @@ const publicIdentities = sizeHoldings.map(({ weightPct: _weightPct, ...holding }
 const byAuthenticatedPayload = rankReport(report, { holdings: publicIdentities, positionSizes: sizes });
 assert.equal(byAuthenticatedPayload.cards[0].ticker, 'LARGE', 'production reads weights from the authenticated positions payload, not the public identity list');
 assert.equal(byAuthenticatedPayload.cards[0].holdingWeightPct, 20);
+const immediateSizes = withPositionSnapshot(byPriority, sizes);
+assert.equal(immediateSizes.cards.find(c => c.ticker === 'LARGE').holdingWeightPct, 20);
+assert.equal(immediateSizes.cards[0].ticker, byPriority.cards[0].ticker, 'size arrival cannot reorder the existing queue');
+const exited = withPositionSnapshot(byPriority, { ...sizes, holdings: sizes.holdings.filter(h => h.ticker !== 'SMALL') });
+assert(!exited.allCards.some(c => c.ticker === 'SMALL'), 'a verified exit is removed before slow feeds finish');
+const identityCard = { ...byPriority.cards[0], key: 'RESOLVED', ticker: 'RESOLVED', entityId: 'isin:INE000009999' };
+const identityReport = { ...byPriority, cards: [identityCard], allCards: [identityCard] };
+const tickerlessSizes = { sizes: { complete: true }, holdings: [{ ticker: null, isin: 'INE000009999', name: 'Unresolved workbook symbol', weightPct: 100 }] };
+assert.equal(withPositionSnapshot(identityReport, tickerlessSizes).cards[0].holdingWeightPct, 100, 'verified ISIN matching retains a held company even when Family has no ticker');
+assert.equal(withPositionSnapshot(identityReport, { ...tickerlessSizes, sizes: { complete: false } }).cards[0].holdingWeightPct, null);
+const resolvedEvent = { ...report.events[0], ticker: 'RESOLVED', entityId: identityCard.entityId };
+assert.equal(rankReport({ ...report, events: [resolvedEvent] }, { holdings: tickerlessSizes.holdings, positionSizes: tickerlessSizes }).allCards[0].holdingWeightPct, 100, 'completed ranking uses the same ISIN aliases');
+const arriving = rankReport({ ...report, events: report.events.map(e => ({ ...e, id: `new-${e.id}`, ticker: 'NEW', company: 'New signal' })) }, { holdings: [{ ticker: 'NEW' }] });
+const progress = mergePartialReport(byPriority, arriving);
+assert(progress.cards.some(c => c.ticker === 'NEW'), 'a new noteworthy company arrives before the slowest source settles');
+assert(progress.cards.some(c => c.ticker === 'LARGE'), 'partial progress does not erase previously loaded companies');
+assert.equal(mergePartialReport(byPriority, { ...byPriority, cards: [], allCards: [] }).cards.length, byPriority.cards.length);
 
 const context = {
   id: 'LARGE-raw-filing', ticker: 'LARGE', company: 'Large holding', feed: 'announcements',
