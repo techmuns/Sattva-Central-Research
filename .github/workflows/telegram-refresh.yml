@@ -23,7 +23,7 @@ on:
         required: false
         default: 'manual'
 
-run-name: Telegram refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
+run-name: Telegram collection (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
 concurrency:
   group: telegram-account-collection
   cancel-in-progress: false

@@ -36,8 +36,9 @@ assert.throws(()=>validateTelegramCapture({...raw,channel:'another_channel'}));
 assert.throws(()=>validateTelegramCapture({...raw,posts:[raw.posts[0],raw.posts[0]]}));
 const bytes=gzipSync(JSON.stringify(capture));
 const digest='sha256:'+createHash('sha256').update(bytes).digest('hex');
-const run={id:1,name:'Telegram collection',head_branch:'main',head_repository:{full_name:TELEGRAM_REPO},event:'schedule',status:'completed',conclusion:'success'};
-for (const scenario of ['ok','digest','host','fork','expired','failed','missing','bootstrap','oversize']) {
+const run={id:1,name:'Telegram collection (github-cron)',display_title:'Telegram collection (github-cron)',head_branch:'main',head_repository:{full_name:TELEGRAM_REPO},event:'schedule',status:'completed',conclusion:'success'};
+assert.match(readFileSync('.github/workflows/telegram-refresh.yml','utf8'),/^run-name: Telegram collection \(/m,'workflow must identify artifact-producing runs in the REST run name');
+for (const scenario of ['ok','digest','host','fork','expired','failed','missing','legacy','bootstrap','oversize']) {
   const calls=[];
   const fetcher=async (url,options)=>{
     calls.push([url,options]);
@@ -46,7 +47,7 @@ for (const scenario of ['ok','digest','host','fork','expired','failed','missing'
       return new Response(bytes);
     }
     assert.equal(options.headers.authorization,'Bearer test-secret');
-    if(url.includes('/runs?')) return Response.json({total_count:scenario==='missing'?0:1,workflow_runs:scenario==='missing' || (scenario==='bootstrap' && url.includes('status=success'))?[]:[{...run,...(scenario==='bootstrap'?{status:'in_progress',conclusion:null}:{}),...(scenario==='fork'?{head_repository:{full_name:'foreign/repository'}}:{}),...(scenario==='failed'?{conclusion:'failure'}:{})}]});
+    if(url.includes('/runs?')) return Response.json({total_count:scenario==='missing'?0:1,workflow_runs:scenario==='missing' || (scenario==='bootstrap' && url.includes('status=success'))?[]:[{...run,...(scenario==='bootstrap'?{status:'in_progress',conclusion:null}:{}),...(scenario==='legacy'?{name:'Telegram refresh (auto)'}:{}),...(scenario==='fork'?{head_repository:{full_name:'foreign/repository'}}:{}),...(scenario==='failed'?{conclusion:'failure'}:{})}]});
     if(url.includes('/artifacts?')) return Response.json({artifacts:[{id:2,name:TELEGRAM_ARTIFACT,expired:scenario==='expired',workflow_run:{id:1},digest:scenario==='digest'?'sha256:'+'0'.repeat(64):digest,size_in_bytes:scenario==='oversize'?100000000:bytes.length}]});
     if(url.endsWith('/zip')) return new Response(null,{status:302,headers:{location:scenario==='host'?'https://attacker.example/secret':'https://example.blob.core.windows.net/artifact'}});
     throw Error('Unexpected request '+url);
@@ -56,7 +57,7 @@ for (const scenario of ['ok','digest','host','fork','expired','failed','missing'
     assert.equal(result.capture.posts.length,1);
     assert.equal(result.source.collectorRunId,1);
     assert.equal(calls.length,5);
-  } else if (['missing','bootstrap'].includes(scenario)) assert.equal(await readTelegramCollector({token:'test-secret',fetcher,allowMissing:true}),null);
+  } else if (['missing','legacy','bootstrap'].includes(scenario)) assert.equal(await readTelegramCollector({token:'test-secret',fetcher,allowMissing:true}),null);
   else await assert.rejects(()=>readTelegramCollector({token:'test-secret',fetcher}));
 }
 console.log('PASS Telegram artifacts: trusted workflow/repository, integrity, expiry, redirect and credential boundaries, first-run bootstrap');
