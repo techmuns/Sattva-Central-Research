@@ -39,7 +39,7 @@ import { scopePossessive, scopeLabel } from '../data/scope.js';
 // The ONE classifier — this view used to carry a second copy of it. See `classifyHolding` there.
 import { classifyHolding, companyKey, filedPair, isMove, quarterOrder } from '../data/finology-shared.js';
 
-const SOURCE = 'Ticker Finology, captured through this dashboard’s Worker and refreshed on demand.';
+const SOURCE = 'Ticker Finology, captured through this dashboard’s Worker and checked automatically while this view is open.';
 const FINOLOGY_COMPANY = (slug) => `https://ticker.finology.in/company/${encodeURIComponent(slug)}`;
 
 const dash = '<span class="text-slate-300">—</span>';
@@ -138,7 +138,7 @@ function quarterSummaryBlock(ctx, m) {
   const empty = (what) => q.comparableBooks === 0
     ? `No comparable books are available for ${scope}.`
     : `No ${what} found in the available ${scope} disclosures for ${q.latest} vs ${q.prior}.`;
-  const sourceDates = feed.books().map((b) => Date.parse(b.fetchedAt || ''));
+  const sourceDates = feed.books().map((b) => Date.parse(b.sourceCheckedAt || b.fetchedAt || ''));
   const sourceDate = sourceDates.length && sourceDates.every(Number.isFinite)
     ? new Date(Math.min(...sourceDates)).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : 'unavailable';
 

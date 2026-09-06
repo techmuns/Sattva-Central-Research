@@ -579,12 +579,8 @@ async function revalidate({ ignoreWindow = false } = {}) {
  * `force` re-asks for books already in memory, which is what the revalidation pass needs; the
  * first-visit walk skips them, because a book in memory there has just been fetched.
  *
- * WHAT THE REVALIDATION PASS DOES *NOT* ASK FOR is the change that made a return visit quick. A
- * book confirmed inside the current window — within the
- * filing calendar rather than from a number of hours — cannot have anything new to tell us, so the
- * request would spend a round trip receiving bytes already on this device. Three exceptions, each
- * of which would otherwise strand a reader on something worse than a slow paint: a book we do not
- * have at all, a failed read, or a book the Worker served as stale during an outage.
+ * Books within the six-hour source window are skipped. Missing books and failed/stale
+ * reads are always eligible; lifecycle retries remain bounded by AUTO_RETRY_MS.
  */
 async function walkBooks({ force = false, ignoreWindow = false } = {}) {
   const gen = generation;
@@ -611,7 +607,7 @@ async function walkBooks({ force = false, ignoreWindow = false } = {}) {
 
 function needsRevalidation(slug) {
   if (!state.books.has(slug) || state.staleBooks.has(slug) || state.failures.has(slug)) return true;
-  const sourceAt = Date.parse(state.books.get(slug).fetchedAt || '');
+  const sourceAt = Date.parse(state.books.get(slug).sourceCheckedAt || state.books.get(slug).fetchedAt || '');
   const confirmedAt = state.confirmedAt.get(slug);
   if (!Number.isFinite(sourceAt) || confirmedAt == null) return true;
   return Date.now() - Math.min(sourceAt, confirmedAt) >= REVALIDATE_MS;

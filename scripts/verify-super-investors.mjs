@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { normalisePortfolio, classifyHolding, deriveMoves, filedPair, isFiledQuarter, quarterOrder } from '../public/js/data/finology-shared.js';
 import { summariseQuarter } from '../public/js/data/investor-quarterly.js';
 import { fetchInvestorPortfolio } from '../worker/finology.mjs';
+import { withTag } from '../worker/http.mjs';
 
 const now = Date.now;
 Date.now = () => Date.parse('2026-09-06T00:00:00Z');
@@ -38,6 +39,12 @@ try {
     await assert.rejects(fetchInvestorPortfolio(async () => Response.json(bad), 'local-fixture', 'one', 'https://fixture.invalid'), { code: 'shape' });
   }
   const workerBook = await fetchInvestorPortfolio(async () => Response.json(body), 'local-fixture', 'one', 'https://fixture.invalid');
+  const firstCheck = Date.now();
+  Date.now = () => firstCheck + 6 * 3600000;
+  const recheckedBook = await fetchInvestorPortfolio(async () => Response.json(body), 'local-fixture', 'one', 'https://fixture.invalid');
+  assert.notEqual(withTag(workerBook).tag, withTag(recheckedBook).tag, 'successful unchanged source checks update the cache validator');
+  assert.equal(normalisePortfolio(recheckedBook, 'one').sourceCheckedAt, recheckedBook.sourceCheckedAt);
+  Date.now = () => firstCheck;
   let cached = workerBook;
   for (let i = 0; i < 4; i++) cached = normalisePortfolio(JSON.parse(JSON.stringify(cached)), 'one');
   assert.equal(cached.holdings[0].quarterlyNotes['Jun 2026'], 'Filing Due');

@@ -193,6 +193,7 @@ export function normalisePortfolio(body, slug) {
     name: str(body?.name) || slug,
     slug: str(body?.slug) || slug,
     ...(str(body?.fetchedAt) ? { fetchedAt: str(body.fetchedAt) } : {}),
+    ...(str(body?.sourceCheckedAt) ? { sourceCheckedAt: str(body.sourceCheckedAt) } : {}),
     netWorthCr: num(body?.netWorthCr),
     activeStocks: num(body?.activeStocks),
     totalStocks: num(body?.totalStocks),

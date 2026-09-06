@@ -148,5 +148,7 @@ export async function fetchInvestorPortfolio(fetchImpl, token, slug, base) {
   if (!isSlug(slug)) throw fail(`"${slug}" is not a valid investor slug.`, 'bad-slug');
   const body = await call(fetchImpl, token, `/super-investors/${encodeURIComponent(slug)}`, base);
   if (!isPortfolioPayload(body, slug)) throw fail('The source returned an incomplete portfolio payload.', 'shape');
-  return normalisePortfolio(body, slug);
+  // Unlike delivery fetchedAt, this successful source check belongs in the ETag.
+  // Otherwise unchanged holdings can retain an old source timestamp indefinitely.
+  return { ...normalisePortfolio(body, slug), sourceCheckedAt: new Date(Date.now()).toISOString() };
 }
