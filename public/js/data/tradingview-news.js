@@ -11,6 +11,7 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
   now = Date.now, schedule = setTimeout, cancel = clearTimeout } = {}) {
   let snapshot = null, pending = null, loaded = false, readError = null;
   let timer = null, listening = false, lastAttempt = null, failures = 0, generation = 0;
+  let combined = null;
   const subscribers = new Set();
   const emit = () => subscribers.forEach(fn => fn());
   base.onChange(emit);
@@ -41,15 +42,20 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
   }
 
   function combinedRows() {
+    const source = base.rows();
+    const from = new Date(now() - 30 * 86400000).toISOString().slice(0, 10);
+    // Coverage, per-company status and several tabs all read this same union. Rebuilding it for
+    // every read made coverage O(companies × articles × URL parsing). Keep complete records;
+    // invalidate on either source revision, identity decoration, or retention-day rollover.
+    if (combined?.source === source && combined.snapshot === snapshot && combined.from === from) return combined.rows;
     const identities = new Map();
     for (const entity of snapshot?.entities || []) for (const key of [entity.entityId, entity.key, entity.ticker].filter(Boolean))
       identities.set(String(key).toUpperCase(), entity);
     const buckets = new Map();
-    const from = new Date(now() - 30 * 86400000).toISOString().slice(0, 10);
     const extras = Object.entries(snapshot?.byTicker || {}).flatMap(([key, list]) => (Array.isArray(list) ? list : [])
       .filter(row => row?.tradingViewId && (!row.date || row.date >= from))
       .map(row => attributeNewsRow(row, identities.get(key.toUpperCase()) || row)));
-    const candidates = [...base.rows(), ...extras].sort((a, b) =>
+    const candidates = [...source, ...extras].sort((a, b) =>
       String(b.lastSeenAt || b.firstSeenAt || '').localeCompare(String(a.lastSeenAt || a.firstSeenAt || '')));
     for (const row of candidates) {
       if (row.tradingViewId && row.date && row.date < from) continue;
@@ -58,7 +64,7 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key).push(row);
     }
-    return [...buckets.values()].flatMap(list => {
+    const rows = [...buckets.values()].flatMap(list => {
       const seenIds = new Set();
       return dedupeArticles(list.filter(row => {
         if (!row.tradingViewId) return true;
@@ -66,6 +72,8 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
         seenIds.add(row.tradingViewId); return true;
       }));
     }).sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));
+    combined = { source, snapshot, from, rows };
+    return rows;
   }
 
   function meta() {
@@ -127,7 +135,7 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
     forTicker: ticker => combinedRows().filter(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()),
     wasAskedEmpty: ticker => !combinedRows().some(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
     invalidate() {
-      generation++; unwatch(); snapshot = null; pending = null; loaded = false; readError = null;
+      generation++; unwatch(); snapshot = null; combined = null; pending = null; loaded = false; readError = null;
       lastAttempt = null; failures = 0; base.invalidate();
     },
     onChange(fn) {

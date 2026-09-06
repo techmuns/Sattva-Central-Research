@@ -24,6 +24,7 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
   let pending = null, historyPending = null, held = [], nseError = null;
   let identity = createAnnouncementIdentity(), identityError = null, identityRevision = null;
   let bseIdentities = [], nseIdentityError = null;
+  let identityKey = '', rowInputs = null, heldText = '';
   const nseDirectories = { sme: [], equity: [] };
   async function loadBseIdentities() {
     try {
@@ -50,11 +51,21 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
   }
   async function loadIdentities() {
     await Promise.all([loadBseIdentities(), loadNseIdentities()]);
-    identity = createAnnouncementIdentity(mergeExchangeIdentities(bseIdentities, nseDirectories.sme, nseDirectories.equity));
+    const entries = mergeExchangeIdentities(bseIdentities, nseDirectories.sme, nseDirectories.equity);
+    const nextKey = JSON.stringify(entries);
+    if (nextKey !== identityKey) { identity = createAnnouncementIdentity(entries); identityKey = nextKey; }
   }
   const listeners = new Set();
   const rows = () => {
-    held = mergeAnnouncements(held.map(identity.row), base.rows().map(identity.row), nse.retainedRows().map(nseAnnouncement).map(identity.row));
+    const baseRows = base.rows(), nseRows = nse.retainedRows();
+    const same = (a, b) => a === b || a.length === b.length && a.every((row, i) => row === b[i]);
+    if (rowInputs?.identity === identity && same(rowInputs.base, baseRows) && same(rowInputs.nse, nseRows)) return held;
+    const next = mergeAnnouncements(held.map(identity.row), baseRows.map(identity.row), nseRows.map(nseAnnouncement).map(identity.row));
+    // A successful poll can return new objects containing exactly the same documents. Compare
+    // once on source arrival, not once per UI/meta read, and preserve row identity when unchanged.
+    const nextText = JSON.stringify(next);
+    if (nextText !== heldText) { held = next; heldText = nextText; }
+    rowInputs = { base: baseRows, nse: nseRows, identity };
     return held;
   };
   const emit = () => listeners.forEach((fn) => fn());

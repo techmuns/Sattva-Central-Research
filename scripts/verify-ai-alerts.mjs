@@ -57,6 +57,7 @@ assert.deepEqual(sortAlertCards(sorting.map(c => ({ ...c, holdingWeightPct: null
 
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 const { rankReport, mergePartialReport, withPositionSnapshot } = await import('../public/js/data/ai-alerts.js');
+const { enrichCardFromAllAlerts, indexAlertContext } = await import('../public/js/data/intelligence-graph.js');
 const sizeHoldings = [
   { ticker: 'LARGE', name: 'Large holding', weightPct: 20 },
   { ticker: 'SMALL', name: 'Small holding', weightPct: 5 },
@@ -121,4 +122,10 @@ assert.equal(largeAfter.contextEvents[0].id, context.id, 'the raw top-of-funnel 
 assert.equal(largeAfter.contextEvents.some((event) => event.id === routineSnapshot.id), false, 'an unrelated routine snapshot does not clutter the alert');
 assert.equal(contextual.allCards.some((card) => card.ticker === 'CONTEXT'), false, 'context-only data cannot manufacture an AI alert');
 assert.equal(contextual.meta.topFunnelEvents, report.events.length + 3);
+const indexedReport = { ...report, events: [...report.events, context, contextOnly, routineSnapshot] };
+const contextIndex = indexAlertContext(indexedReport);
+for (const candidate of byAuthenticatedPayload.cards) {
+  assert.deepEqual(enrichCardFromAllAlerts(candidate, indexedReport, { contextIndex }),
+    enrichCardFromAllAlerts(candidate, indexedReport), 'shared ticker index preserves every selected context record and score');
+}
 console.log('PASS: authenticated size ordering, evidence priority preservation, full-pool zero-score context and missing-size fallback.');

@@ -170,13 +170,28 @@ function contextSentence(event) {
  * Attach context from the complete normalized pool to a card whose trigger events were already
  * selected by AI Alerts. Context can explain and corroborate; it contributes zero priority points.
  */
-export function enrichCardFromAllAlerts(card, report, { insightCompanies = [] } = {}) {
+export function indexAlertContext(report, insightCompanies = []) {
+  const group = rows => {
+    const byTicker = new Map();
+    for (const row of rows) {
+      const ticker = String(row.ticker || '').toUpperCase();
+      if (!byTicker.has(ticker)) byTicker.set(ticker, []);
+      byTicker.get(ticker).push(row);
+    }
+    return byTicker;
+  };
+  return { events: group(report?.events || []), insights: group(insightCompanies),
+    feeds: new Map((report?.feeds || []).map(feed => [feed.id, feed])) };
+}
+
+export function enrichCardFromAllAlerts(card, report, { insightCompanies = [], contextIndex = null } = {}) {
   const ticker = String(card?.ticker || '').toUpperCase();
   const triggerIds = new Set((card?.events || []).map((event) => event.id));
-  const feedById = new Map((report?.feeds || []).map((feed) => [feed.id, feed]));
+  const index = contextIndex || indexAlertContext(report, insightCompanies);
+  const feedById = index.feeds;
   const pool = !ticker || !triggerIds.size ? [] : [
-    ...(report?.events || []).filter((event) => String(event.ticker || '').toUpperCase() === ticker && !triggerIds.has(event.id)),
-    ...insightEvents(insightCompanies.filter((company) => String(company.ticker || '').toUpperCase() === ticker), report?.day),
+    ...(index.events.get(ticker) || []).filter(event => !triggerIds.has(event.id)),
+    ...insightEvents(index.insights.get(ticker) || [], report?.day),
   ];
   const seen = new Set((card.events || []).map(headlineKey));
   const seenDocuments = new Set((card.events || []).map(documentKey).filter(Boolean));

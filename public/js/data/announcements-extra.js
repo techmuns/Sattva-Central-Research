@@ -32,7 +32,14 @@ export function withAnnouncementLookups(base) {
     })();
     return restored;
   }
-  const rows = () => mergeAnnouncements(base.rows().map((r) => ({ ...r, source: r.source || 'BSE', sources: r.sources || [r.source || 'BSE'], providers: ['BSE date index'] })), shared, history);
+  let rowSnapshot = null;
+  const rows = () => {
+    const source = base.rows();
+    if (rowSnapshot?.source === source && rowSnapshot.shared === shared && rowSnapshot.history === history) return rowSnapshot.rows;
+    const value = mergeAnnouncements(source.map((r) => ({ ...r, source: r.source || 'BSE', sources: r.sources || [r.source || 'BSE'], providers: ['BSE date index'] })), shared, history);
+    rowSnapshot = { source, shared, history, rows: value };
+    return value;
+  };
   function lookupMeta() {
     return { lookups: queries.size, companies: new Set([...queries.values()].map((q) => q.ticker)).size,
       rows: history.length, pending: pending.size, failed: [...queries.values()].filter((q) => q.error).length,

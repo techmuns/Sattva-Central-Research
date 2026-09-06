@@ -17,6 +17,7 @@
 import { escapeHtml } from '../core/dom.js';
 import * as store from '../core/watchlist.js';
 import { avatarFor, scoreTier, scoreBadgeClass, tierLabel, tierColor, statusPill, signalDots } from './visual.js';
+import { mountWindowedList } from './windowed-list.js';
 
 // ---------------------------------------------------------------------------------------
 // Overlay focus management — shared by the drill, the modal and the workspace.
@@ -363,10 +364,10 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  nameMaxPx     default null. Hard px cap on the identity column so long names/subs truncate
  *                instead of widening the table.
  *  dense         default false. true tightens horizontal cell padding for wide numeric tables.
- *  fillMode      'idle' (default) eventually paints every row; 'scroll' appends adaptive pages
- *                near the bottom; 'virtual' keeps a bounded moving window for very long streams.
+ *  fillMode      'auto' (default) windows large scrollable tables with natural measured heights;
+ *                'idle'/'scroll' retain legacy fill; 'virtual' uses an explicitly fixed stride.
  *  virtualRowHeight  fixed row height in px used by 'virtual' mode (default 72).
- *  preindexSearch build an explicit searchable accessor's index in idle slices (default false).
+ *  preindexSearch build an explicit searchable accessor's index in idle slices (default true).
  *  onScrollActivity  optional callback fired from the table's passive scroll handler.
  *  scrollLabel   accessible name for the keyboard-focusable table scroller.
  *
@@ -440,16 +441,16 @@ export function scoreTable(config) {
     // `visible` when the other axis is not) — so the head was sticking to a box that never
     // scrolled, while the page scrolled underneath it. Giving the wrapper a height makes it
     // actually scroll, which is what makes the head stay put. The toolbar above stays visible too.
-    stickyHead = null,
-    // Long event timelines do not need thousands of off-screen <tr>s. In `scroll` mode the data
-    // set is still complete — search, filters, counts and export read `rows` — but the DOM grows a
-    // page at a time as the reader advances. Other tables keep the existing idle-fill contract.
-    fillMode = 'idle',
+    stickyHead = rows.length > 160 ? 'max(320px, calc(100vh - 320px))' : null,
+    // Large tables default to a measured, bounded window. Search, filters and exports always read
+    // the complete model. Explicit legacy idle/scroll modes remain available for specialized views;
+    // `virtual` is the fixed-stride All Alerts layout, `windowed` preserves natural row heights.
+    fillMode = 'auto',
     showWatchFilter = true,
     initialRowCount = 40,
     initialRowKey = null,
     virtualRowHeight = 72,
-    preindexSearch = false,
+    preindexSearch = true,
     onScrollActivity = null,
     scrollLabel = `${nameLabel} data table`,
   } = config;
@@ -538,9 +539,11 @@ export function scoreTable(config) {
     if (view.sort) {
       const { key: sk, dir } = view.sort;
       const mul = dir === 'asc' ? 1 : -1;
-      out = out.slice().sort((a, b) => {
-        const av = sortValueFor(a, sk);
-        const bv = sortValueFor(b, sk);
+      // Format/derive each sort key once, not on both sides of every comparator call.
+      const values = new Map(out.map(row => [row, sortValueFor(row, sk)]));
+      out.sort((a, b) => {
+        const av = values.get(a);
+        const bv = values.get(b);
         if (av === bv) return 0;
         if (av === null || av === undefined) return 1;
         if (bv === null || bv === undefined) return -1;
@@ -597,7 +600,9 @@ export function scoreTable(config) {
 
   // A slice of the body, so the first paint can put a screenful in the DOM and let the rest
   // follow. See FIRST_PAINT_ROWS below for why that is not merely a nicety.
-  const isVirtual = fillMode === 'virtual';
+  const isWindowed = fillMode === 'windowed' || (fillMode === 'auto' && !!stickyHead && rows.length > 160);
+  const isFixed = fillMode === 'virtual';
+  const isVirtual = isFixed || isWindowed;
   const VIRTUAL_ROW_HEIGHT = Math.max(48, Math.round(Number(virtualRowHeight) || 72));
 
   function bodyHtml(list, from = 0, to = list.length) {
@@ -641,14 +646,14 @@ export function scoreTable(config) {
         // A CSS height on <tr> is only a minimum. Constrain each cell's content as well, so a
         // longer attribution/reason cannot change the physical stride behind virtual spacers.
         // Full text remains in the existing titles, row detail and model-backed export.
-        const td = (content, classes = '') => `<td class="${PX} ${isVirtual ? '' : 'py-3'} ${classes}"${isVirtual ? ' style="padding-top:0;padding-bottom:0"' : ''}>${isVirtual
+        const td = (content, classes = '') => `<td class="${PX} ${isFixed ? '' : 'py-3'} ${classes}"${isFixed ? ' style="padding-top:0;padding-bottom:0"' : ''}>${isFixed
           ? `<div data-virtual-cell style="height:${VIRTUAL_ROW_HEIGHT - 1}px;display:flex;align-items:center;overflow:hidden"><div style="width:100%;min-width:0;max-height:${VIRTUAL_ROW_HEIGHT - 25}px;overflow:hidden">${content}</div></div>`
           : content}</td>`;
         const dataTd = (c) =>
           td(c.html ? c.get(row) : escapeHtml(c.get(row)), `whitespace-nowrap text-sm text-slate-700 ${c.align === 'right' ? 'text-right tabular-nums' : ''}`);
         const styles = [];
         if (redFlag) styles.push('box-shadow: inset 3px 0 0 #f43f5e');
-        if (isVirtual) styles.push(`height:${VIRTUAL_ROW_HEIGHT}px`);
+        if (isFixed) styles.push(`height:${VIRTUAL_ROW_HEIGHT}px`);
         return `
           <tr data-row-key="${escapeHtml(slug)}" class="row-line border-b border-slate-100 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${redFlag ? 'bg-rose-50/40 hover:bg-rose-50' : `${extraClass} hover:bg-slate-50`}"
             ${rowIndex === null ? '' : `aria-rowindex="${rowIndex + 2}"`} ${styles.length ? `style="${styles.join(';')}"` : ''}>
@@ -755,9 +760,9 @@ export function scoreTable(config) {
     <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100" data-score-table${fillMode === 'scroll' || isVirtual ? ' data-scroll-paged' : ''}${isVirtual ? ` data-virtualized data-virtual-total="${initialList.length}" data-virtual-start="${initialVirtualStart}"` : ''}${!isVirtual && initialList.length > FIRST_PAINT_ROWS ? ` data-rows-pending="${initialList.length - FIRST_PAINT_ROWS}"` : ''}>
       <div data-table-toolbar class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <div class="relative max-w-md flex-1">
+          <div class="relative max-w-md flex-1" style="min-width:min(100%, 220px)">
             <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-            <input type="text" data-table-search placeholder="${escapeHtml(searchPlaceholder)}" value="${escapeHtml(view.q)}"
+            <input type="text" data-table-search aria-label="Search ${escapeHtml(nameLabel)}" placeholder="${escapeHtml(searchPlaceholder)}" value="${escapeHtml(view.q)}"
               class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           ${filterDefs
@@ -932,6 +937,17 @@ export function scoreTable(config) {
     // still leaks nothing. Which scroller matters depends on `stickyHead`: with it the tbody is
     // its own scroll container, without it the page scrolls. Both, then.
     const scroller = host.querySelector('[data-table-scroll]');
+    const windowed = isWindowed ? mountWindowedList({
+      scroller, content: body, items: current, key, rowSelector: 'tr[data-row-key]',
+      renderRows: bodyHtml, estimateHeight: VIRTUAL_ROW_HEIGHT, initialKey: initialRowKey,
+      spacerHtml: (height, edge) => `<tr aria-hidden="true"><td data-window-spacer="${edge}" colspan="${colCount}" style="height:${height}px;padding:0;border:0"></td></tr>`,
+      onScrollActivity,
+      onWindow: (start, total) => {
+        host.dataset.virtualStart = start; host.dataset.virtualTotal = total;
+        tableEl?.setAttribute('aria-rowcount', String(total + 1));
+        rowHtmlCache.clear(); staleKeys.clear();
+      },
+    }) : null;
     let scrollAttached = false;
     let scrollFrame = 0;
 
@@ -950,6 +966,7 @@ export function scoreTable(config) {
     }
 
     function onScroll() {
+      if (isWindowed) return; // measured list owns its scroll/resize lifecycle
       onScrollActivity?.();
       if (scrollFrame || (!isVirtual && filled >= current.length)) return;
       scrollFrame = requestAnimationFrame(() => {
@@ -1006,12 +1023,18 @@ export function scoreTable(config) {
     // The reorder path needs every next row already in the DOM, which is only true once the fill
     // has finished. Mid-fill it falls through to the rebuild — which is now the cheap path, since
     // a rebuild is a screenful plus a fresh fill rather than 1,722 rows.
-    function repaint() {
+    function repaint({ resetScroll = true } = {}) {
       stopFill();
       current = visibleRows();
       head.innerHTML = headHtml();
 
       if (isVirtual) {
+        if (windowed) {
+          windowed.update(current, { resetScroll });
+          markPending(0); countEl.textContent = countText(current);
+          if (watchCount) watchCount.textContent = String(watchlist.size());
+          return;
+        }
         const visibleIndex = scroller ? Math.floor(scroller.scrollTop / VIRTUAL_ROW_HEIGHT) : 0;
         virtualStart = -1; // the filtered/sorted row identities changed; force a bounded rebuild
         paintVirtualWindow(visibleIndex - VIRTUAL_OVERSCAN_ROWS);
@@ -1074,6 +1097,12 @@ export function scoreTable(config) {
     updateRows = (keys) => {
       const wanted = new Set([...keys].map(String));
       if (!wanted.size) return 0;
+      rows.forEach((row, i) => { if (wanted.has(String(key(row))) && searchTextIndex) searchTextIndex[i] = undefined; });
+      if (windowed) {
+        const touched = [...body.querySelectorAll('tr[data-row-key]')].filter(tr => wanted.has(tr.dataset.rowKey)).length;
+        if (touched) windowed.refresh();
+        return touched;
+      }
       const watched = loadWatchlist();
       // Both indexes are built ONCE, not once per key. Sixty keys scanned against six hundred
       // rows and six hundred <tr> nodes is the sort of quadratic that this table's whole design
@@ -1138,7 +1167,7 @@ export function scoreTable(config) {
           rowHtmlCache.delete(slug); // its star changed — rebuild just that row next paint
           staleKeys.add(slug); //      ...including on the fast path, which re-parses nothing
         }
-        repaint();
+        repaint({ resetScroll: false });
         return;
       }
       if (e.target.closest('[data-stop]')) {
@@ -1190,6 +1219,7 @@ export function scoreTable(config) {
     startSearchWarm();
 
     return () => {
+      windowed?.destroy();
       stopFill();
       if (cancelSearchWarm) cancelSearchWarm();
       cancelSearchWarm = null;
