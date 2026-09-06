@@ -3678,7 +3678,7 @@ Stake changes are not labelled buys or sells: changes in share capital can alter
 Active investor views revalidate books automatically on open, visible checks, resume and reconnect,
 using the Worker's six-hour source cache and bounded 15-minute retry interval. Other tabs retain
 their bulk snapshot path. Malformed or failed book responses cannot replace good device-cache
-`sourceCheckedAt` survives normalisation and participates in the content validator, so a
+entries. `sourceCheckedAt` survives normalisation and participates in the content validator, so a
 successful unchanged source read can advance its check time without requiring a new holding.
 Source links support inspection, but this feed remains a third-party aggregation, not an
 independent verification of every exchange filing. An empty result describes available data only.
