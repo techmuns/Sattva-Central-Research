@@ -31,12 +31,16 @@
     "isin:INE914E01040|Alankit": {
       "lastAttemptAt": "2026-09-06T08:59:26+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE914E01040|ALANKIT": {
+      "lastAttemptAt": "2026-09-06T09:03:32+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-06T08:59:26.329471+00:00"
+    "checkedAt": "2026-09-06T09:03:32.131947+00:00"
   }
 }
