@@ -296,6 +296,7 @@ try {
   await input.fill('Keep this next question');
   await page.getByRole('button', { name: 'Reading view', exact: true }).click();
   assert.equal(await page.locator('.research-sidebar').isVisible(), false);
+  assert.equal(await page.locator('[data-beacon-toggle]').isVisible(), false, 'reading view keeps the floating source badge out of the text');
   assert.equal(await input.inputValue(), 'Keep this next question');
   await answerArticle.getByRole('button', { name: 'Read from start', exact: false }).click();
   await page.getByRole('button', { name: 'Latest answer', exact: false }).waitFor();
@@ -311,6 +312,7 @@ try {
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-reading-mobile.png'), fullPage: true });
   await page.getByRole('button', { name: 'Exit reading view', exact: true }).click();
   assert(await page.locator('.research-sidebar').isVisible());
+  assert(await page.locator('[data-beacon-toggle]').isVisible(), 'leaving reading view restores the source inventory');
   await page.setViewportSize({ width: 1440, height: 1050 });
   customAnswer = null;
 
@@ -327,6 +329,7 @@ try {
     result.stableParagraph = first === node.firstChild && first.isConnected;
     renderResearchAnswer(node, 'Portfolio reading [Dashboard: Ask Sattva]', { compactCitations: true, cite: () => ({ href: 'https://sattva-family.pages.dev/ask', label: 'Ask Sattva' }) });
     result.externalTarget = node.querySelector('.research-cite').target;
+    result.citationAttached = node.querySelector('.research-cite').parentElement.classList.contains('research-citation-anchor');
     renderResearchAnswer(node, '# Summary\n\n**Revenue**: 120\n\n**Risks**\n\nStill unresolved.');
     result.headingVariants = [...node.querySelectorAll('h3')].map(heading => heading.textContent);
     node.remove(); return result;
@@ -337,6 +340,7 @@ try {
   assert(safeRender.stableParagraph, 'completed paragraphs remain mounted while later blocks stream');
   assert(safeRender.partialCitationHidden, 'split citation syntax does not flash into the answer');
   assert.equal(safeRender.externalTarget, '_blank', 'external portfolio sources preserve the research conversation');
+  assert(safeRender.citationAttached, 'short citation markers stay attached to the preceding word');
   assert.deepEqual(safeRender.headingVariants, ['Summary', 'Revenue:', 'Risks']);
   assert(safeRender.text.includes('Zero is 0, missing is unavailable.'));
 

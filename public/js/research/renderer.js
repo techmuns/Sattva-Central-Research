@@ -17,15 +17,21 @@ function appendInline(parent, text, cite = null) {
   let cursor = 0;
   for (const match of source.matchAll(pattern)) {
     const token = match[0];
+    const citation = token.match(CITATION);
+    const target = citation ? cite?.(citation[1]) || null : null;
+    let citationParent = parent;
     if (match.index > cursor) {
       const between = source.slice(cursor, match.index);
-      parent.appendChild(document.createTextNode(token.startsWith('[Dashboard:') ? between.replace(/[ \t]+$/, '\u00a0') : between));
+      const tail = target?.number ? between.match(/([^\s]{1,32})[ \t]+$/) : null;
+      if (tail && (tail.index === 0 || /\s/.test(between[tail.index - 1]))) {
+        parent.appendChild(document.createTextNode(between.slice(0, tail.index)));
+        citationParent = el('span', { class: 'research-citation-anchor' }, `${tail[1]}\u00a0`);
+        parent.appendChild(citationParent);
+      } else parent.appendChild(document.createTextNode(between));
     }
-    const citation = token.match(CITATION);
     if (citation) {
-      const target = cite?.(citation[1]) || null;
       if (target?.href) {
-        parent.appendChild(el('a', {
+        citationParent.appendChild(el('a', {
           class: `research-cite${target.number ? ' research-cite-number' : ''}`,
           href: target.href, title: target.title || `Open ${citation[1]}`,
           target: /^https?:\/\//.test(target.href) ? '_blank' : null,
