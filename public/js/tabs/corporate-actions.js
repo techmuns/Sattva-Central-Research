@@ -103,7 +103,7 @@ const tab = makeFilingsTab({
     const recent = (time) => Number.isFinite(time) && Date.now() >= time && Date.now() - time <= 35 * 60 * 1000;
     const fresh = meta.origin === 'live' && !meta.checking && !meta.degraded &&
       meta.sources?.nse?.state === 'live' && recent(nseAt) &&
-      meta.sources?.screener?.state === 'live' && recent(screenerAt);
+      meta.sources?.screener?.state === 'live' && meta.sources.screener.fullHistory === true && recent(screenerAt);
     const age = Number.isFinite(at) ? ` · Captured ${formatRelativeTime(at)}` : '';
     const label = meta.checking
       ? `Checking for updates${age}`

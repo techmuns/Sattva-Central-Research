@@ -153,6 +153,9 @@ try {
   responseCapture = { ...capture, sources: { ...capture.sources, screener: { state: 'retained', capturedAt: at } } };
   await page.evaluate(() => window.poll.fetcher());
   assert.match(await page.locator('[data-filings-info]').innerText(), /freshness unconfirmed/);
+  responseCapture = { ...capture, sources: { ...capture.sources, screener: { state: 'live', capturedAt: at, fullHistory: false } } };
+  await page.evaluate(() => window.poll.fetcher());
+  assert.match(await page.locator('[data-filings-info]').innerText(), /freshness unconfirmed/);
   responseCapture = capture;
   await page.evaluate(() => window.poll.fetcher());
   assert.match(await page.locator('[data-filings-info]').innerText(), /Up to date/);

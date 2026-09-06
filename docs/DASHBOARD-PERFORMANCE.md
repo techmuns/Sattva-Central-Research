@@ -116,8 +116,9 @@ Load, polling and manual refresh share one check. Successful new captures still 
 unchanged 200/304 responses retain row identity, search focus and reading position. Invalid, empty
 and older responses keep the last-good table and cannot overwrite its persistent cache. A failed
 attempt does not advance the successful-check timestamp. Invalidation ignores late completions.
-"Up to date" requires both source layers to report live, recent captures and a successful current
-file check; a retained or failed layer remains explicitly unconfirmed.
+"Up to date" requires both source layers to report live, recent captures, Screener to confirm its
+retained full-history baseline, and a successful current file check; a partial, retained or failed
+layer remains explicitly unconfirmed.
 
 Local Chrome results, not production measurements:
 
