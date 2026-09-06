@@ -487,7 +487,7 @@ export function fitEvidenceToBudget(evidence, charBudget = RESEARCH_EVIDENCE_CHA
         // Preserve the relevant part of long headlines, not just their first 200 characters.
         for (const field of ['title', 'headline', 'summary', 'detail']) if (row[field] && source.rowPriorities) bounded[field] = clipped(row[field], 420);
         if (row.url && /^https?:\/\//i.test(row.url) && row.url.length <= 2048) bounded.url = row.url;
-        candidates.push({ sourceIndex, rowIndex, priority: tier * 10000 + (evidence.selection?.sourceIds?.length && !evidence.selection.sourceIds.includes(source.id) ? 2000 : 0) + (priorities?.[rowIndex] || 0) + rowIndex * 30, row: bounded, target });
+        candidates.push({ sourceIndex, rowIndex, priority: (rowIndex === 0 ? 0 : 1000000) + tier * 10000 + (evidence.selection?.sourceIds?.length && !evidence.selection.sourceIds.includes(source.id) ? 2000 : 0) + (priorities?.[rowIndex] || 0) + rowIndex * 30, row: bounded, target });
       });
     };
     add(source?.rows, source?.rowTiers, source?.matchedRows, 'rows', source?.rowPriorities);
