@@ -80,6 +80,10 @@ try {
   const off = feed.onChange(() => emits++);
   await feed.seed();
   assert.equal(feed.rows().length, 3);
+  const initialRows = feed.rows();
+  assert.equal(feed.rows(), initialRows, 'unchanged complete union is reused by reference');
+  feed.meta(); feed.wasAskedEmpty('ALPHA'); feed.forTicker('ALPHA');
+  assert.equal(feed.rows(), initialRows, 'coverage and per-company reads never rebuild the union');
   assert.equal(feed.meta().capturedAt, core.capturedAt, 'TradingView freshness never launders core search freshness');
   assert.equal(timers.size, 1, 'one shared poller for all consumers');
   const off2 = feed.onChange(() => {});
@@ -91,6 +95,7 @@ try {
   const tick = [...timers.entries()][0]; timers.delete(tick[0]); now += NEWS_SNAPSHOT_POLL_MS;
   await tick[1].fn();
   assert(feed.rows().some(r => r.title === next.title), 'new headlines land automatically while open');
+  assert.notEqual(feed.rows(), initialRows, 'a new publication invalidates the complete union');
   assert.equal(feed.rows().length, 3, 'stable story IDs deduplicate a corrected headline');
   assert.equal(feed.meta().capturedAt, core.capturedAt);
   publication = healthySnapshot;

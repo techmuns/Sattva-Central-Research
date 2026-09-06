@@ -62,7 +62,7 @@ const tab = makeFilingsTab({
     return `${formatNumber(rows.length)} ${rows.length === 1 ? 'announcement' : 'announcements'} · ${formatNumber(companies)} ${companies === 1 ? 'company' : 'companies'} with filings`;
   },
   showWatchFilter: false,
-  fillMode: 'scroll',
+  fillMode: 'auto',
   preserveReadingPosition: true,
   status: () => '<span data-filings-info class="text-xs font-semibold text-slate-500">Updates automatically</span>',
   emptyMessage: 'No captured announcements for this scope or search yet.',

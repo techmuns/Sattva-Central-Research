@@ -19,7 +19,7 @@ import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attributi
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
-import { enrichCardFromAllAlerts } from './intelligence-graph.js';
+import { enrichCardFromAllAlerts, indexAlertContext } from './intelligence-graph.js';
 import { canonicalArticleUrl } from './filings-shared.js';
 import { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
@@ -756,6 +756,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     if (!card.holding || !card.sector || !card.hasMaterialNegative) continue;
     negativeBySector.set(card.sector, (negativeBySector.get(card.sector) || 0) + 1);
   }
+  const contextIndex = indexAlertContext(supportedReport, insightCompanies);
   cards = cards.map((card) => {
     const peers = card.sector ? negativeBySector.get(card.sector) || 0 : 0;
     if (card.hasMaterialNegative && peers > 1) {
@@ -776,7 +777,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     card.insight = plainInsight(card);
     card.metrics = cardMetrics(card);
     card.badge = cardBadge(card);
-    return enrichCardFromAllAlerts(card, supportedReport, { insightCompanies });
+    return enrichCardFromAllAlerts(card, supportedReport, { contextIndex });
   });
 
   cards.sort(

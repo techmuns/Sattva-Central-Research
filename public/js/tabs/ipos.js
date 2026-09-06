@@ -35,7 +35,7 @@ export function render(ctx) {
       rows, key: ipoKey, watchKey: (r) => r.ticker || null, watchName: (r) => r.company,
       name: (r) => r.company, sub: (r) => r.ticker || r.isin || (r.board ? `${r.board} public issue` : 'Public issue filing'),
       showRank: false, nameAfter: 1, dense: true, nameMaxPx: 280,
-      stickyHead: 'max(320px, calc(100vh - 310px))', fillMode: 'scroll',
+      stickyHead: 'max(320px, calc(100vh - 310px))', fillMode: 'auto',
       columns: [
         { label: 'Filed / document date', get: (r) => `${when(ipoDisplayDay(r))}${!r.filingDate && r.documentDate ? ' · document date' : ''}`, sortValue: (r) => ipoDisplayDay(r) || '', align: 'left' },
         { label: 'Filing', get: (r) => `<span class="whitespace-normal text-xs text-slate-700" title="${e(r.title)}">${e(r.filingType)}</span>`, html: true, sortValue: (r) => r.filingType },

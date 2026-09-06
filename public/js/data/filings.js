@@ -290,7 +290,17 @@ export function createFeed(kind) {
   }
 
   /** Every row that has landed, newest first. Rows with no readable date sort last, never first. */
+  let rowSnapshot = null;
   function rows() {
+    const parts = [...state.rows].map(([key, list]) => {
+      if (kind === 'news' && !state.identities.has(key)) {
+        const row = list[0] || {};
+        state.identities.set(key, { ticker: row.ticker || (row.entityId ? null : key), name: state.names.get(key) || row.company || row.query });
+      }
+      return [key, list, state.identities.get(key)];
+    });
+    if (rowSnapshot?.state === state && parts.length === rowSnapshot.parts.length &&
+      parts.every((part, i) => part.every((value, j) => value === rowSnapshot.parts[i][j]))) return rowSnapshot.value;
     const out = [];
     for (const [key, list] of state.rows) {
       for (const row of list) {
@@ -306,7 +316,9 @@ export function createFeed(kind) {
         } else out.push({ ...row, ticker });
       }
     }
-    return out.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const value = out.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    rowSnapshot = { state, parts, value };
+    return value;
   }
 
   const forTicker = (t) => state.rows.get(String(t || '').toUpperCase()) || [];
@@ -407,7 +419,9 @@ export function createFeed(kind) {
           for (const field of ['brands', 'aliases', 'formerNames', 'subsidiaries']) {
             merged[field] = [...new Set([...(previous[field] || []), ...(item[field] || [])])];
           }
-          state.identities.set(t, merged);
+          // Reopening News must not invalidate every article's attribution cache just because
+          // the picker constructed equivalent identity objects. Real enrichment changes still do.
+          if (JSON.stringify(previous) !== JSON.stringify(merged)) state.identities.set(t, merged);
         } else state.identities.set(t, item);
       }
     }
