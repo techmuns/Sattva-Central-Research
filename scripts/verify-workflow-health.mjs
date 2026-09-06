@@ -20,6 +20,8 @@ assert(!assessWorkflow(workflow, active, [{ ...run, conclusion: 'failure' }], { 
 assert(!assessWorkflow(workflow, active, [{ ...run, head_branch: 'codex/test' }], { now }).ok);
 assert(!assessWorkflow({ ...workflow, schedules: ['*/15 * * * *'] }, active, [run], { now }).ok, 'frequent capture requires recent successful runs');
 const recent = { ...run, created_at: '2026-09-05T19:15:00Z' };
+assert(assessWorkflow({ ...workflow, schedules: ['*/15 * * * *'] }, active, [{ ...recent, event: 'workflow_run' }], { now }).ok,
+  'completion-driven recovery counts as a real automatic workflow run');
 assert(assessWorkflow({ ...workflow, schedules: ['*/15 * * * *'] }, active, [recent, { ...recent, id: 2, status: 'queued', conclusion: null, created_at: '2026-09-05T19:45:00Z' }], { now }).ok);
 assert(!assessWorkflow(workflow, active, [{ ...recent, status: 'in_progress', conclusion: null, created_at: '2026-09-05T17:00:00Z' }, run], { now }).ok);
 const calls = [];

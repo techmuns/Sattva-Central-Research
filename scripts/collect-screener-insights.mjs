@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
 import { parseWatchlistExport } from './lib/screener-watchlist.mjs';
 import { buildInsightInventory, insightInventoryDiagnostic, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
+import { collectInsightBatch, orderInsightTargets } from './lib/screener-insights-batch.mjs';
 import {
   mergeScreenerInsightsCapture,
   SCREENER_INSIGHTS_COMPRESSED_LIMIT,
@@ -29,6 +30,7 @@ const ORIGIN = 'https://www.screener.in';
 const WATCHLIST = `${ORIGIN}/watchlist/${SCREENER_PORTFOLIO_WATCHLIST_ID}/`;
 const MAX_PAGE_BYTES = 3 * 1024 * 1024;
 const CONCURRENCY = 3;
+const COLLECTION_BUDGET_MS = 10 * 60_000;
 let stage = 'configuration';
 let browser;
 let inventoryInputs;
@@ -103,6 +105,8 @@ export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 1
   if (item.unresolved) throw Error('Company page identity is unresolved');
   const response = await page.goto(item.companyUrl, { waitUntil: 'domcontentloaded' });
   const final = new URL(page.url());
+  if ([401, 403, 429].includes(response?.status())) throw Error('source-blocked');
+  if (final.origin === ORIGIN && final.pathname.startsWith('/login/')) throw Error('session');
   if (!response?.ok() || final.origin !== ORIGIN || screenerInsightIdentity(final.href)?.companyKey !== item.companyKey) throw Error('response');
   if (!(await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count())) throw Error('session');
   const section = page.locator('#insights');
@@ -124,7 +128,24 @@ export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 1
   return company;
 }
 
+export async function readInsightCompanyAttempt(context, item, checkedAt, { signal, previousCompany = null } = {}) {
+  signal.throwIfAborted();
+  const page = await context.newPage();
+  const close = () => { void page.close().catch(() => {}); };
+  signal.addEventListener('abort', close, { once: true });
+  try {
+    signal.throwIfAborted();
+    page.setDefaultTimeout(8_000);
+    page.setDefaultNavigationTimeout(12_000);
+    return await readInsightCompany(page, item, checkedAt, { previousCompany, tabTimeout: 8_000 });
+  } finally {
+    signal.removeEventListener('abort', close);
+    await page.close().catch(() => {});
+  }
+}
+
 async function main() {
+  const startedAt = Date.now();
   if (!output) throw Error('Provide a staging artifact output path');
   const username = process.env.SCREENER_USERNAME;
   const password = process.env.SCREENER_PASSWORD;
@@ -176,39 +197,20 @@ async function main() {
   const previousAge = Date.now() - Date.parse(previous?.checkedAt || '');
   const full = forceFull || !previous || !previous.fullCoverage || !Number.isFinite(previousAge) || previousAge > 8 * 86_400_000;
   const bucket = Math.floor(Date.now() / 86_400_000) % 7;
-  const selected = [...targets.values()].filter((item) => full || item.inPortfolio || hashBucket(item.companyKey) === bucket);
+  const selected = orderInsightTargets([...targets.values()].filter((item) => full || item.inPortfolio || hashBucket(item.companyKey) === bucket), previous);
   const { readable, unresolvedKeys } = splitInsightReadTargets(selected);
   const previousByKey = new Map((previous?.companies || []).map((company) => [company.companyKey, company]));
-  const succeeded = [];
-  let failedCount = unresolvedKeys.length;
-  const failedKeys = [...unresolvedKeys];
-  let cursor = 0;
 
   stage = full ? 'full Insights crawl' : 'incremental Insights crawl';
-  const worker = async () => {
-    const page = await context.newPage();
-    page.setDefaultTimeout(30_000);
-    page.setDefaultNavigationTimeout(45_000);
-    try {
-      while (cursor < readable.length) {
-        const item = readable[cursor++];
-        let success = false;
-        for (let attempt = 1; attempt <= 2 && !success; attempt++) {
-          try {
-            succeeded.push(await readInsightCompany(page, item, checkedAt, { previousCompany: previousByKey.get(item.companyKey) }));
-            success = true;
-          } catch {
-            if (attempt === 2) { failedCount += 1; failedKeys.push(item.companyKey); }
-            else await page.waitForTimeout(600);
-          }
-        }
-        await page.waitForTimeout(140);
-      }
-    } finally {
-      await page.close();
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, readable.length) }, worker));
+  const batch = await collectInsightBatch(readable, (item, { signal }) => readInsightCompanyAttempt(context, item, checkedAt,
+    { signal, previousCompany: previousByKey.get(item.companyKey) }), {
+    concurrency: CONCURRENCY,
+    maxDurationMs: Math.max(1, COLLECTION_BUDGET_MS - (Date.now() - startedAt)),
+    onProgress: progress => console.log(JSON.stringify({ stage: 'crawl-progress', unresolved: unresolvedKeys.length, ...progress })),
+  });
+  const { succeeded, deferredKeys } = batch;
+  const failedKeys = [...unresolvedKeys, ...batch.failedKeys];
+  const failedCount = failedKeys.length;
 
   stage = 'capture validation';
   if (!succeeded.length) throw Error('No company could be checked');
@@ -218,9 +220,11 @@ async function main() {
     sourceId: SCREENER_INSIGHTS_ID,
     checkedAt,
     targetCount: targetKeys.length,
-    checkedCount: selected.length,
+    checkedCount: batch.attemptedCount + unresolvedKeys.length,
     failedCount,
     failedKeys,
+    deferredCount: deferredKeys.length,
+    deferredKeys,
     fullCoverage: full && failedCount === 0 && succeeded.length === targetKeys.length,
     targetKeys,
     companies: succeeded,
@@ -232,7 +236,7 @@ async function main() {
 
   stage = 'artifact write';
   writeFileSync(output, bytes);
-  console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: selected.length, succeeded: succeeded.length, failed: failedCount, unresolved: unresolvedKeys.length, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
+  console.log(JSON.stringify({ checkedAt, targets: targetKeys.length, checked: current.checkedCount, succeeded: succeeded.length, failed: failedCount, deferred: deferredKeys.length, deadlineReached: batch.deadlineReached, sourceBlocked: batch.sourceBlocked, unresolved: unresolvedKeys.length, companies: capture.companies.length, metrics: capture.companies.reduce((sum, company) => sum + company.rows.length, 0), fullCoverage: capture.fullCoverage, bytes: bytes.length }));
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

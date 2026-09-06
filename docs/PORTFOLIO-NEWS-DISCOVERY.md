@@ -85,15 +85,16 @@ code change is not proof of a successful production X collection.
 
 ### TradingView public headline enrichment
 
-`enrich-tradingview-news.mjs` runs in the existing three-hour company-news workflow, after the
-other enrichment stage, with a separate six-minute budget. Each run reads the same verified active
+`enrich-tradingview-news.mjs --isolated` now runs in its own quarter-hour workflow with an
+eight-minute budget; see [Continuous portfolio news](CONTINUOUS-PORTFOLIO-NEWS.md) for capture,
+checkpoint and bounded recovery contracts. Each run reads the same verified active
 Family portfolio. Newly added identities are enrolled automatically; removed identities stop
 being polled, but their archived observations remain. If the active book cannot be verified, the
 last verified book is retained and the source status explicitly warns that changes may be missing.
 
 NSE symbols come from the resolved book or the exact ISIN exchange directory; BSE symbols require
 that directory. Warrant lines reuse their issuer identity. Private/unmapped companies are listed
-in `company-news/tradingview.json`, never guessed by fuzzy names or assumed to have an NSE symbol.
+in `tradingview-news/tradingview.json`, never guessed by fuzzy names or assumed to have an NSE symbol.
 The BSE page can carry NSE tags for the same issuer; only independently mapped venue aliases are
 accepted. Tags widen discovery but cannot alone establish factual AI attribution.
 

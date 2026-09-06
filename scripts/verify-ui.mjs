@@ -4938,7 +4938,8 @@ if (siProbe.state === 'no-route') {
   const summary = await page.evaluate(async () => {
     const feed = await import('/js/data/super-investors.js');
     const q = feed.quarterSummary({});
-    const moves = feed.allMoves();
+    const { quarterOrder } = await import('/js/data/finology-shared.js');
+    const moves = feed.allMoves().filter((m) => quarterOrder(m.latest) === quarterOrder(q.latest) && quarterOrder(m.prior) === quarterOrder(q.prior));
     const host = document.getElementById('content-host');
     const sec = host.querySelector('[data-quarter-summary]');
     const panel = (k) => sec?.querySelector(`[data-ranked-list="${k}"]`);
@@ -5023,7 +5024,7 @@ if (siProbe.state === 'no-route') {
         .allHoldings()
         .filter((r) => r.company === name)
         .map((r) => {
-          const [latest, prior] = r.quarters || [];
+          const { latest, prior } = feed.quarterSummary();
           return {
             investor: r.investor,
             now: latest ? r.quarterlyHoldings[latest] : null,

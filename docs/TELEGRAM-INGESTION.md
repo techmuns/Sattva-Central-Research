@@ -1,77 +1,100 @@
 # Telegram ingestion
 
-Public Chatter → Telegram reads `public/data/telegram-posts.json`. The archive keeps
-original message IDs, Telegram publication dates, available text, attachment metadata
-where exposed, and links to the originals. It does not score posts or infer a company.
+Public Chatter reads retained posts from **@researchreportss**. Publication dates come
+from Telegram. The source-check time is separate; September 4 publications may still be
+the newest on September 6. Public-page probing cannot establish that they are the newest.
 
-The old implementation read only permalink Open Graph descriptions. It discarded
-captionless/restricted messages, capped retention at 600 rows, recorded no source dates,
-and only saved state when a new text post arrived. A quiet run could therefore lose
-retry/backfill progress. Its statement that Telegram publishes no timestamps was wrong:
-the public embed for `researchreportss/93384` reports `2026-05-13T10:57:05+00:00`.
+## Delivery
 
-The collector now combines Telegram's documented public message embed with available
-permalink text. A matching `data-post` identity and valid `<time datetime>` are required.
-A confirmed post whose content is hidden is kept with `text: null` and
-`contentStatus: "telegram-only"`; no filename, quote or document type is guessed.
-HTTP errors, unrecognised pages and rate limits remain retryable. Missing message IDs
-are not counted as documents or deleted posts. Existing captured records are retained.
+`telegram-refresh.yml` collects into an immutable `telegram-posts-v1.json.gz` Actions
+artifact. `/api/telegram/posts` reads that artifact with the existing Worker
+`GH_DISPATCH_TOKEN`. It validates the source repository, workflow, branch, artifact
+SHA-256, download host and public-data schema. No Telegram credentials reach the Worker
+or browser. One-minute edge caching and ETags bound repeated reads.
 
-## Collection and retention
+The static `public/data/telegram-posts.json` paints first. Public Chatter polls the artifact
+once a minute while mounted and visible, retaining newer data if an older static file or
+failed response arrives. Ten-minute GitHub checks are requested; active readers also
+request an overdue check via the existing POST-only, ten-minute-cooled-down dispatch
+route. Quiet checks use `lastRun.at` rather than content-change time, avoiding needless
+runs when the channel has not posted. This is polling, **not instantaneous streaming**.
+GitHub schedules are best effort. The Cloudflare account currently has no spare cron
+trigger; no always-on timing guarantee is claimed.
 
-Every run checks known messages, walks the next 60 IDs, sweeps a separate forward window
-to cross long gaps, retries failed IDs, and resumes older history (180 IDs by default).
-The forward sweep cycles over the next 10,000 IDs; it is discovery, not proof that a
-channel has no later posts. A verified `TELEGRAM_HEAD_HINT` can jump to a newer known
-message and restart history from there. The old snapshot is upgraded from its newest
-message downward, so missing dates and omitted posts are recovered before older history.
+Collection no longer waits for an archive PR, CI or a site deployment. A separate daily
+`telegram-archive.yml` backs the artifact up through `codex/telegram-capture`, verifies
+its exact commit, and merges only through the existing review/check gates. A conflicted
+backup PR cannot stop fresh collection. Artifacts retain the whole preceding capture,
+expire after 90 days, and are renewed by each successful workflow. A prolonged outage
+beyond retention falls back to the committed backup. Payload size limits fail visibly
+without truncation. Resolve an unattended backup PR before relying on it as permanent
+storage.
 
-All captured rows are retained, with no 600-post cap. `historyNextId` and `retryIds` are
-saved even when no new posts arrive. `lastCheckedAt` records a completed successful
-forward check, `lastRun` reports failures/partial checks, and `capturedAt` changes when
-archive content changes. `firstSeenAt` is preserved and never displayed as publication time.
+## Source modes
 
-A scan reaching ID 1 means the public ID range was examined; it does not claim to have
-obtained content Telegram withholds. Full content and downloadable report files need an
-authenticated Telegram user connection. No Telegram account is configured by this change.
+Without `TELEGRAM_CREDENTIALS`, the dependency-free Node collector combines documented
+public embeds with permalink Open Graph text. A matching message identity and source
+timestamp are required. Missing IDs are not interpreted as documents or deletions.
+Forward sampling and resumable historical scans help discovery but cannot prove the
+latest channel message has been found. The UI explicitly says it has not been verified.
 
-## Local collection
+With `TELEGRAM_CREDENTIALS`, `collect-telegram.py` uses Telethon 1.44.0 and the official
+MTProto API. It asks for the newest 100 messages directly, re-reads recent edits, catches
+up oldest-first after its last confirmed position, and resumes older history separately.
+Large bursts and interrupted requests preserve their position. `latestVerifiedAt` is set
+only when the capture has caught up to the observed API head. History can remain incomplete
+while the newest messages are current. A failed source check preserves prior posts and
+is published as failed health, even though uploading that health artifact succeeds.
 
-These commands modify only a local artifact. Commit the result through a PR.
+The integration reads only the configured public broadcast channel, with no joins,
+sending, contact access, read receipts, private-group export or file downloads. Text,
+publication dates, document filenames/sizes and original links are retained. Captionless
+messages are archived; rows appear when captured text or a named document is available.
 
-```sh
-node scripts/scrape-telegram.mjs
-TELEGRAM_OUT=/tmp/telegram-smoke.json TELEGRAM_HEAD_HINT=93384 TELEGRAM_BACKFILL=10 node scripts/scrape-telegram.mjs
-TELEGRAM_BACKFILL=700 TELEGRAM_BUDGET_MS=840000 node scripts/scrape-telegram.mjs
-```
+## Connect the free official API
 
-`TELEGRAM_BACKFILL=0` disables older history for one run. `TELEGRAM_FORWARD`,
-`TELEGRAM_DISCOVERY`, `TELEGRAM_DELAY_MS`, and `TELEGRAM_BUDGET_MS` bound each run.
-A first capture requires a real message number as `TELEGRAM_HEAD_HINT`; an existing
-archive is the normal starting point. Invalid settings and malformed existing archives
-fail without overwriting the archive. Writes use atomic rename.
+The API is free **but requires a Telegram user account**, your own API ID/hash and a
+revocable account session. A bot token is not a substitute for channel-history access.
 
-## Scheduled publication
+1. Sign in to [Telegram API development tools](https://my.telegram.org/apps) and create
+   your own application. Do not paste credentials, login codes or passwords into chat.
+2. Prepare a local runtime outside the repository:
 
-`telegram-refresh.yml` requests runs at minutes 17 and 47. GitHub schedules are best
-effort; the dashboard reports observed checks rather than promising a fixed cadence.
+   ```sh
+   python3 -m venv "$HOME/.local/share/sattva-telegram-venv"
+   "$HOME/.local/share/sattva-telegram-venv/bin/pip" install telethon==1.44.0
+   "$HOME/.local/share/sattva-telegram-venv/bin/python" scripts/connect-telegram.py
+   ```
 
-The job opens `codex/telegram-capture` as a PR, then explicitly dispatches `Verify` on
-that PR's commit because PR events created with `GITHUB_TOKEN` do not start workflows.
-It waits for that exact run and merges with a head-commit guard only after success.
-Review comments or required review/protection gates leave the PR open; subsequent
-collection runs preserve that pending PR. There is no direct push to main. Repository
-Actions must allow PR creation; if not, the publish step fails visibly and needs the
-repository owner to enable that permission. No admin bypass is used.
+   The helper hides credential/login input and saves
+   `~/.config/sattva-telegram/credentials.json` with owner-only permissions. It does not
+   upload anything or activate production. The session is sensitive and can be revoked
+   under Telegram Settings → Devices.
+3. Once the operator explicitly authorizes **activating this connection in production**,
+   store the single bundle through stdin (never command-line argument values):
 
-A failed source read retains prior posts and saves a failed health state through the same
-PR path, then fails the collection workflow visibly. No manual production dispatch,
-deployment or data write is required to test this change locally.
+   ```sh
+   gh secret set TELEGRAM_CREDENTIALS --repo techmuns/Sattva-Central-Research < "$HOME/.config/sattva-telegram/credentials.json"
+   ```
 
-## Verification
+   The next regular collection selects MTProto automatically. An immediate manual
+   production dispatch is a separate authorized action. Never commit the bundle or
+   upload a session as an Actions artifact.
 
-- `node scripts/verify-telegram.mjs`: parsing, source dates, restricted posts, edits,
-  resumable history, retention, source failures, retries and forward gap discovery.
-- `node scripts/verify-telegram-publishing.mjs`: offline PR scope, check and review gates.
-- `PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-telegram-ui.mjs`: browser
-  dates, scopes, restricted content, search, modal, failed refresh retention and mobile.
+No account has been connected by merely merging this implementation. Until that step,
+public-page collection continues, with its limitations visible.
+
+## Local verification
+
+- `node scripts/verify-telegram.mjs`: public parsing, gaps, retention and checkpoints.
+- `python3 scripts/verify-telegram-api.py`: API head/history, large bursts, quiet checks,
+  interrupted catch-up, documents and the public-channel boundary. No network/login.
+- `node scripts/verify-telegram-artifact.mjs`: artifact trust/digest/host/size boundaries,
+  credential stripping, actual Worker route, conditional caching and failure handling.
+- `node scripts/verify-telegram-publishing.mjs`: archive-only PR scope and review/check gates.
+- `PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-telegram-ui.mjs`: static fallback,
+  artifact arrival without deployment, dates, search/export, errors and mobile layout.
+
+Official references: [Telegram API credentials](https://core.telegram.org/api/obtaining_api_id),
+[history API](https://core.telegram.org/method/messages.getHistory),
+[Telethon sessions](https://docs.telethon.dev/en/stable/concepts/sessions.html).

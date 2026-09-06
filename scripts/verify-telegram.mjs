@@ -87,5 +87,9 @@ assert.equal(new Set(archive.posts.map((p) => p.id)).size, archive.posts.length)
 assert(archive.posts.every((p) => Number.isSafeInteger(p.id) && p.id > 0 && (p.text || p.publishedAt)));
 const workflow = await readFile('.github/workflows/telegram-refresh.yml', 'utf8');
 assert(!/HEAD:main|Commit.*main/.test(workflow), 'archive writes go through PRs');
-assert(workflow.includes('merge-telegram-capture.mjs'));
+assert(workflow.includes('actions/upload-artifact@v7'));
+assert(!workflow.includes('merge-telegram-capture.mjs'), 'source collection cannot wait for repository publication');
+const archiveWorkflow = await readFile('.github/workflows/telegram-archive.yml', 'utf8');
+assert(archiveWorkflow.includes('merge-telegram-capture.mjs'));
+assert(!/HEAD:main|Commit.*main/.test(archiveWorkflow));
 console.log('PASS Telegram: verified identities/dates, hidden posts, caption edits, history resume, uncapped retention, retry recovery, source failure, gap discovery and PR publishing contract');

@@ -143,6 +143,7 @@ export function render(ctx) {
     .then(() => {
       if (token !== renderToken) return;
       paint(ctx);
+      disposers.push(telegram.startLive(ctx.live));
       disposers.push(
         telegram.onChange(() => {
           if (token === renderToken) paint(ctx);
@@ -707,15 +708,16 @@ function telegramDescription() {
 }
 function telegramHeadMeta() {
   const t = telegram.meta();
-  const failed = t.reason || ['failed', 'partial'].includes(t.lastRun?.status);
-  const stale = t.lastCheckedAt && Date.now() - Date.parse(t.lastCheckedAt) > 6 * 3600000;
+  const failed = t.reason || t.delivery?.collectorLatestFailed || ['failed', 'partial'].includes(t.lastRun?.status);
+  const stale = t.lastCheckedAt && Date.now() - Date.parse(t.lastCheckedAt) > 30 * 60000;
   const warning = failed || stale;
   const state = failed ? 'partial' : t.lastCheckedAt ? (stale ? 'stale' : 'checked') : 'unknown';
   const label = failed ? 'Collection needs attention' : t.lastCheckedAt ? `Checked ${formatRelativeTime(new Date(t.lastCheckedAt))}` : 'Check time unavailable';
   return `<div class="flex flex-wrap items-center gap-2">
     <span data-telegram-live data-telegram-freshness="${state}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${warning ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-slate-50 text-slate-600 ring-slate-200'}">
-      ${escapeHtml(formatNumber(t.count || 0))} posts · ${escapeHtml(label)}
+      ${escapeHtml(formatNumber(t.count || 0))} archived · ${escapeHtml(formatNumber(t.listed || 0))} readable · ${escapeHtml(label)}
     </span>
+    <p data-telegram-source-status class="text-xs text-slate-500">Newest captured post: ${escapeHtml(telegramDate(t.newestPublishedAt))}. ${t.latestVerifiedAt && !failed ? `Latest channel post verified ${escapeHtml(formatRelativeTime(new Date(t.latestVerifiedAt)))}.` : 'Latest channel post has not been verified.'}</p>
   </div>`;
 }
 function telegramPanel(table) {
@@ -745,11 +747,11 @@ function openTelegramPost(r) {
 // runner to go and read the channel. That is the same narrowing of "nothing dispatches on its own"
 // that market news runs on, and the two reasons it is safe are unchanged — one request to a public
 // page on our own free runner, declined at the edge when a run is already going.
-const TELEGRAM_AUTO_AFTER_MS = 25 * 60 * 1000;
+const TELEGRAM_AUTO_AFTER_MS = 10 * 60 * 1000;
 let telegramAutoAt = 0;
 
 function maybeAutoRefreshTelegram() {
-  const at = Date.parse(telegram.meta().capturedAt || '');
+  const at = Date.parse(telegram.meta().lastRun?.at || telegram.meta().lastCheckedAt || telegram.meta().capturedAt || '');
   if (!Number.isFinite(at) || Date.now() - at < TELEGRAM_AUTO_AFTER_MS) return;
   // One attempt per window per page, so a dispatch that keeps failing cannot become a loop that
   // re-fires on every repaint — the page-load walk this codebase removed, one layer up.
@@ -789,11 +791,11 @@ function telegramFootnotes() {
   const progress = t.historyComplete ? 'The historical scan has reached the start of the channel.' :
     t.historyNextId ? `Older history is incomplete; the next collection continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
   return `<div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
-    <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} public message pages and embeds. ${escapeHtml(progress)}
-    ${formatNumber(t.limited || 0)} messages in the archive are images or media with no caption and are not listed; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
+    <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} via ${t.route === 'mtproto' ? 'the official Telegram API' : 'public message pages and embeds'}. ${escapeHtml(progress)}
+    ${formatNumber(t.count - t.listed)} messages have no captured text or named attachment and are not listed; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
     ${t.undated ? `${formatNumber(t.undated)} older records are awaiting publication dates. ` : ''}
     Gaps between message numbers are not treated as posts. Publication dates come from Telegram; collection and first-seen times are separate.
-    This archive retains captured posts and does not claim to include content Telegram withholds from the public web.</p>
+    Captures update automatically while this tab is open. Collection scheduling is best effort; this is a polled feed. Original files open in Telegram.</p>
   </div>`;
 }
 function exportTelegramRows(rows) {

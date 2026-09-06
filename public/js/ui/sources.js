@@ -463,9 +463,9 @@ export function sourceGroups() {
           feeds: 'Retained posts from the public Telegram channel, with original publication dates, available text and original message links. ' +
             'Posts whose content is restricted to Telegram remain visible as linked records. Older history resumes on each collection; no sentiment or company mapping is inferred. ' +
             `The archive is read by a scheduled Action${clause(tg, ', <n> posts captured')}.`,
-          cadence: 'Scheduled GitHub Action · half-hourly requested, delivery best-effort · resumable history',
+          cadence: 'Scheduled GitHub Action · ten-minute checks requested, delivery best-effort · direct artifacts · resumable history',
           status: 'live',
-          file: 'public/data/telegram-posts.json · scripts/scrape-telegram.mjs',
+          file: 'api/telegram/posts · scripts/collect-telegram.py · public-page fallback',
         },
         {
           name: 'Slug → NSE symbol (computed)',

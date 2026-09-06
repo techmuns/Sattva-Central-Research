@@ -3167,34 +3167,17 @@ overlapping windows, query checkpoints, timeouts and saturation/recovery handlin
 
 ### Telegram posts — retained channel history in Public Chatter
 
-`public/data/telegram-posts.json` is a retained archive from `@researchreportss`, collected
-by `scripts/scrape-telegram.mjs`. See [Telegram ingestion](TELEGRAM-INGESTION.md) for
-source limitations, local commands, scheduling and PR publication.
+The authoritative contract is [Telegram ingestion](TELEGRAM-INGESTION.md). The browser
+paints the static archive, then polls `/api/telegram/posts` for validated immutable
+Actions captures independently of site deployments. A separate daily archive PR backs
+up the data without blocking live collection.
 
-Schema version 2 stores `channel`, `channelUrl`, `route: "embed+permalink"`,
-`publishesTime`, `capturedAt` (archive content changed), `lastCheckedAt` (successful
-collector check), `lastRun` (check time/status/counts/error), `headId`, `spanFrom`,
-`spanTo`, `historyNextId`, `historyComplete`, `discoveryNextId`, `retryIds` and `posts`.
-Each post has `id`, `url`, nullable `text`, actual Telegram `publishedAt`, collector
-`firstSeenAt`, `contentStatus: "available" | "telegram-only"`, nullable `mediaType`
-and `attachments` (exposed document name/size only).
-
-A verified embed establishes existence and publication time even when Telegram hides
-its content. These rows remain in the table, with links to Telegram and no invented
-caption. Legacy text-only rows survive until their dates are recovered. The browser
-retains last-good rows on failed or malformed refreshes, sorts by message number,
-shows publication times in IST and exports source dates separately from first-seen times.
-
-No captured history is trimmed. The collector saves resumable cursors and failed IDs
-even on quiet runs. A range of absent IDs does not prove the channel has no newer posts;
-a separate forward sweep and an optional verified head hint support gap discovery.
-The UI distinguishes partial history and Telegram-only content from collection failure.
-
-The existing `POST /api/telegram/refresh` dispatch endpoint and
-`GET /api/telegram/run` status endpoint retain their fixed workflow allowlist and cooldown.
-The scheduled workflow publishes updates through `codex/telegram-capture` PRs after
-verification rather than pushing directly to main. Full content that Telegram withholds
-from its public web surfaces still needs an authenticated Telegram connection.
+Source mode is `embed+permalink` unless an operator connects the optional official
+`mtproto` collector. Only MTProto can set `latestVerifiedAt` after reading the actual
+channel head and catching up. `lastCheckedAt`, `lastRun.at`, publication dates and
+content-change time remain separate. No source-check timestamp alone proves complete
+channel history. All retained messages are counted as archived; only captured text or
+named documents are listed. No company, sentiment or file content is invented.
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 
@@ -3567,25 +3550,14 @@ Three rules, and they are the filings snapshot's rules:
 
 ### How often a book is worth asking about again
 
-A book is assembled from shareholding patterns companies file **once a quarter**, so the
-revalidation window is derived from the filing calendar rather than from a flat number of hours:
+Books are checked against the Worker's six-hour source cache year-round. Late filings and
+corrections can arrive outside filing season, so calendar season alone cannot justify a long hold.
 
-| Where the calendar is | Window |
-| --- | --- |
-| within 60 days of a quarter end — companies are still filing | 24 hours |
-| outside that — nothing can change until the next quarter end | 30 days |
-
-Above both: **a confirmation older than the most recent quarter end is always re-asked**, whatever
-the elapsed time says. Without that a long hold could straddle a quarter boundary and keep serving
-last quarter's book into the new one.
-
-**And no book is re-read on a page load at all.** `load()` paints from the device and the snapshot
-and makes exactly **one** request — a conditional GET of the investor LIST, which is the one thing
-a snapshot cannot answer (an investor added or dropped). Confirming ninety books is ninety round
-trips, and it is work the reader asks for: `refresh()` is registered with `js/core/refresh.js`, so
-the header's Refresh button drives it. It ignores the window deliberately — a refresh that silently
-skipped every book because the capture was recent would be a button that does nothing on the one
-occasion the reader was sure something had changed.
+`load()` paints from saved data immediately and checks the investor list. When the investor view
+is active, `watchFreshness()` checks due books on opening, returning, reconnecting and once a minute
+while visible. Recent source reads are skipped; failed/stale books are retried at most once per
+15 minutes. Closing the view removes its listeners and timer. Other tabs retain the bulk-snapshot
+path. The header's manual Refresh still checks every book without waiting for the normal window.
 
 ### The Worker exists to hold the token
 
@@ -3638,10 +3610,10 @@ measurements and the four independent fixes.
 
 | field | on | meaning |
 | --- | --- | --- |
-| `filedQuarters` | portfolio | `quarters` minus every open period — the only columns a comparison may use. A quarter closes in **March, June, September or December**; a label parsing to any other month is the current, open period. A label that does not parse as a date at all is treated as filed. |
+| `filedQuarters` | portfolio | `quarters` minus every open period — the only columns a comparison may use. A quarter closes in **March, June, September or December**; a label parsing to any other month is the current, open period. The period must also have ended by the current UTC date. Unknown dates and future quarter ends are ineligible. |
 | `openQuarters` | portfolio | the rest, rendered in the table and reported as `pending` by `deriveMoves`, never dropped |
-| `quarterlyNotes` | holding | the source's own non-numeric cell text, kept where they gave one (`"Filing Due"`). Empty on a normal book. Same purpose as `parseChange`'s `note` on Trendlyne. |
-| `awaiting` | move action | no filed percentage for the latest **filed** quarter, and either their note says the filing is outstanding or `valueCr > 0` says the position is still worth something. **Not a move**, never an alert, never worded as a sale. |
+| `quarterlyNotes` | holding | Source non-numeric cell text (`"Filing Due"`), preserved on repeated normalisation. Missing keys, invalid percentages and conflicting duplicate cells also carry explicit notes. Same purpose as `parseChange`'s `note` on Trendlyne. |
+| `awaiting` | move action | Either comparison cell carries an incomplete-data note, or a missing latest percentage lacks an explicit zero current value. Labelled **Incomplete data**. **Not a move**, never an alert, never worded as a sale. |
 
 `isMove(action)` is the one definition of what counts as a change (`new`, `exited`, `added`,
 `trimmed`). `classifyHolding(h, latest, prior)` is the one classifier — `js/investors/live.js` used
@@ -3670,11 +3642,38 @@ those carrying a value, and says how many of each. Summing all history produced 
 `0 holdings` beside `₹793 Cr book`; the count and the total now use the same set.
 
 Clicking a company in the cross-book Quarterly Changes summary reads `allHoldings()` for that exact
-company and keeps each investor row whose own latest/prior pair contains a disclosure. The popup
+company identity and uses the same selected quarter pair as the summary. The popup
 therefore includes unchanged current holders as well as movers, and prints investor, action, prior
 stake, latest stake, derived change and current `valueCr`. A row absent from both compared quarters
 is historical rather than part of this quarter and is excluded; a one-quarter current row remains
 with no fabricated comparison.
+
+`investor-quarterly.js` aggregates one shared, consecutive closed quarter pair. Books lacking
+either column are counted as excluded, and unloaded books are counted separately. The summary
+shows the selected company scope, comparison period, source-read age and incomplete positions.
+Portfolio and Watchlist match source symbols where available, otherwise complete normalised
+company names; a shared 12-character prefix is not an identity.
+
+Shared changes count distinct investor slugs per source company identifier. Normalisation
+collapses duplicate company rows; conflicting cells become incomplete data. A group containing
+a new/removed disclosure has no complete percentage-point sum, so no partial sum is displayed.
+Stake changes are not labelled buys or sells: changes in share capital can alter percentages.
+Active investor views revalidate books automatically on open, visible checks, resume and reconnect,
+using the Worker's six-hour source cache and bounded 15-minute retry interval. Other tabs retain
+their bulk snapshot path. Malformed or failed book responses cannot replace good device-cache
+entries. `sourceCheckedAt` survives normalisation and participates in the content validator, so a
+successful unchanged source read can advance its check time without requiring a new holding.
+Source links support inspection, but this feed remains a third-party aggregation, not an
+independent verification of every exchange filing. An empty result describes available data only.
+
+The 6 September 2026 audit of the 4 September capture found 90 books, 87 supporting Jun 2026 vs
+Mar 2026 and 26 Universe companies with shared increases/new disclosures. The screenshot's
+Portfolio filter did not establish a Universe-wide absence. A fresh read of the dashboard API
+confirmed Aavas at 2.13% vs 1.65% for Abu Dhabi Investment Authority, with MIT newly disclosed at
+1.10%. These dated observations are regression examples, not expected future totals.
+
+Run `node scripts/verify-super-investors.mjs` and
+`PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-super-investors-ui.mjs`; both gate PR CI.
 
 The complete `allHoldings()` result renders in the separate **Data Table** tab, positioned after
 Quarterly Changes. **All Investors** contains the investor-card directory only. Search, investor
