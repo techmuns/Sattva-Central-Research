@@ -25,7 +25,7 @@ const server = createServer((req, res) => {
   if (!path.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
     res.setHeader('content-type', {
-      '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
+      '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
     }[extname(path)] || 'application/octet-stream');
     res.setHeader('cache-control', 'public, max-age=0, must-revalidate');
     res.end(readFileSync(path));
@@ -58,6 +58,9 @@ try {
   assert.equal(cacheState.names.length, 1, 'one current app cache is active');
   assert(cacheState.urls.filter((url) => url.includes('/js/')).length > 90, 'complete native module graph is warm');
   assert(cacheState.urls.some((url) => url.endsWith('/data/portfolio-companies.json')), 'critical portfolio identity snapshot is warm');
+  for (const asset of ['sattva-ventures-wordmark.png', 'sattva-ventures-mark.svg', 'favicon.svg']) {
+    assert(cacheState.urls.some(url => url.endsWith(`/assets/brand/${asset}`)), 'product identity is available on an offline repeat visit');
+  }
   for (const asset of ['/js/theme-init.js', '/js/ui/theme-toggle.js', '/css/theme.css']) {
     assert(cacheState.urls.some((url) => url.endsWith(asset)), `${asset} is available offline`);
   }
@@ -71,6 +74,8 @@ try {
   await page.reload();
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 });
   assert(Date.now() - reloadedAt < 1500, 'repeat visit paints from the app cache without waiting for the network');
+  await page.locator('[data-brand-mark] img').evaluate(image => image.decode());
+  await page.locator('.research-opening-brand').evaluate(image => image.decode());
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'cached app restores the saved theme');
   assert.equal(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(11, 18, 32)', 'cached dark styles are applied');
 

@@ -13,7 +13,7 @@ const server = createServer((req, res) => {
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404).end(); return; }
   try {
-    res.setHeader('content-type', { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css' }[extname(file)] || 'text/plain');
+    res.setHeader('content-type', { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'text/plain');
     res.end(readFileSync(file));
   } catch { res.writeHead(404).end(); }
 });

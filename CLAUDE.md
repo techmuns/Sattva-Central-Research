@@ -311,7 +311,13 @@ indigo to mean "good".
 | `--neutral` | `#64748b` | slate — n/a |
 | `--page-bg` | `#f8fafc` | page background |
 
-The brand gradient, used on the logo mark, the scope toggle thumb and the freshness hero card:
+The Sattva Ventures wordmark supplied by the user is in `public/assets/brand/`; use the
+complete wordmark for product introductions and its compact A/V mark beside existing labels.
+These artwork colours are the user's branding exception to the UI colour ramp. Keep source
+status colours semantic. The header, Ask Research, source panel, loading screen and favicon
+share these assets, which must remain available through the service-worker cache.
+
+The interface gradient, used on the scope toggle thumb and the freshness hero card:
 `bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500`.
 
 Conventions:

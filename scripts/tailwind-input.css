@@ -58,8 +58,8 @@
    retain their existing framing. No row typography, virtual stride or data policy changes. */
 [data-reading-layout="table"] [data-app-frame] { max-width: 1800px; padding-left: 24px; padding-right: 24px; }
 [data-reading-layout="table"] [data-app-header] { padding-top: 12px; padding-bottom: 10px; }
-[data-reading-layout="table"] [data-brand-mark] { width: 36px; height: 36px; font-size: 14px; box-shadow: none; }
-[data-reading-layout="table"] [data-app-header] h1 { font-size: 18px; }
+[data-reading-layout="table"] [data-brand-mark] { flex: 0 1 auto; width: 14rem; height: 36px; display: flex; flex-direction: column; justify-content: center; }
+[data-reading-layout="table"] [data-app-header] h1 { margin: 0; }
 [data-reading-layout="table"] #brand-subtitle { display: none; }
 [data-reading-layout="table"] [data-app-content] { padding-top: 12px; padding-bottom: 0; }
 .alerts-workspace [data-section-head] { margin-bottom: 8px; }

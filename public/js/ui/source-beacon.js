@@ -165,7 +165,7 @@ function flowRail(estate) {
         <div class="beacon-core">
           <span class="beacon-core-halo" aria-hidden="true"></span>
           <span class="beacon-core-halo beacon-core-halo-2" aria-hidden="true"></span>
-          <span class="beacon-mark beacon-mark-lg">SC</span>
+          <span class="beacon-mark beacon-mark-lg" aria-hidden="true"><img class="sattva-mark" src="/assets/brand/sattva-ventures-mark.svg" width="420" height="174" alt="" /></span>
         </div>
       </div>
       <div class="beacon-flow-caption">
@@ -269,7 +269,7 @@ function launcherHtml(estate) {
     <button type="button" class="beacon-launcher" data-beacon-toggle
       aria-expanded="false" aria-controls="${PANEL_ID}"
       title="See every source this dashboard reads">
-      <span class="beacon-mark" aria-hidden="true">SC</span>
+      <span class="beacon-mark" aria-hidden="true"><img class="sattva-mark" src="/assets/brand/sattva-ventures-mark.svg" width="420" height="174" alt="" /></span>
       <span class="beacon-launcher-text">
         <span class="beacon-launcher-line" data-beacon-launch-count>${estate.total} research sources</span>
         <span class="beacon-launcher-sub" data-beacon-launch-sub>${estate.automatic} automatic feeds</span>
