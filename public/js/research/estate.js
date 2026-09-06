@@ -107,6 +107,7 @@ const STOP_WORDS = new Set([
   'other', 'our', 'ours', 'out', 'over', 'own', 'page', 'pages', 'per', 'please', 'portfolio', 'position', 'positions', 'quarter',
   'recent', 'recently', 'report', 'reports', 'research', 'same', 'see', 'share', 'shares', 'should', 'show', 'showing', 'signal',
   'signals', 'so', 'some', 'something', 'still', 'stock', 'stocks', 'strong', 'stronger', 'strongest', 'such', 'summarise', 'summarize',
+  'source', 'sources', 'filing', 'filings', 'exchange', 'link', 'links',
   'summary', 'tab', 'tabs', 'tell', 'than', 'that', 'the', 'their', 'theirs', 'them', 'then', 'there', 'these', 'they', 'this', 'those',
   'through', 'to', 'today', 'too', 'top', 'under', 'universe', 'until', 'up', 'us', 'very', 'versus', 'view', 'vs', 'want', 'was',
   'watchlist', 'we', 'weak', 'weaker', 'weakest', 'week', 'weeks', 'well', 'were', 'what', 'when', 'where', 'which', 'while', 'who',
@@ -147,7 +148,7 @@ const isoTime = (value) => {
 };
 
 function queryTokens(question) {
-  return [...new Set(String(question || '').toLowerCase().match(/[a-z0-9&.-]{2,}/g) || [])].filter((token) => !STOP_WORDS.has(token));
+  return [...new Set(String(question || '').toLowerCase().match(/[a-z0-9&.-]{2,}/g) || [])].filter((token) => !STOP_WORDS.has(token) && !NAME_NOISE.has(token));
 }
 
 /**
@@ -208,7 +209,7 @@ function companyIndex(deferred) {
  * ranking tokens, so "finance" does not go on to score every Financial Services row as a hit.
  */
 export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolioPositions = null, now = Date.now() } = {}) {
-  const text = ` ${cleanText(question)} `;
+  const text = ` ${cleanName(question)} `;
   const tokens = queryTokens(question);
   const tokenSet = new Set(tokens);
   const capitals = new Set(String(question || '').match(/\b[A-Z][A-Z0-9&.-]+\b/g) || []);
@@ -216,7 +217,7 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
   const entries = index.map((entry) => {
     const ticker = String(entry?.ticker || '').toUpperCase();
     const aliases = [...new Set([entry?.name, ...(entry?.aliases || [])].map(cleanName).filter((alias) => alias.length >= 3))];
-    const leads = [...new Set(aliases.map((alias) => alias.split(' ')[0]).filter((word) => word.length >= 5 && !GENERIC_LEAD.has(word)))];
+    const leads = [...new Set(aliases.map((alias) => alias.split(' ')[0]).filter((word) => word.length >= 5 && !GENERIC_LEAD.has(word) && !STOP_WORDS.has(word) && !WORD_TICKERS.has(word.toUpperCase())))];
     for (const lead of leads) leadOwners.set(lead, (leadOwners.get(lead) || new Set()).add(ticker || entry.isin));
     return { ticker: ticker || null, ...(entry.isin ? { isin: entry.isin } : {}), name: entry?.name || ticker, aliases, leads };
   });
@@ -493,6 +494,8 @@ export function fitEvidenceToBudget(evidence, charBudget = RESEARCH_EVIDENCE_CHA
     add(source?.rows, source?.rowTiers, source?.matchedRows, 'rows', source?.rowPriorities);
     add(source?.unresolvedTopics?.rows, source?.unresolvedTopics?.rowTiers, source?.unresolvedTopics?.matchedRows, 'unresolvedTopics', source?.unresolvedTopics?.rowPriorities);
   });
+  // Give each matching source a representative before additional rows from the same feed.
+  // Within that pass, the requested topic still leads (including a late-listed social source).
   candidates.sort((a, b) => a.priority - b.priority || a.sourceIndex - b.sourceIndex || a.rowIndex - b.rowIndex);
 
   for (const candidate of candidates) {

@@ -19,6 +19,13 @@ const routine = Array.from({ length: 25 }, (_, i) => ({ ticker: 'HEXT', company:
   date: '2026-09-06', title: `Routine daily trading-volume update ${i}` }));
 const byDate = (a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || ''));
 
+const expandedIndex = [...index,
+  { ticker: 'SCI', name: 'Shipping Corporation of India' },
+  { ticker: 'SCILAL', name: 'Shipping Corporation of India Land and Assets' },
+  { ticker: 'SOURCEIND', name: 'Source Industries (India) Ltd' },
+];
+assert.deepEqual(queryPlan('Show the latest Shipping Corporation of India filings with source links', expandedIndex).companies.map(c => c.ticker), ['SCI'],
+  'legal-form normalization is symmetric; ordinary source vocabulary cannot select Source Industries');
 const plan = planFor('who is the new ceo of hexaware?');
 assert.deepEqual([...plan.tickers], ['HEXT']);
 assert.equal(plan.companies[0].inScope, false, 'public research must not misrepresent an outside issuer as a holding');
