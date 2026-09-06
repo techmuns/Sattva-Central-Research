@@ -16,6 +16,19 @@ let holdAnswer = false;
 let failAnswer = false;
 let emptyStreamsRemaining = 0;
 let firstDelayMs = 100;
+let customAnswer = null;
+// Presentation fixture only: figures and developments below are synthetic.
+const readingAnswer = `Jayaswal Neco has a new company statement to review alongside its latest quarterly results. [Dashboard: News]
+
+**Latest development:** The company published a clarification on 4 September. Read the filing before drawing conclusions about its financial effect. The available headline is a starting point; the attached document needs to be read for the complete statement. [Dashboard: Corp Announcements] Related reporting concerns a separate entity and does not establish a new event at this holding. [Dashboard: News]
+
+**Market reaction:** The saved market reading shows higher activity. It does not establish that the company statement caused that activity. Keep publication dates and market observation dates separate when reviewing the sequence. [Dashboard: Breakouts/Technical]
+
+**Financials (quarter ended June 2026):** Revenue is 120 and net profit is 8 in this synthetic fixture, compared with 100 and a loss of 2 in the comparison period. The change from a loss to a profit should be described directly rather than as a misleading percentage. [Dashboard: Earnings Hub]
+
+**What needs attention:** Confirm the scope of the filing, distinguish direct company statements from related-entity reporting, and check the next disclosed milestone. No guidance or price target is established by these readings. [Dashboard: Corp Announcements]
+
+**Next milestone:** A meeting is scheduled for 9 September; the notice does not establish that it has already occurred. [Dashboard: Corp Announcements]`;
 const activeResponses = new Set();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -29,10 +42,11 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/x-ndjson', 'cache-control': 'no-store, no-transform' });
     const send = event => res.write(JSON.stringify(event) + '\n');
     const failThisAnswer = failAnswer;
+    const answer = customAnswer;
     send({ type: 'start' });
     if (emptyStreamsRemaining > 0) { emptyStreamsRemaining--; res.end(); return; }
-    const first = setTimeout(() => send({ type: 'text', text: 'The latest available company update is dated 6 September. ' }), firstDelayMs);
-    const second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: 'Read the source filing alongside the news. [Dashboard: News]' }), firstDelayMs + 800);
+    const first = setTimeout(() => send({ type: 'text', text: answer ? answer.slice(0, 150) : 'The latest available company update is dated 6 September. ' }), firstDelayMs);
+    const second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: answer ? answer.slice(150) : 'Read the source filing alongside the news. [Dashboard: News]' }), firstDelayMs + 800);
     const finish = setTimeout(() => { if (!holdAnswer) { send({ type: 'done' }); res.end(); } }, firstDelayMs + 1600);
     activeResponses.add(res);
     res.on('close', () => { clearTimeout(first); clearTimeout(second); clearTimeout(finish); activeResponses.delete(res); });
@@ -253,6 +267,88 @@ try {
   assert.equal(questions.at(-1).history.length, 2, 'only the preceding completed exchange enters model history');
   assert(!questions.at(-1).history.some(m => /What changed at IIFL Finance/.test(m.text)), 'failed question is not included as model history');
 
+  // Customer reading experience on the actual page, using synthetic prose.
+  customAnswer = readingAnswer;
+  await page.getByRole('button', { name: 'Start a new research conversation' }).click();
+  await submit('What needs my attention at Jayaswal Neco?');
+  await page.locator('.is-streaming .research-answer-body').waitFor();
+  assert.equal(await page.locator('.is-streaming [data-research-preview]').evaluate(node => node.open), false, 'source preview yields space when answer text starts');
+  await page.waitForFunction(() => !document.querySelector('.is-streaming'));
+  const answerArticle = page.locator('.research-assistant-answer').last();
+  assert.equal(await answerArticle.locator('.research-answer-heading').count(), 5, 'bold section labels become readable headings');
+  assert.equal(await answerArticle.locator('.research-cite-unresolved').count(), 0, 'slash spacing in a valid tab citation still resolves');
+  assert.equal(await answerArticle.locator('.research-answer-references a').count(), 4, 'repeated citations share one source reference');
+  assert.equal(await answerArticle.getByRole('link', { name: 'Source 1: News', exact: true }).count(), 2);
+  assert.equal(await answerArticle.getByRole('link', { name: 'Source 3: Breakouts / Technical', exact: true }).getAttribute('href'), '#/research/breakouts?scope=portfolio&company=JAYNECOIND');
+  assert.match(await answerArticle.locator('.research-answer-freshness').innerText(), /2026-08-31/);
+  assert.equal(await answerArticle.locator('.research-answer-context').evaluate(node => node.open), false, 'detailed provenance is available without crowding the answer');
+  await answerArticle.locator('.research-answer-context > summary').click();
+  assert(await answerArticle.getByText('Snapshot for this answer, not a live refresh.', { exact: false }).isVisible());
+  await answerArticle.locator('.research-answer-context > summary').click();
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await answerArticle.getByRole('button', { name: 'Copy answer', exact: true }).click();
+  await answerArticle.getByText('Copied', { exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), readingAnswer, 'copy retains the exact answer, figures and named citations');
+  await page.evaluate(() => Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async () => { throw new Error('Clipboard denied by host'); } }));
+  await answerArticle.getByRole('button', { name: 'Copy answer', exact: true }).click();
+  await answerArticle.getByText('Select the answer text to copy it.', { exact: true }).waitFor();
+  await page.evaluate(() => { delete navigator.clipboard.writeText; });
+  await input.fill('Keep this next question');
+  await page.getByRole('button', { name: 'Reading view', exact: true }).click();
+  assert.equal(await page.locator('.research-sidebar').isVisible(), false);
+  assert.equal(await page.locator('[data-beacon-toggle]').isVisible(), false, 'reading view keeps the floating source badge out of the text');
+  assert.equal(await input.inputValue(), 'Keep this next question');
+  await answerArticle.getByRole('button', { name: 'Read from start', exact: false }).click();
+  await page.getByRole('button', { name: 'Latest answer', exact: false }).waitFor();
+  const geometry = await answerArticle.locator(':scope > .research-answer-body').evaluate(node => ({ width: node.getBoundingClientRect().width, font: parseFloat(getComputedStyle(node).fontSize) }));
+  assert(geometry.width < 750 && geometry.font >= 15, 'wide screens keep a readable line length and text size');
+  assert(await page.locator('[data-research-composer]').evaluate(node => node.getBoundingClientRect().height < 75), 'one-line composer leaves more space for reading');
+  if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-reading.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Latest answer', exact: false }).click();
+  await page.waitForFunction(() => document.querySelector('[data-research-latest]').hidden);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await answerArticle.getByRole('button', { name: 'Read from start', exact: false }).click();
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'reading view and citations fit mobile');
+  if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-reading-mobile.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Exit reading view', exact: true }).click();
+  assert(await page.locator('.research-sidebar').isVisible());
+  assert(await page.locator('[data-beacon-toggle]').isVisible(), 'leaving reading view restores the source inventory');
+  await page.setViewportSize({ width: 1440, height: 1050 });
+  customAnswer = null;
+
+  const safeRender = await page.evaluate(async () => {
+    const { renderResearchAnswer } = await import('/js/research/renderer.js');
+    const node = document.createElement('div');
+    document.body.appendChild(node);
+    renderResearchAnswer(node, '**Facts:** Zero is 0, missing is unavailable. [Dashboard: Unknown]\n\n<img src=x onerror="window.badPreview=true">\n\n| Period | Value |\n| --- | --- |\n| June | 120 |', { compactCitations: true, cite: () => null });
+    const result = { text: node.textContent, unsafe: node.querySelectorAll('img,script').length, tables: node.querySelectorAll('table').length, unresolved: node.querySelectorAll('.research-cite-unresolved').length };
+    renderResearchAnswer(node, 'Stable first paragraph.\n\nNext reading [Dashboard: Ne', { streaming: true });
+    const first = node.firstChild;
+    result.partialCitationHidden = !node.textContent.includes('[Dashboard:');
+    renderResearchAnswer(node, 'Stable first paragraph.\n\nNext reading [Dashboard: News]\n\nMore text.', { streaming: true });
+    result.stableParagraph = first === node.firstChild && first.isConnected;
+    renderResearchAnswer(node, 'Portfolio reading [Dashboard: Ask Sattva]', { compactCitations: true, cite: () => ({ href: 'https://sattva-family.pages.dev/ask', label: 'Ask Sattva' }) });
+    result.externalTarget = node.querySelector('.research-cite').target;
+    result.citationAttached = node.querySelector('.research-cite').parentElement.classList.contains('research-citation-anchor');
+    renderResearchAnswer(node, '# Summary\n\n**Revenue**: 120\n\n**Risks**\n\nStill unresolved.');
+    result.headingVariants = [...node.querySelectorAll('h3')].map(heading => heading.textContent);
+    renderResearchAnswer(node, '**Keep these words [Dashboard: News]** and `[Dashboard: News]`', { compactCitations: true, cite: () => ({ href: '#/research/news', label: 'News' }) });
+    result.nestedCitationText = node.querySelector('strong')?.textContent;
+    result.literalCode = node.querySelector('code')?.textContent;
+    node.remove(); return result;
+  });
+  assert.equal(safeRender.unsafe, 0);
+  assert.equal(safeRender.tables, 1);
+  assert.equal(safeRender.unresolved, 1, 'unknown pages never become fabricated working citations');
+  assert(safeRender.stableParagraph, 'completed paragraphs remain mounted while later blocks stream');
+  assert(safeRender.partialCitationHidden, 'split citation syntax does not flash into the answer');
+  assert.equal(safeRender.externalTarget, '_blank', 'external portfolio sources preserve the research conversation');
+  assert(safeRender.citationAttached, 'short citation markers stay attached to the preceding word');
+  assert.deepEqual(safeRender.headingVariants, ['Summary', 'Revenue:', 'Risks']);
+  assert(safeRender.nestedCitationText.startsWith('Keep these words'), 'citations inside bold prose never swallow the surrounding words');
+  assert.equal(safeRender.literalCode, '[Dashboard: News]', 'code examples remain literal text');
+  assert(safeRender.text.includes('Zero is 0, missing is unavailable.'));
+
   // A proxy that never sends a terminal event is bounded by a browser deadline.
   await page.clock.install();
   holdAnswer = true;
@@ -279,7 +375,7 @@ try {
   assert.equal(await disconnected.getByRole('textbox', { name: 'Ask about the dashboard' }).inputValue(), screenshotQuestion);
   await disconnected.close();
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: true, timings, assertions: ['progressive HTTP stream', 'exact user regression', 'no duplicate model', 'fresh complete holdings', 'follow-up retrieval', 'company switch', 'stable transcript and scroll through completion', 'private storage', 'failed archive', 'workbook invalidation', 'Stop preserves text', 'partial recovery', 'mobile', 'source preview before inference', 'visible empty failure', 'next draft and IME input', 'manual retry revalidates holdings', 'browser deadline', 'connection recovery'] }, null, 2));
+  console.log(JSON.stringify({ passed: true, timings, assertions: ['progressive HTTP stream', 'exact user regression', 'no duplicate model', 'fresh complete holdings', 'follow-up retrieval', 'company switch', 'stable transcript and scroll through completion', 'private storage', 'failed archive', 'workbook invalidation', 'Stop preserves text', 'partial recovery', 'mobile', 'source preview before inference', 'visible empty failure', 'next draft and IME input', 'manual retry revalidates holdings', 'browser deadline', 'connection recovery', 'readable heading variants', 'numbered citations with source names', 'reading view and compact composer', 'copy with exact provenance', 'jump to latest and start', 'mobile line length', 'safe markup and tables', 'stable streamed paragraphs', 'external sources preserve conversation'] }, null, 2));
 } finally {
   await browser.close();
   for (const response of activeResponses) response.destroy();
