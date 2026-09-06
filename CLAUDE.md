@@ -939,9 +939,9 @@ unchanged: the header carries no Sources button, and every status pill is a pass
 opens nothing. What was wrong was never that the pill stopped opening a modal — it was that nothing
 else opened one either.
 
-- **The source registry** is reached from a **footer**, one muted line under the content column, on
-  every tab. A footer is the one position that cannot compete with the table it qualifies, which was
-  the entire reason the chrome was removed; it is also where a reader already looks for provenance.
+- **The source registry** is reached from a **footer**, one muted line under the content column,
+  except in Ask Research, where **Sources** in the compact conversation toolbar opens the same
+  registry. Ask Research hides its footer and floating badge so neither occupies answer space.
 - **Each filings tab's own provenance** is reached from one muted line **under its table**. It is
   wired rather than pruned because it carries what no static registry can: the **measured coverage
   for the rows on screen** — how many companies answered, how many had nothing, how many could not be
@@ -2327,6 +2327,14 @@ pure and exported; test its policy branches with fixtures rather than waiting fo
 to happen to contain every case.
 
 ## Ask Research — dashboard evidence, streamed immediately
+
+**Answer layout (6 September 2026):** use one compact toolbar, an on-demand native dialog for
+conversation history, and a transcript that fills the remaining viewport. The introduction,
+promise cards, permanent history column and duplicate footer are removed at the user's request.
+Reading view hides dashboard chrome while keeping the active scope, history, Sources, New and
+the composer reachable. The answer column is capped at 56rem with 16px body text. Only the
+transcript scrolls; short/mobile frames must keep the composer visible. History retains the
+storage and hosted-model disclosure. Connection failures and recovery controls remain visible.
 
 **Current retrieval contract (6 September 2026):** the registry has 21 source
 entries, including distinct Telegram, Public Chatter posts, NSE Filings, Corporate

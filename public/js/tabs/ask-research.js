@@ -8,6 +8,8 @@ import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
 import { state, subscribe } from '../core/state.js';
 import * as notifications from '../ui/notifications.js';
+import { openModal } from '../ui/screener.js';
+import { sourcesModalHtml } from '../ui/sources.js';
 import { scopeLabel } from '../data/scope.js';
 import { buildResearchEvidence, prepareResearchSources, researchSuggestions, resolveQuestionCompanies, DASHBOARD_RESEARCH_SOURCES } from '../research/estate.js';
 import { renderResearchAnswer, renderResearchSources } from '../research/renderer.js';
@@ -259,46 +261,36 @@ function watchEvidenceInvalidation() {
 function template(scope) {
   return `
     <section class="research-workspace${readingView ? ' is-reading-view' : ''}" data-research-workspace>
-      <div class="research-workspace-header">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="research-spark" aria-hidden="true">
-              <img class="sattva-mark" src="/assets/brand/sattva-ventures-mark.svg" width="420" height="174" alt="" />
-            </span>
-            <h2 class="font-display text-xl font-extrabold text-slate-900">Ask Research</h2>
-          </div>
-          <p class="mt-1 text-sm text-slate-500">One answer across every dashboard tab in ${scopeLabel(scope)} scope.</p>
-          <p class="mt-1 text-sm text-slate-500" data-portfolio-connection></p>
+      <div class="research-reading-toolbar">
+        <div class="research-toolbar-title">
+          <h2 class="font-display font-extrabold text-slate-900" data-research-title>${readingView ? `${scopeLabel(scope)} research` : 'Ask Research'}</h2>
+          <span class="research-connection" data-portfolio-connection></span>
         </div>
-        <span class="research-estate-chip">
-          <span class="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-          Reads the whole dashboard
-        </span>
+        <div class="research-toolbar-actions">
+          <button type="button" data-research-history aria-label="Conversation history" aria-haspopup="dialog" aria-expanded="false" aria-controls="research-history" title="Conversation history">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h9" stroke-linecap="round"/></svg><span>History</span>
+          </button>
+          <button type="button" data-research-new aria-label="Start a new research conversation" title="New conversation">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg><span>New</span>
+          </button>
+          <button type="button" data-research-sources aria-label="Research sources" title="Research sources">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 3h9l3 3v11H4V3Z M12 3v4h4M7 10h6M7 13h6" stroke-linejoin="round"/></svg><span>Sources</span>
+          </button>
+          <button type="button" data-research-reading aria-label="${readingView ? 'Exit reading view' : 'Reading view'}" aria-pressed="${readingView}" title="${readingView ? 'Exit reading view' : 'Reading view'}">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${readingView ? 'Exit reading view' : 'Reading view'}</span>
+          </button>
+        </div>
       </div>
-
+      <dialog id="research-history" class="research-sidebar" aria-label="Research conversations">
+        <div class="research-history-header">
+          <h3 class="font-display font-bold text-slate-900">Conversations</h3>
+          <button type="button" data-research-history-close aria-label="Close conversation history">×</button>
+        </div>
+        <div class="research-session-list scrollbar-thin" data-research-sessions></div>
+        <p class="research-history-note">${privatePortfolioContext() ? 'Portfolio conversations stay in memory until this page closes.' : 'Conversation history stays on this device.'} Questions and selected source readings go to the Muns-hosted model.</p>
+      </dialog>
       <div class="research-layout">
-        <aside class="research-sidebar" aria-label="Research conversations">
-          <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5">
-            <div>
-              <div class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Library</div>
-              <h3 class="mt-0.5 text-sm font-bold text-slate-800">Conversations</h3>
-            </div>
-            <button type="button" class="research-new-button" data-research-new aria-label="Start a new research conversation">
-              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
-              New
-            </button>
-          </div>
-          <div class="research-session-list scrollbar-thin" data-research-sessions></div>
-          <div class="border-t border-slate-100 px-4 py-3 text-[11px] leading-relaxed text-slate-400">
-            ${privatePortfolioContext() ? 'Portfolio-connected conversations stay in memory only and disappear when this page closes.' : 'Conversation history stays on this device.'} Each question and bounded source readings are sent to the Muns-hosted model for the answer.
-          </div>
-        </aside>
-
         <div class="research-thread">
-          <div class="research-reading-toolbar">
-            <span>${scopeLabel(scope)} research</span>
-            <button type="button" data-research-reading aria-pressed="${readingView}">${readingView ? 'Exit reading view' : 'Reading view'}</button>
-          </div>
           <div class="research-transcript-wrap">
             <div class="research-transcript scrollbar-thin" role="log" aria-live="polite" aria-label="Research conversation" data-research-transcript></div>
             <button type="button" class="research-jump-latest" data-research-latest hidden>Latest answer ↓</button>
@@ -306,9 +298,9 @@ function template(scope) {
 
           <div class="research-composer-wrap">
             <div class="research-config-notice hidden" data-research-config role="status"></div>
-            <div class="research-phase min-h-[1.25rem]" role="status" aria-live="polite" data-research-phase></div>
+            <div class="research-phase" role="status" aria-live="polite" data-research-phase></div>
             <div class="research-composer" data-research-composer>
-              <textarea rows="1" maxlength="1500" data-research-input placeholder="Ask about anything in these reports…" aria-label="Ask about the dashboard"></textarea>
+              <textarea rows="1" maxlength="1500" data-research-input placeholder="Ask a question…" aria-label="Ask about the dashboard"></textarea>
               <div class="research-composer-actions">
                 <button type="button" class="research-send-button" data-research-send aria-label="Send question">
                   <span>Send</span>
@@ -316,7 +308,6 @@ function template(scope) {
                 </button>
               </div>
             </div>
-            <p class="mt-2 text-center text-[10px] text-slate-400">Dashboard figures remain the source of truth.</p>
           </div>
         </div>
       </div>
@@ -357,8 +348,9 @@ function paintPortfolioConnection() {
   const mount = ctxRef?.root.querySelector('[data-portfolio-connection]');
   if (!mount) return;
   empty(mount);
+  mount.dataset.state = portfolioConnected() ? 'connected' : portfolioConnectionState();
   if (portfolioConnected()) {
-    mount.textContent = 'Portfolio connected · refreshed with every question';
+    mount.textContent = 'Portfolio connected';
   } else {
     const status = portfolioConnectionState();
     if (status === 'locked') {
@@ -391,6 +383,14 @@ function cleanupUi() {
 function wire(root) {
   const input = root.querySelector('[data-research-input]');
   const transcript = root.querySelector('[data-research-transcript]');
+  const history = root.querySelector('#research-history');
+  const historyButton = root.querySelector('[data-research-history]');
+  const onHistoryClose = () => historyButton.setAttribute('aria-expanded', 'false');
+  const onHistoryBackdrop = (event) => {
+    if (event.target !== history) return;
+    const box = history.getBoundingClientRect();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) history.close();
+  };
   const onClick = (event) => {
     const sessionButton = event.target.closest('[data-research-session]');
     const deleteButton = event.target.closest('[data-research-delete]');
@@ -400,8 +400,19 @@ function wire(root) {
       root.querySelector('[data-research-workspace]').classList.toggle('is-reading-view', readingView);
       const button = root.querySelector('[data-research-reading]');
       button.setAttribute('aria-pressed', String(readingView));
-      button.textContent = readingView ? 'Exit reading view' : 'Reading view';
+      const label = readingView ? 'Exit reading view' : 'Reading view';
+      button.setAttribute('aria-label', label);
+      button.title = label;
+      button.querySelector('span').textContent = label;
+      root.querySelector('[data-research-title]').textContent = readingView ? `${scopeLabel(ctxRef.scope)} research` : 'Ask Research';
       updateReadingControls();
+    } else if (event.target.closest('[data-research-history]')) {
+      history.showModal();
+      historyButton.setAttribute('aria-expanded', 'true');
+    } else if (event.target.closest('[data-research-history-close]')) {
+      history.close();
+    } else if (event.target.closest('[data-research-sources]')) {
+      openModal(sourcesModalHtml(), { size: 'wide' });
     } else if (event.target.closest('[data-research-latest]')) {
       transcript.scrollTop = transcript.scrollHeight;
       updateReadingControls();
@@ -412,6 +423,7 @@ function wire(root) {
       deleteSession(deleteButton.dataset.researchDelete);
     } else if (sessionButton) {
       activeId = sessionButton.dataset.researchSession;
+      history.close();
       paintAll();
     } else if (event.target.closest('[data-research-new]')) {
       const session = newSession();
@@ -456,12 +468,24 @@ function wire(root) {
     event.preventDefault();
     submitCurrent();
   };
+  const onWorkspaceKeydown = (event) => {
+    if (event.key === 'Escape' && readingView && !history.open && !event.defaultPrevented) {
+      root.querySelector('[data-research-reading]').click();
+    }
+  };
   root.addEventListener('click', onClick);
+  root.addEventListener('keydown', onWorkspaceKeydown);
+  history.addEventListener('close', onHistoryClose);
+  history.addEventListener('click', onHistoryBackdrop);
   transcript.addEventListener('scroll', updateReadingControls, { passive: true });
   input.addEventListener('input', onInput);
   input.addEventListener('keydown', onKeydown);
   return () => {
+    history.close();
+    history.removeEventListener('close', onHistoryClose);
+    history.removeEventListener('click', onHistoryBackdrop);
     root.removeEventListener('click', onClick);
+    root.removeEventListener('keydown', onWorkspaceKeydown);
     transcript.removeEventListener('scroll', updateReadingControls);
     input.removeEventListener('input', onInput);
     input.removeEventListener('keydown', onKeydown);
@@ -640,26 +664,8 @@ function openingState(scope) {
   const wrap = el('div', { class: 'research-opening' });
   wrap.appendChild(el('img', { class: 'sattva-wordmark research-opening-brand', src: '/assets/brand/sattva-ventures-wordmark.png', width: '2704', height: '302', alt: 'Sattva Ventures' }));
   wrap.appendChild(el('h3', { class: 'font-display mt-5 text-2xl font-extrabold tracking-tight text-slate-900' }, 'Research the whole picture'));
-  wrap.appendChild(el('p', { class: 'mt-2 max-w-2xl text-sm leading-6 text-slate-500' }, `Ask one question across every dashboard tab in ${scopeLabel(scope)} scope. Ask Research checks each source, preserves its period and provenance, and never turns missing data into a number.`));
+  wrap.appendChild(el('p', { class: 'mt-2 text-sm leading-6 text-slate-500' }, `Ask about ${scope === 'portfolio' ? 'your portfolio companies' : scopeLabel(scope).toLowerCase() + ' companies'}, with updates and links to the sources.`));
 
-  const promises = el('div', { class: 'research-opening-promises' });
-  for (const item of [
-    ['Every tab', 'Earnings, calls, Telegram, public chatter, technicals, filings, investor books and both alert feeds.'],
-    ['Traceable', 'Material figures name the dashboard page they came from.'],
-    ['Evidence-led', 'Answers stay grounded in the dashboard packet sent with each question.'],
-  ]) {
-    const card = el('div', { class: 'research-promise' });
-    card.appendChild(el('span', { class: 'research-promise-dot' }));
-    const copy = el('span');
-    copy.appendChild(el('strong', { class: 'block text-xs font-bold text-slate-700' }, item[0]));
-    copy.appendChild(el('span', { class: 'mt-0.5 block text-[11px] leading-4 text-slate-400' }, item[1]));
-    card.appendChild(copy);
-    promises.appendChild(card);
-  }
-  wrap.appendChild(promises);
-
-  const label = el('div', { class: 'mt-7 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400' }, 'Try asking');
-  wrap.appendChild(label);
   const suggestions = el('div', { class: 'research-suggestions' });
   for (const suggestion of researchSuggestions(scope)) {
     const button = el('button', { type: 'button', class: 'research-suggestion', 'data-research-suggestion': suggestion });
@@ -865,7 +871,7 @@ function paintComposer() {
 
   if (input.value !== session.draft) input.value = session.draft;
   input.disabled = false;
-  input.placeholder = configured ? busy ? 'Write your next question…' : 'Ask about anything in these reports…' : 'Assistant is not configured';
+  input.placeholder = configured ? busy ? 'Next question…' : 'Ask a question…' : 'Assistant unavailable';
   autoSize(input);
   composer.classList.toggle('is-disabled', !configured);
 

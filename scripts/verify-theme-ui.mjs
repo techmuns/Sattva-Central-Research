@@ -82,6 +82,11 @@ try {
   assert.equal(await page.evaluate(() => localStorage.getItem('sattva:theme')), 'dark');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme), 'dark');
   await shot(page, 'research-dark');
+  await page.getByRole('button', { name: 'Conversation history', exact: true }).click();
+  const history = await surface(page, '.research-sidebar');
+  assert(luma(history.bg) < 0.05 && contrast(history.color, history.bg) >= 4.5, 'history drawer follows the dark theme');
+  await shot(page, 'history-dark');
+  await page.keyboard.press('Escape');
   const studio = await surface(page, '.research-workspace');
   assert(luma(studio.bg) < 0.05, 'research surface is dark');
   assert(contrast(studio.color, studio.bg) >= 4.5, 'research text is readable');
@@ -97,11 +102,11 @@ try {
   await second.close();
 
   // Source popover, modal, drill and workspace use the same tokens as the tab.
-  await page.locator('[data-beacon-toggle]').click();
+  await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon());
   assert(luma((await surface(page, '.beacon-panel')).bg) < 0.05);
   await shot(page, 'beacon-dark');
   await page.locator('[data-beacon-close]').click();
-  await page.locator('[data-sources-open]').click();
+  await page.getByRole('button', { name: 'Research sources', exact: true }).click();
   assert(luma((await surface(page, '#modal-container')).bg) < 0.05);
   await shot(page, 'sources-dark');
   await page.keyboard.press('Escape');
