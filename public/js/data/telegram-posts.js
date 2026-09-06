@@ -13,6 +13,7 @@ const emit = () => subscribers.forEach((fn) => fn());
 function apply(res) {
   const v = res?.value;
   if (!v || !Array.isArray(v.posts) || !/^[A-Za-z0-9_]{5,32}$/.test(v.channel)) throw new Error('Telegram capture could not be read');
+  if (state.ok && state.channel !== v.channel) throw new Error('Unexpected Telegram channel; previous archive retained');
   if (state.ok && state.channel === v.channel && !v.posts.length && state.count) throw new Error('Empty Telegram refresh; previous archive retained');
   const rows = v.posts.map((raw) => {
     const id = int(raw?.id), text = str(raw?.text);

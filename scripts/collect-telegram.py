@@ -46,7 +46,8 @@ async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
             raise ValueError('Telegram returned an invalid message')
         posts[m.id] = normalize(m, posts.get(m.id))
         count += 1
-    try:
+    async def read():
+        nonlocal latest_verified, history_done, history_offset, synced
         # Always ask Telegram for the actual head, including on quiet weekends.
         recent = await client.get_messages(entity, limit=100)
         if not recent:
@@ -73,6 +74,8 @@ async def collect(client, entity, prior, history_limit=180, forward_limit=1000):
                 history_offset = message.id
                 received += 1
             history_done = received < history_limit
+    try:
+        await asyncio.wait_for(read(), timeout=500)
     except Exception as error:
         # Log the class only: RPC exception strings/session objects can contain account details.
         failure = type(error).__name__
