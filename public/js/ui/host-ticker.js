@@ -49,7 +49,7 @@ function chipHtml() {
       type="button"
       data-host-ticker="${escapeHtml(ticker)}"
       class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition hover:brightness-95"
-      style="background:#eef2ff;border-color:#e0e7ff;color:#4338ca"
+      style="background:rgb(var(--surface-indigo-50,238 242 255));border-color:rgb(var(--edge-indigo-100,224 231 255));color:rgb(var(--text-indigo-700,67 56 202))"
       title="Selected in Munshot: ${escapeHtml(label)}. Opens All Alerts filtered to this company."
     >
       <span class="h-1.5 w-1.5 rounded-full" style="background:#4f46e5"></span>

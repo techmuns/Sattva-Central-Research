@@ -226,13 +226,16 @@ semantic rule states (pass / partial / fail) and are never used as brand colours
 
 - Page background carries three radial gradients, all ≤ 12% opacity: violet top-left, pink
   top-right, sky bottom-right.
-- Surfaces: white, `rounded-2xl`, `shadow-sm`, `ring-1 ring-slate-100`.
+- Surfaces: theme-aware `bg-white`, `rounded-2xl`, `shadow-sm`, `ring-1 ring-slate-100`.
 - Content column is `max-w-[1400px] mx-auto px-6`.
 - Top-tab indicator: a 3px indigo→purple bar that scales in with a springy
   `cubic-bezier(0.34, 1.56, 0.64, 1)` transition.
 - `font-variant-numeric: tabular-nums` on every number-bearing cell.
-- Light theme only. Fully responsive; tables scroll horizontally inside their own container so
-  the page body never scrolls sideways.
+- Light and dark themes share the same layout and semantic colors. The header's Dark mode
+  toggle remembers a choice in this browser; before a choice, follow the operating system.
+  Apply the preference before first paint and keep printouts light. Tailwind colors use the
+  role palettes in `scripts/theme-palette.cjs`; custom CSS uses those same tokens with light
+  fallbacks. Fully responsive; tables scroll inside their own container.
 - Fonts: Inter (400–800) for body, Plus Jakarta Sans (600–800) for headings via `.font-display`.
 
 ### The screener kit (`public/js/ui/screener.js`, `visual.js`)
