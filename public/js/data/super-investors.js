@@ -752,7 +752,10 @@ function displayName(b) {
 }
 
 function derived() {
-  if (memo.version === version) return memo;
+  // A quarter can close while the same cached bytes remain loaded.
+  const now = new Date(Date.now());
+  const period = `${now.getUTCFullYear()}-${Math.floor(now.getUTCMonth() / 3)}`;
+  if (memo.version === version && memo.period === period) return memo;
 
   const moves = [];
   const holdings = [];
@@ -786,7 +789,7 @@ function derived() {
     for (const m of ms) moves.push({ ...m, investor, slug: b.slug, latest: l, prior });
   }
 
-  memo = { version, moves, holdings, quarters: orderQuarters(seenQuarters) };
+  memo = { version, period, moves, holdings, quarters: orderQuarters(seenQuarters) };
   return memo;
 }
 

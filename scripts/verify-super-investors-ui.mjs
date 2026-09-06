@@ -108,6 +108,15 @@ try {
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await page.waitForFunction(() => testSI.feed.book('one').holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Jun 2026'] === 1.8);
   assert.match(await page.locator('[data-ranked-list="si-adds"]').innerText(), /0.80 pp/, 'resume automatically picks up late corrections');
+  await page.evaluate(() => {
+    const b = testSI.feed.book('one');
+    b.quarters.unshift('Sep 2026');
+    b.holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Sep 2026'] = 2.4;
+    // Populate the memo before the calendar boundary, without a new network payload.
+    testSI.feed.allMoves();
+  });
+  await page.clock.setSystemTime(new Date('2026-10-01T00:00:00Z'));
+  assert.equal(await page.evaluate(() => testSI.feed.allMoves().find(m => m.companySlug === 'ONLY').latest), 'Sep 2026', 'quarter rollover invalidates derived cache');
   assert.deepEqual(errors, []);
   console.log('PASS investor scope, identity, disclosure notes, shared changes, drill evidence, missing books, outages and mobile layout');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
