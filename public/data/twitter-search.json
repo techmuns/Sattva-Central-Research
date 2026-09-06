@@ -59,12 +59,16 @@
     "isin:INE094B01013|ASHIKA": {
       "lastAttemptAt": "2026-09-06T13:39:26+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE0Z4F01028|Atlanta Electricals": {
+      "lastAttemptAt": "2026-09-06T14:12:02+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-06T13:39:26.236387+00:00"
+    "checkedAt": "2026-09-06T14:12:02.084724+00:00"
   }
 }
