@@ -36,7 +36,7 @@ export function cronMatches(cron, time) {
 export function assessWorkflow(workflow, metadata, runs, { now = Date.now(), graceMs = 2 * 3600000 } = {}) {
   const issues = [];
   if (metadata.state !== 'active') issues.push('workflow-disabled');
-  const ordered = runs.filter(r => r.head_branch === 'main' && ['schedule', 'workflow_dispatch', 'push'].includes(r.event))
+  const ordered = runs.filter(r => r.head_branch === 'main' && ['schedule', 'workflow_dispatch', 'workflow_run', 'push'].includes(r.event))
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
   const latest = ordered[0], completed = ordered.find(r => r.status === 'completed');
   if (!latest) issues.push('no-main-run');

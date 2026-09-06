@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: "22"
       - name: Verify Telegram parsing, retention and resumable collection
-        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs
+        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && python3 scripts/verify-telegram-api.py
       - name: Verify investor quarterly evidence and aggregation
         run: node scripts/verify-super-investors.mjs
       - name: Verify refresh ownership and source targeting
@@ -32,7 +32,7 @@ jobs:
       - name: Verify portfolio discovery, customer misses and source recovery
         run: node scripts/verify-portfolio-news-discovery.mjs && node scripts/verify-news-country.mjs && python3 scripts/verify-twitter-search.py
       - name: Verify public TradingView ingestion and automatic portfolio membership
-        run: node scripts/verify-tradingview-news.mjs && node scripts/verify-continuous-news.mjs
+        run: node scripts/verify-tradingview-news.mjs && node scripts/verify-continuous-news.mjs && node scripts/verify-news-recovery.mjs
       - name: Verify source connections and scheduled pipeline health
         run: node scripts/verify-source-connections.mjs && node scripts/verify-workflow-health.mjs
       - name: Verify research and portfolio evidence

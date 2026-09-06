@@ -1,93 +1,88 @@
-name: Telegram refresh
+name: Telegram collection
 
 on:
   schedule:
-    # Best-effort scheduling; the UI reports the actual successful check time.
-    - cron: "17,47 * * * *"
+    # Best effort. Active readers also request overdue checks through the existing POST route.
+    - cron: '7,17,27,37,47,57 * * * *'
   workflow_dispatch:
     inputs:
       backfill:
-        description: "Older message IDs to collect this run (0 disables history)"
+        description: 'Older messages/IDs to collect this run (0 disables history)'
         required: false
-        default: "180"
+        default: '180'
       head_hint:
-        description: "Optional verified latest message number from a Telegram link"
+        description: 'Optional verified message number for the public-page fallback'
         required: false
-        default: "0"
+        default: '0'
       source:
-        description: "Who requested this run"
+        description: 'Who requested this run'
         required: false
-        default: "manual"
+        default: 'manual'
 
 run-name: Telegram refresh (${{ github.event_name == 'schedule' && 'github-cron' || inputs.source || 'manual' }})
 concurrency:
-  group: telegram-refresh
+  group: telegram-refresh-${{ github.ref_name }}
   cancel-in-progress: false
-
+permissions:
+  contents: read
+  actions: read
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    permissions:
-      contents: write
-      pull-requests: write
-      actions: write
-      checks: read
-    env:
-      GH_TOKEN: ${{ github.token }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - name: Wait for an existing archive PR to be resolved
-        id: existing
-        run: |
-          number=$(gh pr list --head codex/telegram-capture --state open --json number --jq '.[0].number // empty')
-          if [ -n "$number" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "number=$number" >> "$GITHUB_OUTPUT"
-            echo "Archive PR #$number is awaiting checks or review. Retaining its progress."
-          fi
-      - name: Resume verification of the existing archive PR
-        if: steps.existing.outputs.number != '' && github.ref == 'refs/heads/main'
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Restore retained collection independently of archive PRs
         env:
-          TELEGRAM_PR_NUMBER: ${{ steps.existing.outputs.number }}
-        run: node scripts/merge-telegram-capture.mjs
-      - name: Verify collector contracts offline
-        if: steps.existing.outputs.skip != 'true'
-        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs
-      - name: Collect posts and resumable history
-        if: steps.existing.outputs.skip != 'true'
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/telegram-artifact.mjs restore public/data/telegram-posts.json "$RUNNER_TEMP/telegram-posts.json"
+      - name: Detect official API connection
+        id: connection
+        env:
+          TELEGRAM_CREDENTIALS: ${{ secrets.TELEGRAM_CREDENTIALS }}
+        run: |
+          if [ -n "$TELEGRAM_CREDENTIALS" ]; then
+            echo 'api=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v6
+        if: steps.connection.outputs.api == 'true'
+        with:
+          python-version: '3.12'
+      - name: Install official API client outside the repository
+        if: steps.connection.outputs.api == 'true'
+        run: pip install --disable-pip-version-check telethon==1.44.0
+      - name: Collect channel through official API or public fallback
         id: collect
         continue-on-error: true
         env:
+          TELEGRAM_CREDENTIALS: ${{ secrets.TELEGRAM_CREDENTIALS }}
+          TELEGRAM_OUT: ${{ runner.temp }}/telegram-posts.json
           TELEGRAM_BACKFILL: ${{ inputs.backfill || '180' }}
           TELEGRAM_HEAD_HINT: ${{ inputs.head_hint || '0' }}
-        run: node scripts/scrape-telegram.mjs
-      - name: Open archive update PR
-        if: steps.existing.outputs.skip != 'true' && github.ref == 'refs/heads/main'
-        id: archive
-        uses: peter-evans/create-pull-request@v8.1.1
-        with:
-          branch: codex/telegram-capture
-          base: main
-          add-paths: public/data/telegram-posts.json
-          commit-message: Refresh retained Telegram archive and collection health
-          title: Refresh retained Telegram archive
-          body: |
-            Update the retained public Telegram archive with original publication dates, visible text,
-            Telegram-only post links, collection health and resumable history progress.
-
-            The workflow dispatches Verify on this PR's exact commit before merging. Any review
-            feedback or required review gate leaves the PR open. No manual production operations.
-      - name: Verify and merge the archive PR
-        if: steps.archive.outputs.pull-request-number != ''
-        env:
-          TELEGRAM_PR_NUMBER: ${{ steps.archive.outputs.pull-request-number }}
-        run: node scripts/merge-telegram-capture.mjs
-      - name: Report collection failure
-        if: steps.collect.outcome == 'failure'
         run: |
-          echo "::error::Telegram collection failed. Prior posts were retained; inspect lastRun in the archive for the source error."
-          exit 1
+          if [ -n "$TELEGRAM_CREDENTIALS" ]; then
+            python scripts/collect-telegram.py
+          else
+            node scripts/scrape-telegram.mjs
+          fi
+      - name: Preserve a failed source check explicitly
+        if: steps.collect.outcome == 'failure'
+        run: node scripts/telegram-artifact.mjs failed "$RUNNER_TEMP/telegram-posts.json"
+      - name: Validate and package only public channel data
+        run: node scripts/telegram-artifact.mjs pack "$RUNNER_TEMP/telegram-posts.json" "$RUNNER_TEMP/telegram-posts-v1.json.gz"
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/telegram-posts-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 90
+      # Publish a health record even after source failure. The UI reads lastRun, never equates
+      # workflow success with source success; the error is explicit in the run summary.
+      - name: Collection health
+        if: steps.collect.outcome == 'failure'
+        run: echo '::warning::Telegram source failed. Prior posts and failed health were retained in the artifact.'

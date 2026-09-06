@@ -29,6 +29,8 @@ jobs:
         with:
           node-version: "22"
       - name: Capture public portfolio headlines
+        id: capture
+        continue-on-error: true
         run: node scripts/enrich-tradingview-news.mjs --isolated
       - name: Retain capture artifact
         if: always()
@@ -38,7 +40,9 @@ jobs:
           path: public/data/tradingview-news/
           if-no-files-found: warn
       - name: Publish independent news capture
-        if: success() && github.ref == 'refs/heads/main'
+        # Successful checkpoints survive a later collector failure or artifact-service outage.
+        # The final gate still reports that failed collection; publishing is not approval.
+        if: ${{ !cancelled() && steps.capture.outcome != 'skipped' && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -55,10 +59,16 @@ jobs:
       # Partial capture and Retry-After are durable before reporting failure, so the next
       # scheduled run can recover without discarding news or hammering a refusing source.
       - name: Check TradingView coverage
-        if: success()
+        if: ${{ !cancelled() && steps.capture.outcome != 'skipped' }}
         env:
           TRADINGVIEW_HEALTH_REPORT: ${{ runner.temp }}/tradingview-health.json
-        run: node scripts/check-tradingview-news-health.mjs
+          CAPTURE_OUTCOME: ${{ steps.capture.outcome }}
+        run: |
+          node scripts/check-tradingview-news-health.mjs
+          if [ "$CAPTURE_OUTCOME" != "success" ]; then
+            echo "::error::Collection stopped early. Saved checkpoints are retained; coverage is not certified."
+            exit 1
+          fi
       - name: Retain coverage report
         if: always()
         uses: actions/upload-artifact@v5

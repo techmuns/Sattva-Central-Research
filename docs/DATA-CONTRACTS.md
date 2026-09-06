@@ -3167,34 +3167,17 @@ overlapping windows, query checkpoints, timeouts and saturation/recovery handlin
 
 ### Telegram posts — retained channel history in Public Chatter
 
-`public/data/telegram-posts.json` is a retained archive from `@researchreportss`, collected
-by `scripts/scrape-telegram.mjs`. See [Telegram ingestion](TELEGRAM-INGESTION.md) for
-source limitations, local commands, scheduling and PR publication.
+The authoritative contract is [Telegram ingestion](TELEGRAM-INGESTION.md). The browser
+paints the static archive, then polls `/api/telegram/posts` for validated immutable
+Actions captures independently of site deployments. A separate daily archive PR backs
+up the data without blocking live collection.
 
-Schema version 2 stores `channel`, `channelUrl`, `route: "embed+permalink"`,
-`publishesTime`, `capturedAt` (archive content changed), `lastCheckedAt` (successful
-collector check), `lastRun` (check time/status/counts/error), `headId`, `spanFrom`,
-`spanTo`, `historyNextId`, `historyComplete`, `discoveryNextId`, `retryIds` and `posts`.
-Each post has `id`, `url`, nullable `text`, actual Telegram `publishedAt`, collector
-`firstSeenAt`, `contentStatus: "available" | "telegram-only"`, nullable `mediaType`
-and `attachments` (exposed document name/size only).
-
-A verified embed establishes existence and publication time even when Telegram hides
-its content. These rows remain in the table, with links to Telegram and no invented
-caption. Legacy text-only rows survive until their dates are recovered. The browser
-retains last-good rows on failed or malformed refreshes, sorts by message number,
-shows publication times in IST and exports source dates separately from first-seen times.
-
-No captured history is trimmed. The collector saves resumable cursors and failed IDs
-even on quiet runs. A range of absent IDs does not prove the channel has no newer posts;
-a separate forward sweep and an optional verified head hint support gap discovery.
-The UI distinguishes partial history and Telegram-only content from collection failure.
-
-The existing `POST /api/telegram/refresh` dispatch endpoint and
-`GET /api/telegram/run` status endpoint retain their fixed workflow allowlist and cooldown.
-The scheduled workflow publishes updates through `codex/telegram-capture` PRs after
-verification rather than pushing directly to main. Full content that Telegram withholds
-from its public web surfaces still needs an authenticated Telegram connection.
+Source mode is `embed+permalink` unless an operator connects the optional official
+`mtproto` collector. Only MTProto can set `latestVerifiedAt` after reading the actual
+channel head and catching up. `lastCheckedAt`, `lastRun.at`, publication dates and
+content-change time remain separate. No source-check timestamp alone proves complete
+channel history. All retained messages are counted as archived; only captured text or
+named documents are listed. No company, sentiment or file content is invented.
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 
