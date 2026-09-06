@@ -5,6 +5,14 @@ earnings, con-calls, public chatter, technical breakouts, superstar investors, n
 announcements, IPOs, NSE filings and insider trades — under a global **Portfolio · Watchlist · Universe**
 scope toggle that applies to every one of them.
 
+**Standing requirement: current data on opening and no silent gaps over time.**
+Every tab, including NSE Filings and all four Insider Trades categories, must
+refresh automatically, collect independently of browser visits, retain captured
+history and report stale or incomplete checks honestly. This is the required
+behavior, not a certification of current upstream completeness. See the
+[data reliability criteria](docs/INTELLIGENCE-RELIABILITY.md) and
+[project instructions](AGENTS.md).
+
 **The public Portfolio snapshot is a list of company names, not a ledger.** The Portfolio scope filters the
 research tabs by Family Office's active shared workbook, through a protected names-only export.
 It refreshes on load, every minute while visible, and on Refresh; failed reads retain the saved

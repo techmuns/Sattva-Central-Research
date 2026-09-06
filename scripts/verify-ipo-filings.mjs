@@ -115,6 +115,6 @@ await test('moved coverage preserves cadence, missing dates, limits and safe sou
   const tab = readFileSync(new URL('../public/js/tabs/ipos.js', import.meta.url), 'utf8');
   assert(registry.includes('ipoSourceGroup(),'));
   assert(!registry.includes('DRHP dashboard — public IPO monitor'));
-  assert(!tab.includes('data-ipo-coverage')); assert(tab.includes("openBeacon({ group: 'ipo-filings' })"));
+  assert(!tab.includes('data-ipo-coverage')); assert(!tab.includes('data-ipo-sources'));
 });
 console.log(`${count} IPO filing checks passed`);
