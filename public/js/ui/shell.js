@@ -156,7 +156,7 @@ function shellTemplate() {
         <div class="flex flex-shrink-0 flex-wrap items-center gap-2 text-xs text-slate-500">
           <div class="flex items-center gap-1.5"
                title="Data scope: which companies the tab you are on reports. Portfolio is the family's book, Watchlist is the companies you have starred, Universe is every listed company the feed carries.">
-            <span class="hidden text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">Scope</span>
+            <span data-scope-label class="hidden text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">Scope</span>
             <div id="scope-toggle-mount"></div>
             <div id="scope-edit-mount"></div>
           </div>

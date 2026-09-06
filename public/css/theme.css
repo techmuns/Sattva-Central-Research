@@ -42,6 +42,14 @@ html[data-theme="dark"] body {
 .theme-toggle svg { width: 1rem; height: 1rem; }
 .theme-toggle:hover { background: rgb(var(--surface-indigo-50, 238 242 255)); color: var(--accent-600); }
 .theme-toggle:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; }
+@media (min-width: 960px) and (max-width: 1199px) {
+  /* Preserve All Alerts' reading area inside a short laptop host frame. */
+  [data-reading-layout="table"] [data-app-header] > div { flex-wrap: nowrap; gap: 12px; }
+  [data-reading-layout="table"] [data-app-header] > div > div:first-child { flex-shrink: 1; }
+  [data-reading-layout="table"] [data-scope-label],
+  [data-reading-layout="table"] .theme-toggle span { display: none; }
+  [data-reading-layout="table"] .theme-toggle { width: 32px; min-height: 32px; padding: 0; }
+}
 @media (max-width: 359px) {
   [data-app-header] { padding-left: 16px; padding-right: 16px; }
 }
