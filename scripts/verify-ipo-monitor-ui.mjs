@@ -54,10 +54,10 @@ try {
   check('empty Watchlist still loads every captured issuer', (await page.locator('[data-row-count]').innerText()).startsWith(`${capture.rows.length} of ${capture.rows.length}`));
   check('newest dated filings appear first', (await page.locator('[data-row-key]').first().innerText()).includes('04 Sept 2026'));
   check('automatic refresh is registered at five minutes', await page.evaluate(() => window.pollStarted && window.poll.intervalMs === 300000));
-  check('long source disclosure removed from the IPO table', await page.locator('#root [data-ipo-coverage]').count() === 0);
-  await page.locator('[data-ipo-sources]').click();
+  check('coverage status and source shortcut are removed from the IPO tab', await page.locator('#root [data-ipo-coverage], #root [data-ipo-freshness], #root [data-ipo-sources]').count() === 0 && !(await page.locator('#root').innerText()).includes('Source details'));
+  await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon({ group: 'ipo-filings' }));
   const ipoGroup = page.locator('[data-beacon-group="ipo-filings"]');
-  check('source shortcut opens existing beacon at all eight IPO sources', await ipoGroup.isVisible() && await ipoGroup.locator('[data-beacon-source]').count() === 8 && await page.locator('[data-beacon-notes="ipo-filings"] > summary').evaluate((el) => el === document.activeElement));
+  check('existing Data flowing in panel retains all eight IPO sources', await ipoGroup.isVisible() && await ipoGroup.locator('[data-beacon-source]').count() === 8 && await page.locator('[data-beacon-notes="ipo-filings"] > summary').evaluate((el) => el === document.activeElement));
   check('source totals are derived from the updated registry', await page.evaluate(async () => {
     const { sourceGroups } = await import('/js/ui/sources.js');
     const items = sourceGroups().flatMap((g) => g.items);
@@ -91,7 +91,7 @@ try {
   const directoryWorkbook = new ExcelJS.Workbook(); await directoryWorkbook.xlsx.readFile(await (await directoryDownload).path());
   check('directory export includes publisher provenance and all matching issuers', directoryWorkbook.worksheets[0].name === 'IPO directory' && directoryWorkbook.worksheets[0].rowCount === 3);
   failure = true; await page.locator('[data-ipo-refresh]').click(); await ready();
-  check('directory survives outage without a fresh label', await page.locator('[data-row-key]').count() === 1 && (await page.locator('[data-ipo-freshness]').innerText()).includes('unavailable'));
+  check('directory survives outage without restoring removed coverage text', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-ipo-freshness], [data-ipo-sources]').count() === 0);
   failure = false;
   for (const width of [900, 390, 320]) {
     await page.setViewportSize({ width, height: 850 });
@@ -121,8 +121,8 @@ try {
   await page.evaluate(() => window.poll.fetcher());
   check('a newly published filing arrives through automatic refresh while preserving search', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-table-search]').inputValue() === 'Example new arrival');
   failure = true; await page.locator('[data-ipo-refresh]').click(); await ready();
-  check('source outage retains documents with a visible stale warning', (await page.locator('[data-ipo-freshness]').innerText()).includes('unavailable') && await page.locator('[data-row-key]').count() === 1);
-  await page.locator('[data-ipo-sources]').click();
+  check('source outage retains documents without restoring removed coverage text', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-ipo-freshness], [data-ipo-sources]').count() === 0);
+  await page.evaluate(async () => (await import('/js/ui/source-beacon.js')).openBeacon({ group: 'ipo-filings' }));
   check('whole-feed outage does not leave green IPO sources in the beacon', await page.locator('[data-beacon-group="ipo-filings"] .beacon-row.is-live').count() === 0);
   await page.keyboard.press('Escape');
   failure = false;

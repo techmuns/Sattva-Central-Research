@@ -2688,8 +2688,8 @@ filings missing from a narrower source window. There is **no new background capt
 closed browsers do not accumulate new local history. Upstream publication, SEBI pagination and
 BSE-only mainboard coverage can still leave gaps, disclosed in the Data flowing in source panel.
 
-The IPO table keeps only a compact freshness/error line and a Source details shortcut. This opens
-the existing source beacon at its IPO filings group. Seven official feeds replace the obsolete
+The IPO table does not repeat source coverage/status text or a Source details shortcut. Source
+health remains in the existing lower-left Data flowing in panel at its IPO filings group. Seven official feeds replace the obsolete
 weekly-tracker registry entry. Expandable source rows carry their own read status, check time,
 document count and coverage note; group details retain undated counts, cadence, archive and cap
 warnings. The registry and sources modal use the same IPO feed metadata, without starting another

@@ -130,6 +130,14 @@ export function validateScreenerInsightsCapture(capture, now = Date.now()) {
   if (capture.failedKeys !== undefined && (!Array.isArray(capture.failedKeys) ||
       capture.failedKeys.length !== capture.failedCount || new Set(capture.failedKeys).size !== capture.failedKeys.length ||
       capture.failedKeys.some((key) => !capture.targetKeys.includes(key)))) throw Error('Invalid Screener insight failures');
+  if (capture.deferredCount !== undefined || capture.deferredKeys !== undefined) {
+    if (!Number.isSafeInteger(capture.deferredCount) || capture.deferredCount < 0 ||
+        capture.checkedCount + capture.deferredCount > capture.targetCount || !Array.isArray(capture.deferredKeys) ||
+        capture.deferredKeys.length !== capture.deferredCount || new Set(capture.deferredKeys).size !== capture.deferredCount ||
+        capture.deferredKeys.some(key => !capture.targetKeys.includes(key) || capture.failedKeys?.includes(key))) {
+      throw Error('Invalid Screener insight deferrals');
+    }
+  }
   validateScreenerInsightCompanies(capture.companies);
   if (capture.companies.some((company) => Date.parse(company.checkedAt) > checkedAt + 60_000)) throw Error('Invalid Screener insight observation time');
   if (capture.companies.some((company) => !capture.targetKeys.includes(company.companyKey))) throw Error('Unexpected Screener insight company');
