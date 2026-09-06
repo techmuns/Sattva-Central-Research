@@ -2,40 +2,36 @@
 //
 //   configured()                    is a base URL set?
 //   setBaseUrl(url) / baseUrl()     where that dashboard lives
-//   readyByTicker()                 which companies ALREADY have a report — free, no run
+//   readyReportsByTicker()          every report the provider ALREADY holds — free, no run
 //   start(row, { onProgress })      dispatch a run and poll it to completion
 //   resume(slug, { onProgress })    reattach to an existing run or open a finished report
-//   reportUrl(slug)                 deep link into THEIR rendering of the report
-//   remembered(ticker)              a slug we already have for this company
+//   remembered(ticker, recordId)    a slug we already have for this exact call row
 //   savedReport(slug)               a finished report KEPT ON THIS DEVICE — no network at all
 //   saveReport({ slug, report })    keep one, so the next open costs nothing
-//   savedByTicker() / savedFor()    which companies this device already holds a report for
+//   savedByRecord() / savedForRecord() exact call rows this device already holds a report for
 //
 // TWO KINDS OF CALL, AND ONLY ONE OF THEM COSTS ANYTHING.
 //   Reading — `GET /api/summary` (their index of finished reports) and `GET /api/report` — is
 //   free. Writing — `POST /api/analyze` — starts a real LLM pipeline. So the index is fetched
 //   once per page load to mark the rows that are already free to open, and a dispatch happens
-//   only on an explicit click through a confirm step. Never blur those two.
+//   only from the explicit Deep Dive row-button click. Never blur those two.
 //
 // THIS TALKS TO A DIFFERENT DASHBOARD, AND EVERY FIELD IT RENDERS IS THAT DASHBOARD'S.
 //   Concall Deep Dive runs its own LLM pipeline over a company's call and publishes a report. We
 //   trigger it, watch it, and show what it returns. We compute nothing on top and we re-band
 //   nothing — same rule as the StockScans scores and the Trendlyne holding values. Every surface
-//   says whose analysis it is, and every report carries a link to their own rendering of it.
+//   says whose analysis it is, while only the primary transcript/presentation links are exposed.
 //
-// A CLICK COSTS THEM A PIPELINE RUN.
+// A NEW DEEP DIVE CLICK CAN COST THEM A PIPELINE RUN.
 //   `POST /api/analyze` dispatches a real LLM + compute run and the endpoint is unauthenticated.
-//   So nothing here fires on its own: no poller registers this, no row triggers it on render, and
-//   the button asks for confirmation before the first dispatch. A cached report (<14 days) comes
-//   back instantly with `status: "done"` and costs nothing, which is why the confirm step says
-//   whether it expects to reuse one.
+//   So nothing here fires on render or from a poller. The Deep Dive button itself is the explicit
+//   instruction: its click dispatches and opens progress immediately. A cached report (<14 days)
+//   comes back instantly with `status: "done"` and costs nothing.
 //
 // WHERE THE BASE URL COMES FROM
-//   The Worker behind that dashboard has no custom domain, so its URL is whatever Cloudflare
-//   assigned — typically https://concall-sattva.<subdomain>.workers.dev. It is not committed here
-//   because it is deployment-specific and nobody in this repo can know it. Set it once in the UI
-//   (stored in localStorage) or bake it in by setting `window.SATTVA_DEEPDIVE_URL` in index.html.
-//   Until it is set, the column renders a "connect" state rather than a broken button.
+//   `window.SATTVA_DEEPDIVE_URL` in index.html is the deployment configuration. A localStorage
+//   override remains for the browser verification stub, but neither address is printed or editable
+//   in the customer-facing panel. Until it is set, the panel says Deep Dive is unavailable.
 //
 // A FINISHED REPORT IS KEPT ON THE DEVICE, AND THAT IS NOT AN OPTIMISATION.
 //   Everywhere else on this dashboard a cache miss costs bytes and a moment. Here it can cost a
@@ -131,15 +127,13 @@ export function setBaseUrl(url) {
 
 export const configured = () => !!baseUrl();
 
-/** Their own rendering of a finished report. Always offered beside ours — see the header. */
-export function reportUrl(slug) {
-  const b = baseUrl();
-  return b && slug ? `${b}/#/report/${encodeURIComponent(slug)}` : null;
-}
-
 // ticker -> { slug, at }. A run takes minutes; remembering the slug means closing the panel and
 // coming back reattaches to the job in flight rather than dispatching a second one.
-export const remembered = (ticker) => (ticker ? read(LS_SLUGS, {})[String(ticker).toUpperCase()] || null : null);
+export const remembered = (ticker, recordId = null) => {
+  const entry = ticker ? read(LS_SLUGS, {})[String(ticker).toUpperCase()] || null : null;
+  if (!entry || !recordId) return entry;
+  return entry.recordId === recordId ? entry : null;
+};
 
 /**
  * The whole map, read once.
@@ -150,10 +144,17 @@ export const remembered = (ticker) => (ticker ? read(LS_SLUGS, {})[String(ticker
  */
 export const rememberedMap = () => read(LS_SLUGS, {});
 
-function remember(ticker, slug) {
+/** exact visible-row id -> remembered in-flight/completed run. */
+export function rememberedByRecord() {
+  const out = {};
+  for (const entry of Object.values(rememberedMap())) if (entry?.recordId) out[entry.recordId] = entry;
+  return out;
+}
+
+function remember(ticker, slug, { recordId = null, date = null } = {}) {
   if (!ticker || !slug) return;
   const all = read(LS_SLUGS, {});
-  all[String(ticker).toUpperCase()] = { slug, at: Date.now() };
+  all[String(ticker).toUpperCase()] = { slug, at: Date.now(), recordId, date };
   write(LS_SLUGS, all);
 }
 
@@ -164,8 +165,9 @@ function remember(ticker, slug) {
 //   IndexedDB  the report BODY, under their slug. Prose-carrying and tens of KB, so it does not
 //              belong in localStorage beside the watchlist and the keyword sets.
 //   localStorage  a small INDEX of what the body store holds — slug -> { ticker, company, quarter,
-//              savedAt }. It is read synchronously on every table paint to mark the rows that open
-//              for free, which an async IndexedDB read could not do.
+//              recordId, callDate, summary, savedAt }. It is read synchronously on every table
+//              paint to mark the exact rows that open for free, which an async IndexedDB read
+//              could not do.
 //
 // The index is written only after the body write lands on a working IndexedDB. In a private window
 // the mark never appears and the panel still gets the in-memory copy for the session — better than
@@ -175,7 +177,7 @@ function remember(ticker, slug) {
 /** How many finished reports this device keeps. Oldest beyond this are dropped, body and all. */
 export const MAX_SAVED = 60;
 
-/** slug -> { ticker, company, quarter, savedAt }. One read, for a whole table paint. */
+/** slug -> { ticker, company, quarter, recordId, callDate, summary, savedAt }. */
 export const savedMap = () => read(LS_REPORTS, {});
 
 /** ticker (upper-case) -> the newest saved entry, with its slug. Built once per paint. */
@@ -189,8 +191,58 @@ export function savedByTicker() {
   return out;
 }
 
+/** ticker -> every saved index entry, newest first. */
+export function savedReportsByTicker() {
+  const out = {};
+  for (const [slug, entry] of Object.entries(savedMap())) {
+    const ticker = String(entry?.ticker || '').toUpperCase();
+    if (!ticker) continue;
+    (out[ticker] ||= []).push({ ...entry, slug });
+  }
+  for (const rows of Object.values(out)) rows.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+  return out;
+}
+
+/** exact visible-row id -> newest saved entry. One localStorage read for the whole table paint. */
+export function savedByRecord() {
+  const out = {};
+  for (const [slug, entry] of Object.entries(savedMap())) {
+    const id = entry?.recordId;
+    if (!id) continue;
+    if (!out[id] || (entry.savedAt || 0) > (out[id].savedAt || 0)) out[id] = { ...entry, slug };
+  }
+  return out;
+}
+
 /** The newest report this device holds for one company, or null. Index only — no body read. */
 export const savedFor = (ticker) => (ticker ? savedByTicker()[String(ticker).toUpperCase()] || null : null);
+
+/** A report filed against this exact visible call row, or null. */
+export function savedForRecord(recordId) {
+  return recordId ? savedByRecord()[recordId] || null : null;
+}
+
+/** The compact list fields the provider itself exposes for a finished report. No scoring here. */
+export function reportSummary({ slug = null, report = null } = {}) {
+  if (!report || typeof report !== 'object') return null;
+  const meta = report.meta || {};
+  const tags = Array.isArray(report?.concall?.classification)
+    ? report.concall.classification.map((entry) => entry?.tag).filter(Boolean)
+    : [];
+  return {
+    slug: slug || meta.slug || null,
+    company: meta.company || null,
+    ticker: meta.ticker || null,
+    quarter: meta.quarter || report?.earnings?.quarter || null,
+    quarter_confirmed: meta.quarter_confirmed === true,
+    generated_at: meta.generated_at || null,
+    transcript_available: meta.transcript_available === true,
+    verdict: report?.next_steps?.conviction || null,
+    result: report?.earnings?.beat_miss?.overall || null,
+    headline: Array.isArray(report.key_takeaways) ? report.key_takeaways.find(Boolean) || null : null,
+    tags: tags.slice(0, 4),
+  };
+}
 
 /**
  * The stored body for one slug, or null.
@@ -226,7 +278,7 @@ export async function savedReport(slug) {
  * what that pipeline produced, and a locally reshaped one would be worth less than no copy at all.
  * Resolves once the index is durable, so a caller can mark the row only when the claim is true.
  */
-export function saveReport({ slug, ticker, company, quarter, report, partial = false }) {
+export function saveReport({ slug, ticker, company, quarter, recordId = null, callDate = null, report, partial = false }) {
   if (!slug || !report) return Promise.resolve(false);
   const savedAt = Date.now();
   return writeEntry(KEYS.deepDiveReport(slug), { value: { report, partial, slug, ticker: ticker || null }, savedAt })
@@ -237,6 +289,9 @@ export function saveReport({ slug, ticker, company, quarter, report, partial = f
         ticker: ticker ? String(ticker).toUpperCase() : null,
         company: company || null,
         quarter: quarter || null,
+        recordId,
+        callDate,
+        summary: reportSummary({ slug, report }),
         savedAt,
       };
       // Oldest first out, body and index together, so the two can never disagree about what is here.
@@ -279,20 +334,20 @@ export function conflictsWith(report, ticker) {
 
 async function call(path, init) {
   const b = baseUrl();
-  if (!b) throw new Error('The Deep Dive dashboard URL has not been set.');
+  if (!b) throw new Error('Deep Dive is not configured for this deployment.');
   let res;
   try {
     res = await fetch(`${b}${path}`, init);
   } catch (err) {
     // Their CORS is open, so a failure here is the host being unreachable or the URL being wrong —
     // both worth saying plainly rather than as a bare TypeError.
-    throw new Error(`Could not reach ${b} — check the URL is right and the dashboard is deployed.`);
+    throw new Error('Could not reach the Deep Dive service. Try again in a moment.');
   }
   let body = null;
   try {
     body = await res.json();
   } catch {
-    throw new Error(`${path} returned ${res.status} and not JSON — is ${b} the Deep Dive dashboard?`);
+    throw new Error(`The Deep Dive service returned an invalid response (HTTP ${res.status}).`);
   }
   return body;
 }
@@ -330,8 +385,8 @@ export function summary({ refresh = false } = {}) {
         const body = await call('/api/summary');
         return Array.isArray(body?.summaries) ? body : null;
       } catch {
-        // A missing index is not an error: it means we cannot pre-mark rows, and every row falls
-        // back to the ask-first path, which is where they would have been anyway.
+        // A missing index is not an error: it means we cannot pre-mark rows, and a clicked row
+        // follows the normal direct-run path.
         return null;
       }
     })();
@@ -357,6 +412,19 @@ export async function readyByTicker() {
   return out;
 }
 
+/** ticker -> every finished summary, newest first, so an older quarter is not hidden by the latest. */
+export async function readyReportsByTicker() {
+  const body = await summary();
+  const out = {};
+  for (const row of body?.summaries || []) {
+    const ticker = String(row?.ticker || '').toUpperCase();
+    if (!ticker || !row.slug) continue;
+    (out[ticker] ||= []).push(row);
+  }
+  for (const rows of Object.values(out)) rows.sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')));
+  return out;
+}
+
 /**
  * Dispatch a run and poll it to completion.
  *
@@ -367,7 +435,7 @@ export async function readyByTicker() {
  * Resolves with `{ status: 'done', slug, report }` or throws. `signal` aborts the polling loop
  * when the reader closes the panel — the run continues on their side, and reopening reattaches.
  */
-export async function start({ company, ticker, force = false }, { onProgress = () => {}, signal } = {}) {
+export async function start({ company, ticker, recordId = null, date = null, force = false }, { onProgress = () => {}, signal } = {}) {
   if (!company && !ticker) throw new Error('A company name or ticker is required.');
 
   onProgress({ status: 'dispatching', stage: null, message: 'Asking the Deep Dive dashboard to start…', elapsedMs: 0 });
@@ -389,7 +457,7 @@ export async function start({ company, ticker, force = false }, { onProgress = (
   // The slug is theirs and is always derived server-side. Never construct one here.
   const slug = dispatched?.slug;
   if (!slug) throw new Error('The Deep Dive dashboard did not return a report id.');
-  remember(ticker, slug);
+  remember(ticker, slug, { recordId, date });
 
   if (dispatched.status === 'done') {
     onProgress({ status: 'done', stage: null, message: 'A recent report was already on file.', elapsedMs: 0, cached: true });
@@ -407,7 +475,7 @@ export async function start({ company, ticker, force = false }, { onProgress = (
 
     const elapsedMs = Date.now() - started;
     if (elapsedMs > TIMEOUT_MS) {
-      throw new Error(`The run has been going for ${Math.round(elapsedMs / 60000)} minutes without finishing. It may still complete on the Deep Dive dashboard — the link below reattaches to it.`);
+      throw new Error(`The run has been going for ${Math.round(elapsedMs / 60000)} minutes without finishing. Close this panel and reopen the same row later to reattach.`);
     }
 
     let tick;
