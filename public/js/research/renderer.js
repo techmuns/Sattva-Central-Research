@@ -16,13 +16,22 @@ function appendInline(parent, text, cite = null) {
   const pattern = /(\[Dashboard:\s*[^\]\n]+\]|\*\*[^*\n]+\*\*|`[^`\n]+`|\*[^*\n]+\*)/g;
   let cursor = 0;
   for (const match of source.matchAll(pattern)) {
-    if (match.index > cursor) parent.appendChild(document.createTextNode(source.slice(cursor, match.index)));
     const token = match[0];
+    if (match.index > cursor) {
+      const between = source.slice(cursor, match.index);
+      parent.appendChild(document.createTextNode(token.startsWith('[Dashboard:') ? between.replace(/[ \t]+$/, '\u00a0') : between));
+    }
     const citation = token.match(CITATION);
     if (citation) {
       const target = cite?.(citation[1]) || null;
       if (target?.href) {
-        parent.appendChild(el('a', { class: 'research-cite', href: target.href, title: target.title || `Open ${citation[1]}` }, target.label || citation[1]));
+        parent.appendChild(el('a', {
+          class: `research-cite${target.number ? ' research-cite-number' : ''}`,
+          href: target.href, title: target.title || `Open ${citation[1]}`,
+          target: /^https?:\/\//.test(target.href) ? '_blank' : null,
+          rel: /^https?:\/\//.test(target.href) ? 'noopener noreferrer' : null,
+          'aria-label': target.number ? `Source ${target.number}: ${target.label || citation[1]}` : null,
+        }, target.number ? String(target.number) : target.label || citation[1]));
       } else {
         parent.appendChild(el('span', { class: 'research-cite research-cite-unresolved' }, citation[1]));
       }
@@ -88,17 +97,35 @@ function renderTable(lines, start, cite) {
   };
 }
 
-export function renderResearchAnswer(container, text, { cite = null } = {}) {
-  empty(container);
-  const lines = String(text || '').replaceAll('\r\n', '\n').split('\n');
+export function renderResearchAnswer(container, text, { cite = null, compactCitations = false, streaming = false } = {}) {
+  const output = document.createDocumentFragment();
+  const references = new Map();
+  const resolve = compactCitations ? (name) => {
+    const target = cite?.(name);
+    if (!target?.href) return null;
+    if (!references.has(target.href)) references.set(target.href, { ...target, number: references.size + 1, label: target.label || name });
+    return references.get(target.href);
+  } : cite;
+  const prose = String(text || '').replaceAll('\r\n', '\n');
+  const lines = (streaming ? prose.replace(/\[Dashboard:[^\]\n]*$/, '') : prose).split('\n');
   let cursor = 0;
   let paragraph = [];
 
   const flushParagraph = () => {
     if (!paragraph.length) return;
+    let copy = paragraph.join(' ');
+    // Promote only an explicit bold label at the beginning of a paragraph.
+    // Preserve its words and all following prose; never infer new conclusions.
+    const label = copy.match(/^\*\*([^*\n]{1,160})\*\*(\s*:)?\s*/);
+    if (label && (/:\s*$/.test(label[1]) || label[2] || copy.length === label[0].length)) {
+      const heading = el('h3', { class: 'research-answer-heading' });
+      appendInline(heading, label[1].trim() + (label[2]?.trim() || ''), resolve);
+      output.appendChild(heading);
+      copy = copy.slice(label[0].length);
+    }
     const p = el('p', { class: 'research-answer-paragraph' });
-    appendInline(p, paragraph.join(' '), cite);
-    container.appendChild(p);
+    appendInline(p, copy, resolve);
+    if (copy) output.appendChild(p);
     paragraph = [];
   };
 
@@ -111,20 +138,23 @@ export function renderResearchAnswer(container, text, { cite = null } = {}) {
       continue;
     }
 
-    const table = renderTable(lines, cursor, cite);
+    // Resolve citations in document order, including the paragraph before a table.
+    const tableCandidate = lines[cursor]?.includes('|') && isDivider(lines[cursor + 1] || '');
+    if (tableCandidate) flushParagraph();
+    const table = tableCandidate ? renderTable(lines, cursor, resolve) : null;
     if (table) {
       flushParagraph();
-      container.appendChild(table.node);
+      output.appendChild(table.node);
       cursor = table.next;
       continue;
     }
 
-    const heading = trimmed.match(/^(#{2,4})\s+(.+)$/);
+    const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (heading) {
       flushParagraph();
       const h = el('h3', { class: 'research-answer-heading' });
-      appendInline(h, heading[2], cite);
-      container.appendChild(h);
+      appendInline(h, heading[2], resolve);
+      output.appendChild(h);
       cursor += 1;
       continue;
     }
@@ -132,8 +162,8 @@ export function renderResearchAnswer(container, text, { cite = null } = {}) {
     if (trimmed.startsWith('>')) {
       flushParagraph();
       const quote = el('blockquote', { class: 'research-answer-callout' });
-      appendInline(quote, trimmed.replace(/^>\s?/, ''), cite);
-      container.appendChild(quote);
+      appendInline(quote, trimmed.replace(/^>\s?/, ''), resolve);
+      output.appendChild(quote);
       cursor += 1;
       continue;
     }
@@ -150,12 +180,12 @@ export function renderResearchAnswer(container, text, { cite = null } = {}) {
         const match = ordered ? candidate.match(/^(\d+)[.)]\s+(.+)$/) : candidate.match(/^[-•*]\s+(.+)$/);
         if (!match) break;
         const li = el('li');
-        appendInline(li, ordered ? match[2] : match[1], cite);
+        appendInline(li, ordered ? match[2] : match[1], resolve);
         if (ordered) li.value = Number(match[1]);
         list.appendChild(li);
         cursor += 1;
       }
-      container.appendChild(list);
+      output.appendChild(list);
       continue;
     }
 
@@ -163,6 +193,26 @@ export function renderResearchAnswer(container, text, { cite = null } = {}) {
     cursor += 1;
   }
   flushParagraph();
+  if (references.size) {
+    const sources = el('nav', { class: 'research-answer-references', 'aria-label': 'Sources cited in this answer' });
+    sources.appendChild(el('span', {}, 'Cited sources'));
+    for (const reference of references.values()) sources.appendChild(el('a', {
+      href: reference.href, title: reference.title,
+      target: /^https?:\/\//.test(reference.href) ? '_blank' : null,
+      rel: /^https?:\/\//.test(reference.href) ? 'noopener noreferrer' : null,
+    }, `${reference.number}. ${reference.label}`));
+    output.appendChild(sources);
+  }
+  // Keep completed paragraphs and their citation links mounted as later tokens
+  // arrive. Selecting text or focusing a citation should survive the next chunk.
+  const children = [...output.childNodes];
+  children.forEach((node, index) => {
+    const existing = container.childNodes[index];
+    if (existing?.isEqualNode(node)) return;
+    if (existing) existing.replaceWith(node);
+    else container.appendChild(node);
+  });
+  while (container.childNodes.length > children.length) container.lastChild.remove();
 }
 
 export function renderResearchSources(container, { dashboard = [], web = [] } = {}) {

@@ -1570,10 +1570,10 @@ console.log('\n— AI alerts —');
   // no company, without a `company=` seed it would have no honest value for.
   const citation = await page.evaluate(() => {
     const a = document.querySelector('[data-research-transcript] a.research-cite');
-    return a ? { href: a.getAttribute('href'), text: a.textContent.trim(), unresolved: document.querySelectorAll('[data-research-transcript] .research-cite-unresolved').length } : null;
+    return a ? { href: a.getAttribute('href'), text: a.getAttribute('aria-label') || a.textContent.trim(), unresolved: document.querySelectorAll('[data-research-transcript] .research-cite-unresolved').length } : null;
   });
   ok('...and renders every [Dashboard: Page] citation as a link into that tab',
-    !!citation && /^#\/research\/earnings-hub\?scope=portfolio$/.test(citation.href) && citation.text === 'Earnings Hub' && citation.unresolved === 0,
+    !!citation && /^#\/research\/earnings-hub\?scope=portfolio$/.test(citation.href) && citation.text === 'Source 1: Earnings Hub' && citation.unresolved === 0,
     citation ? `${citation.text} → ${citation.href}` : 'no citation link rendered');
 
   // AN ANSWER THE READER WALKED AWAY FROM IS STILL THERE WHEN THEY COME BACK.

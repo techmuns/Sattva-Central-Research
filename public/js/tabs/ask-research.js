@@ -35,6 +35,7 @@ let ctxRef = null;
 let uiDispose = null;
 let configState = null;
 let configPromise = null;
+let readingView = false;
 const generations = new Map();
 onPortfolioInvalidation((version) => {
   for (const generation of generations.values()) {
@@ -257,7 +258,7 @@ function watchEvidenceInvalidation() {
 
 function template(scope) {
   return `
-    <section class="research-workspace" data-research-workspace>
+    <section class="research-workspace${readingView ? ' is-reading-view' : ''}" data-research-workspace>
       <div class="research-workspace-header">
         <div>
           <div class="flex items-center gap-2">
@@ -294,7 +295,14 @@ function template(scope) {
         </aside>
 
         <div class="research-thread">
-          <div class="research-transcript scrollbar-thin" role="log" aria-live="polite" aria-label="Research conversation" data-research-transcript></div>
+          <div class="research-reading-toolbar">
+            <span>${scopeLabel(scope)} research</span>
+            <button type="button" data-research-reading aria-pressed="${readingView}">${readingView ? 'Exit reading view' : 'Reading view'}</button>
+          </div>
+          <div class="research-transcript-wrap">
+            <div class="research-transcript scrollbar-thin" role="log" aria-live="polite" aria-label="Research conversation" data-research-transcript></div>
+            <button type="button" class="research-jump-latest" data-research-latest hidden>Latest answer ↓</button>
+          </div>
 
           <div class="research-composer-wrap">
             <div class="research-config-notice hidden" data-research-config role="status"></div>
@@ -382,11 +390,24 @@ function cleanupUi() {
 
 function wire(root) {
   const input = root.querySelector('[data-research-input]');
+  const transcript = root.querySelector('[data-research-transcript]');
   const onClick = (event) => {
     const sessionButton = event.target.closest('[data-research-session]');
     const deleteButton = event.target.closest('[data-research-delete]');
     const suggestion = event.target.closest('[data-research-suggestion]');
-    if (deleteButton) {
+    if (event.target.closest('[data-research-reading]')) {
+      readingView = !readingView;
+      root.querySelector('[data-research-workspace]').classList.toggle('is-reading-view', readingView);
+      const button = root.querySelector('[data-research-reading]');
+      button.setAttribute('aria-pressed', String(readingView));
+      button.textContent = readingView ? 'Exit reading view' : 'Reading view';
+      updateReadingControls();
+    } else if (event.target.closest('[data-research-latest]')) {
+      transcript.scrollTop = transcript.scrollHeight;
+      updateReadingControls();
+    } else if (event.target.closest('[data-research-preview] > summary')) {
+      event.target.closest('[data-research-preview]').dataset.readerToggled = 'true';
+    } else if (deleteButton) {
       event.stopPropagation();
       deleteSession(deleteButton.dataset.researchDelete);
     } else if (sessionButton) {
@@ -436,10 +457,12 @@ function wire(root) {
     submitCurrent();
   };
   root.addEventListener('click', onClick);
+  transcript.addEventListener('scroll', updateReadingControls, { passive: true });
   input.addEventListener('input', onInput);
   input.addEventListener('keydown', onKeydown);
   return () => {
     root.removeEventListener('click', onClick);
+    transcript.removeEventListener('scroll', updateReadingControls);
     input.removeEventListener('input', onInput);
     input.removeEventListener('keydown', onKeydown);
     // Leaving the tab is exactly when an unsaved draft would be lost, so flush rather than
@@ -603,6 +626,14 @@ function paintTranscript() {
       transcript.style.scrollBehavior = '';
     });
   }
+  updateReadingControls();
+}
+
+function updateReadingControls() {
+  const root = ctxRef?.root;
+  const transcript = root?.querySelector('[data-research-transcript]');
+  const button = root?.querySelector('[data-research-latest]');
+  if (button && transcript) button.hidden = !transcript.querySelector('.research-message-stack') || transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
 }
 
 function openingState(scope) {
@@ -675,9 +706,10 @@ function citeResolver(companies = []) {
   const scope = ctxRef?.scope || 'portfolio';
   const company = companies.length === 1 ? companies[0] : null;
   return (name) => {
-    const wanted = String(name || '').trim().toLowerCase();
+    const normalise = value => String(value || '').trim().toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ');
+    const wanted = normalise(name);
     if (wanted === 'ask sattva' || wanted === 'sattva family') return { href: `${FAMILY_ORIGIN}/ask`, title: 'Open the portfolio source in Sattva Family', label: 'Ask Sattva' };
-    const source = DASHBOARD_RESEARCH_SOURCES.find((item) => item.tab.toLowerCase() === wanted) || DASHBOARD_RESEARCH_SOURCES.find((item) => item.id === wanted);
+    const source = DASHBOARD_RESEARCH_SOURCES.find((item) => normalise(item.tab) === wanted) || DASHBOARD_RESEARCH_SOURCES.find((item) => item.id === wanted);
     if (!source) return null;
     return { href: dashboardHref(tabRoute(source.route), scope, company), title: company ? `Open ${source.tab} for ${company.name || company.ticker}` : `Open ${source.tab}`, label: source.tab };
   };
@@ -719,7 +751,7 @@ function messageNode(message) {
   article.appendChild(label);
   const body = el('div', { class: 'research-answer-body' });
   const companies = message.companies || [];
-  renderResearchAnswer(body, message.text, { cite: citeResolver(companies) });
+  renderResearchAnswer(body, message.text, { cite: citeResolver(companies), compactCitations: true });
   article.appendChild(body);
   if (message.incomplete) {
     const recovery = el('div', { class: 'research-recovery', role: 'status' });
@@ -730,22 +762,26 @@ function messageNode(message) {
     }, 'Retry answer'));
     article.appendChild(recovery);
   }
-  if (message.preview) article.appendChild(previewNode(message.preview, { open: !!message.incomplete }));
+  const context = el('details', { class: 'research-answer-context' });
+  context.appendChild(el('summary', {}, 'Source readings & portfolio context'));
+  if (message.preview) context.appendChild(previewNode(message.preview, { open: true }));
+  if (message.incomplete) context.open = true;
   if (Number.isFinite(message.timings?.firstTextMs)) {
-    article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Answer started in ${(message.timings.firstTextMs / 1000).toFixed(1)}s · ${message.dashboardSources?.length || 0} dashboard pages read`));
+    context.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Answer started in ${(message.timings.firstTextMs / 1000).toFixed(1)}s · ${message.dashboardSources?.length || 0} dashboard pages read`));
   }
   if (message.portfolio) {
     const p = message.portfolio;
     const checked = new Date(p.checkedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
     const quotes = p.quotes?.asOf ? `${p.quotes.asOf} (${p.quotes.freshness === 'partial-or-stale' ? 'partial or stale' : 'per-symbol freshness unverified'})` : 'unavailable — workbook marks only';
-    article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Portfolio book: ${p.bookAsOf}. Quotes: ${quotes}. Checked ${checked} IST. Snapshot for this answer, not a live refresh.`));
+    article.appendChild(el('p', { class: 'research-answer-freshness' }, `Portfolio snapshot: ${p.bookAsOf}. Quotes: ${quotes}.`));
+    context.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Portfolio book: ${p.bookAsOf}. Quotes: ${quotes}. Checked ${checked} IST. Snapshot for this answer, not a live refresh.`));
     if (p.sourceErrors?.length) article.appendChild(el('p', { class: 'text-xs text-slate-500' }, `Sources not read: ${p.sourceErrors.join(', ')}.`));
     const details = el('details');
     details.appendChild(el('summary', { class: 'research-cite' }, p.mode === 'verified-holdings' ? 'Verified portfolio context' : 'Portfolio source reading · Ask Sattva'));
     const reading = el('div', { class: 'research-answer-body' });
     renderResearchAnswer(reading, p.answer, { cite: citeResolver() });
     details.appendChild(reading);
-    article.appendChild(details);
+    context.appendChild(details);
   }
   const sources = el('div', { class: 'research-sources' });
   const company = companies.length === 1 ? companies[0] : null;
@@ -753,7 +789,24 @@ function messageNode(message) {
     dashboard: (message.dashboardSources || []).map((item) => ({ ...item, route: dashboardHref(item.route, ctxRef?.scope || 'portfolio', company) })),
     web: message.webSources,
   });
-  article.appendChild(sources);
+  context.appendChild(sources);
+  article.appendChild(context);
+  if (message.text.trim()) {
+    const actions = el('div', { class: 'research-answer-actions' });
+    const copy = el('button', { type: 'button' }, message.incomplete ? 'Copy partial answer' : 'Copy answer');
+    const status = el('span', { role: 'status' });
+    copy.onclick = async () => {
+      try { await navigator.clipboard.writeText(message.text); status.textContent = 'Copied'; }
+      catch { status.textContent = 'Select the answer text to copy it.'; }
+    };
+    const start = el('button', { type: 'button' }, 'Read from start ↑');
+    start.onclick = () => {
+      const transcript = article.closest('[data-research-transcript]');
+      if (transcript) transcript.scrollTop += article.getBoundingClientRect().top - transcript.getBoundingClientRect().top - 16;
+    };
+    actions.append(copy, start, status);
+    article.appendChild(actions);
+  }
   return article;
 }
 
@@ -766,8 +819,10 @@ function streamNode(session) {
   if (session.streamPreview) article.appendChild(previewNode(session.streamPreview, { open: true }));
   if (session.streamText) {
     const body = el('div', { class: 'research-answer-body' });
-    renderResearchAnswer(body, session.streamText, { cite: citeResolver(session.streamCompanies || []) });
-    article.appendChild(body);
+    renderResearchAnswer(body, session.streamText, { cite: citeResolver(session.streamCompanies || []), compactCitations: true, streaming: true });
+    label.after(body);
+    const preview = article.querySelector('[data-research-preview]');
+    if (preview) preview.open = false;
   } else {
     article.appendChild(el('div', { class: 'research-thinking' }, [
       el('span'), el('span'), el('span'), el('strong', {}, session.phase || 'Reading the dashboard'),
@@ -850,7 +905,7 @@ function syncSendState() {
 function autoSize(input) {
   if (!input) return;
   input.style.height = 'auto';
-  input.style.height = `${Math.min(180, Math.max(44, input.scrollHeight))}px`;
+  input.style.height = `${Math.min(136, Math.max(44, input.scrollHeight))}px`;
 }
 
 function setPhase(session, phase) {
@@ -1009,6 +1064,7 @@ async function submitCurrent(retryQuestion) {
         paintComposer();
         paintSidebar();
       } else paintAll();
+      updateReadingControls();
     }
     else if (ctxRef) paintSidebar();
     // AN ANSWER THAT ARRIVED WHILE THE READER WAS ELSEWHERE HAS TO SAY SO, or keeping it running
@@ -1117,9 +1173,14 @@ function queueStreamPaint(session, generation) {
     if (session.streamText) {
       article.querySelector('.research-thinking')?.remove();
       let body = article.querySelector('.research-answer-body');
-      if (!body) { body = el('div', { class: 'research-answer-body' }); article.appendChild(body); }
+      if (!body) {
+        body = el('div', { class: 'research-answer-body' });
+        article.querySelector('.research-answer-label').after(body);
+        const preview = article.querySelector('[data-research-preview]');
+        if (preview && !preview.dataset.readerToggled) preview.open = false;
+      }
       if (generation.paintedText !== session.streamText || generation.paintedBody !== body) {
-        renderResearchAnswer(body, session.streamText, { cite: citeResolver(session.streamCompanies || []) });
+        renderResearchAnswer(body, session.streamText, { cite: citeResolver(session.streamCompanies || []), compactCitations: true, streaming: true });
         generation.paintedText = session.streamText;
         generation.paintedBody = body;
       }
@@ -1128,5 +1189,6 @@ function queueStreamPaint(session, generation) {
       if (status) status.textContent = session.phase || 'Reading the dashboard';
     }
     if (followLive) transcript.scrollTop = transcript.scrollHeight;
+    updateReadingControls();
   });
 }

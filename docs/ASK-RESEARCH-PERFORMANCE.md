@@ -4,6 +4,33 @@ The portfolio-focused release gates and executable quality scenarios are in
 [Customer readiness](ASK-RESEARCH-CUSTOMER-READINESS.md). Retrieval tests alone
 do not certify customer readiness.
 
+## Reading answers
+
+Answers use a bounded reading column, larger body type and explicit section
+headings. Existing bold paragraph labels become headings without rewriting the
+answer's words, amounts or uncertainty. Inline numbered citations remain at the
+original claim positions; the cited page names and links appear below the prose.
+Whitespace around a slash in a known page name does not break its citation.
+Unknown page names remain visibly unresolved, never invented working links.
+
+Reading view hides the workspace header and conversation library while keeping
+the composer and exit control available. The one-line composer is compact and
+expands for longer drafts. Readers can copy the original answer with named
+citations, return to its start, or jump to the latest output after scrolling back.
+External portfolio citations open separately so the private conversation survives.
+
+Portfolio snapshot dates and quote limitations stay visible. Detailed source
+readings, book checks and timing are expandable beneath the answer. During
+streaming, the initial source preview yields space to generated prose unless the
+reader has explicitly toggled it. Completed paragraph nodes remain mounted while
+later blocks change; split citation syntax waits for its closing bracket.
+
+`scripts/verify-research-stream-ui.mjs` exercises this layout on desktop and mobile
+using synthetic portfolio prose, including heading variants, citation routing and
+deduplication, unknown sources, exact clipboard content, source details, reading
+view, draft preservation, scroll controls, stable paragraphs and safe HTML/table
+rendering. These are presentation checks, not model-accuracy benchmarks.
+
 The reported failure was a Jayaswal Neco news question waiting on Family's
 question-specific model read until the 125-second bridge timeout, before any
 research request started. The previous path then awaited up to 14 seconds for
