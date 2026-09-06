@@ -107,12 +107,16 @@
     "isin:INE476A01022|CANBK": {
       "lastAttemptAt": "2026-09-06T20:36:32+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE482D01024|Carysil": {
+      "lastAttemptAt": "2026-09-06T21:29:57+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-06T20:36:32.898976+00:00"
+    "checkedAt": "2026-09-06T21:29:57.576618+00:00"
   }
 }
