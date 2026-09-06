@@ -23,12 +23,16 @@
     "isin:INE0ALI01010|Advait Energy Transitions": {
       "lastAttemptAt": "2026-09-06T07:35:40+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE0ALI01010|ADVAIT": {
+      "lastAttemptAt": "2026-09-06T08:25:24+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 229,
-    "checkedAt": "2026-09-06T07:35:40.463876+00:00"
+    "checkedAt": "2026-09-06T08:25:24.490928+00:00"
   }
 }
