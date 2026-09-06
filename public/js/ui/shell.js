@@ -19,6 +19,7 @@ import { bindFamilySyncLifecycle } from '../data/family-sync-lifecycle.js';
 import { openScopeEditor } from './scope-editor.js';
 import { sourcesModalHtml } from './sources.js';
 import { mountHostTicker } from './host-ticker.js';
+import { mountThemeToggle } from './theme-toggle.js';
 import * as sourceBeacon from './source-beacon.js';
 
 import * as aiAlerts from '../tabs/ai-alerts.js';
@@ -152,7 +153,7 @@ function shellTemplate() {
         <div class="flex flex-shrink-0 flex-wrap items-center gap-2 text-xs text-slate-500">
           <div class="flex items-center gap-1.5"
                title="Data scope: which companies the tab you are on reports. Portfolio is the family's book, Watchlist is the companies you have starred, Universe is every listed company the feed carries.">
-            <span class="hidden text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">Scope</span>
+            <span data-scope-label class="hidden text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">Scope</span>
             <div id="scope-toggle-mount"></div>
             <div id="scope-edit-mount"></div>
           </div>
@@ -163,6 +164,7 @@ function shellTemplate() {
                it. (No backticks in here: this comment lives inside a template literal.) -->
           <div id="host-ticker-mount" hidden></div>
           <div id="status-mount"></div>
+          <button type="button" data-theme-toggle class="theme-toggle" aria-label="Dark mode" aria-pressed="false"></button>
         </div>
       </div>
     </header>
@@ -216,9 +218,11 @@ function shellTemplate() {
  * any poller has ticked.
  *
  * The pill is deliberately passive. Source/freshness explainer popups were removed from the
- * dashboard; Refresh remains the only action in this compact header cluster.
+ * dashboard; Refresh and the appearance toggle share this compact header cluster.
  */
 function wireStaticHeader(root) {
+  headerDisposer?.();
+  const offTheme = mountThemeToggle(root.querySelector('[data-theme-toggle]'));
   const status = statusControl({
     getTimestamp: () => live.getLastDataTick(),
     subscribeTick: live.onGlobalTick,
@@ -249,6 +253,7 @@ function wireStaticHeader(root) {
   sourcesBtn?.addEventListener('click', onSources);
 
   headerDisposer = () => {
+    offTheme();
     offStatus?.();
     offHostTicker?.();
     sourcesBtn?.removeEventListener('click', onSources);

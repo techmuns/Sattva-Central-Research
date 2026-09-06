@@ -251,7 +251,7 @@ try {
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-preview.png'), fullPage: true });
   const packet = questions.at(-1).evidence;
   for (const title of await livePreview.locator('.research-evidence-item > p').allTextContents()) {
-    assert(packet.sources.some(s => s.rows.some(r => (r.title || r.headline) === title)), 'preview quotes a reading in the verified packet verbatim');
+    assert(packet.sources.some(s => s.rows.some(r => [(r.title || r.headline || r.text), (r.title || r.headline || r.text || '').slice(0, 700) + '…', (r.title || r.headline || r.text || '').slice(0, 420) + '…'].includes(title))), 'preview quotes a reading in the verified packet verbatim');
   }
   await input.fill('What changed at IIFL Finance?');
   await input.dispatchEvent('keydown', { key: 'Enter', isComposing: true });

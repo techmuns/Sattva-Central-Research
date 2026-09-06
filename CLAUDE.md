@@ -28,7 +28,9 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
    The source entry is `scripts/tailwind-input.css`; the content/font config is
    `tailwind.config.cjs`. Commit the generated stylesheet. The on-demand CLI is a maintenance
    tool, not an app dependency or a deployment step.
-5. Light theme only.
+5. Support light and dark themes. The header toggle remembers the reader's choice; without a
+   saved choice, follow the operating system. Use the shared theme tokens for surfaces, text,
+   borders and semantic states, including dialogs and new tabs. Printing stays light.
 6. **Current data and continuous history are a standing user requirement across every tab.**
    Opening or returning to the dashboard must automatically revalidate the relevant feeds;
    background collection must retain history and recover missed intervals where possible.
@@ -2325,6 +2327,19 @@ pure and exported; test its policy branches with fixtures rather than waiting fo
 to happen to contain every case.
 
 ## Ask Research — dashboard evidence, streamed immediately
+
+**Current retrieval contract (6 September 2026):** the registry has 21 source
+entries, including distinct Telegram, Public Chatter posts, NSE Filings, Corporate
+Actions and IPOs. Explicit company research searches retained public records beyond
+the displayed scope, while private portfolio-only feeds retain their scope gate.
+`query-context.js` supplies a 60-day default priority window and event vocabulary;
+older/undated records stay labelled and available. The provider row allowance is
+18,000 characters (Worker bound 19,000), separate from full authenticated positions.
+Larger combined prompts use the existing hosted route. Source and topic relevance
+apply before shared row allocation; literal source previews appear before inference.
+See `docs/INTELLIGENCE-RELIABILITY.md` for the investor use case and acceptance tests.
+This contract supersedes the historical fourteen-source and 13,000-character details
+below. The source registry, source-loading order and truthful sampling rules remain.
 
 `js/research/estate.js` is a runtime registry, not a second copy of the data. Every adapter reads
 the same module as its owning tab and always returns a catalog/status entry, even when that source

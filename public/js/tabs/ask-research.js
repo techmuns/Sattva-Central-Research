@@ -88,7 +88,7 @@ function normaliseSession(raw) {
           webResearch: message.webResearch === true,
           dashboardSources: Array.isArray(message.dashboardSources) ? message.dashboardSources.slice(0, 16) : [],
           // The companies the question resolved to, so a saved answer's citations still deep-link.
-          companies: Array.isArray(message.companies) ? message.companies.filter((c) => c && typeof c.ticker === 'string').slice(0, 6).map((c) => ({ ticker: c.ticker, name: typeof c.name === 'string' ? c.name : c.ticker })) : undefined,
+          companies: Array.isArray(message.companies) ? message.companies.filter((c) => c && typeof c.ticker === 'string').slice(0, 6).map((c) => ({ ticker: c.ticker, name: typeof c.name === 'string' ? c.name : c.ticker, inScope: c.inScope })) : undefined,
           webSources: Array.isArray(message.webSources) ? message.webSources.slice(0, 12) : [],
         }))
     : [];
@@ -545,7 +545,7 @@ function backfillCompanies(session) {
     backfilling.add(message);
     resolveQuestionCompanies(question, scope)
       .then((companies) => {
-        message.companies = companies.map((company) => ({ ticker: company.ticker, name: company.name }));
+        message.companies = companies.map((company) => ({ ticker: company.ticker, name: company.name, inScope: company.inScope }));
         persistSessions();
         if (ctxRef && activeId === session.id && !isBusy(session)) paintTranscript();
       })
@@ -706,7 +706,7 @@ function citeResolver(companies = []) {
     if (wanted === 'ask sattva' || wanted === 'sattva family') return { href: `${FAMILY_ORIGIN}/ask`, title: 'Open the portfolio source in Sattva Family', label: 'Ask Sattva' };
     const source = DASHBOARD_RESEARCH_SOURCES.find((item) => normalise(item.tab) === wanted) || DASHBOARD_RESEARCH_SOURCES.find((item) => item.id === wanted);
     if (!source) return null;
-    return { href: dashboardHref(tabRoute(source.route), scope, company), title: company ? `Open ${source.tab} for ${company.name || company.ticker}` : `Open ${source.tab}`, label: source.tab };
+    return { href: dashboardHref(tabRoute(source.route), company?.inScope === false ? 'universe' : scope, company), title: company ? `Open ${source.tab} for ${company.name || company.ticker}` : `Open ${source.tab}`, label: source.tab };
   };
 }
 
@@ -831,14 +831,16 @@ function previewNode(preview, { open = false } = {}) {
   const details = el('details', { class: 'research-evidence-preview', 'data-research-preview': '' });
   details.open = open;
   details.appendChild(el('summary', {}, 'Source readings'));
-  details.appendChild(el('p', { class: 'research-evidence-note' }, 'Selected dashboard headlines, before the generated answer. Coverage may be partial; dates belong to each source.'));
-  if (!preview.items.length) details.appendChild(el('p', { class: 'research-evidence-note' }, 'No confirmed company headlines in these selected readings. This does not establish that there are no updates.'));
+  details.appendChild(el('p', { class: 'research-evidence-note' }, 'Matching dashboard headlines and excerpts, before the generated answer. Discussion claims are unverified; coverage may be partial.'));
+  if (!preview.items.length) details.appendChild(el('p', { class: 'research-evidence-note' }, 'No matching headlines or excerpts in these selected readings. This does not establish that there are no updates.'));
   for (const item of preview.items) {
     const reading = el('div', { class: 'research-evidence-item' });
-    reading.appendChild(el('div', { class: 'research-evidence-meta' }, [item.company, item.date || (item.period ? `Period: ${item.period}` : 'Date unavailable'), item.publisher].filter(Boolean).join(' · ')));
-    reading.appendChild(el('p', {}, item.title));
-    const target = citeResolver(item.ticker ? [{ ticker: item.ticker, name: item.company }] : [])(item.tab);
+    reading.appendChild(el('div', { class: 'research-evidence-meta' }, [item.company, (item.date ? `${item.dateLabel ? `${item.dateLabel}: ` : ''}${item.date}` : null) || (item.period ? `Period: ${item.period}` : 'Date unavailable'), item.publisher].filter(Boolean).join(' · ')));
+    if (item.attribution) reading.appendChild(el('div', { class: 'research-evidence-meta' }, item.attribution));
+    reading.appendChild(el('p', {}, `${item.title}${item.truncated && !item.title.endsWith('…') ? '…' : ''}`));
+    const target = citeResolver(item.ticker ? [{ ticker: item.ticker, name: item.company, inScope: item.inScope }] : [])(item.tab);
     if (target) reading.appendChild(el('a', { class: 'research-cite', href: target.href }, item.tab));
+    if (item.url) reading.appendChild(el('a', { class: 'research-cite', href: item.url, target: '_blank', rel: 'noopener noreferrer' }, 'Open original'));
     if (item.quality) reading.appendChild(el('span', { class: 'research-evidence-meta' }, ` ${item.quality} source readings`));
     details.appendChild(reading);
   }
@@ -982,7 +984,7 @@ async function submitCurrent(retryQuestion) {
     });
     if (generation.controller.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     session.streamDashboard = dashboardSources(evidence);
-    session.streamCompanies = (evidence.selection?.companies || []).map((company) => ({ ticker: company.ticker, name: company.name }));
+    session.streamCompanies = (evidence.selection?.companies || []).map((company) => ({ ticker: company.ticker, name: company.name, inScope: company.inScope }));
     session.streamPreview = researchPreview(evidence);
     setPhase(session, 'Writing from dashboard evidence…');
 

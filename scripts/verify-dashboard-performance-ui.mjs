@@ -61,10 +61,14 @@ try {
   for (const asset of ['sattva-ventures-wordmark.png', 'sattva-ventures-mark.svg', 'favicon.svg']) {
     assert(cacheState.urls.some(url => url.endsWith(`/assets/brand/${asset}`)), 'product identity is available on an offline repeat visit');
   }
+  for (const asset of ['/js/theme-init.js', '/js/ui/theme-toggle.js', '/css/theme.css']) {
+    assert(cacheState.urls.some((url) => url.endsWith(asset)), `${asset} is available offline`);
+  }
   assert(!cacheState.urls.some((url) => new URL(url).pathname.startsWith('/api/')), 'authenticated/API replies are never persisted');
   assert(!cacheState.urls.some((url) => /authorized-fixture|no-store-fixture/.test(url)),
     'Authorization and explicit no-store reads are never persisted');
 
+  await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
   const reloadedAt = Date.now();
   await page.reload();
@@ -72,6 +76,8 @@ try {
   assert(Date.now() - reloadedAt < 1500, 'repeat visit paints from the app cache without waiting for the network');
   await page.locator('[data-brand-mark] img').evaluate(image => image.decode());
   await page.locator('.research-opening-brand').evaluate(image => image.decode());
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'cached app restores the saved theme');
+  assert.equal(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(11, 18, 32)', 'cached dark styles are applied');
 
   const scrollMs = await page.evaluate(async () => {
     const list = document.querySelector('[data-tab-list]');

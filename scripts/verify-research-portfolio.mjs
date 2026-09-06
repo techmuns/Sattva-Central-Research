@@ -25,7 +25,7 @@ try {
     if (preview.items.length > 3) failures.push('preview_unbounded');
     for (const item of preview.items) {
       if (!packet.selection.companies.some(c => c.name === item.company)) failures.push('preview_wrong_company');
-      if (!packet.sources.some(s => s.rows.some(r => (r.title || r.headline) === item.title))) failures.push('preview_not_literal_source');
+      if (!packet.sources.some(s => s.rows.some(r => (r.title || r.headline || r.text || '').startsWith(item.title)))) failures.push('preview_not_literal_source');
     }
     if (!packet.selection.companies.some(c => target.ticker ? c.ticker === target.ticker : c.isin === target.isin)) failures.push('company_not_resolved');
     if (packet.selection.companies.some(c => target.ticker ? c.ticker !== target.ticker : c.isin !== target.isin)) failures.push('unrequested_company_selected');

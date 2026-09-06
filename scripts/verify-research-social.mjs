@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Real browser adapters over isolated public-post fixtures; no production or model calls.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { telegramCompanyRows, postExcerpt, chatterPostEvidence } from '../public/js/research/social.js';
 import { researchLocalBrowser } from './lib/research-local-browser.mjs';
 import { providerEvidence } from '../public/js/research/evidence-shared.js';
@@ -45,6 +46,7 @@ assert(performance.now() - slowStarted < 2500, 'an already-running slow popup re
 const at = '2026-09-06T08:00:00.000Z';
 let capture = { channel: 'researchreportss', capturedAt: at, lastCheckedAt: at, historyComplete: false,
   lastRun: { status: 'ok', at }, posts: [
+    { id: 102825, text: 'JM Financial sees 11% UPSIDE in Hexaware Technologies- Vivek Jetley to take over as CEO', publishedAt: '2026-09-04T10:46:00Z' },
     { id: 20, text: 'Jayaswal NECO Industries: unverified broker discussion. Read the original.', publishedAt: at },
     { id: 19, text: 'IIFL Finance: discussion about credit demand.', publishedAt: at },
     { id: 18, text: null, publishedAt: at, mediaType: 'document', attachments: [{ type: 'document', name: 'Jayaswal NECO Industries research.pdf' }] },
@@ -75,6 +77,8 @@ const { page, close } = await researchLocalBrowser({ intercept: async (route, ur
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 try {
+  // Ranking stays relative to the fixture's publication dates; real request timers still run.
+  await page.clock.setFixedTime(new Date(at));
   const build = question => page.evaluate(question => research.buildResearchEvidence({ question, scope: 'portfolio', prepared }), question);
   const packet = await build('What are Telegram and public chatter saying about Jayaswal Neco?');
   const tg = packet.sources.find(s => s.id === 'telegram');
@@ -107,8 +111,43 @@ try {
   assert(nextRows.length && nextRows.every(r => r.ticker === 'IIFL'));
   assert.deepEqual(postReads, ['jaynecoind', 'iifl']);
   const outside = await build('What is public chatter saying about Sterlite Technologies?');
-  assert.equal(outside.sources.find(s => s.id === 'chatter-posts').rows.length, 0);
-  assert(!postReads.includes('stltech'), 'a topic outside the saved portfolio cannot leak into portfolio evidence');
+  const outsideRows = outside.sources.find(s => s.id === 'chatter-posts').rows;
+  assert(outsideRows.length && outsideRows.every(row => row.ticker === 'STLTECH'));
+  assert(postReads.includes('stltech'), 'explicit outside-company research reads its public topic independently of portfolio membership');
+  for (const scope of ['portfolio', 'watchlist', 'universe']) {
+    const question = 'who is the new ceo of hexaware?';
+    const hexaware = await page.evaluate(({ question, scope }) => research.buildResearchEvidence({ question, scope, prepared }), { question, scope });
+    const source = hexaware.sources.find(s => s.id === 'telegram');
+    const report = source.rows.find(row => row.messageId === 102825);
+    assert(report?.text.includes('Vivek Jetley to take over as CEO'), `${scope}: a visible public post answers a named-company question without visiting its tab`);
+    assert.equal(report.ticker, 'HEXT', 'the universe abbreviation Hexaware Tech. resolves the full captured company name');
+    assert.equal(report.publishedAt, '2026-09-04T10:46:00Z');
+    assert.equal(report.url, 'https://t.me/researchreportss/102825');
+    assert(source.rows.every(row => row.ticker === 'HEXT'));
+    assert(providerEvidence(hexaware).sources.find(s => s.id === 'telegram').rows.some(row => row.messageId === 102825));
+    assert(validateResearchBody({ question, evidence: hexaware }).ok);
+    if (scope === 'portfolio') assert.equal(hexaware.selection.companies[0].inScope, false, 'public evidence does not invent a portfolio position');
+  }
+  const book = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url), 'utf8'));
+  const actions = JSON.parse(readFileSync(new URL('../public/data/corporate-actions.json', import.meta.url), 'utf8')).rows;
+  const heldTickers = new Set(book.holdings.map(row => row.ticker).filter(Boolean));
+  const actionSubject = actions.find(row => heldTickers.has(row.ticker));
+  assert(actionSubject, 'the local saved estate contains a corporate-action fixture for a held issuer');
+  const actionPacket = await build(`Show corporate actions for ${actionSubject.ticker}.`);
+  const actionRows = actionPacket.sources.find(source => source.id === 'corporate-actions').rows;
+  assert(actionRows.length, 'the Corporate Actions tab has an independent evidence adapter with actual retained rows');
+  for (const row of actionRows) {
+    const original = actions.find(action => action.ticker === row.ticker && action.exDate === row.exDate && action.purpose === row.title);
+    assert(original, 'the adapter cannot fabricate an action from a company snapshot');
+    assert.equal(row.type, original.actionType);
+    assert.equal(row.url, original.sourceUrl || original.screenerUrl || original.screenerCompanyUrl);
+    assert.equal(row.date || null, original.announcementDate || null, 'ex-date does not become a publication date');
+    assert.equal(row.recordDate || null, original.recordDate || null);
+  }
+  for (const id of ['nse-filings', 'ipos']) {
+    assert(actionPacket.catalog.some(source => source.id === id));
+    assert(actionPacket.sources.some(source => source.id === id), `${id} contributes its own evidence and source-coverage state`);
+  }
   const empty = await page.evaluate(() => research.buildResearchEvidence({ question: 'What are Telegram and public chatter saying?', scope: 'watchlist', prepared }));
   assert.equal(empty.sources.find(s => s.id === 'telegram').rows.length, 0);
   assert.equal(empty.sources.find(s => s.id === 'chatter-posts').rows.length, 0);
@@ -135,5 +174,5 @@ try {
   assert.equal(retained.dataQuality, 'partial'); assert(retained.rows.some(r => r.messageId === 21));
   assert(retained.asOf.startsWith('2026-09-06T09:00'), 'failed browser read cannot advance the source check time');
   assert.deepEqual(errors, []);
-  console.log('PASS: Telegram and Public Chatter reach the provider packet; issuer isolation, small holdings, tickerless names, citations, excerpts, dates, incomplete history, warm reuse, fresh arrivals, failed reads and recovery.');
+  console.log('PASS: Telegram and Public Chatter reach the provider packet; outside-company Hexaware CEO retrieval across scopes, Corporate Actions/NSE/IPOs adapters, issuer isolation, small holdings, tickerless names, citations, excerpts, dates, incomplete history, warm reuse, fresh arrivals, failed reads and recovery.');
 } finally { await close(); }

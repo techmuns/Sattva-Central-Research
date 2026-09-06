@@ -5,7 +5,7 @@ import { validPortfolioReply, validPositionSizes, questionNeedsPortfolio } from 
 import { providerEvidenceChars, researchEvidenceChars, providerEvidence } from '../public/js/research/evidence-shared.js';
 
 globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
-const { fitEvidenceToBudget, DASHBOARD_RESEARCH_SOURCES } = await import('../public/js/research/estate.js');
+const { fitEvidenceToBudget, DASHBOARD_RESEARCH_SOURCES, RESEARCH_EVIDENCE_CHAR_BUDGET } = await import('../public/js/research/estate.js');
 const coverage = await import('../public/js/data/coverage.js');
 const reading = { status: 'ready', answer: 'A verified portfolio reading.', bookAsOf: '2026-06-30', checkedAt: new Date().toISOString(), archiveVersion: 2, quotes: { freshness: 'partial-or-stale' } };
 const holdings = [{ isin: 'INE009A01021', name: 'Example equity', sector: 'Technology', ticker: 'EXAMPLE' }, { isin: 'INF000000001', name: 'Example fund', sector: 'Fund', ticker: null }];
@@ -41,7 +41,7 @@ assert.equal(coverage.meta().unlisted, null, 'old reason-bucket counts are not a
 const largeReading = { ...reading, answer: 'x'.repeat(5400) };
 const fitted = fitEvidenceToBudget({ portfolio: largeReading, portfolioPositions: sizeReply, sources: DASHBOARD_RESEARCH_SOURCES.map(s => ({ ...s, status: 'ready', source: 'provider', asOf: '2026-09-04', rowCount: 20, summary: { info: 'a'.repeat(2000) }, rows: Array.from({ length: 20 }, (_, i) => ({ ticker: `STOCK${i}`, value: i })) })) });
 assert.deepEqual(fitted.portfolio, largeReading, 'portfolio caveats and figures may not be silently truncated');
-assert.ok(researchEvidenceChars(fitted) <= 13000);
+assert.ok(researchEvidenceChars(fitted) <= RESEARCH_EVIDENCE_CHAR_BUDGET);
 const modelPositions = providerEvidence(fitted).portfolioPositions;
 assert.deepEqual(modelPositions.holdings.map(row => Object.fromEntries(modelPositions.columns.map((key, i) => [key, row[i]]))), sizeReply.holdings);
 assert.deepEqual(modelPositions.sizes, sizeReply.sizes);
