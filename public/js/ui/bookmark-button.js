@@ -62,7 +62,9 @@ export function wireBookmarks(root, resolve) {
       } else {
         const entry = resolve(button);
         if (!entry) throw new Error('This event has changed. Try saving it again.');
-        await notebook.save(entry);
+        // A research answer may have been rendered hours before this click. Its source date
+        // stays intact; the saved date records the reader's action, not that earlier render.
+        await notebook.save({ ...entry, savedAt: new Date().toISOString() });
         showBookmarkMessage('Saved to your notebook.');
       }
     } catch (error) { showBookmarkMessage(error.message, { error: true }); }
