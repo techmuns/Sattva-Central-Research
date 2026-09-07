@@ -159,14 +159,23 @@ export function reasoningSourceSamples(packets, context, plan) {
   const { readings } = corpus(packets, plan);
   const allowed = [...context.candidates, ...context.references];
   return packets.map(packet => {
-    const rows = [];
+    const rows = [], seen = new Set();
+    const material = value => {
+      if (Array.isArray(value)) return value.map(material).filter(v => v !== undefined);
+      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value)
+        .filter(([k, v]) => k !== 'periodMatch' && v !== null && v !== undefined && v !== '')
+        .sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, material(v)])
+        .filter(([, v]) => !Array.isArray(v) || v.length));
+      return value ?? undefined;
+    };
+    const add = row => { const key = JSON.stringify(material(row)); if (!seen.has(key)) { seen.add(key); rows.push(row); } };
     for (const company of allowed) {
       const matches = readings.filter(r => r.sourceId === packet.id && (company.isin && r.isin ? company.isin === r.isin : company.ticker && company.ticker === r.ticker));
-      rows.push(...diverse(matches, 2).map(r => r.row));
+      diverse(matches, 2).forEach(r => add(r.row));
     }
     // Retain original numeric/period rows too; textual dossiers cannot replace
     // earnings, operating metrics or price facts that have little prose.
-    for (const row of packet.rows || []) if (holdingForBusinessRow(row, allowed) && !rows.includes(row)) rows.push(row);
+    for (const row of packet.rows || []) if (holdingForBusinessRow(row, allowed)) add(row);
     return { ...packet, rows, rowTiers: rows.map(() => 0), rowPriorities: rows.map((_, i) => i) };
   });
 }

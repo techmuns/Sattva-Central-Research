@@ -51,6 +51,7 @@ for (const [question, expected, history = []] of scenarios) {
   assert(context.candidates.flatMap(c => c.evidence).every(e => e.tab === 'Con-call' && e.date === '2026-09-03'));
   const fit = fitBusinessContext(context, 6300);
   const packets = reasoningSourceSamples([packet], fit, plan);
+  assert(packets[0].rows.length <= packet.rowCount, 'mapped and compact copies must not duplicate the same source record');
   const sources = DASHBOARD_RESEARCH_SOURCES.map(s => s.id === 'concall' ? packets[0] : { ...s, status: 'unavailable', rows: [] });
   const evidence = fitEvidenceToBudget({ scope: 'portfolio', businessContext: context, sources });
   assert(researchEvidenceChars(evidence) <= 18000);
