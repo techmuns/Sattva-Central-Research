@@ -4,7 +4,7 @@
 // This route keeps the provider credential off the device, applies the final evidence-only
 // instruction, and normalises the provider's NDJSON stream to the dashboard's small NDJSON events.
 
-import { providerEvidence, researchEvidenceChars, PORTFOLIO_REASONING_CHAR_BUDGET, PORTFOLIO_POSITIONS_MAX_CHARS } from '../public/js/research/evidence-shared.js';
+import { providerEvidence, researchEvidenceChars, PORTFOLIO_REASONING_MAX_CHARS, PORTFOLIO_POSITIONS_MAX_CHARS } from '../public/js/research/evidence-shared.js';
 import { questionNeedsPortfolio, validPositionSizes } from '../public/js/research/portfolio-bridge.js';
 import { finalAnswerFilter } from './research-answer.mjs';
 import { researchHistory } from '../public/js/research/history.js';
@@ -194,7 +194,7 @@ export function validateResearchBody(body) {
       return { ok: false, status: 409, error: 'invalid_portfolio_positions', message: 'Fresh, complete holdings context is required. Please ask again.' };
     }
   }
-  if (researchEvidenceChars(evidence) > (evidence.businessContext?.kind === 'portfolio-reasoning' ? PORTFOLIO_REASONING_CHAR_BUDGET + 1000 : MAX_EVIDENCE_CHARS)) {
+  if (researchEvidenceChars(evidence) > (evidence.businessContext?.kind === 'portfolio-reasoning' ? PORTFOLIO_REASONING_MAX_CHARS : MAX_EVIDENCE_CHARS)) {
     return { ok: false, status: 413, error: 'evidence_too_large', message: 'The dashboard evidence packet is too large. Narrow the question and try again.' };
   }
 

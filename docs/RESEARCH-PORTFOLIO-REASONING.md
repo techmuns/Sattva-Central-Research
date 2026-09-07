@@ -27,7 +27,7 @@ The general packet includes:
 
 No additional model-planning call, network source, embedding service or stored
 private dossier is introduced. Matching happens against loaded dashboard records.
-The general evidence ceiling is 36,000 provider-facing characters (Worker maximum
+The general evidence ceiling is 30,000 provider-facing characters (Worker maximum
 37,000), versus 18,000/19,000 for ordinary research. Full positions retain their
 separate 60,000-character bound. At most 65% of the general allowance goes to the
 business map and excerpts. Under smaller caller budgets, complete excerpts and

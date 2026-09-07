@@ -38,7 +38,7 @@ try {
     assert.match(r.context.holdingsBasis, /ownership and weights not established/);
     assert.equal(r.sources.length, 21);
     assert(r.sources.some(s => s.count));
-    assert(r.chars <= 36000);
+    assert(r.chars <= 30000);
     assert(r.preview.items.every(p => p.kind === 'excerpt' || p.kind === 'headline'));
     assert(r.context.candidates.every(c => c.evidence.every(e => e.tab && e.text && e.sourceStatus)));
   }

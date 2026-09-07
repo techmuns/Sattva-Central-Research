@@ -4561,7 +4561,7 @@ count. The separate tables prevent citing an analysis claim as a technical fact.
 `total`, `omitted`, `candidatesFound` and `candidatesOmitted` describe retrieval, not
 portfolio completeness or the number of actual beneficiaries. Unknown values remain
 null; ownership is governed by `holdingsBasis` and the authenticated positions reply.
-General research uses a 36,000-character evidence budget, with a 37,000-character
+General research uses a 30,000-character evidence budget, with a 37,000-character
 Worker bound; ordinary research remains at 18,000/19,000. See
 [General portfolio reasoning](RESEARCH-PORTFOLIO-REASONING.md) for inference rules,
 sampling, tests and limits.
