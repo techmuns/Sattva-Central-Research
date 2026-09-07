@@ -17,7 +17,7 @@ const outside = { ticker: 'OUTSIDE', isin: 'INE000000006', name: 'Outside Compan
 const holdings = [ref, fibre, network, broad, tiny];
 const index = [...holdings, outside];
 const positions = { sizes: { complete: true, basis: 'workbook' }, holdings };
-const options = { scope: 'portfolio', holdings, portfolioPositions: positions, now: '2026-09-07T12:00:00Z' };
+const options = { scope: 'portfolio', holdings, portfolio: { status: 'ready', mode: 'verified-holdings' }, portfolioPositions: positions, now: '2026-09-07T12:00:00Z' };
 const questions = [
   'Which are my ai related stocks and how are they performing after sterlite news?',
   'the benefit that sterlite comparable business which other stocks in my portfolio have got benefit',
@@ -39,7 +39,9 @@ assert.equal(businessIntent('How have they performed?', [{ role: 'user', text: q
 const watch = queryPlan(questions[0], index, { ...options, scope: 'watchlist', holdings: [fibre] });
 assert.deepEqual(watch.businessHoldings, [fibre]); assert.equal(watch.businessHoldingsVerified, false);
 const fallback = queryPlan(questions[0], index, { ...options, portfolioPositions: { ...positions, sizes: { complete: false } }, holdings: [fibre] });
-assert.deepEqual(fallback.businessHoldings, [fibre]); assert(!fallback.businessHoldingsVerified);
+assert.deepEqual(fallback.businessHoldings, holdings, 'unavailable valuations cannot replace the actual position identities with saved coverage');
+assert(fallback.businessHoldingsVerified); assert(!fallback.businessWeightsComplete);
+assert(!queryPlan(questions[0], index, { ...options, portfolio: { status: 'limited', mode: 'public-snapshot-fixture' } }).businessHoldingsVerified);
 const withoutReference = queryPlan(questions[0], index, { ...options, holdings: [fibre], portfolioPositions: { ...positions, holdings: [fibre] } });
 assert.equal(withoutReference.companies[0].inScope, false);
 

@@ -183,7 +183,7 @@ export function portfolioBusinessContext({ plan, packets, technicalRows = [] }) 
     const coreOverlap = evidence.filter(r => primary.has(r.id)).reduce((sum, r) => sum + byId.get(r.id).weight * (r.basis === 'industry label only' ? 1 : 2), 0);
     const raw = technicalRows.find(r => symbol(r.ticker) === symbol(holding.ticker) && holding.ticker);
     candidates.push({ ticker: holding.ticker || null, isin: holding.isin, name: holding.name,
-      weightPct: plan.businessHoldingsVerified && Number.isFinite(holding.weightPct) ? holding.weightPct : null,
+      weightPct: plan.businessHoldingsVerified && plan.businessWeightsComplete && Number.isFinite(holding.weightPct) ? holding.weightPct : null,
       overlapScore: coreOverlap * 100 + overlap, relationship: contradictions.length ? 'Conflicting or limited business exposure; verify the supplied counter-evidence'
         : industryOnly ? 'Industry candidate; business overlap unconfirmed'
         : primary.size && !coreOverlap ? 'Adjacent/shared theme; not established as a product peer'

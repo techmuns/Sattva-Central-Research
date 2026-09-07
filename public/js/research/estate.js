@@ -209,7 +209,7 @@ function companyIndex(deferred) {
  * one company in the index starts with. The words a company match consumed are removed from the
  * ranking tokens, so "finance" does not go on to score every Financial Services row as a hit.
  */
-export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolioPositions = null, now = Date.now() } = {}) {
+export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolio = null, portfolioPositions = null, now = Date.now() } = {}) {
   const business = businessIntent(question, history);
   const text = ` ${cleanName(question)} `;
   const tokens = queryTokens(question);
@@ -273,8 +273,11 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
   }
   return {
     business,
-    businessHoldings: business ? (scope === 'portfolio' && portfolioPositions?.sizes?.complete ? portfolioPositions.holdings : holdings || []) : [],
-    businessHoldingsVerified: scope === 'portfolio' && portfolioPositions?.sizes?.complete === true,
+    // Missing valuations do not make a validated complete identity list partial.
+    businessHoldings: business ? (scope === 'portfolio' && Array.isArray(portfolioPositions?.holdings) ? portfolioPositions.holdings : holdings || []) : [],
+    businessHoldingsVerified: scope === 'portfolio' && Array.isArray(portfolioPositions?.holdings) &&
+      ['ready', 'limited'].includes(portfolio?.status) && portfolio?.mode === 'verified-holdings',
+    businessWeightsComplete: portfolioPositions?.sizes?.complete === true,
     tokens: tokens.filter((token) => !consumed.has(token)),
     topics: questionTopics(question),
     sourceIds: [/\btelegram\b/i.test(question) && 'telegram', /\b(?:public )?chatter\b/i.test(question) && 'public-chatter', /\b(?:public )?chatter\b/i.test(question) && 'chatter-posts'].filter(Boolean),
@@ -1281,7 +1284,7 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
   const holdings = scopeHoldings(scope);
   // Phase two: the question, resolved once against everything that loaded.
   const identities = companyIndex(deferred);
-  const plan = queryPlan(question, identities, { scope, holdings, history, portfolioPositions });
+  const plan = queryPlan(question, identities, { scope, holdings, history, portfolio, portfolioPositions });
   // Resolve the question before fetching company-specific discussion. Finish bounded I/O before
   // synchronous estate ranking: a busy main thread must not consume the network deadline before
   // even an immediate post response has a chance to be handled.
