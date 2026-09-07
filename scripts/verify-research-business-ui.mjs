@@ -2,7 +2,9 @@
 // Whole saved dashboard regression for the customer's Sterlite peer questions.
 // API and external requests are blocked; this never queries the live portfolio or model.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { researchLocalBrowser } from './lib/research-local-browser.mjs';
+const book = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));
 const harness = await researchLocalBrowser();
 try {
   const report = await harness.page.evaluate(async () => {
@@ -33,7 +35,7 @@ try {
     assert(!row.context.candidates.some(c => c.ticker === 'HDFCBANK'), 'emoji round-up must not invent a bank telecom business');
     assert(row.context.candidates.every(c => c.ticker !== 'STLTECH'));
     assert.equal(row.context.candidates[0].ticker, 'HFCL', 'fibre product overlap should lead broad AI activity');
-    assert.equal(row.context.holdingsExamined, 142);
+    assert.equal(row.context.holdingsExamined, book.holdings.length);
     assert.match(row.context.holdingsBasis, /ownership and weights not established/);
     assert(row.context.candidates.every(c => c.weightPct === null));
     assert.equal(row.sources.length, 21);

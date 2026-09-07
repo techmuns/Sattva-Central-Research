@@ -210,7 +210,7 @@ function companyIndex(deferred) {
  * ranking tokens, so "finance" does not go on to score every Financial Services row as a hit.
  */
 export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolio = null, portfolioPositions = null, now = Date.now() } = {}) {
-  const business = businessIntent(question, history);
+  let business = businessIntent(question, history);
   const text = ` ${cleanName(question)} `;
   const tokens = queryTokens(question);
   const tokenSet = new Set(tokens);
@@ -270,6 +270,11 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
     for (const holding of ranked) if (!companies.some(c => c.isin === holding.isin)) {
       companies.push({ isin: holding.isin, ticker: holding.ticker, name: holding.name, inScope: holding.ticker ? scopeAllowsTicker(scope, holding.ticker, holdings) : scope === 'portfolio' || scope === 'universe', aliases: entries.find(e => holding.ticker ? e.ticker === holding.ticker : e.isin === holding.isin)?.aliases || [cleanName(holding.name)] });
     }
+  }
+  // A theme word inside an issuer name (for example Solar Industries) is not
+  // a request to replace that company's answer with a portfolio-wide scan.
+  if (business?.mode === 'portfolio-theme' && consumed.size) {
+    business = businessIntent(cleanName(question).split(' ').filter(word => !consumed.has(word)).join(' '), history);
   }
   return {
     business,

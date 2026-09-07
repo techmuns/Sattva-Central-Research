@@ -31,6 +31,12 @@ for (const question of questions) {
   assert(plan.businessHoldingsVerified);
 }
 for (const question of ['Latest news on Sterlite?', 'What is my portfolio value?', 'Why did Sterlite gain today?']) assert.equal(businessIntent(question), null, question);
+const themedNames = [{ ticker: 'SOLARINDS', name: 'Solar Industries India' }, { ticker: 'WAAREERTL', name: 'Waaree Renewable Technologies' }];
+for (const company of themedNames) {
+  const narrow = queryPlan(`What matters most about ${company.name} for my portfolio?`, themedNames, { scope: 'portfolio', holdings: themedNames });
+  assert.equal(narrow.business, null, 'issuer-name words must not turn a company question into a peer scan');
+  assert.deepEqual([...narrow.tickers], [company.ticker]);
+}
 const follow = queryPlan('Which other portfolio stocks could benefit?', index, { ...options, history: [{ role: 'user', text: 'Latest Sterlite news?' }] });
 assert.deepEqual(follow.companies.map(c => c.ticker), ['STLTECH']);
 const switched = queryPlan('Which other portfolio stocks have similar businesses to Network Company?', index, { ...options, history: [{ role: 'user', text: 'Latest Sterlite news?' }] });
