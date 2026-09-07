@@ -31,6 +31,27 @@ try {
     catch { return new Response('', { status: 404 }); }
   };
   assert.deepEqual(await hydrateJsonShards(manifest, 'news.json', { fetcher }), before);
+  const failOnce = new Set();
+  assert.deepEqual(await hydrateJsonShards(manifest, 'news.json', { fetcher: async input => {
+    if (!failOnce.has(input)) { failOnce.add(input); return new Response('', { status: 503 }); }
+    return fetcher(input);
+  } }), before, 'one transient part failure recovers without dropping rows');
+  let deniedAttempts = 0;
+  const single = { ...manifest, _jsonShards: { ...manifest._jsonShards,
+    parts: [manifest._jsonShards.parts[0]], rows: manifest._jsonShards.parts[0].rows } };
+  await assert.rejects(hydrateJsonShards(single, 'news.json', { fetcher: async () => {
+    deniedAttempts++; return new Response('', { status: 403 });
+  } }), /unavailable/);
+  assert.equal(deniedAttempts, 1, 'access failures are not retried');
+  let oversizedAttempts = 0;
+  await assert.rejects(hydrateJsonShards(single, 'news.json', { fetcher: async () => {
+    oversizedAttempts++; return new Response('x'.repeat(single._jsonShards.parts[0].bytes + 1));
+  } }), /byte count/);
+  assert.equal(oversizedAttempts, 1, 'oversized/corrupt bodies are bounded and not retried');
+  const cancelled = AbortSignal.abort();
+  await assert.rejects(hydrateJsonShards(single, 'news.json', { signal: cancelled, fetcher: async () => {
+    assert.fail('cancelled reads must not start a request');
+  } }));
   globalThis.fetch = fetcher;
   const first = await conditionalJson('news.json', { key: 'news-test' });
   assert.deepEqual(first.value, before);

@@ -125,9 +125,9 @@ export async function readCachedAlertWindow({ scope = 'portfolio', holdings = nu
   const wanted = scopeMatcher(scope, holdings || coverage.holdings());
   const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
   const entityIds = new Set(portfolioNewsEntities(holdings || coverage.holdings()).map(e => e.entityId));
+  const scopeContext = { scope, wanted, entityIds };
   const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day &&
-    (!event.portfolioOnly || scope === 'portfolio') &&
-    (event.ticker ? wanted.has(event.ticker) : scope === 'universe' || scope === 'portfolio' && entityIds.has(event.entityId)));
+    matchesAlertScope(event, scopeContext));
   const sameDay = entry.value.day === day;
   return {
     day,
@@ -230,7 +230,7 @@ export function newsSignal(row = {}) {
   const eventTopics = newsEventTopics(row);
   if (eventTopics.length && ['confirmed', 'related'].includes(attribution.status)) {
     return { ...signal(DIRECTION.NEUTRAL, IMPORTANCE.HIGH,
-      'Reported topic; neither the allegation nor its financial impact is verified by this classification.',
+      'Reported topic; this classification does not verify the event, opinion or its financial impact.',
       `High: ${eventTopics.join(', ')} in the headline or bounded article body. ${attribution.reason}`),
       keywords: [...new Set([...reading.labels, ...eventTopics])], ...identityReading,
       reviewContext: attribution.status === 'related' };
@@ -464,9 +464,11 @@ export async function refreshSources() {
 }
 
 /** Load the shared feed stores without assembling or sorting any timeline. */
-export async function prepareSources({ refresh = false } = {}) {
+export async function prepareSources({ refresh = false, feedIds = null } = {}) {
   observeSources();
-  return Promise.allSettled(FEEDS.map(feed => loadFeed(feed.id, refresh)));
+  const wanted = feedIds == null ? null : new Set(feedIds);
+  const selected = wanted ? FEEDS.filter(feed => wanted.has(feed.id)) : FEEDS;
+  return Promise.allSettled(selected.map(feed => loadFeed(feed.id, refresh)));
 }
 
 // ---------------------------------------------------------------------------------------
@@ -687,6 +689,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   const wanted = { has: ticker => scoped.has(ticker) || requested.has(ticker) };
   const portfolioEntities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
   const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
+  const scopeContext = { scope, wanted, entityIds: portfolioNewsIds, requestedEntities };
   const feeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ).map((settled) => {
@@ -704,13 +707,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
     // Company News has the same legitimate no-ticker case, but carries a stable ISIN entity id
     // instead of being pre-scoped by its collector.
-    const events = all.filter((event) => {
-      if (event.portfolioOnly) return scope === 'portfolio';
-      if (event.ticker) return wanted.has(event.ticker);
-      if (event.entityId && requestedEntities.has(event.entityId)) return true;
-      if (scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
-      return scope === 'universe';
-    });
+    const events = all.filter(event => matchesAlertScope(event, scopeContext));
     const unresolved = all.filter((event) => !event.ticker && !event.entityId).length;
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
     return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
@@ -758,6 +755,18 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
       moveThreshold: MOVE_PCT,
     },
   };
+}
+
+/** Match stable company identity OR ticker, exactly as Portfolio News does. A discovered BSE
+ * symbol or an older ticker must not veto the same held ISIN in another dashboard view. This
+ * affects visibility, not the article's attribution/AI materiality or the source's saved identity.
+ */
+export function matchesAlertScope(event, { scope, wanted, entityIds, requestedEntities } = {}) {
+  if (event.portfolioOnly) return scope === 'portfolio';
+  if (event.entityId && requestedEntities?.has(event.entityId)) return true;
+  if (scope === 'portfolio' && event.entityId && entityIds?.has(event.entityId)) return true;
+  if (event.ticker) return !!wanted?.has(event.ticker);
+  return scope === 'universe';
 }
 
 /**
@@ -1349,10 +1358,21 @@ function companyNewsState(day) {
   const capturedDay = istDay(m.capturedAt);
   const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
   const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
+  const delivery = m.newsDelivery;
+  const sourceStates = ['core', 'publishers', 'tradingView'].map(key => delivery?.[key]).filter(Boolean);
+  const failed = sourceStates.some(source => ['partial', 'unavailable'].includes(source.status) || source.error || source.historyError) ||
+    !!m.newsHistory?.error || !!m.reason || !!m.failed || !!m.truncated;
+  const pending = sourceStates.some(source => source.pending || source.status === 'pending' || source.historyPending) ||
+    !!m.newsHistory?.pending;
   return {
-    reachesToday: !!capturedDay && capturedDay >= day,
+    // A successful TradingView subset cannot establish that the main news head, publisher feeds
+    // and every advertised history part reached the customer. Readiness and freshness differ.
+    status: failed ? 'failed' : pending ? 'pending' : 'ok',
+    reachesToday: !failed && !pending && !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
-    note: [m.newsHistory?.error, capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
+    note: [m.newsHistory?.error,
+      delivery ? ['core', 'publishers', 'tradingView'].map(key => delivery[key] ? `${key === 'core' ? 'Company news' : key === 'publishers' ? 'Publisher feeds' : 'TradingView'}: ${delivery[key].status}.${delivery[key].error ? ` ${delivery[key].error}` : ''}${delivery[key].historyError ? ` ${delivery[key].historyError}` : ''}` : null).filter(Boolean).join(' ') : null,
+      capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
       m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.',
       m.tradingViewCoverage ? `TradingView public headlines: ${m.tradingViewCoverage.mappedCompanies}/${m.tradingViewCoverage.activeCompanies} companies mapped; ${m.tradingViewCoverage.staleOrFailedSymbols} stale/failed symbol reads; ${m.tradingViewCoverage.possibleGapSymbols} possible window gaps; ${m.tradingViewCoverage.restrictedHeadlines} restricted headlines not extracted. Checked ${m.tradingViewCoverage.checkedAt}.${m.tradingViewHealth?.ok === false ? ' TradingView coverage is stale or incomplete.' : ''}${m.tradingViewCoverage.portfolioError ? ' Portfolio changes could not be verified.' : ''}${m.tradingViewReadError ? ' Latest published snapshot could not be confirmed; retained headlines remain visible.' : ''}` : 'TradingView enrichment has not reported coverage yet.']
       .filter(Boolean).join(' ') || null,

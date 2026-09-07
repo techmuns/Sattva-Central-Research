@@ -48,6 +48,7 @@ export const meta = {
 };
 
 const REFRESH_ID = 'daily-alerts';
+const RECHECK_MS = 90_000;
 
 // ---------------------------------------------------------------------------------------
 // Module state
@@ -81,6 +82,7 @@ let focusMode = false;
 let pageBeforeFocus = 0;
 let scrollQuietUntil = 0;
 let deferredPaintTimer = null;
+let lastRevalidatedAt = 0;
 function sourceChanged() {
   sourceDirty = true;
   if (!ctxRef || sourceTimer || collecting) return;
@@ -118,10 +120,16 @@ export function render(ctx) {
       if (report) { report = { ...report, events: report.events.filter((r) => !r.private) }; if (ctxRef) paint(ctxRef); }
       sourceChanged();
     }));
-    const timer = setInterval(() => {
-      if (ctxRef && !collecting && !document.hidden) void recollect(ctxRef, { refresh: true });
-    }, 90000);
+    const checkVisible = () => {
+      if (ctxRef && !collecting && !document.hidden && Date.now() - lastRevalidatedAt >= RECHECK_MS)
+        void recollect(ctxRef, { refresh: true });
+    };
+    const timer = setInterval(checkVisible, RECHECK_MS);
     unsubs.push(() => clearInterval(timer));
+    for (const [target, event] of [[window, 'focus'], [window, 'online'], [document, 'visibilitychange']]) {
+      target.addEventListener(event, checkVisible);
+      unsubs.push(() => target.removeEventListener(event, checkVisible));
+    }
     unsubs.push(
       refresh.register(REFRESH_ID, {
         label: 'All Alerts',
@@ -152,10 +160,9 @@ export function render(ctx) {
   // Paint immediately with whatever is already collected, then collect. A tab that renders nothing
   // until every feed has answered is a blank timeline.
   paint(ctx);
-  // Opening or returning to a tab is navigation, not an explicit refresh.
-  // Loaders reuse their retained snapshots; the 90-second cadence and header
-  // Refresh remain the two places that deliberately revalidate everything.
-  recollect(ctx);
+  // A short return reuses retained snapshots; reopening after inactivity checks the source
+  // readers immediately instead of waiting another full polling interval. No capture dispatch.
+  recollect(ctx, { refresh: Date.now() - lastRevalidatedAt >= RECHECK_MS });
 }
 
 export function destroy() {
@@ -198,6 +205,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   // an overlapping one costs a revalidation, not a download.
   const token = ++loadToken;
   collecting++;
+  if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
     const next = await alerts.collect({
       scope: ctx.scope,
@@ -225,6 +233,13 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     paintAfterScroll();
   } catch (err) {
     console.error('[daily-alerts] collect failed', err);
+    if (token === loadToken && ctxRef) {
+      // An unexpected assembly failure is not a completed empty check. Retain the last report,
+      // including the current search/scroll position, and make the failed refresh visible.
+      report = { ...(report || { day: alerts.today(), scope: ctx.scope, events: [], feeds: [] }),
+        readError: true, pending: 0 };
+      paintAfterScroll();
+    }
   } finally {
     collecting--;
     if (sourceDirty) sourceChanged();
@@ -353,7 +368,7 @@ function paint(ctx) {
       })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}</div>`,
     })}
     <div class="alerts-controls" data-alerts-controls>
-      ${horizonToggle(allThrough.length, allUpcoming.length, day)}
+      ${horizonToggle(allThrough.length, allUpcoming.length, day, !!report)}
       <div class="alerts-view-controls">
         ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length)}
         <button type="button" class="alerts-layout-button" data-alerts-focus aria-pressed="${focusMode}"
@@ -497,22 +512,39 @@ function restoreFocus(root, focus) {
  * the same false freshness claim as the header chip that tracked a heartbeat and asked no server
  * anything.
  */
+export function alertCoverageState(rep) {
+  const feeds = (rep?.feeds || []).filter(feed => feed.scopable !== false);
+  const failed = feeds.filter(feed => feed.status === 'failed').length;
+  const reading = Math.max(rep?.pending || 0, feeds.filter(feed => feed.status === 'pending').length);
+  if (rep?.readError || failed) return { status: 'partial', label: 'Partial coverage',
+    title: `${failed || 'Some'} source${failed === 1 ? '' : 's'} could not be completely read. Retained records remain visible.${reading ? ` ${reading} more sources are still being read.` : ''}` };
+  if (!rep || !feeds.length || reading) return { status: 'loading', label: 'Loading sources',
+    title: 'The source checks are not complete. Results already loaded remain searchable while more sources arrive.' };
+  const behind = feeds.filter(feed => feed.status !== 'on-demand' && (feed.status !== 'ok' || feed.reachesToday !== true)).length;
+  if (behind) return { status: 'behind', label: 'Latest available history',
+    title: `${behind} source${behind === 1 ? ' has' : 's have'} not confirmed the selected day. An absent article is not proof that nothing was published.` };
+  if (feeds.some(feed => feed.status === 'on-demand')) return { status: 'limited', label: 'Loaded source coverage',
+    title: 'Scheduled feeds have checked the selected day. On-demand sources cover only the requests already made, not a complete scan.' };
+  return { status: 'checked', label: 'Sources checked',
+    title: 'The loaded source readers have checked the selected Indian date. Collection follows each source’s cadence; this is not a real-time or exhaustive-coverage guarantee.' };
+}
+
 function livePill(rep, day) {
-  const feeds = rep?.feeds || [];
-  const behind = feeds.filter((f) => f.status !== 'ok' || f.reachesToday !== true).length;
-  const reading = rep?.pending ?? 0;
-  const label = `${fmtDay(day)}`;
-  if (behind || reading) {
+  const state = alertCoverageState(rep);
+  const label = `${state.label} · ${fmtDay(day)}`;
+  if (state.status !== 'checked') {
     return `<span data-alerts-info
+       data-alerts-coverage-state="${state.status}"
        class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-300"
-       title="${escapeHtml(behind ? `${behind} feed${behind === 1 ? ' has' : 's have'} not looked at today yet.` : 'Still reading.')}">
+       title="${escapeHtml(state.title)}">
        <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> ${escapeHtml(label)}
      </span>`;
   }
   return `<span data-alerts-info
+     data-alerts-coverage-state="${state.status}"
      class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
-     title="Every feed on this page has looked at today. Indian trading date, not UTC.">
-     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Live · ${escapeHtml(label)}
+     title="${escapeHtml(state.title)}">
+     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> ${escapeHtml(label)}
    </span>`;
 }
 
@@ -556,7 +588,7 @@ function calendarPill(events) {
   });
 }
 
-function horizonToggle(throughCount, upcomingCount, day) {
+function horizonToggle(throughCount, upcomingCount, day, ready = true) {
   const tab = (value, label, count) => {
     const active = horizon === value;
     return `<button type="button" role="tab" data-horizon-toggle="${value}" aria-selected="${active}" tabindex="${active ? '0' : '-1'}"
@@ -564,7 +596,7 @@ function horizonToggle(throughCount, upcomingCount, day) {
         active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
       }">
       ${escapeHtml(label)}
-      <span class="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}">${escapeHtml(formatNumber(count))}</span>
+      <span class="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}">${ready ? escapeHtml(formatNumber(count)) : '…'}</span>
     </button>`;
   };
   return `<div class="alerts-horizon-control">
@@ -605,9 +637,7 @@ function coveragePanel(feeds, visibleCount) {
     const st = feedState(f);
     const detail = st.short(f);
     const on = !!picked && picked.has(f.id);
-    // Feed health remains operational metadata. The customer-facing control stays focused on its
-    // one job: selecting a source. Only a confirmed, current count is shown beside the source name.
-    const title = `Filter alerts to ${f.label}.`;
+    const title = `Filter alerts to ${f.label}. ${st.label}.${f.asOf ? ` Source as of ${f.asOf}.` : ''}${f.note ? ` ${f.note}` : ''}`;
     chips.push(`
       <button type="button" data-feed-toggle="${escapeHtml(f.id)}" data-feed="${escapeHtml(f.id)}"
         role="checkbox" aria-checked="${on}" title="${escapeHtml(title)}"
@@ -800,29 +830,27 @@ function wireFeedFilter(ctx, available) {
  * reached on a day a feed is actually behind, which most days it is not: asserting it through the
  * rendered panel passes vacuously and proves nothing. The suite calls this directly instead.
  *
- * Customer-facing chips intentionally omit health jargon. A factual count appears only after a
- * feed has confirmed the selected day; every other state keeps the source name uncluttered.
+ * Short labels expose pending and failed checks; they must not read as zero confirmed events.
  */
 export function feedState(f) {
-  // `label` remains available to operational callers. `short` is customer-facing: it is empty for
-  // health states and numeric only when the count is a confirmed reading for the selected day.
+  // Numbers describe a confirmed reading for the selected day; unfinished states stay words.
   const n = (x) => formatNumber(x || 0);
   // PENDING IS ITS OWN STATE. A feed nobody has heard from yet must never be drawn as "nothing
   // today" — that is a finished answer, and this is the absence of one.
   if (f.status === 'pending') {
-    return { label: 'reading…', short: () => '', dot: 'bg-slate-300 animate-pulse', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-400' };
+    return { label: 'reading…', short: () => 'reading…', dot: 'bg-slate-300 animate-pulse', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-400' };
   }
   if (f.status === 'failed') {
-    return { label: 'read failed or incomplete; retained records shown', short: () => '', dot: 'bg-amber-500', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
+    return { label: 'read failed or incomplete; retained records shown', short: () => 'partial', dot: 'bg-amber-500', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   if (f.status === 'on-demand') {
-    return { label: 'on-demand coverage only; not a complete source scan', short: () => '', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
+    return { label: 'on-demand coverage only; not a complete source scan', short: () => 'on request', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   if (f.scopable === false) {
     return { label: 'not in this scope', short: () => '', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-slate-50/50', text: 'text-slate-400' };
   }
   if (f.reachesToday !== true) {
-    return { label: 'latest available capture; not confirmed current', short: () => '', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
+    return { label: 'latest available capture; not confirmed current', short: () => 'check due', dot: 'bg-slate-300', ring: 'ring-slate-100', bg: 'bg-white', text: 'text-slate-500' };
   }
   const todayCount = f.todayCount ?? f.count ?? 0;
   if (todayCount) {
@@ -968,6 +996,17 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
           match: (e, v) => e.direction === v,
         },
         { label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDateRange(e.day, day, v) },
+        {
+          label: 'Company relationship',
+          options: [
+            { value: 'all', label: 'All retained records' },
+            { value: 'confirmed', label: 'Matched companies / filings' },
+            { value: 'related', label: 'Related-entity news' },
+            { value: 'uncertain', label: 'Possible news matches' },
+            { value: 'unrelated', label: 'Reviewed unrelated news' },
+          ],
+          match: matchesCompanyRelationship,
+        },
       ];
   return scoreTable({
     rows: events,
@@ -1024,9 +1063,8 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
         location.hash = `#/research/${e.tab}?${params.join('&')}`;
       }
     },
-    // Company-news identity is query metadata, not publisher evidence. The shared helper keeps an
-    // unverified row retained but prevents that synthetic label from making an unrelated headline
-    // satisfy a company search. Every other feed has a resolved/source-carried company identity.
+    // Query identity remains searchable as a possible match, not publisher evidence. The explicit
+    // relationship filter can separate those leads without silently deleting retained coverage.
     searchable: alerts.eventSearchText,
     filters,
     initialSort: { key: 'Date / time', dir: mode === HORIZON.UPCOMING ? 'asc' : 'desc' },
@@ -1084,9 +1122,20 @@ function matchesDateRange(eventDay, throughDay, range) {
  * panel that explains why.
  */
 function emptyMessageFor(scope, day, mode) {
+  const state = alertCoverageState(report);
+  if (state.status === 'loading') return 'Reading sources. Matching articles will appear here as they arrive; this is not a completed empty result.';
+  if (state.status === 'partial') return 'No loaded event matches these filters yet. Some source checks are incomplete; retained records remain available and missing results may still be loading.';
   const where = scope === 'universe' ? 'across the market' : `for your ${scopeLabel(scope).toLowerCase()}`;
   if (mode === HORIZON.UPCOMING) return `No loaded upcoming event ${where} matches the current search, source and date filters from ${day}.`;
   return `No loaded event ${where} matches the current search, feed, direction, importance and date filters through ${day}. Use the source filters above to adjust the view.`;
+}
+
+/** An explicit display filter, never a collection or history-retention rule. */
+export function matchesCompanyRelationship(event, value) {
+  if (!value || value === 'all') return true;
+  if (event.attribution) return event.attribution.status === value;
+  if (['news', 'market-news', 'twitter'].includes(event.feed)) return value === 'uncertain';
+  return value === 'confirmed' && !!(event.ticker || event.entityId);
 }
 
 // ---------------------------------------------------------------------------------------

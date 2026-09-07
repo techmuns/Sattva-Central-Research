@@ -26,6 +26,18 @@ export function matchPortfolioNews(row, identities) {
     .filter(row => ['confirmed', 'related'].includes(row.attribution.status));
 }
 
+/** Shared by exploratory Topic filters and the stricter headline/body alert classifier. */
+export function isBrokerageResearch(text = '') {
+  // Brokerage research is a reported opinion, not an issuer fact or an inferred buy/sell signal.
+  // Require securities-research wording: bare "coverage", "upgrade" and "target" also describe
+  // insurance, software releases and operating plans. Search snippets never qualify these rules.
+  const researchContext = /\b(brokerage|broker|analyst|analysts|research|securities|price target|target price|(?:buy|sell|hold|neutral|outperform|underperform|overweight|underweight) (?:call|rating))\b/i.test(text);
+  const coverageChange = /\b(?:initiat(?:es?|ed|ing)|starts?|started|begins?|began|resum(?:es?|ed|ing))\b[^.!?]{0,50}\bcoverage\b|\bcoverage initiation\b/i.test(text);
+  const ratingChange = /\b(?:upgrad(?:es?|ed|ing)|downgrad(?:es?|ed|ing))\b[^.!?]{0,90}\bto\s+["'“‘]?(?:buy|sell|hold|neutral|outperform|underperform|overweight|underweight|equal[ -]weight)\b/i.test(text);
+  const targetChange = /\b(?:rais(?:es?|ed|ing)|cuts?|cutting|lower(?:s|ed|ing)?|revis(?:es?|ed|ing)|hik(?:es?|ed|ing)|increas(?:es?|ed|ing)|reduc(?:es?|ed|ing))\b[^.!?]{0,65}\b(?:price targets?|target prices?)\b|\b(?:price targets?|target prices?)\b[^.!?]{0,50}\b(?:rais(?:ed|es)|cut|lowered|revised|hiked|increased|reduced)\b/i.test(text);
+  return researchContext && coverageChange || ratingChange || targetChange;
+}
+
 // Event vocabulary is additive to the desk's topic filters. It classifies only the headline or
 // an explicitly bounded publisher body, never a search snippet or related-links strip.
 export function newsEventTopics(row = {}) {
@@ -34,6 +46,7 @@ export function newsEventTopics(row = {}) {
     ['Legal dispute / allegations', /\b(arbitrat\w*|lawsuit|litigation|legal dispute|court case|criminal complaint|allegations?|faulty shells?|fake (?:shells?|munitions?)|defective ammunition)\b/i],
     ['Company clarification', /\b(clarification|clarifies|denies|denied|rejects allegations|media reports?)\b/i],
     ['Analyst / investor day', /\b(analysts?[’']? day|investors?[’']? day|analyst (?:meet|presentation)|investor (?:meet|presentation)|lakshya 29)\b/i],
+    ['Brokerage research / rating change', { test: isBrokerageResearch }],
     ['IPO / offer filing', /\b(IPO|DRHP|RHP|draft red herring prospectus|initial public offering)\b/i],
     ['Business outlook / expansion', /\b(guidance|capacity expansion|capex plan|capital expenditure|profit warning|earnings outlook)\b/i],
   ].filter(([, pattern]) => pattern.test(text)).map(([label]) => label);

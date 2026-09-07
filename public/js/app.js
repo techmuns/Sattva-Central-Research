@@ -5,6 +5,7 @@
 import { $ } from './core/dom.js';
 import { setData, setDataError, setDeferredData } from './core/state.js';
 import { revalidatedJson } from './core/store.js';
+import { watchAppUpdates } from './core/app-updates.js';
 import { mount } from './ui/shell.js';
 import { adaptUniverse } from './data/universe.js';
 import { prime as primeFiled } from './data/institution-holdings.js';
@@ -177,6 +178,7 @@ async function boot() {
       applyWorkerUpgrade();
     });
     const register = () => navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(registration => { watchAppUpdates(registration); })
       .catch((err) => console.warn('[app] repeat-visit cache unavailable', err));
     if (typeof requestIdleCallback === 'function') requestIdleCallback(register, { timeout: 2000 });
     else setTimeout(register, 0);

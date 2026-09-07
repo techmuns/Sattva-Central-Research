@@ -56,6 +56,7 @@ import { dedupeArticles } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
 import { withTradingViewNews } from './tradingview-news.js';
 import { withNewsHistory } from './news-history.js';
+import { withPortfolioPublisherNews } from './portfolio-publisher-news.js';
 
 // How many companies a live walk will ask about before it stops and says so. The upstreams allow
 // 60 requests a minute; forty keeps a cold start under a minute and well inside that budget.
@@ -181,6 +182,9 @@ export function createFeed(kind) {
       enrichmentCoverage: null,
       tradingViewCoverage: null,
       snapshotUpdatedAt: null,
+      snapshotReadError: null,
+      snapshotPending: false,
+      snapshotChecked: false,
       capturedAt: null,
       oldestDataAt: null,
       fallbackCount: 0,
@@ -235,6 +239,11 @@ export function createFeed(kind) {
 
   function meta() {
     const covered = state.rows.size;
+    const query = state.queryCoverage;
+    const queryComplete = query && ['planned', 'succeeded', 'failed'].every(field => Number.isInteger(query[field]) && query[field] >= 0) &&
+      query.succeeded === query.planned && query.failed === 0;
+    const stamp = Date.parse(state.capturedAt);
+    const coreFresh = Number.isFinite(stamp) && stamp <= Date.now() + 600000 && Date.now() - stamp <= 4 * 3600000;
     return {
       kind,
       ok: covered > 0 || state.failures.size === 0,
@@ -274,6 +283,14 @@ export function createFeed(kind) {
       tickerlessPortfolioLines: state.tickerlessPortfolioLines,
       tickerlessPortfolioEntities: state.tickerlessPortfolioEntities,
       queryCoverage: state.queryCoverage,
+      ...(kind === 'news' ? { newsDelivery: { core: {
+        status: !state.snapshotChecked ? 'pending' : state.snapshotReadError || !coreFresh || !queryComplete
+          ? (covered ? 'partial' : 'unavailable') : 'ok',
+        pending: state.snapshotPending, error: state.snapshotReadError ||
+          (state.snapshotChecked && !queryComplete ? 'Some company searches are incomplete or unchecked.' :
+            state.snapshotChecked && !coreFresh ? 'Company-search source checks are stale or unavailable.' : null),
+        capturedAt: state.capturedAt, checkedAt: state.capturedAt, readerCheckedAt: state.checkedAt,
+      } } } : {}),
       enrichmentCoverage: state.enrichmentCoverage,
       tradingViewCoverage: state.tradingViewCoverage,
       // WHAT THIS SESSION HAS NOT LOOKED AT, which is a statement about us and not a claim about
@@ -550,8 +567,7 @@ export function createFeed(kind) {
   function storeRows(ticker, incoming) {
     const list = kind === 'insider'
       ? mergeInsiderTrades(state.rows.get(ticker) || [], incoming, { from: daysAgo(WINDOW_DAYS.insider), to: iso(Date.now()) })
-      : kind === 'news' ? dedupeArticles([...incoming, ...(state.rows.get(ticker) || [])
-        .filter(row => row.tradingViewId && (!row.date || row.date >= daysAgo(WINDOW_DAYS.news)))])
+      : kind === 'news' ? dedupeArticles([...incoming, ...(state.rows.get(ticker) || [])])
       : incoming;
     state.rows.set(ticker, list);
     if (kind === 'insider') {
@@ -624,14 +640,21 @@ export function createFeed(kind) {
    */
   async function seedFromSnapshot({ replace = false } = {}) {
     let res;
+    state.snapshotPending = true;
     try {
       res = await conditionalJson(SNAPSHOT[kind], { key: KEYS.filings(kind), optional: true });
     } catch {
       res = null;
     }
     const body = res?.value;
+    state.snapshotPending = false;
+    state.snapshotChecked = true;
     state.checkedAt = res?.checkedAt || Date.now();
-    if (!body || typeof body !== 'object') return false;
+    if (!body || typeof body !== 'object' || (kind === 'news' && (!body.byTicker || typeof body.byTicker !== 'object' || Array.isArray(body.byTicker)))) {
+      state.snapshotReadError = 'Company-news capture could not be verified. Previously loaded records remain visible.';
+      return false;
+    }
+    state.snapshotReadError = null;
 
     const capturedAt = body.capturedAt || body.generated_at || null;
     // An independent source may enrich a last-good core capture. Its revision changes the
@@ -640,6 +663,17 @@ export function createFeed(kind) {
       ? body.newsUpdatedAt : capturedAt;
     const nextCaptured = Date.parse(revisionAt || '');
     const heldCaptured = Date.parse(state.snapshotUpdatedAt || state.capturedAt || '');
+    if (kind === 'news') {
+      const declaredTimes = [capturedAt, ...(body.newsUpdatedAt == null ? [] : [body.newsUpdatedAt])];
+      if (declaredTimes.some(value => !Number.isFinite(Date.parse(value)) || Date.parse(value) > Date.now() + 600000)) {
+        state.snapshotReadError = 'Company-news publication time is invalid. Previously loaded records remain visible.';
+        return false;
+      }
+      if (Number.isFinite(heldCaptured) && nextCaptured < heldCaptured) {
+        state.snapshotReadError = 'Company-news publication is older than the retained revision. Previously loaded records remain visible.';
+        return false;
+      }
+    }
     // "Newer" is chronological, not merely different. A rollback or stale edge response must not
     // replace rows this browser has already proved came from a later capture.
     const newer = replace && Number.isFinite(nextCaptured) && (!Number.isFinite(heldCaptured) || nextCaptured > heldCaptured);
@@ -679,11 +713,11 @@ export function createFeed(kind) {
     if (replace && !newer) return state.rows.size > 0;
 
     if (newer) {
-      // News/announcements snapshots replace rows. Companies that aged out
+      // Announcement snapshots replace rows. Companies that aged out
       // of the rolling window or answered empty in the new run must lose yesterday's rows now,
       // without waiting for a page reload. Preserve only companies read live in this session —
       // those bytes are newer than the bulk file by definition.
-      if (kind === 'insider') {
+      if (kind === 'insider' || kind === 'news') {
         // A smaller response cannot retract a disclosure. Only the retention window expires it.
         for (const t of state.rows.keys()) storeRows(t, []);
       } else {
@@ -719,19 +753,17 @@ export function createFeed(kind) {
     for (const t of Array.isArray(body.empty) ? body.empty : []) {
       if (typeof t !== 'string' || !t) continue;
       const ticker = t.toUpperCase();
-      // A newer bulk search that found nothing must remove an older live row too. Without this,
-      // yesterday's article survives until reload even though the replacement capture explicitly
-      // says the company is empty in the current window.
+      // Empty latest search results are not a retraction of previously captured news/disclosures.
       const wins = !newer || snapshotWins(ticker);
       if (newer && wins) {
-        if (kind === 'insider') storeRows(ticker, []);
+        if (kind === 'insider' || kind === 'news') storeRows(ticker, []);
         else state.rows.delete(ticker);
         state.fromSnapshot.delete(ticker);
         state.confirmedHere.delete(ticker);
         state.confirmedAt.delete(ticker);
       }
-      if (wins && (kind !== 'insider' || !state.rows.get(ticker)?.length)) state.askedEmpty.add(ticker);
-      else if (wins && kind === 'insider') state.fromSnapshot.add(ticker);
+      if (wins && !state.rows.get(ticker)?.length) state.askedEmpty.add(ticker);
+      else if (wins && (kind === 'insider' || kind === 'news')) state.fromSnapshot.add(ticker);
     }
     // Companies the capture ASKED and could not read. A third answer again, distinct from having
     // rows and from having none: the pill turns amber for these, the coverage sentence names them
@@ -739,7 +771,7 @@ export function createFeed(kind) {
     // over a company that has since been read live — that answer is newer than the file's.
     for (const [ticker, info] of Object.entries(body.failed || {})) {
       const t = String(ticker || '').toUpperCase();
-      const unresolved = kind === 'insider' ? snapshotWins(t) : !state.rows.has(t);
+      const unresolved = kind === 'insider' || kind === 'news' ? snapshotWins(t) : !state.rows.has(t);
       if (t && unresolved && !state.failures.has(t)) state.failures.set(t, { ...info, fromSnapshot: true });
     }
     state.snapshotCount = state.fromSnapshot.size;
@@ -861,6 +893,6 @@ export function createFeed(kind) {
 
 // One instance per feed, module-level so a second visit to the tab repaints instantly instead of
 // re-walking. Same reasoning as the super-investor feed.
-export const news = withNewsHistory(withTradingViewNews(createFeed('news')));
+export const news = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(createFeed('news'))));
 export const announcements = withAnnouncementLookups(withFilingArchive(createFeed('announcements'), 'announcements'));
 export const insider = withFilingArchive(createFeed('insider'), 'insider');

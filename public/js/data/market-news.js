@@ -45,6 +45,7 @@ const SNAPSHOT = 'data/market-news.json';
 
 let state = fresh();
 let loading = null;
+let refreshing = null, reading = null, loadingArchive = null;
 const subscribers = new Set();
 const emit = () => subscribers.forEach((fn) => fn());
 
@@ -183,7 +184,8 @@ function remerge() {
 
 function absorb(body, { fromStore = false } = {}) {
   const list = Array.isArray(body?.articles) ? body.articles : [];
-  if (!list.length) return false;
+  if (!Array.isArray(body?.articles)) return false;
+  if (state.capturedAt && Date.parse(body.capturedAt) < Date.parse(state.capturedAt)) throw Error('Publisher capture regressed.');
 
   const before = state.head;
   const next = new Map();
@@ -203,9 +205,20 @@ function absorb(body, { fromStore = false } = {}) {
     if (added.length) state.arrivals = [...added.map((k) => next.get(k)), ...state.arrivals].slice(0, 80);
   }
 
+  // A moving head is a transport window, not a deletion instruction. Retain observations even
+  // before their archive month arrives; a valid empty capture is different from a failed read.
+  for (const [key, row] of state.head) if (!next.has(key)) state.older.set(key, row);
   state.head = next;
   state.sources = Array.isArray(body.sources) ? body.sources : [];
-  state.archive = Array.isArray(body.archive) ? body.archive : [];
+  const nextArchive = Array.isArray(body.archive) ? body.archive : [];
+  const previousArchive = new Map(state.archive.map(part => [part.file, part]));
+  // Monthly descriptors do not carry content digests yet. A newer capture can correct an older
+  // article without changing the month's count, so its prior session check cannot prove equality.
+  if (body.capturedAt !== state.capturedAt) state.loadedShards.clear();
+  for (const part of nextArchive) {
+    if (JSON.stringify(previousArchive.get(part.file)) !== JSON.stringify(part)) state.loadedShards.delete(part.file);
+  }
+  state.archive = nextArchive;
   // A capture written before the archive existed reports no total, and the honest fallback is what
   // we can actually count rather than a zero that would read as "no history".
   state.archivedCount = Number.isFinite(body.archivedCount) ? body.archivedCount : next.size;
@@ -218,7 +231,13 @@ function absorb(body, { fromStore = false } = {}) {
   return true;
 }
 
-async function read() {
+function read() {
+  if (reading) return reading;
+  reading = readSnapshot().finally(() => { reading = null; });
+  return reading;
+}
+
+async function readSnapshot() {
   try {
     // No "force" needed: `conditionalJson` fetches with `cache: 'no-cache'`, which revalidates on
     // every call and reuses the bytes only when the server confirms them. A manual re-check and an
@@ -266,7 +285,13 @@ export function load() {
  * so the tab's control says "check for a newer capture" rather than anything that implies this
  * reaches the publisher.
  */
-export async function refresh() {
+export function refresh() {
+  if (refreshing) return refreshing;
+  refreshing = refreshCapture().finally(() => { refreshing = null; });
+  return refreshing;
+}
+
+async function refreshCapture() {
   // COUNT THE IDS THAT ARE NEW, NEVER THE DIFFERENCE IN LENGTH.
   //
   // The capture is trimmed to KEEP (600). Once it is full, one story arriving pushes the oldest
@@ -356,8 +381,15 @@ export function archiveMeta() {
  * and "could not be read" must never be drawn as "there is nothing older", which is the same
  * outage-as-absence error the filings snapshot rules exist to prevent.
  */
-export async function loadMore() {
-  if (state.loadingMore) return { added: 0, busy: true, exhausted: false, failed: 0 };
+export function loadMore() {
+  // News and All Alerts share this reader. Both must await the same month, not interpret a
+  // concurrently busy loader as a missing archive or start duplicate requests.
+  if (loadingArchive) return loadingArchive;
+  loadingArchive = loadArchiveBatch().finally(() => { loadingArchive = null; });
+  return loadingArchive;
+}
+
+async function loadArchiveBatch() {
   state.loadingMore = true;
   emit();
   let added = 0;
@@ -368,9 +400,10 @@ export async function loadMore() {
       const next = pendingShards()[0];
       if (!next) break;
       try {
+        if (!/^market-news\/(?:\d{4}-\d{2}|undated)\.json$/.test(next.file)) throw Error('Invalid publisher archive path');
         const res = await conditionalJson(`data/${next.file}`, { key: KEYS.marketNewsMonth(next.month), optional: true });
         const list = Array.isArray(res?.value?.articles) ? res.value.articles : null;
-        if (!list) {
+        if (!list || (Number.isInteger(next.count) && list.length !== next.count)) {
           // A shard named by the manifest that will not load is a real failure, and it is recorded
           // as one. It is NOT marked loaded: leaving it pending is what lets a later attempt — a
           // reader scrolling again after the network came back — pick it up.
@@ -382,9 +415,9 @@ export async function loadMore() {
         for (const a of list) {
           const k = keyOf(a);
           // The head's copy of a story is the newer read of it, so it is never overwritten here.
-          if (k && !state.head.has(k) && !state.older.has(k)) {
+          if (k && !state.head.has(k)) {
+            if (!state.older.has(k)) added += 1;
             state.older.set(k, a);
-            added += 1;
           }
         }
         if (added) break;
@@ -394,7 +427,7 @@ export async function loadMore() {
         break;
       }
     }
-    if (added) remerge();
+    remerge();
   } finally {
     state.loadingMore = false;
   }

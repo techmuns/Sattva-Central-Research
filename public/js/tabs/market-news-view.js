@@ -29,6 +29,7 @@ import { mountWindowedList } from '../ui/windowed-list.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatNumber, formatRelativeTime } from '../core/format.js';
 import { withoutPublisherName } from '../core/source-copy.js';
+import { canonicalPublisherName } from '../core/news-publishers.js';
 import { exportRows } from '../ui/export.js';
 import * as marketNews from '../data/market-news.js';
 import * as twitterNews from '../data/twitter-news.js';
@@ -258,11 +259,11 @@ function visibleRows(rows) {
       if ((publisher && publisher !== 'all') || (section && section !== 'all') || (topic && topic !== 'all')) return false;
       return !q || `${r.title || ''} ${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
     }
-    if (publisher && publisher !== 'all' && r.publisher !== publisher) return false;
+    if (publisher && publisher !== 'all' && canonicalPublisherName(r.publisher) !== publisher) return false;
     if (section && section !== 'all' && r.section !== section) return false;
     if (topic && topic !== 'all' && !matchesTopic(readingFor(r), topic)) return false;
     if (!q) return true;
-    return `${r.title || ''} ${r.summary || ''} ${r.section || ''} ${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
+    return `${r.title || ''} ${r.summary || ''} ${r.section || ''} ${r.publisher || ''} ${canonicalPublisherName(r.publisher)} ${r.handle || ''} ${r.displayName || ''}`.toLowerCase().includes(q);
   });
 }
 
@@ -272,8 +273,7 @@ function visibleRows(rows) {
 // saying the link could not be used, because dropping the row would report a bad URL as no story.
 const linkable = (u) => /^https?:\/\//i.test(String(u || ''));
 
-const sectionLabel = (value) =>
-  withoutPublisherName(String(value || '').replace(/-/g, ' ')).replace(/^the publisher\b/i, 'Publisher');
+const sectionLabel = (value) => String(value || '').replace(/-/g, ' ');
 
 /**
  * A post's card. The same shell, the same thumbnail slot, the same meta row — the only additions
@@ -315,20 +315,8 @@ function postBody(r, canLink) {
       </div>`;
 }
 
-/**
- * How a publisher is NAMED on screen — which is not always what the row stores.
- *
- * The byline itself is not optional: this feed carries five publishers, and an unattributed headline
- * in a mixed list attributes itself to whichever masthead the reader assumes. WHICH name is printed
- * is a different question and not an engineering one — CLAUDE.md puts the supplier's brand at the
- * owner's discretion, and `core/source-copy.js` already records that decision for the one publisher
- * it covers. So every display of a publisher goes through it, and the row keeps the real value for
- * matching, filtering and export keys. Naming the other four is not a new policy: nothing has ever
- * asked for them to be withheld, and withholding an attribution nobody asked to withhold would be
- * the worse default of the two.
- */
-const publisherLabel = (value) =>
-  withoutPublisherName(String(value || '')).replace(/^the publisher\b/i, 'The publisher');
+// Reviewed spellings share one filter/byline; original source strings remain in the capture/export.
+const publisherLabel = canonicalPublisherName;
 
 function cardHtml(r) {
   const canLink = linkable(r.url);
@@ -359,8 +347,8 @@ function cardHtml(r) {
   const body = isPost(r) ? postBody(r, canLink) : `
       <div class="h-[62px] w-[110px] flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 sm:h-[76px] sm:w-[135px]">${thumb}</div>
       <div class="min-w-0 max-w-4xl flex-1">
-        <h3 class="font-display text-[15px] font-bold leading-snug text-slate-900 ${canLink ? 'group-hover:text-indigo-700' : ''}">${escapeHtml(withoutPublisherName(r.title) || '(untitled)')}</h3>
-        ${r.summary ? `<p class="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500">${escapeHtml(withoutPublisherName(r.summary))}</p>` : ''}
+        <h3 class="font-display text-[15px] font-bold leading-snug text-slate-900 ${canLink ? 'group-hover:text-indigo-700' : ''}">${escapeHtml(r.title || '(untitled)')}</h3>
+        ${r.summary ? `<p class="mt-1 line-clamp-2 text-sm leading-relaxed text-slate-500">${escapeHtml(r.summary)}</p>` : ''}
         <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">${meta}</div>
       </div>`;
   const key = escapeHtml(String(r.id || r.url));
@@ -419,7 +407,10 @@ function listHtml(rows) {
   // easiest to reach. Read off the WHOLE feed rather than the filtered set, for the same reason the
   // sections are: a dropdown that loses its own options as you use it cannot be used to get back.
   const counts = new Map();
-  for (const r of marketNews.rows()) if (r.publisher) counts.set(r.publisher, (counts.get(r.publisher) || 0) + 1);
+  for (const r of marketNews.rows()) {
+    const publisher = publisherLabel(r.publisher);
+    if (publisher) counts.set(publisher, (counts.get(publisher) || 0) + 1);
+  }
   const allPublishers = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   return `
     <section data-mcnews-list class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100"${pending ? ` data-rows-pending="${pending}"` : ''}>
@@ -496,7 +487,10 @@ function fillRest(root, rows, wantScroll) {
 /** "Mint 105, Business Standard 156, …" — for the export banner and the provenance panel. */
 function publisherTally() {
   const counts = new Map();
-  for (const r of marketNews.rows()) if (r.publisher) counts.set(r.publisher, (counts.get(r.publisher) || 0) + 1);
+  for (const r of marketNews.rows()) {
+    const publisher = publisherLabel(r.publisher);
+    if (publisher) counts.set(publisher, (counts.get(publisher) || 0) + 1);
+  }
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([p, n]) => `${publisherLabel(p)} ${formatNumber(n)}`)
@@ -528,10 +522,11 @@ async function exportVisible(visible, m) {
             : istTime(r.publishedAt) || '',
       },
       { header: 'Publisher', key: 'pub', width: 20, get: (r) => (r.__banner ? '' : publisherLabel(r.publisher)) },
-      { header: 'Headline', key: 'h', width: 80, get: (r) => (r.__banner ? '' : withoutPublisherName(r.title)) },
+      { header: 'Publisher as captured', key: 'rawPub', width: 20, get: (r) => (r.__banner ? '' : r.publisher || '') },
+      { header: 'Headline', key: 'h', width: 80, get: (r) => (r.__banner ? '' : r.title || '') },
       { header: 'Section', key: 's', width: 20, get: (r) => (r.__banner ? '' : sectionLabel(r.section)) },
       { header: 'Tracked topics', key: 'k', width: 30, get: (r) => (r.__banner ? '' : readingFor(r).labels.join(', ')) },
-      { header: 'Standfirst (publisher)', key: 'p', width: 80, get: (r) => (r.__banner ? '' : withoutPublisherName(r.summary)) },
+      { header: 'Standfirst (publisher)', key: 'p', width: 80, get: (r) => (r.__banner ? '' : r.summary || '') },
       { header: 'Premium', key: 'x', width: 10, get: (r) => (r.__banner ? '' : r.premium ? 'yes' : '') },
       { header: 'URL', key: 'u', width: 70, get: (r) => (r.__banner ? '' : r.url || '') },
       { header: 'First seen by this dashboard', key: 'f', width: 26, get: (r) => (r.__banner ? '' : r.firstSeenAt || '') },

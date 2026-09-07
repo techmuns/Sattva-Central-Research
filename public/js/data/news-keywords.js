@@ -55,8 +55,9 @@
 // mismatch. The optional strict filter requires true. Default views retain uncertain coverage.
 
 import { attributionFor } from './company-news-attribution.js';
+import { isBrokerageResearch } from './portfolio-news-matching.js';
 
-/** The families the thirty keywords sort into, in the order the filter offers them. */
+/** The families of the tracked vocabulary, in the order the filter offers them. */
 export const GROUPS = [
   { id: 'growth', label: 'Growth & operations' },
   { id: 'deals', label: 'Deals & structure' },
@@ -64,12 +65,13 @@ export const GROUPS = [
   { id: 'results', label: 'Results' },
   { id: 'capital', label: 'Capital raising' },
   { id: 'risk', label: 'Risk & governance' },
+  { id: 'research', label: 'Brokerage research' },
 ];
 
 const GROUP_LABEL = new Map(GROUPS.map((g) => [g.id, g.label]));
 
 /**
- * The thirty tracked keywords, in the order the desk supplied them.
+ * The original thirty desk keywords, followed by the requested brokerage-research extension.
  *
  * `label` is theirs and is what every surface prints. `test` is the pattern actually applied, and a
  * `note` is present wherever that pattern is narrower or wider than the plain word — see rule 3 in
@@ -196,6 +198,11 @@ export const KEYWORDS = [
     note: 'Includes the tribunal and insolvency wording an Indian default is reported under.',
   },
   { id: 'downgrade', label: 'Downgrade', group: 'risk', test: /\bdowngrad(?:e|es|ed|ing)\b|\brating cut\b|\bcuts? (?:the )?rating\b/ },
+  {
+    id: 'brokerage-research', label: 'Brokerage research', group: 'research',
+    test: { test: isBrokerageResearch },
+    note: 'Reported coverage initiation or resumption, explicit securities-rating changes and price-target revisions. A broker’s opinion is not a verified outcome or this product’s buy/sell recommendation.',
+  },
 ];
 
 const BY_ID = new Map(KEYWORDS.map((k) => [k.id, k]));

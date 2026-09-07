@@ -176,9 +176,11 @@ try {
   await settled();
   await page.locator('[data-sources-summary]').click();
   const coverageText = await page.locator('[data-alerts-coverage]').innerText();
-  assert(!/stale\s*\/\s*unknown|incomplete|on-demand|not in scope/i.test(coverageText), 'customer-facing source filters omit feed-health jargon');
-  assert.equal(await page.locator('[data-feed][title*="stale" i], [data-feed][title*="unknown" i], [data-feed][title*="incomplete" i], [data-feed][title*="on-demand" i]').count(), 0,
-    'feed-health jargon is also absent from hover text');
+  assert(/partial|check due|on request/i.test(coverageText), 'unfinished and limited sources remain distinguishable from verified empty results');
+  assert(await page.locator('[data-feed][title*="incomplete" i], [data-feed][title*="not confirmed" i], [data-feed][title*="on-demand" i]').count() > 0,
+    'source controls retain the actual coverage explanation in hover text');
+  assert.notEqual(await page.locator('[data-alerts-coverage-state]').getAttribute('data-alerts-coverage-state'), 'checked',
+    'a mixed/failed local source pool must not claim all checks are complete');
   await page.locator('[data-sources-close]').click();
   await page.locator('[data-table-search]').fill('Undated retained item');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Undated retained item'));

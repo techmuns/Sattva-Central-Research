@@ -33,14 +33,18 @@ export function partitionNewsData(dataDir, { write = false } = {}) {
 }
 
 export function verifyAssetSizes(publicDir) {
-  let files = 0;
+  let files = 0, bytes = 0, largestBytes = 0;
+  let largestFile = null;
   function walk(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
       else if (entry.isFile()) {
         files++;
-        if (statSync(path).size > JSON_ASSET_LIMIT) throw Error(`Static asset exceeds 25 MiB: ${path}`);
+        const size = statSync(path).size;
+        bytes += size;
+        if (size > largestBytes) { largestBytes = size; largestFile = path.slice(publicDir.length + 1); }
+        if (size > JSON_ASSET_LIMIT) throw Error(`Static asset exceeds 25 MiB: ${path}`);
         if (entry.name.endsWith('.json') && !dir.endsWith('.parts')) {
           const raw = JSON.parse(readFileSync(path, 'utf8'));
           if (raw?._jsonShards) readNewsJson(path); // missing/corrupt parts fail the build too
@@ -50,7 +54,9 @@ export function verifyAssetSizes(publicDir) {
   }
   walk(publicDir);
   if (files > 20000) throw Error('Static assets exceed the configured free-plan file budget');
-  return { files, ok: true };
+  return { files, bytes, largestFile, largestBytes, fileBudget: 20000,
+    remainingFiles: 20000 - files, usedPercent: Math.round(files / 20000 * 10000) / 100,
+    warnings: files >= 16000 ? ['Static assets reached 80% of the conservative 20,000-file budget. Plan migration or a verified plan upgrade; do not delete history automatically.'] : [], ok: true };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

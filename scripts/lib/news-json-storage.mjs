@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, renameSync, readdirSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, renameSync, readdirSync, unlinkSync, lstatSync } from 'node:fs';
 import { dirname, basename, join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
@@ -10,6 +10,20 @@ const atomic = (path, text) => {
   writeFileSync(`${path}.tmp`, text);
   renameSync(`${path}.tmp`, path);
 };
+
+function pruneGeneratedParts(path, keep = new Set()) {
+  const directory = join(dirname(path), `${basename(path, '.json')}.parts`);
+  let stat;
+  try { stat = lstatSync(directory); } catch (error) { if (error.code === 'ENOENT') return; throw error; }
+  // A .parts directory is generated storage, never a link to another location. Keep anything
+  // outside the content-addressed filename contract, including operator notes or subdirectories.
+  if (!stat.isDirectory() || stat.isSymbolicLink()) throw Error('Invalid generated news parts directory');
+  for (const name of readdirSync(directory)) {
+    if (!/^[a-f0-9]{64}\.json$/.test(name) || keep.has(name)) continue;
+    const file = join(directory, name);
+    if (lstatSync(file).isFile()) unlinkSync(file);
+  }
+}
 
 export function readNewsJson(path, fallback = null) {
   let value;
@@ -30,7 +44,14 @@ export function writeNewsJson(path, value, { maxBytes = JSON_SHARD_BYTES } = {})
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 128 || maxBytes > JSON_SHARD_BYTES) throw Error('Invalid news part size');
   if (Object.hasOwn(value, '_jsonShards')) throw Error('Hydrate the news capture before writing');
   const text = `${JSON.stringify(value)}\n`;
-  if (Buffer.byteLength(text) <= maxBytes) { atomic(path, text); return; }
+  if (Buffer.byteLength(text) <= maxBytes) {
+    atomic(path, text);
+    if (!isDeepStrictEqual(readNewsJson(path), JSON.parse(text))) throw Error('News inline write changed records');
+    // Compaction may shrink a previously partitioned capture below the part threshold. Reclaim
+    // only obsolete generated fragments, after verifying the complete inline replacement.
+    pruneGeneratedParts(path);
+    return;
+  }
   const field = value.byTicker && !Array.isArray(value.byTicker) ? 'byTicker' : Array.isArray(value.articles) ? 'articles' : null;
   if (!field) throw Error('Large news JSON has no supported record collection');
   const stem = `${basename(path, '.json')}.parts`;
@@ -71,7 +92,5 @@ export function writeNewsJson(path, value, { maxBytes = JSON_SHARD_BYTES } = {})
   // Only obsolete generated fragments are removed, after their records have been verified in the
   // new representation. Logical archives are never deleted; Git also retains prior generations.
   const keep = new Set(parts.map(p => basename(p.file)));
-  for (const name of readdirSync(join(dirname(path), stem))) {
-    if (/^[a-f0-9]{64}\.json$/.test(name) && !keep.has(name)) unlinkSync(join(dirname(path), stem, name));
-  }
+  pruneGeneratedParts(path, keep);
 }

@@ -19,7 +19,7 @@ concurrency:
 jobs:
   publication:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       # Never execute a workflow_run artifact or code supplied by its triggering run.
       - uses: actions/checkout@v5
@@ -32,3 +32,17 @@ jobs:
         env:
           PUBLICATION_WAIT_MS: '480000'
         run: node scripts/check-news-publication.mjs
+      - name: Audit capacity without deleting history
+        if: always()
+        run: node scripts/check-news-capacity.mjs
+      - name: Install pinned read-only delivery probe runtime
+        if: always()
+        run: |
+          npm install --prefix "$RUNNER_TEMP/news-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/news-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify retained portfolio stories reach News and Alerts
+        if: always()
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/news-browser/node_modules/playwright
+          NEWS_DELIVERY_BASE: https://sattva-central-research.tech-441.workers.dev
+        run: node scripts/check-news-customer-delivery.mjs

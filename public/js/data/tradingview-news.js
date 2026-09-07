@@ -8,7 +8,7 @@ import { assessTradingViewCoverage } from './tradingview-news-health.js';
 export const NEWS_SNAPSHOT_POLL_MS = 120000;
 
 export function withTradingViewNews(base, { read = conditionalJson, doc = globalThis.document,
-  now = Date.now, schedule = setTimeout, cancel = clearTimeout } = {}) {
+  view = doc?.defaultView || globalThis.window, now = Date.now, schedule = setTimeout, cancel = clearTimeout } = {}) {
   let snapshot = null, pending = null, loaded = false, readError = null;
   let timer = null, listening = false, lastAttempt = null, failures = 0, generation = 0;
   let combined = null;
@@ -79,17 +79,23 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
   function meta() {
     const m = base.meta(), rows = combinedRows();
     const coverage = snapshot?.tradingViewCoverage || m.tradingViewCoverage;
+    const health = assessTradingViewCoverage(coverage, { now: now() });
     return { ...m, rowCount: rows.length, covered: new Set(rows.map(r => r.entityId || r.ticker || r.company)).size,
       origin: rows.some(r => r.tradingViewId) && m.origin === 'live' ? 'mixed' : m.origin,
       tradingViewCoverage: coverage, tradingViewReadError: readError,
-      tradingViewHealth: assessTradingViewCoverage(coverage, { now: now() }),
+      tradingViewHealth: health,
+      newsDelivery: { ...m.newsDelivery, tradingView: {
+        status: !snapshot && !readError ? 'pending' : readError || !health.ok ? (snapshot ? 'partial' : 'unavailable') : 'ok',
+        pending: !!pending, error: readError || (snapshot && !health.ok ? 'Some TradingView company checks are stale or incomplete.' : null),
+        capturedAt: snapshot?.capturedAt || null, checkedAt: coverage?.checkedAt || null,
+      } },
       tradingViewArchive: snapshot?.archive || null };
   }
 
   async function refreshSnapshot() {
     const [core, extra] = await Promise.all([base.refreshSnapshot(), readSnapshot()]);
     return { ...core, available: core.available || extra.available, changed: core.changed || extra.changed,
-      partial: !core.available || !extra.available };
+      partial: !!core.partial || !core.available || !extra.available };
   }
 
   // A single visibility-aware bulk poller shared by News, All Alerts and AI Alerts. No dispatch,
@@ -112,11 +118,17 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
     if (!doc || listening || !loaded || !subscribers.size) return;
     listening = true;
     doc.addEventListener('visibilitychange', visibility);
+    view?.addEventListener('focus', visibility);
+    view?.addEventListener('online', visibility);
     arm();
   }
   function unwatch() {
     pause();
-    if (listening) doc.removeEventListener('visibilitychange', visibility);
+    if (listening) {
+      doc.removeEventListener('visibilitychange', visibility);
+      view?.removeEventListener('focus', visibility);
+      view?.removeEventListener('online', visibility);
+    }
     listening = false;
   }
   async function initialize(method, args) {

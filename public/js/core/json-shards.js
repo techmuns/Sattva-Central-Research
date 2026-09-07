@@ -74,16 +74,59 @@ export async function hydrateJsonShards(value, path, { fetcher = fetch, signal }
   const spec = shardSpec(value);
   if (!spec) return value;
   const chunks = new Array(spec.parts.length);
+  const group = new AbortController();
+  const combined = signal ? AbortSignal.any([signal, group.signal]) : group.signal;
   let next = 0;
-  await Promise.all(Array.from({ length: Math.min(3, spec.parts.length) }, async () => {
+  try { await Promise.all(Array.from({ length: Math.min(3, spec.parts.length) }, async () => {
     while (next < spec.parts.length) {
       const i = next++, part = spec.parts[i];
-      const response = await fetcher(shardPath(path, part.file), {
-        cache: 'no-cache', signal: signal || AbortSignal.timeout(20000), headers: { accept: 'application/json' },
-      });
-      if (!response.ok) throw Error('News part unavailable');
-      chunks[i] = await decodeShard(await response.text(), part);
+      // Immutable GETs get one bounded recovery attempt. Integrity failures and access denials
+      // never retry. No partial result reaches the store; one fatal part stops sibling downloads.
+      const text = await readPart(shardPath(path, part.file), part, fetcher, combined);
+      chunks[i] = await decodeShard(text, part);
     }
-  }));
+  })); } catch (error) { group.abort(); throw error; }
   return assembleShards(value, chunks);
+}
+
+async function readPart(path, part, fetcher, signal) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    signal.throwIfAborted();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    let retryable = true;
+    try {
+      const response = await fetcher(path, { cache: 'no-cache',
+        signal: AbortSignal.any([signal, controller.signal]), headers: { accept: 'application/json' } });
+      if (!response.ok) {
+        retryable = [502, 503, 504].includes(response.status);
+        await response.body?.cancel();
+        throw Error('News part unavailable');
+      }
+      // Limit decoded response bytes, not Content-Length (which may describe gzip bytes).
+      const reader = response.body?.getReader();
+      if (!reader) { retryable = false; throw Error('News part body missing'); }
+      const chunks = []; let size = 0;
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > part.bytes) {
+            retryable = false;
+            await reader.cancel();
+            throw Error('News part byte count mismatch');
+          }
+          chunks.push(value);
+        }
+      } finally { reader.releaseLock(); }
+      const bytes = new Uint8Array(size); let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+      retryable = false;
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch (error) {
+      if (!retryable || attempt || signal.aborted) throw error;
+      await new Promise(resolve => setTimeout(resolve, 250));
+    } finally { clearTimeout(timer); }
+  }
 }

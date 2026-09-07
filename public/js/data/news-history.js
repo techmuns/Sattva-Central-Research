@@ -14,7 +14,7 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
     if (combined?.source === source && combined.revision === revision) return combined.rows;
     const buckets = new Map();
     const add = row => {
-      const key = row.entityId || row.ticker || row.company;
+      const key = row.ticker || row.entityId || row.company;
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key).push(row);
     };

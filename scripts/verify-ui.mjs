@@ -1781,14 +1781,14 @@ console.log('\n— AI alerts —');
     ['Price & volume', 'Earnings', 'Con-calls', 'Public chatter', 'Investor activity', 'Announcements', 'Insider trades', 'Company news'].every((n) => panel.includes(n)),
     panel.replace(/\s+/g, ' ').slice(0, 120));
   // A COUNT IS A FINISHED ANSWER; "has not looked" IS THE ABSENCE OF ONE. A chip without a confirmed
-  // reading shows only the source name: no misleading zero and no customer-facing health jargon.
+  // reading names the unfinished state rather than implying a verified zero.
   const chipStates = await page.$$eval('[data-alerts-coverage] [data-feed]', (els) =>
     els.map((e) => ({ text: e.innerText.replace(/\s+/g, ' ').trim(), title: e.getAttribute('title') || '' })));
-  ok('...and source filters omit feed-health labels from visible and hover text',
-    chipStates.every((c) => !/stale|unknown|incomplete|on-demand|not in scope|read failed/i.test(`${c.text} ${c.title}`)),
+  ok('...and every source filter exposes its coverage reading in hover text',
+    chipStates.every((c) => /reading|failed|incomplete|on-demand|not in this scope|not confirmed|current/i.test(c.title)),
     chipStates.map((c) => `${c.text} [${c.title}]`).join(' | '));
-  ok('...and every chip has a simple filtering hint',
-    chipStates.length === expectedScopedFeeds && chipStates.every((c) => /^Filter alerts to .+\.$/.test(c.title)),
+  ok('...and every chip still has its filtering hint',
+    chipStates.length === expectedScopedFeeds && chipStates.every((c) => /^Filter alerts to .+\./.test(c.title)),
     `${chipStates.length} chips`);
   // AND ASSERTED AT THE RULE, because the check above passes vacuously on any day every feed has
   // looked at today — which is most days. `feedState` is exported for exactly this reason, the same
@@ -1807,11 +1807,11 @@ console.log('\n— AI alerts —');
       some: of({ reachesToday: true, count: 30 }),
     };
   });
-  ok('a feed that has not looked at today renders no customer-facing detail',
-    states.behind.short === '' && states.behindWithRows.short === '',
+  ok('a feed that has not looked at today states that a check is due, not zero events',
+    states.behind.short === 'check due' && states.behindWithRows.short === 'check due',
     `count 0 -> "${states.behind.short}", count 7 -> "${states.behindWithRows.short}"`);
-  ok('...and neither do failed, pending, or unscoped feeds',
-    states.failed.short === '' && states.pending.short === '' && states.unscoped.short === '',
+  ok('...and failed and pending reads remain distinct from an out-of-scope source',
+    states.failed.short === 'partial' && states.pending.short === 'reading…' && states.unscoped.short === '',
     `failed "${states.failed.short}", pending "${states.pending.short}", unscoped "${states.unscoped.short}"`);
   // The one case that IS a number, and the one zero that is a real measurement rather than a gap.
   ok('...while a feed that looked and found nothing prints a real zero',
@@ -5859,8 +5859,7 @@ console.log('\n— news, announcements and insider trades —');
     await go('/#/research/news?scope=portfolio', 4000);
     await settleTables();
     return (await page.locator('#content-host tbody tr[data-row-key]').count()) > 0 &&
-      (await page.locator('[data-mcnews-fetch]').count()) === 0 &&
-      !/money\s*control/i.test(await hostText());
+      (await page.locator('[data-mcnews-fetch]').count()) === 0;
   })());
   await go('/#/research/news?scope=universe', 3500);
 
@@ -5869,8 +5868,7 @@ console.log('\n— news, announcements and insider trades —');
   ok('the news head carries one small status chip and no freshness card',
     (await page.locator('[data-mcnews-info]').count()) === 1 &&
       (await page.locator('#content-host [data-mcnews-fetch]').count()) === 0 &&
-      !/a scheduled job also reads it/i.test(headText) &&
-      !/money\s*control/i.test(headText),
+      !/a scheduled job also reads it/i.test(headText),
     headText.slice(0, 110));
 
   // "LIVE" IS A CLAIM ABOUT DATA. Green may appear only while the capture really is the newest the
@@ -5985,11 +5983,9 @@ console.log('\n— news, announcements and insider trades —');
 
   const bylines = await evalSafe(async () => {
     const mod = await import('/js/data/market-news.js');
-    const { withoutPublisherName } = await import('/js/core/source-copy.js');
-    // The row keeps the real publisher for matching; the SCREEN shows it through the naming policy,
-    // so the card is checked against the labelled form. Checking the raw value would fail for the
-    // one publisher whose brand this dashboard withholds, and pass only by accident for the rest.
-    const named = (v) => withoutPublisherName(String(v || '')).replace(/^the publisher\b/i, 'The publisher');
+    const { canonicalPublisherName: named } = await import('/js/core/news-publishers.js');
+    // Reviewed publisher spellings share a byline/filter, including the real Moneycontrol name.
+    // Original publisher strings and headlines remain unchanged in the captured records.
     const rows = mod.rows();
     const cardsNow = [...document.querySelectorAll('[data-news-key]')];
     const byKey = new Map(rows.map((r) => [String(r.id || r.url), r]));
@@ -5997,7 +5993,7 @@ console.log('\n— news, announcements and insider trades —');
       const r = byKey.get(c.dataset.newsKey);
       return r?.publisher && (c.innerText || '').includes(named(r.publisher));
     }).length;
-    const pubs = [...new Set(rows.map((r) => r.publisher).filter(Boolean))];
+    const pubs = [...new Set(rows.map((r) => named(r.publisher)).filter(Boolean))];
     return {
       total: rows.length,
       withPublisher: rows.filter((r) => r.publisher).length,
@@ -6005,8 +6001,7 @@ console.log('\n— news, announcements and insider trades —');
       drawn: cardsNow.length,
       drawnBylines,
       options: [...document.querySelectorAll('[data-news-publisher] option')].map((o) => o.value),
-      // The withheld brand must not reach the screen through any of the new surfaces — byline,
-      // dropdown, footer or provenance — the same rule the Earnings view is already held to.
+      hasMoneycontrol: pubs.includes('Moneycontrol'),
       brandOnScreen: /money\s*control/i.test(document.getElementById('content-host')?.innerText || ''),
     };
   });
@@ -6039,9 +6034,9 @@ console.log('\n— news, announcements and insider trades —');
   ok('every market-news story names the publisher it came from',
     bylines && bylines.total > 0 && bylines.withPublisher === bylines.total && bylines.drawnBylines === bylines.drawn,
     `${bylines?.withPublisher}/${bylines?.total} rows attributed, ${bylines?.drawnBylines}/${bylines?.drawn} cards showing it, publishers: ${bylines?.publishers.join(', ')}`);
-  ok('...without the News view printing the upstream publisher name either',
-    bylines && bylines.brandOnScreen === false,
-    bylines?.brandOnScreen ? 'the withheld brand reached the screen' : 'not printed');
+  ok('...and Moneycontrol keeps its real name when present in the News feed',
+    bylines && (!bylines.hasMoneycontrol || bylines.brandOnScreen),
+    bylines?.brandOnScreen ? 'Moneycontrol is named' : 'no Moneycontrol in this capture');
   ok('...and every publisher in the feed can be filtered to',
     bylines && bylines.publishers.every((px) => bylines.options.includes(px)),
     `${bylines?.options.length - 1} of ${bylines?.publishers.length} publishers offered`);
@@ -6052,15 +6047,16 @@ console.log('\n— news, announcements and insider trades —');
     const sel = document.querySelector('[data-news-publisher]');
     if (!sel || sel.options.length < 2) return null;
     const mod = await import('/js/data/market-news.js');
+    const { canonicalPublisherName } = await import('/js/core/news-publishers.js');
     const want = sel.options[1].value;
-    const expect = mod.rows().filter((r) => r.publisher === want).length;
+    const expect = mod.rows().filter((r) => canonicalPublisherName(r.publisher) === want).length;
     sel.value = want;
     sel.dispatchEvent(new Event('change', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 900));
     const label = document.querySelector('[data-mcnews-list]')?.innerText.match(/([\d,]+)\s+of\s+([\d,]+)\s+stories/);
     const drawnPubs = [...new Set([...document.querySelectorAll('[data-news-key]')].map((n) => {
       const m = mod.rows().find((r) => String(r.id || r.url) === n.dataset.newsKey);
-      return m?.publisher;
+      return canonicalPublisherName(m?.publisher);
     }))];
     sel.value = 'all';
     sel.dispatchEvent(new Event('change', { bubbles: true }));
@@ -7647,7 +7643,7 @@ const keywordRules = await page.evaluate(async () => {
   };
 });
 
-ok('the desk supplied thirty keywords and thirty are registered', keywordRules.count === 30 && keywordRules.uniqueIds === 30 && keywordRules.uniqueLabels === 30, `${keywordRules.count} keywords`);
+ok('the thirty desk topics and brokerage research are registered without duplicate ids or labels', keywordRules.count === 31 && keywordRules.uniqueIds === 31 && keywordRules.uniqueLabels === 31, `${keywordRules.count} keywords`);
 ok("...spelt in the desk's own words", keywordRules.hasDeskWords);
 ok('...and no pattern is global, which would make it match every other row', !keywordRules.anyGlobal);
 ok('a free trial is not a Trial, a clinical one is', keywordRules.freeTrialIsNotATrial && keywordRules.clinicalTrialIs);

@@ -66,6 +66,12 @@ jobs:
         continue-on-error: true
         run: node scripts/enrich-company-news.mjs
 
+      - name: Compact identical observations without removing source history
+        run: node scripts/compact-news-data.mjs --write
+
+      - name: Check publication capacity and browser-load headroom
+        run: node scripts/check-news-capacity.mjs
+
       - name: Upload company-news data
         if: always()
         uses: actions/upload-artifact@v5
