@@ -81,6 +81,8 @@ Company-news capture rejects empty provider rows containing only discovery bookk
 anonymous observations use a stable, full-content fallback identity, retaining distinct unlinked
 snippets and source links, first/last observation times and query provenance. Repeated seeding
 must be idempotent rather than exponentially copying placeholders into the head and archive.
+The browser uses the same anonymous content identity to avoid expanding legacy duplicates before
+the next normal capture rewrites them; distinct content and attribution remain separate.
 
 AI Alerts defaults to **Newest first**, using the latest noteworthy source event's IST date/time.
 Routine observations and refresh timestamps cannot make an older material event new. That event

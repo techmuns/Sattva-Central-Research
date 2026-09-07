@@ -9,6 +9,7 @@ import {
 } from '../public/js/data/company-news-identity.js';
 import { namesCompany } from '../public/js/data/news-keywords.js';
 import { attributeNewsRow } from '../public/js/data/company-news-attribution.js';
+import { dedupeArticles } from '../public/js/data/filings-shared.js';
 import {
   commitCompanyNewsArchive,
   incrementalNewsRange,
@@ -56,6 +57,9 @@ try {
     'observation range and reviewed query provenance survive compaction');
   assert.equal(mergeCompanyNewsArticles(replayed, [{ ...anonymous, summary: 'A corrected unlinked snippet' }]).length, 4,
     'distinct text with no publisher identity is never merged away');
+  const clientRows = dedupeArticles([...replayed, ...replayed.map(row => ({ ...row, lastSeenAt: '2026-09-04T00:00:00Z', query: 'Another query' }))]);
+  assert.equal(clientRows.length, 3, 'the browser also avoids expanding legacy duplicate observations before the next normal capture');
+  assert.equal(dedupeArticles([...clientRows, { ...anonymous, summary: 'A corrected unlinked snippet' }]).length, 4);
 
   const first = observedCompanyArticles([{
     date: '2026-08-31', title: 'Beta wins order', source: 'Publisher A',

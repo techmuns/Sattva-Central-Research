@@ -315,9 +315,20 @@ export function canonicalArticleUrl(raw) {
  * deliberately outside this function: one article returned for two portfolio companies remains
  * visible under both of them.
  */
+// Full-content identity only for records without a publisher URL/headline identity. Discovery
+// bookkeeping may differ between observations; actual text, links and attribution may not.
+const articleObservationKeys = new Set(['firstSeenAt', 'lastSeenAt', 'query', 'matchedQueries']);
+export function anonymousArticleContentKey(row) {
+  if (row === null || typeof row !== 'object') return JSON.stringify(row);
+  const content = Object.fromEntries(Object.entries(row).filter(([key]) => !articleObservationKeys.has(key)));
+  return JSON.stringify(content, (key, item) => item && typeof item === 'object' && !Array.isArray(item)
+    ? Object.fromEntries(Object.keys(item).sort().map(name => [name, item[name]])) : item);
+}
+
 export function dedupeArticles(list = []) {
   const seenUrl = new Set();
   const seenStory = new Set();
+  const seenAnonymous = new Set();
   return list.filter((row) => {
     const url = row?.url ? canonicalArticleUrl(row.url) : null;
     if (url) {
@@ -330,6 +341,11 @@ export function dedupeArticles(list = []) {
     if (story) {
       if (seenStory.has(story)) return false;
       seenStory.add(story);
+    }
+    if (!url && !story) {
+      const content = anonymousArticleContentKey(row);
+      if (seenAnonymous.has(content)) return false;
+      seenAnonymous.add(content);
     }
     return true;
   });

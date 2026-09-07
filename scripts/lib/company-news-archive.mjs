@@ -12,7 +12,7 @@
 // in this module—the capture retains every usable row returned by every reviewed identity query.
 
 import { join } from 'node:path';
-import { canonicalArticleUrl } from '../../public/js/data/filings-shared.js';
+import { canonicalArticleUrl, anonymousArticleContentKey } from '../../public/js/data/filings-shared.js';
 import { readNewsJson as readJson, writeNewsJson as writeJson } from './news-json-storage.mjs';
 
 export const COMPANY_NEWS_ARCHIVE_VERSION = 1;
@@ -34,11 +34,6 @@ const storyKey = (row) => row?.title && row?.source
 // Some providers return an empty normalized row with only discovery metadata. Without a URL
 // or headline these observations used to double on each seed/merge. Keep a stable fallback
 // identity for ALL remaining content; only observation times and query bookkeeping may vary.
-const observationKeys = new Set(['firstSeenAt', 'lastSeenAt', 'query', 'matchedQueries']);
-const stableContent = value => JSON.stringify(value, (key, item) => item && typeof item === 'object' && !Array.isArray(item)
-  ? Object.fromEntries(Object.keys(item).sort().map(name => [name, item[name]])) : item);
-const anonymousKey = row => stableContent(Object.fromEntries(Object.entries(row).filter(([key]) => !observationKeys.has(key))));
-
 export function companyArticleKey(row = {}) {
   const entity = clean(row.entityId) || `ticker:${clean(row.ticker).toUpperCase()}`;
   const url = row.url ? canonicalArticleUrl(row.url) : null;
@@ -61,7 +56,7 @@ export function mergeCompanyNewsArticles(previous = [], incoming = []) {
     const urlKey = row.url ? `${entity}|${canonicalArticleUrl(row.url)}` : null;
     const headlineKey = storyKey(row) ? `${entity}|${storyKey(row)}` : null;
     const tradingViewKey = row.tradingViewId ? `${entity}|${row.tradingViewId}` : null;
-    const fallbackKey = !urlKey && !headlineKey && !tradingViewKey ? anonymousKey(row) : null;
+    const fallbackKey = !urlKey && !headlineKey && !tradingViewKey ? anonymousArticleContentKey(row) : null;
     const existingIndex = (tradingViewKey && byTradingViewId.get(tradingViewKey)) ?? (urlKey && byUrl.get(urlKey)) ??
       (headlineKey && byStory.get(headlineKey)) ?? (fallbackKey && byAnonymousContent.get(fallbackKey));
     if (existingIndex != null) {
