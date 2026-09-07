@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Portfolio relationship and event-return contracts. No network, inference or private data.
 import assert from 'node:assert/strict';
-import { businessIntent, businessSignals, businessReadings, holdingForBusinessRow, portfolioBusinessContext, fitBusinessContext, datedPerformance } from '../public/js/research/business-context.js';
+import { businessIntent, businessSignals, businessReadings, holdingForBusinessRow, portfolioBusinessContext, fitBusinessContext, businessPeerSamples, datedPerformance } from '../public/js/research/business-context.js';
 import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
 import { providerEvidence, researchEvidenceChars } from '../public/js/research/evidence-shared.js';
 import { researchPreview } from '../public/js/research/preview.js';
@@ -88,6 +88,13 @@ assert.equal(context.candidates[0].weightPct, 2);
 assert.equal(context.candidates[0].evidence[0].sourceStatus, 'partial');
 assert.equal(context.candidates.find(c => c.isin === tiny.isin).performance.status, 'unavailable');
 assert(!context.candidates.some(c => c.ticker === 'STLTECH' || c.ticker === 'OUTSIDE'));
+const peerSource = businessPeerSamples([source], context)[0];
+assert.equal(peerSource.rows.length, 4);
+assert(peerSource.rows.every(r => r.ticker !== ref.ticker && r.ticker !== outside.ticker));
+assert.equal(peerSource.rows[0].ticker, fibre.ticker);
+assert.equal(peerSource.rowCount, source.rowCount, 'selection does not rewrite source coverage');
+assert.equal(peerSource.status, source.status); assert.equal(peerSource.dataQuality, 'partial');
+assert.deepEqual(businessPeerSamples([source], { candidates: [] }), [source], 'no discovered peers keeps useful reference evidence');
 const disputed = portfolioBusinessContext({ plan, packets: [source, { id: 'telegram', tab: 'Telegram', status: 'ready',
   businessReadings: businessReadings([row(fibre, 'Fibre Company does not manufacture optical fibre cables.', { feed: 'Telegram' })], plan) }] });
 assert.match(disputed.candidates.find(c => c.ticker === fibre.ticker).relationship, /Conflicting/);
@@ -103,7 +110,7 @@ for (const limit of [20, 200, 1000, 3000, 6300]) {
   if (fitted?.candidates) assert.equal(fitted.candidates.length + fitted.candidatesOmitted, context.candidatesFound);
 }
 const sources = DASHBOARD_RESEARCH_SOURCES.map(s => ({ ...s, status: 'unavailable', error: 'Fixture unavailable', rows: [] }));
-sources[sources.findIndex(s => s.id === 'company-news')] = source;
+sources[sources.findIndex(s => s.id === 'company-news')] = peerSource;
 const fitted = fitEvidenceToBudget({ selection: { companies: plan.companies, business: plan.business }, businessContext: context, sources });
 assert(researchEvidenceChars(fitted) <= 18000);
 assert(fitted.businessContext.candidates.length >= 2);

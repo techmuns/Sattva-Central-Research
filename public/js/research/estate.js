@@ -50,7 +50,7 @@ import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 import { attributionFor } from '../data/company-news-attribution.js';
 import { telegramCompanyRows, chatterPostEvidence, postExcerpt } from './social.js';
 import { questionWindow, questionTopics, rowContext } from './query-context.js';
-import { businessIntent, holdingForBusinessRow, businessReadings, portfolioBusinessContext, fitBusinessContext } from './business-context.js';
+import { businessIntent, holdingForBusinessRow, businessReadings, portfolioBusinessContext, fitBusinessContext, businessPeerSamples } from './business-context.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
@@ -1350,7 +1350,7 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
       const packet = packets.find((item) => item.id === source.id);
       return { ...source, status: packet?.status || 'unavailable', rowCount: packet?.rowCount ?? null, error: packet?.error || null };
     }),
-    sources: packets,
+    sources: businessPeerSamples(packets, fitBusinessContext(businessContext, Math.floor(charBudget * 0.35))),
   }, charBudget);
 }
 

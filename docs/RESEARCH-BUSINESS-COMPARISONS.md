@@ -23,6 +23,12 @@ with original dashboard citations. Literal peer source excerpts appear before
 inference. Telegram searches include peer identities; public chatter still has
 its existing six-topic limit, which remains a coverage gap.
 
+Once candidates are known, source samples prioritize their original company rows.
+The reference business development stays in the comparison context, so its
+unrelated price/insider headlines do not displace the requested peer evidence.
+No discovered peers keeps the existing reference sample and its missing-data
+limitations. Missing valuations do not discard validated holding identities.
+
 Comparison evidence uses at most 35% of the existing 18,000-character research
 budget, with explicit omitted-candidate counts. All 21 source entries retain
 status, provenance, data quality and row counts. Optional summaries, coverage

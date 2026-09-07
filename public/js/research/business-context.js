@@ -103,6 +103,9 @@ export function businessReadings(rows, plan) {
       if (seen.has(identity)) continue;
       seen.add(identity);
       out.push({ ...signal, ticker: company.ticker || null, isin: company.isin || null,
+        // Internal reference to the original mapped row, used to select peer
+        // source samples after all sources establish the business candidates.
+        row,
         company: company.name, date: eventDay(row), url: row.url || row.documents?.[0]?.url || null,
         verification: /telegram|chatter|twitter|social/i.test(row.feed || '') ? 'unverified discussion' : 'reported; not independently verified',
         title: textLimit(row.title || row.headline || row.sourceTags?.join('; ') || row.industry, 200) });
@@ -158,7 +161,8 @@ export function portfolioBusinessContext({ plan, packets, technicalRows = [] }) 
     const development = r => /\b(?:target\w*|capex|capacity|launch\w*|contract\w*|order\w*|demand|guidance|plan\w*|expan\w*)\b/i.test(r.title || r.excerpt) ? 1 : 0;
     const dated = rows.filter(r => r.date && r.basis !== 'industry label only').sort((a, b) => development(b) - development(a) || b.date.localeCompare(a.date));
     const unique = new Set();
-    const evidence = rows.sort((a, b) => Number(a.basis === 'industry label only') - Number(b.basis === 'industry label only'))
+    const evidence = rows.filter(r => development(r) || r.basis !== 'company-linked source text')
+      .sort((a, b) => development(b) - development(a) || Number(a.basis === 'industry label only') - Number(b.basis === 'industry label only'))
       .filter(r => !unique.has(r.id) && unique.add(r.id)).slice(0, 2).map(proof);
     return { ticker: company.ticker, isin: company.isin, name: company.name,
       concepts, primaryActivities, referencePublication: dated[0] ? { date: dated[0].date, title: textLimit(dated[0].title, 200), tab: dated[0].tab } : null, evidence };
@@ -203,6 +207,26 @@ export function portfolioBusinessContext({ plan, packets, technicalRows = [] }) 
     sourceCoverage: 'Loaded source readings only. Unavailable sources, unread documents and bounded discussion topics remain gaps; no match is not proof of no business exposure.',
     pricePolicy: 'Scheduled EOD snapshots, not live. Latest-session moves are not since-news returns. After-event changes require dated adjusted closes; shared moves do not establish causation.',
     references, candidates, candidatesOmitted: 0 };
+}
+
+// The ordinary named-company sample would refill the prompt with the anchor's
+// price headlines and unrelated financials. For a peer question, retain actual
+// original peer rows instead; the reference development already lives above.
+export function businessPeerSamples(packets, context) {
+  if (!context?.candidates?.length) return packets;
+  return packets.map(packet => {
+    const readings = (packet.businessReadings || []).filter(r => r.row);
+    const rows = [], used = new Set();
+    for (const candidate of context.candidates) {
+      const matches = readings.filter(r => candidate.isin && r.isin ? candidate.isin === r.isin : candidate.ticker && candidate.ticker === r.ticker);
+      for (const reading of matches) {
+        if (used.has(reading.row)) continue;
+        used.add(reading.row); rows.push(reading.row);
+        break; // One representative per peer per source before extra readings.
+      }
+    }
+    return { ...packet, rows, rowTiers: rows.map(() => 0), rowPriorities: rows.map((_, i) => i) };
+  });
 }
 
 export function fitBusinessContext(context, limit) {
