@@ -607,6 +607,8 @@ function holdingsTable(ctx, rows, quarters, initialView) {
 
   return scoreTable({
     rows,
+    bookmarkDate: () => quarters[0],
+    bookmarkSource: row => row.investor,
     key: (r) => `${r.slug}|${r.company}`,
     // NO STAR ON THIS TABLE. The watchlist is a list of NSE symbols — that is what every scope
     // filter on this dashboard matches — and this upstream discloses a company NAME and no symbol

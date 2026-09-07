@@ -197,6 +197,15 @@ try {
   await settled();
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
   assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A00', 'weights arriving cannot silently change newest-first order');
+  await page.locator('[data-ai-notebook-event] [data-bookmark-key]').first().click();
+  await waitFor(page, async () => (await import('/js/core/bookmarks.js')).all().length === 1);
+  const savedEvidence = await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all()[0]);
+  assert(savedEvidence.title && savedEvidence.eventDate, 'AI evidence is independently saved with its source date');
+  await page.locator('[data-ai-notebook-card] [data-bookmark-key]').first().click();
+  await waitFor(page, async () => (await import('/js/core/bookmarks.js')).all().length === 2);
+  const savedCard = await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all().find(entry => entry.kind === 'AI Alerts'));
+  assert(savedCard.body && savedCard.details.length, 'The AI insight preserves its evidence after archiving');
+  assert(!Object.hasOwn(savedCard, 'holdingWeightPct'), 'No private position object is copied into a saved insight');
   const sortControl = page.getByRole('combobox', { name: 'Sort AI Alerts' });
   assert.equal(await sortControl.inputValue(), 'newest');
   const readsBeforeSort = await page.evaluate(() => window.reads);

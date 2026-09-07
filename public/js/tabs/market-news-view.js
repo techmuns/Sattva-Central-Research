@@ -27,6 +27,9 @@ import * as refreshRegistry from '../core/refresh.js';
 import { sectionHead, openModal } from '../ui/screener.js';
 import { mountWindowedList } from '../ui/windowed-list.js';
 import { escapeHtml } from '../core/dom.js';
+import { snapshotForRow } from '../core/bookmark-record.js';
+import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
+let offBookmarks = null;
 import { formatNumber, formatRelativeTime } from '../core/format.js';
 import { withoutPublisherName } from '../core/source-copy.js';
 import { canonicalPublisherName } from '../core/news-publishers.js';
@@ -356,13 +359,16 @@ function cardHtml(r) {
 
   if (!canLink) {
     return `<div data-news-key="${key}" data-news-unlinkable class="${shell}">${body}
+      ${bookmarkButton(snapshotForRow(r, { section: 'news' }))}
       <span class="self-start rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500" title="The capture carried no usable http(s) address for this story.">no link</span>
     </div>`;
   }
   return `
-    <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" data-news-key="${key}"
-       class="${shell} hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">${body}
-    </a>`;
+    <article data-news-key="${key}" class="flex items-start gap-1 pr-3 hover:bg-slate-50">
+      <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer"
+         class="${shell} min-w-0 flex-1 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">${body}</a>
+      <span class="mt-4">${bookmarkButton(snapshotForRow(r, { section: 'news' }))}</span>
+    </article>`;
 }
 
 /**
@@ -663,6 +669,7 @@ function provenance(m) {
 }
 
 function paint(ctx) {
+  offBookmarks?.(); offBookmarks = null;
   const m = marketNews.meta();
   const rows = feedRows();
   if (fillStop) {
@@ -851,6 +858,12 @@ function failureText(out) {
 
 /** Search, section and export. Rebound on every list rebuild, because the nodes are new. */
 function wireList(root) {
+  offBookmarks?.();
+  offBookmarks = wireBookmarks(root, button => {
+    const key = button.closest('[data-news-key]')?.dataset.newsKey;
+    const row = feedRows().find(row => String(row.id || row.url) === key);
+    return row && snapshotForRow(row, { section: 'news' });
+  });
   const search = root.querySelector('[data-news-search]');
   search?.addEventListener('input', () => {
     listView.q = search.value;
@@ -1015,6 +1028,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  offBookmarks?.(); offBookmarks = null;
   unregisterRefresh?.(); unregisterRefresh = null;
   ctxRef = null;
   fillStop?.();

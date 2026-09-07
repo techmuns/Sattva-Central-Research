@@ -450,6 +450,16 @@ try {
   assert.equal(await input.inputValue(), 'Keep this next question');
   await page.setViewportSize({ width: 1440, height: 1050 });
   customAnswer = null;
+  const bookmarkClickAt = await page.evaluate(() => Date.now());
+  await answerArticle.locator('[data-bookmark-key]').click();
+  // waitForFunction treats a returned Promise as truthy before its boolean resolves. Wait on
+  // the observable post-commit state instead, so slower CI storage cannot race the assertion.
+  await answerArticle.locator('[data-bookmark-key][aria-pressed="true"]:not([aria-busy])').waitFor();
+  const notebookAnswer = await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all().find(entry => entry.kind === 'Research'));
+  assert(notebookAnswer.body && notebookAnswer.title, 'A requested research answer saves its full text and original question');
+  assert.equal(notebookAnswer.source, 'Ask Research · Generated answer');
+  assert(Date.parse(notebookAnswer.savedAt) >= bookmarkClickAt, 'Saved time records the bookmark action, not when the answer was rendered');
+  assert(!Object.hasOwn(notebookAnswer, 'portfolio'), 'Saving an answer never serializes the authenticated portfolio object');
 
   const safeRender = await page.evaluate(async () => {
     const { renderResearchAnswer } = await import('/js/research/renderer.js');

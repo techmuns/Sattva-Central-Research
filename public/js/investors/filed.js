@@ -88,6 +88,8 @@ export function renderFiled(ctx, { disposers = [], section = 'institutions', onS
 
   const table = scoreTable({
     rows,
+    bookmarkDate: () => label0,
+    bookmarkSource: () => fund.name,
     // An AMC line that resolved to no NSE symbol still needs a stable id for the watchlist, so the
     // instrument name stands in. It is unique within a fund — the importer merges a company's
     // repeat spells into one row and fails the run on two companies sharing a symbol.
