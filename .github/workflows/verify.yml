@@ -47,6 +47,8 @@ jobs:
         run: node scripts/verify-research.mjs && node scripts/verify-research-completion.mjs && node scripts/verify-research-retrieval.mjs && node scripts/verify-research-catalysts.mjs && node scripts/verify-research-evaluation.mjs && node scripts/verify-research-preview.mjs
       - name: Verify private portfolio bridge
         run: node scripts/verify-portfolio-bridge.mjs
+      - name: Verify comparable portfolio businesses and dated event returns
+        run: node scripts/verify-research-business.mjs && node scripts/verify-bars.mjs
       - name: Verify additive insider trades
         run: node scripts/verify-insider-trades.mjs
       - name: Verify additive corporate-announcement lookups
@@ -145,6 +147,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-social.mjs
+      - name: Verify Sterlite peer questions against the whole saved dashboard
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-research-business-ui.mjs
       - name: Verify stable alert refresh, portfolio failures and navigation
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

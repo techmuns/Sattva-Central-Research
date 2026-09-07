@@ -42,8 +42,10 @@ export function providerEvidence(evidence = {}) {
     scopeDefinition: evidence?.scopeDefinition,
     portfolio: evidence?.portfolio,
     portfolioPositions: providerPositions(evidence?.portfolioPositions),
+    businessContext: evidence?.businessContext,
     selection: {
       tokens: Array.isArray(selection.tokens) ? selection.tokens : [],
+      business: selection.business,
       companies: Array.isArray(selection.companies) ? selection.companies : [],
       topics: selection.topics,
       window: selection.window,

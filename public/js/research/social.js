@@ -1,6 +1,7 @@
 // Public posts are discussion evidence, never verified company disclosures.
 import { normalizeNewsText } from '../data/company-news-attribution.js';
 import { reviewedNewsIdentity } from '../data/company-news-reviewed.js';
+import { holdingForBusinessRow } from './business-context.js';
 
 export const CHATTER_TOPIC_LIMIT = 6;
 export const SOCIAL_READ_TIMEOUT_MS = 1500;
@@ -116,7 +117,9 @@ export function postExcerpt(text, terms = [], max = 700) {
 }
 
 export async function chatterPostEvidence(chatter, entries, plan) {
-  const requested = entries.filter(entry => !plan.companies.length || plan.tickers.has(entry.ticker));
+  const requested = entries.filter(entry => plan.business
+    ? holdingForBusinessRow(entry, [...plan.businessHoldings, ...plan.companies])
+    : !plan.companies.length || plan.tickers.has(entry.ticker));
   // One topic for each requested issuer before taking a second topic for any issuer.
   const seen = new Map();
   const ranked = [...requested].sort((a, b) => (b.mentions || 0) - (a.mentions || 0)).map(entry => {
