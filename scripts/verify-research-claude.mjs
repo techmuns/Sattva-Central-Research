@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { buildClaudeRequest, CLAUDE_MODEL, consumeClaudeStream } from '../worker/research-claude.mjs';
 import { handleResearch, researchConfigured, providerEvidence } from '../worker/research.mjs';
 import { modelScenarios, scenarioBody } from './lib/research-model-scenarios.mjs';
-import { checkClaudeAccess } from './check-research-claude-access.mjs';
+import { checkClaudeAccess, claudeKeyFormat } from './check-research-claude-access.mjs';
 
 const encoder = new TextEncoder();
 const env = { CLAUDE_API_KEY: 'synthetic-claude-credential', MUNS_TOKEN: 'must-not-be-used', ANTHROPIC_API_KEY: 'legacy-muns-token', MUNS_LLM_LEGACY_ANTHROPIC_BINDING: 'confirmed-muns-token' };
@@ -43,6 +43,7 @@ assert(!JSON.stringify(configured).includes(env.CLAUDE_API_KEY));
 pass('dedicated Claude key wins; malformed and misplaced keys fail closed; config exposes no secrets');
 
 assert.deepEqual(await checkClaudeAccess(''), { ok: false, reason: 'missing-key' });
+for (const [value, format] of [['sk-ant-test', 'Anthropic-key-shaped'], ['"sk-ant-test"', 'quoted-Anthropic-value'], ["'sk-ant-test'", 'quoted-Anthropic-value'], ['CLAUDE_API_KEY=example', 'environment-assignment'], ['Bearer example', 'Bearer-prefixed-value'], ['sk-ant-oat-example', 'Claude-OAuth-token-shaped'], ['sk-or-example', 'OpenRouter-key-shaped'], ['AIza-example', 'Google-key-shaped'], ['unknown-value', 'unrecognized']]) assert.equal(claudeKeyFormat(value), format);
 for (const status of [200, 302, 401, 403, 404, 429, 500]) {
   const result = await checkClaudeAccess(env.CLAUDE_API_KEY, async (url, options) => {
     assert.equal(url, `https://api.anthropic.com/v1/models/${CLAUDE_MODEL}`);

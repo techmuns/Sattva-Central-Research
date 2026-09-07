@@ -4,6 +4,19 @@ import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { CLAUDE_MODEL } from '../worker/research-claude.mjs';
 
+export function claudeKeyFormat(key) {
+  const value = String(key || '').trim();
+  if (!value) return 'missing';
+  if (/^(["'])sk-ant-[\s\S]*\1$/.test(value)) return 'quoted-Anthropic-value';
+  if (/^[A-Z_]+\s*=/.test(value)) return 'environment-assignment';
+  if (/^Bearer\s/i.test(value)) return 'Bearer-prefixed-value';
+  if (value.startsWith('sk-ant-oat')) return 'Claude-OAuth-token-shaped';
+  if (value.startsWith('sk-ant-')) return 'Anthropic-key-shaped';
+  if (value.startsWith('sk-or-')) return 'OpenRouter-key-shaped';
+  if (value.startsWith('AIza')) return 'Google-key-shaped';
+  return 'unrecognized';
+}
+
 export async function checkClaudeAccess(key, fetcher = fetch) {
   const credential = String(key || '').trim();
   if (!credential) return { ok: false, reason: 'missing-key' };
@@ -25,7 +38,7 @@ export async function checkClaudeAccess(key, fetcher = fetch) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = await checkClaudeAccess(process.env.CLAUDE_API_KEY);
-  const summary = `Claude GitHub secret check: ${result.reason}${result.status ? ` (HTTP ${result.status})` : ''}. Model: ${CLAUDE_MODEL}. No generation or deployment was performed.`;
+  const summary = `Claude GitHub secret check: ${result.reason}${result.status ? ` (HTTP ${result.status})` : ''}. Stored format: ${claudeKeyFormat(process.env.CLAUDE_API_KEY)} (shape only, not proof of issuer or validity). Model: ${CLAUDE_MODEL}. No generation or deployment was performed.`;
   console.log(summary);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + '\n');
   if (!result.ok) process.exitCode = 1;
