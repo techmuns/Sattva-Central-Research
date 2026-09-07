@@ -59,6 +59,31 @@ outstanding cache adoption, and a verified position snapshot removes exited comp
 Private sizes and document records never enter the public alert cache. If browser storage is
 unavailable or cleared, the first visit must read the sources again.
 
+The device-only alert cache uses approximately 512 KiB integrity-checked parts and an atomic
+IndexedDB manifest replacement; there is no 100,000-event rejection threshold. A single larger
+event stays whole. Missing or corrupt parts cannot be treated as a complete window. A failed
+transaction retains the previous disk revision and the complete incoming session copy, with an
+explicit offline-cache notice. Superseded cache parts are pruned, not captured source history.
+Browser quota and memory remain finite: this is not an unlimited offline archive or a guarantee
+against device eviction. No per-alert Cloudflare files are created by this cache.
+
+AI Alerts revalidates its existing source readers every 90 seconds while visible and on focus,
+visibility return or reconnection after that interval. These are source reads, not additional
+collection-job dispatches or a claim that periodic upstream feeds publish in real time. Holding
+sizes reuse their authenticated snapshot during automatic checks. New evidence for an already
+visible company merges immediately with retained evidence while other sources remain pending or
+failed. Rendering eight cards at a time and previewing three evidence items are presentation
+limits only: company/event search evaluates all eligible cards and their evidence, and All Alerts
+remains the broader retained-record view. Routine/unverified records do not gain priority merely
+because they were collected.
+
+Company-news capture rejects empty provider rows containing only discovery bookkeeping. Legacy
+anonymous observations use a stable, full-content fallback identity, retaining distinct unlinked
+snippets and source links, first/last observation times and query provenance. Repeated seeding
+must be idempotent rather than exponentially copying placeholders into the head and archive.
+The browser uses the same anonymous content identity to avoid expanding legacy duplicates before
+the next normal capture rewrites them; distinct content and attribution remain separate.
+
 AI Alerts defaults to **Newest first**, using the latest noteworthy source event's IST date/time.
 Routine observations and refresh timestamps cannot make an older material event new. That event
 leads the evidence preview even when older evidence has a higher score. **Largest holdings** and

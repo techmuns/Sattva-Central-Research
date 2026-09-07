@@ -58,7 +58,8 @@ import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSourceDependencies } from './alert-sources.js';
 import * as records from './alert-records.js';
-import { readEntry, writeEntry } from '../core/store.js';
+import { alertWindowCache } from './alert-window-cache.js';
+export { ALERT_WINDOW_CACHE_KEY } from './alert-window-cache.js';
 import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
@@ -81,7 +82,6 @@ export const today = (now = Date.now()) => new Date(now + IST_OFFSET_MS).toISOSt
 // otherwise has to assemble every source before it can draw a useful card. It
 // deliberately carries no Family reply, holding weight, private document or
 // sourceRecord. Those stay memory-only; this cache is safe to survive a reload.
-export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
 
 function shiftDay(day, amount) {
   const date = new Date(`${day}T00:00:00Z`);
@@ -98,7 +98,7 @@ export function materializePublicAlertWindow(report) {
     day: report.day,
     feeds: (report.feeds || []).filter((feed) => !privateFeeds.has(feed.id)).map(({ events, count, todayCount, ...feed }) => feed),
     events: (report.events || [])
-      .filter((event) => !event.private && (event.ticker || event.entityId) && event.day >= firstDay && event.day <= report.day)
+      .filter((event) => !event.private && !privateFeeds.has(event.feed) && (event.ticker || event.entityId) && event.day >= firstDay && event.day <= report.day)
       .map(({ sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct,
         holdingWeightPct: _holdingWeightPct, ...event }) => event),
   };
@@ -107,20 +107,20 @@ export function materializePublicAlertWindow(report) {
 function validAlertWindow(value, throughDay) {
   const privateFeeds = new Set(['company-documents', 'drhp-documents']);
   if (value?.version !== 1 || !/^\d{4}-\d{2}-\d{2}$/.test(value.day || '') ||
-      !Array.isArray(value.events) || !Array.isArray(value.feeds) || value.events.length > 100_000) return false;
+      !Array.isArray(value.events) || !Array.isArray(value.feeds)) return false;
   const captured = Date.parse(`${value.day}T00:00:00Z`);
   const through = Date.parse(`${throughDay}T00:00:00Z`);
   return Number.isFinite(captured) && Number.isFinite(through) && captured <= through &&
     through - captured < ALERT_WINDOW_CACHE_DAYS * 86_400_000 &&
     value.feeds.every((feed) => !privateFeeds.has(feed?.id)) &&
-    value.events.every((event) => !event.private && event.sourceRecord == null &&
+    value.events.every((event) => !event.private && !privateFeeds.has(event.feed) && event.sourceRecord == null &&
       event.weightPct == null && event.holdingWeightPct == null &&
       (typeof event.ticker === 'string' || typeof event.entityId === 'string') && typeof event.feed === 'string');
 }
 
 /** Restore a ready public alert window, narrowed against the current in-memory scope. */
 export async function readCachedAlertWindow({ scope = 'portfolio', holdings = null, day = today() } = {}) {
-  const entry = await readEntry(ALERT_WINDOW_CACHE_KEY);
+  const entry = await alertWindowCache.read();
   if (!validAlertWindow(entry?.value, day)) return null;
   const wanted = scopeMatcher(scope, holdings || coverage.holdings());
   const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
@@ -555,7 +555,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     // read. Universe is used so the same public snapshot can be narrowed against
     // the current Portfolio or Watchlist after a reload without persisting either.
     const allPublic = assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
-    void writeEntry(ALERT_WINDOW_CACHE_KEY, { value: materializePublicAlertWindow(allPublic) });
+    void alertWindowCache.write(materializePublicAlertWindow(allPublic));
   }
   return completed;
 }

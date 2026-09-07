@@ -52,7 +52,7 @@ window.currentDay=currentDay;
 window.show=(scope='portfolio')=>tab.render({root:document.querySelector('#root'),scope,params:{}});
 window.dispose=()=>tab.destroy();
 window.refreshAlerts=()=>refresh.refreshAll();
-window.show();
+window.show(new URLSearchParams(location.search).get('scope') || 'portfolio');
 </script></body></html>`;
 const fixtureModule = `
 const listeners=new Set(); export const onChange=fn=>{listeners.add(fn);return()=>listeners.delete(fn);}; window.feedChanged=()=>listeners.forEach(fn=>fn());
@@ -71,7 +71,7 @@ export async function collect({scope,onPartial,holdings,load=true}) {
   if(load && window.holdStart) await new Promise(done=>window.releaseStart=done);
   const wanted=new Set(holdings.map(h=>h.ticker));
   const events=window.fixtureEvents.filter(e=>scope==='universe' || wanted.has(e.ticker));
-  const report=()=>({day:currentDay(),scope,events,feeds:${JSON.stringify(feeds.map((id) => ({ id, status: 'ok', reachesToday: true })))},pending:0});
+  const report=()=>({day:currentDay(),scope,events,feeds:${JSON.stringify(feeds.map((id) => ({ id, status: 'ok', reachesToday: true })))}.map(feed=>({...feed,status:window.failedFeed===feed.id?'failed':feed.status})),pending:0});
   const params=new URLSearchParams(location.search);
   if(load && (params.has('emptyFirst') || params.has('cacheRace'))) {
     onPartial?.({...report(),events:[],pending:2});
@@ -466,6 +466,60 @@ try {
   assert.equal(await privateCard.count(), 1, 'tickerless dismissal uses its own stable entity identity');
   await privateCard.locator('[data-ai-unmute]').click();
   console.log('PASS: below-threshold company search and tickerless cards, links and dismissal.');
+  const capacityContext = await browser.newContext();
+  const capacityPage = await capacityContext.newPage();
+  capacityPage.on('pageerror', error => errors.push(error.message));
+  await capacityPage.route('**/*', route => route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
+  await capacityPage.clock.install({ time: '2026-09-04T08:00:00Z' });
+  await capacityPage.goto(`${origin}/?scope=universe`);
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  await capacityPage.evaluate(() => {
+    window.dispose();
+    window.primeCoverage({ holdings: Array.from({ length: 600 }, (_, i) => ({ ticker: `CAP${i}`, name: `Capacity Company ${i}` })) });
+    window.fixtureEvents = Array.from({ length: 100_005 }, (_, i) => ({
+      id: `capacity:${i}`, ticker: `CAP${i % 600}`, company: `Capacity Company ${i % 600}`, day: window.currentDay(), time: '08:00',
+      headline: i === 100_004 ? 'Tail evidence needle beyond the old cache ceiling' : `Material contract ${i}`,
+      feed: 'announcements', importance: 'high', direction: 'neutral', url: `https://example.test/capacity/${i}`,
+    }));
+    window.show('universe');
+  });
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  assert.equal(await capacityPage.locator('[data-ai-card]').count(), 8, 'large evidence windows keep the initial DOM bounded');
+  await capacityPage.locator('[data-ai-more]').click();
+  assert.equal(await capacityPage.locator('[data-ai-card]').count(), 16);
+  await capacityPage.locator('[data-ai-search]').fill('Tail evidence needle');
+  assert.equal(await capacityPage.locator('[data-ai-card][data-ticker="CAP404"]').count(), 1,
+    'search evaluates the 100,005th event, not only paginated cards or the evidence preview');
+  const beforeVisible = await capacityPage.evaluate(() => window.reads);
+  await capacityPage.clock.fastForward(90_001);
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 1, 'visible AI Alerts revalidates published sources after 90 seconds');
+  await capacityPage.evaluate(() => Object.defineProperty(document, 'hidden', { configurable: true, value: true }));
+  await capacityPage.clock.fastForward(90_001);
+  assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 1, 'hidden views do not poll');
+  await capacityPage.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: false }); window.dispatchEvent(new Event('focus')); });
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 2, 'returning from inactivity checks immediately');
+  await capacityPage.evaluate(() => window.dispatchEvent(new Event('online')));
+  assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 2, 'nearby wake signals do not duplicate checks');
+  await capacityPage.evaluate(() => {
+    const old = window.fixtureEvents.at(-1);
+    window.fixtureEvents = [{ ...old, id: 'capacity:new-arrival', url: 'https://example.test/capacity/new-arrival', headline: 'New same-company material event', time: '23:59' }];
+    window.holdRead = true; window.failedFeed = 'earnings';
+    void window.refreshAlerts();
+  });
+  await waitFor(capacityPage, () => !!window.releaseRead && document.querySelector('[data-ai-card][data-ticker="CAP404"]')?.textContent.includes('New same-company material event'));
+  await capacityPage.evaluate(() => { window.holdRead = false; window.releaseRead(); });
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'partial');
+  assert.equal(await capacityPage.locator('[data-ai-card][data-ticker="CAP404"]').count(), 1,
+    'a failed source retains old tail evidence used by the active search and shows the new same-company arrival');
+  await capacityPage.evaluate(() => window.dispose());
+  const disposedReads = await capacityPage.evaluate(() => window.reads);
+  await capacityPage.clock.fastForward(180_001);
+  await capacityPage.evaluate(() => { window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('online')); });
+  assert.equal(await capacityPage.evaluate(() => window.reads), disposedReads, 'destroy removes freshness intervals and wake listeners');
+  await capacityContext.close();
+  console.log('PASS: 100,005-event UI, bounded pagination, tail search, same-company partial/failure arrivals, 90-second visible rechecks, inactivity resume and cleanup.');
   assert.deepEqual(errors, []);
   console.log('PASS: responsive search/cards at 320–1440px, calendar cleanup and zero application errors.');
 } catch (error) {
