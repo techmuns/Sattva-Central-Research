@@ -2,12 +2,18 @@ name: Verify
 
 on:
   workflow_dispatch:
+    inputs:
+      claude_access_check:
+        description: Check the GitHub Claude key against Anthropic without deploying
+        type: boolean
+        default: false
   pull_request:
   push:
     branches: [main]
 
 jobs:
   contracts:
+    if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -98,6 +104,7 @@ jobs:
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
   browser:
+    if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -184,6 +191,7 @@ jobs:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-source-connections-ui.mjs
   portfolio-research:
+    if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -199,3 +207,21 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/research-browser/node_modules/playwright
         run: node scripts/verify-research-portfolio.mjs
+
+  claude-access:
+    if: github.event_name == 'workflow_dispatch' && inputs.claude_access_check
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Verify the saved Claude credential and model access
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: node scripts/check-research-claude-access.mjs

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { buildClaudeRequest, CLAUDE_MODEL, consumeClaudeStream } from '../worker/research-claude.mjs';
 import { handleResearch, researchConfigured, providerEvidence } from '../worker/research.mjs';
 import { modelScenarios, scenarioBody } from './lib/research-model-scenarios.mjs';
+import { checkClaudeAccess } from './check-research-claude-access.mjs';
 
 const encoder = new TextEncoder();
 const env = { CLAUDE_API_KEY: 'synthetic-claude-credential', MUNS_TOKEN: 'must-not-be-used', ANTHROPIC_API_KEY: 'legacy-muns-token', MUNS_LLM_LEGACY_ANTHROPIC_BINDING: 'confirmed-muns-token' };
@@ -40,6 +41,22 @@ const configured = await (await handleResearch(new Request('https://dashboard.ex
 assert.equal(configured.provider, 'claude');
 assert(!JSON.stringify(configured).includes(env.CLAUDE_API_KEY));
 pass('dedicated Claude key wins; malformed and misplaced keys fail closed; config exposes no secrets');
+
+assert.deepEqual(await checkClaudeAccess(''), { ok: false, reason: 'missing-key' });
+for (const status of [200, 302, 401, 403, 404, 429, 500]) {
+  const result = await checkClaudeAccess(env.CLAUDE_API_KEY, async (url, options) => {
+    assert.equal(url, `https://api.anthropic.com/v1/models/${CLAUDE_MODEL}`);
+    assert.equal(options.method, 'GET');
+    assert.equal(options.redirect, 'manual');
+    assert.equal(options.headers['x-api-key'], env.CLAUDE_API_KEY);
+    return new Response('provider body must not appear: ' + env.CLAUDE_API_KEY, { status });
+  });
+  assert.equal(result.ok, status === 200);
+  assert.equal(result.status, status);
+  assert(!JSON.stringify(result).includes(env.CLAUDE_API_KEY));
+}
+assert.deepEqual(await checkClaudeAccess(env.CLAUDE_API_KEY, async () => { throw new Error(env.CLAUDE_API_KEY); }), { ok: false, reason: 'request-failed' });
+pass('manual access probe uses read-only Anthropic requests and keeps credentials and upstream bodies out of diagnostics');
 
 for (const test of modelScenarios()) {
   const value = scenarioBody(test);

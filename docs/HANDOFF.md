@@ -360,6 +360,13 @@ integration's runtime. The former `ANTHROPIC_API_KEY` name is a Muns migration b
 direct Claude key. Do not overwrite it. Never put credentials in `public/`, `wrangler.jsonc`,
 chat or browser storage. Setting a secret is an operator production action, not part of CI tests.
 
+To independently check a GitHub repository secret, run Verify manually with
+`claude_access_check=true` (CLI: `gh workflow run verify.yml --ref BRANCH -f claude_access_check=true`).
+This read-only job uses `CLAUDE_API_KEY` only inside Actions, checks the configured model's
+Anthropic Models API, and reports a status without revealing the key or response body.
+It performs no generation, deployment or secret synchronization. Normal pull-request checks
+still run without credentials; the access probe is explicitly manual.
+
 Run `node scripts/verify-research-claude.mjs` for simulated streaming/security checks. For actual
 provider evaluation, make the key available locally and run
 `node --env-file=.dev.vars scripts/evaluate-research-model.mjs`. This invokes the local Worker
