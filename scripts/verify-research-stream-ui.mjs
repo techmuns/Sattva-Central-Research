@@ -17,6 +17,8 @@ let failAnswer = false;
 let emptyStreamsRemaining = 0;
 let firstDelayMs = 100;
 let customAnswer = null;
+let pauseAfterFirstText = false;
+let releaseNextChunks = () => {};
 // Presentation fixture only: figures and developments below are synthetic.
 const readingAnswer = `Jayaswal Neco has a new company statement to review alongside its latest quarterly results. [Dashboard: News]
 
@@ -45,11 +47,24 @@ const server = createServer(async (req, res) => {
     const send = event => res.write(JSON.stringify(event) + '\n');
     const failThisAnswer = failAnswer;
     const answer = customAnswer;
+    const pauseThisAnswer = pauseAfterFirstText;
+    pauseAfterFirstText = false;
     send({ type: 'start' });
     if (emptyStreamsRemaining > 0) { emptyStreamsRemaining--; res.end(); return; }
-    const first = setTimeout(() => send({ type: 'text', text: answer ? answer.slice(0, 150) : 'The latest available company update is dated 6 September. ' }), firstDelayMs);
-    const second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: answer ? answer.slice(150) : 'Read the source filing alongside the news. [Dashboard: News]' }), firstDelayMs + 800);
-    const finish = setTimeout(() => { if (!holdAnswer) { send({ type: 'done' }); res.end(); } }, firstDelayMs + 1600);
+    let second, finish;
+    const remainder = () => {
+      if (res.destroyed || res.writableEnded) return;
+      second = setTimeout(() => send(failThisAnswer ? { type: 'error', message: 'Fixture model disconnected' } : { type: 'text', text: answer ? answer.slice(150) : 'Read the source filing alongside the news. [Dashboard: News]' }), 800);
+      finish = setTimeout(() => { if (!holdAnswer) { send({ type: 'done' }); res.end(); } }, 1600);
+    };
+    const first = setTimeout(() => {
+      send({ type: 'text', text: answer ? answer.slice(0, 150) : 'The latest available company update is dated 6 September. ' });
+      // Keep the observed intermediate state until its assertions finish. CPU scheduling must
+      // not let completion remove .is-streaming between waitFor() and innerText(). The original
+      // first-token deadlines below still apply; only the subsequent fixture chunks are gated.
+      if (pauseThisAnswer) releaseNextChunks = remainder;
+      else remainder();
+    }, firstDelayMs);
     activeResponses.add(res);
     res.on('close', () => { clearTimeout(first); clearTimeout(second); clearTimeout(finish); activeResponses.delete(res); });
     return;
@@ -121,6 +136,7 @@ try {
   const submit = async question => { await input.fill(question); await send.click(); };
   const exactQuestion = 'What is the latest info on jayaswal neco for me?';
   const started = Date.now();
+  pauseAfterFirstText = true;
   await submit(exactQuestion);
   await page.locator('.is-streaming .research-answer-body').filter({ hasText: 'latest available company update' }).waitFor({ timeout: 10_000 });
   timings.push({ scenario: 'cold exact user question', firstTextMs: Date.now() - started });
@@ -131,10 +147,12 @@ try {
   assert.equal(questions[0].evidence.portfolioPositions.holdings.length, holdings.length);
   assert(questions[0].evidence.selection.companies.some(c => c.ticker === 'JAYNECOIND'));
   assert(questions[0].evidence.sources.some(s => s.rows.some(r => r.ticker === 'JAYNECOIND')), 'named company evidence is actually included');
+  releaseNextChunks();
   await page.locator('.research-assistant-answer:not(.is-streaming)').waitFor();
   await page.evaluate(() => { window.savedAnswerNode = document.querySelector('.research-assistant-answer'); });
 
   const warmStart = Date.now();
+  pauseAfterFirstText = true;
   await submit('And what are its main risks?');
   await page.locator('.is-streaming .research-answer-body').waitFor({ timeout: 3500 });
   timings.push({ scenario: 'warm follow-up', firstTextMs: Date.now() - warmStart });
@@ -147,6 +165,7 @@ try {
     transcript.style.maxHeight = '120px';
     transcript.scrollTop = 0;
   });
+  releaseNextChunks();
   await page.locator('.is-streaming .research-answer-body').filter({ hasText: 'source filing' }).waitFor();
   assert(await page.evaluate(() => savedAnswerNode.isConnected), 'streaming never rebuilds earlier answers');
   assert.equal(await page.locator('[data-research-transcript]').evaluate(node => node.scrollTop), 0, 'new tokens respect a reader scrolling back');
@@ -206,7 +225,9 @@ try {
   const slowStart = Date.now();
   await slow.getByRole('textbox', { name: 'Ask about the dashboard' }).fill(exactQuestion);
   await slow.getByRole('button', { name: 'Send question' }).click();
-  await slow.locator('.is-streaming .research-answer-body').waitFor({ timeout: 10_000 });
+  // This case checks bounded availability despite a stalled source, not an intermediate
+  // streaming state (asserted above). A response that has already completed is valid too.
+  await slow.locator('.research-answer-body').filter({ hasText: 'latest available company update' }).waitFor({ timeout: 10_000 });
   timings.push({ scenario: 'stalled optional source', firstTextMs: Date.now() - slowStart });
   assert(parked.length > 0);
   assert.equal(questions.at(-1).evidence.sources.find(s => s.id === 'screener-insights').status, 'unavailable');
