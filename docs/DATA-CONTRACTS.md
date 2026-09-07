@@ -4518,3 +4518,19 @@ without authorizing a new event return. Absence is valid for older captures or
 unavailable adjusted prices. No values are filled with zero and no collection
 success timestamp is inferred from retention. This field is not sent wholesale
 to the LLM; only a dated, validated comparison return is selected.
+
+### Ask Research general portfolio implications (September 2026)
+
+`businessContext.kind=portfolio-reasoning` adds a complete supplied-holdings business
+map plus bounded source excerpts, without assigning business relationships.
+`businessProfiles.columns` names identity/name/industry/industrySourceIndex;
+`industrySources` resolves each industry citation. `businessProfiles.analyses` has
+its own `tab=Con-call`, column schema, publication dates, excerpt rows and omission
+count. The separate tables prevent citing an analysis claim as a technical fact.
+`total`, `omitted`, `candidatesFound` and `candidatesOmitted` describe retrieval, not
+portfolio completeness or the number of actual beneficiaries. Unknown values remain
+null; ownership is governed by `holdingsBasis` and the authenticated positions reply.
+General research uses a 36,000-character evidence budget, with a 37,000-character
+Worker bound; ordinary research remains at 18,000/19,000. See
+[General portfolio reasoning](RESEARCH-PORTFOLIO-REASONING.md) for inference rules,
+sampling, tests and limits.

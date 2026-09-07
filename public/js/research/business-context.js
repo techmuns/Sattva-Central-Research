@@ -28,13 +28,13 @@ const normalizedName = value => String(value || '').toLowerCase().replace(/\b(?:
 const textLimit = (value, limit = 360) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, limit);
 const escapePattern = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-function companyPassages(row) {
+export function companyPassages(row) {
   const names = [row.ticker, String(row.company || row.name || '').replace(/\b(?:limited|ltd)\.?$/i, '').trim()].filter(Boolean);
   const patterns = names.map(name => new RegExp(`\\b${escapePattern(name)}\\b`, 'i'));
   const content = [row.title, row.headline, row.summary, row.text, row.detail].filter(Boolean).join('. ');
   // A round-up attributed to several issuers must not give Sterlite another
   // company's transformer orders. Only issuer-local clauses are evidence.
-  const passages = content.split(/(?:[.!?](?:\s|$)|[\n\r]|\p{Extended_Pictographic}|(?=\*[^*]{3,70}\*:))/u)
+  const passages = content.split(/(?:[.!?](?:\s|$)|[\n\r|;]|\p{Extended_Pictographic}|(?=\*[^*]{3,70}\*:))/u)
     .filter(part => patterns.some(pattern => pattern.test(part)));
   return [...passages, ...(row.sourceTags || []), row.metric].filter(Boolean).join(' ');
 }
@@ -49,6 +49,12 @@ export function businessIntent(question, history = []) {
     const prior = history.filter(m => m.role === 'user').slice(-6).reverse().find(m => businessIntent(m.text));
     if (prior) { theme = THEMES.find(([id]) => id === businessIntent(prior.text)?.theme); inherited = true; }
   }
+  const analytical = /\b(?:if|scenario|expos\w*|affect\w*|impact\w*|implic\w*|sensitiv\w*|depend\w*|beneficiar\w*|losers?|winners?|supply|demand|risk\w*|contradict\w*|trade[- ]?offs?|second[- ]order|value[- ]chain|drivers?|hurt\w*|linked|manufactur\w*|produce\w*|suppliers?|customers?|sector\w*|industr\w*)\b/i.test(q);
+  const followAnalysis = /\b(?:they|their|them|those|these|that|this|opposite|reverse)\b/i.test(q) &&
+    history.filter(m => m.role === 'user').slice(-6).some(m => businessIntent(m.text));
+  if (group && (analytical || !theme && /\brelated\b/i.test(q)) || followAnalysis && !theme) return { mode: 'portfolio-reasoning',
+    label: 'Portfolio implications', concepts: [], comparePerformance: /\b(?:perform\w*|returns?|moves?|gains?)\b/i.test(q),
+    afterEvent: /\b(?:after|since|following)\b/i.test(q) };
   if (!(group && (peers || theme) || inherited)) return null;
   return { mode: peers ? 'business-peers' : 'portfolio-theme', theme: theme?.[0] || null,
     label: theme?.[1] || 'Comparable businesses', concepts: theme?.[3] || [],
@@ -238,6 +244,15 @@ export function fitBusinessContext(context, limit) {
   if (!context) return undefined;
   const result = structuredClone(context);
   result.candidates.forEach(candidate => { delete candidate.overlapScore; });
+  if (result.businessProfiles) {
+    const profiles = result.businessProfiles;
+    // Industry identities and analysis have separate provenance. Remove whole
+    // excerpts under pressure so a cut number, unit or negation cannot become a fact.
+    while (JSON.stringify(profiles).length > limit * 0.75 && profiles.analyses.rows.length) {
+      profiles.analyses.rows.pop(); profiles.analyses.omitted++;
+    }
+    while (JSON.stringify(profiles).length > limit * 0.75 && profiles.rows.length) { profiles.rows.pop(); profiles.omitted++; }
+  }
   // Bound multiple anchors as well as candidates. Never let supplementary
   // comparison metadata crowd every original source row out of the packet.
   result.referencesOmitted = 0;

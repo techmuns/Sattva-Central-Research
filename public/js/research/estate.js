@@ -50,6 +50,8 @@ import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 import { attributionFor } from '../data/company-news-attribution.js';
 import { telegramCompanyRows, chatterPostEvidence, postExcerpt } from './social.js';
 import { questionWindow, questionTopics, rowContext } from './query-context.js';
+import { PORTFOLIO_REASONING_CHAR_BUDGET, businessContextShare } from './evidence-shared.js';
+import { reasoningReadings, portfolioReasoningContext, reasoningSourceSamples } from './reasoning-context.js';
 import { businessIntent, holdingForBusinessRow, businessReadings, portfolioBusinessContext, fitBusinessContext, businessPeerSamples } from './business-context.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
@@ -122,7 +124,7 @@ const GENERIC_LEAD = new Set(['india', 'indian', 'bharat', 'national', 'global',
 // Symbols that are also English words. A lower-case token merely spelling one is not a company
 // mention — "any idea about…" is not Vodafone Idea — unless the question also names the company or
 // types the symbol in capitals.
-const WORD_TICKERS = new Set(['IDEA', 'SAIL', 'GAIL', 'PAGE', 'TRENT', 'BATA', 'RAIN', 'STAR', 'PEARL', 'ZEN', 'CERA', 'BLISS', 'FINE', 'JUST', 'NEXT', 'ONE', 'MAN', 'CAN', 'VIP', 'MAX', 'RISE', 'JET', 'CLEAN', 'PRIME', 'FOCUS', 'UNITED', 'SUN', 'GEM', 'FOOD', 'LIFE', 'NEST', 'KEY', 'FIT', 'SAFE', 'SHARP', 'POLO', 'HOME', 'GLOBAL', 'INDIA', 'BANK', 'POWER', 'STEEL', 'MOTOR', 'AUTO']);
+const WORD_TICKERS = new Set(['OIL', 'IDEA', 'SAIL', 'GAIL', 'PAGE', 'TRENT', 'BATA', 'RAIN', 'STAR', 'PEARL', 'ZEN', 'CERA', 'BLISS', 'FINE', 'JUST', 'NEXT', 'ONE', 'MAN', 'CAN', 'VIP', 'MAX', 'RISE', 'JET', 'CLEAN', 'PRIME', 'FOCUS', 'UNITED', 'SUN', 'GEM', 'FOOD', 'LIFE', 'NEST', 'KEY', 'FIT', 'SAFE', 'SHARP', 'POLO', 'HOME', 'GLOBAL', 'INDIA', 'BANK', 'POWER', 'STEEL', 'MOTOR', 'AUTO']);
 
 const round = (value, places = 2) => {
   if (!Number.isFinite(value)) return value ?? null;
@@ -273,11 +275,12 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
   }
   // A theme word inside an issuer name (for example Solar Industries) is not
   // a request to replace that company's answer with a portfolio-wide scan.
-  if (business?.mode === 'portfolio-theme' && consumed.size) {
+  if (business && consumed.size) {
     business = businessIntent(cleanName(question).split(' ').filter(word => !consumed.has(word)).join(' '), history);
   }
   return {
     business,
+    reasoningQuery: [question, ...(/\b(?:they|their|them|those|these|that|this|opposite|reverse)\b/i.test(question) ? history.filter(m => m.role === 'user').slice(-1).map(m => m.text) : [])].join(' '),
     // Missing valuations do not make a validated complete identity list partial.
     businessHoldings: business ? (scope === 'portfolio' && Array.isArray(portfolioPositions?.holdings) ? portfolioPositions.holdings : holdings || []) : [],
     businessHoldingsVerified: scope === 'portfolio' && Array.isArray(portfolioPositions?.holdings) &&
@@ -386,7 +389,8 @@ export function chooseRows(rows, plan, mapRow, compare = null) {
   if (companyOrder.size > 1) scored.sort((a, b) => tierOf(a) - tierOf(b) || (tierOf(a) === 0 ? a.companyPass - b.companyPass || a.companyOrder - b.companyOrder : 0) || byRelevance(a, b));
   const picked = scored.slice(0, matchedRows ? MATCH_ROW_LIMIT : DEFAULT_ROW_LIMIT);
   return {
-    ...(plan.business ? { businessReadings: businessReadings(scored.map(item => item.row), plan) } : {}),
+    ...(plan.business ? { businessReadings: businessReadings(scored.map(item => item.row), plan),
+      reasoningRows: scored.map(item => item.row) } : {}),
     rows: picked.map((item) => compactRow({ ...item.row, ...(plan.window ? { periodMatch: item.context.temporal } : {}) }) || {}),
     rowTiers: picked.map(tierOf),
     // Cross-source priority retains topic evidence before generic issuer context.
@@ -475,7 +479,7 @@ export function fitEvidenceToBudget(evidence, charBudget = RESEARCH_EVIDENCE_CHA
     scopeDefinition: clipped(evidence?.scopeDefinition, 360),
     portfolio: evidence?.portfolio,
     portfolioPositions: evidence?.portfolioPositions,
-    businessContext: fitBusinessContext(evidence?.businessContext, Math.floor(charBudget * 0.35)),
+    businessContext: fitBusinessContext(evidence?.businessContext, Math.floor(charBudget * businessContextShare(evidence))),
     selection: {
       ...boundedMetadata(evidence?.selection || {}),
       evidenceCharBudget: charBudget,
@@ -1282,7 +1286,7 @@ export function prepareResearchSources({ onProgress = null } = {}) {
   return preparing;
 }
 
-export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, history = [], prepared = null, signal, onProgress = null, charBudget = RESEARCH_EVIDENCE_CHAR_BUDGET } = {}) {
+export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, history = [], prepared = null, signal, onProgress = null, charBudget = undefined } = {}) {
   const { deferred, loadErrors } = await withResearchDeadline(prepared || prepareResearchSources({ onProgress }), 'Dashboard sources', { signal, timeoutMs: LOADER_TIMEOUT_MS + 1000 });
   if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
   // Resolve scope only AFTER the authenticated reader has adopted its book.
@@ -1328,8 +1332,15 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
   packets.sort((a, b) => order.get(a.id) - order.get(b.id));
   const ready = packets.filter((packet) => packet.status === 'ready');
   const unavailable = packets.filter((packet) => packet.status !== 'ready');
-  const businessContext = portfolioBusinessContext({ plan, packets,
-    technicalRows: technicals.all().map(scored => scored.company) });
+  const technicalRows = technicals.all().map(scored => scored.company);
+  const comparison = portfolioBusinessContext({ plan, packets, technicalRows });
+  // Product dictionaries can help known themes, but are never a gate on an
+  // arbitrary business question. Discover evidence using its own vocabulary.
+  const general = plan.business && (plan.business.mode === 'portfolio-reasoning' || !comparison?.candidates?.length);
+  const reasoningPackets = general ? packets.map(packet => ({ ...packet, reasoningReadings: reasoningReadings(packet.reasoningRows || [], plan) })) : packets;
+  const businessContext = general ? portfolioReasoningContext({ plan, packets: reasoningPackets, technicalRows }) : comparison;
+  charBudget ??= general ? PORTFOLIO_REASONING_CHAR_BUDGET : RESEARCH_EVIDENCE_CHAR_BUDGET;
+  const fittedBusiness = fitBusinessContext(businessContext, Math.floor(charBudget * businessContextShare({ businessContext })));
   return fitEvidenceToBudget({
     generatedAt: new Date().toISOString(),
     scope,
@@ -1355,7 +1366,7 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
       const packet = packets.find((item) => item.id === source.id);
       return { ...source, status: packet?.status || 'unavailable', rowCount: packet?.rowCount ?? null, error: packet?.error || null };
     }),
-    sources: businessPeerSamples(packets, fitBusinessContext(businessContext, Math.floor(charBudget * 0.35))),
+    sources: businessContext?.kind === 'portfolio-reasoning' ? reasoningSourceSamples(reasoningPackets, fittedBusiness, plan) : businessPeerSamples(packets, fittedBusiness),
   }, charBudget);
 }
 
