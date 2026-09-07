@@ -50,7 +50,7 @@ import * as screenerInsights from './screener-insights.js';
 // filing would have become a negative alert about a named investor.
 import { isMove } from './finology-shared.js';
 import { announcements, insider, news } from './filings.js';
-import { insiderTradeSourceUrl } from './filings-shared.js';
+import { insiderTradeSourceUrl, canonicalArticleUrl } from './filings-shared.js';
 import { classifyStory } from './news-keywords.js';
 import { announcementSignal } from './filing-signals.js';
 export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
@@ -681,6 +681,49 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
   return value;
 }
 
+/** One company/article can arrive through company search and the shared publisher projection.
+ * Collapse only that cross-route display overlap; never collapse different companies, unrelated
+ * Universe stories, or filings/social events. Source readers and their complete archives remain
+ * untouched. The preferred row retains its attribution and full source record, with compact
+ * provenance for every contributing route; feed counts and exports use this same unique view.
+ */
+export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
+  const byTicker = new Map(entities.filter(entity => entity.ticker).map(entity => [String(entity.ticker).toUpperCase(), entity.entityId]));
+  const groups = new Map();
+  feeds.forEach((feed, feedIndex) => {
+    if (!['news', 'market-news'].includes(feed.id)) return;
+    feed.events.forEach((event, rowIndex) => {
+      const ticker = String(event.ticker || '').toUpperCase();
+      const identity = event.entityId && !event.entityId.startsWith('ticker:') ? event.entityId
+        : byTicker.get(ticker) || (ticker ? `ticker:${ticker}` : event.entityId);
+      if (!identity || !event.url) return;
+      const key = JSON.stringify([identity, canonicalArticleUrl(event.url)]);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ event, feed, feedIndex, rowIndex });
+    });
+  });
+  const changes = new Map();
+  const quality = event => ({ confirmed: 3, related: 2, uncertain: 1, unrelated: 0 })[event.attribution?.status] ?? 0;
+  for (const group of groups.values()) {
+    if (new Set(group.map(item => item.feed.id)).size < 2) continue;
+    // Prefer stronger article/company evidence; equal evidence keeps the Company news route.
+    const winner = [...group].sort((a, b) => quality(b.event) - quality(a.event) || Number(b.feed.id === 'news') - Number(a.feed.id === 'news'))[0];
+    const provenance = group.flatMap(({ event, feed }) => event.newsProvenance || [{ feed: feed.id, eventId: event.id,
+      url: event.url, publisher: event.sourceRecord?.publisher || event.sourceRecord?.source || null,
+      discoverySource: event.sourceRecord?.discoverySource || null }]);
+    for (const item of group) changes.set(`${item.feedIndex}:${item.rowIndex}`, item === winner ? { ...winner.event,
+      newsProvenance: [...new Map(provenance.map(record => [JSON.stringify(record), record])).values()] } : null);
+  }
+  if (!changes.size) return feeds;
+  return feeds.map((feed, feedIndex) => {
+    const events = feed.events.flatMap((event, rowIndex) => {
+      const key = `${feedIndex}:${rowIndex}`;
+      return !changes.has(key) ? [event] : changes.get(key) ? [changes.get(key)] : [];
+    });
+    return { ...feed, events, count: events.length, todayCount: events.filter(event => event.day === day).length };
+  });
+}
+
 function assemble({ day, scope, holdings, includeHistory, settledFeeds, requestedCompanies = [] }) {
   const scoped = scopeMatcher(scope, holdings);
   const requested = new Set(requestedCompanies.map(company => company.ticker).filter(Boolean));
@@ -691,7 +734,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   const portfolioEntities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
   const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
   const scopeContext = { scope, wanted, entityIds: portfolioNewsIds, requestedEntities };
-  const feeds = FEEDS.map(
+  const scopedFeeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ).map((settled) => {
     // Private results can be cleared while public reads are in flight. Never let an old partial
@@ -716,6 +759,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };
   });
 
+  const feeds = dedupePublisherAlertFeeds(scopedFeeds, { day, entities: portfolioEntities });
   const events = [];
   for (const f of feeds) for (const ev of f.events) events.push({ ...ev, feed: f.id, feedLabel: f.label, tab: f.tab });
   events.sort(byNewestFirst);

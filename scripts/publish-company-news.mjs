@@ -2,12 +2,13 @@
 // Normal Actions data publication only. Never rebase generated files, force-push, reset main,
 // or overwrite the capture checkout. Each attempt starts in a fresh disposable latest-main
 // worktree and semantically reconciles the immutable captured records into it.
-import { cpSync, existsSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { mergeCaptureData } from './lib/company-news-publish.mjs';
+import { assessFilingsHealth } from '../public/js/data/filings-health-shared.js';
 
 const git = (cwd, args, { mayFail = false } = {}) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
@@ -17,7 +18,7 @@ const git = (cwd, args, { mayFail = false } = {}) => {
 const inside = (path, root) => realpathSync(path).startsWith(realpathSync(root) + sep);
 
 export async function publishCompanyNews({ repoDir = process.cwd(), captureDataDir = join(repoDir, 'public/data'),
-  attempts = 4, fixtureRoot = null, beforePush = async () => {}, verify = async () => {} } = {}) {
+  attempts = 4, fixtureRoot = null, beforePush = async () => {}, verify = async () => {}, healthNow = null } = {}) {
   repoDir = realpathSync(repoDir);
   // The callable fixture seam cannot target a hosted remote. All non-Actions tests must keep
   // both checkout and local bare origin inside their own explicitly supplied temporary root.
@@ -57,18 +58,28 @@ export async function publishCompanyNews({ repoDir = process.cwd(), captureDataD
       const changed = git(worktree, ['diff', '--cached', '--name-only']).output.split('\n').filter(Boolean);
       if (changed.some(path => path !== 'public/data/news.json' && !path.startsWith('public/data/news.parts/') && !path.startsWith('public/data/company-news/')))
         throw Error('company-news-publication-path-outside-scope');
-      if (!changed.length) return { ok: true, outcome: 'already-retained', attempts: attempt, commit: latest, ...merged };
+      const finish = (outcome, commit) => {
+        // Assess the exact committed index, never the original capture checkout or mutable
+        // remote main. This stays tied to the published version even if main advances again.
+        // Incomplete coverage fails the job only AFTER useful partial data is preserved.
+        let index = null;
+        try { index = JSON.parse(git(worktree, ['show', `${commit}:public/data/company-news/index.json`]).output); } catch {}
+        const health = { ...assessFilingsHealth({ news: index }, { sources: ['news'], now: healthNow ?? Date.now() }),
+          publicationCommit: commit, publicationOutcome: outcome };
+        return { ok: health.ok, published: true, outcome, attempts: attempt, commit, ...merged, health };
+      };
+      if (!changed.length) return finish('already-retained', latest);
       git(worktree, ['-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
         'commit', '-m', `Company news refresh (${merged.capturedAt})`]);
       const commit = git(worktree, ['rev-parse', 'HEAD']).output;
       await beforePush({ attempt, worktree, commit, base: latest });
       if (git(worktree, ['push', 'origin', 'HEAD:refs/heads/main'], { mayFail: true }).ok)
-        return { ok: true, outcome: 'published', attempts: attempt, commit, ...merged };
+        return finish('published', commit);
       // Distinguish a real main-branch race from authentication/protection/network refusal.
       // An ambiguous response that actually published this commit is success, not a second push.
       git(repoDir, ['fetch', '--no-tags', 'origin', 'main']);
       const after = git(repoDir, ['rev-parse', 'FETCH_HEAD']).output;
-      if (after === commit) return { ok: true, outcome: 'published', attempts: attempt, commit, ...merged };
+      if (after === commit) return finish('published', commit);
       if (after === latest) throw Error('company-news-push-refused-without-main-change');
     }
     throw Error('company-news-publication-retry-budget-exhausted');
@@ -86,7 +97,16 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       const checked = spawnSync(process.execPath, ['scripts/check-news-capacity.mjs'], { cwd: worktree, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
       if (checked.status !== 0) throw Error('company-news-reconciled-capacity-check-failed');
     } });
+    if (process.env.FILINGS_HEALTH_REPORT) writeFileSync(process.env.FILINGS_HEALTH_REPORT, `${JSON.stringify(report.health, null, 2)}\n`);
+    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+      `\n## Published company-news health\n\nCommit: \`${report.commit}\` · Status: **${report.health.status}** · ${report.health.critical} critical findings\n\n` +
+      report.health.findings.map(finding => `- ${finding.severity}: ${finding.code} (${finding.count})`).join('\n') +
+      '\n\nThe exact committed index was checked after publication. Retained records were published even when coverage remained incomplete; this does not certify exhaustive provider coverage.\n');
     console.log(JSON.stringify(report));
+    if (!report.ok) {
+      if (process.env.GITHUB_ACTIONS === 'true') console.error('::error::Published company-news coverage is incomplete. See the commit-bound health report; captured records were retained.');
+      process.exitCode = 1;
+    }
   } catch (error) {
     console.error(JSON.stringify({ ok: false, code: /^company-news-[a-z-]+$/.test(error.message) ? error.message : 'company-news-reconciliation-failed',
       note: 'Captured data is retained in the workflow artifact. No force push or capture-job replay was performed.' }));

@@ -1,12 +1,50 @@
 #!/usr/bin/env node
 // Synthetic reads only: no production requests or collection dispatches.
 import assert from 'node:assert/strict';
-import { withPortfolioPublisherNews } from '../public/js/data/portfolio-publisher-news.js';
+import { withPortfolioPublisherNews, publisherNewsDate } from '../public/js/data/portfolio-publisher-news.js';
 import { createFeed } from '../public/js/data/filings.js';
 import * as marketNews from '../public/js/data/market-news.js';
 import { withTradingViewNews, NEWS_SNAPSHOT_POLL_MS } from '../public/js/data/tradingview-news.js';
 import { portfolioNewsEntities, filterCompanyNewsByScope } from '../public/js/data/company-news-identity.js';
-import { mapPortfolioDiscoveryEvents, newsSignal } from '../public/js/data/daily-alerts.js';
+import { mapPortfolioDiscoveryEvents, newsSignal, dedupePublisherAlertFeeds } from '../public/js/data/daily-alerts.js';
+
+for (const [publishedAt, expected] of [
+  ['2026-09-03T18:29:59Z', '2026-09-03'], ['2026-09-03T18:30:00Z', '2026-09-04'],
+  ['2026-09-30T20:00:00Z', '2026-10-01'], ['2026-12-31T18:30:00Z', '2027-01-01'],
+  ['2026-09-04T00:00:00+05:30', '2026-09-04'],
+]) assert.equal(publisherNewsDate({ publishedAt }), expected, `publisher fallback uses the IST calendar: ${publishedAt}`);
+assert.equal(publisherNewsDate({ date: '2026-09-03', publishedAt: '2026-09-03T20:00:00Z' }), '2026-09-03', 'explicit valid source day is not rewritten');
+assert.equal(publisherNewsDate({ date: '2026-02-30', publishedAt: '2026-09-03T20:00:00Z' }), '2026-09-04', 'invalid calendar date falls back to the source instant');
+assert.equal(publisherNewsDate({ date: '2024-02-29' }), '2024-02-29', 'valid leap day is respected');
+assert.equal(publisherNewsDate({ publishedAt: 'invalid' }), null);
+assert.equal(publisherNewsDate({}), null, 'missing source date stays undated');
+
+const unionDay = '2026-09-04', unionSource = { title: 'Company A and B enter an agreement', publisher: 'Economic Times' };
+const unionRow = { id: 'company-a', ticker: 'AAA', entityId: 'isin:AAA', day: unionDay,
+  url: 'https://www.example.test/story/', sourceRecord: unionSource, attribution: { status: 'confirmed' } };
+const unionFeed = (id, events) => ({ id, events, count: events.length, todayCount: events.length, sourceCount: events.length });
+const unionInput = [unionFeed('news', [unionRow, { ...unionRow, id: 'company-b', ticker: 'BBB', entityId: 'isin:BBB' }]),
+  unionFeed('market-news', [{ ...unionRow, id: 'publisher-a', entityId: 'ticker:AAA', url: 'https://example.test/story' },
+    { ...unionRow, id: 'publisher-b', ticker: 'BBB', entityId: 'isin:BBB' },
+    { ...unionRow, id: 'unmatched', ticker: null, entityId: null },
+    { ...unionRow, id: 'other-publisher', url: 'https://other.test/story' },
+    { ...unionRow, id: 'history', url: 'https://example.test/history', day: '2026-08-01' }]),
+  unionFeed('announcements', [{ ...unionRow, id: 'filing' }])];
+const unionOriginal = JSON.stringify(unionInput);
+const union = dedupePublisherAlertFeeds(unionInput, { day: unionDay, entities: [{ ticker: 'AAA', entityId: 'isin:AAA' }] });
+assert.equal(union[0].count, 2, 'same publisher article remains attributed once to each company');
+assert.equal(union[1].count, 3, 'unmatched Universe, other publisher URL and older history all survive');
+assert.equal(union[1].todayCount, 2, 'display counts use the same deduplicated events as export');
+assert.equal(union[1].sourceCount, 5, 'source collection count is not rewritten');
+assert.equal(union[2].count, 1, 'non-news records are never collapsed with news');
+assert.equal(union[0].events[0].sourceRecord, unionSource, 'preferred source evidence remains intact');
+assert.deepEqual(union[0].events[0].newsProvenance.map(record => record.feed), ['news', 'market-news']);
+assert.equal(JSON.stringify(unionInput), unionOriginal, 'deduplication never edits source arrays or raw records');
+assert.equal(dedupePublisherAlertFeeds(union, { day: unionDay }), union, 'deduplication is idempotent');
+const stronger = dedupePublisherAlertFeeds([unionFeed('news', [{ ...unionRow, attribution: { status: 'uncertain' } }]),
+  unionFeed('market-news', [{ ...unionRow, id: 'confirmed-publisher' }])], { day: unionDay });
+assert.equal(stronger[1].events[0].id, 'confirmed-publisher', 'stronger company evidence wins over a weaker company-search copy');
+assert.equal(stronger[1].events[0].newsProvenance.length, 2);
 
 const now = Date.now(), capturedAt = new Date(now).toISOString();
 const holding = { ticker: 'KISSHT', name: 'OnEMI Technology Solutions', isin: 'INE12F801023' };
@@ -42,6 +80,7 @@ assert.equal(coreLoaded, false, 'company search can still be pending');
 assert.equal(feed.rows().length, 1, 'Economic Times reaches Portfolio News before the core finishes');
 assert.equal(feed.rows()[0].ticker, 'KISSHT');
 assert.equal(feed.rows()[0].source, 'Economic Times');
+assert.equal(feed.rows()[0].date, '2026-09-04');
 assert.equal(feed.rows()[0].publisherSourceRecord, et, 'raw publisher evidence is preserved');
 assert(!('ticker' in et), 'projection never changes the raw market record');
 assert.equal(publishers.rows().length, 2, 'unmatched records remain searchable in Universe');

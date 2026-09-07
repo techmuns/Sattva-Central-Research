@@ -159,6 +159,10 @@ try {
   const newsPublish = newsWorkflow.indexOf('node scripts/publish-company-news.mjs');
   assert(newsPublish > 0 && newsWorkflow.indexOf('Check company-news capture health') > newsPublish,
     'news health gate preserves progress before failing incomplete captures');
+  assert(newsWorkflow.includes("if: success() && github.ref != 'refs/heads/main'"),
+    'main cannot certify the unreconciled original checkout after publishing a different index');
+  const publishStep = newsWorkflow.slice(newsWorkflow.indexOf('name: Publish company news and check reconciled health'), newsPublish);
+  assert(publishStep.includes('FILINGS_HEALTH_REPORT:'), 'main publishes the reconciled commit-bound health artifact');
   const announcementsWorkflow = readFileSync(new URL('../.github/workflows/announcements-refresh.yml', import.meta.url), 'utf8');
   assert(announcementsWorkflow.indexOf('Check operational capture health') > announcementsWorkflow.indexOf('git push origin HEAD:main'), 'announcement health gate runs after preserving/publishing captured progress');
   const insiderWorkflow = readFileSync(new URL('../.github/workflows/insider-trades-refresh.yml', import.meta.url), 'utf8');

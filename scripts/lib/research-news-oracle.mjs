@@ -15,8 +15,8 @@ export function matchesCapturedNews(row, captured) {
   const expected = titleText(captured.title), actual = titleText(row.title);
   if (!expected || !actual) return false;
   if (expected === actual) return true;
-  // Without a stable URL, a short arbitrary prefix is not enough to identify an article.
+  // A stable URL cannot excuse a mostly missing headline: evaluate the actual projection.
   // The company-news adapter's actual title budget is 420 characters, including ellipsis.
-  return actual.endsWith('…') && (expectedUrl ? actual.length > 1 : actual.length === 420) &&
+  return expected.length > 420 && actual.endsWith('…') && actual.length === 420 &&
     expected.startsWith(actual.slice(0, -1));
 }

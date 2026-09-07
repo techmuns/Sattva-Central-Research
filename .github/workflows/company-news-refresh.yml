@@ -87,13 +87,16 @@ jobs:
             public/data/company-news/
           if-no-files-found: warn
 
-      - name: Commit company news to main
+      - name: Publish company news and check reconciled health
         if: success() && github.ref == 'refs/heads/main'
+        env:
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/company-news-health.json
         run: node scripts/publish-company-news.mjs
 
-      # Save partial progress first; an empty or failed newest query must still fail the run.
-      - name: Check company-news capture health
-        if: success()
+      # Main's publisher assesses its exact committed index after preserving partial progress.
+      # Non-main captures are not published, so only those may assess the original checkout.
+      - name: Check company-news capture health without publication
+        if: success() && github.ref != 'refs/heads/main'
         env:
           FILINGS_HEALTH_REPORT: ${{ runner.temp }}/company-news-health.json
         run: node scripts/check-filings-health.mjs news

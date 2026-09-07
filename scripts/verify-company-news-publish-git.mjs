@@ -9,11 +9,13 @@ import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { publishCompanyNews } from './publish-company-news.mjs';
 import { readNewsJson, writeNewsJson } from './lib/news-json-storage.mjs';
+import { assessFilingsHealth } from '../public/js/data/filings-health-shared.js';
 
 // process.cwd() resolves macOS /var aliases; canonicalize before constructing any fixture paths.
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'sattva-company-news-git-')));
 const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();
 const initialPath = process.env.PATH;
+const healthNow = Date.parse('2026-09-07T07:30:00Z');
 const identity = { entityId: 'isin:INE12F801023', key: 'KISSHT', ticker: 'KISSHT',
   name: 'OnEMI Technology Solutions', legalName: 'OnEMI Technology Solutions Limited', queries: ['OnEMI Technology Solutions'] };
 const article = id => ({ entityId: identity.entityId, ticker: identity.ticker, company: identity.name,
@@ -28,7 +30,7 @@ function saveCapture(checkout, rows, at) {
     from: '2026-08-08', empty: [], failed: {}, queryCoverage: { planned: 1, succeeded: 1, failed: 0 },
     archive: { index: 'company-news/index.json' } });
   writeNewsJson(join(data, 'company-news/2026-09.json'), { month: '2026-09', articles: rows });
-  writeNewsJson(join(data, 'company-news/index.json'), { createdAt: '2026-09-07T06:00:00Z', updatedAt: at,
+  writeNewsJson(join(data, 'company-news/index.json'), { version: 1, createdAt: '2026-09-07T06:00:00Z', updatedAt: at,
     entities: [identity], queries: { [identity.entityId]: { [identity.name]: { lastAttemptAt: at, lastSuccessAt: at, coveredThrough: '2026-09-07' } } },
     archive: [{ file: 'company-news/2026-09.json', month: '2026-09', count: rows.length }], articleCount: rows.length });
 }
@@ -100,7 +102,7 @@ try {
 
   const race = setup('race-recovered'), beforeRace = preservation(race), checks = [], attempts = [];
   let competingCommit;
-  const published = await publishCompanyNews({ repoDir: race.checkout, fixtureRoot: race.root,
+  const published = await publishCompanyNews({ repoDir: race.checkout, fixtureRoot: race.root, healthNow,
     verify: async (worktree, result) => {
       assert(readNewsJson(join(worktree, 'public/data/news.json')).byTicker.KISSHT.some(row => row.url === article('captured').url));
       checks.push(result.archiveRows);
@@ -114,6 +116,8 @@ try {
       }
     } });
   assert.equal(published.outcome, 'published'); assert.equal(published.attempts, 2);
+  assert.equal(published.ok, true); assert.equal(published.health.ok, true);
+  assert.equal(published.health.publicationCommit, published.commit, 'health is bound to the actual successfully published commit');
   assert.deepEqual(attempts, [1, 2]); assert.equal(checks.length, 2, 'each semantic merge is verified before its push');
   assert.equal(git(race.remote, 'rev-parse', 'refs/heads/main^'), competingCommit, 'published data is a descendant of current main');
   assert.deepEqual(urls(remoteHead(race).byTicker.KISSHT), urls([article('base'), article('captured'), article('competing-1')]));
@@ -122,8 +126,9 @@ try {
   assert.equal(JSON.parse(remoteText(race, 'public/data/other-source.json')).version, 'latest-main-1', 'other writers retain their data');
   assert.deepEqual(preservation(race), beforeRace, 'publication never rewrites the original capture workspace or uploaded artifact');
   const mergedCommit = git(race.remote, 'rev-parse', 'refs/heads/main');
-  const unchanged = await publishCompanyNews({ repoDir: race.checkout, fixtureRoot: race.root });
+  const unchanged = await publishCompanyNews({ repoDir: race.checkout, fixtureRoot: race.root, healthNow });
   assert.equal(unchanged.outcome, 'already-retained', 'retrying the same retained capture is idempotent');
+  assert.equal(unchanged.ok, true); assert.equal(unchanged.health.publicationCommit, mergedCommit);
   assert.equal(git(race.remote, 'rev-parse', 'refs/heads/main'), mergedCommit);
 
   const exhausted = setup('race-exhausted'), beforeExhaustion = preservation(exhausted), exhaustedAttempts = [];
@@ -146,6 +151,45 @@ try {
   assert.equal(calls().slice(refusalCalls).filter(call => call.args[0] === 'push').length, 1, 'unchanged-main refusal is not treated as a retryable race');
   assert.deepEqual(preservation(refused), beforeRefusal);
   assert.deepEqual(urls(remoteHead(refused).byTicker.KISSHT), [article('base').url]);
+
+  // A concurrent main update introduces an unvisited alias. The original capture remains
+  // healthy, but the actual reconciled published index must fail health without losing data.
+  const partial = setup('published-partial'), beforePartial = preservation(partial);
+  const originalIndex = readNewsJson(join(partial.checkout, 'public/data/company-news/index.json'));
+  assert.equal(assessFilingsHealth({ news: originalIndex }, { sources: ['news'], now: healthNow }).ok, true);
+  const partialResult = await publishCompanyNews({ repoDir: partial.checkout, fixtureRoot: partial.root, healthNow,
+    beforePush: async ({ attempt, worktree }) => {
+      if (attempt !== 1) {
+        // Simulate mutable worktree state diverging after the commit. It is not pushed and
+        // cannot replace the exact committed snapshot as the health audit's evidence.
+        const path = join(worktree, 'public/data/company-news/index.json');
+        const transient = readNewsJson(path);
+        transient.entities[0].queries = [identity.name];
+        writeNewsJson(path, transient);
+        assert.equal(assessFilingsHealth({ news: transient }, { sources: ['news'], now: healthNow }).ok, true);
+        return;
+      }
+      advanceMain(partial, 1);
+      const path = join(partial.competing, 'public/data/company-news/index.json');
+      const current = readNewsJson(path);
+      current.entities[0].queries.push('New reviewed alias not searched yet');
+      writeNewsJson(path, current);
+      git(partial.competing, 'add', 'public/data/company-news/index.json');
+      git(partial.competing, 'commit', '-m', 'Concurrent reviewed alias awaiting capture');
+      git(partial.competing, 'push', 'origin', 'HEAD:refs/heads/main');
+    } });
+  assert.equal(partialResult.published, true); assert.equal(partialResult.outcome, 'published');
+  assert.equal(partialResult.ok, false, 'publication success is not a healthy coverage result');
+  assert.equal(partialResult.health.ok, false);
+  assert.equal(partialResult.attempts, 2, 'a healthy stale checkout cannot determine the retried publication health');
+  assert(partialResult.health.findings.some(f => f.code === 'company-never-checked'));
+  assert.equal(partialResult.health.publicationCommit, git(partial.remote, 'rev-parse', 'refs/heads/main'));
+  assert.deepEqual(urls(remoteHead(partial).byTicker.KISSHT), urls([article('base'), article('captured'), article('competing-1')]),
+    'partial merged coverage is published, not discarded when the health result fails');
+  assert.deepEqual(preservation(partial), beforePartial, 'partial health preserves the original healthy checkout and artifact');
+  const partialRetained = await publishCompanyNews({ repoDir: partial.checkout, fixtureRoot: partial.root, healthNow });
+  assert.equal(partialRetained.outcome, 'already-retained'); assert.equal(partialRetained.ok, false,
+    'an idempotent already-retained publication still checks its reconciled incomplete index');
 
   const commands = calls();
   assert(commands.every(call => !['reset', 'rebase', 'checkout'].includes(call.args[0])), 'no reset, rebase or checkout can discard the capture');

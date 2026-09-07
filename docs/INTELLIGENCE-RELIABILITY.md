@@ -117,6 +117,9 @@ using reviewed portfolio identities. It does not wait for the three-hour company
 The underlying publisher records stay in the market-wide archive, including unmatched stories.
 Portfolio additions are matched against retained records automatically; exiting a company changes
 scope, not the archive. Company/URL duplicates are combined without deduplicating across companies.
+All Alerts also combines the same company's article when both the company-news and publisher
+routes deliver it, retaining both routes' provenance and using the unique rows for counts/export.
+Publisher publication instants without a separate calendar date use the Indian calendar day.
 
 News uses its existing two-minute visible snapshot check for company search, publisher captures
 and TradingView together. All Alerts and AI Alerts revalidate every 90 seconds while visible and
@@ -144,6 +147,8 @@ transient network/502/503/504 failure gets one bounded retry; access denials and
 not. Response-body size is bounded before decoding. No incomplete manifest replaces the last
 good cache. Open documents check the app version every five visible minutes and on overdue
 return, with the existing upgrade mechanism deferring reload during paid research streams.
+The first service-worker claim does not reload fresh modules, but is remembered so later
+deployments also upgrade documents that originally opened without a controlling worker.
 
 Normal company-news capture runs `compact-news-data.mjs --write` before publication. This is
 representation maintenance, not retention deletion: only identical source content is combined,
@@ -186,7 +191,10 @@ an updated index or retained archive cannot conceal missing queries. Historical 
 not treated as proof of current coverage.
 
 The company-news workflow saves captured progress before running its health gate. An incomplete
-capture consequently retains its useful history and fails the operational check. Reports contain
+capture consequently retains its useful history and fails the operational check. On main, the
+gate reads the exact reconciled, published commit's index before removing its temporary worktree;
+a healthy original capture cannot certify new aliases or companies introduced during collection.
+The report records the publication commit separately from its coverage result. Reports contain
 controlled diagnostic codes and identity keys, never upstream credential/error bodies. The health
 endpoint reads static assets only and returns HTTP 503 for critical core-source findings. GitHub
 notification delivery still depends on the operator's notification settings and scheduler; there

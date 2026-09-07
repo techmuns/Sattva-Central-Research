@@ -7,6 +7,18 @@ import { portfolioNewsEntities } from './company-news-identity.js';
 import { matchPortfolioNews } from './portfolio-news-matching.js';
 import { dedupeArticles, isoDate } from './filings-shared.js';
 
+const indianDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+/** An explicit publisher calendar date wins; only an instant fallback needs timezone conversion. */
+export function publisherNewsDate(row = {}) {
+  const date = isoDate(row.date);
+  const midnight = date && Date.parse(`${date}T00:00:00Z`);
+  if (Number.isFinite(midnight) && new Date(midnight).toISOString().slice(0, 10) === date) return date;
+  const instant = row.publishedAt && Date.parse(row.publishedAt);
+  if (!Number.isFinite(instant)) return null;
+  const parts = Object.fromEntries(indianDay.formatToParts(instant).map(part => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 export function withPortfolioPublisherNews(base, { publishers = marketNews, book = coverage,
   now = Date.now } = {}) {
   const listeners = new Set(), wanted = new Map();
@@ -42,7 +54,7 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     // Head/body-backed publisher matches are preferred over an older uncertain search copy at
     // the same company URL; dedupe never crosses companies or publisher domains.
     for (const row of published) for (const match of matchPortfolioNews(row, entities)) add({
-      ...match, source: row.source || row.publisher || null, date: row.date || isoDate(row.publishedAt),
+      ...match, source: row.source || row.publisher || null, date: publisherNewsDate(row),
       discoverySource: 'published-publisher-feed', publisherSourceRecord: row,
     });
     source.forEach(add);

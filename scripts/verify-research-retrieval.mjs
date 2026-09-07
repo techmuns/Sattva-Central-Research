@@ -49,7 +49,8 @@ const capturedLatest = { ticker: 'ADANIENT', company: 'Adani Enterprises', date:
   url: 'https://economictimes.indiatimes.com/markets/stocks/stock-liveblog/adani-ent-stock-price-live-updates-07-sep-2026/liveblog/133860680.cms' };
 const includedLatest = { ...capturedLatest, attribution: 'confirmed', title: capturedLatest.title.replace(/\s+/g, ' ') };
 assert(matchesCapturedNews(includedLatest, capturedLatest), 'literal whitespace normalization does not create a missing-news false positive');
-assert(matchesCapturedNews({ ...includedLatest, title: 'Adani Ent Share Price Live Updates: Adani Enterprises…' }, capturedLatest), 'explicitly clipped literal headlines match the same dated captured article');
+assert(!matchesCapturedNews({ ...includedLatest, title: 'Adani Ent Share Price Live Updates: Adani Enterprises…' }, capturedLatest), 'a matching URL cannot justify truncating a headline below its actual budget');
+assert(!matchesCapturedNews({ ...includedLatest, title: 'A…' }, capturedLatest), 'a matching URL cannot turn a near-empty headline into retrieved evidence');
 assert(matchesCapturedNews({ ...includedLatest, url: null }, { ...capturedLatest, url: null }), 'URL-less retained articles use the normalized literal headline');
 for (const change of [{ attribution: 'uncertain' }, { ticker: 'OTHER' }, { ticker: null }, { date: '2026-09-06' }, { title: 'Different company development' },
   { title: '' },
@@ -62,6 +63,9 @@ assert(!matchesCapturedNews({ ...includedLatest, ticker: null, isin: 'OTHER' }, 
 assert(!matchesCapturedNews({ ...includedLatest, title: 'A…', url: null }, { ...capturedLatest, url: null }), 'a near-empty URL-less prefix cannot identify an article');
 const longTitle = 'Literal captured company development '.repeat(16);
 assert(matchesCapturedNews({ ...includedLatest, title: `${longTitle.slice(0, 419)}…`, url: null }, { ...capturedLatest, title: longTitle, url: null }), 'URL-less fallback supports the actual 420-character headline boundary');
+assert(matchesCapturedNews({ ...includedLatest, title: `${longTitle.slice(0, 419)}…` }, { ...capturedLatest, title: longTitle }), 'URL-backed articles support the actual 420-character headline boundary');
+assert(!matchesCapturedNews({ ...includedLatest, title: `${longTitle.slice(0, 418)}…` }, { ...capturedLatest, title: longTitle }), 'URL-backed clipping one character before the actual boundary is rejected');
+assert(!matchesCapturedNews({ ...includedLatest, title: `${longTitle.slice(0, 419)}…` }, { ...capturedLatest, title: longTitle.slice(0, 420) }), 'an exactly 420-character source title must not be truncated');
 const noCompanyRows = chooseRows([{ ticker: 'OTHER', title: 'Latest material news' }], latestPlan, r => r);
 assert.equal(noCompanyRows.companyRows, 0);
 assert.deepEqual(noCompanyRows.rows, []);
