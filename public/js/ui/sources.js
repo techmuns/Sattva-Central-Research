@@ -21,6 +21,7 @@ import * as concalls from '../data/concall-scans.js';
 import * as earningsLive from '../data/earnings-live.js';
 import * as chatter from '../data/chatter-live.js';
 import * as telegramPosts from '../data/telegram-posts.js';
+import { telegramReadHealth } from '../data/telegram-health.js';
 import * as institutions from '../data/institution-holdings.js';
 import * as technicals from '../data/technicals.js';
 import { announcements as annFeed, news as newsFeed } from '../data/filings.js';
@@ -705,7 +706,6 @@ export function sourceGroups() {
     ['Live published-results feed', earningsLive.meta(), 10 * 60000],
     ['Con-call scans — third-party research provider', concalls.meta(), 10 * 60000],
     ['SentimentDash — mention counts and sentiment', chatter.meta(), 26 * 3600000],
-    ['Telegram — a public research channel', tgMeta, 2 * 3600000],
     ['BSE — corporate announcements, indexed by date', annFeed.meta(), 4 * 3600000],
     ['NSE — live exchange announcements', nseFeed.meta(), 15 * 60000],
   ];
@@ -716,6 +716,8 @@ export function sourceGroups() {
       failed: !!meta?.reason || !!meta?.degraded || !!meta?.lastReadFailed || !!meta?.error,
       partial: Number(meta?.failed) > 0 || (Array.isArray(meta?.failures) ? meta.failures.length > 0 : Number(meta?.failures) > 0), maxAgeMs });
   }
+  const telegramSource = groups.flatMap(g => g.items).find(i => i.name === 'Telegram — a public research channel');
+  if (telegramSource) telegramSource.readState = sourceReadState(telegramReadHealth(tgMeta || {}));
   // Keep roadmap and credential implementation details in the code/docs, outside the source
   // count. Configured sources with a failed read remain listed with their actual read state.
   return groups.map(g => ({ ...g, items: g.items.filter(i => !i.planned && !i.internal).map(i => {

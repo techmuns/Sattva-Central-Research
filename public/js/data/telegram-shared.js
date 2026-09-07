@@ -2,10 +2,21 @@
 export const TELEGRAM_REPO = 'techmuns/Sattva-Central-Research';
 export const TELEGRAM_WORKFLOW = 'telegram-refresh.yml';
 export const TELEGRAM_ARTIFACT = 'telegram-posts-v1.json.gz';
+export const TELEGRAM_HEAD_ARTIFACT = 'telegram-head-v1.json.gz';
 export const TELEGRAM_COMPRESSED_LIMIT = 8 * 1024 * 1024;
 export const TELEGRAM_LIMIT = 16 * 1024 * 1024;
 const stamp = (v, now) => typeof v === 'string' && Number.isFinite(Date.parse(v)) && Date.parse(v) <= now + 300000 ? v : null;
 const positive = (v) => Number.isSafeInteger(v) && v > 0;
+export function telegramCatchupRanges(value = []) {
+  if (!Array.isArray(value) || value.length > 10000 || value.some(r => !positive(r?.from) || !positive(r?.to) || r.from > r.to)) throw Error('Invalid Telegram catch-up ranges');
+  const merged = [];
+  for (const range of value.map(({ from, to }) => ({ from, to })).sort((a, b) => a.from - b.from)) {
+    const last = merged.at(-1);
+    if (last && range.from <= last.to + 1) last.to = Math.max(last.to, range.to);
+    else merged.push(range);
+  }
+  return merged;
+}
 export function validateTelegramCapture(v, now = Date.now()) {
   if (v?.schemaVersion !== 2 || v.channel !== 'researchreportss' || !Array.isArray(v.posts) || !v.posts.length || v.posts.length > 150000 ||
       !stamp(v.lastRun?.at, now) || !['ok', 'partial', 'failed'].includes(v.lastRun?.status)) throw Error('Invalid Telegram capture');
@@ -33,6 +44,7 @@ export function validateTelegramCapture(v, now = Date.now()) {
     headId: posts[0].id, lowestId: posts.at(-1).id, spanFrom: posts.at(-1).id, spanTo: posts[0].id,
     historyNextId: positive(v.historyNextId) ? v.historyNextId : 0, historyComplete: v.historyComplete === true,
     discoveryNextId: positive(v.discoveryNextId) ? v.discoveryNextId : 0,
+    catchupRanges: telegramCatchupRanges(v.catchupRanges),
     retryIds: (v.retryIds || []).filter(positive),
     publicSafety: v.publicSafety ? { reason: v.publicSafety.reason, nextAttemptAt: v.publicSafety.nextAttemptAt } : null,
     apiSafety: v.apiSafety ? { paused: v.apiSafety.paused === true || !['rate-limit', 'connection', 'cooldown', 'account-attention'].includes(v.apiSafety.reason) || !!(v.apiSafety.nextAttemptAt && !Number.isFinite(Date.parse(v.apiSafety.nextAttemptAt))),

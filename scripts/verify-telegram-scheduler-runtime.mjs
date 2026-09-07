@@ -79,11 +79,12 @@ const read = async () => (await fetch(`${origin}/status`)).json();
 const post = path => fetch(`${origin}${path}`, {method:'POST'});
 try {
   await start();
-  assert.deepEqual(await read(), {enabled:false,intervalSeconds:600,nextAttemptAt:null,lastAttemptAt:null,lastResult:'not-started',reason:null,failures:0,alarm:null,posts:0});
+  assert.deepEqual(await read(), {enabled:false,intervalSeconds:600,alarmAt:null,nextAttemptAt:null,lastAttemptAt:null,lastResult:'not-started',reason:null,failures:0,activeRun:null,runOverdue:false,alarm:null,posts:0});
   const results=await Promise.all(Array.from({length:12},async()=> (await post('/start')).json()));
   assert.equal(results.filter(result=>result.dispatched).length,1);
   const first=await read();
   assert.equal(first.posts,1); assert(first.alarm>Date.now());
+  assert.equal(first.alarmAt,new Date(first.alarm).toISOString(),'read-only status reflects the actual runtime alarm');
   const company=await (await fetch(`${origin}/company`)).json();
   assert.equal(company.companies.length,1);
   assert.equal(company.alarm,null,'company registry objects never arm collection');

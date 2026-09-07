@@ -15,7 +15,12 @@ function integer(env, key, fallback, min, max) {
 export function config(env = process.env) {
   const channel = String(env.TELEGRAM_CHANNEL || 'researchreportss').replace(/^@/, '').toLowerCase();
   if (!CHANNEL_RE.test(channel)) throw new Error('Invalid Telegram channel username');
+  const phase = env.TELEGRAM_PHASE || 'full';
+  if (!['full', 'recent', 'history'].includes(phase)) throw new Error('Invalid Telegram collection phase');
+  const jumpShare = Number(env.TELEGRAM_JUMP_SHARE ?? 0.4);
+  if (!Number.isFinite(jumpShare) || jumpShare < 0 || jumpShare > 0.8) throw new Error('TELEGRAM_JUMP_SHARE must be between 0 and 0.8');
   return { channel, out: resolve(env.TELEGRAM_OUT || resolve(ROOT, 'public/data/telegram-posts.json')),
+    phase,
     history: integer(env, 'TELEGRAM_BACKFILL', 180, 0, 100000),
     forward: integer(env, 'TELEGRAM_FORWARD', 60, 1, 10000),
     discovery: integer(env, 'TELEGRAM_DISCOVERY', 20, 0, 1000),
@@ -30,10 +35,24 @@ export function config(env = process.env) {
     jumpSamples: integer(env, 'TELEGRAM_JUMP_SAMPLES', 40, 4, 400),
     // The share of the run the head search may spend. It must never take the whole budget:
     // finding the head and then having no requests left to READ it writes the capture unchanged.
-    jumpShare: Number(env.TELEGRAM_JUMP_SHARE ?? 0.4) };
+    jumpShare };
 }
 
-export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+// A bounded set of inclusive unread intervals, separate from older archive progress.
+// Coalescing excess intervals may re-read some IDs; it never drops an unread gap.
+function mergeRanges(ranges) {
+  const result = [];
+  for (const range of ranges.sort((a, b) => a.from - b.from)) {
+    if (!positiveId(range.from) || !positiveId(range.to) || range.from > range.to) throw new Error('Invalid Telegram catch-up interval');
+    const last = result.at(-1);
+    if (last && range.from <= last.to + 1) last.to = Math.max(last.to, range.to);
+    else result.push({ from: Number(range.from), to: Number(range.to) });
+  }
+  while (result.length > 128) result.splice(0, 2, { from: result[0].from, to: result[1].to });
+  return result.reverse();
+}
+
+export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), checkpoint = async () => {} } = {}) {
   if (prior.channel && prior.channel.toLowerCase() !== cfg.channel) throw new Error('Existing archive belongs to another channel; use a separate TELEGRAM_OUT');
   const started = now(), deadline = started + cfg.budget;
   const stamp = () => new Date(now()).toISOString();
@@ -46,10 +65,31 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
   const retry = new Set((prior.retryIds || []).filter(positiveId).map(Number));
   let head = [...byId.keys()].reduce((max, id) => Math.max(max, id), positiveId(prior.headId));
   let next = prior.schemaVersion === 2 ? Number(prior.historyNextId ?? head) : head;
+  let catchupRanges = mergeRanges((prior.catchupRanges || []).map((range) => ({ ...range })));
   let discoveryNext = positiveId(prior.discoveryNextId) || head + cfg.forward + 1;
   const stats = { scanned: 0, posts: 0, unavailable: 0, missing: 0, errors: 0 };
-  let checked = false, signature, failure = null;
+  // The workflow publishes a recent pass before starting history from this same file.
+  // Successful optional backfill cannot erase an unfinished required recent check.
+  const recentIncomplete = cfg.phase === 'history' && prior.lastRun?.phase === 'recent' && prior.lastRun.status !== 'ok';
+  let checked = false, checkedAt = null, signature, failure = null, searchFailed = false, control = false;
   const observed = new Map();
+
+  function snapshot(final = false) {
+    const posts = [...byId.values()].sort((a, b) => b.id - a.id);
+    const changed = JSON.stringify(posts) !== JSON.stringify(prior.posts || []);
+    const status = failure || publicSafety ? 'failed' : final && control && (checked || cfg.phase === 'history') && !recentIncomplete && !searchFailed && stats.errors === 0 ? 'ok' : 'partial';
+    return { schemaVersion: 2, source: 'Telegram public embeds and message pages', channel: cfg.channel,
+      channelUrl: `https://t.me/${cfg.channel}`, route: 'embed+permalink', publishesTime: true,
+      capturedAt: changed ? stamp() : prior.capturedAt || null,
+      lastCheckedAt: checked && !publicSafety && !searchFailed ? checkedAt : prior.lastCheckedAt || null,
+      latestVerifiedAt: null, publicSafety, apiSafety: prior.apiSafety || null,
+      headId: head, lowestId: posts.at(-1)?.id || 0, spanFrom: posts.at(-1)?.id || 0, spanTo: posts[0]?.id || 0,
+      historyNextId: next, historyComplete: next === 0 && catchupRanges.length === 0 && retry.size === 0 && !failure && !publicSafety,
+      catchupRanges: catchupRanges.map((range) => ({ ...range })),
+      discoveryNextId: discoveryNext, retryIds: [...retry].sort((a, b) => b - a),
+      lastRun: { at: stamp(), status, phase: cfg.phase, ...stats, error: publicSafety ? 'Public source requests paused' : failure }, posts };
+  }
+  const save = () => checkpoint(snapshot());
 
   async function page(path) {
     if (publicSafety) throw new Error('Public source requests paused');
@@ -65,6 +105,7 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
             const retryAt = /^\d+$/.test(retryAfter || '') ? now() + Number(retryAfter) * 1000 : Date.parse(retryAfter);
             publicSafety = { reason: response.status === 429 ? 'rate-limit' : 'source-refused',
               nextAttemptAt: new Date(Math.max(now() + (response.status === 429 ? 1800000 : 3600000), Number.isFinite(new Date(retryAt + 60000).getTime()) ? retryAt + 60000 : 0)).toISOString() };
+            await save();
             throw new Error('Public source requests paused');
           }
           throw new Error(`Telegram HTTP ${response.status}`);
@@ -103,6 +144,7 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
         p.text = p.text || old?.text || null;
         if (p.text) p.contentStatus = 'available';
         byId.set(id, { ...p, firstSeenAt: old?.firstSeenAt || stamp() });
+        if (head && id > head + 1) catchupRanges = mergeRanges([...catchupRanges, { from: head + 1, to: id }]);
         head = Math.max(head, id);
         stats.posts++;
         if (p.contentStatus === 'telegram-only') stats.unavailable++;
@@ -116,23 +158,23 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       result = { state: 'error', reason: String(err.message || err) };
     }
     observed.set(id, result);
+    if (stats.scanned % 25 === 0) await save();
     if (stats.scanned % 50 === 0) console.log(`Checked ${stats.scanned} IDs; ${byId.size} posts retained; ${retry.size} lookups pending.`);
     return result;
   }
   try {
+    if (byId.size) await save();
     const landing = await page(cfg.channel);
     signature = { title: metaOf(landing, 'og:title'), desc: metaOf(landing, 'og:description') };
     if (!signature.title) throw new Error('Telegram landing page not recognised');
     if (cfg.headHint > head) {
+      const cold = !head;
       if ((await visit(cfg.headHint)).state !== 'post') throw new Error('Supplied head hint is not a readable Telegram message');
-      next = head; // Re-scan the gap down to the retained history, without dropping anything.
+      if (cold) next = head;
     }
     if (!head) throw new Error('A first capture needs TELEGRAM_HEAD_HINT from a real message link');
-    // A successful known-message control is necessary before calling a quiet scan successful.
-    // The newest batch can disappear together (for example captionless attachments). Do not
-    // let those three missing posts prevent discovery of newer, still-public messages. Keep
-    // the fallback bounded and spread it through retained history rather than retrying a
-    // whole archive. Missing controls are retained; they are not proof of deletion.
+    // Old messages may disappear together. Try bounded, diverse controls; a matching new
+    // message from the recent scan below can also confirm the public source still works.
     const retained = [...byId.values()].sort((a, b) => b.id - a.id);
     const controls = [...new Set([
       ...retained.slice(0, 3),
@@ -140,105 +182,80 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       ...[0.1, 0.5, 0.9, 1].map((fraction) => retained[Math.floor((retained.length - 1) * fraction)]),
     ].filter(Boolean).map((post) => post.id))];
     if (!controls.length) controls.push(head);
-    let control = false;
+    const controlDeadline = started + Math.min(30000, Math.floor(cfg.budget / 5));
     for (const id of controls) {
-      if (outOfTime()) break;
+      if (outOfTime() || now() >= controlDeadline) break;
       if ((await visit(id)).state === 'post') { control = true; break; }
     }
-    if (!control) throw new Error('Known messages could not be confirmed; archive retained');
-    // A LINEAR SWEEP CANNOT CATCH UP WITH A CHANNEL IT HAS FALLEN BEHIND.
-    //
-    // The resumable discovery sweep below advances `cfg.discovery` ids per run, and GitHub
-    // delivers 7-9 scheduled runs a DAY on this repository whatever the cron asks for (measured
-    // across six workflows spanning a 4x range of requested density). This archive's head was
-    // 93384, dated 2026-05-13, while the channel's was 102828, dated 2026-09-04 — 9,444 ids of
-    // mostly-deleted space between them. At twenty ids a run that gap closes in about fifty days,
-    // during which the tab keeps presenting May's posts as the newest and nothing says otherwise.
-    //
-    // So the head is SEARCHED for rather than walked to. Existence is decidable per id on the
-    // embed route, which is what makes a search possible at all: `highestIn` samples a span and
-    // the gallop climbs while whole spans keep answering. Nine thousand ids cost a couple of
-    // hundred requests rather than nine thousand.
-    //
-    // IT DELIBERATELY DOES NOT PIN THE HEAD EXACTLY. A bisect after the gallop cost as much again
-    // and bought a dozen ids: the gallop leaves `peak` within one span of the true head, the
-    // ordinary forward scan covers what is immediately above it, and the next run's gallop closes
-    // the rest. Spending the budget on precision here is what starved the run that found the head
-    // of the requests it needed to record it — measured, a run that located 102816 and then had
-    // nothing left to read it with, so the capture was written unchanged.
-    const searchDeadline = started + Math.floor(cfg.budget * cfg.jumpShare);
+
+    // Publish nearby arrivals before spending any time on sparse discovery or old history.
+    // History-only work skips this pass unless it is needed to recover missing controls.
+    if (cfg.phase !== 'history' || !control) {
+      const from = head + 1, end = from + cfg.forward - 1;
+      let scanOk = true, scannedTo = from - 1;
+      for (let id = from; id <= end && !outOfTime(); id++) {
+        const result = await visit(id);
+        if (result.state === 'post') control = true;
+        if (result.state === 'error' || result.textFailed) scanOk = false;
+        scannedTo = id;
+      }
+      checked = cfg.phase !== 'history' && control && scanOk && scannedTo === end;
+      if (checked) checkedAt = stamp();
+      // Do not skip unvisited recent IDs when a run hits its time budget.
+      if (scannedTo === end && control) discoveryNext = Math.max(discoveryNext, end + 1);
+    }
+    if (!control) throw new Error('No archived or recent public message could be confirmed; archive retained');
+    await save();
+    if (cfg.phase === 'recent') return snapshot(true);
+
+    // Search beyond deleted-ID gaps only after fresh rows have been checkpointed. Every
+    // matching sample is retained immediately, and transport/parser failures stay errors.
+    const searchDeadline = Math.min(deadline, now() + Math.floor(cfg.budget * cfg.jumpShare));
     const searchSpent = () => now() >= searchDeadline;
-    const exists = async (id) => {
-      try { return (parseEmbed(await page(`${cfg.channel}/${id}?embed=1&mode=tme`), cfg.channel, id)).state === 'post'; }
-      catch { return false; }
-    };
     const highestIn = async (lowest, highest, samples = cfg.jumpSamples) => {
       const step = Math.max(1, Math.floor((highest - lowest) / samples));
       let best = 0;
-      for (let id = lowest; id <= highest && !outOfTime() && !searchSpent(); id += step) if (await exists(id)) best = id;
+      for (let id = lowest; id <= highest && !outOfTime() && !searchSpent(); id += step) {
+        const result = await visit(id);
+        if (result.state === 'post') best = id;
+        if (result.state === 'error' || result.textFailed) searchFailed = true;
+      }
       return best;
     };
-    // A SPARSE MISS IS NOT A MISSING SPAN, AND BELIEVING ONE IS EXACTLY HOW THE OLD SEEK DIED.
-    // Its window test read "not found" 17-44% of the time below the true head, and a search that
-    // stops at the first lie stops for ever: one `postNear(98304) -> NOT FOUND` put the ceiling
-    // under the real head and the bisect could never climb back. This gallop samples every
-    // jumpSpan/jumpSamples ids — fifty by default — and existence in older stretches of this
-    // channel runs at 17%, so a span CAN read empty while holding posts. So an empty span is
-    // re-asked once at four times the resolution before it is allowed to end the climb. The cost
-    // is paid only when the search is about to stop, which is the one place it is worth paying.
     let peak = head;
     while (!outOfTime() && !searchSpent()) {
       let hit = await highestIn(peak + 1, peak + cfg.jumpSpan);
+      // A sparse miss cannot prove an entire span is empty. Recheck with finer spacing.
       if (!hit) hit = await highestIn(peak + 1, peak + cfg.jumpSpan, cfg.jumpSamples * 4);
       if (!hit) break;
       peak = hit;
     }
-    if (peak > head) {
-      const wasHead = head;
-      console.log(`Head search moved the channel head ${wasHead} -> ${peak}.`);
-      await visit(peak);
-      // The ids between the old head and the new one are unread history, not a hole to step over.
-      // Pointing the resumable sweep at the top of the gap means the NEWEST of them are read
-      // first, so one run puts the top of the channel on screen and later runs fill downwards.
-      next = Math.max(head, wasHead);
-    }
+    await save();
 
-    const from = head + 1;
-    let end = from + cfg.forward - 1;
-    let scanOk = true, scannedTo = from - 1;
-    for (let id = from; id <= end && !outOfTime(); id++) {
-      const result = await visit(id);
-      if (result.state === 'error' || result.textFailed) scanOk = false;
-      scannedTo = id;
-    }
-    checked = scanOk && scannedTo === end;
-    // A separate resumable forward sweep crosses long deleted/hidden gaps. A window of misses
-    // never establishes the channel's true head. Every normal run also rechecks above the head.
-    discoveryNext = Math.max(discoveryNext, end + 1);
+    // The independent forward sweep eventually crosses a sparse search's blind spots.
+    // It advances only after a visit, and failures also remain in the retry queue.
+    discoveryNext = Math.max(discoveryNext, head + 1);
     for (let i = 0; i < cfg.discovery && !outOfTime(); i++, discoveryNext++) await visit(discoveryNext);
     if (discoveryNext > head + 10000) discoveryNext = head + cfg.forward + 1;
     for (const id of [...retry].sort((a, b) => b - a).slice(0, 40)) {
       if (outOfTime()) break;
       await visit(id);
     }
-    // Migrates the entire old text-only window before continuing through older history.
+    // Head jumps keep their own newest-first intervals. Alternate with old backfill so
+    // daily arrivals can never reset or permanently starve the older history cursor.
     if (!next && prior.schemaVersion !== 2) next = head;
-    for (let i = 0; i < cfg.history && next > 0 && !outOfTime(); i++, next--) await visit(next);
+    for (let i = 0; i < cfg.history && !outOfTime() && (next > 0 || catchupRanges.length); i++) {
+      if (catchupRanges.length && (i % 2 === 0 || next <= 0)) {
+        const range = catchupRanges[0];
+        await visit(range.to);
+        if (--range.to < range.from) catchupRanges.shift();
+      } else {
+        await visit(next);
+        next--;
+      }
+    }
   } catch (err) { failure = String(err.message || err); }
-  if (publicSafety) failure = 'Public source requests paused';
-  const posts = [...byId.values()].sort((a, b) => b.id - a.id);
-  const changed = JSON.stringify(posts) !== JSON.stringify(prior.posts || []);
-  const status = failure ? 'failed' : checked && stats.errors === 0 ? 'ok' : 'partial';
-  return { schemaVersion: 2, source: 'Telegram public embeds and message pages', channel: cfg.channel,
-    channelUrl: `https://t.me/${cfg.channel}`, route: 'embed+permalink', publishesTime: true,
-    capturedAt: changed ? stamp() : prior.capturedAt || null,
-    lastCheckedAt: checked && !publicSafety ? stamp() : prior.lastCheckedAt || null,
-    publicSafety,
-    apiSafety: prior.apiSafety || null,
-    headId: head, lowestId: posts.at(-1)?.id || 0, spanFrom: posts.at(-1)?.id || 0, spanTo: posts[0]?.id || 0,
-    historyNextId: next, historyComplete: next === 0 && retry.size === 0 && !failure,
-    discoveryNextId: discoveryNext, retryIds: [...retry].sort((a, b) => b - a),
-    lastRun: { at: stamp(), status, ...stats, error: failure }, posts };
+  return snapshot(true);
 }
 
 async function main() {
@@ -248,10 +265,13 @@ async function main() {
     prior = JSON.parse(await readFile(cfg.out, 'utf8'));
     if (!Array.isArray(prior.posts) || prior.posts.some((p) => !positiveId(p.id))) throw new Error('Invalid existing Telegram archive');
   } catch (err) { if (err.code !== 'ENOENT') throw err; }
-  const archive = await collect(prior, cfg);
   await mkdir(dirname(cfg.out), { recursive: true });
-  await writeFile(`${cfg.out}.tmp`, `${JSON.stringify(archive, null, 2)}\n`);
-  await rename(`${cfg.out}.tmp`, cfg.out);
+  const persist = async (archive) => {
+    await writeFile(`${cfg.out}.tmp`, `${JSON.stringify(archive, null, 2)}\n`);
+    await rename(`${cfg.out}.tmp`, cfg.out);
+  };
+  const archive = await collect(prior, cfg, { checkpoint: persist });
+  await persist(archive);
   console.log(JSON.stringify({ retainedPosts: archive.posts.length, head: archive.headId, historyNextId: archive.historyNextId, retry: archive.retryIds.length, ...archive.lastRun }));
   if (archive.lastRun.status === 'failed') process.exitCode = 1;
 }

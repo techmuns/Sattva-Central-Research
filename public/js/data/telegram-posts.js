@@ -1,18 +1,61 @@
 // Retained public Telegram messages. Source dates, collector checks and browser reads stay separate.
-import { conditionalJson, KEYS } from '../core/store.js';
+import { conditionalJson, readEntry, writeEntry, KEYS } from '../core/store.js';
 const LIVE = 'api/telegram/posts';
 const SNAPSHOT = 'data/telegram-posts.json';
+const ARTIFACT_KEY = 'telegram-artifact-v1';
+const RETAINED_KEY = 'telegram-retained-v1';
 const str = (v) => typeof v === 'string' && v.trim() ? v.trim() : null;
 const date = (v) => str(v) && Number.isFinite(Date.parse(v)) ? v : null;
 const int = (v) => Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : 0;
 let state = { loaded: false, ok: false, posts: [], byId: new Map(), count: 0 };
 let loading = null;
+let retainedCapture = null;
 const subscribers = new Set();
 const emit = () => subscribers.forEach((fn) => fn());
 
-function apply(res) {
+function validateCapture(v) {
+  if (!v || !Array.isArray(v.posts) || v.posts.length > 150000 || v.channel !== 'researchreportss') throw new Error('Telegram capture could not be read');
+  if (!v.posts.length && state.count) throw new Error('Empty Telegram refresh; previous archive retained');
+  for (const value of [v.lastRun?.at, v.lastCheckedAt]) {
+    if (value != null && (!date(value) || Date.parse(value) > Date.now() + 300000))
+      throw new Error('Invalid Telegram check time; previous archive retained');
+  }
+  const ids = new Set();
+  for (const p of v.posts) {
+    if (!int(p?.id) || ids.has(Number(p.id)) || (!str(p.text) && !date(p.publishedAt)) ||
+        (p.text != null && (typeof p.text !== 'string' || p.text.length > 65536))) throw new Error('Malformed Telegram posts; previous archive retained');
+    ids.add(Number(p.id));
+  }
+}
+
+async function hydrateSaved() {
+  const saved = await Promise.all([readEntry(KEYS.telegramPosts), readEntry(ARTIFACT_KEY), readEntry(RETAINED_KEY)]);
+  for (const entry of saved.filter(Boolean).sort((a, b) => Date.parse(a.value.lastRun?.at || a.value.lastCheckedAt || a.value.capturedAt || 0) - Date.parse(b.value.lastRun?.at || b.value.lastCheckedAt || b.value.capturedAt || 0))) {
+    try { validateCapture(entry.value); await apply({ ...entry, checkedAt: null, fromStore: true }, false); } catch { /* Ignore old corrupt cache entries. */ }
+  }
+  // Do not overwrite the retained key with an older entry midway through hydration.
+  await persistRetained();
+}
+
+async function persistRetained() {
+  if (retainedCapture) await writeEntry(RETAINED_KEY, { value: { ...retainedCapture, posts: state.posts } });
+}
+
+function postMetadata(posts, byId) {
+  const spanFrom = posts.at(-1)?.id || 0, spanTo = posts[0]?.id || 0;
+  return { posts, byId, count: posts.length, spanFrom, spanTo,
+    span: spanFrom ? spanTo - spanFrom + 1 : 0,
+    readable: posts.length, unreadable: spanFrom ? spanTo - spanFrom + 1 - posts.length : 0,
+    limited: posts.filter((p) => p.contentStatus === 'telegram-only').length,
+    listed: posts.filter((p) => p.text || p.attachments.length).length,
+    newestPublishedAt: posts.find((p) => p.publishedAt)?.publishedAt || null,
+    newestReadableAt: posts.find((p) => p.publishedAt && (p.text || p.attachments.length))?.publishedAt || null,
+    undated: posts.filter((p) => !p.publishedAt).length };
+}
+
+async function apply(res, persist = true) {
   const v = res?.value;
-  if (!v || !Array.isArray(v.posts) || !/^[A-Za-z0-9_]{5,32}$/.test(v.channel)) throw new Error('Telegram capture could not be read');
+  validateCapture(v);
   if (state.ok && state.channel !== v.channel) throw new Error('Unexpected Telegram channel; previous archive retained');
   if (state.ok && state.channel === v.channel && !v.posts.length && state.count) throw new Error('Empty Telegram refresh; previous archive retained');
   const rows = v.posts.map((raw) => {
@@ -27,29 +70,40 @@ function apply(res) {
   }).filter(Boolean);
   if (rows.length !== v.posts.length) throw new Error('Malformed Telegram posts; previous archive retained');
   // A static fallback or out-of-order response cannot roll back a newer artifact.
-  if (state.ok && Date.parse(v.lastRun?.at || v.lastCheckedAt || 0) < Date.parse(state.lastRun?.at || state.lastCheckedAt || 0)) return;
+  if (state.ok && Date.parse(v.lastRun?.at || v.lastCheckedAt || 0) < Date.parse(state.lastRun?.at || state.lastCheckedAt || 0)) {
+    const additions = rows.filter(row => !state.byId.has(row.id));
+    if (additions.length) {
+      const byId = new Map([...state.posts, ...additions].map(row => [row.id, row]));
+      state = { ...state, ...postMetadata([...byId.values()].sort((a, b) => b.id - a.id), byId) };
+      emit();
+    }
+    if (v.delivery?.degraded || v.delivery?.collectorLatestFailed) {
+      state = { ...state, delivery: v.delivery, reason: 'Latest collection unavailable; newer saved archive retained.' };
+      retainedCapture = { ...retainedCapture, delivery: v.delivery }; emit();
+    }
+    if (persist) await persistRetained();
+    return;
+  }
   const byId = new Map([...state.posts, ...rows].map((p) => [p.id, p]));
   const posts = [...byId.values()].sort((a, b) => b.id - a.id);
-  const spanFrom = posts.at(-1)?.id || 0, spanTo = posts[0]?.id || 0;
-  state = { loaded: true, ok: true, reason: null, posts, byId, count: posts.length,
+  // Keep additive retained history separate from exact HTTP payloads and their ETags. A valid
+  // older fallback may replace the transport cache but cannot erase newer captured rows offline.
+  retainedCapture = { ...v, posts };
+  state = { loaded: true, ok: true, reason: null, ...postMetadata(posts, byId),
     channel: v.channel, channelUrl: `https://t.me/${v.channel}`, route: str(v.route),
     publishesTime: posts.some((p) => p.publishedAt), capturedAt: date(v.capturedAt),
     lastCheckedAt: date(v.lastCheckedAt), checkedAt: res.checkedAt ? new Date(res.checkedAt).toISOString() : null,
     lastRun: v.lastRun || null, apiSafety: v.apiSafety || null, publicSafety: v.publicSafety || null, latestVerifiedAt: v.route === 'mtproto' ? date(v.latestVerifiedAt) : null, delivery: v.delivery || null, historyNextId: int(v.historyNextId), historyComplete: v.historyComplete === true,
-    origin: res.fromStore ? 'store' : 'live', headId: int(v.headId), spanFrom, spanTo,
-    span: spanFrom ? spanTo - spanFrom + 1 : 0,
-    readable: posts.length, unreadable: spanFrom ? spanTo - spanFrom + 1 - posts.length : 0,
-    pending: Array.isArray(v.retryIds) ? v.retryIds.length : 0,
-    limited: posts.filter((p) => p.contentStatus === 'telegram-only').length,
-    listed: posts.filter((p) => p.text || p.attachments.length).length,
-    newestPublishedAt: posts.find((p) => p.publishedAt)?.publishedAt || null,
-    undated: posts.filter((p) => !p.publishedAt).length };
+    origin: res.fromStore ? 'store' : 'live', headId: int(v.headId),
+    pending: Array.isArray(v.retryIds) ? v.retryIds.length : 0 };
   emit();
+  if (persist) await persistRetained();
 }
 export function load() {
   if (loading) return loading;
-  loading = conditionalJson(SNAPSHOT, { key: KEYS.telegramPosts, optional: true })
-    .then((res) => { apply(res); return state; })
+  loading = (state.loaded ? Promise.resolve() : hydrateSaved())
+    .then(() => conditionalJson(SNAPSHOT, { key: KEYS.telegramPosts, optional: true, validate: validateCapture }))
+    .then(async (res) => { await apply(res); return state; })
     .catch((err) => {
       // A temporary or malformed refresh keeps the last usable archive on screen.
       state = { ...state, loaded: true, reason: String(err?.message || err) };
@@ -61,8 +115,8 @@ export async function refresh() {
   const before = new Set(state.byId.keys());
   loading = null; await load();
   try {
-    const res = await conditionalJson(LIVE, { key: 'telegram-artifact-v1', optional: true });
-    if (res.value) apply(res);
+    const res = await conditionalJson(LIVE, { key: ARTIFACT_KEY, optional: true, validate: validateCapture });
+    if (res.value) await apply(res);
     else if (![404, 405, 501].includes(res.status)) {
       state = { ...state, reason: 'Latest collection unavailable; saved archive retained.' }; emit();
     }

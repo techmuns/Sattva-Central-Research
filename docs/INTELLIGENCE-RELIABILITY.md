@@ -110,6 +110,18 @@ corroboration, and duplicate links/subjects are counted once.
 
 ## Operational checks
 
+### Telegram delivery resilience (7 September 2026)
+
+Recent public posts are published before historical collection finishes. Atomic checkpoints
+and independent catch-up intervals preserve arrivals and backfill progress. Verified artifact
+fallback and validated browser storage retain readable data through delivery failures, while
+an unknown newer source safety state stops further collection until it can be confirmed.
+Public-source refusals and account pauses cannot be bypassed in the name of freshness.
+The read-only operational check compares actual source-success times, artifact health and
+the durable timer's stored alarm; a newly written file or an old publication does not decide
+whether collection is healthy. See [Telegram ingestion](TELEGRAM-INGESTION.md) for cadence,
+recovery boundaries and local interruption/reload acceptance tests.
+
 ### News delivery integrity (7 September 2026)
 
 The company News reader joins the dedicated publisher head and retained monthly archive directly,

@@ -36,6 +36,12 @@ jobs:
           FILINGS_HEALTH_BASE: https://sattva-central-research.tech-441.workers.dev
           TRADINGVIEW_HEALTH_REPORT: ${{ runner.temp }}/tradingview-health.json
         run: node scripts/check-tradingview-news-health.mjs
+      - name: Check Telegram delivery and the independent collection timer
+        if: always()
+        env:
+          FILINGS_HEALTH_BASE: https://sattva-central-research.tech-441.workers.dev
+          TELEGRAM_HEALTH_REPORT: ${{ runner.temp }}/telegram-health.json
+        run: node scripts/check-telegram-health.mjs
       - name: Check scheduled collectors and build pipelines
         if: always()
         env:
@@ -51,4 +57,5 @@ jobs:
             ${{ runner.temp }}/filings-health.json
             ${{ runner.temp }}/tradingview-health.json
             ${{ runner.temp }}/workflow-health.json
+            ${{ runner.temp }}/telegram-health.json
           if-no-files-found: warn
