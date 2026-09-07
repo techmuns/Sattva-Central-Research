@@ -69,11 +69,11 @@ try {
   assert(behind.findings.some(f => f.code === 'capture-not-published'), 'successful capture cannot conceal an old live deployment');
   unavailable = newer._jsonShards.parts[0].file;
   assert.equal((await checkNewsPublication(options)).ok, false, 'reachable manifest alone is not publication success');
-  let archiveFails = false, indexRevision = 1, headRows = [{ ...row(1), ticker: 'ALPHA' }];
+  let archiveFails = false, indexRevision = 1, headRows = [{ ...row(1), ticker: 'ALPHA' }], notifyBase = () => {};
   const oldStory = { ...row(800), ticker: 'ALPHA', entityId: 'ticker:ALPHA', date: '2020-01-01' };
   const base = { rows: () => headRows, meta: () => ({ ok: true, archive: { index: 'company-news/index.json' } }),
     seed: async () => {}, load: async () => {}, refresh: async () => ({}), refreshSnapshot: async () => ({ available: true }),
-    onChange: () => () => {}, invalidate() {} };
+    onChange: fn => { notifyBase = fn; return () => {}; }, wasAskedEmpty: () => true, invalidate() {} };
   const history = withNewsHistory(base, { read: async path => {
     if (path.endsWith('/index.json')) return { tag: String(indexRevision), value: { archive: [{ file: 'company-news/2020-01.json', count: 1 }] } };
     if (archiveFails) throw Error('Offline');
@@ -81,12 +81,15 @@ try {
   } });
   await history.seed();
   assert(history.rows().some(r => r.url === oldStory.url), 'customer readers include records older than the recent head');
+  assert.equal(history.wasAskedEmpty('ALPHA'), false, 'historical evidence is not labelled an empty company search');
+  const off = history.onChange(() => {});
   archiveFails = true; indexRevision++;
   assert.equal((await history.refreshSnapshot()).partial, true);
   assert(history.rows().some(r => r.url === oldStory.url), 'failed history refresh retains previously loaded history');
   assert(history.meta().newsHistory.error);
-  archiveFails = false; await history.refreshSnapshot();
+  archiveFails = false; notifyBase(); await history.loadArchive();
   assert.equal(history.meta().newsHistory.error, null);
+  off();
   history.invalidate(); assert.equal(history.rows().length, 1, 'portfolio invalidation clears adopted history');
   console.log('PASS lossless split, complete hydration, corruption/missing-part refusal, cache recovery and end-to-end publication checks.');
 } finally {

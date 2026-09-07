@@ -6,7 +6,7 @@ import { attributeNewsRow } from './company-news-attribution.js';
 // attribution still run in their existing consumers; storage partitioning is never a filter.
 export function withNewsHistory(base, { read = conditionalJson } = {}) {
   let held = new Map(), identities = new Map(), revision = 0, combined = null;
-  let pending = null, error = null, loaded = false, epoch = 0;
+  let pending = null, error = null, loaded = false, initialized = false, epoch = 0;
   const indexes = new Map(), listeners = new Set();
   const emit = () => listeners.forEach(fn => fn());
   function rows() {
@@ -72,8 +72,8 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
     return pending;
   }
   return { ...base, rows, loadArchive,
-    async seed(...args) { await base.seed(...args); await loadArchive(); },
-    async load(...args) { await base.load(...args); await loadArchive(); },
+    async seed(...args) { await base.seed(...args); initialized = true; await loadArchive(); },
+    async load(...args) { await base.load(...args); initialized = true; await loadArchive(); },
     async refreshSnapshot(...args) {
       const result = await base.refreshSnapshot(...args), history = await loadArchive();
       return { ...result, partial: !!result.partial || !history };
@@ -83,6 +83,7 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
       return { ...result, partial: !!result.partial || !history };
     },
     forTicker: ticker => rows().filter(row => String(row.ticker || row.entityId || '').toUpperCase() === String(ticker).toUpperCase()),
+    wasAskedEmpty: ticker => !rows().some(row => String(row.ticker || row.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
     meta() { const meta = base.meta(); return { ...meta, ok: meta.ok && !error,
       rowCount: rows().length, newsHistory: { loaded, pending: !!pending, error } }; },
     onChange(fn) {
@@ -91,11 +92,11 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
         fn();
         // The inner shared poller also runs without an explicit refresh from this wrapper.
         // Follow those automatic checks so retained history stays live in an open News tab.
-        if (!pending) void loadArchive();
+        if (initialized && !pending) void loadArchive();
       });
       return () => { listeners.delete(fn); off(); };
     },
     invalidate() { epoch++; base.invalidate(); held = new Map(); identities = new Map(); indexes.clear();
-      revision++; combined = null; pending = null; error = null; loaded = false; },
+      revision++; combined = null; pending = null; error = null; loaded = false; initialized = false; },
   };
 }
