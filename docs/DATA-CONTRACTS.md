@@ -1,5 +1,33 @@
 # Data Contracts
 
+## Personal bookmarked notebook
+
+`js/core/bookmarks.js` owns IndexedDB `sattva-notebook` v1 / object store `bookmarks`,
+keyed by `id`. This is user-created browser-local storage, separate from `sattva-cache` and
+all public captures. Nothing is published to the repository or sent to an API. Individual
+saves, removals, note writes and additive imports are atomic; successful UI state follows the
+transaction commit. No automatic count/date retention cap applies. Browser storage limits still do.
+
+Each record contains plain strings `title`, `company`, `ticker`, `entityId`, `kind`, `source`,
+`sourceId`, `eventDate`, `body`, `note`, plus `savedAt` (ISO save instant), `id`, `url`,
+`details: [{label,value}]` and `links: [{label,url}]`. Unknown source fields are discarded.
+Only HTTP(S) source links without embedded credentials are accepted. Source dates retain their
+original precision; a save time never becomes an event date. Full available text/readings are
+stored, not the visible excerpt or a reference requiring a live feed lookup. Source documents
+and article files are linked rather than copied. Explicitly saved research answers may contain
+the reader's private research; authentication/session objects are never serialized.
+
+Identity includes event type, company identity and original URL (or source/record identity when
+unlinked), with event date for non-article records. Same-company news saved through All Alerts,
+AI evidence and News shares an identity; company attributions remain distinct. Repeated saves
+and imports retain the existing snapshot and note. Removals are explicit and offer Undo.
+
+Portable backup envelope: `{format:"sattva-bookmarked-notebook",version:1,exportedAt,entries:[]}`.
+Import validates the entire envelope/records before writing and adds only absent identities.
+Clearing browser site data removes the notebook; backup export/import is the recovery and
+cross-browser transfer path, with no cloud-sync claim. Verify with `verify-bookmarks.mjs` and
+`verify-bookmarks-ui.mjs`.
+
 All Alerts' current source-record pool, date semantics, scope rules, privacy and coverage
 limitations are specified in [GENERAL-ALERTS-POOL.md](GENERAL-ALERTS-POOL.md). That contract
 supersedes the older nine-feed/threshold-entry description of the timeline in this document.

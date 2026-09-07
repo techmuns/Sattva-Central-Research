@@ -233,6 +233,14 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
+The Bookmarked Notebook (`tabs/bookmarks.js`) is a personal saved-record view. Its
+`scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
+keeps saved companies accessible even after a portfolio exit or empty Watchlist. The notebook's
+company filters apply to saved identities. This is the explicit exception to the feed-scope rule
+below. `core/bookmarks.js` owns its separate durable browser store, and `ui/bookmark-button.js`
+supplies event actions; the company watchlist star keeps its existing meaning. See the notebook
+contract in `docs/DATA-CONTRACTS.md`. Never put bookmarks into the pruned feed cache.
+
 Every file in `js/tabs/` exports exactly this. The shell is generic and knows nothing about any
 individual tab beyond this contract.
 

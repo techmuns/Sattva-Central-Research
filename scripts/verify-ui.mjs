@@ -5923,12 +5923,12 @@ console.log('\n— news, announcements and insider trades —');
     // is publisher-agnostic and strictly stronger: it catches a card wearing another story's
     // picture, which no domain test ever could.
     const offsite = nodes.filter((a) => {
-      const href = a.getAttribute('href') || '';
+      const href = (a.matches('a') ? a : a.querySelector('a[href]'))?.getAttribute('href') || '';
       if (!/^https:\/\//.test(href)) return false;
       try { return new URL(href).origin !== window.location.origin; } catch { return false; }
     }).length;
-    const newTab = nodes.filter((a) => a.getAttribute('target') === '_blank' && /noreferrer/.test(a.getAttribute('rel') || '')).length;
-    const hrefMatchesFeed = nodes.filter((a) => byKey.get(a.getAttribute('data-news-key'))?.url === a.getAttribute('href')).length;
+    const newTab = nodes.filter((node) => { const a = node.matches('a') ? node : node.querySelector('a[href]'); return a?.getAttribute('target') === '_blank' && /noreferrer/.test(a?.getAttribute('rel') || ''); }).length;
+    const hrefMatchesFeed = nodes.filter((a) => byKey.get(a.getAttribute('data-news-key'))?.url === (a.matches('a') ? a : a.querySelector('a[href]'))?.getAttribute('href')).length;
     const thumbs = nodes.filter((a) => {
       const img = a.querySelector('img');
       const want = byKey.get(a.getAttribute('data-news-key'))?.image;
@@ -6973,7 +6973,7 @@ console.log('\n— twitter / x as a news source —');
       posts: postAt.length,
       postAt,
       text: first?.innerText.replace(/\s+/g, ' ').trim() || '',
-      href: first?.getAttribute('href') || null,
+      href: (first?.matches('a') ? first : first?.querySelector('a[href]'))?.getAttribute('href') || null,
       sources: [...(document.querySelector('[data-news-source]')?.options || [])].map((o) => o.text),
       keys: cards.map((c) => c.getAttribute('data-news-key')),
     };
