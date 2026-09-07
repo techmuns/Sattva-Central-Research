@@ -8,6 +8,8 @@
 import { sectionHead } from '../ui/screener.js';
 import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
+import { normalizeBookmark, snapshotForRow } from '../core/bookmark-record.js';
+import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
@@ -36,6 +38,7 @@ let sortOrder = 'newest';
 try { const saved = localStorage.getItem(SORT_KEY); if (Object.hasOwn(SORTS, saved)) sortOrder = saved; } catch { /* Session preference still works. */ }
 
 let ctxRef = null;
+let offBookmarks = null;
 let report = null;
 let loadToken = 0;
 let cacheToken = 0;
@@ -162,6 +165,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  offBookmarks?.(); offBookmarks = null;
   clearTimeout(sourceTimer);
   sourceTimer = null;
   captureDirty = false;
@@ -525,6 +529,15 @@ function contextMarkup(card, scope) {
     class="mt-2 block text-xs leading-relaxed text-slate-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${escapeHtml(card.contextSummary)}</a>`;
 }
 
+function cardSnapshot(card) {
+  return normalizeBookmark({ title: card.insight, company: card.company, ticker: card.ticker, entityId: card.entityId,
+    kind: 'AI Alerts', source: 'Dashboard analysis', sourceId: `${card.key || card.ticker}:${card.evidenceKey || card.insight}`,
+    eventDate: latestAlertEvent(card)?.day,
+    body: card.events.map(event => [event.headline, event.detail, event.reason].filter(Boolean).join('\n')).join('\n\n'),
+    details: card.events.map(event => ({ label: `${event.feedLabel || event.feed} · ${event.day || 'Date not supplied'}`, value: event.headline })),
+    links: card.events.filter(event => event.url).map(event => ({ label: event.headline, url: event.url })),
+  });
+}
 function cardMarkup(card, scope, day, archived = false) {
   const badge = card.badge || { id: 'important', label: 'Important', tone: 'neutral' };
   const tone = {
@@ -570,6 +583,7 @@ function cardMarkup(card, scope, day, archived = false) {
           ? `<button type="button" data-open-general data-ticker="${escapeHtml(card.ticker || card.company)}" class="text-xs font-bold text-indigo-700 hover:text-indigo-900">${escapeHtml(formatNumber(rest))} more ${rest === 1 ? 'event' : 'events'} →</button>`
           : `<span class="text-xs text-slate-400">Everything on this company is above</span>`}
         <div class="flex shrink-0 items-center gap-2">
+          <span data-ai-notebook-card="${escapeHtml(card.key || card.ticker)}">${bookmarkButton(cardSnapshot(card), { compact: false })}</span>
           ${archived
             ? `<button type="button" data-ai-unmute data-ticker="${escapeHtml(card.key || card.ticker)}"
                 class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 transition hover:ring-indigo-300">Restore</button>`
@@ -610,15 +624,16 @@ function eventMarkup(event, scope, day) {
   // `plainHeadline`. The tooltip always carries the feed's own wording so nothing is lost.
   const claim = alerts.plainHeadline(event);
   return `
-    <li>
+    <li class="flex items-start gap-2" data-ai-notebook-event="${escapeHtml(event.id)}">
       <a data-ai-event data-ai-evidence-link href="${escapeHtml(destination.href)}"
         ${destination.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
         aria-label="${escapeHtml(destination.ariaLabel)}"
-        class="group flex items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-indigo-50/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+        class="group flex min-w-0 flex-1 items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-indigo-50/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
         <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT_TONE[event.direction] || DOT_TONE.neutral}" aria-hidden="true"></span>
         <span class="line-clamp-2 min-w-0 flex-1 text-sm leading-snug text-slate-700 group-hover:text-slate-900" title="${escapeHtml(event.headline || '')}">${escapeHtml(claim)}</span>
         <span class="mt-0.5 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider text-slate-400" title="${escapeHtml(`${event.feedLabel || event.feed} · ${when}`)}">${escapeHtml(tag)} · <time data-ai-age data-day="${escapeHtml(event.day)}" datetime="${escapeHtml(event.day)}">${escapeHtml(age)}</time></span>
       </a>
+      ${bookmarkButton(snapshotForRow(event, { section: 'daily-alerts' }))}
     </li>`;
 }
 
@@ -677,6 +692,14 @@ function filteredCards(cards) {
 }
 
 function wire(ctx, total) {
+  offBookmarks?.();
+  offBookmarks = wireBookmarks(ctx.root, button => {
+    const cardKey = button.closest('[data-ai-notebook-card]')?.dataset.aiNotebookCard;
+    if (cardKey) { const card = report?.cards?.find(card => String(card.key || card.ticker) === cardKey); return card && cardSnapshot(card); }
+    const id = button.closest('[data-ai-notebook-event]')?.dataset.aiNotebookEvent;
+    const event = report?.cards?.flatMap(card => card.events).find(event => String(event.id) === id);
+    return event && snapshotForRow(event, { section: 'daily-alerts' });
+  });
   const sort = ctx.root.querySelector('[data-ai-sort]');
   if (sort) sort.onchange = () => {
     if (!Object.hasOwn(SORTS, sort.value)) return;

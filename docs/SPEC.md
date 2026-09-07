@@ -485,6 +485,33 @@ roadmap* card that used to close each tab has been removed from the UI:
 
 ## 8. Roadmap
 
+### Bookmarked Notebook
+
+The **Bookmarked Notebook** top tab sits after All Alerts. An outlined bookmark saves an
+individual event; its filled state removes it, with Undo. The company watchlist star retains
+its existing meaning. Shared research tables, market-news cards, AI cards and individual AI
+evidence, public-chatter mentions, and finished/partial Ask Research answers expose this action.
+
+The notebook retains an independent copy of the available event text, company, source date,
+source links and table readings. Live feed refreshes, AI archiving, portfolio exits and date
+windows cannot remove that copy. Opening a saved entry reads the snapshot without loading its
+original feed. Linked publisher pages and document files themselves are not downloaded.
+
+Company navigation is alphabetical with saved-event counts and company/ticker search; mobile
+uses a company picker. Search covers the complete notebook, including notes, before paginating.
+Event-type and notes-only filters combine with company selection. Sorts are recently saved,
+event date and company A–Z. Each entry opens its full saved text and an explicitly saved research
+note. The notebook has its own company filter and shows every saved company, so the global
+scope control is hidden on this tab. An empty Watchlist never hides the notebook.
+
+Storage is personal to the current browser and origin, in a separate IndexedDB database.
+There is no account/cloud sync or automatic age-based deletion. Browser quota, clearing site
+data and eviction remain limits; request persistent storage opportunistically and provide JSON
+backup export/import. The UI states this plainly. Imports merge atomically, preserving existing
+snapshots/notes; repeat saves do not replace the original snapshot. Failed writes must not claim
+success or fall back to temporary in-memory bookmarks. Tabs synchronize after committed writes.
+
+
 | # | Prompt | Scope |
 | --- | --- | --- |
 | 1 | Foundation + shell | File layout, nav model, scope toggle, routing, design system, UI primitives, live engine, mock data, placeholder panels, docs. ✅ *this prompt* |

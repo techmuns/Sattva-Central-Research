@@ -23,6 +23,9 @@
 import { topCards, scoreTable, sectionHead, openModal } from '../ui/screener.js';
 import { scopeSummary, pill, tabBar } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
+import { snapshotForRow } from '../core/bookmark-record.js';
+import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
+let mentionBookmarkOff = null;
 import { formatDate, formatNumber, formatRelativeTime, formatTime } from '../core/format.js';
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
@@ -156,6 +159,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  mentionBookmarkOff?.(); mentionBookmarkOff = null;
   renderToken++;
   cleanup();
   chatterSection = 'coverage';
@@ -298,10 +302,12 @@ function paint(ctx) {
  */
 function openMentions(entry) {
   if (!entry?.slug) return;
+  mentionBookmarkOff?.(); mentionBookmarkOff = null;
   const token = ++mentionRequestToken;
   openModal(mentionsFrame(entry), {
     size: 'wide',
     onClose: () => {
+      mentionBookmarkOff?.(); mentionBookmarkOff = null;
       if (token === mentionRequestToken) mentionRequestToken++;
     },
   });
@@ -311,7 +317,13 @@ function openMentions(entry) {
     .then((payload) => {
       if (token !== mentionRequestToken) return;
       const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
-      if (body) body.innerHTML = mentionsBody(entry, payload);
+      if (body) {
+        body.innerHTML = mentionsBody(entry, payload);
+        mentionBookmarkOff = wireBookmarks(body, button => {
+          const post = payload.posts?.[Number(button.closest('[data-mention-index]')?.dataset.mentionIndex)];
+          return post && mentionSnapshot(post, entry);
+        });
+      }
     })
     .catch((error) => {
       if (token !== mentionRequestToken) return;
@@ -346,7 +358,7 @@ function mentionsBody(entry, payload) {
   const posts = payload.posts || [];
   const total = payload.total ?? posts.length;
   const moved = total !== entry.mentions;
-  const rows = posts.map(mentionRow).join('');
+  const rows = posts.map((post, index) => mentionRow(post, entry, index)).join('');
   return `
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
       <p data-chatter-mention-total data-detail-total="${escapeHtml(String(total))}" data-snapshot-total="${escapeHtml(String(entry.mentions))}">
@@ -360,13 +372,17 @@ function mentionsBody(entry, payload) {
     </div>`;
 }
 
-function mentionRow(post) {
+function mentionSnapshot(post, entry) {
+  return snapshotForRow(post, { section: 'public-chatter', company: entry.name, ticker: entry.ticker,
+    details: [{ label: 'Author', value: post.author || post.handle || '' }, { label: 'Context', value: 'Public discussion; claims are unverified.' }] });
+}
+function mentionRow(post, entry, index) {
   const href = safeExternalUrl(post.url);
   const author = post.author || post.handle || post.community || post.sourceLabel || 'Source';
   const when = post.at ? `${formatDate(post.at)} · ${formatTime(post.at)}` : 'Time not published';
   const excerpt = shortExcerpt(post.text);
   return `
-    <article class="rounded-xl border border-slate-200 bg-white p-4" data-chatter-mention-row>
+    <article class="rounded-xl border border-slate-200 bg-white p-4" data-chatter-mention-row data-mention-index="${index}">
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
         <span class="font-semibold text-slate-700">${escapeHtml(post.sourceLabel || post.community || 'Source')}</span>
         <span aria-hidden="true">·</span>
@@ -376,10 +392,11 @@ function mentionRow(post) {
         <span class="ml-auto">${sentimentPill({ label: post.sentiment, labelText: titleCase(post.sentiment) })}</span>
       </div>
       <p class="mt-2 text-sm font-medium leading-relaxed text-slate-800">${escapeHtml(excerpt || 'No excerpt was published.')}</p>
-      <div class="mt-3">
+      <div class="mt-3 flex items-center justify-between gap-3">
         ${href
           ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" data-chatter-mention-link class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">Open original mention <span aria-hidden="true">↗</span></a>`
           : '<span class="text-xs text-slate-400">Direct link unavailable from the source.</span>'}
+        ${bookmarkButton(mentionSnapshot(post, entry), { compact: false })}
       </div>
     </article>`;
 }

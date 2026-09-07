@@ -36,6 +36,7 @@ import * as corporateActions from '../tabs/corporate-actions.js';
 import * as nseFilings from '../tabs/nse-filings.js';
 import * as insiderTrades from '../tabs/insider-trades.js';
 import * as ipos from '../tabs/ipos.js';
+import * as bookmarks from '../tabs/bookmarks.js';
 
 // The nav model in one place: each workspace an ordered list of tab modules. Every module's
 // `meta.subviews` supplies the rail/rail-dropdown items — nothing here is duplicated per module.
@@ -61,7 +62,7 @@ import * as ipos from '../tabs/ipos.js';
 // an unknown or absent tab, so the order of this array IS the default landing page — there is no
 // second place recording it that could disagree.
 const WORKSPACES = [
-  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades] },
+  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, bookmarks, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades] },
 ];
 
 let contentHost = null;
@@ -151,7 +152,7 @@ function shellTemplate() {
         </div>
 
         <div class="flex flex-shrink-0 flex-wrap items-center gap-2 text-xs text-slate-500">
-          <div class="flex items-center gap-1.5"
+          <div data-scope-controls class="flex items-center gap-1.5"
                title="Data scope: which companies the tab you are on reports. Portfolio is the family's book, Watchlist is the companies you have starred, Universe is every listed company the feed carries.">
             <span data-scope-label class="hidden text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">Scope</span>
             <div id="scope-toggle-mount"></div>
@@ -309,6 +310,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
     onChange: goScope,
   });
   const toggleMount = $('#scope-toggle-mount', root);
+  // Personal saved records keep their original company membership after a portfolio exit.
+  root.querySelector('[data-scope-controls]').hidden = tabModule.meta.scopeIndependent === true;
   toggleMount.innerHTML = toggle.html;
   chromeDisposers.push(toggle.wire(toggleMount));
 
