@@ -103,6 +103,7 @@ window.renderScope('universe');
 
 let servedCapture = capture;
 let servedArtifact = null;
+let artifactStatus = 200, snapshotStatus = 200;
 const TYPES = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 const server = createServer((request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
@@ -110,11 +111,12 @@ const server = createServer((request, response) => {
   if (pathname === '/') { response.setHeader('content-type', 'text/html'); response.end(html); return; }
   if (pathname === '/api/telegram/posts') {
     response.setHeader('content-type', 'application/json');
-    response.statusCode = servedArtifact ? 200 : 404;
+    response.statusCode = artifactStatus !== 200 ? artifactStatus : servedArtifact ? 200 : 404;
     response.end(JSON.stringify(servedArtifact || { error: 'no artifact' }));
     return;
   }
   if (pathname === '/data/telegram-posts.json') {
+    response.statusCode = snapshotStatus;
     response.setHeader('content-type', 'application/json');
     response.end(JSON.stringify(servedCapture));
     return;
@@ -176,12 +178,8 @@ try {
   assert(view.pill.includes('7 archived') && view.pill.includes('6 readable'));
   assert((await page.locator('[data-telegram-source-status]').innerText()).includes('has not been verified'));
   assert.equal(view.count, 7, 'every post in the capture is read');
-  // ARCHIVED IS NOT LISTED. A message with no caption is kept — it is a real message, it carries
-  // the publication date the ordering rests on, and the newest of them anchors the channel's head
-  // — but a row reading only "Open in Telegram to read" answers nothing on a page of report
-  // headlines, so it is not drawn. The two numbers are asserted against each other rather than
-  // typed, or this passes for the wrong reason the day the fixture gains another media post.
-  assert.equal(view.drawn, view.count - view.hidden, 'media-only posts are archived but not listed');
+  // All verified publications stay dated and linked, even when their text is Telegram-only.
+  assert.equal(view.drawn, view.count, 'all captured posts remain visible, including Telegram-only publications');
   assert(view.hidden > 0, 'the fixture actually contains a media-only post, so the rule is exercised');
   assert(view.drawn > 0, 'and the readable posts are still drawn');
   assert(view.descending, 'ordered by message id, newest first');
@@ -200,13 +198,11 @@ try {
   assert(await page.locator('[data-chatter-panel="telegram"]').innerText().then((t) => t.includes('13 May 2026')));
   const search = page.locator('[data-chatter-panel="telegram"] [data-table-search]');
   assert.equal(await search.getAttribute('placeholder'), 'Search posts, reports or message number…');
-  // 499 is the caption-less image: archived, dated, counted — and never a row.
+  // A captionless post keeps its original date and Telegram link.
   await search.fill('499');
-  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 0,
-    'a caption-less image post is archived but never listed');
-  // 498 carries no text either and IS listed, because its attachment is the content. That pair is
-  // the whole rule: what decides a row is whether the message has something to read, not whether
-  // Telegram happened to put it in the text field.
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1,
+    'a caption-less post is dated, searchable and linked');
+  // Named documents remain searchable even without a caption.
   await search.fill('498');
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1,
     'a document post with no caption is still listed');
@@ -235,12 +231,12 @@ try {
     assert.equal(sheet.rowCount, view.drawn + 2, 'headers + provenance + every listed post');
     const exportedIds = [];
     sheet.eachRow((row, index) => { if (index > 2) exportedIds.push(row.getCell('B').value); });
-    assert.deepEqual(exportedIds, [500, 498, 496, 495, 493, 491],
-      'export matches readable rows, including the document-only post, while captionless media remains archived');
+    assert.deepEqual(exportedIds, [500, 499, 498, 496, 495, 493, 491],
+      'export preserves all captured rows, including Telegram-only and document-only posts');
     assert.equal(sheet.getCell('C3').value, '2026-05-13T10:57:05.000Z');
     assert.equal(sheet.getCell('G3').value, capturedAt, 'collector time is a separate column');
-    assert.equal(sheet.getCell('A4').value, 'Broker C sector update.pdf');
-    assert.equal(sheet.getCell('E4').value, 'Broker C sector update.pdf');
+    assert.equal(sheet.getCell('A5').value, 'Broker C sector update.pdf');
+    assert.equal(sheet.getCell('E5').value, 'Broker C sector update.pdf');
   }
   // `capturedAt` moves when the CHANNEL posts, not when the job ran, so the label may not claim it.
   assert(!/\bLive\b/i.test(view.pill), `the status label must not claim Live, got: ${view.pill}`);
@@ -303,6 +299,54 @@ try {
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   assert((await page.locator('[data-telegram-live]').innerText()).includes('Public source retry after'));
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(),view.drawn+1,'public source backoff retains every visible row');
+  // Validated persistent data must survive a malformed response AND a full browser reload.
+  const cacheAt = new Date(Date.parse(freshAt) + 3000).toISOString();
+  servedArtifact = { ...capture, lastRun: { at: cacheAt, status: 'ok' }, lastCheckedAt: cacheAt,
+    posts: [{ ...post(502, null), publishedAt: cacheAt }, post(501, 'New API report'), ...capture.posts] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn + 2);
+  assert((await page.locator('[data-telegram-source-status]').innerText()).includes('Newest readable report:'), 'new restricted publications cannot masquerade as an old feed');
+  await page.waitForFunction(() => new Promise(resolve => {
+    const open = indexedDB.open('sattva-cache');
+    open.onsuccess = () => { const db = open.result; const req = db.transaction('payloads').objectStore('payloads').get('telegram-artifact-v1');
+      req.onsuccess = () => { resolve(req.result?.value?.posts?.some(p => p.id === 502)); db.close(); }; };
+    open.onerror = () => resolve(false);
+  }));
+  servedCapture = { error: 'malformed static' };
+  servedArtifact = { channel: 'researchreportss', posts: [{ id: 0, text: 'invalid' }] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  const stored = await page.evaluate(async () => (await (await import('/js/core/store.js')).readEntry('telegram-artifact-v1')).value);
+  assert(stored.posts.some(p => p.id === 502), 'malformed 200 cannot replace last-good cache');
+  servedArtifact = { ...capture, lastRun: { at: '2099-01-01T00:00:00Z', status: 'ok' } };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.evaluate(async () => (await (await import('/js/core/store.js')).readEntry('telegram-artifact-v1')).value.lastRun.at), cacheAt,
+    'a future check timestamp cannot poison the cache and block later valid updates');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof window.renderScope === 'function');
+  await page.evaluate(() => window.renderScope('universe', { section: 'telegram' }));
+  await page.waitForFunction(() => document.querySelectorAll('[data-chatter-panel="telegram"] tbody tr[data-row-key]').length === 9);
+  assert((await page.locator('[data-telegram-live]').innerText()).includes('needs attention'));
+  // An older but valid fallback can replace its HTTP cache entry; it cannot erase the
+  // additive archive that must survive the next offline reload.
+  servedArtifact = { ...capture, lastRun: { at: freshAt, status: 'ok' }, lastCheckedAt: freshAt,
+    delivery: { status: 'partial', degraded: true, collectorLatestFailed: true },
+    posts: [post(501, 'Older API report'), ...capture.posts] };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 9);
+  assert((await page.locator('[data-telegram-live]').innerText()).includes('needs attention'));
+  await page.waitForFunction(() => new Promise(resolve => {
+    const open = indexedDB.open('sattva-cache');
+    open.onsuccess = () => { const db = open.result; const req = db.transaction('payloads').objectStore('payloads').get('telegram-retained-v1');
+      req.onsuccess = () => { resolve(req.result?.value?.posts?.some(p => p.id === 502)); db.close(); }; };
+    open.onerror = () => resolve(false);
+  }));
+  artifactStatus = snapshotStatus = 503;
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof window.renderScope === 'function');
+  await page.evaluate(() => window.renderScope('universe', { section: 'telegram' }));
+  await page.waitForFunction(() => document.querySelectorAll('[data-chatter-panel="telegram"] tbody tr[data-row-key]').length === 9);
+  const offline = await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).meta());
+  assert(offline.reason && offline.count === 9, 'offline reload retains validated records and reports unavailable collection');
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);

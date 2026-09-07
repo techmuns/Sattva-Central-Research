@@ -3255,8 +3255,11 @@ Source mode is `embed+permalink` unless an operator connects the optional offici
 `mtproto` collector. Only MTProto can set `latestVerifiedAt` after reading the actual
 channel head and catching up. `lastCheckedAt`, `lastRun.at`, publication dates and
 content-change time remain separate. No source-check timestamp alone proves complete
-channel history. All retained messages are counted as archived; only captured text or
-named documents are listed. No company, sentiment or file content is invented.
+channel history. All retained messages are counted as archived and listed; posts without
+captured text or named documents retain their publication date and original Telegram link.
+No company, sentiment or file content is invented. `catchupRanges` holds inclusive message-ID
+intervals independently of `historyNextId`. Delivery identifies early versus final artifacts,
+normal work in progress and degraded fallback; none changes source-check timestamps.
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 

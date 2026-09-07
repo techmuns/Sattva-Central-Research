@@ -38,14 +38,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: main
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Restore retained collection independently of archive PRs
+        id: restore
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/telegram-artifact.mjs restore public/data/telegram-posts.json "$RUNNER_TEMP/telegram-posts.json"
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/telegram-artifact.mjs restore public/data/telegram-posts.json "$RUNNER_TEMP/telegram-posts.json"; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep 5
+          done
       - name: Detect official API connection
         id: connection
         env:
@@ -61,8 +68,36 @@ jobs:
       - name: Install official API client outside the repository
         if: steps.connection.outputs.api == 'true'
         run: pip install --disable-pip-version-check telethon==1.44.0
+      - name: Collect recent public posts before historical work
+        id: recent
+        if: steps.connection.outputs.api != 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_OUT: ${{ runner.temp }}/telegram-posts.json
+          TELEGRAM_PHASE: recent
+          TELEGRAM_BUDGET_MS: '180000'
+          TELEGRAM_BACKFILL: '0'
+          TELEGRAM_DISCOVERY: '0'
+          TELEGRAM_HEAD_HINT: ${{ inputs.head_hint || '0' }}
+        run: node scripts/scrape-telegram.mjs
+      - name: Preserve a failed recent source check
+        if: steps.recent.outcome == 'failure'
+        run: node scripts/telegram-artifact.mjs failed "$RUNNER_TEMP/telegram-posts.json"
+      - name: Package the recent public checkpoint
+        if: steps.connection.outputs.api != 'true'
+        run: node scripts/telegram-artifact.mjs pack "$RUNNER_TEMP/telegram-posts.json" "$RUNNER_TEMP/telegram-head-v1.json.gz"
+      - name: Deliver recent posts while history continues
+        if: steps.connection.outputs.api != 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/telegram-head-v1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 7
       - name: Collect channel through official API or public fallback
         id: collect
+        if: steps.connection.outputs.api == 'true' || steps.recent.outcome == 'success'
         continue-on-error: true
         env:
           TELEGRAM_CREDENTIALS: ${{ secrets.TELEGRAM_CREDENTIALS }}
@@ -70,6 +105,8 @@ jobs:
           TELEGRAM_OUT: ${{ runner.temp }}/telegram-posts.json
           TELEGRAM_BACKFILL: ${{ inputs.backfill || '180' }}
           TELEGRAM_HEAD_HINT: ${{ inputs.head_hint || '0' }}
+          TELEGRAM_PHASE: history
+          TELEGRAM_BUDGET_MS: '360000'
         run: |
           if [ -n "$TELEGRAM_CREDENTIALS" ]; then
             python scripts/collect-telegram.py
@@ -80,15 +117,20 @@ jobs:
         if: steps.collect.outcome == 'failure'
         run: node scripts/telegram-artifact.mjs failed "$RUNNER_TEMP/telegram-posts.json"
       - name: Validate and package only public channel data
+        id: package
+        if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
         run: node scripts/telegram-artifact.mjs pack "$RUNNER_TEMP/telegram-posts.json" "$RUNNER_TEMP/telegram-posts-v1.json.gz"
       - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         with:
           path: ${{ runner.temp }}/telegram-posts-v1.json.gz
           archive: false
           if-no-files-found: error
           retention-days: 90
-      # Publish a health record even after source failure. The UI reads lastRun, never equates
-      # workflow success with source success; the error is explicit in the run summary.
+      # Publish retained rows and safety state first, then make source failures fail the job.
+      # A valid final artifact remains readable even if the workflow ends with this health error.
       - name: Collection health
-        if: steps.collect.outcome == 'failure'
-        run: echo '::warning::Telegram source failed. Prior posts and failed health were retained in the artifact.'
+        if: ${{ always() && (steps.collect.outcome == 'failure' || steps.recent.outcome == 'failure') }}
+        run: |
+          echo '::error::Telegram source check failed. Retained posts and safety state were packaged before this health failure.'
+          exit 1

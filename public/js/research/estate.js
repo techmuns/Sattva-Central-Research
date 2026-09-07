@@ -38,6 +38,7 @@ import * as earningsCalendar from '../data/earnings-calendar.js';
 import * as concalls from '../data/concall-scans.js';
 import * as chatter from '../data/chatter-live.js';
 import * as telegram from '../data/telegram-posts.js';
+import { telegramReadHealth } from '../data/telegram-health.js';
 import * as technicals from '../data/technicals.js';
 import * as investors from '../data/super-investors.js';
 import * as institutions from '../data/institution-holdings.js';
@@ -980,13 +981,14 @@ const BUILDERS = [
         : scope === 'universe' ? index.filter(entry => !entry.ticker || scopeAllowsTicker(scope, entry.ticker, holdings)) : holdings;
       const rows = telegramCompanyRows(telegram.posts(), identities, index);
       const matchedPosts = new Set(rows.map(row => row.id)).size;
+      const health = telegramReadHealth(meta);
       return sourcePacket(this.id, {
         source: `Telegram public channel @${meta.channel}`,
         asOf: meta.lastCheckedAt || meta.capturedAt,
         rowCount: rows.length,
-        dataQuality: meta.reason || meta.lastRun?.status !== 'ok' || !meta.historyComplete || meta.limited || meta.pending ? 'partial' : 'source-reported',
+        dataQuality: health.state !== 'checked' || !meta.historyComplete || meta.limited ? 'partial' : 'source-reported',
         definition: 'Unverified channel discussion; a company mention does not verify a claim. Text and document names only; attachment contents unread. publishedAt is publication time; firstSeenAt is observation time. Undated posts have no inferred date.',
-        note: `${meta.reason ? `${clipped(meta.reason, 65)} ` : meta.lastRun?.status !== 'ok' ? 'Latest collection not successful. ' : ''}Captured channel only; history ${meta.historyComplete ? 'collector reports complete' : 'incomplete'}. ${meta.limited || 0} posts require Telegram to read. Unmatched posts are not assigned to portfolio companies.`,
+        note: `${meta.reason ? `${clipped(meta.reason, 65)} ` : health.state !== 'checked' ? 'Latest source check is stale, incomplete or unavailable. ' : ''}Captured channel only; history ${meta.historyComplete ? 'collector reports complete' : 'incomplete'}. ${meta.limited || 0} posts require Telegram to read. Unmatched posts are not assigned to portfolio companies.`,
         coverage: { archivedPosts: meta.count, matchedPosts, unmatchedPosts: meta.count - matchedPosts,
           historyComplete: meta.historyComplete, restrictedPosts: meta.limited, undatedPosts: meta.undated,
           pendingIds: meta.pending, lastCheckedAt: meta.lastCheckedAt, latestVerifiedAt: meta.latestVerifiedAt,

@@ -31,6 +31,7 @@ import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
 import * as coverage from '../data/coverage.js';
 import * as telegram from '../data/telegram-posts.js';
+import { telegramReadHealth } from '../data/telegram-health.js';
 
 export const meta = {
   id: 'public-chatter',
@@ -728,10 +729,10 @@ function telegramDescription() {
 }
 function telegramHeadMeta() {
   const t = telegram.meta();
-  const failed = t.reason || t.delivery?.collectorLatestFailed || ['failed', 'partial'].includes(t.lastRun?.status);
-  const stale = t.lastCheckedAt && Date.now() - Date.parse(t.lastCheckedAt) > 30 * 60000;
-  const warning = failed || stale;
-  const state = failed ? 'partial' : t.lastCheckedAt ? (stale ? 'stale' : 'checked') : 'unknown';
+  const health = telegramReadHealth(t);
+  const failed = health.failed || health.partial;
+  const state = health.state;
+  const warning = state !== 'checked';
   const paused = t.apiSafety?.paused || (failed && Date.parse(t.apiSafety?.nextAttemptAt || '') > Date.now());
   const publicPaused = t.route !== 'mtproto' && Date.parse(t.publicSafety?.nextAttemptAt || '') > Date.now();
   const label = publicPaused ? `Public source retry after ${telegramDate(t.publicSafety.nextAttemptAt)}` : paused ? (t.apiSafety?.paused ? 'Account collection paused for review' : `Account collection paused until ${telegramDate(t.apiSafety.nextAttemptAt)}`) : failed ? 'Collection needs attention' : t.lastCheckedAt ? `Checked ${formatRelativeTime(new Date(t.lastCheckedAt))}` : 'Check time unavailable';
@@ -739,7 +740,7 @@ function telegramHeadMeta() {
     <span data-telegram-live data-telegram-freshness="${state}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${warning ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-slate-50 text-slate-600 ring-slate-200'}">
       ${escapeHtml(formatNumber(t.count || 0))} archived · ${escapeHtml(formatNumber(t.listed || 0))} readable · ${escapeHtml(label)}
     </span>
-    <p data-telegram-source-status class="text-xs text-slate-500">Newest captured post: ${escapeHtml(telegramDate(t.newestPublishedAt))}. ${t.latestVerifiedAt && !failed ? `Latest channel post verified ${escapeHtml(formatRelativeTime(new Date(t.latestVerifiedAt)))}.` : 'Latest channel post has not been verified.'}</p>
+    <p data-telegram-source-status class="text-xs text-slate-500">Newest captured post: ${escapeHtml(telegramDate(t.newestPublishedAt))}. ${t.newestReadableAt !== t.newestPublishedAt ? `Newest readable report: ${escapeHtml(telegramDate(t.newestReadableAt))}. ` : ''}${t.delivery?.collectorInProgress ? 'Collection is continuing. ' : ''}${t.latestVerifiedAt && !failed ? `Latest channel post verified ${escapeHtml(formatRelativeTime(new Date(t.latestVerifiedAt)))}.` : 'Latest channel post has not been verified.'}</p>
   </div>`;
 }
 function telegramPanel(table) {
@@ -778,13 +779,9 @@ function maybeAutoRefreshTelegram() {
 }
 
 function buildTelegramTable() {
-  // A MESSAGE WITH NOTHING TO READ IS NOT A ROW. Slightly over half of this channel's messages are
-  // images and forwarded media posted without a caption — 170 of the 327 in the shipped capture —
-  // and a row whose only content is "Open in Telegram to read" is a row that answers nothing on a
-  // page whose whole point is the report headline. They stay in the ARCHIVE, because they are real
-  // messages, they carry the publication dates the ordering rests on, and the newest of them is
-  // what anchors the channel's head; they are simply not listed.
-  const rows = telegram.posts().filter((r) => r.text || r.attachments.length);
+  // A captured publication remains visible even when Telegram withholds its public text.
+  // Its date and original link distinguish new restricted posts from a stalled collection.
+  const rows = telegram.posts();
   if (!rows.length) return null;
   const table = scoreTable({
     rows, key: (r) => r.key, watchKey: () => null, name: postLabel,
@@ -809,7 +806,7 @@ function telegramFootnotes() {
     t.historyNextId ? `Older history is incomplete; the next collection continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
   return `<div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
     <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} via ${t.route === 'mtproto' ? 'the official Telegram API' : 'public message pages and embeds'}. ${escapeHtml(progress)}
-    ${formatNumber(t.count - t.listed)} messages have no captured text or named attachment and are not listed; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
+    ${formatNumber(t.count - t.listed)} messages have no captured text or named attachment and are shown as Telegram links; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
     ${t.undated ? `${formatNumber(t.undated)} older records are awaiting publication dates. ` : ''}
     Gaps between message numbers are not treated as posts. Publication dates come from Telegram; collection and first-seen times are separate.
     Captures update automatically while this tab is open. Collection scheduling is best effort; this is a polled feed. Original files open in Telegram.</p>

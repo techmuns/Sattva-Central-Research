@@ -47,7 +47,7 @@ jobs:
         run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs
       - name: Read latest validated artifact for the daily repository backup
         if: steps.existing.outputs.skip != 'true'
-        run: node scripts/telegram-artifact.mjs restore public/data/telegram-posts.json public/data/telegram-posts.json
+        run: node scripts/telegram-artifact.mjs backup public/data/telegram-posts.json public/data/telegram-posts.json
       - name: Open archive update PR
         if: steps.existing.outputs.skip != 'true' && github.ref == 'refs/heads/main'
         id: archive
