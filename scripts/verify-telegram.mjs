@@ -83,6 +83,71 @@ assert.equal(down.lastRun.status, 'failed');
 assert.deepEqual(down.posts, second.posts);
 assert.equal(down.capturedAt, second.capturedAt);
 assert.equal(down.lastCheckedAt, second.lastCheckedAt);
+
+// A deleted/restricted head is not a channel-wide outage. Reproduce the retained
+// September head: its three captionless controls disappeared, while the older
+// Hexaware caption and a September 7 publication remain publicly readable.
+const previousCheck = '2026-09-06T08:00:00Z';
+const nextCheck = '2026-09-07T02:00:00.000Z';
+const knownHead = { channel, schemaVersion: 2, headId: 102828, historyNextId: 101000, discoveryNextId: 102900,
+  capturedAt: previousCheck, lastCheckedAt: previousCheck,
+  posts: [102828, 102827, 102826].map(id => ({ ...old(id), text: null, publishedAt: published, contentStatus: 'telegram-only' }))
+    .concat({ ...old(102825), text: 'Hexaware Technologies: Vivek Jetley to take over as CEO', publishedAt: published }) };
+const visible = upstream(new Map([
+  [102825, { body: '<div class="tgme_widget_message_text">Hexaware Technologies: Vivek Jetley to take over as CEO</div>' }],
+  [102829, { body: '<div class="tgme_widget_message_text">New September 7 research report</div>' }],
+]));
+const afterMissingHead = await collect(knownHead, { ...settings, history: 0 }, { ...visible, now: () => Date.parse(nextCheck) });
+assert.equal(afterMissingHead.lastRun.status, 'ok', 'missing recent controls cannot permanently stop an otherwise readable public channel');
+assert.equal(afterMissingHead.headId, 102829);
+assert(afterMissingHead.posts.some(post => post.id === 102829 && post.text === 'New September 7 research report'));
+assert(knownHead.posts.every(post => afterMissingHead.posts.some(retained => retained.id === post.id)), 'now-missing captured posts remain in history');
+assert.equal(afterMissingHead.lastCheckedAt, nextCheck);
+assert.equal(afterMissingHead.historyNextId, knownHead.historyNextId, 'a control recovery does not reset completed backfill progress');
+
+const controlArchive = { channel, schemaVersion: 2, headId: 5000, historyNextId: 3900, discoveryNextId: 5200,
+  capturedAt: previousCheck, lastCheckedAt: previousCheck, posts: Array.from({ length: 1000 }, (_, index) => old(5000 - index)) };
+const oldestReadable = upstream(new Map([[4001, { body: '<div class="tgme_widget_message_text">Older public report</div>' }],
+  [5001, { body: '<div class="tgme_widget_message_text">Newest public report</div>' }]]));
+const distantControl = await collect(controlArchive, { ...settings, history: 0 }, oldestReadable);
+assert(distantControl.posts.some(post => post.id === 5001), 'control diversity must reach retained history beyond the newest cluster');
+assert.equal(distantControl.lastRun.status, 'ok');
+
+const missingControls = upstream(new Map());
+const noneReadable = await collect(controlArchive, settings, { ...missingControls, now: () => Date.parse(nextCheck) });
+const probedIds = new Set(missingControls.calls.map(path => Number(path.match(/\/(\d+)\?/)?.[1])).filter(Boolean));
+assert(probedIds.size > 3 && probedIds.size <= 8, 'a failed control check probes diverse history with at most eight known-message candidates');
+assert(missingControls.calls.length <= 17, 'confirmed missing controls need at most two reads per candidate plus the landing page');
+assert([...probedIds].every(id => controlArchive.posts.some(post => post.id === id)), 'an unverified channel must not enter forward or backfill scans');
+assert.equal(noneReadable.lastRun.status, 'failed');
+assert.deepEqual(noneReadable.posts, controlArchive.posts);
+for (const key of ['capturedAt', 'lastCheckedAt', 'headId', 'historyNextId', 'discoveryNextId']) {
+  assert.equal(noneReadable[key], controlArchive[key], `failed diverse controls preserve ${key}`);
+}
+
+// A fallback control may be the first request that encounters a refusal. The
+// collector must stop there, not continue through its other control candidates.
+for (const status of [403, 429]) {
+  const paths = [];
+  let refusedAt = null;
+  const fallbackRefused = await collect(knownHead, settings, { now: () => Date.parse(nextCheck), sleep: async () => {}, fetcher: async url => {
+    const u = new URL(url), id = Number(u.pathname.split('/')[2]);
+    paths.push(u.pathname + u.search);
+    if (!id) return new Response(landing);
+    if ([102828, 102827, 102826].includes(id)) return new Response(missing);
+    assert.equal(refusedAt, null, 'no request may follow an explicit source refusal');
+    refusedAt = paths.length;
+    return new Response('Please wait', { status, headers: { 'retry-after': '7200' } });
+  } });
+  assert(refusedAt !== null, 'the fixture reaches an older fallback control');
+  assert.equal(paths.length, refusedAt, 'a fallback refusal stops all remaining public requests immediately');
+  assert.equal(fallbackRefused.lastRun.status, 'failed');
+  assert.equal(fallbackRefused.publicSafety.reason, status === 403 ? 'source-refused' : 'rate-limit');
+  assert.equal(Date.parse(fallbackRefused.publicSafety.nextAttemptAt), Date.parse(nextCheck) + 7260000);
+  assert.deepEqual(fallbackRefused.posts, knownHead.posts);
+  assert.equal(fallbackRefused.lastCheckedAt, knownHead.lastCheckedAt);
+  assert.equal(fallbackRefused.historyNextId, knownHead.historyNextId);
+}
 await assert.rejects(() => collect({ channel: 'different', posts: [] }, settings, source), /another channel/);
 
 const many = Array.from({ length: 650 }, (_, i) => old(1000 - i));
@@ -109,4 +174,4 @@ assert(!workflow.includes('merge-telegram-capture.mjs'), 'source collection cann
 const archiveWorkflow = await readFile('.github/workflows/telegram-archive.yml', 'utf8');
 assert(archiveWorkflow.includes('merge-telegram-capture.mjs'));
 assert(!/HEAD:main|Commit.*main/.test(archiveWorkflow));
-console.log('PASS Telegram: verified identities/dates, hidden posts, caption edits, history resume, uncapped retention, retry recovery, source failure, gap discovery and PR publishing contract');
+console.log('PASS Telegram: verified identities/dates, hidden posts, caption edits, history resume, uncapped retention, retry recovery, bounded diverse controls, missing-head recovery, fallback refusal stops, source failure, gap discovery and PR publishing contract');
