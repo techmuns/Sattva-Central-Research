@@ -80,8 +80,8 @@ export function mount(root) {
   scopeLists.migratePortfolioToWatchlist();
   wireStaticHeader(root);
   coverage.onChange(({ changed }) => {
-    if (changed && state.scope === 'portfolio' && !['ask-research', 'ai-alerts'].includes(state.tab) && !document.querySelector('[data-scope-editor]')) {
-      setTimeout(() => handleRoute(root, router.parseHash()), 0);
+    if (changed && state.scope === 'portfolio' && !currentTabModule?.meta.scopeIndependent && !['ask-research', 'ai-alerts'].includes(state.tab) && !document.querySelector('[data-scope-editor]')) {
+      setTimeout(() => { if (!currentTabModule?.meta.scopeIndependent) handleRoute(root, router.parseHash()); }, 0);
     }
   });
   // Read-only, one names-only request per minute while visible. The existing
@@ -123,19 +123,21 @@ export function mount(root) {
   // Deferred by a tick because the change arrives mid-`repaint()`, and remounting the tab out from
   // under the handler that is painting it is a different bug for the same money.
   watchlist.onChange(() => {
+    if (currentTabModule?.meta.scopeIndependent) return;
     if (state.scope !== 'watchlist') return;
     // The editor deliberately batches its repaint until it closes, so several additions can be
     // made without the route remount closing the modal after the first click.
     if (document.querySelector('[data-scope-editor]')) return;
     setTimeout(() => {
-      if (state.scope === 'watchlist') handleRoute(root, router.parseHash());
+      if (state.scope === 'watchlist' && !currentTabModule?.meta.scopeIndependent) handleRoute(root, router.parseHash());
     }, 0);
   });
 
   scopeLists.onChange((scope) => {
+    if (currentTabModule?.meta.scopeIndependent) return;
     if (state.scope !== scope || document.querySelector('[data-scope-editor]')) return;
     setTimeout(() => {
-      if (state.scope === scope) handleRoute(root, router.parseHash());
+      if (state.scope === scope && !currentTabModule?.meta.scopeIndependent) handleRoute(root, router.parseHash());
     }, 0);
   });
 

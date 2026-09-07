@@ -24,9 +24,12 @@ window.showTable=(section='news')=>{tab.destroy();dispose?.();setRoute({workspac
 window.showNotebook=()=>{dispose?.();dispose=null;tab.render({root,scope:'watchlist',data:{},params:{}});};
 window.showNotebook(); window.ready=true;
 </script>`;
-const html = readFileSync(resolve(root, 'index.html'), 'utf8').replace('<script type="module" src="js/app.js"></script>', harness);
+const appHtml = readFileSync(resolve(root, 'index.html'), 'utf8');
+const html = appHtml.replace('<script type="module" src="js/app.js"></script>', harness);
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
+  if (path === '/shell') { res.setHeader('content-type', 'text/html'); res.end(appHtml); return; }
+  if (path.startsWith('/api/')) { res.setHeader('content-type', 'application/json'); res.end('{"ok":false,"status":"unavailable","reason":"local-test"}'); return; }
   if (path === '/' || path === '/fixture') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
   const file = resolve(root, `.${path}`);
   if (!file.startsWith(root + '/')) { res.writeHead(404).end(); return; }
@@ -151,6 +154,22 @@ try {
   await unavailable.getByRole('alert').filter({hasText:'storage is unavailable'}).waitFor();
   assert.equal(await unavailable.locator('[data-bookmark-key]').first().getAttribute('aria-pressed'),'false');
   await blocked.close();
+  // The actual shell must not remount this scope-independent tab under an open note.
+  const shell=await context.newPage();shell.on('pageerror',error=>errors.push(error.message));
+  await shell.goto(base+'/shell#/research/bookmarks?scope=watchlist');
+  await shell.getByRole('tab',{name:'Bookmarked Notebook',exact:true}).waitFor();
+  assert.equal(await shell.locator('[data-scope-controls]').isVisible(),false);
+  await shell.locator('[data-notebook-search]').fill('New capacity announced');
+  await shell.getByRole('button',{name:'New capacity announced',exact:true}).click();
+  await shell.locator('#notebook-note').fill('A note in progress must survive company membership changes.');
+  await shell.evaluate(async()=>{(await import('/js/core/watchlist.js')).add('RELIANCE','Reliance Industries');await new Promise(done=>setTimeout(done,50));});
+  assert.equal(await shell.locator('#notebook-note').inputValue(),'A note in progress must survive company membership changes.');
+  await shell.evaluate(()=>location.hash='/research/bookmarks?scope=portfolio');
+  await shell.getByRole('button',{name:'New capacity announced',exact:true}).click();
+  await shell.locator('#notebook-note').fill('Portfolio refresh must keep this editor open.');
+  await shell.evaluate(async()=>{(await import('/js/data/coverage.js')).useFamilyBook([{ticker:'TCS',name:'Tata Consultancy Services'}],'2026-09-07');await new Promise(done=>setTimeout(done,50));});
+  assert.equal(await shell.locator('#notebook-note').inputValue(),'Portfolio refresh must keep this editor open.');
+  await shell.close();
   assert.deepEqual(errors.filter(error=>!error.includes('Test quota failure')),[]);
   console.log('PASS notebook save, keyboard, reload, archived sources, notes, company filters, cross-tab races, rollback, backup/restore, safe rendering, all-record search and both themes at mobile/desktop widths');
 } finally { await browser.close(); await new Promise(done=>server.close(done)); }
