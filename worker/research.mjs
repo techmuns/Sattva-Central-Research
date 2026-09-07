@@ -271,10 +271,10 @@ async function consumeMunsStream(stream, controller) {
   const consumeRaw = (raw) => {
     try {
       const event = JSON.parse(raw);
-      if (typeof event?.text === 'string' && event.text) {
-        final.push(event.text);
-      } else if (event?.error) {
+      if (event?.error) {
         providerStreamFailure = String(event.error?.message || event.error).slice(0, 260);
+      } else if (typeof event?.text === 'string' && event.text) {
+        final.push(event.text);
       }
     } catch {
       providerStreamFailure = 'The research provider returned a malformed answer stream.';
@@ -282,25 +282,25 @@ async function consumeMunsStream(stream, controller) {
   };
 
   try {
-    while (!providerStreamFailure) {
+    while (!providerStreamFailure && !final.finish().complete) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const parsed = takeNdjsonLines(buffer);
       buffer = parsed.rest;
-      if (buffer.length > 64_000 || parsed.lines.some(line => line.length > 64_000)) {
-        providerStreamFailure = 'The research provider returned an oversized stream event.';
-        break;
-      }
       for (const raw of parsed.lines) {
+        if (raw.length > 64_000) { providerStreamFailure = 'The research provider returned an oversized stream event.'; break; }
         consumeRaw(raw);
-        if (providerStreamFailure) break;
+        if (providerStreamFailure || final.finish().complete) break;
       }
+      if (!final.finish().complete && buffer.length > 64_000) providerStreamFailure = 'The research provider returned an oversized stream event.';
     }
     buffer += decoder.decode();
-    if (!providerStreamFailure && buffer.trim()) consumeRaw(buffer);
+    if (!providerStreamFailure && !final.finish().complete && buffer.trim()) consumeRaw(buffer);
   } finally {
-    await reader.cancel().catch(() => {});
+    // The answer's closing marker is terminal. Connection teardown may settle
+    // later and must never postpone done or reverse a completed answer.
+    void reader.cancel().catch(() => {});
     reader.releaseLock();
   }
 
@@ -346,6 +346,7 @@ function researchStream(request, env, input) {
           message: timedOut ? 'Research took too long. Please try a narrower question.' : request.signal.aborted ? 'Research was cancelled.' : 'The research provider could not be reached.',
         });
       } finally {
+        upstreamCancellation.abort();
         if (!cancelled) rawController.close();
       }
     },

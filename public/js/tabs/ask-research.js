@@ -1088,8 +1088,10 @@ async function submitCurrent(retryQuestion) {
   }
 }
 
-function interruptedAnswer() {
-  return Object.assign(new Error('The answer ended before a complete response arrived.'), { retryable: true });
+function interruptedAnswer(hasText = false) {
+  return Object.assign(new Error(hasText
+    ? 'The connection closed before the answer finished. The text above and its sources are saved.'
+    : 'The answer ended before a complete response arrived.'), { retryable: true });
 }
 
 async function consumeStream(stream, session, generation) {
@@ -1121,20 +1123,23 @@ async function consumeStream(stream, session, generation) {
       buffer += decoder.decode(part.value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
-      if (buffer.length > 64_000) throw new Error('The answer stream was malformed.');
       for (const line of lines) {
+        if (line.length > 64_000) throw new Error('The answer stream was malformed.');
         consumeEvent(line);
         if (done || streamError) break;
       }
+      if (!done && !streamError && buffer.length > 64_000) throw new Error('The answer stream was malformed.');
     }
     buffer += decoder.decode();
     if (!done && !streamError && buffer.trim()) consumeEvent(buffer);
   } finally {
-    await reader.cancel().catch(() => {});
+    // Finalize the message as soon as done arrives, even if a proxy takes time
+    // to release its stream. Cleanup cannot keep the answer in Working state.
+    void reader.cancel().catch(() => {});
     reader.releaseLock();
   }
   if (streamError) throw new Error(streamError);
-  if (!done || !session.streamText.trim()) throw interruptedAnswer();
+  if (!done || !session.streamText.trim()) throw interruptedAnswer(!!session.streamText.trim());
 
   session.messages.push({
     role: 'assistant',

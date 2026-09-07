@@ -345,6 +345,14 @@ with `llm_type: local_llm` and `stream: true` for low first-token latency; the u
 no web-search mode, so the UI makes no such claim. Model text is rendered through a small DOM-based Markdown subset and never
 reaches `innerHTML`.
 
+For Muns, the explicit `</research-answer>` marker ends the answer immediately;
+the Worker cancels the upstream reader and aborts its fetch without waiting for
+HTTP EOF. The browser likewise finalizes on its `done` event without waiting for
+transport cancellation to settle. Late connection errors cannot reverse a
+completed answer. Missing completion remains an error: text and sources are
+retained as partial, with no silent duplicate inference. Run
+`node scripts/verify-research-completion.mjs` for these boundary cases.
+
 An empty Watchlist does not replace this tab with the shell's generic empty panel. The source
 catalog and its zero-row coverage are still useful evidence, so this module declares
 `meta.allowEmptyScope`; every other tab retains the shared empty-Watchlist behavior.
