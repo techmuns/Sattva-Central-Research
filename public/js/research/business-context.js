@@ -72,17 +72,22 @@ export function businessSignals(row) {
   // Deliberately exclude our source labels ("AI Alerts"), identifiers, URLs,
   // sentiment scores and generic company names from semantic matching.
   const text = companyPassages(row);
+  const names = [row.company, row.name].filter(Boolean).map(name => String(name).replace(/\b(?:limited|ltd)\.?$/i, '').trim()).filter(name => name.length > 3);
+  const withoutNames = value => names.reduce((result, name) => result.replace(new RegExp(`\\b${escapePattern(name)}\\b`, 'gi'), match => ' '.repeat(match.length)), value);
+  // Preserve original quote offsets while stopping "Solar Industries" or
+  // "AI Finance" in a headline from creating a business classification.
+  const semanticText = withoutNames(text);
   const industry = [row.industry, row.sector].filter(Boolean).join(' ');
   return CONCEPTS.flatMap(([id, label, pattern]) => {
-    const match = pattern.exec(text) || pattern.exec(industry);
+    const match = pattern.exec(semanticText) || pattern.exec(industry);
     if (!match) return [];
-    const inText = pattern.test(text), value = inText ? text : industry;
-    const index = pattern.exec(value)?.index || 0;
+    const inText = pattern.test(semanticText), value = inText ? text : industry;
+    const index = pattern.exec(inText ? semanticText : industry)?.index || 0;
     const from = Math.max(0, index - 100);
     const local = value.slice(Math.max(0, index - 90), index + 90);
     const denied = /\b(?:does not|doesn't|do not|not|no longer)\s+(?:\w+\s+){0,3}(?:manufacture|make|sell|provide|operate|produce|exposed|exposure|involved|linked)\b/i.test(local);
     return [{ id, label, industryMatch: pattern.test(industry), basis: inText
-      ? (row.sourceTags?.some(tag => pattern.test(tag)) ? 'company analysis tags' : 'company-linked source text') : 'industry label only',
+      ? (row.sourceTags?.some(tag => pattern.test(withoutNames(tag))) ? 'company analysis tags' : 'company-linked source text') : 'industry label only',
       stance: denied ? 'denied-or-limited' : 'mentioned',
       excerpt: `${from ? '…' : ''}${textLimit(value.slice(from), 360)}${value.length > from + 360 ? '…' : ''}` }];
   });

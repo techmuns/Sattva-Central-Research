@@ -53,6 +53,12 @@ assert.equal(withoutReference.companies[0].inScope, false);
 
 const signals = row => businessSignals(row).map(s => s.id);
 assert.deepEqual(signals({ ticker: 'AI', company: 'AI Finance', title: 'Results gain 10%', feed: 'AI Alerts', url: 'https://example.test/ai' }), []);
+assert.deepEqual(signals({ ticker: 'AIFIN', company: 'AI Finance', title: 'AI Finance announces a dividend' }), []);
+assert.deepEqual(signals({ ticker: 'SOLARINDS', company: 'Solar Industries India', title: 'Solar Industries India announces a dividend' }), []);
+assert.deepEqual(signals({ ticker: 'SOLARINDS', company: 'Solar Industries India', title: 'Solar Industries India wins a defence order' }), ['defence']);
+const genuineAI = businessSignals({ ticker: 'AIFIN', company: 'AI Finance', title: 'AI Finance launches artificial intelligence products' });
+assert.equal(genuineAI[0].id, 'ai');
+assert.match(genuineAI[0].excerpt, /^AI Finance launches/, 'semantic filtering does not rewrite the source quote');
 assert.deepEqual(signals({ ticker: 'BANK', company: 'Bank Company', title: 'Bank Company gains today. Network Company launches 5G networks.' }), []);
 assert.deepEqual(signals({ ticker: 'HDFCBANK', company: 'HDFC Bank', title: 'Strongest sectors 🏦 HDFC Bank financial services 📱 Telecom Bharti Airtel 5G 🚙 Auto Tata Motors' }), []);
 assert(!signals({ ticker: 'STLTECH', company: ref.name, title: '*Indo-Tech*: Power transformers order. *STLTECH*: Optical fibre capacity expansion.' }).includes('power-equipment'));
