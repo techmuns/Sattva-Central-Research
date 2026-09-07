@@ -8,12 +8,23 @@ import { readFileSync } from 'node:fs';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateResearchBody } from '../worker/research.mjs';
+import { readNewsJson } from './lib/news-json-storage.mjs';
 
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = fileURLToPath(new URL('../public', import.meta.url));
+// Conversation lifecycle timings must have a reproducible source volume. The
+// full, growing archive is checked separately by verify-research-portfolio and
+// verify-news-publication-ui; it is not a fixed latency fixture for this suite.
+const newsFixture = readNewsJson(resolve(root, 'data/news.json'));
+delete newsFixture._jsonShards;
+newsFixture.byTicker = Object.fromEntries(Object.entries(newsFixture.byTicker).filter(([ticker]) => ['JAYNECOIND', 'IIFL', 'SAIL'].includes(ticker)).map(([ticker, rows]) => [ticker, rows.slice(0, 12)]));
+newsFixture.rowCount = Object.values(newsFixture.byTicker).reduce((sum, rows) => sum + rows.length, 0);
+newsFixture._provenance = 'Bounded UI test fixture; not a source completeness or live latency claim.';
+const newsFixtureJson = JSON.stringify(newsFixture);
 const questions = [], timings = [], errors = [];
 let holdAnswer = false;
 let failAnswer = false;
+let truncateAnswer = false;
 let emptyStreamsRemaining = 0;
 let firstDelayMs = 100;
 let customAnswer = null;
@@ -36,6 +47,11 @@ Public discussion remains unverified. [Dashboard: Telegram] [Dashboard: Public C
 const activeResponses = new Set();
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
+  if (url.pathname === '/data/news.json' || url.pathname === '/data/company-news/index.json') {
+    res.setHeader('content-type', 'application/json');
+    res.end(url.pathname.endsWith('/news.json') ? newsFixtureJson : '{"archive":[],"queries":{},"entities":[],"articleCount":0,"_provenance":"UI fixture: archive checked in the complete-portfolio suite"}');
+    return;
+  }
   if (url.pathname === '/api/research') {
     if (req.method === 'GET') { res.setHeader('content-type', 'application/json'); res.end('{"configured":true}'); return; }
     let raw = ''; for await (const chunk of req) raw += chunk;
@@ -46,6 +62,7 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/x-ndjson', 'cache-control': 'no-store, no-transform' });
     const send = event => res.write(JSON.stringify(event) + '\n');
     const failThisAnswer = failAnswer;
+    const truncateThisAnswer = truncateAnswer;
     const answer = customAnswer;
     const pauseThisAnswer = pauseAfterFirstText;
     pauseAfterFirstText = false;
@@ -59,6 +76,7 @@ const server = createServer(async (req, res) => {
     };
     const first = setTimeout(() => {
       send({ type: 'text', text: answer ? answer.slice(0, 150) : 'The latest available company update is dated 6 September. ' });
+      if (truncateThisAnswer) { res.end(); return; }
       // Keep the observed intermediate state until its assertions finish. CPU scheduling must
       // not let completion remove .is-streaming between waitFor() and innerText(). The original
       // first-token deadlines below still apply; only the subsequent fixture chunks are gated.
@@ -107,6 +125,7 @@ addEventListener('message', event=>{
 send({type:'available'});
 </script>`;
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
+let observedPage;
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1050 }, serviceWorkers: 'block' });
   await context.route('**/*', route => {
@@ -117,6 +136,7 @@ try {
     return route.continue();
   });
   const page = await context.newPage();
+  observedPage = page;
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${origin}/#/research/ask-research?scope=portfolio`);
   await page.getByText('Portfolio connected', { exact: false }).waitFor();
@@ -227,7 +247,10 @@ try {
   await slow.getByRole('button', { name: 'Send question' }).click();
   // This case checks bounded availability despite a stalled source, not an intermediate
   // streaming state (asserted above). A response that has already completed is valid too.
-  await slow.locator('.research-answer-body').filter({ hasText: 'latest available company update' }).waitFor({ timeout: 10_000 });
+  await slow.locator('.research-answer-body').filter({ hasText: 'latest available company update' }).waitFor({ timeout: 10_000 }).catch(async error => {
+    if (process.env.SCREENSHOT_PATH) await slow.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-stalled-source-failure.png'), fullPage: true });
+    throw error;
+  });
   timings.push({ scenario: 'stalled optional source', firstTextMs: Date.now() - slowStart });
   assert(parked.length > 0);
   assert.equal(questions.at(-1).evidence.sources.find(s => s.id === 'screener-insights').status, 'unavailable');
@@ -255,6 +278,42 @@ try {
   assert.equal(await page.locator('.research-opening').count(), 0, 'empty failure never resets the conversation to the welcome screen');
   assert.equal(await page.locator('.research-user-bubble').last().innerText(), screenshotQuestion);
   assert(await page.locator('.research-assistant-answer').last().locator('[data-research-preview]').isVisible(), 'source readings remain available after an empty failure');
+
+  // Customer regression: done is already received, but transport cancellation
+  // never settles. The completed message must still release the composer.
+  await page.evaluate(() => {
+    const fetchOriginal = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await fetchOriginal(...args);
+      if (String(args[0]).endsWith('api/research') && args[1]?.method === 'POST') {
+        window.fetch = fetchOriginal;
+        const getReader = response.body.getReader.bind(response.body);
+        response.body.getReader = () => {
+          const reader = getReader();
+          return { read: reader.read.bind(reader), releaseLock: reader.releaseLock.bind(reader),
+            cancel() { void reader.cancel().catch(() => {}); return new Promise(() => {}); } };
+        };
+      }
+      return response;
+    };
+  });
+  emptyStreamsRemaining = 0;
+  await submit('Is there any info of JM Financial initiating coverage?');
+  await page.locator('.research-assistant-answer:not(.is-streaming)').last().getByRole('button', { name: 'Copy answer', exact: true }).waitFor({ timeout: 10_000 });
+  assert.equal(await send.isEnabled(), false, 'an empty composer returns to its idle disabled state');
+  assert.equal(await page.getByRole('button', { name: 'Stop answer', exact: true }).count(), 0);
+  const completedReading = page.locator('.research-assistant-answer:not(.is-streaming)').last();
+  assert.equal(await completedReading.getByRole('button', { name: 'Retry answer', exact: true }).count(), 0, 'settling the transport cannot downgrade a completed answer');
+
+  // An actual EOF in the middle of an answer remains visibly partial; it is
+  // retained and never retried silently as a second, potentially different answer.
+  const beforePartialEof = questions.length;
+  truncateAnswer = true;
+  await submit('Is there any info of JM Financial initiating coverage?');
+  await page.getByText('The connection closed before the answer finished. The text above and its sources are saved.', { exact: true }).waitFor();
+  truncateAnswer = false;
+  assert.equal(questions.length, beforePartialEof + 1, 'partial EOF cannot create a hidden duplicate inference');
+  assert((await page.locator('.research-assistant-answer:not(.is-streaming)').last().innerText()).includes('latest available company update'));
 
   // Hold the model before its first token. Source readings must paint honestly
   // before it, and typing/IME composition cannot submit or erase a next draft.
@@ -452,6 +511,15 @@ try {
   await disconnected.close();
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ passed: true, timings, assertions: ['progressive HTTP stream', 'exact user regression', 'no duplicate model', 'fresh complete holdings', 'follow-up retrieval', 'company switch', 'stable transcript and scroll through completion', 'private storage', 'failed archive', 'workbook invalidation', 'Stop preserves text', 'partial recovery', 'mobile', 'source preview before inference', 'visible empty failure', 'next draft and IME input', 'manual retry revalidates holdings', 'browser deadline', 'connection recovery', 'readable heading variants', 'numbered citations with source names', 'reading view and compact composer', 'copy with exact provenance', 'jump to latest and start', 'mobile line length', 'safe markup and tables', 'stable streamed paragraphs', 'external sources preserve conversation'] }, null, 2));
+} catch (error) {
+  if (observedPage) {
+    console.error(JSON.stringify({ testState: await observedPage.evaluate(() => ({
+      phase: document.querySelector('[data-research-phase]')?.textContent,
+      transcript: document.querySelector('[data-research-transcript]')?.textContent?.slice(-1400),
+      button: document.querySelector('[data-research-send]')?.getAttribute('aria-label'),
+    })), receivedRequests: questions.length, timings }));
+  }
+  throw error;
 } finally {
   await browser.close();
   for (const response of activeResponses) response.destroy();

@@ -4,6 +4,23 @@ Status on 6 September 2026: **not yet certified for customer use**. Retrieval an
 application tests are separate from real-model quality, live data completeness,
 and the authenticated customer's book. An unavailable test is not a pass.
 
+## Stream completion recovery (7 September 2026)
+
+The Muns bridge previously waited for HTTP EOF even after the model's closing
+answer marker. Regression tests reproduce a complete answer hanging behind an
+open provider connection, late error frames and cancellation that never settles.
+The Worker now ends at the closing marker and aborts the fetch. The browser also
+commits `done` without waiting for cleanup. Real truncation retains partial text
+and sources and never becomes a success or triggers a hidden second inference.
+
+An isolated remote-development preview completed the customer's JM Financial
+coverage question using saved public dashboard readings: first text at 27.4s,
+completion at 31.6s. This is one successful transport observation, not a customer
+latency or answer-quality pass. No production inference or private-book read was
+performed. Source completeness and the model's interpretation still require their
+separate gates. Conversation lifecycle tests use bounded news fixtures; complete
+snapshot retrieval continues to run in the full-portfolio suite.
+
 ## Portfolio scenarios
 
 The existing [question bank](ASK-RESEARCH-QUESTIONS.md) contains 14 categories for
