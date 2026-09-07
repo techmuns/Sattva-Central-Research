@@ -291,12 +291,16 @@
     "isin:INE220J01025|FCONSUMER": {
       "lastAttemptAt": "2026-09-07T08:24:29+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE935Q01015|Future Supply Chain Solutions": {
+      "lastAttemptAt": "2026-09-07T08:59:48+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 229,
     "attempted": 1,
     "incomplete": 224,
-    "checkedAt": "2026-09-07T08:24:29.875224+00:00"
+    "checkedAt": "2026-09-07T08:59:48.570100+00:00"
   }
 }
