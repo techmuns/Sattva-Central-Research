@@ -407,6 +407,8 @@ export function scoreTable(config) {
     // All record tables can save a snapshot. A specialized adapter may replace the default.
     bookmark = null,
     bookmarkSection = state.tab || '',
+    bookmarkDate = null,
+    bookmarkSource = null,
     filters = null,
     searchable = null,
     initialSort = null,
@@ -475,7 +477,9 @@ export function scoreTable(config) {
     const section = bookmarkSection || exportName.replace(/^sattva-/, '');
     const context = { section, company: row.company || (['Company', 'Stock', 'Instrument'].includes(nameLabel) || watchKeyOf(row) ? watchNameOf(row) : ''),
       title: `${name(row)} · ${SECTION_LABELS[section] || section}${sub(row) ? ` · ${sub(row)}` : ''}`,
-      sourceId: `${exportName}:${key(row)}`, rowKey: key(row), url: link?.(row) };
+      ticker: watchKeyOf(row), eventDate: bookmarkDate?.(row), source: bookmarkSource?.(row),
+      // Export filenames use today's date; saving a record must not change its identity at midnight.
+      sourceId: `${exportName.replace(/-\d{4}-\d{2}-\d{2}$/, '')}:${key(row)}`, rowKey: key(row), url: link?.(row) };
     if (full) {
       // Only on a save, capture complete column readings and their source links. Use the
       // accessors, not truncated/virtual DOM cells. Inert template content executes nothing.

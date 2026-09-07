@@ -26,7 +26,8 @@ export function bookmarkId(entry) {
   // Keep company attribution separate even when two companies share an article URL.
   // A repeated save never replaces the original snapshot or its notes.
   return JSON.stringify([entry.kind, company, entry.url || JSON.stringify([entry.source, entry.sourceId || entry.title]),
-    entry.url && ['News', 'Corporate announcements', 'NSE filings'].includes(entry.kind) ? '' : entry.eventDate]);
+    entry.url && ['News', 'Corporate announcements', 'NSE filings'].includes(entry.kind) ? '' : entry.eventDate,
+    entry.kind === 'Investors' ? entry.sourceId : '']);
 }
 
 export function normalizeBookmark(value) {
@@ -45,21 +46,22 @@ export function normalizeBookmark(value) {
 }
 
 export function snapshotForRow(row = {}, context = {}) {
-  const original = row.sourceRecord || row;
+  const companyRecord = row.company && typeof row.company === 'object' ? row.company : null;
+  const original = row.sourceRecord || companyRecord || row;
   const section = context.section || '';
   const title = text(original.title || row.headline || row.subject || row.purpose || row.text || row.event || context.title)
     || `${SECTION_LABELS[section] || 'Research'} snapshot`;
   return normalizeBookmark({
     title,
-    company: row.feed === 'market-news' ? '' : original.company || row.company || context.company || '',
+    company: row.feed === 'market-news' ? '' : text(original.company) || text(companyRecord?.name) || text(row.company) || text(context.company),
     ticker: original.ticker || row.ticker || context.ticker || '',
     entityId: original.entityId || row.entityId,
     kind: context.kind || FEED_KINDS[row.feed] || row.feedLabel || SECTION_LABELS[section] || 'Event',
     sourceId: original.id || row.id || context.sourceId || context.rowKey || title,
-    source: text(original.publisher || original.source || row.sourceLabel || row.feedLabel) || SECTION_LABELS[section],
-    eventDate: original.publishedAt || original.date || row.day || row.at || row.filingDate || row.exDate || row.resultDate || row.period || context.eventDate,
+    source: text(original.publisher || original.source || row.sourceLabel || row.feedLabel) || text(context.source) || SECTION_LABELS[section],
+    eventDate: original.publishedAt || original.date || row.day || row.at || row.filingDate || row.exDate || row.resultDate || original.bar_date || row.period || context.eventDate,
     body: [original.summary, original.description, original.text, row.detail, row.reason].map(text).filter((v, i, a) => v && v !== title && a.indexOf(v) === i).join('\n\n'),
-    url: original.url || row.url || row.documentUrl || row.link || context.url,
+    url: original.url || row.url || row.documentUrl || row.link || context.url || original.screenerUrl,
     details: context.details || [],
     links: context.links || [],
   });
