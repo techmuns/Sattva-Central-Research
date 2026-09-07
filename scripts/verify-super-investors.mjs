@@ -76,7 +76,17 @@ try {
   Date.now = now;
   const fixture = JSON.parse(readFileSync(new URL('../public/data/super-investors.json', import.meta.url)));
   const actual = summariseQuarter(Object.entries(fixture.books).map(([slug, b]) => normalisePortfolio(b, slug)), { investors: fixture.investors, limit: Infinity });
-  assert.equal(actual.loadedBooks, fixture.investors.length);
+  // This is a changing source capture, not a fixture promising 100% upstream availability.
+  // A declared timeout must stay visible as missing data, not block unrelated news publication.
+  // Undeclared omissions, duplicate identities and unknown books still fail the contract.
+  const expectedSlugs = new Set(fixture.investors.map(i => i.slug));
+  assert.equal(expectedSlugs.size, fixture.investors.length);
+  for (const slug of Object.keys(fixture.books)) assert(expectedSlugs.has(slug), `unexpected investor book: ${slug}`);
+  const missingSlugs = [...expectedSlugs].filter(slug => !Object.hasOwn(fixture.books, slug));
+  for (const slug of missingSlugs) assert.equal(typeof fixture.failed?.[slug]?.reason, 'string', `undeclared missing investor book: ${slug}`);
+  assert.equal(actual.loadedBooks, Object.keys(fixture.books).length);
+  assert.equal(actual.missingBooks, missingSlugs.length);
+  assert.equal(actual.loadedBooks + actual.missingBooks, fixture.investors.length);
   assert(actual.pairs.length <= 1);
   const observed = summariseQuarter([
     book('adia', [row('Aavas Financiers Ltd.', 'AAVAS', 2.13, 1.65)]),
@@ -84,5 +94,5 @@ try {
   ]);
   assert.equal(observed.consensusBuys[0].count, 2, 'Aavas source observation from 6 Sep 2026');
   assert(actual.consensusBuys.every((c) => new Set(c.investors.map((i) => i.slug)).size === c.count));
-  console.log(JSON.stringify({ status: 'passed', books: actual.loadedBooks, comparable: actual.comparableBooks, excluded: actual.excludedBooks.length, sharedCompanies: actual.consensusBuyCount, counts: actual.counts }));
+  console.log(JSON.stringify({ status: 'passed', books: actual.loadedBooks, missingBooks: actual.missingBooks, comparable: actual.comparableBooks, excluded: actual.excludedBooks.length, sharedCompanies: actual.consensusBuyCount, counts: actual.counts }));
 } finally { Date.now = now; }
