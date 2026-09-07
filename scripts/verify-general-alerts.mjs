@@ -40,7 +40,8 @@ globalThis.fetch = async (input) => {
   const mapped = { 'api/earnings': 'data/earnings-live.json' }[path] || path;
   const file = resolve(root, mapped);
   assert(file.startsWith(root + sep), 'fixture path must stay in public');
-  try { return json(read(mapped)); } catch { return new Response('{}', { status: 404 }); }
+  try { return new Response(readFileSync(file), { headers: { 'content-type': 'application/json' } }); }
+  catch { return new Response('{}', { status: 404 }); }
 };
 
 const alerts = await import('../public/js/data/daily-alerts.js');

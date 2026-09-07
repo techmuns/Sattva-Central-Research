@@ -27,6 +27,8 @@ jobs:
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
         run: node scripts/verify-company-news-archive.mjs
+      - name: Verify lossless news parts and deployable asset sizes
+        run: node scripts/verify-news-publication.mjs && node scripts/partition-news-data.mjs
       - name: Verify recall-safe company-news attribution
         run: node scripts/verify-company-news-attribution.mjs
       - name: Verify incremental company-news capture
@@ -111,6 +113,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-theme-ui.mjs
+      - name: Verify complete news publication in the Portfolio table
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-news-publication-ui.mjs
       - name: Verify investor scope, disclosure evidence and incomplete data
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

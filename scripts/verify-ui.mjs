@@ -5684,7 +5684,8 @@ console.log('\n— news, announcements and insider trades —');
   const book = await evalSafe(async () => {
     const cov = await import('/js/data/coverage.js');
     const uniMod = await import('/js/data/universe.js');
-    const snap = await fetch('data/news.json', { cache: 'no-cache' }).then((r) => r.json()).catch(() => ({}));
+    const { revalidatedJson } = await import('/js/core/store.js');
+    const snap = await revalidatedJson('data/news.json').catch(() => ({}));
     // COVERED MEANS ASKED, NOT "HAD SOMETHING TO SAY". A company the capture searched and that
     // answered nothing is recorded in `empty` and carries no rows — it is covered, the walk
     // deliberately skips it, and picking one here would measure zero requests and blame the code.

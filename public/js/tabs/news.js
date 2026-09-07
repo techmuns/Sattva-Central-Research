@@ -203,7 +203,8 @@ const tab = makeFilingsTab({
 
         <p class="mt-2 text-xs"><strong>Incremental and permanent.</strong> Portfolio identities are checked every few hours
            with a 48-hour overlap. Every returned article is written to a permanent monthly archive before this fast 30-day
-           view is derived, so a successful empty search never retracts an article captured earlier. Companies without an NSE
+           head is derived. Retained monthly history is also loaded into this view, so a successful empty search never
+           retracts an article captured earlier. ${m.newsHistory?.error ? escapeHtml(m.newsHistory.error) : ''} Companies without an NSE
            ticker are searched by legal name and remain linked to the portfolio by ISIN.</p>
 
         <p class="mt-2 text-xs"><strong>TradingView enrichment.</strong> An independent background capture targets every 15 minutes,

@@ -29,6 +29,7 @@
 //   "fetch it", which is exactly what the code did before this module existed.
 
 import { authHeaders } from './host-context.js';
+import { hydrateJsonShards } from './json-shards.js';
 
 const DB_NAME = 'sattva-cache';
 const DB_VERSION = 1;
@@ -282,6 +283,7 @@ export function conditionalJson(path, options = {}) {
 }
 
 async function readConditionalJson(path, { key, optional = false, signal, validate } = {}) {
+  const callerSignal = signal;
   signal = signal || AbortSignal.timeout(20000);
   const stored = key ? await readEntry(key) : null;
 
@@ -311,14 +313,16 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   // The tag travels in the body as well as the header. The header is authoritative where it can be
   // read; the body copy is what survives a cross-origin response whose ETag is not exposed.
   const headerTag = res.headers.get('etag');
-  if (headerTag && stored?.tag === headerTag && stored.value) {
+  if (headerTag && stored?.tag === headerTag && stored.value && !Object.hasOwn(stored.value, '_jsonShards')) {
     validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
   let value;
   try {
-    value = await res.json();
+    // Each immutable part has its own bounded timeout. A large complete capture must not share
+    // the manifest's 20-second budget; an explicit caller cancellation still covers every read.
+    value = await hydrateJsonShards(await res.json(), path, { signal: callerSignal });
   } catch (err) {
     if (optional) return miss(res.status);
     throw err;
@@ -327,7 +331,7 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   const tag = headerTag || value?.meta?.contentTag || null;
   // Same short-circuit, for the case where the ETag header was unreadable and the tag had to come
   // out of the body. The parse is already paid for, but the caller still learns nothing changed.
-  if (tag && stored?.tag === tag && stored.value) {
+  if (tag && stored?.tag === tag && stored.value && !Object.hasOwn(stored.value, '_jsonShards')) {
     validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
@@ -369,7 +373,7 @@ export function revalidatedJson(path, { optional = false, allowCached = false } 
   const p = fetch(path, { cache: 'no-cache', ...(allowCached ? { headers: { 'x-sattva-bootstrap': '1' } } : {}), signal: AbortSignal.timeout(20000) })
     .then((res) => {
       if (!res.ok) throw new Error(`${path} (${res.status})`);
-      return res.json();
+      return res.json().then(value => hydrateJsonShards(value, path));
     })
     .finally(() => inFlightJson.delete(requestKey));
 

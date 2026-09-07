@@ -125,7 +125,9 @@ jobs:
           # month — and staging only the head would commit a head that names archive months no
           # deployment has ever received. The reader would scroll to the end and get a failed fetch
           # for every one of them.
+          node scripts/partition-news-data.mjs
           git add public/data/market-news.json public/data/market-news
+          if [ -d public/data/market-news.parts ]; then git add -A -- public/data/market-news.parts; fi
           if git diff --cached --quiet; then
             echo "No new stories."
             exit 0

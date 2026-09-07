@@ -101,7 +101,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # The head AND the archive directory: a head naming shard months that were never committed
           # would give the reader a failed fetch at the end of every scroll.
+          node scripts/partition-news-data.mjs
           git add public/data/market-news.json public/data/market-news
+          if [ -d public/data/market-news.parts ]; then git add -A -- public/data/market-news.parts; fi
           if git diff --cached --quiet; then
             echo "No new stories."
             exit 0

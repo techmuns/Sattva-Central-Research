@@ -73,6 +73,7 @@ jobs:
           name: company-news-data
           path: |
             public/data/news.json
+            public/data/news.parts/
             public/data/company-news/
           if-no-files-found: warn
 
@@ -81,7 +82,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node scripts/partition-news-data.mjs
           git add public/data/news.json public/data/company-news/
+          if [ -d public/data/news.parts ]; then git add -A -- public/data/news.parts; fi
           if git diff --cached --quiet; then
             echo "No company-news changes to commit."
             exit 0

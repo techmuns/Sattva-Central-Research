@@ -2,7 +2,7 @@
 // Scheduled metadata enrichment; public access only. Every run resolves the active book.
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readJson, writeJson } from './lib/company-capture.mjs';
+import { readNewsJson as readJson, writeNewsJson as writeJson } from './lib/news-json-storage.mjs';
 import { loadCapturePortfolio } from './lib/capture-portfolio.mjs';
 import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
 import { mergeExchangeIdentities } from '../public/js/data/announcement-identity.js';

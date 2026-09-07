@@ -2211,7 +2211,35 @@ public/data/company-news/undated.json    source rows without a readable publicat
 Every established identity query starts 48 hours before its last successful observation. A newly
 added legal name, former name, brand, subsidiary or reviewed alias receives a 30-day initial
 backfill. Empty incremental responses add no rows and retract nothing. The archive is written before
-the head is derived, so an article leaving the 30-day UI window has already been retained.
+the head is derived, so an article leaving the 30-day recent head has already been retained.
+The browser's shared news reader also loads the retained monthly index, making older records
+available to News, All Alerts and research under the existing scope and attribution rules.
+An incomplete monthly read preserves the last complete history and reports the gap; it is retried
+on opening, explicit refresh and the shared visible-page snapshot poll.
+
+#### Lossless publication of large news captures
+
+News heads and monthly files larger than 4 MiB use a versioned `_jsonShards` manifest in place of
+their record array/map. The manifest retains all source metadata and names immutable SHA-256
+parts beside it (`news.parts/<hash>.json` or `<month>.parts/<hash>.json`). Each part is at most
+4 MiB. `scripts/lib/news-json-storage.mjs` reads both representations, writes parts first, and
+verifies reconstruction of every field and row before atomically replacing a manifest. This is
+a transport change, not a retention limit: no headline, timestamp, company or historical row is
+removed by splitting a file. Obsolete generated fragments are pruned only after their logical
+records have been verified in the new representation; Git retains prior representations.
+
+The browser's conditional JSON reader validates byte length, SHA-256 and row counts for every
+referenced part before adopting a revision or updating its persistent cache. A missing/corrupt
+part cannot turn a manifest into an empty feed or replace last-good data. Unchanged ETags reuse
+the complete hydrated value. The asset gate in CI and news publishing jobs verifies references,
+Cloudflare's 25 MiB per-file ceiling and the conservative 20,000-file ceiling.
+
+`News publication health` is a read-only check after news workflows and twice hourly. It compares
+the deployed heads with committed capture revisions and verifies all head parts using the same
+decoder as the browser. It allows eight minutes for the normal Git-triggered deployment, then
+fails visibly if captured news has not reached the customer site. It never deploys or dispatches
+collectors. Publication integrity, collection cadence and upstream coverage remain separate
+checks; this does not certify that every publisher has supplied every article.
 
 `scripts/company-news-identity-overrides.json` is the reviewed enrichment layer. The active Family
 book supplies ISIN, current name and ticker where one exists; overrides may supply `legalName`,

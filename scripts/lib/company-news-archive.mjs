@@ -13,7 +13,7 @@
 
 import { join } from 'node:path';
 import { canonicalArticleUrl } from '../../public/js/data/filings-shared.js';
-import { readJson, writeJson } from './company-capture.mjs';
+import { readNewsJson as readJson, writeNewsJson as writeJson } from './news-json-storage.mjs';
 
 export const COMPANY_NEWS_ARCHIVE_VERSION = 1;
 export const DEFAULT_OVERLAP_HOURS = 48;
