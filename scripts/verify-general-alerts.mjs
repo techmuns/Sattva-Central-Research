@@ -11,6 +11,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: {
   getItem: (key) => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key),
 } });
 Date.now = () => Date.parse('2026-09-04T08:00:00Z');
+const nseCheckedAt = '2026-09-04T07:00:00Z';
 const calls = [];
 const broken = new Set();
 let revision = 1;
@@ -30,7 +31,11 @@ globalThis.fetch = async (input) => {
   const json = (value) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
   if (path === 'api/nse-announcements') { if (nseGate) await nseGate; return json({ rows: [nseRow, nseRow, undated, outsideNseRow,
     ...(revision > 1 ? [{ ...nseRow, url: 'https://example.test/new.pdf' }] : []),
-    ...(revision > 2 ? [{ ...nseRow, url: 'https://example.test/other-tab.pdf' }] : [])], capturedAt: '2026-09-04T07:00:00Z' }); }
+    ...(revision > 2 ? [{ ...nseRow, url: 'https://example.test/other-tab.pdf' }] : [])], capturedAt: nseCheckedAt }); }
+  // Keep the shipped NSE rows, but control both source-check clocks. The feed correctly takes
+  // the newer live/snapshot confirmation; a future repository capture must not override this
+  // test's Sept 4 clock and make its cached Sept 5 freshness assertion depend on data updates.
+  if (path === 'data/nse-announcements.json') return json({ ...read(path), capturedAt: nseCheckedAt });
   if (path === 'data/twitter-posts.json') return json({ capturedAt: '2026-09-04T07:00:00Z', handles: ['moneycontrolcom'], failed: [], posts: [
     { tweet_id: '1', handle: 'moneycontrolcom', text: 'IPO discussion, original words', created_at: '2026-09-03T20:10:00Z' },
     { tweet_id: '2', handle: 'moneycontrolcom', text: 'Undated original post', created_at: null },
@@ -101,6 +106,8 @@ assert.equal(firstTechnical(afterIdle), firstTechnical(universe), 'returning aft
 Date.now = originalNow;
 const singleDay = await alerts.collect({ ...options, includeHistory: false, scope: 'universe', load: false });
 assert(singleDay.events.every((e) => e.day === options.day), 'history cache cannot leak other dates into a daily report');
+assert.equal(singleDay.feeds.find((f) => f.id === 'nse-filings').asOf, nseCheckedAt, 'NSE freshness uses the controlled source-check timestamp');
+assert.equal(singleDay.feeds.find((f) => f.id === 'nse-filings').reachesToday, true, 'a successful Sept 4 source check covers the requested Sept 4 day');
 const nextDay = await alerts.collect({ ...options, day: '2026-09-05', scope: 'universe', load: false });
 assert.equal(nextDay.feeds.find((f) => f.id === 'nse-filings').reachesToday, false, 'cached freshness re-ages when the requested IST day changes');
 const scope = await import('../public/js/data/scope.js');

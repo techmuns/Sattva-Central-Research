@@ -36,12 +36,14 @@ jobs:
         if: always()
         run: node scripts/check-news-capacity.mjs
       - name: Install pinned read-only delivery probe runtime
-        if: always()
+        # The light transport check runs after every capture. Keep the heavier browser probe
+        # half-hourly (or explicitly requested) to bound Actions minutes and repeated downloads.
+        if: always() && github.event_name != 'workflow_run'
         run: |
           npm install --prefix "$RUNNER_TEMP/news-browser" --no-save --package-lock=false playwright@1.62.1
           node "$RUNNER_TEMP/news-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Verify retained portfolio stories reach News and Alerts
-        if: always()
+        if: always() && github.event_name != 'workflow_run'
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/news-browser/node_modules/playwright
           NEWS_DELIVERY_BASE: https://sattva-central-research.tech-441.workers.dev

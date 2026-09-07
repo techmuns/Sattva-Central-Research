@@ -152,6 +152,17 @@ distinct unlinked text survive. Source timestamps are not advanced by compaction
 mode and `check-news-capacity.mjs` never change data. Obsolete generated transport parts may be
 removed only after a verified replacement; historical stories are not automatically deleted.
 
+Company-news publication starts queued runs from current branch code. If main changes during
+collection, the normal publisher combines distinct captured records with the latest main data
+in a disposable worktree; it does not text-rebase generated news parts. Source corrections,
+query checkpoints, observation ranges and history survive reconciliation. Capture-start identity
+and checkpoint baselines distinguish portfolio changes from stale snapshots; without that
+baseline, reviewed artifact recovery keeps the target's active registry authoritative. Publication
+allows at most four ordinary fast-forward attempts. A refusal without a competing main update
+fails immediately; exhausted attempts leave the original capture and uploaded artifact intact.
+The publication wrapper is restricted to the normal main-branch Actions workspace; local Git
+tests use an isolated bare repository and cannot target hosted remotes.
+
 The capacity report checks physical file count, the 25 MiB per-asset ceiling and client-load
 size independently. It warns at 80% of a conservative 20,000-file budget and at 50 MiB of
 distinct content in one logical news capture. The latter is an engineering planning threshold,
@@ -161,7 +172,7 @@ audit. See [current platform limits](https://developers.cloudflare.com/workers/p
 Plan a company/time-indexed archive reader or storage migration before client growth becomes a
 problem; buying a larger file allowance alone does not solve browser memory or transfer costs.
 
-The publication health workflow also runs a read-only browser delivery probe against deployed
+Half-hourly, the publication health workflow also runs a read-only browser delivery probe against deployed
 static modules and data. API calls, external requests and non-GET requests are blocked. It follows
 portfolio news into All Alerts and checks the known OnEMI search and age-eligible AI evidence.
 Transport, source completeness and customer delivery remain separate checks. This does not

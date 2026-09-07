@@ -33,6 +33,7 @@ export function partitionNewsData(dataDir, { write = false } = {}) {
 }
 
 export function verifyAssetSizes(publicDir) {
+  publicDir = resolve(publicDir);
   let files = 0, bytes = 0, largestBytes = 0;
   let largestFile = null;
   function walk(dir) {

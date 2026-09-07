@@ -156,7 +156,9 @@ try {
   await promisify(execFile)(process.execPath, ['scripts/check-filings-health.mjs'], options);
   assert.equal(JSON.parse(readFileSync(report)).status, 'healthy');
   const newsWorkflow = readFileSync(new URL('../.github/workflows/company-news-refresh.yml', import.meta.url), 'utf8');
-  assert(newsWorkflow.indexOf('Check company-news capture health') > newsWorkflow.indexOf('git push origin HEAD:main'), 'news health gate preserves progress before failing incomplete captures');
+  const newsPublish = newsWorkflow.indexOf('node scripts/publish-company-news.mjs');
+  assert(newsPublish > 0 && newsWorkflow.indexOf('Check company-news capture health') > newsPublish,
+    'news health gate preserves progress before failing incomplete captures');
   const announcementsWorkflow = readFileSync(new URL('../.github/workflows/announcements-refresh.yml', import.meta.url), 'utf8');
   assert(announcementsWorkflow.indexOf('Check operational capture health') > announcementsWorkflow.indexOf('git push origin HEAD:main'), 'announcement health gate runs after preserving/publishing captured progress');
   const insiderWorkflow = readFileSync(new URL('../.github/workflows/insider-trades-refresh.yml', import.meta.url), 'utf8');

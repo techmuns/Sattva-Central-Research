@@ -65,6 +65,7 @@ export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-w
 import { portfolioNewsEntities } from './company-news-identity.js';
 import { attributeNewsRow, attributionFor, newsSearchText } from './company-news-attribution.js';
 import { matchPortfolioNews, newsEventTopics } from './portfolio-news-matching.js';
+import { enrichmentCoverageIncomplete } from '../core/news-view-status.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -1353,27 +1354,26 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
   return { events, ...companyNewsState(day) };
 }
 
-function companyNewsState(day) {
-  const m = news.meta();
+export function companyNewsState(day, m = news.meta(), now = Date.now()) {
   const capturedDay = istDay(m.capturedAt);
   const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
-  const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
+  const enrichmentStale = !Number.isFinite(enrichmentAt) || enrichmentAt > now + 10 * 60_000 || now - enrichmentAt > 24 * 3600000;
   const delivery = m.newsDelivery;
   const sourceStates = ['core', 'publishers', 'tradingView'].map(key => delivery?.[key]).filter(Boolean);
   const failed = sourceStates.some(source => ['partial', 'unavailable'].includes(source.status) || source.error || source.historyError) ||
-    !!m.newsHistory?.error || !!m.reason || !!m.failed || !!m.truncated;
+    !!m.newsHistory?.error || !!m.reason || !!m.failed || !!m.truncated || enrichmentCoverageIncomplete(m.enrichmentCoverage, now);
   const pending = sourceStates.some(source => source.pending || source.status === 'pending' || source.historyPending) ||
     !!m.newsHistory?.pending;
   return {
     // A successful TradingView subset cannot establish that the main news head, publisher feeds
     // and every advertised history part reached the customer. Readiness and freshness differ.
     status: failed ? 'failed' : pending ? 'pending' : 'ok',
-    reachesToday: !failed && !pending && !!capturedDay && capturedDay >= day,
+    reachesToday: !failed && !pending && !!m.enrichmentCoverage && !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
     note: [m.newsHistory?.error,
       delivery ? ['core', 'publishers', 'tradingView'].map(key => delivery[key] ? `${key === 'core' ? 'Company news' : key === 'publishers' ? 'Publisher feeds' : 'TradingView'}: ${delivery[key].status}.${delivery[key].error ? ` ${delivery[key].error}` : ''}${delivery[key].historyError ? ` ${delivery[key].historyError}` : ''}` : null).filter(Boolean).join(' ') : null,
       capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
-      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.',
+      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery check time is stale or unverified. ' : ''}Last reported: ${Number(m.enrichmentCoverage.staleOrIncompleteQueries) || 0} stale or incomplete global queries; ${Number(m.enrichmentCoverage.pagesFailed) || 0} IR pages need recovery; ${Number(m.enrichmentCoverage.documentsPending) || 0} documents not yet read. Checked ${m.enrichmentCoverage.capturedAt || 'time not supplied'}.` : 'Global/IR enrichment has not reported coverage yet.',
       m.tradingViewCoverage ? `TradingView public headlines: ${m.tradingViewCoverage.mappedCompanies}/${m.tradingViewCoverage.activeCompanies} companies mapped; ${m.tradingViewCoverage.staleOrFailedSymbols} stale/failed symbol reads; ${m.tradingViewCoverage.possibleGapSymbols} possible window gaps; ${m.tradingViewCoverage.restrictedHeadlines} restricted headlines not extracted. Checked ${m.tradingViewCoverage.checkedAt}.${m.tradingViewHealth?.ok === false ? ' TradingView coverage is stale or incomplete.' : ''}${m.tradingViewCoverage.portfolioError ? ' Portfolio changes could not be verified.' : ''}${m.tradingViewReadError ? ' Latest published snapshot could not be confirmed; retained headlines remain visible.' : ''}` : 'TradingView enrichment has not reported coverage yet.']
       .filter(Boolean).join(' ') || null,
   };

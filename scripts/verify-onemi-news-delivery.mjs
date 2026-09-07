@@ -8,7 +8,8 @@ import { classifyStory } from '../public/js/data/news-keywords.js';
 
 const store = new Map();
 globalThis.localStorage = { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) };
-const { newsSignal, eventSearchText, mapPortfolioDiscoveryEvents, matchesAlertScope, materializePublicAlertWindow, readCachedAlertWindow, ALERT_WINDOW_CACHE_KEY } = await import('../public/js/data/daily-alerts.js');
+const { newsSignal, companyNewsState, eventSearchText, mapPortfolioDiscoveryEvents, matchesAlertScope, materializePublicAlertWindow, readCachedAlertWindow, ALERT_WINDOW_CACHE_KEY } = await import('../public/js/data/daily-alerts.js');
+const { enrichmentCoverageIncomplete, newsViewStatus } = await import('../public/js/core/news-view-status.js');
 const { rankReport, mergePartialReport } = await import('../public/js/data/ai-alerts.js');
 const { matchesSearch } = await import('../public/js/ui/ai-alert-utils.js');
 const { alertCoverageState, feedState, matchesCompanyRelationship } = await import('../public/js/tabs/daily-alerts.js');
@@ -133,4 +134,28 @@ assert.equal(alertCoverageState({ ...report(), feeds: [{ id: 'news', status: 'ok
 assert.equal(alertCoverageState(report()).status, 'checked');
 for (const status of ['pending', 'failed']) assert(!/\d/.test(feedState({ status }).short({ count: 0 })), 'unfinished sources cannot print a false zero');
 assert.equal(feedState({ status: 'failed' }).short(), 'partial');
+const checkAt = Date.parse('2026-09-07T09:00:00Z');
+const completeCoverage = { capturedAt: new Date(checkAt).toISOString(), staleOrIncompleteQueries: 0, pagesFailed: 0, documentsPending: 0 };
+const deliveryMeta = { rowCount: 1, capturedAt: completeCoverage.capturedAt,
+  newsDelivery: Object.fromEntries(['core', 'publishers', 'tradingView'].map(key => [key, { status: 'ok', pending: false }])),
+  enrichmentCoverage: completeCoverage };
+assert.equal(companyNewsState('2026-09-07', deliveryMeta, checkAt).status, 'ok');
+assert.equal(companyNewsState('2026-09-07', deliveryMeta, checkAt).reachesToday, true);
+for (const gap of [
+  { staleOrIncompleteQueries: 39 }, { pagesFailed: 2 }, { documentsPending: 330 },
+  { capturedAt: '2026-09-05T09:00:00Z' }, { capturedAt: '2026-09-08T09:00:00Z' }, { capturedAt: 'invalid' },
+  { staleOrIncompleteQueries: undefined }, { pagesFailed: -1 }, { documentsPending: 'unknown' },
+]) {
+  const enrichmentCoverage = { ...completeCoverage, ...gap };
+  assert(enrichmentCoverageIncomplete(enrichmentCoverage, checkAt));
+  const state = companyNewsState('2026-09-07', { ...deliveryMeta, enrichmentCoverage }, checkAt);
+  assert.equal(state.status, 'failed', 'declared discovery gaps remain partial even if all other sources loaded');
+  assert.equal(state.reachesToday, false);
+  assert.equal(alertCoverageState({ feeds: [{ id: 'news', ...state }], pending: 0 }).status, 'partial');
+}
+const missingCoverage = companyNewsState('2026-09-07', { ...deliveryMeta, enrichmentCoverage: null }, checkAt);
+assert.equal(missingCoverage.status, 'ok', 'legacy absence does not invent a failed request');
+assert.equal(missingCoverage.reachesToday, false, 'unknown discovery coverage cannot certify current completeness');
+assert.match(missingCoverage.note, /has not reported coverage/);
+assert.equal(newsViewStatus({ ...deliveryMeta, enrichmentCoverage: { ...completeCoverage, documentsPending: 330 } }).state, 'partial', 'News and All Alerts expose the same pending-document gap');
 console.log('PASS: exact OnEMI headline → reviewed KISSHT identity → searchable All Alerts → material neutral AI evidence; aliases, noisy-query retention, brokerage vocabulary, partial refresh, rollover, scope exit and truthful source states.');

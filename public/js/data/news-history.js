@@ -21,7 +21,16 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
     source.forEach(add);
     for (const list of held.values()) for (const row of list)
       add(attributeNewsRow(row, identities.get(row.entityId) || identities.get(row.ticker) || row));
-    const value = [...buckets.values()].flatMap(dedupeArticles)
+    // Archive concatenation order (including corrected publication dates crossing months) must
+    // not let an older observation win a publisher URL forever. Prefer the actual last capture
+    // observation; stable ties and an unstamped current head retain existing head precedence.
+    // Publication dates are not observation times. Raw versions stay in the archive.
+    const currentRows = new Set(source);
+    const observedAt = row => {
+      const time = Date.parse(row.lastSeenAt || row.firstSeenAt || '');
+      return Number.isFinite(time) ? time : currentRows.has(row) ? Infinity : -Infinity;
+    };
+    const value = [...buckets.values()].flatMap(list => dedupeArticles(list.sort((a, b) => observedAt(b) - observedAt(a))))
       .sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));
     combined = { source, revision, rows: value };
     return value;
