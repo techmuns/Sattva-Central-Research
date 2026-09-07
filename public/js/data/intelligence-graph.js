@@ -82,7 +82,7 @@ function contextScore(event, triggers, throughDay, feedById) {
   if (upcoming && (event.kind !== 'scheduled' || distance > UPCOMING_CONTEXT_DAYS)) return null;
   if (!upcoming && -distance > CONTEXT_LOOKBACK_DAYS) return null;
   const overlap = overlapWith(event, triggers);
-  const nearest = Math.min(...triggers.map((trigger) => Math.abs(daysBetween(event.day, trigger.day) ?? 999)));
+  const nearest = triggers.reduce((best, trigger) => Math.min(best, Math.abs(daysBetween(event.day, trigger.day) ?? 999)), Infinity);
   let score = overlap.length * 9;
   if (nearest === 0) score += 8;
   else if (nearest === 1) score += 6;

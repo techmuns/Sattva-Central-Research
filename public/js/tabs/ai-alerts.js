@@ -11,6 +11,7 @@ import { escapeHtml } from '../core/dom.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import { alertWindowCache } from '../data/alert-window-cache.js';
 import * as screenerInsights from '../data/screener-insights.js';
 import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
@@ -28,6 +29,7 @@ export const meta = {
 
 const REFRESH_ID = 'ai-alerts';
 const PAGE_SIZE = 8;
+const RECHECK_MS = 90_000;
 const SORT_KEY = 'sattva:ai-alerts:sort:v1';
 const SORTS = { newest: 'Newest first', holdings: 'Largest holdings', priority: 'Highest priority' };
 let sortOrder = 'newest';
@@ -49,6 +51,7 @@ let collecting = false;
 let loadError = '';
 let captureDirty = false;
 let sourceTimer = null;
+let lastSourceCheck = 0;
 function sourceChanged() {
   if (!ctxRef) return;
   captureDirty = true;
@@ -104,6 +107,8 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
+    unsubs.push(watchFreshness());
+    unsubs.push(alertWindowCache.onChange(() => { if (ctxRef) paint(ctxRef); }));
     unsubs.push(onCaptureLanded(sourceChanged));
     unsubs.push(alerts.onChange(sourceChanged));
     unsubs.push(onPortfolioConnection((connected) => {
@@ -180,9 +185,10 @@ export function destroy() {
   unsubs = [];
 }
 
-async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {}) {
+async function recollect(ctx, { refresh: forceRefresh = false, load = true, reusePositions = false } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
+  if (load) lastSourceCheck = Date.now();
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -195,7 +201,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   // A slow or unavailable size reader must not hold the first alert hostage.
   // An explicit Refresh must really check Family again. Navigation, calendar
   // ageing and a quick tab return are the paths allowed to reuse the snapshot.
-  const heldSizes = forceRefresh ? null : cachedPositionSizes();
+  const heldSizes = forceRefresh && !reusePositions ? null : cachedPositionSizes();
   let checkedSnapshot = heldSizes;
   let positions = Promise.resolve(heldSizes);
   if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
@@ -241,7 +247,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     const completed = positionSizes ? await alerts.collect({ scope: ctx.scope,
       holdings: coverage.holdings(), positionSizes, load: false }) : next;
     if (!current()) return;
-    report = completed;
+    report = completed.pending || completed.feeds.some(feed => feed.status === 'failed')
+      ? alerts.mergePartialReport(report, completed) : completed;
   } catch (err) {
     if (!current()) return;
     loadError = err?.message || 'The alert feeds could not be refreshed.';
@@ -271,7 +278,9 @@ function paint(ctx) {
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
   ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
-  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx);
+  const cache = alertWindowCache.status();
+  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx) + (cache.message
+    ? `<p data-ai-cache-status role="status" class="mb-4 text-xs text-slate-500">${escapeHtml(cache.message)}</p>` : '');
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
   // Identical results keep their DOM, expanded evidence and keyboard focus.
   for (const [selector, markup] of [
@@ -346,6 +355,21 @@ function watchCalendar() {
   };
 }
 
+/** Revalidate bounded source snapshots while visible and after returning from inactivity.
+ * This checks published captures only; it does not dispatch production collection jobs. */
+function watchFreshness() {
+  const check = () => {
+    if (!ctxRef || document.hidden || collecting || Date.now() - lastSourceCheck < RECHECK_MS) return;
+    void recollect(ctxRef, { refresh: true, reusePositions: true });
+  };
+  const timer = setInterval(check, RECHECK_MS);
+  document.addEventListener('visibilitychange', check);
+  window.addEventListener('focus', check);
+  window.addEventListener('online', check);
+  return () => { clearInterval(timer); document.removeEventListener('visibilitychange', check);
+    window.removeEventListener('focus', check); window.removeEventListener('online', check); };
+}
+
 function head(ctx) {
   const m = report?.meta || {};
   // Connector and refresh failures stay available to the refresh controller for diagnostics, but
@@ -378,6 +402,9 @@ export function feedStatus(rep) {
       tone: 'neutral',
       state: 'pending',
     };
+  }
+  if (rep.feeds?.some(feed => feed.status === 'failed')) {
+    return { label: 'Partial coverage · retained evidence shown', tone: 'neutral', state: 'partial' };
   }
   const staleFeeds = Number(rep.meta?.staleFeeds || 0);
   if (staleFeeds > 0) {

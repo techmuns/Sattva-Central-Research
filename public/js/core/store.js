@@ -230,6 +230,44 @@ export function writeEntry(key, { tag, value, savedAt = Date.now() }) {
     .catch(() => null);
 }
 
+/** Atomically replace a multi-entry cache. Quota/transaction failure keeps the previous disk
+ * revision intact; the complete new revision remains usable in this session's memory. */
+export async function writeEntryBatch(entries, deleteKeys = [], { prunePrefix = null } = {}) {
+  const rows = [...entries].map(([key, entry]) => [key, { tag: entry.tag || null,
+    savedAt: entry.savedAt ?? Date.now(), value: entry.value }]);
+  const keep = new Set(rows.map(([key]) => key));
+  const inGroup = key => key === prunePrefix || key.startsWith(`${prunePrefix}:`);
+  if (prunePrefix && (!prunePrefix.startsWith('ai-alerts:public-window:') || rows.some(([key]) => !inGroup(key))))
+    throw Error('Invalid alert cache group');
+  const db = await openDb();
+  const persistent = db ? await new Promise(resolve => {
+    let transaction;
+    try {
+      transaction = db.transaction(STORE, 'readwrite');
+      const target = transaction.objectStore(STORE);
+      if (prunePrefix) {
+        const cursor = target.openKeyCursor(IDBKeyRange.bound(prunePrefix, `${prunePrefix}\uffff`));
+        cursor.onsuccess = () => {
+          if (!cursor.result) return;
+          if (inGroup(cursor.result.key) && !keep.has(cursor.result.key)) target.delete(cursor.result.key);
+          cursor.result.continue();
+        };
+      }
+      for (const key of deleteKeys) target.delete(key);
+      for (const [key, row] of rows) target.put(row, key);
+      transaction.oncomplete = () => resolve(true);
+      transaction.onabort = transaction.onerror = () => resolve(false);
+    } catch {
+      try { transaction?.abort(); } catch { /* Already aborted. */ }
+      resolve(false);
+    }
+  }) : false;
+  if (prunePrefix) for (const key of memory.keys()) if (inGroup(key) && !keep.has(key)) memory.delete(key);
+  for (const key of deleteKeys) memory.delete(key);
+  for (const [key, row] of rows) memory.set(key, row);
+  return { persistent };
+}
+
 export function deleteEntry(key) {
   memory.delete(key);
   return openDb()

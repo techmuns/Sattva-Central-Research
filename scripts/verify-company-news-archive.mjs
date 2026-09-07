@@ -38,6 +38,24 @@ try {
   assert.equal(beta.entityId, 'isin:INE000000003');
   assert.deepEqual(beta.queries, ['Private Beta Limited', 'Old Beta Ltd', 'BetaPay', 'Beta Services']);
   assert.deepEqual(beta.officialDomains, ['beta.example']);
+  assert.equal(observedCompanyArticles([{ title: null, summary: null, date: null, url: null,
+    discoverySource: 'global-news-search' }], beta, 'BetaPay', '2026-09-01T00:00:00Z').length, 0,
+  'discovery bookkeeping is not an article when the provider returned no content');
+  assert.equal(observedCompanyArticles([{ sourceUrls: ['https://source.example/document'] }], beta, 'BetaPay', '2026-09-01T00:00:00Z').length, 1,
+    'a provider record containing only a source link remains useful evidence');
+  assert.equal(observedCompanyArticles([{ sourceUrls: [], discoverySources: ['global-news-search'] }], beta, 'BetaPay', '2026-09-01T00:00:00Z').length, 0);
+  const anonymous = { entityId: beta.entityId, ticker: null, title: null, source: null, url: null,
+    summary: null, discoverySource: 'global-news-search', firstSeenAt: '2026-09-01T00:00:00Z', lastSeenAt: '2026-09-01T00:00:00Z', query: 'BetaPay' };
+  let replayed = [anonymous, { ...anonymous, summary: 'A real unlinked snippet' },
+    { ...anonymous, summary: 'A distinct unlinked snippet' }];
+  for (let run = 0; run < 12; run++) replayed = mergeCompanyNewsArticles(replayed, replayed.map(row => ({ ...row,
+    query: 'Private Beta Limited', lastSeenAt: '2026-09-03T00:00:00Z' })));
+  assert.equal(replayed.length, 3, 'twelve seed/replay cycles cannot exponentially multiply unkeyed observations');
+  assert(replayed.every(row => row.firstSeenAt === anonymous.firstSeenAt && row.lastSeenAt === '2026-09-03T00:00:00Z'));
+  assert(replayed.every(row => row.matchedQueries.includes('BetaPay') && row.matchedQueries.includes('Private Beta Limited')),
+    'observation range and reviewed query provenance survive compaction');
+  assert.equal(mergeCompanyNewsArticles(replayed, [{ ...anonymous, summary: 'A corrected unlinked snippet' }]).length, 4,
+    'distinct text with no publisher identity is never merged away');
 
   const first = observedCompanyArticles([{
     date: '2026-08-31', title: 'Beta wins order', source: 'Publisher A',

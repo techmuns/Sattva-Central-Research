@@ -27,6 +27,9 @@ export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 export const MIN_SCORE = 64;
 export const MUST_SEE_SCORE = 82;
 export const onChange = generalAlerts.onChange;
+// Keep ranking inputs in memory only; private position sizes must never enter a saved report.
+const rankingOptions = new WeakMap();
+const rankingEvidence = new WeakMap();
 
 const FEED_WEIGHT = {
   earnings: 12,
@@ -667,10 +670,9 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     holdings.find(h => entity.portfolioIsins.includes(String(h.isin || '').toUpperCase())) || entity]));
 
   const supportedReport = { ...report, events: (report?.events || []).filter(newsCanSupportAI) };
-  const recent = (report?.events || []).filter(
-    (event) => (newsCanSupportAI(event) && event.aiEligible !== false || isRelatedNewsContext(event)) &&
-      (event.ticker || event.entityId) && validDay(event.day) && event.day >= firstDay && event.day <= day
-  );
+  const windowEvidence = (report?.events || []).filter(event => (event.ticker || event.entityId) &&
+    validDay(event.day) && event.day >= firstDay && event.day <= day);
+  const recent = windowEvidence.filter(event => newsCanSupportAI(event) && event.aiEligible !== false || isRelatedNewsContext(event));
   const grouped = new Map();
   for (const event of recent) {
     const ticker = event.ticker ? String(event.ticker).toUpperCase() : event.entityId;
@@ -788,7 +790,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     (event) => !event.ticker && !event.entityId && event.day && event.day >= firstDay && event.day <= day
   ).length;
 
-  return {
+  const result = {
     day,
     scope: report?.scope || 'universe',
     pending: report?.pending || 0,
@@ -815,6 +817,9 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       cacheSavedAt: report?.cacheSavedAt || null,
     },
   };
+  rankingOptions.set(result, { holdings, positionSizes, insightCompanies });
+  rankingEvidence.set(result, windowEvidence);
+  return result;
 }
 
 /** Publish new material arrivals while preserving evidence not yet revalidated. */
@@ -823,23 +828,34 @@ export function mergePartialReport(previous, next) {
   const key = card => card.key || card.ticker || card.entityId;
   const existingVisible = new Set(previous.cards.map(key));
   const arrivingVisible = new Set(next.cards.map(key));
-  const all = new Map(previous.allCards.map(card => [key(card), card]));
-  for (const card of next.allCards) {
-    const old = all.get(key(card));
-    // A restored public window may know more than the first few live feeds.
-    // Only replace a card once its material evidence is covered by the new read.
-    const incoming = new Set(materialEvidence(card.events));
-    if (old && (materialEvidence(old.events).some(event => !incoming.has(event)) ||
-        existingVisible.has(key(card)) && !arrivingVisible.has(key(card)))) continue;
-    all.set(key(card), card);
+  // Union EVIDENCE, not whole cards. Keeping the old card until every prior source answers
+  // hides a new material story about that same company behind an unrelated slow feed.
+  const evidence = new Map();
+  for (const report of [previous, next]) for (const card of report.allCards) {
+    for (const event of [...card.events, ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) {
+      const id = `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
+      evidence.set(id, event); // New source corrections win under their stable identity.
+    }
   }
-  const allCards = [...all.values()];
-  const cards = allCards.filter(card => existingVisible.has(key(card)) || arrivingVisible.has(key(card)));
-  return { ...next, allCards, cards, meta: { ...next.meta,
-    activeCompanies: allCards.length, surfacedCompanies: cards.length,
+  // Even a correction that removes AI eligibility must supersede its old event. Such a row
+  // may have no next card at all; retain these current-window inputs in memory, never on disk.
+  for (const event of rankingEvidence.get(next) || []) {
+    const id = `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
+    evidence.set(id, event);
+  }
+  const merged = rankReport({ day: next.day, scope: next.scope, feeds: next.feeds,
+    pending: next.pending, events: [...evidence.values()] }, rankingOptions.get(next) || rankingOptions.get(previous));
+  const allCards = merged.allCards;
+  const newlyVisible = new Set(merged.cards.map(key));
+  const cards = allCards.filter(card => existingVisible.has(key(card)) || arrivingVisible.has(key(card)) || newlyVisible.has(key(card)));
+  const result = { ...merged, allCards, cards, meta: { ...merged.meta,
+    activeCompanies: allCards.length, surfacedCompanies: cards.length, suppressedCompanies: allCards.length - cards.length,
     mustSee: cards.filter(card => card.priority === 'must-see').length,
     important: cards.filter(card => card.priority === 'important').length,
   } };
+  rankingOptions.set(result, rankingOptions.get(merged));
+  rankingEvidence.set(result, rankingEvidence.get(merged));
+  return result;
 }
 
 /** Apply a newly checked private snapshot without another feed read or ranking pass. */
@@ -852,12 +868,16 @@ export function withPositionSnapshot(report, snapshot) {
   const retained = card => identity(card) !== undefined;
   const cards = report.cards.filter(retained).map(decorate);
   const allCards = report.allCards.filter(retained).map(decorate);
-  return { ...report, cards, allCards, meta: { ...report.meta,
+  const result = { ...report, cards, allCards, meta: { ...report.meta,
     positionSizes: snapshot.sizes, sortedByHolding: false,
     activeCompanies: allCards.length, surfacedCompanies: cards.length,
     mustSee: cards.filter(card => card.priority === 'must-see').length,
     important: cards.filter(card => card.priority === 'important').length,
   } };
+  rankingOptions.set(result, { ...rankingOptions.get(report), holdings: snapshot.holdings, positionSizes: snapshot });
+  rankingEvidence.set(result, (rankingEvidence.get(report) || []).filter(event =>
+    [event.ticker, event.entityId].some(key => byKey.has(key))));
+  return result;
 }
 
 /** A privacy-safe ready view while the live source modules revalidate. */

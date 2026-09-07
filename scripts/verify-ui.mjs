@@ -1239,8 +1239,8 @@ console.log('\n— AI alerts —');
     (await page.locator('[data-ai-alert-summary]').count()) === 0 &&
       renderedCards.every((card) => card.why === 0 && !card.scoreShown));
   const aiFeedStatus = (await page.locator('[data-ai-feed-status]').innerText()).trim();
-  ok('the compact header uses calm update language while recovery runs',
-    /^(Updated|Sources updating)$/.test(aiFeedStatus), aiFeedStatus);
+  ok('the compact header distinguishes a completed source check from partial coverage',
+    /^(Updated|Sources updating|Partial coverage · retained evidence shown)$/.test(aiFeedStatus), aiFeedStatus);
   ok('every surfaced card keeps the insight and evidence without a Review next block',
     renderedCards.every((card) => card.insight && !card.reviewNext && card.events > 0));
   ok('every visible evidence row links to its traceable source',
