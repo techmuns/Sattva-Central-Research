@@ -4,7 +4,7 @@ import { companyKey, filterBookmarks } from '../core/bookmark-record.js';
 import { sectionHead, openModal } from '../ui/screener.js';
 import { BOOKMARK_ICON, bookmarkButton, wireBookmarks, showBookmarkMessage } from '../ui/bookmark-button.js';
 
-export const meta = { id: 'bookmarks', title: 'Bookmarked Notebook', subtitle: 'Your saved research, kept together.', subviews: [], allowEmptyScope: true, scopeIndependent: true };
+export const meta = { id: 'bookmarks', title: 'Bookmarks', subtitle: 'Your saved research, kept together.', subviews: [], allowEmptyScope: true, scopeIndependent: true };
 let ctxRef, off, offButtons, limit = 30;
 let view = { company: '', query: '', kind: '', sort: 'saved', notesOnly: false };
 let companySearch = '';

@@ -97,6 +97,7 @@ export function scopeSummary({ scope, count, noun = 'companies', book = null }) 
 export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
   let list = null;
   let revealActive = () => {};
+  const tabStopId = () => tabs.some((tab) => tab.id === activeId) ? activeId : tabs[0]?.id;
   const html = `
     <div class="tab-bar" data-tab-bar>
       <div class="tab-list" role="tablist" aria-label="${escapeHtml(label)}" data-tab-list>
@@ -104,7 +105,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
         .map(
           (t) => `
         <button type="button" role="tab" data-tab-id="${escapeHtml(t.id)}" aria-selected="${t.id === activeId}"
-          tabindex="${t.id === activeId ? 0 : -1}" class="tab-btn${t.id === activeId ? ' is-active' : ''}">
+          tabindex="${t.id === tabStopId() ? 0 : -1}" class="tab-btn${t.id === activeId ? ' is-active' : ''}">
           ${escapeHtml(t.label)}
         </button>`
         )
@@ -218,7 +219,8 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
       const selected = button.dataset.tabId === activeId;
       button.setAttribute('aria-selected', String(selected));
       button.classList.toggle('is-active', selected);
-      button.tabIndex = selected ? 0 : -1;
+      // Header destinations have no selected tab, but the strip stays keyboard-accessible.
+      button.tabIndex = button.dataset.tabId === tabStopId() ? 0 : -1;
     }
     revealActive();
   }

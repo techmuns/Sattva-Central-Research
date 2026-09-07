@@ -233,7 +233,7 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
-The Bookmarked Notebook (`tabs/bookmarks.js`) is a personal saved-record view. Its
+Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
 keeps saved companies accessible even after a portfolio exit or empty Watchlist. The notebook's
 company filters apply to saved identities. This is the explicit exception to the feed-scope rule

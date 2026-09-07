@@ -157,7 +157,18 @@ try {
   // The actual shell must not remount this scope-independent tab under an open note.
   const shell=await context.newPage();shell.on('pageerror',error=>errors.push(error.message));
   await shell.goto(base+'/shell#/research/bookmarks?scope=watchlist');
-  await shell.getByRole('tab',{name:'Bookmarked Notebook',exact:true}).waitFor();
+  const bookmarksLink=shell.getByRole('link',{name:'Bookmarks',exact:true});
+  await bookmarksLink.waitFor();
+  assert.equal(await bookmarksLink.getAttribute('aria-current'),'page');
+  assert.equal(await shell.locator('[data-theme-toggle] + [data-header-bookmarks]').count(),1);
+  assert.equal(await shell.getByRole('tab',{name:/Bookmark/}).count(),0);
+  assert.equal(await shell.locator('[role="tab"][tabindex="0"]').count(),1,'Research navigation remains keyboard-accessible from Bookmarks');
+  await shell.getByRole('tab',{name:'All Alerts',exact:true}).click();
+  await shell.locator('[data-tab-id="daily-alerts"][aria-selected="true"]').waitFor();
+  assert.equal(await bookmarksLink.getAttribute('aria-current'),null);
+  await bookmarksLink.focus();await shell.keyboard.press('Enter');
+  await shell.getByRole('heading',{name:'Bookmarks',exact:true}).waitFor();
+  assert.equal(await bookmarksLink.getAttribute('aria-current'),'page');
   assert.equal(await shell.locator('[data-scope-controls]').isVisible(),false);
   await shell.locator('[data-notebook-search]').fill('New capacity announced');
   await shell.getByRole('button',{name:'New capacity announced',exact:true}).click();
