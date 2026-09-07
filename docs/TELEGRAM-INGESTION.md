@@ -52,6 +52,11 @@ storage.
 Without `TELEGRAM_CREDENTIALS`, the dependency-free Node collector combines documented
 public embeds with permalink Open Graph text. A matching message identity and source
 timestamp are required. Missing IDs are not interpreted as documents or deletions.
+Before discovery, a known archived message must still be publicly readable. If the three
+newest archived posts are missing, the collector tries the newest text post and a small
+sample spread through retained history, with at most eight distinct control IDs. This
+prevents a removed batch from blocking newer posts. A source refusal, rate limit or time
+budget still stops requests, and an unconfirmed source does not advance the success time.
 Forward sampling and resumable historical scans help discovery but cannot prove the
 latest channel message has been found. The UI explicitly says it has not been verified.
 HTTP 429 and 403 stop all public requests immediately. A retained `publicSafety` deadline

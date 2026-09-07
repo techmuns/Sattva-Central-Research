@@ -129,10 +129,20 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
     }
     if (!head) throw new Error('A first capture needs TELEGRAM_HEAD_HINT from a real message link');
     // A successful known-message control is necessary before calling a quiet scan successful.
-    const controls = [...byId.keys()].sort((a, b) => b - a).slice(0, 3);
+    // The newest batch can disappear together (for example captionless attachments). Do not
+    // let those three missing posts prevent discovery of newer, still-public messages. Keep
+    // the fallback bounded and spread it through retained history rather than retrying a
+    // whole archive. Missing controls are retained; they are not proof of deletion.
+    const retained = [...byId.values()].sort((a, b) => b.id - a.id);
+    const controls = [...new Set([
+      ...retained.slice(0, 3),
+      retained.find((post) => post.text),
+      ...[0.1, 0.5, 0.9, 1].map((fraction) => retained[Math.floor((retained.length - 1) * fraction)]),
+    ].filter(Boolean).map((post) => post.id))];
     if (!controls.length) controls.push(head);
     let control = false;
     for (const id of controls) {
+      if (outOfTime()) break;
       if ((await visit(id)).state === 'post') { control = true; break; }
     }
     if (!control) throw new Error('Known messages could not be confirmed; archive retained');
