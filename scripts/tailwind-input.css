@@ -89,6 +89,17 @@ html[data-alerts-focus-mode="true"] [data-reading-layout="table"] [data-app-nav]
 @media (min-width: 768px) {
   .alerts-workspace [data-section-head] > div { display: grid; grid-template-columns: auto minmax(0, 1fr); }
 }
+@media (min-width: 960px) {
+  /* Native selects size themselves to their longest option. Four independent filters must
+     share the laptop reading row instead; opening a selector still shows every full label. */
+  .alerts-workspace [data-table-toolbar] > div:first-child { flex-wrap: nowrap; }
+  .alerts-workspace [data-table-filter] { flex: 1 1 0; min-width: 0; }
+  .alerts-workspace [data-table-filter="2"], .alerts-workspace [data-table-filter="3"] { flex-grow: 1.35; }
+  .alerts-workspace [data-watch-toggle] { flex-shrink: 0; }
+}
+@media (min-width: 960px) and (max-width: 1199px) {
+  .alerts-workspace [data-table-filter], .alerts-workspace [data-watch-toggle] { padding-left: 8px; padding-right: 8px; font-size: 12px; }
+}
 @media (min-width: 768px) and (max-width: 1199px) {
   /* Keep the view row on one line on smaller laptops, including wider fallback fonts. */
   .alerts-controls { column-gap: 8px; }
@@ -112,8 +123,11 @@ html[data-alerts-focus-mode="true"] [data-reading-layout="table"] [data-app-nav]
   .alerts-view-controls .alerts-layout-button { padding-left: 8px; padding-right: 8px; font-size: 12px; gap: 6px; }
   .alerts-view-controls .alerts-selection { font-size: 11px; padding-left: 4px; padding-right: 4px; }
   .alerts-workspace [data-table-toolbar] { padding-top: 8px; padding-bottom: 8px; }
-  .alerts-workspace [data-table-toolbar] > div:first-child > div:first-child { flex-basis: 100%; max-width: none; }
+  /* Search and Watchlist share the first row; four selectors then occupy two equal rows.
+     The shared table's inline search minimum is for standalone toolbars, not this phone grid. */
+  .alerts-workspace [data-table-toolbar] > div:first-child > div:first-child { order: -2; flex-basis: calc(100% - 128px); min-width: 0 !important; max-width: none; }
   .alerts-workspace [data-table-filter], .alerts-workspace [data-watch-toggle] { flex: 1 1 calc(50% - 4px); min-width: 0; width: calc(50% - 4px); max-width: calc(50% - 4px); }
+  .alerts-workspace [data-watch-toggle] { order: -1; flex: 0 0 120px; width: 120px; max-width: 120px; padding-left: 8px; padding-right: 8px; font-size: 12px; }
 }
 @media (min-width: 350px) and (max-width: 767px) {
   .alerts-horizon-control { padding-right: 90px; }

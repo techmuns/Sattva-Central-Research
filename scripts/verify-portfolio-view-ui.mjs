@@ -298,6 +298,8 @@ try {
     });
     const normal = await measure();
     assert(normal.pageWidth <= normal.width + 2, `no horizontal page clipping at ${size.width}px`);
+    assert(normal.toolbar <= (size.width >= 1024 ? 66 : 165), `search, watchlist and all filters retain a compact row budget: ${JSON.stringify(normal)}`);
+    assert((await frame.locator('[data-table-search]').boundingBox()).width >= 160, 'company search remains a usable text field, not a collapsed icon');
     const clipped = await frame.evaluate(() => [...document.querySelectorAll('[data-alerts-workspace] button, [data-sources-summary], [data-table-search], [data-table-filter]')]
       .filter(node => !node.closest('tbody') && node.getBoundingClientRect().width > 0)
       .filter(node => node.getBoundingClientRect().left < 0 || node.getBoundingClientRect().right > innerWidth + 1)
@@ -307,6 +309,8 @@ try {
       const brand = await frame.locator('[data-brand-mark] img').evaluate(async image => { await image.decode(); return image.getBoundingClientRect().width; });
       assert(brand >= 180, 'the full wordmark remains legible in the compact table header');
       assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
+      assert.equal(await frame.locator('[data-table-filter]').count(), 4, 'the compact layout retains all four independent filters');
+      assert(await frame.getByRole('combobox', { name: 'Company relationship' }).isVisible(), 'company relationship remains directly available');
       assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }
@@ -331,9 +335,10 @@ try {
     if (size.width === 390 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT.replace('.png', '-mobile.png') });
     // Font fallback differs between macOS and Linux. Exercise wider control-label metrics too
     // so a toolbar that only fits with the developer's system font cannot silently ship.
-    const widerFont = await frame.addStyleTag({ content: '.alerts-controls { font-family: Verdana, sans-serif; }' });
+    const widerFont = await frame.addStyleTag({ content: '.alerts-controls, .alerts-workspace [data-table-toolbar] { font-family: Verdana, sans-serif; }' });
     const fallback = await measure();
     assert(fallback.controls <= (size.width >= 1024 ? 52 : 100), `fallback-font controls stay compact: ${JSON.stringify(fallback)}`);
+    assert(fallback.toolbar <= (size.width >= 1024 ? 66 : 165), `fallback-font filters stay compact: ${JSON.stringify(fallback)}`);
     await widerFont.evaluate(node => node.remove());
     await frame.locator('[data-alerts-focus]').press('Escape');
     assert.equal((await measure()).headerVisible, true, 'Escape restores the header and navigation');
