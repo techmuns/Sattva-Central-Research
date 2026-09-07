@@ -13,6 +13,9 @@ on:
 
 jobs:
   contracts:
+    # A credential-only dispatch must never replace required PR check contexts
+    # with successful skips on the same commit.
+    name: ${{ inputs.claude_access_check && 'probe-skipped-contracts' || 'contracts' }}
     if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -104,6 +107,7 @@ jobs:
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
   browser:
+    name: ${{ inputs.claude_access_check && 'probe-skipped-browser' || 'browser' }}
     if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -191,6 +195,7 @@ jobs:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-source-connections-ui.mjs
   portfolio-research:
+    name: ${{ inputs.claude_access_check && 'probe-skipped-portfolio-research' || 'portfolio-research' }}
     if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -24,6 +24,15 @@ credential must be corrected and verified before activating this route. Earlier
 Muns timings are not Claude benchmarks. A local key and the existing evaluation
 runner (`HANDOFF.md`), or an isolated preview, can complete the remaining evaluation.
 
+On 7 September a fresh isolated Worker preview still returned HTTP 401. The
+GitHub `CLAUDE_API_KEY` was then independently consumed inside a manual Actions
+job, without exporting or logging its value. Anthropic's read-only Models API
+also returned HTTP 401 in runs `34082270841` and `34082402866`; the second probe
+reported an unrecognized key shape, with no quoted-key, assignment or Bearer
+wrapper detected. Shape is not proof of issuer or validity. No real Claude answer
+was generated. The issuer/credential remains an activation blocker, independent
+of GitHub-to-Worker secret transfer.
+
 ## Portfolio scenarios
 
 The existing [question bank](ASK-RESEARCH-QUESTIONS.md) contains 14 categories for
