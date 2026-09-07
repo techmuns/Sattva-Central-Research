@@ -133,6 +133,8 @@ html[data-theme="dark"] body {
   [data-reading-layout="table"] [data-scope-label],
   [data-reading-layout="table"] .theme-toggle span { display: none; }
   [data-reading-layout="table"] .theme-toggle { width: 32px; min-height: 32px; padding: 0; }
+  [data-reading-layout="table"] [data-header-refresh] { width: 32px; height: 32px; padding: 0; justify-content: center; }
+  [data-reading-layout="table"] [data-header-refresh-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 @media (max-width: 359px) {
   [data-app-header] { padding-left: 16px; padding-right: 16px; }
