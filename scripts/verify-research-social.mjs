@@ -166,6 +166,9 @@ try {
 
   capture = { ...capture, lastCheckedAt: '2026-09-06T09:00:00Z', lastRun: { status: 'ok', at: '2026-09-06T09:00:00Z' },
     posts: [{ id: 21, text: 'JAYNECOIND: new captured message after the initial question.', publishedAt: '2026-09-06T08:30:00Z' }, ...capture.posts] };
+  // The later source check is valid only after the scenario's clock has advanced too.
+  // A future-dated response must not defeat the reader's cache-poisoning guard.
+  await page.clock.setFixedTime(new Date(capture.lastCheckedAt));
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   assert.equal((await build('Any new Telegram updates on Jayaswal Neco?')).sources.find(s => s.id === 'telegram').rows[0].messageId, 21);
   failTelegram = true;
