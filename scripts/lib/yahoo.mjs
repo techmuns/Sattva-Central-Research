@@ -109,6 +109,7 @@ export async function fetchBars(symbol, start, end, { includeInProgress = false 
 
       const ts = result.timestamp;
       const q = result.indicators?.quote?.[0] || {};
+      const adjusted = result.indicators?.adjclose?.[0]?.adjclose || [];
       const out = [];
       for (let i = 0; i < ts.length; i++) {
         const close = q.close?.[i];
@@ -120,6 +121,7 @@ export async function fetchBars(symbol, start, end, { includeInProgress = false 
           high: q.high?.[i] ?? close,
           low: q.low?.[i] ?? close,
           close,
+          adjustedClose: Number.isFinite(adjusted[i]) ? adjusted[i] : null,
           volume,
         });
       }

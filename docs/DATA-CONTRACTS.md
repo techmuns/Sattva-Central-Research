@@ -4500,3 +4500,21 @@ second Watchlist filter. The global scope control chooses the companies. Older r
 the reader scrolls; counts, search and export include all loaded records. Background arrivals
 preserve the reader's search, focus and scroll position. Source coverage, capture errors and
 unresolved company details remain available through the information link below the table.
+
+### Ask Research comparable activities and optional price history
+
+`research/business-context.js` derives a bounded `businessContext` from the
+question's reference companies and exact scoped holdings, before source-row
+sampling. References and candidates retain source text, dates, tab provenance,
+uncertainty, missing coverage and omitted-candidate counts. It is evidence for
+qualified comparison, not an authoritative business taxonomy or a benefit score.
+See [Portfolio business comparisons](RESEARCH-BUSINESS-COMPARISONS.md).
+
+Technical rows may carry `closeHistory`: `{ basis: 'adjusted-close', source,
+sourceSymbol, capturedAt, from, to, retention, rows: [[date, adjustedClose], ...] }`.
+The regular capture keeps at most 120 completed sessions from one adjustment
+vintage; `retainedAfterFailure: true` preserves unavailable-refresh history
+without authorizing a new event return. Absence is valid for older captures or
+unavailable adjusted prices. No values are filled with zero and no collection
+success timestamp is inferred from retention. This field is not sent wholesale
+to the LLM; only a dated, validated comparison return is selected.
