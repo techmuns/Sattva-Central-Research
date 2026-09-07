@@ -451,7 +451,9 @@ try {
   await page.setViewportSize({ width: 1440, height: 1050 });
   customAnswer = null;
   await answerArticle.locator('[data-bookmark-key]').click();
-  await page.waitForFunction(async () => (await import('/js/core/bookmarks.js')).all().some(entry => entry.kind === 'Research'));
+  // waitForFunction treats a returned Promise as truthy before its boolean resolves. Wait on
+  // the observable post-commit state instead, so slower CI storage cannot race the assertion.
+  await answerArticle.locator('[data-bookmark-key][aria-pressed="true"]:not([aria-busy])').waitFor();
   const notebookAnswer = await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all().find(entry => entry.kind === 'Research'));
   assert(notebookAnswer.body && notebookAnswer.title, 'A requested research answer saves its full text and original question');
   assert.equal(notebookAnswer.source, 'Ask Research · Generated answer');
