@@ -18,6 +18,7 @@ export function newsPublicationDay(row = {}) {
   // Never substitute firstSeenAt / fetchedAt for an unknown publication date.
   return row.publishedAt ? newsDay(row.publishedAt) : null;
 }
+export const DEFAULT_NEWS_PERIOD = 'today';
 export const NEWS_PERIODS = [
   { value: '30', label: 'Last 30 days' },
   { value: 'today', label: 'Today' },
@@ -60,7 +61,7 @@ export function newsShardInWindow(shard, window) {
   return month >= firstMonth && month <= window.to.slice(0, 7);
 }
 export const newsPeriodFilter = () => ({
-  label: 'News period', value: '30', options: NEWS_PERIODS,
+  label: 'News period', value: DEFAULT_NEWS_PERIOD, options: NEWS_PERIODS,
   match: (row, period) => matchesNewsPeriod(row, period),
 });
 

@@ -124,12 +124,15 @@ recovery boundaries and local interruption/reload acceptance tests.
 
 ### News delivery integrity (7 September 2026)
 
-**Recent News view (8 September 2026):** at the customer's request, News defaults to Last 30 days.
-Today, Last 3 days, Last 7 days, Last 14 days and This month are IST calendar filters; each
+**Recent reading defaults (8 September 2026):** at the customer's request, News defaults to Today
+and All Alerts defaults to Last 3 days. Today, Last 3 days, Last 7 days, Last 14 days, Last 30 days
+and This month are IST calendar filters; each
 rolling period includes today, and This month can include 31 days. Date not supplied is a separate
 choice: observation timestamps never make undated articles appear current. Portfolio, Watchlist
-and Universe use these same boundaries. Capture cadence, permanent storage, All Alerts, AI Alerts
-and research history are unchanged; this is a reading window, not a deletion policy.
+and Universe use these same boundaries. All Alerts also retains All history through today,
+Older than 30 days and its unchanged Upcoming horizon. Explicit company "See all" links select
+All history rather than silently applying the 3-day default. Capture cadence, permanent storage,
+AI Alerts and research history are unchanged; these are reading windows, not deletion policies.
 
 The recent reader loads only overlapping archive months, including the boundary month needed for
 UTC publications falling on the next IST day. A revalidated company archive index can certify that
@@ -164,7 +167,7 @@ the current scope/filter may contain no matching articles, so source health is c
 
 The official OnEMI Technology / KISSHT identity is a permanent regression case. The 4 September
 Economic Times JM Financial initiation story must remain searchable in Portfolio News and All
-Alerts. Explicit brokerage coverage/rating/target changes are eligible material research events;
+Alerts when its date is included in the chosen period. Explicit brokerage coverage/rating/target changes are eligible material research events;
 they do not invent a directional judgment or automatically receive the highest priority. AI
 Alerts keeps its 14-day material-evidence window; All Alerts is the broader retained view.
 An optional company-relationship filter separates possible matches without deleting them.

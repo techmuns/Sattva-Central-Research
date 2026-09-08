@@ -100,7 +100,7 @@ const tab = makeFilingsTab({
   id: 'news',
   title: 'News',
   subtitle:
-    'Last 30 days of company news, updated automatically. Choose a shorter period or This month (IST). ' +
+    'Company news, updated automatically. Opens on Today (IST); choose another period up to 30 days or This month. ' +
     'Undated stories have their own filter; older news stays saved in All Alerts.',
   feed,
   preserveReadingPosition: true,
@@ -232,8 +232,8 @@ const tab = makeFilingsTab({
 
         <p class="mt-2 text-xs"><strong>Incremental and permanent.</strong> Portfolio identities are checked every few hours
            with a 48-hour overlap. Every returned article is written to a permanent monthly archive before this fast 30-day
-           head is derived. This view loads only the recent period and undated stories; it opens on the last 30 calendar days,
-           including today in IST. This month starts on the first calendar day (up to 31 days). Older news remains available in
+           head is derived. This view loads only the recent period and undated stories; it opens on Today in IST.
+           Last 30 days includes today; This month starts on the first calendar day (up to 31 days). Older news remains available in
            <a class="text-indigo-600 underline" href="#/research/daily-alerts?scope=portfolio">All Alerts</a> and is never deleted by a filter.
            A successful empty search never retracts an article captured earlier. ${m.newsHistory?.error ? escapeHtml(m.newsHistory.error) : ''} Companies without an NSE
            ticker are searched by legal name and remain linked to the portfolio by ISIN.</p>

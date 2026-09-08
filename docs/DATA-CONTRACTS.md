@@ -2337,12 +2337,15 @@ backfill. Empty incremental responses add no rows and retract nothing. The archi
 the head is derived, so an article leaving the 30-day recent head has already been retained.
 The full-history news reader loads the retained monthly index, making older records available
 to All Alerts and research under the existing scope and attribution rules. News itself uses an
-independent recent reader: Last 30 days by default, plus Today, Last 3 days, Last 7 days, Last 14
+independent recent reader: Today by default, plus Last 3 days, Last 7 days, Last 14 days, Last 30
 days, This month and Date not supplied. Date windows are inclusive IST calendar days; This month
 can span 31 days. Date filters never delete archives or change collection cadence. A validated,
 archive-derived head covering the period avoids duplicate company-month downloads; a newer index
 or insufficient head coverage loads the overlapping months. Dedicated-publisher and TradingView
 history are also bounded to overlapping months. Undated records remain separately accessible.
+All Alerts uses the same IST presets with Last 3 days as its display default, while retaining
+All history through today, Older than 30 days and the separate Upcoming horizon. Its source
+reader still retains full history, and company "See all" links explicitly open All history.
 An incomplete monthly read preserves the last complete history and reports the gap; it is retried
 on opening, explicit refresh and the shared visible-page snapshot poll.
 

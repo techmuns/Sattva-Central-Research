@@ -44,7 +44,7 @@ import * as tab from '/js/tabs/daily-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
 coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'},{ticker:'NESTLEIND',name:'Nestle India'},{ticker:'DMART',name:'Avenue Supermarts'}]});
-window.show=(scope='universe')=>tab.render({root:document.querySelector('#root'),params:{},scope,data:{}});
+window.show=(scope='universe',params={})=>tab.render({root:document.querySelector('#root'),params,scope,data:{}});
 window.dispose=()=>tab.destroy();
 document.querySelector('#refresh').onclick=()=>refresh.refreshAll();
 window.show();
@@ -135,6 +135,13 @@ try {
   await page.goto(origin);
   await settled();
   console.log('Rendered complete All Alerts pool');
+  const period = page.getByRole('combobox', { name: 'Date range', exact: true });
+  assert.equal(await period.inputValue(), '3d', 'All Alerts opens on Last 3 days');
+  for (const label of ['Today', 'Last 3 days', 'Last 7 days', 'Last 14 days', 'Last 30 days', 'This month', 'Date not supplied', 'All history through today']) {
+    assert((await period.locator('option').allTextContents()).includes(label), `All Alerts offers ${label}`);
+  }
+  await period.selectOption('all'); // The remaining regression suite deliberately exercises full history.
+  await stableReadingSurface(); // Changing the default period can overlap a trailing source repaint.
   const picker = page.locator('[data-alerts-sources]');
   const sourceSummary = page.locator('[data-sources-summary]');
   assert.equal(await picker.getAttribute('open'), null, 'source grid is collapsed on entry');
@@ -178,6 +185,40 @@ try {
   assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
   await page.evaluate(() => window.show('portfolio'));
   await settled();
+  const dateFixture = await page.evaluate(async () => {
+    const { today } = await import('/js/data/daily-alerts.js');
+    const records = await import('/js/data/alert-records.js');
+    const day = today();
+    const dates = [0,1,2,3,6,7,13,14,29,30,60].map(offset =>
+      new Date(Date.parse(day + 'T00:00:00Z') - offset * 86400000).toISOString().slice(0,10));
+    records.recordDocuments('company-documents', { rows: [...dates,null].map((date,i) => ({
+      key: 'date-window-fixture-' + i, ticker: 'STLTECH', title: 'Date window fixture ' + i,
+      date, url: 'https://example.test/date-window-' + i,
+    })) }, { ticker: 'STLTECH', name: 'Sterlite Technologies' });
+    return { day, dates };
+  });
+  await page.locator('[data-table-search]').fill('Date window fixture');
+  await page.waitForFunction(() => document.querySelectorAll('tbody tr[data-row-key]').length === 12);
+  for (const [value,count] of [['today',1],['3d',3],['7d',5],['14d',7],['30d',9],
+    ['month',dateFixture.dates.filter(day => day >= dateFixture.day.slice(0,7) + '-01').length],['older',2],['undated',1],['all',12]]) {
+    await period.selectOption(value);
+    assert.equal(await page.locator('tbody tr[data-row-key]').count(), count, `All Alerts exact period membership: ${value}`);
+  }
+  await period.selectOption('7d');
+  await page.evaluate(() => window.show('portfolio'));
+  await settled();
+  assert.equal(await period.inputValue(), '7d', 'chosen period survives a source revalidation');
+  assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'date window fixture');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 5);
+  await period.selectOption('today');
+  await page.evaluate(() => window.show('portfolio', { company: 'STLTECH' }));
+  await settled();
+  assert.equal(await period.inputValue(), 'all', 'company See all link explicitly restores complete history');
+  await page.locator('[data-table-search]').fill('Date window fixture 10');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, '60-day evidence remains reachable through See all');
+  await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); window.show('portfolio'); });
+  await settled();
+  console.log('Verified exact All Alerts periods, retained user choice and complete-history company links');
   assert.equal(await page.locator('[data-feed="screener-portfolio-upcoming"]').count(), 1);
   await page.locator('[data-horizon-toggle="upcoming"]').click();
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('AGM scheduled'));
@@ -418,6 +459,8 @@ try {
     newsTab.render({ root: document.querySelector('#root'), scope: 'portfolio', params: {}, data: {} });
   });
   await page.waitForSelector('[data-table-search]');
+  assert.equal(await page.getByRole('combobox', { name: 'News period' }).inputValue(), 'today');
+  await page.getByRole('combobox', { name: 'News period' }).selectOption('30');
   await page.locator('[data-table-search]').fill('jayaswal');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Indian manufacturer shares a business update'));
   const newsText = await page.locator('tbody').innerText();
@@ -432,6 +475,8 @@ try {
   await page.goto(`${origin}/embed`);
   const embedded = await (await page.locator('iframe').elementHandle()).contentFrame();
   await settled(embedded);
+  assert.equal(await embedded.getByRole('combobox', { name: 'Date range' }).inputValue(), '3d', 'fresh embedded dashboard also defaults to 3 days');
+  await embedded.getByRole('combobox', { name: 'Date range' }).selectOption('all');
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
     await page.setViewportSize(size);
     const scroller = embedded.locator('[data-table-scroll]');

@@ -104,8 +104,8 @@ await context.route('**/*', route => {
       {entityId:'isin:INE000000001',key:'ISIN:INE000000001',ticker:null,name:'Unmapped held company'},
     ],
     byTicker:{
-      ...Object.fromEntries(['KISSHT','EDELWEISS','NEWCO'].map(t => [t,[{ date:'2026-09-04',title:`${t} announces dividend`,url:`https://example.com/${t}`,source:'Fixture' }]])),
-      'ISIN:INE000000001':[{entityId:'isin:INE000000001',ticker:null,company:'Unmapped held company',date:'2026-09-04',title:'Tickerless private company routine update',url:'https://example.com/private-company',source:'Fixture'}],
+      ...Object.fromEntries(['KISSHT','EDELWEISS','NEWCO'].map(t => [t,[{ date:todayIst,title:`${t} announces dividend`,url:`https://example.com/${t}`,source:'Fixture' }]])),
+      'ISIN:INE000000001':[{entityId:'isin:INE000000001',ticker:null,company:'Unmapped held company',date:todayIst,title:'Tickerless private company routine update',url:'https://example.com/private-company',source:'Fixture'}],
     },
     empty:[], failed:{}, headers:[],
   });
@@ -163,6 +163,7 @@ try {
   const peer = await (await page.locator('iframe[title="Private portfolio connection"]').elementHandle()).contentFrame(); assert.ok(peer);
   await peer.waitForFunction(() => Array.isArray(window.book));
   assert.equal(await page.locator('iframe[title="Private portfolio connection"]').isVisible(), false);
+  assert.equal(await page.getByRole('combobox', { name: 'News period' }).inputValue(), 'today');
   await page.getByText('KISSHT announces dividend', { exact:true }).waitFor();
   await page.getByText('Tickerless private company routine update', { exact:true }).waitFor();
   assert.equal(await page.evaluate(async () => {

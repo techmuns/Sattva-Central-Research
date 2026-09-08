@@ -555,12 +555,16 @@
     "isin:INE237A01036|KOTAKBANK": {
       "lastAttemptAt": "2026-09-08T06:29:11+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE0O6601022|Kross": {
+      "lastAttemptAt": "2026-09-08T07:04:42+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 230,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-08T06:29:11.471279+00:00"
+    "checkedAt": "2026-09-08T07:04:42.495806+00:00"
   }
 }
