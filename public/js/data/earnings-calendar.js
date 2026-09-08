@@ -20,9 +20,10 @@
 //   when Akamai blocks the live page — but it arrives stamped, with `listSource: 'snapshot'` and
 //   `listCapturedAt`, and the pill says *Captured* rather than *Live*. The original objection still
 //   holds — a stale schedule looks exactly like a fresh one — and the answer to it is the stamp,
-//   not the absence of a fallback. Nothing in this module invents a schedule of its own.
+//   not the absence of a fallback. The browser can retain a previously received response during
+//   a route outage, with its original source timestamps and a visible failed-refresh state.
 
-import { KEYS, conditionalJson } from '../core/store.js';
+import { KEYS, conditionalJson, readEntry } from '../core/store.js';
 
 const ENDPOINT = 'api/earnings-calendar';
 const LIVE_ID = 'earnings-calendar';
@@ -41,8 +42,14 @@ const inflight = new Map(); // "iso|list" -> promise, so a double-click is one f
 // Per-date also means one bad date does not stop the reader trying another.
 const failures = new Map(); // iso -> message
 let lastError = null;
+let generation = 0;
 const subscribers = new Set();
 export const onChange = (fn) => { subscribers.add(fn); return () => subscribers.delete(fn); };
+function notify() {
+  for (const fn of subscribers) {
+    try { fn(); } catch (err) { console.error('[earnings-calendar] repaint failed', err); }
+  }
+}
 
 export function strip() {
   return stripCache;
@@ -94,7 +101,9 @@ function payloadFingerprint(payload) {
     degraded: payload.degraded || null,
     complete: payload.complete === true,
     listSource: payload.listSource || null,
+    listCapturedAt: payload.listCapturedAt || null,
     countSource: payload.countSource || null,
+    countsCapturedAt: payload.countsCapturedAt || null,
     screenerUpcomingSource: payload.screenerUpcomingSource || null,
     screenerUpcomingCheckedAt: payload.screenerUpcomingCheckedAt || null,
     days: (payload.days || []).map((day) => [day.date, day.displayDate || null, day.resultCount ?? null, day.concallCount ?? null, day.count ?? null]),
@@ -119,6 +128,14 @@ async function readDate(iso, { from, to, list = 'full' } = {}, { refresh = false
   const ck = cacheKey(iso, list);
   if (!refresh && byDate.has(ck)) return Promise.resolve(byDate.get(ck));
   if (inflight.has(ck)) return inflight.get(ck);
+  const token = generation;
+  const key = KEYS.calendar(iso, list);
+  const validate = (payload) => {
+    if (!payload?.ok || payload.date !== iso || !Array.isArray(payload.rows) || !Array.isArray(payload.days) ||
+        (list === 'full' && payload.listRequested === false)) {
+      throw new Error(payload?.degraded || 'calendar feed returned no valid schedule');
+    }
+  };
 
   const qs = new URLSearchParams({ date: iso });
   if (from) qs.set('from', from);
@@ -127,27 +144,46 @@ async function readDate(iso, { from, to, list = 'full' } = {}, { refresh = false
 
   // Conditional, and persisted per date: a schedule changes on the order of hours, so revisiting a
   // date already seen on this device costs a 304 rather than the whole day's list again.
-  const p = conditionalJson(`${ENDPOINT}?${qs}`, { key: KEYS.calendar(iso, list) })
+  const p = conditionalJson(`${ENDPOINT}?${qs}`, { key, validate: (payload) => {
+    // An old visit must not overwrite either the active view or its persisted response.
+    if (token !== generation) throw new Error('Calendar visit ended');
+    validate(payload);
+  } })
     .then((out) => {
       const payload = out.value;
-      if (!payload?.ok) throw new Error(payload?.degraded || 'calendar feed returned no data');
+      if (token !== generation) return payload;
       // The strip covers a window around whichever date was asked for, so later loads widen it
       // rather than replacing it — clicking around the strip must not make dates disappear.
       const previous = byDate.get(ck);
-      const changed = previous && payloadFingerprint(previous) !== payloadFingerprint(payload);
+      // First success after a 503 and unchanged recovery are changes in the visible state too.
+      const changed = !previous || failures.has(iso) || payloadFingerprint(previous) !== payloadFingerprint(payload);
       mergeStrip(payload.days || []);
       byDate.set(ck, payload);
-      if (changed) subscribers.forEach((fn) => fn());
       failures.delete(iso);
       lastError = null;
+      if (changed) notify();
       return payload;
     })
-    .catch((err) => {
+    .catch(async (err) => {
+      if (token !== generation) throw err;
+      // Reopening during an outage still has a usable per-date response on this device. Do not
+      // manufacture a fresh check or combine another date/representation with these rows.
+      const stored = !byDate.has(ck) ? await readEntry(key) : null;
+      if (token !== generation) throw err;
+      if (stored?.value) {
+        try {
+          validate(stored.value);
+          byDate.set(ck, stored.value);
+          mergeStrip(stored.value.days);
+        } catch { /* Invalid saved data is unavailable, never a verified empty schedule. */ }
+      }
+      const changed = failures.get(iso) !== String(err.message || err) || !!stored?.value;
       lastError = String(err.message || err);
       failures.set(iso, lastError);
+      if (changed) notify();
       throw err;
     })
-    .finally(() => inflight.delete(ck));
+    .finally(() => { if (inflight.get(ck) === p) inflight.delete(ck); });
 
   inflight.set(ck, p);
   return p;
@@ -200,6 +236,7 @@ export function defaultDate(today = new Date().toISOString().slice(0, 10)) {
 
 /** Drop everything. Used when the tab unmounts so a stale schedule cannot outlive the visit. */
 export function reset() {
+  generation++;
   stripCache = [];
   byDate.clear();
   inflight.clear();
