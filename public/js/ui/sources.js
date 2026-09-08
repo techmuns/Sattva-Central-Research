@@ -24,7 +24,7 @@ import * as telegramPosts from '../data/telegram-posts.js';
 import { telegramReadHealth } from '../data/telegram-health.js';
 import * as institutions from '../data/institution-holdings.js';
 import * as technicals from '../data/technicals.js';
-import { announcements as annFeed, news as newsFeed } from '../data/filings.js';
+import { announcements as annFeed } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
 import * as nseFeed from '../data/nse-filings.js';
 import * as twitterNews from '../data/twitter-news.js';
@@ -35,7 +35,7 @@ import * as superInvestors from '../data/super-investors.js';
 import * as dailyAlerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
 import { ipoSourceGroup } from './ipo-sources.js';
-import { newsSourceItems, screenerInsightsSource } from './news-sources.js';
+import { newsSourceItems, newsSourceMeta, screenerInsightsSource } from './news-sources.js';
 import { sourceConnection, sourceSummary, sourceReadState } from './source-connections.js';
 
 // ---------------------------------------------------------------------------------------
@@ -688,12 +688,12 @@ export function sourceGroups() {
   // replace the aggregate row, so sources are named individually without double-counting.
   const flows = groups.find(g => g.title === 'Shareholding & flows');
   const companyNews = flows.items.find(i => i.id === 'muns-company-news');
-  const m = newsFeed.meta();
-  companyNews.readState = sourceReadState({ at: m.capturedAt, failed: !!m.reason,
+  const m = newsSourceMeta();
+  companyNews.readState = sourceReadState({ at: m.capturedAt, failed: !!m.reason || !!m.newsDelivery?.core?.error,
     partial: !!m.failed || !!m.queryCoverage?.failed || m.queryCoverage?.succeeded < m.queryCoverage?.planned, maxAgeMs: 4 * 3600000 });
   flows.items = flows.items.filter(i => !['Muns news API — company news', 'Market-wide news — five publishers'].includes(i.name));
   groups.splice(groups.indexOf(flows), 0, { id: 'portfolio-news', title: 'News & company discovery', icon: '📰',
-    tabs: 'News · All Alerts · AI Alerts', items: [companyNews, ...newsSourceItems()] });
+    tabs: 'News · All Alerts · AI Alerts', items: [companyNews, ...newsSourceItems(m)] });
   groups.find(g => g.title === 'Earnings & filings').items.push(screenerInsightsSource());
   const x = twitterNews.meta();
   groups.find(g => g.id === 'twitter').items.unshift({ id: 'x-portfolio-search', name: 'X — portfolio-wide company searches',

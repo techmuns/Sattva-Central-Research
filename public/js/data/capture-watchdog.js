@@ -182,7 +182,12 @@ async function applyLandedCapture(name, expected) {
   }
   if (['companyNews', 'announcements', 'insider'].includes(name)) {
     const feeds = await import('./filings.js');
-    const feed = name === 'companyNews' ? feeds.news : feeds[name];
+    if (name === 'companyNews') {
+      const loaded = [feeds.news, feeds.recentNews].filter(feed => feed.isLoaded());
+      const outcomes = await Promise.all(loaded.map(feed => feed.refreshSnapshot()));
+      return outcomes.every(out => out.available && matches(out.capturedAt));
+    }
+    const feed = feeds[name];
     if (!feed?.isLoaded()) return true;
     const out = await feed.refreshSnapshot();
     return out.available && matches(out.capturedAt);

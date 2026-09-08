@@ -29,6 +29,8 @@ jobs:
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
         run: node scripts/verify-company-news-archive.mjs
+      - name: Verify recent News calendar windows and lossless archive separation
+        run: node scripts/verify-news-window.mjs
       - name: Verify lossless news parts and deployable asset sizes
         run: node scripts/verify-news-publication.mjs && node scripts/verify-news-maintenance.mjs && node scripts/partition-news-data.mjs
       - name: Verify direct publisher delivery, OnEMI identity and open-app upgrades

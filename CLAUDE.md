@@ -3,6 +3,13 @@
 Read this before touching anything. `docs/SPEC.md` has the product detail;
 `docs/DATA-CONTRACTS.md` has every JSON shape.
 
+**News reading window (8 September 2026):** the customer wants the latest 30 days by default.
+News uses `recentNews`, separate from the full-history `news` reader in All Alerts / research.
+`news-window.js` owns the inclusive IST presets and undated choice; This month may span 31 days.
+Only overlapping archive months load, and a verified archive-derived head can avoid duplicate
+monthly downloads. Keep capture/retention unchanged, preserve failed-refresh data and reader
+filters, and test both recent delivery and older-history access. See the reliability contract.
+
 ---
 
 ## Hard rules

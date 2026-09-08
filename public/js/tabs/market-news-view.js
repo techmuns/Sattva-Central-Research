@@ -35,6 +35,7 @@ import { withoutPublisherName } from '../core/source-copy.js';
 import { canonicalPublisherName } from '../core/news-publishers.js';
 import { exportRows } from '../ui/export.js';
 import * as marketNews from '../data/market-news.js';
+import { NEWS_PERIODS, recentNewsWindow, inNewsWindow, matchesNewsPeriod } from '../data/news-window.js';
 import * as twitterNews from '../data/twitter-news.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import { openTwitterSources } from '../ui/twitter-sources.js';
@@ -70,7 +71,7 @@ let lastResult = null;
 let failure = null;
 // The reader's own filters. Module state, not node state: every repaint rebuilds the list, so a
 // value held on the input would be discarded the moment a capture landed.
-let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all' };
+let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: '30' };
 let fillStop = null;
 // Whether the provenance modal — which holds the Fetch control — is on screen, so a fetch's
 // progress can be re-rendered into it rather than reported to a panel nobody is looking at.
@@ -109,8 +110,10 @@ function pill(m) {
   const at = m.capturedAt ? Date.parse(m.capturedAt) : NaN;
   const age = Number.isFinite(at) ? Date.now() - at : null;
   const fresh = age !== null && age < FRESH_MS;
-  const tone = fresh ? 'text-emerald-700' : 'text-slate-500';
-  const label = age === null ? 'Updating' : fresh ? 'Up to date' : `Updated ${formatRelativeTime(at)}`;
+  const incomplete = m.lastReadFailed || lastMore?.failed;
+  const pending = marketNews.archiveMeta(recentNewsWindow()).remaining > 0;
+  const tone = fresh && !incomplete && !pending ? 'text-emerald-700' : 'text-slate-500';
+  const label = incomplete ? 'Partial coverage · loaded stories shown' : pending ? 'Loading recent history' : age === null ? 'Updating' : fresh ? 'Published capture loaded' : `Updated ${formatRelativeTime(at)}`;
   return `<span data-mcnews-info title="Market-news capture status"
       class="inline-flex items-center gap-1.5 text-xs font-semibold ${tone}">
       ${escapeHtml(label)}
@@ -154,8 +157,9 @@ const FIRST_PAINT = 24;
 
 /** Every story in the list: the publisher feed plus the posts from monitored handles. */
 function feedRows() {
-  const publisher = marketNews.rows();
-  const posts = twitterNews.rows();
+  const window = recentNewsWindow();
+  const publisher = marketNews.rows().filter(row => inNewsWindow(row, window));
+  const posts = twitterNews.rows().filter(row => inNewsWindow(row, window));
   if (!posts.length) return publisher;
 
   // Publisher stories keep their own order and their index becomes the tie-break, so a story with
@@ -188,6 +192,7 @@ const NEAR_BOTTOM_PX = 600;
 // the time there is something to say. Same reasoning as `lastResult` above.
 let lastMore = null;
 let moreInFlight = false;
+let lastArchiveCheckAt = null;
 
 /**
  * The end of the list, and the only place that says how far back the archive goes.
@@ -198,40 +203,42 @@ let moreInFlight = false;
  * at all to tell the two apart from the screen.
  */
 function moreFooter() {
-  const arc = marketNews.archiveMeta();
-  const back = arc.oldest ? istTime(arc.oldest) : null;
+  const arc = marketNews.archiveMeta(recentNewsWindow());
   const base = 'flex items-center justify-center gap-3 border-t border-slate-100 px-5 py-4 text-sm';
 
   if (moreInFlight || arc.loading) {
-    return `<div data-news-more class="${base} text-slate-500">${SPINNER}<span>Loading older stories…</span></div>`;
+    return `<div data-news-more class="${base} text-slate-500">${SPINNER}<span>Loading the rest of the recent period…</span></div>`;
   }
   if (lastMore?.failed) {
     return `<div data-news-more class="${base} text-slate-500">
-      <span class="text-amber-700">Older stories could not be read${lastMore.reason ? ` — ${escapeHtml(String(lastMore.reason))}` : ''}.</span>
+      <span class="text-amber-700">Some recent history could not be read. Loaded stories remain available.</span>
       <button type="button" data-news-more-btn class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 transition hover:bg-slate-50">Try again</button>
     </div>`;
   }
   if (!arc.exhausted) {
     return `<div data-news-more class="${base} text-slate-500">
-      <span>Keep scrolling for older stories${arc.remaining ? ` · ${escapeHtml(formatNumber(arc.remaining))} more month${arc.remaining === 1 ? '' : 's'} in the archive` : ''}</span>
-      <button type="button" data-news-more-btn class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 transition hover:bg-slate-50">Load older</button>
+      <span>More captured stories are available in this period.</span>
+      <button type="button" data-news-more-btn class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-indigo-700 ring-1 ring-slate-200 transition hover:bg-slate-50">Load remaining</button>
     </div>`;
   }
   return `<div data-news-more class="${base} text-slate-400">
-    <span>That is every story captured${back ? `, back to ${escapeHtml(back)}` : ''}. History grows from here — nothing is discarded any more.</span>
+    <span>Recent captured history loaded. Older news stays saved in All Alerts; Date not supplied shows undated stories.</span>
   </div>`;
 }
 
 /** Pull the next month in. Guarded so a flick of the wheel cannot start three of these at once. */
 async function requestMore(root) {
   if (moreInFlight) return;
-  const arc = marketNews.archiveMeta();
+  const arc = marketNews.archiveMeta(recentNewsWindow());
   if (arc.exhausted) return;
   moreInFlight = true;
+  lastArchiveCheckAt = marketNews.meta().checkedAt;
   const foot = root?.querySelector('[data-news-more]');
   if (foot) foot.outerHTML = moreFooter();
   try {
-    lastMore = await marketNews.loadMore();
+    do {
+      lastMore = await marketNews.loadMore(recentNewsWindow());
+    } while (ctxRef && !lastMore.failed && marketNews.archiveMeta(recentNewsWindow()).remaining);
   } catch (err) {
     lastMore = { added: 0, failed: 1, reason: String(err?.message || err) };
   } finally {
@@ -242,6 +249,8 @@ async function requestMore(root) {
   // footer is refreshed here rather than waiting for a paint that has nothing to redraw.
   const still = root?.querySelector('[data-news-more]');
   if (still) still.outerHTML = moreFooter();
+  const status = ctxRef?.root.querySelector('[data-mcnews-info]');
+  if (status) status.outerHTML = pill(marketNews.meta());
 }
 
 /** Which stories the search box and the four filters leave. */
@@ -252,6 +261,7 @@ function visibleRows(rows) {
   const topic = listView.topic;
   const source = listView.source;
   return rows.filter((r) => {
+    if (!matchesNewsPeriod(r, listView.period)) return false;
     // The source filter is the coarsest of the four and comes first: publisher, section and topic
     // are all readings of a PUBLISHER story, and a post carries none of them.
     if (source === 'twitter' && !isPost(r)) return false;
@@ -428,6 +438,10 @@ function listHtml(rows) {
               class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           ${sourceSelect}
+          <select data-news-period aria-label="News period"
+            class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            ${NEWS_PERIODS.map(o => `<option value="${o.value}"${listView.period === o.value ? ' selected' : ''}>${o.label}</option>`).join('')}
+          </select>
           ${
             allPublishers.length > 1
               ? `<select data-news-publisher aria-label="Publisher"
@@ -677,7 +691,7 @@ function paint(ctx) {
     fillStop = null;
   }
 
-  if (!rows.length) {
+  if (!rows.length && !m.loaded) {
     ctx.root.innerHTML = `
       ${sectionHead({ title: 'News', description: DESCRIPTION, meta: pill(m) })}
       <div class="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100">
@@ -871,6 +885,11 @@ function wireList(root) {
   });
 
   const topic = root.querySelector('[data-news-topic]');
+  const period = root.querySelector('[data-news-period]');
+  period?.addEventListener('change', () => {
+    listView.period = period.value;
+    relist(root);
+  });
   if (topic) {
     const onTopic = () => {
       listView.topic = topic.value;
@@ -933,8 +952,8 @@ function wireList(root) {
 }
 
 const DESCRIPTION =
-  'Every story in the market-wide feeds of several publishers — not filtered to the companies in scope. Each row names who published it; headlines and standfirsts are theirs, and the article stays where it is published. ' +
-  'Topic narrows it to the thirty keywords this desk tracks newsflow by; these rows carry no company, so a topic names a subject rather than an exposure.';
+  'Last 30 days of market-wide news, not limited to your portfolio. Time filters use IST; This month starts on the first calendar day. ' +
+  'Older news stays saved in All Alerts. Undated stories have their own filter.';
 
 /**
  * OPENING THIS TAB ON A STALE CAPTURE FETCHES ONE. A DELIBERATE REVERSAL, SO HERE IS THE REASONING.
@@ -1002,7 +1021,14 @@ export function render(ctx) {
   // Guard on `ctxRef`, which the lifecycle owns, rather than on anything captured at subscribe
   // time: render() runs again on every scope and sub-view change, and a token captured in the
   // closure would be stale from the first one onwards.
-  if (!unsub) unsub = marketNews.onChange(() => ctxRef && paint(ctxRef));
+  if (!unsub) unsub = marketNews.onChange(() => {
+    if (!ctxRef) return;
+    paint(ctxRef);
+    // A new head can revise a recent month. Complete the bounded period automatically,
+    // without turning scroll/search into a full-history download.
+    const meta = marketNews.meta();
+    if (!meta.lastReadFailed && (!lastMore?.failed || meta.checkedAt !== lastArchiveCheckAt)) void requestMore(ctxRef.root);
+  });
   // The post capture and the handle list each move the row set, so each repaints. Registered on
   // the same `ctxRef` guard and only once, exactly as the publisher feed's subscription is:
   // render() runs again on every scope change and a per-render subscription would stack up.
@@ -1019,11 +1045,13 @@ export function render(ctx) {
     marketNews.load().then(() => {
       if (!ctxRef) return;
       paint(ctxRef);
+      void requestMore(ctxRef.root);
       maybeAutoFetch(ctxRef);
     });
     return;
   }
   paint(ctx);
+  void requestMore(ctx.root);
   maybeAutoFetch(ctx);
 }
 
@@ -1049,5 +1077,5 @@ export function destroy() {
   modalOpen = false;
   // The filters are the reader's, and leaving the tab discards them deliberately: coming back to a
   // list silently narrowed by a search typed ten minutes ago reads as a feed that lost stories.
-  listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all' };
+  listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: '30' };
 }

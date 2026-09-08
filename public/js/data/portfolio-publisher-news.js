@@ -6,6 +6,7 @@ import * as coverage from './coverage.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
 import { matchPortfolioNews } from './portfolio-news-matching.js';
 import { dedupeArticles, isoDate } from './filings-shared.js';
+import { inNewsWindow } from './news-window.js';
 
 const indianDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
 /** An explicit publisher calendar date wins; only an instant fallback needs timezone conversion. */
@@ -20,7 +21,7 @@ export function publisherNewsDate(row = {}) {
 }
 
 export function withPortfolioPublisherNews(base, { publishers = marketNews, book = coverage,
-  now = Date.now } = {}) {
+  now = Date.now, window: readingWindow = () => null } = {}) {
   const listeners = new Set(), wanted = new Map();
   let combined = null, pending = null, archivePending = null, archiveError = null, publisherReadError = null, epoch = 0;
   let identityStamp = null, identities = [];
@@ -43,7 +44,8 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
 
   function rows() {
     const source = base.rows(), published = publishers.rows(), entities = companyIdentities();
-    if (combined?.source === source && combined.published === published && combined.entities === entities) return combined.rows;
+    const window = readingWindow(), windowKey = JSON.stringify(window);
+    if (combined?.source === source && combined.published === published && combined.entities === entities && combined.windowKey === windowKey) return combined.rows;
     const buckets = new Map();
     const add = row => {
       // A stable ticker joins older ticker-only search copies with newer ISIN-backed identities.
@@ -53,14 +55,14 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     };
     // Head/body-backed publisher matches are preferred over an older uncertain search copy at
     // the same company URL; dedupe never crosses companies or publisher domains.
-    for (const row of published) for (const match of matchPortfolioNews(row, entities)) add({
+    for (const row of published) if (inNewsWindow(row, window)) for (const match of matchPortfolioNews(row, entities)) add({
       ...match, source: row.source || row.publisher || null, date: publisherNewsDate(row),
       discoverySource: 'published-publisher-feed', publisherSourceRecord: row,
     });
-    source.forEach(add);
+    source.filter(row => inNewsWindow(row, window)).forEach(add);
     const value = [...buckets.values()].flatMap(dedupeArticles)
       .sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));
-    combined = { source, published, entities, rows: value,
+    combined = { source, published, entities, windowKey, rows: value,
       publisherCount: value.filter(row => row.discoverySource === 'published-publisher-feed').length };
     return value;
   }
@@ -70,11 +72,12 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     const generation = epoch;
     archivePending = (async () => {
       try {
-        while (publishers.archiveMeta().remaining) {
-          const before = publishers.archiveMeta().remaining;
-          const result = await publishers.loadMore();
+        const window = readingWindow();
+        while (publishers.archiveMeta(window).remaining) {
+          const before = publishers.archiveMeta(window).remaining;
+          const result = await publishers.loadMore(window);
           if (generation !== epoch) return false;
-          if (result.failed || publishers.archiveMeta().remaining >= before) throw Error('Publisher history could not be completely read.');
+          if (result.failed || publishers.archiveMeta(window).remaining >= before) throw Error('Publisher history could not be completely read.');
         }
         archiveError = null;
         return true;
@@ -107,7 +110,7 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
   }
 
   function meta() {
-    const m = base.meta(), p = publishers.meta(), archive = publishers.archiveMeta();
+    const m = base.meta(), p = publishers.meta(), archive = publishers.archiveMeta(readingWindow());
     const required = ['moneycontrol', 'business-standard', 'mint', 'economic-times', 'investing'];
     const badSource = required.some(id => !p.sources?.some(s => s.id === id)) || p.sources.some(s => !s.ok ||
       !Number.isInteger(s.feeds) || s.feeds < (s.id === 'moneycontrol' ? 1 : 3) ||

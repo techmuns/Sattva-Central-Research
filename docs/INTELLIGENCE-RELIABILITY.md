@@ -124,6 +124,21 @@ recovery boundaries and local interruption/reload acceptance tests.
 
 ### News delivery integrity (7 September 2026)
 
+**Recent News view (8 September 2026):** at the customer's request, News defaults to Last 30 days.
+Today, Last 3 days, Last 7 days, Last 14 days and This month are IST calendar filters; each
+rolling period includes today, and This month can include 31 days. Date not supplied is a separate
+choice: observation timestamps never make undated articles appear current. Portfolio, Watchlist
+and Universe use these same boundaries. Capture cadence, permanent storage, All Alerts, AI Alerts
+and research history are unchanged; this is a reading window, not a deletion policy.
+
+The recent reader loads only overlapping archive months, including the boundary month needed for
+UTC publications falling on the next IST day. A revalidated company archive index can certify that
+the archive-derived head already covers the entire period (matching archive count and a head
+revision at least as new as the index). Only then are duplicate company-month downloads skipped.
+A newer index, missing coverage metadata or a wider calendar month falls back to bounded archive
+reads. Failed reads retain usable records and remain retryable. Full-history consumers keep a
+separate reader; opening them cannot widen the News filter or cause storage deletion.
+
 The company News reader joins the dedicated publisher head and retained monthly archive directly,
 using reviewed portfolio identities. It does not wait for the three-hour company-enrichment run.
 The underlying publisher records stay in the market-wide archive, including unmatched stories.

@@ -32,7 +32,8 @@ import { canonicalPublisherName, newsPublisherFilter } from '../core/news-publis
 import { newsViewStatus } from '../core/news-view-status.js';
 import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
-import { news as feed } from '../data/filings.js';
+import { recentNews as feed } from '../data/filings.js';
+import { newsPeriodFilter, newsPublicationDay } from '../data/news-window.js';
 import * as marketNews from './market-news-view.js';
 import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, groupLabel } from '../data/news-keywords.js';
 import { filterByScope as filterTickerRows } from '../data/scope.js';
@@ -99,8 +100,8 @@ const tab = makeFilingsTab({
   id: 'news',
   title: 'News',
   subtitle:
-    'Company stories from retained company-search, publisher and TradingView feeds, updated automatically. ' +
-    'Search and filters do not delete captured history. Universe also includes market-wide stories.',
+    'Last 30 days of company news, updated automatically. Choose a shorter period or This month (IST). ' +
+    'Undated stories have their own filter; older news stays saved in All Alerts.',
   feed,
   preserveReadingPosition: true,
   noun: 'articles',
@@ -132,10 +133,10 @@ const tab = makeFilingsTab({
   columns: () => [
     {
       label: 'Date',
-      get: (r) => (r.date ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(r.date))}</span>` : dash('the article carried no readable date')),
+      get: (r) => (newsPublicationDay(r) ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(newsPublicationDay(r)))}</span>` : dash('the article carried no readable date')),
       html: true,
       // A row with no date sorts last rather than first. An unreadable date is not "today".
-      sortValue: (r) => r.date || '',
+      sortValue: (r) => newsPublicationDay(r) || '',
     },
     {
       // THE TOPIC COLUMN TOOK THE OUTLET COLUMN'S PLACE RATHER THAN BEING ADDED BESIDE IT. The
@@ -213,7 +214,7 @@ const tab = makeFilingsTab({
     };
     // AN ARRAY, so the two AND together — "Order" and "Business Standard" are different questions
     // and folding them into one dropdown would make them mutually exclusive for no reason.
-    return [topic, relationship, newsPublisherFilter(rows)];
+    return [topic, relationship, newsPublisherFilter(rows), newsPeriodFilter()];
   },
   provenance: (m) => `<div class="px-7 py-6">
       <div class="mb-3 flex items-start justify-between gap-4">
@@ -231,8 +232,10 @@ const tab = makeFilingsTab({
 
         <p class="mt-2 text-xs"><strong>Incremental and permanent.</strong> Portfolio identities are checked every few hours
            with a 48-hour overlap. Every returned article is written to a permanent monthly archive before this fast 30-day
-           head is derived. Retained monthly history is also loaded into this view, so a successful empty search never
-           retracts an article captured earlier. ${m.newsHistory?.error ? escapeHtml(m.newsHistory.error) : ''} Companies without an NSE
+           head is derived. This view loads only the recent period and undated stories; it opens on the last 30 calendar days,
+           including today in IST. This month starts on the first calendar day (up to 31 days). Older news remains available in
+           <a class="text-indigo-600 underline" href="#/research/daily-alerts?scope=portfolio">All Alerts</a> and is never deleted by a filter.
+           A successful empty search never retracts an article captured earlier. ${m.newsHistory?.error ? escapeHtml(m.newsHistory.error) : ''} Companies without an NSE
            ticker are searched by legal name and remain linked to the portfolio by ISIN.</p>
 
         <p class="mt-2 text-xs"><strong>TradingView enrichment.</strong> An independent background capture targets every 15 minutes,

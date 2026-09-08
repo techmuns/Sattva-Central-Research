@@ -2322,8 +2322,14 @@ Every established identity query starts 48 hours before its last successful obse
 added legal name, former name, brand, subsidiary or reviewed alias receives a 30-day initial
 backfill. Empty incremental responses add no rows and retract nothing. The archive is written before
 the head is derived, so an article leaving the 30-day recent head has already been retained.
-The browser's shared news reader also loads the retained monthly index, making older records
-available to News, All Alerts and research under the existing scope and attribution rules.
+The full-history news reader loads the retained monthly index, making older records available
+to All Alerts and research under the existing scope and attribution rules. News itself uses an
+independent recent reader: Last 30 days by default, plus Today, Last 3 days, Last 7 days, Last 14
+days, This month and Date not supplied. Date windows are inclusive IST calendar days; This month
+can span 31 days. Date filters never delete archives or change collection cadence. A validated,
+archive-derived head covering the period avoids duplicate company-month downloads; a newer index
+or insufficient head coverage loads the overlapping months. Dedicated-publisher and TradingView
+history are also bounded to overlapping months. Undated records remain separately accessible.
 An incomplete monthly read preserves the last complete history and reports the gap; it is retried
 on opening, explicit refresh and the shared visible-page snapshot poll.
 
