@@ -1096,6 +1096,11 @@ feed contract but is not rendered in the tab chrome.
 
 ### Screener collection and freshness
 
+The Con-call Documents column, document filter, search labels and document export omit Screener
+Summary links: the capture contains URLs rather than summary text, and Screener's signed-in reader
+blocks embedding. Summary source references remain in retained records. Transcript, Recording and
+Presentation links and the dashboard's existing Deep Dive panel remain available.
+
 `.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
 `SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
 generated data. Every 15 minutes it reads the newest concall pages until it reaches records already
