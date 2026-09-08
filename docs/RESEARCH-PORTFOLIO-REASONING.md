@@ -50,6 +50,9 @@ not the held company's liability. Co-mentions, industry labels, source query nam
 and shared price direction do not establish customers, peers or causation.
 Industry-only ideas must remain conditional research candidates. Citation page
 names and analysis dates are separate; all profile analysis cites Con-call.
+Before naming a beneficiary, the answer contract checks the direction from
+revenue and expense changes to margins or cash flow. Unknown repricing speed,
+fixed/floating terms, pass-through and hedges remain conditional premises.
 
 ## Validation and limits
 

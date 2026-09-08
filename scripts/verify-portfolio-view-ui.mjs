@@ -314,6 +314,18 @@ try {
       assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }
+    // Native details updates `open` now but queues `toggle` for a later task. Force the
+    // same repaint a source arrival can cause before that event, in both directions.
+    const pickerState = await frame.evaluate(() => {
+      const click = selector => document.querySelector(selector).click();
+      click('[data-sources-summary]');
+      click('[data-feed-toggle="__all"]');
+      const afterOpenRepaint = document.querySelector('[data-alerts-sources]').open;
+      click('[data-sources-summary]');
+      click('[data-feed-toggle="__all"]');
+      return { afterOpenRepaint, afterCloseRepaint: document.querySelector('[data-alerts-sources]').open };
+    });
+    assert.deepEqual(pickerState, { afterOpenRepaint: true, afterCloseRepaint: false }, 'repaints preserve native source-menu state before the queued toggle event');
     await frame.locator('[data-sources-summary]').click();
     await frame.locator('[data-alerts-coverage]').waitFor({ state: 'visible' });
     const expanded = await measure();

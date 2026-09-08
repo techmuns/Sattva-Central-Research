@@ -338,6 +338,10 @@ function paint(ctx) {
   }));
 
   const focus = captureFocus(ctx.root);
+  // Native details changes `open` synchronously but dispatches `toggle` later.
+  // A feed repaint can replace the node before that event saves its state.
+  const sourcePicker = ctx.root.querySelector('[data-alerts-sources]');
+  if (sourcePicker) sourcesOpen = sourcePicker.open;
   const sourceScrollTop = renderedHorizon === horizon ? ctx.root.querySelector('[data-alerts-coverage]')?.scrollTop || 0 : 0;
   // Preserve the visible row across live repaints inside one horizon, but never carry a deep
   // history scroll offset into the much shorter forward calendar (or vice versa).
