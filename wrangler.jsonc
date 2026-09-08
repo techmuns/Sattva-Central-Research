@@ -33,8 +33,12 @@
     "GH_REPO": "techmuns/Sattva-Central-Research",
     "GH_REF": "main",
 
-    // Ask Research streams the low-latency model through Muns' query router. The session credential
-    // is a Worker secret: prefer `MUNS_LLM_TOKEN`, with existing Muns tokens as fallbacks.
+    // Ask Research uses Claude Sonnet 5 through AWS Bedrock when the CLAUDE_KEY Worker
+    // secret is present. The key is never a build variable or browser credential.
+    // The older CLAUDE_API_KEY name remains an alias; CLAUDE_KEY takes precedence.
+    // Muns remains the route only for environments without a dedicated Claude key.
+    "BEDROCK_REGION": "ap-south-1",
+    "BEDROCK_MODEL_ID": "global.anthropic.claude-sonnet-5",
     "MUNS_LLM_BASE": "https://fastapi.muns.io",
     // Compact prompts use the local route; research.mjs automatically routes larger
     // complete-portfolio prompts to hosted_llm before overflowing the small context.

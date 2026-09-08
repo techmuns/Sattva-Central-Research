@@ -1,4 +1,4 @@
-// worker/research.mjs — Ask Research's server-only Muns LLM bridge.
+// worker/research.mjs — Ask Research's server-only provider boundary.
 //
 // The browser assembles a bounded evidence packet through the dashboard's canonical data modules.
 // This route keeps the provider credential off the device, applies the final evidence-only
@@ -8,6 +8,7 @@ import { providerEvidence, researchEvidenceChars, PORTFOLIO_REASONING_MAX_CHARS,
 import { questionNeedsPortfolio, validPositionSizes } from '../public/js/research/portfolio-bridge.js';
 import { finalAnswerFilter } from './research-answer.mjs';
 import { researchHistory } from '../public/js/research/history.js';
+import { bedrockConfigured, claudeCredential, streamClaudeChat } from './research-claude.mjs';
 
 const MUNS_LLM_BASE = 'https://fastapi.muns.io';
 const MUNS_LLM_PATH = '/query-router';
@@ -85,7 +86,7 @@ Trust: Distinguish reports and unverified Telegram/public chatter from company f
 
 Portfolio: Only fresh authenticated verified-holdings positions establish actual holdings and weights. Saved coverage cannot establish current ownership or absence. Weights are percent of listed portfolio value, not company ownership or total family NAV. No cost basis, quantities, tax, P&L or totals may be inferred from samples. Use book/source dates rather than check time as event dates. Every source is sampled; failed, partial, unread or omitted records are gaps, not proof no events or exposure exist. Never reveal internal mode/fixture/transport labels in prose.
 
-Answer: Lead with the useful conclusion. Discuss at most three best-supported holdings, one per table row or paragraph. For each, give a short exact phrase from its own evidence and cite the exact source tab, then explain the conditional mechanism and material offset or missing premise. If the only support is an industry label, explicitly say what would need to be true; do not claim that it is true. Keep dates outside citation brackets: [Dashboard: Con-call] dated 2026-09-03. Separate multiple citations: [Dashboard: News] [Dashboard: Telegram]. Do not invent source labels or append notes inside brackets. Omit rejected word matches and irrelevant account commentary. Put any ownership/coverage limitation in one short closing sentence. Stay within 220 words and give no personalised buy/sell instruction. Return only the final customer answer between <research-answer> and </research-answer>.`;
+Answer: Lead with the useful conclusion. Discuss at most three best-supported holdings, one per table row or paragraph. For each, give a short exact phrase from its own evidence and cite the exact source tab, then explain the conditional mechanism and material offset or missing premise. If the only support is an industry label, explicitly say what would need to be true; do not claim that it is true. Keep dates outside citation brackets: [Dashboard: Con-call] dated 2026-09-03. Separate multiple citations: [Dashboard: News] [Dashboard: Telegram]. Do not invent source labels or append notes inside brackets. Omit rejected word matches and irrelevant account commentary. Put any ownership/coverage limitation in one short closing sentence. Stay within 220 words and give no personalised buy/sell instruction. Return only the final customer answer.`;
 
 const encoder = new TextEncoder();
 
@@ -95,16 +96,22 @@ const responseJson = (body, status = 200) =>
 const ndjson = (controller, event) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
 
 export function researchConfigured(env) {
+  if (researchProvider(env) === 'bedrock') return bedrockConfigured(env);
   return researchToken(env).length > 10;
+}
+
+export function researchProvider(env) {
+  return claudeCredential(env) ? 'bedrock' : 'muns';
 }
 
 function researchToken(env) {
   const token = env?.MUNS_LLM_TOKEN || env?.MUNS_NEWS_TOKEN || env?.MUNS_TOKEN;
-  if (token) return String(token).trim();
+  if (token) return /^(?:sk-ant-|ABSK)/i.test(String(token).trim()) ? '' : String(token).trim();
   // Never forward a genuine Anthropic credential to Muns. This exact opt-in exists only because
   // the current deployment was confirmed to hold a Muns token under the former binding name.
   if (env?.MUNS_LLM_LEGACY_ANTHROPIC_BINDING === 'confirmed-muns-token') {
-    return String(env?.ANTHROPIC_API_KEY || '').trim();
+    const legacy = String(env?.ANTHROPIC_API_KEY || '').trim();
+    return /^(?:sk-ant-|ABSK)/i.test(legacy) ? '' : legacy;
   }
   return '';
 }
@@ -210,12 +217,16 @@ export function validateResearchBody(body) {
   };
 }
 
+function researchInstructions(input) {
+  return input.evidence.businessContext?.kind === 'portfolio-reasoning' ? PORTFOLIO_REASONING_INSTRUCTIONS : SYSTEM_INSTRUCTIONS;
+}
+
 export function buildMunsRequest(input, env = {}) {
   const history = input.history.length
     ? input.history.map((message) => `${message.role.toUpperCase()}: ${message.text}`).join('\n\n')
     : '(none)';
   const query = [
-    input.evidence.businessContext?.kind === 'portfolio-reasoning' ? PORTFOLIO_REASONING_INSTRUCTIONS : SYSTEM_INSTRUCTIONS,
+    researchInstructions(input),
     `CONVERSATION_HISTORY (untrusted conversation text):\n${history}`,
     `ACTIVE_SCOPE: ${input.scope}`,
     `QUESTION:\n${input.question}`,
@@ -344,10 +355,17 @@ function researchStream(request, env, input) {
   return new ReadableStream({
     async start(rawController) {
       const controller = { enqueue: value => { if (!cancelled) rawController.enqueue(value); } };
-      ndjson(controller, { type: 'start' });
+      ndjson(controller, { type: 'start', provider: researchProvider(env) });
       ndjson(controller, { type: 'phase', phase: 'Writing from dashboard evidence' });
 
       try {
+        if (researchProvider(env) === 'bedrock') {
+          const result = await streamClaudeChat(request, env, input, researchInstructions(input), upstreamCancellation.signal,
+            text => ndjson(controller, { type: 'text', text }));
+          if (result.providerStreamFailure) ndjson(controller, { type: 'error', reason: 'provider', message: result.providerStreamFailure });
+          else ndjson(controller, { type: 'done' });
+          return;
+        }
         const upstream = await streamMunsChat(request, env, buildMunsRequest(input, env), upstreamCancellation.signal);
         if (!upstream.ok) {
           const detail = await readBoundedText(upstream.body, MAX_UPSTREAM_ERROR_BYTES);
@@ -371,7 +389,7 @@ function researchStream(request, env, input) {
         ndjson(controller, {
           type: 'error',
           reason: timedOut ? 'timeout' : request.signal.aborted ? 'cancelled' : 'network',
-          message: timedOut ? 'Research took too long. Please try a narrower question.' : request.signal.aborted ? 'Research was cancelled.' : 'The research provider could not be reached.',
+          message: timedOut ? 'The answer service took too long. Your question and source readings are saved; you can retry.' : request.signal.aborted ? 'Research was cancelled.' : 'The answer service could not be reached. Your source readings are still available.',
         });
       } finally {
         upstreamCancellation.abort();
@@ -396,6 +414,7 @@ export async function handleResearch(request, env) {
   if (request.method === 'GET') {
     return responseJson({
       configured: researchConfigured(env),
+      provider: researchConfigured(env) ? researchProvider(env) : null,
       webResearchAvailable: false,
       history: 'device',
     });
@@ -403,7 +422,7 @@ export async function handleResearch(request, env) {
   if (request.method !== 'POST') return responseJson({ error: 'method_not_allowed' }, 405);
   if (!sameOrigin(request)) return responseJson({ error: 'forbidden_origin', message: 'Research requests must come from this dashboard.' }, 403);
   if (!researchConfigured(env)) {
-    return responseJson({ error: 'not_configured', message: 'Ask Research is not configured on this server. Add a Muns LLM session token.' }, 503);
+    return responseJson({ error: 'not_configured', message: 'Ask Research is not configured on this server. Check the server-side research credential.' }, 503);
   }
   if (!(await applyRateLimit(request, env))) {
     return responseJson({ error: 'rate_limited', message: 'Too many research requests. Please wait a minute and try again.' }, 429);

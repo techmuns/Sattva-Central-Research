@@ -53,7 +53,8 @@ const server = createServer(async (req, res) => {
     return;
   }
   if (url.pathname === '/api/research') {
-    if (req.method === 'GET') { res.setHeader('content-type', 'application/json'); res.end('{"configured":true}'); return; }
+    // An open page may retain config from before a deployment changed provider.
+    if (req.method === 'GET') { res.setHeader('content-type', 'application/json'); res.end('{"configured":true,"provider":"muns"}'); return; }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = JSON.parse(raw);
     const validated = validateResearchBody(body);
@@ -66,7 +67,7 @@ const server = createServer(async (req, res) => {
     const answer = customAnswer;
     const pauseThisAnswer = pauseAfterFirstText;
     pauseAfterFirstText = false;
-    send({ type: 'start' });
+    send({ type: 'start', provider: 'bedrock' });
     if (emptyStreamsRemaining > 0) { emptyStreamsRemaining--; res.end(); return; }
     let second, finish;
     const remainder = () => {
@@ -278,6 +279,8 @@ try {
   assert.equal(await page.locator('.research-opening').count(), 0, 'empty failure never resets the conversation to the welcome screen');
   assert.equal(await page.locator('.research-user-bubble').last().innerText(), screenshotQuestion);
   assert(await page.locator('.research-assistant-answer').last().locator('[data-research-preview]').isVisible(), 'source readings remain available after an empty failure');
+  assert.equal(await page.locator('.research-assistant-answer').last().locator(':scope > [data-research-preview] > summary').innerText(), 'Findings from your sources', 'retrieved leads remain outside collapsed portfolio details when the model fails');
+  assert.match(await page.locator('[data-research-provider-note]').textContent(), /Claude through Amazon Bedrock/, 'stream metadata corrects a provider disclosure cached before deployment');
 
   // Customer regression: done is already received, but transport cancellation
   // never settles. The completed message must still release the composer.

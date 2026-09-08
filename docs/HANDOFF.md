@@ -338,12 +338,16 @@ across sources. The compact catalog carries only source identity and status beca
 packet already holds the tab, UI route, dates, provider and coverage. Those UI-only fields stay in
 the browser for source chips and are not charged against the budget.
 
-`POST /api/research` in `worker/research.mjs` is the only provider boundary. It keeps
-a Muns session token server-side, rejects cross-origin and oversized requests, rate-limits the paid
-upstream, and streams normalized NDJSON back to the browser. It calls `fastapi.muns.io/query-router`
-with `llm_type: local_llm` and `stream: true` for low first-token latency; the upstream contract has
-no web-search mode, so the UI makes no such claim. Model text is rendered through a small DOM-based Markdown subset and never
-reaches `innerHTML`.
+`POST /api/research` in `worker/research.mjs` is the only provider boundary. It rejects
+cross-origin and oversized requests, rate-limits the paid upstream and streams normalized NDJSON.
+When the dedicated `CLAUDE_KEY` Worker secret exists, it calls AWS Bedrock through
+`worker/research-claude.mjs`: Claude Sonnet 5, thinking disabled, shared-instruction prompt caching,
+immediate text deltas, explicit completion checks and bounded first-text/total deadlines. The
+selected source evidence and full authenticated position context are retained. An error never
+silently switches providers. `AWS_BEARER_TOKEN_BEDROCK` and the older `CLAUDE_API_KEY` are lower-priority aliases.
+Without a dedicated Bedrock key, the existing Muns route remains available.
+Neither route performs web search. The History drawer names the configured provider. Model text
+uses the DOM-based Markdown renderer and never reaches `innerHTML`.
 
 For Muns, the explicit `</research-answer>` marker ends the answer immediately;
 the Worker cancels the upstream reader and aborts its fetch without waiting for
@@ -358,11 +362,31 @@ catalog and its zero-row coverage are still useful evidence, so this module decl
 `meta.allowEmptyScope`; every other tab retains the shared empty-Watchlist behavior.
 
 Local static serving shows the complete workspace but disables the composer. To exercise answers,
-run `npx wrangler dev` with `MUNS_LLM_TOKEN=…` in the gitignored `.dev.vars`. Production prefers
-`npx wrangler secret put MUNS_LLM_TOKEN` and falls back to `MUNS_NEWS_TOKEN` or `MUNS_TOKEN`. The
-former `ANTHROPIC_API_KEY` name is read only when `MUNS_LLM_LEGACY_ANTHROPIC_BINDING` equals
-`confirmed-muns-token`; remove that migration opt-in after installing the correctly named secret.
-Never put that value in `public/`, `wrangler.jsonc` or browser storage.
+run `npx wrangler dev` with `CLAUDE_KEY=…` in the gitignored `.dev.vars`. Production uses
+Cloudflare → Workers & Pages → sattva-central-research → Settings → Variables and Secrets,
+type **Secret**, name **CLAUDE_KEY**, containing an AWS Bedrock API key (ABSK).
+`BEDROCK_REGION=ap-south-1` and `BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-5`
+select the verified AWS Messages endpoint and global inference profile. Global
+inference can route across AWS regions; it does not guarantee processing in Mumbai.
+Never send this credential to Anthropic's first-party API. GitHub secrets do not automatically reach this Git
+integration's runtime. The former `ANTHROPIC_API_KEY` name is a Muns migration binding, not a
+direct Claude key. Do not overwrite it. Never put credentials in `public/`, `wrangler.jsonc`,
+chat or browser storage. Setting a secret is an operator production action, not part of CI tests.
+
+To check a local credential, use the gitignored `.dev.vars` and run
+`node --env-file=.dev.vars scripts/check-research-claude-access.mjs`. The probe calls
+AWS Bedrock's read-only model catalog and reports access without claiming inference
+permission or answer quality. It does not expose the key or
+response body. It does not generate an answer or change production. This checks
+only the local environment, not Cloudflare or GitHub. Normal CI uses synthetic
+credentials only; no branch-dispatched job receives the Claude secrets.
+
+Run `node scripts/verify-research-claude.mjs` for simulated streaming/security checks. For actual
+provider evaluation, make the key available locally and run
+`node --env-file=.dev.vars scripts/evaluate-research-model.mjs`. This invokes the local Worker
+handler with controlled synthetic portfolio scenarios and stores private answers under the
+gitignored `.research-evaluation/`. It does not call production. Review claims and citations
+against each packet; passing transport checks does not certify live speed or factual accuracy.
 
 ---
 

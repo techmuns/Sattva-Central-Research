@@ -384,7 +384,7 @@ try {
 const notConfigured = await handleResearch(new Request('https://dashboard.example/api/research'), {});
 const configBody = await notConfigured.json();
 ok('the configuration route fails closed without exposing provider details', () => {
-  assert.deepEqual(configBody, { configured: false, webResearchAvailable: false, history: 'device' });
+  assert.deepEqual(configBody, { configured: false, provider: null, webResearchAvailable: false, history: 'device' });
 });
 
 const configured = await handleResearch(
@@ -393,7 +393,7 @@ const configured = await handleResearch(
 );
 const configuredBody = await configured.json();
 ok('the configuration route advertises dashboard research without unsupported web mode', () => {
-  assert.deepEqual(configuredBody, { configured: true, webResearchAvailable: false, history: 'device' });
+  assert.deepEqual(configuredBody, { configured: true, provider: 'muns', webResearchAvailable: false, history: 'device' });
 });
 
 const wrongOrigin = await handleResearch(

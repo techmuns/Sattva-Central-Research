@@ -218,8 +218,9 @@ scripts/
 worker/index.js               asset serving + POST /api/live-prices + GET /api/earnings
                               (+ ?fields=prices) + /api/earnings-calendar + /api/concalls
                               + /api/super-investors (+ /{slug})
-worker/research.mjs           Ask Research's provider bridge: holds the Muns LLM token, bounds the request on
+worker/research.mjs           Ask Research's provider bridge: selects the server-only Claude or Muns credential, bounds the request on
                               public/js/research/evidence-shared.js and streams the answer back as NDJSON
+worker/research-claude.mjs    direct Claude Messages SSE adapter, cached instructions and explicit completion
 worker/http.mjs               content ETags, 304s and CORS — shared with any local stand-in
 worker/mc.mjs                 the Moneycontrol client + normaliser, shared with scripts/
 worker/stockscans.mjs         the StockScans con-call client (vocabulary lives in public/js/data/)
@@ -2503,22 +2504,44 @@ threw, the packet was well-formed and under bound, and the suite asserted only i
    in lower case resolves to its ticker and leads every source that carries it. **Asserting the size
    of a packet says nothing about whether it carries evidence.**
 
-`worker/research.mjs` is the provider boundary. A Muns session token is a Worker secret and must
-never enter `public/`, browser storage, a request payload or a committed config file. The route is
-same-origin, request-bounded and rate-limited. It calls `fastapi.muns.io/query-router` with
-`llm_type: local_llm` and `stream: true`, then forwards every upstream NDJSON text chunk to the
-browser immediately. That provider contract has no web-search option, so the UI must not offer or
-claim one. The browser preserves every source's status, coverage and provenance, then shares the
-remaining provider-facing budget (`RESEARCH_EVIDENCE_CHAR_BUDGET`, 13,000 characters — about 3,900
-tokens of JSON, sized for the local model's 8K-token context beside the instruction, the bounded
-history and a 768-token answer; the fourteen-source skeleton measures ~6,700 on the shipped data, so
-roughly twenty rows fit) across question-ranked rows. UI-only routes and the duplicate catalog
-stay in the browser rather than being repeated in the model prompt, and they are not charged against
-the budget.
+`worker/research.mjs` is the same-origin, request-bounded, rate-limited provider boundary.
+**The `CLAUDE_KEY` Worker secret is an AWS Bedrock API key and selects Claude on Bedrock** through
+`worker/research-claude.mjs`, using `global.anthropic.claude-sonnet-5`, streaming, 2,048 output tokens and
+explicitly disabled thinking. Non-default sampling parameters are not supported by Sonnet 5.
+Only the shared system instructions have a five-minute prompt-cache breakpoint; customer
+holdings, source readings and conversation history are sent fresh and not marked for caching.
+The entire canonical provider-facing evidence packet is preserved. The key goes only to the
+AWS-owned `bedrock-runtime.{region}.amazonaws.com/anthropic/v1/messages` endpoint; redirects are refused. Credentials never enter `public/`,
+browser storage, a request payload or committed config.
+`CLAUDE_KEY` takes precedence over `AWS_BEARER_TOKEN_BEDROCK` and the older `CLAUDE_API_KEY` alias.
+These are Bedrock keys (ABSK), not Anthropic first-party keys; never send them to api.anthropic.com.
+`BEDROCK_REGION` defaults to `ap-south-1` and `BEDROCK_MODEL_ID` defaults to the global
+Sonnet 5 inference profile. Global inference may route across AWS regions; it is not
+a guarantee of Mumbai-only processing. Only AWS-owned region endpoints are constructed.
+A malformed or rejected primary key never falls back to the alias or to Muns.
+A GitHub secret probe checks only GitHub; it does not verify the Cloudflare runtime
+secret. The configured flag reports presence, not successful provider authentication.
+
+Forward SSE text deltas immediately, without Muns' final-answer XML framing. Ignore thinking
+and other non-text deltas; a normal completion requires `message_stop`, `end_turn` and nonempty
+text. EOF, truncation, malformed frames and errors remain failures with partial text retained.
+Abort a Claude request that has not produced answer text in 20 seconds; the total provider
+deadline remains 45 seconds, bounded by the browser's 55-second guard. Cancel on browser stop.
+Do not silently fall back to another provider after a Claude error. Timeout copy must preserve
+the user's question and findings, not blame the breadth of a simple question. If no answer
+arrived, show the saved literal findings outside the collapsed portfolio details.
+
+Environments without the dedicated Claude key retain Muns' `/query-router`, with larger
+prompts routed to `hosted_llm` and compact ones to `local_llm`. The Muns final-answer filter
+still applies only to that provider. Neither route performs web search. Config reports the
+active provider so the History drawer accurately discloses where questions and readings go.
+UI-only routes and the duplicate source catalog stay in the browser.
 
 The former `ANTHROPIC_API_KEY` binding is never sent to Muns unless
 `MUNS_LLM_LEGACY_ANTHROPIC_BINDING=confirmed-muns-token` explicitly records that an operator replaced
-its value with a Muns token. Remove that migration opt-in after installing `MUNS_LLM_TOKEN`.
+its value with a Muns token. Values starting `sk-ant-` are rejected even under that legacy opt-in
+or any Muns token binding. Never replace the legacy binding with a real Claude key; use the
+dedicated `CLAUDE_KEY`. Remove the migration opt-in after installing `MUNS_LLM_TOKEN`.
 
 **AN ANSWER IN FLIGHT OUTLIVES THE TAB IT WAS ASKED FROM.** `destroy()` used to abort every running
 generation, so pressing Send and then looking at another tab — the obvious thing to do while fifteen
@@ -2547,7 +2570,7 @@ the assistant ignored it. Re-asking costs a real model run, so it is never re-se
 the phase line says why it is there.
 
 Conversation history is stored on the device, but each submitted question and bounded evidence
-packet are sent to the Muns-hosted model. The UI says both halves. Model prose is
+packet are sent to the configured model (Claude or Muns). The UI names the active provider. Model prose is
 untrusted: render it through
 `js/research/renderer.js`'s DOM-based subset, never by assigning it to `innerHTML`.
 
@@ -3397,13 +3420,13 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change General Alerts direction or importance | the exported rules and per-feed collectors in `js/data/daily-alerts.js` — every row carries `signalReason` and `importanceReason`; keep thresholds visible in the source registry and export |
 | Change a General Alerts threshold | the exported constants in `js/data/daily-alerts.js` — the source registry, export and tests read those constants rather than retyping them |
 | Change which tabs General Alerts reads | `FEEDS` in `js/data/daily-alerts.js` — an entry plus a collector and matching provenance/docs; nothing is special-cased by feed id |
-| Change Ask Research's workspace or conversation lifecycle | `js/tabs/ask-research.js`; history is device-local, but every submitted question and bounded evidence packet are streamed through Muns' hosted LLM router |
+| Change Ask Research's workspace or conversation lifecycle | `js/tabs/ask-research.js`; private portfolio history stays in memory. Questions and bounded evidence go to Claude through AWS Bedrock when a dedicated key is configured; environments without that key use Muns. Stream metadata keeps the provider disclosure current across deployments |
 | Change what cancels an in-flight answer, or what survives leaving the tab | `abortGenerations` / `watchEvidenceInvalidation` / `destroy` in `js/tabs/ask-research.js` — read *An answer in flight outlives the tab* first; `destroy()` must not abort, and the invalidation watchers must stay at module level |
 | Change where a `[Dashboard: …]` citation links, or make a tab honour `?company=` | `citeResolver()` in `js/tabs/ask-research.js` + `companySeededView()` in `js/ui/screener.js`; the tab's own render seeds its `initialView` from it |
 | Change which dashboard evidence Ask Research reads | `js/research/estate.js` — every registered source must keep a catalog/status entry even when its read fails, `load` before `read`, and the packet must stay below the Worker bound **and still carry rows**; read *The budget is measured on what the model receives* first |
 | Change what the model receives, or the evidence budget | `js/research/evidence-shared.js` (the provider shape — the Worker imports it too) + `RESEARCH_EVIDENCE_CHAR_BUDGET` / `ROW_RESERVE_SHARE` in `estate.js` — measure with `providerEvidenceChars`, never `JSON.stringify(packet).length` |
 | Change how a question names a company | `queryPlan()` + `STOP_WORDS` / `WORD_TICKERS` in `js/research/estate.js` — pure, fixture-tested in `scripts/verify-research.mjs` |
-| Change Ask Research's provider, prompt, web-search contract or limits | `worker/research.mjs` + `wrangler.jsonc` — the key stays server-side; the route stays same-origin, bounded and rate-limited |
+| Change Ask Research's provider, prompt, web-search contract or limits | `worker/research.mjs` + `worker/research-claude.mjs` + `wrangler.jsonc` — the Bedrock adapter owns AWS authentication, model options and SSE completion; keys stay server-side and the route stays same-origin, bounded and rate-limited |
 | Change which tab the dashboard opens on | the order of `WORKSPACES[0].tabs` in `js/ui/shell.js` — the array **is** the default; `DEFAULT_ROUTE` in `router.js` should agree |
 | Hand the project over | `docs/HANDOFF.md` |
 | Regenerate the mock earnings set | `node scripts/gen-mock-earnings.mjs` — seeded, so output is stable |

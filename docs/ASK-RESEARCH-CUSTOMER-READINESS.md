@@ -1,8 +1,87 @@
 # Ask Research: portfolio customer-readiness evaluation
 
-Status on 6 September 2026: **not yet certified for customer use**. Retrieval and
+Status on 8 September 2026: **not yet certified for customer use**. Retrieval and
 application tests are separate from real-model quality, live data completeness,
 and the authenticated customer's book. An unavailable test is not a pass.
+
+## AWS Bedrock correction (8 September 2026)
+
+`CLAUDE_KEY` is the AWS Bedrock credential for Ask Research, despite its historical
+name. Do not send it to Anthropic's first-party API or the Muns router. The
+integration uses the [AWS Anthropic Messages endpoint](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-messages-api.html)
+with `x-api-key`, incremental SSE, and explicit message completion. The existing
+runtime secret activates Bedrock on deployment; there is no secret rename.
+
+In a run starting at 09:10 UTC on 8 September, ten controlled questions using the final Bedrock
+request settings completed through the local Worker handler with the saved key.
+All ten passed the existing automated answer tripwires. Comparing the same ten
+scenario IDs with the saved 6 September Muns hosted run gives:
+
+| Provider run | Median first answer text | Median completion | Slowest first text | Completed |
+| --- | --- | --- | --- | --- |
+| Bedrock, 8 September | 2.11 s | 8.62 s | 3.38 s | 10/10 |
+| Muns hosted, 6 September | 9.59 s | 16.74 s | 24.18 s | 10/10 |
+
+The median first answer text arrived about **4.6 times sooner** (78% less wait),
+and completion took about half as long. This is a historical comparison of the
+same controlled question scenarios, **not a simultaneous provider A/B test**:
+provider, prompt format, runtime path, cache state and test date differ. Timings
+start at the handler request and exclude source loading and the live Family book.
+The fixtures contain synthetic facts/weights and establish no real company fact.
+Local artifacts: `.research-evaluation/bedrock-final/model-results.json`; baseline:
+the previous task's `2026-09-06/hosted-controlled-final/model-results.json`.
+
+Manual review found retained dates, amounts, citations, issuer switching and
+explicit feed-failure handling, but also unnecessary context, unsupported
+interpretations of disclosure thresholds/technical indicators and weak sector
+inferences. These measurements establish working, faster transport in the tested
+conditions; they do not certify general investment-answer quality. The explicit
+output contract reinforces concise answers and evidence limits, but model prose
+still requires the source-level checks described below.
+
+The operator confirmed that `CLAUDE_KEY` is an **AWS Bedrock** API key. The earlier
+Anthropic first-party 401 responses were tests against the wrong service; they
+do not establish that the saved key is invalid. AWS Bedrock model-catalog requests
+using the exact saved key returned HTTP 200 in `ap-south-1` and `us-east-1`.
+A real streamed response through the AWS Messages endpoint in `ap-south-1` with
+`global.anthropic.claude-sonnet-5` succeeded: first text 2,047 ms, completion
+2,172 ms. This was a tiny connectivity prompt, not a portfolio benchmark.
+
+The integration now uses only AWS Bedrock for a dedicated key and discloses that
+provider in the History drawer. Non-Bedrock keys and invalid region/model settings
+fail closed; no retry forwards a rejected key to Anthropic or Muns. Current
+portfolio reasoning and explicit completion checks are preserved. The default
+model is a global inference profile, so the Mumbai entry point is not a promise
+that processing stays in Mumbai. Portfolio answer evaluation and deployment
+verification remain separate from the successful credential and transport checks.
+
+Six saved public portfolio scenarios completed through the local production
+handler using the real Bedrock key: median first text 2.63 seconds, slowest first
+text 3.60 seconds, slowest completion 12.70 seconds. Topics covered oil, rates,
+currency, comparable businesses, shared demand and conflicting signals. These
+are provider/handler timings and do not include the live Family/browser retrieval
+path. Automated tripwires passed, but manual review found unsupported exposure
+assumptions, irrelevant candidates and weak financial reasoning. This is a
+transport pass, **not an answer-quality certification**.
+
+Adaptive-thinking experiments did not demonstrate a reliable quality improvement;
+the high-effort run completed five of six answers, with one first-text timeout
+and one misspelled source citation. They are not the shipped settings. The final
+configuration keeps thinking explicitly disabled and retains bounded deadlines.
+
+## Superseded authentication investigation
+
+Earlier probes sent this Bedrock key to Anthropic's first-party Models API and
+received HTTP 401. Those failures diagnosed the wrong endpoint, not the AWS key.
+A private local check and a server-side comparison in an isolated remote preview
+confirmed that the saved local key matches Cloudflare's `CLAUDE_KEY`. Neither
+key nor digest was logged; temporary previews were stopped. Real AWS catalog and
+streaming checks above supersede the original activation blocker.
+
+The secret-bearing manual GitHub probe was removed following review. CI runs
+only synthetic transport tests; real credential checks stay local or in an
+explicitly isolated development preview. Runtime configuration presence does not
+itself certify authentication.
 
 ## Stream completion recovery (7 September 2026)
 
