@@ -2,21 +2,12 @@ name: Verify
 
 on:
   workflow_dispatch:
-    inputs:
-      claude_access_check:
-        description: Check the GitHub Claude key against Anthropic without deploying
-        type: boolean
-        default: false
   pull_request:
   push:
     branches: [main]
 
 jobs:
   contracts:
-    # A credential-only dispatch must never replace required PR check contexts
-    # with successful skips on the same commit.
-    name: ${{ inputs.claude_access_check && 'probe-skipped-contracts' || 'contracts' }}
-    if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -38,6 +29,8 @@ jobs:
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
         run: node scripts/verify-company-news-archive.mjs
+      - name: Verify recent News calendar windows and lossless archive separation
+        run: node scripts/verify-news-window.mjs
       - name: Verify lossless news parts and deployable asset sizes
         run: node scripts/verify-news-publication.mjs && node scripts/verify-news-maintenance.mjs && node scripts/partition-news-data.mjs
       - name: Verify direct publisher delivery, OnEMI identity and open-app upgrades
@@ -71,7 +64,7 @@ jobs:
       - name: Verify domestic filings and earnings provenance
         run: node scripts/verify-domestic-filings.mjs
       - name: Verify automatic filing capture and archives
-        run: node scripts/verify-company-capture.mjs
+        run: node scripts/verify-company-capture.mjs && node scripts/verify-company-capture-due.mjs
       - name: Verify live portfolio capture onboarding and source recovery
         run: node scripts/verify-capture-onboarding.mjs
       - name: Verify watchlist capture registration and retries
@@ -117,8 +110,6 @@ jobs:
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
   browser:
-    name: ${{ inputs.claude_access_check && 'probe-skipped-browser' || 'browser' }}
-    if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -194,6 +185,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-portfolio-calendar.mjs
+      - name: Verify Earnings Calendar automatic recovery and saved schedules in both scopes
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-earnings-calendar-ui.mjs
       - name: Verify publisher filters, delayed news delivery and exact OnEMI regression
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
@@ -225,8 +220,6 @@ jobs:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-source-connections-ui.mjs
   portfolio-research:
-    name: ${{ inputs.claude_access_check && 'probe-skipped-portfolio-research' || 'portfolio-research' }}
-    if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
     # Full retained news now exceeds 150k observations. Keep all 426 current portfolio cases;
     # the former 15-minute limit stopped a healthy run at case 400 before final assertions.
@@ -244,22 +237,3 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/research-browser/node_modules/playwright
         run: node scripts/verify-research-portfolio.mjs
-
-  claude-access:
-    if: github.event_name == 'workflow_dispatch' && inputs.claude_access_check
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-      - name: Verify the GitHub Claude credential and model access (not Cloudflare runtime)
-        env:
-          CLAUDE_KEY: ${{ secrets.CLAUDE_KEY }}
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
-        run: node scripts/check-research-claude-access.mjs
