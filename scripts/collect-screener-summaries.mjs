@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { buildSummaryInventory } from './lib/concall-summary-inventory.mjs';
-import { readScreenerSummary, summaryResponseError } from './lib/read-screener-summary.mjs';
+import { readScreenerSummary, summaryResponseError, summaryNavigationGate } from './lib/read-screener-summary.mjs';
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
 import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
@@ -80,6 +80,7 @@ export async function runSummaryCollection({ client, inventory, openSession, rea
       let body;
       try {
         session ||= await openSession();
+        session.prepare?.(claim.target);
         body = await read(session.page, claim.target);
       } catch (error) {
         const outcome = SUMMARY_FAILURES.has(error?.summaryCode) ? error.summaryCode : 'source-unavailable';
@@ -119,14 +120,15 @@ async function main() {
       const browser = await chromium.launch({ headless: true, env: browserEnv });
       try {
         const context = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block', acceptDownloads: false });
+        const page = await context.newPage(), navigation = summaryNavigationGate();
         // A summary navigation is the only metered source request. Disable prefetch/XHR/scripts
         // and third-party resources instead of letting the page make unaccounted summary reads.
         await context.route('**/*', route => {
           const request = route.request(), url = new URL(request.url());
           if (url.origin !== 'https://www.screener.in' || !['document', 'stylesheet'].includes(request.resourceType())) return route.abort();
+          if (!navigation.accept(url.href, request.resourceType(), request.frame() === page.mainFrame())) return route.abort();
           return route.continue();
         });
-        const page = await context.newPage();
         page.setDefaultTimeout(15000);
         const response = await page.goto('https://www.screener.in/login/?next=%2Fconcalls%2F', { waitUntil: 'domcontentloaded' });
         const refused = summaryResponseError(response?.status() || 0, await page.locator('body').innerText(), response?.headers()['retry-after']);
@@ -136,7 +138,7 @@ async function main() {
         await form.locator('input[name="password"]').fill(password);
         await Promise.all([page.waitForURL('https://www.screener.in/concalls/', { waitUntil: 'domcontentloaded' }), form.locator('button[type="submit"]').click()]);
         if (!(await context.cookies('https://www.screener.in')).some(cookie => cookie.name === 'sessionid' && cookie.value)) throw Error('Source sign-in failed');
-        return { page, close: () => browser.close() };
+        return { page, prepare: target => navigation.arm(target), close: () => browser.close() };
       } catch (error) { await browser.close(); throw error; }
     },
   });

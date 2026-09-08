@@ -1,6 +1,24 @@
 import { summaryId, SUMMARY_WINDOW_MS, validateSummaryBody } from '../../public/js/data/concall-summaries-shared.js';
 
 export const summaryReadError = (code, retryAt = null) => Object.assign(Error('Screener summary could not be read'), { summaryCode: code, retryAt });
+
+// One source navigation per durable reservation, including redirects, meta refresh and CSS
+// imports. A page remains open between claims; it cannot spend another request by itself.
+export function summaryNavigationGate() {
+  let allowed = null;
+  return {
+    arm(target) {
+      if (summaryId(target?.url) !== target?.id) throw summaryReadError('identity');
+      allowed = target.url;
+    },
+    accept(url, type, mainFrame) {
+      if (!new URL(url).pathname.startsWith('/concalls/summary/')) return true;
+      if (type !== 'document' || !mainFrame || url !== allowed) return false;
+      allowed = null;
+      return true;
+    },
+  };
+}
 export function summaryResponseError(status, text = '', retryAfter = null, now = Date.now()) {
   let retryAt = null;
   if (retryAfter) {

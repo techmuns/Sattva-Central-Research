@@ -11,7 +11,7 @@ import { authoriseSummaryReader, summaryCollectorIdentity } from '../worker/conc
 import { handleConcallSummaries } from '../worker/concall-summaries.mjs';
 import { summaryId, summaryIdsForRow, validateSummaryBody, summaryStateMessage, summaryScheduleMessage, SUMMARY_WINDOW_MS, SUMMARY_ORIGIN, SUMMARY_WORKFLOW, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 import { buildSummaryInventory } from './lib/concall-summary-inventory.mjs';
-import { summaryResponseError } from './lib/read-screener-summary.mjs';
+import { summaryResponseError, summaryNavigationGate } from './lib/read-screener-summary.mjs';
 import { runSummaryCollection, summaryCollectorClient } from './collect-screener-summaries.mjs';
 
 const START = Date.parse('2026-09-10T06:00:00Z');
@@ -252,4 +252,17 @@ test('scheduler failures are visible immediately even while source coverage is f
   assert.match(summaryScheduleMessage({...state,schedule:{started:true,alarmAt:null}},START),/no next check/);
   assert.match(summaryScheduleMessage({...state,schedule:{started:true,alarmAt:START-6*60000}},START),/overdue/);
   assert.equal(summaryScheduleMessage({...state,enabled:false},START),'');
+});
+
+test('each durable reservation allows exactly one main-frame summary navigation', () => {
+  const gate=summaryNavigationGate(), target={id:'123',url:'https://www.screener.in/concalls/summary/123/'};
+  assert.equal(gate.accept(target.url,'document',true),false);
+  gate.arm(target);
+  assert.equal(gate.accept(target.url,'stylesheet',true),false);
+  assert.equal(gate.accept(target.url,'document',false),false);
+  assert.equal(gate.accept('https://www.screener.in/concalls/summary/124/','document',true),false);
+  assert.equal(gate.accept(target.url,'document',true),true);
+  assert.equal(gate.accept(target.url,'document',true),false,'automatic reload cannot spend another request');
+  assert.equal(gate.accept('https://www.screener.in/concalls/summary/124/','document',true),false,'redirects cannot spend another request');
+  gate.arm(target);assert.equal(gate.accept(target.url,'document',true),true,'only a new durable claim can re-arm a source read');
 });

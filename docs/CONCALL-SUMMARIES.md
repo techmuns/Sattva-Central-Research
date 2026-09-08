@@ -82,6 +82,8 @@ identity resolution still determine coverage.
   access and enforces at least 15 seconds between attempts, with at most **60 in rolling 24 hours**.
   This leaves nominal room beneath the reported 80/day allowance. Manual usage cannot be observed
   by this ledger; the source's own refusal always overrides remaining local allowance.
+- Each reservation permits one exact main-frame summary request. Source redirects, automatic
+  reloads, subframes and stylesheet imports cannot make extra uncounted summary requests.
 - Reservation loss, runner crash and login failure count conservatively. An interrupted record
   waits 24 hours. Neither a restart, new run nor midnight clears the ledger. Repeating a completion
   after a lost response is idempotent; repeating a reservation never issues its source request again.
