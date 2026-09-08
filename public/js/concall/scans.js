@@ -216,7 +216,7 @@ function documentLinks(row) {
       (document) =>
         `<a data-norow href="${escapeHtml(document.url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeHtml(document.type)} at its original source" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">${escapeHtml(document.type)}</a>`,
     )
-    .join('')}${summaries.length ? `<button type="button" ${summariesAvailable() ? '' : 'hidden'} data-norow data-screener-summary="${escapeHtml(rowKey(row))}" title="Read the saved Screener summary inside this dashboard" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">Summary</button>` : ''}</div>`;
+    .join('')}${summaries.length ? `<button type="button" data-norow data-screener-summary="${escapeHtml(rowKey(row))}" title="Read the saved Screener summary inside this dashboard" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">Summary</button>` : ''}</div>`;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -311,6 +311,7 @@ export function wireLivePill(root, m) {
 // Sub-view 1 — the scan table
 // ---------------------------------------------------------------------------------------
 export function renderScans(ctx, { disposers, tableView, onView, onInsights = null }) {
+  ctx.root.dataset.summaryAvailable = String(summariesAvailable());
   const m = feed.meta();
   const rows = feed.forScope(ctx.scope, coverage.holdings());
   const allRows = feed.all();

@@ -72,7 +72,7 @@ function renderFeed(ctx) {
         if (token !== renderToken) return;
         const note = ctx.root.querySelector('[data-summary-coverage]');
         if (note) note.outerHTML = summaryStatusHtml();
-        for (const button of ctx.root.querySelectorAll('[data-screener-summary]')) button.hidden = !summaries.available();
+        ctx.root.dataset.summaryAvailable = String(summaries.available());
       }));
       mountDisposers.push(summaries.start());
     })

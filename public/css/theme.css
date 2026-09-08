@@ -1,4 +1,6 @@
 /* Shared appearance tokens. Tailwind's role palettes live in scripts/theme-palette.cjs. */
+/* Parent state also applies to cached or virtual rows inserted after an access change. */
+[data-summary-available="false"] [data-screener-summary] { display: none; }
 /* Personal notebook uses the same surface and text tokens in both appearances. */
 .bookmark-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-height: 32px; padding: 5px 9px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 8px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-400); font-size: 12px; font-weight: 600; vertical-align: middle; }
 .bookmark-button.is-compact { width: 30px; min-height: 28px; padding: 4px; border-color: transparent; background: transparent; }
