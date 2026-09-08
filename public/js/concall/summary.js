@@ -54,7 +54,7 @@ export async function openSummary(row) {
       const record = ready[index];
       content.querySelector('[data-summary-body]').innerHTML = record
         ? `<h3 class="text-base font-semibold text-slate-900">${e(record.body.title)}</h3><p class="text-xs text-slate-500">Saved from Screener on ${e(date(record.fetchedAt))}.</p>${bodyHtml(record.body)}`
-        : '<p class="text-sm font-medium text-slate-700">This summary is awaiting collection. It will appear here after Screener permits a successful read.</p>';
+        : '<p class="text-sm font-medium text-slate-700">No saved copy is available yet. Automatic collection covers the current portfolio and runs within Screener’s allowance.</p>';
     };
     paint(0);
     content.querySelector('[data-summary-version]')?.addEventListener('change', event => paint(Number(event.target.value)));
