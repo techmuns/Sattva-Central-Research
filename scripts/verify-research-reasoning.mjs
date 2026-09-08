@@ -64,6 +64,11 @@ for (const [question, expected, history = []] of scenarios) {
   checks++;
 }
 const plan = queryPlan(scenarios[0][0], index, options);
+const roundup = 'Resin Maker, Paint Maker, Airline Company: crude oil, oil input supply and crude production costs in focus';
+const roundupReads = reasoningReadings([...[0, 1, 4].map(i => row([i, ''], { title: roundup })), row(facts[0])], plan);
+const roundupContext = portfolioReasoningContext({ plan, packets: [{ id: 'company-news', tab: 'News', status: 'ready', reasoningReadings: roundupReads }] });
+assert.equal(roundupContext.candidates[0].ticker, 'RESIN', 'company-specific operating evidence outranks a repeated multi-company roundup');
+assert(roundupContext.candidates.find(c => c.ticker === 'AIRCO').evidence.every(e => /shared multi-company/.test(e.basis)), 'shared passages stay available with their attribution limit');
 const reads = reasoningReadings([
   ...facts.map(f => row(f)),
   row([1, 'Crude oil prices do not affect margins because input prices are contractually passed through.']),

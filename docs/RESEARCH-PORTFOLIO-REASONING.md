@@ -25,6 +25,11 @@ The general packet includes:
 - Original source rows for numeric/period facts, all 21 source statuses and
   provenance, explicit missing/omitted counts and the separate authenticated book.
 
+Identical passages assigned to several holdings remain available as shared
+context, explicitly labelled, with lower ranking than issuer-specific passages.
+An unsplit market roundup must not inherit individual business attribution from
+each of its mentioned names.
+
 No additional model-planning call, network source, embedding service or stored
 private dossier is introduced. Matching happens against loaded dashboard records.
 The general evidence ceiling is 30,000 provider-facing characters (Worker maximum

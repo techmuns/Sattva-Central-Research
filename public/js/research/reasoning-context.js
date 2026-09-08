@@ -52,10 +52,25 @@ export function reasoningReadings(rows, plan) {
       date: eventDay(row), text: text || industry, industry, tokens, hit, discussion: /telegram|chatter|twitter|social/i.test(row.feed || ''), basis: text ? 'company-linked source text' : 'industry label only',
       url: row.url || row.documents?.[0]?.url || null });
   }
+  // An unsplit roundup may be assigned to several issuers. Preserve it as shared
+  // context, but do not let identical multi-company text outrank an issuer's own
+  // evidence just because its other clauses repeat the question's words.
+  const all = [...byCompany.values()].flatMap(readings => [...readings.values()]);
+  const owners = new Map();
+  const passageKey = r => r.text.toLowerCase().replace(/\W+/g, ' ').trim();
+  for (const reading of all) {
+    const key = passageKey(reading);
+    if (!owners.has(key)) owners.set(key, new Set());
+    owners.get(key).add(identity(reading));
+  }
+  for (const reading of all) {
+    reading.sharedPassage = owners.get(passageKey(reading)).size > 1;
+    if (reading.sharedPassage) reading.basis = 'shared multi-company passage; individual exposure not established';
+  }
   // Query ranking happens before this per-company/per-source sample. A tiny or
   // tickerless holding has the same opportunity as the largest position.
   return [...byCompany.values()].flatMap(readings => [...readings.values()]
-    .sort((a, b) => b.hit - a.hit || String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 12));
+    .sort((a, b) => b.hit * (b.sharedPassage ? 0.2 : 1) - a.hit * (a.sharedPassage ? 0.2 : 1) || String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 12));
 }
 
 function corpus(packets, plan) {
@@ -84,7 +99,7 @@ function corpus(packets, plan) {
   // products, inputs or markets present there, not a fixed sector vocabulary.
   const expansion = [...new Set(referenceRows.flatMap(r => r.tokens))].sort((a, b) => idf(b) - idf(a)).slice(0, 32);
   for (const token of expansion) if (!query.has(token)) query.set(token, 1);
-  const score = r => r.tokens.reduce((sum, t) => sum + (query.get(t) || 0) * idf(t), 0) / Math.sqrt(1 + r.tokens.length / 35);
+  const score = r => r.tokens.reduce((sum, t) => sum + (query.get(t) || 0) * idf(t), 0) / Math.sqrt(1 + r.tokens.length / 35) * (r.sharedPassage ? 0.2 : 1);
   readings.forEach(r => { r.rank = score(r); });
   return { readings, referenceRows, byCompany };
 }
