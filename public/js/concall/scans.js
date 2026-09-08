@@ -49,6 +49,9 @@ import * as deepDive from '../data/deep-dive.js';
 import { openDeepDive } from './deep-dive.js';
 import * as coverage from '../data/coverage.js';
 import { scopePossessive } from '../data/scope.js';
+import { summaryIdsForRow } from '../data/concall-summaries-shared.js';
+import { available as summariesAvailable } from '../data/concall-summaries.js';
+import { openSummary, openSummaryCoverage, summaryStatusHtml } from './summary.js';
 
 const ATTRIBUTION =
   'Scores and current-quarter sentiment are the research provider’s own analysis. Where an exact, transcript-backed Deep Dive report is already available for one unambiguous call, its result, view and headline fill otherwise blank cells unchanged; no score or sentiment tier is inferred.';
@@ -201,19 +204,19 @@ function dateCell(row) {
     : `<span class="whitespace-nowrap" title="Published in Screener’s concall index; exact call time is not supplied.">${escapeHtml(IST_DATE.format(d))}<span class="ml-1 text-[10px] text-slate-400">published</span></span>`;
 }
 
-// Screener supplies summary URLs, not summary text, and its signed-in reader blocks embedding.
-// Keep those source references in the retained feed, but omit redirect-only summaries from the UI.
+// Source links are retained, but every call has at most one in-dashboard Summary action.
 const readableDocuments = (row) => (row.documents || []).filter((document) => document.type !== 'Summary');
 
 function documentLinks(row) {
   const documents = readableDocuments(row);
-  if (!documents.length) return '<span class="text-slate-300">—</span>';
+  const summaries = summaryIdsForRow(row);
+  if (!documents.length && !summaries.length) return '<span class="text-slate-300">—</span>';
   return `<div class="flex max-w-[300px] flex-wrap justify-end gap-1">${documents
     .map(
       (document) =>
         `<a data-norow href="${escapeHtml(document.url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeHtml(document.type)} at its original source" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">${escapeHtml(document.type)}</a>`,
     )
-    .join('')}</div>`;
+    .join('')}${summaries.length ? `<button type="button" ${summariesAvailable() ? '' : 'hidden'} data-norow data-screener-summary="${escapeHtml(rowKey(row))}" title="Read the saved Screener summary inside this dashboard" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">Summary</button>` : ''}</div>`;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -464,8 +467,18 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
       meta: scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'calls', book: coverage.meta() }),
     })}
     ${table.html}
+    ${summaryStatusHtml()}
   `;
   disposers.push(table.wire(ctx.root));
+  const onSummary = event => {
+    const button = event.target.closest('[data-screener-summary]');
+    if (button) {
+      const row = rows.find(row => rowKey(row) === button.dataset.screenerSummary);
+      if (row) { event.preventDefault(); event.stopPropagation(); void openSummary(row); }
+    } else if (event.target.closest('[data-summary-coverage-open]')) openSummaryCoverage();
+  };
+  ctx.root.addEventListener('click', onSummary);
+  disposers.push(() => ctx.root.removeEventListener('click', onSummary));
 
   // Delegated on the host rather than per button: the table body is rebuilt on every sort, filter
   // and live tick, and 500 listeners would be rebuilt with it. The button carries `data-norow`, so

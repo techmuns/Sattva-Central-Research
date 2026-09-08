@@ -57,6 +57,7 @@ import {
 } from './github-actions.mjs';
 import { handleResearch } from './research.mjs';
 import { handleFamilyPortfolio } from './family-portfolio.mjs';
+import { handleConcallSummaries } from './concall-summaries.mjs';
 import { handleCombinedFilings } from './combined-filings.mjs';
 import { handleDrhpFilings } from './drhp-filings.mjs';
 import { handleIpoMonitor } from './ipo-monitor.mjs';
@@ -133,6 +134,8 @@ export default {
     if (url.pathname === '/api/ipo-monitor') return handleIpoMonitor(request);
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
+    if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
+      return handleConcallSummaries(request, env);
 
     // THE READER'S OWN TOKEN, BUT ONLY WHERE THIS DEPLOYMENT HAS NONE. The dashboard runs inside
     // the Munshot host, which hands the browser the signed-in reader's session JWT; the browser

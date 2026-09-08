@@ -281,3 +281,15 @@ risks for an Indian family office, usually over the last month or two.
   outside-scope companies, aliases, competing newer routine rows, long excerpts,
   source failures, retained history and context-budget pressure. Model-answer
   evaluation is a separate gate from deterministic retrieval verification.
+
+## Private Screener summary coverage
+
+Summary membership follows each freshly validated Family Office portfolio; every holding remains
+in the coverage report even without a confirmed source identity or published note. New holdings
+join after the next successful check. Saved notes survive exits, discovery failures and source
+cooldowns. The private account ledger caps attempts at 60 per rolling day and records attempts
+before source access, including interrupted runs. Source refusal overrides the local allowance.
+Catalogue/portfolio timestamps and pending counts must stay distinct from saved-body age and timer
+health. Initial backfill is quota-limited; same-ID source corrections are not automatically checked.
+See `CONCALL-SUMMARIES.md` for retention limits, activation gates and the unverified live source
+parser. Offline tests do not certify production capture or complete portfolio summary coverage.

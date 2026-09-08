@@ -1,5 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { TelegramSchedule } from './telegram-scheduler.mjs';
+import { ConcallSummaryStore } from './concall-summary-store.mjs';
+import { ConcallSummarySchedule } from './concall-summary-schedule.mjs';
 import { CAPTURE_REGISTRY_LIMIT, CAPTURE_REGISTRATION_BATCH, registeredCompany } from '../public/js/data/capture-registration-shared.js';
 
 // Each shard coordinates one bounded set of issuer registrations. No reader identity is stored.
@@ -10,11 +12,22 @@ export class CaptureRegistry extends DurableObject {
     // company-registry shard. Reuse the provisioned class so preview version uploads need no
     // namespace migration. Construction and company operations never arm a timer.
     this.schedule = new TelegramSchedule(ctx.storage, env);
+    this.summaries = new ConcallSummaryStore(ctx.storage);
+    this.summarySchedule = new ConcallSummarySchedule(ctx.storage, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS companies (isin TEXT PRIMARY KEY, ticker TEXT NOT NULL, name TEXT NOT NULL)');
   }
   status() { return this.schedule.status(); }
+  async summarySync(inventory) { const result = this.summaries.sync(inventory); await this.summarySchedule.arm(); return result; }
+  async summaryDiscoveryFailed() { const result = this.summaries.discoveryFailed(); await this.summarySchedule.arm(); return result; }
+  async summaryStatus() { return { ...this.summaries.status(), schedule: await this.summarySchedule.status() }; }
+  summaryReserve(run, requestId) { return this.summaries.reserve(run, requestId); }
+  summaryComplete(run, input) { return this.summaries.complete(run, input); }
+  summaryRead(ids) { return this.summaries.read(ids); }
   request(source) { return this.schedule.request(source); }
-  async alarm() { await this.schedule.request('cron'); }
+  async alarm() {
+    if (await this.ctx.storage.get('summary-timer')) await this.summarySchedule.wake();
+    else await this.schedule.request('cron');
+  }
   list() {
     return this.ctx.storage.sql.exec('SELECT isin, ticker, name FROM companies ORDER BY isin').toArray();
   }

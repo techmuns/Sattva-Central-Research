@@ -1096,10 +1096,15 @@ feed contract but is not rendered in the tab chrome.
 
 ### Screener collection and freshness
 
-The Con-call Documents column, document filter, search labels and document export omit Screener
-Summary links: the capture contains URLs rather than summary text, and Screener's signed-in reader
-blocks embedding. Summary source references remain in retained records. Transcript, Recording and
-Presentation links and the dashboard's existing Deep Dive panel remain available.
+The Con-call Documents column replaces outbound Screener Summary links with one private inline
+reader per call once collection is enabled or saved notes are available to the authorised reader.
+Exact source summary IDs join the saved text; distinct transcript/recording notes appear as versions.
+No source request is made by clicking or refreshing the reader. Collection follows the live Family
+Office portfolio on every half-hour run with a durable 60-attempt rolling-day budget, retained
+history and explicit per-holding gaps. The feature ships disabled pending the source arrangement
+and live validation; buttons remain hidden in that state. Document filter/search/export continue
+to omit outbound Summary links. See [Private Screener summaries](CONCALL-SUMMARIES.md) for the
+private data contract, source limits and activation requirements.
 
 `.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
 `SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits

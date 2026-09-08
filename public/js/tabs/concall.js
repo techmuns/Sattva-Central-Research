@@ -26,6 +26,8 @@ import { escapeHtml } from '../core/dom.js';
 import * as scans from '../concall/scans.js';
 import { stopDeepDive } from '../concall/deep-dive.js';
 import * as feed from '../data/concall-scans.js';
+import * as summaries from '../data/concall-summaries.js';
+import { stopSummary, summaryStatusHtml } from '../concall/summary.js';
 
 export const meta = {
   id: 'concall',
@@ -66,6 +68,13 @@ function renderFeed(ctx) {
         paint(ctx, token);
       });
       mountDisposers.push(feed.startLive(ctx.live));
+      mountDisposers.push(summaries.onChange(() => {
+        if (token !== renderToken) return;
+        const note = ctx.root.querySelector('[data-summary-coverage]');
+        if (note) note.outerHTML = summaryStatusHtml();
+        for (const button of ctx.root.querySelectorAll('[data-screener-summary]')) button.hidden = !summaries.available();
+      }));
+      mountDisposers.push(summaries.start());
     })
     .catch((err) => {
       if (token !== renderToken) return;
@@ -96,6 +105,7 @@ function cleanup() {
   // The shell closes overlays on route change with `{ silent: true }`, which skips the workspace's
   // own onClose — so the Deep Dive poller has to be stopped from here or it outlives its panel.
   stopDeepDive();
+  stopSummary();
   disposePanel();
   mountDisposers.forEach((d) => d && d());
   mountDisposers = [];

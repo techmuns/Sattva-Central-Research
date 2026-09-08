@@ -1,0 +1,77 @@
+import { escapeHtml } from '../core/dom.js';
+import { openModal, closeModal } from '../ui/screener.js';
+import { onHostContext } from '../core/host-context.js';
+import * as summaries from '../data/concall-summaries.js';
+import { summaryIdsForRow, summaryStateMessage } from '../data/concall-summaries-shared.js';
+
+const e = escapeHtml;
+const date = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST' : 'Not checked';
+const header = title => `<div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><h2 class="font-display text-xl font-bold text-slate-900">${e(title)}</h2><button type="button" data-summary-close aria-label="Close summary" class="rounded-lg px-3 py-2 text-xl text-slate-600">×</button></div>`;
+let closeSession = null, openVersion = 0;
+export function stopSummary() { openVersion++; closeSession?.(); closeSession = null; }
+function modal(html) {
+  stopSummary();
+  openModal(html, { size: 'wide', onClose: stopSummary });
+  const content = document.getElementById('modal-content');
+  const close = event => { if (event.target.closest('[data-summary-close]')) closeModal(); };
+  content.addEventListener('click', close);
+  const unsubscribe = onHostContext((_context, changes) => { if (changes?.session) { closeModal(); stopSummary(); } });
+  closeSession = () => { unsubscribe(); content.removeEventListener('click', close); };
+  return openVersion;
+}
+function bodyHtml(body) {
+  return body.blocks.map(block => {
+    if (block.type === 'heading') return `<h3 class="mt-6 text-base font-bold text-slate-900">${e(block.text)}</h3>`;
+    if (block.type === 'paragraph' || block.type === 'quote') return `<p class="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">${e(block.text)}</p>`;
+    if (block.type === 'list') {
+      const tag = block.ordered ? 'ol' : 'ul';
+      return `<${tag} class="${block.ordered ? 'list-decimal' : 'list-disc'} space-y-2 pl-5 text-sm leading-relaxed text-slate-700">${block.items.map(item => `<li>${e(item)}</li>`).join('')}</${tag}>`;
+    }
+    return `<div class="overflow-x-auto"><table class="w-full text-left text-sm text-slate-700"><tbody>${block.rows.map(row => `<tr class="border-b border-slate-100">${row.map(cell => `<td class="px-3 py-2 align-top">${e(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }).join('');
+}
+function coverageNote() {
+  const state = summaries.status();
+  return `<p class="text-sm text-slate-600">${e(summaryStateMessage(state))}</p>${state?.cooldownUntil && Date.parse(state.cooldownUntil) > Date.now()
+    ? `<p class="mt-2 text-xs text-slate-500">Next eligible source check: ${e(date(state.cooldownUntil))}. The source may impose a longer pause.</p>` : ''}`;
+}
+export async function openSummary(row) {
+  const ids = summaryIdsForRow(row);
+  if (!ids.length) return;
+  const version = modal(`${header(`${row.name} · Summary`)}<div class="p-6 text-sm text-slate-600" aria-live="polite">Loading saved Screener summary…</div>`);
+  try {
+    const records = await summaries.read(ids);
+    if (version !== openVersion) return;
+    const content = document.getElementById('modal-content');
+    const ready = records.filter(record => record.status === 'ready');
+    content.innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-4 p-6" data-summary-reader>
+      <p class="text-xs text-slate-500">Screener’s published notes, reproduced unchanged. Reading a saved copy does not request another summary from Screener.</p>
+      ${ready.length > 1 ? `<label class="block text-sm text-slate-700">Source version <select data-summary-version class="ml-2 rounded-lg border border-slate-200 bg-white p-2">${ready.map((record, index) => `<option value="${index}">${e(record.kind)} · ${e(record.publishedDate)} · ${e(record.id)}</option>`).join('')}</select></label>` : ''}
+      <div data-summary-body class="space-y-4"></div>
+      ${records.length > ready.length ? '<p class="text-xs text-slate-500">Additional source notes for this call have not been collected yet.</p>' : ''}
+      ${coverageNote()}</div>`;
+    const paint = index => {
+      const record = ready[index];
+      content.querySelector('[data-summary-body]').innerHTML = record
+        ? `<h3 class="text-base font-semibold text-slate-900">${e(record.body.title)}</h3><p class="text-xs text-slate-500">Saved from Screener on ${e(date(record.fetchedAt))}.</p>${bodyHtml(record.body)}`
+        : '<p class="text-sm font-medium text-slate-700">This summary is awaiting collection. It will appear here after Screener permits a successful read.</p>';
+    };
+    paint(0);
+    content.querySelector('[data-summary-version]')?.addEventListener('change', event => paint(Number(event.target.value)));
+  } catch (error) {
+    if (version !== openVersion) return;
+    document.getElementById('modal-content').innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-3 p-6"><p class="text-sm text-slate-700">${e(error.message)}</p>${coverageNote()}</div>`;
+  }
+}
+export function openSummaryCoverage() {
+  const state = summaries.status();
+  const labels = { matched: 'Discovered', 'ambiguous-identity': 'Source identity needs review',
+    'no-matching-source-company': 'No confirmed company match in the source catalogue', 'no-published-summary': 'No summary listed by Screener' };
+  modal(`${header('Portfolio summary coverage')}<div class="space-y-4 p-6">${coverageNote()}
+    <p class="text-xs text-slate-500">Portfolio checked: ${e(date(state?.portfolioCheckedAt))}<br>Source catalogue checked: ${e(date(state?.sourceCheckedAt))}</p>
+    <p class="text-xs text-slate-500">New holdings join automatically on the next successful portfolio and catalogue check. Saved notes have no automatic expiry. Source corrections without a new summary ID are not re-fetched automatically.</p>
+    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`);
+}
+export function summaryStatusHtml() {
+  return `<div data-summary-coverage class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>${e(summaryStateMessage(summaries.status()))}</span><button type="button" data-summary-coverage-open class="font-semibold text-indigo-600 underline">Summary coverage</button></div>`;
+}

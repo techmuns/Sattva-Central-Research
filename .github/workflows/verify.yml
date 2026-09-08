@@ -93,6 +93,8 @@ jobs:
         run: node scripts/verify-ipo-platform.mjs
       - name: Verify Screener concall pagination, deduplication and artifact integrity
         run: node scripts/verify-screener-concalls.mjs
+      - name: Verify private summaries, dynamic portfolio queue, durable quota and authorisation
+        run: node scripts/verify-concall-summaries.mjs
       - name: Verify Screener Insights capture and context-only correlation
         run: node scripts/verify-screener-insights.mjs
       - name: Verify complete General Alerts pool and scope isolation
@@ -107,6 +109,8 @@ jobs:
         run: npx --yes wrangler@4 deploy --dry-run
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
+      - name: Verify private summary persistence in the local Worker runtime
+        run: node scripts/verify-concall-summaries-runtime.mjs
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -123,6 +127,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-theme-ui.mjs
+      - name: Verify inline private summary reader and source parser offline
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-concall-summaries-ui.mjs
       - name: Verify notebook persistence, notes, backup recovery and responsive layout
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

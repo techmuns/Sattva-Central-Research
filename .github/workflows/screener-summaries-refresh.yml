@@ -1,0 +1,51 @@
+name: Private Screener summaries
+
+on:
+  schedule:
+    - cron: '11,41 * * * *'
+  repository_dispatch:
+    types: [family-book-updated]
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Who requested collection'
+        type: string
+        default: manual
+
+concurrency:
+  group: screener-summary-account
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  collect:
+    # Premium view allowance does not grant redistribution rights. Enable only for an approved
+    # private caching arrangement, alongside the Worker's SCREENER_SUMMARIES_ENABLED setting.
+    if: github.ref == 'refs/heads/main' && vars.SCREENER_SUMMARIES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install pinned browser runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/summary-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/summary-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Discover the current portfolio and collect due summaries within the durable budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCREENER_USERNAME: ${{ secrets.SCREENER_USERNAME }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/summary-browser/node_modules/playwright
+          DEBUG: ''
+          PWDEBUG: ''
+        run: node scripts/collect-screener-summaries.mjs

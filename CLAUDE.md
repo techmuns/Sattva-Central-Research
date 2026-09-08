@@ -3650,3 +3650,12 @@ checkpoint after a partial parse, or equate a successful source check with compl
 `company-capture.mjs` owns resumable state; `filing-archive.mjs` preserves BSE/insider events
 before recent display windows apply. The frontend exposes coverage gaps and archived rows.
 Production activation remains subject to the user's PR-specific deployment authorization.
+
+### Private inline Screener summaries
+
+Read `docs/CONCALL-SUMMARIES.md` before modifying this collector or reader. Paid summary text is
+private Durable Object data, never public Git/Actions/browser-persistent cache data. Each call has
+one inline action joined by exact source summary IDs. The live Family Office portfolio controls
+every discovery, including future additions/exits. Preserve the durable rolling quota, failure
+cooldowns, retained history, reader verification and source coverage gaps. Collection is opt-in;
+merging this implementation does not enable the production gates or establish live compatibility.

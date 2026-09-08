@@ -11,6 +11,8 @@
   "durable_objects": {
     "bindings": [
       { "name": "CAPTURE_REGISTRY", "class_name": "CaptureRegistry" },
+      // Private summary records and the account budget use a separate fixed object name.
+      { "name": "SCREENER_SUMMARIES", "class_name": "CaptureRegistry" },
       // Alias the existing namespace; the channel timer uses a distinct fixed object name.
       { "name": "TELEGRAM_SCHEDULER", "class_name": "CaptureRegistry" }
     ]
