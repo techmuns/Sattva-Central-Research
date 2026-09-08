@@ -8,7 +8,12 @@ const root = resolve('public');
 const at = '2026-09-04T13:00:00Z';
 const company = (ticker) => ({ ticker, name: `${ticker} Test Company` });
 const filing = (ticker, id, date = '2026-09-04') => ({ ticker, company: company(ticker).name, title: `${ticker} announcement ${id}`, date, time: '15:00:00', source: 'BSE', url: `https://example.test/${ticker}/${id}.pdf` });
-const bseRows = Array.from({ length: 140 }, (_, i) => filing('TCS', i));
+const dualHash = `sha256:${'4c'.repeat(32)}`;
+const dualPairId = `sha256:${'7a'.repeat(32)}`;
+const bseRows = [
+  { ...filing('TCS', 'cross-exchange'), documentHash: dualHash, crossExchangeDocumentId: dualPairId },
+  ...Array.from({ length: 139 }, (_, i) => filing('TCS', i)),
+];
 const nseRow = { ticker: 'TCS', company: 'TCS Test Company', subject: 'NSE meeting', publishedAt: '2026-09-04T12:00:00Z', url: 'https://example.test/nse.pdf' };
 let nseRows = [nseRow, { ...nseRow, ticker: null, company: 'Unresolved Company', url: 'https://example.test/unresolved.pdf' }];
 let fail = false;
@@ -22,7 +27,9 @@ const bodies = {
   ] },
   '/data/corp-announcements.json': { kind: 'announcements', capturedAt: at, coversUniverse: true, windowDays: 3, byTicker: { TCS: bseRows, INFY: [filing('INFY', 1)] } },
   '/data/filing-capture/index.json': { version: 1, updatedAt: at, companies: [company('TCS')], sources: { announcements: { TCS: { rowCount: 2, lastSuccessAt: at } } }, unresolved: ['Unresolved Company'] },
-  '/data/filing-capture/announcements-recent.json': { rows: [{ ...filing('TCS', 'meeting'), source: 'NSE', title: 'NSE meeting', time: '17:30:00', url: nseRow.url }] },
+  '/data/filing-capture/announcements-recent.json': { rows: [{ ...filing('TCS', 'cross-exchange'), source: 'NSE',
+    title: 'Same filing delivered through NSE', time: '15:10:00', url: 'https://nsearchives.nseindia.com/corporate/cross-exchange.pdf',
+    documentHash: dualHash, crossExchangeDocumentId: dualPairId }] },
   '/data/filing-capture/announcements/TCS.json': { rows: [{ ...filing('TCS', 'older-company', '2025-01-01'), source: 'DRHP' }] },
   '/data/announcements-archive/index.json': { months: { '2025-01': 1 }, updatedAt: at },
   '/data/announcements-archive/2025-01.json': { rows: [filing('TCS', 'older-bse', '2025-01-02')] },
@@ -82,9 +89,17 @@ try {
   assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-table-filter], [data-watch-toggle], [data-document-tabs]').count(), 0);
   assert.match(await page.locator('[data-row-count]').innerText(), /^146 announcements · 3 companies with filings$/);
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
+  const search = page.locator('[data-table-search]');
+  await search.fill('cross-exchange');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'byte-identical BSE/NSE rows render once');
+  assert.match(await page.locator('tbody tr[data-row-key]').innerText(), /BSE \/ NSE/);
+  assert.deepEqual(await page.evaluate(() => window.stream.rows().find(r => r.documentHash)?.sourceUrls), [
+    { source: 'BSE', url: 'https://example.test/TCS/cross-exchange.pdf' },
+    { source: 'NSE', url: 'https://nsearchives.nseindia.com/corporate/cross-exchange.pdf' },
+  ]);
+  await search.fill('');
   assert(await page.locator('tbody tr[data-row-key]').count() <= 160, 'table DOM stays bounded');
   console.log('PASS clean portfolio stream, source deduplication and automatic BSE/company/NSE history');
-  const search = page.locator('[data-table-search]');
   await search.fill('KAMATS');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'BSE-only holding matches by ISIN');
   await search.fill('ASHIKAG');
@@ -137,13 +152,23 @@ try {
   await page.evaluate(() => window.stream.loadArchive());
   const companyReads = hits.get('/data/filing-capture/announcements/TCS.json');
   const monthReads = hits.get('/data/announcements-archive/2025-01.json');
+  bodies['/data/filing-capture/index.json'].sources.announcements.TCS.bse = {
+    bseCode: '500001', lastSuccessAt: '2026-09-04T13:04:00Z', lastResponseAt: '2026-09-04T13:04:00Z',
+  };
+  bodies['/data/filing-capture/announcements/TCS.json'].rows[0].summary = 'BSE-only same-count revision';
+  await page.clock.fastForward(61000);
+  await page.evaluate(() => window.stream.loadArchive({ onlyChanged: true }));
+  await page.waitForFunction(() => window.stream.rows().some(r => r.summary === 'BSE-only same-count revision'));
+  assert.equal(hits.get('/data/filing-capture/announcements/TCS.json'), companyReads + 1,
+    'a BSE-only revision reloads the company file when its aggregate row count is unchanged');
+  const afterBseReads = hits.get('/data/filing-capture/announcements/TCS.json');
   bodies['/data/filing-capture/index.json'].sources.announcements.TCS.lastSuccessAt = '2026-09-04T13:05:00Z';
   bodies['/data/filing-capture/announcements/TCS.json'].rows.push(filing('TCS', 'new-company-history', '2025-02-01'));
   bodies['/data/announcements-archive/index.json'].updatedAt = '2026-09-04T13:05:00Z';
   bodies['/data/announcements-archive/2025-01.json'].rows = [filing('TCS', 'revised-month-history', '2025-01-03')];
   await page.clock.fastForward(90100);
   await page.waitForFunction(() => window.stream.rows().some(r => r.title === 'TCS announcement revised-month-history') && window.stream.rows().some(r => r.title === 'TCS announcement new-company-history'));
-  assert.equal(hits.get('/data/filing-capture/announcements/TCS.json'), companyReads + 1);
+  assert.equal(hits.get('/data/filing-capture/announcements/TCS.json'), afterBseReads + 1);
   assert.equal(hits.get('/data/announcements-archive/2025-01.json'), monthReads + 1);
   assert(await page.evaluate(() => window.stream.rows().some(r => r.title === 'TCS announcement older-bse')));
   console.log('PASS changed archive revisions refresh automatically, including unchanged row counts');

@@ -20,6 +20,7 @@ import { openScopeEditor } from './scope-editor.js';
 import { sourcesModalHtml } from './sources.js';
 import { mountHostTicker } from './host-ticker.js';
 import { mountThemeToggle } from './theme-toggle.js';
+import { BOOKMARK_ICON } from './bookmark-button.js';
 import * as sourceBeacon from './source-beacon.js';
 
 import * as aiAlerts from '../tabs/ai-alerts.js';
@@ -36,6 +37,7 @@ import * as corporateActions from '../tabs/corporate-actions.js';
 import * as nseFilings from '../tabs/nse-filings.js';
 import * as insiderTrades from '../tabs/insider-trades.js';
 import * as ipos from '../tabs/ipos.js';
+import * as bookmarks from '../tabs/bookmarks.js';
 
 // The nav model in one place: each workspace an ordered list of tab modules. Every module's
 // `meta.subviews` supplies the rail/rail-dropdown items — nothing here is duplicated per module.
@@ -61,7 +63,7 @@ import * as ipos from '../tabs/ipos.js';
 // an unknown or absent tab, so the order of this array IS the default landing page — there is no
 // second place recording it that could disagree.
 const WORKSPACES = [
-  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades] },
+  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, bookmarks, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades] },
 ];
 
 let contentHost = null;
@@ -79,8 +81,8 @@ export function mount(root) {
   scopeLists.migratePortfolioToWatchlist();
   wireStaticHeader(root);
   coverage.onChange(({ changed }) => {
-    if (changed && state.scope === 'portfolio' && !['ask-research', 'ai-alerts'].includes(state.tab) && !document.querySelector('[data-scope-editor]')) {
-      setTimeout(() => handleRoute(root, router.parseHash()), 0);
+    if (changed && state.scope === 'portfolio' && !currentTabModule?.meta.scopeIndependent && !['ask-research', 'ai-alerts'].includes(state.tab) && !document.querySelector('[data-scope-editor]')) {
+      setTimeout(() => { if (!currentTabModule?.meta.scopeIndependent) handleRoute(root, router.parseHash()); }, 0);
     }
   });
   // Read-only, one names-only request per minute while visible. The existing
@@ -122,19 +124,21 @@ export function mount(root) {
   // Deferred by a tick because the change arrives mid-`repaint()`, and remounting the tab out from
   // under the handler that is painting it is a different bug for the same money.
   watchlist.onChange(() => {
+    if (currentTabModule?.meta.scopeIndependent) return;
     if (state.scope !== 'watchlist') return;
     // The editor deliberately batches its repaint until it closes, so several additions can be
     // made without the route remount closing the modal after the first click.
     if (document.querySelector('[data-scope-editor]')) return;
     setTimeout(() => {
-      if (state.scope === 'watchlist') handleRoute(root, router.parseHash());
+      if (state.scope === 'watchlist' && !currentTabModule?.meta.scopeIndependent) handleRoute(root, router.parseHash());
     }, 0);
   });
 
   scopeLists.onChange((scope) => {
+    if (currentTabModule?.meta.scopeIndependent) return;
     if (state.scope !== scope || document.querySelector('[data-scope-editor]')) return;
     setTimeout(() => {
-      if (state.scope === scope) handleRoute(root, router.parseHash());
+      if (state.scope === scope && !currentTabModule?.meta.scopeIndependent) handleRoute(root, router.parseHash());
     }, 0);
   });
 
@@ -151,7 +155,7 @@ function shellTemplate() {
         </div>
 
         <div class="flex flex-shrink-0 flex-wrap items-center gap-2 text-xs text-slate-500">
-          <div class="flex items-center gap-1.5"
+          <div data-scope-controls class="flex items-center gap-1.5"
                title="Data scope: which companies the tab you are on reports. Portfolio is the family's book, Watchlist is the companies you have starred, Universe is every listed company the feed carries.">
             <span data-scope-label class="hidden text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:inline">Scope</span>
             <div id="scope-toggle-mount"></div>
@@ -164,7 +168,10 @@ function shellTemplate() {
                it. (No backticks in here: this comment lives inside a template literal.) -->
           <div id="host-ticker-mount" hidden></div>
           <div id="status-mount"></div>
-          <button type="button" data-theme-toggle class="theme-toggle" aria-label="Dark mode" aria-pressed="false"></button>
+          <div class="header-personal-controls">
+            <button type="button" data-theme-toggle class="theme-toggle" aria-label="Dark mode" aria-pressed="false"></button>
+            <a data-header-bookmarks class="header-bookmarks" href="#/research/bookmarks">${BOOKMARK_ICON}<span>Bookmarks</span></a>
+          </div>
         </div>
       </div>
     </header>
@@ -294,6 +301,10 @@ function editScope(root, scope) {
 
 function renderRouteChrome(root, ws, tabModule, resolved) {
   disposeChrome();
+  const bookmarksLink = root.querySelector('[data-header-bookmarks]');
+  bookmarksLink.href = router.buildHash({ workspace: ws.id, tab: bookmarks.meta.id, scope: resolved.scope });
+  if (tabModule === bookmarks) bookmarksLink.setAttribute('aria-current', 'page');
+  else bookmarksLink.removeAttribute('aria-current');
   // Table-first is an opt-in layout, not a redesign of the other research views.
   root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
 
@@ -309,6 +320,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
     onChange: goScope,
   });
   const toggleMount = $('#scope-toggle-mount', root);
+  // Personal saved records keep their original company membership after a portfolio exit.
+  root.querySelector('[data-scope-controls]').hidden = tabModule.meta.scopeIndependent === true;
   toggleMount.innerHTML = toggle.html;
   chromeDisposers.push(toggle.wire(toggleMount));
 
@@ -379,7 +392,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
     topTabs.bar.update(resolved.tab);
   } else {
     topTabs?.dispose();
-    const tabItems = ws.tabs.map((t) => ({ id: t.meta.id, label: t.meta.title }));
+    // Saved events are reached from the header beside the appearance control.
+    const tabItems = ws.tabs.filter((t) => t !== bookmarks).map((t) => ({ id: t.meta.id, label: t.meta.title }));
     const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab, label: 'Research sections' });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;

@@ -100,6 +100,19 @@ const progress = mergePartialReport(byPriority, arriving);
 assert(progress.cards.some(c => c.ticker === 'NEW'), 'a new noteworthy company arrives before the slowest source settles');
 assert(progress.cards.some(c => c.ticker === 'LARGE'), 'partial progress does not erase previously loaded companies');
 assert.equal(mergePartialReport(byPriority, { ...byPriority, cards: [], allCards: [] }).cards.length, byPriority.cards.length);
+const arrivingSameCompany = rankReport({ ...report, pending: 1, events: [{ ...report.events[0],
+  id: 'same-company-new', headline: 'New material export contract', feed: 'announcements' }] }, { holdings: sizeHoldings });
+const mergedSameCompany = mergePartialReport(byPriority, arrivingSameCompany);
+const mergedLarge = mergedSameCompany.cards.find(card => card.ticker === 'LARGE');
+assert(mergedLarge.events.some(e => e.id === 'same-company-new'), 'new evidence is not hidden while an older source is pending');
+assert(mergedLarge.events.some(e => e.id === report.events[0].id), 'old evidence remains alongside the new arrival');
+const corrected = rankReport({ ...report, pending: 1, events: [{ ...report.events[0], headline: 'Corrected original event' }] }, { holdings: sizeHoldings });
+assert.equal(mergePartialReport(byPriority, corrected).cards.find(c => c.ticker === 'LARGE').events.find(e => e.id === report.events[0].id).headline,
+  'Corrected original event', 'a correction updates its old stable identity during partial progress');
+const retractedEligibility = rankReport({ ...report, pending: 1,
+  events: report.events.map(event => ({ ...event, aiEligible: false })) }, { holdings: sizeHoldings });
+assert.equal(mergePartialReport(byPriority, retractedEligibility).cards.length, 0,
+  'a source correction removing AI eligibility cannot resurrect old material evidence during a partial refresh');
 
 const context = {
   id: 'LARGE-raw-filing', ticker: 'LARGE', company: 'Large holding', feed: 'announcements',

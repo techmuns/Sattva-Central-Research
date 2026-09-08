@@ -44,6 +44,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          # Queued schedules/dispatches can carry an old event SHA. Start from the branch's
+          # current code and capture, then reconcile again if main moves during collection.
+          ref: ${{ github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -66,6 +70,12 @@ jobs:
         continue-on-error: true
         run: node scripts/enrich-company-news.mjs
 
+      - name: Compact identical observations without removing source history
+        run: node scripts/compact-news-data.mjs --write
+
+      - name: Check publication capacity and browser-load headroom
+        run: node scripts/check-news-capacity.mjs
+
       - name: Upload company-news data
         if: always()
         uses: actions/upload-artifact@v5
@@ -73,32 +83,20 @@ jobs:
           name: company-news-data
           path: |
             public/data/news.json
+            public/data/news.parts/
             public/data/company-news/
           if-no-files-found: warn
 
-      - name: Commit company news to main
+      - name: Publish company news and check reconciled health
         if: success() && github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/news.json public/data/company-news/
-          if git diff --cached --quiet; then
-            echo "No company-news changes to commit."
-            exit 0
-          fi
-          git commit -m "Company news refresh ($(date -u +'%Y-%m-%d %H:%M') UTC)"
-          for attempt in 1 2 3 4; do
-            if git push origin HEAD:main; then exit 0; fi
-            echo "Push rejected (attempt $attempt) — rebasing onto fresh main..."
-            git fetch origin main
-            git rebase origin/main || { git rebase --abort; exit 1; }
-            sleep $((attempt * 2))
-          done
-          exit 1
+        env:
+          FILINGS_HEALTH_REPORT: ${{ runner.temp }}/company-news-health.json
+        run: node scripts/publish-company-news.mjs
 
-      # Save partial progress first; an empty or failed newest query must still fail the run.
-      - name: Check company-news capture health
-        if: success()
+      # Main's publisher assesses its exact committed index after preserving partial progress.
+      # Non-main captures are not published, so only those may assess the original checkout.
+      - name: Check company-news capture health without publication
+        if: success() && github.ref != 'refs/heads/main'
         env:
           FILINGS_HEALTH_REPORT: ${{ runner.temp }}/company-news-health.json
         run: node scripts/check-filings-health.mjs news

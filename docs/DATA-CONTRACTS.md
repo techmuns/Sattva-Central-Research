@@ -1,5 +1,33 @@
 # Data Contracts
 
+## Personal bookmarked notebook
+
+`js/core/bookmarks.js` owns IndexedDB `sattva-notebook` v1 / object store `bookmarks`,
+keyed by `id`. This is user-created browser-local storage, separate from `sattva-cache` and
+all public captures. Nothing is published to the repository or sent to an API. Individual
+saves, removals, note writes and additive imports are atomic; successful UI state follows the
+transaction commit. No automatic count/date retention cap applies. Browser storage limits still do.
+
+Each record contains plain strings `title`, `company`, `ticker`, `entityId`, `kind`, `source`,
+`sourceId`, `eventDate`, `body`, `note`, plus `savedAt` (ISO save instant), `id`, `url`,
+`details: [{label,value}]` and `links: [{label,url}]`. Unknown source fields are discarded.
+Only HTTP(S) source links without embedded credentials are accepted. Source dates retain their
+original precision; a save time never becomes an event date. Full available text/readings are
+stored, not the visible excerpt or a reference requiring a live feed lookup. Source documents
+and article files are linked rather than copied. Explicitly saved research answers may contain
+the reader's private research; authentication/session objects are never serialized.
+
+Identity includes event type, company identity and original URL (or source/record identity when
+unlinked), with event date for non-article records. Same-company news saved through All Alerts,
+AI evidence and News shares an identity; company attributions remain distinct. Repeated saves
+and imports retain the existing snapshot and note. Removals are explicit and offer Undo.
+
+Portable backup envelope: `{format:"sattva-bookmarked-notebook",version:1,exportedAt,entries:[]}`.
+Import validates the entire envelope/records before writing and adds only absent identities.
+Clearing browser site data removes the notebook; backup export/import is the recovery and
+cross-browser transfer path, with no cloud-sync claim. Verify with `verify-bookmarks.mjs` and
+`verify-bookmarks-ui.mjs`.
+
 All Alerts' current source-record pool, date semantics, scope rules, privacy and coverage
 limitations are specified in [GENERAL-ALERTS-POOL.md](GENERAL-ALERTS-POOL.md). That contract
 supersedes the older nine-feed/threshold-entry description of the timeline in this document.
@@ -915,6 +943,88 @@ Portfolio scope, including numeric/BSE-only company paths that cannot be safely 
 ticker. It must never be broadened into Universe or a personal Watchlist. When another calendar
 contains the same company/date/type, All Alerts' Upcoming view renders one entry and prefers this
 portfolio row's source link.
+
+**`portfolioUpcoming` IS `null` WHERE IT COULD NOT BE READ, AND `[]` ONLY WHERE IT GENUINELY IS.**
+This half of the route comes from an entirely different upstream to `rows` — an immutable Actions
+artifact behind the GitHub API — and it fails on its own: a timeout, a rate limit, an expired
+collector token. When StockScans is instead the half that fails, the route serves the committed
+`concall-scans.json` snapshot, which is a capture of StockScans alone and has never carried a
+calendar at all; that branch states `portfolioUpcoming: null` explicitly rather than leaving the
+key merely missing — and **carries the artifact read into the fallback where it succeeded**. The
+collector read therefore settles OUTSIDE the route's `Promise.all`: one that rejects on the first
+failure would discard a healthy calendar along with the StockScans error, and a cold device has no
+retained copy to soften that. Both used to arrive as `[]` inside an `ok: true` 200, and
+`js/data/concall-scans.js` wrote that straight over a good calendar — so **an outage in a feed
+All Alerts does not read emptied its Upcoming view**, and because the response is stored under the
+server's own ETag the emptiness survived every reload until a healthy 200 happened to land.
+
+So the browser retains a calendar the payload did not carry, under its own device key
+(`concalls:portfolio-upcoming`) rather than as a patched copy of the response — the store holds the
+server's own bytes under the server's own tag, and that pairing is the whole basis for trusting a
+304. `meta.portfolioUpcomingRetained` says the rows on screen are a retained capture and
+`meta.portfolioUpcomingCheckedAt` dates them to their own read, never to the check that failed;
+All Alerts' Portfolio calendar feed reads that flag as its OWN leg of the incomplete predicate and
+says so in its coverage note.
+
+**`retained` also covers a live read that never happened.** A reload against an unreachable Worker
+paints the stored response, and that response carries the `meta.screener` of whichever read wrote
+it — `status: 'ok'`, its own `checkedAt`. Left alone it reads as a calendar confirmed just now.
+A confirmation is a 304, or a 200 whose rows were ingested, and nothing else: `conditionalJson`
+reports what the server actually said (`status: 0` only where the request never completed), so a
+503 arrives as 503 and testing for 0 alone would let every server-side failure through. Anything
+else clears `meta.portfolioUpcomingConfirmed`, on **every** revalidation path — the poller's own
+failures are swallowed by `live.js`, so marking only in `build()` would never report an outage that
+began after the page loaded. A **304 lifts the mark**, because it says the representation we hold is
+current, calendar included; without that, recovery through an unchanged ETag carries no content
+change and nothing would ever clear it. That branch notifies subscribers when and only when it
+lifted one. `screener.status` is deliberately left as the upstream reported it — it describes the
+artifact collector, not our ability to reach our own route.
+
+**`confirmed` is about the READ; `retained` is about the ROWS**, and one flag for both was wrong in
+both directions. Gated on row count it let a legitimately empty capture report a failed check as
+current; set unconditionally it claimed, on a first visit with an unreachable route, that an empty
+result was the retained rows from a capture this device had never made. The read's outcome gates the
+feed status; the rows' provenance gates the retention sentence. A **verified-empty calendar is
+restored from the device like any other** — an empty dashboard is an answer, and dropping it lets an
+older response resurrect events that were correctly cleared.
+
+**A supplied calendar older than the one held is not an update.** The response and the calendar are
+written under separate device keys, so a quota failure or aborted transaction on the large one
+leaves a newer calendar beside an older response, and the next reload would adopt the older over it
+and write that back. Capture times are compared only where both sides carry one; an undated capture
+cannot be ordered and is taken as given, exactly as `isNewerThanHeld` refuses to rank an unstamped
+snapshot. `portfolioUpcomingConfirmed` is `!!adopted` and not "this response arrived": a calendar
+refused as stale must not certify the newer rows it was rejected in favour of, and a payload that
+carried none confirms nothing about the rows it left on screen.
+
+**The opposite write failure is accepted rather than coordinated, and this is why.** If the
+calendar-specific write fails while the combined response persists, retention is not durable, and a
+later response carrying `portfolioUpcoming: null` can leave neither entry holding the last good
+rows. Two things make that acceptable: every later ingest carrying a calendar rewrites the entry —
+including the one in `build()` that reads the stored response — so a transient failure is corrected
+by the next response that could have populated it at all; and a persistent failure means the device
+cannot write, which no coordination fixes. `core/store.js` already falls back to an in-memory Map
+and reports `isPersistent()`, surfaced as `meta.persisted`. The outcome in that case is the
+behaviour from before this contract existed — the calendar emptying on a failure — reached through
+a rare pair of failures instead of every one, so it narrows the fault rather than adding one. **If
+the calendar is ever seen emptying on a device reporting `persisted: false`, reopen this**; that is
+the evidence that would change the decision.
+
+**`meta.portfolioUpcomingSupplied` is a fact about the response; `retained` is the claim made to a
+reader.** Neither derives from the other — a payload carrying no calendar while nothing is held
+supplies nothing and retains nothing — and `hasChanged` compares `supplied`, so a calendar going
+missing or coming back **notifies subscribers even when its rows are identical**. Without that the
+coverage chip keeps printing the previous answer (a retained calendar still labelled confirmed, or
+a recovered one still labelled retained) until All Alerts' own next collection. A **successful**
+read still clears the calendar, and a shorter one still shrinks it — a forward calendar loses its
+events as their dates pass, so retention may never become a merge. `scripts/verify-portfolio-calendar.mjs`
+asserts all six branches, including that an empty successful read is not treated as a failure.
+
+`readCachedScreenerCollector` caches the failure too, but for `CONCALL_SCREENER_FAIL_TTL_S` (15s)
+rather than the success window: every reader sits behind one edge entry, so an uncached failure
+costs each of them their own 15-second timeout, while caching it for a minute pins a degraded
+schedule on every screen long after the artifact is readable again. Same split, same reason, as the
+Finology client's 15s `ok: false` window.
 
 The body carries **no "served at" stamp**, deliberately: it would differ on every request while
 the content did not, so the ETag would never match and the 304 this route depends on would never
@@ -2211,7 +2321,35 @@ public/data/company-news/undated.json    source rows without a readable publicat
 Every established identity query starts 48 hours before its last successful observation. A newly
 added legal name, former name, brand, subsidiary or reviewed alias receives a 30-day initial
 backfill. Empty incremental responses add no rows and retract nothing. The archive is written before
-the head is derived, so an article leaving the 30-day UI window has already been retained.
+the head is derived, so an article leaving the 30-day recent head has already been retained.
+The browser's shared news reader also loads the retained monthly index, making older records
+available to News, All Alerts and research under the existing scope and attribution rules.
+An incomplete monthly read preserves the last complete history and reports the gap; it is retried
+on opening, explicit refresh and the shared visible-page snapshot poll.
+
+#### Lossless publication of large news captures
+
+News heads and monthly files larger than 4 MiB use a versioned `_jsonShards` manifest in place of
+their record array/map. The manifest retains all source metadata and names immutable SHA-256
+parts beside it (`news.parts/<hash>.json` or `<month>.parts/<hash>.json`). Each part is at most
+4 MiB. `scripts/lib/news-json-storage.mjs` reads both representations, writes parts first, and
+verifies reconstruction of every field and row before atomically replacing a manifest. This is
+a transport change, not a retention limit: no headline, timestamp, company or historical row is
+removed by splitting a file. Obsolete generated fragments are pruned only after their logical
+records have been verified in the new representation; Git retains prior representations.
+
+The browser's conditional JSON reader validates byte length, SHA-256 and row counts for every
+referenced part before adopting a revision or updating its persistent cache. A missing/corrupt
+part cannot turn a manifest into an empty feed or replace last-good data. Unchanged ETags reuse
+the complete hydrated value. The asset gate in CI and news publishing jobs verifies references,
+Cloudflare's 25 MiB per-file ceiling and the conservative 20,000-file ceiling.
+
+`News publication health` is a read-only check after news workflows and twice hourly. It compares
+the deployed heads with committed capture revisions and verifies all head parts using the same
+decoder as the browser. It allows eight minutes for the normal Git-triggered deployment, then
+fails visibly if captured news has not reached the customer site. It never deploys or dispatches
+collectors. Publication integrity, collection cadence and upstream coverage remain separate
+checks; this does not certify that every publisher has supplied every article.
 
 `scripts/company-news-identity-overrides.json` is the reviewed enrichment layer. The active Family
 book supplies ISIN, current name and ticker where one exists; overrides may supply `legalName`,
@@ -3199,8 +3337,11 @@ Source mode is `embed+permalink` unless an operator connects the optional offici
 `mtproto` collector. Only MTProto can set `latestVerifiedAt` after reading the actual
 channel head and catching up. `lastCheckedAt`, `lastRun.at`, publication dates and
 content-change time remain separate. No source-check timestamp alone proves complete
-channel history. All retained messages are counted as archived; only captured text or
-named documents are listed. No company, sentiment or file content is invented.
+channel history. All retained messages are counted as archived and listed; posts without
+captured text or named documents retain their publication date and original Telegram link.
+No company, sentiment or file content is invented. `catchupRanges` holds inclusive message-ID
+intervals independently of `historyNextId`. Delivery identifies early versus final artifacts,
+normal work in progress and degraded fallback; none changes source-check timestamps.
 
 ### Corporate announcements are read by DATE, from BSE — a different shape entirely
 
@@ -3220,11 +3361,13 @@ the last verified list; each directory records its own failure and check time. B
 and collector use this mapping, so new NSE-only holdings do not require a hand-maintained symbol list.
 
 The per-company collector gives portfolio announcement history priority after never-checked and
-failed work. Two out of three request starts are reserved for announcements and one for domestic
-reports; never-visited companies take precedence over repeats. Within announcements, portfolio
-companies precede already-visited Universe companies, which rotate by oldest attempt. It still
-uses bounded, restartable date windows, and a successful recent check does not imply that its
-one-year history is complete.
+failed work. It reads both the authenticated Muns company route and BSE's open scrip-code route;
+their successful windows and errors advance independently, and readable rows from either source are
+saved before reporting a partial run. Two out of three request starts are reserved for announcements
+and one for domestic reports; never-visited companies take precedence over repeats. Within
+announcements, portfolio companies precede already-visited Universe companies, which rotate by
+oldest attempt. Both announcement sources use bounded, restartable date windows, and a successful
+recent check does not imply that either source's one-year history is complete.
 
 NSE SME announcement requests use exchange symbols rather than Yahoo's `-SM` quote aliases:
 [ALPEXSOLAR](https://www.nseindia.com/corporate/corporate-announcements/ALPEXSOLAR/Alpex%20Solar%20Limited?ann_dt=14072026214516&segtype=SME&seqid=106697775),
@@ -3240,7 +3383,9 @@ confirms `FSC` / `INE935Q01015` and retains delisting/insolvency announcements; 
 confirms BSE code `540798` on page 1. The supplement records these sources and its verification date.
 It permits history capture and matching without relabelling the holding as currently traded.
 
-**`corp-announcements.json` remains the BSE date-indexed base capture.** Additional Muns company/date lookups are merged in the browser; they never overwrite that exchange-wide file.
+**`corp-announcements.json` remains the BSE date-indexed base capture.** Direct BSE scrip-code and
+Muns company/date histories are stored additively in the company capture; they never overwrite that
+exchange-wide file.
 The per-company route reached 118 of 603 companies because it costs one request each against a
 ~60/minute cap. BSE publish the same filings indexed by date, so the whole exchange arrives in about
 twenty requests, with no credential.
@@ -3252,11 +3397,13 @@ public/data/corp-announcements.json          written by scripts/scrape-bse-annou
   "source": "BSE — api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData",
   "capturedAt": "2026-08-24T…Z", "from": "2026-08-22", "to": "2026-08-24", "windowDays": 3,
   "coversUniverse": true,        // THE FIELD THAT SWITCHES THE PER-COMPANY WALK OFF
+  "categoryCoverage": "configured", "categoryInventoryVerified": false,
+  "categories": ["Company Update", "Board Meeting", "Corp. Action", "Result", "AGM/EGM", "New Listing", "Insider Trading / SAST", "Insurance", "Integrated Filing", "Others"],
   "exchangeCompanies": 5122,     // active equity listings the date index spans
   "companies": 526, "namedCompanies": 515, "unnamedRows": 11,
   "rowCount": 722, "keepDays": 3, "prunedRows": 0, "requests": 19,
   "byCategory": { "Company Update": { "declared": 482, "collected": 482, "pages": 10 }, … },
-  "unknownCategories": {},       // a category BSE added that we did not ask for — a tripwire
+  "unknownCategories": {},       // unexpected labels returned inside the configured requests
   "shortfall": [],               // collected < declared, per category
   "failed": [],
   "byTicker": { "LAURUSLABS": [ {
@@ -3286,10 +3433,12 @@ carries, and without BSE's `subject` field (which is `<company> - <scrip code> -
 headline>`, every part of which is already a column). Widening it is one variable and one re-run;
 BSE still hold the history.
 
-**Two 200s that are not answers.** `strCat=-1` returns the string `"No Record Found!"`; an empty
-`strCat` returns zero rows. Both mean the request was wrong, not that the exchange was quiet, so
-`assertShape` in `worker/bse-ann.mjs` rejects them and a run collecting nothing exits non-zero
-rather than writing an empty file over a good one.
+**Two market-wide 200s that are not answers.** Without `strScrip`, `strCat=-1` returns the string
+`"No Record Found!"`; an empty `strCat` returns zero rows. Both mean the request was wrong, not that
+the exchange was quiet, so the market-wide collector requests every named category. With a verified
+six-digit `strScrip`, `strCat=-1` is BSE's working all-category company-history query. The company
+collector rejects missing or changing declared counts, incomplete pagination, duplicate ids and any
+row carrying another scrip code.
 
 ```bash
 node scripts/scrape-bse-announcements.mjs                    # today, merged into the window
@@ -3325,15 +3474,32 @@ shared recent capture and device history without walking the upstream per compan
 capture is described below; the form remains available for an immediate company/date check.
 
 Lookup rows are retained in IndexedDB under `announcement-lookups:v1`, outside the HTTP cache and
-the BSE snapshot. An empty/failed response or a newer BSE snapshot cannot erase them. Matching
-company/date/document identity collapses overlap while retaining source/provider labels; BSE's
-AttachLive, AttachHis and Pname variants of one attachment share its PDF identifier. Distinct
-exchange documents remain distinct, and identical rows without a document ID preserve their
-maximum observed multiplicity across responses. Manual lookups remain device-retained, alongside the scheduled shared company histories. It may include dates older than the BSE base window.
+the BSE snapshot. An empty/failed response or a newer BSE snapshot cannot erase them. BSE's
+AttachLive, AttachHis and Pname variants of one attachment share its PDF identifier. A scheduled
+company capture considers only one-to-one BSE/NSE candidates for the same ticker and date with
+nearby exchange times, reads official HTTPS PDFs with a six-download/15-second enrichment budget,
+per-document size and timeout bounds, official-host redirect checks, and plausible PDF header,
+length and EOF validation. A persisted rotating pair cursor prevents permanently blocked documents
+from consuming every later enrichment run. The collector sets `documentHash` only from the
+downloaded bytes. Cross-exchange rows collapse only when their
+`sha256:<hex>` values are exactly equal and the collector assigns both halves the same pair-specific
+`crossExchangeDocumentId`. The pair ID includes both source URLs, preventing separate same-day
+filings that reuse identical PDF bytes from collapsing together. The merged row keeps ordered `sources`, every retrieval
+provider and `sourceUrls: [{ source, url }]`, so the table says `BSE / NSE` and the export retains
+both original documents. It also retains the validated single-exchange observations behind a
+matched pair. Every later capture reconstructs and re-clusters those observations, so a late third
+filing with the same bytes makes the group ambiguous and restores all source records instead of
+leaving an arrival-order-dependent merge. Legacy pairs are reconstructed only when their digest,
+official links and pair ID validate together. Different, ambiguous, oversized or unreadable documents remain distinct.
+Rows without a document ID preserve their maximum observed multiplicity across responses. Manual
+lookups remain device-retained alongside scheduled shared company histories, which may include dates
+older than the BSE base window.
 
-`node scripts/verify-announcement-lookups.mjs` covers source grouping, numeric BSE identity,
-calendar validation, authentication, range-separated caching, overlap, empty/failure retention and
-restoring device history. Browser checks cover the form, scope identity, Source filter and export.
+`node scripts/verify-announcement-lookups.mjs` and
+`node scripts/verify-announcement-document-hashes.mjs` cover source grouping, numeric BSE identity,
+calendar validation, authentication, BSE company pagination, range-separated caching, exact-content
+overlap, bounds, ambiguity, empty/failure retention and restoring device history. Browser checks
+cover scope identity, the combined `BSE / NSE` label and retained source URLs.
 
 ### News and trades: snapshot first, live detail second
 
@@ -4377,17 +4543,25 @@ schedule. No registration request dispatches a production workflow.
 
 `public/data/filing-capture/index.json` records each source/company independently: last attempt,
 last fully parsed success, response time, errors, failure count, next retry time, query symbol,
-missing document links, retained row count, and
-successfully read announcement date ranges. Per-company files under `announcements/` and
+missing document links, retained row count, and successfully read announcement date ranges. The
+existing top-level announcement entry is the authenticated provider checkpoint; its nested `bse`
+checkpoint carries the verified six-digit code and BSE's independent ranges and failures. A
+run-wide `sourceOutages.authenticatedAnnouncements` marker prevents companies not reached after a
+credential failure from retaining a healthy-looking authenticated-source state; direct BSE work
+continues and is reported independently. Per-company files under `announcements/` and
 `domestic/` keep all captured records without a date expiry. Files are written atomically before
 advancing the checkpoint. Empty responses cannot retract records; partial responses add readable
-rows but do not close the date gap. Authentication failures stop additional requests, preserve
-history, and remain visible. Failed entries retry with exponential delays from two hours up to
+rows but do not close the date gap. Raw exchange rows and their source checkpoint are durable before
+optional bounded PDF comparison starts. Authentication failures stop the affected authenticated
+lane, preserve history, remain visible globally, and do not block the official BSE lane. Failed entries retry with exponential delays from two hours up to
 24 hours, respecting `Retry-After` within that bound. A corrected query symbol clears its delay
-and requests a recent check. Failures never close history gaps or become successful empty reads.
+and reopens every historical window. A corrected BSE code also removes records attributed to the
+superseded direct issuer code, then reopens both source histories so valid merged evidence can be
+recovered. Failures never close history gaps or become successful empty reads.
 
-A run has a 20-minute budget, three requests in flight and one shared 2.5-second request-start
-interval. Reaching the budget retains unvisited work for later runs; it does not reduce the declared
+A run has a 20-minute budget, three company jobs in flight and one shared 2.5-second job-start
+interval. An announcement job settles its Muns and official-BSE reads independently and in parallel.
+Reaching the budget retains unvisited work for later runs; it does not reduce the declared
 universe. Domestic documents are rechecked daily. Announcement requests use 31-day backfill
 windows, starting with the most recent seven days. That recent window is rechecked at least daily
 as a company is reached. The initial backfill floor is 365 days before setup and stays fixed;
@@ -4421,7 +4595,11 @@ publication, and ordinary 30-minute trade runs are not failed by unrelated compa
 
 The BSE job also runs every two hours on all days, overlapping two days and recovering from the
 last completed date if a scheduled run was missed. A source pagination shortfall or unknown
-category prevents `coversUniverse: true` and does not advance `lastCompleteTo`.
+category returned inside a configured category prevents `coversUniverse: true` and does not advance
+`lastCompleteTo`. Because BSE does not expose a verified category inventory through this endpoint,
+the market-wide capture proves full pagination across the named category set rather than claiming
+that an unqueried newly introduced category cannot exist. The per-company scrip-code capture uses
+BSE's working all-category mode independently.
 
 **Operational limit:** these jobs use the repository's existing snapshot publication pipeline once
 the change is approved and deployed. GitHub schedules are best-effort and have previously stalled;
@@ -4453,10 +4631,11 @@ For anything that should update without a page reload, register a poller with
 
 ### Continuous Corporate Announcements stream
 
-Corporate Announcements merges the BSE date capture, retained BSE archives, scheduled Muns
-BSE/NSE/DRHP company captures, earlier saved company lookups, and the existing live NSE feed.
+Corporate Announcements merges the BSE date capture, retained BSE archives, scheduled direct BSE
+and Muns BSE/NSE/DRHP company captures, earlier saved company lookups, and the existing live NSE feed.
 The selected Portfolio, Watchlist or Universe scope filters the whole stream. Matching company,
-date and document identity deduplicate through `mergeAnnouncements`; source labels survive.
+date and document identity deduplicate through `mergeAnnouncements`; cross-exchange copies require
+an exact captured content hash, and all source labels and URLs survive.
 NSE publication timestamps are converted to IST without inventing dates for undated records.
 
 The tab checks for updates every 90 seconds while visible, pauses when hidden and checks again
@@ -4472,3 +4651,37 @@ second Watchlist filter. The global scope control chooses the companies. Older r
 the reader scrolls; counts, search and export include all loaded records. Background arrivals
 preserve the reader's search, focus and scroll position. Source coverage, capture errors and
 unresolved company details remain available through the information link below the table.
+
+### Ask Research comparable activities and optional price history
+
+`research/business-context.js` derives a bounded `businessContext` from the
+question's reference companies and exact scoped holdings, before source-row
+sampling. References and candidates retain source text, dates, tab provenance,
+uncertainty, missing coverage and omitted-candidate counts. It is evidence for
+qualified comparison, not an authoritative business taxonomy or a benefit score.
+See [Portfolio business comparisons](RESEARCH-BUSINESS-COMPARISONS.md).
+
+Technical rows may carry `closeHistory`: `{ basis: 'adjusted-close', source,
+sourceSymbol, capturedAt, from, to, retention, rows: [[date, adjustedClose], ...] }`.
+The regular capture keeps at most 120 completed sessions from one adjustment
+vintage; `retainedAfterFailure: true` preserves unavailable-refresh history
+without authorizing a new event return. Absence is valid for older captures or
+unavailable adjusted prices. No values are filled with zero and no collection
+success timestamp is inferred from retention. This field is not sent wholesale
+to the LLM; only a dated, validated comparison return is selected.
+
+### Ask Research general portfolio implications (September 2026)
+
+`businessContext.kind=portfolio-reasoning` adds a complete supplied-holdings business
+map plus bounded source excerpts, without assigning business relationships.
+`businessProfiles.columns` names identity/name/industry/industrySourceIndex;
+`industrySources` resolves each industry citation. `businessProfiles.analyses` has
+its own `tab=Con-call`, column schema, publication dates, excerpt rows and omission
+count. The separate tables prevent citing an analysis claim as a technical fact.
+`total`, `omitted`, `candidatesFound` and `candidatesOmitted` describe retrieval, not
+portfolio completeness or the number of actual beneficiaries. Unknown values remain
+null; ownership is governed by `holdingsBasis` and the authenticated positions reply.
+General research uses a 30,000-character evidence budget, with a 37,000-character
+Worker bound; ordinary research remains at 18,000/19,000. See
+[General portfolio reasoning](RESEARCH-PORTFOLIO-REASONING.md) for inference rules,
+sampling, tests and limits.

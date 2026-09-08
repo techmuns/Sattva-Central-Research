@@ -340,29 +340,39 @@ the browser for source chips and are not charged against the budget.
 
 `POST /api/research` in `worker/research.mjs` is the only provider boundary. It rejects
 cross-origin and oversized requests, rate-limits the paid upstream and streams normalized NDJSON.
-When the dedicated `CLAUDE_API_KEY` Worker secret exists, it calls Anthropic directly through
+When the dedicated `CLAUDE_KEY` Worker secret exists, it calls Anthropic directly through
 `worker/research-claude.mjs`: Claude Sonnet 5, thinking disabled, shared-instruction prompt caching,
 immediate text deltas, explicit completion checks and bounded first-text/total deadlines. The
 selected source evidence and full authenticated position context are retained. An error never
-silently switches providers. Without that key, the existing Muns route remains available.
+silently switches providers. The older `CLAUDE_API_KEY` remains a lower-priority alias.
+Without either dedicated key, the existing Muns route remains available.
 Neither route performs web search. The History drawer names the configured provider. Model text
 uses the DOM-based Markdown renderer and never reaches `innerHTML`.
+
+For Muns, the explicit `</research-answer>` marker ends the answer immediately;
+the Worker cancels the upstream reader and aborts its fetch without waiting for
+HTTP EOF. The browser likewise finalizes on its `done` event without waiting for
+transport cancellation to settle. Late connection errors cannot reverse a
+completed answer. Missing completion remains an error: text and sources are
+retained as partial, with no silent duplicate inference. Run
+`node scripts/verify-research-completion.mjs` for these boundary cases.
 
 An empty Watchlist does not replace this tab with the shell's generic empty panel. The source
 catalog and its zero-row coverage are still useful evidence, so this module declares
 `meta.allowEmptyScope`; every other tab retains the shared empty-Watchlist behavior.
 
 Local static serving shows the complete workspace but disables the composer. To exercise answers,
-run `npx wrangler dev` with `CLAUDE_API_KEY=…` in the gitignored `.dev.vars`. Production uses
+run `npx wrangler dev` with `CLAUDE_KEY=…` in the gitignored `.dev.vars`. Production uses
 Cloudflare → Workers & Pages → sattva-central-research → Settings → Variables and Secrets,
-type **Secret**, name **CLAUDE_API_KEY**. GitHub secrets do not automatically reach this Git
+type **Secret**, name **CLAUDE_KEY**. GitHub secrets do not automatically reach this Git
 integration's runtime. The former `ANTHROPIC_API_KEY` name is a Muns migration binding, not a
 direct Claude key. Do not overwrite it. Never put credentials in `public/`, `wrangler.jsonc`,
 chat or browser storage. Setting a secret is an operator production action, not part of CI tests.
 
 To independently check a GitHub repository secret, run Verify manually with
 `claude_access_check=true` (CLI: `gh workflow run verify.yml --ref BRANCH -f claude_access_check=true`).
-This read-only job uses `CLAUDE_API_KEY` only inside Actions, checks the configured model's
+This read-only job uses GitHub `CLAUDE_KEY` (or its older `CLAUDE_API_KEY` alias)
+only inside Actions. It does not verify the Cloudflare runtime secret. It checks the model's
 Anthropic Models API, and reports a status without revealing the key or response body.
 It performs no generation, deployment or secret synchronization. Normal pull-request checks
 still run without credentials; the access probe is explicitly manual.

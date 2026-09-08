@@ -121,8 +121,8 @@ public/
                               so nothing in here fires on its own
       universe.js             screener-export -> legacy universe shape adapter
       telegram-posts.js       posts from the monitored public Telegram channel, on Public Chatter's
-                              Telegram section. Ordered by MESSAGE ID because the route publishes no
-                              times; coverage is derived from the capture's span, never tallied
+                              Telegram section. Source publication times and check times stay separate;
+                              see docs/TELEGRAM-INGESTION.md for delivery and coverage limits
       twitter-news.js         X/Twitter posts, converted into the EXISTING news article shape so
                               they join the same News list — not a second feed
       filings.js              the News / Announcements / Insider feed: snapshot first, then a
@@ -176,7 +176,7 @@ scripts/
   scrape-telegram.mjs         posts from a public TELEGRAM channel, read from each message's own
                               page. No credential and no dependency: the channel's t.me/s/ preview
                               is off and the Bot API has no history method, so the permalink is the
-                              only way in — and it publishes NO post times
+                              public fallback; validated embeds supply source publication times
   scrape-twitter.py           THE ONE PYTHON SCRIPT — posts from the monitored X accounts, via
                               twscrape, on a runner. Read the section below before touching it
   scrape-institution-holdings.mjs  REAL filed shareholdings, per fund, off Trendlyne
@@ -199,8 +199,8 @@ scripts/
 .github/workflows/rss-news-refresh.yml     hourly; the four RSS publishers. Shares the
                                            `market-news-capture` concurrency group with
                                            market-news-refresh.yml — both merge into one file
-.github/workflows/telegram-refresh.yml     every 30 min + workflow_dispatch; posts from the public
-                                           Telegram channel. Needs no secret
+.github/workflows/telegram-refresh.yml     ten-minute target + durable dispatch; recent posts publish
+                                           before history. Public mode needs no Telegram account
 .github/workflows/twitter-refresh.yml      every 30 min + workflow_dispatch from the dashboard when
                                            a reader adds an account; posts from the monitored handles
 worker/index.js               asset serving + POST /api/live-prices + GET /api/earnings
@@ -233,6 +233,14 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 ---
 
 ## Module interface contract
+
+Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
+`scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
+keeps saved companies accessible even after a portfolio exit or empty Watchlist. The notebook's
+company filters apply to saved identities. This is the explicit exception to the feed-scope rule
+below. `core/bookmarks.js` owns its separate durable browser store, and `ui/bookmark-button.js`
+supplies event actions; the company watchlist star keeps its existing meaning. See the notebook
+contract in `docs/DATA-CONTRACTS.md`. Never put bookmarks into the pruned feed cache.
 
 Every file in `js/tabs/` exports exactly this. The shell is generic and knows nothing about any
 individual tab beyond this contract.
@@ -988,13 +996,13 @@ Three things follow, and each is load-bearing:
    that. **It must never be inferred from a row count**: a count cannot tell "nobody filed" from "we
    ran out of budget", which is the exact confusion this change exists to end. The snapshot declares
    it or the walk runs.
-2. **`strCat=-1` is a 200 that means the request was wrong.** The obvious "all categories" value
-   answers HTTP 200 with the bare string `"No Record Found!"`, and an empty `strCat` answers 200
-   with zero rows. Neither is an error and neither is an empty day. So the categories are named
-   explicitly, `assertShape` rejects the string form outright, and a run that collects nothing across
-   every category exits non-zero rather than committing an empty file over a good one. Naming them
-   costs a tripwire: `unknownCategories` checks every row's own `CATEGORYNAME` against what we asked
-   for, so a category BSE adds later shows up in the run report instead of silently vanishing.
+2. **`strCat=-1` is a 200 that means a market-wide request was wrong.** Without a scrip code, the
+   obvious "all categories" value answers HTTP 200 with the bare string `"No Record Found!"`, and an
+   empty `strCat` answers 200 with zero rows. Neither is an empty day. Market-wide capture therefore
+   names every official category, rejects malformed result shapes and fails rather than replacing a
+   good file with an empty one. With a verified six-digit `strScrip`, the same `-1` wildcard returns
+   that company's complete result set and is used for bounded historical backfill. Both paths validate
+   every page and declared total before advancing coverage.
 3. **The window is a SIZE limit, not an editorial one.** A weekday carries ~900 filings across the
    exchange, so a month is ~22,000 rows and roughly 16 MB of committed JSON that every visitor
    downloads. `ANN_KEEP_DAYS` (default 3) is a ceiling on bytes, and the file says so. Older filings
@@ -1685,6 +1693,95 @@ correct surfaces, one still visibly wrong. `classifyHolding()` is now the only o
 comparing two columns of anybody's data, ask what has to be true for both to be complete — and
 where the source itself answers that question, in words or in a figure, read its answer instead of
 inferring one.
+
+### ONE ROUTE, TWO UPSTREAMS — an absent half is not an empty half
+
+`/api/concalls` assembles two things that have nothing to do with each other: StockScans' analysed
+con-call rows, and the authenticated S Screen dashboard's portfolio calendar, captured into an
+immutable Actions artifact and read back through the GitHub API. They fail independently, and for
+a long time each one's failure emptied the other's feed.
+
+**Both failures arrived as `[]` inside an `ok: true` 200.** The artifact read has its own timeout,
+rate limit and token, and `readCachedScreenerCollector` catches every one of them and returns
+`capture: null` — which the payload turned into `portfolioUpcoming: []`. And when *StockScans* was
+the half that failed, the route fell back to the committed `concall-scans.json` snapshot, which is
+a capture of StockScans alone and **has never carried a calendar at all** — so the key was simply
+missing, and `|| []` in the browser finished the job. All Alerts' Upcoming view went from 52 rows
+to zero on an outage in a feed it does not read.
+
+**And the emptiness persisted, which is what made it look like a bug in the calendar rather than in
+its neighbour.** The response is stored in IndexedDB under the server's own ETag, so a reload
+repainted the empty calendar and every subsequent poll 304'd against it. Nothing threw, no count
+was wrong, the failure WAS reported in `meta.screener.status` — and the rows were gone anyway.
+
+Eight rules, and the first is the one this codebase already had written down three other ways:
+
+1. **A read that did not happen is absent; only a successful read may be empty.** The route sends
+   `portfolioUpcoming: null` where the capture is unavailable, and the snapshot-fallback branch
+   states that `null` explicitly rather than leaving the key missing. The browser retains what it
+   holds when the payload carries no array. Same rule as `failed` rather than empty books in the
+   investor snapshot, `empty: []` beside `failed: []` in the filings captures, and `null` versus a
+   Set from `scopeTickers()`.
+2. **The retained copy lives in its own device entry**, `concalls:portfolio-upcoming`, never as a
+   patched copy of the response — `core/store.js` holds the server's own bytes under the server's
+   own tag, and that pairing is the entire basis for trusting a 304. Same arrangement, same reason,
+   as `nse-filings:history` beneath the shrinking live NSE window.
+3. **A retained calendar is dated to its own capture and says it is retained.**
+   `meta.portfolioUpcomingRetained` and `meta.portfolioUpcomingCheckedAt` are separate from the
+   response's `checkedAt`, because these rows can be older than the payload that carried the rest
+   of the page; the All Alerts feed reads that flag as its own leg of the incomplete predicate and
+   its coverage note says the latest check could not read the dashboard. Restamping them would be
+   the retained copy claiming a freshness nothing vouched for. **A live read that never happened
+   is not a confirmation either**: a reload against an unreachable Worker paints the stored
+   response, whose own `meta.screener` said `ok` when it was written, so anything short of a 304
+   or an ingested 200 marks the calendar retained. Test for that positively —
+   `conditionalJson` reports the server's real status and reserves `0` for a request that never
+   completed, so a 503 arrives as 503 and a `status === 0` guard lets every server-side failure
+   through, and so does testing only `build()`: the poller's own failures are swallowed by
+   `live.js`, so an outage beginning after the page loaded would never be reported at all. Every
+   revalidation path marks it. **A 304 lifts the mark** — it says the representation we hold is
+   current, calendar included — and it has to, because recovery through an unchanged ETag carries
+   no content change, so nothing else would ever clear it and the feed would report failed while
+   every poll succeeded; the 304 branch therefore notifies subscribers **when and only when it
+   lifted one**, since an ordinary unchanged tick must still repaint nothing.
+4. **Only an ADOPTED calendar is a confirmed one, and every correction must reach subscribers.**
+   `confirmed` answers one question — did this read vouch for what is now painted — so a payload
+   carrying no calendar, and one whose calendar was refused as stale, both leave it false. Setting
+   it on any successful response let the older response certify the newer held rows it had just
+   been refused for. And a correction nobody is told about is the correction not happening:
+   `live.js` catches the poller's throw without invoking subscribers, so the failure path notifies
+   directly, and `hasChanged` compares the collector's own rendered health (`status`,
+   `collectorLatestFailed`, `portfolioUpcomingAvailable`) as well as the rows.
+5. **`confirmed` is about the READ; `retained` is about the ROWS.** One flag for both was wrong in
+   both directions. Gated on `rows.length` it let a legitimately empty capture report a failed
+   check as current; set unconditionally it claimed, on a first visit with an unreachable route,
+   that an empty result was "the retained rows from the last successful capture" — inventing a
+   capture this device had never made. So the read's outcome gates the feed's status and the rows'
+   provenance gates the sentence, and a verified-empty calendar is restored from the device like
+   any other: an empty dashboard is an answer, and dropping it lets an older response resurrect
+   events that were correctly cleared.
+6. **A supplied calendar older than the one held is not an update.** The response and the calendar
+   are written to the device under separate keys, so a quota failure on the large one leaves a
+   newer calendar beside an older response and the next reload would adopt the older over it —
+   and write it back. Compare only where both sides date themselves; an undated capture cannot be
+   ordered and is taken as given, exactly as `isNewerThanHeld` refuses to rank an unstamped
+   snapshot.
+7. **Retention is not a merge, and an empty successful read must still clear.** A forward calendar
+   legitimately shrinks as its dates pass, so a successful read always replaces — a shorter one
+   included — and `[]` from a healthy capture means the dashboard has nothing scheduled, which is
+   an answer. `scripts/verify-portfolio-calendar.mjs` asserts both directions; a retention rule
+   that could never go back to nothing would be the mirror of the bug it fixed.
+8. **An availability transition is itself a change.** `meta.portfolioUpcomingSupplied` is a fact
+   about the response and `retained` is the claim made to a reader; neither derives from the other,
+   and `hasChanged` compares `supplied` so a calendar going missing — or coming back with the same
+   rows — reaches subscribers. Otherwise the coverage chip keeps printing the previous answer until
+   All Alerts' own next collection, which is a stale label on a correct feed: the failure mode this
+   whole section is about, one layer up.
+
+The failure is cached too, at `CONCALL_SCREENER_FAIL_TTL_S` (15s) rather than the 60s success
+window: every reader sits behind one edge entry, so an uncached failure costs each of them their
+own timeout while a success-length one pins a degraded schedule on every screen long after the
+artifact is readable again. Same split as the Finology client's `ok: false` window.
 
 ### Triggering someone else's pipeline — the Deep Dive rule
 
@@ -2396,7 +2493,7 @@ threw, the packet was well-formed and under bound, and the suite asserted only i
    of a packet says nothing about whether it carries evidence.**
 
 `worker/research.mjs` is the same-origin, request-bounded, rate-limited provider boundary.
-**A dedicated `CLAUDE_API_KEY` Worker secret selects direct Claude** through
+**The `CLAUDE_KEY` Worker secret selects direct Claude** through
 `worker/research-claude.mjs`, using `claude-sonnet-5`, streaming, 2,048 output tokens and
 explicitly disabled thinking. Non-default sampling parameters are not supported by Sonnet 5.
 Only the shared system instructions have a five-minute prompt-cache breakpoint; customer
@@ -2404,6 +2501,10 @@ holdings, source readings and conversation history are sent fresh and not marked
 The entire canonical provider-facing evidence packet is preserved. The key goes only to the
 fixed Anthropic Messages endpoint; redirects are refused. Credentials never enter `public/`,
 browser storage, a request payload or committed config.
+`CLAUDE_KEY` takes precedence over the older dedicated `CLAUDE_API_KEY` alias.
+A malformed or rejected primary key never falls back to the alias or to Muns.
+A GitHub secret probe checks only GitHub; it does not verify the Cloudflare runtime
+secret. The configured flag reports presence, not successful provider authentication.
 
 Forward SSE text deltas immediately, without Muns' final-answer XML framing. Ignore thinking
 and other non-text deltas; a normal completion requires `message_stop`, `end_turn` and nonempty
@@ -2424,7 +2525,7 @@ The former `ANTHROPIC_API_KEY` binding is never sent to Muns unless
 `MUNS_LLM_LEGACY_ANTHROPIC_BINDING=confirmed-muns-token` explicitly records that an operator replaced
 its value with a Muns token. Values starting `sk-ant-` are rejected even under that legacy opt-in
 or any Muns token binding. Never replace the legacy binding with a real Claude key; use the
-dedicated `CLAUDE_API_KEY`. Remove the migration opt-in after installing `MUNS_LLM_TOKEN`.
+dedicated `CLAUDE_KEY`. Remove the migration opt-in after installing `MUNS_LLM_TOKEN`.
 
 **AN ANSWER IN FLIGHT OUTLIVES THE TAB IT WAS ASKED FROM.** `destroy()` used to abort every running
 generation, so pressing Send and then looking at another tab — the obvious thing to do while fifteen
@@ -3277,7 +3378,8 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change which date the Earnings Calendar opens on | `defaultCalendarDate()` in `js/tabs/earnings-hub.js` — it is today, in **IST**, and `?date=` and the reader's own click both win over it |
 | Add or refresh an AMC portfolio | drop the workbook in `scripts/fixtures/`, add an entry to `FUNDS` in `scripts/import-amc-portfolio.mjs`, re-run it — read *Two disclosures that look identical* first |
 | Change how a company name resolves to a ticker | `scripts/lib/company-index.mjs` — `node scripts/lib/company-index.mjs "Some Name Ltd"` explains one match |
-| Change the live con-call feed | `worker/stockscans.mjs` + `public/js/data/stockscans-shared.js`, then `/api/concalls` — read *Reproducing someone else's analysis* below first |
+| Change the live con-call feed | `worker/stockscans.mjs` + `public/js/data/stockscans-shared.js`, then `/api/concalls` — read *Reproducing someone else's analysis* below first. `/api/concalls` is a UNION OF TWO UPSTREAMS: a half that could not be read travels as `null`, never `[]` — see *One route, two upstreams* below |
+| Change the portfolio calendar behind All Alerts' Upcoming view | `scheduleFrom()` / `ingest()` in `js/data/concall-scans.js` (retention), `handleConcalls` in `worker/index.js` (the `null`), and the `screener-portfolio-upcoming` entry in `js/data/alert-sources.js` (the note). `node scripts/verify-portfolio-calendar.mjs` is the test |
 | Change the Con-call tab | `js/concall/scans.js` — the whole tab is that one file |
 | Change the Deep Dive column or panel | `js/concall/deep-dive.js` (panel) + `js/data/deep-dive.js` (transport) — read *Triggering someone else's pipeline* below first |
 | Change what a Deep Dive report keeps on the device | the saved-report block in `js/data/deep-dive.js` + `KEYS.deepDiveReport` — a report costs a metered run, so read rule 5 there before shortening anything |
@@ -3325,10 +3427,10 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change how a reader REACHES provenance | the footer in `layout()` + `wireStaticHeader()` in `js/ui/shell.js` (the registry), and `methodFooter()` + `wireMethod()` in `js/tabs/filings-tab.js` (a tab's own coverage) — read *An explanation with no door* first. The doors go BELOW the content; the header button and the active pill stay gone |
 | Add an Ask Research source that fetches nothing | give its builder an explicit `load: null` in `js/research/estate.js` — a builder with neither a `load()` nor that declaration is raised as a registry error, because an omitted one used to throw and wear the upstream's clothes |
 | Change what appears in the News feed from X | `js/data/twitter-news.js` (the conversion) + `feedRows()` / `postBody()` in `js/tabs/market-news-view.js` — read *X/Twitter is a SOURCE in the News feed* first; it must stay ONE list |
-| Change the Telegram section, or what it says about times | `telegramPanel()` / `telegramDescription()` / `telegramFootnotes()` / `buildTelegramTable()` in `js/tabs/public-chatter.js` — read *Telegram posts* in `docs/DATA-CONTRACTS.md` first. The route publishes **no post times**, so there is no time column and the absence is stated in words; `telegramFreshness` is exported and pure so the suite asserts both sides of the boundary directly |
-| Change how Telegram posts are collected | `scripts/scrape-telegram.mjs` + `.github/workflows/telegram-refresh.yml` (half-hourly, best-effort) — Node 22, no dependency, **no credential**. The exit codes are the interface (0 wrote, 2 nothing new, **4 nothing readable at all — the shape of a refused runner, raised as a warning**, 1 a real fault). Read the header before touching the discriminator: an absent id answers **200** with the channel page, and so does a rate-limited request, and the channel's OWN description is what an empty id's page carries |
-| Drive the Telegram refresh on a cadence GitHub actually delivers | `POST /api/telegram/refresh?source=cron` every 30 min from an external scheduler, watched by the free `GET /api/telegram/run`. Routes are in `worker/index.js` beside the Twitter pair; the client is `worker/github-actions.mjs`. The cron in the workflow is a request GitHub honours about a sixth of the time — measured on the identical `*/30` in twitter-refresh.yml — and `workflow_dispatch` is not throttled at all. `TELEGRAM_DISPATCH_COOLDOWN_S` must stay BELOW the pinger's interval or it defeats it |
-| Point the Telegram feed at another channel | `TELEGRAM_CHANNEL` (validated against Telegram's own 5–32 `[A-Za-z0-9_]` rule, because it reaches a URL). A capture for a different channel is never treated as history for this one. A channel whose web preview is **on** unlocks the richer `t.me/s/` route, which publishes real timestamps — `route` and `publishesTime` in the capture exist so the UI reads which it got rather than assuming |
+| Change the Telegram section, or what it says about times | `public/js/tabs/public-chatter.js` + `public/js/data/telegram-health.js`; read `docs/TELEGRAM-INGESTION.md`. Publication dates, successful source checks, readable reports and captured Telegram-only links stay distinct. |
+| Change how Telegram posts are collected | `scripts/scrape-telegram.mjs` + `.github/workflows/telegram-refresh.yml`; read `docs/TELEGRAM-INGESTION.md`. Public recent/history phases use bounded requests and atomic checkpoints; source failure artifacts publish before the job fails. No account is needed for public mode. |
+| Drive the Telegram refresh on a cadence GitHub actually delivers | `worker/telegram-scheduler.mjs` uses a durable ten-minute timer with the GitHub schedule as fallback. `/api/telegram/schedule` is read-only; `scripts/check-telegram-health.mjs` detects overdue checks, actual alarm gaps and stalled jobs. No scheduler can guarantee external-provider availability. |
+| Point the Telegram feed at another channel | This integration is fixed to `researchreportss` in its public-data and API safety boundaries. A channel change requires an explicit contract review; never treat another channel's capture as this archive. |
 | Change the X account list, or how a handle is read | `js/core/twitter-handles.js` + `js/ui/twitter-sources.js` — the 1–15 `[A-Za-z0-9_]` rule is also in `worker/index.js` and `scripts/scrape-twitter.py` and the three may not disagree |
 | Change how X posts are collected | `scripts/scrape-twitter.py` + `.github/workflows/twitter-refresh.yml` — the exit codes are the interface (0 wrote, 2 nothing readable, 3 no credential, 1 a real fault) |
 | Set up X collection on a deployment | add an **`X_ACCOUNTS`** repository secret (*Settings → Secrets and variables → Actions*), one `username:password:email:email_password` per line. The dashboard's Add Handle control additionally needs `GH_DISPATCH_TOKEN` on the Worker, and says `Adding…` rather than failing without it |
@@ -3363,6 +3465,7 @@ Then run the suite — ~410 Playwright assertions, exits non-zero at the end if 
 
 ```bash
 node scripts/verify-calendar.mjs
+node scripts/verify-portfolio-calendar.mjs
 node scripts/verify-research.mjs
 node scripts/verify-ui.mjs
 node scripts/verify-sdk.mjs

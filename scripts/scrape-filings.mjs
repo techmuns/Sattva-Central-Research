@@ -43,6 +43,7 @@ import { loadActivePortfolio } from './lib/active-portfolio.mjs';
 // silently showing 563 of 603 as if that were the whole picture.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { readNewsJson, writeNewsJson } from './lib/news-json-storage.mjs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchNews, fetchInsiderTrades, MunsError } from '../worker/muns.mjs';
@@ -183,6 +184,7 @@ function newsCompanies(book) {
 
 /** The committed snapshot as it stands, or null. Used to refuse to replace a better one. */
 function readIfPresent(file) {
+  if (file === 'news.json') return readNewsJson(DATA(file));
   try {
     return JSON.parse(readFileSync(DATA(file), 'utf8'));
   } catch {
@@ -431,7 +433,7 @@ async function runNews(list, portfolio, book) {
       months: archive.archive.length,
     },
   };
-  writeFileSync(DATA('news.json'), `${JSON.stringify(payload, null, 2)}\n`);
+  writeNewsJson(DATA('news.json'), payload);
   console.log(
     `\r  news: ${payload.rowCount} recent rows; ${archive.articleCount} portfolio observations retained permanently; ` +
       `${payload.queryCoverage.succeeded}/${payload.queryCoverage.planned} identity queries succeeded -> public/data/news.json`

@@ -330,7 +330,7 @@ Every registered source contributes its status, coverage,
 as-of metadata and provenance; question-matched rows are included within the Worker request bound,
 so one slow or unavailable feed is reported rather than silently omitted.
 
-With `CLAUDE_API_KEY` configured, the Worker sends the packet directly to Claude Sonnet 5 with
+With `CLAUDE_KEY` configured, the Worker sends the packet directly to Claude Sonnet 5 with
 streaming and thinking disabled, and caches only shared instructions. It forwards answer text
 immediately and validates the provider's completion reason. Environments without the key retain
 the Muns router; a failed Claude call never silently falls back to it. Retrieved source findings
@@ -485,6 +485,33 @@ roadmap* card that used to close each tab has been removed from the UI:
 ---
 
 ## 8. Roadmap
+
+### Bookmarks
+
+The **Bookmarks** header control sits beside Dark mode, outside the research tab strip. An outlined bookmark saves an
+individual event; its filled state removes it, with Undo. The company watchlist star retains
+its existing meaning. Shared research tables, market-news cards, AI cards and individual AI
+evidence, public-chatter mentions, and finished/partial Ask Research answers expose this action.
+
+The notebook retains an independent copy of the available event text, company, source date,
+source links and table readings. Live feed refreshes, AI archiving, portfolio exits and date
+windows cannot remove that copy. Opening a saved entry reads the snapshot without loading its
+original feed. Linked publisher pages and document files themselves are not downloaded.
+
+Company navigation is alphabetical with saved-event counts and company/ticker search; mobile
+uses a company picker. Search covers the complete notebook, including notes, before paginating.
+Event-type and notes-only filters combine with company selection. Sorts are recently saved,
+event date and company A–Z. Each entry opens its full saved text and an explicitly saved research
+note. The notebook has its own company filter and shows every saved company, so the global
+scope control is hidden on this tab. An empty Watchlist never hides the notebook.
+
+Storage is personal to the current browser and origin, in a separate IndexedDB database.
+There is no account/cloud sync or automatic age-based deletion. Browser quota, clearing site
+data and eviction remain limits; request persistent storage opportunistically and provide JSON
+backup export/import. The UI states this plainly. Imports merge atomically, preserving existing
+snapshots/notes; repeat saves do not replace the original snapshot. Failed writes must not claim
+success or fall back to temporary in-memory bookmarks. Tabs synchronize after committed writes.
+
 
 | # | Prompt | Scope |
 | --- | --- | --- |

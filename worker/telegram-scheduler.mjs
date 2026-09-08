@@ -1,12 +1,20 @@
-import { dispatchWorkflow, latestRun, TELEGRAM_WORKFLOW } from './github-actions.mjs';
+import { dispatchWorkflow, isInFlight, latestRun, TELEGRAM_WORKFLOW } from './github-actions.mjs';
 
 export const TELEGRAM_INTERVAL_MS = 10 * 60 * 1000;
+// The workflow has a 15-minute execution timeout; also allow 15 minutes for queueing.
+export const TELEGRAM_RUN_OVERDUE_MS = 30 * 60 * 1000;
 export const TELEGRAM_SCHEDULER_NAME = 'researchreportss-main-v1';
 export const TELEGRAM_PRODUCTION_HOST = 'sattva-central-research.tech-441.workers.dev';
 const KEY = 'schedule';
 const REPO = 'techmuns/Sattva-Central-Research';
 const REASONS = new Set(['unauthorised', 'forbidden', 'rate-limited', 'refused', 'not-found', 'invalid-runs', 'unreachable']);
 const iso = value => Number.isFinite(value) ? new Date(value).toISOString() : null;
+const activeRun = (run, previous, at) => isInFlight(run) ? {
+  id: run.id, status: run.status,
+  createdAt: Number.isFinite(Date.parse(run.createdAt)) ? run.createdAt : null,
+  firstObservedAt: previous?.id === run.id ? previous.firstObservedAt : iso(at),
+} : null;
+const overdue = (run, at) => !!run && at - Date.parse(run.createdAt || run.firstObservedAt) > TELEGRAM_RUN_OVERDUE_MS;
 
 // One object coordinates this channel's timer and reader requests. Durable claims precede all
 // external I/O: replaying an alarm or losing a POST response must not immediately dispatch again.
@@ -19,11 +27,16 @@ export class TelegramSchedule {
   }
 
   async status() {
-    const state = await this.storage.get(KEY) || {};
+    // Read the actual alarm with its intended deadline. A GET never repairs or arms anything.
+    const { state, alarm } = await this.storage.transaction(async tx => ({
+      state: await tx.get(KEY) || {}, alarm: await tx.getAlarm(),
+    }));
     return { enabled: state.enabled === true, intervalSeconds: TELEGRAM_INTERVAL_MS / 1000,
+      alarmAt: iso(alarm),
       nextAttemptAt: iso(state.nextAttemptAt), lastAttemptAt: iso(state.lastAttemptAt),
       lastResult: state.lastResult || 'not-started', reason: state.reason || null,
-      failures: state.failures || 0 };
+      failures: state.failures || 0, activeRun: state.activeRun || null,
+      runOverdue: overdue(state.activeRun, this.now()) };
   }
 
   async finish(claim, values, nextAttemptAt = claim + TELEGRAM_INTERVAL_MS) {
@@ -41,7 +54,7 @@ export class TelegramSchedule {
     if (this.env.TELEGRAM_SCHEDULER_DISABLED === 'true') {
       await this.storage.transaction(async tx => {
         const state = await tx.get(KEY) || {};
-        await tx.put(KEY, { ...state, enabled: false, nextAttemptAt: null, lastResult: 'disabled', reason: 'operator-disabled' });
+        await tx.put(KEY, { ...state, enabled: false, nextAttemptAt: null, activeRun: null, lastResult: 'disabled', reason: 'operator-disabled' });
         await tx.deleteAlarm();
       });
       return { ok: false, dispatched: false, reason: 'operator-disabled' };
@@ -70,13 +83,22 @@ export class TelegramSchedule {
       const recent = (await latestRun(this.fetcher, cfg, TELEGRAM_WORKFLOW, { perPage: 1 }))[0];
       const started = Date.parse(recent?.createdAt);
       if (Number.isFinite(started) && started > at - TELEGRAM_INTERVAL_MS && started <= at + 60000) {
-        await this.finish(at, { lastResult: 'recent-run', reason: null, failures: 0 }, Math.max(at + 60000, started + TELEGRAM_INTERVAL_MS));
-        return { ok: true, dispatched: false, reason: 'cooling-down', run: recent, cooldownS: TELEGRAM_INTERVAL_MS / 1000 };
+        const failed = recent.status === 'completed' && recent.conclusion !== 'success';
+        await this.finish(at, { lastResult: failed ? 'recent-run-failed' : 'recent-run',
+          reason: failed ? 'latest-run-failed' : null, failures: 0, activeRun: activeRun(recent, null, at) },
+        Math.max(at + 60000, started + TELEGRAM_INTERVAL_MS));
+        return { ok: !failed, dispatched: false, reason: failed ? 'latest-run-failed' : 'cooling-down', run: recent, cooldownS: TELEGRAM_INTERVAL_MS / 1000 };
       }
       const out = await dispatchWorkflow(this.fetcher, cfg, TELEGRAM_WORKFLOW, 'main', { source });
+      const previous = await this.storage.get(KEY) || {};
+      const running = activeRun(out.run, previous.activeRun, at);
+      const stalled = overdue(running, at);
       const reason = out.dispatched ? 'dispatched' : 'already-running';
-      await this.finish(at, { lastResult: reason, reason: null, failures: 0 });
-      return { ok: true, dispatched: out.dispatched, reason, run: out.run,
+      // Keep exclusion and the next check, but never describe an indefinitely queued run as
+      // healthy. Recovery does not cancel jobs or bypass approval/account-review gates.
+      await this.finish(at, { lastResult: stalled ? 'blocked' : reason, reason: stalled ? 'run-overdue' : null,
+        failures: 0, activeRun: running });
+      return { ok: !stalled, dispatched: out.dispatched, reason: stalled ? 'run-overdue' : reason, run: out.run,
         workflow: TELEGRAM_WORKFLOW, source, requestedAt: iso(at) };
     } catch (error) {
       const state = await this.storage.get(KEY) || {};

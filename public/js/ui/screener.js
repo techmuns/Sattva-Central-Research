@@ -18,6 +18,10 @@ import { escapeHtml } from '../core/dom.js';
 import * as store from '../core/watchlist.js';
 import { avatarFor, scoreTier, scoreBadgeClass, tierLabel, tierColor, statusPill, signalDots } from './visual.js';
 import { mountWindowedList } from './windowed-list.js';
+import { state } from '../core/state.js';
+import * as notebook from '../core/bookmarks.js';
+import { snapshotForRow, SECTION_LABELS } from '../core/bookmark-record.js';
+import { bookmarkButton, wireBookmarks } from './bookmark-button.js';
 
 // ---------------------------------------------------------------------------------------
 // Overlay focus management — shared by the drill, the modal and the workspace.
@@ -400,6 +404,11 @@ export function scoreTable(config) {
     signals = null,
     link = null,
     onRowClick = null,
+    // All record tables can save a snapshot. A specialized adapter may replace the default.
+    bookmark = null,
+    bookmarkSection = state.tab || '',
+    bookmarkDate = null,
+    bookmarkSource = null,
     filters = null,
     searchable = null,
     initialSort = null,
@@ -462,6 +471,32 @@ export function scoreTable(config) {
     return raw === null || raw === undefined || raw === '' ? null : String(raw).toUpperCase();
   };
   const watchNameOf = (row) => String((watchName || name)(row) ?? '') || null;
+
+  function bookmarkEntry(row, full = false) {
+    if (bookmark) return bookmark(row);
+    const section = bookmarkSection || exportName.replace(/^sattva-/, '');
+    const context = { section, company: row.company || (['Company', 'Stock', 'Instrument'].includes(nameLabel) || watchKeyOf(row) ? watchNameOf(row) : ''),
+      title: `${name(row)} · ${SECTION_LABELS[section] || section}${sub(row) ? ` · ${sub(row)}` : ''}`,
+      ticker: watchKeyOf(row), eventDate: bookmarkDate?.(row), source: bookmarkSource?.(row),
+      // Export filenames use today's date; saving a record must not change its identity at midnight.
+      sourceId: `${exportName.replace(/-\d{4}-\d{2}-\d{2}$/, '')}:${key(row)}`, rowKey: key(row), url: link?.(row) };
+    if (full) {
+      // Only on a save, capture complete column readings and their source links. Use the
+      // accessors, not truncated/virtual DOM cells. Inert template content executes nothing.
+      context.details = [];
+      context.links = [];
+      for (const column of columns) {
+        const value = column.get(row);
+        if (!column.html) { context.details.push({ label: column.label, value: String(value ?? '') }); continue; }
+        const template = document.createElement('template'); template.innerHTML = String(value ?? '');
+        context.details.push({ label: column.label, value: template.content.textContent.replace(/\s+/g, ' ').trim() });
+        for (const anchor of template.content.querySelectorAll('a[href]'))
+          context.links.push({ label: `${column.label}: ${anchor.textContent.trim()}`, url: anchor.getAttribute('href') });
+      }
+      if (showScore && score) { const s = score(row); context.details.push({ label: 'Score at save', value: `${s.points}/${s.max}${s.redFlag ? ` · ${s.redFlag}` : ''}` }); }
+    }
+    return snapshotForRow(row, context);
+  }
 
   // `filters` takes one config or several. Several render as several <select>s and AND together,
   // which is what lets "PAT grew" and "Consolidated only" be asked at the same time — folding both
@@ -668,7 +703,7 @@ export function scoreTable(config) {
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
                 <div class="min-w-0">
                   <div class="truncate font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-                  <div class="truncate text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</div>
+                  <div class="flex items-center gap-1"><span class="truncate text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${bookmarkButton(bookmarkEntry(row))}</div>
                 </div>
               </div>`)}
             ${
@@ -822,6 +857,12 @@ export function scoreTable(config) {
     const watchIcon = host.querySelector('[data-watch-icon]');
     const watchCount = host.querySelector('[data-watch-count]');
     const tableEl = host.querySelector('table');
+    const offBookmarkCache = notebook.onChange(() => rowHtmlCache.clear());
+    const offBookmarks = wireBookmarks(host, button => {
+      const slug = button.closest('[data-row-key]')?.dataset.rowKey;
+      const row = rows.find(row => String(key(row)) === slug);
+      return row ? bookmarkEntry(row, true) : null;
+    });
 
     let current = initialList;
     let virtualStart = initialVirtualStart;
@@ -1219,6 +1260,7 @@ export function scoreTable(config) {
     startSearchWarm();
 
     return () => {
+      offBookmarks(); offBookmarkCache();
       windowed?.destroy();
       stopFill();
       if (cancelSearchWarm) cancelSearchWarm();

@@ -33,7 +33,7 @@ globalThis.fetch = async (url, options) => {
     }, 800);
   }, cancel() { clearTimeout(timer); } }), {headers:{'content-type':'text/event-stream'}});
 };
-export default { fetch(request) { return handleResearch(request, {CLAUDE_API_KEY:'synthetic-claude-runtime-key'}); } };
+export default { fetch(request) { return handleResearch(request, {CLAUDE_KEY:'synthetic-claude-runtime-key'}); } };
 `);
 writeFileSync(join(scratch, 'wrangler.json'), JSON.stringify({ name: 'claude-runtime-local-test', main: 'worker.mjs', compatibility_date: '2026-05-23' }));
 let child, logs = '';

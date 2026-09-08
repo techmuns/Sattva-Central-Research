@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { researchQuestionBank } from './lib/research-questions.mjs';
 import { researchLocalBrowser } from './lib/research-local-browser.mjs';
+import { matchesCapturedNews } from './lib/research-news-oracle.mjs';
 import { validateResearchBody } from '../worker/research.mjs';
 import { researchPreview } from '../public/js/research/preview.js';
 const book = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));
@@ -45,11 +46,14 @@ try {
       const rows = news.rows().filter(r => { const a = attributionFor(r); return a.status === 'confirmed' && (target.ticker ? a.companyTicker === target.ticker : a.companyName === target.name); });
       const dated = rows.filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && !/(?:share price.*stock price|stock price.*share price|SWOT Analysis)/i.test(r.title || ''));
       const newest = dated.map(r => r.date).sort().at(-1);
-      return { count: rows.length, newest, titles: dated.filter(r => r.date === newest).map(r => r.title) };
+      const latest = dated.filter(r => r.date === newest);
+      return { count: rows.length, newest, titles: latest.map(r => r.title),
+        articles: latest.map(r => ({ date: r.date, title: r.title, url: r.url || r.link || null,
+          ticker: target.ticker || null, isin: target.isin || null, company: target.name })) };
     }, target);
     const newsRows = packet.sources.find(s => s.id === 'company-news').rows;
     if (confirmed.count && !newsRows.some(r => r.attribution === 'confirmed' && (target.ticker ? r.ticker === target.ticker : r.company === target.name))) failures.push('confirmed_news_not_retrieved');
-    if (test.category === 'latest' && confirmed.newest && !newsRows.some(r => r.attribution === 'confirmed' && r.date === confirmed.newest && confirmed.titles.some(title => title.startsWith(r.title.replace(/…$/, ''))))) failures.push('newest_company_development_not_retrieved');
+    if (test.category === 'latest' && confirmed.newest && !newsRows.some(r => confirmed.articles.some(article => matchesCapturedNews(r, article)))) failures.push('newest_company_development_not_retrieved');
     results.push({ id: test.id, company: test.company, category: test.category, elapsedMs: packetMs, selected: packet.selection.companies, confirmedNewsAvailable: confirmed, sources, failures });
     if (results.length % 50 === 0) console.log(`Checked ${results.length}/${cases.length} portfolio packets`);
   }

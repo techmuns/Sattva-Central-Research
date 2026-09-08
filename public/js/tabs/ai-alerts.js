@@ -8,9 +8,12 @@
 import { sectionHead } from '../ui/screener.js';
 import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
+import { normalizeBookmark, snapshotForRow } from '../core/bookmark-record.js';
+import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import { alertWindowCache } from '../data/alert-window-cache.js';
 import * as screenerInsights from '../data/screener-insights.js';
 import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
@@ -28,12 +31,14 @@ export const meta = {
 
 const REFRESH_ID = 'ai-alerts';
 const PAGE_SIZE = 8;
+const RECHECK_MS = 90_000;
 const SORT_KEY = 'sattva:ai-alerts:sort:v1';
 const SORTS = { newest: 'Newest first', holdings: 'Largest holdings', priority: 'Highest priority' };
 let sortOrder = 'newest';
 try { const saved = localStorage.getItem(SORT_KEY); if (Object.hasOwn(SORTS, saved)) sortOrder = saved; } catch { /* Session preference still works. */ }
 
 let ctxRef = null;
+let offBookmarks = null;
 let report = null;
 let loadToken = 0;
 let cacheToken = 0;
@@ -49,6 +54,7 @@ let collecting = false;
 let loadError = '';
 let captureDirty = false;
 let sourceTimer = null;
+let lastSourceCheck = 0;
 function sourceChanged() {
   if (!ctxRef) return;
   captureDirty = true;
@@ -104,6 +110,8 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
+    unsubs.push(watchFreshness());
+    unsubs.push(alertWindowCache.onChange(() => { if (ctxRef) paint(ctxRef); }));
     unsubs.push(onCaptureLanded(sourceChanged));
     unsubs.push(alerts.onChange(sourceChanged));
     unsubs.push(onPortfolioConnection((connected) => {
@@ -157,6 +165,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  offBookmarks?.(); offBookmarks = null;
   clearTimeout(sourceTimer);
   sourceTimer = null;
   captureDirty = false;
@@ -180,9 +189,10 @@ export function destroy() {
   unsubs = [];
 }
 
-async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {}) {
+async function recollect(ctx, { refresh: forceRefresh = false, load = true, reusePositions = false } = {}) {
   if (!ctx) return;
   const token = ++loadToken;
+  if (load) lastSourceCheck = Date.now();
   sizeController?.abort();
   sizeController = null;
   sizesLoading = false;
@@ -195,7 +205,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   // A slow or unavailable size reader must not hold the first alert hostage.
   // An explicit Refresh must really check Family again. Navigation, calendar
   // ageing and a quick tab return are the paths allowed to reuse the snapshot.
-  const heldSizes = forceRefresh ? null : cachedPositionSizes();
+  const heldSizes = forceRefresh && !reusePositions ? null : cachedPositionSizes();
   let checkedSnapshot = heldSizes;
   let positions = Promise.resolve(heldSizes);
   if (ctx.scope === 'portfolio' && privatePortfolioContext()) {
@@ -241,7 +251,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     const completed = positionSizes ? await alerts.collect({ scope: ctx.scope,
       holdings: coverage.holdings(), positionSizes, load: false }) : next;
     if (!current()) return;
-    report = completed;
+    report = completed.pending || completed.feeds.some(feed => feed.status === 'failed')
+      ? alerts.mergePartialReport(report, completed) : completed;
   } catch (err) {
     if (!current()) return;
     loadError = err?.message || 'The alert feeds could not be refreshed.';
@@ -271,7 +282,9 @@ function paint(ctx) {
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
   ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
-  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx);
+  const cache = alertWindowCache.status();
+  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx) + (cache.message
+    ? `<p data-ai-cache-status role="status" class="mb-4 text-xs text-slate-500">${escapeHtml(cache.message)}</p>` : '');
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
   // Identical results keep their DOM, expanded evidence and keyboard focus.
   for (const [selector, markup] of [
@@ -346,6 +359,21 @@ function watchCalendar() {
   };
 }
 
+/** Revalidate bounded source snapshots while visible and after returning from inactivity.
+ * This checks published captures only; it does not dispatch production collection jobs. */
+function watchFreshness() {
+  const check = () => {
+    if (!ctxRef || document.hidden || collecting || Date.now() - lastSourceCheck < RECHECK_MS) return;
+    void recollect(ctxRef, { refresh: true, reusePositions: true });
+  };
+  const timer = setInterval(check, RECHECK_MS);
+  document.addEventListener('visibilitychange', check);
+  window.addEventListener('focus', check);
+  window.addEventListener('online', check);
+  return () => { clearInterval(timer); document.removeEventListener('visibilitychange', check);
+    window.removeEventListener('focus', check); window.removeEventListener('online', check); };
+}
+
 function head(ctx) {
   const m = report?.meta || {};
   // Connector and refresh failures stay available to the refresh controller for diagnostics, but
@@ -378,6 +406,9 @@ export function feedStatus(rep) {
       tone: 'neutral',
       state: 'pending',
     };
+  }
+  if (rep.feeds?.some(feed => feed.status === 'failed')) {
+    return { label: 'Partial coverage · retained evidence shown', tone: 'neutral', state: 'partial' };
   }
   const staleFeeds = Number(rep.meta?.staleFeeds || 0);
   if (staleFeeds > 0) {
@@ -498,6 +529,15 @@ function contextMarkup(card, scope) {
     class="mt-2 block text-xs leading-relaxed text-slate-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${escapeHtml(card.contextSummary)}</a>`;
 }
 
+function cardSnapshot(card) {
+  return normalizeBookmark({ title: card.insight, company: card.company, ticker: card.ticker, entityId: card.entityId,
+    kind: 'AI Alerts', source: 'Dashboard analysis', sourceId: `${card.key || card.ticker}:${card.evidenceKey || card.insight}`,
+    eventDate: latestAlertEvent(card)?.day,
+    body: card.events.map(event => [event.headline, event.detail, event.reason].filter(Boolean).join('\n')).join('\n\n'),
+    details: card.events.map(event => ({ label: `${event.feedLabel || event.feed} · ${event.day || 'Date not supplied'}`, value: event.headline })),
+    links: card.events.filter(event => event.url).map(event => ({ label: event.headline, url: event.url })),
+  });
+}
 function cardMarkup(card, scope, day, archived = false) {
   const badge = card.badge || { id: 'important', label: 'Important', tone: 'neutral' };
   const tone = {
@@ -543,6 +583,7 @@ function cardMarkup(card, scope, day, archived = false) {
           ? `<button type="button" data-open-general data-ticker="${escapeHtml(card.ticker || card.company)}" class="text-xs font-bold text-indigo-700 hover:text-indigo-900">${escapeHtml(formatNumber(rest))} more ${rest === 1 ? 'event' : 'events'} →</button>`
           : `<span class="text-xs text-slate-400">Everything on this company is above</span>`}
         <div class="flex shrink-0 items-center gap-2">
+          <span data-ai-notebook-card="${escapeHtml(card.key || card.ticker)}">${bookmarkButton(cardSnapshot(card), { compact: false })}</span>
           ${archived
             ? `<button type="button" data-ai-unmute data-ticker="${escapeHtml(card.key || card.ticker)}"
                 class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 transition hover:ring-indigo-300">Restore</button>`
@@ -583,15 +624,16 @@ function eventMarkup(event, scope, day) {
   // `plainHeadline`. The tooltip always carries the feed's own wording so nothing is lost.
   const claim = alerts.plainHeadline(event);
   return `
-    <li>
+    <li class="flex items-start gap-2" data-ai-notebook-event="${escapeHtml(event.id)}">
       <a data-ai-event data-ai-evidence-link href="${escapeHtml(destination.href)}"
         ${destination.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
         aria-label="${escapeHtml(destination.ariaLabel)}"
-        class="group flex items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-indigo-50/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+        class="group flex min-w-0 flex-1 items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-indigo-50/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
         <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT_TONE[event.direction] || DOT_TONE.neutral}" aria-hidden="true"></span>
         <span class="line-clamp-2 min-w-0 flex-1 text-sm leading-snug text-slate-700 group-hover:text-slate-900" title="${escapeHtml(event.headline || '')}">${escapeHtml(claim)}</span>
         <span class="mt-0.5 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider text-slate-400" title="${escapeHtml(`${event.feedLabel || event.feed} · ${when}`)}">${escapeHtml(tag)} · <time data-ai-age data-day="${escapeHtml(event.day)}" datetime="${escapeHtml(event.day)}">${escapeHtml(age)}</time></span>
       </a>
+      ${bookmarkButton(snapshotForRow(event, { section: 'daily-alerts' }))}
     </li>`;
 }
 
@@ -650,6 +692,14 @@ function filteredCards(cards) {
 }
 
 function wire(ctx, total) {
+  offBookmarks?.();
+  offBookmarks = wireBookmarks(ctx.root, button => {
+    const cardKey = button.closest('[data-ai-notebook-card]')?.dataset.aiNotebookCard;
+    if (cardKey) { const card = report?.cards?.find(card => String(card.key || card.ticker) === cardKey); return card && cardSnapshot(card); }
+    const id = button.closest('[data-ai-notebook-event]')?.dataset.aiNotebookEvent;
+    const event = report?.cards?.flatMap(card => card.events).find(event => String(event.id) === id);
+    return event && snapshotForRow(event, { section: 'daily-alerts' });
+  });
   const sort = ctx.root.querySelector('[data-ai-sort]');
   if (sort) sort.onchange = () => {
     if (!Object.hasOwn(SORTS, sort.value)) return;

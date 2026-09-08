@@ -6,6 +6,13 @@ export const CLAUDE_MODEL = 'claude-sonnet-5';
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 const MAX_EVENT_CHARS = 64_000;
 
+// Cloudflare's runtime secret is CLAUDE_KEY. Keep the former dedicated name for
+// existing environments; never use a Muns token or retry a rejected primary key
+// with the legacy value. Both provider selection and requests use this resolver.
+export function claudeCredential(env) {
+  return String(env?.CLAUDE_KEY || '').trim() || String(env?.CLAUDE_API_KEY || '').trim();
+}
+
 export function buildClaudeRequest(input, instructions) {
   return {
     model: CLAUDE_MODEL,
@@ -40,16 +47,16 @@ export async function streamClaudeChat(request, env, input, instructions, cancel
     const response = await fetch(CLAUDE_URL, {
       method: 'POST',
       redirect: 'manual', // Workers supports manual/follow; never follow a credential redirect.
-      headers: { 'x-api-key': String(env.CLAUDE_API_KEY).trim(), 'anthropic-version': '2023-06-01', accept: 'text/event-stream', 'content-type': 'application/json' },
+      headers: { 'x-api-key': claudeCredential(env), 'anthropic-version': '2023-06-01', accept: 'text/event-stream', 'content-type': 'application/json' },
       body: JSON.stringify(buildClaudeRequest(input, instructions)),
       signal,
     });
     if (!response.ok) {
-      await response.body?.cancel().catch(() => {});
+      void response.body?.cancel().catch(() => {});
       return { providerStreamFailure: claudeFailure(response.status), wroteText: false };
     }
     if (!response.body || !response.headers.get('content-type')?.toLowerCase().includes('text/event-stream')) {
-      await response.body?.cancel().catch(() => {});
+      void response.body?.cancel().catch(() => {});
       return { providerStreamFailure: 'Claude returned an unreadable answer stream. Your source readings are still available; please retry.', wroteText: false };
     }
     return await consumeClaudeStream(response.body, text => {
@@ -136,7 +143,7 @@ export async function consumeClaudeStream(stream, emit) {
         line(value);
         if (stopped || providerStreamFailure) break;
       }
-      if (buffer.length > MAX_EVENT_CHARS) malformed();
+      if (!stopped && !providerStreamFailure && buffer.length > MAX_EVENT_CHARS) malformed();
     }
     // EOF does not stand in for a message_stop event or a complete SSE frame.
     if (!providerStreamFailure && (!stopped || !wroteText)) malformed();
@@ -145,7 +152,10 @@ export async function consumeClaudeStream(stream, emit) {
       : 'Claude did not finish the answer normally. The available answer and source readings are saved.';
     return { providerStreamFailure, wroteText };
   } finally {
-    await reader.cancel().catch(() => {});
+    // Explicit completion is terminal; pending teardown or a late transport
+    // failure must not delay done or turn a completed answer into Retry answer.
+    // The caller also aborts the upstream fetch when this parser returns.
+    void reader.cancel().catch(() => {});
     reader.releaseLock();
   }
 }

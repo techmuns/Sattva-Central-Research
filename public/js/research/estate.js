@@ -38,6 +38,7 @@ import * as earningsCalendar from '../data/earnings-calendar.js';
 import * as concalls from '../data/concall-scans.js';
 import * as chatter from '../data/chatter-live.js';
 import * as telegram from '../data/telegram-posts.js';
+import { telegramReadHealth } from '../data/telegram-health.js';
 import * as technicals from '../data/technicals.js';
 import * as investors from '../data/super-investors.js';
 import * as institutions from '../data/institution-holdings.js';
@@ -50,6 +51,9 @@ import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 import { attributionFor } from '../data/company-news-attribution.js';
 import { telegramCompanyRows, chatterPostEvidence, postExcerpt } from './social.js';
 import { questionWindow, questionTopics, rowContext } from './query-context.js';
+import { PORTFOLIO_REASONING_CHAR_BUDGET, businessContextShare } from './evidence-shared.js';
+import { reasoningReadings, portfolioReasoningContext, reasoningSourceSamples } from './reasoning-context.js';
+import { businessIntent, holdingForBusinessRow, businessReadings, portfolioBusinessContext, fitBusinessContext, businessPeerSamples } from './business-context.js';
 
 export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
@@ -121,7 +125,7 @@ const GENERIC_LEAD = new Set(['india', 'indian', 'bharat', 'national', 'global',
 // Symbols that are also English words. A lower-case token merely spelling one is not a company
 // mention — "any idea about…" is not Vodafone Idea — unless the question also names the company or
 // types the symbol in capitals.
-const WORD_TICKERS = new Set(['IDEA', 'SAIL', 'GAIL', 'PAGE', 'TRENT', 'BATA', 'RAIN', 'STAR', 'PEARL', 'ZEN', 'CERA', 'BLISS', 'FINE', 'JUST', 'NEXT', 'ONE', 'MAN', 'CAN', 'VIP', 'MAX', 'RISE', 'JET', 'CLEAN', 'PRIME', 'FOCUS', 'UNITED', 'SUN', 'GEM', 'FOOD', 'LIFE', 'NEST', 'KEY', 'FIT', 'SAFE', 'SHARP', 'POLO', 'HOME', 'GLOBAL', 'INDIA', 'BANK', 'POWER', 'STEEL', 'MOTOR', 'AUTO']);
+const WORD_TICKERS = new Set(['OIL', 'IDEA', 'SAIL', 'GAIL', 'PAGE', 'TRENT', 'BATA', 'RAIN', 'STAR', 'PEARL', 'ZEN', 'CERA', 'BLISS', 'FINE', 'JUST', 'NEXT', 'ONE', 'MAN', 'CAN', 'VIP', 'MAX', 'RISE', 'JET', 'CLEAN', 'PRIME', 'FOCUS', 'UNITED', 'SUN', 'GEM', 'FOOD', 'LIFE', 'NEST', 'KEY', 'FIT', 'SAFE', 'SHARP', 'POLO', 'HOME', 'GLOBAL', 'INDIA', 'BANK', 'POWER', 'STEEL', 'MOTOR', 'AUTO']);
 
 const round = (value, places = 2) => {
   if (!Number.isFinite(value)) return value ?? null;
@@ -208,7 +212,8 @@ function companyIndex(deferred) {
  * one company in the index starts with. The words a company match consumed are removed from the
  * ranking tokens, so "finance" does not go on to score every Financial Services row as a hit.
  */
-export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolioPositions = null, now = Date.now() } = {}) {
+export function queryPlan(question, index = [], { scope = 'universe', holdings = null, history = [], portfolio = null, portfolioPositions = null, now = Date.now() } = {}) {
+  let business = businessIntent(question, history);
   const text = ` ${cleanName(question)} `;
   const tokens = queryTokens(question);
   const tokenSet = new Set(tokens);
@@ -247,7 +252,8 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
   // A follow-up searches the last named company again; conversation text alone
   // cannot retrieve fresh company rows. An explicit new company always wins.
   const portfolioWide = /\b(portfolio|holdings|positions|stocks|book)\b/i.test(question) && !/\b(it|its|they|them|their|that|same)\b/i.test(question);
-  if (!companies.length && !portfolioWide && /^(and |what about |how about )|\b(it|its|they|them|their|those|these|that|same)\b/i.test(question)) {
+  const peerFollowUp = business?.mode === 'business-peers' && /\b(other|same|similar|comparable|peers?)\b/i.test(question);
+  if (!companies.length && (peerFollowUp || !portfolioWide && /^(and |what about |how about )|\b(it|its|they|them|their|those|these|that|same)\b/i.test(question))) {
     for (const message of history.filter(m => m.role === 'user').slice(-6).reverse()) {
       const prior = queryPlan(message.text, index, { scope, holdings });
       if (!prior.companies.length) continue;
@@ -268,12 +274,24 @@ export function queryPlan(question, index = [], { scope = 'universe', holdings =
       companies.push({ isin: holding.isin, ticker: holding.ticker, name: holding.name, inScope: holding.ticker ? scopeAllowsTicker(scope, holding.ticker, holdings) : scope === 'portfolio' || scope === 'universe', aliases: entries.find(e => holding.ticker ? e.ticker === holding.ticker : e.isin === holding.isin)?.aliases || [cleanName(holding.name)] });
     }
   }
+  // A theme word inside an issuer name (for example Solar Industries) is not
+  // a request to replace that company's answer with a portfolio-wide scan.
+  if (business && consumed.size) {
+    business = businessIntent(cleanName(question).split(' ').filter(word => !consumed.has(word)).join(' '), history);
+  }
   return {
+    business,
+    reasoningQuery: [question, ...(/\b(?:they|their|them|those|these|that|this|opposite|reverse)\b/i.test(question) ? history.filter(m => m.role === 'user').slice(-1).map(m => m.text) : [])].join(' '),
+    // Missing valuations do not make a validated complete identity list partial.
+    businessHoldings: business ? (scope === 'portfolio' && Array.isArray(portfolioPositions?.holdings) ? portfolioPositions.holdings : holdings || []) : [],
+    businessHoldingsVerified: scope === 'portfolio' && Array.isArray(portfolioPositions?.holdings) &&
+      ['ready', 'limited'].includes(portfolio?.status) && portfolio?.mode === 'verified-holdings',
+    businessWeightsComplete: portfolioPositions?.sizes?.complete === true,
     tokens: tokens.filter((token) => !consumed.has(token)),
     topics: questionTopics(question),
     sourceIds: [/\btelegram\b/i.test(question) && 'telegram', /\b(?:public )?chatter\b/i.test(question) && 'public-chatter', /\b(?:public )?chatter\b/i.test(question) && 'chatter-posts'].filter(Boolean),
     window: questionWindow(question, now),
-    crossHolding: /\b(other|rest|across)\b.*\b(holdings|portfolio|stocks|positions|book)\b/i.test(question),
+    crossHolding: !!business || /\b(other|rest|across)\b.*\b(holdings|portfolio|stocks|positions|book)\b/i.test(question),
     companies: companies.map(({ ticker, isin, name, inScope }) => ({ ticker, ...(isin ? { isin } : {}), name, inScope })),
     tickers: new Set(companies.map(company => company.ticker).filter(Boolean)),
     isins: new Set(companies.map(company => company.isin).filter(Boolean)),
@@ -340,7 +358,8 @@ export function chooseRows(rows, plan, mapRow, compare = null) {
   const mapped = (rows || []).map(mapRow).filter(Boolean);
   const named = plan.tickers.size > 0 || plan.isins?.size > 0 || plan.names.length > 0;
   const scored = mapped.map((row, index) => ({ row, index, company: companyMatch(row, plan) }))
-    .filter(({ row, company }) => !named || plan.crossHolding || company ||
+    .filter(({ row, company }) => (!named && !plan.business) || (!plan.business && plan.crossHolding) || company ||
+      plan.business && holdingForBusinessRow(row, plan.businessHoldings) ||
       // Retain related/uncertain search coverage only for the named identity,
       // and never count it as confirmed company evidence.
       row.attribution && row.attribution !== 'confirmed' &&
@@ -371,6 +390,8 @@ export function chooseRows(rows, plan, mapRow, compare = null) {
   if (companyOrder.size > 1) scored.sort((a, b) => tierOf(a) - tierOf(b) || (tierOf(a) === 0 ? a.companyPass - b.companyPass || a.companyOrder - b.companyOrder : 0) || byRelevance(a, b));
   const picked = scored.slice(0, matchedRows ? MATCH_ROW_LIMIT : DEFAULT_ROW_LIMIT);
   return {
+    ...(plan.business ? { businessReadings: businessReadings(scored.map(item => item.row), plan),
+      reasoningRows: scored.map(item => item.row) } : {}),
     rows: picked.map((item) => compactRow({ ...item.row, ...(plan.window ? { periodMatch: item.context.temporal } : {}) }) || {}),
     rowTiers: picked.map(tierOf),
     // Cross-source priority retains topic evidence before generic issuer context.
@@ -430,7 +451,7 @@ function skeletonOf(packet = {}) {
  * definition and data quality are never trimmed: they are the honesty of the packet.
  */
 function trimSkeleton(sources, measure, ceiling) {
-  for (const field of ['summary', 'coverage']) {
+  for (const field of ['summary', 'coverage', 'retrieval']) {
     while (measure() > ceiling) {
       const victim = sources
         .filter((source) => source[field] !== undefined)
@@ -459,6 +480,7 @@ export function fitEvidenceToBudget(evidence, charBudget = RESEARCH_EVIDENCE_CHA
     scopeDefinition: clipped(evidence?.scopeDefinition, 360),
     portfolio: evidence?.portfolio,
     portfolioPositions: evidence?.portfolioPositions,
+    businessContext: fitBusinessContext(evidence?.businessContext, Math.floor(charBudget * businessContextShare(evidence))),
     selection: {
       ...boundedMetadata(evidence?.selection || {}),
       evidenceCharBudget: charBudget,
@@ -602,9 +624,13 @@ function technicalRow(scored) {
     ticker: row.ticker || null,
     company: clipped(row.name || row.ticker, 60),
     sector: row.sector || row.broadSector || null,
+    industry: row.industry || null,
+    priceDate: row.bar_date || null,
+    previousPriceDate: (['confirmed', 'corrected'].includes(row.move_check) ? row.move_prev_date : row.prev_bar_date) || null,
+    moveVerification: row.move_check || 'single-source',
     score: { points: scored.totalPoints ?? null, max: scored.totalMax ?? null, pct: round(scored.scorePct) },
     hardFails: (scored.hardFails || []).map((item) => clipped(item.label || item.key || item, 80)).slice(0, 6),
-    closeRupees: row.cmp ?? null,
+    closeRupees: (['confirmed', 'corrected'].includes(row.move_check) ? row.move_close : row.cmp) ?? null,
     oneDayMovePct: row.pct_change_today ?? null,
     sixMonthReturnPct: Number.isFinite(row.return_6m) ? round(row.return_6m * 100) : null,
     relativeStrengthSixMonthPct: Number.isFinite(row.relative_strength_6m) ? round(row.relative_strength_6m * 100) : null,
@@ -949,18 +975,20 @@ const BUILDERS = [
     read({ scope, holdings, plan, identities: index }) {
       const meta = telegram.meta();
       if (!meta.ok) throw new Error('Telegram capture is unavailable.');
-      const identities = plan.companies.length
-        ? index.filter(entry => plan.tickers.has(entry.ticker) || plan.isins.has(entry.isin))
+      const wanted = plan.business ? [...plan.businessHoldings, ...plan.companies] : plan.companies;
+      const identities = wanted.length
+        ? index.filter(entry => wanted.some(c => c.isin && entry.isin ? c.isin === entry.isin : c.ticker && c.ticker === entry.ticker))
         : scope === 'universe' ? index.filter(entry => !entry.ticker || scopeAllowsTicker(scope, entry.ticker, holdings)) : holdings;
       const rows = telegramCompanyRows(telegram.posts(), identities, index);
       const matchedPosts = new Set(rows.map(row => row.id)).size;
+      const health = telegramReadHealth(meta);
       return sourcePacket(this.id, {
         source: `Telegram public channel @${meta.channel}`,
         asOf: meta.lastCheckedAt || meta.capturedAt,
         rowCount: rows.length,
-        dataQuality: meta.reason || meta.lastRun?.status !== 'ok' || !meta.historyComplete || meta.limited || meta.pending ? 'partial' : 'source-reported',
+        dataQuality: health.state !== 'checked' || !meta.historyComplete || meta.limited ? 'partial' : 'source-reported',
         definition: 'Unverified channel discussion; a company mention does not verify a claim. Text and document names only; attachment contents unread. publishedAt is publication time; firstSeenAt is observation time. Undated posts have no inferred date.',
-        note: `${meta.reason ? `${clipped(meta.reason, 65)} ` : meta.lastRun?.status !== 'ok' ? 'Latest collection not successful. ' : ''}Captured channel only; history ${meta.historyComplete ? 'collector reports complete' : 'incomplete'}. ${meta.limited || 0} posts require Telegram to read. Unmatched posts are not assigned to portfolio companies.`,
+        note: `${meta.reason ? `${clipped(meta.reason, 65)} ` : health.state !== 'checked' ? 'Latest source check is stale, incomplete or unavailable. ' : ''}Captured channel only; history ${meta.historyComplete ? 'collector reports complete' : 'incomplete'}. ${meta.limited || 0} posts require Telegram to read. Unmatched posts are not assigned to portfolio companies.`,
         coverage: { archivedPosts: meta.count, matchedPosts, unmatchedPosts: meta.count - matchedPosts,
           historyComplete: meta.historyComplete, restrictedPosts: meta.limited, undatedPosts: meta.undated,
           pendingIds: meta.pending, lastCheckedAt: meta.lastCheckedAt, latestVerifiedAt: meta.latestVerifiedAt,
@@ -985,7 +1013,7 @@ const BUILDERS = [
         asOf: meta.generated_at || null,
         rowCount: rows.length,
         coverage: { universe: cov.total, nse500: cov.nse500, book: cov.book, scored: meta.scored_count, failures: meta.failures },
-        definition: '16 rules, 24 points, computed by this dashboard. Returns are percentages; Pp fields are percentage points.',
+        definition: '16 rules, 24 points. Returns are percentages; Pp fields are percentage points. priceDate and previousPriceDate date the latest session; sixMonthReturnPct is not a since-news return. Capture time is not the price date.',
         ...chooseRows(rows, plan, technicalRow, (a, b) => (b.score?.points ?? -Infinity) - (a.score?.points ?? -Infinity)),
       });
     },
@@ -1260,14 +1288,14 @@ export function prepareResearchSources({ onProgress = null } = {}) {
   return preparing;
 }
 
-export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, history = [], prepared = null, signal, onProgress = null, charBudget = RESEARCH_EVIDENCE_CHAR_BUDGET } = {}) {
+export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, history = [], prepared = null, signal, onProgress = null, charBudget = undefined } = {}) {
   const { deferred, loadErrors } = await withResearchDeadline(prepared || prepareResearchSources({ onProgress }), 'Dashboard sources', { signal, timeoutMs: LOADER_TIMEOUT_MS + 1000 });
   if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
   // Resolve scope only AFTER the authenticated reader has adopted its book.
   const holdings = scopeHoldings(scope);
   // Phase two: the question, resolved once against everything that loaded.
   const identities = companyIndex(deferred);
-  const plan = queryPlan(question, identities, { scope, holdings, history, portfolioPositions });
+  const plan = queryPlan(question, identities, { scope, holdings, history, portfolio, portfolioPositions });
   // Resolve the question before fetching company-specific discussion. Finish bounded I/O before
   // synchronous estate ranking: a busy main thread must not consume the network deadline before
   // even an immediate post response has a chance to be handled.
@@ -1306,19 +1334,31 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
   packets.sort((a, b) => order.get(a.id) - order.get(b.id));
   const ready = packets.filter((packet) => packet.status === 'ready');
   const unavailable = packets.filter((packet) => packet.status !== 'ready');
+  const technicalRows = technicals.all().map(scored => scored.company);
+  const comparison = portfolioBusinessContext({ plan, packets, technicalRows });
+  // Product dictionaries can help known themes, but are never a gate on an
+  // arbitrary business question. Discover evidence using its own vocabulary.
+  const general = plan.business && (plan.business.mode === 'portfolio-reasoning' || !comparison?.candidates?.length);
+  const reasoningPackets = general ? packets.map(packet => ({ ...packet, reasoningReadings: reasoningReadings(packet.reasoningRows || [], plan) })) : packets;
+  const businessContext = general ? portfolioReasoningContext({ plan, packets: reasoningPackets, technicalRows }) : comparison;
+  charBudget ??= general ? PORTFOLIO_REASONING_CHAR_BUDGET : RESEARCH_EVIDENCE_CHAR_BUDGET;
+  const fittedBusiness = fitBusinessContext(businessContext, Math.floor(charBudget * businessContextShare({ businessContext })));
   return fitEvidenceToBudget({
     generatedAt: new Date().toISOString(),
     scope,
     portfolio,
     portfolioPositions,
+    businessContext,
     scopeDefinition: scopeDefinition(scope),
     selection: {
       method: 'Every registered source contributes status, coverage and provenance. Rows are ranked by the companies the question names, then by token hits, then by each source\'s own ordering.',
       tokens: plan.tokens,
+      business: plan.business,
       topics: plan.topics,
       sourceIds: plan.sourceIds,
       window: plan.window,
-      searchScope: plan.companies.length ? 'Named companies across retained dashboard sources; display scope does not exclude an explicit company.' : 'Active dashboard scope',
+      searchScope: plan.business ? 'Compare activities across the complete supplied holdings list; named companies are reference businesses, not an exclusive issuer filter.'
+        : plan.companies.length ? 'Named companies across retained dashboard sources; display scope does not exclude an explicit company.' : 'Active dashboard scope',
       companies: plan.companies,
       sourcesRegistered: DASHBOARD_RESEARCH_SOURCES.length,
       sourcesReady: ready.length,
@@ -1328,7 +1368,7 @@ export async function buildResearchEvidence({ question, scope = 'portfolio', por
       const packet = packets.find((item) => item.id === source.id);
       return { ...source, status: packet?.status || 'unavailable', rowCount: packet?.rowCount ?? null, error: packet?.error || null };
     }),
-    sources: packets,
+    sources: businessContext?.kind === 'portfolio-reasoning' ? reasoningSourceSamples(reasoningPackets, fittedBusiness, plan) : businessPeerSamples(packets, fittedBusiness),
   }, charBudget);
 }
 

@@ -5,6 +5,7 @@
 import { $ } from './core/dom.js';
 import { setData, setDataError, setDeferredData } from './core/state.js';
 import { revalidatedJson } from './core/store.js';
+import { watchAppUpdates, watchWorkerChanges } from './core/app-updates.js';
 import { mount } from './ui/shell.js';
 import { adaptUniverse } from './data/universe.js';
 import { prime as primeFiled } from './data/institution-holdings.js';
@@ -168,15 +169,11 @@ async function boot() {
     //
     // `controllerchange` fires exactly when the claim lands. It also fires on a FIRST install,
     // where the page already holds the newest modules and a reload would be a pointless flash —
-    // `hadController` is what tells the two apart.
-    const hadController = !!navigator.serviceWorker.controller;
-    let upgrading = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!hadController || upgrading) return;
-      upgrading = true;
-      applyWorkerUpgrade();
-    });
+    // Track the first claim too: the same first-visit document may stay open
+    // across later deployments, which must then use the normal guarded upgrade.
+    watchWorkerChanges(navigator.serviceWorker, applyWorkerUpgrade);
     const register = () => navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(registration => { watchAppUpdates(registration); })
       .catch((err) => console.warn('[app] repeat-visit cache unavailable', err));
     if (typeof requestIdleCallback === 'function') requestIdleCallback(register, { timeout: 2000 });
     else setTimeout(register, 0);

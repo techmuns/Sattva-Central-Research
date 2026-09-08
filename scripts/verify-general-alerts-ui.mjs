@@ -111,6 +111,26 @@ const settled = async (target = page) => {
     throw new Error(`All Alerts did not settle; pending feeds: ${pending.join(', ') || 'controls unavailable'}; page: ${state.slice(0, 500) || 'empty'}; errors: ${errors.join(' | ') || 'none'}`, { cause: error });
   }
 };
+// A finished provider read can still leave the tab's 250ms source coalescer / 180ms
+// scroll-quiet paint queued. Start geometry gestures only after the rendered surface itself
+// is stable; a chip that no longer says "reading" does not establish that condition.
+const stableReadingSurface = (target = page) => target.evaluate(async () => {
+  let previous = null, previousNode = null, stableAt = performance.now();
+  const deadline = performance.now() + 10000;
+  for (;;) {
+    await new Promise(requestAnimationFrame);
+    const node = document.querySelector('[data-table-scroll]');
+    const box = node?.getBoundingClientRect();
+    const rows = [...(node?.querySelectorAll('tr[data-row-key]') || [])];
+    const stamp = JSON.stringify([box?.x, box?.y, box?.width, box?.height, node?.scrollTop,
+      node?.scrollHeight, node?.querySelector('thead')?.offsetHeight,
+      node?.closest('[data-score-table]')?.dataset.virtualTotal, rows[0]?.dataset.rowKey, rows.at(-1)?.dataset.rowKey]);
+    if (!node || node !== previousNode || stamp !== previous) stableAt = performance.now();
+    else if (performance.now() - stableAt >= 400) return;
+    if (performance.now() > deadline) throw Error('Rendered reading surface did not stabilize');
+    previous = stamp; previousNode = node;
+  }
+});
 try {
   await page.goto(origin);
   await settled();
@@ -176,9 +196,11 @@ try {
   await settled();
   await page.locator('[data-sources-summary]').click();
   const coverageText = await page.locator('[data-alerts-coverage]').innerText();
-  assert(!/stale\s*\/\s*unknown|incomplete|on-demand|not in scope/i.test(coverageText), 'customer-facing source filters omit feed-health jargon');
-  assert.equal(await page.locator('[data-feed][title*="stale" i], [data-feed][title*="unknown" i], [data-feed][title*="incomplete" i], [data-feed][title*="on-demand" i]').count(), 0,
-    'feed-health jargon is also absent from hover text');
+  assert(/partial|check due|on request/i.test(coverageText), 'unfinished and limited sources remain distinguishable from verified empty results');
+  assert(await page.locator('[data-feed][title*="incomplete" i], [data-feed][title*="not confirmed" i], [data-feed][title*="on-demand" i]').count() > 0,
+    'source controls retain the actual coverage explanation in hover text');
+  assert.notEqual(await page.locator('[data-alerts-coverage-state]').getAttribute('data-alerts-coverage-state'), 'checked',
+    'a mixed/failed local source pool must not claim all checks are complete');
   await page.locator('[data-sources-close]').click();
   await page.locator('[data-table-search]').fill('Undated retained item');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Undated retained item'));
@@ -334,6 +356,7 @@ try {
   assert(beforeRefresh.key && (await page.locator('[data-table-scroll]').evaluate((el) => el.scrollTop)) > 0);
   await page.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
   await settled();
+  await stableReadingSurface();
   const afterRefresh = await page.locator('[data-table-scroll]').evaluate((scroller, key) => {
     const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
     const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((item) => item.dataset.rowKey === key);
@@ -349,7 +372,8 @@ try {
     const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find(node => node.dataset.rowKey === key);
     return row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.querySelector('thead').offsetHeight;
   }, beforeRefresh.key);
-  assert(Math.abs(focusAnchor - beforeRefresh.offset) <= 2, 'focus mode keeps the same reading anchor');
+  assert(Math.abs(focusAnchor - beforeRefresh.offset) <= 2,
+    `focus mode keeps the same reading anchor: ${JSON.stringify({ beforeRefresh, afterRefresh, focusAnchor })}`);
   await page.locator('[data-table-scroll]').press('Escape');
   assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'false');
   assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false);
@@ -411,14 +435,23 @@ try {
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
     await page.setViewportSize(size);
     const scroller = embedded.locator('[data-table-scroll]');
+    await stableReadingSurface(embedded);
     await scroller.evaluate(el => { el.scrollTop = 0; el.scrollIntoView({ block: 'end' }); });
+    await stableReadingSurface(embedded);
     const box = await scroller.boundingBox();
     await page.mouse.move(box.x + 200, Math.min(size.height - 40, box.y + box.height / 2));
     let previous = 0;
     const starts = new Set();
     for (let step = 0; step < 24; step++) {
       await page.mouse.wheel(0, 180);
-      await embedded.waitForFunction(top => document.querySelector('[data-table-scroll]').scrollTop > top, previous);
+      try {
+        await embedded.waitForFunction(top => document.querySelector('[data-table-scroll]').scrollTop > top, previous);
+      } catch (error) {
+        const state = await scroller.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight,
+          scrollHeight: el.scrollHeight, bounds: el.getBoundingClientRect().toJSON(),
+          documentScroll: window.scrollY, viewport: { width: innerWidth, height: innerHeight } }));
+        throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, box, state })}`, { cause: error });
+      }
       const sample = await embedded.evaluate(async () => {
         await new Promise(requestAnimationFrame);
         await new Promise(requestAnimationFrame);

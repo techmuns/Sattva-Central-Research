@@ -4,6 +4,10 @@ import { pauseFamilySession } from '../data/family-session.js';
 
 import { authHeaders } from '../core/host-context.js';
 import { empty, el } from '../core/dom.js';
+import { normalizeBookmark } from '../core/bookmark-record.js';
+import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
+let answerBookmarkDisposers = [];
+function clearAnswerBookmarks() { answerBookmarkDisposers.forEach(off => off()); answerBookmarkDisposers = []; }
 import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
 import { state, subscribe } from '../core/state.js';
@@ -372,6 +376,7 @@ export function destroy() {
 }
 
 function cleanupUi() {
+  clearAnswerBookmarks();
   try {
     uiDispose?.();
   } catch (error) {
@@ -625,6 +630,7 @@ function paintTranscript() {
   const transcript = root?.querySelector('[data-research-transcript]');
   const session = currentSession();
   if (!transcript || !session) return;
+  clearAnswerBookmarks();
   const followLive = transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
   const showOpening = !session.messages.length && !session.streamText && !isBusy(session);
   empty(transcript);
@@ -810,6 +816,17 @@ function messageNode(message) {
       if (transcript) transcript.scrollTop += article.getBoundingClientRect().top - transcript.getBoundingClientRect().top - 16;
     };
     actions.append(copy, start, status);
+    const session = currentSession();
+    const position = session?.messages.indexOf(message) ?? -1;
+    const question = session?.messages.slice(0, position).findLast(item => item.role === 'user')?.text;
+    const saved = normalizeBookmark({ title: question || session?.title || 'Research answer', body: message.text,
+      company: company?.name || '', ticker: company?.ticker || '', kind: 'Research', source: 'Ask Research · Generated answer',
+      sourceId: `${session?.id}:${position}`, details: [{ label: 'Answer status', value: message.incomplete ? 'Incomplete answer' : 'Completed answer' }],
+      links: (message.webSources || []).map(item => ({ label: item.title || item.label || 'Source', url: item.url })),
+    });
+    const bookmark = el('span'); bookmark.innerHTML = bookmarkButton(saved, { compact: false });
+    actions.prepend(bookmark);
+    answerBookmarkDisposers.push(wireBookmarks(bookmark, () => saved));
     article.appendChild(actions);
   }
   return article;
@@ -1100,8 +1117,10 @@ async function submitCurrent(retryQuestion) {
   }
 }
 
-function interruptedAnswer() {
-  return Object.assign(new Error('The answer ended before a complete response arrived.'), { retryable: true });
+function interruptedAnswer(hasText = false) {
+  return Object.assign(new Error(hasText
+    ? 'The connection closed before the answer finished. The text above and its sources are saved.'
+    : 'The answer ended before a complete response arrived.'), { retryable: true });
 }
 
 async function consumeStream(stream, session, generation) {
@@ -1133,20 +1152,23 @@ async function consumeStream(stream, session, generation) {
       buffer += decoder.decode(part.value, { stream: true });
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
-      if (buffer.length > 64_000) throw new Error('The answer stream was malformed.');
       for (const line of lines) {
+        if (line.length > 64_000) throw new Error('The answer stream was malformed.');
         consumeEvent(line);
         if (done || streamError) break;
       }
+      if (!done && !streamError && buffer.length > 64_000) throw new Error('The answer stream was malformed.');
     }
     buffer += decoder.decode();
     if (!done && !streamError && buffer.trim()) consumeEvent(buffer);
   } finally {
-    await reader.cancel().catch(() => {});
+    // Finalize the message as soon as done arrives, even if a proxy takes time
+    // to release its stream. Cleanup cannot keep the answer in Working state.
+    void reader.cancel().catch(() => {});
     reader.releaseLock();
   }
   if (streamError) throw new Error(streamError);
-  if (!done || !session.streamText.trim()) throw interruptedAnswer();
+  if (!done || !session.streamText.trim()) throw interruptedAnswer(!!session.streamText.trim());
 
   session.messages.push({
     role: 'assistant',

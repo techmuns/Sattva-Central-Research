@@ -50,7 +50,7 @@ import * as screenerInsights from './screener-insights.js';
 // filing would have become a negative alert about a named investor.
 import { isMove } from './finology-shared.js';
 import { announcements, insider, news } from './filings.js';
-import { insiderTradeSourceUrl } from './filings-shared.js';
+import { insiderTradeSourceUrl, canonicalArticleUrl } from './filings-shared.js';
 import { classifyStory } from './news-keywords.js';
 import { announcementSignal } from './filing-signals.js';
 export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
@@ -58,12 +58,14 @@ import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSourceDependencies } from './alert-sources.js';
 import * as records from './alert-records.js';
-import { readEntry, writeEntry } from '../core/store.js';
+import { alertWindowCache } from './alert-window-cache.js';
+export { ALERT_WINDOW_CACHE_KEY } from './alert-window-cache.js';
 import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 import { portfolioNewsEntities } from './company-news-identity.js';
 import { attributeNewsRow, attributionFor, newsSearchText } from './company-news-attribution.js';
 import { matchPortfolioNews, newsEventTopics } from './portfolio-news-matching.js';
+import { enrichmentCoverageIncomplete } from '../core/news-view-status.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -81,7 +83,6 @@ export const today = (now = Date.now()) => new Date(now + IST_OFFSET_MS).toISOSt
 // otherwise has to assemble every source before it can draw a useful card. It
 // deliberately carries no Family reply, holding weight, private document or
 // sourceRecord. Those stay memory-only; this cache is safe to survive a reload.
-export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
 
 function shiftDay(day, amount) {
   const date = new Date(`${day}T00:00:00Z`);
@@ -98,7 +99,7 @@ export function materializePublicAlertWindow(report) {
     day: report.day,
     feeds: (report.feeds || []).filter((feed) => !privateFeeds.has(feed.id)).map(({ events, count, todayCount, ...feed }) => feed),
     events: (report.events || [])
-      .filter((event) => !event.private && (event.ticker || event.entityId) && event.day >= firstDay && event.day <= report.day)
+      .filter((event) => !event.private && !privateFeeds.has(event.feed) && (event.ticker || event.entityId) && event.day >= firstDay && event.day <= report.day)
       .map(({ sourceRecord: _sourceRecord, private: _private, weightPct: _weightPct,
         holdingWeightPct: _holdingWeightPct, ...event }) => event),
   };
@@ -107,27 +108,27 @@ export function materializePublicAlertWindow(report) {
 function validAlertWindow(value, throughDay) {
   const privateFeeds = new Set(['company-documents', 'drhp-documents']);
   if (value?.version !== 1 || !/^\d{4}-\d{2}-\d{2}$/.test(value.day || '') ||
-      !Array.isArray(value.events) || !Array.isArray(value.feeds) || value.events.length > 100_000) return false;
+      !Array.isArray(value.events) || !Array.isArray(value.feeds)) return false;
   const captured = Date.parse(`${value.day}T00:00:00Z`);
   const through = Date.parse(`${throughDay}T00:00:00Z`);
   return Number.isFinite(captured) && Number.isFinite(through) && captured <= through &&
     through - captured < ALERT_WINDOW_CACHE_DAYS * 86_400_000 &&
     value.feeds.every((feed) => !privateFeeds.has(feed?.id)) &&
-    value.events.every((event) => !event.private && event.sourceRecord == null &&
+    value.events.every((event) => !event.private && !privateFeeds.has(event.feed) && event.sourceRecord == null &&
       event.weightPct == null && event.holdingWeightPct == null &&
       (typeof event.ticker === 'string' || typeof event.entityId === 'string') && typeof event.feed === 'string');
 }
 
 /** Restore a ready public alert window, narrowed against the current in-memory scope. */
 export async function readCachedAlertWindow({ scope = 'portfolio', holdings = null, day = today() } = {}) {
-  const entry = await readEntry(ALERT_WINDOW_CACHE_KEY);
+  const entry = await alertWindowCache.read();
   if (!validAlertWindow(entry?.value, day)) return null;
   const wanted = scopeMatcher(scope, holdings || coverage.holdings());
   const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
   const entityIds = new Set(portfolioNewsEntities(holdings || coverage.holdings()).map(e => e.entityId));
+  const scopeContext = { scope, wanted, entityIds };
   const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day &&
-    (!event.portfolioOnly || scope === 'portfolio') &&
-    (event.ticker ? wanted.has(event.ticker) : scope === 'universe' || scope === 'portfolio' && entityIds.has(event.entityId)));
+    matchesAlertScope(event, scopeContext));
   const sameDay = entry.value.day === day;
   return {
     day,
@@ -230,7 +231,7 @@ export function newsSignal(row = {}) {
   const eventTopics = newsEventTopics(row);
   if (eventTopics.length && ['confirmed', 'related'].includes(attribution.status)) {
     return { ...signal(DIRECTION.NEUTRAL, IMPORTANCE.HIGH,
-      'Reported topic; neither the allegation nor its financial impact is verified by this classification.',
+      'Reported topic; this classification does not verify the event, opinion or its financial impact.',
       `High: ${eventTopics.join(', ')} in the headline or bounded article body. ${attribution.reason}`),
       keywords: [...new Set([...reading.labels, ...eventTopics])], ...identityReading,
       reviewContext: attribution.status === 'related' };
@@ -464,9 +465,11 @@ export async function refreshSources() {
 }
 
 /** Load the shared feed stores without assembling or sorting any timeline. */
-export async function prepareSources({ refresh = false } = {}) {
+export async function prepareSources({ refresh = false, feedIds = null } = {}) {
   observeSources();
-  return Promise.allSettled(FEEDS.map(feed => loadFeed(feed.id, refresh)));
+  const wanted = feedIds == null ? null : new Set(feedIds);
+  const selected = wanted ? FEEDS.filter(feed => wanted.has(feed.id)) : FEEDS;
+  return Promise.allSettled(selected.map(feed => loadFeed(feed.id, refresh)));
 }
 
 // ---------------------------------------------------------------------------------------
@@ -555,7 +558,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     // read. Universe is used so the same public snapshot can be narrowed against
     // the current Portfolio or Watchlist after a reload without persisting either.
     const allPublic = assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
-    void writeEntry(ALERT_WINDOW_CACHE_KEY, { value: materializePublicAlertWindow(allPublic) });
+    void alertWindowCache.write(materializePublicAlertWindow(allPublic));
   }
   return completed;
 }
@@ -678,6 +681,49 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
   return value;
 }
 
+/** One company/article can arrive through company search and the shared publisher projection.
+ * Collapse only that cross-route display overlap; never collapse different companies, unrelated
+ * Universe stories, or filings/social events. Source readers and their complete archives remain
+ * untouched. The preferred row retains its attribution and full source record, with compact
+ * provenance for every contributing route; feed counts and exports use this same unique view.
+ */
+export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
+  const byTicker = new Map(entities.filter(entity => entity.ticker).map(entity => [String(entity.ticker).toUpperCase(), entity.entityId]));
+  const groups = new Map();
+  feeds.forEach((feed, feedIndex) => {
+    if (!['news', 'market-news'].includes(feed.id)) return;
+    feed.events.forEach((event, rowIndex) => {
+      const ticker = String(event.ticker || '').toUpperCase();
+      const identity = event.entityId && !event.entityId.startsWith('ticker:') ? event.entityId
+        : byTicker.get(ticker) || (ticker ? `ticker:${ticker}` : event.entityId);
+      if (!identity || !event.url) return;
+      const key = JSON.stringify([identity, canonicalArticleUrl(event.url)]);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ event, feed, feedIndex, rowIndex });
+    });
+  });
+  const changes = new Map();
+  const quality = event => ({ confirmed: 3, related: 2, uncertain: 1, unrelated: 0 })[event.attribution?.status] ?? 0;
+  for (const group of groups.values()) {
+    if (new Set(group.map(item => item.feed.id)).size < 2) continue;
+    // Prefer stronger article/company evidence; equal evidence keeps the Company news route.
+    const winner = [...group].sort((a, b) => quality(b.event) - quality(a.event) || Number(b.feed.id === 'news') - Number(a.feed.id === 'news'))[0];
+    const provenance = group.flatMap(({ event, feed }) => event.newsProvenance || [{ feed: feed.id, eventId: event.id,
+      url: event.url, publisher: event.sourceRecord?.publisher || event.sourceRecord?.source || null,
+      discoverySource: event.sourceRecord?.discoverySource || null }]);
+    for (const item of group) changes.set(`${item.feedIndex}:${item.rowIndex}`, item === winner ? { ...winner.event,
+      newsProvenance: [...new Map(provenance.map(record => [JSON.stringify(record), record])).values()] } : null);
+  }
+  if (!changes.size) return feeds;
+  return feeds.map((feed, feedIndex) => {
+    const events = feed.events.flatMap((event, rowIndex) => {
+      const key = `${feedIndex}:${rowIndex}`;
+      return !changes.has(key) ? [event] : changes.get(key) ? [changes.get(key)] : [];
+    });
+    return { ...feed, events, count: events.length, todayCount: events.filter(event => event.day === day).length };
+  });
+}
+
 function assemble({ day, scope, holdings, includeHistory, settledFeeds, requestedCompanies = [] }) {
   const scoped = scopeMatcher(scope, holdings);
   const requested = new Set(requestedCompanies.map(company => company.ticker).filter(Boolean));
@@ -687,7 +733,8 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   const wanted = { has: ticker => scoped.has(ticker) || requested.has(ticker) };
   const portfolioEntities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
   const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
-  const feeds = FEEDS.map(
+  const scopeContext = { scope, wanted, entityIds: portfolioNewsIds, requestedEntities };
+  const scopedFeeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ).map((settled) => {
     // Private results can be cleared while public reads are in flight. Never let an old partial
@@ -704,13 +751,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
     // Company News has the same legitimate no-ticker case, but carries a stable ISIN entity id
     // instead of being pre-scoped by its collector.
-    const events = all.filter((event) => {
-      if (event.portfolioOnly) return scope === 'portfolio';
-      if (event.ticker) return wanted.has(event.ticker);
-      if (event.entityId && requestedEntities.has(event.entityId)) return true;
-      if (scope === 'portfolio' && event.entityId) return portfolioNewsIds.has(event.entityId);
-      return scope === 'universe';
-    });
+    const events = all.filter(event => matchesAlertScope(event, scopeContext));
     const unresolved = all.filter((event) => !event.ticker && !event.entityId).length;
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
     return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
@@ -718,6 +759,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };
   });
 
+  const feeds = dedupePublisherAlertFeeds(scopedFeeds, { day, entities: portfolioEntities });
   const events = [];
   for (const f of feeds) for (const ev of f.events) events.push({ ...ev, feed: f.id, feedLabel: f.label, tab: f.tab });
   events.sort(byNewestFirst);
@@ -758,6 +800,18 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
       moveThreshold: MOVE_PCT,
     },
   };
+}
+
+/** Match stable company identity OR ticker, exactly as Portfolio News does. A discovered BSE
+ * symbol or an older ticker must not veto the same held ISIN in another dashboard view. This
+ * affects visibility, not the article's attribution/AI materiality or the source's saved identity.
+ */
+export function matchesAlertScope(event, { scope, wanted, entityIds, requestedEntities } = {}) {
+  if (event.portfolioOnly) return scope === 'portfolio';
+  if (event.entityId && requestedEntities?.has(event.entityId)) return true;
+  if (scope === 'portfolio' && event.entityId && entityIds?.has(event.entityId)) return true;
+  if (event.ticker) return !!wanted?.has(event.ticker);
+  return scope === 'universe';
 }
 
 /**
@@ -1344,16 +1398,26 @@ function fromCompanyNews({ day, wanted, includeHistory }) {
   return { events, ...companyNewsState(day) };
 }
 
-function companyNewsState(day) {
-  const m = news.meta();
+export function companyNewsState(day, m = news.meta(), now = Date.now()) {
   const capturedDay = istDay(m.capturedAt);
   const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
-  const enrichmentStale = !Number.isFinite(enrichmentAt) || Date.now() - enrichmentAt > 24 * 3600000;
+  const enrichmentStale = !Number.isFinite(enrichmentAt) || enrichmentAt > now + 10 * 60_000 || now - enrichmentAt > 24 * 3600000;
+  const delivery = m.newsDelivery;
+  const sourceStates = ['core', 'publishers', 'tradingView'].map(key => delivery?.[key]).filter(Boolean);
+  const failed = sourceStates.some(source => ['partial', 'unavailable'].includes(source.status) || source.error || source.historyError) ||
+    !!m.newsHistory?.error || !!m.reason || !!m.failed || !!m.truncated || enrichmentCoverageIncomplete(m.enrichmentCoverage, now);
+  const pending = sourceStates.some(source => source.pending || source.status === 'pending' || source.historyPending) ||
+    !!m.newsHistory?.pending;
   return {
-    reachesToday: !!capturedDay && capturedDay >= day,
+    // A successful TradingView subset cannot establish that the main news head, publisher feeds
+    // and every advertised history part reached the customer. Readiness and freshness differ.
+    status: failed ? 'failed' : pending ? 'pending' : 'ok',
+    reachesToday: !failed && !pending && !!m.enrichmentCoverage && !!capturedDay && capturedDay >= day,
     asOf: m.capturedAt || null,
-    note: [capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
-      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery status is stale. ' : ''}Last reported: ${m.enrichmentCoverage.staleOrIncompleteQueries} stale or incomplete global queries; ${m.enrichmentCoverage.pagesFailed} IR pages need recovery. Checked ${m.enrichmentCoverage.capturedAt}.` : 'Global/IR enrichment has not reported coverage yet.',
+    note: [m.newsHistory?.error,
+      delivery ? ['core', 'publishers', 'tradingView'].map(key => delivery[key] ? `${key === 'core' ? 'Company news' : key === 'publishers' ? 'Publisher feeds' : 'TradingView'}: ${delivery[key].status}.${delivery[key].error ? ` ${delivery[key].error}` : ''}${delivery[key].historyError ? ` ${delivery[key].historyError}` : ''}` : null).filter(Boolean).join(' ') : null,
+      capturedDay && capturedDay >= day ? null : `The newest company-news capture ran on ${capturedDay || 'an unknown date'}.`,
+      m.enrichmentCoverage ? `${enrichmentStale ? 'Global/IR discovery check time is stale or unverified. ' : ''}Last reported: ${Number(m.enrichmentCoverage.staleOrIncompleteQueries) || 0} stale or incomplete global queries; ${Number(m.enrichmentCoverage.pagesFailed) || 0} IR pages need recovery; ${Number(m.enrichmentCoverage.documentsPending) || 0} documents not yet read. Checked ${m.enrichmentCoverage.capturedAt || 'time not supplied'}.` : 'Global/IR enrichment has not reported coverage yet.',
       m.tradingViewCoverage ? `TradingView public headlines: ${m.tradingViewCoverage.mappedCompanies}/${m.tradingViewCoverage.activeCompanies} companies mapped; ${m.tradingViewCoverage.staleOrFailedSymbols} stale/failed symbol reads; ${m.tradingViewCoverage.possibleGapSymbols} possible window gaps; ${m.tradingViewCoverage.restrictedHeadlines} restricted headlines not extracted. Checked ${m.tradingViewCoverage.checkedAt}.${m.tradingViewHealth?.ok === false ? ' TradingView coverage is stale or incomplete.' : ''}${m.tradingViewCoverage.portfolioError ? ' Portfolio changes could not be verified.' : ''}${m.tradingViewReadError ? ' Latest published snapshot could not be confirmed; retained headlines remain visible.' : ''}` : 'TradingView enrichment has not reported coverage yet.']
       .filter(Boolean).join(' ') || null,
   };

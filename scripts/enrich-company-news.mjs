@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { readJson, writeJson } from './lib/company-capture.mjs';
+import { readNewsJson as readJson, writeNewsJson as writeJson } from './lib/news-json-storage.mjs';
 import { companyNewsArchiveRows, commitCompanyNewsArchive, observedCompanyArticles, readCompanyNewsIndex, recentArchivedCompanyNews } from './lib/company-news-archive.mjs';
 import { discoveryRange, discoverNewsRange, officialDocumentLinks, officialDocumentDate } from './lib/news-discovery.mjs';
 import { matchPortfolioNews } from '../public/js/data/portfolio-news-matching.js';

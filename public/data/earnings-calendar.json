@@ -1,11 +1,31 @@
 {
-  "capturedAt": "2026-09-04T02:25:55.529Z",
-  "from": "2026-09-01",
-  "to": "2026-09-25",
+  "capturedAt": "2026-09-08T01:57:31.446Z",
+  "from": "2026-09-05",
+  "to": "2026-09-29",
   "pageSize": 20,
   "source": "Moneycontrol — Earnings Calendar (all-exchange counts plus every earnings-widget pagination page)",
   "note": "The per-date counts and company lists both cover All exchanges. Every published pagination page is captured; counts are re-fetched live by the Worker and these lists are as of capturedAt.",
   "days": [
+    {
+      "date": "2026-09-29",
+      "displayDate": "29 Sep",
+      "count": 0
+    },
+    {
+      "date": "2026-09-28",
+      "displayDate": "28 Sep",
+      "count": 0
+    },
+    {
+      "date": "2026-09-27",
+      "displayDate": "27 Sep",
+      "count": 0
+    },
+    {
+      "date": "2026-09-26",
+      "displayDate": "26 Sep",
+      "count": 0
+    },
     {
       "date": "2026-09-25",
       "displayDate": "25 Sep",
@@ -89,7 +109,7 @@
     {
       "date": "2026-09-09",
       "displayDate": "09 Sep",
-      "count": 0
+      "count": 1
     },
     {
       "date": "2026-09-08",
@@ -99,7 +119,7 @@
     {
       "date": "2026-09-07",
       "displayDate": "07 Sep",
-      "count": 3
+      "count": 4
     },
     {
       "date": "2026-09-06",
@@ -110,29 +130,32 @@
       "date": "2026-09-05",
       "displayDate": "05 Sep",
       "count": 1
-    },
-    {
-      "date": "2026-09-04",
-      "displayDate": "04 Sep",
-      "count": 1
-    },
-    {
-      "date": "2026-09-03",
-      "displayDate": "03 Sep",
-      "count": 0
-    },
-    {
-      "date": "2026-09-02",
-      "displayDate": "02 Sep",
-      "count": 2
-    },
-    {
-      "date": "2026-09-01",
-      "displayDate": "01 Sep",
-      "count": 1
     }
   ],
   "byDate": {
+    "2026-09-09": {
+      "rows": [
+        {
+          "scId": "NIS",
+          "name": "Nova Iron & Steel",
+          "shortName": null,
+          "resultDate": "2026-09-09",
+          "displayDate": "9 Sep",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 12.07,
+          "changePct": 5.22,
+          "marketCap": 43.62,
+          "exchange": "B",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/steel-sponge-iron/novaironsteel/NIS"
+        }
+      ],
+      "scheduledCount": 1,
+      "pageSize": 20,
+      "pagesFetched": 1,
+      "complete": true,
+      "asOnDate": "08/09/2026"
+    },
     "2026-09-08": {
       "rows": [
         {
@@ -143,9 +166,9 @@
           "displayDate": "8 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 31.7,
-          "changePct": -0.44,
-          "marketCap": 191.47,
+          "ltp": 34.79,
+          "changePct": 4.95,
+          "marketCap": 210.13,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/household-personal-products/marutiinteriorproducts/MIP02"
         }
@@ -154,7 +177,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "04/09/2026"
+      "asOnDate": "08/09/2026"
     },
     "2026-09-07": {
       "rows": [
@@ -166,16 +189,16 @@
           "displayDate": "7 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 135.89,
-          "changePct": 1.55,
-          "marketCap": 9887.05,
+          "ltp": 135.21,
+          "changePct": -0.52,
+          "marketCap": 9837.58,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/online-services/shiprocket/SL26",
           "ticker": "SHIPROCKET",
           "fullName": "Shiprocket",
           "industry": "Online Services",
           "shares": 727577587,
-          "mktCapAtBuild": 9887.05
+          "mktCapAtBuild": 9837.58
         },
         {
           "scId": "BLE",
@@ -185,16 +208,35 @@
           "displayDate": "7 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 454.25,
-          "changePct": 2.02,
-          "marketCap": 1921.59,
+          "ltp": 478.3,
+          "changePct": 5.55,
+          "marketCap": 2023.33,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/metals-castings-forgings/beharilalengineering/BLE",
           "ticker": "BLEL",
           "fullName": "Behari Lal Engg",
           "industry": "Metals - Castings/Forgings",
           "shares": 42302482,
-          "mktCapAtBuild": 1921.59
+          "mktCapAtBuild": 2023.33
+        },
+        {
+          "scId": "KI25",
+          "name": "Kotyark Industries",
+          "shortName": null,
+          "resultDate": "2026-09-07",
+          "displayDate": "7 Sep",
+          "quarter": "NA",
+          "time": null,
+          "ltp": 32.89,
+          "changePct": -2.58,
+          "marketCap": 371.89,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/renewables/kotyarkindustries/KI10",
+          "ticker": "KOTYARK",
+          "fullName": "Kotyark",
+          "industry": "Renewables",
+          "shares": 113070276,
+          "mktCapAtBuild": 371.89
         },
         {
           "scId": "SF26",
@@ -204,18 +246,18 @@
           "displayDate": "7 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 6.68,
-          "changePct": null,
-          "marketCap": 2.53,
+          "ltp": 6.9,
+          "changePct": 1.47,
+          "marketCap": 2.61,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/finance-investments/sspnfinance/SF10"
         }
       ],
-      "scheduledCount": 3,
+      "scheduledCount": 4,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "04/09/2026"
+      "asOnDate": "08/09/2026"
     },
     "2026-09-05": {
       "rows": [
@@ -227,116 +269,23 @@
           "displayDate": "5 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 1135.2,
-          "changePct": 2.47,
-          "marketCap": 13082.04,
+          "ltp": 1127.2,
+          "changePct": -2.87,
+          "marketCap": 12989.85,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/medical-equipment-supplies-accessories/molbiodiagnostics/MDL02",
           "ticker": "MOLBIO",
           "fullName": "Molbio Diagnost",
           "industry": "Medical Equipment/Supplies/Accessories",
           "shares": 115239996,
-          "mktCapAtBuild": 13082.04
+          "mktCapAtBuild": 12989.85
         }
       ],
       "scheduledCount": 1,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "04/09/2026"
-    },
-    "2026-09-04": {
-      "rows": [
-        {
-          "scId": "DTL03",
-          "name": "Dhoot Transmission",
-          "shortName": null,
-          "resultDate": "2026-09-04",
-          "displayDate": "4 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 1583.5,
-          "changePct": 4.03,
-          "marketCap": 32390.18,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/auto-ancillaries-auto-truck-motorcycle-parts/dhoottransmission/DTL02",
-          "ticker": "DHOOTTRANS",
-          "fullName": "Dhoot Transmiss",
-          "industry": "Auto Ancillaries - Auto, Truck & Motorcycle Parts",
-          "shares": 204548057,
-          "mktCapAtBuild": 32390.18
-        }
-      ],
-      "scheduledCount": 1,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "04/09/2026"
-    },
-    "2026-09-02": {
-      "rows": [
-        {
-          "scId": "TVL01",
-          "name": "Technocraft Ventures",
-          "shortName": null,
-          "resultDate": "2026-09-02",
-          "displayDate": "2 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 373.2,
-          "changePct": -0.77,
-          "marketCap": 1478.1,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/construction-infrastructure/technocraftventures/TVL",
-          "ticker": "TECHNOCRAF",
-          "fullName": "Technocraft Ven",
-          "industry": "Construction - Infrastructure",
-          "shares": 39606200,
-          "mktCapAtBuild": 1489.59
-        },
-        {
-          "scId": "VIVAN54173",
-          "name": "Vivanta Industries Limited",
-          "shortName": null,
-          "resultDate": "2026-09-02",
-          "displayDate": "2 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 1.84,
-          "changePct": null,
-          "marketCap": 23.7,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/miscellaneous/vivantaindustrieslimited/VIVAN54173"
-        }
-      ],
-      "scheduledCount": 2,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "04/09/2026"
-    },
-    "2026-09-01": {
-      "rows": [
-        {
-          "scId": "VP01",
-          "name": "TeleCanor Global",
-          "shortName": null,
-          "resultDate": "2026-09-01",
-          "displayDate": "1 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 21.39,
-          "changePct": -2.11,
-          "marketCap": 35.27,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/it-services-consulting/telecanorglobal/TCG01"
-        }
-      ],
-      "scheduledCount": 1,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "04/09/2026"
+      "asOnDate": "08/09/2026"
     }
   }
 }

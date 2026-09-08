@@ -30,6 +30,7 @@ import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
 import * as refreshRegistry from '../core/refresh.js';
 import { portfolioNewsEntities, newsRowEntityKey } from '../data/company-news-identity.js';
+import { newsViewStatus } from '../core/news-view-status.js';
 
 const REASONS = {
   'no-route': {
@@ -214,8 +215,10 @@ export function makeFilingsTab(cfg) {
     if (cfg.keepRow) all = all.filter(cfg.keepRow);
 
     const rows = (cfg.filterByScope || filterByScope)(all, ctx.scope, coverage.holdings());
+    const customEmptyMessage = typeof cfg.emptyMessage === 'function' ? cfg.emptyMessage(m) : cfg.emptyMessage;
     if (cfg.preserveReadingPosition) {
       const sameRows = renderedRows?.scope === ctx.scope && renderedRows.reason === m.reason &&
+        renderedRows.emptyMessage === customEmptyMessage &&
         renderedRows.rows.length === rows.length && rows.every((row, i) => row === renderedRows.rows[i]);
       // Archive/check status can change several times in one poll without changing a filing.
       // Keep the mounted search field and rows intact for those notifications.
@@ -227,7 +230,7 @@ export function makeFilingsTab(cfg) {
         if (busy) busy.innerHTML = busyStrip(m);
         return;
       }
-      renderedRows = { scope: ctx.scope, reason: m.reason, rows };
+      renderedRows = { scope: ctx.scope, reason: m.reason, emptyMessage: customEmptyMessage, rows };
     }
     disposers.forEach((dispose) => dispose && dispose());
     disposers = [];
@@ -349,7 +352,7 @@ export function makeFilingsTab(cfg) {
       // articles in the last 30 days" is a claim about the upstream that nobody measured — these
       // routes have no index, so the only honest statement is how many were not asked about. The
       // strip above says the same thing; this stops the table contradicting it at a glance.
-      emptyMessage: cfg.emptyMessage || (m.outstanding
+      emptyMessage: customEmptyMessage || (m.outstanding
         ? `Nothing in the capture for ${scopePossessive(ctx.scope) || 'these companies'} — and ${formatNumber(m.outstanding)} ${m.outstanding === 1 ? 'company has' : 'companies have'} not been checked since it ran. Refresh to search ${m.outstanding === 1 ? 'it' : 'them'}.`
         : scopePossessive(ctx.scope)
           ? `No ${cfg.noun} for ${scopePossessive(ctx.scope)} in the last ${m.windowDays} days.`
@@ -516,6 +519,13 @@ const loadingHtml = () => `
  * is not the label a customer needs above the table.
  */
 function pill(m, scope, rows) {
+  if (m.kind === 'news') {
+    const status = newsViewStatus(m);
+    const tone = status.state === 'partial' ? 'text-amber-700' : status.state === 'loading' ? 'text-indigo-600' : 'text-slate-500';
+    return `<span data-filings-info data-news-load-state="${status.state}" role="status" aria-live="polite"
+      title="${escapeHtml(`${status.detail} ${scopeTitle(scope, rows, m)}`)}"
+      class="inline-flex items-center gap-1.5 text-xs font-semibold ${tone}">${escapeHtml(status.label)}</span>`;
+  }
   const at = m.capturedAt ? Date.parse(m.capturedAt) : NaN;
   const age = Number.isFinite(at) ? Date.now() - at : null;
   const maxAge = m.kind === 'announcements' ? 90 * 60 * 1000 : m.kind === 'news' ? 3 * 60 * 60 * 1000 : 75 * 60 * 1000;

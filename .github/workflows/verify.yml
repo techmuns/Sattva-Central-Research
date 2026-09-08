@@ -25,21 +25,29 @@ jobs:
         with:
           node-version: "22"
       - name: Verify Telegram parsing, retention and resumable collection
-        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && node scripts/verify-telegram-scheduler.mjs && python3 scripts/verify-telegram-api.py
+        run: node scripts/verify-telegram.mjs && node scripts/verify-telegram-publishing.mjs && node scripts/verify-telegram-artifact.mjs && node scripts/verify-telegram-scheduler.mjs && node scripts/verify-telegram-health.mjs && python3 scripts/verify-telegram-api.py
       - name: Verify investor quarterly evidence and aggregation
         run: node scripts/verify-super-investors.mjs
       - name: Verify refresh ownership and source targeting
         run: node scripts/verify-refresh.mjs
+      - name: Verify personal notebook snapshot and backup contracts
+        run: node scripts/verify-bookmarks.mjs
       - name: Verify variable-height virtual list geometry
         run: node scripts/verify-windowed-geometry.mjs
       - name: Verify filings snapshot recovery
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
         run: node scripts/verify-company-news-archive.mjs
+      - name: Verify lossless news parts and deployable asset sizes
+        run: node scripts/verify-news-publication.mjs && node scripts/verify-news-maintenance.mjs && node scripts/partition-news-data.mjs
+      - name: Verify direct publisher delivery, OnEMI identity and open-app upgrades
+        run: node scripts/verify-publisher-news-delivery.mjs && node scripts/verify-onemi-news-delivery.mjs && node scripts/verify-app-updates.mjs
       - name: Verify recall-safe company-news attribution
         run: node scripts/verify-company-news-attribution.mjs
       - name: Verify incremental company-news capture
         run: node scripts/verify-company-news-capture.mjs
+      - name: Verify lossless publication across competing data updates
+        run: node scripts/verify-company-news-publish.mjs && node scripts/verify-company-news-publish-git.mjs
       - name: Verify portfolio discovery, customer misses and source recovery
         run: node scripts/verify-portfolio-news-discovery.mjs && node scripts/verify-news-country.mjs && python3 scripts/verify-twitter-search.py
       - name: Verify public TradingView ingestion and automatic portfolio membership
@@ -47,15 +55,17 @@ jobs:
       - name: Verify source connections and scheduled pipeline health
         run: node scripts/verify-source-connections.mjs && node scripts/verify-workflow-health.mjs
       - name: Verify research and portfolio evidence
-        run: node scripts/verify-research.mjs && node scripts/verify-research-claude.mjs && node scripts/verify-research-retrieval.mjs && node scripts/verify-research-catalysts.mjs && node scripts/verify-research-evaluation.mjs && node scripts/verify-research-preview.mjs
+        run: node scripts/verify-research.mjs && node scripts/verify-research-completion.mjs && node scripts/verify-research-claude.mjs && node scripts/verify-research-retrieval.mjs && node scripts/verify-research-catalysts.mjs && node scripts/verify-research-evaluation.mjs && node scripts/verify-research-preview.mjs
       - name: Verify Claude streaming in the native local Worker runtime
         run: node scripts/verify-research-claude-runtime.mjs
       - name: Verify private portfolio bridge
         run: node scripts/verify-portfolio-bridge.mjs
+      - name: Verify comparable portfolio businesses and dated event returns
+        run: node scripts/verify-research-business.mjs && node scripts/verify-research-reasoning.mjs && node scripts/verify-bars.mjs
       - name: Verify additive insider trades
         run: node scripts/verify-insider-trades.mjs
       - name: Verify additive corporate-announcement lookups
-        run: node scripts/verify-announcement-lookups.mjs
+        run: node scripts/verify-announcement-lookups.mjs && node scripts/verify-announcement-document-hashes.mjs
       - name: Verify continuous corporate announcement sources and retention
         run: node scripts/verify-corporate-stream.mjs
       - name: Verify domestic filings and earnings provenance
@@ -97,7 +107,7 @@ jobs:
       - name: Verify complete General Alerts pool and scope isolation
         run: node scripts/verify-general-alerts.mjs
       - name: Verify AI alert search and calendar dates
-        run: node scripts/verify-ai-alerts.mjs
+        run: node scripts/verify-ai-alerts.mjs && node scripts/verify-alert-capacity.mjs
       - name: Verify material alert lifecycle and optional social coverage
         run: node scripts/verify-alert-reliability.mjs && python3 scripts/verify-twitter-collection.py
       - name: Syntax-check JavaScript
@@ -110,7 +120,7 @@ jobs:
     name: ${{ inputs.claude_access_check && 'probe-skipped-browser' || 'browser' }}
     if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -124,6 +134,14 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-theme-ui.mjs
+      - name: Verify notebook persistence, notes, backup recovery and responsive layout
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-bookmarks-ui.mjs
+      - name: Verify complete news publication in the Portfolio table
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-news-publication-ui.mjs
       - name: Verify investor scope, disclosure evidence and incomplete data
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
@@ -140,7 +158,7 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-portfolio-view-ui.mjs
-      - name: Verify fast portfolio research and incremental answer streaming
+      - name: Verify research conversation lifecycle and incremental answer streaming
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-stream-ui.mjs
@@ -148,10 +166,14 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-social.mjs
+      - name: Verify Sterlite peer questions against the whole saved dashboard
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-research-business-ui.mjs && node scripts/verify-research-reasoning-ui.mjs
       - name: Verify stable alert refresh, portfolio failures and navigation
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-ai-alerts-ui.mjs
+        run: node scripts/verify-ai-alerts-ui.mjs && node scripts/verify-alert-capacity-ui.mjs
       - name: Verify explicit refresh through the service worker
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
@@ -168,6 +190,14 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-general-alerts-ui.mjs
+      - name: Verify the portfolio calendar survives an unreadable S Screen capture
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-portfolio-calendar.mjs
+      - name: Verify publisher filters, delayed news delivery and exact OnEMI regression
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-news-publisher-ui.mjs && node scripts/verify-onemi-news-delivery-ui.mjs && node scripts/verify-news-customer-delivery.mjs
       - name: Verify clean corporate stream, automatic history and live scope updates
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
@@ -198,7 +228,9 @@ jobs:
     name: ${{ inputs.claude_access_check && 'probe-skipped-portfolio-research' || 'portfolio-research' }}
     if: ${{ !inputs.claude_access_check }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Full retained news now exceeds 150k observations. Keep all 426 current portfolio cases;
+    # the former 15-minute limit stopped a healthy run at case 400 before final assertions.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -226,7 +258,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-      - name: Verify the saved Claude credential and model access
+      - name: Verify the GitHub Claude credential and model access (not Cloudflare runtime)
         env:
+          CLAUDE_KEY: ${{ secrets.CLAUDE_KEY }}
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
         run: node scripts/check-research-claude-access.mjs

@@ -15,6 +15,18 @@ export function researchPreview(evidence) {
   const sources = evidence.sources || [];
   const items = [];
   const seen = new Set();
+  // Literal peer readings can be selected outside the ordinary named-company
+  // row sample. Show one per holding, with the same original provenance.
+  for (const candidate of evidence.businessContext?.candidates || []) {
+    const reading = candidate.evidence?.find(r => r.basis !== 'industry label only');
+    const source = sources.find(s => s.tab === reading?.tab);
+    if (!reading || !source) continue;
+    items.push({ title: reading.text, company: candidate.name, ticker: candidate.ticker,
+      date: reading.date, tab: reading.tab, route: source.route, url: sourceUrl(reading.url),
+      kind: 'excerpt', truncated: true, attribution: reading.verification,
+      asOf: source.asOf || null, quality: reading.sourceStatus,
+      businessRank: items.length, context: rowContext({ date: reading.date, text: reading.text }, plan) });
+  }
   // Prefer the original feed over its duplicate in All Alerts.
   const order = ['company-news', 'company-filings', 'announcements', 'nse-filings', 'corporate-actions', 'ipos', 'telegram', 'chatter-posts', 'daily-alerts'];
   for (const id of order) {
@@ -48,9 +60,9 @@ export function researchPreview(evidence) {
     }
   }
   const dated = item => /^\d{4}-\d{2}-\d{2}/.test(item.date || '') ? item.date : '';
-  items.sort((a, b) => b.context.topic - a.context.topic || a.context.temporalRank - b.context.temporalRank || dated(b).localeCompare(dated(a)));
+  items.sort((a, b) => (a.businessRank ?? Infinity) - (b.businessRank ?? Infinity) || b.context.topic - a.context.topic || a.context.temporalRank - b.context.temporalRank || dated(b).localeCompare(dated(a)));
   return {
-    items: items.slice(0, 3).map(({ context, ...item }) => item),
+    items: items.slice(0, 3).map(({ context, businessRank, ...item }) => item),
     sources: sources.map(source => ({ tab: source.tab, source: source.source || source.id,
       status: source.status, quality: source.dataQuality || null, asOf: source.asOf || null,
       included: source.rows?.length || 0 })),

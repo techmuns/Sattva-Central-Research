@@ -11,6 +11,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: {
   getItem: (key) => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key),
 } });
 Date.now = () => Date.parse('2026-09-04T08:00:00Z');
+const nseCheckedAt = '2026-09-04T07:00:00Z';
 const calls = [];
 const broken = new Set();
 let revision = 1;
@@ -18,6 +19,13 @@ let nseGate = null;
 const undated = { company: 'Unresolved issuer', ticker: null, publishedAt: null, subject: 'Undated filing', url: 'https://example.test/undated.pdf' };
 const nseRow = { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-03T20:00:00Z', subject: 'Analyst day', url: 'https://example.test/analyst.pdf', description: 'Entire source description' };
 const outsideNseRow = { ...nseRow, company: 'Hexaware Technologies', ticker: 'HEXT', subject: 'Chief executive transition', url: 'https://example.test/hexaware-ceo.pdf' };
+const crossRoutePublisher = { id: 'fixture:partnership', publisher: 'Economic Times',
+  title: 'Sterlite Technologies and Reliance Industries expand their partnership',
+  url: 'https://example.test/cross-route-partnership', publishedAt: '2026-09-03T20:00:00Z' };
+const olderPublisher = { ...crossRoutePublisher, id: 'fixture:older-partnership',
+  url: 'https://example.test/older-cross-route-partnership', publishedAt: '2026-08-25T20:00:00Z' };
+const unmatchedPublisher = { id: 'fixture:unmatched', publisher: 'Economic Times',
+  title: 'World market overview', url: 'https://example.test/unmatched-market', publishedAt: '2026-09-03T20:00:00Z' };
 const portfolioUpcomingFixture = [
   { id: 'STLTECH|2026-09-10|AGM|day', companyKey: 'STLTECH', ticker: 'STLTECH', name: 'Sterlite Technologies', date: '2026-09-10', time: null, eventType: 'AGM', companyUrl: 'https://www.screener.in/company/STLTECH/', sourceUrl: 'https://www.screener.in/company/STLTECH/', observedAt: '2026-09-04T07:00:00Z' },
   { id: '500001|2026-09-12|Postal ballot|day', companyKey: '500001', ticker: null, name: 'BSE-only portfolio company', date: '2026-09-12', time: null, eventType: 'Postal ballot', companyUrl: 'https://www.screener.in/company/500001/', sourceUrl: 'https://www.screener.in/company/500001/', observedAt: '2026-09-04T07:00:00Z' },
@@ -30,7 +38,15 @@ globalThis.fetch = async (input) => {
   const json = (value) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
   if (path === 'api/nse-announcements') { if (nseGate) await nseGate; return json({ rows: [nseRow, nseRow, undated, outsideNseRow,
     ...(revision > 1 ? [{ ...nseRow, url: 'https://example.test/new.pdf' }] : []),
-    ...(revision > 2 ? [{ ...nseRow, url: 'https://example.test/other-tab.pdf' }] : [])], capturedAt: '2026-09-04T07:00:00Z' }); }
+    ...(revision > 2 ? [{ ...nseRow, url: 'https://example.test/other-tab.pdf' }] : [])], capturedAt: nseCheckedAt }); }
+  // Keep the shipped NSE rows, but control both source-check clocks. The feed correctly takes
+  // the newer live/snapshot confirmation; a future repository capture must not override this
+  // test's Sept 4 clock and make its cached Sept 5 freshness assertion depend on data updates.
+  if (path === 'data/nse-announcements.json') return json({ ...read(path), capturedAt: nseCheckedAt });
+  if (path === 'data/market-news.json') {
+    const snapshot = read(path);
+    return json({ ...snapshot, articles: [...snapshot.articles, crossRoutePublisher, olderPublisher, unmatchedPublisher] });
+  }
   if (path === 'data/twitter-posts.json') return json({ capturedAt: '2026-09-04T07:00:00Z', handles: ['moneycontrolcom'], failed: [], posts: [
     { tweet_id: '1', handle: 'moneycontrolcom', text: 'IPO discussion, original words', created_at: '2026-09-03T20:10:00Z' },
     { tweet_id: '2', handle: 'moneycontrolcom', text: 'Undated original post', created_at: null },
@@ -40,7 +56,8 @@ globalThis.fetch = async (input) => {
   const mapped = { 'api/earnings': 'data/earnings-live.json' }[path] || path;
   const file = resolve(root, mapped);
   assert(file.startsWith(root + sep), 'fixture path must stay in public');
-  try { return json(read(mapped)); } catch { return new Response('{}', { status: 404 }); }
+  try { return new Response(readFileSync(file), { headers: { 'content-type': 'application/json' } }); }
+  catch { return new Response('{}', { status: 404 }); }
 };
 
 const alerts = await import('../public/js/data/daily-alerts.js');
@@ -67,6 +84,16 @@ assert(universe.events.length > 1000, 'real retained records loaded');
 assert.equal(new Set(universe.events.map((e) => e.id)).size, universe.events.length);
 assert(universe.events.every((e) => e.sourceRecord), 'every event preserves the full normalized source record');
 assert(universe.events.every((e) => e.signalReason && e.importanceReason));
+for (const publisher of [crossRoutePublisher, olderPublisher]) {
+  const delivered = universe.events.filter(event => event.url === publisher.url);
+  assert.equal(delivered.length, 2, 'the shared assembler delivers one publisher alert per company across both news routes');
+  assert.deepEqual(delivered.map(event => event.ticker).sort(), ['RELIANCE', 'STLTECH']);
+  assert(delivered.every(event => event.newsProvenance?.length === 2), 'each company alert retains both collection-route references');
+}
+assert.equal(universe.events.filter(event => event.url === unmatchedPublisher.url).length, 1, 'unmatched raw market news remains available in Universe');
+assert.equal((await import('../public/js/data/market-news.js')).rows().filter(row => row.url === crossRoutePublisher.url).length, 1,
+  'display deduplication never removes the raw market source record');
+assert.equal(universe.feeds.reduce((sum, feed) => sum + feed.count, 0), universe.events.length, 'feed counters and exported event collection agree');
 assert(universe.events.some((e) => e.url === nseRow.url && e.day === '2026-09-04'));
 assert.equal(universe.events.filter((e) => e.url === nseRow.url).length, 1, 'identical source copies are not duplicated');
 assert(universe.events.some((e) => e.url === undated.url && !e.day && !e.ticker));
@@ -100,6 +127,8 @@ assert.equal(firstTechnical(afterIdle), firstTechnical(universe), 'returning aft
 Date.now = originalNow;
 const singleDay = await alerts.collect({ ...options, includeHistory: false, scope: 'universe', load: false });
 assert(singleDay.events.every((e) => e.day === options.day), 'history cache cannot leak other dates into a daily report');
+assert.equal(singleDay.feeds.find((f) => f.id === 'nse-filings').asOf, nseCheckedAt, 'NSE freshness uses the controlled source-check timestamp');
+assert.equal(singleDay.feeds.find((f) => f.id === 'nse-filings').reachesToday, true, 'a successful Sept 4 source check covers the requested Sept 4 day');
 const nextDay = await alerts.collect({ ...options, day: '2026-09-05', scope: 'universe', load: false });
 assert.equal(nextDay.feeds.find((f) => f.id === 'nse-filings').reachesToday, false, 'cached freshness re-ages when the requested IST day changes');
 const scope = await import('../public/js/data/scope.js');
@@ -117,6 +146,7 @@ assert.equal(portfolio.feeds.find((f) => f.id === 'screener-portfolio-upcoming')
 watchlist.toggle('STLTECH', 'Sterlite Technologies');
 const watched = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.deepEqual(watched.events.map((e) => e.id).sort(), universe.events.filter((e) => e.ticker === 'STLTECH').map((e) => e.id).sort());
+assert.equal(watched.events.filter(event => event.url === crossRoutePublisher.url).length, 1, 'Watchlist also receives just one company/article alert');
 assert.equal(calls.length, previousCalls, 'scope/filter changes require no extra fetch');
 assert.equal(portfolio.feeds.find((f) => f.id === 'twitter').scopable, true, 'reviewed company mentions can now be scoped; unresolved posts still stay in Universe');
 assert(portfolio.feeds.find((f) => f.id === 'nse-filings').unresolvedCount > 0, 'unresolved omissions are counted');

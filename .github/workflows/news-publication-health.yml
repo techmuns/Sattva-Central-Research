@@ -1,0 +1,50 @@
+name: News publication health
+
+on:
+  workflow_run:
+    workflows: [Company news refresh, TradingView portfolio news, Market news refresh, RSS news refresh]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "11,41 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-publication-health
+  cancel-in-progress: false
+
+jobs:
+  publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Never execute a workflow_run artifact or code supplied by its triggering run.
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Verify news reached the customer-facing site
+        env:
+          PUBLICATION_WAIT_MS: '480000'
+        run: node scripts/check-news-publication.mjs
+      - name: Audit capacity without deleting history
+        if: always()
+        run: node scripts/check-news-capacity.mjs
+      - name: Install pinned read-only delivery probe runtime
+        # The light transport check runs after every capture. Keep the heavier browser probe
+        # half-hourly (or explicitly requested) to bound Actions minutes and repeated downloads.
+        if: always() && github.event_name != 'workflow_run'
+        run: |
+          npm install --prefix "$RUNNER_TEMP/news-browser" --no-save --package-lock=false playwright@1.62.1
+          node "$RUNNER_TEMP/news-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify retained portfolio stories reach News and Alerts
+        if: always() && github.event_name != 'workflow_run'
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/news-browser/node_modules/playwright
+          NEWS_DELIVERY_BASE: https://sattva-central-research.tech-441.workers.dev
+        run: node scripts/check-news-customer-delivery.mjs

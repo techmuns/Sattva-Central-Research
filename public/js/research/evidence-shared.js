@@ -42,8 +42,10 @@ export function providerEvidence(evidence = {}) {
     scopeDefinition: evidence?.scopeDefinition,
     portfolio: evidence?.portfolio,
     portfolioPositions: providerPositions(evidence?.portfolioPositions),
+    businessContext: evidence?.businessContext,
     selection: {
       tokens: Array.isArray(selection.tokens) ? selection.tokens : [],
+      business: selection.business,
       companies: Array.isArray(selection.companies) ? selection.companies : [],
       topics: selection.topics,
       window: selection.window,
@@ -69,3 +71,10 @@ export const PORTFOLIO_POSITIONS_MAX_CHARS = 60_000;
 export function researchEvidenceChars(evidence) {
   return providerEvidenceChars({ ...evidence, portfolioPositions: undefined });
 }
+
+// General implications need the portfolio business map as well as detailed rows.
+// A single larger inference avoids an additional serial planning/model call.
+export const PORTFOLIO_REASONING_CHAR_BUDGET = 30_000;
+export const businessContextShare = evidence => evidence?.businessContext?.kind === 'portfolio-reasoning' ? 0.65 : 0.35;
+// Transport headroom also accepts a bounded explicit client budget.
+export const PORTFOLIO_REASONING_MAX_CHARS = 37_000;

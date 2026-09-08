@@ -109,7 +109,15 @@ export function withAnnouncementLookups(base) {
           while (queue.length) {
             const ticker = queue.shift(), entry = status.entries[ticker];
             if (!entry.rowCount) continue;
-            const revision = `${entry.lastResponseAt || entry.lastSuccessAt || ''}:${entry.rowCount}`;
+            // Either source can change the shared company file independently. In particular, an
+            // official-BSE row may enrich an existing NSE row without changing the aggregate count,
+            // so the authenticated-provider timestamp alone cannot identify the file revision.
+            const revision = [
+              Number.isSafeInteger(entry.fileRevision) ? entry.fileRevision : '',
+              entry.lastResponseAt || entry.lastSuccessAt || '',
+              entry.bse?.lastResponseAt || entry.bse?.lastSuccessAt || '',
+              entry.rowCount,
+            ].join(':');
             if (onlyChanged && !status.error && sharedRevisions.get(ticker) === revision) continue;
             try {
               const result = await capturedCompany('announcements', ticker);

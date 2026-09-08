@@ -95,11 +95,27 @@ try {
       text: document.querySelector('#content-host')?.textContent.trim().replace(/\s+/g, ' ').slice(0, 220),
       maxTaskMs: Math.max(0, ...window.__longTasks.map(t => t.ms)),
     }));
-    const search = frame.locator('[data-table-search], [data-news-search]').first();
-    if (await search.count()) {
-      result.searchMs = await search.evaluate(async el => { const start=performance.now(); el.value='zzzz-no-matching-fixture'; el.dispatchEvent(new Event('input', {bubbles:true})); await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); return performance.now()-start; });
-      await search.fill('');
-    }
+    // Live tabs may replace their search input while a source update is painting. Resolve both the
+    // probe and its cleanup inside the page, where each current node can be used synchronously;
+    // a Playwright locator would otherwise keep retrying against successively detached inputs.
+    const searchMs = await frame.evaluate(async () => {
+      const selector = '[data-table-search], [data-news-search]';
+      const el = document.querySelector(selector);
+      if (!el) return null;
+      const start = performance.now();
+      el.value = 'zzzz-no-matching-fixture';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+      const elapsed = performance.now() - start;
+      const current = document.querySelector(selector);
+      for (const input of new Set([el, current].filter(Boolean))) {
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      return elapsed;
+    });
+    if (searchMs != null) result.searchMs = searchMs;
     const sort = frame.locator('th[data-sort]').first();
     if (await sort.count()) result.sortMs = await sort.evaluate(async el => { const start=performance.now(); el.click(); await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); return performance.now()-start; });
     results.push({ route, readyMs: Math.round(readyMs), ...result });

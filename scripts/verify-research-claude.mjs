@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // Provider transport fixtures only. No real credentials, paid calls or accuracy claims.
 import assert from 'node:assert/strict';
-import { buildClaudeRequest, CLAUDE_MODEL, consumeClaudeStream } from '../worker/research-claude.mjs';
+import { buildClaudeRequest, CLAUDE_MODEL, claudeCredential, consumeClaudeStream } from '../worker/research-claude.mjs';
 import { handleResearch, researchConfigured, providerEvidence } from '../worker/research.mjs';
 import { modelScenarios, scenarioBody } from './lib/research-model-scenarios.mjs';
 import { checkClaudeAccess, claudeKeyFormat } from './check-research-claude-access.mjs';
 
 const encoder = new TextEncoder();
-const env = { CLAUDE_API_KEY: 'synthetic-claude-credential', MUNS_TOKEN: 'must-not-be-used', ANTHROPIC_API_KEY: 'legacy-muns-token', MUNS_LLM_LEGACY_ANTHROPIC_BINDING: 'confirmed-muns-token' };
+const env = { CLAUDE_KEY: 'synthetic-claude-credential', CLAUDE_API_KEY: 'old-dedicated-credential-must-not-be-used', MUNS_TOKEN: 'must-not-be-used', ANTHROPIC_API_KEY: 'legacy-muns-token', MUNS_LLM_LEGACY_ANTHROPIC_BINDING: 'confirmed-muns-token' };
 // The reported customer miss, represented as a controlled packet: a broker
 // claim in discussion alongside a routine notice, not an independently verified target.
 const body = { question: 'Any upside in Indraprastha Gas?', scope: 'portfolio', history: [], evidence: { sources: [
@@ -32,31 +32,41 @@ const events = async value => (await value.text()).trim().split('\n').filter(Boo
 const parts = chunks => new ReadableStream({ start(controller) { for (const chunk of chunks) controller.enqueue(chunk); controller.close(); } });
 let checks = 0;
 const pass = label => { checks++; console.log(`PASS ${label}`); };
+const bounded = async promise => {
+  let timer;
+  try { return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Claude answer waited for transport teardown')), 500); })]); }
+  finally { clearTimeout(timer); }
+};
 
-assert.equal(researchConfigured({ CLAUDE_API_KEY: env.CLAUDE_API_KEY }), true);
-assert.equal(researchConfigured({ ...env, CLAUDE_API_KEY: 'short' }), false, 'a malformed dedicated key cannot silently choose Muns');
+assert.equal(researchConfigured({ CLAUDE_KEY: env.CLAUDE_KEY }), true);
+assert.equal(researchConfigured({ CLAUDE_API_KEY: env.CLAUDE_KEY }), true, 'older dedicated binding remains supported');
+assert.equal(claudeCredential(env), env.CLAUDE_KEY, 'Cloudflare CLAUDE_KEY wins over the old dedicated binding');
+assert.equal(claudeCredential({ CLAUDE_KEY: '  ', CLAUDE_API_KEY: ' old-key ' }), 'old-key');
+assert.equal(claudeCredential({ CLAUDE_KEY: ' new-key ', CLAUDE_API_KEY: 'old-key' }), 'new-key');
+assert.equal(claudeCredential({ MUNS_TOKEN: 'muns-only', ANTHROPIC_API_KEY: 'legacy-muns' }), '', 'no cross-provider credential fallback');
+assert.equal(researchConfigured({ ...env, CLAUDE_KEY: 'short' }), false, 'a malformed dedicated key cannot silently choose Muns');
 assert.equal(researchConfigured({ ANTHROPIC_API_KEY: 'sk-ant-real-key-must-not-go-to-muns', MUNS_LLM_LEGACY_ANTHROPIC_BINDING: 'confirmed-muns-token' }), false);
 assert.equal(researchConfigured({ MUNS_TOKEN: 'sk-ant-real-key-must-not-go-to-muns' }), false);
 const configured = await (await handleResearch(new Request('https://dashboard.example/api/research'), env)).json();
 assert.equal(configured.provider, 'claude');
-assert(!JSON.stringify(configured).includes(env.CLAUDE_API_KEY));
+assert(!JSON.stringify(configured).includes(env.CLAUDE_KEY));
 pass('dedicated Claude key wins; malformed and misplaced keys fail closed; config exposes no secrets');
 
 assert.deepEqual(await checkClaudeAccess(''), { ok: false, reason: 'missing-key' });
 for (const [value, format] of [['sk-ant-test', 'Anthropic-key-shaped'], ['"sk-ant-test"', 'quoted-Anthropic-value'], ["'sk-ant-test'", 'quoted-Anthropic-value'], ['CLAUDE_API_KEY=example', 'environment-assignment'], ['Bearer example', 'Bearer-prefixed-value'], ['sk-ant-oat-example', 'Claude-OAuth-token-shaped'], ['sk-or-example', 'OpenRouter-key-shaped'], ['AIza-example', 'Google-key-shaped'], ['unknown-value', 'unrecognized']]) assert.equal(claudeKeyFormat(value), format);
 for (const status of [200, 302, 401, 403, 404, 429, 500]) {
-  const result = await checkClaudeAccess(env.CLAUDE_API_KEY, async (url, options) => {
+  const result = await checkClaudeAccess(env.CLAUDE_KEY, async (url, options) => {
     assert.equal(url, `https://api.anthropic.com/v1/models/${CLAUDE_MODEL}`);
     assert.equal(options.method, 'GET');
     assert.equal(options.redirect, 'manual');
-    assert.equal(options.headers['x-api-key'], env.CLAUDE_API_KEY);
-    return new Response('provider body must not appear: ' + env.CLAUDE_API_KEY, { status });
+    assert.equal(options.headers['x-api-key'], env.CLAUDE_KEY);
+    return new Response('provider body must not appear: ' + env.CLAUDE_KEY, { status });
   });
   assert.equal(result.ok, status === 200);
   assert.equal(result.status, status);
-  assert(!JSON.stringify(result).includes(env.CLAUDE_API_KEY));
+  assert(!JSON.stringify(result).includes(env.CLAUDE_KEY));
 }
-assert.deepEqual(await checkClaudeAccess(env.CLAUDE_API_KEY, async () => { throw new Error(env.CLAUDE_API_KEY); }), { ok: false, reason: 'request-failed' });
+assert.deepEqual(await checkClaudeAccess(env.CLAUDE_KEY, async () => { throw new Error(env.CLAUDE_KEY); }), { ok: false, reason: 'request-failed' });
 pass('manual access probe uses read-only Anthropic requests and keeps credentials and upstream bodies out of diagnostics');
 
 for (const test of modelScenarios()) {
@@ -117,10 +127,47 @@ pass('truncation, refusal, malformed/oversized streams and EOF cannot masquerade
 
 const originalFetch = globalThis.fetch;
 try {
+  // Exercise both supported deployment shapes through the actual request path.
+  for (const candidate of [{ CLAUDE_KEY: 'current-runtime-key', CLAUDE_API_KEY: 'old-key' }, { CLAUDE_API_KEY: 'legacy-runtime-key' }]) {
+    let sentKey;
+    globalThis.fetch = async (_url, options) => { sentKey = options.headers['x-api-key']; return response(full); };
+    const out = await events(await handleResearch(request(), candidate));
+    assert.equal(sentKey, candidate.CLAUDE_KEY || candidate.CLAUDE_API_KEY);
+    assert.equal(out.at(-1).type, 'done');
+    assert(!JSON.stringify(out).includes(sentKey));
+  }
+  pass('current Cloudflare binding and legacy environments select the same key for configuration and inference');
+
+  for (const tail of ['open-connection', 'pending-cancel', 'same-chunk-error', 'same-chunk-oversized', 'late-error']) {
+    let wasCancelled = false, upstreamSignal;
+    globalThis.fetch = async (_url, options) => {
+      upstreamSignal = options.signal;
+      return response(new ReadableStream({
+        start(controller) {
+          const extra = tail === 'same-chunk-error' ? frame({ type: 'error', error: { type: 'api_error' } }) : tail === 'same-chunk-oversized' ? 'x'.repeat(64_001) : '';
+          controller.enqueue(encoder.encode(full + extra));
+          if (tail === 'late-error') controller.enqueue(encoder.encode(frame({ type: 'error', error: { type: 'api_error' } })));
+        },
+        cancel() { wasCancelled = true; if (tail === 'pending-cancel') return new Promise(() => {}); },
+      }));
+    };
+    const out = await bounded(events(await handleResearch(request(), env)));
+    assert.deepEqual(out.filter(e => ['done', 'error'].includes(e.type)).map(e => e.type), ['done'], tail);
+    assert.equal(out.filter(e => e.type === 'text').map(e => e.text).join(''), answer);
+    assert(wasCancelled);
+    assert(upstreamSignal.aborted);
+  }
+  for (const [status, contentType] of [[401, 'text/event-stream'], [200, 'text/html']]) {
+    globalThis.fetch = async () => new Response(new ReadableStream({ cancel() { return new Promise(() => {}); } }), { status, headers: { 'content-type': contentType } });
+    const out = await bounded(events(await handleResearch(request(), env)));
+    assert.equal(out.at(-1).type, 'error', 'failed response teardown cannot postpone the error');
+  }
+  pass('terminal Claude answers survive late errors and unfinished teardown; rejected responses also finish promptly');
+
   let providerController;
   globalThis.fetch = async (url, options) => {
     assert.equal(url, 'https://api.anthropic.com/v1/messages');
-    assert.equal(options.headers['x-api-key'], env.CLAUDE_API_KEY);
+    assert.equal(options.headers['x-api-key'], env.CLAUDE_KEY);
     assert.equal(options.headers['anthropic-version'], '2023-06-01');
     assert.equal(options.redirect, 'manual');
     assert.equal(options.headers.authorization, undefined);
@@ -144,18 +191,18 @@ try {
 
   for (const status of [400, 401, 403, 404, 429, 500, 529]) {
     let calls = 0;
-    globalThis.fetch = async () => { calls++; return new Response('private provider detail ' + env.CLAUDE_API_KEY, { status }); };
+    globalThis.fetch = async () => { calls++; return new Response('private provider detail ' + env.CLAUDE_KEY, { status }); };
     const out = await events(await handleResearch(request(), env));
     assert.equal(out.at(-1).type, 'error');
-    assert(!JSON.stringify(out).includes(env.CLAUDE_API_KEY));
+    assert(!JSON.stringify(out).includes(env.CLAUDE_KEY));
     assert.equal(calls, 1, 'no hidden fallback to another provider');
   }
   for (const errorType of ['overloaded_error', 'rate_limit_error', 'authentication_error']) {
-    globalThis.fetch = async () => response(start + open + token('Partial finding') + frame({ type: 'error', error: { type: errorType, message: env.CLAUDE_API_KEY } }));
+    globalThis.fetch = async () => response(start + open + token('Partial finding') + frame({ type: 'error', error: { type: errorType, message: env.CLAUDE_KEY } }));
     const out = await events(await handleResearch(request(), env));
     assert.equal(out.filter(e => e.type === 'text').map(e => e.text).join(''), 'Partial finding');
     assert.equal(out.at(-1).type, 'error');
-    assert(!JSON.stringify(out).includes(env.CLAUDE_API_KEY));
+    assert(!JSON.stringify(out).includes(env.CLAUDE_KEY));
   }
   globalThis.fetch = async () => new Response('<html>login</html>', { headers: { 'content-type': 'text/html' } });
   assert.equal((await events(await handleResearch(request(), env))).at(-1).type, 'error');

@@ -20,7 +20,8 @@
 // that wrote only its own publisher's stories would delete every other publisher's on each run,
 // which is the same discard this module exists to end, arrived at from a different direction.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { readNewsJson, writeNewsJson } from './news-json-storage.mjs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -70,7 +71,7 @@ export const monthOf = (a) => {
 export function loadHead() {
   if (!existsSync(HEAD_FILE)) return { articles: [], newestId: null, capturedAt: null, sources: [] };
   try {
-    const prev = JSON.parse(readFileSync(HEAD_FILE, 'utf8'));
+    const prev = readNewsJson(HEAD_FILE);
     return {
       articles: Array.isArray(prev.articles) ? prev.articles : [],
       newestId: prev.newestId || null,
@@ -78,7 +79,7 @@ export function loadHead() {
       sources: Array.isArray(prev.sources) ? prev.sources : [],
     };
   } catch {
-    return { articles: [], newestId: null, capturedAt: null, sources: [] };
+    throw new Error('Existing market-news head could not be read; refusing to overwrite it');
   }
 }
 
@@ -86,7 +87,7 @@ export function readShard(month) {
   const f = resolve(ARCHIVE_DIR, `${month}.json`);
   if (!existsSync(f)) return [];
   try {
-    const j = JSON.parse(readFileSync(f, 'utf8'));
+    const j = readNewsJson(f);
     return Array.isArray(j.articles) ? j.articles : [];
   } catch {
     // A shard that cannot be parsed is NOT treated as an empty month. Returning [] here would let
@@ -120,9 +121,9 @@ function writeShard(month, list) {
   mkdirSync(ARCHIVE_DIR, { recursive: true });
   const rows = [...list].sort(byNewest);
   const dates = rows.map((a) => a.publishedAt || a.firstSeenAt).filter(Boolean).sort();
-  writeFileSync(
+  writeNewsJson(
     resolve(ARCHIVE_DIR, `${month}.json`),
-    `${JSON.stringify({
+    {
       _provenance:
         'One month of market-wide news, as each publisher published it. Headlines, standfirsts and section names are theirs, ' +
         'reproduced unchanged; the article stays on their site. A story is filed under this month by the publisher\'s own date ' +
@@ -134,7 +135,7 @@ function writeShard(month, list) {
       from: dates[0] || null,
       to: dates[dates.length - 1] || null,
       articles: rows,
-    })}\n`,
+    },
   );
 }
 
@@ -152,7 +153,7 @@ function writeShard(month, list) {
  */
 export function archiveManifest(headKeys = new Set()) {
   return shardMonths().map((month) => {
-    const j = JSON.parse(readFileSync(resolve(ARCHIVE_DIR, `${month}.json`), 'utf8'));
+    const j = readNewsJson(resolve(ARCHIVE_DIR, `${month}.json`));
     const rows = Array.isArray(j.articles) ? j.articles : [];
     return {
       month,
@@ -221,6 +222,6 @@ export function commit({ articles, capturedAt, head = 600, sources = [], extra =
     ...extra,
     articles: kept,
   };
-  writeFileSync(HEAD_FILE, `${JSON.stringify(payload)}\n`);
+  writeNewsJson(HEAD_FILE, payload);
   return { kept, all, archive, archived, withDate, undatable, payload };
 }

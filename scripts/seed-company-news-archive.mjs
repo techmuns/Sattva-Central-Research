@@ -2,7 +2,7 @@
 // One idempotent migration/repair pass: preserve every portfolio article already present in the
 // legacy 30-day head before incremental capture takes over. No network request is made.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readNewsJson as read, writeNewsJson } from './lib/news-json-storage.mjs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
@@ -14,7 +14,6 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const data = (name) => resolve(here, '../public/data', name);
-const read = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
 const book = read(data('portfolio-companies.json'));
 const snapshot = read(data('news.json'));
@@ -45,5 +44,5 @@ const next = {
     months: archive.archive.length,
   },
 };
-writeFileSync(data('news.json'), `${JSON.stringify(next, null, 2)}\n`);
+writeNewsJson(data('news.json'), next);
 console.log(`Seeded ${archive.articleCount} existing portfolio-company articles across ${archive.archive.length} permanent archive shard(s); ${book.holdings.length} book lines resolve to ${entities.length} companies.`);

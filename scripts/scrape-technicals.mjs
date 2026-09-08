@@ -34,6 +34,7 @@ import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { fetchBars, dayMove } from './lib/yahoo.mjs';
 import { verifyMoves, loadChecks, saveChecks, CHECKS_PATH } from './lib/muns-market-data.mjs';
 import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
+import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { abdiRanaldoSpreadPct, amihudImpactPct, liquidityTier } from "./lib/liquidity-estimators.mjs";
@@ -91,6 +92,7 @@ run().catch((err) => {
 
 // ---------- main ----------
 async function run() {
+  const previousHistory = new Map(readExistingRows().filter(row => row.closeHistory).map(row => [row.ticker, row.closeHistory]));
   const screenerRows = JSON.parse(readFileSync(COMPANIES_PATH, "utf8"));
   const bookRows = await bookCompaniesNotInScreener(screenerRows);
   const allCompanies = [...screenerRows, ...bookRows];
@@ -232,11 +234,13 @@ async function run() {
         impact_cost_pct_est_5cr: amihudImpactPct(bars, 30, IMPACT_COST_ORDER_SIZE_RUPEES),
         liquidity_tier: liquidityTier(adtv20Cr(bars)),
         ...indicators,
+        closeHistory: researchPriceHistory(bars, { sourceSymbol: usedSym }) || retainedPriceHistory(previousHistory.get(ticker)),
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
     } catch (err) {
       failures++;
-      results.push({ ticker, name: c.Company, screenerUrl: c["Screener URL"], listSource: c.listSource || "nse500", error: err.message });
+      results.push({ ticker, name: c.Company, screenerUrl: c["Screener URL"], listSource: c.listSource || "nse500", error: err.message,
+        closeHistory: retainedPriceHistory(previousHistory.get(ticker)) });
       console.log(`FAIL ${err.message}`);
     }
     await sleep(FETCH_DELAY_MS);

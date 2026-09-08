@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { TelegramSchedule, TELEGRAM_INTERVAL_MS, TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from '../worker/telegram-scheduler.mjs';
+import { TelegramSchedule, TELEGRAM_INTERVAL_MS, TELEGRAM_RUN_OVERDUE_MS, TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from '../worker/telegram-scheduler.mjs';
 import worker from '../worker/index.js';
 
 class Store {
@@ -31,8 +31,10 @@ const fetcher = async (input, init) => {
     return new Response(null, { status: 204 });
   }
   let runs = [];
-  if (scenario === 'running' && url.searchParams.get('status') === 'queued') runs = [{ id: 1, status: 'queued' }];
-  if (recentAt && !url.searchParams.has('status')) runs = [{ id: 2, status: 'completed', created_at: recentAt }];
+  if (['running', 'stalled'].includes(scenario) && url.searchParams.get('status') === 'queued') runs = [{ id: 1, status: 'queued',
+    ...(scenario === 'stalled' ? { created_at: new Date(time - TELEGRAM_RUN_OVERDUE_MS - 1).toISOString() } : {}) }];
+  if (recentAt && !url.searchParams.has('status')) runs = [{ id: 2, status: 'completed',
+    conclusion: scenario === 'recent-failed' ? 'failure' : 'success', created_at: recentAt }];
   return Response.json({ workflow_runs: runs });
 };
 const storage = new Store();
@@ -48,16 +50,32 @@ schedule = create(); // Simulate eviction: nothing important lives only in memor
 assert.equal((await schedule.request('auto')).reason, 'cooling-down');
 assert.equal(await storage.getAlarm(), firstAlarm, 'visits do not push the timer into the future');
 storage.alarm = null;
+assert.equal((await schedule.status()).alarmAt, null, 'a status read reports the lost alarm without repairing it');
+assert.equal(await storage.getAlarm(), null);
 await schedule.request('auto');
 assert.equal(await storage.getAlarm(), firstAlarm, 'recover the timer without bypassing its claim');
 time += TELEGRAM_INTERVAL_MS;
 scenario = 'running';
 assert.equal((await schedule.request('auto')).reason, 'already-running');
 assert.equal(posts, 1, 'an older active run blocks collection');
+assert.equal((await schedule.status()).activeRun.status, 'queued');
+assert.equal((await schedule.status()).runOverdue, false);
+time += TELEGRAM_RUN_OVERDUE_MS + 1;
+assert.equal((await schedule.request('auto')).reason, 'run-overdue', 'an undated queued run cannot hide forever behind success');
+assert.equal((await schedule.status()).lastResult, 'blocked');
+assert.equal((await schedule.status()).runOverdue, true);
+assert.equal(posts, 1, 'overdue diagnostics never cancel or duplicate an active job');
+time = await storage.getAlarm();
+scenario = 'stalled';
+assert.equal((await schedule.request('auto')).ok, false, 'a dated stalled run is also an explicit failure');
+assert.equal(posts, 1);
 time += TELEGRAM_INTERVAL_MS;
 scenario = 'ok'; recentAt = new Date(time - 60000).toISOString();
 assert.equal((await schedule.request('auto')).reason, 'cooling-down');
 assert.equal(posts, 1, 'a recent GitHub scheduled run prevents an extra timer run');
+time = await storage.getAlarm(); scenario = 'recent-failed'; recentAt = new Date(time - 60000).toISOString();
+assert.equal((await schedule.request('auto')).reason, 'latest-run-failed');
+assert.equal((await schedule.status()).lastResult, 'recent-run-failed', 'a recent failed workflow is not a healthy cooldown');
 time = await storage.getAlarm(); recentAt = null; scenario = 'lost-response';
 assert.equal((await schedule.request('auto')).ok, false);
 assert.equal(posts, 2);

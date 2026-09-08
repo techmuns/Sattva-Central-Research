@@ -3,7 +3,20 @@
 export const reviewedNewsIdentities = [
   // Existing curated ISIN overrides, moved unchanged into the shared registry so publisher/X
   // matching sees the same identities as scheduled company search.
-  { match: { isin: 'INE12F801023' }, brands: ['Kissht'] },
+  {
+    match: { isin: 'INE12F801023', ticker: 'KISSHT' },
+    legalName: 'OnEMI Technology Solutions Limited',
+    aliases: ['OnEMI Technology'],
+    brands: ['Kissht'],
+    officialDomains: ['kissht.com'],
+    evidenceUrls: [
+      'https://www.kissht.com/investor-relations',
+      'https://nsearchives.nseindia.com/corporate/ixbrl/INTEGRATED_FILING_GOVERNANCE_180423_30072026140405_iXBRL_WEB.html',
+      // Reviewed publisher usage of the shortened legal name, not an inferred search alias.
+      'https://economictimes.indiatimes.com/markets/stocks/news/jm-financial-initiates-coverage-on-onemi-technology-with-buy-call-sees-28-upside/articleshow/133755070.cms',
+    ],
+    // Do not shorten Kissht to "Kiss" or expand it fuzzily to Kishtwar.
+  },
   { match: { isin: 'INE526E01018' }, legalName: 'SPR Auto Technologies Ltd', formerNames: ['Shriram Pistons & Rings Ltd'] },
   { match: { isin: 'INE879I01012' }, formerNames: ['DB Realty Ltd'] },
   { match: { isin: 'INE010J01012' }, legalName: 'Tejas Networks Limited' },

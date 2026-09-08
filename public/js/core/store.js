@@ -29,6 +29,7 @@
 //   "fetch it", which is exactly what the code did before this module existed.
 
 import { authHeaders } from './host-context.js';
+import { hydrateJsonShards } from './json-shards.js';
 
 const DB_NAME = 'sattva-cache';
 const DB_VERSION = 1;
@@ -38,6 +39,12 @@ const STORE = 'payloads';
 export const KEYS = {
   earnings: (subType) => `earnings:${subType}`,
   concalls: 'concalls',
+  // The portfolio calendar half of /api/concalls, kept separate from the response above and its
+  // ETag. The route assembles two independent upstreams — StockScans' rows and the authenticated
+  // S Screen artifact — and either can fail alone, arriving as a payload that carries no calendar
+  // at all. Retaining it here is what stops one upstream's outage emptying the other's feed, and
+  // what makes that survive a reload; the same reasoning as `nse-filings:history`.
+  concallPortfolioUpcoming: 'concalls:portfolio-upcoming',
   // The `list` half is keyed separately from the strip-only request: they are different
   // representations of the same date and storing them under one key would let a strip-only
   // response answer for a request that wanted the company list, or the reverse.
@@ -229,6 +236,44 @@ export function writeEntry(key, { tag, value, savedAt = Date.now() }) {
     .catch(() => null);
 }
 
+/** Atomically replace a multi-entry cache. Quota/transaction failure keeps the previous disk
+ * revision intact; the complete new revision remains usable in this session's memory. */
+export async function writeEntryBatch(entries, deleteKeys = [], { prunePrefix = null } = {}) {
+  const rows = [...entries].map(([key, entry]) => [key, { tag: entry.tag || null,
+    savedAt: entry.savedAt ?? Date.now(), value: entry.value }]);
+  const keep = new Set(rows.map(([key]) => key));
+  const inGroup = key => key === prunePrefix || key.startsWith(`${prunePrefix}:`);
+  if (prunePrefix && (!prunePrefix.startsWith('ai-alerts:public-window:') || rows.some(([key]) => !inGroup(key))))
+    throw Error('Invalid alert cache group');
+  const db = await openDb();
+  const persistent = db ? await new Promise(resolve => {
+    let transaction;
+    try {
+      transaction = db.transaction(STORE, 'readwrite');
+      const target = transaction.objectStore(STORE);
+      if (prunePrefix) {
+        const cursor = target.openKeyCursor(IDBKeyRange.bound(prunePrefix, `${prunePrefix}\uffff`));
+        cursor.onsuccess = () => {
+          if (!cursor.result) return;
+          if (inGroup(cursor.result.key) && !keep.has(cursor.result.key)) target.delete(cursor.result.key);
+          cursor.result.continue();
+        };
+      }
+      for (const key of deleteKeys) target.delete(key);
+      for (const [key, row] of rows) target.put(row, key);
+      transaction.oncomplete = () => resolve(true);
+      transaction.onabort = transaction.onerror = () => resolve(false);
+    } catch {
+      try { transaction?.abort(); } catch { /* Already aborted. */ }
+      resolve(false);
+    }
+  }) : false;
+  if (prunePrefix) for (const key of memory.keys()) if (inGroup(key) && !keep.has(key)) memory.delete(key);
+  for (const key of deleteKeys) memory.delete(key);
+  for (const [key, row] of rows) memory.set(key, row);
+  return { persistent };
+}
+
 export function deleteEntry(key) {
   memory.delete(key);
   return openDb()
@@ -282,6 +327,7 @@ export function conditionalJson(path, options = {}) {
 }
 
 async function readConditionalJson(path, { key, optional = false, signal, validate } = {}) {
+  const callerSignal = signal;
   signal = signal || AbortSignal.timeout(20000);
   const stored = key ? await readEntry(key) : null;
 
@@ -311,14 +357,16 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   // The tag travels in the body as well as the header. The header is authoritative where it can be
   // read; the body copy is what survives a cross-origin response whose ETag is not exposed.
   const headerTag = res.headers.get('etag');
-  if (headerTag && stored?.tag === headerTag && stored.value) {
+  if (headerTag && stored?.tag === headerTag && stored.value && !Object.hasOwn(stored.value, '_jsonShards')) {
     validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
 
   let value;
   try {
-    value = await res.json();
+    // Each immutable part has its own bounded timeout. A large complete capture must not share
+    // the manifest's 20-second budget; an explicit caller cancellation still covers every read.
+    value = await hydrateJsonShards(await res.json(), path, { signal: callerSignal });
   } catch (err) {
     if (optional) return miss(res.status);
     throw err;
@@ -327,7 +375,7 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   const tag = headerTag || value?.meta?.contentTag || null;
   // Same short-circuit, for the case where the ETag header was unreadable and the tag had to come
   // out of the body. The parse is already paid for, but the caller still learns nothing changed.
-  if (tag && stored?.tag === tag && stored.value) {
+  if (tag && stored?.tag === tag && stored.value && !Object.hasOwn(stored.value, '_jsonShards')) {
     validate?.(stored.value);
     return { status: 304, value: stored.value, tag: stored.tag, savedAt: stored.savedAt, checkedAt, fromStore: true };
   }
@@ -369,7 +417,7 @@ export function revalidatedJson(path, { optional = false, allowCached = false } 
   const p = fetch(path, { cache: 'no-cache', ...(allowCached ? { headers: { 'x-sattva-bootstrap': '1' } } : {}), signal: AbortSignal.timeout(20000) })
     .then((res) => {
       if (!res.ok) throw new Error(`${path} (${res.status})`);
-      return res.json();
+      return res.json().then(value => hydrateJsonShards(value, path));
     })
     .finally(() => inFlightJson.delete(requestKey));
 

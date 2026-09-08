@@ -2,7 +2,7 @@
 // Read-only Anthropic access probe. Never print the key or upstream response body.
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { CLAUDE_MODEL } from '../worker/research-claude.mjs';
+import { CLAUDE_MODEL, claudeCredential } from '../worker/research-claude.mjs';
 
 export function claudeKeyFormat(key) {
   const value = String(key || '').trim();
@@ -37,8 +37,10 @@ export async function checkClaudeAccess(key, fetcher = fetch) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const result = await checkClaudeAccess(process.env.CLAUDE_API_KEY);
-  const summary = `Claude GitHub secret check: ${result.reason}${result.status ? ` (HTTP ${result.status})` : ''}. Stored format: ${claudeKeyFormat(process.env.CLAUDE_API_KEY)} (shape only, not proof of issuer or validity). Model: ${CLAUDE_MODEL}. No generation or deployment was performed.`;
+  const credential = claudeCredential(process.env);
+  const binding = String(process.env.CLAUDE_KEY || '').trim() ? 'CLAUDE_KEY' : 'CLAUDE_API_KEY';
+  const result = await checkClaudeAccess(credential);
+  const summary = `Claude environment check (${binding}): ${result.reason}${result.status ? ` (HTTP ${result.status})` : ''}. Stored format: ${claudeKeyFormat(credential)} (shape only, not proof of issuer or validity). Model: ${CLAUDE_MODEL}. This checks only the current process environment, not another secret store. No generation or deployment was performed.`;
   console.log(summary);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + '\n');
   if (!result.ok) process.exitCode = 1;
