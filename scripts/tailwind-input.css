@@ -115,8 +115,8 @@ html[data-alerts-focus-mode="true"] [data-reading-layout="table"] [data-app-nav]
   .alerts-workspace [data-section-head] { margin-bottom: 8px; }
   .alerts-controls { gap: 8px 6px; margin-bottom: 8px; }
   .alerts-view-controls { width: 100%; justify-content: space-between; gap: 6px; }
-  .alerts-horizon-control [role="tab"] { padding-left: 8px; padding-right: 8px; gap: 4px; }
-  .alerts-horizon-control [role="tab"] > span { padding-left: 5px; padding-right: 5px; }
+  .alerts-horizon-control [role="tab"] { padding-left: 6px; padding-right: 6px; gap: 4px; white-space: nowrap; }
+  .alerts-horizon-control [role="tab"] > span { padding-left: 2px; padding-right: 2px; }
   .alerts-workspace [data-export-format] { display: none; }
   .alerts-workspace [data-export] { padding-left: 10px; padding-right: 10px; }
   .alerts-source-panel { padding: 12px; max-height: 50vh; }

@@ -28,7 +28,7 @@
 import { scoreTable, sectionHead } from '../ui/screener.js';
 import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
-import { formatNumber } from '../core/format.js';
+import { formatCompact, formatNumber } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/daily-alerts.js';
@@ -600,7 +600,8 @@ function horizonToggle(throughCount, upcomingCount, day, ready = true) {
         active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
       }">
       ${escapeHtml(label)}
-      <span class="rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}">${ready ? escapeHtml(formatNumber(count)) : '…'}</span>
+      <span class="rounded-full px-1 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}"
+        title="${ready ? escapeHtml(formatNumber(count)) : 'Still loading'} alerts">${ready ? escapeHtml(formatCompact(count)) : '…'}</span>
     </button>`;
   };
   return `<div class="alerts-horizon-control">

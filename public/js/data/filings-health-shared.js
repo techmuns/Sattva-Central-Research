@@ -11,6 +11,7 @@ export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHou
 const object = (value) => value && typeof value === 'object' && !Array.isArray(value);
 const stamp = (value) => typeof value === 'string' ? Date.parse(value) : NaN;
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
+const verifiedBseCode = (value) => /^\d{6}$/.test(String(value || '')) ? String(value) : null;
 
 export function assessFilingsHealth(captures, { now = Date.now(), sources = Object.keys(FILINGS_HEALTH_FILES) } = {}) {
   const findings = [];
@@ -90,6 +91,21 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         if (body.registration.error) add(source, 'company-registration-unavailable', 'critical');
         age(source, body.registration.checkedAt, FILINGS_HEALTH_LIMITS.runHours, 'company-registration-overdue');
       }
+      let authenticatedAnnouncementOutage = false;
+      if (body.sourceOutages !== undefined && !object(body.sourceOutages)) {
+        add(source, 'invalid-capture', 'critical');
+      } else if (body.sourceOutages?.authenticatedAnnouncements !== undefined) {
+        const outage = body.sourceOutages.authenticatedAnnouncements;
+        if (!object(outage) || !['no-token', 'unauthorised'].includes(outage.reason)) {
+          add(`${source}/announcements`, 'invalid-capture', 'critical');
+        } else {
+          authenticatedAnnouncementOutage = true;
+          const outageAt = stamp(outage.at);
+          if (!Number.isFinite(outageAt) || outageAt > now + 600000) {
+            add(`${source}/announcements`, 'invalid-check-time', 'critical');
+          }
+        }
+      }
       for (const [kind, directory] of Object.entries(body.identitySources || {})) {
         if (!object(directory)) { add(source, 'invalid-capture', 'critical', [kind]); continue; }
         if (directory.error) add(source, 'identity-directory-unavailable', 'critical', [kind]);
@@ -107,8 +123,10 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         let unavailableLinks = 0;
         for (const { ticker } of body.companies) {
           const entry = entries[ticker];
+          if (kind === 'announcements' && authenticatedAnnouncementOutage) group('authentication-failed', 'critical', ticker);
           if (!object(entry)) { group('company-unregistered', 'critical', ticker); continue; }
           unavailableLinks += Number(entry.unavailableLinks) || 0;
+          if (kind === 'announcements' && authenticatedAnnouncementOutage) continue;
           if (entry.error) group(['no-token', 'unauthorised'].includes(entry.error.reason) ? 'authentication-failed' : 'source-read-failed', 'critical', ticker);
           else if (entry.skipped) group('partial-source-response', 'critical', ticker);
           else if (!entry.lastSuccessAt) {
@@ -123,6 +141,62 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         }
         for (const { code, severity, tickers } of groups.values()) add(name, code, severity, tickers);
         if (unavailableLinks) add(name, 'source-links-unavailable', 'warning', [], unavailableLinks);
+        if (kind === 'announcements') {
+          // The authenticated company route and official BSE history have independent watermarks.
+          // Audit BSE only where the identity registry supplied a verified six-digit code; a
+          // ticker with no BSE identity is outside this source rather than silently incomplete.
+          const bseName = `${name}/bse`, bseGroups = new Map();
+          const groupBse = (code, severity, ticker) => {
+            const key = `${severity}:${code}`;
+            if (!bseGroups.has(key)) bseGroups.set(key, { code, severity, tickers: [] });
+            bseGroups.get(key).tickers.push(ticker);
+          };
+          let bseUnavailableLinks = 0;
+          for (const company of body.companies) {
+            const ticker = company.ticker, entry = entries[ticker];
+            const source = object(entry?.bse) ? entry.bse : null;
+            const companyCode = verifiedBseCode(company.bseCode);
+            const capturedCode = verifiedBseCode(source?.bseCode);
+            if (!companyCode && !capturedCode) continue;
+            if (companyCode && capturedCode && companyCode !== capturedCode) {
+              groupBse('bse-code-mismatch', 'critical', ticker); continue;
+            }
+            if (!source || companyCode && !capturedCode) {
+              const registered = stamp(source?.registeredAt || entry?.registeredAt || body.createdAt);
+              groupBse('company-never-checked', Number.isFinite(registered) && registered <= now + 600000 &&
+                now - registered <= FILINGS_HEALTH_LIMITS.initialHours * 3600000 ? 'warning' : 'critical', ticker);
+              continue;
+            }
+            bseUnavailableLinks += Number(source.unavailableLinks) || 0;
+            if (source.error) groupBse('source-read-failed', 'critical', ticker);
+            else if (source.skipped) groupBse('partial-source-response', 'critical', ticker);
+            else if (!source.lastSuccessAt) {
+              const registered = stamp(source.registeredAt || entry?.registeredAt || body.createdAt);
+              groupBse('company-never-checked', Number.isFinite(registered) && registered <= now + 600000 &&
+                now - registered <= FILINGS_HEALTH_LIMITS.initialHours * 3600000 ? 'warning' : 'critical', ticker);
+            } else {
+              const success = stamp(source.lastSuccessAt);
+              const time = stamp(source.recentCheckedAt || source.lastSuccessAt);
+              const attempt = stamp(source.lastAttemptAt);
+              if (!Number.isFinite(success) || success > now + 600000 || !Number.isFinite(time) || time > now + 600000 ||
+                  !Number.isFinite(attempt) || attempt > now + 600000) {
+                groupBse('invalid-check-time', 'critical', ticker);
+              } else {
+                if (now - time > FILINGS_HEALTH_LIMITS.companyHours * 3600000) groupBse('company-check-overdue', 'critical', ticker);
+                if (attempt > success) groupBse('company-reads-incomplete', 'critical', ticker);
+              }
+              const paginationValid = count(source.declared) && count(source.collected) && count(source.pages) && source.pages > 0 &&
+                count(source.requests) && source.requests >= source.pages;
+              if (!paginationValid) groupBse('invalid-capture', 'critical', ticker);
+              else if (source.declared !== source.collected) groupBse('pagination-shortfall', 'critical', ticker);
+              if (!(Array.isArray(source.ranges) && source.ranges.some((r) => r && r.from <= body.requestedFrom && r.to >= body.requestedTo))) {
+                groupBse('historical-backfill-pending', 'warning', ticker);
+              }
+            }
+          }
+          for (const { code, severity, tickers } of bseGroups.values()) add(bseName, code, severity, tickers);
+          if (bseUnavailableLinks) add(bseName, 'source-links-unavailable', 'warning', [], bseUnavailableLinks);
+        }
       }
       if (body.stoppedForAuth && !findings.some((f) => f.code === 'authentication-failed')) add(source, 'authentication-failed', 'critical');
       if (Array.isArray(body.unresolved) && body.unresolved.length) add(source, 'company-identities-unresolved', 'warning', body.unresolved);
@@ -142,6 +216,7 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
         else if (body.shortfall != null && !Array.isArray(body.shortfall)) add(source, 'invalid-capture', 'critical');
         if (Object.keys(body.unknownCategories || {}).length) add(source, 'unknown-source-categories', 'critical', Object.keys(body.unknownCategories));
         if (body.coversUniverse !== true) add(source, 'exchange-coverage-unverified', 'critical');
+        if (body.categoryInventoryVerified !== true) add(source, 'category-inventory-unverified', 'warning');
       } else if (body.coversUniverse === true) {
         const required = new Set(['bulk', 'block', 'sast', 'insiders']);
         const sources = Array.isArray(body.sources) ? body.sources : [];

@@ -6,14 +6,18 @@ import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { assessFilingsHealth, FILINGS_HEALTH_FILES } from '../public/js/data/filings-health-shared.js';
+import { companyCaptureStatusFromIndex } from '../public/js/data/company-captures.js';
 import worker from '../worker/index.js';
 
 const now = Date.now(), recent = new Date(now - 60000).toISOString();
 const from = '2025-01-01', to = new Date(now).toISOString().slice(0, 10);
 const healthy = {
-  company: { version: 1, companies: [{ ticker: 'A' }], createdAt: recent, lastRunFinishedAt: recent, requestedFrom: from, requestedTo: to,
-    sources: { announcements: { A: { lastSuccessAt: recent, recentCheckedAt: recent, ranges: [{ from, to }] } }, domestic: { A: { lastSuccessAt: recent } } } },
-  announcements: { byTicker: {}, rowCount: 0, capturedAt: recent, coversUniverse: true, shortfall: [], failed: [] },
+  company: { version: 1, companies: [{ ticker: 'A', bseCode: '500001' }], createdAt: recent, lastRunFinishedAt: recent, requestedFrom: from, requestedTo: to,
+    sources: { announcements: { A: { lastSuccessAt: recent, recentCheckedAt: recent, ranges: [{ from, to }],
+      bse: { bseCode: '500001', lastAttemptAt: recent, lastSuccessAt: recent, recentCheckedAt: recent,
+        declared: 0, collected: 0, pages: 1, requests: 1, ranges: [{ from, to }] } } }, domestic: { A: { lastSuccessAt: recent } } } },
+  announcements: { byTicker: {}, rowCount: 0, capturedAt: recent, coversUniverse: true,
+    categoryInventoryVerified: true, shortfall: [], failed: [] },
   news: { version: 1, updatedAt: recent, entities: [{ entityId: 'isin:PRIVATE', key: 'ISIN:PRIVATE', queries: ['Private Alpha Ltd', 'AlphaBrand'] }],
     queries: { 'isin:PRIVATE': Object.fromEntries(['Private Alpha Ltd', 'AlphaBrand'].map(q => [q, { lastAttemptAt: recent, lastSuccessAt: recent, lastResultCount: 0, error: null }])) } },
   twitter: { posts: [], failed: [], capturedAt: recent, collection: { status: 'ok' } },
@@ -22,11 +26,68 @@ const healthy = {
 const assess = (value) => assessFilingsHealth(value, { now });
 assert.equal(assess(healthy).status, 'healthy');
 const original = structuredClone(healthy);
+const categoryInventory = structuredClone(healthy);
+categoryInventory.announcements.categoryInventoryVerified = false;
+assert(assess(categoryInventory).findings.some((finding) => finding.source === 'announcements' &&
+  finding.code === 'category-inventory-unverified' && finding.severity === 'warning'));
+
+const topLevelOk = { lastSuccessAt: recent, recentCheckedAt: recent, ranges: [{ from, to }] };
+const bseStatusIndex = { version: 1, requestedFrom: from, requestedTo: to, updatedAt: recent,
+  companies: [
+    { ticker: 'OK', bseCode: '500001' }, { ticker: 'NEVER', bseCode: '500002' },
+    { ticker: 'STALE', bseCode: '500003' }, { ticker: 'ERROR', bseCode: '500004' },
+    { ticker: 'BACKFILL', bseCode: '500005' }, { ticker: 'NOCODE' },
+  ], sources: { announcements: {
+    OK: { ...topLevelOk, bse: { bseCode: '500001', ...topLevelOk } },
+    NEVER: { ...topLevelOk, bse: { bseCode: '500002', registeredAt: recent, ranges: [] } },
+    STALE: { ...topLevelOk, bse: { bseCode: '500003', lastSuccessAt: new Date(now - 49 * 3600000).toISOString(), ranges: [{ from, to }] } },
+    ERROR: { ...topLevelOk, bse: { bseCode: '500004', error: { reason: 'upstream', message: 'BSE unavailable' }, ranges: [] } },
+    BACKFILL: { ...topLevelOk, bse: { bseCode: '500005', lastSuccessAt: recent, recentCheckedAt: recent, ranges: [{ from: to, to }] } },
+    NOCODE: { ...topLevelOk, bse: { bseCode: null, error: { reason: 'upstream', message: 'irrelevant without a code' } } },
+  } } };
+const bseStatus = companyCaptureStatusFromIndex(bseStatusIndex, 'announcements', null, now);
+assert.equal(bseStatus.checked, 6, 'existing announcement status remains the top-level provider checkpoint');
+assert.deepEqual({ total: bseStatus.bse.total, checked: bseStatus.bse.checked, failed: bseStatus.bse.failed,
+  never: bseStatus.bse.never, stale: bseStatus.bse.stale, backfill: bseStatus.bse.backfill },
+{ total: 5, checked: 2, failed: 1, never: 1, stale: 1, backfill: 1 });
+assert.equal(bseStatus.bse.gaps.length, 4);
+assert.equal(companyCaptureStatusFromIndex(bseStatusIndex, 'announcements', ['NOCODE'], now).bse.total, 0,
+  'companies without a verified BSE code never count as official-BSE gaps');
+for (const [label, mutate] of [
+  ['future success timestamps', entry => { entry.lastSuccessAt = new Date(now + 11 * 60000).toISOString(); }],
+  ['future recent-check timestamps', entry => { entry.recentCheckedAt = new Date(now + 11 * 60000).toISOString(); }],
+]) {
+  const fixture = structuredClone(bseStatusIndex);
+  mutate(fixture.sources.announcements.OK);
+  mutate(fixture.sources.announcements.OK.bse);
+  const result = companyCaptureStatusFromIndex(fixture, 'announcements', ['OK'], now);
+  assert.deepEqual({ checked: result.checked, stale: result.stale, reason: result.gaps[0]?.reason },
+    { checked: 0, stale: 1, reason: 'Source check time is invalid' }, `top-level ${label} cannot look current`);
+  assert.deepEqual({ checked: result.bse.checked, stale: result.bse.stale, reason: result.bse.gaps[0]?.reason },
+    { checked: 0, stale: 1, reason: 'Official BSE check time is invalid' }, `BSE ${label} cannot look current`);
+}
+const outageStatusIndex = structuredClone(bseStatusIndex);
+outageStatusIndex.sourceOutages = { authenticatedAnnouncements: { reason: 'unauthorised', at: recent } };
+const outageStatus = companyCaptureStatusFromIndex(outageStatusIndex, 'announcements', ['OK'], now);
+assert.deepEqual({ checked: outageStatus.checked, failed: outageStatus.failed, reason: outageStatus.gaps[0]?.reason },
+  { checked: 0, failed: 1, reason: 'Authenticated announcement source is unavailable' },
+  'a global authenticated-source outage applies to an untouched company checkpoint');
+
 const auth = structuredClone(healthy);
 auth.company.sources.domestic.A.error = { reason: 'unauthorised', message: 'Sensitive upstream error must not be exposed in health report' };
 assert.equal(assess(auth).ok, false, 'a fresh job timestamp cannot mask an expired credential');
 assert(assess(auth).findings.some((f) => f.code === 'authentication-failed'));
 assert(!JSON.stringify(assess(auth)).includes('Sensitive upstream'), 'only controlled diagnostic codes are exposed');
+const globalAuth = structuredClone(healthy);
+globalAuth.company.sourceOutages = { authenticatedAnnouncements: { reason: 'unauthorised', at: recent } };
+const globalAuthResult = assess(globalAuth);
+assert(globalAuthResult.findings.some((finding) => finding.source === 'company/announcements' &&
+  finding.code === 'authentication-failed' && finding.affected.includes('A')),
+'a cached authenticated-source outage keeps untouched announcement entries unhealthy');
+const malformedGlobalAuth = structuredClone(globalAuth);
+malformedGlobalAuth.company.sourceOutages.authenticatedAnnouncements.at = new Date(now + 11 * 60000).toISOString();
+assert(assess(malformedGlobalAuth).findings.some((finding) => finding.source === 'company/announcements' &&
+  finding.code === 'invalid-check-time'), 'a future-dated global outage cannot provide a valid source check time');
 
 const stale = structuredClone(healthy);
 stale.company.lastRunFinishedAt = new Date(now - 5 * 3600000).toISOString();
@@ -63,6 +124,40 @@ assert(assess(corrupt).findings.some((f) => f.code === 'row-count-mismatch'));
 const malformedRanges = structuredClone(healthy);
 malformedRanges.company.sources.announcements.A.ranges = {};
 assert.equal(assess(malformedRanges).status, 'degraded', 'malformed range metadata cannot assert complete historical coverage');
+for (const [label, mutate, code, severity = 'critical'] of [
+  ['BSE source failure', b => { b.company.sources.announcements.A.bse.error = { reason: 'upstream', message: 'secret BSE detail' }; }, 'source-read-failed'],
+  ['BSE never checked', b => { b.company.sources.announcements.A.bse = { bseCode: '500001', registeredAt: recent, ranges: [] }; }, 'company-never-checked', 'warning'],
+  ['BSE stale', b => { b.company.sources.announcements.A.bse.recentCheckedAt = new Date(now - 49 * 3600000).toISOString(); }, 'company-check-overdue'],
+  ['BSE backfill pending', b => { b.company.sources.announcements.A.bse.ranges = []; }, 'historical-backfill-pending', 'warning'],
+  ['BSE future success', b => { b.company.sources.announcements.A.bse.lastSuccessAt = new Date(now + 11 * 60000).toISOString(); }, 'invalid-check-time'],
+  ['BSE future recent check', b => { b.company.sources.announcements.A.bse.recentCheckedAt = new Date(now + 11 * 60000).toISOString(); }, 'invalid-check-time'],
+  ['BSE missing attempt time', b => { delete b.company.sources.announcements.A.bse.lastAttemptAt; }, 'invalid-check-time'],
+  ['BSE unfinished newest read', b => { b.company.sources.announcements.A.bse.lastAttemptAt = new Date(now).toISOString(); }, 'company-reads-incomplete'],
+  ['BSE declared-count shortfall', b => { b.company.sources.announcements.A.bse.declared = 1; }, 'pagination-shortfall'],
+  ['BSE missing declared count', b => { delete b.company.sources.announcements.A.bse.declared; }, 'invalid-capture'],
+  ['BSE invalid collected count', b => { b.company.sources.announcements.A.bse.collected = '0'; }, 'invalid-capture'],
+  ['BSE invalid page count', b => { b.company.sources.announcements.A.bse.pages = 0; }, 'invalid-capture'],
+  ['BSE invalid request count', b => { b.company.sources.announcements.A.bse.requests = 0; }, 'invalid-capture'],
+  ['BSE fewer requests than pages', b => { b.company.sources.announcements.A.bse.pages = 2; }, 'invalid-capture'],
+]) {
+  const fixture = structuredClone(healthy); mutate(fixture);
+  const result = assess(fixture);
+  assert(result.findings.some((finding) => finding.source === 'company/announcements/bse' &&
+    finding.code === code && finding.severity === severity), label);
+  assert(!JSON.stringify(result).includes('secret BSE detail'), 'BSE health exposes controlled codes instead of upstream messages');
+}
+const bseMismatch = structuredClone(healthy);
+bseMismatch.company.sources.announcements.A.bse.bseCode = '500002';
+assert(assess(bseMismatch).findings.some((finding) => finding.source === 'company/announcements/bse' && finding.code === 'bse-code-mismatch'));
+const noBseCode = structuredClone(healthy);
+delete noBseCode.company.companies[0].bseCode;
+delete noBseCode.company.sources.announcements.A.bse;
+assert.equal(assess(noBseCode).status, 'healthy', 'a company without a verified BSE identity is outside BSE coverage, not a gap');
+const nestedBseCode = structuredClone(healthy);
+delete nestedBseCode.company.companies[0].bseCode;
+nestedBseCode.company.sources.announcements.A.bse.error = { reason: 'upstream', message: 'hidden' };
+assert(assess(nestedBseCode).findings.some((finding) => finding.source === 'company/announcements/bse' && finding.code === 'source-read-failed'),
+  'the verified code retained in the nested source state remains auditable');
 const retained = structuredClone(healthy);
 retained.insider.fallback = { A: { capturedAt: recent, reason: 'timeout' } };
 assert(assess(retained).findings.some((f) => f.code === 'company-reads-incomplete'), 'last-good rows cannot mask the failed newest read');

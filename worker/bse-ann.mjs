@@ -12,16 +12,21 @@
 //   requests. That is the entire universe for roughly four per cent of the old budget, and it needs
 //   no credential, so it cannot fail the way a session JWT fails.
 //
-// THE `-1` WILDCARD IS A TRAP AND IT FAILS SILENTLY.
+// THE `-1` WILDCARD IS A TRAP FOR MARKET-WIDE READS AND IT FAILS SILENTLY.
 //   `strCat=-1` — the obvious "all categories" value, and the one their own page appears to use —
 //   answers HTTP 200 with the bare STRING "No Record Found!". An empty `strCat` answers 200 with
 //   zero rows. Neither is an error and neither is empty: both are the request being wrong. So the
 //   categories are named explicitly, `assertShape` rejects the string form outright, and a run that
 //   collects nothing fails rather than committing an empty file over a good one.
 //
-//   The cost of naming them is that a category BSE adds later is invisible. `unknownCategories`
-//   is the tripwire: every row's own `CATEGORYNAME` is checked against the list we asked for, so a
-//   value we did not request still shows up in the run report instead of being silently absent.
+//   With a six-digit `strScrip`, BSE's `-1` wildcard does return the complete company result set.
+//   That narrower mode powers resumable per-company history without multiplying each company by
+//   every category. It validates the declared total and issuer on every page before advancing.
+//
+//   The cost of naming them is that a category BSE adds later is invisible until this configured
+//   inventory is updated. `unknownCategories` can detect an unexpected label returned by one of the
+//   categories we did request; it cannot discover a category that was never queried. A successful
+//   walk therefore proves pagination across the configured categories, not that BSE added none.
 //
 // WHAT IS REPRODUCED AND WHAT IS NOT. The headline, the subject line, the category and the filing
 // time are BSE's. Presentation-only HTML break tags are normalised to spaces; the words are not
@@ -36,13 +41,17 @@ export const CATEGORIES = [
   'Result',
   'AGM/EGM',
   'New Listing',
+  'Insider Trading / SAST',
   'Insurance',
   'Integrated Filing',
+  'Others',
 ];
 
 const BASE = 'https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w';
 const PAGE_SIZE = 50; // observed: 50 rows a page, and the page after the last is empty rather than 404
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+export const BSE_PAGE_JSON_LIMIT = 2 * 1024 * 1024;
+export const BSE_PAGE_TIMEOUT_MS = 20_000;
 
 export const HEADERS = {
   'user-agent': UA,
@@ -52,8 +61,10 @@ export const HEADERS = {
 
 /** `YYYY-MM-DD` or a Date in, `YYYYMMDD` out — this endpoint wants the compact form. */
 export const compact = (d) => {
-  if (d instanceof Date) return d.toISOString().slice(0, 10).replace(/-/g, '');
-  return String(d || '').replace(/-/g, '').slice(0, 8);
+  if (d instanceof Date) return Number.isFinite(d.getTime()) ? d.toISOString().slice(0, 10).replace(/-/g, '') : '';
+  const value = String(d || '');
+  if (/^\d{8}$/.test(value)) return value;
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.replace(/-/g, '') : '';
 };
 
 export class BseAnnError extends Error {
@@ -64,19 +75,40 @@ export class BseAnnError extends Error {
   }
 }
 
-export function annUrl({ category, from, to, page = 1 }) {
-  const f = compact(from);
-  const t = compact(to);
-  if (!/^\d{8}$/.test(f) || !/^\d{8}$/.test(t)) {
-    throw new BseAnnError('shape', 'Announcements need a YYYYMMDD date range.', { from, to });
+function requiredDateRange(from, to) {
+  const parse = (value) => {
+    const valueCompact = compact(value);
+    if (!/^\d{8}$/.test(valueCompact)) return null;
+    const iso = `${valueCompact.slice(0, 4)}-${valueCompact.slice(4, 6)}-${valueCompact.slice(6)}`;
+    const parsed = new Date(`${iso}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso
+      ? { compact: valueCompact, iso }
+      : null;
+  };
+  const first = parse(from), last = parse(to);
+  if (!first || !last || first.iso > last.iso) {
+    throw new BseAnnError('shape', 'Announcements need an ordered, valid YYYYMMDD date range.', { from, to });
+  }
+  return { from: first, to: last };
+}
+
+export function annUrl({ category, from, to, page = 1, scripCode = '' }) {
+  const range = requiredDateRange(from, to);
+  const pageNumber = Number(page);
+  if (!Number.isSafeInteger(pageNumber) || pageNumber < 1) {
+    throw new BseAnnError('shape', 'The BSE announcement page must be a positive integer.', { page });
+  }
+  const code = String(scripCode || '').trim();
+  if (code && !/^\d{6}$/.test(code)) {
+    throw new BseAnnError('shape', 'A BSE scrip code must contain exactly six digits.', { scripCode });
   }
   const q = new URLSearchParams({
-    pageno: String(page),
+    pageno: String(pageNumber),
     strCat: category,
-    strPrevDate: f,
-    strScrip: '',
+    strPrevDate: range.from.compact,
+    strScrip: code,
     strSearch: 'P',
-    strToDate: t,
+    strToDate: range.to.compact,
     strType: 'C',
     subcategory: '-1',
   });
@@ -104,11 +136,85 @@ export function assertShape(body, ctx = {}) {
   return body;
 }
 
+async function cancelResponse(response) {
+  try { await response?.body?.cancel?.(); } catch { /* Preserve the source error rather than a close error. */ }
+}
+
+async function boundedResponseJson(response, maxBytes, ctx) {
+  const length = response.headers?.get?.('content-length');
+  if (/^\d+$/.test(length || '') && Number(length) > maxBytes) {
+    await cancelResponse(response);
+    throw new BseAnnError('shape', `BSE response exceeded the ${maxBytes}-byte page limit.`, ctx);
+  }
+  const reader = response.body?.getReader?.();
+  if (!reader) throw new BseAnnError('shape', 'BSE returned an unreadable response body.', ctx);
+  const decoder = new TextDecoder();
+  let size = 0, text = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel().catch(() => {});
+        throw new BseAnnError('shape', `BSE response exceeded the ${maxBytes}-byte page limit.`, ctx);
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    try { return JSON.parse(text + decoder.decode()); }
+    catch { throw new BseAnnError('shape', 'BSE returned unreadable JSON.', ctx); }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+async function fetchBsePage(url, ctx, { fetchImpl, timeoutMs, maxResponseBytes }) {
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new BseAnnError('upstream', `BSE page did not answer within ${timeoutMs}ms.`, ctx));
+    }, timeoutMs);
+  });
+  const read = (async () => {
+    let response;
+    try { response = await fetchImpl(url, { headers: HEADERS, signal: controller.signal }); }
+    catch (error) {
+      if (controller.signal.aborted || error?.name === 'AbortError' || error?.name === 'TimeoutError') {
+        throw new BseAnnError('upstream', `BSE page did not answer within ${timeoutMs}ms.`, ctx);
+      }
+      throw new BseAnnError('upstream', 'BSE page could not be read.', { ...ctx, cause: String(error?.message || error) });
+    }
+    if (!response?.ok) {
+      await cancelResponse(response);
+      throw new BseAnnError('upstream', `BSE answered HTTP ${response?.status ?? 'unknown'}.`, {
+        ...ctx, status: response?.status ?? null,
+      });
+    }
+    return boundedResponseJson(response, maxResponseBytes, ctx);
+  })();
+  try { return await Promise.race([read, timeout]); }
+  finally { clearTimeout(timer); }
+}
+
 /** The declared total for a category, which is how we know when we have all of it. */
 export const rowCountOf = (body) => {
   const n = Number((body?.Table1 || [{}])[0]?.ROWCNT);
   return Number.isFinite(n) ? n : null;
 };
+
+function requiredRowCount(body, ctx) {
+  const raw = body?.Table1?.[0]?.ROWCNT;
+  if (!/^\d+$/.test(String(raw ?? ''))) {
+    throw new BseAnnError('shape', 'BSE did not declare a valid announcement count.', ctx);
+  }
+  const count = Number(raw);
+  if (!Number.isSafeInteger(count)) {
+    throw new BseAnnError('shape', 'BSE declared an announcement count outside the supported range.', { ...ctx, count: raw });
+  }
+  return count;
+}
 
 /** BSE occasionally embeds HTML break tags in a plain-text headline field. */
 export function cleanAnnouncementText(value) {
@@ -150,6 +256,26 @@ export function normaliseAnnouncement(row) {
   };
 }
 
+function requiredAnnouncementRow(raw, context) {
+  const row = normaliseAnnouncement(raw);
+  const date = String(row.date || '');
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T00:00:00Z`) : null;
+  if (!parsed || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date
+    || date < context.from || date > context.to) {
+    throw new BseAnnError('shape', 'BSE returned an announcement outside the requested date range or without a valid date.', {
+      ...context, returnedDate: row.date,
+    });
+  }
+  if (!row.headline) {
+    throw new BseAnnError('shape', 'BSE returned an announcement without a recognizable headline or subject.', context);
+  }
+  return row;
+}
+
+const announcementRecordId = (row) => row.newsId ? `news:${row.newsId}` : `row:${JSON.stringify([
+  row.scripCode, row.date, row.time, row.url, row.headline, row.subject, row.category, row.subCategory,
+])}`;
+
 /**
  * Every announcement in a date range, across every company on BSE.
  *
@@ -157,14 +283,25 @@ export function normaliseAnnouncement(row) {
  * is. `gapMs` spaces the requests — BSE has never rate-limited this in testing, and being
  * comfortably polite to somebody else's service is cheaper than finding out where their limit is.
  *
- * Returns `{ rows, byCategory, unknownCategories, requests, shortfall }`. `shortfall` records any
- * category where the rows collected did not reach the total BSE declared: a partial read is a
- * partial read and must not be presented as the day's full set.
+ * Returns `{ rows, byCategory, unknownCategories, requests, shortfall }`. Every page must repeat the
+ * same declared total, and the complete declared result must be collected within `maxPages`; a
+ * partial result throws instead of returning rows that a caller could mistake for complete.
  */
 export async function fetchAnnouncements(
   { from, to, categories = CATEGORIES, maxPages = 200 },
-  { fetchImpl = fetch, gapMs = 150, onProgress = null } = {},
+  { fetchImpl = fetch, gapMs = 150, onProgress = null,
+    timeoutMs = BSE_PAGE_TIMEOUT_MS, maxResponseBytes = BSE_PAGE_JSON_LIMIT } = {},
 ) {
+  if (!Array.isArray(categories) || !categories.length || categories.some((category) => !String(category || '').trim())) {
+    throw new BseAnnError('shape', 'Announcements need at least one named BSE category.');
+  }
+  if (!Number.isSafeInteger(maxPages) || maxPages < 1) {
+    throw new BseAnnError('shape', 'The BSE page limit must be a positive integer.', { maxPages });
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || !Number.isSafeInteger(maxResponseBytes) || maxResponseBytes < 1) {
+    throw new BseAnnError('shape', 'BSE page timeout and response limit must be positive integers.', { timeoutMs, maxResponseBytes });
+  }
+  const requested = requiredDateRange(from, to);
   const known = new Set(categories);
   const rows = [];
   const byCategory = {};
@@ -176,20 +313,47 @@ export async function fetchAnnouncements(
     let page = 1;
     let declared = null;
     let got = 0;
+    const recordIds = new Set();
     for (;;) {
       const url = annUrl({ category, from, to, page });
-      const res = await fetchImpl(url, { headers: HEADERS });
       requests++;
-      if (!res.ok) {
-        throw new BseAnnError('upstream', `BSE answered HTTP ${res.status} for ${category} page ${page}.`, { url, status: res.status });
+      const context = { url, category, page };
+      const body = assertShape(await fetchBsePage(url, context, { fetchImpl, timeoutMs, maxResponseBytes }), context);
+      const pageDeclared = requiredRowCount(body, { url, category, page });
+      if (declared == null) declared = pageDeclared;
+      else if (pageDeclared !== declared) {
+        throw new BseAnnError('shape', `BSE changed the declared count for ${category} while it was being paged.`, {
+          url, category, page, declared, pageDeclared,
+        });
       }
-      const body = assertShape(await res.json(), { url, category, page });
-      if (declared == null) declared = rowCountOf(body);
       const batch = body.Table;
+      if (batch.length > PAGE_SIZE) {
+        throw new BseAnnError('shape', `BSE returned more than ${PAGE_SIZE} rows for ${category} page ${page}.`, {
+          url, category, page, rows: batch.length,
+        });
+      }
+      if (got + batch.length > declared) {
+        throw new BseAnnError('shape', `BSE returned more rows than it declared for ${category}.`, {
+          url, category, page, declared, collected: got + batch.length,
+        });
+      }
       for (const raw of batch) {
-        const r = normaliseAnnouncement(raw);
-        // The tripwire: a category we did not ask for cannot appear in a result set we asked for
-        // by name — unless BSE renamed one, which is exactly what we want to hear about.
+        const r = requiredAnnouncementRow(raw, { url, category, page, from: requested.from.iso, to: requested.to.iso });
+        const recordId = announcementRecordId(r);
+        if (recordIds.has(recordId)) {
+          throw new BseAnnError('shape', `BSE repeated an announcement while paging ${category}.`, {
+            url, category, page, newsId: r.newsId,
+          });
+        }
+        recordIds.add(recordId);
+        // A different label means BSE ignored or changed the requested filter. It cannot be counted
+        // as a complete walk of this category. This still cannot discover a separate category that
+        // was absent from the configured requests altogether.
+        if (r.category !== category) {
+          throw new BseAnnError('shape', `BSE returned category ${r.category || '(missing)'} while ${category} was requested.`, {
+            url, category, returnedCategory: r.category, page,
+          });
+        }
         if (r.category && !known.has(r.category)) {
           unknownCategories.set(r.category, (unknownCategories.get(r.category) || 0) + 1);
         }
@@ -197,14 +361,120 @@ export async function fetchAnnouncements(
       }
       got += batch.length;
       if (onProgress) onProgress({ category, page, got, declared, requests });
-      if (batch.length < PAGE_SIZE || page >= maxPages) break;
+      if (got === declared) break;
+      if (batch.length !== PAGE_SIZE) {
+        throw new BseAnnError('shape', `BSE ended ${category} page ${page} before its declared count was collected.`, {
+          url, category, page, declared, collected: got,
+        });
+      }
+      if (page >= maxPages) {
+        throw new BseAnnError('shape', `BSE ${category} exceeded the ${maxPages}-page safety limit.`, {
+          url, category, page, declared, collected: got,
+        });
+      }
       page++;
       if (gapMs) await new Promise((r) => setTimeout(r, gapMs));
     }
     byCategory[category] = { declared, collected: got, pages: page };
-    if (declared != null && got < declared) shortfall.push({ category, declared, collected: got });
     if (gapMs) await new Promise((r) => setTimeout(r, gapMs));
   }
 
   return { rows, byCategory, unknownCategories: Object.fromEntries(unknownCategories), requests, shortfall };
+}
+
+/**
+ * Complete BSE history for one known scrip code and date range.
+ *
+ * BSE's all-category wildcard is reliable when a scrip code is present, so a company history costs
+ * one paginated walk rather than one walk per category. This path is deliberately stricter than
+ * the exchange-wide collector: one wrong-code row or unstable count would put another issuer's
+ * filing into a durable company archive, so the whole answer is rejected instead.
+ */
+export async function fetchCompanyAnnouncements(
+  { scripCode, from, to, maxPages = 200 },
+  { fetchImpl = fetch, gapMs = 150, onProgress = null,
+    timeoutMs = BSE_PAGE_TIMEOUT_MS, maxResponseBytes = BSE_PAGE_JSON_LIMIT } = {},
+) {
+  const code = String(scripCode || '').trim();
+  if (!/^\d{6}$/.test(code)) {
+    throw new BseAnnError('shape', 'A BSE scrip code must contain exactly six digits.', { scripCode });
+  }
+  if (!Number.isSafeInteger(maxPages) || maxPages < 1) {
+    throw new BseAnnError('shape', 'The BSE page limit must be a positive integer.', { maxPages });
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || !Number.isSafeInteger(maxResponseBytes) || maxResponseBytes < 1) {
+    throw new BseAnnError('shape', 'BSE page timeout and response limit must be positive integers.', { timeoutMs, maxResponseBytes });
+  }
+  const requested = requiredDateRange(from, to);
+
+  const rows = [];
+  const recordIds = new Set();
+  let declared = null;
+  let page = 1;
+
+  for (;;) {
+    const url = annUrl({ category: '-1', from, to, page, scripCode: code });
+    const context = { url, scripCode: code, page };
+    const body = assertShape(await fetchBsePage(url, context, { fetchImpl, timeoutMs, maxResponseBytes }), context);
+
+    const pageDeclared = requiredRowCount(body, { url, scripCode: code, page });
+    if (declared == null) declared = pageDeclared;
+    else if (pageDeclared !== declared) {
+      throw new BseAnnError('shape', `BSE changed the declared count for scrip ${code} while it was being paged.`, {
+        url, scripCode: code, page, declared, pageDeclared,
+      });
+    }
+
+    const batch = body.Table;
+    if (batch.length > PAGE_SIZE) {
+      throw new BseAnnError('shape', `BSE returned more than ${PAGE_SIZE} rows for scrip ${code} page ${page}.`, {
+        url, scripCode: code, page, rows: batch.length,
+      });
+    }
+    if (rows.length + batch.length > declared) {
+      throw new BseAnnError('shape', `BSE returned more rows than it declared for scrip ${code}.`, {
+        url, scripCode: code, page, declared, collected: rows.length + batch.length,
+      });
+    }
+
+    for (const raw of batch) {
+      const rowCode = String(raw?.SCRIP_CD ?? '').trim();
+      if (rowCode !== code) {
+        throw new BseAnnError('shape', `BSE returned scrip ${rowCode || '(missing)'} while ${code} was requested.`, {
+          url, scripCode: code, returnedScripCode: rowCode || null, page,
+        });
+      }
+      const row = requiredAnnouncementRow(raw, {
+        url, scripCode: code, page, from: requested.from.iso, to: requested.to.iso,
+      });
+      // NEWSID is normally present, but completeness must not depend on it. A repeated no-ID row
+      // on a later page can otherwise make the collected count equal the declared total while one
+      // real announcement is still missing.
+      const recordId = announcementRecordId(row);
+      if (recordIds.has(recordId)) {
+        throw new BseAnnError('shape', `BSE repeated an announcement while paging scrip ${code}.`, {
+          url, scripCode: code, newsId: row.newsId, page,
+        });
+      }
+      recordIds.add(recordId);
+      rows.push(row);
+    }
+
+    onProgress?.({ scripCode: code, page, got: rows.length, declared });
+    if (rows.length === declared) break;
+    if (batch.length !== PAGE_SIZE) {
+      throw new BseAnnError('shape', `BSE ended scrip ${code} page ${page} before its declared count was collected.`, {
+        url, scripCode: code, page, declared, collected: rows.length,
+      });
+    }
+    if (page >= maxPages) {
+      throw new BseAnnError('shape', `BSE scrip ${code} exceeded the ${maxPages}-page safety limit.`, {
+        url, scripCode: code, page, declared, collected: rows.length,
+      });
+    }
+    page++;
+    if (gapMs) await new Promise((resolve) => setTimeout(resolve, gapMs));
+  }
+
+  return { rows, scripCode: code, declared, collected: rows.length, pages: page, requests: page };
 }

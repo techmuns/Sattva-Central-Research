@@ -3361,11 +3361,13 @@ the last verified list; each directory records its own failure and check time. B
 and collector use this mapping, so new NSE-only holdings do not require a hand-maintained symbol list.
 
 The per-company collector gives portfolio announcement history priority after never-checked and
-failed work. Two out of three request starts are reserved for announcements and one for domestic
-reports; never-visited companies take precedence over repeats. Within announcements, portfolio
-companies precede already-visited Universe companies, which rotate by oldest attempt. It still
-uses bounded, restartable date windows, and a successful recent check does not imply that its
-one-year history is complete.
+failed work. It reads both the authenticated Muns company route and BSE's open scrip-code route;
+their successful windows and errors advance independently, and readable rows from either source are
+saved before reporting a partial run. Two out of three request starts are reserved for announcements
+and one for domestic reports; never-visited companies take precedence over repeats. Within
+announcements, portfolio companies precede already-visited Universe companies, which rotate by
+oldest attempt. Both announcement sources use bounded, restartable date windows, and a successful
+recent check does not imply that either source's one-year history is complete.
 
 NSE SME announcement requests use exchange symbols rather than Yahoo's `-SM` quote aliases:
 [ALPEXSOLAR](https://www.nseindia.com/corporate/corporate-announcements/ALPEXSOLAR/Alpex%20Solar%20Limited?ann_dt=14072026214516&segtype=SME&seqid=106697775),
@@ -3381,7 +3383,9 @@ confirms `FSC` / `INE935Q01015` and retains delisting/insolvency announcements; 
 confirms BSE code `540798` on page 1. The supplement records these sources and its verification date.
 It permits history capture and matching without relabelling the holding as currently traded.
 
-**`corp-announcements.json` remains the BSE date-indexed base capture.** Additional Muns company/date lookups are merged in the browser; they never overwrite that exchange-wide file.
+**`corp-announcements.json` remains the BSE date-indexed base capture.** Direct BSE scrip-code and
+Muns company/date histories are stored additively in the company capture; they never overwrite that
+exchange-wide file.
 The per-company route reached 118 of 603 companies because it costs one request each against a
 ~60/minute cap. BSE publish the same filings indexed by date, so the whole exchange arrives in about
 twenty requests, with no credential.
@@ -3393,11 +3397,13 @@ public/data/corp-announcements.json          written by scripts/scrape-bse-annou
   "source": "BSE — api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData",
   "capturedAt": "2026-08-24T…Z", "from": "2026-08-22", "to": "2026-08-24", "windowDays": 3,
   "coversUniverse": true,        // THE FIELD THAT SWITCHES THE PER-COMPANY WALK OFF
+  "categoryCoverage": "configured", "categoryInventoryVerified": false,
+  "categories": ["Company Update", "Board Meeting", "Corp. Action", "Result", "AGM/EGM", "New Listing", "Insider Trading / SAST", "Insurance", "Integrated Filing", "Others"],
   "exchangeCompanies": 5122,     // active equity listings the date index spans
   "companies": 526, "namedCompanies": 515, "unnamedRows": 11,
   "rowCount": 722, "keepDays": 3, "prunedRows": 0, "requests": 19,
   "byCategory": { "Company Update": { "declared": 482, "collected": 482, "pages": 10 }, … },
-  "unknownCategories": {},       // a category BSE added that we did not ask for — a tripwire
+  "unknownCategories": {},       // unexpected labels returned inside the configured requests
   "shortfall": [],               // collected < declared, per category
   "failed": [],
   "byTicker": { "LAURUSLABS": [ {
@@ -3427,10 +3433,12 @@ carries, and without BSE's `subject` field (which is `<company> - <scrip code> -
 headline>`, every part of which is already a column). Widening it is one variable and one re-run;
 BSE still hold the history.
 
-**Two 200s that are not answers.** `strCat=-1` returns the string `"No Record Found!"`; an empty
-`strCat` returns zero rows. Both mean the request was wrong, not that the exchange was quiet, so
-`assertShape` in `worker/bse-ann.mjs` rejects them and a run collecting nothing exits non-zero
-rather than writing an empty file over a good one.
+**Two market-wide 200s that are not answers.** Without `strScrip`, `strCat=-1` returns the string
+`"No Record Found!"`; an empty `strCat` returns zero rows. Both mean the request was wrong, not that
+the exchange was quiet, so the market-wide collector requests every named category. With a verified
+six-digit `strScrip`, `strCat=-1` is BSE's working all-category company-history query. The company
+collector rejects missing or changing declared counts, incomplete pagination, duplicate ids and any
+row carrying another scrip code.
 
 ```bash
 node scripts/scrape-bse-announcements.mjs                    # today, merged into the window
@@ -3466,15 +3474,32 @@ shared recent capture and device history without walking the upstream per compan
 capture is described below; the form remains available for an immediate company/date check.
 
 Lookup rows are retained in IndexedDB under `announcement-lookups:v1`, outside the HTTP cache and
-the BSE snapshot. An empty/failed response or a newer BSE snapshot cannot erase them. Matching
-company/date/document identity collapses overlap while retaining source/provider labels; BSE's
-AttachLive, AttachHis and Pname variants of one attachment share its PDF identifier. Distinct
-exchange documents remain distinct, and identical rows without a document ID preserve their
-maximum observed multiplicity across responses. Manual lookups remain device-retained, alongside the scheduled shared company histories. It may include dates older than the BSE base window.
+the BSE snapshot. An empty/failed response or a newer BSE snapshot cannot erase them. BSE's
+AttachLive, AttachHis and Pname variants of one attachment share its PDF identifier. A scheduled
+company capture considers only one-to-one BSE/NSE candidates for the same ticker and date with
+nearby exchange times, reads official HTTPS PDFs with a six-download/15-second enrichment budget,
+per-document size and timeout bounds, official-host redirect checks, and plausible PDF header,
+length and EOF validation. A persisted rotating pair cursor prevents permanently blocked documents
+from consuming every later enrichment run. The collector sets `documentHash` only from the
+downloaded bytes. Cross-exchange rows collapse only when their
+`sha256:<hex>` values are exactly equal and the collector assigns both halves the same pair-specific
+`crossExchangeDocumentId`. The pair ID includes both source URLs, preventing separate same-day
+filings that reuse identical PDF bytes from collapsing together. The merged row keeps ordered `sources`, every retrieval
+provider and `sourceUrls: [{ source, url }]`, so the table says `BSE / NSE` and the export retains
+both original documents. It also retains the validated single-exchange observations behind a
+matched pair. Every later capture reconstructs and re-clusters those observations, so a late third
+filing with the same bytes makes the group ambiguous and restores all source records instead of
+leaving an arrival-order-dependent merge. Legacy pairs are reconstructed only when their digest,
+official links and pair ID validate together. Different, ambiguous, oversized or unreadable documents remain distinct.
+Rows without a document ID preserve their maximum observed multiplicity across responses. Manual
+lookups remain device-retained alongside scheduled shared company histories, which may include dates
+older than the BSE base window.
 
-`node scripts/verify-announcement-lookups.mjs` covers source grouping, numeric BSE identity,
-calendar validation, authentication, range-separated caching, overlap, empty/failure retention and
-restoring device history. Browser checks cover the form, scope identity, Source filter and export.
+`node scripts/verify-announcement-lookups.mjs` and
+`node scripts/verify-announcement-document-hashes.mjs` cover source grouping, numeric BSE identity,
+calendar validation, authentication, BSE company pagination, range-separated caching, exact-content
+overlap, bounds, ambiguity, empty/failure retention and restoring device history. Browser checks
+cover scope identity, the combined `BSE / NSE` label and retained source URLs.
 
 ### News and trades: snapshot first, live detail second
 
@@ -4518,17 +4543,25 @@ schedule. No registration request dispatches a production workflow.
 
 `public/data/filing-capture/index.json` records each source/company independently: last attempt,
 last fully parsed success, response time, errors, failure count, next retry time, query symbol,
-missing document links, retained row count, and
-successfully read announcement date ranges. Per-company files under `announcements/` and
+missing document links, retained row count, and successfully read announcement date ranges. The
+existing top-level announcement entry is the authenticated provider checkpoint; its nested `bse`
+checkpoint carries the verified six-digit code and BSE's independent ranges and failures. A
+run-wide `sourceOutages.authenticatedAnnouncements` marker prevents companies not reached after a
+credential failure from retaining a healthy-looking authenticated-source state; direct BSE work
+continues and is reported independently. Per-company files under `announcements/` and
 `domestic/` keep all captured records without a date expiry. Files are written atomically before
 advancing the checkpoint. Empty responses cannot retract records; partial responses add readable
-rows but do not close the date gap. Authentication failures stop additional requests, preserve
-history, and remain visible. Failed entries retry with exponential delays from two hours up to
+rows but do not close the date gap. Raw exchange rows and their source checkpoint are durable before
+optional bounded PDF comparison starts. Authentication failures stop the affected authenticated
+lane, preserve history, remain visible globally, and do not block the official BSE lane. Failed entries retry with exponential delays from two hours up to
 24 hours, respecting `Retry-After` within that bound. A corrected query symbol clears its delay
-and requests a recent check. Failures never close history gaps or become successful empty reads.
+and reopens every historical window. A corrected BSE code also removes records attributed to the
+superseded direct issuer code, then reopens both source histories so valid merged evidence can be
+recovered. Failures never close history gaps or become successful empty reads.
 
-A run has a 20-minute budget, three requests in flight and one shared 2.5-second request-start
-interval. Reaching the budget retains unvisited work for later runs; it does not reduce the declared
+A run has a 20-minute budget, three company jobs in flight and one shared 2.5-second job-start
+interval. An announcement job settles its Muns and official-BSE reads independently and in parallel.
+Reaching the budget retains unvisited work for later runs; it does not reduce the declared
 universe. Domestic documents are rechecked daily. Announcement requests use 31-day backfill
 windows, starting with the most recent seven days. That recent window is rechecked at least daily
 as a company is reached. The initial backfill floor is 365 days before setup and stays fixed;
@@ -4562,7 +4595,11 @@ publication, and ordinary 30-minute trade runs are not failed by unrelated compa
 
 The BSE job also runs every two hours on all days, overlapping two days and recovering from the
 last completed date if a scheduled run was missed. A source pagination shortfall or unknown
-category prevents `coversUniverse: true` and does not advance `lastCompleteTo`.
+category returned inside a configured category prevents `coversUniverse: true` and does not advance
+`lastCompleteTo`. Because BSE does not expose a verified category inventory through this endpoint,
+the market-wide capture proves full pagination across the named category set rather than claiming
+that an unqueried newly introduced category cannot exist. The per-company scrip-code capture uses
+BSE's working all-category mode independently.
 
 **Operational limit:** these jobs use the repository's existing snapshot publication pipeline once
 the change is approved and deployed. GitHub schedules are best-effort and have previously stalled;
@@ -4594,10 +4631,11 @@ For anything that should update without a page reload, register a poller with
 
 ### Continuous Corporate Announcements stream
 
-Corporate Announcements merges the BSE date capture, retained BSE archives, scheduled Muns
-BSE/NSE/DRHP company captures, earlier saved company lookups, and the existing live NSE feed.
+Corporate Announcements merges the BSE date capture, retained BSE archives, scheduled direct BSE
+and Muns BSE/NSE/DRHP company captures, earlier saved company lookups, and the existing live NSE feed.
 The selected Portfolio, Watchlist or Universe scope filters the whole stream. Matching company,
-date and document identity deduplicate through `mergeAnnouncements`; source labels survive.
+date and document identity deduplicate through `mergeAnnouncements`; cross-exchange copies require
+an exact captured content hash, and all source labels and URLs survive.
 NSE publication timestamps are converted to IST without inventing dates for undated records.
 
 The tab checks for updates every 90 seconds while visible, pauses when hidden and checks again

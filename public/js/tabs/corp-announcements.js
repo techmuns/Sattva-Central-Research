@@ -7,7 +7,7 @@ import { formatDate, formatNumber } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { corporateAnnouncements as feed } from '../data/corporate-announcements.js';
-import { announcementSources } from '../data/announcements-shared.js';
+import { announcementSources, announcementSourceUrls } from '../data/announcements-shared.js';
 import { captureCoverageHtml } from '../ui/capture-coverage.js';
 import { classifyStory, groupLabel } from '../data/news-keywords.js';
 
@@ -136,12 +136,14 @@ const tab = makeFilingsTab({
       <p><strong>NSE:</strong> the live exchange feed and up to 90 days of retained captures join this table.
         Latest source capture: ${escapeHtml(m.nse?.capturedAt || 'unavailable')}.
         ${escapeHtml(m.nse?.error || m.nse?.degraded || '')}</p>
-      <p><strong>Additional BSE / NSE / DRHP filings:</strong> scheduled Muns company captures and earlier saved lookups
-        join the same stream. Their coverage is limited to the companies and dates successfully read.</p>
+      <p><strong>Company history:</strong> scheduled direct BSE company captures, Muns BSE/NSE/DRHP captures and earlier
+        saved lookups join the same stream. Each source keeps its own successful date coverage; one source failing does not
+        erase rows or advance the other source's coverage.</p>
       <p>The feed checks for updates every 90 seconds while visible, pauses when hidden and checks again on return.
         Retained history loads automatically. Source publication and scheduled captures can lag; this is not a complete exchange archive.</p>
-      <p>The Source column preserves exchange labels. Matching document, company and date overlap appears once;
-        separate exchange documents remain separate rows. Original document links are included in the export.</p>
+      <p>The Source column preserves every exchange label. BSE and NSE rows merge only when the captured PDFs have the same
+        SHA-256 content hash for that company and date; separate or unreadable documents remain separate rows. Every retained
+        exchange document link is included in the export.</p>
       <p>Portfolio matching uses exchange ISINs and BSE scrip codes as well as ticker aliases, including renamed and newly listed holdings.
         The table count describes companies with loaded filings, not the number checked or complete portfolio coverage.
         Exchange identities checked: ${escapeHtml(m.identity?.capturedAt || 'unavailable')}.
@@ -166,7 +168,7 @@ const tab = makeFilingsTab({
           get: (r) =>
             r.__banner
               ? `SOURCE DISCLOSURES. BSE exchange-wide capture: ${m.windowDays} day(s), captured ${m.capturedAt || 'at an unknown time'}. ` +
-                `Live NSE announcements, retained NSE history, and scheduled Muns BSE/NSE/DRHP company captures are merged with older saved lookups. Coverage is limited to successful source reads. ` +
+                `Live NSE announcements, retained NSE history, scheduled direct-BSE company history, and Muns BSE/NSE/DRHP company captures are merged with older saved lookups. Coverage is limited to successful source reads. ` +
                 `Subjects and categories are the sources' own words; Topic is the dashboard's keyword reading. No document contents are summarized. Exported ${new Date().toISOString()}.`
               : r.date || '',
         },
@@ -180,6 +182,8 @@ const tab = makeFilingsTab({
         { header: 'Source', key: 'src', width: 20, get: (r) => r.__banner ? '' : announcementSources(r).join(' / ') },
         { header: 'Retrieved through', key: 'via', width: 35, get: (r) => r.__banner ? '' : (r.providers || []).join(' / ') },
         { header: 'Document URL', key: 'u', width: 60, get: (r) => (r.__banner ? '' : r.url || '') },
+        { header: 'All source document URLs', key: 'su', width: 80, get: (r) => r.__banner ? '' :
+          announcementSourceUrls(r).map(({ source, url }) => `${source}: ${url}`).join('\n') },
       ],
       rows: [{ __banner: true }, ...visible],
     });

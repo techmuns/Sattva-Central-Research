@@ -15,8 +15,8 @@
 //   snapshot covered 118 companies. Narrowing the date window would not have helped: the range is a
 //   PARAMETER on a per-company request, so one day for 603 companies is still 603 requests.
 //
-//   BSE index the same filings by DATE. Measured on 19 Aug 2026: 886 announcements across every
-//   listed company in about two dozen requests. Whole universe, no credential, no expiry.
+//   BSE index filings by DATE. Measured on 19 Aug 2026: 886 announcements across the configured
+//   categories and every listed company in about two dozen requests. No credential, no expiry.
 //
 // MERGING IS THE DEFAULT, AND IT IS WHY THE WINDOW DOES NOT SHRINK.
 //   A daily run fetches one day and merges it into what is already committed, so the file keeps its
@@ -233,10 +233,12 @@ async function main() {
     windowDays: Math.max(1, Math.round((Date.parse(TO) - Date.parse(windowFrom)) / 86400000) + 1),
     dateRangeInFile: dates.length ? { first: dates[0], last: dates[dates.length - 1] } : null,
     scope: 'exchange',
-    // THE POINT OF THIS FILE. Every company on the exchange was covered, because the question asked
-    // was "what was filed on these dates" rather than "what did these companies file". A company
-    // with no rows here filed nothing in the window — it was not skipped for want of budget.
+    // Every company is covered on the company axis for the named category requests. This endpoint
+    // exposes no independently verified category inventory, so that separate limitation is explicit.
     coversUniverse: shortfall.length === 0 && Object.keys(unknownCategories).length === 0,
+    categoryCoverage: 'configured',
+    categoryInventoryVerified: false,
+    categories: CATEGORIES,
     lastCompleteTo: shortfall.length || Object.keys(unknownCategories).length ? lastCompleteTo : TO,
     exchangeCompanies: masterRows,
     companies: Object.keys(byTicker).length,

@@ -995,13 +995,13 @@ Three things follow, and each is load-bearing:
    that. **It must never be inferred from a row count**: a count cannot tell "nobody filed" from "we
    ran out of budget", which is the exact confusion this change exists to end. The snapshot declares
    it or the walk runs.
-2. **`strCat=-1` is a 200 that means the request was wrong.** The obvious "all categories" value
-   answers HTTP 200 with the bare string `"No Record Found!"`, and an empty `strCat` answers 200
-   with zero rows. Neither is an error and neither is an empty day. So the categories are named
-   explicitly, `assertShape` rejects the string form outright, and a run that collects nothing across
-   every category exits non-zero rather than committing an empty file over a good one. Naming them
-   costs a tripwire: `unknownCategories` checks every row's own `CATEGORYNAME` against what we asked
-   for, so a category BSE adds later shows up in the run report instead of silently vanishing.
+2. **`strCat=-1` is a 200 that means a market-wide request was wrong.** Without a scrip code, the
+   obvious "all categories" value answers HTTP 200 with the bare string `"No Record Found!"`, and an
+   empty `strCat` answers 200 with zero rows. Neither is an empty day. Market-wide capture therefore
+   names every official category, rejects malformed result shapes and fails rather than replacing a
+   good file with an empty one. With a verified six-digit `strScrip`, the same `-1` wildcard returns
+   that company's complete result set and is used for bounded historical backfill. Both paths validate
+   every page and declared total before advancing coverage.
 3. **The window is a SIZE limit, not an editorial one.** A weekday carries ~900 filings across the
    exchange, so a month is ~22,000 rows and roughly 16 MB of committed JSON that every visitor
    downloads. `ANN_KEEP_DAYS` (default 3) is a ceiling on bytes, and the file says so. Older filings

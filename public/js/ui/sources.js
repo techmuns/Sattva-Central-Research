@@ -59,12 +59,14 @@ function capturedSourceReadState(kind) {
   const status = companyCaptureStatus(kind);
   if (!status.available || !status.total) return 'unchecked';
   return sourceReadState({ at: status.updatedAt, failed: !!status.error,
-    partial: !!status.gaps.length || !!status.unresolved.length || !!status.unavailableLinks, maxAgeMs: 4 * 3600000 });
+    partial: !!status.gaps.length || !!status.bse?.gaps.length || !!status.unresolved.length ||
+      !!status.unavailableLinks || !!status.bse?.unavailableLinks, maxAgeMs: 4 * 3600000 });
 }
 function capturedSourceCadence(kind) {
   const status = companyCaptureStatus(kind);
   return 'Scheduled every two hours; progress resumes across runs. ' + (!status.available ? 'No shared capture published yet.' :
-    `${status.checked}/${status.total} recently checked, ${status.failed} failed, ${status.never} never checked, ${status.stale} overdue, ${status.backfill} backfilling. `) +
+    `${kind === 'announcements' ? 'Muns: ' : ''}${status.checked}/${status.total} recently checked, ${status.failed} failed, ${status.never} never checked, ${status.stale} overdue, ${status.backfill} backfilling. ` +
+    (kind === 'announcements' && status.bse?.total ? `Official BSE: ${status.bse.checked}/${status.bse.total} coded companies recently checked, ${status.bse.failed} failed, ${status.bse.never} never checked, ${status.bse.stale} overdue, ${status.bse.backfill} backfilling. ` : '')) +
     'Shared history does not expire; personal device-only additions are outside scheduled coverage.';
 }
 
@@ -525,19 +527,19 @@ export function sourceGroups() {
           name: 'BSE — corporate announcements, indexed by date',
           url: 'https://www.bseindia.com/corporates/ann.html',
           feeds:
-            "<strong>Real filings, for the whole exchange.</strong> Read from BSE's own date index (<code class=\"rounded bg-slate-100 px-1\">AnnSubCategoryGetData</code>), which answers <em>what was filed on these dates</em> rather than <em>what did this company file</em>. That difference is why coverage went from 118 companies to every listing: the per-company route costs one request each against a ~60/minute cap, so the universe was ten minutes of somebody else's service and a run cut short by the limit reached whatever it reached. This costs about twenty requests and needs no credential. <strong>Coverage depends on successfully reading each date window</strong> — failed or incomplete reads do not prove that no filing exists. Headlines, categories and sub-categories are BSE's own strings; the filing PDF stays on their server and every row links to it. Nothing here judges an announcement material or routine — BSE's own critical flag is reproduced where they set it.",
+            "<strong>Real filings across every listing for the configured BSE categories.</strong> Read from BSE's own date index (<code class=\"rounded bg-slate-100 px-1\">AnnSubCategoryGetData</code>), which answers <em>what was filed on these dates</em> rather than <em>what did this company file</em>. The endpoint does not expose a separately verifiable category inventory, so a newly introduced unqueried category remains an explicit coverage limit. The per-company provider route costs one request each against a ~60/minute cap, while the BSE date index costs about twenty requests and needs no credential. BSE's scrip-code all-category index is also read in restartable windows for company history, so newly enrolled portfolio and watchlist companies recover filings older than the market-wide head. Each route keeps independent successful coverage. <strong>Failed or incomplete reads do not prove that no filing exists.</strong> Headlines, categories and sub-categories are BSE's own strings; the filing PDF stays on their server and every row links to it. Nothing here judges an announcement material or routine — BSE's own critical flag is reproduced where they set it.",
           // Two counts, each dropping its own clause when unknown — the modal opens from every
           // screen and this feed only loads when its tab mounts. A sentence built AROUND a number
           // reads as broken prose the moment it does not arrive.
           cadence:
             `Scheduled every two hours, including weekends; missed date windows are retried and older rows are archived.${clause(num(() => annFeed.meta().windowDays), ' Rolling <n>-day window.')}${clause(num(() => annFeed.meta().baseRowCount), ' <n> filings in the current file.')}${clause(num(() => annFeed.meta().baseCovered), ' <n> companies filed something.')}`,
           status: 'live',
-          file: 'worker/bse-ann.mjs · scripts/scrape-bse-announcements.mjs · .github/workflows/announcements-refresh.yml',
+          file: 'worker/bse-ann.mjs · scripts/scrape-bse-announcements.mjs · scripts/capture-company-filings.mjs · .github/workflows/announcements-refresh.yml',
         },
         {
           name: 'Muns — BSE / NSE / DRHP corporate announcements',
           url: 'https://devde.muns.io',
-          feeds: 'Additional corporate announcements from BSE, NSE fallback and DRHP documents through the authenticated corporate-announcements endpoint. Scheduled captures cover the committed companies, and their retained history loads automatically. Results join BSE and live NSE announcements in one table with source labels and document links; matching disclosures are deduplicated. Saved lookup rows survive an empty or failed refresh. Coverage is limited to the companies and dates requested, not the whole NSE or DRHP universe.',
+          feeds: 'Additional corporate announcements from BSE, NSE fallback and DRHP documents through the authenticated corporate-announcements endpoint. Scheduled captures cover the committed companies, and their retained history loads automatically. Results join direct BSE and live NSE announcements in one table. Plausible cross-exchange pairs are combined only when their PDFs have the exact same SHA-256 content hash; every exchange label and original link survives. Saved rows survive an empty or failed refresh. Coverage is limited to the companies and dates successfully requested, not the whole NSE or DRHP universe.',
           cadence: capturedSourceCadence('announcements'),
           status: 'live', readState: capturedSourceReadState('announcements'),
           file: 'worker/muns.mjs → GET /filings/corp/announcements/{ticker} · public/js/data/announcements-extra.js',

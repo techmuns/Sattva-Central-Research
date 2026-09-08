@@ -21,8 +21,24 @@ export function announcementUrl(value) {
   } catch { return null; }
 }
 
-export const announcementSources = (row) => [...new Set((row.sources || [row.source]).filter(Boolean))];
+const SOURCE_ORDER = new Map(['BSE', 'NSE', 'DRHP'].map((source, index) => [source, index]));
 const groupName = (value) => /^(BSE|NSE|DRHP)(?:$|[\s_-])/i.exec(String(value || ''))?.[1]?.toUpperCase() || String(value || '').trim() || null;
+export const announcementSources = (row) => [...new Set((row.sources || [row.source]).filter(Boolean))]
+  .sort((a, b) => (SOURCE_ORDER.get(a) ?? 99) - (SOURCE_ORDER.get(b) ?? 99) || String(a).localeCompare(String(b)));
+
+export function announcementSourceUrls(row) {
+  const links = [];
+  for (const item of Array.isArray(row?.sourceUrls) ? row.sourceUrls : []) {
+    const url = announcementUrl(item?.url);
+    const source = groupName(item?.source);
+    if (url && source) links.push({ source, url });
+  }
+  const url = announcementUrl(row?.url);
+  const sources = announcementSources(row);
+  if (url && sources.length === 1) links.push({ source: sources[0], url });
+  return [...new Map(links.map((item) => [`${item.source}|${item.url}`, item])).values()]
+    .sort((a, b) => (SOURCE_ORDER.get(a.source) ?? 99) - (SOURCE_ORDER.get(b.source) ?? 99) || a.url.localeCompare(b.url));
+}
 const wrappers = new Set(['data', 'results', 'items', 'records', 'announcements', 'rows']);
 
 /** Keep exchange grouping and the requested NSE identity, including BSE numeric-symbol records. */
@@ -69,7 +85,7 @@ export function normaliseCorporateAnnouncements(body, ticker) {
   return { announcements, groups: [...groups], skipped };
 }
 
-function documentIdentity(value) {
+export function announcementDocumentIdentity(value) {
   const url = announcementUrl(value);
   if (!url) return null;
   const u = new URL(url);
@@ -81,6 +97,41 @@ function documentIdentity(value) {
   return `${u.hostname.toLowerCase().replace(/^www\./, '')}${u.pathname}${u.search}`;
 }
 
+const digestIdentity = (value) => /^sha256:[0-9a-f]{64}$/i.test(String(value || ''))
+  ? String(value).toLowerCase() : null;
+
+function identityKeys(row, sources = announcementSources(row)) {
+  const prefix = `${row.ticker || ''}|${row.date || ''}|`;
+  const keys = [];
+  // A content digest alone is not an event identity: two legitimate same-day filings can reuse
+  // identical PDF bytes. The collector assigns this pair-specific ID only after a one-to-one
+  // BSE/NSE comparison, so it is safe to use as the shared cross-exchange key.
+  const crossExchangeDocumentId = digestIdentity(row.crossExchangeDocumentId);
+  if (crossExchangeDocumentId) keys.push(`${prefix}cross-exchange:${crossExchangeDocumentId}`);
+  for (const value of [row.url, ...announcementSourceUrls(row).map((item) => item.url)]) {
+    const document = announcementDocumentIdentity(value);
+    if (document) keys.push(`${prefix}document:${document}`);
+  }
+  if (row.newsId) keys.push(`${prefix}news:${sources.join(',')}:${row.newsId}`);
+  return [...new Set(keys)];
+}
+
+function mergeAnnouncement(previous, row, sources) {
+  // Capture a legacy row's primary link before adding another source. Older persisted rows do
+  // not have sourceUrls yet, and announcementSourceUrls intentionally cannot assign one URL to
+  // multiple exchanges once the source list has been widened.
+  const previousSourceUrls = announcementSourceUrls(previous);
+  previous.sources = [...new Set([...announcementSources(previous), ...sources])]
+    .sort((a, b) => (SOURCE_ORDER.get(a) ?? 99) - (SOURCE_ORDER.get(b) ?? 99) || String(a).localeCompare(String(b)));
+  previous.source = previous.sources.join(' / ');
+  previous.providers = [...new Set([...(previous.providers || []), ...(row.providers || [])])];
+  previous.sourceUrls = [...new Map([...previousSourceUrls, ...announcementSourceUrls(row)]
+    .map((item) => [`${item.source}|${item.url}`, item])).values()]
+    .sort((a, b) => (SOURCE_ORDER.get(a.source) ?? 99) - (SOURCE_ORDER.get(b.source) ?? 99) || a.url.localeCompare(b.url));
+  for (const [field, value] of Object.entries(row)) if (previous[field] == null && value != null) previous[field] = value;
+  return previous;
+}
+
 /** Append new disclosures; only proven same-document/date/company overlap collapses. */
 export function mergeAnnouncements(...lists) {
   const out = [], seen = new Map();
@@ -89,21 +140,20 @@ export function mergeAnnouncements(...lists) {
     for (const row of list || []) {
       if (!row || typeof row !== 'object') continue;
       const sources = announcementSources(row);
-      const document = documentIdentity(row.url);
-      const identity = document || (row.newsId ? `${sources.join(',')}:${row.newsId}` : null);
       const exact = JSON.stringify([row.ticker, row.date, row.time, row.title, row.summary, row.category, row.subCategory, sources]);
       const occurrence = (occurrences.get(exact) || 0) + 1;
       occurrences.set(exact, occurrence);
-      const key = identity ? `${row.ticker || ''}|${row.date || ''}|${identity}` : `${exact}|${occurrence}`;
-      const previous = key && seen.get(key);
+      const keys = identityKeys(row, sources);
+      const fallback = `${exact}|${occurrence}`;
+      const previous = keys.map((key) => seen.get(key)).find(Boolean) || (!keys.length ? seen.get(fallback) : null);
       if (previous) {
-        previous.sources = [...new Set([...announcementSources(previous), ...sources])];
-        previous.providers = [...new Set([...(previous.providers || []), ...(row.providers || [])])];
-        for (const [field, value] of Object.entries(row)) if (previous[field] == null && value != null) previous[field] = value;
+        mergeAnnouncement(previous, row, sources);
+        for (const key of [...identityKeys(previous), ...keys]) seen.set(key, previous);
       } else {
-        const next = { ...row, sources, providers: [...(row.providers || [])] };
+        const sourceUrls = announcementSourceUrls(row);
+        const next = { ...row, sources, providers: [...(row.providers || [])], ...(sourceUrls.length ? { sourceUrls } : {}) };
         out.push(next);
-        if (key) seen.set(key, next);
+        for (const key of keys.length ? keys : [fallback]) seen.set(key, next);
       }
     }
   }
