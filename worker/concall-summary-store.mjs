@@ -1,9 +1,9 @@
 import { SUMMARY_WINDOW_MS, SUMMARY_REQUEST_BUDGET, SUMMARY_GAP_MS, SUMMARY_INITIAL_STOP,
-  SUMMARY_RECORD_LIMIT, SUMMARY_FAILURES, summaryId, validateSummaryBody } from '../public/js/data/concall-summaries-shared.js';
+  SUMMARY_RECORD_LIMIT, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, summaryId, validateSummaryBody } from '../public/js/data/concall-summaries-shared.js';
 
 const iso = at => new Date(at).toISOString();
 const json = value => JSON.stringify(value);
-const goodTime = value => Number.isFinite(Date.parse(value));
+const goodTime = value => typeof value === 'string' && value.length <= 40 && Number.isFinite(Date.parse(value));
 const MINUTE = 60000;
 
 // One durable coordination unit per subscribed Screener account. Public company registries use
@@ -24,6 +24,7 @@ export class ConcallSummaryStore {
     this.storage.sql.exec(`CREATE TABLE IF NOT EXISTS summary_attempts (
       id TEXT PRIMARY KEY, run TEXT NOT NULL, record_id TEXT NOT NULL, token TEXT NOT NULL,
       started REAL NOT NULL, expires REAL NOT NULL, outcome TEXT NOT NULL)`);
+    this.storage.sql.exec('CREATE TABLE IF NOT EXISTS summary_inventory (seq INTEGER PRIMARY KEY, id TEXT NOT NULL UNIQUE, target TEXT NOT NULL)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS summary_attempt_time ON summary_attempts(started)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS summary_queue ON summary_records(active, rank, next_attempt)');
     this.initialised = true;
@@ -37,56 +38,121 @@ export class ConcallSummaryStore {
   putState(value) {
     this.rows("INSERT INTO summary_meta(key,value) VALUES ('state',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", json(value));
   }
+  // Convenience for local contracts; production sends the same protocol as bounded RPC batches.
   sync(inventory) {
+    if (!Array.isArray(inventory?.targets)) throw Error('Invalid inventory');
+    const { targets, ...manifest } = inventory, run = '0:1', syncId = this.uuid();
+    this.beginInventory(run, syncId, { ...manifest, targetCount: targets.length });
+    for (let offset = 0; offset < targets.length; offset += SUMMARY_INVENTORY_BATCH)
+      this.inventoryBatch(run, syncId, offset, targets.slice(offset, offset + SUMMARY_INVENTORY_BATCH));
+    return this.finishInventory(run, syncId);
+  }
+  beginInventory(run, syncId, inventory) {
     const at = this.now();
-    if (inventory?.version !== 1 || !/^[a-f0-9]{64}$/.test(inventory.portfolioRevision || '') ||
+    if (!/^\d+:\d+$/.test(run || '') || !/^[a-f0-9-]{36}$/.test(syncId || '') ||
+        inventory?.version !== 1 || !/^[a-f0-9]{64}$/.test(inventory.portfolioRevision || '') ||
         !goodTime(inventory.portfolioCheckedAt) || !goodTime(inventory.sourceCheckedAt) ||
         !/^\d{4}-\d{2}-\d{2}$/.test(inventory.portfolioAsOf || '') || !goodTime(inventory.portfolioAsOf) ||
         !goodTime(inventory.portfolioWorkbookUploadedAt) ||
         at - Date.parse(inventory.portfolioCheckedAt) > 90000 || Date.parse(inventory.portfolioCheckedAt) > at + MINUTE ||
         at - Date.parse(inventory.sourceCheckedAt) > 30 * MINUTE || Date.parse(inventory.sourceCheckedAt) > at + MINUTE ||
         !Array.isArray(inventory.holdings) || !inventory.holdings.length || inventory.holdings.length > 5000 ||
-        !Array.isArray(inventory.targets) || inventory.targets.length > 25000) throw Error('Invalid inventory');
-    const holdings = new Set();
-    for (const holding of inventory.holdings) {
-      if (!/^INE[A-Z0-9]{9}$/.test(holding.isin || '') || holdings.has(holding.isin) ||
+        !Number.isInteger(inventory.targetCount) || inventory.targetCount < 0 || inventory.targetCount > 25000) throw Error('Invalid inventory');
+    const identities = new Set();
+    const holdings = inventory.holdings.map(holding => {
+      if (!/^INE[A-Z0-9]{9}$/.test(holding.isin || '') || identities.has(holding.isin) ||
           typeof holding.name !== 'string' || !holding.name.trim() || holding.name.length > 200 ||
+          /[\u0000-\u001f]/.test(holding.name) ||
+          (holding.ticker != null && !/^[A-Z0-9&.\-]{1,50}$/.test(holding.ticker)) ||
+          (holding.companyKey != null && !/^[A-Za-z0-9&._\-]{1,80}$/.test(holding.companyKey)) ||
           !['matched', 'ambiguous-identity', 'no-matching-source-company', 'no-published-summary'].includes(holding.discovery)) throw Error('Invalid holding');
-      holdings.add(holding.isin);
-    }
-    const ids = new Set();
-    for (const target of inventory.targets) {
-      if (summaryId(target.url) !== target.id || ids.has(target.id) || !holdings.has(target.isin) ||
-          typeof target.companyKey !== 'string' || !target.companyKey || target.companyKey.length > 80 ||
-          !/^https:\/\/www\.screener\.in\/company\/[^/?#]+\/(?:consolidated\/)?$/.test(target.companyUrl || '') ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(target.publishedDate || '') || !goodTime(target.publishedDate) ||
-          typeof target.name !== 'string' || !target.name || target.name.length > 200 ||
-          typeof target.sourceName !== 'string' || !target.sourceName || target.sourceName.length > 300 ||
-          !['Transcript', 'Recording', 'Presentation', 'Other'].includes(target.kind) ||
-          !Number.isInteger(target.rank) || target.rank < 0 || target.rank > 25000 || json(target).length > 4000) throw Error('Invalid summary target');
-      ids.add(target.id);
-    }
+      identities.add(holding.isin);
+      return { isin: holding.isin, ticker: holding.ticker || null, name: holding.name,
+        companyKey: holding.companyKey || null, discovery: holding.discovery };
+    });
+    const manifest = { version: 1, portfolioRevision: inventory.portfolioRevision, portfolioCheckedAt: inventory.portfolioCheckedAt,
+      portfolioAsOf: inventory.portfolioAsOf, portfolioWorkbookUploadedAt: inventory.portfolioWorkbookUploadedAt,
+      sourceCheckedAt: inventory.sourceCheckedAt, targetCount: inventory.targetCount, holdings };
     this.init();
     return this.storage.transactionSync(() => {
-      const previous = this.state();
+      const old = this.inventoryStage();
+      if (old && old.syncId === syncId && old.run === run) {
+        if (json(old.manifest) !== json(manifest)) throw Error('Inventory manifest changed');
+        return { ok: true };
+      }
+      if (old && old.run !== run && at - old.startedAt < 15 * MINUTE) throw Error('Inventory upload is busy');
+      this.rows('DELETE FROM summary_inventory');
+      this.rows("INSERT INTO summary_meta(key,value) VALUES ('inventory',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        json({ run, syncId, startedAt: at, manifest }));
+      this.putState({ ...this.state(), discoveryStatus: 'checking', discoveryAttemptedAt: iso(at) });
+      return { ok: true };
+    });
+  }
+  inventoryStage() {
+    const row = this.rows("SELECT value FROM summary_meta WHERE key='inventory'")[0];
+    return row ? JSON.parse(row.value) : null;
+  }
+  requireInventory(run, syncId) {
+    const stage = this.inventoryStage();
+    if (!stage || stage.run !== run || stage.syncId !== syncId || this.now() - stage.startedAt > 15 * MINUTE)
+      throw Error('Inventory upload unavailable');
+    return stage;
+  }
+  inventoryBatch(run, syncId, offset, targets) {
+    this.init();
+    return this.storage.transactionSync(() => {
+      const stage = this.requireInventory(run, syncId);
+      if (!Number.isInteger(offset) || offset < 0 || offset % SUMMARY_INVENTORY_BATCH !== 0 ||
+          !Array.isArray(targets) || !targets.length || targets.length !== Math.min(SUMMARY_INVENTORY_BATCH, stage.manifest.targetCount - offset))
+        throw Error('Invalid inventory batch');
+      const holdings = new Set(stage.manifest.holdings.map(holding => holding.isin));
+      for (const [index, target] of targets.entries()) {
+        const value = json(target);
+        if (summaryId(target.url) !== target.id || !holdings.has(target.isin) ||
+            typeof target.companyKey !== 'string' || !target.companyKey || target.companyKey.length > 80 ||
+            !/^https:\/\/www\.screener\.in\/company\/[^/?#]+\/(?:consolidated\/)?$/.test(target.companyUrl || '') ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(target.publishedDate || '') || !goodTime(target.publishedDate) ||
+            typeof target.name !== 'string' || !target.name || target.name.length > 200 ||
+            typeof target.sourceName !== 'string' || !target.sourceName || target.sourceName.length > 300 ||
+            !['Transcript', 'Recording', 'Presentation', 'Other'].includes(target.kind) ||
+            !Number.isInteger(target.rank) || target.rank < 0 || target.rank > 25000 || new TextEncoder().encode(value).length > 4096)
+          throw Error('Invalid summary target');
+        const seq = offset + index;
+        const old = this.rows('SELECT target FROM summary_inventory WHERE seq=?', seq)[0];
+        if (old && old.target !== value) throw Error('Inventory batch changed');
+        if (!old) this.rows('INSERT INTO summary_inventory(seq,id,target) VALUES (?,?,?)', seq, target.id, value);
+      }
+      return { ok: true };
+    });
+  }
+  finishInventory(run, syncId) {
+    this.init();
+    return this.storage.transactionSync(() => {
+      const completed = this.rows("SELECT value FROM summary_meta WHERE key='inventory-complete'")[0];
+      if (completed && completed.value === json({ run, syncId })) return this.status();
+      const stage = this.requireInventory(run, syncId), inventory = stage.manifest, at = this.now(), previous = this.state();
+      if (this.rows('SELECT COUNT(*) AS n FROM summary_inventory')[0].n !== inventory.targetCount) throw Error('Inventory upload is incomplete');
       if (Date.parse(inventory.portfolioCheckedAt) < Date.parse(previous.portfolioCheckedAt || '') ||
           Date.parse(inventory.sourceCheckedAt) < Date.parse(previous.sourceCheckedAt || '') ||
           (previous.portfolioAsOf && (inventory.portfolioAsOf < previous.portfolioAsOf ||
             (inventory.portfolioAsOf === previous.portfolioAsOf && Date.parse(inventory.portfolioWorkbookUploadedAt) < Date.parse(previous.portfolioWorkbookUploadedAt)))))
         throw Error('Inventory reconciliation required');
-      // Do not load every full target (or any body) into Worker memory to check identities.
-      const existing = new Map(this.rows("SELECT id,isin,json_extract(target,'$.companyKey') AS company_key FROM summary_records").map(row => [row.id, row]));
-      if (new Set([...existing.keys(), ...ids]).size > SUMMARY_RECORD_LIMIT) throw Error('Summary archive capacity reached');
-      for (const target of inventory.targets) {
-        const old = existing.get(target.id);
-        if (old && (old.isin !== target.isin || old.company_key !== target.companyKey)) throw Error('Source summary identity changed');
-      }
+      const existing = this.rows('SELECT COUNT(*) AS n FROM summary_records')[0].n;
+      const added = this.rows('SELECT COUNT(*) AS n FROM summary_inventory i WHERE NOT EXISTS (SELECT 1 FROM summary_records r WHERE r.id=i.id)')[0].n;
+      if (existing + added > SUMMARY_RECORD_LIMIT) throw Error('Summary archive capacity reached');
+      if (this.rows(`SELECT i.id FROM summary_inventory i JOIN summary_records r ON r.id=i.id
+        WHERE r.isin!=json_extract(i.target,'$.isin') OR json_extract(r.target,'$.companyKey')!=json_extract(i.target,'$.companyKey') LIMIT 1`).length)
+        throw Error('Source summary identity changed');
+      // One atomic SQL publication: partial/duplicate/missing batches cannot retire any record.
       this.rows('UPDATE summary_records SET active=0 WHERE active=1');
-      for (const target of inventory.targets) this.rows(`INSERT INTO summary_records(id,isin,target,active,rank,published_date,status)
-        VALUES (?,?,?,1,?,?,'queued') ON CONFLICT(id) DO UPDATE SET target=excluded.target,active=1,rank=excluded.rank,published_date=excluded.published_date`,
-      target.id, target.isin, json(target), target.rank, target.publishedDate);
-      this.putState({ ...previous, ...inventory, targets: undefined, discoveryStatus: 'ok',
+      this.rows(`INSERT INTO summary_records(id,isin,target,active,rank,published_date,status)
+        SELECT id,json_extract(target,'$.isin'),target,1,json_extract(target,'$.rank'),json_extract(target,'$.publishedDate'),'queued'
+        FROM summary_inventory WHERE 1 ON CONFLICT(id) DO UPDATE SET target=excluded.target,active=1,rank=excluded.rank,published_date=excluded.published_date`);
+      this.putState({ ...previous, ...inventory, targetCount: undefined, discoveryStatus: 'ok',
         discoveryAttemptedAt: iso(at), discoveredAt: iso(at), discoveryReason: null });
+      this.rows("INSERT INTO summary_meta(key,value) VALUES ('inventory-complete',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", json({ run, syncId }));
+      this.rows("DELETE FROM summary_meta WHERE key='inventory'");
+      this.rows('DELETE FROM summary_inventory');
       return this.status();
     });
   }
@@ -101,7 +167,8 @@ export class ConcallSummaryStore {
     const byIsin = new Map(counts.map(row => [row.isin, row]));
     const totals = this.rows('SELECT COUNT(*) AS total,SUM(CASE WHEN body IS NOT NULL THEN 1 ELSE 0 END) AS ready FROM summary_records')[0];
     const attempts = this.rows('SELECT COUNT(*) AS count,MIN(started) AS oldest FROM summary_attempts WHERE started>?', at - SUMMARY_WINDOW_MS)[0];
-    return { ...state, discoveryStatus: state.discoveryStatus === 'ok' && at - Date.parse(state.discoveredAt) > 90 * MINUTE ? 'stale' : state.discoveryStatus,
+    return { ...state, discoveryStatus: state.discoveryStatus === 'ok' && at - Date.parse(state.discoveredAt) > 90 * MINUTE ? 'stale'
+      : state.discoveryStatus === 'checking' && at - Date.parse(state.discoveryAttemptedAt) > 15 * MINUTE ? 'failed' : state.discoveryStatus,
       ready: totals.ready || 0, retained: totals.total, pending: counts.reduce((n, row) => n + row.total - row.ready, 0),
       automatedRequestsLast24h: attempts.count, requestBudget: SUMMARY_REQUEST_BUDGET,
       nextBudgetAt: attempts.count >= SUMMARY_REQUEST_BUDGET ? iso(attempts.oldest + SUMMARY_WINDOW_MS) : null,

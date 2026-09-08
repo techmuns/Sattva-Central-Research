@@ -9,6 +9,8 @@ export const SUMMARY_INTERVAL_MS = 30 * 60 * 1000;
 export const SUMMARY_GAP_MS = 15000;
 export const SUMMARY_BODY_LIMIT = 128 * 1024;
 export const SUMMARY_RECORD_LIMIT = 50000;
+export const SUMMARY_INVENTORY_BATCH = 250;
+export const SUMMARY_TRANSPORT_LIMIT = 8 * 1024 * 1024;
 // Observed in the signed-in browser on 8 September. A deployment cannot forget that refusal.
 export const SUMMARY_INITIAL_STOP = '2026-09-09T06:48:00.000Z';
 export const SUMMARY_FAILURES = new Set(['rate-limited', 'access-denied', 'session-expired',
@@ -47,12 +49,31 @@ export function validateSummaryBody(value) {
   return result;
 }
 
-export function summaryStateMessage(state) {
+function coverageStateMessage(state) {
   if (!state) return 'Screener summaries have not been checked.';
   if (state.reason === 'no-session') return 'Sign in through Munshot to read private Screener summaries.';
   if (state.reason === 'access') return 'This session is not authorised to read the private Screener summaries.';
   if (state.enabled === false) return 'Screener summary collection is not enabled.';
   if (state.cooldownUntil && Date.parse(state.cooldownUntil) > Date.now()) return 'Screener summary collection is paused after a source limit or refusal. Saved summaries remain readable.';
+  if (state.discoveryStatus === 'checking') return 'Summary coverage is being refreshed. Saved summaries remain readable.';
   if (state.discoveryStatus !== 'ok') return 'Summary coverage could not be refreshed. Saved summaries remain readable; new holdings or calls may be pending.';
   return `${state.ready || 0} summaries saved · ${state.pending || 0} awaiting collection.`;
+}
+
+export function summaryScheduleMessage(state, now = Date.now()) {
+  if (state?.enabled !== true) return '';
+  const schedule = state.schedule;
+  if (!schedule?.started) return 'The collection timer has not started yet.';
+  const failures = {
+    unavailable: 'The collection timer could not check or start a collection run.',
+    'recent-run-failed': 'The latest scheduled collection run failed.',
+    'run-overdue': 'The scheduled collection run is overdue.',
+  };
+  if (failures[schedule.reason]) return failures[schedule.reason];
+  if (!Number.isFinite(schedule.alarmAt)) return 'The collection timer has no next check scheduled.';
+  if (schedule.alarmAt < now - 5 * 60000) return 'The collection timer is overdue.';
+  return '';
+}
+export function summaryStateMessage(state) {
+  return [coverageStateMessage(state), summaryScheduleMessage(state)].filter(Boolean).join(' ');
 }

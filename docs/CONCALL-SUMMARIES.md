@@ -46,13 +46,21 @@ history. A deployment or workflow edit must never reset the private account obje
 Every collection first reads the **live Family Office portfolio**, validates the complete response,
 then reads the latest digest-verified complete Screener document-index capture. It does not depend
 on a committed portfolio snapshot or Screener's mirrored watchlist catching up. The portfolio must
-be checked within 90 seconds and the source catalogue within 30 minutes; a newer failed catalogue
+be checked within 90 seconds and the source catalogue within 30 minutes when an upload begins; a newer failed catalogue
 run blocks discovery. Failed discovery preserves the previous membership and all saved records,
 marks coverage failed and pauses source claims until a successful check.
 The shared Family Office loader's existing reconciliation guard still applies to a fall of more
 than 20% against its reviewed baseline. Such a change is shown as unavailable until reconciled;
 it is never silently accepted as a partial book. Older workbook dates/uploads cannot replace a
 newer revision already seen by the private store, even when the network check itself is recent.
+
+Inventory uploads use an owned manifest and batches of at most 250 targets, each at most 4 KiB.
+All 25,000 supported targets can be uploaded without a single large request. An 8 MiB transport
+bound also accommodates the maximum projected 5,000-holding manifest and coverage response.
+Only a complete, unique, identity-checked staging inventory is published, in one SQL transaction.
+Repeated batches/completions are idempotent; missing or conflicting batches cannot retire records.
+Staging survives a Worker restart and expires after 15 minutes. An interrupted upload remains
+visibly incomplete; the next run can replace expired staging while retaining the previous archive.
 
 Each current holding has a coverage record. Matching uses its exchange ticker, exact ISIN registry
 identity (including BSE codes), or a unique exact normalised name for tickerless holdings. Conflicts
@@ -87,7 +95,9 @@ identity resolution still determine coverage.
   schedule is available; a read-only dashboard request cannot arm or dispatch collection.
 - Browser coverage refreshes every minute while visible and on return/reconnection. Saved copies
   are readable during source pauses. Source/portfolio check times and stale/failed coverage are
-  explicit; a successful timer dispatch is not a successful source check.
+  explicit; a successful timer dispatch is not a successful source check. Failed, overdue or missing
+  timer checks appear immediately in the footer and live coverage view, with the actual last and
+  next timer check times, independently of the source catalogue's freshness.
 
 The archive uses a distinct fixed Durable Object name in the existing SQLite namespace. Bodies have
 no automatic expiry; they never enter Git, public Actions artifacts, public static snapshots,
@@ -108,6 +118,7 @@ Object retention guarantees would require recovery or recollection within the sa
 source IDs, crash/rolling-budget behaviour, fairness, retention, source refusals, reader privacy,
 real RSA-signed OIDC claim verification and timer recovery. `verify-concall-summaries-runtime.mjs`
 uses local workerd for real SQL/RPC, concurrent leases, and body/budget/alarm persistence across
-restart. `verify-concall-summaries-ui.mjs` covers one inline action, source versions, pending recovery,
+restart, including finishing a staged upload after restart. The 25,000-target transport boundary,
+partial/replayed uploads and scheduler failures are also verified. `verify-concall-summaries-ui.mjs` covers one inline action, source versions, pending recovery,
 inert source text, logout and delayed responses, disabled state, portfolio gaps, light/dark contrast,
 narrow layout and offline parser failures. All three are CI checks; none reads production summaries.

@@ -17,7 +17,9 @@ export class CaptureRegistry extends DurableObject {
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS companies (isin TEXT PRIMARY KEY, ticker TEXT NOT NULL, name TEXT NOT NULL)');
   }
   status() { return this.schedule.status(); }
-  async summarySync(inventory) { const result = this.summaries.sync(inventory); await this.summarySchedule.arm(); return result; }
+  summaryBeginInventory(run, syncId, manifest) { return this.summaries.beginInventory(run, syncId, manifest); }
+  summaryInventoryBatch(run, syncId, offset, targets) { return this.summaries.inventoryBatch(run, syncId, offset, targets); }
+  async summaryFinishInventory(run, syncId) { const result = this.summaries.finishInventory(run, syncId); await this.summarySchedule.arm(); return result; }
   async summaryDiscoveryFailed() { const result = this.summaries.discoveryFailed(); await this.summarySchedule.arm(); return result; }
   async summaryStatus() { return { ...this.summaries.status(), schedule: await this.summarySchedule.status() }; }
   summaryReserve(run, requestId) { return this.summaries.reserve(run, requestId); }

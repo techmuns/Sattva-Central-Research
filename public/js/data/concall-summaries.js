@@ -1,6 +1,6 @@
 import { authHeaders, hostToken, onHostContext } from '../core/host-context.js';
 import { boundedJson } from './family-book-contract.js';
-import { validateSummaryBody } from './concall-summaries-shared.js';
+import { validateSummaryBody, SUMMARY_TRANSPORT_LIMIT } from './concall-summaries-shared.js';
 
 const ENDPOINT = 'api/concall-summaries';
 const INTERVAL = 60000;
@@ -17,7 +17,7 @@ async function request(options = {}) {
   const response = await fetch(ENDPOINT, { ...options, cache: 'no-store', redirect: 'error',
     headers: { accept: 'application/json', ...authHeaders(ENDPOINT), ...(options.body ? { 'content-type': 'application/json' } : {}) },
     signal: AbortSignal.timeout(20000) });
-  const payload = await boundedJson(new Response(response.body), 2 * 1024 * 1024);
+  const payload = await boundedJson(new Response(response.body), SUMMARY_TRANSPORT_LIMIT);
   if (!response.ok || payload.ok !== true) throw Object.assign(Error('Private summaries could not be read.'), { reason: payload.reason || 'unavailable' });
   return payload;
 }

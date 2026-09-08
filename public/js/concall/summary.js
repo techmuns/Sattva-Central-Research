@@ -2,7 +2,7 @@ import { escapeHtml } from '../core/dom.js';
 import { openModal, closeModal } from '../ui/screener.js';
 import { onHostContext } from '../core/host-context.js';
 import * as summaries from '../data/concall-summaries.js';
-import { summaryIdsForRow, summaryStateMessage } from '../data/concall-summaries-shared.js';
+import { summaryIdsForRow, summaryStateMessage, summaryScheduleMessage } from '../data/concall-summaries-shared.js';
 
 const e = escapeHtml;
 const date = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST' : 'Not checked';
@@ -63,14 +63,26 @@ export async function openSummary(row) {
     document.getElementById('modal-content').innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-3 p-6"><p class="text-sm text-slate-700">${e(error.message)}</p>${coverageNote()}</div>`;
   }
 }
-export function openSummaryCoverage() {
+function coverageHtml() {
   const state = summaries.status();
   const labels = { matched: 'Discovered', 'ambiguous-identity': 'Source identity needs review',
     'no-matching-source-company': 'No confirmed company match in the source catalogue', 'no-published-summary': 'No summary listed by Screener' };
-  modal(`${header('Portfolio summary coverage')}<div class="space-y-4 p-6">${coverageNote()}
+  return `${header('Portfolio summary coverage')}<div class="space-y-4 p-6">${coverageNote()}
     <p class="text-xs text-slate-500">Portfolio checked: ${e(date(state?.portfolioCheckedAt))}<br>Source catalogue checked: ${e(date(state?.sourceCheckedAt))}</p>
+    <p data-summary-schedule class="text-xs text-slate-500">Automatic collection: ${e(summaryScheduleMessage(state) || (state?.enabled ? 'Timer scheduled; source coverage is reported separately.' : 'Not enabled.'))}<br>Timer last checked: ${e(date(state?.schedule?.lastAttemptAt ? new Date(state.schedule.lastAttemptAt).toISOString() : null))}<br>Next timer check: ${e(date(state?.schedule?.alarmAt ? new Date(state.schedule.alarmAt).toISOString() : null))}</p>
     <p class="text-xs text-slate-500">New holdings join automatically on the next successful portfolio and catalogue check. Saved notes have no automatic expiry. Source corrections without a new summary ID are not re-fetched automatically.</p>
-    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`);
+    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
+}
+export function openSummaryCoverage() {
+  const version = modal(coverageHtml());
+  const off = summaries.onChange(() => {
+    if (version !== openVersion) return;
+    const content = document.getElementById('modal-content'), focused = content.contains(document.activeElement);
+    content.innerHTML = coverageHtml();
+    if (focused) content.querySelector('[data-summary-close]')?.focus({ preventScroll: true });
+  });
+  const release = closeSession;
+  closeSession = () => { off(); release?.(); };
 }
 export function summaryStatusHtml() {
   return `<div data-summary-coverage class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>${e(summaryStateMessage(summaries.status()))}</span><button type="button" data-summary-coverage-open class="font-semibold text-indigo-600 underline">Summary coverage</button></div>`;

@@ -21,9 +21,10 @@ const body = {title:'Concall Summary - Summary fixture company - Sep 2026',block
   {type:'list',items:['<img src=x onerror=alert(1)>','Second note'],ordered:false},
   {type:'table',rows:[['Measure','Value'],['Fixture','12']]},
 ]};
-let enabled = true, denied = false, delayed = null, pendingId = null;
+let enabled = true, denied = false, delayed = null, pendingId = null, timerReason = 'recent-run';
 let getCount=0, postCount=0;
 const state = () => ({ok:true,enabled,ready:2,pending:1,discoveryStatus:'ok',portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
+  schedule:{started:true,reason:timerReason,alarmAt:Date.now()+1800000,lastAttemptAt:Date.now()},
   holdings:[{isin:'INE000000001',name:'Summary fixture company',ready:2,pending:1,discovery:'matched'},
     {isin:'INE000000002',name:'New portfolio holding',ready:0,pending:0,discovery:'no-published-summary'}]});
 const server = createServer(async (req,res) => {
@@ -86,6 +87,12 @@ try {
   await page.locator('[data-summary-coverage-open]').click();
   assert((await page.locator('#modal-content').innerText()).includes('New portfolio holding'));
   assert((await page.locator('#modal-content').innerText()).includes('No summary listed by Screener'));
+  timerReason='unavailable';
+  await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  assert((await page.locator('[data-summary-coverage]').innerText()).includes('could not check or start'));
+  assert((await page.locator('[data-summary-schedule]').innerText()).includes('could not check or start'),'open coverage view updates without reopening');
+  assert((await page.locator('[data-summary-schedule]').innerText()).includes('Next timer check:'));
+  timerReason='recent-run';
   await page.keyboard.press('Escape');
   // A pending note is requested again once collected, never cached as permanently unavailable.
   pendingId='123';await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});

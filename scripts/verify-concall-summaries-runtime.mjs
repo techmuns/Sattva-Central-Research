@@ -13,7 +13,14 @@ const origin=`http://127.0.0.1:${port}`,config=join(scratch,'wrangler.json');
 const entry=`import { CaptureRegistry as ActualRegistry } from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
 export class SummaryTest extends ActualRegistry { constructor(ctx,env) { super(ctx,env); this.summaries.now=()=>Date.parse('2026-09-10T06:00:00Z'); } }
 export default {async fetch(request,env) { const input=await request.json(),store=env.SUMMARIES.getByName('local-private-account');
-if(input.action==='sync') return Response.json(await store.summarySync(input.inventory));
+if(input.action==='sync') {
+ const {targets,...manifest}=input.inventory,syncId=crypto.randomUUID();
+ await store.summaryBeginInventory('1:1',syncId,{...manifest,targetCount:targets.length});
+ for(let offset=0;offset<targets.length;offset+=250) await store.summaryInventoryBatch('1:1',syncId,offset,targets.slice(offset,offset+250));
+ return Response.json(await store.summaryFinishInventory('1:1',syncId)); }
+if(input.action==='sync-begin') return Response.json(await store.summaryBeginInventory('1:1',input.syncId,input.manifest));
+if(input.action==='sync-batch') return Response.json(await store.summaryInventoryBatch('1:1',input.syncId,input.offset,input.targets));
+if(input.action==='sync-finish') return Response.json(await store.summaryFinishInventory('1:1',input.syncId));
 if(input.action==='reserve') return Response.json(await store.summaryReserve('1:1',input.requestId));
 if(input.action==='complete') return Response.json(await store.summaryComplete('1:1',input));
 if(input.action==='read') return Response.json(await store.summaryRead(input.ids));
@@ -51,5 +58,14 @@ try {
   const status=await call();assert.equal(status.ready,1);assert.equal(status.automatedRequestsLast24h,1);assert(status.schedule.alarmAt>Date.now());
   assert.deepEqual((await call({action:'read',ids:['123']}))[0].body,body);
   assert.equal((await call({action:'complete',...claim,outcome:'ready',body})).duplicate,true);
+  const syncId=crypto.randomUUID(),{targets,...manifest}=inventory;
+  await call({action:'sync-begin',syncId,manifest:{...manifest,targetCount:1}});
+  await call({action:'sync-batch',syncId,offset:0,targets:[{...target,id:'124',url:'https://www.screener.in/concalls/summary/124/'}]});
+  await stop();await start();
+  assert.equal((await call()).discoveryStatus,'checking');
+  assert.equal((await call({action:'read',ids:['123']}))[0].status,'ready');
+  assert.equal((await call({action:'sync-finish',syncId})).pending,1);
+  assert.equal((await call({action:'sync-finish',syncId})).pending,1);
+  assert.equal((await call({action:'read',ids:['123']}))[0].status,'ready');
   console.log('PASS local workerd: private summary SQL/RPC, concurrent lease, budget/body/alarm restart persistence and idempotent completion');
 } finally {await stop();rmSync(scratch,{recursive:true,force:true});}

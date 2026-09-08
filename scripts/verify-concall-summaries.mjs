@@ -9,10 +9,10 @@ import { ConcallSummaryStore } from '../worker/concall-summary-store.mjs';
 import { ConcallSummarySchedule } from '../worker/concall-summary-schedule.mjs';
 import { authoriseSummaryReader, summaryCollectorIdentity } from '../worker/concall-summary-auth.mjs';
 import { handleConcallSummaries } from '../worker/concall-summaries.mjs';
-import { summaryId, summaryIdsForRow, validateSummaryBody, SUMMARY_WINDOW_MS, SUMMARY_ORIGIN, SUMMARY_WORKFLOW } from '../public/js/data/concall-summaries-shared.js';
+import { summaryId, summaryIdsForRow, validateSummaryBody, summaryStateMessage, summaryScheduleMessage, SUMMARY_WINDOW_MS, SUMMARY_ORIGIN, SUMMARY_WORKFLOW, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 import { buildSummaryInventory } from './lib/concall-summary-inventory.mjs';
 import { summaryResponseError } from './lib/read-screener-summary.mjs';
-import { runSummaryCollection } from './collect-screener-summaries.mjs';
+import { runSummaryCollection, summaryCollectorClient } from './collect-screener-summaries.mjs';
 
 const START = Date.parse('2026-09-10T06:00:00Z');
 const iso = at => new Date(at).toISOString();
@@ -105,14 +105,14 @@ test('saved bodies survive real SQLite reopen, portfolio exits, repeat publicati
     next.portfolioRevision='b'.repeat(64); store.sync(next);
     assert.equal(store.status().holdings.some(h=>h.isin===isin(1)),false);
     assert.equal(store.read(['1'])[0].status,'ready');
-    assert.throws(()=>store.sync({...inventory(1,now),portfolioAsOf:'2026-07-31'}),/reconciliation/);
-    assert.throws(()=>store.sync({...inventory(1,now),portfolioWorkbookUploadedAt:iso(START-2*SUMMARY_WINDOW_MS)}),/reconciliation/);
     assert.equal(store.reserve('1:1',randomUUID()).target.id,'6');
     store.discoveryFailed(); assert.equal(store.status().discoveryStatus,'failed'); assert.equal(store.read(['1'])[0].status,'ready');
     now+=6*60000; assert.equal(store.reserve('1:1',randomUUID()).reason,'inventory-unavailable');
     store.sync(inventory(1,now));
     assert.equal(store.status().holdings.length,1,'a validated complete portfolio reduction is accepted');
     assert.equal(store.read(['1'])[0].status,'ready');
+    assert.throws(()=>store.sync({...inventory(1,now),portfolioAsOf:'2026-07-31'}),/reconciliation/);
+    assert.throws(()=>store.sync({...inventory(1,now),portfolioWorkbookUploadedAt:iso(START-2*SUMMARY_WINDOW_MS)}),/reconciliation/);
   } finally {backing.db.close();rmSync(dir,{recursive:true,force:true});}
 });
 
@@ -198,4 +198,58 @@ test('workflow is opt-in, main-only and has no public summary artifact or source
   const yaml=readFileSync(new URL('../.github/workflows/screener-summaries-refresh.yml',import.meta.url),'utf8');
   assert.match(yaml,/vars\.SCREENER_SUMMARIES_ENABLED == 'true'/);assert.match(yaml,/github.ref == 'refs\/heads\/main'/);
   assert.match(yaml,/family-book-updated/);assert.match(yaml,/cancel-in-progress: false/);assert(!yaml.includes('upload-artifact'));
+});
+
+test('the transport accepts the full 25,000-target inventory in bounded batches', async () => {
+  const backing=storage(), store=new ConcallSummaryStore(backing,{now:()=>START}), plan=inventory(1);
+  plan.targets=Array.from({length:25000},(_,index)=>({...plan.targets[0],id:String(index+1),rank:index,
+    url:`https://www.screener.in/concalls/summary/${index+1}/`,sourceDocumentUrl:'https://example.test/'+ 'x'.repeat(300)}));
+  assert(Buffer.byteLength(JSON.stringify(plan))>4*1024*1024,'fixture exceeds the rejected single-request boundary');
+  let largest=0,batches=0;
+  const client=summaryCollectorClient({env:{ACTIONS_ID_TOKEN_REQUEST_URL:'https://runner.actions.githubusercontent.com/token',ACTIONS_ID_TOKEN_REQUEST_TOKEN:'fixture'},fetcher:async(url,options)=>{
+    if(url.includes('.actions.githubusercontent.com/')) return Response.json({value:'fixture-oidc'});
+    largest=Math.max(largest,Buffer.byteLength(options.body));const input=JSON.parse(options.body);
+    if(input.action==='sync-begin') return Response.json(store.beginInventory('1:1',input.syncId,input.manifest));
+    if(input.action==='sync-batch') {batches++;return Response.json(store.inventoryBatch('1:1',input.syncId,input.offset,input.targets));}
+    assert.equal(input.action,'sync-finish');return Response.json({ok:true,state:store.finishInventory('1:1',input.syncId)});
+  }});
+  try {
+    const result=await client({action:'sync',inventory:plan});
+    assert.equal(result.state.pending,25000);assert.equal(result.state.automatedRequestsLast24h,0);
+    assert.equal(batches,Math.ceil(25000/SUMMARY_INVENTORY_BATCH));assert(largest<SUMMARY_TRANSPORT_LIMIT);
+  } finally {backing.db.close();}
+});
+
+test('partial, conflicting and replayed inventory batches cannot publish a partial portfolio', () => {
+  const backing=storage();let now=START;const store=new ConcallSummaryStore(backing,{now:()=>now});store.sync(inventory(2));
+  const claim=store.reserve('1:1',randomUUID());complete(store,claim);
+  const next=inventory(251),{targets,...manifest}=next,syncId=randomUUID();
+  store.beginInventory('2:1',syncId,{...manifest,targetCount:targets.length});
+  store.inventoryBatch('2:1',syncId,250,targets.slice(250));
+  assert.throws(()=>store.finishInventory('2:1',syncId),/incomplete/);
+  assert.equal(store.status().holdings.length,2);assert.equal(store.read(['1'])[0].status,'ready');
+  assert.throws(()=>store.inventoryBatch('3:1',syncId,0,targets.slice(0,250)),/unavailable/);
+  store.inventoryBatch('2:1',syncId,0,targets.slice(0,250));
+  store.inventoryBatch('2:1',syncId,0,targets.slice(0,250));
+  assert.throws(()=>store.inventoryBatch('2:1',syncId,250,[{...targets[250],name:'Changed'}]),/changed/);
+  assert.equal(store.finishInventory('2:1',syncId).holdings.length,251);
+  assert.equal(store.finishInventory('2:1',syncId).holdings.length,251);
+  assert.equal(store.read(['1'])[0].status,'ready');
+  const interrupted=randomUUID();store.beginInventory('2:1',interrupted,{...manifest,targetCount:targets.length});
+  now+=16*60000;assert.equal(store.status().discoveryStatus,'failed');
+  assert.throws(()=>store.finishInventory('2:1',interrupted),/unavailable/);
+  backing.db.close();
+});
+
+test('scheduler failures are visible immediately even while source coverage is fresh', () => {
+  const state={enabled:true,discoveryStatus:'ok',ready:2,pending:1,schedule:{started:true,alarmAt:START+60000}};
+  for(const reason of ['unavailable','recent-run-failed','run-overdue']) {
+    const failed={...state,schedule:{...state.schedule,reason}};
+    assert(summaryScheduleMessage(failed,START));
+    assert(summaryStateMessage(failed).includes(summaryScheduleMessage(failed,START)));
+  }
+  assert.equal(summaryScheduleMessage(state,START),'');
+  assert.match(summaryScheduleMessage({...state,schedule:{started:true,alarmAt:null}},START),/no next check/);
+  assert.match(summaryScheduleMessage({...state,schedule:{started:true,alarmAt:START-6*60000}},START),/overdue/);
+  assert.equal(summaryScheduleMessage({...state,enabled:false},START),'');
 });

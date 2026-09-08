@@ -1,4 +1,4 @@
-import { SUMMARY_OBJECT, SUMMARY_ORIGIN } from '../public/js/data/concall-summaries-shared.js';
+import { SUMMARY_OBJECT, SUMMARY_ORIGIN, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { summaryCollectorIdentity, authoriseSummaryReader } from './concall-summary-auth.mjs';
 
@@ -17,9 +17,11 @@ export async function handleConcallSummaries(request, env, { fetcher = fetch, no
     try { identity = await summaryCollectorIdentity(request, { fetcher, now: now() }); }
     catch { return reply({ ok: false, reason: 'collector-identity' }, 403); }
     try {
-      const input = await boundedJson(new Response(request.body), 4 * 1024 * 1024);
+      const input = await boundedJson(new Response(request.body), SUMMARY_TRANSPORT_LIMIT);
       const store = env.SCREENER_SUMMARIES.getByName(SUMMARY_OBJECT);
-      if (input.action === 'sync') return reply({ ok: true, state: await store.summarySync(input.inventory) });
+      if (input.action === 'sync-begin') return reply(await store.summaryBeginInventory(identity, input.syncId, input.manifest));
+      if (input.action === 'sync-batch') return reply(await store.summaryInventoryBatch(identity, input.syncId, input.offset, input.targets));
+      if (input.action === 'sync-finish') return reply({ ok: true, state: await store.summaryFinishInventory(identity, input.syncId) });
       if (input.action === 'discovery-failed') return reply({ ok: true, state: await store.summaryDiscoveryFailed() });
       if (input.action === 'reserve') return reply(await store.summaryReserve(identity, input.requestId));
       if (input.action === 'complete') return reply(await store.summaryComplete(identity, input));

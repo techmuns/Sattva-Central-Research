@@ -9,7 +9,7 @@ import { readScreenerSummary, summaryResponseError } from './lib/read-screener-s
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
 import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
-import { SUMMARY_ORIGIN, SUMMARY_FAILURES } from '../public/js/data/concall-summaries-shared.js';
+import { SUMMARY_ORIGIN, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
 
 const ENDPOINT = `${SUMMARY_ORIGIN}/api/concall-summaries/collector`;
 const MAX_BATCH = 10;
@@ -17,7 +17,7 @@ const MAX_BATCH = 10;
 export function summaryCollectorClient({ fetcher = fetch, env = process.env } = {}) {
   // GitHub's request credential stays on its documented Actions hostname. The short-lived OIDC
   // token goes only to this dashboard's fixed collector audience; redirects are never followed.
-  return async input => {
+  const send = async input => {
     const url = new URL(env.ACTIONS_ID_TOKEN_REQUEST_URL || '');
     if (url.protocol !== 'https:' || !url.hostname.endsWith('.actions.githubusercontent.com') || url.username || url.password || url.port)
       throw Error('OIDC endpoint unavailable');
@@ -27,16 +27,24 @@ export function summaryCollectorClient({ fetcher = fetch, env = process.env } = 
     if (typeof identity.value !== 'string' || identity.value.length > 16000) throw Error('OIDC identity unavailable');
     // Retrying the same complete payload is idempotent. Reserve is never repeated automatically:
     // a response lost after claiming a slot is an accounted interrupted attempt.
-    const attempts = input.action === 'complete' ? 2 : 1;
+    const attempts = ['complete', 'sync-begin', 'sync-batch', 'sync-finish'].includes(input.action) ? 2 : 1;
     for (let attempt = 0; attempt < attempts; attempt++) {
       try {
         const response = await fetcher(ENDPOINT, { method: 'POST', headers: { authorization: `Bearer ${identity.value}`,
           'content-type': 'application/json' }, body: JSON.stringify(input), redirect: 'manual', signal: AbortSignal.timeout(45000) });
-        const result = await boundedJson(response, 4 * 1024 * 1024);
+        const result = await boundedJson(response, SUMMARY_TRANSPORT_LIMIT);
         if (result.ok !== true) throw Error('Private summary checkpoint unavailable');
         return result;
       } catch { if (attempt + 1 === attempts) throw Error('Private summary checkpoint unavailable'); }
     }
+  };
+  return async input => {
+    if (input.action !== 'sync') return send(input);
+    const { targets, ...manifest } = input.inventory, syncId = randomUUID();
+    await send({ action: 'sync-begin', syncId, manifest: { ...manifest, targetCount: targets.length } });
+    for (let offset = 0; offset < targets.length; offset += SUMMARY_INVENTORY_BATCH)
+      await send({ action: 'sync-batch', syncId, offset, targets: targets.slice(offset, offset + SUMMARY_INVENTORY_BATCH) });
+    return send({ action: 'sync-finish', syncId });
   };
 }
 
