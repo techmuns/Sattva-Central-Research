@@ -5,7 +5,8 @@
 // always network-only, so Family holdings, research answers and private document
 // lookups never cross the persistence boundary.
 
-// BUMP THIS ON EVERY CHANGE TO A FILE UNDER /js/, WITHOUT EXCEPTION.
+// Advance a revision on every change under /js/. CACHE_KEY combines the shared release
+// marker below with the separate module revision, so either change creates a fresh cache.
 // `revalidateInBackground` below deliberately excludes /js/ — modules are treated as immutable and
 // the service-worker file plus this name ARE the code version boundary. So a returning reader with
 // a warm cache keeps the old module graph for ever unless this string changes: the browser only
@@ -15,12 +16,17 @@
 // happened to the Telegram section, whose new module is reachable from app.js but would never have
 // been requested. Nothing fails and nothing looks wrong; the feature simply is not there.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-08-telegram-content-news-today-v3`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-08-bse-portfolio-coverage-v5`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
 const WARM_CONCURRENCY = 8;
+
+// Keep the Telegram revision separate from the shared marker: concurrent dashboard
+// releases can update that marker without conflicting with this content fix. Every
+// install, read and eviction uses the same combined key, retaining atomic upgrades.
+const CACHE_KEY = `${CACHE_NAME}-telegram-content-v1`;
 
 function moduleSpecifiers(source) {
   const found = new Set();
@@ -115,7 +121,7 @@ async function cacheModuleGraph(cache, entry) {
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await caches.open(CACHE_KEY);
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -130,7 +136,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_KEY).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -177,7 +183,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await caches.open(CACHE_KEY);
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture

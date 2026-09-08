@@ -13,6 +13,7 @@ import { companyNewsArchiveRows, commitCompanyNewsArchive, mergeCompanyNewsArtic
 import { readJson, writeJson } from './lib/company-capture.mjs';
 import { createFeed } from '../public/js/data/filings.js';
 import { clearAll } from '../public/js/core/store.js';
+import { buildAnnouncementIdentities } from './lib/announcement-identities.mjs';
 
 const now = Date.now(), at = new Date(now).toISOString(), day = at.slice(0, 10);
 const holdings = [
@@ -27,6 +28,17 @@ const directory = [
 ];
 const entities = portfolioNewsEntities(holdings), alpha = entities.find(e => e.ticker === 'ALPHA');
 const targets = tradingViewTargets(entities, directory);
+for (const status of ['Suspended', 'Delisted']) {
+  const suspended = buildAnnouncementIdentities([{ ISIN_NUMBER: 'INE220J01025', SCRIP_CD: '533400',
+    scrip_id: 'FCONSUMER', Scrip_Name: 'Future Consumer Ltd', Status: status }]);
+  const entity = portfolioNewsEntities([{ isin: 'INE220J01025', ticker: 'FCONSUMER', name: 'Future Consumer' }]);
+  const options = { nseEntries: [{ isin: 'INE000000001', ticker: 'ALPHA' }],
+    previousEntries: { 'isin:INE220J01025|NSE:FCONSUMER': { lastSuccessAt: at } } };
+  assert.deepEqual(tradingViewTargets(entity, suspended.entries, options)[0].symbols, ['NSE:FCONSUMER', 'BSE:FCONSUMER'],
+    `${status} identity discovery enriches BSE without disabling the already verified NSE news target`);
+  assert.deepEqual(tradingViewTargets(entity, suspended.entries, { ...options, previousEntries: {} })[0].symbols, ['BSE:FCONSUMER'],
+    'a suspended BSE identity alone cannot invent an NSE listing');
+}
 assert.deepEqual(targets.find(t => t.entity.ticker === 'ALPHA').symbols, ['NSE:ALPHA', 'BSE:ALPHAB']);
 assert.deepEqual(targets.find(t => t.entity.name === 'BSE Beta').symbols, ['BSE:BETAB']);
 assert.equal(targets.find(t => t.entity.name === 'Private Robotics').reason, 'no-verified-exchange-symbol');

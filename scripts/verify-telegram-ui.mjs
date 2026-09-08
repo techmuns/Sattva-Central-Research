@@ -445,3 +445,5 @@ try {
   await browser.close();
   await new Promise((done) => server.close(done));
 }
+
+await import('./verify-telegram-cache-ui.mjs');

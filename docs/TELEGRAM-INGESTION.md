@@ -157,6 +157,11 @@ text or newer collection health. Enriched records survive an offline reload thro
 existing retained cache. These safeguards do not invent missing text or guarantee future
 public availability; reconnecting an account is a separate operational decision.
 
+The app cache combines the shared release marker with a Telegram content revision.
+Install, reads and eviction use that same full key. Local browser verification holds
+the next module download to confirm that the previous cache remains available until
+the new graph activates, including when a later release changes the shared marker.
+
 ### Account safeguards
 
 Telegram can restrict unofficial API clients; read-only collection cannot guarantee an

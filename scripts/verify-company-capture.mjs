@@ -84,6 +84,35 @@ try {
   writeJson(join(scratch, 'portfolio-companies.json'), { holdings: [{ ticker: 'ALPEXSOLAR-SM', name: 'Alpex Solar' }] });
   assert.equal(captureCompanies(scratch, { announcements: true }).companies[0].announcementTicker, 'ALPEXSOLAR');
 
+  const aliasDir = join(scratch, 'portfolio-alias');
+  writeJson(join(aliasDir, 'announcement-identities.json'), { entries: [{ isin: 'INE094B01013',
+    ticker: 'ASHIKAG', bseCode: '543766', name: 'Ashika Global Securities' }] });
+  writeJson(join(aliasDir, 'universe.json'), [{ ticker: 'ASHIKA', name: 'Ashika Credit Capital' }]);
+  const aliasHoldings = [{ ticker: 'ASHIKA', isin: 'INE094B01013', name: 'Ashika Credit Capital' }];
+  const aliasScope = captureCompanies(aliasDir, { announcements: true, holdings: aliasHoldings });
+  assert.equal(aliasScope.companies.length, 1, 'an unresolved universe alias cannot create a second storage ticker');
+  assert.equal(aliasScope.companies[0].announcementTicker, 'ASHIKAG');
+  assert.equal(aliasScope.companies[0].priority, true);
+  const aliasCalls = [];
+  const aliasOptions = { ...options, dir: join(aliasDir, 'capture'), companies: aliasScope.companies, maxRequests: 1,
+    request: async (kind, ticker, range, company, context) => {
+      aliasCalls.push({ kind, ticker, company, context });
+      return { ok: true, announcements: [], bse: { ok: true, announcements: [], declared: 0, collected: 0, pages: 1, requests: 1 } };
+    } };
+  const aliasFirst = await captureCompanySources(aliasOptions);
+  const aliasSecond = await captureCompanySources({ ...aliasOptions, maxRequests: 0 });
+  assert.equal(aliasCalls[0].company.announcementTicker, 'ASHIKAG');
+  assert.equal(aliasCalls[0].context.bseCode, '543766');
+  assert.equal(aliasSecond.sources.announcements.ASHIKA.priority, true);
+  assert.equal(aliasSecond.sources.announcements.ASHIKA.lastSuccessAt, aliasFirst.sources.announcements.ASHIKA.lastSuccessAt,
+    'a later run cannot reset the verified alias watermark');
+  writeJson(join(aliasDir, 'universe.json'), [{ ticker: 'ASHIKA', isin: 'INE000000099' }]);
+  assert.throws(() => captureCompanies(aliasDir, { announcements: true, holdings: aliasHoldings }), /Conflicting company identities/,
+    'an explicitly different issuer cannot overwrite a shared capture ticker');
+  writeJson(join(aliasDir, 'universe.json'), [{ ticker: 'ASHIKA', bseCode: '500099' }]);
+  assert.throws(() => captureCompanies(aliasDir, { announcements: true, holdings: aliasHoldings }), /Conflicting company identities/,
+    'an unrecognized explicit BSE code is not a less-specific ticker alias');
+
   const priorityDir = join(scratch, 'priority');
   const recentEntry = { lastAttemptAt: recent, lastSuccessAt: recent, recentCheckedAt: recent,
     ranges: [{ from: '2026-08-29', to: dayForTest(clock) }], rowCount: 0 };
