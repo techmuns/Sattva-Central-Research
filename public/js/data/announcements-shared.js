@@ -17,8 +17,11 @@ export function announcementRange(fromDate, toDate) {
 // A merge checks the same link for provenance and document identity several times.
 // Cache only bounded string inputs; this is derived metadata, never retained source history.
 const urlInfoCache = new Map();
+const urlInfoKeys = new Array(16_384);
+let nextUrlInfoKey = 0;
 function announcementUrlInfo(value) {
-  const cacheable = typeof value === 'string' && value.length <= 4096;
+  if (value == null || value === '') return null;
+  const cacheable = typeof value === 'string' && value.length <= 256;
   if (cacheable && urlInfoCache.has(value)) return urlInfoCache.get(value);
   let info = null;
   try {
@@ -30,8 +33,11 @@ function announcementUrlInfo(value) {
         : `${u.hostname.toLowerCase().replace(/^www\./, '')}${u.pathname}${u.search}` };
     }
   } catch { /* Invalid links have no source or document identity. */ }
-  if (cacheable) {
-    if (urlInfoCache.size >= 2048) urlInfoCache.delete(urlInfoCache.keys().next().value);
+  if (cacheable && (!info || info.url.length <= 256 && info.document.length <= 256)) {
+    // Direct FIFO eviction avoids repeatedly scanning Map iterator tombstones on long histories.
+    urlInfoCache.delete(urlInfoKeys[nextUrlInfoKey]);
+    urlInfoKeys[nextUrlInfoKey] = value;
+    nextUrlInfoKey = (nextUrlInfoKey + 1) % urlInfoKeys.length;
     urlInfoCache.set(value, info);
   }
   return info;
@@ -45,7 +51,7 @@ const groupName = (value) => /^(BSE|NSE|DRHP)(?:$|[\s_-])/i.exec(String(value ||
 export const announcementSources = (row) => [...new Set((row.sources || [row.source]).filter(Boolean))]
   .sort((a, b) => (SOURCE_ORDER.get(a) ?? 99) - (SOURCE_ORDER.get(b) ?? 99) || String(a).localeCompare(String(b)));
 
-export function announcementSourceUrls(row) {
+function sourceUrlsFor(row, sources) {
   const links = [];
   for (const item of Array.isArray(row?.sourceUrls) ? row.sourceUrls : []) {
     const url = announcementUrl(item?.url);
@@ -53,10 +59,12 @@ export function announcementSourceUrls(row) {
     if (url && source) links.push({ source, url });
   }
   const url = announcementUrl(row?.url);
-  const sources = announcementSources(row);
   if (url && sources.length === 1) links.push({ source: sources[0], url });
   return [...new Map(links.map((item) => [`${item.source}|${item.url}`, item])).values()]
     .sort((a, b) => (SOURCE_ORDER.get(a.source) ?? 99) - (SOURCE_ORDER.get(b.source) ?? 99) || a.url.localeCompare(b.url));
+}
+export function announcementSourceUrls(row) {
+  return sourceUrlsFor(row, announcementSources(row));
 }
 const wrappers = new Set(['data', 'results', 'items', 'records', 'announcements', 'rows']);
 
@@ -112,7 +120,7 @@ export function announcementDocumentIdentity(value) {
 const digestIdentity = (value) => /^sha256:[0-9a-f]{64}$/i.test(String(value || ''))
   ? String(value).toLowerCase() : null;
 
-function identityKeys(row, sources = announcementSources(row)) {
+function identityKeys(row, sources = announcementSources(row), sourceUrls = sourceUrlsFor(row, sources)) {
   const prefix = `${row.ticker || ''}|${row.date || ''}|`;
   const keys = [];
   // A content digest alone is not an event identity: two legitimate same-day filings can reuse
@@ -120,7 +128,7 @@ function identityKeys(row, sources = announcementSources(row)) {
   // BSE/NSE comparison, so it is safe to use as the shared cross-exchange key.
   const crossExchangeDocumentId = digestIdentity(row.crossExchangeDocumentId);
   if (crossExchangeDocumentId) keys.push(`${prefix}cross-exchange:${crossExchangeDocumentId}`);
-  for (const value of [row.url, ...announcementSourceUrls(row).map((item) => item.url)]) {
+  for (const value of [row.url, ...sourceUrls.map((item) => item.url)]) {
     const document = announcementDocumentIdentity(value);
     if (document) keys.push(`${prefix}document:${document}`);
   }
@@ -128,16 +136,16 @@ function identityKeys(row, sources = announcementSources(row)) {
   return [...new Set(keys)];
 }
 
-function mergeAnnouncement(previous, row, sources) {
+function mergeAnnouncement(previous, row, sources, sourceUrls) {
   // Capture a legacy row's primary link before adding another source. Older persisted rows do
   // not have sourceUrls yet, and announcementSourceUrls intentionally cannot assign one URL to
   // multiple exchanges once the source list has been widened.
-  const previousSourceUrls = announcementSourceUrls(previous);
-  previous.sources = [...new Set([...announcementSources(previous), ...sources])]
+  const previousSourceUrls = sourceUrlsFor(previous, previous.sources);
+  previous.sources = [...new Set([...previous.sources, ...sources])]
     .sort((a, b) => (SOURCE_ORDER.get(a) ?? 99) - (SOURCE_ORDER.get(b) ?? 99) || String(a).localeCompare(String(b)));
   previous.source = previous.sources.join(' / ');
   previous.providers = [...new Set([...(previous.providers || []), ...(row.providers || [])])];
-  previous.sourceUrls = [...new Map([...previousSourceUrls, ...announcementSourceUrls(row)]
+  previous.sourceUrls = [...new Map([...previousSourceUrls, ...sourceUrls]
     .map((item) => [`${item.source}|${item.url}`, item])).values()]
     .sort((a, b) => (SOURCE_ORDER.get(a.source) ?? 99) - (SOURCE_ORDER.get(b.source) ?? 99) || a.url.localeCompare(b.url));
   for (const [field, value] of Object.entries(row)) if (previous[field] == null && value != null) previous[field] = value;
@@ -152,17 +160,17 @@ export function mergeAnnouncements(...lists) {
     for (const row of list || []) {
       if (!row || typeof row !== 'object') continue;
       const sources = announcementSources(row);
+      const sourceUrls = sourceUrlsFor(row, sources);
       const exact = JSON.stringify([row.ticker, row.date, row.time, row.title, row.summary, row.category, row.subCategory, sources]);
       const occurrence = (occurrences.get(exact) || 0) + 1;
       occurrences.set(exact, occurrence);
-      const keys = identityKeys(row, sources);
+      const keys = identityKeys(row, sources, sourceUrls);
       const fallback = `${exact}|${occurrence}`;
       const previous = keys.map((key) => seen.get(key)).find(Boolean) || (!keys.length ? seen.get(fallback) : null);
       if (previous) {
-        mergeAnnouncement(previous, row, sources);
-        for (const key of [...identityKeys(previous), ...keys]) seen.set(key, previous);
+        mergeAnnouncement(previous, row, sources, sourceUrls);
+        for (const key of [...identityKeys(previous, previous.sources, previous.sourceUrls), ...keys]) seen.set(key, previous);
       } else {
-        const sourceUrls = announcementSourceUrls(row);
         const next = { ...row, sources, providers: [...(row.providers || [])], ...(sourceUrls.length ? { sourceUrls } : {}) };
         out.push(next);
         for (const key of keys.length ? keys : [fallback]) seen.set(key, next);

@@ -10,7 +10,7 @@ import { CATEGORIES, annUrl, fetchAnnouncements, fetchCompanyAnnouncements } fro
 
 const pdf = 'a1111111-1111-1111-1111-111111111111.pdf';
 for (let repeat = 0; repeat < 2; repeat++) {
-  for (const unsafe of ['javascript:alert(1)', 'https://user:password@example.test/a.pdf', 'not a URL']) {
+  for (const unsafe of [null, undefined, '', 'javascript:alert(1)', 'https://user:password@example.test/a.pdf', 'not a URL']) {
     assert.equal(announcementUrl(unsafe), null);
     assert.equal(announcementDocumentIdentity(unsafe), null);
   }
@@ -18,6 +18,16 @@ for (let repeat = 0; repeat < 2; repeat++) {
   assert.equal(announcementDocumentIdentity(`https://www.bseindia.com/xml-data/corpfiling/AttachHis/${pdf}`), `bse:${pdf}`);
 }
 const mutableUrl = new URL('https://example.test/report.pdf');
+for (let i = 0; i < 17000; i++) {
+  const url = `https://example.test/report-${i}.pdf`;
+  assert.equal(announcementUrl(url), url);
+  assert.equal(announcementDocumentIdentity(url), `example.test/report-${i}.pdf`);
+}
+assert.equal(announcementDocumentIdentity(`https://www.bseindia.com/xml-data/corpfiling/AttachHis/${pdf}`), `bse:${pdf}`,
+  'document identities survive cache rotation across a long stream');
+const longUrl = `https://example.test/${'a'.repeat(600)}.pdf`;
+assert.equal(announcementUrl(longUrl), longUrl, 'cache bounds never reject a valid long source link');
+assert.equal(announcementDocumentIdentity(longUrl), longUrl.slice('https://'.length));
 assert.equal(announcementUrl(mutableUrl), mutableUrl.href);
 mutableUrl.username = 'private';
 assert.equal(announcementUrl(mutableUrl), null, 'a changed URL object is validated again');
