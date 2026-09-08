@@ -3,7 +3,10 @@
 Read this before touching anything. `docs/SPEC.md` has the product detail;
 `docs/DATA-CONTRACTS.md` has every JSON shape.
 
-**News reading window (8 September 2026):** the customer wants the latest 30 days by default.
+**Reading defaults (8 September 2026):** News opens on Today; All Alerts opens on Last 3 days.
+Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
+All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
+the complete company history. These are display defaults, not deletion or collection rules.
 News uses `recentNews`, separate from the full-history `news` reader in All Alerts / research.
 `news-window.js` owns the inclusive IST presets and undated choice; This month may span 31 days.
 Only overlapping archive months load, and a verified archive-derived head can avoid duplicate

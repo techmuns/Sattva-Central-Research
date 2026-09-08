@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { newsDay, newsPublicationDay, newsPeriodBounds, recentNewsWindow, matchesNewsPeriod,
+import { newsDay, newsPublicationDay, newsPeriodBounds, recentNewsWindow, matchesNewsPeriod, newsPeriodFilter,
   newsShardInWindow, newsHeadCoversArchive } from '../public/js/data/news-window.js';
 import { withNewsHistory } from '../public/js/data/news-history.js';
 import { newsSourceMeta } from '../public/js/ui/news-sources.js';
 
 const now = Date.parse('2026-09-08T04:30:00Z');
+assert.equal(newsPeriodFilter().value, 'today', 'News defaults to Today without narrowing the retained reader');
 const olderMeta = { newsDelivery: { core: { readerCheckedAt: 100, status: 'ok' } } };
 const recentMeta = { newsDelivery: { core: { readerCheckedAt: 200, status: 'unavailable' } } };
 assert.equal(newsSourceMeta([olderMeta, recentMeta]), recentMeta, 'source registry uses newest attempt, even when failed');

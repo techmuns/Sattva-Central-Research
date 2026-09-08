@@ -100,6 +100,9 @@ try {
   const status = page.locator('[data-filings-info]');
   const outlet = page.locator('select[aria-label="Outlet"]');
   const search = page.locator('[data-table-search]');
+  const period = page.getByRole('combobox', { name:'News period', exact:true });
+  assert.equal(await period.inputValue(), 'today', 'Portfolio News opens on Today');
+  await period.selectOption('30'); // The retained publisher/OnEMI fixtures are from yesterday.
   assert.match(await status.textContent(), /Loading remaining sources/);
   assert.ok((await outlet.locator('option').allTextContents()).includes('Moneycontrol'));
   assert.ok(!(await outlet.locator('option').allTextContents()).includes('the publisher'));
@@ -130,8 +133,7 @@ try {
   await search.fill('');
   await outlet.selectOption('all');
   await page.evaluate(()=>window.fixture.dates());
-  const period = page.getByRole('combobox', { name:'News period', exact:true });
-  assert.equal(await period.inputValue(), '30', 'News opens on last 30 days');
+  assert.equal(await period.inputValue(), '30', 'the chosen period survives source arrivals');
   assert.deepEqual(await period.locator('option').allTextContents(), ['Last 30 days','Today','Last 3 days','Last 7 days','Last 14 days','This month','Date not supplied']);
   for (const [value,count] of [['30',8],['today',1],['3',3],['7',5],['14',7],['month',6],['undated',1]]) {
     await period.selectOption(value);
@@ -171,7 +173,10 @@ try {
   await page.route('**/data/twitter-posts.json*', route => route.fulfill({contentType:'application/json',body:JSON.stringify({capturedAt:publisherAt,posts:[],byHandle:{},failed:{}})}));
   await page.evaluate(()=>window.fixture.universe());
   await page.waitForFunction(()=>document.querySelector('[data-news-more]')?.textContent.includes('Recent captured history loaded'));
-  assert.equal(await page.locator('[data-news-key]').count(), 3);
+  assert.equal(await period.inputValue(), 'today', 'Universe News also opens on Today');
+  assert.equal(await page.locator('[data-news-key]').count(), 1);
+  await period.selectOption('30');
+  assert.equal(await page.locator('[data-news-key]').count(), 3, 'older recent stories remain available');
   assert(!requests.some(path=>path.includes('2020-01')), 'Universe never walks older archive months');
   const recentRequests = requests.length;
   await period.selectOption('today');

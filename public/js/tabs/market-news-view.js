@@ -35,7 +35,7 @@ import { withoutPublisherName } from '../core/source-copy.js';
 import { canonicalPublisherName } from '../core/news-publishers.js';
 import { exportRows } from '../ui/export.js';
 import * as marketNews from '../data/market-news.js';
-import { NEWS_PERIODS, recentNewsWindow, inNewsWindow, matchesNewsPeriod } from '../data/news-window.js';
+import { DEFAULT_NEWS_PERIOD, NEWS_PERIODS, recentNewsWindow, inNewsWindow, matchesNewsPeriod } from '../data/news-window.js';
 import * as twitterNews from '../data/twitter-news.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import { openTwitterSources } from '../ui/twitter-sources.js';
@@ -71,7 +71,7 @@ let lastResult = null;
 let failure = null;
 // The reader's own filters. Module state, not node state: every repaint rebuilds the list, so a
 // value held on the input would be discarded the moment a capture landed.
-let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: '30' };
+let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: DEFAULT_NEWS_PERIOD };
 let fillStop = null;
 // Whether the provenance modal — which holds the Fetch control — is on screen, so a fetch's
 // progress can be re-rendered into it rather than reported to a panel nobody is looking at.
@@ -952,7 +952,7 @@ function wireList(root) {
 }
 
 const DESCRIPTION =
-  'Last 30 days of market-wide news, not limited to your portfolio. Time filters use IST; This month starts on the first calendar day. ' +
+  'Market-wide news, not limited to your portfolio. Opens on Today (IST); choose another period up to 30 days or This month. ' +
   'Older news stays saved in All Alerts. Undated stories have their own filter.';
 
 /**
@@ -1077,5 +1077,5 @@ export function destroy() {
   modalOpen = false;
   // The filters are the reader's, and leaving the tab discards them deliberately: coming back to a
   // list silently narrowed by a search typed ten minutes ago reads as a feed that lost stories.
-  listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: '30' };
+  listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: DEFAULT_NEWS_PERIOD };
 }
