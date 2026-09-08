@@ -107,6 +107,7 @@ test('saved bodies survive real SQLite reopen, portfolio exits, repeat publicati
     assert.equal(store.status().holdings.some(h=>h.isin===isin(1)),false);
     assert.deepEqual(store.status().readyIds,['1'],'saved IDs remain readable after a portfolio exit');
     assert.equal(store.read(['1'])[0].status,'ready');
+    assert.equal(store.read(['1'])[0].active,false,'portfolio exits stop eligibility without removing the saved body');
     assert.equal(store.reserve('1:1',randomUUID()).target.id,'6');
     store.discoveryFailed(); assert.equal(store.status().discoveryStatus,'failed'); assert.equal(store.read(['1'])[0].status,'ready');
     now+=6*60000; assert.equal(store.reserve('1:1',randomUUID()).reason,'inventory-unavailable');
@@ -139,6 +140,18 @@ test('one newest note per company precedes its older history; duplicates do not 
   const capture={fullHistory:true,checkedAt:iso(START),rows:[source(1,'1'),source(1,'1'),source(1,'11','2026-08-01'),source(2,'2','2026-08-30')]};
   const plan=buildSummaryInventory(book(2),capture,{now:START});
   assert.deepEqual(plan.targets.map(t=>t.id),['1','2','11']);
+});
+
+test('private readers receive actual deferred eligibility and no invented date for untracked IDs', () => {
+  const backing=storage(), store=new ConcallSummaryStore(backing,{now:()=>START});
+  try {
+    store.sync(inventory());
+    const claim=store.reserve('1:1',randomUUID());complete(store,claim,'not-published');
+    const deferred=store.read([claim.target.id])[0];
+    assert.equal(deferred.active,true);assert.equal(deferred.status,'not-published');
+    assert.equal(deferred.nextAttemptAt,iso(START+7*SUMMARY_WINDOW_MS));
+    assert.deepEqual(store.read(['999'])[0],{id:'999',status:'not-collected',active:false,nextAttemptAt:null});
+  } finally {backing.db.close();}
 });
 
 test('reader access requires verified owner identity and never uses the caller as a deployment fallback', async () => {

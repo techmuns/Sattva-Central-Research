@@ -237,10 +237,11 @@ export class ConcallSummaryStore {
   read(ids) {
     if (!Array.isArray(ids) || !ids.length || ids.length > 10 || ids.some(id => !/^[1-9]\d{0,19}$/.test(id))) throw Error('Invalid summary IDs');
     return [...new Set(ids)].map(id => {
-      const row = this.rows('SELECT target,body,fetched_at,status FROM summary_records WHERE id=?', id)[0];
-      if (!row) return { id, status: 'not-collected' };
+      const row = this.rows('SELECT target,body,fetched_at,status,active,next_attempt FROM summary_records WHERE id=?', id)[0];
+      if (!row) return { id, status: 'not-collected', active: false, nextAttemptAt: null };
       const target = JSON.parse(row.target);
       return { id, status: row.body ? 'ready' : row.status, name: target.name, ticker: target.ticker,
+        active: row.active === 1, nextAttemptAt: row.next_attempt ? iso(row.next_attempt) : null,
         publishedDate: target.publishedDate, kind: target.kind, url: target.url, fetchedAt: row.fetched_at,
         ...(row.body ? { body: JSON.parse(row.body) } : {}) };
     });

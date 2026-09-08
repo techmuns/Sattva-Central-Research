@@ -37,11 +37,14 @@ function coverageNote() {
   return `<p class="text-sm text-slate-600">${e(summaryStateMessage(state))}</p>${state?.cooldownUntil && Date.parse(state.cooldownUntil) > Date.now()
     ? `<p class="mt-2 text-xs text-slate-500">Next eligible source check: ${e(date(state.cooldownUntil))}. The source may impose a longer pause.</p>` : ''}`;
 }
-function checkBackMessage() {
+function checkBackMessage(records) {
   const state = summaries.status();
-  const next = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt), state?.schedule?.alarmAt]
-    .filter(time => Number.isFinite(time) && time > Date.now()));
-  if (!Number.isFinite(next)) return 'Please check back later.';
+  const now = Date.now();
+  const future = time => Number.isFinite(time) && time > now ? time : 0;
+  const account = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt), state?.schedule?.alarmAt].map(future));
+  const next = Math.min(...records.filter(record => record.active === true)
+    .map(record => Math.max(account, future(Date.parse(record.nextAttemptAt)))));
+  if (!Number.isFinite(next) || next <= now) return 'Please check back later.';
   const when = new Date(next).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long',
     day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true });
   return `Please check back — ${when} IST.`;
@@ -57,10 +60,22 @@ export async function openSummary(row) {
     const focused = content.contains(document.activeElement);
     const ready = records.filter(record => record.status === 'ready');
     if (!ready.length) {
-      content.innerHTML = `${header(`${row.name} · Summary`)}<div class="p-6" data-summary-reader><p data-summary-check-back class="text-sm text-slate-700" aria-live="polite">${e(checkBackMessage())}</p></div>`;
+      content.innerHTML = `${header(`${row.name} · Summary`)}<div class="p-6" data-summary-reader><p data-summary-check-back class="text-sm text-slate-700" aria-live="polite">${e(checkBackMessage(records))}</p></div>`;
       const note = content.querySelector('[data-summary-check-back]');
-      const off = summaries.onChange(() => {
-        if (version === openVersion) note.textContent = checkBackMessage();
+      let checking = false, pendingRecords = records;
+      const off = summaries.onChange(async () => {
+        if (version !== openVersion || checking) return;
+        checking = true;
+        try {
+          // Read private saved state only; this never requests a source summary.
+          const updated = await summaries.read(ids);
+          if (version !== openVersion) return;
+          pendingRecords = updated;
+          if (updated.some(record => record.status === 'ready')) { void openSummary(row); return; }
+          note.textContent = checkBackMessage(updated);
+        } catch {
+          if (version === openVersion) note.textContent = checkBackMessage(pendingRecords);
+        } finally { checking = false; }
       });
       const release = closeSession;
       closeSession = () => { off(); release?.(); };
