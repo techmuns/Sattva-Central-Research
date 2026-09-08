@@ -47,7 +47,14 @@ export async function runSummaryCollection({ client, inventory, openSession, rea
     let plan;
     try { plan = await inventory(); }
     catch { await client({ action: 'discovery-failed' }); throw Error('Current portfolio or source catalogue unavailable'); }
-    const synced = await client({ action: 'sync', inventory: plan });
+    let synced;
+    try { synced = await client({ action: 'sync', inventory: plan }); }
+    catch {
+      // A rejected reconciliation or an oversized inventory must invalidate the previous
+      // coverage claim immediately, even though the retained records remain untouched.
+      try { await client({ action: 'discovery-failed' }); } catch { /* Checkpoint outage: age stays visible. */ }
+      throw Error('Private summary inventory could not be reconciled');
+    }
     if (Date.parse(synced.state?.cooldownUntil) > now()) return { saved, attempted, reason: 'source-cooldown' };
     // Do not even sign in if the rolling daily allowance has already been consumed.
     if (synced.state?.automatedRequestsLast24h >= synced.state?.requestBudget) return { saved, attempted, reason: 'daily-budget' };

@@ -175,6 +175,11 @@ test('collector refreshes membership even during quota cooldown and stops after 
   let requests=0,opened=0;const calls=[];
   const stopped=await runSummaryCollection({inventory:async()=>inventory(),client:async input=>{calls.push(input);return {state:{cooldownUntil:iso(START+60000)}};},openSession:async()=>{opened++;},now:()=>START});
   assert.equal(stopped.reason,'source-cooldown');assert.equal(opened,0);assert.equal(calls[0].action,'sync');
+  const failed=[];
+  await assert.rejects(()=>runSummaryCollection({inventory:async()=>inventory(),client:async input=>{
+    failed.push(input.action);if(input.action==='sync') throw Error('capacity');return {ok:true};
+  },openSession:async()=>{opened++;}}));
+  assert.deepEqual(failed,['sync','discovery-failed']);assert.equal(opened,0);
   const actions=[];
   const result=await runSummaryCollection({inventory:async()=>inventory(),client:async input=>{actions.push(input);if(input.action==='sync')return {state:{}};if(input.action==='reserve')return {reserved:true,requestId:input.requestId,token:'token',target:source(1)};return {ok:true};},
     openSession:async()=>({page:{},close:async()=>{}}),read:async()=>{requests++;throw Object.assign(Error(),{summaryCode:'rate-limited'});},now:()=>START});

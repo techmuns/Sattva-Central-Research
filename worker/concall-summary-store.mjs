@@ -74,11 +74,12 @@ export class ConcallSummaryStore {
           (previous.portfolioAsOf && (inventory.portfolioAsOf < previous.portfolioAsOf ||
             (inventory.portfolioAsOf === previous.portfolioAsOf && Date.parse(inventory.portfolioWorkbookUploadedAt) < Date.parse(previous.portfolioWorkbookUploadedAt)))))
         throw Error('Inventory reconciliation required');
-      const existing = new Map(this.rows('SELECT id,isin,target FROM summary_records').map(row => [row.id, row]));
+      // Do not load every full target (or any body) into Worker memory to check identities.
+      const existing = new Map(this.rows("SELECT id,isin,json_extract(target,'$.companyKey') AS company_key FROM summary_records").map(row => [row.id, row]));
       if (new Set([...existing.keys(), ...ids]).size > SUMMARY_RECORD_LIMIT) throw Error('Summary archive capacity reached');
       for (const target of inventory.targets) {
         const old = existing.get(target.id);
-        if (old && (old.isin !== target.isin || JSON.parse(old.target).companyKey !== target.companyKey)) throw Error('Source summary identity changed');
+        if (old && (old.isin !== target.isin || old.company_key !== target.companyKey)) throw Error('Source summary identity changed');
       }
       this.rows('UPDATE summary_records SET active=0 WHERE active=1');
       for (const target of inventory.targets) this.rows(`INSERT INTO summary_records(id,isin,target,active,rank,published_date,status)
