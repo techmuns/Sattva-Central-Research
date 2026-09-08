@@ -30,6 +30,13 @@ Insider Trades (bulk deals, block deals, SAST and insider disclosures).
 
 ## Repository workflow
 
+Standing summary instruction, confirmed on 8 September 2026: the user approved private
+Screener summary caching/display and production activation, requested automatic start after
+cooldowns, and asked that this same authorization not be requested again. Keep the existing
+collector automatic for the entire live portfolio, including future holdings. Preserve the
+durable request budget, source cooldowns and saved history. Pending summary popups should say
+“Please check back” with the next eligible day and time; operational detail stays in coverage.
+
 - For every repository change, create a `codex/*` branch and raise a pull request.
 - Never commit, push or reset directly on `main`; merge through pull requests.
 - Wait for required CI checks and automated reviewer/bot feedback, address

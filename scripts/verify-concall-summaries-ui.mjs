@@ -41,7 +41,7 @@ const server = createServer(async (req,res) => {
       let raw='';for await(const chunk of req) raw+=chunk;
       if(delayed) await delayed;
       if(denied) {res.statusCode=401;return res.end('{"ok":false,"reason":"access"}');}
-      return res.end(JSON.stringify({ok:true,records:JSON.parse(raw).ids.map(id=> id===pendingId ? {id,status:'queued'} :
+      return res.end(JSON.stringify({ok:true,records:JSON.parse(raw).ids.map(id=> pendingId==='all'||id===pendingId ? {id,status:'queued'} :
         {id,status:'ready',name:row.name,kind:id==='124'?'Recording':'Transcript',publishedDate:'2026-09-04',fetchedAt:new Date().toISOString(),body:{...body,title:body.title+(id==='124'?' - recording':'')}})}));
     }
     return res.end('{"ok":false,"error":"Local fixture"}');
@@ -103,11 +103,26 @@ try {
   }
   discoveryStatus='ok';cooldownUntil=null;
   await page.keyboard.press('Escape');
+  // An empty reader shows only a check-back day/time, and follows changed cooldowns live.
+  pendingId='all';cooldownUntil=new Date(Date.now()+86400000).toISOString();
+  await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
+  await button.click();await page.locator('[data-summary-check-back]').waitFor();
+  const checkBack=await page.locator('[data-summary-check-back]').innerText();
+  assert.match(checkBack,/^Please check back — .+ IST\.$/);
+  assert.equal(await page.locator('#modal-content p').count(),1,'pending popup is a single message');
+  assert.doesNotMatch(await page.locator('#modal-content').innerText(),/Screener|source|collection|allowance|saved/i);
+  const oldDay=new Date(cooldownUntil).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long'});
+  assert(checkBack.includes(oldDay),'the check-back date uses the Indian calendar day');
+  cooldownUntil=new Date(Date.parse(cooldownUntil)+86400000).toISOString();
+  await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  assert.notEqual(await page.locator('[data-summary-check-back]').innerText(),checkBack,'open popup follows the next eligible check');
+  assert.equal(postCount,2,'updating a check-back time does not fetch another summary');
+  await page.keyboard.press('Escape');cooldownUntil=null;
   // A pending note is requested again once collected, never cached as permanently unavailable.
   pendingId='123';await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
   await button.click();await page.locator('[data-summary-reader]').waitFor();assert.equal(await page.locator('[data-summary-version]').count(),0);
   pendingId=null;await page.keyboard.press('Escape');await button.click();await page.locator('[data-summary-version]').waitFor();
-  assert.equal(postCount,3);
+  assert.equal(postCount,4);
   await page.keyboard.press('Escape');
   body.blocks.push(...Array.from({length:35},()=>({type:'paragraph',text})));
   await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
@@ -136,7 +151,7 @@ try {
   await page.evaluate(()=>{window.fixtureSession(null);window.fixtureSession('local-test-token');});
   denied=true;
   const result=await page.evaluate(async()=>{try {await (await import('/js/data/concall-summaries.js')).read(['123']);return 'leaked';}catch{return 'refused';}});
-  assert.equal(result,'refused');assert.equal(postCount,5);
+  assert.equal(result,'refused');assert.equal(postCount,6);
   denied=false;enabled=false;savedIds=['123'];
   await page.evaluate(()=>location.hash='#/research/concall?scope=universe');
   await page.locator('[data-summary-coverage]').waitFor();
@@ -153,7 +168,7 @@ try {
   enabled=true;savedIds=['123','124'];await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
   await button.waitFor();
   let release;delayed=new Promise(done=>release=done);await button.click();
-  await page.waitForFunction(()=>document.querySelector('#modal-content')?.textContent.includes('Loading saved'));
+  await page.waitForFunction(()=>document.querySelector('#modal-content')?.textContent.includes('Loading summary'));
   await page.evaluate(()=>window.fixtureSession(null));release();delayed=null;
   await page.waitForFunction(()=>document.querySelector('#modal-overlay').classList.contains('hidden'));
   assert.equal(await page.locator('[data-summary-body]').count(),0,'late prior-session content cannot reopen the reader');

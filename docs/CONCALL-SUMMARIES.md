@@ -9,29 +9,35 @@ When collection is disabled, unsaved calls stay hidden even after table filterin
 
 ## Current activation state
 
-This implementation ships **disabled**. The signed-in source reader returned “Limit exceeded” on
-8 September 2026 and stated an 80-summary daily allowance. No successful paid summary body or
-production private-reader identity response was available for live validation. Browser tests use
-synthetic local fixtures; they do not establish compatibility with an unseen successful source
-page. The collector refuses an unrecognised/incomplete template instead of saving partial text.
+**Enabled on 8 September 2026.** The user confirmed the permitted private caching/display
+arrangement, authorized production activation and automatic start after cooldown, and requested
+that this same authorization not be asked again. The standing instruction is also in `AGENTS.md`.
 
-Screener's [standard terms](https://www.screener.in/guides/terms/) do not establish permission to
-retain and mirror its paid summaries. Confirm the applicable private caching/display arrangement
-before enabling. This source permission question is separate from dashboard authentication and
-from the repository's explicit-authorization requirement for production configuration changes.
+The [initial activation run](https://github.com/techmuns/Sattva-Central-Research/actions/runs/34232669785)
+and [subsequent automatic run](https://github.com/techmuns/Sattva-Central-Research/actions/runs/34234674937)
+succeeded with zero source requests during cooldown. The live embedded dashboard verified the
+private reader, coverage for all 118 then-current holdings, 145 queued notes and the persisted next
+timer check. Anonymous and invalid-token requests were denied. These counts are observations,
+not fixed membership or completeness guarantees.
 
-Activation, after that confirmation and authorization for these exact production actions:
+The source's 8 September daily-limit refusal remains recorded until 9 September at 06:48 UTC
+(12:18 pm IST). The existing schedule starts eligible collection automatically after that time.
+Successful paid-body capture still needs verification: local parser fixtures do not establish
+compatibility with an unseen successful source page. Unrecognised/incomplete templates fail closed.
 
-1. Configure Worker secret `SCREENER_SUMMARIES_ENABLED=true` and repository Actions variable
-   `SCREENER_SUMMARIES_ENABLED=true`. Both gates are required; neither is set by this PR.
+Production configuration and verification:
+
+1. Worker secret `SCREENER_SUMMARIES_ENABLED=true` and repository Actions variable
+   `SCREENER_SUMMARIES_ENABLED=true` are both enabled and required.
 2. Keep existing repository secrets `SCREENER_USERNAME` / `SCREENER_PASSWORD`, and Worker
    `GH_DISPATCH_TOKEN`, `GH_REPO=techmuns/Sattva-Central-Research`, `GH_REF=main` configured.
    No new long-lived collector credential is needed. GitHub's signed OIDC token is restricted
    to this repository's immutable IDs, main ref and exact collector workflow.
-3. Set Worker secret `SCREENER_SUMMARY_READER_EMAILS` to the approved private reader email(s),
-   or use the default deployment-owner check through `MUNS_TOKEN`. Every reader token is
+3. Worker secret `SCREENER_SUMMARY_READER_EMAILS` restricts the reader to the user's verified
+   signed-in dashboard account. The default deployment-owner check through `MUNS_TOKEN` is
+   available when no explicit private reader is configured. Every reader token is
    verified through Munshot's official `/auth/me`; no browser-provided email or decoded JWT
-   claim grants access. Confirm the real identity response and denied-account behaviour.
+   claim grants access. Authenticated reading and unauthenticated/invalid-token denial were verified live.
 4. Let the enabled half-hour schedule make its first eligible run after the recorded cooldown.
    Check the source body against the inline rendering, actual portfolio/source check times,
    the successful saved count and per-holding coverage. Do not claim live capture until this
@@ -41,6 +47,12 @@ Activation, after that confirmation and authorization for these exact production
 Setting the Worker gate false stops new writes and the next alarm. Disabling the Actions variable
 also avoids runner setup. Existing private saved bodies remain readable. Neither switch deletes
 history. A deployment or workflow edit must never reset the private account object or its budget.
+
+An empty summary popup contains only “Please check back” and the next eligible day/time in IST.
+It uses the known cooldown, budget availability and scheduled check, updating while open. If no
+future check is known, it says “Please check back later” without inventing a time. This is a time
+to check again, not a guarantee that a particular queued report will be ready. Source attribution
+remains with saved reports; detailed source health and gaps remain in the separate coverage view.
 
 ## Membership, queue and history
 

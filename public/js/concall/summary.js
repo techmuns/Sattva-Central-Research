@@ -37,16 +37,36 @@ function coverageNote() {
   return `<p class="text-sm text-slate-600">${e(summaryStateMessage(state))}</p>${state?.cooldownUntil && Date.parse(state.cooldownUntil) > Date.now()
     ? `<p class="mt-2 text-xs text-slate-500">Next eligible source check: ${e(date(state.cooldownUntil))}. The source may impose a longer pause.</p>` : ''}`;
 }
+function checkBackMessage() {
+  const state = summaries.status();
+  const next = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt), state?.schedule?.alarmAt]
+    .filter(time => Number.isFinite(time) && time > Date.now()));
+  if (!Number.isFinite(next)) return 'Please check back later.';
+  const when = new Date(next).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long',
+    day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true });
+  return `Please check back — ${when} IST.`;
+}
 export async function openSummary(row) {
   const ids = summaryIdsForRow(row);
   if (!ids.length) return;
-  const version = modal(`${header(`${row.name} · Summary`)}<div class="p-6 text-sm text-slate-600" aria-live="polite">Loading saved Screener summary…</div>`);
+  const version = modal(`${header(`${row.name} · Summary`)}<div class="p-6 text-sm text-slate-600" aria-live="polite">Loading summary…</div>`);
   try {
     const records = await summaries.read(ids);
     if (version !== openVersion) return;
     const content = document.getElementById('modal-content');
     const focused = content.contains(document.activeElement);
     const ready = records.filter(record => record.status === 'ready');
+    if (!ready.length) {
+      content.innerHTML = `${header(`${row.name} · Summary`)}<div class="p-6" data-summary-reader><p data-summary-check-back class="text-sm text-slate-700" aria-live="polite">${e(checkBackMessage())}</p></div>`;
+      const note = content.querySelector('[data-summary-check-back]');
+      const off = summaries.onChange(() => {
+        if (version === openVersion) note.textContent = checkBackMessage();
+      });
+      const release = closeSession;
+      closeSession = () => { off(); release?.(); };
+      if (focused) content.querySelector('[data-summary-close]')?.focus({ preventScroll: true });
+      return;
+    }
     content.innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-4 p-6" data-summary-reader>
       <p class="text-xs text-slate-500">Screener’s published notes, reproduced unchanged. Reading a saved copy does not request another summary from Screener.</p>
       ${ready.length > 1 ? `<label class="block text-sm text-slate-700">Source version <select data-summary-version class="ml-2 rounded-lg border border-slate-200 bg-white p-2">${ready.map((record, index) => `<option value="${index}">${e(record.kind)} · ${e(record.publishedDate)} · ${e(record.id)}</option>`).join('')}</select></label>` : ''}
@@ -55,9 +75,8 @@ export async function openSummary(row) {
       ${coverageNote()}</div>`;
     const paint = index => {
       const record = ready[index];
-      content.querySelector('[data-summary-body]').innerHTML = record
-        ? `<h3 class="text-base font-semibold text-slate-900">${e(record.body.title)}</h3><p class="text-xs text-slate-500">Saved from Screener on ${e(date(record.fetchedAt))}.</p>${bodyHtml(record.body)}`
-        : '<p class="text-sm font-medium text-slate-700">No saved copy is available yet. Automatic collection covers the current portfolio and runs within Screener’s allowance.</p>';
+      if (!record) return;
+      content.querySelector('[data-summary-body]').innerHTML = `<h3 class="text-base font-semibold text-slate-900">${e(record.body.title)}</h3><p class="text-xs text-slate-500">Saved from Screener on ${e(date(record.fetchedAt))}.</p>${bodyHtml(record.body)}`;
     };
     paint(0);
     content.querySelector('[data-summary-version]')?.addEventListener('change', event => paint(Number(event.target.value)));
