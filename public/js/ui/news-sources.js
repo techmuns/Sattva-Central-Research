@@ -1,5 +1,5 @@
 // Registry only: reads existing feed state, never performs a source read or a capture dispatch.
-import { news } from '../data/filings.js';
+import { news, recentNews } from '../data/filings.js';
 import * as marketNews from '../data/market-news.js';
 import * as screenerInsights from '../data/screener-insights.js';
 import { sourceReadState } from './source-connections.js';
@@ -12,7 +12,21 @@ export const NEWS_PUBLISHERS = [
   { id: 'investing', name: 'Investing.com', url: 'https://in.investing.com/rss/news_285.rss' },
 ];
 
-export function newsSourceItems(meta = news.meta(), publishers = marketNews.meta().sources || [], publisherReadFailed = marketNews.meta().lastReadFailed) {
+// The registry reports the latest actual reader check, including a failed attempt. Merely
+// opening recent News must not force the full archive to load just to populate source status.
+export function newsSourceMeta(metas = [news.meta(), recentNews.meta()]) {
+  const core = metas.reduce((latest, next) =>
+    (next.newsDelivery?.core?.readerCheckedAt || 0) > (latest.newsDelivery?.core?.readerCheckedAt || 0) ? next : latest);
+  // The core observations are shared, but TradingView checks belong to each reader. A tied
+  // core timestamp must not hide the recent reader's successful OR failed TradingView check.
+  const tv = metas.reduce((latest, next) =>
+    (next.newsDelivery?.tradingView?.readerCheckedAt || 0) > (latest.newsDelivery?.tradingView?.readerCheckedAt || 0) ? next : latest, core);
+  return tv === core ? core : { ...core, tradingViewCoverage: tv.tradingViewCoverage,
+    tradingViewReadError: tv.tradingViewReadError, tradingViewHealth: tv.tradingViewHealth,
+    newsDelivery: { ...core.newsDelivery, tradingView: tv.newsDelivery?.tradingView } };
+}
+
+export function newsSourceItems(meta = newsSourceMeta(), publishers = marketNews.meta().sources || [], publisherReadFailed = marketNews.meta().lastReadFailed) {
   const tv = meta.tradingViewCoverage, discovery = meta.enrichmentCoverage;
   return [
     { id: 'tradingview-news', name: 'TradingView — portfolio headlines', url: 'https://in.tradingview.com/', status: 'live',
@@ -44,7 +58,7 @@ export function newsSourceItems(meta = news.meta(), publishers = marketNews.meta
         readState: sourceReadState({ at: source?.capturedAt, failed: publisherReadFailed || source?.ok === false,
           partial: Number.isFinite(source?.feedsOk) && source.feedsOk < source.feeds, maxAgeMs: 3 * 3600000 }),
         cadence: p.id === 'moneycontrol' ? 'Half-hourly daytime / hourly overnight · retained publisher feed' : 'Hourly RSS capture · retained publisher feeds',
-        feeds: 'Original reporting with publisher timestamps and links. Exact portfolio matches enrich company news; the complete retained feed remains available in Universe.',
+        feeds: 'Original reporting with publisher timestamps and links. Exact portfolio matches enrich company news; recent market-wide stories appear in Universe and older retained stories remain in All Alerts.',
         details: [source ? `Last source capture: ${source.capturedAt || 'not supplied'}. Latest read: ${source.ok ? 'successful' : 'not completed'}.` : 'Published source metadata has not loaded in this session.',
           'A quiet response is distinct from a failed read. Earlier captured stories remain retained.'],
         file: 'data/market-news.json · data/market-news/' };

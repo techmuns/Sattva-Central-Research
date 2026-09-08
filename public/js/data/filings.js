@@ -57,6 +57,7 @@ import { attributeNewsRow } from './company-news-attribution.js';
 import { withTradingViewNews } from './tradingview-news.js';
 import { withNewsHistory } from './news-history.js';
 import { withPortfolioPublisherNews } from './portfolio-publisher-news.js';
+import { recentNewsWindow } from './news-window.js';
 
 // How many companies a live walk will ask about before it stops and says so. The upstreams allow
 // 60 requests a minute; forty keeps a cold start under a minute and well inside that budget.
@@ -278,6 +279,7 @@ export function createFeed(kind) {
       coverageFrom: state.coverageFrom,
       retention: state.retention,
       archive: state.archive,
+      newsHeadWindow: state.newsHeadWindow,
       portfolioLines: state.portfolioLines,
       portfolioEntities: state.portfolioEntities,
       tickerlessPortfolioLines: state.tickerlessPortfolioLines,
@@ -695,6 +697,8 @@ export function createFeed(kind) {
     state.coverageFrom = /^\d{4}-\d{2}-\d{2}$/.test(body.coverageFrom || '') ? body.coverageFrom : null;
     state.retention = body.retention || null;
     state.archive = body.archive || null;
+    if (kind === 'news') state.newsHeadWindow = { from: body.from, to: body.to,
+      updatedAt: body.newsUpdatedAt || body.capturedAt };
     state.portfolioLines = Number.isFinite(body.portfolioLines) ? body.portfolioLines : null;
     state.portfolioEntities = Number.isFinite(body.portfolioEntities) ? body.portfolioEntities : null;
     state.tickerlessPortfolioLines = Number.isFinite(body.tickerlessPortfolioLines) ? body.tickerlessPortfolioLines : null;
@@ -893,6 +897,13 @@ export function createFeed(kind) {
 
 // One instance per feed, module-level so a second visit to the tab repaints instantly instead of
 // re-walking. Same reasoning as the super-investor feed.
-export const news = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(createFeed('news'))));
+const companyNewsFeed = createFeed('news');
+export const news = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(companyNewsFeed)));
+// Separate reading state: a fast News visit never narrows the history used by All Alerts,
+// AI Alerts, Ask Research or saved bookmarks. Network/cache bytes remain shared by URL.
+// Share captured/head and explicit live-search observations, not archive-loading state. A manual
+// News refresh must also reach All Alerts immediately; it cannot be marooned in a second cache.
+export const recentNews = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(companyNewsFeed,
+  { window: recentNewsWindow })), { window: recentNewsWindow });
 export const announcements = withAnnouncementLookups(withFilingArchive(createFeed('announcements'), 'announcements'));
 export const insider = withFilingArchive(createFeed('insider'), 'insider');

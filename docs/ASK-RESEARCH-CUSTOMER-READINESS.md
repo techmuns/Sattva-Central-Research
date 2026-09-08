@@ -46,6 +46,21 @@ inference was performed. Model access, streaming quality and latency remain
 unverified; PR #131 stays a draft pending valid authentication and real-response
 checks. Configuration presence must not be reported as authenticated access.
 
+Later on 8 September the operator supplied a key through a private, gitignored
+local file, reporting that the team's local test works. A direct local Anthropic
+model-access request still returned HTTP 401. Non-disclosing checks found no
+whitespace, control characters, quote or Bearer wrapper. At 08:24:40 UTC, a
+server-side digest comparison in an isolated remote-development preview confirmed
+that the supplied key exactly matches Cloudflare's `CLAUDE_KEY`; it does not match
+`MUNS_TOKEN`. Neither key was exported or logged. This rules out a difference
+between those two saved values, but does not identify the provider used by the
+team's successful test. Their working endpoint and authentication format remain
+needed before changing provider configuration. The temporary preview was stopped.
+
+The secret-bearing manual GitHub probe has been removed following review. CI
+runs only synthetic Claude transport tests; real credential checks remain local
+or in an explicitly isolated development preview.
+
 ## Stream completion recovery (7 September 2026)
 
 The Muns bridge previously waited for HTTP EOF even after the model's closing

@@ -201,8 +201,12 @@ function dateCell(row) {
     : `<span class="whitespace-nowrap" title="Published in Screener’s concall index; exact call time is not supplied.">${escapeHtml(IST_DATE.format(d))}<span class="ml-1 text-[10px] text-slate-400">published</span></span>`;
 }
 
+// Screener supplies summary URLs, not summary text, and its signed-in reader blocks embedding.
+// Keep those source references in the retained feed, but omit redirect-only summaries from the UI.
+const readableDocuments = (row) => (row.documents || []).filter((document) => document.type !== 'Summary');
+
 function documentLinks(row) {
-  const documents = row.documents || [];
+  const documents = readableDocuments(row);
   if (!documents.length) return '<span class="text-slate-300">—</span>';
   return `<div class="flex max-w-[300px] flex-wrap justify-end gap-1">${documents
     .map(
@@ -429,21 +433,20 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
           { value: 'Transcript', label: 'Transcript' },
           { value: 'Recording', label: 'Recording' },
           { value: 'Presentation', label: 'Presentation' },
-          { value: 'Summary', label: 'Summary' },
         ],
-        match: (r, v) => (r.documents || []).some((document) => document.type === v),
+        match: (r, v) => readableDocuments(r).some((document) => document.type === v),
       },
     ],
     searchable: (r) => {
       const insight = deepDiveInsight(r, allRows, saved, savedByTicker);
-      return `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.tags.join(' ')} ${insight?.result || ''} ${insight?.verdict || ''} ${insight?.headline || ''} ${(insight?.tags || []).join(' ')} ${(r.documents || []).map((document) => document.type).join(' ')}`;
+      return `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.tags.join(' ')} ${insight?.result || ''} ${insight?.verdict || ''} ${insight?.headline || ''} ${(insight?.tags || []).join(' ')} ${readableDocuments(r).map((document) => document.type).join(' ')}`;
     },
     // The way out to the provider's reader, which is the one thing the removed drill panel carried
     // that was not already on the row. Their reader is where the summary and the transcript live;
     // this tab is their index and links to it rather than reproducing it. `docUrl` builds their
     // DOCUMENT route — the company route needs a period this payload does not carry, and building
     // it short is what made every one of these links 404.
-    link: (r) => r.transcriptUrl || r.documents?.[0]?.url || r.screenerCompanyUrl || null,
+    link: (r) => r.transcriptUrl || readableDocuments(r)[0]?.url || r.screenerCompanyUrl || null,
     initialSort: { key: 'Call / Published', dir: 'desc' },
     exportName: 'sattva-concall-scans',
     onExport: (visible) => exportScans(visible, m),
@@ -841,7 +844,7 @@ async function exportScans(rows, m) {
       { header: 'Deep Dive View', key: 'ddv', width: 22, get: (r) => insight(r)?.verdict || '' },
       { header: 'Deep Dive Headline', key: 'ddh', width: 70, get: (r) => insight(r)?.headline || '' },
       { header: 'Summary Link', key: 'u', width: 60, get: (r) => (r.__banner ? '' : r.transcriptUrl || '') },
-      { header: 'Documents', key: 'docs', width: 80, get: (r) => (r.__banner ? '' : (r.documents || []).map((document) => `${document.type}: ${document.url}`).join(' | ')) },
+      { header: 'Documents', key: 'docs', width: 80, get: (r) => (r.__banner ? '' : readableDocuments(r).map((document) => `${document.type}: ${document.url}`).join(' | ')) },
     ],
     rows: [banner, ...rows],
   });

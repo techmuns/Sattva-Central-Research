@@ -40,6 +40,7 @@
 
 import { authHeaders } from '../core/host-context.js';
 import { conditionalJson, KEYS } from '../core/store.js';
+import { newsShardInWindow } from './news-window.js';
 
 const SNAPSHOT = 'data/market-news.json';
 
@@ -349,11 +350,11 @@ const SHARDS_PER_CALL = 3;
  * from a capture written before `inHead` existed reports undefined, which is not equal to `count`,
  * so it is fetched — the safe direction.
  */
-const pendingShards = () =>
-  state.archive.filter((a) => a && a.file && !state.loadedShards.has(a.file) && a.inHead !== a.count);
+const pendingShards = (window = null) =>
+  state.archive.filter((a) => a && a.file && !state.loadedShards.has(a.file) && a.inHead !== a.count && newsShardInWindow(a, window));
 
-export function archiveMeta() {
-  const pending = pendingShards();
+export function archiveMeta(window = null) {
+  const pending = pendingShards(window);
   return {
     // Every story the capture says exists, head and archive together.
     total: Math.max(state.archivedCount, state.articles.length),
@@ -381,15 +382,15 @@ export function archiveMeta() {
  * and "could not be read" must never be drawn as "there is nothing older", which is the same
  * outage-as-absence error the filings snapshot rules exist to prevent.
  */
-export function loadMore() {
+export function loadMore(window = null) {
   // News and All Alerts share this reader. Both must await the same month, not interpret a
   // concurrently busy loader as a missing archive or start duplicate requests.
-  if (loadingArchive) return loadingArchive;
-  loadingArchive = loadArchiveBatch().finally(() => { loadingArchive = null; });
+  if (loadingArchive) return loadingArchive.then(result => result.failed || !pendingShards(window).length ? result : loadMore(window));
+  loadingArchive = loadArchiveBatch(window).finally(() => { loadingArchive = null; });
   return loadingArchive;
 }
 
-async function loadArchiveBatch() {
+async function loadArchiveBatch(window) {
   state.loadingMore = true;
   emit();
   let added = 0;
@@ -397,7 +398,7 @@ async function loadArchiveBatch() {
   let reason = null;
   try {
     for (let i = 0; i < SHARDS_PER_CALL; i += 1) {
-      const next = pendingShards()[0];
+      const next = pendingShards(window)[0];
       if (!next) break;
       try {
         if (!/^market-news\/(?:\d{4}-\d{2}|undated)\.json$/.test(next.file)) throw Error('Invalid publisher archive path');
@@ -432,7 +433,7 @@ async function loadArchiveBatch() {
     state.loadingMore = false;
   }
   emit();
-  return { added, failed, reason, exhausted: pendingShards().length === 0, busy: false };
+  return { added, failed, reason, exhausted: pendingShards(window).length === 0, busy: false };
 }
 
 export const isLoaded = () => state.loaded;

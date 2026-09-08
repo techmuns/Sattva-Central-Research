@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ipoDisplayDay } from '../public/js/data/ipo-filings-shared.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const ExcelJS = (await import(`${process.env.EXCELJS_ROOT}/excel.js`)).default;
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
@@ -51,6 +52,12 @@ try {
   const ready = () => page.locator('[data-ipo-refresh]:not([disabled])').waitFor();
   await ready();
   check('native NSE-style table replaces weekly tracker and scoring', await page.locator('[data-score-table]').count() === 1 && await page.locator('.ipo-board, .ipo-card, [data-ipo-settings]').count() === 0);
+  const history = page.getByRole('combobox', { name: 'History range', exact: true });
+  const today = new Date(Date.parse(capture.checkedAt) + 19800000).toISOString().slice(0, 10);
+  const dayOffset = (days) => new Date(Date.parse(today) + days * 86400000).toISOString().slice(0, 10);
+  const recentCount = capture.rows.filter((row) => ipoDisplayDay(row) >= dayOffset(-6) && ipoDisplayDay(row) <= today).length;
+  check('IPO Filings opens on Last 7 days with exact inclusive IST membership', await history.inputValue() === '7' && (await page.locator('[data-row-count]').innerText()).startsWith(`${recentCount} of ${recentCount}`));
+  await history.selectOption('all');
   check('empty Watchlist still loads every captured issuer', (await page.locator('[data-row-count]').innerText()).startsWith(`${capture.rows.length} of ${capture.rows.length}`));
   check('newest dated filings appear first', (await page.locator('[data-row-key]').first().innerText()).includes('04 Sept 2026'));
   check('automatic refresh is registered at five minutes', await page.evaluate(() => window.pollStarted && window.poll.intervalMs === 300000));
@@ -111,8 +118,26 @@ try {
   const workbook = new ExcelJS.Workbook(); await workbook.xlsx.readFile(await download.path());
   check('Excel exports all filtered rows, not just rendered rows, with provenance', workbook.worksheets[0].rowCount === expectedCount + 2 && workbook.worksheets[1].name === 'Coverage' && String(workbook.worksheets[0].getCell('A1').value).includes('not a complete IPO universe'));
   await page.evaluate(() => window.showIpos()); await ready();
-  await page.locator('[data-ipo-history]').selectOption('7');
+  check('returning to IPO Filings restores the seven-day default', await history.inputValue() === '7');
   check('recent window excludes undated documents without inventing dates', (await page.locator('[data-row-key]').allTextContents()).every((t) => !t.includes('Date not supplied')));
+  const boundaries = [0, -6, -7, -30, 1, null];
+  live.rows.push(...boundaries.map((offset, index) => ({ ...capture.rows[0],
+    company: 'Window boundary issuer ' + index, title: 'Window boundary filing ' + index,
+    filingDate: offset === null ? null : dayOffset(offset), documentDate: null,
+    url: `https://www.sebi.gov.in/window-boundary-${index}.pdf`, observedAt: capture.checkedAt,
+  })));
+  await page.locator('[data-table-search]').fill('Window boundary');
+  await page.evaluate(() => window.poll.fetcher());
+  check('automatic arrivals preserve the seven-day choice and include only today through six days ago', await history.inputValue() === '7' && await page.locator('[data-row-key]').count() === 2);
+  await history.selectOption('30');
+  await page.evaluate(() => window.poll.fetcher());
+  check('a chosen longer window survives source refresh', await history.inputValue() === '30' && await page.locator('[data-row-key]').count() === 3);
+  await history.selectOption('all');
+  check('older, future-dated and undated captures are retained outside the default window', await page.locator('[data-row-key]').count() === boundaries.length);
+  await page.evaluate(() => window.showIpos({ company: 'Window boundary issuer 3' })); await ready();
+  check('explicit company links retain access to older cited filings', await history.inputValue() === 'all' && await page.locator('[data-row-key]').count() === 1);
+  await page.evaluate(() => window.showIpos()); await ready();
+  check('a fresh ordinary visit returns to Last 7 days after a company link', await history.inputValue() === '7');
   await page.locator('[data-ipo-history]').selectOption('undated');
   check('undated documents remain accessible separately', await page.locator('[data-row-key]').count() > 0 && (await page.locator('[data-row-key]').first().innerText()).includes('Date not supplied'));
   await page.locator('[data-ipo-history]').selectOption('all');

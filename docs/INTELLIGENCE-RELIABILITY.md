@@ -124,6 +124,24 @@ recovery boundaries and local interruption/reload acceptance tests.
 
 ### News delivery integrity (7 September 2026)
 
+**Recent reading defaults (8 September 2026):** at the customer's request, News defaults to Today
+and All Alerts defaults to Last 3 days. Today, Last 3 days, Last 7 days, Last 14 days, Last 30 days
+and This month are IST calendar filters; each
+rolling period includes today, and This month can include 31 days. Date not supplied is a separate
+choice: observation timestamps never make undated articles appear current. Portfolio, Watchlist
+and Universe use these same boundaries. All Alerts also retains All history through today,
+Older than 30 days and its unchanged Upcoming horizon. Explicit company "See all" links select
+All history rather than silently applying the 3-day default. Capture cadence, permanent storage,
+AI Alerts and research history are unchanged; these are reading windows, not deletion policies.
+
+The recent reader loads only overlapping archive months, including the boundary month needed for
+UTC publications falling on the next IST day. A revalidated company archive index can certify that
+the archive-derived head already covers the entire period (matching archive count and a head
+revision at least as new as the index). Only then are duplicate company-month downloads skipped.
+A newer index, missing coverage metadata or a wider calendar month falls back to bounded archive
+reads. Failed reads retain usable records and remain retryable. Full-history consumers keep a
+separate reader; opening them cannot widen the News filter or cause storage deletion.
+
 The company News reader joins the dedicated publisher head and retained monthly archive directly,
 using reviewed portfolio identities. It does not wait for the three-hour company-enrichment run.
 The underlying publisher records stay in the market-wide archive, including unmatched stories.
@@ -149,7 +167,7 @@ the current scope/filter may contain no matching articles, so source health is c
 
 The official OnEMI Technology / KISSHT identity is a permanent regression case. The 4 September
 Economic Times JM Financial initiation story must remain searchable in Portfolio News and All
-Alerts. Explicit brokerage coverage/rating/target changes are eligible material research events;
+Alerts when its date is included in the chosen period. Explicit brokerage coverage/rating/target changes are eligible material research events;
 they do not invent a directional judgment or automatically receive the highest priority. AI
 Alerts keeps its 14-day material-evidence window; All Alerts is the broader retained view.
 An optional company-relationship filter separates possible matches without deleting them.

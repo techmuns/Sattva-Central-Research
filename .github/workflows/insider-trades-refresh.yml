@@ -4,7 +4,7 @@ env:
   FAMILY_HOLDINGS_LIVE: 'true'
 
 # The four Screener lists run every 30 minutes and always run first. The slower company-filings
-# checkpoint keeps its two-hour cadence without delaying ordinary trade refreshes. Screener is
+# checkpoint keeps its two-hour cadence on both scheduled and watchdog runs. Screener is
 # incremental after a 30-day bootstrap and publishes only when all four lists parse successfully.
 
 on:
@@ -30,11 +30,15 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # The trade lane can use 45 minutes and company recovery 25. Leave time to publish both.
+    timeout-minutes: 80
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # A queued run must inspect the latest checkpoint, not the dispatch-time snapshot.
+          ref: ${{ github.ref }}
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
@@ -60,9 +64,14 @@ jobs:
           PWDEBUG: ""
         run: node scripts/scrape-screener-trades.mjs
 
+      - name: Check whether company filings are due
+        id: company_due
+        if: ${{ !cancelled() }}
+        run: node scripts/check-company-capture-due.mjs
+
       - name: Capture company announcements and domestic filings
         id: company
-        if: ${{ !cancelled() && github.event_name == 'schedule' && github.event.schedule == '30 */2 * * *' }}
+        if: ${{ !cancelled() && steps.company_due.outputs.due == 'true' }}
         timeout-minutes: 25
         run: node scripts/capture-company-filings.mjs
 

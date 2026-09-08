@@ -28,10 +28,10 @@ writeNewsJson(join(fixture, 'tradingview-news/latest.json'), { capturedAt: at, e
 let unavailable = null;
 const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><main id="root"></main><script type="module">
 import * as tab from '/js/tabs/news.js';
-import { news } from '/js/data/filings.js';
+import { recentNews as news, news as history } from '/js/data/filings.js';
 import * as coverage from '/js/data/coverage.js';
 coverage.prime({ holdings: [{ ticker: 'STLTECH', isin: 'INE089C01029', name: 'Sterlite Technologies Limited' }] });
-window.newsTest = { feed: news };
+window.newsTest = { feed: news, history };
 await news.seed();
 tab.render({ root: document.querySelector('#root'), scope: 'portfolio', live: { register() {}, start() {}, stop() {} } });
 window.newsTest.ready = true;
@@ -39,6 +39,8 @@ window.newsTest.ready = true;
 const server = createServer((req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
   if (pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  if (pathname === '/api/news') { res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ ok: true, fetchedAt: at, articles: [row('manual-query')] })); return; }
   if (pathname === unavailable) { res.writeHead(503); res.end(); return; }
   const base = pathname.startsWith('/data/') ? fixture : root;
   const path = resolve(base, `.${pathname.replace(/^\/data/, '')}`);
@@ -62,25 +64,33 @@ try {
   await page.clock.install({ time: new Date(at) });
   await page.goto(origin);
   await page.waitForFunction(() => window.newsTest?.ready);
-  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 441);
+  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 440);
   const search = page.locator('[data-table-search]');
   await search.fill('verified update 439');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('verified update 439'));
   await search.fill('verified update historical');
-  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('verified update historical'));
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 0, 'recent News excludes old history');
+  assert.equal(await page.evaluate(async () => {
+    await window.newsTest.history.seed();
+    return window.newsTest.history.rows().some(row => row.title.includes('verified update historical'));
+  }), true, 'full-history reader still delivers the archived article to All Alerts/research');
   head = { ...head, capturedAt: '2026-09-07T05:01:00Z', byTicker: { STLTECH: [...head.byTicker.STLTECH, row('fresh')] } };
   save();
   unavailable = '/data/' + JSON.parse(readFileSync(join(fixture, 'news.json')))._jsonShards.parts.at(-1).file;
   assert.equal(await page.evaluate(async () => (await window.newsTest.feed.refreshSnapshot()).partial), true);
-  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 441, 'incomplete transport retains last-good news');
+  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 440, 'incomplete transport retains last-good news');
   unavailable = null;
   await page.evaluate(() => window.newsTest.feed.refreshSnapshot());
   await search.fill('verified update fresh');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('verified update fresh'));
-  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 442);
+  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 441);
   await page.reload();
   await page.waitForFunction(() => window.newsTest?.ready);
-  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 442, 'reopening keeps new and historical news');
+  assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 441, 'reopening keeps recent news without widening the date window');
+  assert.equal(await page.evaluate(async () => {
+    await window.newsTest.feed.loadOne('STLTECH', { force: true });
+    return window.newsTest.history.rows().some(row => row.title.includes('manual-query'));
+  }), true, 'explicit live News query immediately reaches the shared All Alerts/research head');
   assert.deepEqual(errors, []);
   console.log('PASS browser: every part reaches the Portfolio News table; old history, incomplete refresh, recovery and reopening preserved.');
 } finally {

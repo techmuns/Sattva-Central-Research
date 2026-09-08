@@ -1096,6 +1096,11 @@ feed contract but is not rendered in the tab chrome.
 
 ### Screener collection and freshness
 
+The Con-call Documents column, document filter, search labels and document export omit Screener
+Summary links: the capture contains URLs rather than summary text, and Screener's signed-in reader
+blocks embedding. Summary source references remain in retained records. Transcript, Recording and
+Presentation links and the dashboard's existing Deep Dive panel remain available.
+
 `.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
 `SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
 generated data. Every 15 minutes it reads the newest concall pages until it reaches records already
@@ -1452,6 +1457,14 @@ While the Earnings Calendar is mounted, the browser revalidates the selected dat
 The poll pauses while the page is hidden and checks immediately when the reader returns. A changed
 artifact repaints in place while retaining the selected scope and table view; an unchanged ETag
 costs no response body.
+
+First success after a failed load, a failed refresh and recovery with unchanged rows all notify
+the mounted calendar after its error state has been updated. A transient route 503 must never
+leave a working retry hidden behind the original error screen. Calendar starts independently of
+the Earnings Reported feed. A failed reopening restores a valid per-date device response, retaining
+its source timestamps and showing **Saved schedule · retrying** until revalidation succeeds.
+Malformed responses cannot replace those saved bytes; a successful empty schedule still clears
+the visible rows. `scripts/verify-earnings-calendar-ui.mjs` exercises these cases in both scopes.
 
 ### Pagination coverage and Worker request bounds
 
@@ -2322,8 +2335,17 @@ Every established identity query starts 48 hours before its last successful obse
 added legal name, former name, brand, subsidiary or reviewed alias receives a 30-day initial
 backfill. Empty incremental responses add no rows and retract nothing. The archive is written before
 the head is derived, so an article leaving the 30-day recent head has already been retained.
-The browser's shared news reader also loads the retained monthly index, making older records
-available to News, All Alerts and research under the existing scope and attribution rules.
+The full-history news reader loads the retained monthly index, making older records available
+to All Alerts and research under the existing scope and attribution rules. News itself uses an
+independent recent reader: Today by default, plus Last 3 days, Last 7 days, Last 14 days, Last 30
+days, This month and Date not supplied. Date windows are inclusive IST calendar days; This month
+can span 31 days. Date filters never delete archives or change collection cadence. A validated,
+archive-derived head covering the period avoids duplicate company-month downloads; a newer index
+or insufficient head coverage loads the overlapping months. Dedicated-publisher and TradingView
+history are also bounded to overlapping months. Undated records remain separately accessible.
+All Alerts uses the same IST presets with Last 3 days as its display default, while retaining
+All history through today, Older than 30 days and the separate Upcoming horizon. Its source
+reader still retains full history, and company "See all" links explicitly open All history.
 An incomplete monthly read preserves the last complete history and reports the gap; it is retried
 on opening, explicit refresh and the shared visible-page snapshot poll.
 
@@ -2820,6 +2842,10 @@ white table, dashboard typography/avatars, newest-first dates, search, filing/bo
 history ranges and filtered Excel export. It is automatically populated for all issuers regardless
 of Portfolio/Watchlist scope; a missing listed symbol never removes an issuer. The weekly KPI cards,
 cream/teal theme, financial scoring and separate weekly/tracker/news views are no longer this tab.
+Ordinary visits default to Last 7 days, including today in IST. All captured, Last 30/90 days,
+Last year and Date not supplied remain available; the selected range survives source refreshes.
+Explicit company links open All captured so older cited filings remain visible. These are display
+choices only: collection, retained history, source checks and the issuer directory are unchanged.
 
 `GET /api/ipo-filings` reads seven fixed public resources with no credentials:
 
@@ -3383,6 +3409,20 @@ confirms `FSC` / `INE935Q01015` and retains delisting/insolvency announcements; 
 confirms BSE code `540798` on page 1. The supplement records these sources and its verification date.
 It permits history capture and matching without relabelling the holding as currently traded.
 
+The BSE equity directory is read across all trading statuses. Suspended and delisted issuers remain
+eligible for company history capture; status is metadata, not a filter. For example, the official
+directory identifies Future Consumer as `INE220J01025` / `533400`, with status `Suspended`.
+When multiple codes share an ISIN, active codes take precedence over suspended and delisted codes.
+Historical codes and symbols remain exact aliases so earlier announcements retain their issuer.
+The original code on each filing remains source data even when its issuer now has a different
+primary code. Suspended/delisted identities retain the historical marker used to preserve an
+already successful NSE news target; their new BSE identity adds coverage without replacing it.
+Directory reads have a 20-second/8-MiB bound and must include active, suspended and delisted rows.
+Previously verified directory codes must remain present with valid ISINs; otherwise publication
+fails and retains the previous directory. Manually sourced off-directory supplements are exempt
+from that presence check. This catches missing status groups and loss of known mappings, without
+claiming the upstream can never omit a previously unseen listing.
+
 **`corp-announcements.json` remains the BSE date-indexed base capture.** Direct BSE scrip-code and
 Muns company/date histories are stored additively in the company capture; they never overwrite that
 exchange-wide file.
@@ -3399,7 +3439,7 @@ public/data/corp-announcements.json          written by scripts/scrape-bse-annou
   "coversUniverse": true,        // THE FIELD THAT SWITCHES THE PER-COMPANY WALK OFF
   "categoryCoverage": "configured", "categoryInventoryVerified": false,
   "categories": ["Company Update", "Board Meeting", "Corp. Action", "Result", "AGM/EGM", "New Listing", "Insider Trading / SAST", "Insurance", "Integrated Filing", "Others"],
-  "exchangeCompanies": 5122,     // active equity listings the date index spans
+  "exchangeCompanies": 10861,    // equity directory rows, including suspended/delisted codes
   "companies": 526, "namedCompanies": 515, "unnamedRows": 11,
   "rowCount": 722, "keepDays": 3, "prunedRows": 0, "requests": 19,
   "byCategory": { "Company Update": { "declared": 482, "collected": 482, "pages": 10 }, … },
@@ -4505,7 +4545,13 @@ saved-document retention and synthetic-data rejection checks.
 ## Automatic company capture and permanent filing history
 
 `scripts/capture-company-filings.mjs` runs in the existing `insider-trades-refresh.yml` workflow,
-now scheduled every two hours on all days. With `FAMILY_HOLDINGS_LIVE=true`, it reads the current
+with a two-hour collection interval on all days. Every workflow run, including watchdog dispatches,
+checks the latest branch checkpoint with `check-company-capture-due.mjs` immediately after the
+trade lane, including when that lane fails. A missing, invalid or
+interrupted checkpoint is due immediately; a completed recent run is skipped. Eligibility does not
+depend on one particular cron event, so a missed scheduler tick can recover on the next ordinary
+run. This interval controls collection attempts, not proof of successful checks for every company.
+With `FAMILY_HOLDINGS_LIVE=true`, it reads the current
 shared Family portfolio on every run and combines it with the raw Screener universe and technicals.
 The last verified names/identifiers-only portfolio is retained in `filing-capture/portfolio.json`;
 the reviewed `portfolio-companies.json` remains the initial fallback. A source outage, stale response,
@@ -4516,6 +4562,11 @@ are copied into the cache. New companies are registered before requests begin, s
 resume even if this one has no budget left. Valid removals lose portfolio priority; archived filings
 remain retained and companies still in Universe continue to be captured. Entries without a usable
 ticker remain explicitly unresolved.
+
+Collection has one checkpoint/file per storage ticker. If a verified portfolio ISIN supplies a
+source-symbol alias, a later unresolved universe row using the same ticker cannot overwrite its
+identity, priority or coverage. Conflicting explicit identities sharing a storage ticker stop scope
+construction before capture rather than repeatedly resetting or mixing the issuer's history.
 
 Watchlist additions now enroll public company identities through `POST /api/capture-registration`.
 The request contains only ticker symbols; the server resolves ISINs and names from the verified BSE/NSE

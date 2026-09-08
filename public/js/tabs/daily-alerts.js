@@ -36,12 +36,13 @@ import * as coverage from '../data/coverage.js';
 import { scopeLabel } from '../data/scope.js';
 import * as records from '../data/alert-records.js';
 import { attributionLabel } from '../data/company-news-attribution.js';
+import { NEWS_PERIODS, newsPeriodBounds } from '../data/news-window.js';
 
 export const meta = {
   id: 'daily-alerts',
   title: 'All Alerts',
   layout: 'table',
-  subtitle: 'Every retained alert and loaded portfolio schedule in one time view.',
+  subtitle: 'Opens on the last 3 days (IST); older retained alerts and upcoming schedules remain available.',
   // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
   // collapse — the feed filter in the toolbar does that job without costing a navigation.
   subviews: [],
@@ -104,7 +105,9 @@ export function render(ctx) {
   const requestedCompany = String(ctx.params?.company || '').trim();
   if (requestedCompany && requestedCompany !== routeCompany) {
     horizon = HORIZON.THROUGH;
-    tableViews = { [HORIZON.THROUGH]: { q: requestedCompany }, [HORIZON.UPCOMING]: { q: requestedCompany } };
+    picked = null;
+    tableViews = { [HORIZON.THROUGH]: { q: requestedCompany, filters: ['all', 'all', 'all', 'all'] },
+      [HORIZON.UPCOMING]: { q: requestedCompany } };
   } else if (!requestedCompany && routeCompany) {
     tableViews = {
       [HORIZON.THROUGH]: { ...(tableViews[HORIZON.THROUGH] || {}), q: '' },
@@ -942,6 +945,7 @@ export function collapseUpcoming(events) {
 }
 
 function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, warmSearch = false) {
+  const matchesDate = dateRangeMatcher(day);
   const dateColumn = {
     label: 'Date / time',
     align: 'left',
@@ -979,7 +983,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
         { label: 'Feed', get: (e) => e.feedLabel },
       ];
   const filters = mode === HORIZON.UPCOMING
-    ? [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDateRange(e.day, day, v) }]
+    ? [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) }]
     : [
         {
           label: 'Importance',
@@ -1000,7 +1004,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
           ],
           match: (e, v) => e.direction === v,
         },
-        { label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDateRange(e.day, day, v) },
+        { label: 'Date range', value: '3d', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) },
         {
           label: 'Company relationship',
           options: [
@@ -1095,28 +1099,31 @@ function dateRangeOptions(events, day, mode) {
       { value: 'next30', label: 'Next 30 days' },
     ];
   }
-  const options = [
-    { value: 'all', label: 'All dates through today' },
-    { value: 'today', label: 'Today only' },
-    { value: '7d', label: 'Last 7 days' },
-    { value: '30d', label: 'Last 30 days' },
-  ];
-  if (events.some((event) => !event.day)) options.push({ value: 'undated', label: 'Date not supplied' });
+  const options = [{ value: 'all', label: 'All history through today' },
+    ...NEWS_PERIODS.map(option => ({ ...option,
+      value: /^\d+$/.test(option.value) ? `${option.value}d` : option.value }))];
   if (events.some((event) => event.day < shiftDay(day, -29))) options.push({ value: 'older', label: 'Older than 30 days' });
   return options;
 }
 
-function matchesDateRange(eventDay, throughDay, range) {
-  if (range === 'all') return true;
-  if (range === 'undated') return !eventDay;
-  if (!eventDay) return false;
-  if (range === 'next7') return eventDay >= throughDay && eventDay <= shiftDay(throughDay, 6);
-  if (range === 'next30') return eventDay >= throughDay && eventDay <= shiftDay(throughDay, 29);
-  if (range === 'today') return eventDay === throughDay;
-  if (range === '7d') return eventDay >= shiftDay(throughDay, -6) && eventDay <= throughDay;
-  if (range === '30d') return eventDay >= shiftDay(throughDay, -29) && eventDay <= throughDay;
-  if (range === 'older') return eventDay < shiftDay(throughDay, -29);
-  return true;
+function dateRangeMatcher(throughDay) {
+  // Compute calendar boundaries once per selected period, not once per retained alert. Repainting
+  // on IST rollover constructs a fresh matcher; changing a filter never needs a source request.
+  const ranges = new Map();
+  return (eventDay, range) => {
+    if (range === 'all') return true;
+    if (range === 'undated') return !eventDay;
+    if (!eventDay) return false;
+    if (range === 'next7') return eventDay >= throughDay && eventDay <= shiftDay(throughDay, 6);
+    if (range === 'next30') return eventDay >= throughDay && eventDay <= shiftDay(throughDay, 29);
+    if (['today', '3d', '7d', '14d', '30d', 'month'].includes(range)) {
+      if (!ranges.has(range)) ranges.set(range, newsPeriodBounds(range.replace(/d$/, ''), `${throughDay}T12:00:00+05:30`));
+      const bounds = ranges.get(range);
+      return eventDay >= bounds.from && eventDay <= bounds.to;
+    }
+    if (range === 'older') return eventDay < shiftDay(throughDay, -29);
+    return true;
+  };
 }
 
 /**

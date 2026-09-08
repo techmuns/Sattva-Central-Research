@@ -3,6 +3,18 @@
 Read this before touching anything. `docs/SPEC.md` has the product detail;
 `docs/DATA-CONTRACTS.md` has every JSON shape.
 
+**Reading defaults (8 September 2026):** News opens on Today; All Alerts opens on Last 3 days.
+Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
+All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
+the complete company history. These are display defaults, not deletion or collection rules.
+IPO Filings opens on Last 7 days (IST), retaining All captured and longer/undated choices;
+explicit company links still open that issuer's complete captured history.
+News uses `recentNews`, separate from the full-history `news` reader in All Alerts / research.
+`news-window.js` owns the inclusive IST presets and undated choice; This month may span 31 days.
+Only overlapping archive months load, and a verified archive-derived head can avoid duplicate
+monthly downloads. Keep capture/retention unchanged, preserve failed-refresh data and reader
+filters, and test both recent delivery and older-history access. See the reliability contract.
+
 ---
 
 ## Hard rules
@@ -3059,6 +3071,10 @@ rendered total in that state instead of presenting mixed observations as one fac
 The mounted calendar revalidates its selected date every minute through `core/live.js`, pauses
 while hidden and checks immediately when visible again. Keep this visibility-aware poll when
 adding sources: a fresh backend is not a fresh open dashboard if its first response lives forever.
+Failure and recovery are visible changes even when the rows are identical: notify the mounted
+Calendar after updating its error state, including the first successful retry after a 503. Keep
+saved responses and their source times through route outages, and load Calendar independently of
+Earnings Reported. `scripts/verify-earnings-calendar-ui.mjs` guards this recovery in both scopes.
 
 **Calendar scope is permanent product memory, not a per-source choice.** Resolve each event to a
 ticker before the client calls `filterByScope()`. Portfolio and Watchlist include only matching

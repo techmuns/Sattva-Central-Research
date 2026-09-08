@@ -1,17 +1,19 @@
 import { conditionalJson } from '../core/store.js';
 import { dedupeArticles } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
+import { inNewsWindow, newsShardInWindow, newsHeadCoversArchive } from './news-window.js';
 
 // Retained monthly records stay available after they leave the recent head. Scope, search and
 // attribution still run in their existing consumers; storage partitioning is never a filter.
-export function withNewsHistory(base, { read = conditionalJson } = {}) {
+export function withNewsHistory(base, { read = conditionalJson, window: readingWindow = () => null } = {}) {
   let held = new Map(), identities = new Map(), revision = 0, combined = null;
   let pending = null, error = null, loaded = false, initialized = false, epoch = 0;
   const indexes = new Map(), listeners = new Set();
   const emit = () => listeners.forEach(fn => fn());
   function rows() {
     const source = base.rows();
-    if (combined?.source === source && combined.revision === revision) return combined.rows;
+    const window = readingWindow(), windowKey = JSON.stringify(window);
+    if (combined?.source === source && combined.revision === revision && combined.windowKey === windowKey) return combined.rows;
     const buckets = new Map();
     const add = row => {
       const key = row.ticker || row.entityId || row.company;
@@ -31,8 +33,9 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
       return Number.isFinite(time) ? time : currentRows.has(row) ? Infinity : -Infinity;
     };
     const value = [...buckets.values()].flatMap(list => dedupeArticles(list.sort((a, b) => observedAt(b) - observedAt(a))))
+      .filter(row => inNewsWindow(row, window))
       .sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));
-    combined = { source, revision, rows: value };
+    combined = { source, revision, windowKey, rows: value };
     return value;
   }
   function loadArchive() {
@@ -40,6 +43,7 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
     const generation = epoch;
     pending = (async () => {
       const meta = base.meta();
+      const window = readingWindow(), windowKey = JSON.stringify(window);
       const paths = [...new Set([meta.archive?.index, meta.tradingViewArchive?.index].filter(Boolean))];
       let failed = false;
       for (const indexPath of paths) {
@@ -51,7 +55,8 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
           const stamp = tag || value.updatedAt;
           const previous = indexes.get(indexPath);
           if (previous?.updatedAt && Date.parse(value.updatedAt) < Date.parse(previous.updatedAt)) throw Error('News archive index regressed');
-          if (stamp && previous?.stamp === stamp) continue;
+          const coveredByHead = indexPath === 'company-news/index.json' && newsHeadCoversArchive(meta, value, window);
+          if (stamp && previous?.stamp === stamp && previous.windowKey === windowKey && previous.coveredByHead === coveredByHead) continue;
           const family = indexPath.split('/')[0];
           const next = new Map(), nextIdentities = new Map();
           for (const entity of value.entities || []) {
@@ -62,6 +67,7 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
           // leaves the previous complete family visible and retryable on the next refresh.
           for (const shard of value.archive) {
             if (!new RegExp(`^${family}/(\\d{4}-\\d{2}|undated)\\.json$`).test(shard.file || '')) throw Error('Invalid news archive month');
+            if (coveredByHead || !newsShardInWindow(shard, window)) continue;
             const part = await read(`data/${shard.file}`, { key: `news-history:${shard.file}` });
             if (generation !== epoch) return false;
             if (!Array.isArray(part.value?.articles) || part.value.articles.length !== shard.count) throw Error('News archive month incomplete');
@@ -69,7 +75,7 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
           }
           for (const [path, records] of next) held.set(path, records);
           for (const [key, identity] of nextIdentities) identities.set(key, identity);
-          if (stamp) indexes.set(indexPath, { stamp, updatedAt: value.updatedAt });
+          if (stamp) indexes.set(indexPath, { stamp, updatedAt: value.updatedAt, windowKey, coveredByHead });
           revision++;
         } catch { failed = true; }
       }
@@ -81,6 +87,9 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
     return pending;
   }
   return { ...base, rows, loadArchive,
+    // Another view may have loaded the shared company head without initializing this reader's
+    // publisher/TradingView sources. A head alone cannot make this reader skip its own load.
+    isLoaded: () => initialized && base.isLoaded(),
     async seed(...args) { await base.seed(...args); initialized = true; await loadArchive(); },
     async load(...args) { await base.load(...args); initialized = true; await loadArchive(); },
     async refreshSnapshot(...args) {
@@ -94,7 +103,7 @@ export function withNewsHistory(base, { read = conditionalJson } = {}) {
     forTicker: ticker => rows().filter(row => String(row.ticker || row.entityId || '').toUpperCase() === String(ticker).toUpperCase()),
     wasAskedEmpty: ticker => !rows().some(row => String(row.ticker || row.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
     meta() { const meta = base.meta(); return { ...meta, ok: meta.ok && !error,
-      rowCount: rows().length, newsHistory: { loaded, pending: !!pending, error } }; },
+      rowCount: rows().length, newsHistory: { loaded, pending: !!pending, error, window: readingWindow() } }; },
     onChange(fn) {
       listeners.add(fn);
       const off = base.onChange(() => {
