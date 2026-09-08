@@ -33,7 +33,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchAnnouncements, CATEGORIES, HEADERS } from '../worker/bse-ann.mjs';
 import { archiveFilings } from './lib/filing-archive.mjs';
-import { BSE_MASTER_URL, buildAnnouncementIdentities } from './lib/announcement-identities.mjs';
+import { fetchBseIdentityMaster, buildAnnouncementIdentities } from './lib/announcement-identities.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = (f) => resolve(__dirname, '../public/data', f);
@@ -89,13 +89,9 @@ async function buildScripIndex() {
   }
   const confirmed = byCode.size;
 
-  const url = BSE_MASTER_URL;
-  const res = await fetch(url, { headers: HEADERS });
-  if (!res.ok) throw new Error(`BSE scrip master answered HTTP ${res.status}`);
-  const master = await res.json();
-  if (!Array.isArray(master) || master.length < 1000) {
-    throw new Error(`BSE scrip master returned ${Array.isArray(master) ? master.length : typeof master} rows — that is not the master.`);
-  }
+  const identityPath = DATA('announcement-identities.json');
+  const previousIdentities = existsSync(identityPath) ? JSON.parse(readFileSync(identityPath, 'utf8')) : null;
+  const master = await fetchBseIdentityMaster(previousIdentities, { headers: HEADERS });
   for (const s of master) {
     const code = String(s?.SCRIP_CD || '').trim();
     if (!code || byCode.has(code)) continue;

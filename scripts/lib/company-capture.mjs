@@ -120,6 +120,7 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
   const enrolled = announcements ? registrations ?? readJson(join(dataDir, 'filing-capture/registrations.json'), {}).companies ?? [] : [];
   const known = [...(announcements ? announcementBook : book), ...enrolled.map(c => ({ ...c, priority: true })), ...(Array.isArray(universe) ? universe : universe.companies || []), ...technicals];
   const seen = new Map();
+  const storageTickers = new Map();
   const unresolved = [];
   for (const c of known) {
     const ticker = String(c.ticker || /\/company\/([^/]+)/.exec(c['Screener URL'] || '')?.[1] || '').trim().toUpperCase();
@@ -128,10 +129,22 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
     const sourceTicker = c.announcementTicker || (identity && filingTicker(identity.ticker || identity.bseSymbol));
     const bseCode = String(identity?.bseCode || c.bseCode || '');
     const key = announcements ? identityIndex.key({ ...c, ticker }) || filingTicker(ticker) : ticker;
+    // A portfolio alias may resolve by ISIN while the same universe ticker has no directory
+    // match. Both write the same checkpoint/file: keep the verified portfolio identity instead
+    // of letting the later, less-specific row reset its query symbol, history and priority.
+    const stored = storageTickers.get(ticker);
+    if (stored && stored.key !== key) {
+      if (!identity && !c.isin && !c.bseCode && !c.scripCode && stored.company.isin) {
+        stored.company.priority ||= !!c.priority;
+        continue;
+      }
+      throw new Error(`Conflicting company identities for capture ticker ${ticker}; retaining published capture state.`);
+    }
     if (!seen.has(key)) seen.set(key, { ticker, name: c.name || c.Company || ticker,
       ...(sourceTicker ? { announcementTicker: sourceTicker } : {}),
       ...(identity ? { isin: identity.isin } : {}),
       ...(/^\d{6}$/.test(bseCode) ? { bseCode } : {}), priority: !!c.priority });
+    storageTickers.set(ticker, { key, company: seen.get(key) });
   }
   return { companies: [...seen.values()], unresolved: [...new Set(unresolved)] };
 }

@@ -360,10 +360,12 @@ try {
 
   // Customer reading experience on the actual page, using synthetic prose.
   customAnswer = readingAnswer;
+  pauseAfterFirstText = true;
   await page.getByRole('button', { name: 'Start a new research conversation' }).click();
   await submit('What needs my attention at Jayaswal Neco?');
   await page.locator('.is-streaming .research-answer-body').waitFor();
   assert.equal(await page.locator('.is-streaming [data-research-preview]').evaluate(node => node.open), false, 'source preview yields space when answer text starts');
+  releaseNextChunks();
   await page.waitForFunction(() => !document.querySelector('.is-streaming'));
   const answerArticle = page.locator('.research-assistant-answer').last();
   assert.equal(await answerArticle.locator('.research-answer-heading').count(), 5, 'bold section labels become readable headings');

@@ -62,7 +62,7 @@ jobs:
       - name: Verify domestic filings and earnings provenance
         run: node scripts/verify-domestic-filings.mjs
       - name: Verify automatic filing capture and archives
-        run: node scripts/verify-company-capture.mjs
+        run: node scripts/verify-company-capture.mjs && node scripts/verify-company-capture-due.mjs
       - name: Verify live portfolio capture onboarding and source recovery
         run: node scripts/verify-capture-onboarding.mjs
       - name: Verify watchlist capture registration and retries
