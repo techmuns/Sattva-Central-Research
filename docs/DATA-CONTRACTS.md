@@ -2842,6 +2842,10 @@ white table, dashboard typography/avatars, newest-first dates, search, filing/bo
 history ranges and filtered Excel export. It is automatically populated for all issuers regardless
 of Portfolio/Watchlist scope; a missing listed symbol never removes an issuer. The weekly KPI cards,
 cream/teal theme, financial scoring and separate weekly/tracker/news views are no longer this tab.
+Ordinary visits default to Last 7 days, including today in IST. All captured, Last 30/90 days,
+Last year and Date not supplied remain available; the selected range survives source refreshes.
+Explicit company links open All captured so older cited filings remain visible. These are display
+choices only: collection, retained history, source checks and the issuer directory are unchanged.
 
 `GET /api/ipo-filings` reads seven fixed public resources with no credentials:
 

@@ -14,7 +14,9 @@ const stamp = (at) => at ? new Date(at).toLocaleString('en-IN', { timeZone: 'Asi
 export function render(ctx) {
   dispose?.();
   let dead = false, tableDispose = null, view = ctx.params?.company ? { q: ctx.params.company } : null;
-  let history = 'all', busy = !feed.meta().loaded, mode = 'filings';
+  // Ordinary visits open on the recent week. Explicit company links from research must still
+  // reveal older evidence, rather than silently hiding it behind the default reading window.
+  let history = ctx.params?.company ? 'all' : '7', busy = !feed.meta().loaded, mode = 'filings';
   const filtered = () => {
     if (history === 'all') return feed.rows();
     if (history === 'undated') return feed.rows().filter((r) => !ipoDisplayDay(r));

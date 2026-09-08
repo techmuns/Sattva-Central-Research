@@ -7,6 +7,8 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
 All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
+IPO Filings opens on Last 7 days (IST), retaining All captured and longer/undated choices;
+explicit company links still open that issuer's complete captured history.
 News uses `recentNews`, separate from the full-history `news` reader in All Alerts / research.
 `news-window.js` owns the inclusive IST presets and undated choice; This month may span 31 days.
 Only overlapping archive months load, and a verified archive-derived head can avoid duplicate
