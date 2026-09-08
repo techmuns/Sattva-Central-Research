@@ -229,9 +229,9 @@ jobs:
         run: node scripts/verify-source-connections-ui.mjs
   portfolio-research:
     runs-on: ubuntu-latest
-    # Full retained news now exceeds 150k observations. Keep all 426 current portfolio cases;
-    # the former 15-minute limit stopped a healthy run at case 400 before final assertions.
-    timeout-minutes: 20
+    # Keep all 426 current portfolio cases as retained news grows. A 20-minute runner
+    # completed only 350 cases (about 3 seconds each); allow headroom for final assertions.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
