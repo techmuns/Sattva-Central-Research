@@ -75,6 +75,7 @@ try {
   assert.equal(await page.locator('a[href*="/concalls/summary/"]').count(),0);
   const before=page.url(), pages=context.pages().length;
   await button.click();await page.locator('[data-summary-version]').waitFor();
+  assert(await page.evaluate(()=>document.querySelector('#modal-container').contains(document.activeElement)),'loading keeps keyboard focus inside the reader');
   assert.equal(postCount,1);assert.equal(page.url(),before);assert.equal(context.pages().length,pages);
   assert.equal(await page.locator('[data-summary-body] img').count(),0,'provider strings are inert');
   assert((await page.locator('[data-summary-body]').innerText()).includes('<img src=x onerror=alert(1)>'));
@@ -99,11 +100,19 @@ try {
   await button.click();await page.locator('[data-summary-reader]').waitFor();assert.equal(await page.locator('[data-summary-version]').count(),0);
   pendingId=null;await page.keyboard.press('Escape');await button.click();await page.locator('[data-summary-version]').waitFor();
   assert.equal(postCount,3);
+  await page.keyboard.press('Escape');
+  body.blocks.push(...Array.from({length:35},()=>({type:'paragraph',text})));
+  await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
+  await button.click();await page.locator('[data-summary-version]').waitFor();
+  assert(await page.locator('#modal-content').evaluate(el=>el.scrollHeight>el.clientHeight),'a full report scrolls within the reader');
+  assert(await page.locator('#modal-container').evaluate(el=>el.getBoundingClientRect().top>=0),'long reports do not hide the top of the modal above the viewport');
+  await page.locator('#modal-content').evaluate(el=>el.scrollTop=el.scrollHeight);
+  assert(await page.getByRole('button',{name:'Close summary',exact:true}).evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}),'close remains accessible at the end of a long report');
   // Reader layout in both themes and on a narrow viewport.
   for(const theme of ['light','dark']) {
     await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
     await page.waitForFunction(theme=>getComputedStyle(document.querySelector('#modal-container')).backgroundColor === (theme==='dark'?'rgb(22, 33, 52)':'rgb(255, 255, 255)'),theme);
-    const contrast=await page.locator('[data-summary-body] p.whitespace-pre-wrap').evaluate(el=>{
+    const contrast=await page.locator('[data-summary-body] p.whitespace-pre-wrap').first().evaluate(el=>{
       const luma=color=>{const c=color.match(/[\d.]+/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722;};
       const a=luma(getComputedStyle(el).color),b=luma(getComputedStyle(document.querySelector('#modal-container')).backgroundColor);
       return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
@@ -119,7 +128,7 @@ try {
   await page.evaluate(()=>{window.fixtureSession(null);window.fixtureSession('local-test-token');});
   denied=true;
   const result=await page.evaluate(async()=>{try {await (await import('/js/data/concall-summaries.js')).read(['123']);return 'leaked';}catch{return 'refused';}});
-  assert.equal(result,'refused');assert.equal(postCount,4);
+  assert.equal(result,'refused');assert.equal(postCount,5);
   denied=false;enabled=false;
   await page.evaluate(()=>location.hash='#/research/concall?scope=universe');
   await page.locator('[data-summary-coverage]').waitFor();

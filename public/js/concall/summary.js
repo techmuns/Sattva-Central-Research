@@ -6,17 +6,19 @@ import { summaryIdsForRow, summaryStateMessage, summaryScheduleMessage } from '.
 
 const e = escapeHtml;
 const date = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST' : 'Not checked';
-const header = title => `<div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"><h2 class="font-display text-xl font-bold text-slate-900">${e(title)}</h2><button type="button" data-summary-close aria-label="Close summary" class="rounded-lg px-3 py-2 text-xl text-slate-600">×</button></div>`;
+const header = title => `<div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5"><h2 class="font-display text-xl font-bold text-slate-900">${e(title)}</h2><button type="button" data-summary-close aria-label="Close summary" class="rounded-lg px-3 py-2 text-xl text-slate-600">×</button></div>`;
 let closeSession = null, openVersion = 0;
 export function stopSummary() { openVersion++; closeSession?.(); closeSession = null; }
 function modal(html) {
   stopSummary();
   openModal(html, { size: 'wide', onClose: stopSummary });
   const content = document.getElementById('modal-content');
+  content.dataset.summaryView = 'true';
+  content.scrollTop = 0;
   const close = event => { if (event.target.closest('[data-summary-close]')) closeModal(); };
   content.addEventListener('click', close);
   const unsubscribe = onHostContext((_context, changes) => { if (changes?.session) { closeModal(); stopSummary(); } });
-  closeSession = () => { unsubscribe(); content.removeEventListener('click', close); };
+  closeSession = () => { unsubscribe(); content.removeEventListener('click', close); delete content.dataset.summaryView; };
   return openVersion;
 }
 function bodyHtml(body) {
@@ -43,6 +45,7 @@ export async function openSummary(row) {
     const records = await summaries.read(ids);
     if (version !== openVersion) return;
     const content = document.getElementById('modal-content');
+    const focused = content.contains(document.activeElement);
     const ready = records.filter(record => record.status === 'ready');
     content.innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-4 p-6" data-summary-reader>
       <p class="text-xs text-slate-500">Screener’s published notes, reproduced unchanged. Reading a saved copy does not request another summary from Screener.</p>
@@ -58,9 +61,12 @@ export async function openSummary(row) {
     };
     paint(0);
     content.querySelector('[data-summary-version]')?.addEventListener('change', event => paint(Number(event.target.value)));
+    if (focused) content.querySelector('[data-summary-close]')?.focus({ preventScroll: true });
   } catch (error) {
     if (version !== openVersion) return;
-    document.getElementById('modal-content').innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-3 p-6"><p class="text-sm text-slate-700">${e(error.message)}</p>${coverageNote()}</div>`;
+    const content = document.getElementById('modal-content'), focused = content.contains(document.activeElement);
+    content.innerHTML = `${header(`${row.name} · Summary`)}<div class="space-y-3 p-6"><p class="text-sm text-slate-700">${e(error.message)}</p>${coverageNote()}</div>`;
+    if (focused) content.querySelector('[data-summary-close]')?.focus({ preventScroll: true });
   }
 }
 function coverageHtml() {
