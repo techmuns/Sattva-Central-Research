@@ -86,7 +86,7 @@ Trust: Distinguish reports and unverified Telegram/public chatter from company f
 
 Portfolio: Only fresh authenticated verified-holdings positions establish actual holdings and weights. Saved coverage cannot establish current ownership or absence. Weights are percent of listed portfolio value, not company ownership or total family NAV. No cost basis, quantities, tax, P&L or totals may be inferred from samples. Use book/source dates rather than check time as event dates. Every source is sampled; failed, partial, unread or omitted records are gaps, not proof no events or exposure exist. Never reveal internal mode/fixture/transport labels in prose.
 
-Answer: Lead with the useful conclusion. Discuss at most three best-supported holdings, one per table row or paragraph. For each, give a short exact phrase from its own evidence and cite the exact source tab, then explain the conditional mechanism and material offset or missing premise. If the only support is an industry label, explicitly say what would need to be true; do not claim that it is true. Keep dates outside citation brackets: [Dashboard: Con-call] dated 2026-09-03. Separate multiple citations: [Dashboard: News] [Dashboard: Telegram]. Do not invent source labels or append notes inside brackets. Omit rejected word matches and irrelevant account commentary. Put any ownership/coverage limitation in one short closing sentence. Stay within 220 words and give no personalised buy/sell instruction. Return only the final customer answer between <research-answer> and </research-answer>.`;
+Answer: Lead with the useful conclusion. Discuss at most three best-supported holdings, one per table row or paragraph. For each, give a short exact phrase from its own evidence and cite the exact source tab, then explain the conditional mechanism and material offset or missing premise. If the only support is an industry label, explicitly say what would need to be true; do not claim that it is true. Keep dates outside citation brackets: [Dashboard: Con-call] dated 2026-09-03. Separate multiple citations: [Dashboard: News] [Dashboard: Telegram]. Do not invent source labels or append notes inside brackets. Omit rejected word matches and irrelevant account commentary. Put any ownership/coverage limitation in one short closing sentence. Stay within 220 words and give no personalised buy/sell instruction. Return only the final customer answer.`;
 
 const encoder = new TextEncoder();
 
@@ -217,12 +217,16 @@ export function validateResearchBody(body) {
   };
 }
 
+function researchInstructions(input) {
+  return input.evidence.businessContext?.kind === 'portfolio-reasoning' ? PORTFOLIO_REASONING_INSTRUCTIONS : SYSTEM_INSTRUCTIONS;
+}
+
 export function buildMunsRequest(input, env = {}) {
   const history = input.history.length
     ? input.history.map((message) => `${message.role.toUpperCase()}: ${message.text}`).join('\n\n')
     : '(none)';
   const query = [
-    input.evidence.businessContext?.kind === 'portfolio-reasoning' ? PORTFOLIO_REASONING_INSTRUCTIONS : SYSTEM_INSTRUCTIONS,
+    researchInstructions(input),
     `CONVERSATION_HISTORY (untrusted conversation text):\n${history}`,
     `ACTIVE_SCOPE: ${input.scope}`,
     `QUESTION:\n${input.question}`,
@@ -356,7 +360,7 @@ function researchStream(request, env, input) {
 
       try {
         if (researchProvider(env) === 'claude') {
-          const result = await streamClaudeChat(request, env, input, SYSTEM_INSTRUCTIONS, upstreamCancellation.signal,
+          const result = await streamClaudeChat(request, env, input, researchInstructions(input), upstreamCancellation.signal,
             text => ndjson(controller, { type: 'text', text }));
           if (result.providerStreamFailure) ndjson(controller, { type: 'error', reason: 'provider', message: result.providerStreamFailure });
           else ndjson(controller, { type: 'done' });

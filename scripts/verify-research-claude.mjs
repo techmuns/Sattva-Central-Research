@@ -138,6 +138,24 @@ try {
   }
   pass('current Cloudflare binding and legacy environments select the same key for configuration and inference');
 
+  for (const kind of ['portfolio-reasoning', 'comparable-business']) {
+    const businessContext = { kind, candidates: [], businessProfiles: { columns: ['company', 'industry'], rows: [['Synthetic paint maker', 'Coatings']] } };
+    globalThis.fetch = async (_url, options) => {
+      const payload = JSON.parse(options.body), instructions = payload.system[0].text;
+      assert.deepEqual(JSON.parse(payload.messages[0].content).DASHBOARD_EVIDENCE.businessContext, businessContext);
+      if (kind === 'portfolio-reasoning') {
+        assert(instructions.includes('Mechanisms: Check the direction'), 'Claude must receive the general portfolio reasoning contract');
+        assert(instructions.includes('industrySources[industrySourceIndex]'), 'industry evidence keeps its exact provenance rules');
+        assert(!instructions.includes('For these comparisons, lead'), 'broad scenarios must not inherit the narrow peer template');
+      } else assert(instructions.includes('For comparable-business, thematic or read-across questions'));
+      assert(!instructions.includes('<research-answer>'), 'Claude has protocol completion, not Muns XML framing');
+      return response(full);
+    };
+    const out = await events(await handleResearch(request({ ...body, evidence: { ...body.evidence, businessContext } }), env));
+    assert.equal(out.at(-1).type, 'done');
+  }
+  pass('Claude preserves portfolio reasoning instructions and full business evidence without Muns framing');
+
   for (const tail of ['open-connection', 'pending-cancel', 'same-chunk-error', 'same-chunk-oversized', 'late-error']) {
     let wasCancelled = false, upstreamSignal;
     globalThis.fetch = async (_url, options) => {
