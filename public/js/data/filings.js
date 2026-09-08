@@ -897,10 +897,13 @@ export function createFeed(kind) {
 
 // One instance per feed, module-level so a second visit to the tab repaints instantly instead of
 // re-walking. Same reasoning as the super-investor feed.
-export const news = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(createFeed('news'))));
+const companyNewsFeed = createFeed('news');
+export const news = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(companyNewsFeed)));
 // Separate reading state: a fast News visit never narrows the history used by All Alerts,
 // AI Alerts, Ask Research or saved bookmarks. Network/cache bytes remain shared by URL.
-export const recentNews = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(createFeed('news'),
+// Share captured/head and explicit live-search observations, not archive-loading state. A manual
+// News refresh must also reach All Alerts immediately; it cannot be marooned in a second cache.
+export const recentNews = withNewsHistory(withTradingViewNews(withPortfolioPublisherNews(companyNewsFeed,
   { window: recentNewsWindow })), { window: recentNewsWindow });
 export const announcements = withAnnouncementLookups(withFilingArchive(createFeed('announcements'), 'announcements'));
 export const insider = withFilingArchive(createFeed('insider'), 'insider');

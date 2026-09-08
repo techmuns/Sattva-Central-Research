@@ -87,6 +87,9 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     return pending;
   }
   return { ...base, rows, loadArchive,
+    // Another view may have loaded the shared company head without initializing this reader's
+    // publisher/TradingView sources. A head alone cannot make this reader skip its own load.
+    isLoaded: () => initialized && base.isLoaded(),
     async seed(...args) { await base.seed(...args); initialized = true; await loadArchive(); },
     async load(...args) { await base.load(...args); initialized = true; await loadArchive(); },
     async refreshSnapshot(...args) {

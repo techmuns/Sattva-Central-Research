@@ -39,6 +39,8 @@ window.newsTest.ready = true;
 const server = createServer((req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
   if (pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  if (pathname === '/api/news') { res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ ok: true, fetchedAt: at, articles: [row('manual-query')] })); return; }
   if (pathname === unavailable) { res.writeHead(503); res.end(); return; }
   const base = pathname.startsWith('/data/') ? fixture : root;
   const path = resolve(base, `.${pathname.replace(/^\/data/, '')}`);
@@ -85,6 +87,10 @@ try {
   await page.reload();
   await page.waitForFunction(() => window.newsTest?.ready);
   assert.equal(await page.evaluate(() => window.newsTest.feed.rows().length), 441, 'reopening keeps recent news without widening the date window');
+  assert.equal(await page.evaluate(async () => {
+    await window.newsTest.feed.loadOne('STLTECH', { force: true });
+    return window.newsTest.history.rows().some(row => row.title.includes('manual-query'));
+  }), true, 'explicit live News query immediately reaches the shared All Alerts/research head');
   assert.deepEqual(errors, []);
   console.log('PASS browser: every part reaches the Portfolio News table; old history, incomplete refresh, recovery and reopening preserved.');
 } finally {
