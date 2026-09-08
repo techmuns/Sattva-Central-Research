@@ -268,6 +268,89 @@ assert.equal(secondJump.historyNextId, 1, 'another new head cannot reset older p
 assert.deepEqual(secondJump.catchupRanges, [{ from: 84, to: 154 }, { from: 11, to: 81 }], 'both interrupted catch-up intervals survive another jump');
 assert.equal(secondJump.lastCheckedAt, previousCheck, 'historical discovery never advances the successful recent-check time');
 
+// Deterministic request timers distinguish the overall collection deadline from the
+// normal 15-second upstream timeout. No real waits or Telegram requests are involved.
+function deadlineSource({ target = 5, kind = 'confirm', budget = 4000 } = {}) {
+  let clock = Date.parse(nextCheck);
+  let targetRequests = 0;
+  const deadline = clock + budget, timers = new WeakMap(), calls = [];
+  return { calls, budget, now: () => clock, sleep: async ms => { clock += ms; },
+    timeoutSignal(ms) { const controller = new AbortController(); timers.set(controller.signal, { controller, ms }); return controller.signal; },
+    async fetcher(url, { signal }) {
+      const u = new URL(url), id = Number(u.pathname.split('/')[2]); calls.push(u.pathname + u.search);
+      if (id !== target) { clock += 10; return new Response(!id ? landing : embed(id, '<div class="tgme_widget_message_text">Available report</div>')); }
+      targetRequests++;
+      if (kind === 'http-then-signal' && targetRequests === 1) { clock += 10; return new Response('Unavailable', { status: 503 }); }
+      if (kind === 'confirm') { clock = deadline - 500; return new Response(missing); }
+      if (kind === 'permalink') { clock = deadline - 500; return new Response(embed(id)); }
+      if (['permalink-signal', 'permalink-http'].includes(kind) && u.search) { clock += 10; return new Response(embed(id)); }
+      if (kind === 'http' || kind === 'permalink-http') { clock = deadline - 500; return new Response('Unavailable', { status: 503 }); }
+      // The request remains pending until its supplied timer aborts it. A shortened
+      // timer ends at the local deadline; a normal 15-second timer is a source failure.
+      return new Promise((resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+        queueMicrotask(() => { const { controller, ms } = timers.get(signal); clock += ms;
+          controller.abort(new DOMException('Request timed out', 'TimeoutError')); });
+      });
+    } };
+}
+for (const kind of ['confirm', 'signal']) {
+  const historyDeadline = deadlineSource({ kind });
+  const stoppedHistory = await collect(freshPrior, { ...settings, phase: 'history', jumpShare: 0, budget: historyDeadline.budget }, historyDeadline);
+  assert.equal(stoppedHistory.lastRun.status, 'ok', 'a local historical time budget is a resumable stop, not an upstream failure');
+  assert.equal(stoppedHistory.lastRun.errors, 0);
+  assert.deepEqual(stoppedHistory.retryIds, []);
+  assert.equal(stoppedHistory.historyNextId, 5, 'the unfinished ID remains the next historical lookup');
+  assert.equal(stoppedHistory.lastCheckedAt, previousCheck);
+  assert.equal(historyDeadline.calls.filter(path => path.startsWith(`/${channel}/5?`)).length, 1, 'budget exhaustion does not retry an unfinished request');
+  const recoveredHistory = await collect(stoppedHistory, { ...settings, phase: 'history', jumpShare: 0, history: 1 }, upstream(freshMessages));
+  assert.equal(recoveredHistory.historyNextId, 4);
+  assert(recoveredHistory.posts.some(post => post.id === 5), 'the next run resumes and captures the exact deferred ID');
+}
+for (const [kind, target, prior, extra, field, expected] of [
+  ['confirm', 7, { ...freshPrior, catchupRanges: [{ from: 6, to: 7 }] }, {}, 'catchupRanges', [{ from: 6, to: 7 }]],
+  ['signal', 15, { ...freshPrior, discoveryNextId: 15 }, { discovery: 2 }, 'discoveryNextId', 15],
+  ['permalink', 8, { ...freshPrior, retryIds: [8] }, {}, 'retryIds', [8]],
+]) {
+  const source = deadlineSource({ kind, target });
+  const stopped = await collect(prior, { ...settings, phase: 'history', jumpShare: 0, budget: source.budget, ...extra }, source);
+  assert.equal(stopped.lastRun.status, 'ok');
+  assert.equal(stopped.lastRun.errors, 0);
+  assert.deepEqual(stopped[field], expected, 'a local deadline preserves the active pending cursor or pre-existing retry');
+  assert.equal(stopped.historyNextId, prior.historyNextId);
+}
+for (const kind of ['confirm', 'signal', 'permalink', 'permalink-signal']) {
+  const source = deadlineSource({ target: 11, kind });
+  const stopped = await collect(freshPrior, { ...settings, phase: 'recent', budget: source.budget }, source);
+  assert.equal(stopped.lastRun.status, 'partial', 'an unfinished recent window cannot be certified by a local deadline');
+  assert.equal(stopped.lastRun.errors, 0);
+  assert.equal(stopped.lastCheckedAt, previousCheck);
+  assert.deepEqual(stopped.retryIds, []);
+  assert.equal(stopped.historyNextId, freshPrior.historyNextId);
+  if (kind.startsWith('permalink')) {
+    assert(stopped.posts.some(post => post.id === 11 && post.publishedAt === published), 'a verified embed survives an unfinished text lookup');
+    assert.deepEqual(stopped.catchupRanges, [{ from: 11, to: 11 }], 'unfinished new text remains reachable after the head advances');
+    const recovered = await collect(stopped, { ...settings, phase: 'history', jumpShare: 0, history: 1 },
+      upstream(new Map([[11, { permalink: '<meta property="og:description" content="Recovered report text">' }]])));
+    assert.equal(recovered.posts.find(post => post.id === 11).text, 'Recovered report text');
+    assert.deepEqual(recovered.catchupRanges, []);
+  }
+}
+for (const source of [deadlineSource({ kind: 'http' }), deadlineSource({ kind: 'http-then-signal' }), deadlineSource({ kind: 'signal', budget: 60000 })]) {
+  const failedSource = await collect(freshPrior, { ...settings, phase: 'history', jumpShare: 0, budget: source.budget, history: 1 }, source);
+  assert.equal(failedSource.lastRun.status, 'partial', 'a real503 or normal15-second timeout remains a failed lookup');
+  assert.equal(failedSource.lastRun.errors, 1);
+  assert.deepEqual(failedSource.retryIds, [5]);
+  assert.equal(failedSource.historyNextId, 4, 'genuine failures retain the existing retry-queue recovery behavior');
+}
+const failedTextSource = deadlineSource({ target: 11, kind: 'permalink-http' });
+const failedText = await collect(freshPrior, { ...settings, phase: 'recent', budget: failedTextSource.budget }, failedTextSource);
+assert.equal(failedText.lastRun.status, 'partial');
+assert.equal(failedText.lastRun.errors, 1, 'a real permalink failure must not be hidden by a following budget stop');
+assert.deepEqual(failedText.retryIds, [11]);
+assert(failedText.posts.some(post => post.id === 11), 'verified identity survives a genuine text-source failure too');
+assert.equal(failedText.lastCheckedAt, previousCheck);
+
 const originalRanges = Array.from({ length: 128 }, (_, index) => ({ from: index * 3 + 1, to: index * 3 + 1 }));
 const bounded = await collect({ ...freshPrior, headId: 1000, posts: [old(1000)], catchupRanges: originalRanges },
   { ...settings, phase: 'recent', headHint: 1002 }, upstream(new Map([[1002, {}]])));

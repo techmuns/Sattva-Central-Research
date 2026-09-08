@@ -1,11 +1,16 @@
 {
-  "capturedAt": "2026-09-07T07:26:06.305Z",
-  "from": "2026-09-04",
-  "to": "2026-09-28",
+  "capturedAt": "2026-09-08T01:57:31.446Z",
+  "from": "2026-09-05",
+  "to": "2026-09-29",
   "pageSize": 20,
   "source": "Moneycontrol — Earnings Calendar (all-exchange counts plus every earnings-widget pagination page)",
   "note": "The per-date counts and company lists both cover All exchanges. Every published pagination page is captured; counts are re-fetched live by the Worker and these lists are as of capturedAt.",
   "days": [
+    {
+      "date": "2026-09-29",
+      "displayDate": "29 Sep",
+      "count": 0
+    },
     {
       "date": "2026-09-28",
       "displayDate": "28 Sep",
@@ -125,11 +130,6 @@
       "date": "2026-09-05",
       "displayDate": "05 Sep",
       "count": 1
-    },
-    {
-      "date": "2026-09-04",
-      "displayDate": "04 Sep",
-      "count": 1
     }
   ],
   "byDate": {
@@ -143,9 +143,9 @@
           "displayDate": "9 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 11.7,
-          "changePct": 1.74,
-          "marketCap": 42.28,
+          "ltp": 12.07,
+          "changePct": 5.22,
+          "marketCap": 43.62,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/steel-sponge-iron/novaironsteel/NIS"
         }
@@ -154,7 +154,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "07/09/2026"
+      "asOnDate": "08/09/2026"
     },
     "2026-09-08": {
       "rows": [
@@ -166,9 +166,9 @@
           "displayDate": "8 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 34,
-          "changePct": 2.6,
-          "marketCap": 205.36,
+          "ltp": 34.79,
+          "changePct": 4.95,
+          "marketCap": 210.13,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/household-personal-products/marutiinteriorproducts/MIP02"
         }
@@ -177,7 +177,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "07/09/2026"
+      "asOnDate": "08/09/2026"
     },
     "2026-09-07": {
       "rows": [
@@ -189,16 +189,16 @@
           "displayDate": "7 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 137.15,
-          "changePct": 0.9,
-          "marketCap": 9978.73,
+          "ltp": 135.21,
+          "changePct": -0.52,
+          "marketCap": 9837.58,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/online-services/shiprocket/SL26",
           "ticker": "SHIPROCKET",
           "fullName": "Shiprocket",
           "industry": "Online Services",
           "shares": 727577587,
-          "mktCapAtBuild": 9978.73
+          "mktCapAtBuild": 9837.58
         },
         {
           "scId": "BLE",
@@ -208,16 +208,16 @@
           "displayDate": "7 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 464.5,
-          "changePct": 2.5,
-          "marketCap": 1964.95,
+          "ltp": 478.3,
+          "changePct": 5.55,
+          "marketCap": 2023.33,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/metals-castings-forgings/beharilalengineering/BLE",
           "ticker": "BLEL",
           "fullName": "Behari Lal Engg",
           "industry": "Metals - Castings/Forgings",
           "shares": 42302482,
-          "mktCapAtBuild": 1964.95
+          "mktCapAtBuild": 2023.33
         },
         {
           "scId": "KI25",
@@ -227,16 +227,16 @@
           "displayDate": "7 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 33.91,
-          "changePct": 0.44,
-          "marketCap": 383.42,
+          "ltp": 32.89,
+          "changePct": -2.58,
+          "marketCap": 371.89,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/renewables/kotyarkindustries/KI10",
           "ticker": "KOTYARK",
-          "fullName": "Kotyark Ind",
+          "fullName": "Kotyark",
           "industry": "Renewables",
           "shares": 113070276,
-          "mktCapAtBuild": 383.42
+          "mktCapAtBuild": 371.89
         },
         {
           "scId": "SF26",
@@ -257,7 +257,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "07/09/2026"
+      "asOnDate": "08/09/2026"
     },
     "2026-09-05": {
       "rows": [
@@ -269,51 +269,23 @@
           "displayDate": "5 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 1115.3,
-          "changePct": -3.89,
-          "marketCap": 12852.72,
+          "ltp": 1127.2,
+          "changePct": -2.87,
+          "marketCap": 12989.85,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/medical-equipment-supplies-accessories/molbiodiagnostics/MDL02",
           "ticker": "MOLBIO",
           "fullName": "Molbio Diagnost",
           "industry": "Medical Equipment/Supplies/Accessories",
           "shares": 115239996,
-          "mktCapAtBuild": 12852.72
+          "mktCapAtBuild": 12989.85
         }
       ],
       "scheduledCount": 1,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "07/09/2026"
-    },
-    "2026-09-04": {
-      "rows": [
-        {
-          "scId": "DTL03",
-          "name": "Dhoot Transmission",
-          "shortName": null,
-          "resultDate": "2026-09-04",
-          "displayDate": "4 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 1545.2,
-          "changePct": -4.36,
-          "marketCap": 31606.77,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/auto-ancillaries-auto-truck-motorcycle-parts/dhoottransmission/DTL02",
-          "ticker": "DHOOTTRANS",
-          "fullName": "Dhoot Transmiss",
-          "industry": "Auto Ancillaries - Auto, Truck & Motorcycle Parts",
-          "shares": 204548057,
-          "mktCapAtBuild": 32071.09
-        }
-      ],
-      "scheduledCount": 1,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "07/09/2026"
+      "asOnDate": "08/09/2026"
     }
   }
 }

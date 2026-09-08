@@ -233,7 +233,7 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
-The Bookmarked Notebook (`tabs/bookmarks.js`) is a personal saved-record view. Its
+Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
 keeps saved companies accessible even after a portfolio exit or empty Watchlist. The notebook's
 company filters apply to saved identities. This is the explicit exception to the feed-scope rule
@@ -1692,6 +1692,95 @@ correct surfaces, one still visibly wrong. `classifyHolding()` is now the only o
 comparing two columns of anybody's data, ask what has to be true for both to be complete — and
 where the source itself answers that question, in words or in a figure, read its answer instead of
 inferring one.
+
+### ONE ROUTE, TWO UPSTREAMS — an absent half is not an empty half
+
+`/api/concalls` assembles two things that have nothing to do with each other: StockScans' analysed
+con-call rows, and the authenticated S Screen dashboard's portfolio calendar, captured into an
+immutable Actions artifact and read back through the GitHub API. They fail independently, and for
+a long time each one's failure emptied the other's feed.
+
+**Both failures arrived as `[]` inside an `ok: true` 200.** The artifact read has its own timeout,
+rate limit and token, and `readCachedScreenerCollector` catches every one of them and returns
+`capture: null` — which the payload turned into `portfolioUpcoming: []`. And when *StockScans* was
+the half that failed, the route fell back to the committed `concall-scans.json` snapshot, which is
+a capture of StockScans alone and **has never carried a calendar at all** — so the key was simply
+missing, and `|| []` in the browser finished the job. All Alerts' Upcoming view went from 52 rows
+to zero on an outage in a feed it does not read.
+
+**And the emptiness persisted, which is what made it look like a bug in the calendar rather than in
+its neighbour.** The response is stored in IndexedDB under the server's own ETag, so a reload
+repainted the empty calendar and every subsequent poll 304'd against it. Nothing threw, no count
+was wrong, the failure WAS reported in `meta.screener.status` — and the rows were gone anyway.
+
+Eight rules, and the first is the one this codebase already had written down three other ways:
+
+1. **A read that did not happen is absent; only a successful read may be empty.** The route sends
+   `portfolioUpcoming: null` where the capture is unavailable, and the snapshot-fallback branch
+   states that `null` explicitly rather than leaving the key missing. The browser retains what it
+   holds when the payload carries no array. Same rule as `failed` rather than empty books in the
+   investor snapshot, `empty: []` beside `failed: []` in the filings captures, and `null` versus a
+   Set from `scopeTickers()`.
+2. **The retained copy lives in its own device entry**, `concalls:portfolio-upcoming`, never as a
+   patched copy of the response — `core/store.js` holds the server's own bytes under the server's
+   own tag, and that pairing is the entire basis for trusting a 304. Same arrangement, same reason,
+   as `nse-filings:history` beneath the shrinking live NSE window.
+3. **A retained calendar is dated to its own capture and says it is retained.**
+   `meta.portfolioUpcomingRetained` and `meta.portfolioUpcomingCheckedAt` are separate from the
+   response's `checkedAt`, because these rows can be older than the payload that carried the rest
+   of the page; the All Alerts feed reads that flag as its own leg of the incomplete predicate and
+   its coverage note says the latest check could not read the dashboard. Restamping them would be
+   the retained copy claiming a freshness nothing vouched for. **A live read that never happened
+   is not a confirmation either**: a reload against an unreachable Worker paints the stored
+   response, whose own `meta.screener` said `ok` when it was written, so anything short of a 304
+   or an ingested 200 marks the calendar retained. Test for that positively —
+   `conditionalJson` reports the server's real status and reserves `0` for a request that never
+   completed, so a 503 arrives as 503 and a `status === 0` guard lets every server-side failure
+   through, and so does testing only `build()`: the poller's own failures are swallowed by
+   `live.js`, so an outage beginning after the page loaded would never be reported at all. Every
+   revalidation path marks it. **A 304 lifts the mark** — it says the representation we hold is
+   current, calendar included — and it has to, because recovery through an unchanged ETag carries
+   no content change, so nothing else would ever clear it and the feed would report failed while
+   every poll succeeded; the 304 branch therefore notifies subscribers **when and only when it
+   lifted one**, since an ordinary unchanged tick must still repaint nothing.
+4. **Only an ADOPTED calendar is a confirmed one, and every correction must reach subscribers.**
+   `confirmed` answers one question — did this read vouch for what is now painted — so a payload
+   carrying no calendar, and one whose calendar was refused as stale, both leave it false. Setting
+   it on any successful response let the older response certify the newer held rows it had just
+   been refused for. And a correction nobody is told about is the correction not happening:
+   `live.js` catches the poller's throw without invoking subscribers, so the failure path notifies
+   directly, and `hasChanged` compares the collector's own rendered health (`status`,
+   `collectorLatestFailed`, `portfolioUpcomingAvailable`) as well as the rows.
+5. **`confirmed` is about the READ; `retained` is about the ROWS.** One flag for both was wrong in
+   both directions. Gated on `rows.length` it let a legitimately empty capture report a failed
+   check as current; set unconditionally it claimed, on a first visit with an unreachable route,
+   that an empty result was "the retained rows from the last successful capture" — inventing a
+   capture this device had never made. So the read's outcome gates the feed's status and the rows'
+   provenance gates the sentence, and a verified-empty calendar is restored from the device like
+   any other: an empty dashboard is an answer, and dropping it lets an older response resurrect
+   events that were correctly cleared.
+6. **A supplied calendar older than the one held is not an update.** The response and the calendar
+   are written to the device under separate keys, so a quota failure on the large one leaves a
+   newer calendar beside an older response and the next reload would adopt the older over it —
+   and write it back. Compare only where both sides date themselves; an undated capture cannot be
+   ordered and is taken as given, exactly as `isNewerThanHeld` refuses to rank an unstamped
+   snapshot.
+7. **Retention is not a merge, and an empty successful read must still clear.** A forward calendar
+   legitimately shrinks as its dates pass, so a successful read always replaces — a shorter one
+   included — and `[]` from a healthy capture means the dashboard has nothing scheduled, which is
+   an answer. `scripts/verify-portfolio-calendar.mjs` asserts both directions; a retention rule
+   that could never go back to nothing would be the mirror of the bug it fixed.
+8. **An availability transition is itself a change.** `meta.portfolioUpcomingSupplied` is a fact
+   about the response and `retained` is the claim made to a reader; neither derives from the other,
+   and `hasChanged` compares `supplied` so a calendar going missing — or coming back with the same
+   rows — reaches subscribers. Otherwise the coverage chip keeps printing the previous answer until
+   All Alerts' own next collection, which is a stale label on a correct feed: the failure mode this
+   whole section is about, one layer up.
+
+The failure is cached too, at `CONCALL_SCREENER_FAIL_TTL_S` (15s) rather than the 60s success
+window: every reader sits behind one edge entry, so an uncached failure costs each of them their
+own timeout while a success-length one pins a degraded schedule on every screen long after the
+artifact is readable again. Same split as the Finology client's `ok: false` window.
 
 ### Triggering someone else's pipeline — the Deep Dive rule
 
@@ -3270,7 +3359,8 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change which date the Earnings Calendar opens on | `defaultCalendarDate()` in `js/tabs/earnings-hub.js` — it is today, in **IST**, and `?date=` and the reader's own click both win over it |
 | Add or refresh an AMC portfolio | drop the workbook in `scripts/fixtures/`, add an entry to `FUNDS` in `scripts/import-amc-portfolio.mjs`, re-run it — read *Two disclosures that look identical* first |
 | Change how a company name resolves to a ticker | `scripts/lib/company-index.mjs` — `node scripts/lib/company-index.mjs "Some Name Ltd"` explains one match |
-| Change the live con-call feed | `worker/stockscans.mjs` + `public/js/data/stockscans-shared.js`, then `/api/concalls` — read *Reproducing someone else's analysis* below first |
+| Change the live con-call feed | `worker/stockscans.mjs` + `public/js/data/stockscans-shared.js`, then `/api/concalls` — read *Reproducing someone else's analysis* below first. `/api/concalls` is a UNION OF TWO UPSTREAMS: a half that could not be read travels as `null`, never `[]` — see *One route, two upstreams* below |
+| Change the portfolio calendar behind All Alerts' Upcoming view | `scheduleFrom()` / `ingest()` in `js/data/concall-scans.js` (retention), `handleConcalls` in `worker/index.js` (the `null`), and the `screener-portfolio-upcoming` entry in `js/data/alert-sources.js` (the note). `node scripts/verify-portfolio-calendar.mjs` is the test |
 | Change the Con-call tab | `js/concall/scans.js` — the whole tab is that one file |
 | Change the Deep Dive column or panel | `js/concall/deep-dive.js` (panel) + `js/data/deep-dive.js` (transport) — read *Triggering someone else's pipeline* below first |
 | Change what a Deep Dive report keeps on the device | the saved-report block in `js/data/deep-dive.js` + `KEYS.deepDiveReport` — a report costs a metered run, so read rule 5 there before shortening anything |
@@ -3356,6 +3446,7 @@ Then run the suite — ~410 Playwright assertions, exits non-zero at the end if 
 
 ```bash
 node scripts/verify-calendar.mjs
+node scripts/verify-portfolio-calendar.mjs
 node scripts/verify-research.mjs
 node scripts/verify-ui.mjs
 node scripts/verify-sdk.mjs

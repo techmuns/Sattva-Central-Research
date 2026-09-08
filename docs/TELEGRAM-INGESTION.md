@@ -52,7 +52,11 @@ operator's authorization.
 Collection no longer waits for an archive PR, CI or a site deployment. A separate daily
 `telegram-archive.yml` backs the artifact up through `codex/telegram-capture`, verifies
 its exact commit, and merges only through the existing review/check gates. A conflicted
-backup PR cannot stop fresh collection. Artifacts retain the whole preceding capture,
+backup PR cannot stop fresh collection. Each normal backup starts from current `main`,
+retains validated data from an existing archive-only PR at its exact commit, and combines
+it with the latest readable artifact before updating that PR. This lets outdated test or
+deployment code recover without losing records held only in the unmerged backup. It does
+not dismiss review feedback or bypass required checks. Artifacts retain the whole preceding capture,
 expire after 90 days, and are renewed by each successful workflow. A prolonged outage
 beyond retention falls back to the committed backup. Payload size limits fail visibly
 without truncation. Resolve an unattended backup PR before relying on it as permanent
@@ -102,6 +106,10 @@ Inclusive `catchupRanges` retain unscanned intervals found by forward discovery 
 of the older-history cursor, so a new gap cannot overwrite existing backfill progress.
 The recent phase publishes before history; historical progress never advances the most
 recent successful source-check time or masks an incomplete recent check.
+Reaching the local phase deadline checkpoints unfinished work without treating the
+planned cutoff as a Telegram failure. The unfinished ID remains resumable; an incomplete
+recent scan still cannot advance its success time. Actual HTTP and request-timeout failures
+remain errors even if the phase budget subsequently prevents another retry.
 HTTP 429 and 403 stop all public requests immediately. A retained `publicSafety` deadline
 respects `Retry-After` plus one minute, with minimum waits of thirty minutes for rate limits
 and one hour for refusal. Subsequent runs wait before making any public request. A successful

@@ -323,12 +323,224 @@
     "isin:INE850D01014|Godrej Agrovet": {
       "lastAttemptAt": "2026-09-07T13:18:54+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE850D01014|GODREJAGRO": {
+      "lastAttemptAt": "2026-09-07T13:57:47+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE036B01030|Gujarat Ambuja Exports": {
+      "lastAttemptAt": "2026-09-07T14:37:31+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE036B01030|GAEL": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 108,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-07T15:18:18+00:00",
+      "pending": [
+        {
+          "from": "2026-08-29T15:18:18.076878+00:00",
+          "to": "2026-09-03T03:18:18.038439+00:00"
+        },
+        {
+          "from": "2026-09-03T03:18:18.038439+00:00",
+          "to": "2026-09-07T15:18:18+00:00"
+        }
+      ]
+    },
+    "isin:INE330T01021|Happy Forgings": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 41,
+      "error": null,
+      "lastSuccessAt": "2026-09-07T15:18:18+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE330T01021|HAPPYFORGE": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 16,
+      "error": null,
+      "lastSuccessAt": "2026-09-07T15:18:18+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE548A01028|HFCL": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 108,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-07T15:18:18+00:00",
+      "pending": [
+        {
+          "from": "2026-08-29T15:18:18.076878+00:00",
+          "to": "2026-09-03T03:18:18.038439+00:00"
+        },
+        {
+          "from": "2026-09-03T03:18:18.038439+00:00",
+          "to": "2026-09-07T15:18:18+00:00"
+        }
+      ]
+    },
+    "isin:INE267A01025|Hindustan Zinc": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 103,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-07T15:18:18+00:00",
+      "pending": [
+        {
+          "from": "2026-08-29T15:18:18.076878+00:00",
+          "to": "2026-09-03T03:18:18.038439+00:00"
+        },
+        {
+          "from": "2026-09-03T03:18:18.038439+00:00",
+          "to": "2026-09-07T15:18:18+00:00"
+        }
+      ]
+    },
+    "isin:INE267A01025|HINDZINC": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 110,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-07T15:18:18+00:00",
+      "pending": [
+        {
+          "from": "2026-08-29T15:18:18.076878+00:00",
+          "to": "2026-09-03T03:18:18.038439+00:00"
+        },
+        {
+          "from": "2026-09-03T03:18:18.038439+00:00",
+          "to": "2026-09-07T15:18:18+00:00"
+        }
+      ]
+    },
+    "isin:INE685T01010|Horizon Industrial Parks": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 16,
+      "error": null,
+      "lastSuccessAt": "2026-09-07T15:18:18+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE530B01024|IIFL Finance": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 89,
+      "error": null,
+      "lastSuccessAt": "2026-09-07T15:18:18+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE530B01024|IIFL": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "lastResultCount": 102,
+      "error": "result-cap-incomplete",
+      "targetThrough": "2026-09-07T15:18:18+00:00",
+      "pending": [
+        {
+          "from": "2026-08-29T15:18:18.076878+00:00",
+          "to": "2026-09-03T03:18:18.038439+00:00"
+        },
+        {
+          "from": "2026-09-03T03:18:18.038439+00:00",
+          "to": "2026-09-07T15:18:18+00:00"
+        }
+      ]
+    },
+    "isin:INE622H01018|Indo Farm Equipment": {
+      "lastAttemptAt": "2026-09-07T15:18:18+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE622H01018|INDOFARM": {
+      "lastAttemptAt": "2026-09-07T15:55:12+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE084101034|Indo-Mim": {
+      "lastAttemptAt": "2026-09-07T16:12:24+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE084101034|INDOMIM": {
+      "lastAttemptAt": "2026-09-07T17:01:44+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE00M901018|Interarch Building Products": {
+      "lastAttemptAt": "2026-09-07T17:51:58+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE00M901018|INTERARCH": {
+      "lastAttemptAt": "2026-09-07T18:29:26+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE858B01029|ISGEC Heavy Engineering": {
+      "lastAttemptAt": "2026-09-07T19:03:58+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE858B01029|ISGEC": {
+      "lastAttemptAt": "2026-09-07T19:45:06+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE168A01041|J & K Bank Ltd.": {
+      "lastAttemptAt": "2026-09-07T20:03:37+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE168A01041|J&KBANK": {
+      "lastAttemptAt": "2026-09-07T20:36:55+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE0SMY01017|Jay Bee Laminations": {
+      "lastAttemptAt": "2026-09-07T21:12:56+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE0SMY01017|JAYBEE-SM": {
+      "lastAttemptAt": "2026-09-07T21:50:54+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE854B01010|Jayaswal Neco Industries": {
+      "lastAttemptAt": "2026-09-07T22:26:43+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE854B01010|Jayaswal Neco": {
+      "lastAttemptAt": "2026-09-07T22:55:02+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE854B01010|Neco Defence Munitions": {
+      "lastAttemptAt": "2026-09-07T23:36:48+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE854B01010|Datasel": {
+      "lastAttemptAt": "2026-09-08T00:10:23+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE854B01010|Datasel S.R.L.": {
+      "lastAttemptAt": "2026-09-08T00:44:39+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE854B01010|JAYNECOIND": {
+      "lastAttemptAt": "2026-09-08T00:48:56+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE700A01033|Jubilant Pharmova LT": {
+      "lastAttemptAt": "2026-09-08T01:21:58+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE700A01033|JUBLPHARMA": {
+      "lastAttemptAt": "2026-09-08T02:06:58+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE303R01014|Kalyan Jewellers India": {
+      "lastAttemptAt": "2026-09-08T02:47:33+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE303R01014|KALYANKJIL": {
+      "lastAttemptAt": "2026-09-08T03:36:43+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE415I01015|Kiri Industries": {
+      "lastAttemptAt": "2026-09-08T04:21:06+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 230,
     "attempted": 1,
-    "incomplete": 225,
-    "checkedAt": "2026-09-07T13:18:54.269835+00:00"
+    "incomplete": 221,
+    "checkedAt": "2026-09-08T04:21:06.753647+00:00"
   }
 }

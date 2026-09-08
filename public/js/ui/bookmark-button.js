@@ -4,7 +4,7 @@ import * as notebook from '../core/bookmarks.js';
 export const BOOKMARK_ICON = '<svg width="16" height="18" viewBox="0 0 20 22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5 2h10a1 1 0 0 1 1 1v17l-6-4-6 4V3a1 1 0 0 1 1-1Z" stroke-linejoin="round"/></svg>';
 export function bookmarkButton(entry, { compact = true } = {}) {
   const saved = notebook.has(entry.id);
-  const label = saved ? 'Remove from notebook' : 'Save to notebook';
+  const label = saved ? 'Remove bookmark' : 'Save to bookmarks';
   return `<button type="button" data-bookmark-key="${escapeHtml(entry.id)}" data-norow
     class="bookmark-button${compact ? ' is-compact' : ''}" aria-label="${label}" title="${label}" aria-pressed="${saved}">
     ${BOOKMARK_ICON}${compact ? '' : `<span data-bookmark-label>${saved ? 'Saved' : 'Save'}</span>`}</button>`;
@@ -27,7 +27,7 @@ export function showBookmarkMessage(text, { error = false, undo = null } = {}) {
     };
     toast.append(button);
   } else if (!error) {
-    const link = document.createElement('a'); link.href = '#/research/bookmarks'; link.textContent = 'Open notebook'; toast.append(link);
+    const link = document.createElement('a'); link.href = '#/research/bookmarks'; link.textContent = 'Open bookmarks'; toast.append(link);
   }
   const close = document.createElement('button'); close.type = 'button'; close.textContent = '×'; close.setAttribute('aria-label', 'Dismiss');
   close.onclick = () => toast.remove(); toast.append(close);
@@ -41,7 +41,7 @@ export function wireBookmarks(root, resolve) {
     for (const button of root.querySelectorAll('[data-bookmark-key]')) {
       const saved = notebook.has(button.dataset.bookmarkKey);
       button.setAttribute('aria-pressed', String(saved));
-      const label = saved ? 'Remove from notebook' : 'Save to notebook';
+      const label = saved ? 'Remove bookmark' : 'Save to bookmarks';
       button.setAttribute('aria-label', label); button.title = label;
       const caption = button.querySelector('[data-bookmark-label]');
       if (caption) caption.textContent = saved ? 'Saved' : 'Save';

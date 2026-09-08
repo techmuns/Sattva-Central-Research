@@ -39,6 +39,12 @@ const STORE = 'payloads';
 export const KEYS = {
   earnings: (subType) => `earnings:${subType}`,
   concalls: 'concalls',
+  // The portfolio calendar half of /api/concalls, kept separate from the response above and its
+  // ETag. The route assembles two independent upstreams — StockScans' rows and the authenticated
+  // S Screen artifact — and either can fail alone, arriving as a payload that carries no calendar
+  // at all. Retaining it here is what stops one upstream's outage emptying the other's feed, and
+  // what makes that survive a reload; the same reasoning as `nse-filings:history`.
+  concallPortfolioUpcoming: 'concalls:portfolio-upcoming',
   // The `list` half is keyed separately from the strip-only request: they are different
   // representations of the same date and storing them under one key would let a strip-only
   // response answer for a request that wanted the company list, or the reverse.

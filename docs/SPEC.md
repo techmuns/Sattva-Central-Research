@@ -485,9 +485,9 @@ roadmap* card that used to close each tab has been removed from the UI:
 
 ## 8. Roadmap
 
-### Bookmarked Notebook
+### Bookmarks
 
-The **Bookmarked Notebook** top tab sits after All Alerts. An outlined bookmark saves an
+The **Bookmarks** header control sits beside Dark mode, outside the research tab strip. An outlined bookmark saves an
 individual event; its filled state removes it, with Undo. The company watchlist star retains
 its existing meaning. Shared research tables, market-news cards, AI cards and individual AI
 evidence, public-chatter mentions, and finished/partial Ask Research answers expose this action.

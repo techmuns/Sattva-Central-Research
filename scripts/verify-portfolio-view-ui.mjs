@@ -315,6 +315,7 @@ try {
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }
     await frame.locator('[data-sources-summary]').click();
+    await frame.locator('[data-alerts-coverage]').waitFor({ state: 'visible' });
     const expanded = await measure();
     assert.equal(expanded.height, normal.height, 'filters overlay, rather than consume, the reading space');
     const panel = await frame.locator('[data-alerts-coverage]').boundingBox();

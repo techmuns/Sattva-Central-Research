@@ -10,7 +10,17 @@ export function mergeTelegramRestore(committedInput, latestInput, now = Date.now
   const committed = validateTelegramCapture(committedInput, now);
   const latest = latestInput ? validateTelegramCapture(latestInput, now) : null;
   const newer = latest && Date.parse(latest.lastRun.at) > Date.parse(committed.lastRun.at) ? latest : committed;
-  const rows = new Map([...(latest?.posts || []), ...committed.posts, ...newer.posts].map(p => [p.id, p]));
+  const older = newer === committed ? latest : committed;
+  const rows = new Map();
+  for (const p of older?.posts || []) rows.set(p.id, p);
+  const fallback = (prior, incoming) => {
+    if (!prior) return incoming;
+    const merged = { ...prior, ...incoming };
+    if ((incoming?.text == null || incoming.text === '') && prior.text) merged.text = prior.text;
+    if (!incoming?.firstSeenAt && prior.firstSeenAt) merged.firstSeenAt = prior.firstSeenAt;
+    return merged;
+  };
+  for (const p of newer.posts) rows.set(p.id, fallback(rows.get(p.id), p));
   // A later repository backup timestamp is not authorization to clear a known active pause
   // from the source checkpoint. A genuinely newer final checkpoint remains authoritative.
   const publicSafety = newer === committed && Date.parse(latest?.publicSafety?.nextAttemptAt) > now &&

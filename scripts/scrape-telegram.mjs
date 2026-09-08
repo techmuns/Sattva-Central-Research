@@ -52,7 +52,11 @@ function mergeRanges(ranges) {
   return result.reverse();
 }
 
-export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), checkpoint = async () => {} } = {}) {
+class CollectionBudgetReached extends Error {
+  constructor() { super('Collection time budget reached'); }
+}
+
+export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), checkpoint = async () => {}, timeoutSignal = (ms) => AbortSignal.timeout(ms) } = {}) {
   if (prior.channel && prior.channel.toLowerCase() !== cfg.channel) throw new Error('Existing archive belongs to another channel; use a separate TELEGRAM_OUT');
   const started = now(), deadline = started + cfg.budget;
   const stamp = () => new Date(now()).toISOString();
@@ -96,9 +100,12 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
     let error;
     for (let attempt = 0; attempt < 3; attempt++) {
       const remaining = deadline - now();
-      if (remaining < 1000) throw new Error('Collection time budget reached');
+      // A previous real failure remains a failure even when there is no time to retry it.
+      if (remaining < 1000) throw error || new CollectionBudgetReached();
+      const limitedByBudget = remaining <= 15000;
+      const signal = timeoutSignal(Math.min(15000, remaining));
       try {
-        const response = await fetcher(`https://t.me/${path}`, { headers: { 'user-agent': 'Mozilla/5.0', accept: 'text/html' }, signal: AbortSignal.timeout(Math.min(15000, remaining)) });
+        const response = await fetcher(`https://t.me/${path}`, { headers: { 'user-agent': 'Mozilla/5.0', accept: 'text/html' }, signal });
         if (!response.ok) {
           if (response.status === 429 || response.status === 403) {
             const retryAfter = response.headers.get('retry-after');
@@ -115,6 +122,9 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
         return html;
       } catch (err) {
         if (publicSafety) throw err;
+        if (limitedByBudget && signal.aborted && (err === signal.reason || ['AbortError', 'TimeoutError'].includes(err?.name))) {
+          throw error || new CollectionBudgetReached();
+        }
         error = err;
         if (attempt < 2) await sleep(Math.min(1000 * (attempt + 1), Math.max(0, deadline - now())));
       }
@@ -130,16 +140,19 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       // Confirm absence: a throttled web response must not permanently erase history.
       if (result.state === 'missing') result = parseEmbed(await page(`${cfg.channel}/${id}?embed=1&mode=tme`), cfg.channel, id);
       if (result.state === 'error') throw new Error(result.reason);
-      retry.delete(id);
       if (result.state === 'post') {
+        control = true;
         const old = byId.get(id);
         const p = result.post;
-        let textFailed = false;
+        let textFailed = false, budgetStop = null;
         // Re-read visible text for edits, including old rows. The embed on this channel hides
         // text that Telegram still publishes in the permalink's OG description.
         if (!p.text) {
           try { p.text = permalinkText(await page(`${cfg.channel}/${id}`), signature); }
-          catch { retry.add(id); stats.errors++; textFailed = true; }
+          catch (err) {
+            if (err instanceof CollectionBudgetReached) budgetStop = err;
+            else { retry.add(id); stats.errors++; textFailed = true; }
+          }
         }
         p.text = p.text || old?.text || null;
         if (p.text) p.contentStatus = 'available';
@@ -149,11 +162,23 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
         stats.posts++;
         if (p.contentStatus === 'telegram-only') stats.unavailable++;
         result.textFailed = textFailed;
+        if (budgetStop) {
+          // The embed is real, but its text is unfinished. A newly advanced head would
+          // otherwise move the next recent pass beyond it. Preserve an unread interval
+          // unless the unchanged history cursor or an existing retry already covers it.
+          if (id > next && !retry.has(id)) catchupRanges = mergeRanges([...catchupRanges, { from: id, to: id }]);
+          throw budgetStop;
+        }
+        if (!textFailed) retry.delete(id);
       } else {
+        retry.delete(id);
         stats.missing++;
         // A post already archived is retained. A later missing response is not proof of deletion.
       }
     } catch (err) {
+      // The surrounding loop owns its cursor. Propagate before incrementing it so the
+      // next run resumes this exact unfinished ID without a fabricated source error.
+      if (err instanceof CollectionBudgetReached) throw err;
       retry.add(id); stats.errors++;
       result = { state: 'error', reason: String(err.message || err) };
     }
@@ -169,8 +194,8 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
     if (!signature.title) throw new Error('Telegram landing page not recognised');
     if (cfg.headHint > head) {
       const cold = !head;
+      if (cold) next = cfg.headHint;
       if ((await visit(cfg.headHint)).state !== 'post') throw new Error('Supplied head hint is not a readable Telegram message');
-      if (cold) next = head;
     }
     if (!head) throw new Error('A first capture needs TELEGRAM_HEAD_HINT from a real message link');
     // Old messages may disappear together. Try bounded, diverse controls; a matching new
@@ -204,7 +229,10 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
       // Do not skip unvisited recent IDs when a run hits its time budget.
       if (scannedTo === end && control) discoveryNext = Math.max(discoveryNext, end + 1);
     }
-    if (!control) throw new Error('No archived or recent public message could be confirmed; archive retained');
+    if (!control) {
+      if (outOfTime() && !publicSafety) throw new CollectionBudgetReached();
+      throw new Error('No archived or recent public message could be confirmed; archive retained');
+    }
     await save();
     if (cfg.phase === 'recent') return snapshot(true);
 
@@ -254,7 +282,9 @@ export async function collect(prior, cfg, { fetcher = fetch, now = () => Date.no
         next--;
       }
     }
-  } catch (err) { failure = String(err.message || err); }
+  } catch (err) {
+    if (!(err instanceof CollectionBudgetReached)) failure = String(err.message || err);
+  }
   return snapshot(true);
 }
 

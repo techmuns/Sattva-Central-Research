@@ -20,6 +20,7 @@ import { openScopeEditor } from './scope-editor.js';
 import { sourcesModalHtml } from './sources.js';
 import { mountHostTicker } from './host-ticker.js';
 import { mountThemeToggle } from './theme-toggle.js';
+import { BOOKMARK_ICON } from './bookmark-button.js';
 import * as sourceBeacon from './source-beacon.js';
 
 import * as aiAlerts from '../tabs/ai-alerts.js';
@@ -167,7 +168,10 @@ function shellTemplate() {
                it. (No backticks in here: this comment lives inside a template literal.) -->
           <div id="host-ticker-mount" hidden></div>
           <div id="status-mount"></div>
-          <button type="button" data-theme-toggle class="theme-toggle" aria-label="Dark mode" aria-pressed="false"></button>
+          <div class="header-personal-controls">
+            <button type="button" data-theme-toggle class="theme-toggle" aria-label="Dark mode" aria-pressed="false"></button>
+            <a data-header-bookmarks class="header-bookmarks" href="#/research/bookmarks">${BOOKMARK_ICON}<span>Bookmarks</span></a>
+          </div>
         </div>
       </div>
     </header>
@@ -297,6 +301,10 @@ function editScope(root, scope) {
 
 function renderRouteChrome(root, ws, tabModule, resolved) {
   disposeChrome();
+  const bookmarksLink = root.querySelector('[data-header-bookmarks]');
+  bookmarksLink.href = router.buildHash({ workspace: ws.id, tab: bookmarks.meta.id, scope: resolved.scope });
+  if (tabModule === bookmarks) bookmarksLink.setAttribute('aria-current', 'page');
+  else bookmarksLink.removeAttribute('aria-current');
   // Table-first is an opt-in layout, not a redesign of the other research views.
   root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
 
@@ -384,7 +392,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
     topTabs.bar.update(resolved.tab);
   } else {
     topTabs?.dispose();
-    const tabItems = ws.tabs.map((t) => ({ id: t.meta.id, label: t.meta.title }));
+    // Saved events are reached from the header beside the appearance control.
+    const tabItems = ws.tabs.filter((t) => t !== bookmarks).map((t) => ({ id: t.meta.id, label: t.meta.title }));
     const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab, label: 'Research sections' });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;

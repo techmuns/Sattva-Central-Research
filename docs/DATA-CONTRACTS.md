@@ -944,6 +944,88 @@ ticker. It must never be broadened into Universe or a personal Watchlist. When a
 contains the same company/date/type, All Alerts' Upcoming view renders one entry and prefers this
 portfolio row's source link.
 
+**`portfolioUpcoming` IS `null` WHERE IT COULD NOT BE READ, AND `[]` ONLY WHERE IT GENUINELY IS.**
+This half of the route comes from an entirely different upstream to `rows` — an immutable Actions
+artifact behind the GitHub API — and it fails on its own: a timeout, a rate limit, an expired
+collector token. When StockScans is instead the half that fails, the route serves the committed
+`concall-scans.json` snapshot, which is a capture of StockScans alone and has never carried a
+calendar at all; that branch states `portfolioUpcoming: null` explicitly rather than leaving the
+key merely missing — and **carries the artifact read into the fallback where it succeeded**. The
+collector read therefore settles OUTSIDE the route's `Promise.all`: one that rejects on the first
+failure would discard a healthy calendar along with the StockScans error, and a cold device has no
+retained copy to soften that. Both used to arrive as `[]` inside an `ok: true` 200, and
+`js/data/concall-scans.js` wrote that straight over a good calendar — so **an outage in a feed
+All Alerts does not read emptied its Upcoming view**, and because the response is stored under the
+server's own ETag the emptiness survived every reload until a healthy 200 happened to land.
+
+So the browser retains a calendar the payload did not carry, under its own device key
+(`concalls:portfolio-upcoming`) rather than as a patched copy of the response — the store holds the
+server's own bytes under the server's own tag, and that pairing is the whole basis for trusting a
+304. `meta.portfolioUpcomingRetained` says the rows on screen are a retained capture and
+`meta.portfolioUpcomingCheckedAt` dates them to their own read, never to the check that failed;
+All Alerts' Portfolio calendar feed reads that flag as its OWN leg of the incomplete predicate and
+says so in its coverage note.
+
+**`retained` also covers a live read that never happened.** A reload against an unreachable Worker
+paints the stored response, and that response carries the `meta.screener` of whichever read wrote
+it — `status: 'ok'`, its own `checkedAt`. Left alone it reads as a calendar confirmed just now.
+A confirmation is a 304, or a 200 whose rows were ingested, and nothing else: `conditionalJson`
+reports what the server actually said (`status: 0` only where the request never completed), so a
+503 arrives as 503 and testing for 0 alone would let every server-side failure through. Anything
+else clears `meta.portfolioUpcomingConfirmed`, on **every** revalidation path — the poller's own
+failures are swallowed by `live.js`, so marking only in `build()` would never report an outage that
+began after the page loaded. A **304 lifts the mark**, because it says the representation we hold is
+current, calendar included; without that, recovery through an unchanged ETag carries no content
+change and nothing would ever clear it. That branch notifies subscribers when and only when it
+lifted one. `screener.status` is deliberately left as the upstream reported it — it describes the
+artifact collector, not our ability to reach our own route.
+
+**`confirmed` is about the READ; `retained` is about the ROWS**, and one flag for both was wrong in
+both directions. Gated on row count it let a legitimately empty capture report a failed check as
+current; set unconditionally it claimed, on a first visit with an unreachable route, that an empty
+result was the retained rows from a capture this device had never made. The read's outcome gates the
+feed status; the rows' provenance gates the retention sentence. A **verified-empty calendar is
+restored from the device like any other** — an empty dashboard is an answer, and dropping it lets an
+older response resurrect events that were correctly cleared.
+
+**A supplied calendar older than the one held is not an update.** The response and the calendar are
+written under separate device keys, so a quota failure or aborted transaction on the large one
+leaves a newer calendar beside an older response, and the next reload would adopt the older over it
+and write that back. Capture times are compared only where both sides carry one; an undated capture
+cannot be ordered and is taken as given, exactly as `isNewerThanHeld` refuses to rank an unstamped
+snapshot. `portfolioUpcomingConfirmed` is `!!adopted` and not "this response arrived": a calendar
+refused as stale must not certify the newer rows it was rejected in favour of, and a payload that
+carried none confirms nothing about the rows it left on screen.
+
+**The opposite write failure is accepted rather than coordinated, and this is why.** If the
+calendar-specific write fails while the combined response persists, retention is not durable, and a
+later response carrying `portfolioUpcoming: null` can leave neither entry holding the last good
+rows. Two things make that acceptable: every later ingest carrying a calendar rewrites the entry —
+including the one in `build()` that reads the stored response — so a transient failure is corrected
+by the next response that could have populated it at all; and a persistent failure means the device
+cannot write, which no coordination fixes. `core/store.js` already falls back to an in-memory Map
+and reports `isPersistent()`, surfaced as `meta.persisted`. The outcome in that case is the
+behaviour from before this contract existed — the calendar emptying on a failure — reached through
+a rare pair of failures instead of every one, so it narrows the fault rather than adding one. **If
+the calendar is ever seen emptying on a device reporting `persisted: false`, reopen this**; that is
+the evidence that would change the decision.
+
+**`meta.portfolioUpcomingSupplied` is a fact about the response; `retained` is the claim made to a
+reader.** Neither derives from the other — a payload carrying no calendar while nothing is held
+supplies nothing and retains nothing — and `hasChanged` compares `supplied`, so a calendar going
+missing or coming back **notifies subscribers even when its rows are identical**. Without that the
+coverage chip keeps printing the previous answer (a retained calendar still labelled confirmed, or
+a recovered one still labelled retained) until All Alerts' own next collection. A **successful**
+read still clears the calendar, and a shorter one still shrinks it — a forward calendar loses its
+events as their dates pass, so retention may never become a merge. `scripts/verify-portfolio-calendar.mjs`
+asserts all six branches, including that an empty successful read is not treated as a failure.
+
+`readCachedScreenerCollector` caches the failure too, but for `CONCALL_SCREENER_FAIL_TTL_S` (15s)
+rather than the success window: every reader sits behind one edge entry, so an uncached failure
+costs each of them their own 15-second timeout, while caching it for a minute pins a degraded
+schedule on every screen long after the artifact is readable again. Same split, same reason, as the
+Finology client's 15s `ok: false` window.
+
 The body carries **no "served at" stamp**, deliberately: it would differ on every request while
 the content did not, so the ETag would never match and the 304 this route depends on would never
 fire. `meta.fetchedAt` — when StockScans was actually read — is the honest freshness signal, and

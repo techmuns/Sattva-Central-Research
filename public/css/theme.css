@@ -103,7 +103,8 @@ html[data-theme="dark"] body {
 /* Allow the appearance control to wrap with the existing header actions. */
 [data-app-header] > div { flex-wrap: wrap; }
 [data-app-header] > div > div { min-width: 0; max-width: 100%; }
-.theme-toggle {
+.header-personal-controls { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.5rem; }
+.theme-toggle, .header-bookmarks {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -119,9 +120,12 @@ html[data-theme="dark"] body {
   font-weight: 600;
   cursor: pointer;
 }
-.theme-toggle svg { width: 1rem; height: 1rem; }
-.theme-toggle:hover { background: rgb(var(--surface-indigo-50, 238 242 255)); color: var(--accent-600); }
-.theme-toggle:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; }
+.theme-toggle svg, .header-bookmarks svg { width: 1rem; height: 1rem; }
+.header-bookmarks { white-space: nowrap; text-decoration: none; }
+.theme-toggle:hover, .header-bookmarks:hover, .header-bookmarks[aria-current="page"] { background: rgb(var(--surface-indigo-50, 238 242 255)); color: var(--accent-600); }
+.header-bookmarks[aria-current="page"] { border-color: var(--accent-600); }
+.header-bookmarks[aria-current="page"] svg { fill: currentColor; }
+.theme-toggle:focus-visible, .header-bookmarks:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; }
 @media (min-width: 960px) and (max-width: 1199px) {
   /* Preserve All Alerts' reading area inside a short laptop host frame. */
   [data-reading-layout="table"] [data-app-header] > div { flex-wrap: nowrap; gap: 12px; }
@@ -129,12 +133,14 @@ html[data-theme="dark"] body {
   [data-reading-layout="table"] [data-scope-label],
   [data-reading-layout="table"] .theme-toggle span { display: none; }
   [data-reading-layout="table"] .theme-toggle { width: 32px; min-height: 32px; padding: 0; }
+  [data-reading-layout="table"] [data-header-refresh] { width: 32px; height: 32px; padding: 0; justify-content: center; }
+  [data-reading-layout="table"] [data-header-refresh-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 @media (max-width: 359px) {
   [data-app-header] { padding-left: 16px; padding-right: 16px; }
 }
 @media (pointer: coarse) {
-  .theme-toggle { min-height: 44px; }
+  .theme-toggle, .header-bookmarks { min-height: 44px; }
 }
 html[data-theme="dark"] :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent-600);
@@ -159,5 +165,5 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
     --neutral: #64748b;
   }
   html[data-theme] body { background: white; }
-  .theme-toggle { display: none; }
+  .theme-toggle, .header-bookmarks { display: none; }
 }

@@ -50,6 +50,10 @@ assert.deepEqual(restoredWithPause.posts.map(p=>p.id),[500,499],'restore merges 
 const resumed=mergeTelegramRestore({...raw,apiSafety:{paused:true,reason:'account-attention',failures:1}},
   {...raw,lastRun:{at:'2026-09-06T02:00:00Z',status:'ok'},apiSafety:null});
 assert.equal(resumed.apiSafety,null,'a newer final source checkpoint can record an actual reviewed resume');
+const fallbackText = mergeTelegramRestore({...raw,lastRun:{at:'2026-09-06T02:00:00Z',status:'ok'},posts:[{...raw.posts[0],text:'Recovered text',firstSeenAt:'2026-09-05T22:00:00Z'}]},
+  {...raw,lastRun:{at:'2026-09-06T02:30:00Z',status:'ok'},posts:[{...raw.posts[0],text:null,firstSeenAt:null,publishedAt:'2026-09-06T02:30:00Z'}]});
+assert.equal(fallbackText.posts[0].text,'Recovered text','newer empty text cannot wipe older non-empty text');
+assert.equal(fallbackText.posts[0].firstSeenAt,'2026-09-05T22:00:00Z','newer missing firstSeenAt cannot wipe older firstSeenAt');
 const bytes=gzipSync(JSON.stringify(capture));
 const digest='sha256:'+createHash('sha256').update(bytes).digest('hex');
 const run={id:1,name:'Telegram collection (github-cron)',display_title:'Telegram collection (github-cron)',head_branch:'main',head_repository:{full_name:TELEGRAM_REPO},event:'schedule',status:'completed',conclusion:'success'};

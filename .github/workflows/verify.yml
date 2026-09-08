@@ -177,6 +177,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-general-alerts-ui.mjs
+      - name: Verify the portfolio calendar survives an unreadable S Screen capture
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-portfolio-calendar.mjs
       - name: Verify publisher filters, delayed news delivery and exact OnEMI regression
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
