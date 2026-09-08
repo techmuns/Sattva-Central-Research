@@ -1,15 +1,17 @@
 import { authHeaders, hostToken, onHostContext } from '../core/host-context.js';
 import { boundedJson } from './family-book-contract.js';
-import { validateSummaryBody, SUMMARY_TRANSPORT_LIMIT } from './concall-summaries-shared.js';
+import { validateSummaryBody, SUMMARY_TRANSPORT_LIMIT, SUMMARY_RECORD_LIMIT } from './concall-summaries-shared.js';
 
 const ENDPOINT = 'api/concall-summaries';
 const INTERVAL = 60000;
 let state = null, checked = 0, pending = null, generation = 0, mounted = 0;
 const bodies = new Map();
+let savedIds = new Set();
 const listeners = new Set();
 const emit = () => { for (const listener of listeners) listener(); };
 export const status = () => state;
-export const available = () => !!state && !['access', 'no-session'].includes(state.reason) && (state.enabled === true || state.ready > 0);
+export const available = (ids = null) => !!state && !['access', 'no-session'].includes(state.reason) &&
+  (state.enabled === true || (ids ? ids.some(id => savedIds.has(id)) : savedIds.size > 0));
 export const onChange = listener => { listeners.add(listener); return () => listeners.delete(listener); };
 
 async function request(options = {}) {
@@ -29,13 +31,17 @@ export function refresh({ force = false } = {}) {
   pending = request().then(result => {
     if (epoch !== generation) return state;
     if (!Array.isArray(result.holdings) || result.holdings.length > 5000) throw Error('Summary coverage response is invalid');
+    if (!Array.isArray(result.readyIds) || result.readyIds.length > SUMMARY_RECORD_LIMIT || result.readyIds.length !== result.ready ||
+        result.readyIds.some(id => typeof id !== 'string' || !/^[1-9]\d{0,19}$/.test(id)) || new Set(result.readyIds).size !== result.readyIds.length)
+      throw Error('Saved summary identities are invalid');
+    savedIds = new Set(result.readyIds);
     state = result;
     emit();
     return state;
   }).catch(error => {
     if (epoch !== generation) return state;
     const privateFailure = ['access', 'no-session'].includes(error.reason);
-    if (privateFailure) bodies.clear();
+    if (privateFailure) { bodies.clear(); savedIds.clear(); }
     state = privateFailure ? { ok: false, enabled: false, reason: error.reason } : { ...state, ok: false, discoveryStatus: 'unavailable' };
     emit();
     return state;
@@ -53,7 +59,7 @@ export async function read(ids) {
     try { result = await request({ method: 'POST', body: JSON.stringify({ ids: batch }) }); }
     catch (error) {
       if (epoch === generation && ['access', 'no-session'].includes(error.reason)) {
-        bodies.clear(); state = { ok: false, reason: error.reason }; emit();
+        bodies.clear(); savedIds.clear(); state = { ok: false, reason: error.reason }; emit();
       }
       throw error;
     }
@@ -74,7 +80,7 @@ export async function read(ids) {
   return result;
 }
 export function clear() {
-  generation++; pending = null; checked = 0; state = null; bodies.clear(); emit();
+  generation++; pending = null; checked = 0; state = null; bodies.clear(); savedIds.clear(); emit();
 }
 export function start() {
   mounted++;

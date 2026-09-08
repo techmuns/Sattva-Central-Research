@@ -27,6 +27,7 @@ export class ConcallSummaryStore {
     this.storage.sql.exec('CREATE TABLE IF NOT EXISTS summary_inventory (seq INTEGER PRIMARY KEY, id TEXT NOT NULL UNIQUE, target TEXT NOT NULL)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS summary_attempt_time ON summary_attempts(started)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS summary_queue ON summary_records(active, rank, next_attempt)');
+    this.storage.sql.exec('CREATE INDEX IF NOT EXISTS summary_ready_ids ON summary_records(id) WHERE body IS NOT NULL');
     this.initialised = true;
   }
   rows(sql, ...args) { this.init(); return this.storage.sql.exec(sql, ...args).toArray(); }
@@ -170,6 +171,7 @@ export class ConcallSummaryStore {
     return { ...state, discoveryStatus: state.discoveryStatus === 'ok' && at - Date.parse(state.discoveredAt) > 90 * MINUTE ? 'stale'
       : state.discoveryStatus === 'checking' && at - Date.parse(state.discoveryAttemptedAt) > 15 * MINUTE ? 'failed' : state.discoveryStatus,
       ready: totals.ready || 0, retained: totals.total, pending: counts.reduce((n, row) => n + row.total - row.ready, 0),
+      readyIds: this.rows('SELECT id FROM summary_records WHERE body IS NOT NULL ORDER BY id').map(row => row.id),
       automatedRequestsLast24h: attempts.count, requestBudget: SUMMARY_REQUEST_BUDGET,
       nextBudgetAt: attempts.count >= SUMMARY_REQUEST_BUDGET ? iso(attempts.oldest + SUMMARY_WINDOW_MS) : null,
       holdings: state.holdings.map(holding => ({ ...holding, ready: byIsin.get(holding.isin)?.ready || 0,

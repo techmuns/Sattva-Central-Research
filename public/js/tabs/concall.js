@@ -27,7 +27,7 @@ import * as scans from '../concall/scans.js';
 import { stopDeepDive } from '../concall/deep-dive.js';
 import * as feed from '../data/concall-scans.js';
 import * as summaries from '../data/concall-summaries.js';
-import { stopSummary, summaryStatusHtml } from '../concall/summary.js';
+import { stopSummary, summaryStatusHtml, updateSummaryButtons } from '../concall/summary.js';
 
 export const meta = {
   id: 'concall',
@@ -72,7 +72,7 @@ function renderFeed(ctx) {
         if (token !== renderToken) return;
         const note = ctx.root.querySelector('[data-summary-coverage]');
         if (note) note.outerHTML = summaryStatusHtml();
-        ctx.root.dataset.summaryAvailable = String(summaries.available());
+        updateSummaryButtons(ctx.root);
       }));
       mountDisposers.push(summaries.start());
     })

@@ -93,3 +93,8 @@ export function openSummaryCoverage() {
 export function summaryStatusHtml() {
   return `<div data-summary-coverage class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>${e(summaryStateMessage(summaries.status()))}</span><button type="button" data-summary-coverage-open class="font-semibold text-indigo-600 underline">Summary coverage</button></div>`;
 }
+export function updateSummaryButtons(root) {
+  root.dataset.summaryAvailable = String(summaries.available());
+  for (const button of root.querySelectorAll('[data-screener-summary]'))
+    button.hidden = !summaries.available((button.dataset.summaryIds || '').split(' '));
+}

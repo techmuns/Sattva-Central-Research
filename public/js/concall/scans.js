@@ -51,7 +51,7 @@ import * as coverage from '../data/coverage.js';
 import { scopePossessive } from '../data/scope.js';
 import { summaryIdsForRow } from '../data/concall-summaries-shared.js';
 import { available as summariesAvailable } from '../data/concall-summaries.js';
-import { openSummary, openSummaryCoverage, summaryStatusHtml } from './summary.js';
+import { openSummary, openSummaryCoverage, summaryStatusHtml, updateSummaryButtons } from './summary.js';
 
 const ATTRIBUTION =
   'Scores and current-quarter sentiment are the research provider’s own analysis. Where an exact, transcript-backed Deep Dive report is already available for one unambiguous call, its result, view and headline fill otherwise blank cells unchanged; no score or sentiment tier is inferred.';
@@ -216,7 +216,7 @@ function documentLinks(row) {
       (document) =>
         `<a data-norow href="${escapeHtml(document.url)}" target="_blank" rel="noopener noreferrer" title="Open ${escapeHtml(document.type)} at its original source" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">${escapeHtml(document.type)}</a>`,
     )
-    .join('')}${summaries.length ? `<button type="button" data-norow data-screener-summary="${escapeHtml(rowKey(row))}" title="Read the saved Screener summary inside this dashboard" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">Summary</button>` : ''}</div>`;
+    .join('')}${summaries.length ? `<button type="button" data-norow data-screener-summary="${escapeHtml(rowKey(row))}" data-summary-ids="${summaries.join(' ')}" title="Read the saved Screener summary inside this dashboard" class="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100">Summary</button>` : ''}</div>`;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -471,6 +471,11 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
     ${summaryStatusHtml()}
   `;
   disposers.push(table.wire(ctx.root));
+  updateSummaryButtons(ctx.root);
+  // Cached/virtual rows can be inserted after status changes. Reconcile their exact IDs too.
+  const summaryRows = new MutationObserver(() => updateSummaryButtons(ctx.root));
+  summaryRows.observe(ctx.root, { childList: true, subtree: true });
+  disposers.push(() => summaryRows.disconnect());
   const onSummary = event => {
     const button = event.target.closest('[data-screener-summary]');
     if (button) {

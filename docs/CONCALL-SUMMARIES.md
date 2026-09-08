@@ -4,7 +4,8 @@ The Con-call library has one inline Summary action per call, joining only the ex
 summary IDs already attached to that call. Different transcript/recording notes are versions in
 one reader. The reader fetches saved text from the dashboard; it never navigates to Screener,
 embeds its page, generates analysis, or initiates a source request. Buttons remain hidden until
-private collection is enabled or the authorised reader has saved notes available.
+private collection is enabled or the authorised reader has saved notes for that exact call.
+When collection is disabled, unsaved calls stay hidden even after table filtering or pagination.
 
 ## Current activation state
 
@@ -99,7 +100,8 @@ identity resolution still determine coverage.
   are readable during source pauses. Source/portfolio check times and stale/failed coverage are
   explicit; a successful timer dispatch is not a successful source check. Failed, overdue or missing
   timer checks appear immediately in the footer and live coverage view, with the actual last and
-  next timer check times, independently of the source catalogue's freshness.
+  next timer check times, independently of the source catalogue's freshness. A source cooldown
+  is shown alongside failed or stale portfolio discovery; it cannot conceal unchecked holdings.
 
 The archive uses a distinct fixed Durable Object name in the existing SQLite namespace. Bodies have
 no automatic expiry; they never enter Git, public Actions artifacts, public static snapshots,

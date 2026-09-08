@@ -14,7 +14,7 @@ const row = { ...fixture.rows[0], name: 'Summary fixture company', documents: [
   {type:'Summary',url:'https://www.screener.in/concalls/summary/124/'},
   {type:'Summary',url:'https://www.screener.in/concalls/summary/123/'},
 ] };
-fixture.rows = [row];
+fixture.rows = [row, {...row,companyKey:'OTHER',ticker:'OTHER',name:'Other fixture',documents:[{type:'Summary',url:'https://www.screener.in/concalls/summary/999/'}]}];
 const text = 'Private fixture notes describe management discussion of operating performance, current demand and costs. These words are synthetic test data and are never a company report.';
 const body = {title:'Concall Summary - Summary fixture company - Sep 2026',blocks:[
   {type:'heading',text:'Operating performance'}, {type:'paragraph',text},
@@ -22,8 +22,9 @@ const body = {title:'Concall Summary - Summary fixture company - Sep 2026',block
   {type:'table',rows:[['Measure','Value'],['Fixture','12']]},
 ]};
 let enabled = true, denied = false, delayed = null, pendingId = null, timerReason = 'recent-run';
+let savedIds=['123','124'], discoveryStatus='ok', cooldownUntil=null;
 let getCount=0, postCount=0;
-const state = () => ({ok:true,enabled,ready:2,pending:1,discoveryStatus:'ok',portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
+const state = () => ({ok:true,enabled,ready:savedIds.length,readyIds:savedIds,pending:1,discoveryStatus,cooldownUntil,portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
   schedule:{started:true,reason:timerReason,alarmAt:Date.now()+1800000,lastAttemptAt:Date.now()},
   holdings:[{isin:'INE000000001',name:'Summary fixture company',ready:2,pending:1,discovery:'matched'},
     {isin:'INE000000002',name:'New portfolio holding',ready:0,pending:0,discovery:'no-published-summary'}]});
@@ -35,7 +36,7 @@ const server = createServer(async (req,res) => {
     if(path==='/api/concalls') return res.end(JSON.stringify(fixture));
     if(path==='/api/concall-summaries') {
       assert.equal(req.headers.authorization,'Bearer local-test-token');
-      if(req.method==='GET') {getCount++; return res.end(JSON.stringify({...state(),ready:enabled?2:0}));}
+      if(req.method==='GET') {getCount++; return res.end(JSON.stringify(state()));}
       postCount++;
       let raw='';for await(const chunk of req) raw+=chunk;
       if(delayed) await delayed;
@@ -70,8 +71,9 @@ try {
   const page=await context.newPage();page.setDefaultTimeout(15000);
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`${origin}/#/research/concall?scope=universe`);
-  const button=page.locator('[data-screener-summary]');
-  await button.waitFor();assert.equal(await button.count(),1,'one action for duplicate and distinct summary references');
+  const button=page.locator('[data-screener-summary]').first();
+  await button.waitFor();assert.equal(await page.locator('[data-screener-summary]').count(),2);
+  assert.equal(await button.evaluate(el=>el.closest('tr').querySelectorAll('[data-screener-summary]').length),1,'one action for duplicate and distinct summary references');
   assert.equal(await page.locator('a[href*="/concalls/summary/"]').count(),0);
   const before=page.url(), pages=context.pages().length;
   await button.click();await page.locator('[data-summary-version]').waitFor();
@@ -94,6 +96,12 @@ try {
   assert((await page.locator('[data-summary-schedule]').innerText()).includes('could not check or start'),'open coverage view updates without reopening');
   assert((await page.locator('[data-summary-schedule]').innerText()).includes('Next timer check:'));
   timerReason='recent-run';
+  discoveryStatus='failed';cooldownUntil=new Date(Date.now()+86400000).toISOString();
+  await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  for(const selector of ['[data-summary-coverage]','#modal-content']) {
+    const text=await page.locator(selector).innerText();assert(text.includes('could not be refreshed')&&text.includes('paused'),'a source pause cannot conceal failed discovery');
+  }
+  discoveryStatus='ok';cooldownUntil=null;
   await page.keyboard.press('Escape');
   // A pending note is requested again once collected, never cached as permanently unavailable.
   pendingId='123';await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
@@ -129,12 +137,20 @@ try {
   denied=true;
   const result=await page.evaluate(async()=>{try {await (await import('/js/data/concall-summaries.js')).read(['123']);return 'leaked';}catch{return 'refused';}});
   assert.equal(result,'refused');assert.equal(postCount,5);
-  denied=false;enabled=false;
+  denied=false;enabled=false;savedIds=['123'];
   await page.evaluate(()=>location.hash='#/research/concall?scope=universe');
   await page.locator('[data-summary-coverage]').waitFor();
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
-  assert.equal(await button.isVisible(),false,'disabled collector leaves summary buttons hidden');
-  enabled=true;await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  await button.waitFor();
+  assert.equal(await page.locator('[data-screener-summary]').nth(1).isVisible(),false,'disabled collection exposes only exact saved IDs');
+  const search=page.locator('[data-table-search]');
+  await search.fill('Other fixture');await page.waitForFunction(()=>document.querySelectorAll('[data-screener-summary]').length===1);
+  assert.equal(await button.isVisible(),false,'unsaved cached rows stay hidden after filtering');
+  await search.fill('');await page.waitForFunction(()=>document.querySelectorAll('[data-screener-summary]').length===2);
+  await button.waitFor();
+  savedIds=[];await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
+  assert.equal(await button.isVisible(),false,'disabled collection without saved notes hides every Summary action');
+  enabled=true;savedIds=['123','124'];await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
   await button.waitFor();
   let release;delayed=new Promise(done=>release=done);await button.click();
   await page.waitForFunction(()=>document.querySelector('#modal-content')?.textContent.includes('Loading saved'));

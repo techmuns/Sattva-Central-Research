@@ -54,10 +54,14 @@ function coverageStateMessage(state) {
   if (state.reason === 'no-session') return 'Sign in through Munshot to read private Screener summaries.';
   if (state.reason === 'access') return 'This session is not authorised to read the private Screener summaries.';
   if (state.enabled === false) return 'Screener summary collection is not enabled.';
-  if (state.cooldownUntil && Date.parse(state.cooldownUntil) > Date.now()) return 'Screener summary collection is paused after a source limit or refusal. Saved summaries remain readable.';
-  if (state.discoveryStatus === 'checking') return 'Summary coverage is being refreshed. Saved summaries remain readable.';
-  if (state.discoveryStatus !== 'ok') return 'Summary coverage could not be refreshed. Saved summaries remain readable; new holdings or calls may be pending.';
-  return `${state.ready || 0} summaries saved · ${state.pending || 0} awaiting collection.`;
+  const coverage = state.discoveryStatus === 'checking' ? 'Summary coverage is being refreshed. Saved summaries remain readable.'
+    : state.discoveryStatus === 'not-started' ? 'Summary coverage has not been checked yet.'
+    : state.discoveryStatus === 'stale' ? 'Summary coverage is stale. New holdings or calls may not have been checked. Saved summaries remain readable.'
+    : state.discoveryStatus !== 'ok' ? 'Summary coverage could not be refreshed. Saved summaries remain readable; new holdings or calls may be pending.'
+    : `${state.ready || 0} summaries saved · ${state.pending || 0} awaiting collection.`;
+  const pause = state.cooldownUntil && Date.parse(state.cooldownUntil) > Date.now()
+    ? 'Screener summary collection is paused after a source limit or refusal. Saved summaries remain readable.' : '';
+  return [coverage, pause].filter(Boolean).join(' ');
 }
 
 export function summaryScheduleMessage(state, now = Date.now()) {

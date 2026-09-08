@@ -98,12 +98,14 @@ test('saved bodies survive real SQLite reopen, portfolio exits, repeat publicati
     assert.equal(complete(store,claim).duplicate,true);
     backing.db.close(); backing=storage(path); store=new ConcallSummaryStore(backing,{now:()=>now});
     assert.deepEqual(store.read(['1'])[0].body,body);
+    assert.deepEqual(store.status().readyIds,['1']);
     now+=60000; const next=inventory(5,now);
     next.holdings[0]={isin:isin(6),ticker:'TEST6',name:'Test company 6',discovery:'matched',summaries:1};
     next.targets=next.targets.filter(t=>t.id!=='1'); next.targets.unshift({...next.targets[0],id:'6',isin:isin(6),companyKey:'TEST6',
       companyUrl:'https://www.screener.in/company/TEST6/',name:'Test company 6',sourceName:'Test company 6',url:source(6).summaryUrl,rank:0,publishedDate:'2026-09-10'});
     next.portfolioRevision='b'.repeat(64); store.sync(next);
     assert.equal(store.status().holdings.some(h=>h.isin===isin(1)),false);
+    assert.deepEqual(store.status().readyIds,['1'],'saved IDs remain readable after a portfolio exit');
     assert.equal(store.read(['1'])[0].status,'ready');
     assert.equal(store.reserve('1:1',randomUUID()).target.id,'6');
     store.discoveryFailed(); assert.equal(store.status().discoveryStatus,'failed'); assert.equal(store.read(['1'])[0].status,'ready');
@@ -265,4 +267,13 @@ test('each durable reservation allows exactly one main-frame summary navigation'
   assert.equal(gate.accept(target.url,'document',true),false,'automatic reload cannot spend another request');
   assert.equal(gate.accept('https://www.screener.in/concalls/summary/124/','document',true),false,'redirects cannot spend another request');
   gate.arm(target);assert.equal(gate.accept(target.url,'document',true),true,'only a new durable claim can re-arm a source read');
+});
+
+test('a source cooldown never masks failed or stale portfolio discovery', () => {
+  for(const discoveryStatus of ['failed','stale']) {
+    const text=summaryStateMessage({enabled:true,discoveryStatus,cooldownUntil:iso(Date.now()+SUMMARY_WINDOW_MS),
+      schedule:{started:true,alarmAt:Date.now()+1800000}});
+    assert.match(text,/new holdings or calls/i);assert.match(text,/paused/);
+    assert.match(text,discoveryStatus==='stale'?/stale/:/could not be refreshed/);
+  }
 });
