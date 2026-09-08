@@ -6,6 +6,7 @@ export const SUMMARY_OBJECT = 'screener-account-summaries-v1';
 export const SUMMARY_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const SUMMARY_REQUEST_BUDGET = 60;
 export const SUMMARY_INTERVAL_MS = 30 * 60 * 1000;
+export const SUMMARY_CRON_OFFSET_MS = 11 * 60 * 1000; // Workflow runs at :11/:41 UTC.
 export const SUMMARY_GAP_MS = 15000;
 export const SUMMARY_BODY_LIMIT = 128 * 1024;
 export const SUMMARY_RECORD_LIMIT = 50000;

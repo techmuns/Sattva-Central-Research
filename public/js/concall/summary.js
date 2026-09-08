@@ -2,7 +2,7 @@ import { escapeHtml } from '../core/dom.js';
 import { openModal, closeModal } from '../ui/screener.js';
 import { onHostContext } from '../core/host-context.js';
 import * as summaries from '../data/concall-summaries.js';
-import { summaryIdsForRow, summaryStateMessage, summaryScheduleMessage } from '../data/concall-summaries-shared.js';
+import { summaryIdsForRow, summaryStateMessage, summaryScheduleMessage, SUMMARY_INTERVAL_MS, SUMMARY_CRON_OFFSET_MS } from '../data/concall-summaries-shared.js';
 
 const e = escapeHtml;
 const date = value => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST' : 'Not checked';
@@ -41,9 +41,16 @@ function checkBackMessage(records) {
   const state = summaries.status();
   const now = Date.now();
   const future = time => Number.isFinite(time) && time > now ? time : 0;
-  const account = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt), state?.schedule?.alarmAt].map(future));
-  const next = Math.min(...records.filter(record => record.active === true)
+  const alarm = future(state?.schedule?.alarmAt);
+  if (!alarm) return 'Please check back later.';
+  const account = Math.max(...[Date.parse(state?.cooldownUntil), Date.parse(state?.nextBudgetAt)].map(future));
+  const eligible = Math.min(...records.filter(record => record.active === true)
     .map(record => Math.max(account, future(Date.parse(record.nextAttemptAt)))));
+  const timer = alarm + Math.max(0, Math.ceil((eligible - alarm) / SUMMARY_INTERVAL_MS)) * SUMMARY_INTERVAL_MS;
+  const cron = Math.ceil((Math.max(now, eligible) - SUMMARY_CRON_OFFSET_MS) / SUMMARY_INTERVAL_MS)
+    * SUMMARY_INTERVAL_MS + SUMMARY_CRON_OFFSET_MS;
+  // Allow both timer phases to reach eligibility: a recent cron run can defer the durable timer.
+  const next = Math.max(timer, cron);
   if (!Number.isFinite(next) || next <= now) return 'Please check back later.';
   const when = new Date(next).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long',
     day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true });

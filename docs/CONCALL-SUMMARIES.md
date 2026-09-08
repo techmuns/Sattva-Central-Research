@@ -49,8 +49,10 @@ also avoids runner setup. Existing private saved bodies remain readable. Neither
 history. A deployment or workflow edit must never reset the private account object or its budget.
 
 An empty summary popup contains only “Please check back” and the next eligible day/time in IST.
-It combines the requested records' actual retry eligibility with the known cooldown, budget
-availability and scheduled check. Inactive/untracked reports and unknown dates say “Please check
+It combines the requested records' actual retry eligibility with the known cooldown and budget
+availability, then allows both the next durable-timer and independent workflow slots to reach
+eligibility. A recent pre-eligibility workflow run can defer the durable timer, so the later slot
+is the conservative check-back time. Inactive/untracked reports and unknown dates say “Please check
 back later” without inventing a time. The open popup rereads private saved state when coverage
 updates and shows a report automatically once saved; these reads never request source summaries. This is a time
 to check again, not a guarantee that a particular queued report will be ready. Source attribution

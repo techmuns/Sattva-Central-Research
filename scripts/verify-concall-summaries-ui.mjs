@@ -25,9 +25,10 @@ let enabled = true, denied = false, delayed = null, pendingId = null, timerReaso
 let savedIds=['123','124'], discoveryStatus='ok', cooldownUntil=null;
 let pendingActive=true, pendingNextAttemptAt=null;
 let readBudget=Infinity;
+let alarmAt=Date.now()+1800000;
 let getCount=0, postCount=0;
 const state = () => ({ok:true,enabled,ready:savedIds.length,readyIds:savedIds,pending:1,discoveryStatus,cooldownUntil,portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
-  schedule:{started:true,reason:timerReason,alarmAt:Date.now()+1800000,lastAttemptAt:Date.now()},
+  schedule:{started:true,reason:timerReason,alarmAt,lastAttemptAt:Date.now()},
   holdings:[{isin:'INE000000001',name:'Summary fixture company',ready:2,pending:1,discovery:'matched'},
     {isin:'INE000000002',name:'New portfolio holding',ready:0,pending:0,discovery:'no-published-summary'}]});
 const server = createServer(async (req,res) => {
@@ -108,15 +109,20 @@ try {
   discoveryStatus='ok';cooldownUntil=null;
   await page.keyboard.press('Escape');
   // An empty reader shows only a check-back day/time, and follows changed cooldowns live.
-  pendingId='all';savedIds=[];cooldownUntil=new Date(Date.now()+86400000).toISOString();
+  pendingId='all';savedIds=[];
+  const tomorrow=new Date(Date.now()+86400000);tomorrow.setUTCHours(18,10,0,0);alarmAt=tomorrow.getTime();
+  cooldownUntil=new Date(alarmAt+10*60000).toISOString();
   await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
   await button.click();await page.locator('[data-summary-check-back]').waitFor();
   const checkBack=await page.locator('[data-summary-check-back]').innerText();
   assert.match(checkBack,/^Please check back — .+ IST\.$/);
   assert.equal(await page.locator('#modal-content p').count(),1,'pending popup is a single message');
   assert.doesNotMatch(await page.locator('#modal-content').innerText(),/Screener|source|collection|allowance|saved/i);
-  const oldDay=new Date(cooldownUntil).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long'});
+  const expectedCheck = new Date(alarmAt+31*60000);
+  const oldDay=expectedCheck.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long'});
   assert(checkBack.includes(oldDay),'the check-back date uses the Indian calendar day');
+  assert.equal(checkBack,`Please check back — ${expectedCheck.toLocaleString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long',day:'numeric',month:'long',hour:'numeric',minute:'2-digit',hour12:true})} IST.`,
+    'a cooldown between timer runs allows both the next alarm and :41 cron slot, including the Indian date rollover');
   cooldownUntil=new Date(Date.parse(cooldownUntil)+86400000).toISOString();
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
   await page.waitForFunction(old=>document.querySelector('[data-summary-check-back]')?.textContent!==old,checkBack);
@@ -124,9 +130,9 @@ try {
   pendingActive=false;
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
   await page.waitForFunction(()=>document.querySelector('[data-summary-check-back]')?.textContent==='Please check back later.');
-  pendingActive=true;pendingNextAttemptAt=new Date(Date.now()+7*86400000).toISOString();
+  pendingActive=true;pendingNextAttemptAt=new Date(alarmAt+6*86400000+10*60000).toISOString();
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
-  const deferredDay=new Date(pendingNextAttemptAt).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long',day:'numeric',month:'long'});
+  const deferredDay=new Date(alarmAt+6*86400000+31*60000).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long',day:'numeric',month:'long'});
   await page.waitForFunction(day=>document.querySelector('[data-summary-check-back]')?.textContent.includes(day),deferredDay);
   pendingId='124';savedIds=['123'];pendingNextAttemptAt=null;readBudget=1;
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
