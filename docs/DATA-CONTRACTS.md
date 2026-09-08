@@ -1096,6 +1096,11 @@ feed contract but is not rendered in the tab chrome.
 
 ### Screener collection and freshness
 
+The Con-call Documents column, document filter, search labels and document export omit Screener
+Summary links: the capture contains URLs rather than summary text, and Screener's signed-in reader
+blocks embedding. Summary source references remain in retained records. Transcript, Recording and
+Presentation links and the dashboard's existing Deep Dive panel remain available.
+
 `.github/workflows/screener-concalls-refresh.yml` logs in with the existing `SCREENER_USERNAME` and
 `SCREENER_PASSWORD` repository secrets. It publishes a gzip Actions artifact and never commits
 generated data. Every 15 minutes it reads the newest concall pages until it reaches records already
@@ -1452,6 +1457,14 @@ While the Earnings Calendar is mounted, the browser revalidates the selected dat
 The poll pauses while the page is hidden and checks immediately when the reader returns. A changed
 artifact repaints in place while retaining the selected scope and table view; an unchanged ETag
 costs no response body.
+
+First success after a failed load, a failed refresh and recovery with unchanged rows all notify
+the mounted calendar after its error state has been updated. A transient route 503 must never
+leave a working retry hidden behind the original error screen. Calendar starts independently of
+the Earnings Reported feed. A failed reopening restores a valid per-date device response, retaining
+its source timestamps and showing **Saved schedule · retrying** until revalidation succeeds.
+Malformed responses cannot replace those saved bytes; a successful empty schedule still clears
+the visible rows. `scripts/verify-earnings-calendar-ui.mjs` exercises these cases in both scopes.
 
 ### Pagination coverage and Worker request bounds
 

@@ -12,13 +12,13 @@
 // column may be blank; totalling those would either crash or, worse, quietly produce a number.
 // Insider dealing is a list of events, and this shows the list.
 
-import { filingHistoryControls } from './filing-history-controls.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatDate } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { insider as feed } from '../data/filings.js';
 import { insiderTradeSourceUrl, pickField } from '../data/filings-shared.js';
+import { matchesNewsPeriod, NEWS_PERIODS } from '../data/news-window.js';
 
 export { insiderTradeSourceUrl };
 
@@ -86,7 +86,7 @@ const filterCell = (row, keys) => {
 };
 
 function tradeFilters(rows) {
-  return FILTER_FIELDS.map((field) => {
+  const fields = FILTER_FIELDS.map((field) => {
     // A numeric/date-only value under Transaction or Mode is a ragged upstream markdown row, not
     // a transaction choice. It remains visible under "All" but is not promoted into a misleading
     // dropdown option. Every genuine value in this feed contains a word.
@@ -100,15 +100,22 @@ function tradeFilters(rows) {
       match: (row, value) => filterCell(row, field.keys) === value,
     };
   });
+  return [
+    ...fields,
+    {
+      label: 'Trade period',
+      value: '30',
+      maxWidthPx: 180,
+      options: [...NEWS_PERIODS, { value: 'all', label: 'All captured' }],
+      match: (row, value) => matchesNewsPeriod(row, value),
+    },
+  ];
 }
 
-const history = filingHistoryControls(feed);
 const tab = makeFilingsTab({
-  aboveTable: history.html,
-  wireAboveTable: history.wire,
   id: 'insider-trades',
   title: 'Insider Trades',
-  subtitle: 'Bulk deals, block deals, SAST and insider disclosures for the companies in scope, retained once per economic event.',
+  subtitle: 'Automatically refreshed bulk deals, block deals, SAST and insider disclosures for the companies in scope. Last 30 days shown by default; choose another period to see retained trades.',
   feed,
   noun: 'trades',
   nameLabel: 'Insider',

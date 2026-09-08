@@ -6648,14 +6648,16 @@ console.log('\n— news, announcements and insider trades —');
     const total = Number((countText.match(/[\d,]+/) || ['0'])[0].replace(/,/g, ''));
     const results = [];
     for (const select of selects) {
-      const choice = [...select.options].find((o) => o.value !== 'all');
+      const initial = select.value;
+      const period = select.getAttribute('aria-label') === 'Trade period';
+      const choice = [...select.options].find((o) => period ? o.value === 'all' : o.value !== 'all' && o.value !== initial);
       if (!choice) continue;
       select.value = choice.value;
       select.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 30));
       const shown = Number((document.querySelector('[data-row-count]')?.textContent || '').match(/\d+/)?.[0] || 0);
-      results.push({ label: select.getAttribute('aria-label'), choice: choice.textContent, shown });
-      select.value = 'all';
+      results.push({ label: select.getAttribute('aria-label'), initial, choice: choice.textContent, shown });
+      select.value = initial;
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }
     return {
@@ -6668,15 +6670,20 @@ console.log('\n— news, announcements and insider trades —');
   });
   ok('the Insider Trades toolbar separates trade rows from portfolio companies',
     /^[\d,]+ trades from [\d,]+ portfolio companies$/i.test(insiderFilters.countText.trim()), insiderFilters.countText.trim());
-  ok('insider trades offers Category, Transaction type and Mode filters',
-    ['Category', 'Transaction type', 'Mode'].every((label) => insiderFilters.labels.includes(label)),
+  ok('insider trades offers Category, Transaction type, Mode and Trade period filters',
+    ['Category', 'Transaction type', 'Mode', 'Trade period'].every((label) => insiderFilters.labels.includes(label)),
     insiderFilters.labels.join(' · '));
   ok('...each dropdown is populated from the rows in scope',
-    insiderFilters.optionCounts.length === 3 && insiderFilters.optionCounts.every((n) => n > 1),
+    insiderFilters.optionCounts.length === 4 && insiderFilters.optionCounts.every((n) => n > 1),
     insiderFilters.optionCounts.join(' · '));
   ok('...and each selection narrows the table',
-    insiderFilters.results.length === 3 && insiderFilters.results.every((r) => r.shown > 0 && r.shown < insiderFilters.total),
+    insiderFilters.results.filter((r) => r.label !== 'Trade period').length === 3 &&
+      insiderFilters.results.filter((r) => r.label !== 'Trade period').every((r) => r.shown > 0 && r.shown < insiderFilters.total),
     insiderFilters.results.map((r) => `${r.label}: ${r.choice} → ${r.shown}`).join(' · '));
+  const insiderPeriod = insiderFilters.results.find((r) => r.label === 'Trade period');
+  ok('...with Trade period defaulting to 30 days and All captured restoring older rows',
+    insiderPeriod?.initial === '30' && insiderPeriod?.choice === 'All captured' && insiderPeriod.shown > insiderFilters.total,
+    insiderPeriod ? `default ${insiderPeriod.initial}; ${insiderPeriod.choice} → ${insiderPeriod.shown} from ${insiderFilters.total}` : 'missing period filter');
   await drive('insider', 'insider-trades');
   const insUrls = seen.insider.map((u) => new URL(u));
   ok('a refresh asks insider trades per company, once each', insUrls.length > 1 && new Set(insUrls.map((u) => u.pathname)).size === insUrls.length, `${insUrls.length} request(s)`);

@@ -183,6 +183,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-portfolio-calendar.mjs
+      - name: Verify Earnings Calendar automatic recovery and saved schedules in both scopes
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-earnings-calendar-ui.mjs
       - name: Verify publisher filters, delayed news delivery and exact OnEMI regression
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
