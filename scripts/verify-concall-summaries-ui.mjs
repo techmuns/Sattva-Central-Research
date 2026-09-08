@@ -24,6 +24,7 @@ const body = {title:'Concall Summary - Summary fixture company - Sep 2026',block
 let enabled = true, denied = false, delayed = null, pendingId = null, timerReason = 'recent-run';
 let savedIds=['123','124'], discoveryStatus='ok', cooldownUntil=null;
 let pendingActive=true, pendingNextAttemptAt=null;
+let readBudget=Infinity;
 let getCount=0, postCount=0;
 const state = () => ({ok:true,enabled,ready:savedIds.length,readyIds:savedIds,pending:1,discoveryStatus,cooldownUntil,portfolioCheckedAt:new Date().toISOString(),sourceCheckedAt:new Date().toISOString(),
   schedule:{started:true,reason:timerReason,alarmAt:Date.now()+1800000,lastAttemptAt:Date.now()},
@@ -42,6 +43,7 @@ const server = createServer(async (req,res) => {
       let raw='';for await(const chunk of req) raw+=chunk;
       if(delayed) await delayed;
       if(denied) {res.statusCode=401;return res.end('{"ok":false,"reason":"access"}');}
+      if(readBudget--<=0) {res.statusCode=503;return res.end('{"ok":false,"reason":"unavailable"}');}
       return res.end(JSON.stringify({ok:true,records:JSON.parse(raw).ids.map(id=> pendingId==='all'||id===pendingId
         ? {id,status:!pendingActive?'not-collected':pendingNextAttemptAt?'not-published':'queued',active:pendingActive,nextAttemptAt:pendingNextAttemptAt} :
         {id,status:'ready',name:row.name,kind:id==='124'?'Recording':'Transcript',publishedDate:'2026-09-04',fetchedAt:new Date().toISOString(),body:{...body,title:body.title+(id==='124'?' - recording':'')}})}));
@@ -126,13 +128,14 @@ try {
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
   const deferredDay=new Date(pendingNextAttemptAt).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',weekday:'long',day:'numeric',month:'long'});
   await page.waitForFunction(day=>document.querySelector('[data-summary-check-back]')?.textContent.includes(day),deferredDay);
-  pendingId=null;savedIds=['123','124'];pendingNextAttemptAt=null;
+  pendingId='124';savedIds=['123'];pendingNextAttemptAt=null;readBudget=1;
   await page.evaluate(async()=>{await (await import('/js/data/concall-summaries.js')).refresh({force:true});});
-  await page.locator('[data-summary-version]').waitFor();
+  await page.locator('[data-summary-body]').waitFor();
+  assert((await page.locator('[data-summary-body]').innerText()).includes(body.title),'the first saved report is shown even if subsequent reads fail');
   assert.equal(await page.locator('[data-summary-check-back]').count(),0,'a saved report replaces the open pending message');
-  assert.equal(postCount,6,'ready transition reuses the newly read private body');
+  assert.equal(postCount,6,'partial readiness renders the returned records without rereading pending IDs');
   assert.equal(external.some(url=>url.includes('/concalls/summary/')),false,'pending updates never visit the source');
-  await page.keyboard.press('Escape');cooldownUntil=null;
+  await page.keyboard.press('Escape');cooldownUntil=null;readBudget=Infinity;savedIds=['123','124'];
   // A pending note is requested again once collected, never cached as permanently unavailable.
   pendingId='123';await page.evaluate(async()=>{const s=await import('/js/data/concall-summaries.js');s.clear();await s.refresh({force:true});});
   await button.click();await page.locator('[data-summary-reader]').waitFor();assert.equal(await page.locator('[data-summary-version]').count(),0);

@@ -2,13 +2,25 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import worker from '../worker/index.js';
-import { normaliseCorporateAnnouncements, announcementRange, announcementSourceUrls, mergeAnnouncements } from '../public/js/data/announcements-shared.js';
+import { normaliseCorporateAnnouncements, announcementRange, announcementSourceUrls, announcementUrl, announcementDocumentIdentity, mergeAnnouncements } from '../public/js/data/announcements-shared.js';
 import { withAnnouncementLookups } from '../public/js/data/announcements-extra.js';
 import { clearAll } from '../public/js/core/store.js';
 import { loadCompanyCaptureIndex } from '../public/js/data/company-captures.js';
 import { CATEGORIES, annUrl, fetchAnnouncements, fetchCompanyAnnouncements } from '../worker/bse-ann.mjs';
 
 const pdf = 'a1111111-1111-1111-1111-111111111111.pdf';
+for (let repeat = 0; repeat < 2; repeat++) {
+  for (const unsafe of ['javascript:alert(1)', 'https://user:password@example.test/a.pdf', 'not a URL']) {
+    assert.equal(announcementUrl(unsafe), null);
+    assert.equal(announcementDocumentIdentity(unsafe), null);
+  }
+  assert.equal(announcementDocumentIdentity(`https://www.bseindia.com/xml-data/corpfiling/AttachLive/${pdf}`), `bse:${pdf}`);
+  assert.equal(announcementDocumentIdentity(`https://www.bseindia.com/xml-data/corpfiling/AttachHis/${pdf}`), `bse:${pdf}`);
+}
+const mutableUrl = new URL('https://example.test/report.pdf');
+assert.equal(announcementUrl(mutableUrl), mutableUrl.href);
+mutableUrl.username = 'private';
+assert.equal(announcementUrl(mutableUrl), null, 'a changed URL object is validated again');
 const fixture = [
   { source: 'BSE', data: [{ symbol: '500325', title: 'Board meeting', date: '2026-07-10T17:46:25.00', attachment: `https://www.bseindia.com/xml-data/corpfiling/AttachHis/${pdf}` }] },
   { source: 'NSE', data: [{ symbol: 'RELIANCE', title: 'Analyst meet', date: '2026-07-10T17:46:25.00', attachment: 'https://nsearchives.nseindia.com/corporate/meet.pdf' }] },

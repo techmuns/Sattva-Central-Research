@@ -14,11 +14,30 @@ export function announcementRange(fromDate, toDate) {
   return { from: from.iso, to: to.iso, fromDate: from.compact, toDate: to.compact };
 }
 
-export function announcementUrl(value) {
+// A merge checks the same link for provenance and document identity several times.
+// Cache only bounded string inputs; this is derived metadata, never retained source history.
+const urlInfoCache = new Map();
+function announcementUrlInfo(value) {
+  const cacheable = typeof value === 'string' && value.length <= 4096;
+  if (cacheable && urlInfoCache.has(value)) return urlInfoCache.get(value);
+  let info = null;
   try {
     const u = new URL(value);
-    return ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password ? u.href : null;
-  } catch { return null; }
+    if (['http:', 'https:'].includes(u.protocol) && !u.username && !u.password) {
+      const pdf = /(^|\.)bseindia\.com$/i.test(u.hostname)
+        && u.href.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.pdf/i);
+      info = { url: u.href, document: pdf ? `bse:${pdf[0].toLowerCase()}`
+        : `${u.hostname.toLowerCase().replace(/^www\./, '')}${u.pathname}${u.search}` };
+    }
+  } catch { /* Invalid links have no source or document identity. */ }
+  if (cacheable) {
+    if (urlInfoCache.size >= 2048) urlInfoCache.delete(urlInfoCache.keys().next().value);
+    urlInfoCache.set(value, info);
+  }
+  return info;
+}
+export function announcementUrl(value) {
+  return announcementUrlInfo(value)?.url || null;
 }
 
 const SOURCE_ORDER = new Map(['BSE', 'NSE', 'DRHP'].map((source, index) => [source, index]));
@@ -86,15 +105,8 @@ export function normaliseCorporateAnnouncements(body, ticker) {
 }
 
 export function announcementDocumentIdentity(value) {
-  const url = announcementUrl(value);
-  if (!url) return null;
-  const u = new URL(url);
   // BSE moves the same attachment from AttachLive to AttachHis and also serves it via Pname.
-  if (/(^|\.)bseindia\.com$/i.test(u.hostname)) {
-    const pdf = url.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.pdf/i);
-    if (pdf) return `bse:${pdf[0].toLowerCase()}`;
-  }
-  return `${u.hostname.toLowerCase().replace(/^www\./, '')}${u.pathname}${u.search}`;
+  return announcementUrlInfo(value)?.document || null;
 }
 
 const digestIdentity = (value) => /^sha256:[0-9a-f]{64}$/i.test(String(value || ''))

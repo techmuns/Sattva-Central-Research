@@ -49,12 +49,12 @@ function checkBackMessage(records) {
     day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true });
   return `Please check back — ${when} IST.`;
 }
-export async function openSummary(row) {
+export async function openSummary(row, initialRecords = null) {
   const ids = summaryIdsForRow(row);
   if (!ids.length) return;
   const version = modal(`${header(`${row.name} · Summary`)}<div class="p-6 text-sm text-slate-600" aria-live="polite">Loading summary…</div>`);
   try {
-    const records = await summaries.read(ids);
+    const records = initialRecords ?? await summaries.read(ids);
     if (version !== openVersion) return;
     const content = document.getElementById('modal-content');
     const focused = content.contains(document.activeElement);
@@ -71,7 +71,7 @@ export async function openSummary(row) {
           const updated = await summaries.read(ids);
           if (version !== openVersion) return;
           pendingRecords = updated;
-          if (updated.some(record => record.status === 'ready')) { void openSummary(row); return; }
+          if (updated.some(record => record.status === 'ready')) { void openSummary(row, updated); return; }
           note.textContent = checkBackMessage(updated);
         } catch {
           if (version === openVersion) note.textContent = checkBackMessage(pendingRecords);
