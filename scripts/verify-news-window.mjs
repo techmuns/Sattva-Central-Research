@@ -10,6 +10,16 @@ const olderMeta = { newsDelivery: { core: { readerCheckedAt: 100, status: 'ok' }
 const recentMeta = { newsDelivery: { core: { readerCheckedAt: 200, status: 'unavailable' } } };
 assert.equal(newsSourceMeta([olderMeta, recentMeta]), recentMeta, 'source registry uses newest attempt, even when failed');
 assert.equal(newsSourceMeta([{}, recentMeta]), recentMeta, 'recent-only News can populate sources without loading full history');
+const sharedCore = { readerCheckedAt: 300, status: 'ok' };
+const noTvCheck = { newsDelivery: { core: sharedCore } };
+const checkedTv = { tradingViewCoverage: { checkedAt: '2026-09-08T04:30:00Z' },
+  newsDelivery: { core: sharedCore, tradingView: { readerCheckedAt: 301, status: 'ok' } } };
+assert.equal(newsSourceMeta([noTvCheck, checkedTv]).tradingViewCoverage, checkedTv.tradingViewCoverage,
+  'shared core timestamps cannot select a reader that has not checked TradingView');
+const failedTv = { ...noTvCheck, tradingViewReadError: 'fixture outage',
+  newsDelivery: { core: sharedCore, tradingView: { readerCheckedAt: 302, status: 'unavailable' } } };
+assert.equal(newsSourceMeta([failedTv, checkedTv]).tradingViewReadError, 'fixture outage',
+  'latest failed TradingView check wins over an earlier success');
 assert.equal(newsDay('2026-08-31T18:29:59Z'), '2026-08-31');
 assert.equal(newsDay('2026-08-31T18:30:00Z'), '2026-09-01');
 assert.equal(newsDay('2026-12-31T18:30:00Z'), '2027-01-01');

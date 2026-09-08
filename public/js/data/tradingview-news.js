@@ -9,7 +9,7 @@ export const NEWS_SNAPSHOT_POLL_MS = 120000;
 
 export function withTradingViewNews(base, { read = conditionalJson, doc = globalThis.document,
   view = doc?.defaultView || globalThis.window, now = Date.now, schedule = setTimeout, cancel = clearTimeout } = {}) {
-  let snapshot = null, pending = null, loaded = false, readError = null;
+  let snapshot = null, pending = null, loaded = false, readError = null, readerCheckedAt = null;
   let timer = null, listening = false, lastAttempt = null, failures = 0, generation = 0;
   let combined = null;
   const subscribers = new Set();
@@ -35,7 +35,7 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
         if (epoch === generation) readError = String(error.message || error);
         return { available: false };
       } finally {
-        if (epoch === generation) { pending = null; emit(); }
+        if (epoch === generation) { readerCheckedAt = now(); pending = null; emit(); }
       }
     })();
     return pending;
@@ -87,7 +87,7 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
       newsDelivery: { ...m.newsDelivery, tradingView: {
         status: !snapshot && !readError ? 'pending' : readError || !health.ok ? (snapshot ? 'partial' : 'unavailable') : 'ok',
         pending: !!pending, error: readError || (snapshot && !health.ok ? 'Some TradingView company checks are stale or incomplete.' : null),
-        capturedAt: snapshot?.capturedAt || null, checkedAt: coverage?.checkedAt || null,
+        capturedAt: snapshot?.capturedAt || null, checkedAt: coverage?.checkedAt || null, readerCheckedAt,
       } },
       tradingViewArchive: snapshot?.archive || null };
   }
@@ -148,7 +148,7 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
     wasAskedEmpty: ticker => !combinedRows().some(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
     invalidate() {
       generation++; unwatch(); snapshot = null; combined = null; pending = null; loaded = false; readError = null;
-      lastAttempt = null; failures = 0; base.invalidate();
+      lastAttempt = null; readerCheckedAt = null; failures = 0; base.invalidate();
     },
     onChange(fn) {
       subscribers.add(fn); watch();

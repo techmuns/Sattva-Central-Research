@@ -15,8 +15,15 @@ export const NEWS_PUBLISHERS = [
 // The registry reports the latest actual reader check, including a failed attempt. Merely
 // opening recent News must not force the full archive to load just to populate source status.
 export function newsSourceMeta(metas = [news.meta(), recentNews.meta()]) {
-  return metas.reduce((latest, next) =>
+  const core = metas.reduce((latest, next) =>
     (next.newsDelivery?.core?.readerCheckedAt || 0) > (latest.newsDelivery?.core?.readerCheckedAt || 0) ? next : latest);
+  // The core observations are shared, but TradingView checks belong to each reader. A tied
+  // core timestamp must not hide the recent reader's successful OR failed TradingView check.
+  const tv = metas.reduce((latest, next) =>
+    (next.newsDelivery?.tradingView?.readerCheckedAt || 0) > (latest.newsDelivery?.tradingView?.readerCheckedAt || 0) ? next : latest, core);
+  return tv === core ? core : { ...core, tradingViewCoverage: tv.tradingViewCoverage,
+    tradingViewReadError: tv.tradingViewReadError, tradingViewHealth: tv.tradingViewHealth,
+    newsDelivery: { ...core.newsDelivery, tradingView: tv.newsDelivery?.tradingView } };
 }
 
 export function newsSourceItems(meta = newsSourceMeta(), publishers = marketNews.meta().sources || [], publisherReadFailed = marketNews.meta().lastReadFailed) {
