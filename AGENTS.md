@@ -30,6 +30,10 @@ Insider Trades (bulk deals, block deals, SAST and insider disclosures).
 
 ## Repository workflow
 
+Changes under `public/js/` must advance the release version in `public/sw.js`: returning
+dashboards serve those modules from an immutable cache. Verify an existing session upgrades;
+a fresh asset response alone does not prove that returning readers received the change.
+
 Standing summary instruction, confirmed on 8 September 2026: the user approved private
 Screener summary caching/display and production activation, requested automatic start after
 cooldowns, and asked that this same authorization not be requested again. Keep the existing
