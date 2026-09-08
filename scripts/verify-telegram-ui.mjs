@@ -153,6 +153,17 @@ try {
   await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
   await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr', { timeout: 20000 });
 
+  const content = page.locator('[data-chatter-panel="telegram"] select[aria-label="Content"]');
+  assert.equal(await content.inputValue(), 'all', 'latest metadata-only posts must remain visible by default');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 7);
+  await content.selectOption('readable');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 5, 'filenames and missing text are not readable reports');
+  assert((await page.locator('[data-telegram-content-notice]').innerText()).includes('2 posts are saved with dates and original links, but no readable text'));
+  assert(!(await page.locator('[data-chatter-panel="telegram"]').innerText()).includes('Content available in Telegram'));
+  await content.selectOption('telegram');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 2);
+  await content.selectOption('all');
+
   const view = await page.evaluate(async () => {
     const t = await import('/js/data/telegram-posts.js');
     const host = document.querySelector('#content-host');
@@ -175,7 +186,7 @@ try {
     };
   });
 
-  assert(view.pill.includes('7 archived') && view.pill.includes('6 readable'));
+  assert(view.pill.includes('7 archived') && view.pill.includes('5 readable here'));
   assert((await page.locator('[data-telegram-source-status]').innerText()).includes('has not been verified'));
   assert.equal(view.count, 7, 'every post in the capture is read');
   // All verified publications stay dated and linked, even when their text is Telegram-only.
@@ -202,12 +213,19 @@ try {
   await search.fill('499');
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1,
     'a caption-less post is dated, searchable and linked');
+  assert((await page.locator('[data-chatter-panel="telegram"] tbody').innerText()).includes('Post link captured'));
+  assert((await page.locator('[data-chatter-panel="telegram"] tbody').innerText()).includes('Type unavailable'));
+  await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').click();
+  assert((await page.locator('[data-telegram-post-dialog]').innerText()).includes('No text was captured'));
+  assert.equal(await page.locator('[data-telegram-post-dialog] a').getAttribute('href'), 'https://t.me/researchreportss/499');
+  await page.locator('[data-telegram-post-dialog] [data-modal-close]').click();
   // Named documents remain searchable even without a caption.
   await search.fill('498');
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1,
     'a document post with no caption is still listed');
   await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').click();
   await page.waitForSelector('[data-telegram-post-dialog]');
+  assert((await page.locator('[data-telegram-post-dialog]').innerText()).includes('filename was captured'));
   assert.equal(await page.locator('[data-telegram-post-dialog] a').getAttribute('href'), 'https://t.me/researchreportss/498');
   await page.locator('[data-telegram-post-dialog] [data-modal-close]').click();
   await search.fill('sector update.pdf');
@@ -263,6 +281,7 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('#content-host [data-chatter-section-tabs] [role="tab"]').length === 3, null, { timeout: 20000 });
   await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
   await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr', { timeout: 20000 });
+  await content.selectOption('all');
   const watchRows = await page.$$eval('[data-chatter-panel="telegram"] tbody tr', (r) => r.length);
   // Compared against what the Universe scope actually drew, not a typed number: the claim is that
   // the watchlist does not NARROW this section, and only the two counts together say that.
@@ -305,7 +324,7 @@ try {
     posts: [{ ...post(502, null), publishedAt: cacheAt }, post(501, 'New API report'), ...capture.posts] };
   await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
   assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), view.drawn + 2);
-  assert((await page.locator('[data-telegram-source-status]').innerText()).includes('Newest readable report:'), 'new restricted publications cannot masquerade as an old feed');
+  assert((await page.locator('[data-telegram-source-status]').innerText()).includes('Newest readable text:'), 'new restricted publications cannot masquerade as an old feed');
   await page.waitForFunction(() => new Promise(resolve => {
     const open = indexedDB.open('sattva-cache');
     open.onsuccess = () => { const db = open.result; const req = db.transaction('payloads').objectStore('payloads').get('telegram-artifact-v1');
@@ -324,6 +343,7 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof window.renderScope === 'function');
   await page.evaluate(() => window.renderScope('universe', { section: 'telegram' }));
+  await content.selectOption('all');
   await page.waitForFunction(() => document.querySelectorAll('[data-chatter-panel="telegram"] tbody tr[data-row-key]').length === 9);
   assert((await page.locator('[data-telegram-live]').innerText()).includes('needs attention'));
   // An older but valid fallback can replace its HTTP cache entry; it cannot erase the
@@ -344,13 +364,83 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof window.renderScope === 'function');
   await page.evaluate(() => window.renderScope('universe', { section: 'telegram' }));
+  await content.selectOption('all');
   await page.waitForFunction(() => document.querySelectorAll('[data-chatter-panel="telegram"] tbody tr[data-row-key]').length === 9);
   const offline = await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).meta());
   assert(offline.reason && offline.count === 9, 'offline reload retains validated records and reports unavailable collection');
+  // A newer date/link-only refresh must not erase readable text, filename or first-seen time.
+  artifactStatus = snapshotStatus = 200;
+  const laterAt = new Date(Date.parse(cacheAt) + 1000).toISOString();
+  servedCapture = { ...capture, posts: capture.posts.map(p => ({ ...p, text: null, attachments: [], mediaType: null })) };
+  servedArtifact = { ...servedCapture, lastRun: { at: laterAt, status: 'ok' }, lastCheckedAt: laterAt };
+  await content.selectOption('readable');
+  await search.fill('Broker A');
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await content.inputValue(), 'readable', 'content filter survives automatic refresh');
+  assert.equal((await search.inputValue()).toLowerCase(), 'broker a', 'search survives automatic refresh');
+  assert.equal(await page.locator('[data-chatter-panel="telegram"] tbody tr[data-row-key]').count(), 1);
+  let retained = await page.evaluate(async () => {
+    const t = await import('/js/data/telegram-posts.js');
+    return { text: t.byId(500).text, file: t.byId(498).attachments[0]?.name, firstSeen: t.byId(500).firstSeenAt };
+  });
+  assert.equal(retained.text, capture.posts[0].text);
+  assert.equal(retained.file, 'Broker C sector update.pdf');
+  assert.equal(retained.firstSeen, capturedAt);
+  // Older captures can fill missing text, but cannot roll back a newer edit or source status.
+  servedCapture = { ...capture, posts: capture.posts.map(p => p.id === 499 ? { ...p, text: 'Recovered older caption' } : p) };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).byId(499).text), 'Recovered older caption');
+  servedArtifact = { ...servedArtifact, posts: servedArtifact.posts.map(p => p.id === 500 ? { ...p, text: 'New corrected report' } : p),
+    lastRun: { at: new Date(Date.parse(laterAt) + 1000).toISOString(), status: 'ok' } };
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  assert.equal(await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).byId(500).text), 'New corrected report');
+  artifactStatus = snapshotStatus = 503;
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof window.renderScope === 'function');
+  await page.evaluate(() => window.renderScope('universe', { section: 'telegram' }));
+  await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr[data-row-key]');
+  assert.equal(await content.inputValue(), 'all', 'reopening restores the newest posts, including those without text');
+  assert.equal(await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).byId(499).text), 'Recovered older caption', 'recovered text survives offline reload');
+  assert.equal(await page.evaluate(async () => (await import('/js/data/telegram-posts.js')).byId(500).text), 'New corrected report');
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-panel="telegram"]').isVisible());
+  assert(await content.isVisible(), 'content selector remains reachable on mobile');
+  await page.screenshot({ path: '/tmp/sattva-telegram-readable-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: '/tmp/sattva-telegram-readable-desktop.png', fullPage: true });
+  // With no captured text at all, the default must expose the source links and honest zero.
+  const emptyContext = await browser.newContext();
+  const emptyPage = await emptyContext.newPage();
+  await emptyPage.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort());
+  artifactStatus = snapshotStatus = 200;
+  servedArtifact = null;
+  servedCapture = { ...capture, posts: [{ ...post(499, null), mediaType: 'photo' }, capture.posts[2], { ...post(497, null), mediaType: 'video' }] };
+  await emptyPage.goto(base, { waitUntil: 'domcontentloaded' });
+  await emptyPage.waitForFunction(() => typeof window.renderScope === 'function');
+  await emptyPage.evaluate(() => window.renderScope('universe', { section: 'telegram' }));
+  const emptyContent = emptyPage.locator('[data-chatter-panel="telegram"] select[aria-label="Content"]');
+  await emptyContent.waitFor();
+  assert.equal(await emptyContent.inputValue(), 'all', 'no readable text still opens on the saved links');
+  assert((await emptyPage.locator('[data-telegram-live]').innerText()).includes('0 readable here'), 'photos and filenames are not counted as readable text');
+  assert((await emptyPage.locator('[data-chatter-panel="telegram"] tbody').innerText()).includes('Image · Open in Telegram'));
+  assert((await emptyPage.locator('[data-chatter-panel="telegram"] tbody').innerText()).includes('Video · Open in Telegram'));
+  assert((await emptyPage.locator('[data-chatter-panel="telegram"] tbody').innerText()).includes('Document in Telegram'));
+  await emptyPage.locator('[data-row-key="tg:researchreportss:499"]').click();
+  assert((await emptyPage.locator('[data-telegram-content-type]').innerText()).includes('Image in Telegram'));
+  await emptyPage.locator('[data-modal-close]').click();
+  await emptyContent.selectOption('readable');
+  assert((await emptyPage.locator('[data-chatter-panel="telegram"]').innerText()).includes('Change the Content filter'));
+  servedCapture = { ...servedCapture, posts: servedCapture.posts.map(p => p.id === 499 ? { ...p, text: 'Caption for the broker chart' } : p) };
+  await emptyPage.evaluate(async () => (await import('/js/data/telegram-posts.js')).refresh());
+  const imageRow = emptyPage.locator('[data-row-key="tg:researchreportss:499"]');
+  assert((await imageRow.innerText()).includes('Caption for the broker chart'));
+  assert((await imageRow.innerText()).includes('Image in Telegram · Caption readable here'));
+  await emptyPage.locator('[data-table-search]').fill('image');
+  assert.equal(await emptyPage.locator('tbody tr[data-row-key]').count(), 1, 'media labels are searchable even with a caption');
+  await emptyContext.close();
   assert.deepEqual(errors, [], `console errors: ${errors.join(' | ')}`);
-  console.log('PASS telegram section: module graph reachable, three sections without the chatter feed, source dates, restricted content, filenames, modal, retained failed refresh, empty-watchlist scope and mobile');
+  console.log('PASS telegram section: newest posts visible by default, readable/media filters, honest media labels, source dates, modal, text recovery and offline retention, live edits, empty-watchlist scope and mobile');
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));

@@ -47,10 +47,23 @@ function postMetadata(posts, byId) {
     span: spanFrom ? spanTo - spanFrom + 1 : 0,
     readable: posts.length, unreadable: spanFrom ? spanTo - spanFrom + 1 - posts.length : 0,
     limited: posts.filter((p) => p.contentStatus === 'telegram-only').length,
-    listed: posts.filter((p) => p.text || p.attachments.length).length,
+    listed: posts.filter((p) => p.text).length,
     newestPublishedAt: posts.find((p) => p.publishedAt)?.publishedAt || null,
-    newestReadableAt: posts.find((p) => p.publishedAt && (p.text || p.attachments.length))?.publishedAt || null,
+    newestReadableAt: posts.find((p) => p.publishedAt && p.text)?.publishedAt || null,
     undated: posts.filter((p) => !p.publishedAt).length };
+}
+
+// Public responses can expose only a date/link for a post whose text was captured earlier.
+// Enrich missing fields from the other copy; only the newer copy may replace non-empty text.
+function retainContent(older, newer) {
+  if (!older) return newer;
+  const merged = { ...older, ...newer,
+    text: newer.text || older.text,
+    firstSeenAt: older.firstSeenAt || newer.firstSeenAt,
+    attachments: newer.attachments.length ? newer.attachments : older.attachments,
+    mediaType: newer.mediaType || older.mediaType };
+  merged.contentStatus = merged.text || merged.attachments.length || ['photo', 'video'].includes(merged.mediaType) ? 'available' : 'telegram-only';
+  return merged;
 }
 
 async function apply(res, persist = true) {
@@ -71,9 +84,14 @@ async function apply(res, persist = true) {
   if (rows.length !== v.posts.length) throw new Error('Malformed Telegram posts; previous archive retained');
   // A static fallback or out-of-order response cannot roll back a newer artifact.
   if (state.ok && Date.parse(v.lastRun?.at || v.lastCheckedAt || 0) < Date.parse(state.lastRun?.at || state.lastCheckedAt || 0)) {
-    const additions = rows.filter(row => !state.byId.has(row.id));
-    if (additions.length) {
-      const byId = new Map([...state.posts, ...additions].map(row => [row.id, row]));
+    const byId = new Map(state.byId);
+    let changed = false;
+    for (const row of rows) {
+      const current = byId.get(row.id);
+      const merged = current ? retainContent(row, current) : row;
+      if (JSON.stringify(merged) !== JSON.stringify(current)) { byId.set(row.id, merged); changed = true; }
+    }
+    if (changed) {
       state = { ...state, ...postMetadata([...byId.values()].sort((a, b) => b.id - a.id), byId) };
       emit();
     }
@@ -84,7 +102,8 @@ async function apply(res, persist = true) {
     if (persist) await persistRetained();
     return;
   }
-  const byId = new Map([...state.posts, ...rows].map((p) => [p.id, p]));
+  const byId = new Map(state.byId);
+  for (const row of rows) byId.set(row.id, retainContent(byId.get(row.id), row));
   const posts = [...byId.values()].sort((a, b) => b.id - a.id);
   // Keep additive retained history separate from exact HTTP payloads and their ETags. A valid
   // older fallback may replace the transport cache but cannot erase newer captured rows offline.

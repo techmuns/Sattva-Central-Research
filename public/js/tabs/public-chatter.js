@@ -716,8 +716,15 @@ export function telegramFreshness(capturedAt, now = Date.now()) {
   const ageMs = now - Date.parse(capturedAt);
   return { state: ageMs <= TELEGRAM_UNCHANGED_AFTER_MS ? 'captured' : 'unchanged', ageMs };
 }
+const telegramMediaLabel = (r) => ({ photo: 'Image', video: 'Video', document: 'Document' })[r.mediaType] ||
+  (r.attachments?.length ? 'Document' : null);
+const telegramContentLabel = (r) => {
+  const media = telegramMediaLabel(r);
+  if (media) return `${media} in Telegram · ${r.text ? 'Caption readable here' : r.attachments?.length ? 'Filename only' : 'No caption captured'}`;
+  return r.text ? 'Text readable here' : 'Type unavailable · Date and link captured';
+};
 const postLabel = (r) => r.text || r.attachments?.map((a) => a.name).join(', ') ||
-  (r.mediaType ? `${r.mediaType[0].toUpperCase()}${r.mediaType.slice(1)} post` : 'Content available in Telegram');
+  (telegramMediaLabel(r) ? `${telegramMediaLabel(r)} · Open in Telegram` : 'Post link captured · Open in Telegram');
 const TELEGRAM_DATE_FORMAT = new Intl.DateTimeFormat('en-IN', {
   day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata',
 });
@@ -725,7 +732,7 @@ const telegramDate = (value) => value ? TELEGRAM_DATE_FORMAT.format(new Date(val
 function telegramDescription() {
   const t = telegram.meta();
   return `Posts from ${escapeHtml(t.channel ? `@${t.channel}` : 'the public Telegram channel')}, newest first, with original publication dates in IST. ` +
-    'Read captured text here and open reports or restricted content in Telegram. Posts appear in every portfolio scope.';
+    'Read captured text and captions here. Images, videos and documents open in Telegram. Posts appear in every portfolio scope.';
 }
 function telegramHeadMeta() {
   const t = telegram.meta();
@@ -738,9 +745,9 @@ function telegramHeadMeta() {
   const label = publicPaused ? `Public source retry after ${telegramDate(t.publicSafety.nextAttemptAt)}` : paused ? (t.apiSafety?.paused ? 'Account collection paused for review' : `Account collection paused until ${telegramDate(t.apiSafety.nextAttemptAt)}`) : failed ? 'Collection needs attention' : t.lastCheckedAt ? `Checked ${formatRelativeTime(new Date(t.lastCheckedAt))}` : 'Check time unavailable';
   return `<div class="flex flex-wrap items-center gap-2">
     <span data-telegram-live data-telegram-freshness="${state}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${warning ? 'bg-amber-50 text-amber-700 ring-amber-100' : 'bg-slate-50 text-slate-600 ring-slate-200'}">
-      ${escapeHtml(formatNumber(t.count || 0))} archived · ${escapeHtml(formatNumber(t.listed || 0))} readable · ${escapeHtml(label)}
+      ${escapeHtml(formatNumber(t.count || 0))} archived · ${escapeHtml(formatNumber(t.listed || 0))} readable here · ${escapeHtml(label)}
     </span>
-    <p data-telegram-source-status class="text-xs text-slate-500">Newest captured post: ${escapeHtml(telegramDate(t.newestPublishedAt))}. ${t.newestReadableAt !== t.newestPublishedAt ? `Newest readable report: ${escapeHtml(telegramDate(t.newestReadableAt))}. ` : ''}${t.delivery?.collectorInProgress ? 'Collection is continuing. ' : ''}${t.latestVerifiedAt && !failed ? `Latest channel post verified ${escapeHtml(formatRelativeTime(new Date(t.latestVerifiedAt)))}.` : 'Latest channel post has not been verified.'}</p>
+    <p data-telegram-source-status class="text-xs text-slate-500">Newest captured post: ${escapeHtml(telegramDate(t.newestPublishedAt))}. ${t.newestReadableAt !== t.newestPublishedAt ? `Newest readable text: ${t.newestReadableAt ? escapeHtml(telegramDate(t.newestReadableAt)) : 'none captured'}. ` : ''}${t.delivery?.collectorInProgress ? 'Collection is continuing. ' : ''}${t.latestVerifiedAt && !failed ? `Latest channel post verified ${escapeHtml(formatRelativeTime(new Date(t.latestVerifiedAt)))}.` : 'Latest channel post has not been verified.'}</p>
   </div>`;
 }
 function telegramPanel(table) {
@@ -748,7 +755,9 @@ function telegramPanel(table) {
   if (!t.loaded) return '<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400">Loading Telegram posts…</div>';
   if (!t.ok) return '<div data-telegram-unavailable class="rounded-2xl bg-white p-8 text-sm text-slate-600">Telegram posts are not available. The archive could not be read; returning to this tab will retry.</div>';
   if (!t.count) return '<div data-telegram-empty class="rounded-2xl bg-white p-8 text-sm text-slate-600">No posts have been captured yet.</div>';
-  return table?.html || '';
+  const unavailable = t.count - t.listed;
+  const notice = unavailable ? `<p data-telegram-content-notice class="mb-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">${escapeHtml(formatNumber(unavailable))} posts are saved with dates and original links, but no readable text. Their content opens in Telegram. Known media are labelled Image, Video or Document; <strong>Type unavailable</strong> means Telegram did not expose the type. Choose <strong>Readable here</strong> to browse captured text and captions.</p>` : '';
+  return notice + (table?.html || '');
 }
 function openTelegramPost(r) {
   openModal(`<div data-telegram-post-dialog class="scrollbar-thin max-h-[82vh] overflow-y-auto p-6">
@@ -757,7 +766,8 @@ function openTelegramPost(r) {
       <p class="mt-1 text-xs text-slate-500">${escapeHtml(telegramDate(r.publishedAt))}${r.publishedAt ? ' IST' : ''}</p></div>
       <button type="button" data-modal-close aria-label="Close post" class="text-2xl text-slate-400">&times;</button>
     </div>
-    <p class="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">${escapeHtml(r.text || 'Telegram confirms this post exists, but does not expose its text on the public web. Open the original to read it.')}</p>
+    <p data-telegram-content-type class="mt-3 text-xs font-semibold text-slate-500">${escapeHtml(telegramContentLabel(r))}</p>
+    <p class="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">${escapeHtml(r.text || (r.attachments.length ? 'The filename was captured, but the file is available only in Telegram. Open the original below to read or download it.' : 'No text was captured for this post. Its date and original link are saved. Telegram may show a file, media or other content when you open it.'))}</p>
     ${r.attachments.map((a) => `<p class="mt-3 text-sm text-slate-600">${escapeHtml(a.name)}${a.size ? ` · ${escapeHtml(a.size)}` : ''}</p>`).join('')}
     <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex font-semibold text-indigo-600">Open original in Telegram &rarr;</a>
   </div>`, { size: 'wide' });
@@ -785,11 +795,14 @@ function buildTelegramTable() {
   if (!rows.length) return null;
   const table = scoreTable({
     rows, key: (r) => r.key, watchKey: () => null, name: postLabel,
-    sub: (r) => `Message ${r.id}${r.contentStatus === 'telegram-only' ? ' · Open in Telegram to read' : r.mediaType ? ` · ${r.mediaType}` : ''}`,
-    searchable: (r) => `${postLabel(r)} ${r.id} ${r.publishedAt || ''} ${r.attachments.map((a) => a.name).join(' ')}`,
+    sub: (r) => `Message ${r.id} · ${telegramContentLabel(r)}`,
+    searchable: (r) => `${postLabel(r)} ${telegramContentLabel(r)} ${r.id} ${r.publishedAt || ''} ${r.attachments.map((a) => a.name).join(' ')}`,
     searchPlaceholder: 'Search posts, reports or message number…',
     dense: true, wrapHeads: true, showAvatar: false, showRank: false, nameMaxPx: 620,
-    nameLabel: 'Post', emptyMessage: 'No posts match your search.', showWatchFilter: false,
+    nameLabel: 'Post', emptyMessage: 'No posts match this view. Change the Content filter or search to see other archived posts.', showWatchFilter: false,
+    filters: [{ label: 'Content', value: 'all',
+      options: [{ value: 'all', label: 'All posts' }, { value: 'readable', label: 'Readable here' }, { value: 'telegram', label: 'Open in Telegram' }],
+      match: (r, value) => value === 'readable' ? !!r.text : !r.text }],
     initialView: tableViews.telegram, exportName: 'telegram-posts', onExport: exportTelegramRows,
     stickyHead: 'max(320px, calc(100vh - 420px))', onRowClick: openTelegramPost,
     columns: [
@@ -806,7 +819,7 @@ function telegramFootnotes() {
     t.historyNextId ? `Older history is incomplete; the next collection continues below message ${formatNumber(t.historyNextId + 1)}.` : 'Older history has not been fully scanned.';
   return `<div data-telegram-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
     <p>Source: ${escapeHtml(t.channel ? `@${t.channel}` : 'Telegram')} via ${t.route === 'mtproto' ? 'the official Telegram API' : 'public message pages and embeds'}. ${escapeHtml(progress)}
-    ${formatNumber(t.count - t.listed)} messages have no captured text or named attachment and are shown as Telegram links; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
+    ${formatNumber(t.count - t.listed)} messages have no captured text and can be found using the Content filter; ${formatNumber(t.pending || 0)} message lookups are awaiting retry.
     ${t.undated ? `${formatNumber(t.undated)} older records are awaiting publication dates. ` : ''}
     Gaps between message numbers are not treated as posts. Publication dates come from Telegram; collection and first-seen times are separate.
     Captures update automatically while this tab is open. Collection scheduling is best effort; this is a polled feed. Original files open in Telegram.</p>
@@ -814,14 +827,14 @@ function telegramFootnotes() {
 }
 function exportTelegramRows(rows) {
   const t = telegram.meta();
-  const banner = { __banner: true, text: `Posts from @${t.channel}. Publication times come from Telegram (UTC in this export); first seen is the collector's time. Missing content must be opened in Telegram. History ${t.historyComplete ? 'scanned to the beginning' : 'still being collected'}. Last successful check: ${t.lastCheckedAt || 'not recorded'}.` };
+  const banner = { __banner: true, text: `Posts from @${t.channel}. Export includes the current search and Content filter. Publication times come from Telegram (UTC in this export); first seen is the collector's time. Files and missing text must be opened in Telegram. History ${t.historyComplete ? 'scanned to the beginning' : 'still being collected'}. Last successful check: ${t.lastCheckedAt || 'not recorded'}.` };
   const value = (r, fn) => r.__banner ? '' : fn(r);
   return exportRows({ filename: `sattva-telegram-posts-${todayStamp()}`, sheetName: 'Telegram',
     columns: [
       { header: 'Post', key: 'text', width: 90, get: (r) => r.__banner ? r.text : postLabel(r) },
       { header: 'Message', key: 'id', width: 12, get: (r) => value(r, (p) => p.id) },
       { header: 'Published (UTC)', key: 'publishedAt', width: 28, get: (r) => value(r, (p) => p.publishedAt || '') },
-      { header: 'Content access', key: 'contentStatus', width: 22, get: (r) => value(r, (p) => p.contentStatus) },
+      { header: 'Content access', key: 'contentStatus', width: 36, get: (r) => value(r, telegramContentLabel) },
       { header: 'Attachments', key: 'attachments', width: 40, get: (r) => value(r, (p) => p.attachments.map((a) => a.name).join('; ')) },
       { header: 'Link', key: 'url', width: 46, get: (r) => value(r, (p) => p.url) },
       { header: 'First seen (collector)', key: 'firstSeenAt', width: 28, get: (r) => value(r, (p) => p.firstSeenAt || '') },

@@ -130,6 +130,33 @@ publication dates, document filenames/sizes and original links are retained. Cap
 messages remain visible as dated original Telegram links. The UI distinguishes the newest
 captured publication from the newest readable report; it does not invent unavailable text.
 
+### Reading captured content
+
+Public Chatter opens with **All posts**, keeping the newest captured publications visible
+even when only their dates and links are available. The Content filter also offers
+**Readable here** (captured text/captions) and **Open in Telegram** (no captured text).
+No archive records are removed. The archive count, newest captured publication, source-check
+time and missing-text notice remain visible in every view, and search/export follow the selected
+filter. A named file without a caption is a filename, not a readable report. Files remain
+in Telegram and are not downloaded or rendered by this integration.
+Rows, post dialogs and exports explicitly label known **Image**, **Video** and **Document**
+media. A captured caption is readable here even though its media opens in Telegram.
+**Type unavailable** means no media type or filename was exposed; an unsupported public
+widget alone is not evidence that a post contains an image. Media labels are searchable.
+
+Posts with neither text nor a known media type say **Post link captured** and **Type unavailable**,
+with the notice explicitly stating that no readable text was captured.
+On 8 September, public message 102978 returned a matching publication date but an unsupported
+media notice and an empty permalink description; 102977's description was also empty.
+Public collection cannot reproduce content those responses do not contain. These observations
+do not establish the media type or a permanent channel restriction.
+
+Browser refreshes retain existing text and attachment names when newer responses contain
+only metadata. Older captures can fill missing content without replacing newer non-empty
+text or newer collection health. Enriched records survive an offline reload through the
+existing retained cache. These safeguards do not invent missing text or guarantee future
+public availability; reconnecting an account is a separate operational decision.
+
 ### Account safeguards
 
 Telegram can restrict unofficial API clients; read-only collection cannot guarantee an
