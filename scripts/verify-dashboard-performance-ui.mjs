@@ -112,7 +112,10 @@ try {
   }
 
   await page.locator('[data-tab-id="ai-alerts"]').click();
-  await page.getByRole('heading', { name: 'AI Alerts', exact: true }).waitFor({ timeout: 500 });
+  // This revisit has the same one-second offline tab budget as the sweep above. A separate
+  // 500ms setup timeout made the popup check intermittently fail on the shared runner before
+  // the popup was even opened, despite the navigation satisfying its documented budget.
+  await page.getByRole('heading', { name: 'AI Alerts', exact: true }).waitFor({ timeout: TAB_INTERACTION_LIMIT_MS });
 
   const popupMs = await page.evaluate(async (limitMs) => {
     const started = performance.now();
