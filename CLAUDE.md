@@ -3047,6 +3047,10 @@ rendered total in that state instead of presenting mixed observations as one fac
 The mounted calendar revalidates its selected date every minute through `core/live.js`, pauses
 while hidden and checks immediately when visible again. Keep this visibility-aware poll when
 adding sources: a fresh backend is not a fresh open dashboard if its first response lives forever.
+Failure and recovery are visible changes even when the rows are identical: notify the mounted
+Calendar after updating its error state, including the first successful retry after a 503. Keep
+saved responses and their source times through route outages, and load Calendar independently of
+Earnings Reported. `scripts/verify-earnings-calendar-ui.mjs` guards this recovery in both scopes.
 
 **Calendar scope is permanent product memory, not a per-source choice.** Resolve each event to a
 ticker before the client calls `filterByScope()`. Portfolio and Watchlist include only matching

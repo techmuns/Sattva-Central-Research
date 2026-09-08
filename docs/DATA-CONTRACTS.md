@@ -1453,6 +1453,14 @@ The poll pauses while the page is hidden and checks immediately when the reader 
 artifact repaints in place while retaining the selected scope and table view; an unchanged ETag
 costs no response body.
 
+First success after a failed load, a failed refresh and recovery with unchanged rows all notify
+the mounted calendar after its error state has been updated. A transient route 503 must never
+leave a working retry hidden behind the original error screen. Calendar starts independently of
+the Earnings Reported feed. A failed reopening restores a valid per-date device response, retaining
+its source timestamps and showing **Saved schedule · retrying** until revalidation succeeds.
+Malformed responses cannot replace those saved bytes; a successful empty schedule still clears
+the visible rows. `scripts/verify-earnings-calendar-ui.mjs` exercises these cases in both scopes.
+
 ### Pagination coverage and Worker request bounds
 
 Each HTML page carries at most 20 companies. The all-exchange count determines how many pages are

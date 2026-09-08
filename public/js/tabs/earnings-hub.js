@@ -90,8 +90,24 @@ let periodError = null;
 
 function renderFeed(ctx) {
   const token = ++renderToken;
+  disposers.forEach((d) => d && d());
+  disposers = [];
+  calendarBusy = false;
   if (viewOf(ctx) === 'filings') {
     disposers.push(renderCompanyFilings(ctx, { controls: viewToggle('filings'), wireControls: wireViewToggle }));
+    return;
+  }
+  // The schedule has its own route and recovery policy. An unavailable or slow filed-results
+  // feed must not delay this view or prevent its automatic retries from starting.
+  if (viewOf(ctx) === 'calendar') {
+    disposers.push(calendar.onChange(() => {
+      if (token === renderToken) renderCalendar(ctx);
+    }));
+    renderCalendar(ctx);
+    disposers.push(calendar.startLive(ctx.live, () => {
+      const date = calendarDate || isoToday();
+      return { date, ...stripWindowFor(date) };
+    }));
     return;
   }
   ctx.root.innerHTML = loadingHtml();
@@ -124,20 +140,6 @@ function renderFeed(ctx) {
         })
       );
       disposers.push(feed.startLive(ctx.live));
-      if (viewOf(ctx) === 'calendar') {
-        disposers.push(
-          calendar.onChange(() => {
-            if (token !== renderToken || viewOf(ctx) !== 'calendar') return;
-            renderCalendar(ctx);
-          }),
-        );
-        disposers.push(
-          calendar.startLive(ctx.live, () => {
-            const date = calendarDate || isoToday();
-            return { date, ...stripWindowFor(date) };
-          }),
-        );
-      }
     })
     .catch((err) => {
       if (token !== renderToken) return;
@@ -162,6 +164,7 @@ function destroyFeed() {
   routeCompany = null;
   periodError = null;
   calendarDate = null;
+  calendarBusy = false;
   stripScrollLeft = null;
   calendarTableView = null;
   calendar.reset();
@@ -724,8 +727,9 @@ function renderCalendar(ctx) {
       .loadDate(wanted, { ...stripWindowFor(wanted, today), list: 'full' })
       .catch(() => {})
       .finally(() => {
+        if (token !== renderToken) return;
         calendarBusy = false;
-        if (token === renderToken) renderCalendar(ctx);
+        renderCalendar(ctx);
       });
   }
 
@@ -886,9 +890,11 @@ function calendarPill(payload, err) {
   // day. Say "schedule" rather than assert a number we do not believe.
   const count = believableCount(payload);
   return `
-    <span data-cal-info title="Current calendar-feed status"
+    <span data-cal-info title="${escapeHtml(err
+      ? `${payload ? 'Showing the saved schedule. ' : ''}The latest calendar check failed; retrying automatically.`
+      : 'Current calendar-feed status')}"
       class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${cls}">
-      ${dot}<span>${bad ? 'Updating' : captured ? 'Schedule updated' : 'Up to date'}</span>
+      ${dot}<span>${err ? (payload ? 'Saved schedule · retrying' : 'Unavailable · retrying') : bad ? 'Updating' : captured ? 'Schedule updated' : 'Up to date'}</span>
       <span class="font-normal opacity-70">${count != null ? `${escapeHtml(formatNumber(count))} scheduled` : 'schedule'}</span>
     </span>`;
 }
