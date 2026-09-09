@@ -86,6 +86,9 @@ counts and explicit outcome. A newer completed run without a valid document chec
 requests; an older checkpoint may only restore the history baseline. Legacy successful artifacts
 remain readable during rollout. Expired/corrupt artifacts and stale document checks fail closed.
 Calendar failure remains visible as calendar failure and cannot claim fresh calendar coverage.
+The public Con-call library also adopts newer validated document metadata independently, so
+new calls remain visible. Previously confirmed calendar rows retain their own check time and
+failure state; document arrival cannot make a retained calendar look freshly checked.
 No schedule, private storage identity, quota, reservation, cooldown or paid-body reader is reset.
 
 This isolates calendar defects from summary discovery; it does not guarantee source availability

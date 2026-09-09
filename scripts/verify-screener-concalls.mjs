@@ -22,7 +22,7 @@ import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calenda
 import { filterByScope } from '../public/js/data/scope.js';
 import { deepDiveEligible, matchingDeepDive, reportingQuarter } from '../public/js/concall/scans.js';
 import * as deepDiveData from '../public/js/data/deep-dive.js';
-import { readScreenerConcallCollector, SCREENER_DOCUMENT_ARTIFACT } from '../worker/screener-concalls-collector.mjs';
+import { readScreenerConcallCollector, readScreenerConcallCollection, SCREENER_DOCUMENT_ARTIFACT } from '../worker/screener-concalls-collector.mjs';
 import { writeDocumentCheckpoint } from './lib/concall-document-checkpoint.mjs';
 
 const observedAt = '2026-09-05T01:00:00.000Z';
@@ -341,6 +341,29 @@ test('checkpoint publication is atomic, excludes calendars and cannot bless inco
     assert.equal(value.rows.length,3);
     assert.equal(existsSync(`${path}.tmp`),false);
   } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test('new documents reach the dashboard while retained calendars keep their original health and date', async () => {
+  const { portfolioUpcoming, upcoming, upcomingPublishedTotal, upcomingPagesFetched, upcomingDuplicatesRemoved, ...history } = capture;
+  const later='2026-09-05T02:00:00.000Z';
+  const full={capture,source:{checkedAt:observedAt,status:'ok',collectorLatestFailed:true,portfolioUpcomingAvailable:true}};
+  const checkpoint={capture:{...history,checkedAt:later,rows:[...rows,{...rows[0],id:'https://example.com/new.pdf',url:'https://example.com/new.pdf'}],publishedTotal:4},
+    source:{checkedAt:later,collectorLatestFailed:false,collectorRunId:22}};
+  const result=await readScreenerConcallCollection({},async options=>options.documentsOnly?checkpoint:full);
+  assert.equal(result.capture.rows.length,4);
+  assert.deepEqual(result.capture.portfolioUpcoming,portfolioUpcoming);
+  assert.deepEqual(result.capture.upcoming,upcoming);
+  assert.equal(result.source.checkedAt,observedAt,'a new document check cannot make an old calendar fresh');
+  assert.equal(result.source.collectorLatestFailed,true);
+  assert.equal(result.source.documentCheckedAt,later);
+  assert.equal(result.source.documentLatestFailed,false);
+  const withoutCalendar=await readScreenerConcallCollection({},async options=>{if(options.documentsOnly)return checkpoint;throw Error('calendar unavailable');});
+  assert.equal(withoutCalendar.capture.rows.length,4);
+  assert.equal(withoutCalendar.capture.portfolioUpcoming,undefined);
+  assert.equal(withoutCalendar.source.checkedAt,null);
+  assert.equal(withoutCalendar.source.status,'failed');
+  const documentsDown=await readScreenerConcallCollection({},async options=>{if(!options.documentsOnly)return full;throw Error('document unavailable');});
+  assert.deepEqual(documentsDown,full,'a checkpoint outage preserves the previously complete capture');
 });
 
 test('real collector preserves documents on independent calendar failures, with no source traffic in tests', () => {

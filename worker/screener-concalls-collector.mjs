@@ -14,6 +14,37 @@ const API = `https://api.github.com/repos/${SCREENER_CONCALL_REPO}`;
 const positiveId = (value) => Number.isSafeInteger(value) && value > 0;
 export const SCREENER_DOCUMENT_ARTIFACT = 'screener-concall-documents-v1.json.gz';
 
+// Document publication and calendar publication are independent. Keep the last confirmed
+// calendar and its own check time while newer complete documents continue reaching the library.
+// No calendar fields may be taken from a document-only checkpoint.
+export async function readScreenerConcallCollection(options = {}, read = readScreenerConcallCollector) {
+  const [calendar, documents] = await Promise.allSettled([
+    read(options), read({ ...options, documentsOnly: true }),
+  ]);
+  const full = calendar.status === 'fulfilled' ? calendar.value : null;
+  const checkpoint = documents.status === 'fulfilled' ? documents.value : null;
+  if (!checkpoint?.capture || (full?.capture && Date.parse(full.capture.checkedAt) >= Date.parse(checkpoint.capture.checkedAt))) {
+    if (full) return full;
+    throw Error('Screener collection unavailable');
+  }
+  const { documentCheckpoint, portfolioUpcoming, upcoming, upcomingPublishedTotal, upcomingPagesFetched,
+    upcomingDuplicatesRemoved, ...history } = checkpoint.capture;
+  return {
+    capture: { ...full?.capture, ...history,
+      ...(full?.capture?.portfolioUpcoming !== undefined ? { portfolioUpcoming: full.capture.portfolioUpcoming } : {}),
+    },
+    source: {
+      ...(full?.source || { id: SCREENER_CONCALL_ID, status: 'failed', checkedAt: null,
+        portfolioUpcomingAvailable: false, portfolioUpcomingRecords: 0, upcomingPublishedTotal: null,
+        upcomingRecords: 0, upcomingDuplicatesRemoved: 0, upcomingPagesFetched: 0, collectorLatestFailed: true }),
+      records: history.rows.length, publishedTotal: history.publishedTotal, fullHistory: history.fullHistory,
+      documentCheckedAt: checkpoint.source.checkedAt,
+      documentLatestFailed: checkpoint.source.collectorLatestFailed,
+      documentCollectorRunId: checkpoint.source.collectorRunId,
+    },
+  };
+}
+
 export async function boundedCollectorBytes(response, signal, limit = SCREENER_CONCALL_COMPRESSED_LIMIT) {
   if (Number(response.headers.get('content-length')) > limit) {
     await response.body?.cancel();

@@ -64,7 +64,7 @@ import { handleIpoMonitor } from './ipo-monitor.mjs';
 import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
-import { readScreenerConcallCollector } from './screener-concalls-collector.mjs';
+import { readScreenerConcallCollection } from './screener-concalls-collector.mjs';
 import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
 import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calendar-shared.js';
 import { readScreenerInsightsCollector } from './screener-insights-collector.mjs';
@@ -1054,7 +1054,7 @@ async function readCachedScreenerCollector(request, env, ctx) {
 
   let value;
   try {
-    value = await readScreenerConcallCollector({
+    value = await readScreenerConcallCollection({
       token: env.GH_DISPATCH_TOKEN,
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
     });
