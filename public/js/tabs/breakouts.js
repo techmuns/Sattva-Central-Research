@@ -30,7 +30,6 @@ export const meta = {
     { id: 'strong-breakouts', label: 'Strong Breakouts' },
     { id: 'technical-scanner', label: 'Technical Scanner' },
     { id: 'fii-accumulation', label: 'FII Accumulation' },
-    { id: 'earnings-surprise', label: 'Earnings Surprise' },
   ],
 };
 
@@ -50,7 +49,6 @@ export function render(ctx) {
   refreshQuotes = null;
   if (!refreshOff) refreshOff = refreshRegistry.register('technicals-view', {
     label: 'Technicals', refresh: async () => {
-      if (ctxRef?.subview === 'earnings-surprise') return { skipped: true };
       await technicals.refresh();
       if (ctxRef?.subview === 'technical-scanner' && refreshQuotes) return refreshQuotes();
       return { checked: 1, partial: !!technicals.meta()?.failures };
@@ -58,7 +56,6 @@ export function render(ctx) {
   });
   if (!dataOff) dataOff = technicals.onChange(() => { if (ctxRef) paint(ctxRef); });
   const token = ++renderToken;
-  if (ctx.subview === 'earnings-surprise') { renderEarningsSurprise(ctx); return; }
   ctx.root.innerHTML = loadingHtml();
 
   technicals
@@ -96,7 +93,6 @@ function paint(ctx) {
     'strong-breakouts': renderStrongBreakouts,
     'technical-scanner': renderScanner,
     'fii-accumulation': renderFiiAccumulation,
-    'earnings-surprise': renderEarningsSurprise,
   }[ctx.subview] || renderStrongBreakouts;
 
   view(ctx, rows);
@@ -159,7 +155,7 @@ const scoreOf = (s) => ({
 });
 const signalsOf = (s) => s.breakdown.map((b) => ({ label: `${b.label} (${fmtPoints(b.points)}/${b.max})`, status: b.status }));
 
-// scoreTable accessors are shared across all four sub-views.
+// scoreTable accessors are shared across all three sub-views.
 const tableBase = (rows, ctx) => ({
   rows,
   key: (s) => s.company.ticker,
@@ -860,19 +856,6 @@ function holdCell(v) {
 function deliveryCell(v) {
   if (v == null) return '<span class="text-slate-300">—</span>';
   return toneSpan(`${v > 0 ? '+' : ''}${num(v, 1)} pp`, v > 1 ? 'pos' : v > 0 ? 'warn' : 'neg');
-}
-
-// ---- (d) Earnings Surprise -------------------------------------------------------------------
-
-function renderEarningsSurprise(ctx) {
-  ctx.root.innerHTML = `
-    ${sectionHead({ title: 'Earnings Surprise', description: 'Analyst consensus estimates are not connected.' })}
-    <div class="rounded-2xl bg-white p-6 text-sm text-slate-600 ring-1 ring-slate-200">
-      <p>Beat/miss tags, surprise percentages and the legacy earnings quality score are unavailable.
-         Filing PDFs provide published documents; they do not provide analyst consensus estimates.</p>
-      <p class="mt-3"><a class="font-semibold text-indigo-600" href="#/research/earnings-hub?scope=${encodeURIComponent(ctx.scope)}">View reported results</a>
-        · <a class="font-semibold text-indigo-600" href="#/research/earnings-hub?scope=${encodeURIComponent(ctx.scope)}&view=filings">Browse company filings</a></p>
-    </div>`;
 }
 
 function tagPill(tag) {

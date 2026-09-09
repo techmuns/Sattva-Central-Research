@@ -2868,9 +2868,10 @@ ever has one age, so the stale branch cannot be produced by the fixture, exactly
 cannot be produced by a day with no big faller in it. A feed with **no** capture time is a third
 state, `unknown`: never "live", never "stale".
 
-**And a half-mock view may not wear a green Live.** Breakouts' Earnings Surprise sub-view is amber
-and reads *Mock earnings · live technicals* on the face of the chip, because a screenshot travels
-without the modal.
+**Earnings Surprise is removed because analyst consensus estimates are not connected.** Breakouts
+has three views: Strong Breakouts, Technical Scanner and FII Accumulation. Old Earnings Surprise
+links resolve to Strong Breakouts through the normal sub-view fallback. Research keeps the missing
+consensus limitation with Earnings Hub; reported growth must not be presented as an earnings surprise.
 
 ---
 

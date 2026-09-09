@@ -66,7 +66,7 @@ try {
     'earnings-hub?scope=universe&view=calendar', 'earnings-hub?scope=universe&view=filings', 'concall?scope=universe',
     'public-chatter?scope=universe', 'public-chatter?scope=universe|Not in coverage', 'public-chatter?scope=universe|Telegram',
     'breakouts/strong-breakouts?scope=universe', 'breakouts/technical-scanner?scope=universe',
-    'breakouts/fii-accumulation?scope=universe', 'breakouts/earnings-surprise?scope=universe',
+    'breakouts/fii-accumulation?scope=universe',
     'super-investors/superstar-investors?scope=universe', 'super-investors/institutions?scope=universe',
     'ipos?scope=universe', 'ipos?scope=universe|directory', 'corp-announcements?scope=universe', 'corporate-actions?scope=universe',
     'nse-filings?scope=universe', 'insider-trades?scope=universe', 'news?scope=universe',

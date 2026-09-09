@@ -61,7 +61,7 @@ spans the full 1400px on every tab.
 | Earnings Hub | *(none — one table, so the picker is hidden)* |
 | Con-call | *(no sub-views)* — one scan table, with no schedule or feed-status chips above it |
 | Public Chatter | *(no shell sub-views)* — in-page **Coverage** and **Not in coverage** tabs, one table at a time |
-| Breakouts / Technical | Strong Breakouts *(default)* · Technical Scanner · FII Accumulation · Earnings Surprise |
+| Breakouts / Technical | Strong Breakouts *(default)* · Technical Scanner · FII Accumulation |
 | Super Investors | Superstar Investors · Institutions |
 | News · Corp Announcements · NSE Filings · Insider Trades | *(no sub-views)* — one table each, off the shared filings renderer |
 
@@ -420,13 +420,12 @@ Yahoo Finance EOD scrape of the NSE 500 plus NSE bhavcopy delivery data. A close
 No sub-view here carries a stat strip: the two or three counts and the gradient freshness hero
 became one small passive **Live** pill in the section head. The pill is green only while the capture is inside the
 schedule's worst case (72 hours — Friday's capture is still current on Monday); past that it is
-amber and prints the age, and on Earnings Surprise it is amber regardless, reading *Mock earnings ·
-live technicals*.
+muted and prints the age.
 
 Sub-views: **Strong Breakouts** (6-week base breakouts, URL-reflected filter chips) — first in the
 picker and so the view the tab opens on — then **Technical Scanner** (the full scored universe),
-**FII Accumulation** (shareholding changes joined to the score), **Earnings Surprise** (mock
-earnings beside the live score, deliberately not blended).
+**FII Accumulation** (shareholding changes joined to the score). Earnings Surprise was removed
+because analyst consensus estimates are not connected; old links resolve to Strong Breakouts.
 
 Every Strong Breakouts filter group leads with **All** and defaults to it, so the sub-view opens on
 the widest answer it can give. The trend filter used to ship on *Above 200 DMA only*, which meant a

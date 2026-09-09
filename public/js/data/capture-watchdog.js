@@ -297,14 +297,14 @@ export function resetForTest() {
 
 
 /** Only the sources used by the current view; no new job on navigation. */
-export function captureNamesForView({ tab, scope, subview, params = {} }) {
+export function captureNamesForView({ tab, scope, params = {} }) {
   if (params.view === 'filings') return [];
   switch (tab) {
     case 'news': return scope === 'universe' ? ['marketNews'] : ['companyNews'];
     case 'corp-announcements': return ['announcements'];
     case 'corporate-actions': return ['corporateActions'];
     case 'insider-trades': return ['insider'];
-    case 'breakouts': return subview === 'earnings-surprise' ? [] : ['technicals'];
+    case 'breakouts': return ['technicals'];
     case 'ai-alerts': case 'daily-alerts': case 'ask-research':
       return ['companyNews', 'marketNews', 'announcements', 'insider', 'corporateActions', 'technicals'];
     default: return [];

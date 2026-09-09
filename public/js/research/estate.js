@@ -59,7 +59,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'ai-alerts', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'The dashboard\'s deterministic seven-day company priority over All Alerts: which companies carry the most material, corroborated recent evidence.' },
   { id: 'daily-alerts', tab: 'All Alerts', route: '#/research/daily-alerts', description: 'The complete normalized top-of-funnel pool across all twenty dashboard feed categories, including raw filings, schedules, snapshots, documents, posts and market events.' },
   { id: 'screener-insights', tab: 'AI Alerts', route: '#/research/ai-alerts', description: 'Source-backed yearly and quarterly operating metrics extracted by Screener from company filings and presentations; context only, never an alert trigger by itself.' },
-  { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns.' },
+  { id: 'earnings-hub', tab: 'Earnings Hub', route: '#/research/earnings-hub', description: 'Reported quarterly figures, comparison periods, prices and result-date returns. Analyst consensus estimates are not connected.' },
   { id: 'company-filings', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=filings', description: 'Company document titles, periods and source links already read in Company Filings. PDF contents are not extracted.' },
   { id: 'earnings-calendar', tab: 'Earnings Hub', route: '#/research/earnings-hub?view=calendar', description: 'Currently loaded scheduled-result and upcoming-con-call dates and company lists.' },
   { id: 'concall', tab: 'Con-call', route: '#/research/concall', description: 'Screener’s retained transcript, recording and presentation index, enriched with StockScans scores and sentiment where available.' },
@@ -67,7 +67,6 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'chatter-posts', tab: 'Public Chatter posts', route: '#/research/public-chatter?open=mentions', description: 'Question-selected company posts from the same detail reader as Public Chatter; source text and links, with bounded topic coverage.' },
   { id: 'telegram', tab: 'Telegram', route: '#/research/public-chatter?section=telegram', description: 'Retained public-channel text and document names mentioning companies in scope. Attachment contents are not extracted.' },
   { id: 'technicals', tab: 'Breakouts / Technical', route: '#/research/breakouts/technical-scanner', description: 'The dashboard\'s 16-rule technical score and its underlying market readings.' },
-  { id: 'earnings-surprise', tab: 'Breakouts / Technical', route: '#/research/breakouts/earnings-surprise', description: 'Analyst consensus and earnings surprise are unavailable until a real estimates feed is connected.' },
   { id: 'super-investors', tab: 'Super Investors', route: '#/research/super-investors/superstar-investors', description: 'Filed superstar-investor holdings and quarter-on-quarter disclosed changes.' },
   { id: 'institutions', tab: 'Super Investors', route: '#/research/super-investors/institutions', description: 'Institutional shareholding patterns and AMC portfolio disclosures.' },
   { id: 'company-news', tab: 'News', route: '#/research/news', description: 'Permanently retained company news, including portfolio companies without exchange symbols.' },
@@ -839,7 +838,7 @@ const BUILDERS = [
         asOf: meta.fetchedAt || meta.checkedAt || null,
         rowCount: rows.length,
         coverage: { allReportedRows: meta.count ?? earningsLive.all().length },
-        definition: `${meta.quarter || 'Current quarter'} · ${meta.currentPeriod || 'current'} vs ${meta.priorPeriod || 'prior'} · ${String(meta.subType || 'yoy').toUpperCase()}. ₹ crore. growthPct is absent where the sign changed; change says how.`,
+        definition: `${meta.quarter || 'Current quarter'} · ${meta.currentPeriod || 'current'} vs ${meta.priorPeriod || 'prior'} · ${String(meta.subType || 'yoy').toUpperCase()}. ₹ crore. growthPct is absent where the sign changed; change says how. Analyst consensus estimates are not connected; reported growth is not an earnings surprise.`,
         ...chooseRows(rows, plan, earningsRow, byDateDesc('resultDate')),
       });
     },
@@ -1016,13 +1015,6 @@ const BUILDERS = [
         definition: '16 rules, 24 points. Returns are percentages; Pp fields are percentage points. priceDate and previousPriceDate date the latest session; sixMonthReturnPct is not a since-news return. Capture time is not the price date.',
         ...chooseRows(rows, plan, technicalRow, (a, b) => (b.score?.points ?? -Infinity) - (a.score?.points ?? -Infinity)),
       });
-    },
-  },
-  {
-    id: 'earnings-surprise',
-    load: async () => null,
-    read() {
-      return failedPacket(this.id, 'Analyst consensus estimates and structured earnings history are not connected. No synthetic financials are supplied.');
     },
   },
   {

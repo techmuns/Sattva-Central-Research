@@ -329,7 +329,7 @@ export function sourceGroups() {
     {
       title: 'Earnings & filings',
       icon: '📊',
-      tabs: 'Earnings Hub · Con-call · Breakouts → Earnings Surprise',
+      tabs: 'Earnings Hub · Con-call',
       items: [
         {
           name: 'Live published-results feed',

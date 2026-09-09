@@ -2732,7 +2732,6 @@ console.log('\n— breakouts: the stat strip became a Live pill —');
     ['strong-breakouts', 'Strong Breakouts', false],
     ['technical-scanner', 'Technical Scanner', false],
     ['fii-accumulation', 'FII Accumulation', false],
-    ['earnings-surprise', 'Earnings Surprise', true], // estimates unavailable — no live pill
   ];
 
   const seen = [];
@@ -2772,11 +2771,6 @@ console.log('\n— breakouts: the stat strip became a Live pill —');
   ok('a current sub-view\'s pill is green, dotted, and reads "Up to date"',
     seen.filter(([, mock]) => !mock).every(([, , m]) => m.green && m.dot && m.face === 'Up to date'),
     seen.filter(([, mock]) => !mock).map(([l, , m]) => `${l}:"${m.face}"`).join(' · '));
-
-  // Missing estimates must not be replaced by a synthetic table or a live-data label.
-  const es = seen.find(([l]) => l === 'Earnings Surprise')[2];
-  ok('the unavailable estimates view has no live-data pill', es.pills === 0 && !es.green);
-  ok('missing consensus is explicit and no generated rows are shown', /consensus estimates are not connected/i.test(await hostText()) && await rowCount() === 0);
 
   // The compact status stays on the page without opening a verbose explainer.
   await go('/#/research/breakouts/strong-breakouts?scope=universe', 2600);
