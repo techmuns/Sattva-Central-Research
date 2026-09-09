@@ -76,9 +76,10 @@ after a calendar failure. It contains public document metadata only, with no pai
 state; the existing combined calendar artifact still requires all its own reads to succeed.
 
 A checkpoint begins `pending`, so interrupted work cannot authorise paid requests. A completed
-document capture may be used after a confirmed calendar `shape` error, with authentication and
-refusal checks still required. Source refusals, session/identity failures, transport errors and
-unknown failures remain blocked. Unchanged malformed calendar pages are not retried in the same
+document capture may be used after a confirmed calendar `shape` error, with authentication,
+positive calendar structure and refusal checks still required. Unknown/interstitial/partial pages
+remain blocked. Source refusals, session/identity failures, transport errors and
+unknown failures remain blocked. Temporary server failures retain bounded retries; unchanged malformed calendar pages are not retried in the same
 run. Fixed diagnostic categories identify the rejected calendar stage without publishing its HTML.
 
 The private collector validates the artifact's digest, origin, owning workflow/run, full-history
@@ -89,6 +90,8 @@ Calendar failure remains visible as calendar failure and cannot claim fresh cale
 The public Con-call library also adopts newer validated document metadata independently, so
 new calls remain visible. Previously confirmed calendar rows retain their own check time and
 failure state; document arrival cannot make a retained calendar look freshly checked.
+Earnings Calendar keeps its original calendar-only reader and request budget; it never spends
+company-identity requests on document recovery.
 No schedule, private storage identity, quota, reservation, cooldown or paid-body reader is reset.
 
 This isolates calendar defects from summary discovery; it does not guarantee source availability

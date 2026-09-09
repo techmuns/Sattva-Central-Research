@@ -29,7 +29,7 @@ import {
   screenerConcallKey,
 } from '../public/js/data/screener-concalls-shared.js';
 import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
-import { writeDocumentCheckpoint } from './lib/concall-document-checkpoint.mjs';
+import { writeDocumentCheckpoint, recognisedCalendar } from './lib/concall-document-checkpoint.mjs';
 import { summaryResponseError } from './lib/read-screener-summary.mjs';
 
 const output = process.argv[2];
@@ -43,6 +43,7 @@ let failureCode = null;
 let failureFeed = null;
 let documents = null;
 let failureDetail = null;
+let confirmedCalendarShape = false;
 
 function collectionError(code) {
   const error = new Error('Screener concall page rejected');
@@ -188,7 +189,7 @@ async function main() {
   stage = 'upcoming calendar crawl';
   // A full history audit has just made 168 polite sequential requests. Give the authenticated
   // session a quiet boundary before switching feeds, then apply the same bounded retry discipline
-  // to page one as to every later page. A transient 429/5xx here must not discard a valid crawl.
+  // to page one as to every later page. Temporary 5xx responses get bounded retries; refusals stop.
   await page.waitForTimeout(full ? 5000 : 750);
   const readUpcomingPage = async (number, baseline = null) => {
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -198,7 +199,7 @@ async function main() {
           throw collectionError('navigation');
         });
         const finalUrl = new URL(page.url());
-        if (!response?.ok()) throw collectionError('response');
+        if (!response?.ok()) throw collectionError([401,403,429].includes(response?.status()) ? 'refused' : 'response');
         if (finalUrl.origin !== 'https://www.screener.in' || finalUrl.pathname !== '/concalls/upcoming/') throw collectionError('session');
         if (summaryResponseError(response.status(), await page.locator('body').innerText(), response.headers()['retry-after']))
           throw collectionError('refused');
@@ -208,13 +209,15 @@ async function main() {
         try {
           parsed = parseScreenerMarketUpcomingPage(html);
         } catch {
+          confirmedCalendarShape = recognisedCalendar(html, 'upcoming') &&
+            (await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count()) > 0;
           throw collectionError('shape');
         }
         if (baseline && (parsed.publishedTotal !== baseline.publishedTotal || parsed.lastPage !== baseline.lastPage)) throw collectionError('pagination');
         await page.waitForTimeout(120);
         return parsed;
       } catch (error) {
-        if (attempt === 3 || ['response', 'session', 'refused', 'shape'].includes(error?.collectionCode)) {
+        if (attempt === 3 || ['session', 'refused', 'oversized', 'shape'].includes(error?.collectionCode)) {
           failurePage = number;
           failureFeed = 'upcoming';
           failureCode = ['navigation', 'response', 'session', 'refused', 'oversized', 'shape', 'pagination'].includes(error?.collectionCode)
@@ -246,9 +249,8 @@ async function main() {
   stage = 'portfolio calendar capture';
   const checkedAt = new Date().toISOString();
   // This read follows seven market-calendar pages on a normal run (and the complete document
-  // catalogue on a daily audit). Give the authenticated session a quiet boundary and retry only
-  // this fixed dashboard: a transient refusal or partial render must not discard the two valid
-  // captures already completed, while an identity or shape change must still fail closed.
+  // catalogue on a daily audit). Retry temporary transport/server failures on this fixed
+  // dashboard. Refusals and shape changes stop; complete documents remain checkpointed separately.
   await page.waitForTimeout(2500);
   const readPortfolioUpcoming = async () => {
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -257,7 +259,7 @@ async function main() {
           throw collectionError('navigation');
         });
         const dashboardUrl = new URL(page.url());
-        if (!dashboard?.ok()) throw collectionError('response');
+        if (!dashboard?.ok()) throw collectionError([401,403,429].includes(dashboard?.status()) ? 'refused' : 'response');
         if (dashboardUrl.origin !== 'https://www.screener.in' || dashboardUrl.pathname !== `/dash/${SCREENER_PORTFOLIO_WATCHLIST_ID}/`) {
           throw collectionError('session');
         }
@@ -268,9 +270,13 @@ async function main() {
         if ((await watchlistLink.count()) < 1 || (await namedWatchlist.count()) < 1) throw collectionError('identity');
         if (summaryResponseError(dashboard.status(), await page.locator('body').innerText(), dashboard.headers()['retry-after']))
           throw collectionError('refused');
+        const html = await page.content();
+        if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw collectionError('oversized');
         try {
-          return parseScreenerPortfolioUpcomingPage(await page.content(), checkedAt);
+          return parseScreenerPortfolioUpcomingPage(html, checkedAt);
         } catch (error) {
+          confirmedCalendarShape = recognisedCalendar(html, 'portfolio') &&
+            (await page.locator('a[href^="/logout/"], form[action^="/logout/"]').count()) > 0;
           const diagnostics = new Map([
             ['Screener Upcoming panel unavailable or ambiguous', 'panel'],
             ['Unmapped Screener Upcoming row', 'row'],
@@ -283,7 +289,7 @@ async function main() {
           throw collectionError('shape');
         }
       } catch (error) {
-        if (attempt === 3 || ['response', 'session', 'identity', 'refused', 'shape'].includes(error?.collectionCode)) {
+        if (attempt === 3 || ['session', 'identity', 'refused', 'oversized', 'shape'].includes(error?.collectionCode)) {
           failurePage = 1;
           failureFeed = 'portfolio';
           failureCode = ['navigation', 'response', 'session', 'identity', 'refused', 'shape'].includes(error?.collectionCode)
@@ -344,7 +350,7 @@ try {
   await main();
 } catch {
   if (documents) {
-    const calendarShape = ['portfolio', 'upcoming'].includes(failureFeed) && failureCode === 'shape';
+    const calendarShape = confirmedCalendarShape && ['portfolio', 'upcoming'].includes(failureFeed) && failureCode === 'shape';
     writeDocumentCheckpoint(documentOutput, documents, calendarShape ? 'calendar-shape' : 'blocked');
   }
   // Browser exceptions can include form values or page content. Public logs get only a fixed

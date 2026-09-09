@@ -64,7 +64,7 @@ import { handleIpoMonitor } from './ipo-monitor.mjs';
 import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
-import { readScreenerConcallCollection } from './screener-concalls-collector.mjs';
+import { readScreenerConcallCollector, readScreenerConcallCollection } from './screener-concalls-collector.mjs';
 import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
 import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calendar-shared.js';
 import { readScreenerInsightsCollector } from './screener-insights-collector.mjs';
@@ -1040,21 +1040,21 @@ async function dispatchScreenerRefresh(env) {
 }
 
 /**
- * One minute cache shared by Con-call and Earnings Calendar.
+ * One minute caches for the calendar snapshot and recovered Con-call documents.
  *
  * The immutable artifact holds both retained documents and the authoritative current invitation
- * list. Reading it once for each route would double GitHub API traffic whenever a dashboard opens
- * both tabs, so both consume this same internal cache entry.
+ * list. Earnings Calendar needs only that artifact: document recovery must not spend any of its
+ * tightly bounded company-identity request budget. Con-call has its own document-aware cache.
  */
-async function readCachedScreenerCollector(request, env, ctx) {
+async function readCachedScreenerCollector(request, env, ctx, documents = false) {
   const cache = caches.default;
-  const cacheKey = edgeKey('concalls/screener-v2');
+  const cacheKey = edgeKey(documents ? 'concalls/screener-documents-v1' : 'concalls/screener-v2');
   const hit = await cache.match(cacheKey);
   if (hit) return { value: await hit.json(), fresh: false };
 
   let value;
   try {
-    value = await readScreenerConcallCollection({
+    value = await (documents ? readScreenerConcallCollection : readScreenerConcallCollector)({
       token: env.GH_DISPATCH_TOKEN,
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
     });
@@ -1154,7 +1154,7 @@ async function handleConcalls(request, env, ctx) {
   // result away with the rest — so a StockScans outage would empty a portfolio calendar that had
   // been read perfectly well, which is the failure this whole route was just fixed for. On a cold
   // device there is no retained copy to fall back to, so the loss would reach the screen.
-  const screenerRead = readCachedScreenerCollector(request, env, ctx).catch(() => null);
+  const screenerRead = readCachedScreenerCollector(request, env, ctx, true).catch(() => null);
 
   try {
     const [head, tail, sched] = await Promise.all([

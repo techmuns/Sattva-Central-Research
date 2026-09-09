@@ -280,7 +280,10 @@ function artifactFetch({ digest = null, host = 'https://example.blob.core.window
 }
 
 test('Worker accepts only trusted, digest-verified Actions artifacts', async () => {
-  const out = await readScreenerConcallCollector({ token: 'test-token', now: () => Date.parse(observedAt), fetcher: artifactFetch() });
+  let requests=0;
+  const fetcher=artifactFetch();
+  const out = await readScreenerConcallCollector({ token: 'test-token', now: () => Date.parse(observedAt), fetcher: (...args)=>{requests++;return fetcher(...args);} });
+  assert.equal(requests,5,'the calendar-only reader stays within the identity budget reserved by its route');
   assert.equal(out.capture.rows.length, 3);
   assert.equal(out.source.portfolioUpcomingAvailable, true);
   assert.equal(out.source.portfolioUpcomingRecords, 4);
@@ -375,8 +378,11 @@ test('real collector preserves documents on independent calendar failures, with 
     // writer run unchanged; an unexpected navigation fails instead of reaching the network.
     const documentHtml = html.replace('<a href="?p=2">2</a>','');
     const marketHtml = marketUpcomingHtml.replace('<a href="?p=2">2</a>','');
+    const changedPortfolio = portfolioUpcomingHtml.replace('class="badge sub"','class="new-event-label"');
+    const changedMarket = marketHtml.replace('5 September 2026','Unrecognised source date');
     writeFileSync(join(dir,'index.mjs'), `
       const mode=process.env.CALENDAR_FIXTURE_MODE;
+      const healthy=['good','transient-market','transient-portfolio','empty-market'].includes(mode), visits={market:0,portfolio:0};
       let url='https://www.screener.in/concalls/';
       const locator={count:async()=>1,waitFor:async()=>{},fill:async()=>{},click:async()=>{},
         innerText:async()=>mode==='refusal'?'Daily summary quota reached. Try again tomorrow.':'Authenticated calendar',
@@ -384,25 +390,33 @@ test('real collector preserves documents on independent calendar failures, with 
       const page={setDefaultTimeout(){},setDefaultNavigationTimeout(){},locator:()=>locator,getByText:()=>locator,
         waitForTimeout:async()=>{},waitForURL:async()=>{url='https://www.screener.in/concalls/';},url:()=>url,
         goto:async target=>{if(!target.startsWith('https://www.screener.in/'))throw Error('Unexpected fixture origin');url=target;
-          return {ok:()=>true,status:()=>200,headers:()=>({})};},
-        content:async()=>url.includes('/dash/') ? (mode==='good'?${JSON.stringify(portfolioUpcomingHtml)}:'<h2>Upcoming</h2><div>Changed calendar layout</div>')
-          :url.includes('/upcoming/') ? (mode==='market'?'Changed market calendar':mode==='empty-market'?'<table id="result_list"><tbody></tbody></table><div>0 concall invites</div>':${JSON.stringify(marketHtml)})
+          const feed=url.includes('/upcoming/')?'market':url.includes('/dash/')?'portfolio':null;
+          if(feed)visits[feed]++;
+          const status=feed && mode==='http-refusal'?429:feed && mode==='transient-'+feed && visits[feed]<3?503:200;
+          return {ok:()=>status===200,status:()=>status,headers:()=>({})};},
+        content:async()=>url.includes('/dash/') ? (healthy?${JSON.stringify(portfolioUpcomingHtml)}:mode==='interstitial-portfolio'?'<h2>Upcoming</h2><div>Temporarily busy</div>':mode==='partial-portfolio'?'<h2>Upcoming</h2><ul><li><strong>Today</strong></li>':${JSON.stringify(changedPortfolio)})
+          :url.includes('/upcoming/') ? (mode==='market'?${JSON.stringify(changedMarket)}:mode==='interstitial-market'?'Temporarily busy':mode==='empty-market'?'<table id="result_list"><tbody></tbody></table><div>0 concall invites</div>':${JSON.stringify(marketHtml)})
           :mode==='documents'?'Changed document table':${JSON.stringify(documentHtml)}};
-      export const chromium={launch:async()=>({close:async()=>{},newContext:async()=>({newPage:async()=>page,
+      export const chromium={launch:async()=>({close:async()=>{console.log('FIXTURE_VISITS:'+JSON.stringify(visits));},newContext:async()=>({newPage:async()=>page,
         cookies:async()=>[{name:'sessionid',value:'fixture'}]})})};
     `);
-    for (const mode of ['portfolio','market','refusal','documents','empty-market','good']) {
+    for (const mode of ['portfolio','market','refusal','http-refusal','documents','interstitial-market','interstitial-portfolio','partial-portfolio','transient-market','transient-portfolio','empty-market','good']) {
       const path=join(dir,`${mode}.gz`);
+      const healthy=['good','transient-market','transient-portfolio','empty-market'].includes(mode);
       const run=spawnSync(process.execPath,['scripts/collect-screener-concalls.mjs',path],{cwd:new URL('..',import.meta.url),encoding:'utf8',
         env:{...process.env,GITHUB_ACTIONS:'false',SCREENER_USERNAME:'fixture',SCREENER_PASSWORD:'fixture',PLAYWRIGHT_ROOT:dir,CALENDAR_FIXTURE_MODE:mode},timeout:10000});
-      assert.equal(run.status,mode==='good'?0:1,run.stderr);
+      assert.equal(run.status,healthy?0:1,run.stderr);
       if(mode==='documents') {assert.equal(existsSync(`${path}.documents.gz`),false);continue;}
       const checkpoint=JSON.parse(gunzipSync(readFileSync(`${path}.documents.gz`)));
       validateScreenerConcallCapture(checkpoint);
       assert.equal(checkpoint.rows.length,3);
-      assert.equal(checkpoint.documentCheckpoint.outcome,mode==='good'?'complete':mode==='refusal'?'blocked':'calendar-shape');
-      assert.equal(existsSync(path),mode==='good','failed calendars never publish a misleading full capture');
-      if(mode==='portfolio') assert.match(run.stderr,/Portfolio calendar diagnostic: panel/);
+      assert.equal(checkpoint.documentCheckpoint.outcome,healthy?'complete':['portfolio','market'].includes(mode)?'calendar-shape':'blocked',mode);
+      assert.equal(existsSync(path),healthy,'failed calendars never publish a misleading full capture');
+      if(mode==='portfolio') assert.match(run.stderr,/Portfolio calendar diagnostic: label/);
+      const visits=JSON.parse(/FIXTURE_VISITS:(.*)/.exec(run.stdout)[1]);
+      if(mode.startsWith('transient-')) assert.equal(visits[mode.slice(10)],3,'temporary 5xx responses receive their bounded retries');
+      if(['refusal','http-refusal','market','interstitial-market'].includes(mode)) assert.equal(visits.market,1,'refusals and unchanged bad pages are not retried');
+      if(mode==='empty-market') assert.deepEqual(JSON.parse(gunzipSync(readFileSync(path))).upcoming,[]);
     }
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
