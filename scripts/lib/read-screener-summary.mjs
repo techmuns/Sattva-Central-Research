@@ -21,16 +21,19 @@ export function summaryNavigationGate() {
 }
 export function summaryResponseError(status, text = '', retryAfter = null, now = Date.now()) {
   let retryAt = null;
+  const failure = (code, until = null) => Object.assign(summaryReadError(code, until), { httpStatus: status });
   if (retryAfter) {
     const at = /^\d+$/.test(retryAfter) ? now + Number(retryAfter) * 1000 : Date.parse(retryAfter);
     if (Number.isFinite(at)) retryAt = new Date(Math.max(at, now + SUMMARY_WINDOW_MS)).toISOString();
   }
   if (status === 429 || /limit exceeded|(?:daily|summary|summaries) (?:limit|quota).{0,50}(?:exceed|reach)|try again tomorrow/i.test(text))
-    return summaryReadError('rate-limited', retryAt);
-  if (status === 401) return summaryReadError('session-expired');
-  if (status === 403 || /access denied|verify you are human|captcha|upgrade.{0,30}(?:premium|plan)/i.test(text)) return summaryReadError('access-denied', retryAt);
-  if (status === 404 || /summary (?:is )?(?:not available|not yet|being prepared)/i.test(text)) return summaryReadError('not-published');
-  if (status < 200 || status >= 300) return summaryReadError('source-unavailable', retryAt);
+    return failure('rate-limited', retryAt);
+  if (status === 401) return failure('session-expired');
+  // The normal HTTP 200 login page advertises "Upgrade to Premium". Marketing copy alone is
+  // not an access refusal. Unknown paywalls still fail the summary's identity/body validation.
+  if (status === 403 || /access denied|verify you are human|captcha/i.test(text)) return failure('access-denied', retryAt);
+  if (status === 404 || /summary (?:is )?(?:not available|not yet|being prepared)/i.test(text)) return failure('not-published');
+  if (status < 200 || status >= 300) return failure('source-unavailable', retryAt);
   return null;
 }
 
@@ -82,9 +85,10 @@ export async function readScreenerSummary(page, target, { now = Date.now } = {})
   const text = await page.locator('body').innerText({ timeout: 5000 });
   const refusal = summaryResponseError(response?.status() || 0, text, response?.headers()['retry-after'], now());
   if (refusal) throw refusal;
-  if (/\/(?:login|register)\//.test(new URL(page.url()).pathname)) throw summaryReadError('session-expired');
-  if (summaryId(page.url()) !== target.id) throw summaryReadError('identity');
-  if (text.length > 256 * 1024) throw summaryReadError('structure-changed');
+  const failure = code => Object.assign(summaryReadError(code), { httpStatus: response?.status() || null });
+  if (/\/(?:login|register)\//.test(new URL(page.url()).pathname)) throw failure('session-expired');
+  if (summaryId(page.url()) !== target.id) throw failure('identity');
+  if (text.length > 256 * 1024) throw failure('structure-changed');
   const extracted = await page.evaluate(extractSummaryDocument, target);
-  try { return validateSummaryBody(extracted); } catch { throw summaryReadError('structure-changed'); }
+  try { return validateSummaryBody(extracted); } catch { throw failure('structure-changed'); }
 }

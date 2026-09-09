@@ -201,7 +201,7 @@ try {
 
   // Source parser is exercised offline with script execution disabled, as in collection.
   const sourceContext=await browser.newContext({javaScriptEnabled:false,serviceWorkers:'block'});
-  let html=`<main><h1>Concall Summary - Test Ltd - Sep 2026</h1><a href="/company/TEST/">Test Ltd</a><h2>Operating performance</h2><p>${text}</p><ul><li>Demand discussion</li><li>Cost discussion</li></ul><table><tr><th>Measure</th><th>Value</th></tr><tr><td>Fixture</td><td>12</td></tr></table><footer>Account footer</footer></main>`;
+  let html=`<main><h1>Concall Summary - Test Ltd - Sep 2026</h1><a href="/company/TEST/">Test Ltd</a><h2>Operating performance</h2><p>${text}</p><ul><li>Demand discussion</li><li>Cost discussion</li></ul><table><tr><th>Measure</th><th>Value</th></tr><tr><td>Fixture</td><td>12</td></tr></table><footer>Upgrade to Premium</footer></main>`;
   await sourceContext.route('**/*',route=>route.fulfill({contentType:'text/html',body:html}));
   const sourcePage=await sourceContext.newPage();
   const target={id:'123',url:'https://www.screener.in/concalls/summary/123/',companyUrl:'https://www.screener.in/company/TEST/'};
@@ -209,6 +209,8 @@ try {
   assert.equal(parsed.blocks.length,4);assert.equal(parsed.blocks[1].text,text);
   html=html.replace('<p>','<div>').replace('</p>','</div>');
   await assert.rejects(readScreenerSummary(sourcePage,target),e=>e.summaryCode==='structure-changed');
+  html='<main><h1>Concall Summary - Test Ltd</h1><a href="/company/TEST/">Test Ltd</a><p>Upgrade to Premium to read the summary.</p></main>';
+  await assert.rejects(readScreenerSummary(sourcePage,target),e=>e.summaryCode==='structure-changed','a paywall cannot become a saved report');
   html='<main><h1>Concall Summary - Test Ltd</h1><p>Limit exceeded - Please try again later. Premium users can request 80 summaries each day.</p></main>';
   await assert.rejects(readScreenerSummary(sourcePage,target),e=>e.summaryCode==='rate-limited');
   console.log('PASS private summary UI and parser: one inline reader, versions, inert content, pending recovery, portfolio gaps, session isolation, disabled state, responsive themes and quota/template refusals');

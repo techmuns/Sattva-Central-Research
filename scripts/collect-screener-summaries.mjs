@@ -13,6 +13,7 @@ import { SUMMARY_ORIGIN, SUMMARY_FAILURES, SUMMARY_INVENTORY_BATCH, SUMMARY_TRAN
 
 const ENDPOINT = `${SUMMARY_ORIGIN}/api/concall-summaries/collector`;
 const MAX_BATCH = 10;
+const diagnosticTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
 
 export function summaryCollectorClient({ fetcher = fetch, env = process.env } = {}) {
   // GitHub's request credential stays on its documented Actions hostname. The short-lived OIDC
@@ -63,7 +64,8 @@ export async function runSummaryCollection({ client, inventory, openSession, rea
       try { await client({ action: 'discovery-failed' }); } catch { /* Checkpoint outage: age stays visible. */ }
       throw Error('Private summary inventory could not be reconciled');
     }
-    if (Date.parse(synced.state?.cooldownUntil) > now()) return { saved, attempted, reason: 'source-cooldown' };
+    if (Date.parse(synced.state?.cooldownUntil) > now()) return { saved, attempted, reason: 'source-cooldown',
+      cooldownUntil: diagnosticTime(synced.state.cooldownUntil) };
     // Do not even sign in if the rolling daily allowance has already been consumed.
     if (synced.state?.automatedRequestsLast24h >= synced.state?.requestBudget) return { saved, attempted, reason: 'daily-budget' };
     for (let index = 0; index < MAX_BATCH; index++) {
@@ -84,8 +86,10 @@ export async function runSummaryCollection({ client, inventory, openSession, rea
         body = await read(session.page, claim.target);
       } catch (error) {
         const outcome = SUMMARY_FAILURES.has(error?.summaryCode) ? error.summaryCode : 'source-unavailable';
-        await client({ action: 'complete', requestId: claim.requestId, token: claim.token, outcome, retryAt: error?.retryAt || null });
-        if (outcome !== 'not-published') return { saved, attempted, reason: outcome };
+        const completed = await client({ action: 'complete', requestId: claim.requestId, token: claim.token, outcome, retryAt: error?.retryAt || null });
+        if (outcome !== 'not-published') return { saved, attempted, reason: outcome, stage: session ? 'summary' : 'login',
+          httpStatus: Number.isInteger(error?.httpStatus) && error.httpStatus >= 100 && error.httpStatus <= 599 ? error.httpStatus : null,
+          cooldownUntil: diagnosticTime(completed.state?.cooldownUntil) };
         continue;
       }
       await client({ action: 'complete', requestId: claim.requestId, token: claim.token, outcome: 'ready', body });
@@ -142,7 +146,8 @@ async function main() {
       } catch (error) { await browser.close(); throw error; }
     },
   });
-  // Aggregate counters and controlled reasons only; never paid text, account identity or tokens.
+  // Counters, fixed stage/reason, numeric status and canonical cooldown only; never source text,
+  // arbitrary error messages, account identity, URLs, headers or tokens.
   console.log(JSON.stringify(result));
   if (!['source-cooldown', 'daily-budget', 'spacing', 'busy', 'no-due-summaries', 'batch-complete'].includes(result.reason)) process.exitCode = 1;
 }

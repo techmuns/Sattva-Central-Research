@@ -132,6 +132,12 @@ test('all refusals stop the account; failed writes cannot replace a saved summar
   assert.equal(summaryResponseError(200,'Limit exceeded - Please try again later. Premium users can request 80 summaries each day.').summaryCode,'rate-limited');
   assert.equal(summaryResponseError(429,'','172800',START).retryAt,iso(START+2*SUMMARY_WINDOW_MS));
   assert.equal(summaryResponseError(403).summaryCode,'access-denied');
+  assert.equal(summaryResponseError(403).httpStatus,403);
+  assert.equal(summaryResponseError(200,'Welcome back! Login to your account. Upgrade to Premium'),null,
+    'ordinary promotion on the valid public login page is not a refusal');
+  assert.equal(summaryResponseError(200,'The company has an upgrade plan for its factories.'),null);
+  for(const message of ['Access denied','Verify you are human','CAPTCHA'])
+    assert.equal(summaryResponseError(200,message).summaryCode,'access-denied');
   const backing=storage(), store=new ConcallSummaryStore(backing,{now:()=>START});store.sync(inventory());
   const claim=store.reserve('1:1',randomUUID()), retryAt=iso(START+45*SUMMARY_WINDOW_MS);
   store.complete('1:1',{...claim,outcome:'rate-limited',retryAt});
@@ -192,6 +198,7 @@ test('collector refreshes membership even during quota cooldown and stops after 
   let requests=0,opened=0;const calls=[];
   const stopped=await runSummaryCollection({inventory:async()=>inventory(),client:async input=>{calls.push(input);return {state:{cooldownUntil:iso(START+60000)}};},openSession:async()=>{opened++;},now:()=>START});
   assert.equal(stopped.reason,'source-cooldown');assert.equal(opened,0);assert.equal(calls[0].action,'sync');
+  assert.equal(stopped.cooldownUntil,iso(START+60000),'the next automatic eligibility is visible without opening a source session');
   const failed=[];
   await assert.rejects(()=>runSummaryCollection({inventory:async()=>inventory(),client:async input=>{
     failed.push(input.action);if(input.action==='sync') throw Error('capacity');return {ok:true};
@@ -201,6 +208,23 @@ test('collector refreshes membership even during quota cooldown and stops after 
   const result=await runSummaryCollection({inventory:async()=>inventory(),client:async input=>{actions.push(input);if(input.action==='sync')return {state:{}};if(input.action==='reserve')return {reserved:true,requestId:input.requestId,token:'token',target:source(1)};return {ok:true};},
     openSession:async()=>({page:{},close:async()=>{}}),read:async()=>{requests++;throw Object.assign(Error(),{summaryCode:'rate-limited'});},now:()=>START});
   assert.equal(result.reason,'rate-limited');assert.equal(requests,1);assert.equal(actions.at(-1).outcome,'rate-limited');
+  assert.equal(result.stage,'summary');assert.equal(result.httpStatus,null);
+});
+
+test('failure diagnostics distinguish login from summary refusals and exclude arbitrary source data', async () => {
+  for(const stage of ['login','summary']) {
+    const actions=[];
+    const refused=Object.assign(summaryResponseError(403),{message:'PRIVATE MESSAGE',html:'PRIVATE HTML',token:'PRIVATE TOKEN'});
+    const client=async input=>{actions.push(input.action);if(input.action==='sync')return {state:{}};
+      if(input.action==='reserve')return {reserved:true,requestId:input.requestId,token:'token',target:source(1)};
+      return {state:{cooldownUntil:iso(START+SUMMARY_WINDOW_MS),privateText:'PRIVATE STATE'}};};
+    const result=await runSummaryCollection({inventory:async()=>inventory(),client,
+      openSession:async()=>{if(stage==='login')throw refused;return {page:{},close:async()=>{}};},
+      read:async()=>{throw refused;},now:()=>START});
+    assert.deepEqual(result,{saved:0,attempted:1,reason:'access-denied',stage,httpStatus:403,cooldownUntil:iso(START+SUMMARY_WINDOW_MS)});
+    assert.deepEqual(actions,['sync','reserve','complete']);
+    assert.doesNotMatch(JSON.stringify(result),/PRIVATE/);
+  }
 });
 
 test('durable timer is read-only until armed and keeps recovery after dispatch failure', async () => {

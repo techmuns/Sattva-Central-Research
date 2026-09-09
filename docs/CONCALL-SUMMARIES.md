@@ -20,8 +20,16 @@ private reader, coverage for all 118 then-current holdings, 145 queued notes and
 timer check. Anonymous and invalid-token requests were denied. These counts are observations,
 not fixed membership or completeness guarantees.
 
-The source's 8 September daily-limit refusal remains recorded until 9 September at 06:48 UTC
-(12:18 pm IST). The existing schedule starts eligible collection automatically after that time.
+The source's initial 8 September daily-limit refusal was retained through 9 September at 06:48 UTC
+(12:18 pm IST). After the calendar and checkpoint discovery fixes, the automatic 9 September
+11:13 UTC catalogue run succeeded with 4,151 retained unique documents and 60 portfolio events.
+The following 11:15 UTC summary run stopped after one reserved attempt with `access-denied`.
+A public, unauthenticated login-page check then reproduced a false detection: its normal HTTP 200
+response advertises "Upgrade to Premium". That marketing phrase alone no longer counts as a
+refusal. Actual HTTP refusals, verification challenges and summary identity/body checks still
+stop collection. Existing reservations and cooldowns remain intact; the schedule resumes only
+when the recorded eligibility permits. Aggregate logs include a fixed login/summary stage, numeric
+HTTP status and canonical cooldown time, without source content or arbitrary error text.
 Successful paid-body capture still needs verification: local parser fixtures do not establish
 compatibility with an unseen successful source page. Unrecognised/incomplete templates fail closed.
 
