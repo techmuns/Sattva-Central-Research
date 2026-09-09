@@ -23,7 +23,7 @@ import { filterByScope } from '../public/js/data/scope.js';
 import { deepDiveEligible, matchingDeepDive, reportingQuarter } from '../public/js/concall/scans.js';
 import * as deepDiveData from '../public/js/data/deep-dive.js';
 import { readScreenerConcallCollector, readScreenerConcallCollection, SCREENER_DOCUMENT_ARTIFACT } from '../worker/screener-concalls-collector.mjs';
-import { writeDocumentCheckpoint } from './lib/concall-document-checkpoint.mjs';
+import { writeDocumentCheckpoint, recognisedCalendar } from './lib/concall-document-checkpoint.mjs';
 
 const observedAt = '2026-09-05T01:00:00.000Z';
 const row = ({ company = 'Dhoot Transmission', key = 'DHOOTTRANS', date = '4 September 2026', kind = 'Recording', url, summary = null } = {}) => `
@@ -386,9 +386,21 @@ test('real collector preserves documents on independent calendar failures, with 
     const marketHtml = marketUpcomingHtml.replace('<a href="?p=2">2</a>','');
     const changedPortfolio = portfolioUpcomingHtml.replace('class="badge sub"','class="new-event-label"').replace(/<h[1-6]>Upcoming<\/h[1-6]>/, '<button>Upcoming</button>');
     const changedMarket = marketHtml.replace('5 September 2026','Unrecognised source date');
+    const closed = body => `<html><body>${body}</body></html>`;
+    const incompleteEvent = '<button>Upcoming</button><ul><li><strong>Today</strong></li><li><a href="/company/GAEL/">Example company</a></li></ul>';
+    const orphanEvent = '<button>Upcoming</button><ul><li><a href="/company/GAEL/">Example company</a><span>AGM</span></li><li><strong>Today</strong></li></ul>';
+    assert.equal(recognisedCalendar(closed(changedPortfolio),'portfolio',observedAt),true,'a complete calendar with changed presentation remains independently recoverable');
+    for (const body of [incompleteEvent, orphanEvent, changedPortfolio.replace('</a>',''), changedPortfolio.replace('</li>',''), changedPortfolio.replace('</ul>','')])
+      assert.equal(recognisedCalendar(closed(body),'portfolio',observedAt),false,'closed outer HTML cannot conceal an incomplete or unmappable company row');
+    assert.equal(recognisedCalendar(closed(changedMarket),'upcoming',observedAt),true);
+    const incompleteMarket = changedMarket.replace(/<td class="field-time nowrap">[^<]+<\/td>/,'');
+    assert.equal(recognisedCalendar(closed(incompleteMarket),'upcoming',observedAt),false);
+    assert.equal(recognisedCalendar(closed(changedMarket.replace('</tr>','')),'upcoming',observedAt),false);
     writeFileSync(join(dir,'index.mjs'), `
       const mode=process.env.CALENDAR_FIXTURE_MODE;
-      const healthy=['good','tomorrow','transient-market','transient-portfolio','empty-market'].includes(mode), visits={market:0,portfolio:0};
+      const healthy=['good','tomorrow','midnight','transient-market','transient-portfolio','empty-market'].includes(mode), visits={market:0,portfolio:0};
+      const RealDate=Date; let clock=RealDate.parse('2026-09-09T18:29:59Z');
+      if(mode==='midnight') globalThis.Date=class extends RealDate { constructor(...args){super(...(args.length?args:[clock]));} static now(){return clock;} };
       let url='https://www.screener.in/concalls/';
       const locator={count:async()=>1,waitFor:async()=>{},fill:async()=>{},click:async()=>{},
         innerText:async()=>mode==='refusal'?'Daily summary quota reached. Try again tomorrow.':'Authenticated calendar',
@@ -398,23 +410,24 @@ test('real collector preserves documents on independent calendar failures, with 
         goto:async target=>{if(!target.startsWith('https://www.screener.in/'))throw Error('Unexpected fixture origin');url=target;
           const feed=url.includes('/upcoming/')?'market':url.includes('/dash/')?'portfolio':null;
           if(feed)visits[feed]++;
+          if(feed==='portfolio' && mode==='midnight') clock=RealDate.parse('2026-09-09T18:30:02Z');
           const status=feed && mode==='http-refusal'?429:feed && mode==='transient-'+feed && visits[feed]<3?503:200;
-          return {ok:()=>status===200,status:()=>status,headers:()=>({})};},
-        content:async()=>url.includes('/dash/') ? (mode==='tomorrow'?${JSON.stringify(portfolioUpcomingHtml.replace('Today','Tomorrow'))}:healthy?${JSON.stringify(portfolioUpcomingHtml)}:mode==='interstitial-portfolio'?'<h2>Upcoming</h2><div>Temporarily busy</div>':mode==='partial-portfolio'?'<h2>Upcoming</h2><ul><li><strong>Today</strong></li>':${JSON.stringify(changedPortfolio)})
+          return {ok:()=>status===200,status:()=>status,headers:()=>({}),body:async()=>Buffer.from(feed==='portfolio' && mode==='truncated-response'?'<html><body><button>Upcoming</button><ul><li><strong>Today</strong></li><li><a href="/company/GAEL/">Example company':'<html><body>'+await page.content()+'</body></html>')};},
+        content:async()=>url.includes('/dash/') ? (['tomorrow','midnight'].includes(mode)?${JSON.stringify(portfolioUpcomingHtml.replace('Today','Tomorrow'))}:healthy?${JSON.stringify(portfolioUpcomingHtml)}:mode==='interstitial-portfolio'?'<h2>Upcoming</h2><div>Temporarily busy</div>':mode==='partial-portfolio'?'<h2>Upcoming</h2><ul><li><strong>Today</strong></li>':['truncated-response','missing-event'].includes(mode)?${JSON.stringify(incompleteEvent)}:mode==='orphan-event'?${JSON.stringify(orphanEvent)}:${JSON.stringify(changedPortfolio)})
           :url.includes('/upcoming/') ? (mode==='market'?${JSON.stringify(changedMarket)}:mode==='interstitial-market'?'Temporarily busy':mode==='empty-market'?'<table id="result_list"><tbody></tbody></table><div>0 concall invites</div>':${JSON.stringify(marketHtml)})
           :mode==='documents'?'Changed document table':${JSON.stringify(documentHtml)}};
       export const chromium={launch:async()=>({close:async()=>{console.log('FIXTURE_VISITS:'+JSON.stringify(visits));},newContext:async()=>({newPage:async()=>page,
         cookies:async()=>[{name:'sessionid',value:'fixture'}]})})};
     `);
-    for (const mode of ['portfolio','market','refusal','http-refusal','documents','interstitial-market','interstitial-portfolio','partial-portfolio','transient-market','transient-portfolio','empty-market','tomorrow','good']) {
+    for (const mode of ['portfolio','market','refusal','http-refusal','documents','interstitial-market','interstitial-portfolio','partial-portfolio','truncated-response','missing-event','orphan-event','transient-market','transient-portfolio','empty-market','tomorrow','midnight','good']) {
       const path=join(dir,`${mode}.gz`);
-      const healthy=['good','tomorrow','transient-market','transient-portfolio','empty-market'].includes(mode);
+      const healthy=['good','tomorrow','midnight','transient-market','transient-portfolio','empty-market'].includes(mode);
       const run=spawnSync(process.execPath,['scripts/collect-screener-concalls.mjs',path],{cwd:new URL('..',import.meta.url),encoding:'utf8',
         env:{...process.env,GITHUB_ACTIONS:'false',SCREENER_USERNAME:'fixture',SCREENER_PASSWORD:'fixture',PLAYWRIGHT_ROOT:dir,CALENDAR_FIXTURE_MODE:mode},timeout:10000});
       assert.equal(run.status,healthy?0:1,run.stderr);
       if(mode==='documents') {assert.equal(existsSync(`${path}.documents.gz`),false);continue;}
       const checkpoint=JSON.parse(gunzipSync(readFileSync(`${path}.documents.gz`)));
-      validateScreenerConcallCapture(checkpoint);
+      validateScreenerConcallCapture(checkpoint,mode==='midnight'?Date.parse('2026-09-09T18:30:02Z'):Date.now());
       assert.equal(checkpoint.rows.length,3);
       assert.equal(checkpoint.documentCheckpoint.outcome,healthy?'complete':['portfolio','market'].includes(mode)?'calendar-shape':'blocked',mode);
       assert.equal(existsSync(path),healthy,'failed calendars never publish a misleading full capture');
@@ -423,6 +436,11 @@ test('real collector preserves documents on independent calendar failures, with 
       if(mode.startsWith('transient-')) assert.equal(visits[mode.slice(10)],3,'temporary 5xx responses receive their bounded retries');
       if(['refusal','http-refusal','market','interstitial-market'].includes(mode)) assert.equal(visits.market,1,'refusals and unchanged bad pages are not retried');
       if(mode==='empty-market') assert.deepEqual(JSON.parse(gunzipSync(readFileSync(path))).upcoming,[]);
+      if(mode==='midnight') {
+        const result=JSON.parse(gunzipSync(readFileSync(path)));
+        assert.equal(result.checkedAt,'2026-09-09T18:30:02.000Z','the successful response sets the observation time');
+        assert.equal(result.portfolioUpcoming.find(row=>row.companyKey==='GAEL').date,'2026-09-11','Tomorrow is relative to the new IST day after navigation');
+      }
     }
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
