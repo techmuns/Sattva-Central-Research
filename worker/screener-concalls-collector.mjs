@@ -142,10 +142,11 @@ export async function readScreenerConcallCollector({
   // Look back only for restoring history. A newer run without a usable checkpoint still marks
   // discovery failed below, so this fallback cannot authorise paid requests from an old success.
   if (documentsOnly) {
+    const list = await json(`/actions/artifacts?name=${SCREENER_DOCUMENT_ARTIFACT}&per_page=10`);
     for (const candidate of runs.filter(item => item.status === 'completed')) {
-      const list = await json(`/actions/runs/${candidate.id}/artifacts?per_page=10`);
-      if ((list.artifacts || []).some(item => item.name === SCREENER_DOCUMENT_ARTIFACT)) {
-        run = candidate; artifactList = list; documentArtifact = true; break;
+      const owned = (list.artifacts || []).filter(item => item.name === SCREENER_DOCUMENT_ARTIFACT && item.workflow_run?.id === candidate.id);
+      if (owned.length) {
+        run = candidate; artifactList = { artifacts: owned }; documentArtifact = true; break;
       }
     }
   }

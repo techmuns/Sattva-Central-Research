@@ -296,15 +296,17 @@ function checkpointFetch({ outcome = 'calendar-shape', missingLatest = false, co
   const { portfolioUpcoming, upcoming, upcomingPublishedTotal, upcomingPagesFetched, upcomingDuplicatesRemoved, ...history } = capture;
   const value = document ? { ...history, documentCheckpoint: {version:1,outcome} } : capture;
   const bytes = gzipSync(JSON.stringify(value));
+  const artifact = id => ({id:20, name:document ? SCREENER_DOCUMENT_ARTIFACT : SCREENER_CONCALL_ARTIFACT,
+    expired,workflow_run:{id},size_in_bytes:bytes.length,digest:`sha256:${corrupt ? '0'.repeat(64) : createHash('sha256').update(bytes).digest('hex')}`});
   const run = id => ({ id, head_branch:'main', head_repository:{full_name:'techmuns/Sattva-Central-Research'}, event:'schedule',
     status:'completed', conclusion:id===11 ? latestConclusion : 'success' });
   return async (url, init = {}) => {
     if (!url.startsWith('https://api.github.com/')) { assert.equal(init.headers, undefined); return new Response(bytes); }
     if (url.includes('/runs?')) return Response.json({total_count:2,workflow_runs:url.includes('status=success') ? [run(10)] : [run(11),run(10)]});
+    if (url.includes('/actions/artifacts?')) return Response.json({artifacts:document ? [artifact(missingLatest?10:11)] : []});
     if (/\/runs\/\d+\/artifacts/.test(url)) {
       const id = Number(/\/runs\/(\d+)/.exec(url)[1]);
-      return Response.json({artifacts: missingLatest && id===11 ? [] : [{id:20, name:document ? SCREENER_DOCUMENT_ARTIFACT : SCREENER_CONCALL_ARTIFACT,
-        expired,workflow_run:{id},size_in_bytes:bytes.length,digest:`sha256:${corrupt ? '0'.repeat(64) : createHash('sha256').update(bytes).digest('hex')}`}]});
+      return Response.json({artifacts: missingLatest && id===11 ? [] : [artifact(id)]});
     }
     if (url.endsWith('/artifacts/20/zip')) return new Response(null,{status:302,headers:{location:'https://example.blob.core.windows.net/checkpoint'}});
     throw Error('Unexpected checkpoint fixture request');
