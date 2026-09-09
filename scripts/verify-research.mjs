@@ -40,6 +40,14 @@ const requestFor = (body) => new Request('https://dashboard.example/api/research
 const parseEvents = async (response) =>
   (await response.text()).trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
 
+ok('corporate announcements is a topic while Corporate Merchant Bankers remains explicitly searchable', () => {
+  const index = [{ticker:'ADANIENT',name:'Adani Enterprises Limited'}, {ticker:'CMBL',name:'Corporate Merchant Bankers Ltd'}];
+  assert.deepEqual(queryPlan('Show the latest filings and corporate announcements for Adani Enterprises, with source links.',index).companies.map(c=>c.ticker),['ADANIENT']);
+  assert.deepEqual(queryPlan('What corporate announcements are available?',index).companies,[]);
+  assert.deepEqual(queryPlan('Show Corporate Merchant Bankers announcements',index).companies.map(c=>c.ticker),['CMBL']);
+  assert.deepEqual(queryPlan('Show CMBL announcements',index).companies.map(c=>c.ticker),['CMBL']);
+});
+
 ok('company-specific question hits precede unrelated company rows before the sampling limit', () => {
   const rows = Array.from({ length: 20 }, (_, i) => ({ ticker: 'TEST', metric: `Operating metric ${i}` }));
   rows.push({ ticker: 'TEST', metric: 'Pellet production' });

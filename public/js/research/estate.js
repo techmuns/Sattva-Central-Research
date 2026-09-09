@@ -121,7 +121,7 @@ const STOP_WORDS = new Set([
 // Legal-form words a company name carries and a question does not.
 const NAME_NOISE = new Set(['ltd', 'limited', 'co', 'company', 'corp', 'corporation', 'inc', 'plc', 'pvt', 'private', 'the']);
 // A leading word too generic to identify a company on its own, even when only one name starts with it.
-const GENERIC_LEAD = new Set(['india', 'indian', 'bharat', 'national', 'global', 'general', 'united', 'international', 'new', 'first', 'great', 'central', 'state', 'city', 'standard']);
+const GENERIC_LEAD = new Set(['india', 'indian', 'bharat', 'national', 'global', 'general', 'united', 'international', 'new', 'first', 'great', 'central', 'state', 'city', 'standard', 'corporate']);
 // Symbols that are also English words. A lower-case token merely spelling one is not a company
 // mention — "any idea about…" is not Vodafone Idea — unless the question also names the company or
 // types the symbol in capitals.
