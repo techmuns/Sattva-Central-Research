@@ -71,7 +71,7 @@ marks coverage failed and pauses source claims until a successful check.
 
 The 9 September incident exposed a dependency error: successfully read documents were discarded
 when a later, unrelated portfolio calendar could not be parsed. The collector now atomically
-writes `screener-concall-documents-v1.json.gz` before reading either calendar. Its upload runs even
+writes `screener-concalls-v1.json.gz.documents.gz` before reading either calendar. Its upload runs even
 after a calendar failure. It contains public document metadata only, with no paid notes or account
 state; the existing combined calendar artifact still requires all its own reads to succeed.
 
