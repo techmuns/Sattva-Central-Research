@@ -139,7 +139,17 @@ identity resolution still determine coverage.
   Retry-After is respected without shortening it. A missing publication
   waits seven days for that ID. The initial object also retains the observed 8 September refusal.
 - A separate durable half-hour alarm is armed by an authorised discovery run. It can dispatch the
-  fixed workflow if GitHub's schedule slips; it never cancels a running workflow. The next alarm
+  fixed workflows if GitHub's schedule slips; it never cancels a running workflow. Before a due
+  summary run, it checks the document catalogue's workflow. A missing run or one started more than
+  15 minutes ago causes a normal incremental catalogue refresh. An active catalogue is checked
+  again in two minutes, without another dispatch. The timer durably reserves a 15-minute dispatch
+  window before network I/O, so delayed run listings cannot create a two-minute source cadence.
+  A run overdue by 45 minutes remains visible and
+  uses the ordinary half-hour recovery interval. Once a recent catalogue completes, the summary
+  workflow validates its actual document checkpoint before any paid request. A completed calendar
+  failure alone neither authorises nor blocks that checkpoint. This dependency recovery works
+  without an open dashboard or GitHub cron delivery. Recent summary runs schedule the next check
+  from their actual creation time, avoiding an accidental extra half-hour delay. The next alarm
   is saved before network I/O. Without an initial successful workflow checkpoint only GitHub's
   schedule is available; a read-only dashboard request cannot arm or dispatch collection.
 - Browser coverage refreshes every minute while visible and on return/reconnection. Saved copies

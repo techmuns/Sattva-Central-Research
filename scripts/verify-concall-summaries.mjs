@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ConcallSummaryStore } from '../worker/concall-summary-store.mjs';
 import { ConcallSummarySchedule } from '../worker/concall-summary-schedule.mjs';
+import { SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
 import { authoriseSummaryReader, summaryCollectorIdentity } from '../worker/concall-summary-auth.mjs';
 import { handleConcallSummaries } from '../worker/concall-summaries.mjs';
 import { summaryId, summaryIdsForRow, validateSummaryBody, summaryStateMessage, summaryScheduleMessage, SUMMARY_WINDOW_MS, SUMMARY_ORIGIN, SUMMARY_WORKFLOW, SUMMARY_INVENTORY_BATCH, SUMMARY_TRANSPORT_LIMIT } from '../public/js/data/concall-summaries-shared.js';
@@ -208,6 +209,87 @@ test('durable timer is read-only until armed and keeps recovery after dispatch f
   assert.equal((await schedule.status()).alarmAt,null);await schedule.arm();assert.equal((await schedule.status()).alarmAt,now+30*60000);
   now+=30*60000;await schedule.wake();assert.equal((await schedule.status()).reason,'unavailable');assert.equal((await schedule.status()).alarmAt,now+30*60000);
   env.SCREENER_SUMMARIES_ENABLED='false';await schedule.wake();assert.equal((await schedule.status()).alarmAt,null);backing.db.close();
+});
+
+function timerHarness() {
+  const backing = storage(), runs = new Map(), posts = [];
+  const env = { SCREENER_SUMMARIES_ENABLED: 'true', GH_REPO: 'techmuns/Sattva-Central-Research', GH_REF: 'main', GH_DISPATCH_TOKEN: 'fixture' };
+  let now = START, loseDispatch = false;
+  const fetcher = async (url, options) => {
+    const parsed = new URL(url);
+    assert.equal(parsed.origin, 'https://api.github.com');
+    const workflow = parsed.pathname.split('/workflows/')[1]?.split('/')[0];
+    assert([SUMMARY_WORKFLOW, SCREENER_CONCALL_WORKFLOW].includes(workflow));
+    if (options.method === 'POST') {
+      const body = JSON.parse(options.body);
+      assert.equal(body.ref, 'main'); posts.push({ workflow, ...body });
+      if (loseDispatch) throw Error('Response lost after dispatch');
+      return new Response(null, { status: 204 });
+    }
+    assert.equal(parsed.searchParams.get('branch'), 'main');
+    const run = runs.get(workflow), status = parsed.searchParams.get('status');
+    return Response.json({ workflow_runs: run && (!status || run.status === status) ? [run] : [] });
+  };
+  const schedule = () => new ConcallSummarySchedule(backing, env, { now: () => now, fetcher });
+  return { backing, runs, posts, schedule, advance: ms => { now += ms; }, now: () => now,
+    loseDispatch: () => { loseDispatch = true; },
+    run: (status, age = 0, conclusion = 'success') => ({ id: 12, status, conclusion, created_at: iso(now - age) }) };
+}
+
+test('the armed timer refreshes the catalogue without a browser or cron and waits before starting summaries', async () => {
+  const h = timerHarness();
+  try {
+    await h.schedule().arm(); h.advance(SUMMARY_INTERVAL_MS);
+    await h.schedule().wake();
+    assert.deepEqual(h.posts.map(post => post.workflow), [SCREENER_CONCALL_WORKFLOW]);
+    assert.deepEqual(h.posts[0].inputs, { source: 'summary-timer', full: 'false' });
+    assert.equal((await h.schedule().status()).alarmAt, h.now() + 2 * 60000);
+    await h.schedule().wake(); assert.equal(h.posts.length, 1, 'duplicate delivery cannot dispatch twice');
+    h.advance(2 * 60000); await h.schedule().wake();
+    assert.equal(h.posts.length, 1, 'a delayed run listing cannot start another source job');
+    assert.equal((await h.schedule().status()).reason, 'checking');
+    h.runs.set(SCREENER_CONCALL_WORKFLOW, h.run('in_progress'));
+    h.advance(2 * 60000); await h.schedule().wake();
+    assert.equal(h.posts.length, 1, 'an active catalogue is awaited, not duplicated');
+    assert.equal((await h.schedule().status()).dependency, 'catalogue');
+    h.runs.set(SCREENER_CONCALL_WORKFLOW, h.run('completed', 2 * 60000, 'failure'));
+    h.advance(2 * 60000); await h.schedule().wake();
+    assert.deepEqual(h.posts.map(post => post.workflow), [SCREENER_CONCALL_WORKFLOW, SUMMARY_WORKFLOW]);
+    assert.equal((await h.schedule().status()).dependency, null);
+    assert.equal((await h.schedule().status()).alarmAt, h.now() + SUMMARY_INTERVAL_MS);
+    // A workflow failure can carry a valid document checkpoint. Paid eligibility remains the
+    // collector's separate digest, outcome, freshness, portfolio and durable-budget decision.
+  } finally { h.backing.db.close(); }
+});
+
+test('recent run creation does not turn the half-hour timer into an hourly timer', async () => {
+  const h = timerHarness();
+  try {
+    h.runs.set(SUMMARY_WORKFLOW, h.run('completed', SUMMARY_INTERVAL_MS - 2000));
+    await h.schedule().wake();
+    assert.equal(h.posts.length, 0);
+    assert.equal((await h.schedule().status()).alarmAt, h.now() + 60000);
+    h.runs.set(SCREENER_CONCALL_WORKFLOW, h.run('completed'));
+    h.advance(60000); await h.schedule().wake();
+    assert.deepEqual(h.posts.map(post => post.workflow), [SUMMARY_WORKFLOW]);
+  } finally { h.backing.db.close(); }
+});
+
+test('catalogue dispatch uncertainty, invalid times and overdue runs preserve a bounded recovery alarm', async () => {
+  for (const mode of ['lost-dispatch', 'invalid-time', 'overdue']) {
+    const h = timerHarness();
+    try {
+      if (mode === 'lost-dispatch') h.loseDispatch();
+      if (mode === 'invalid-time') h.runs.set(SCREENER_CONCALL_WORKFLOW, { ...h.run('completed'), created_at: null });
+      if (mode === 'overdue') h.runs.set(SCREENER_CONCALL_WORKFLOW, h.run('in_progress', 46 * 60000));
+      await h.schedule().wake();
+      assert.equal(h.posts.length, mode === 'lost-dispatch' ? 1 : 0);
+      assert(!h.posts.some(post => post.workflow === SUMMARY_WORKFLOW));
+      const status = await h.schedule().status();
+      assert.equal(status.alarmAt, h.now() + SUMMARY_INTERVAL_MS);
+      assert.equal(status.reason, mode === 'overdue' ? 'run-overdue' : 'unavailable');
+    } finally { h.backing.db.close(); }
+  }
 });
 
 test('workflow is opt-in, main-only and has no public summary artifact or source-text publication', () => {
