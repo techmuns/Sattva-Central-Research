@@ -434,6 +434,14 @@ anything; it is now one click away instead of the default. **All** under Breakou
 breakout grade — a company whose base has not broken out is not a fourth grade, and the line under
 the chips prints the matched count over every company with a detectable base.
 
+Volume Confirm, 52W Proximity and Trend Filter are shared across all three views and default to
+All. Their URL parameters are `vol`, `near` and `dma`; they combine with the view's existing filters.
+Volume Confirm uses the latest volume divided by the prior 30-session average, consistently with
+Strong Breakouts. Proximity thresholds include the exact 5%, 10% and 20% boundaries. Missing
+measurements remain visible under All and do not qualify for a selected threshold. Chip counts
+hold the other chip selections fixed; table search and score choices further narrow the results.
+Scanner top cards, exports and quote targets follow the market-filtered set.
+
 Still to come — this list is now the only place the gap is recorded, since the dashed *Wiring
 roadmap* card that used to close each tab has been removed from the UI:
 - Intraday refresh via the live-quote endpoint

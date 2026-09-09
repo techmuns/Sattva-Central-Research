@@ -21,6 +21,7 @@ import * as refreshRegistry from '../core/refresh.js';
 import { ACTIVE_RULES } from '../scoring/tech-scoring.js';
 import { openTechnicalsDrill, fmtPoints } from './breakouts-drill.js';
 import * as coverage from '../data/coverage.js';
+import { TECHNICAL_FILTERS, TECHNICAL_DEFAULTS, chipCounts } from './technical-filters.js';
 
 export const meta = {
   id: 'breakouts',
@@ -393,7 +394,10 @@ function scoringHelpModalBody() {
 
 function renderScanner(ctx, rows) {
   const m = technicals.meta();
-  const scored = rows.filter((s) => !s.tickerError);
+  const state = readChipState(ctx.params || {}, TECHNICAL_DEFAULTS, TECHNICAL_FILTERS);
+  const counts = chipCounts(rows, TECHNICAL_FILTERS, state);
+  const filtered = rows.filter(row => Object.values(TECHNICAL_FILTERS).every(group => group.test(row, state[group.param])));
+  const scored = filtered.filter((s) => !s.tickerError);
   const maxPoints = scored[0]?.totalMax ?? 24;
 
   const pill = livePill({
@@ -420,7 +424,7 @@ function renderScanner(ctx, rows) {
   });
 
   const table = scoreTable({
-    ...tableBase(rows, ctx),
+    ...tableBase(filtered, ctx),
     // `?company=` from a citation or an AI Alerts card opens the scanner searched for it.
     initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     showScore: true,
@@ -466,8 +470,10 @@ function renderScanner(ctx, rows) {
     ${sectionHead({
       title: meta.title,
       description: 'Every company scored against the 16-rule technicals framework, ranked best first.',
-      meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'companies', book: coverage.meta() })}</div>`,
+      meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: filtered.length, noun: 'companies', book: coverage.meta() })}</div>`,
     })}
+    ${chipBar(TECHNICAL_FILTERS, state, counts)}
+    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${rows.length}</span> companies match these filters.</div>
     ${refreshBar()}
     ${cards.html}
     ${table.html}
@@ -478,7 +484,10 @@ function renderScanner(ctx, rows) {
   cards.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);
-  wireRefreshBar(ctx, table);
+  wireRefreshBar(ctx, table, filtered);
+  wireChipBar(ctx.root, TECHNICAL_FILTERS, state, (param, next) => {
+    ctx.setParams({ ...(ctx.params || {}), [param]: next.join(',') });
+  });
 }
 
 // ---- (b) Strong Breakouts ------------------------------------------------------------------
@@ -515,61 +524,11 @@ const BREAKOUT_FILTERS = {
       return ids.includes(q);
     },
   },
-  volume: {
-    param: 'vol',
-    label: 'Volume confirm',
-    multi: false,
-    aliases: { any: 'all' },
-    options: [
-      { id: 'all', label: 'All' },
-      { id: '1.5', label: '≥ 1.5×' },
-      { id: '1.0', label: '≥ 1.0×' },
-    ],
-    test: (s, ids) => {
-      const id = ids[0];
-      if (!id || id === 'all') return true;
-      const r = s.company.consolidation_breakout?.today_volume_ratio;
-      return r != null && r >= Number(id);
-    },
-  },
-  proximity: {
-    param: 'near',
-    label: '52W proximity',
-    multi: false,
-    aliases: { any: 'all' },
-    options: [
-      { id: 'all', label: 'All' },
-      { id: '5', label: 'Within 5%' },
-      { id: '10', label: 'Within 10%' },
-      { id: '20', label: 'Within 20%' },
-    ],
-    test: (s, ids) => {
-      const id = ids[0];
-      if (!id || id === 'all') return true;
-      const p = s.company.high_proximity_pct;
-      if (p == null) return false;
-      return (1 - p) * 100 <= Number(id);
-    },
-  },
-  trend: {
-    param: 'dma',
-    label: 'Trend filter',
-    multi: false,
-    // 'any' was this group's include-everything id, so it aliases onto 'all' rather than being
-    // dropped: a bookmarked `?dma=any` still means what its author meant.
-    aliases: { any: 'all' },
-    options: [
-      { id: 'all', label: 'All' },
-      { id: 'above', label: 'Above 200 DMA only' },
-    ],
-    // Only 'above' constrains. Written this way round so an id this group no longer knows widens
-    // the view rather than silently emptying it.
-    test: (s, ids) => (ids[0] === 'above' ? s.company.above_200dma === true : true),
-  },
+  ...TECHNICAL_FILTERS,
 };
 
 // Defaults: all of everything. Nothing on this sub-view is narrowed until the reader narrows it.
-const BREAKOUT_DEFAULTS = { bo: 'all', vol: 'all', near: 'all', dma: 'all' };
+const BREAKOUT_DEFAULTS = { bo: 'all', ...TECHNICAL_DEFAULTS };
 
 function readChipState(params, defaults, groups = null) {
   const aliasFor = (param) => Object.values(groups || {}).find((g) => g.param === param)?.aliases || null;
@@ -590,7 +549,7 @@ function chipBar(groups, state, counts) {
         .map(
           ([groupKey, g]) => `
         <div class="flex flex-wrap items-center gap-2">
-          <span class="w-32 flex-shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(g.label)}</span>
+          <span class="w-32 flex-shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400"${g.description ? ` title="${escapeHtml(g.description)}"` : ''}>${escapeHtml(g.label)}</span>
           ${g.options
             .map((o) => {
               const active = state[g.param].includes(o.id);
@@ -639,16 +598,7 @@ function renderStrongBreakouts(ctx, rows) {
 
   // Live counts per chip: how many rows would remain if that chip alone were toggled on,
   // holding the other groups at their current setting.
-  const counts = {};
-  for (const [groupKey, g] of Object.entries(BREAKOUT_FILTERS)) {
-    counts[g.param] = {};
-    for (const o of g.options) {
-      const trial = { ...state, [g.param]: [o.id] };
-      counts[g.param][o.id] = withBreakout.filter((s) =>
-        Object.entries(BREAKOUT_FILTERS).every(([k2, g2]) => g2.test(s, trial[g2.param]))
-      ).length;
-    }
-  }
+  const counts = chipCounts(withBreakout, BREAKOUT_FILTERS, state);
 
   const filtered = withBreakout
     .filter((s) => Object.values(BREAKOUT_FILTERS).every((g) => g.test(s, state[g.param])))
@@ -773,21 +723,15 @@ const FII_FILTERS = {
       return f != null && f > Number(ids[0] ?? 0);
     },
   },
+  ...TECHNICAL_FILTERS,
 };
-const FII_DEFAULTS = { side: 'fii', mag: '0' };
+const FII_DEFAULTS = { side: 'fii', mag: '0', ...TECHNICAL_DEFAULTS };
 
 function renderFiiAccumulation(ctx, rows) {
   const state = readChipState(ctx.params || {}, FII_DEFAULTS, FII_FILTERS);
   const withHold = rows.filter((s) => !s.tickerError && (s.company.chg_fii_hold != null || s.company.chg_dii_hold != null));
 
-  const counts = {};
-  for (const g of Object.values(FII_FILTERS)) {
-    counts[g.param] = {};
-    for (const o of g.options) {
-      const trial = { ...state, [g.param]: [o.id] };
-      counts[g.param][o.id] = withHold.filter((s) => Object.values(FII_FILTERS).every((g2) => g2.test(s, trial[g2.param]))).length;
-    }
-  }
+  const counts = chipCounts(withHold, FII_FILTERS, state);
 
   const filtered = withHold
     .filter((s) => Object.values(FII_FILTERS).every((g) => g.test(s, state[g.param])))
@@ -943,13 +887,12 @@ let inFlight = null;
 // We do NOT probe for it on mount — an unsolicited request that 404s in a static preview is
 // just console noise. The button starts enabled; if the first click finds no endpoint we
 // disable it and explain, so the failure is stated once and never repeated.
-function wireRefreshBar(ctx, table) {
+function wireRefreshBar(ctx, table, rows) {
   const btn = ctx.root.querySelector('[data-refresh-btn]');
   const note = ctx.root.querySelector('[data-refresh-note]');
   const label = ctx.root.querySelector('[data-refresh-label]');
   if (!btn) return;
 
-  const rows = technicals.forScope(ctx.scope, coverage.holdings());
   const scored = rows.filter((s) => !s.tickerError);
   const byTicker = new Map(scored.map((s) => [s.company.ticker, s.company]));
   const tickers = scored.slice(0, 60).map((s) => s.company.ticker);

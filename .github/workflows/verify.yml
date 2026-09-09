@@ -23,6 +23,8 @@ jobs:
         run: node scripts/verify-refresh.mjs
       - name: Verify personal notebook snapshot and backup contracts
         run: node scripts/verify-bookmarks.mjs
+      - name: Verify shared technical filter boundaries and counts
+        run: node scripts/verify-technical-filters.mjs
       - name: Verify variable-height virtual list geometry
         run: node scripts/verify-windowed-geometry.mjs
       - name: Verify filings snapshot recovery
@@ -129,6 +131,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-theme-ui.mjs
+      - name: Verify technical and institutional filters across scopes and refreshes
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-technical-filters-ui.mjs
       - name: Verify inline private summary reader and source parser offline
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
