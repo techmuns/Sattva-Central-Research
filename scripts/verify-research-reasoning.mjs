@@ -55,7 +55,7 @@ for (const [question, expected, history = []] of scenarios) {
   const sources = DASHBOARD_RESEARCH_SOURCES.map(s => s.id === 'concall' ? packets[0] : { ...s, status: 'unavailable', rows: [] });
   const evidence = fitEvidenceToBudget({ scope: 'portfolio', businessContext: context, sources });
   assert(researchEvidenceChars(evidence) <= 18000);
-  assert.equal(evidence.sources.length, 21);
+  assert.equal(evidence.sources.length, 20);
   assert(evidence.sources.some(s => s.rows.length));
   const prompt = buildMunsRequest({ question, history, evidence, scope: 'portfolio' }).query;
   assert(prompt.includes('PORTFOLIO IMPLICATIONS OUTPUT'));

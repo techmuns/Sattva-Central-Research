@@ -126,7 +126,7 @@ sources[sources.findIndex(s => s.id === 'company-news')] = peerSource;
 const fitted = fitEvidenceToBudget({ selection: { companies: plan.companies, business: plan.business }, businessContext: context, sources });
 assert(researchEvidenceChars(fitted) <= 18000);
 assert(fitted.businessContext.candidates.length >= 2);
-assert.equal(fitted.sources.length, 21);
+assert.equal(fitted.sources.length, 20);
 assert(fitted.sources.some(s => s.rows.length));
 assert(fitted.sources.filter(s => s.id !== 'company-news').every(s => s.status === 'unavailable'));
 assert.deepEqual(providerEvidence(fitted).businessContext, fitted.businessContext);

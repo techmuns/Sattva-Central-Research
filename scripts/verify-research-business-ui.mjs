@@ -38,7 +38,7 @@ try {
     assert.equal(row.context.holdingsExamined, book.holdings.length);
     assert.match(row.context.holdingsBasis, /ownership and weights not established/);
     assert(row.context.candidates.every(c => c.weightPct === null));
-    assert.equal(row.sources.length, 21);
+    assert.equal(row.sources.length, 20);
     assert(row.sources.reduce((n, s) => n + s.rows, 0) >= 3, 'comparison cannot crowd out all original feed rows');
     assert(row.preview.items.some(p => p.ticker === 'HFCL'));
     assert(row.preview.items.some(p => p.ticker === 'TEJASNET'));
