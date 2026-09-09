@@ -188,3 +188,11 @@ transport: portfolio/market calendar changes and empty market schedules preserve
 refusals block paid eligibility, document failures produce no usable checkpoint,
 and recovery publishes the complete calendar again. Artifact tests cover pending/crashed writes,
 newer failed runs, legacy rollout, corruption, expiry and atomic preservation after invalid input.
+
+The independent checkpoint is published as `screener-concalls-v1.json.gz.documents.gz`. With
+[upload-artifact's unarchived mode](https://github.com/actions/upload-artifact#inputs), GitHub uses
+the actual file basename and ignores the configured artifact label. The reader and workflow path
+are checked together to prevent a successfully uploaded checkpoint becoming undiscoverable.
+Calendar date parsing supports Today and Tomorrow across month/year boundaries. Failed portfolio
+parses report only fixed structure flags and counts; source HTML, text and account values stay out
+of public logs. Unknown responses still block paid requests.

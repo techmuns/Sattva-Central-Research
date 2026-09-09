@@ -18,6 +18,7 @@ import {
   SCREENER_PORTFOLIO_DASHBOARD,
   SCREENER_PORTFOLIO_WATCHLIST_ID,
   SCREENER_PORTFOLIO_WATCHLIST_NAME,
+  upcomingDiagnostics,
 } from './lib/screener-upcoming.mjs';
 import {
   mergeScreenerConcallCapture,
@@ -43,6 +44,7 @@ let failureCode = null;
 let failureFeed = null;
 let documents = null;
 let failureDetail = null;
+let failureShape = null;
 let confirmedCalendarShape = false;
 
 function collectionError(code) {
@@ -286,6 +288,7 @@ async function main() {
             ['Invalid Screener upcoming company route', 'company-route'],
           ]);
           failureDetail = diagnostics.get(error.message) || 'validation';
+          failureShape = upcomingDiagnostics(html, checkedAt);
           throw collectionError('shape');
         }
       } catch (error) {
@@ -358,6 +361,7 @@ try {
   const location = failurePage ? ` (${failureFeed || 'history'} page ${failurePage}, ${failureCode})` : '';
   console.error(`Screener concall collection failed during ${stage}${location}. No credentials or page content were logged.`);
   if (failureDetail) console.error(`Portfolio calendar diagnostic: ${failureDetail}.`);
+  if (failureShape) console.error(`Portfolio calendar structure: ${JSON.stringify(failureShape)}`);
   process.exitCode = 1;
 } finally {
   await browser?.close().catch(() => {});

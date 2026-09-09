@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { addResolvedTickers, parseScreenerConcallPage, parseScreenerMarketUpcomingPage, screenerTime } from './lib/screener-concalls.mjs';
-import { parseScreenerUpcomingPage as parseScreenerPortfolioUpcomingPage, upcomingDay, upcomingTime } from './lib/screener-upcoming.mjs';
+import { parseScreenerUpcomingPage as parseScreenerPortfolioUpcomingPage, upcomingDay, upcomingTime, upcomingDiagnostics } from './lib/screener-upcoming.mjs';
 import {
   enrichConcallScans,
   groupScreenerConcalls,
@@ -95,6 +95,12 @@ test('S Screen parser keeps today, times, event types and year rollover without 
   assert.equal(portfolioUpcoming[1].sourceUrl, 'https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=call.pdf');
   assert.equal(portfolioUpcoming[3].ticker, null);
   assert.equal(upcomingDay('Fri, 2 Oct', '2026-09-05'), '2026-10-02');
+  assert.equal(upcomingDay('Tomorrow', '2026-09-09'), '2026-09-10');
+  assert.equal(upcomingDay('Tomorrow', '2026-12-31'), '2027-01-01');
+  assert.equal(upcomingDay('Tomorrow', '2028-02-28'), '2028-02-29');
+  const safeShape = upcomingDiagnostics('<h3>Upcoming</h3><ul><li><strong>Tomorrow</strong></li><li><a href="/company/PRIVATE/">Private label</a></li></ul><form>secret</form>', observedAt);
+  assert.equal(safeShape.dateLists, 1); assert.equal(safeShape.tomorrowHeadings, 1);
+  assert(!JSON.stringify(safeShape).includes('Private')); assert(!JSON.stringify(safeShape).includes('secret'));
   assert.equal(upcomingTime('12 p.m.'), '12:00');
   assert.equal(upcomingTime('12:15 a.m.'), '00:15');
 });
@@ -382,7 +388,7 @@ test('real collector preserves documents on independent calendar failures, with 
     const changedMarket = marketHtml.replace('5 September 2026','Unrecognised source date');
     writeFileSync(join(dir,'index.mjs'), `
       const mode=process.env.CALENDAR_FIXTURE_MODE;
-      const healthy=['good','transient-market','transient-portfolio','empty-market'].includes(mode), visits={market:0,portfolio:0};
+      const healthy=['good','tomorrow','transient-market','transient-portfolio','empty-market'].includes(mode), visits={market:0,portfolio:0};
       let url='https://www.screener.in/concalls/';
       const locator={count:async()=>1,waitFor:async()=>{},fill:async()=>{},click:async()=>{},
         innerText:async()=>mode==='refusal'?'Daily summary quota reached. Try again tomorrow.':'Authenticated calendar',
@@ -394,15 +400,15 @@ test('real collector preserves documents on independent calendar failures, with 
           if(feed)visits[feed]++;
           const status=feed && mode==='http-refusal'?429:feed && mode==='transient-'+feed && visits[feed]<3?503:200;
           return {ok:()=>status===200,status:()=>status,headers:()=>({})};},
-        content:async()=>url.includes('/dash/') ? (healthy?${JSON.stringify(portfolioUpcomingHtml)}:mode==='interstitial-portfolio'?'<h2>Upcoming</h2><div>Temporarily busy</div>':mode==='partial-portfolio'?'<h2>Upcoming</h2><ul><li><strong>Today</strong></li>':${JSON.stringify(changedPortfolio)})
+        content:async()=>url.includes('/dash/') ? (mode==='tomorrow'?${JSON.stringify(portfolioUpcomingHtml.replace('Today','Tomorrow'))}:healthy?${JSON.stringify(portfolioUpcomingHtml)}:mode==='interstitial-portfolio'?'<h2>Upcoming</h2><div>Temporarily busy</div>':mode==='partial-portfolio'?'<h2>Upcoming</h2><ul><li><strong>Today</strong></li>':${JSON.stringify(changedPortfolio)})
           :url.includes('/upcoming/') ? (mode==='market'?${JSON.stringify(changedMarket)}:mode==='interstitial-market'?'Temporarily busy':mode==='empty-market'?'<table id="result_list"><tbody></tbody></table><div>0 concall invites</div>':${JSON.stringify(marketHtml)})
           :mode==='documents'?'Changed document table':${JSON.stringify(documentHtml)}};
       export const chromium={launch:async()=>({close:async()=>{console.log('FIXTURE_VISITS:'+JSON.stringify(visits));},newContext:async()=>({newPage:async()=>page,
         cookies:async()=>[{name:'sessionid',value:'fixture'}]})})};
     `);
-    for (const mode of ['portfolio','market','refusal','http-refusal','documents','interstitial-market','interstitial-portfolio','partial-portfolio','transient-market','transient-portfolio','empty-market','good']) {
+    for (const mode of ['portfolio','market','refusal','http-refusal','documents','interstitial-market','interstitial-portfolio','partial-portfolio','transient-market','transient-portfolio','empty-market','tomorrow','good']) {
       const path=join(dir,`${mode}.gz`);
-      const healthy=['good','transient-market','transient-portfolio','empty-market'].includes(mode);
+      const healthy=['good','tomorrow','transient-market','transient-portfolio','empty-market'].includes(mode);
       const run=spawnSync(process.execPath,['scripts/collect-screener-concalls.mjs',path],{cwd:new URL('..',import.meta.url),encoding:'utf8',
         env:{...process.env,GITHUB_ACTIONS:'false',SCREENER_USERNAME:'fixture',SCREENER_PASSWORD:'fixture',PLAYWRIGHT_ROOT:dir,CALENDAR_FIXTURE_MODE:mode},timeout:10000});
       assert.equal(run.status,healthy?0:1,run.stderr);
@@ -431,7 +437,10 @@ test('workflow is incremental every 15 minutes and audits the full history daily
   assert.match(workflow, /actions\/upload-artifact@v7/);
   assert.match(workflow, /archive:\s*false/, 'the Worker consumes the direct gzip, not a zip wrapper');
   assert.match(workflow, /if: \$\{\{ always\(\) \}\}/,'the independent checkpoint uploads after a calendar failure');
-  assert.match(workflow, /name: screener-concall-documents-v1\.json\.gz/);
+  const checkpointStep = workflow.split('- name: Preserve the independent validated document checkpoint')[1].split('- name: Publish')[0];
+  const publishedPath = /^\s*path: (.+)$/m.exec(checkpointStep)?.[1];
+  assert.equal(publishedPath?.split('/').at(-1), SCREENER_DOCUMENT_ARTIFACT,
+    'archive:false publishes the actual file basename, not the configured artifact label');
   assert.doesNotMatch(workflow, /git push|contents:\s*write/);
   assert.match(collector, /page\.goto\(`\$\{SCREENER_CONCALL_URL\}\?p=\$\{number\}`/);
   assert.match(collector, /number === 1 \? SCREENER_MARKET_UPCOMING_URL : `\$\{SCREENER_MARKET_UPCOMING_URL\}\?p=\$\{number\}`/);

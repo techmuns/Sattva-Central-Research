@@ -62,7 +62,8 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
-          name: screener-concall-documents-v1.json.gz
+          # With archive:false GitHub uses the file basename, regardless of `name`.
+          name: screener-concalls-v1.json.gz.documents.gz
           path: ${{ runner.temp }}/screener-concalls-v1.json.gz.documents.gz
           archive: false
           if-no-files-found: warn

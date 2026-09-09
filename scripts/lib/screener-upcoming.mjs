@@ -46,6 +46,11 @@ function isoDay(year, month, day) {
 export function upcomingDay(label, capturedDay) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(capturedDay || '')) return null;
   if (/^today$/i.test(String(label || '').trim())) return capturedDay;
+  if (/^tomorrow$/i.test(String(label || '').trim())) {
+    const date = new Date(`${capturedDay}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + 1);
+    return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : null;
+  }
   const match = /^(?:[A-Za-z]{3},\s*)?(\d{1,2})\s+([A-Za-z]{3})$/.exec(String(label || '').trim());
   if (!match) return null;
   const month = MONTHS.get(match[2].toLowerCase());
@@ -78,6 +83,22 @@ function anchors(html) {
     href: safeUpcomingUrl(attr(match[1], 'href')),
     label: text(match[2]),
   }));
+}
+
+// Counts and fixed flags only: a failing authenticated page must not leak HTML, account labels,
+// form values or source text into public workflow logs.
+export function upcomingDiagnostics(html, observedAt) {
+  const day = new Date(Date.parse(observedAt) + 19800000).toISOString().slice(0, 10);
+  const lists = [...String(html).matchAll(/<ul\b[^>]*>([\s\S]*?)<\/ul\s*>/gi)]
+    .map(match => match[1]).filter(list => /href=["']\/company\//i.test(list));
+  const groups = lists.map(list => [...list.matchAll(/<strong\b[^>]*>([\s\S]*?)<\/strong\s*>/gi)].map(match => text(match[1])));
+  const headings = groups.flat();
+  return { upcomingLabel: />\s*Upcoming\b/i.test(html),
+    upcomingHeading: [...String(html).matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]\s*>/gi)].some(match => /^Upcoming\b/i.test(text(match[1]))),
+    companyLists: lists.length, dateLists: groups.filter(labels => labels.length && labels.every(label => upcomingDay(label, day))).length,
+    dateHeadings: headings.filter(label => upcomingDay(label, day)).length,
+    tomorrowHeadings: headings.filter(label => /^tomorrow$/i.test(label)).length,
+    unknownHeadings: headings.filter(label => !upcomingDay(label, day)).length };
 }
 
 /** Parse one complete dashboard response into a date-normalized, portfolio-only schedule. */
@@ -127,4 +148,3 @@ export function parseScreenerUpcomingPage(html, observedAt = new Date().toISOStr
   if (!rows.length) throw Error('Screener Upcoming panel is empty');
   return validateScreenerUpcomingRows(rows).sort((a, b) => a.date.localeCompare(b.date) || String(a.time || '99:99').localeCompare(String(b.time || '99:99')) || a.name.localeCompare(b.name));
 }
-

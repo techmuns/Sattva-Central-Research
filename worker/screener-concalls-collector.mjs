@@ -12,7 +12,8 @@ import {
 
 const API = `https://api.github.com/repos/${SCREENER_CONCALL_REPO}`;
 const positiveId = (value) => Number.isSafeInteger(value) && value > 0;
-export const SCREENER_DOCUMENT_ARTIFACT = 'screener-concall-documents-v1.json.gz';
+// upload-artifact with archive:false publishes the file's basename and ignores `name`.
+export const SCREENER_DOCUMENT_ARTIFACT = 'screener-concalls-v1.json.gz.documents.gz';
 
 // Document publication and calendar publication are independent. Keep the last confirmed
 // calendar and its own check time while newer complete documents continue reaching the library.
