@@ -76,7 +76,7 @@ export const DASHBOARD_RESEARCH_SOURCES = [
   { id: 'nse-filings', tab: 'NSE Filings', route: '#/research/nse-filings', description: 'Retained NSE disclosure history, with publication dates, original document links and coverage gaps.' },
   { id: 'corporate-actions', tab: 'Corporate Actions', route: '#/research/corporate-actions', description: 'Retained NSE and Screener dividends, splits, bonuses and other actions, with distinct announcement and effective dates.' },
   { id: 'ipos', tab: 'IPOs', route: '#/research/ipos', description: 'Retained official IPO filings; a filing does not establish an approved or open offer.' },
-  { id: 'insider-trades', tab: 'Insider Trades', route: '#/research/insider-trades', description: 'Insider and promoter disclosures in the upstream\'s own vocabulary.' },
+  { id: 'insider-trades', tab: 'Bulk/Block Deal', route: '#/research/insider-trades', description: 'Insider and promoter disclosures in the upstream\'s own vocabulary.' },
 ];
 
 const SOURCE_BY_ID = new Map(DASHBOARD_RESEARCH_SOURCES.map((source) => [source.id, source]));

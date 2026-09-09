@@ -7860,7 +7860,7 @@ ok('...without printing the two providers whose brands are deliberately withheld
 for (const [route, title, scope] of [
   ['/#/research/news?scope=portfolio', 'News', 'portfolio'],
   ['/#/research/corp-announcements?scope=universe', 'Corp Announcements', 'universe'],
-  ['/#/research/insider-trades?scope=portfolio', 'Insider Trades', 'portfolio'],
+  ['/#/research/insider-trades?scope=portfolio', 'Bulk/Block Deal', 'portfolio'],
 ]) {
   await go(route, 4000);
   await waitForPanel();

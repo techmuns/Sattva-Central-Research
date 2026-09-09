@@ -114,7 +114,7 @@ function tradeFilters(rows) {
 
 const tab = makeFilingsTab({
   id: 'insider-trades',
-  title: 'Insider Trades',
+  title: 'Bulk/Block Deal',
   subtitle: 'Automatically refreshed bulk deals, block deals, SAST and insider disclosures for the companies in scope. Last 30 days shown by default; choose another period to see retained trades.',
   feed,
   noun: 'trades',
@@ -171,7 +171,7 @@ const tab = makeFilingsTab({
   },
   provenance: (m) => `<div class="px-7 py-6">
       <div class="mb-3 flex items-start justify-between gap-4">
-        <h2 class="font-display text-xl font-bold text-slate-900">Insider trades</h2>
+        <h2 class="font-display text-xl font-bold text-slate-900">Bulk/Block Deal</h2>
         <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
       </div>
       <div class="text-sm leading-relaxed text-slate-600">
@@ -208,8 +208,8 @@ const tab = makeFilingsTab({
   onExport: async (visible, m) => {
     const headers = (m.headers || []).filter((h) => !looksLikeSource(h) && !looksLikeLink(h));
     await exportRows({
-      filename: 'sattva-insider-trades',
-      sheetName: 'Insider trades',
+      filename: 'sattva-bulk-block-deal',
+      sheetName: 'Bulk-Block Deal',
       columns: [
         {
           header: 'Date',
