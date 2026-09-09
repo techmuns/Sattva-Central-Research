@@ -5,7 +5,9 @@ import { validateScreenerConcallCapture, SCREENER_CONCALL_LIMIT, SCREENER_CONCAL
 // A parser exception alone cannot distinguish a changed calendar from an error/interstitial
 // page. Require the authenticated page's recognisable calendar structure before isolating it.
 export function recognisedCalendar(html, feed) {
-  if (feed === 'portfolio') return /<h[1-6]\b[^>]*>\s*Upcoming\s*<\/h[1-6]\s*>/i.test(html) &&
+  // The live watchlist uses a tab label, not a heading element. Its tag is layout; the explicit
+  // label plus complete dated company list (and the caller's authentication checks) is evidence.
+  if (feed === 'portfolio') return />\s*Upcoming\s*</i.test(html) &&
     [...html.matchAll(/<ul\b[^>]*>([\s\S]*?)<\/ul\s*>/gi)].some(([, list]) =>
       /<strong\b[^>]*>\s*(?:Today|Tomorrow|(?:[A-Za-z]+,?\s*)?\d{1,2}\s+[A-Za-z]+)\s*<\/strong\s*>/i.test(list) &&
       /href=["']\/company\/[^"']+["']/i.test(list) && /<li\b[^>]*>[\s\S]*?<\/li\s*>/i.test(list));

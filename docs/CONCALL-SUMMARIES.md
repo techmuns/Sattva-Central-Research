@@ -195,4 +195,4 @@ the actual file basename and ignores the configured artifact label. The reader a
 are checked together to prevent a successfully uploaded checkpoint becoming undiscoverable.
 Calendar date parsing supports Today and Tomorrow across month/year boundaries. Failed portfolio
 parses report only fixed structure flags and counts; source HTML, text and account values stay out
-of public logs. Unknown responses still block paid requests.
+of public logs. Recovery recognises an explicit Upcoming tab label as well as a heading; it still requires a complete dated company list and current authentication. Unknown responses still block paid requests.

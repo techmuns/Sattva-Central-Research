@@ -384,7 +384,7 @@ test('real collector preserves documents on independent calendar failures, with 
     // writer run unchanged; an unexpected navigation fails instead of reaching the network.
     const documentHtml = html.replace('<a href="?p=2">2</a>','');
     const marketHtml = marketUpcomingHtml.replace('<a href="?p=2">2</a>','');
-    const changedPortfolio = portfolioUpcomingHtml.replace('class="badge sub"','class="new-event-label"');
+    const changedPortfolio = portfolioUpcomingHtml.replace('class="badge sub"','class="new-event-label"').replace(/<h[1-6]>Upcoming<\/h[1-6]>/, '<button>Upcoming</button>');
     const changedMarket = marketHtml.replace('5 September 2026','Unrecognised source date');
     writeFileSync(join(dir,'index.mjs'), `
       const mode=process.env.CALENDAR_FIXTURE_MODE;
