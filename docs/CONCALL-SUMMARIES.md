@@ -28,8 +28,9 @@ A public, unauthenticated login-page check then reproduced a false detection: it
 response advertises "Upgrade to Premium". That marketing phrase alone no longer counts as a
 refusal. Actual HTTP refusals, verification challenges and summary identity/body checks still
 stop collection. Existing reservations and cooldowns remain intact; the schedule resumes only
-when the recorded eligibility permits. Aggregate logs include a fixed login/summary stage, numeric
-HTTP status and canonical cooldown time, without source content or arbitrary error text.
+when the recorded eligibility permits. Failure logs include a fixed login/summary stage and numeric
+HTTP status; runs waiting on a cooldown report its canonical expiry. Neither logs source content
+or arbitrary error text.
 Successful paid-body capture still needs verification: local parser fixtures do not establish
 compatibility with an unseen successful source page. Unrecognised/incomplete templates fail closed.
 

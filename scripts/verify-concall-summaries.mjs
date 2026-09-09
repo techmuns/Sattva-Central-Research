@@ -217,11 +217,11 @@ test('failure diagnostics distinguish login from summary refusals and exclude ar
     const refused=Object.assign(summaryResponseError(403),{message:'PRIVATE MESSAGE',html:'PRIVATE HTML',token:'PRIVATE TOKEN'});
     const client=async input=>{actions.push(input.action);if(input.action==='sync')return {state:{}};
       if(input.action==='reserve')return {reserved:true,requestId:input.requestId,token:'token',target:source(1)};
-      return {state:{cooldownUntil:iso(START+SUMMARY_WINDOW_MS),privateText:'PRIVATE STATE'}};};
+      return {ok:true,saved:false};};
     const result=await runSummaryCollection({inventory:async()=>inventory(),client,
       openSession:async()=>{if(stage==='login')throw refused;return {page:{},close:async()=>{}};},
       read:async()=>{throw refused;},now:()=>START});
-    assert.deepEqual(result,{saved:0,attempted:1,reason:'access-denied',stage,httpStatus:403,cooldownUntil:iso(START+SUMMARY_WINDOW_MS)});
+    assert.deepEqual(result,{saved:0,attempted:1,reason:'access-denied',stage,httpStatus:403});
     assert.deepEqual(actions,['sync','reserve','complete']);
     assert.doesNotMatch(JSON.stringify(result),/PRIVATE/);
   }

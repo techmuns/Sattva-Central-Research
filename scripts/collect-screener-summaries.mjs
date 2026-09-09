@@ -86,10 +86,9 @@ export async function runSummaryCollection({ client, inventory, openSession, rea
         body = await read(session.page, claim.target);
       } catch (error) {
         const outcome = SUMMARY_FAILURES.has(error?.summaryCode) ? error.summaryCode : 'source-unavailable';
-        const completed = await client({ action: 'complete', requestId: claim.requestId, token: claim.token, outcome, retryAt: error?.retryAt || null });
+        await client({ action: 'complete', requestId: claim.requestId, token: claim.token, outcome, retryAt: error?.retryAt || null });
         if (outcome !== 'not-published') return { saved, attempted, reason: outcome, stage: session ? 'summary' : 'login',
-          httpStatus: Number.isInteger(error?.httpStatus) && error.httpStatus >= 100 && error.httpStatus <= 599 ? error.httpStatus : null,
-          cooldownUntil: diagnosticTime(completed.state?.cooldownUntil) };
+          httpStatus: Number.isInteger(error?.httpStatus) && error.httpStatus >= 100 && error.httpStatus <= 599 ? error.httpStatus : null };
         continue;
       }
       await client({ action: 'complete', requestId: claim.requestId, token: claim.token, outcome: 'ready', body });
