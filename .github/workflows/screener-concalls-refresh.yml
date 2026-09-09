@@ -58,6 +58,15 @@ jobs:
           DEBUG: ''
           PWDEBUG: ''
         run: node scripts/collect-screener-concalls.mjs "$RUNNER_TEMP/screener-concalls-v1.json.gz"
+      - name: Preserve the independent validated document checkpoint
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: screener-concall-documents-v1.json.gz
+          path: ${{ runner.temp }}/screener-concalls-v1.json.gz.documents.gz
+          archive: false
+          if-no-files-found: warn
+          retention-days: 30
       - name: Publish validated immutable public-data capture
         uses: actions/upload-artifact@v7
         with:

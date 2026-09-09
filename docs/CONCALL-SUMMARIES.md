@@ -61,11 +61,35 @@ remains with saved reports; detailed source health and gaps remain in the separa
 ## Membership, queue and history
 
 Every collection first reads the **live Family Office portfolio**, validates the complete response,
-then reads the latest digest-verified complete Screener document-index capture. It does not depend
+then reads the latest digest-verified complete Screener document-index checkpoint. It does not depend
 on a committed portfolio snapshot or Screener's mirrored watchlist catching up. The portfolio must
-be checked within 90 seconds and the source catalogue within 30 minutes when an upload begins; a newer failed catalogue
-run blocks discovery. Failed discovery preserves the previous membership and all saved records,
+be checked within 90 seconds and the source catalogue within 30 minutes when an upload begins; a newer failed document
+check blocks discovery. Failed discovery preserves the previous membership and all saved records,
 marks coverage failed and pauses source claims until a successful check.
+
+### Independent document recovery
+
+The 9 September incident exposed a dependency error: successfully read documents were discarded
+when a later, unrelated portfolio calendar could not be parsed. The collector now atomically
+writes `screener-concall-documents-v1.json.gz` before reading either calendar. Its upload runs even
+after a calendar failure. It contains public document metadata only, with no paid notes or account
+state; the existing combined calendar artifact still requires all its own reads to succeed.
+
+A checkpoint begins `pending`, so interrupted work cannot authorise paid requests. A completed
+document capture may be used after a confirmed calendar `shape` error, with authentication and
+refusal checks still required. Source refusals, session/identity failures, transport errors and
+unknown failures remain blocked. Unchanged malformed calendar pages are not retried in the same
+run. Fixed diagnostic categories identify the rejected calendar stage without publishing its HTML.
+
+The private collector validates the artifact's digest, origin, owning workflow/run, full-history
+counts and explicit outcome. A newer completed run without a valid document checkpoint blocks new
+requests; an older checkpoint may only restore the history baseline. Legacy successful artifacts
+remain readable during rollout. Expired/corrupt artifacts and stale document checks fail closed.
+Calendar failure remains visible as calendar failure and cannot claim fresh calendar coverage.
+No schedule, private storage identity, quota, reservation, cooldown or paid-body reader is reset.
+
+This isolates calendar defects from summary discovery; it does not guarantee source availability
+or successful paid-body parsing. The normal schedule must still verify the first saved report.
 The shared Family Office loader's existing reconciliation guard still applies to a fall of more
 than 20% against its reviewed baseline. Such a change is shown as unavailable until reconciled;
 it is never silently accepted as a partial book. Older workbook dates/uploads cannot replace a
@@ -142,3 +166,9 @@ restart, including finishing a staged upload after restart. The 25,000-target tr
 partial/replayed uploads and scheduler failures are also verified. `verify-concall-summaries-ui.mjs` covers one inline action, source versions, pending recovery,
 inert source text, logout and delayed responses, disabled state, portfolio gaps, light/dark contrast,
 narrow layout and offline parser failures. All three are CI checks; none reads production summaries.
+
+`verify-screener-concalls.mjs` also runs the real collection CLI against an offline browser
+transport: portfolio/market calendar changes and empty market schedules preserve complete documents,
+refusals block paid eligibility, document failures produce no usable checkpoint,
+and recovery publishes the complete calendar again. Artifact tests cover pending/crashed writes,
+newer failed runs, legacy rollout, corruption, expiry and atomic preservation after invalid input.

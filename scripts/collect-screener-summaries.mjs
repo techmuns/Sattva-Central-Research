@@ -106,7 +106,7 @@ async function main() {
     inventory: async () => {
       const [portfolio, result] = await Promise.all([
         loadActivePortfolio(new URL('../public/data/portfolio-companies.json', import.meta.url), { live: true }),
-        readScreenerConcallCollector({ token: github, signal: AbortSignal.timeout(45000) }),
+        readScreenerConcallCollector({ token: github, documentsOnly: true, signal: AbortSignal.timeout(45000) }),
       ]);
       if (result.source.collectorLatestFailed) throw Error('Source catalogue has a newer failed check');
       const identities = JSON.parse(readFileSync(new URL('../public/data/announcement-identities.json', import.meta.url), 'utf8')).entries || [];

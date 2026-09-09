@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { gzipSync } from 'node:zlib';
+import { readFileSync, mkdtempSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import { addResolvedTickers, parseScreenerConcallPage, parseScreenerMarketUpcomingPage, screenerTime } from './lib/screener-concalls.mjs';
 import { parseScreenerUpcomingPage as parseScreenerPortfolioUpcomingPage, upcomingDay, upcomingTime } from './lib/screener-upcoming.mjs';
 import {
@@ -19,7 +22,8 @@ import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calenda
 import { filterByScope } from '../public/js/data/scope.js';
 import { deepDiveEligible, matchingDeepDive, reportingQuarter } from '../public/js/concall/scans.js';
 import * as deepDiveData from '../public/js/data/deep-dive.js';
-import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
+import { readScreenerConcallCollector, SCREENER_DOCUMENT_ARTIFACT } from '../worker/screener-concalls-collector.mjs';
+import { writeDocumentCheckpoint } from './lib/concall-document-checkpoint.mjs';
 
 const observedAt = '2026-09-05T01:00:00.000Z';
 const row = ({ company = 'Dhoot Transmission', key = 'DHOOTTRANS', date = '4 September 2026', kind = 'Recording', url, summary = null } = {}) => `
@@ -287,6 +291,97 @@ test('Worker accepts only trusted, digest-verified Actions artifacts', async () 
   }
 });
 
+function checkpointFetch({ outcome = 'calendar-shape', missingLatest = false, corrupt = false, expired = false,
+  document = true, latestConclusion = 'failure' } = {}) {
+  const { portfolioUpcoming, upcoming, upcomingPublishedTotal, upcomingPagesFetched, upcomingDuplicatesRemoved, ...history } = capture;
+  const value = document ? { ...history, documentCheckpoint: {version:1,outcome} } : capture;
+  const bytes = gzipSync(JSON.stringify(value));
+  const run = id => ({ id, head_branch:'main', head_repository:{full_name:'techmuns/Sattva-Central-Research'}, event:'schedule',
+    status:'completed', conclusion:id===11 ? latestConclusion : 'success' });
+  return async (url, init = {}) => {
+    if (!url.startsWith('https://api.github.com/')) { assert.equal(init.headers, undefined); return new Response(bytes); }
+    if (url.includes('/runs?')) return Response.json({total_count:2,workflow_runs:url.includes('status=success') ? [run(10)] : [run(11),run(10)]});
+    if (/\/runs\/\d+\/artifacts/.test(url)) {
+      const id = Number(/\/runs\/(\d+)/.exec(url)[1]);
+      return Response.json({artifacts: missingLatest && id===11 ? [] : [{id:20, name:document ? SCREENER_DOCUMENT_ARTIFACT : SCREENER_CONCALL_ARTIFACT,
+        expired,workflow_run:{id},size_in_bytes:bytes.length,digest:`sha256:${corrupt ? '0'.repeat(64) : createHash('sha256').update(bytes).digest('hex')}`}]});
+    }
+    if (url.endsWith('/artifacts/20/zip')) return new Response(null,{status:302,headers:{location:'https://example.blob.core.windows.net/checkpoint'}});
+    throw Error('Unexpected checkpoint fixture request');
+  };
+}
+
+test('only a validated, settled document checkpoint can isolate a calendar failure', async () => {
+  const read = options => readScreenerConcallCollector({token:'fixture',documentsOnly:true,now:()=>Date.parse(observedAt),fetcher:checkpointFetch(options)});
+  const partial = await read();
+  assert.equal(partial.capture.rows.length,3);
+  assert.equal(partial.source.collectorLatestFailed,false);
+  assert.equal(partial.source.collectorLatestConclusion,'failure');
+  assert.equal(partial.source.calendarFailure,true);
+  assert.equal(partial.source.portfolioUpcomingAvailable,false,'document checkpoint cannot certify calendar coverage');
+  for (const outcome of ['pending','blocked']) assert.equal((await read({outcome})).source.collectorLatestFailed,true);
+  assert.equal((await read({missingLatest:true})).source.collectorLatestFailed,true,'an older checkpoint cannot hide a newer failed document read');
+  assert.equal((await read({document:false})).source.collectorLatestFailed,true,'legacy green artifacts retain their latest-failure gate');
+  for (const options of [{corrupt:true},{expired:true},{outcome:'invented'}]) await assert.rejects(read(options));
+  const legacy = await read({document:false,latestConclusion:'success'});
+  assert.equal(legacy.source.collectorLatestFailed,false,'rolling deployment can still use a successful legacy capture');
+});
+
+test('checkpoint publication is atomic, excludes calendars and cannot bless incomplete history', () => {
+  const dir = mkdtempSync(join(tmpdir(),'sattva-document-checkpoint-')), path=join(dir,'documents.gz');
+  try {
+    writeDocumentCheckpoint(path,capture);
+    const first = readFileSync(path);
+    assert.equal(JSON.parse(gunzipSync(first)).documentCheckpoint.outcome,'pending');
+    assert.throws(()=>writeDocumentCheckpoint(path,{...capture,fullHistory:false},'complete'));
+    assert.deepEqual(readFileSync(path),first,'failed validation leaves the previous complete bytes');
+    const value = writeDocumentCheckpoint(path,capture,'complete');
+    assert.equal(value.portfolioUpcoming,undefined);
+    assert.equal(value.upcoming,undefined);
+    assert.equal(value.rows.length,3);
+    assert.equal(existsSync(`${path}.tmp`),false);
+  } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test('real collector preserves documents on independent calendar failures, with no source traffic in tests', () => {
+  const dir = mkdtempSync(join(tmpdir(),'sattva-calendar-recovery-'));
+  try {
+    // Fake only the browser transport. The production CLI, parser, reconciliation and artifact
+    // writer run unchanged; an unexpected navigation fails instead of reaching the network.
+    const documentHtml = html.replace('<a href="?p=2">2</a>','');
+    const marketHtml = marketUpcomingHtml.replace('<a href="?p=2">2</a>','');
+    writeFileSync(join(dir,'index.mjs'), `
+      const mode=process.env.CALENDAR_FIXTURE_MODE;
+      let url='https://www.screener.in/concalls/';
+      const locator={count:async()=>1,waitFor:async()=>{},fill:async()=>{},click:async()=>{},
+        innerText:async()=>mode==='refusal'?'Daily summary quota reached. Try again tomorrow.':'Authenticated calendar',
+        locator:()=>locator};
+      const page={setDefaultTimeout(){},setDefaultNavigationTimeout(){},locator:()=>locator,getByText:()=>locator,
+        waitForTimeout:async()=>{},waitForURL:async()=>{url='https://www.screener.in/concalls/';},url:()=>url,
+        goto:async target=>{if(!target.startsWith('https://www.screener.in/'))throw Error('Unexpected fixture origin');url=target;
+          return {ok:()=>true,status:()=>200,headers:()=>({})};},
+        content:async()=>url.includes('/dash/') ? (mode==='good'?${JSON.stringify(portfolioUpcomingHtml)}:'<h2>Upcoming</h2><div>Changed calendar layout</div>')
+          :url.includes('/upcoming/') ? (mode==='market'?'Changed market calendar':mode==='empty-market'?'<table id="result_list"><tbody></tbody></table><div>0 concall invites</div>':${JSON.stringify(marketHtml)})
+          :mode==='documents'?'Changed document table':${JSON.stringify(documentHtml)}};
+      export const chromium={launch:async()=>({close:async()=>{},newContext:async()=>({newPage:async()=>page,
+        cookies:async()=>[{name:'sessionid',value:'fixture'}]})})};
+    `);
+    for (const mode of ['portfolio','market','refusal','documents','empty-market','good']) {
+      const path=join(dir,`${mode}.gz`);
+      const run=spawnSync(process.execPath,['scripts/collect-screener-concalls.mjs',path],{cwd:new URL('..',import.meta.url),encoding:'utf8',
+        env:{...process.env,GITHUB_ACTIONS:'false',SCREENER_USERNAME:'fixture',SCREENER_PASSWORD:'fixture',PLAYWRIGHT_ROOT:dir,CALENDAR_FIXTURE_MODE:mode},timeout:10000});
+      assert.equal(run.status,mode==='good'?0:1,run.stderr);
+      if(mode==='documents') {assert.equal(existsSync(`${path}.documents.gz`),false);continue;}
+      const checkpoint=JSON.parse(gunzipSync(readFileSync(`${path}.documents.gz`)));
+      validateScreenerConcallCapture(checkpoint);
+      assert.equal(checkpoint.rows.length,3);
+      assert.equal(checkpoint.documentCheckpoint.outcome,mode==='good'?'complete':mode==='refusal'?'blocked':'calendar-shape');
+      assert.equal(existsSync(path),mode==='good','failed calendars never publish a misleading full capture');
+      if(mode==='portfolio') assert.match(run.stderr,/Portfolio calendar diagnostic: panel/);
+    }
+  } finally {rmSync(dir,{recursive:true,force:true});}
+});
+
 test('workflow is incremental every 15 minutes and audits the full history daily', () => {
   const workflow = readFileSync(new URL('../.github/workflows/screener-concalls-refresh.yml', import.meta.url), 'utf8');
   const collector = readFileSync(new URL('./collect-screener-concalls.mjs', import.meta.url), 'utf8');
@@ -296,6 +391,8 @@ test('workflow is incremental every 15 minutes and audits the full history daily
   assert.match(workflow, /SCREENER_FULL_REFRESH/);
   assert.match(workflow, /actions\/upload-artifact@v7/);
   assert.match(workflow, /archive:\s*false/, 'the Worker consumes the direct gzip, not a zip wrapper');
+  assert.match(workflow, /if: \$\{\{ always\(\) \}\}/,'the independent checkpoint uploads after a calendar failure');
+  assert.match(workflow, /name: screener-concall-documents-v1\.json\.gz/);
   assert.doesNotMatch(workflow, /git push|contents:\s*write/);
   assert.match(collector, /page\.goto\(`\$\{SCREENER_CONCALL_URL\}\?p=\$\{number\}`/);
   assert.match(collector, /number === 1 \? SCREENER_MARKET_UPCOMING_URL : `\$\{SCREENER_MARKET_UPCOMING_URL\}\?p=\$\{number\}`/);

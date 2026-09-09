@@ -29,15 +29,20 @@ import {
   screenerConcallKey,
 } from '../public/js/data/screener-concalls-shared.js';
 import { readScreenerConcallCollector } from '../worker/screener-concalls-collector.mjs';
+import { writeDocumentCheckpoint } from './lib/concall-document-checkpoint.mjs';
+import { summaryResponseError } from './lib/read-screener-summary.mjs';
 
 const output = process.argv[2];
 if (!output) throw Error('Provide a staging artifact output path');
+const documentOutput = `${output}.documents.gz`;
 const MAX_PAGE_BYTES = 2 * 1024 * 1024;
 let stage = 'configuration';
 let browser;
 let failurePage = null;
 let failureCode = null;
 let failureFeed = null;
+let documents = null;
+let failureDetail = null;
 
 function collectionError(code) {
   const error = new Error('Screener concall page rejected');
@@ -55,6 +60,7 @@ async function readPrevious() {
       token: process.env.GH_TOKEN,
       ref,
       allowMissing: true,
+      documentsOnly: true,
       signal: AbortSignal.timeout(45000),
     })
   )?.capture || null;
@@ -162,6 +168,20 @@ async function main() {
     }
   }
 
+  // Publish the complete document checkpoint before either independent calendar is read.
+  // A calendar template change must not throw away a successful, metered-discovery prerequisite.
+  stage = 'document checkpoint';
+  const index = buildIndex({ mc: readData('mc-ticker-map'), tech: readData('technicals'), book: readData('portfolio-companies') });
+  const unique = mergeScreenerConcallRows(collected);
+  const resolved = addResolvedTickers(unique, (name) => resolveTicker(index, name).ticker);
+  const duplicatesRemoved = collected.length - unique.length;
+  if (full && collected.length !== first.publishedTotal) throw Error('Screener full history count mismatch');
+  const documentCheckedAt = new Date().toISOString();
+  documents = mergeScreenerConcallCapture({ version: 1, sourceId: SCREENER_CONCALL_ID,
+    checkedAt: documentCheckedAt, publishedTotal: first.publishedTotal, pagesFetched,
+    fullHistory: full, duplicatesRemoved, rows: resolved.map(row => ({ ...row, observedAt: documentCheckedAt })) }, previous);
+  writeDocumentCheckpoint(documentOutput, documents);
+
   // The upcoming schedule is small and mutable, so every run reads every page. Unlike retained
   // documents, invitations can be rescheduled or withdrawn; merging an old tail would keep events
   // that the publisher no longer lists.
@@ -180,6 +200,8 @@ async function main() {
         const finalUrl = new URL(page.url());
         if (!response?.ok()) throw collectionError('response');
         if (finalUrl.origin !== 'https://www.screener.in' || finalUrl.pathname !== '/concalls/upcoming/') throw collectionError('session');
+        if (summaryResponseError(response.status(), await page.locator('body').innerText(), response.headers()['retry-after']))
+          throw collectionError('refused');
         const html = await page.content();
         if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw collectionError('oversized');
         let parsed;
@@ -192,10 +214,10 @@ async function main() {
         await page.waitForTimeout(120);
         return parsed;
       } catch (error) {
-        if (attempt === 3) {
+        if (attempt === 3 || ['response', 'session', 'refused', 'shape'].includes(error?.collectionCode)) {
           failurePage = number;
           failureFeed = 'upcoming';
-          failureCode = ['navigation', 'response', 'session', 'oversized', 'shape', 'pagination'].includes(error?.collectionCode)
+          failureCode = ['navigation', 'response', 'session', 'refused', 'oversized', 'shape', 'pagination'].includes(error?.collectionCode)
             ? error.collectionCode
             : 'browser';
           throw error;
@@ -216,14 +238,9 @@ async function main() {
   }
 
   stage = 'ticker resolution';
-  const index = buildIndex({ mc: readData('mc-ticker-map'), tech: readData('technicals'), book: readData('portfolio-companies') });
-  const unique = mergeScreenerConcallRows(collected);
-  const resolved = addResolvedTickers(unique, (name) => resolveTicker(index, name).ticker);
-  const duplicatesRemoved = collected.length - unique.length;
   const upcomingUnique = mergeScreenerMarketUpcomingRows(upcomingCollected);
   const upcomingResolved = addResolvedTickers(upcomingUnique, (name) => resolveTicker(index, name).ticker);
   const upcomingDuplicatesRemoved = upcomingCollected.length - upcomingUnique.length;
-  if (full && collected.length !== first.publishedTotal) throw Error('Screener full history count mismatch');
   if (upcomingCollected.length !== upcomingFirst.publishedTotal) throw Error('Screener upcoming count mismatch');
 
   stage = 'portfolio calendar capture';
@@ -249,16 +266,27 @@ async function main() {
         // Screener renders the same fixed watchlist link in both responsive navigation variants.
         // Require its presence; cardinality is layout, not account identity.
         if ((await watchlistLink.count()) < 1 || (await namedWatchlist.count()) < 1) throw collectionError('identity');
+        if (summaryResponseError(dashboard.status(), await page.locator('body').innerText(), dashboard.headers()['retry-after']))
+          throw collectionError('refused');
         try {
           return parseScreenerPortfolioUpcomingPage(await page.content(), checkedAt);
-        } catch {
+        } catch (error) {
+          const diagnostics = new Map([
+            ['Screener Upcoming panel unavailable or ambiguous', 'panel'],
+            ['Unmapped Screener Upcoming row', 'row'],
+            ['Screener Upcoming event label unavailable', 'label'],
+            ['Screener Upcoming panel is empty', 'empty'],
+            ['Invalid Screener upcoming record', 'record'],
+            ['Invalid Screener upcoming company route', 'company-route'],
+          ]);
+          failureDetail = diagnostics.get(error.message) || 'validation';
           throw collectionError('shape');
         }
       } catch (error) {
-        if (attempt === 3) {
+        if (attempt === 3 || ['response', 'session', 'identity', 'refused', 'shape'].includes(error?.collectionCode)) {
           failurePage = 1;
           failureFeed = 'portfolio';
-          failureCode = ['navigation', 'response', 'session', 'identity', 'shape'].includes(error?.collectionCode)
+          failureCode = ['navigation', 'response', 'session', 'identity', 'refused', 'shape'].includes(error?.collectionCode)
             ? error.collectionCode
             : 'browser';
           throw error;
@@ -293,6 +321,7 @@ async function main() {
 
   stage = 'artifact write';
   writeFileSync(output, bytes);
+  writeDocumentCheckpoint(documentOutput, documents, 'complete');
   console.log(
     JSON.stringify({
       checkedAt: capture.checkedAt,
@@ -314,10 +343,15 @@ async function main() {
 try {
   await main();
 } catch {
+  if (documents) {
+    const calendarShape = ['portfolio', 'upcoming'].includes(failureFeed) && failureCode === 'shape';
+    writeDocumentCheckpoint(documentOutput, documents, calendarShape ? 'calendar-shape' : 'blocked');
+  }
   // Browser exceptions can include form values or page content. Public logs get only a fixed
   // stage name; credentials, HTML, account details and cookies never appear.
   const location = failurePage ? ` (${failureFeed || 'history'} page ${failurePage}, ${failureCode})` : '';
   console.error(`Screener concall collection failed during ${stage}${location}. No credentials or page content were logged.`);
+  if (failureDetail) console.error(`Portfolio calendar diagnostic: ${failureDetail}.`);
   process.exitCode = 1;
 } finally {
   await browser?.close().catch(() => {});
