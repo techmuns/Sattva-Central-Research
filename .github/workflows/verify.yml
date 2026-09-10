@@ -57,6 +57,10 @@ jobs:
         run: node scripts/verify-portfolio-bridge.mjs
       - name: Verify comparable portfolio businesses and dated event returns
         run: node scripts/verify-research-business.mjs && node scripts/verify-research-reasoning.mjs && node scripts/verify-bars.mjs
+      - name: Verify exchange reports, supplementary insiders and artifact delivery
+        run: node scripts/verify-exchange-deals.mjs && node scripts/verify-muns-insider-capture.mjs
+      - name: Verify exchange gzip delivery in the local Worker runtime
+        run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-exchange-worker-runtime.mjs'
       - name: Verify additive insider trades
         run: node scripts/verify-insider-trades.mjs
       - name: Verify additive corporate-announcement lookups
@@ -127,6 +131,10 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/family-browser" --no-save --package-lock=false playwright@1.62.1 exceljs@4.4.0
           node "$RUNNER_TEMP/family-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify Sattva deals across scopes, automatic refresh and history
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-sattva-deals-ui.mjs
       - name: Verify light and dark appearance across dashboard surfaces
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

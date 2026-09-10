@@ -18,7 +18,7 @@ import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { insider as feed } from '../data/filings.js';
 import { insiderTradeSourceUrl, pickField } from '../data/filings-shared.js';
-import { matchesNewsPeriod, NEWS_PERIODS } from '../data/news-window.js';
+import { matchesNewsPeriod, NEWS_PERIODS, newsDay, inNewsWindow } from '../data/news-window.js';
 
 export { insiderTradeSourceUrl };
 
@@ -70,7 +70,9 @@ function directionTint(v) {
 // "Transaction type" on the control because that is the question the reader is asking; its option
 // values remain the source's own words (Acquisition, Disposal, Pledge, and so on).
 const FILTER_FIELDS = [
-  { label: 'Category', allLabel: 'All four categories', keys: ['trade category', 'disclosure type'], maxWidthPx: 220 },
+  { label: 'Trade category', allLabel: 'All trade categories', keys: ['trade category'], maxWidthPx: 220 },
+  { label: 'Exchange', allLabel: 'All exchanges', keys: ['exchange'], maxWidthPx: 160 },
+  { label: 'Category', allLabel: 'All categories', keys: ['category'], maxWidthPx: 220 },
   {
     label: 'Transaction type',
     allLabel: 'All transaction types',
@@ -85,7 +87,16 @@ const filterCell = (row, keys) => {
   return value == null ? null : String(value).trim() || null;
 };
 
+const RANGE_TO_PERIOD = { '1m': '30', '3d': '3', '7d': '7', '14d': '14' };
+const PERIOD_TO_RANGE = { '30': '1m', '3': '3d', '7': '7d', '14': '14d' };
+const TRADE_PERIODS = [...NEWS_PERIODS,
+  { value: '3m', label: 'Last 3 months' }, { value: '6m', label: 'Last 6 months' },
+  { value: '1y', label: 'Last year' }, { value: 'all', label: 'All captured' }];
+
 function tradeFilters(rows) {
+  const today = newsDay();
+  const longRanges = new Map([['3m', 91], ['6m', 182], ['1y', 365]].map(([id, days]) =>
+    [id, { from: new Date(Date.parse(`${today}T00:00:00Z`) - (days - 1) * 86400000).toISOString().slice(0, 10), to: today }]));
   const fields = FILTER_FIELDS.map((field) => {
     // A numeric/date-only value under Transaction or Mode is a ragged upstream markdown row, not
     // a transaction choice. It remains visible under "All" but is not promoted into a misleading
@@ -106,8 +117,9 @@ function tradeFilters(rows) {
       label: 'Trade period',
       value: '30',
       maxWidthPx: 180,
-      options: [...NEWS_PERIODS, { value: 'all', label: 'All captured' }],
-      match: (row, value) => matchesNewsPeriod(row, value),
+      options: TRADE_PERIODS,
+      match: (row, value) => longRanges.has(value)
+        ? inNewsWindow(row, longRanges.get(value)) : value === 'all' || matchesNewsPeriod(row, value),
     },
   ];
 }
@@ -130,6 +142,24 @@ const tab = makeFilingsTab({
   // key builder in filings-tab.js for what that cost the News tab.
   keyFor: (r) => `${r.ticker || ''}|${r.date || ''}|${Object.values(r.cells || {}).join('|')}`,
   filters: tradeFilters,
+  // Keep the selected period in the URL across links and reloads.
+  // Range selection changes only the displayed rows; automatic capture retains its full history.
+  prepareView: (ctx, previous) => {
+    const raw = ctx.params?.range;
+    if (!raw) return previous;
+    const period = RANGE_TO_PERIOD[raw] || raw;
+    if (!TRADE_PERIODS.some(option => option.value === period)) return previous;
+    const filters = [...(previous?.filters || FILTER_FIELDS.map(() => 'all'))];
+    filters[FILTER_FIELDS.length] = period;
+    return { ...previous, filters };
+  },
+  wireAboveTable: (root, ctx) => {
+    const select = root.querySelector('[data-table-filter][aria-label="Trade period"]');
+    if (!select) return;
+    const changed = () => ctx.setParamsQuiet({ ...ctx.params, range: PERIOD_TO_RANGE[select.value] || select.value });
+    select.addEventListener('change', changed);
+    return () => select.removeEventListener('change', changed);
+  },
   // The shared renderer's separate Link column is disabled. Insider Trades owns one Source column:
   // an arrow to the row's evidence, never a repeated provider label plus a second arrow.
   link: false,
@@ -139,6 +169,7 @@ const tab = makeFilingsTab({
   columns: (m) => {
     const headers = (m.headers || []).filter((h) => !looksLikeName(h) && !looksLikeSource(h) && !looksLikeLink(h));
     const cols = [
+      { label: 'Exchange', get: (r) => r.cells?.Exchange || '—' },
       {
         label: 'Date',
         get: (r) => (r.date ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(r.date))}</span>` : dash('the row carried no readable date')),
@@ -169,20 +200,22 @@ const tab = makeFilingsTab({
     });
     return cols;
   },
+  status: (m) => `<p class="mb-3 text-xs text-slate-500" data-filings-info data-exchange-status>${escapeHtml(m.exchanges?.summary || 'NSE / BSE reports are loading.')}<br>${escapeHtml(m.disclosuresStatus || '')}</p>`,
   provenance: (m) => `<div class="px-7 py-6">
       <div class="mb-3 flex items-start justify-between gap-4">
         <h2 class="font-display text-xl font-bold text-slate-900">Bulk/Block Deal</h2>
         <button data-modal-close class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
       </div>
       <div class="text-sm leading-relaxed text-slate-600">
+        <p class="mb-3"><strong>Bulk and block deals</strong> come directly from the full NSE CSV exports and BSE historical reports. Official exchange reports take precedence for dates successfully covered; the shared Screener capture supplies other available dates. Buy and sell sides, bulk and block reports, and trades on different exchanges stay separate. The capture checks every 30 minutes during the day and evening on weekdays, plus weekend catch-up. This tab checks for updates every minute while visible. These are published disclosures, not a streaming trade tape. ${escapeHtml(m.exchanges?.summary || '')}</p>
         <p><strong>Real market disclosures.</strong> The scheduled capture reads Screener.in’s complete market-wide
-           <strong>Bulk deal, Block deal, SAST and Insider trade</strong> lists. Retained Muns insider rows supplement
+           <strong>Bulk deal, Block deal, SAST and Insider trade</strong> lists. Independently refreshed Muns insider rows supplement
            those lists where they carry more exchange fields.</p>
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">The table is theirs, columns and all</h3>
         <p class="mt-1 text-xs">The source-specific cells are retained under their own headings. The one common field,
            <strong>Trade Category</strong>, distinguishes which of the four lists published the row and drives the
-           Category filter.</p>
+           Trade category filter.</p>
 
         <h3 class="font-display mt-4 text-sm font-bold text-slate-900">What this dashboard does to it</h3>
         <ul class="mt-1 list-disc space-y-1 pl-5 text-xs">
@@ -191,7 +224,7 @@ const tab = makeFilingsTab({
           <li><strong>Removes duplicates.</strong> The same ticker, date, person, direction and quantity in the same trade
               category appears once even when Screener and Muns format or attribute it differently. Different trade
               categories remain separate.</li>
-          <li><strong>Reads the date</strong>, so the table can sort. That is the only cell interpreted.</li>
+          <li><strong>Reads the date</strong>, so the table can sort. Official quantity × price is displayed as an approximate rupee value, marked ≈; source-supplied values remain unchanged.</li>
           <li><strong>Tints a direction</strong> where the cell says so in words — <em>bought</em>, <em>sold</em>,
               <em>disposal</em>. A value it does not recognise stays plain rather than being guessed into a direction.</li>
           <li><strong>Sums nothing.</strong> There is no total quantity or total value anywhere on this tab. A quantity
@@ -206,7 +239,7 @@ const tab = makeFilingsTab({
       </div>
     </div>`,
   onExport: async (visible, m) => {
-    const headers = (m.headers || []).filter((h) => !looksLikeSource(h) && !looksLikeLink(h));
+    const headers = (m.headers || []).filter((h) => !/^source$/i.test(h) && !looksLikeLink(h));
     await exportRows({
       filename: 'sattva-bulk-block-deal',
       sheetName: 'Bulk-Block Deal',
@@ -217,10 +250,10 @@ const tab = makeFilingsTab({
           width: 14,
           get: (r) =>
             r.__banner
-              ? `REAL DISCLOSURES, NOT OURS. Bulk deals, block deals, SAST and insider trades from Screener.in, supplemented by retained Muns rows, reaching back ${m.windowDays} days, exported ${new Date().toISOString()}. ` +
+              ? `REAL DISCLOSURES, NOT OURS. Bulk deals, block deals, SAST and insider trades from NSE/BSE reports and Screener.in, supplemented by Muns disclosures, reaching back ${m.windowDays} days, exported ${new Date().toISOString()}. ` +
                 `THE SOURCE-SPECIFIC COLUMNS AND THEIR HEADINGS ARE RETAINED; Trade Category is the common four-list classifier. Duplicate economic events appear once. ` +
-                `NOTHING IS SUMMED OR CLASSIFIED: no total quantity, no total value, and no judgement about what a trade means. ` +
-                `${m.covered} companies covered${m.failed ? `; ${m.failed} could not be read and are ABSENT rather than shown as having no insider dealing` : ''}. ` +
+                `No aggregate totals or judgement about what a trade means. Official quantity × price is an approximate rupee trade value marked ≈; other values retain source units. ` +
+                `${visible.length} visible trades from ${new Set(visible.map(r => r.ticker)).size} companies. ${m.exchanges?.summary || ''} ${m.disclosuresStatus || ''} ` +
                 `A blank cell is one the source left empty, never a zero.`
               : r.date || '',
         },

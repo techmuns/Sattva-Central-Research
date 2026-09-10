@@ -65,6 +65,12 @@ export function withTradeCategory(row) {
 export function insiderTradeIdentity(input) {
   const row = withTradeCategory(input);
   const cells = row.cells;
+  // Official exchange reports retain venue, report type and price. They are reconciled
+  // against secondary coverage before reaching this additive archive layer.
+  if (/^(nse|bse)-(bulk|block)$/.test(row.sourceId || '')) {
+    return JSON.stringify(['exchange', row.sourceId, row.date, row.exchangeSecurity || row.ticker,
+      folded(cells.Insider), direction(cells.Transaction), compactNumber(cells['Trade Shares']), compactNumber(cells.Price)]);
+  }
   const category = folded(field(cells, ['Trade Category', 'Disclosure Type']) || INSIDER_TRADE_CATEGORY);
   const person = folded(field(cells, ['Insider', 'Person', 'Person Name', 'Name of Insider', 'Acquirer', 'Holder']));
   const transaction = direction(field(cells, ['Transaction', 'Transaction Type', 'Acq/Disp', 'Acquisition/Disposal']));

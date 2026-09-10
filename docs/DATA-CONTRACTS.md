@@ -4741,3 +4741,53 @@ General research uses a 30,000-character evidence budget, with a 37,000-characte
 Worker bound; ordinary research remains at 18,000/19,000. See
 [General portfolio reasoning](RESEARCH-PORTFOLIO-REASONING.md) for inference rules,
 sampling, tests and limits.
+
+## Exchange deals and supplementary insider checkpoint
+
+`public/data/exchange-deals.json` is the fallback for `GET /api/bulk-block-deals`.
+The read-only Worker delivers the latest completed Sattva `bulk-block-refresh.yml` artifact,
+including partially successful captures; a delivery failure serves the fallback with
+`X-Sattva-Exchange-Fallback: 1`. `ETag` identifies the artifact. GitHub credentials stay on the
+Worker and never follow the signed artifact-download redirect.
+
+The version-1 snapshot contains `records` as tuples of source id, source date, exchange security
+id, company, client, Buy/Sell, quantity, price and remarks. Four `sources` entries cover NSE/BSE
+bulk/block reports individually: `coverage` is the union of successfully read intervals,
+`checkedAt` is the latest attempt, `lastSuccessAt` is the latest successful read, and `ok/error`
+report its outcome. `securityMap` joins BSE codes to NSE tickers by ISIN. Unresolved codes remain
+in Universe. `identity` reports mapping failures independently. `updatedAt` versions delivery;
+it never certifies source success. Official interval corrections replace the matching source
+slice; failed or suspiciously empty reads preserve it. The initial public exchange history comes
+from the supplied Glow reference, with its original check dates and no Glow portfolio data.
+
+`insiders.byTicker[ticker]` retains Muns `trades`, `from/to`, the last attempt and last success,
+and an explicit error. `insiders.targetTickers` is Sattva's capture universe: its resolved live
+portfolio, local universe, and companies already present in its market disclosures. The bounded
+12-minute walk prioritises portfolio companies whose successful check is at least two hours old,
+then rotates the universe by attempt time. Requests start at least 2.5 seconds apart with four
+in flight. Each read overlaps the last successful day by seven days; the first asks for a year.
+Old records remain additive, including beyond the page's default 30-day reading window. Each
+completed source interval/company response is saved atomically so interrupted jobs can publish
+and resume their completed progress. A failed live portfolio lookup retains the checkpoint and
+reports the error, rather than silently substituting an old book.
+
+The schedule runs every 30 minutes during weekday day/evening hours plus a weekend check.
+The browser reads every minute while the feed is visible, and on focus/reconnection; it can
+request the same throttled workflow when an exchange check is overdue. Collection runs
+independently of a reader, uses Sattva's existing repository/Worker configuration, and publishes
+artifacts without commits to main. Each artifact retains the cumulative history and has 90-day
+artifact retention. An outage beyond retained artifacts is an explicit recovery limit; this is
+not a guarantee of an exhaustive historical archive. Muns coverage is per company and best
+effort; queue size, unavailable securities and upstream response limits can delay checks.
+
+The shared insider reader merges these records with Screener and the monthly archive, so tables,
+alerts and research use the same rows. Official reports supersede secondary rows only inside
+successfully captured exchange intervals. Venue, category, side, quantity and price keep
+separate official transactions distinct. Portfolio and Watchlist filter using Sattva membership;
+Universe keeps the market-wide feed and existing universe exclusions. The UI displays exchange
+and Muns status separately, with original source dates, failed checks and stale coverage. Excel
+keeps the Exchange field; approximate official trade value is quantity × price in rupees,
+marked `≈`, while other source values retain their units.
+
+Offline checks: `verify-exchange-deals.mjs`, `verify-muns-insider-capture.mjs`,
+`verify-exchange-worker-runtime.mjs` and `verify-sattva-deals-ui.mjs`.

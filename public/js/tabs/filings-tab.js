@@ -131,7 +131,7 @@ export function makeFilingsTab(cfg) {
     disposers = [];
     const seeded = companySeededView(ctx, routeCompany, view);
     routeCompany = seeded.company;
-    view = seeded.view;
+    view = cfg.prepareView?.(ctx, seeded.view) ?? seeded.view;
 
     // SUBSCRIBE BEFORE THE EARLY RETURN, not after it.
     //

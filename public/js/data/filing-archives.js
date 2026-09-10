@@ -1,3 +1,4 @@
+import * as exchangeDeals from './exchange-deals.js';
 import { capturedJson } from './company-captures.js';
 import { mergeAnnouncements } from './announcements-shared.js';
 import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
@@ -6,9 +7,17 @@ export function withFilingArchive(base, kind) {
   let rows = [], error = null, pending = false, loaded = false;
   const revisions = new Map();
   const listeners = new Set();
-  const emit = () => listeners.forEach((fn) => fn());
+  const emit = () => [...listeners].forEach((fn) => fn());
   const merge = kind === 'insider' ? mergeInsiderTrades : mergeAnnouncements;
-  const combined = () => merge(base.rows(), rows);
+  let memo = null;
+  const combined = () => {
+    const live = base.rows();
+    if (memo?.live === live && memo.archive === rows) return memo.value;
+    const joined = rows.length ? merge(live, rows) : live;
+    const value = kind === 'insider' && rows.length ? exchangeDeals.combined(joined.filter(r => !/^(nse|bse)-(bulk|block)$/.test(r.sourceId || ''))) : joined;
+    memo = { live, archive: rows, value };
+    return value;
+  };
   return {
     ...base, rows: combined,
     forTicker: (ticker) => combined().filter((row) => row.ticker === String(ticker).toUpperCase()),

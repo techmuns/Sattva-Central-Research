@@ -12,6 +12,8 @@
 // `readState` is separate: only a recent successful check can produce a Connected indicator.
 // Roadmap-only entries and credential plumbing are not customer-facing data sources.
 
+import * as exchangeDeals from '../data/exchange-deals.js';
+import { EXCHANGE_SOURCES } from '../data/exchange-deals-shared.js';
 import { companyCaptureStatus } from '../data/company-captures.js';
 import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime, formatNumber } from '../core/format.js';
@@ -572,6 +574,15 @@ export function sourceGroups() {
           status: 'live',
           file: 'scripts/lib/screener-actions.mjs · scripts/scrape-corporate-actions.mjs · .github/workflows/corporate-actions-refresh.yml',
         },
+        ...EXCHANGE_SOURCES.map(source => {
+          const meta = exchangeDeals.meta();
+          const check = meta?.sources?.find(s => s.id === source.id);
+          return { id: source.id, name: `${source.exchange} — ${source.category} reports`, url: source.url,
+            feeds: 'Complete public exchange reports, retaining the client, date, venue, side, quantity and price. Successfully covered exchange intervals take precedence over secondary listings. Portfolio and Watchlist use Sattva company membership.',
+            cadence: 'Scheduled every 30 minutes on weekday days/evenings, with weekend catch-up; checked every minute while visible. Retained history survives failed reads.',
+            status: 'live', readState: sourceReadState({ at: check?.lastSuccessAt, failed: !!meta?.deliveryError || check?.ok === false, maxAgeMs: 3 * 3600000 }),
+            file: 'scripts/capture-exchange-deals.mjs · worker/exchange-deals.mjs · .github/workflows/bulk-block-refresh.yml' };
+        }),
         {
           name: 'Screener.in — Bulk, Block, SAST and Insider trades',
           url: 'https://www.screener.in/trades/',
@@ -585,8 +596,8 @@ export function sourceGroups() {
           name: 'Muns filings API — company insider-trade detail',
           url: 'https://devde.muns.io',
           feeds:
-            '<strong>Supplemental company detail.</strong> A reader-initiated refresh can add promoter, director and designated-person dealing from <code class="rounded bg-slate-100 px-1">POST /filings/data/insider_trades</code>, routing to NSE, BSE and Trendlyne. Its source-defined markdown columns are retained and combined with the market-wide lists without duplicating matching economic events.',
-          cadence: 'On demand for the selected companies; additive within the same rolling 365-day history. It does not own scheduled market-wide coverage.',
+            '<strong>Supplemental company detail.</strong> An independent scheduled company walk adds promoter, director and designated-person dealing from <code class="rounded bg-slate-100 px-1">POST /filings/data/insider_trades</code>, routing to NSE, BSE and Trendlyne. Its source-defined markdown columns are retained and combined with the market-wide lists without duplicating matching economic events.',
+          cadence: 'A rotating scheduled walk checks due Sattva portfolio companies first and then the retained universe, with a week of overlap after each successful read. Every company retains its own check time and failures; older disclosures stay available. Manual refresh can supplement the selected companies.',
           status: 'live',
           file: 'worker/index.js → /api/insider-trades/{ticker} · worker/muns.mjs · public/js/data/filings-shared.js',
         },
