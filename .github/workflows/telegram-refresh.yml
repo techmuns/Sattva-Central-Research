@@ -120,13 +120,53 @@ jobs:
         id: package
         if: ${{ !cancelled() && steps.restore.outcome == 'success' }}
         run: node scripts/telegram-artifact.mjs pack "$RUNNER_TEMP/telegram-posts.json" "$RUNNER_TEMP/telegram-posts-v1.json.gz"
-      - uses: actions/upload-artifact@v7
+      - name: Deliver final Telegram checkpoint
+        id: final_upload
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() && steps.package.outcome == 'success' }}
         with:
           path: ${{ runner.temp }}/telegram-posts-v1.json.gz
           archive: false
           if-no-files-found: error
           retention-days: 90
+      # Retry publication, never Telegram collection. Distinct immutable names avoid an
+      # ambiguous finalize failure colliding with a partially created artifact.
+      - name: Prepare final checkpoint retry
+        if: ${{ !cancelled() && steps.final_upload.outcome == 'failure' }}
+        run: |
+          sleep 5
+          cp "$RUNNER_TEMP/telegram-posts-v1.json.gz" "$RUNNER_TEMP/telegram-posts-retry-1.json.gz"
+      - name: Retry final Telegram checkpoint
+        id: final_retry
+        continue-on-error: true
+        if: ${{ !cancelled() && steps.final_upload.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/telegram-posts-retry-1.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 90
+      - name: Prepare second final checkpoint retry
+        if: ${{ !cancelled() && steps.final_retry.outcome == 'failure' }}
+        run: |
+          sleep 15
+          cp "$RUNNER_TEMP/telegram-posts-v1.json.gz" "$RUNNER_TEMP/telegram-posts-retry-2.json.gz"
+      - name: Retry final Telegram checkpoint once more
+        id: final_retry_two
+        continue-on-error: true
+        if: ${{ !cancelled() && steps.final_retry.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/telegram-posts-retry-2.json.gz
+          archive: false
+          if-no-files-found: error
+          retention-days: 90
+      - name: Checkpoint delivery health
+        if: ${{ always() && steps.package.outcome == 'success' && steps.final_upload.outcome != 'success' && steps.final_retry.outcome != 'success' && steps.final_retry_two.outcome != 'success' }}
+        run: |
+          echo '::error::Telegram checkpoint publication failed after bounded retries.'
+          exit 1
       # Publish retained rows and safety state first, then make source failures fail the job.
       # A valid final artifact remains readable even if the workflow ends with this health error.
       - name: Collection health

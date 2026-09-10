@@ -92,7 +92,7 @@ function deliveryFixture(definitions) {
     const id=definition.id*10+index;
     const body=item.bytes || gzipSync(JSON.stringify(item.capture || capture));
     downloads.set(id,body);
-    return {id,name:item.phase==='head'?TELEGRAM_HEAD_ARTIFACT:TELEGRAM_ARTIFACT,expired:!!item.expired,
+    return {id,name:item.name || (item.phase==='head'?TELEGRAM_HEAD_ARTIFACT:TELEGRAM_ARTIFACT),expired:!!item.expired,
       workflow_run:{id:definition.id},size_in_bytes:body.length,
       digest:item.corrupt?'sha256:'+'0'.repeat(64):'sha256:'+createHash('sha256').update(body).digest('hex')};
   })]));
@@ -103,8 +103,11 @@ function deliveryFixture(definitions) {
       return new Response(downloads.get(Number(new URL(url).pathname.slice(1))));
     }
     assert.equal(options.headers.authorization,'Bearer test-secret');
-    if(String(url).includes('/runs?')) return Response.json({workflow_runs:String(url).includes('status=success')?
-      workflowRuns.filter(r=>r.status==='completed'&&r.conclusion==='success'):workflowRuns});
+    if(String(url).includes('/runs?')) {
+      const query=new URL(url).searchParams, size=Number(query.get('per_page') || 10), page=Number(query.get('page') || 1);
+      const selected=query.get('status')==='success'?workflowRuns.filter(r=>r.status==='completed'&&r.conclusion==='success'):workflowRuns;
+      return Response.json({total_count:selected.length,workflow_runs:selected.slice((page-1)*size,page*size)});
+    }
     const attempt=String(url).match(/actions\/runs\/(\d+)\/attempts\/1\/jobs/);
     if(attempt)return Response.json(definitions.find(item=>item.id===Number(attempt[1]))?.jobs || {total_count:0,jobs:[]});
     const runId=String(url).match(/actions\/runs\/(\d+)\/artifacts/);
@@ -203,8 +206,80 @@ const unknownMiddle=deliveryFixture([{id:4,conclusion:'failure',jobs:preSourceFa
 await assert.rejects(()=>readFixture(unknownMiddle,{purpose:'restore'}),/safety/);
 assert(!unknownMiddle.calls.some(url=>url.includes('/runs/2/artifacts')),'restore cannot jump across an unverified middle run to the successful baseline');
 const longFailureChain=deliveryFixture([...Array.from({length:11},(_,index)=>({id:12-index,conclusion:'failure',jobs:preSourceFailureJobs(12-index)})),{id:1,artifacts:[{}]}]);
-await assert.rejects(()=>readFixture(longFailureChain,{purpose:'restore'}),/contiguous/);
-assert.equal(longFailureChain.calls.filter(url=>url.includes('/attempts/1/jobs')).length,10,'restore proof has a bounded ten-run recovery window');
+assert.equal((await readFixture(longFailureChain,{purpose:'restore'})).source.collectorRunId,1,'eleven pre-source failures must not deadlock the next collection');
+const exhaustedRestore=deliveryFixture([...Array.from({length:501},(_,index)=>({id:502-index,conclusion:'failure',jobs:preSourceFailureJobs(502-index)})),{id:1,artifacts:[{}]}]);
+await assert.rejects(()=>readFixture(exhaustedRestore,{purpose:'restore'}),/bounded recovery budget/);
+assert.equal(exhaustedRestore.calls.filter(url=>url.includes('/attempts/1/jobs')).length,500,'a degraded provider cannot cause unbounded proof requests');
+
+// Authenticated job evidence from the 8 September incident: collection and packaging
+// succeeded, but GitHub's finalization service returned 403 after the head was published.
+const incidentJobs=JSON.parse(readFileSync('scripts/fixtures/telegram-upload-failure-jobs.json','utf8'));
+function uploadFailureJobs(id) {
+  const value=structuredClone(incidentJobs);
+  value.jobs[0].run_id=id;
+  return value;
+}
+const publicHead={...capture,route:'embed+permalink',apiSafety:{paused:true,reason:'account-attention',failures:1,nextAttemptAt:null},
+  publicSafety:{reason:'rate-limit',nextAttemptAt:'2099-01-01T00:00:00Z'},historyNextId:400,catchupRanges:[{from:501,to:550}]};
+const incidentChain=deliveryFixture([...Array.from({length:205},(_,index)=>({id:207-index,conclusion:'failure',jobs:preSourceFailureJobs(207-index)})),
+  {id:2,conclusion:'failure',jobs:uploadFailureJobs(2),artifacts:[{phase:'head',capture:publicHead}]},{id:1,artifacts:[{}]}]);
+const incidentRecovery=await readFixture(incidentChain,{purpose:'restore'});
+assert.equal(incidentRecovery.source.collectorRunId,2);
+assert.equal(incidentRecovery.source.collectorRecovery,'public-upload-failure');
+assert.equal(incidentRecovery.source.degraded,true,'restoring a checkpoint does not certify fresh collection');
+assert.equal(incidentRecovery.capture.lastCheckedAt,publicHead.lastCheckedAt,'recovery cannot fabricate a source check');
+assert.deepEqual(incidentRecovery.capture.publicSafety,publicHead.publicSafety);
+assert.deepEqual(incidentRecovery.capture.apiSafety,publicHead.apiSafety,'head recovery cannot clear a retained account pause');
+assert.equal(incidentRecovery.capture.historyNextId,400,'unpublished historical work is replayed from the retained cursor');
+assert.deepEqual(incidentRecovery.capture.catchupRanges,publicHead.catchupRanges);
+assert.equal(incidentChain.calls.filter(url=>url.includes('/runs?')).length,3,'restore audits every intervening page');
+assert(!incidentChain.calls.some(url=>url.includes('/runs/1/artifacts')),'a successful baseline cannot bypass the newer head');
+const modernUploadJobs=uploadFailureJobs(2);
+const uploadIndex=modernUploadJobs.jobs[0].steps.findIndex(step=>step.name==='Run actions/upload-artifact@v7');
+modernUploadJobs.jobs[0].steps.splice(uploadIndex,1,...[
+  ['Deliver final Telegram checkpoint','failure'],['Prepare final checkpoint retry','success'],
+  ['Retry final Telegram checkpoint','failure'],['Prepare second final checkpoint retry','success'],
+  ['Retry final Telegram checkpoint once more','failure'],['Checkpoint delivery health','failure'],
+].map(([name,conclusion])=>({name,conclusion,status:'completed'})));
+modernUploadJobs.jobs[0].steps.forEach((step,index)=>{step.number=index+1;});
+const modernRecovery=await readFixture(deliveryFixture([{id:2,conclusion:'failure',jobs:modernUploadJobs,artifacts:[{phase:'head',capture:publicHead}]}]),{purpose:'restore'});
+assert.equal(modernRecovery.source.collectorRecovery,'public-upload-failure','exhausted immutable retries can recover on the next scheduled run');
+for (const [name,conclusion] of [
+  ['Collect recent public posts before historical work','failure'],
+  ['Collect channel through official API or public fallback','failure'],
+  ['Preserve a failed source check explicitly','success'],
+  ['Preserve a failed recent source check','success'],
+  ['Run actions/setup-python@v6','success'],
+  ['Install official API client outside the repository','success'],
+  ['Validate and package only public channel data','failure'],
+  ['Collection health','failure'],
+]) {
+  const evidence=uploadFailureJobs(2);
+  evidence.jobs[0].steps.find(step=>step.name===name).conclusion=conclusion;
+  const fixture=deliveryFixture([{id:2,conclusion:'failure',jobs:evidence,artifacts:[{phase:'head',capture:publicHead}]},{id:1,artifacts:[{}]}]);
+  await assert.rejects(()=>readFixture(fixture,{purpose:'restore'}),/safety/,`${name} cannot authorize replay after unknown source safety`);
+  assert(!fixture.calls.some(url=>url.includes('/runs/1/artifacts')));
+}
+for(const variant of ['account-head','rerun','cancelled','unknown-work','wrong-order','duplicate-step']) {
+  const evidence=uploadFailureJobs(2);
+  if(variant==='unknown-work')evidence.jobs[0].steps.push({name:'Unrecognised collection after packaging',number:40,status:'completed',conclusion:'success'});
+  if(variant==='duplicate-step')evidence.jobs[0].steps.push({...evidence.jobs[0].steps[0],number:40});
+  if(variant==='wrong-order')evidence.jobs[0].steps.find(step=>step.name==='Collect channel through official API or public fallback').number=39;
+  const fixture=deliveryFixture([{id:2,conclusion:variant==='cancelled'?'cancelled':'failure',run_attempt:variant==='rerun'?2:1,jobs:evidence,
+    artifacts:[{phase:'head',capture:variant==='account-head'?capture:publicHead}]},{id:1,artifacts:[{}]}]);
+  await assert.rejects(()=>readFixture(fixture,{purpose:'restore'}),/safety/,variant);
+}
+for(const name of ['telegram-posts-retry-1.json.gz','telegram-posts-retry-2.json.gz']) {
+  const fixture=deliveryFixture([{id:2,artifacts:[{name,capture:publicHead}]}]);
+  for(const purpose of ['delivery','restore']) {
+    const result=await readFixture(fixture,{purpose});
+    assert.equal(result.source.collectorArtifactPhase,'final','a verified publication retry carries final safety state');
+    assert.deepEqual(result.capture.apiSafety,publicHead.apiSafety);
+  }
+  assert(readFileSync('.github/workflows/telegram-refresh.yml','utf8').includes(name),'workflow and reader agree on immutable retry names');
+}
+const recoveredPublication=await readFixture(deliveryFixture([{id:2,artifacts:[{corrupt:true},{name:'telegram-posts-retry-1.json.gz'}]}]));
+assert.equal(recoveredPublication.source.degraded,false,'a complete verified final retry resolves the upload failure');
 const cancelled=new AbortController();cancelled.abort();
 const untouched=deliveryFixture([{id:1,artifacts:[{}]}]);
 await assert.rejects(()=>readFixture(untouched,{signal:cancelled.signal}));

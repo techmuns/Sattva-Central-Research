@@ -37,7 +37,7 @@ if (mode === 'restore' || mode === 'backup') {
   const previous = process.env.GITHUB_ACTIONS === 'true' ? await readTelegramCollector({ token: process.env.GH_TOKEN,
     ref: process.env.GITHUB_REF_NAME || 'main', allowMissing: true, purpose: mode === 'backup' ? 'delivery' : 'restore',
     excludeRunId: Number(process.env.GITHUB_RUN_ID) || 0,
-    runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT || 1), signal: AbortSignal.timeout(45000) }) : null;
+    runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT || 1), signal: AbortSignal.timeout(mode === 'restore' ? 120000 : 45000) }) : null;
   const committed = JSON.parse(await readFile(file, 'utf8'));
   const merged = mergeTelegramRestore(committed, previous?.capture);
   // A backup never contacts Telegram. It can preserve an early/older verified archive, but
