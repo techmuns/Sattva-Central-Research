@@ -3056,6 +3056,86 @@ on it says whose it is — the honesty rule every feed here follows. The `worker
 resolver are pure and shared by the Worker route and the scraper, so the live feed and the snapshot can
 never disagree about shape or about how a name becomes a ticker.
 
+**AN XBRL FILING IS A DOCUMENT, AND A BROWSER SHOWS IT AS MARKUP — so this renders it.** About one
+item in eleven links to a raw XBRL file rather than a PDF (measured: **150 of 1,693** on one live
+pull, `.../corporate/xbrl/<FORM>_<id>_WebXMLFile_<stamp>.xml`), and every one of those rows sent the
+reader to *"This XML file does not appear to have any style information associated with it"* over a
+tree of SEBI namespaces. NSE publish **no readable twin** — measured against the live archive for one
+such filing, `<file>.html`, `<file>_WEB.html` and `/corporate/ixbrl/<file>_iXBRL_WEB.html` all 404,
+the document carries no XSLT stylesheet, and the response has **no `access-control-allow-origin`
+header at all**, so the browser cannot read it even to lay it out itself. (Integrated Filings are the
+exception: NSE publish those directly as `_iXBRL_WEB.html`, already readable, and nothing here
+touches them.)
+
+`GET /api/nse-filing?src=<url>` fetches the file with the same desktop user-agent the RSS needs and
+returns the exchange's own facts as JSON. **`src` is an allow-list, not a parameter**:
+`isXbrlFilingUrl()` in `public/js/data/nse-xbrl-shared.js` pins `https`, the host *exactly*
+(a hostname that merely ends in `nseindia.com` is somebody else's), the `/corporate/xbrl/` path and an
+`.xml` file, and refuses anything else with `400 unsupported` before a request is made — without that
+this is an open proxy answering from our origin. These files are immutable (the filename carries the
+filing's own timestamp), so the edge holds one for **a day** and a failure for **15 seconds**, the
+same split the Finology client draws.
+
+```
+GET /api/nse-filing?src=https://nsearchives.nseindia.com/corporate/xbrl/REG30_PARA_B_897_….xml
+{
+  "ok": true,
+  "url": "https://nsearchives.nseindia.com/corporate/xbrl/REG30_PARA_B_897_….xml",
+  "fetchedAt": "2026-09-10T13:12:41.001Z",
+  "company": "Man Industries (India) Limited",   // in-capmkt:NameOfTheCompany, or null
+  "symbol": "MANINDS", "isin": "INE993A01026", "scripCode": "513269",
+  "factCount": 27,
+  "blocks": [ {
+    "key": "Main",            // the context id, with the taxonomy's instant/duration marker folded
+    "title": null,            // null for the header block; otherwise the block's own name, spaced
+    "facts": [ {
+      "tag": "NSESymbol",     // SEBI's own element name
+      "label": "NSE symbol",  // the same name, spaced into words — the ONLY thing added
+      "value": "MANINDS",     // the company's own value, verbatim
+      "unit": null            // the document's own unitRef, e.g. "INR", where it declares one
+    } ]
+  } ]
+}
+```
+
+**READ BY SHAPE, NOT BY FIELD NAME.** The taxonomy is SEBI's and moves on their schedule, so nothing
+here knows a field by name: measured across twelve form types in one pull (orders, board intimations,
+director changes, shareholder notices, restructuring, trading-window closure, CIRP, analyst meets and
+more) they carry between 9 and 45 facts each, and a form published next month arrives laid out rather
+than dropped. Three rules make the rendering honest:
+
+1. **A fact is an element with a `contextRef`; structure is not a fact.** RailTel's 10 Sep filing
+   declares its repeated blocks with `<in-capmkt:ChangeInManagementDomain>` members nested inside
+   `<xbrli:context>` — same namespace, no context of their own — and four of them landed at the top
+   of the panel reading *"Change in management domain: ChangeInManagementDomain1"* before that rule
+   existed. The taxonomy's own definition is the discriminator, so a typed member of any name is
+   excluded without this code having to know the name.
+2. **A repeated section is a context, not a field name.** That same filing reports four auditor
+   re-appointments as `D_ChangeInManagement1..4` / `I_ChangeInManagement1..4` — the same six tags,
+   four times. Flattened into one list they read as one contradictory record; grouped by context they
+   read as four appointments. `blockKey()` folds the `I_`/`D_` instant-duration marker away so
+   `MainI` and `MainD` are one header, and keeps everything else as written.
+3. **Values travel verbatim and blanks are not findings.** A date stays the date the company filed,
+   `true` stays `true`, a number keeps its digits and gains only the unit the document declares, and
+   a field the company left empty is omitted rather than rendered as an answer. Nothing is summed,
+   scored, re-banded or re-worded — the same reproduce-never-recompute rule the con-call and
+   Institutions feeds follow.
+
+**The row still carries NSE's own URL, everywhere.** `row.url` is unchanged, so the export, the
+provenance surfaces and every other consumer keep the exchange's address; only the *click* is
+intercepted, by one delegated listener in `public/js/ui/xbrl-filing.js` installed once from
+`app.js` — a check in five tabs is how one rule ends up with five spellings that disagree. A
+ctrl-click, a middle-click and "open in new tab" are untouched, because that is how somebody asks
+for the file itself. **On a static origin there is no Worker and so no route**: the panel says that
+in those words and offers the original document, which is exactly where the click used to land, so
+a failure costs one extra click and never the filing.
+
+Regression checks: `node scripts/verify-nse-xbrl.mjs` (offline, over two real filings committed under
+`scripts/fixtures/nse-xbrl/`) and `PLAYWRIGHT_ROOT=… node scripts/verify-nse-xbrl-ui.mjs`, which
+drives the real tab against a stub route and asserts the panel carries the filing's fields, no
+`in-capmkt:` markup, the original link, and the honest no-Worker wording.
+
+
 ### Keeping captures fresh — scheduled first, demand-driven recovery second
 
 **A schedule alone is not treated as proof of freshness.** The measured scheduler behaviour is:

@@ -37,6 +37,7 @@ import { scopeLabel } from '../data/scope.js';
 import * as records from '../data/alert-records.js';
 import { attributionLabel } from '../data/company-news-attribution.js';
 import { NEWS_PERIODS, newsPeriodBounds } from '../data/news-window.js';
+import { isXbrlFilingUrl, openFilingReader } from '../ui/xbrl-filing.js';
 
 export const meta = {
   id: 'daily-alerts',
@@ -1056,6 +1057,14 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     // article, which is the rule that actually matters (see the con-call link rule in CLAUDE.md).
     onRowClick: (e) => {
       if (e.url) {
+        // AN NSE XBRL FILING IS A DOCUMENT, NOT A PAGE. Opening one in a tab shows the reader SEBI's
+        // namespaces; `openFilingReader` lays out the same filing's own fields. Every other URL is
+        // somebody's page and still opens as one. The Link column's anchor is intercepted centrally
+        // (see js/ui/xbrl-filing.js); a row click never becomes an anchor, so it asks here.
+        if (isXbrlFilingUrl(e.url)) {
+          void openFilingReader(e.url, { company: e.company, ticker: e.ticker, subject: e.headline });
+          return;
+        }
         window.open(e.url, '_blank', 'noopener,noreferrer');
         return;
       }

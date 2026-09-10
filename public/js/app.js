@@ -17,6 +17,7 @@ import { startWatchlistCapture } from './data/watchlist-capture.js';
 // SDK client at import time, so pulling it in from the bootstrap is what guarantees the client
 // exists — and its window listener is attached — before the host can post `host:init`.
 import { startHostCapture } from './core/host-capture.js';
+import { installFilingReader } from './ui/xbrl-filing.js';
 
 // Add a file here and every tab can read it off `ctx.data.<key>` — no other wiring needed.
 //
@@ -141,6 +142,12 @@ async function boot() {
   // It does NOT call `sdk.ready()` — the SDK sends `dashboard:ready` itself from inside its
   // `host:init` handler, and a manual one races that and breaks the handshake permanently.
   startHostCapture();
+
+  // NSE publishes about one announcement in eleven as a raw XBRL data file rather than a PDF, and
+  // a browser renders those as a tree of namespaces. One delegated listener, installed once for
+  // every table, drill and card in the app, opens those readable instead. It changes nothing for
+  // any other link, and a middle-click or ctrl-click still gets the original document.
+  installFilingReader();
 
   // GitHub schedules are best-effort. One small timestamp request checks every committed capture
   // after first paint and dispatches only the ones outside their real operating window. The Worker

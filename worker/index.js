@@ -70,6 +70,7 @@ import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calenda
 import { readScreenerInsightsCollector } from './screener-insights-collector.mjs';
 import { SCREENER_INSIGHTS_FRESH_MS, SCREENER_INSIGHTS_WORKFLOW } from '../public/js/data/screener-insights-shared.js';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
+import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
 const MAX_TICKERS = 60;
@@ -164,6 +165,9 @@ export default {
     }
     if (url.pathname === '/api/nse-announcements') {
       return handleNseAnnouncements(request, env, ctx);
+    }
+    if (url.pathname === '/api/nse-filing') {
+      return handleNseFiling(request, ctx);
     }
     if (url.pathname === '/api/concalls') {
       return handleConcalls(request, env, ctx);
@@ -1006,6 +1010,66 @@ async function handleNseAnnouncements(request, env, ctx) {
       return revalidate(request, tagged(body, tag, 15), 'fallback');
     }
     return json({ ok: false, reason: err?.reason || 'unreachable', degraded: `NSE is unreachable and no snapshot is committed: ${String(err?.message || err)}`, rows: [] }, 502);
+  }
+}
+
+// ---------------------------------------------------------------------------------------
+// One NSE XBRL filing, rendered readable
+// ---------------------------------------------------------------------------------------
+//
+// Nine per cent of the announcements above link to a raw XBRL file, not a PDF, and a reader who
+// clicks one gets "This XML file does not appear to have any style information associated with
+// it". NSE publish no readable twin (measured: the .html, _WEB.html and /corporate/ixbrl/ shapes
+// all 404) and no `access-control-allow-origin` header at all, so the browser cannot read the file
+// even to render it itself. This route is the only way that filing reaches a human: fetch it with
+// the same desktop user-agent the RSS needs, parse it in the shared module the browser also
+// imports, and return the exchange's own facts as JSON.
+//
+// THE SOURCE URL IS AN ALLOW-LIST, NOT A PARAMETER. `isXbrlFilingUrl` pins the scheme, the exact
+// host and the path prefix; anything else is refused before a request is made. Without that this
+// is an open proxy answering from this dashboard's origin.
+//
+// CACHED HARD, BECAUSE THESE FILES ARE IMMUTABLE. The filename carries the filing's own timestamp,
+// so a given URL is the same bytes for ever - a day at the edge costs NSE one read per filing per
+// day however many readers open it. A failure is cached for seconds only, the same split the
+// Finology client draws, so a transient refusal does not pin an error on every screen.
+const NSE_FILING_TTL_S = 86400;
+const NSE_FILING_FAIL_TTL_S = 15;
+
+async function handleNseFiling(request, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method', error: 'GET only' }, 405);
+  const src = new URL(request.url).searchParams.get('src') || '';
+  if (!isXbrlFilingUrl(src)) {
+    return json({ ok: false, reason: 'unsupported', url: src,
+      error: 'Only NSE XBRL announcement files (nsearchives.nseindia.com/corporate/xbrl/....xml) can be rendered here.' }, 400);
+  }
+
+  const cache = caches.default;
+  const cacheKey = edgeKey(`nse-filing:${src}`);
+  const hit = await cache.match(cacheKey);
+  if (hit) return revalidate(request, new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers), 'x-sattva-cache': 'hit' } }), 'hit');
+
+  try {
+    const res = await fetch(src, { headers: NSE_HEADERS, signal: AbortSignal.timeout(15000) });
+    const xml = await res.text();
+    if (!res.ok) throw new Error(`NSE HTTP ${res.status}`);
+    // A 200 THAT IS NOT THE FILING IS NOT AN EMPTY FILING. Akamai answers a reader it dislikes with
+    // a small "Access Denied" page carrying whatever status it likes, and this document's own shape
+    // is the only positive evidence that it is the document: an XBRL instance with facts in it.
+    const filing = parseXbrlFiling(xml);
+    if (!filing.ok) throw new Error(`NSE returned ${xml.length} bytes carrying no XBRL facts.`);
+
+    const { body, tag } = withTag({ ok: true, url: src, fetchedAt: new Date().toISOString(), ...filing });
+    const stored = tagged(body, tag, NSE_FILING_TTL_S, { 'x-sattva-cache': 'live' });
+    ctx?.waitUntil?.(cache.put(cacheKey, stored.clone()));
+    return revalidate(request, stored, 'miss');
+  } catch (err) {
+    // NAME THE FAILURE AND CARRY THE URL INTO IT. The reader still has the original document a
+    // click away, and the panel says so rather than implying the filing itself is gone - the
+    // chatter route's bare-404 lesson, which cost a long investigation into a healthy upstream.
+    const { body, tag } = withTag({ ok: false, url: src, reason: 'unreachable',
+      error: `NSE could not be read for this filing: ${String(err?.message || err)}` });
+    return revalidate(request, tagged(body, tag, NSE_FILING_FAIL_TTL_S), 'fallback');
   }
 }
 

@@ -85,6 +85,8 @@ jobs:
         run: node scripts/verify-screener-watchlist.mjs
       - name: Verify NSE filing history and scoped search
         run: node scripts/verify-nse-history.mjs
+      - name: Verify NSE XBRL filings render as filings and the fetch allow-list holds
+        run: node scripts/verify-nse-xbrl.mjs
       - name: Verify caller-private combined filings
         run: node scripts/verify-combined-filings.mjs
       - name: Verify read-only DRHP lookup
@@ -219,6 +221,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-nse-history-ui.mjs && node scripts/verify-combined-filings-ui.mjs
+      - name: Verify an NSE XBRL filing opens readable, with the original still one click away
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-nse-xbrl-ui.mjs
       - name: Verify Telegram dates, restricted posts, search and retained refresh
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
