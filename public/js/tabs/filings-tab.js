@@ -67,6 +67,7 @@ const REASONS = {
  * @param {Function} cfg.searchable  (row) => string
  * @param {Function} cfg.provenance  (meta) => html for the pill's modal
  * @param {Function} [cfg.filters]   (rows) => scoreTable filters
+ * @param {Function} [cfg.renderRevision] extra revision for time-dependent filters on otherwise unchanged rows
  * @param {Function} [cfg.keyFor]    (row, i) => watchlist key
  * @param {Function|false} [cfg.link] custom row-link getter, or false when the tab owns its link cell
  */
@@ -217,8 +218,9 @@ export function makeFilingsTab(cfg) {
     const rows = (cfg.filterByScope || filterByScope)(all, ctx.scope, coverage.holdings());
     const customEmptyMessage = typeof cfg.emptyMessage === 'function' ? cfg.emptyMessage(m) : cfg.emptyMessage;
     if (cfg.preserveReadingPosition) {
+      const revision = cfg.renderRevision?.();
       const sameRows = renderedRows?.scope === ctx.scope && renderedRows.reason === m.reason &&
-        renderedRows.emptyMessage === customEmptyMessage &&
+        renderedRows.emptyMessage === customEmptyMessage && renderedRows.revision === revision &&
         renderedRows.rows.length === rows.length && rows.every((row, i) => row === renderedRows.rows[i]);
       // Archive/check status can change several times in one poll without changing a filing.
       // Keep the mounted search field and rows intact for those notifications.
@@ -230,7 +232,7 @@ export function makeFilingsTab(cfg) {
         if (busy) busy.innerHTML = busyStrip(m);
         return;
       }
-      renderedRows = { scope: ctx.scope, reason: m.reason, emptyMessage: customEmptyMessage, rows };
+      renderedRows = { scope: ctx.scope, reason: m.reason, emptyMessage: customEmptyMessage, revision, rows };
     }
     disposers.forEach((dispose) => dispose && dispose());
     disposers = [];

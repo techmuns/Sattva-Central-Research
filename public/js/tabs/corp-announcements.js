@@ -10,6 +10,15 @@ import { corporateAnnouncements as feed } from '../data/corporate-announcements.
 import { announcementSources, announcementSourceUrls } from '../data/announcements-shared.js';
 import { captureCoverageHtml } from '../ui/capture-coverage.js';
 import { classifyStory, groupLabel } from '../data/news-keywords.js';
+import { newsDay, newsPeriodBounds, inNewsWindow } from '../data/news-window.js';
+
+const ANNOUNCEMENT_PERIODS = [
+  { value: 'today', label: 'Today' },
+  { value: '3', label: 'Last 3 days' },
+  { value: '7', label: 'Last 7 days' },
+  { value: 'month', label: 'This month' },
+  { value: 'all', label: 'All time' },
+];
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
@@ -64,8 +73,19 @@ const tab = makeFilingsTab({
   showWatchFilter: false,
   fillMode: 'auto',
   preserveReadingPosition: true,
+  renderRevision: () => newsDay(),
+  filters: () => {
+    // Bounds are computed once per paint, not once per historical filing. The day revision
+    // also reapplies the period on an unchanged source refresh after midnight in IST.
+    const windows = Object.fromEntries(ANNOUNCEMENT_PERIODS.filter(p => p.value !== 'all')
+      .map(p => [p.value, newsPeriodBounds(p.value)]));
+    return [{
+      label: 'Announcement period (IST)', value: 'all', options: ANNOUNCEMENT_PERIODS,
+      match: (row, period) => period === 'all' || inNewsWindow(row, windows[period]),
+    }];
+  },
   status: () => '<span data-filings-info class="text-xs font-semibold text-slate-500">Updates automatically</span>',
-  emptyMessage: 'No captured announcements for this scope or search yet.',
+  emptyMessage: 'No captured announcements match this scope, period or search.',
   stickyHead: 'max(320px, calc(100vh - 260px))',
   noun: 'announcements',
   nameLabel: 'Subject',
@@ -141,6 +161,8 @@ const tab = makeFilingsTab({
         erase rows or advance the other source's coverage.</p>
       <p>The feed checks for updates every 90 seconds while visible, pauses when hidden and checks again on return.
         Retained history loads automatically. Source publication and scheduled captures can lag; this is not a complete exchange archive.</p>
+      <p>Time filters use source publication dates in IST. Last 3 and 7 days include today; This month runs from the first
+        day through today. All time includes every retained filing, including undated records. Filtering never deletes history.</p>
       <p>The Source column preserves every exchange label. BSE and NSE rows merge only when the captured PDFs have the same
         SHA-256 content hash for that company and date; separate or unreadable documents remain separate rows. Every retained
         exchange document link is included in the export.</p>
