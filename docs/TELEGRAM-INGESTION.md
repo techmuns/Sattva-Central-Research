@@ -60,7 +60,9 @@ not dismiss review feedback or bypass required checks. Artifacts retain the whol
 expire after 90 days, and are renewed by each successful workflow. A prolonged outage
 beyond retention falls back to the committed backup. Payload size limits fail visibly
 without truncation. Resolve an unattended backup PR before relying on it as permanent
-storage. The daily backup can retain a validated early or older artifact without reading
+storage. Its verification wait is 55 minutes, with a 65-minute parent job, so the complete
+50-minute portfolio CI budget can finish; a completed failure still blocks the merge.
+The daily backup can retain a validated early or older artifact without reading
 Telegram, preserving active safety pauses and marking degraded delivery as partial.
 
 Delivery checks at most three candidate runs, keeping the latest successful baseline in
