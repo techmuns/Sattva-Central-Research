@@ -3988,7 +3988,9 @@ twenty". Measured after the change: 12.4s for the first request into a hung upst
 next, because the failure is cached.
 
 `holdings: []` never travels without `ok: false` beside it — a book that failed to load must not be
-able to read as an investor who holds nothing. The card says "could not be read" instead.
+able to read as an investor who holds nothing. The card says so instead. A book that is merely
+of a known age is a different state: it keeps its figures on the card and its age is stated once,
+in the view's freshness label. See `failureFor` vs `uncheckedFor` in `js/data/super-investors.js`.
 
 ---
 

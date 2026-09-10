@@ -4818,13 +4818,23 @@ if (siProbe.state === 'no-route') {
   ok('the derived change equals their latest minus their prior, independently recomputed', moveCheck.length === 0, moveCheck.slice(0, 3).join('; ') || 'all agree');
   ok('...and an appearance or disappearance carries no percentage-point figure', !moveCheck.some((b) => /carries a pp/.test(b)));
 
-  // A book that failed to load must not read as an investor holding nothing.
-  const failed = await page.evaluate(async () => {
+  // A book that failed to load must not read as an investor holding nothing — AND a book that is
+  // merely of a known age must not be reported as one that failed to load. `failureFor` answers
+  // only the first question now, which is what stopped ninety retained books being painted over
+  // with a failure notice while every one of them sat in memory.
+  const investorState = await page.evaluate(async () => {
     const f = await import('/js/data/super-investors.js');
-    return f.list().filter((i) => f.failureFor(i.slug)).map((i) => i.slug);
+    return {
+      gaps: f.list().filter((i) => f.failureFor(i.slug)).map((i) => i.slug),
+      unchecked: f.list().filter((i) => f.uncheckedFor(i.slug)).map((i) => i.slug),
+      drawn: [...document.querySelectorAll('#content-host [data-open-investor]')].filter((el) => /holdings/.test(el.textContent)).length,
+    };
   });
-  if (failed.length) ok('a book that could not be read says so rather than showing as empty', /could not be read/i.test(await hostText()), `${failed.length} failed`);
-  else skip('a book that could not be read says so rather than showing as empty', 'every book loaded in this run');
+  if (investorState.gaps.length) ok('a book with no copy at all says so rather than showing as empty', /not shown as empty/i.test(await hostText()), `${investorState.gaps.length} with no book`);
+  else skip('a book with no copy at all says so rather than showing as empty', 'every investor has a book in this run');
+  ok('a retained book whose re-check failed is never reported as a book that could not be read',
+    investorState.unchecked.every((slug) => !investorState.gaps.includes(slug)),
+    `${investorState.unchecked.length} retained, ${investorState.gaps.length} genuinely missing`);
 
   // The workspace: three panels, every API field reachable.
   await page.locator('#content-host [data-live-section-tabs] [data-tab-id="investors"]').click();

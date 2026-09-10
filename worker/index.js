@@ -1312,21 +1312,50 @@ const ERROR_TTL_S = 15;
 const INVESTOR_SOURCE = 'Ticker Finology, via devde.muns.io';
 
 function handleInvestorList(request, env, ctx) {
-  return investorRoute(request, ctx, 'super-investors', () => fetchInvestorList(fetch, env.MUNS_TOKEN, env.MUNS_BASE), {
-    count: 0,
-    investors: [],
-  });
+  return investorRoute(
+    request,
+    ctx,
+    'super-investors',
+    () => fetchInvestorList(fetch, env.MUNS_TOKEN, env.MUNS_BASE),
+    { count: 0, investors: [] },
+    async () => {
+      const snap = await loadInvestorSnapshot(env, request);
+      return Array.isArray(snap?.investors) && snap.investors.length
+        ? { at: snap.capturedAt, data: { count: snap.count ?? snap.investors.length, dropped: snap.dropped || 0, investors: snap.investors } }
+        : null;
+    },
+  );
 }
 
 function handleInvestorPortfolio(request, env, ctx, slug) {
   if (!isSlug(slug)) {
     return json({ ok: false, error: 'bad-slug', message: 'An investor slug may only contain a-z, 0-9 and hyphens.' }, 400);
   }
-  return investorRoute(request, ctx, `super-investors/${slug}`, () => fetchInvestorPortfolio(fetch, env.MUNS_TOKEN, slug, env.MUNS_BASE), {
-    slug,
-    quarters: [],
-    holdings: [],
-  });
+  return investorRoute(
+    request,
+    ctx,
+    `super-investors/${slug}`,
+    () => fetchInvestorPortfolio(fetch, env.MUNS_TOKEN, slug, env.MUNS_BASE),
+    { slug, quarters: [], holdings: [] },
+    async () => {
+      const book = (await loadInvestorSnapshot(env, request))?.books?.[slug];
+      // ONLY a book the capture actually holds. A slug absent from the file is a book the capture
+      // could not read, and answering it from here would turn "we have no copy of this" into an
+      // investor who discloses nothing — the one substitution this whole route exists to refuse.
+      return book && Array.isArray(book.holdings) ? { at: book.sourceCheckedAt || book.fetchedAt, data: book } : null;
+    },
+  );
+}
+
+/** The committed super-investor capture, read through the ASSETS binding. Null if it isn't there. */
+async function loadInvestorSnapshot(env, request) {
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL('/data/super-investors.json', request.url)));
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1350,7 +1379,7 @@ function handleInvestorPortfolio(request, env, ctx, slug) {
  * outage costs every one of the ninety-one requests its own full timeout, so the failure a reader
  * waits through is ninety-one times longer than the one failure that actually happened.
  */
-async function investorRoute(request, ctx, key, load, empty) {
+async function investorRoute(request, ctx, key, load, empty, snapshot = null) {
   const cache = caches.default;
   const freshKey = edgeKey(key);
   const lastGoodKey = edgeKey(`${key}::last-good`);
@@ -1372,7 +1401,18 @@ async function investorRoute(request, ctx, key, load, empty) {
     // is a service condition, so neither may serve a stale copy or be cached as one.
     if (reason === 'not-found') return json({ ok: false, reason, message: String(err?.message || err), ...empty }, 404);
 
-    const stale = await readLastGood(cache, lastGoodKey);
+    // THE EDGE COPY, THEN THE COMMITTED CAPTURE, THEN — only then — a named failure.
+    //
+    // `caches.default` is per-colo and evictable, so the last-good entry is a good floor and not a
+    // dependable one: a reader routed to a cold colo during an upstream outage got `ok: false` for
+    // every one of ninety books while a complete, committed capture of all ninety sat in this
+    // Worker's own assets. Every other bulk feed here already degrades to its snapshot — that is
+    // what `loadSnapshot` and `loadConcallSnapshot` are — and this one now does too.
+    //
+    // It is a floor, never a substitute: it is reached only after a live read has failed AND the
+    // edge had nothing, it keeps the capture's OWN read time rather than being restamped, and it
+    // travels as `stale: true` so nothing downstream can mistake it for this moment's figures.
+    const stale = (await readLastGood(cache, lastGoodKey)) || (await readSnapshotFallback(snapshot));
     const { body, tag } = stale
       ? withTag({
           ...stale,
@@ -1390,6 +1430,24 @@ async function investorRoute(request, ctx, key, load, empty) {
     const ttl = stale ? INVESTOR_STALE_TTL_S : ERROR_TTL_S;
     ctx?.waitUntil?.(cache.put(freshKey, tagged(body, tag, ttl)));
     return revalidate(request, tagged(body, tag, ttl), stale ? 'stale' : reason);
+  }
+}
+
+/**
+ * The committed capture for this key, shaped like a last-good entry, or null.
+ *
+ * `at` is the capture's own read time and becomes `fetchedAt`, so the age a reader is shown is the
+ * age of the data rather than the age of this request. Never throws, for the same reason
+ * `readLastGood` does not: this runs only after a live read has already failed.
+ */
+async function readSnapshotFallback(snapshot) {
+  if (!snapshot) return null;
+  try {
+    const hit = await snapshot();
+    if (!hit?.data) return null;
+    return { ...hit.data, ok: true, source: INVESTOR_SOURCE, fetchedAt: hit.at || hit.data.fetchedAt || null };
+  } catch {
+    return null;
   }
 }
 

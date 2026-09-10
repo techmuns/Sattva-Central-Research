@@ -88,8 +88,8 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
     ${sectionHead({
       title: 'Superstar Investors',
       description: `Every tracked investor's book as Ticker Finology publish it, quarter by quarter. ${SOURCE}`,
+      meta: freshnessChip(m),
     })}
-    ${staleStrip(m)}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
       ${sectionTabs.html}
     </div>
@@ -231,7 +231,7 @@ function quarterSummaryBlock(ctx, m) {
       <div class="mb-3 rounded-xl bg-white px-4 py-3 text-xs text-slate-500 ring-1 ring-slate-200" data-si-coverage>
         <p><strong>${escapeHtml(scope)} companies</strong> · ${q.comparableBooks} of ${m.total} tracked books have the same comparison pair · ${q.coveredBooks} contain data in this scope.</p>
         <p class="mt-1">${q.loadedBooks} books loaded · ${q.missingBooks} unavailable · ${q.excludedBooks.length} excluded for missing comparison quarters · ${q.counts.awaiting} incomplete positions in this scope.</p>
-        <p class="mt-1">Ticker Finology · oldest source read: ${escapeHtml(sourceDate)} · ${m.origin === 'live' ? 'Feed checked this session' : 'Saved data'}${m.failedBooks ? ` · ${m.failedBooks} book reads failed` : ''}${m.stale ? ' · Source serving older data' : ''}${sourceDates.some((at) => !Number.isFinite(at) || Date.now() - at >= 6 * 3600000) ? ' · Source check overdue' : ''}${m.confirming || m.pending ? ' · Updates still loading' : ''}. Results cover available disclosures and may change as data arrives.</p>
+        <p class="mt-1">Ticker Finology · read ${escapeHtml(sourceDate)}. Results cover available disclosures and may change as data arrives.</p>
         ${ctx.scope !== 'universe' ? `<button type="button" data-si-universe class="mt-2 font-semibold text-indigo-600 hover:underline">View Universe: ${universe.consensusBuyCount} ${universe.consensusBuyCount === 1 ? 'company' : 'companies'} with shared increases or new disclosures</button>` : ''}
       </div>
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">${panels.map((p) => p.html).join('')}</div>
@@ -246,7 +246,7 @@ function quarterSummaryBlock(ctx, m) {
       location.hash = `${path}?${params}`;
     });
     const btn = root.querySelector('[data-summary-help]');
-    if (btn) btn.addEventListener('click', () => openModal(summaryHelpBody(q), { size: 'wide' }));
+    if (btn) btn.addEventListener('click', () => openModal(summaryHelpBody(q, m), { size: 'wide' }));
   }
 
   return { html, wire };
@@ -399,7 +399,45 @@ function summaryHead(q, scope) {
     </p>`;
 }
 
-function summaryHelpBody(q) {
+/**
+ * The provenance door for everything the head no longer prints.
+ *
+ * The amber strip and the coverage block's diagnostics line both came out of the chrome, and this
+ * is where they went — NOT where they were deleted. "An explanation with no door is worse than no
+ * explanation": what a reader gets on the page is the age, and what they get when they ask is the
+ * whole mechanism, the upstream's own words for the failure included.
+ */
+function freshnessProvenance(m) {
+  const read = Date.parse(m.fetchedAt || m.capturedAt || '');
+  const where =
+    m.origin === 'live'
+      ? 'Every book on screen was confirmed against the source in this session.'
+      : m.origin === 'snapshot'
+        ? 'Books are painted from the capture this deployment ships, which is committed on a schedule.'
+        : 'Books are painted from the copy this browser kept from an earlier visit.';
+  // A retained book whose latest re-check did not answer is real filed data of a known age. It is
+  // stated as exactly that, and never as a book that could not be read — that phrase is reserved
+  // for an investor with nothing to show, which is a different fact.
+  const unchecked = Number(m.uncheckedBooks || 0);
+  const missing = Number(m.failedBooks || 0);
+  return `
+    <p><strong>Freshness.</strong> ${Number.isFinite(read) ? `The source was last read ${escapeHtml(formatRelativeTime(read))}.` : 'The source read time is not recorded.'} ${escapeHtml(where)}
+    Shareholding data changes when a company files, so a reading of this age is normally the same figure the source would give now.</p>
+    ${
+      m.stale || unchecked || missing
+        ? `<p><strong>What did not answer.</strong> ${[
+            m.stale ? 'The source did not answer the latest check, so the Worker served the last good read it already held rather than nothing at all.' : null,
+            unchecked ? `${formatNumber(unchecked)} book${unchecked === 1 ? '' : 's'} on screen could not be re-checked just now and ${unchecked === 1 ? 'is' : 'are'} shown at the age above — real filed holdings, not estimates.` : null,
+            missing ? `${formatNumber(missing)} tracked investor${missing === 1 ? ' has' : 's have'} no book available at all and ${missing === 1 ? 'is' : 'are'} shown as such rather than as an empty book.` : null,
+          ]
+            .filter(Boolean)
+            .map(escapeHtml)
+            .join(' ')}${m.staleReason ? ` <span class="font-mono text-[11px] text-slate-500">${escapeHtml(m.staleReason)}</span>` : ''}</p>`
+        : ''
+    }`;
+}
+
+function summaryHelpBody(q, m = {}) {
   return `
     <div class="scrollbar-thin max-h-[80vh] overflow-y-auto px-7 py-6">
       <div class="mb-4 flex items-start justify-between gap-4">
@@ -417,6 +455,7 @@ function summaryHelpBody(q) {
         <p><strong>Stake changes do not establish purchases or sales.</strong> Issuance, buybacks and other changes in share capital can change ownership percentages. Current rupee values estimate holdings, not money traded.</p>
         <p><strong>Shared changes count distinct investors in the same company and quarter pair.</strong> Source company identifiers join names; duplicate rows never add votes. A combined percentage-point change is shown only when every included change has a measured delta.</p>
         <p><strong>The selected scope filters companies.</strong> Portfolio and Watchlist results do not describe the whole Universe. Missing books, excluded periods and incomplete positions are shown above the cards; an empty card means no match in the available data, not proof of no activity.</p>
+        ${freshnessProvenance(m)}
       </div>
     </div>`;
 }
@@ -490,37 +529,47 @@ function renderUnavailable(ctx, m) {
     </div>`;
 }
 
-/**
- * The upstream could not be reached and the Worker served its last good read instead.
- *
- * THIS IS NOT THE MOCK RIBBON AND IT MUST NOT READ AS ONE. Every figure below it is a real filing,
- * read from the real source; what is wrong with it is its AGE, and the strip says exactly that and
- * gives the age. The alternative this replaced was showing nothing at all — a reader with a
- * twenty-minute-old copy of a quarterly disclosure got a page of prose about a restarting service.
- *
- * It sits above the grid rather than inside the provenance modal because a caveat that has to be
- * clicked for is a caveat most readers never see, and this one changes what the numbers mean.
- */
-function staleStrip(m) {
-  if (!m.stale) return '';
-  const age = m.fetchedAt ? formatRelativeTime(Date.parse(m.fetchedAt)) : null;
-  const which =
-    m.staleReason || !m.staleBooks
-      ? 'The source did not answer just now'
-      : `${formatNumber(m.staleBooks)} of these books could not be re-read just now`;
-  return `
-    <div class="mb-5 flex items-start gap-3 rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-200">
-      <span class="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700" aria-hidden="true">
-        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      </span>
-      <p class="text-xs leading-relaxed text-amber-900">
-        <strong>Showing the last good read${age ? `, from ${escapeHtml(age)}` : ''}.</strong>
-        ${escapeHtml(which)}, so the Worker served the copy it already had rather than nothing at all.
-        These are real filed holdings of that age — not estimates, and not this moment's figures.
-        ${m.staleReason ? `<span class="mt-1 block font-mono text-[11px] text-amber-800/80">${escapeHtml(m.staleReason)}</span>` : ''}
-      </p>
-    </div>`;
+// AGE IS THE MATERIAL CONDITION, AND IT IS ALL OF IT THAT BELONGS IN THE CHROME.
+//
+// This used to be a full-width amber block above the grid: a warning triangle, three sentences
+// about the Worker serving the copy it already had, and the upstream's own error string —
+// `/super-investors returned HTTP 502` — in monospace, on a customer screen. It sat over a
+// complete, correct, ninety-book grid of real filed holdings, because the ONLY thing wrong with
+// those figures was that they were a few hours old.
+//
+// Every rule in this codebase about caveats points the same way — "prefer a passive status label
+// whenever a caveat is competing with the content it qualifies", "internal retry states do not
+// appear in customer chrome", "move the explanation behind a control that still states the claim,
+// and never delete the claim". So the claim survives, in the one form a reader can act on: the
+// date the source was read. Whose data it is, why it is that age and what failed are all still
+// written down — in the provenance modal on this panel and in the source registry, which is where
+// a reader who wants the mechanism goes looking.
+//
+// It is DELIBERATELY NOT COLOURED. Amber is semantic here — it means partial — and a quarterly
+// disclosure read this morning is not partial, it is current. Colouring age as a fault taught the
+// reader to distrust figures that were never in doubt.
+//
+// AND IT IS STILL NOT THE MOCK RIBBON, which is the one thing the strip it replaced got right.
+// Every figure under this label is a real filing read from the real source. What can be wrong with
+// it is its AGE and nothing else, so the label gives the age and makes no other claim — the
+// alternative both versions replaced was showing a reader with a perfectly good copy of a
+// quarterly disclosure a page of prose about a restarting service.
+function freshnessLabel(m) {
+  const read = Date.parse(m.fetchedAt || m.capturedAt || '');
+  if (!Number.isFinite(read)) return 'Ticker Finology · updating';
+  // Shareholding data moves when a company files — four times a year — so nothing here goes out of
+  // date in hours. The window is the Worker's own six-hour source cache: inside it, the figure on
+  // screen is the figure the source would give, and saying anything else would invite the reader
+  // to read staleness into a number that could not have changed.
+  const fresh = Date.now() - read < 6 * 60 * 60 * 1000;
+  return `Ticker Finology · ${fresh ? 'up to date' : `read ${formatRelativeTime(read)}`}`;
 }
+
+const freshnessChip = (m) => `
+  <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500" data-si-freshness>
+    <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-400" aria-hidden="true"></span>
+    ${escapeHtml(freshnessLabel(m))}
+  </span>`;
 
 // THERE IS NO FRESHNESS HERO ON THIS VIEW, deliberately.
 //
@@ -545,6 +594,10 @@ function staleStrip(m) {
 function investorCard(inv) {
   const b = feed.book(inv.slug);
   const t = feed.totalsFor(inv.slug);
+  // Only a genuine gap — an investor with NO book. A retained book whose latest re-check did not
+  // answer is not a failure to report on the card: the figures below are that investor's real
+  // filed holdings, and the honest statement about them is their age, which the one freshness
+  // label in the head already makes for the whole view. See `failureFor` in the data module.
   const fail = feed.failureFor(inv.slug);
   const { color, initials } = avatarFor(inv.name || inv.slug);
   const portrait =
@@ -561,20 +614,24 @@ function investorCard(inv) {
         ${portrait}
         <span class="min-w-0">
           <span class="block truncate font-display text-sm font-bold text-slate-900">${escapeHtml(inv.name || inv.slug)}</span>
-          <span class="block truncate text-[11px] text-slate-500">${escapeHtml(filedPair(b?.quarters)[0] ? `as of ${filedPair(b.quarters)[0]}` : fail ? 'not read' : 'reading…')}</span>
+          <span class="block truncate text-[11px] text-slate-500">${escapeHtml(filedPair(b?.quarters)[0] ? `as of ${filedPair(b.quarters)[0]}` : fail ? 'no book published' : 'reading…')}</span>
         </span>
       </div>
       ${inv.bio ? `<p class="mt-2.5 line-clamp-2 text-[11px] leading-snug text-slate-500">${escapeHtml(inv.bio)}</p>` : ''}
       ${
-        fail
-          ? `<p class="mt-3 rounded-lg bg-amber-50 p-2 text-[11px] leading-snug text-amber-800 ring-1 ring-amber-200">This book could not be read${fail.reason === 'unauthorised' ? ' — the token was refused' : ''}. Not shown as empty.</p>`
-          : b
-            ? `<div class="mt-3 grid grid-cols-2 gap-2">
-                 ${statCell(t?.disclosedCount, 'holdings')}
-                 ${statCell(t?.valueCr == null ? null : cr(t.valueCr), 'book (Finology)', true)}
-                 ${statCell(b.netWorthCr == null ? null : cr(b.netWorthCr), 'net worth', true)}
-                 ${statCell(b.activeStocks == null ? null : `${formatNumber(b.activeStocks)}${b.totalStocks != null ? ` / ${formatNumber(b.totalStocks)}` : ''}`, 'active / total', true)}
-               </div>`
+        b
+          ? `<div class="mt-3 grid grid-cols-2 gap-2">
+               ${statCell(t?.disclosedCount, 'holdings')}
+               ${statCell(t?.valueCr == null ? null : cr(t.valueCr), 'book (Finology)', true)}
+               ${statCell(b.netWorthCr == null ? null : cr(b.netWorthCr), 'net worth', true)}
+               ${statCell(b.activeStocks == null ? null : `${formatNumber(b.activeStocks)}${b.totalStocks != null ? ` / ${formatNumber(b.totalStocks)}` : ''}`, 'active / total', true)}
+             </div>`
+          : fail
+            ? // No book at all for this investor, which IS worth saying — and is said in the same
+              // muted register as every other absence here, because it is an absence and not an
+              // alarm. `Not shown as empty` stays: a fund with nothing and a fund we could not read
+              // must never render the same.
+              `<p class="mt-3 rounded-lg bg-slate-50 p-2 text-[11px] leading-snug text-slate-500">No book published for this investor yet. Not shown as empty.</p>`
             : `<div class="mt-3 h-[68px] animate-pulse rounded-lg bg-slate-50"></div>`
       }
     </button>`;

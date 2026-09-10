@@ -83,7 +83,27 @@ export const isLoaded = () => state.loaded;
 export const list = () => state.investors;
 export const book = (slug) => state.books.get(slug) || null;
 export const books = () => [...state.books.values()].filter((b) => state.investors.some((i) => i.slug === b.slug));
-export const failureFor = (slug) => state.failures.get(slug) || null;
+
+// A FAILED RE-CHECK IS NOT A FAILED BOOK, AND ONLY ONE OF THE TWO IS A GAP.
+//
+// `loadBook` deliberately keeps a book it already holds when a later read fails — "a failed
+// revalidation must not delete a book you already have" — and records the failure beside it. Both
+// halves are right. What was wrong is that `failureFor` then reported the two states as one, so
+// every consumer asking "is there anything to show for this investor?" got `yes` from `book()` and
+// `no` from `failureFor()` in the same breath.
+//
+// Measured on the shipped snapshot with the upstream answering 502: ninety books on the device,
+// ninety cards printing "This book could not be read" — directly under their own "as of Jun 2026"
+// line, which was reading the very book the message said could not be read. Nothing threw, no
+// count was wrong and no state was lost; the paint simply asked the wrong question. Same class as
+// every other bug in this file's header: compare what is DRAWN against what the feed HOLDS.
+//
+// So the two questions are now two functions, and neither can answer for the other:
+//   failureFor(slug)   there is NOTHING to show for this investor — a real gap, worth saying
+//   uncheckedFor(slug) we hold a real book and the latest check did not answer — a FRESHNESS
+//                      condition, which belongs in one quiet label and never on the data itself
+export const failureFor = (slug) => (state.books.has(slug) ? null : state.failures.get(slug) || null);
+export const uncheckedFor = (slug) => (state.books.has(slug) ? state.failures.get(slug) || null : null);
 
 export function onChange(fn) {
   subscribers.add(fn);
@@ -145,7 +165,13 @@ export function meta() {
     total: state.investors.length,
     dropped: state.dropped,
     loadedBooks: state.investors.filter((i) => state.books.has(i.slug)).length,
-    failedBooks: state.investors.filter((i) => state.failures.has(i.slug)).length,
+    // Investors with NO book at all. An investor whose retained book simply failed its latest
+    // re-check is not one of these — see `failureFor` above — because counting it here is what let
+    // one coverage line read "90 books loaded · 0 unavailable · 90 book reads failed".
+    failedBooks: state.investors.filter((i) => !state.books.has(i.slug) && state.failures.has(i.slug)).length,
+    // Books on screen whose latest re-check did not answer. Real filed data of a known age; the
+    // honest statement about it is its age, not a failure notice over the figures themselves.
+    uncheckedBooks: state.investors.filter((i) => state.books.has(i.slug) && state.failures.has(i.slug)).length,
     pending: state.investors.filter((i) => !state.books.has(i.slug) && !state.failures.has(i.slug)).length,
     inFlight: state.inFlight,
     fetchedAt: state.fetchedAt,

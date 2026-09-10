@@ -1603,8 +1603,24 @@ Every other source here is open. The super-investor API is not: it wants
    **200 with `ok: false` and a `reason`** — the request to our Worker succeeded — cached for 15
    seconds rather than the six hours a success gets, so a corrected token takes effect at once.
 3. **A failed read is never an empty result.** `holdings: []` only ever travels with `ok: false`
-   beside it, and the card says "could not be read". An investor who holds nothing and an investor
-   whose book 500'd must never render the same.
+   beside it, and the card says so. An investor who holds nothing and an investor whose book 500'd
+   must never render the same.
+
+   **AND A FAILED RE-CHECK IS NOT A FAILED READ — that distinction is the whole of `failureFor`.**
+   `loadBook` keeps a book it already holds when a later read fails, which is right, and records
+   the failure beside it, which is also right. `failureFor` then reported the two as one thing, so
+   a card could ask "is there anything to show for this investor?" and get *yes* from `book()` and
+   *no* from `failureFor()` in the same breath. Measured with the upstream answering 502 over the
+   shipped ninety-book capture: **ninety cards printing "This book could not be read", each one
+   directly under its own "as of Jun 2026" line** — read off the very book the message said could
+   not be read — and one coverage line reading *"90 books loaded · 0 unavailable · 90 book reads
+   failed"*. Nothing threw, no count was wrong and no state was lost; every figure was sitting in
+   memory and the paint asked the wrong question. So the two questions are two functions and
+   neither may answer for the other: **`failureFor(slug)` is a GAP** (no book at all — say so, and
+   never as an empty book), **`uncheckedFor(slug)` is a FRESHNESS condition** (a real book of a
+   known age), counted apart as `meta().failedBooks` and `meta().uncheckedBooks`. Anything that
+   reads one of those counts must be checked against the other — `investorCoverageState` reports
+   an unchecked book as retained rather than as evidence that could not be included.
 
 And two that come from the upstream being a live scrape rather than an API over a database:
 
@@ -1629,8 +1645,29 @@ And two that come from the upstream being a live scrape rather than an API over 
   `last-good` entry, and a failure serves that as a **200 with `stale: true`**, its **original**
   `fetchedAt` (restamping it would be the cache claiming freshness it does not have), a
   `staleReason` naming the failure, and a 30-second TTL so recovery reaches the screen quickly.
-  The view carries an amber strip saying exactly that — *real filed holdings of this age*, which is
-  a different statement from the mock ribbon and must not be worded like one.
+- **`caches.default` IS PER-COLO AND EVICTABLE, so `last-good` is a floor and not a dependable
+  one.** A reader routed to a cold colo during an outage got `ok: false` for all ninety books while
+  a complete committed capture of all ninety sat in this Worker's own assets. `investorRoute` takes
+  a `snapshot` fallback and tries it after the edge copy: the edge entry, then
+  `public/data/super-investors.json` through `ASSETS`, then — only then — a named failure. It is a
+  floor and never a substitute, so it is reached only once a live read HAS failed and the edge had
+  nothing, it carries the capture's **own** read time rather than being restamped, it travels as
+  `stale: true`, and **a slug the capture does not hold stays `ok: false`** — answering that one
+  from the file would turn "we have no copy of this" into an investor who discloses nothing, which
+  is the one substitution this route exists to refuse.
+- **THE AGE IS THE CAVEAT, AND ONE QUIET LABEL IS ALL OF IT THAT BELONGS IN THE CHROME.** The view
+  used to carry a full-width amber block — a warning triangle, three sentences about the Worker
+  serving the copy it already had, and the upstream's own error string, `/super-investors returned
+  HTTP 502`, in monospace on a customer screen — over a complete, correct grid of real filed
+  holdings whose only fault was being a few hours old. Amber is semantic here and means *partial*;
+  a quarterly disclosure read this morning is not partial, it is current, and colouring its age as
+  a fault teaches a reader to distrust figures that were never in doubt. So the claim survives in
+  the form a reader can act on — `Ticker Finology · up to date` inside the six-hour source window,
+  the measured age past it, `updating` with no timestamp — and the mechanism, the counts and the
+  upstream's own words for the failure all move into the panel's provenance modal and the source
+  registry. **Moved, not deleted**: an explanation with no door is worse than no explanation, and
+  this is still not the mock ribbon — every figure under the label is a real filing, so the label
+  gives the age and makes no other claim.
 - **Cache the failure too, briefly.** With ninety-one requests behind one outage, a failure that is
   not cached costs every one of them its own full timeout. Both the stale answer and the hard
   failure go into the fresh key for a few seconds, so one reader pays the timeout once instead of
