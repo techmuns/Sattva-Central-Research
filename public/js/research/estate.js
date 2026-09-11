@@ -1029,7 +1029,7 @@ const BUILDERS = [
         source: 'Ticker Finology filed portfolios',
         asOf: meta.capturedAt || meta.checkedAt || null,
         rowCount: rows.length,
-        coverage: { trackedInvestors: investors.list().length, loadedBooks: investors.books().length, latestQuarter: investors.latestQuarter(), failedBooks: meta.failed },
+        coverage: { trackedInvestors: investors.list().length, loadedBooks: investors.books().length, latestQuarter: investors.latestQuarter(), failedBooks: meta.failedBooks || 0 },
         summary: {
           counts: summary.counts,
           comparableBooks: summary.comparableBooks,

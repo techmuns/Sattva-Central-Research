@@ -86,7 +86,10 @@ try {
   await page.waitForFunction(() => window.stream?.meta().archive?.loaded && window.stream.rows().some(r => r.title === 'Historical NSE filing'));
   await page.waitForFunction(() => window.enrollment.status().remaining.length === 0);
   assert.deepEqual(enrollments, [{ tickers: ['INFY'] }], 'existing watchlist enrolls automatically without sending its names or membership metadata');
-  assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-table-filter], [data-watch-toggle], [data-document-tabs]').count(), 0);
+  assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-watch-toggle], [data-document-tabs]').count(), 0);
+  const period = page.getByRole('combobox', { name: 'Announcement period (IST)' });
+  assert.equal(await period.inputValue(), 'all');
+  assert.deepEqual(await period.locator('option').allTextContents(), ['Today', 'Last 3 days', 'Last 7 days', 'This month', 'All time']);
   assert.match(await page.locator('[data-row-count]').innerText(), /^146 announcements · 3 companies with filings$/);
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
   const search = page.locator('[data-table-search]');
@@ -201,7 +204,67 @@ try {
   await page.locator('[data-modal-close]').click();
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await search.isVisible());
+  assert(await period.isVisible());
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+
+  // Date presets narrow source publication dates, including the exact IST boundaries.
+  fail = false;
+  const periodDates = {
+    today: '2026-09-04', third: '2026-09-02', fourth: '2026-09-01',
+    seventh: '2026-08-29', eighth: '2026-08-28', priorMonth: '2026-08-31',
+    future: '2026-09-05', undated: null, invalid: '2026-02-30',
+  };
+  for (const [id, date] of Object.entries(periodDates)) bseRows.push(filing('TCS', `Period case ${id}`, date));
+  nseRows.push(...[
+    ['beforeMidnight', '2026-09-03T18:29:59Z'], ['atMidnight', '2026-09-03T18:30:00Z'],
+  ].map(([id, publishedAt]) => ({ ...nseRow, subject: `Period case ${id}`, publishedAt, url: `https://example.test/period-${id}.pdf` })));
+  bodies['/data/corp-announcements.json'].byTicker.INFY.push(filing('INFY', 'Period case watched', '2026-09-04'));
+  bodies['/data/corp-announcements.json'].capturedAt = await page.evaluate(() => new Date().toISOString());
+  await page.evaluate(() => window.stream.refresh());
+  await search.fill('Period case');
+  const shownCases = () => page.locator('tbody tr[data-row-key]').evaluateAll(rows => rows.map(row => row.textContent.match(/Period case (\w+)/)?.[1]).sort());
+  const expectCases = async (value, expected) => {
+    await period.selectOption(value);
+    assert.deepEqual(await shownCases(), [...expected].sort(), `inclusive IST period ${value}`);
+  };
+  await expectCases('today', ['today', 'atMidnight']);
+  await expectCases('3', ['today', 'third', 'beforeMidnight', 'atMidnight']);
+  await expectCases('7', ['today', 'third', 'fourth', 'seventh', 'priorMonth', 'beforeMidnight', 'atMidnight']);
+  await expectCases('month', ['today', 'third', 'fourth', 'beforeMidnight', 'atMidnight']);
+  await expectCases('all', [...Object.keys(periodDates), 'beforeMidnight', 'atMidnight']);
+  await expectCases('today', ['today', 'atMidnight']);
+  await page.evaluate(() => {
+    window.exportedRows = null;
+    window.ExcelJS = { Workbook: class {
+      constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array() }; }
+      addWorksheet() { const records = []; window.exportedRows = records; return { addRow: row => records.push(row), getRow: () => ({}) }; }
+    } };
+  });
+  await page.locator('[data-export]').click();
+  await page.waitForFunction(() => Array.isArray(window.exportedRows));
+  assert.deepEqual(await page.evaluate(() => exportedRows.slice(1).map(row => row.h.match(/Period case (\w+)/)?.[1]).sort()), ['atMidnight', 'today'], 'export uses the selected period and search');
+  await page.evaluate(() => window.renderScope('watchlist'));
+  assert.equal(await period.inputValue(), 'today');
+  assert.deepEqual(await shownCases(), ['watched']);
+  await page.evaluate(() => window.renderScope('universe'));
+  assert.deepEqual(await shownCases(), ['atMidnight', 'today', 'watched']);
+  await page.evaluate(() => window.renderScope('portfolio'));
+  fail = true; await page.evaluate(() => window.stream.refresh());
+  assert.equal(await period.inputValue(), 'today');
+  assert.deepEqual(await shownCases(), ['atMidnight', 'today'], 'failed refresh preserves the selected period and retained rows');
+  fail = false;
+  // No new records: advancing the IST day alone must invalidate the unchanged-row paint shortcut.
+  await page.clock.setSystemTime(new Date('2026-09-04T18:30:01Z'));
+  await page.clock.fastForward(90100);
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key]')?.textContent.includes('Period case future'));
+  assert.equal(await period.inputValue(), 'today');
+  assert.deepEqual(await shownCases(), ['future'], 'Today rolls over on the existing automatic poll');
+  assert.equal(await search.inputValue(), 'period case');
+  await expectCases('all', [...Object.keys(periodDates), 'beforeMidnight', 'atMidnight']);
+  await search.fill('older-company');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'All time still reaches older captured history');
+  console.log('PASS IST time presets, inclusive boundaries, unknown dates, filtered exports, all scopes, failure retention and automatic midnight rollover');
+
   await page.evaluate(() => window.destroyStream());
   const last = hits.get('/api/nse-announcements');
   await page.clock.fastForward(180000);

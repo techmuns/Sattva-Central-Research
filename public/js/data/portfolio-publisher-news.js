@@ -7,6 +7,7 @@ import { portfolioNewsEntities } from './company-news-identity.js';
 import { matchPortfolioNews } from './portfolio-news-matching.js';
 import { dedupeArticles, isoDate } from './filings-shared.js';
 import { inNewsWindow } from './news-window.js';
+import { holdsTicker } from './row-ticker-index.js';
 
 const indianDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
 /** An explicit publisher calendar date wins; only an instant fallback needs timezone conversion. */
@@ -154,7 +155,9 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
       return { ...core, partial: !!core.partial || !!extra.partial };
     },
     forTicker: ticker => rows().filter(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()),
-    wasAskedEmpty: ticker => !rows().some(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
+    // Set membership, not a scan: see js/data/row-ticker-index.js. `base.wasAskedEmpty` still
+    // decides whether the company was actually checked — this only answers whether we hold a row.
+    wasAskedEmpty: ticker => !holdsTicker(rows(), ticker) && base.wasAskedEmpty(ticker),
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     invalidate() { epoch++; base.invalidate(); combined = null; pending = null; archivePending = null; archiveError = null; publisherReadError = null;
       wanted.clear(); identityStamp = null; identities = []; },

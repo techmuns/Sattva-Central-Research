@@ -143,11 +143,21 @@ const poolSubset = universe.events.filter((e) => ['STLTECH', 'RELIANCE'].include
 assert.deepEqual(portfolio.events.filter((e) => !e.portfolioOnly).map((e) => e.id).sort(), poolSubset.map((e) => e.id).sort(), 'Portfolio is an exact view of every market-wide source');
 assert.equal(portfolio.events.filter((e) => e.feed === 'screener-portfolio-upcoming').length, 2, 'the exact S Screen calendar includes tickered and BSE-only portfolio companies');
 assert.equal(portfolio.feeds.find((f) => f.id === 'screener-portfolio-upcoming').scopable, true);
+// THE WATCHLIST IS SHARED, so starring a company is a WRITE and legitimately costs a request —
+// where every scope and filter change above it costs nothing. Both halves are asserted rather than
+// folded into one baseline: taking the count only after the write would stop covering the collects
+// before it, which is the half this check was originally written for.
+assert.equal(calls.length, previousCalls, 'scope and filter changes up to here require no fetch');
 watchlist.toggle('STLTECH', 'Sterlite Technologies');
+// Awaiting syncNow() settles the write AND cancels the batching timer behind it, so nothing can
+// land after the count is taken and turn this into a test that passes on timing.
+await watchlist.syncNow({ force: true }).catch(() => {});
+const afterSharedWrite = calls.length;
+assert(afterSharedWrite > previousCalls, 'starring a company writes to the shared watchlist');
 const watched = await alerts.collect({ ...options, scope: 'watchlist', load: false });
 assert.deepEqual(watched.events.map((e) => e.id).sort(), universe.events.filter((e) => e.ticker === 'STLTECH').map((e) => e.id).sort());
 assert.equal(watched.events.filter(event => event.url === crossRoutePublisher.url).length, 1, 'Watchlist also receives just one company/article alert');
-assert.equal(calls.length, previousCalls, 'scope/filter changes require no extra fetch');
+assert.equal(calls.length, afterSharedWrite, 'scope/filter changes require no extra fetch');
 assert.equal(portfolio.feeds.find((f) => f.id === 'twitter').scopable, true, 'reviewed company mentions can now be scoped; unresolved posts still stay in Universe');
 assert(portfolio.feeds.find((f) => f.id === 'nse-filings').unresolvedCount > 0, 'unresolved omissions are counted');
 

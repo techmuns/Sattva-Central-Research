@@ -30,6 +30,14 @@ const fixture = [
   { ticker: 'STLTECH', title: 'Outside requested dates', source: 'NSE', date: '2027-01-01', filing_url: 'https://example.test/future.pdf' },
 ];
 const html = `<!doctype html><html><head><link rel="stylesheet" href="/css/tailwind.css"></head><body class="bg-slate-50 p-6"><main id="root"></main>
+<!-- The screener kit's overlay roots, as public/index.html carries them. openModal and openDrill
+     have always required these; without them a star cannot open its attribution prompt and a row
+     cannot open a drill, both silently. A fixture that renders a scoreTable needs them too. -->
+<div id="modal-overlay" class="fixed inset-0 z-[60] hidden items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-sm sm:p-8">
+  <div id="modal-container" class="relative my-8 w-full max-w-4xl scale-95 overflow-hidden rounded-3xl bg-white opacity-0 shadow-2xl transition-all duration-200">
+    <div id="modal-content"></div>
+  </div>
+</div>
 <script>
 let context = { session: { token: 'fixture.reader-a.session' } }; const listeners=[];
 window.MunshotDashboardSDK={createDashboardClientSdk:()=>({getContext:()=>context,onMessage:fn=>{listeners.push(fn);return ()=>{};}})};
@@ -101,8 +109,16 @@ try {
   check('company documents have original source labels and caller read status',await page.locator('[data-doc-results] tbody tr').count()===3 && /Unread/.test(await page.locator('[data-doc-results]').innerText()) && /BSE/.test(await page.locator('[data-doc-results]').innerText()));
   check('records outside the selected dates are excluded with a visible count',!/Outside requested dates/.test(await page.locator('[data-doc-results]').innerText()) && /outside this company\/source\/date view/.test(await page.locator('[data-doc-status]').innerText()));
   check('duplicate/source lookup results never change portfolio membership',await page.evaluate(async()=>{const c=await import('/js/data/coverage.js');return c.holdings().length===1;}));
+  // The watchlist is shared, so starring asks who is adding before anything is stored. The check
+  // below is about WHAT gets watched — the company, not the document id — so it answers the prompt
+  // the way a person does rather than reaching past it.
   await page.locator('[data-doc-results] [data-watch="STLTECH"]').first().click();
+  await page.locator('[data-watch-attribution]').waitFor();
+  await page.locator('[data-attribution-input]').fill('Verification Runner');
+  await page.locator('[data-attribution-confirm]').click();
+  await page.locator('[data-watch-attribution]').waitFor({state:'detached'});
   check('starring a document watches the company, never the document id',await page.evaluate(async()=>{const w=await import('/js/core/watchlist.js');return w.all().length===1&&w.all()[0].ticker==='STLTECH';}));
+  check('...and records who added it, because everyone shares the list',await page.evaluate(async()=>{const w=await import('/js/core/watchlist.js');return w.all()[0].addedBy==='Verification Runner';}));
   await page.evaluate(()=>window.showDocuments('all','NSE')); await load();
   check('NSE history excludes BSE and Screener-only documents',await page.locator('[data-doc-results] tbody tr').count()===1 && !/Board outcome|Annual report/.test(await page.locator('[data-doc-results]').innerText()));
   await page.evaluate(()=>window.showDocuments('concalls')); await load();

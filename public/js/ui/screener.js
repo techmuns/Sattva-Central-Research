@@ -1191,24 +1191,53 @@ export function scoreTable(config) {
       repaint();
     });
 
+    // ONE COMPANY CAN BE SEVERAL ROWS. Three announcements from one filer share a watch key
+    // and each carries its own star, so invalidating only the row that was clicked would leave
+    // the other two showing the opposite of what is stored — the same disagreement between a
+    // control and its state that `staleKeys` exists to close, arrived at from the other side.
+    function restainWatched(company) {
+      // The prompt below is asynchronous, so this can run after the reader has navigated away and
+      // the table has been torn down. Painting into a detached host would be silent and wrong;
+      // the state is already written either way.
+      if (!host.isConnected) return;
+      for (const r of rows) {
+        if (watchKeyOf(r) !== company) continue;
+        const slug = String(key(r));
+        rowHtmlCache.delete(slug); // its star changed — rebuild just that row next paint
+        staleKeys.add(slug); //      ...including on the fast path, which re-parses nothing
+      }
+      repaint({ resetScroll: false });
+    }
+
+    // THE STAR WRITES TO A LIST EVERYBODY READS, so adding asks whose add it is.
+    //
+    // Unstarring does not ask. It is the undo for a mis-click and has to stay one click, and the
+    // contract lets a removal be unattributed rather than inventing a name for it — see
+    // `watchlistIntent` in js/data/watchlist-shared.js. The name this device last used still rides
+    // along when there is one, so a removal is usually attributed anyway.
+    //
+    // The dialog is imported on demand: it imports `openModal` from this very file, and a static
+    // import would be a cycle. Lazy also means the modal costs nothing until somebody stars a row.
+    async function toggleWatched(company, label) {
+      if (watchlist.has(company)) {
+        watchlist.remove(company);
+        restainWatched(company);
+        return;
+      }
+      const { askContributor } = await import('./watchlist-attribution.js');
+      const by = await askContributor({ ticker: company, company: label || company });
+      // Backing out of the prompt is an answer: nothing is added, and nothing is added anonymously.
+      if (!by) return;
+      watchlist.add(company, label, by);
+      restainWatched(company);
+    }
+
     // Delegated: watchlist star, external link, row click — in that priority order.
     body.addEventListener('click', (e) => {
       const star = e.target.closest('[data-watch]');
       if (star) {
         e.stopPropagation();
-        const company = star.dataset.watch;
-        watchlist.toggle(company, star.dataset.watchName || null);
-        // ONE COMPANY CAN BE SEVERAL ROWS. Three announcements from one filer share a watch key
-        // and each carries its own star, so invalidating only the row that was clicked would leave
-        // the other two showing the opposite of what is stored — the same disagreement between a
-        // control and its state that `staleKeys` exists to close, arrived at from the other side.
-        for (const r of rows) {
-          if (watchKeyOf(r) !== company) continue;
-          const slug = String(key(r));
-          rowHtmlCache.delete(slug); // its star changed — rebuild just that row next paint
-          staleKeys.add(slug); //      ...including on the fast path, which re-parses nothing
-        }
-        repaint({ resetScroll: false });
+        void toggleWatched(star.dataset.watch, star.dataset.watchName || null);
         return;
       }
       if (e.target.closest('[data-stop]')) {

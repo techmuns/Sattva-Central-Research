@@ -12,12 +12,34 @@ export function withAnnouncementLookups(base) {
   let lastQuery = null;
   let shared = [], sharedError = null, sharedPending = false, sharedLoaded = false;
   const sharedRevisions = new Map();
+  // Reserved revision key for the shared recent capture; ':' cannot appear in a ticker.
+  const SHARED_RECENT_KEY = 'recent:announcements';
   async function loadShared() {
     await loadCompanyCaptureIndex();
     try {
       const result = await capturedJson('data/filing-capture/announcements-recent.json');
       if (!Array.isArray(result.value?.rows)) throw new Error('Additional shared announcements have an unfamiliar format.');
-      shared = mergeAnnouncements(shared, result.value.rows);
+      // RE-MERGING AN UNCHANGED CAPTURE IS NOT FREE, AND ITS REAL COST IS PAID BY EVERY LAYER ABOVE.
+      //
+      // `loadShared()` runs on seed(), load() and refreshSnapshot(), so every mount of a tab that
+      // reads announcements landed here. Reassigning `shared` produces a NEW array even when the
+      // merge folded in nothing, and each consumer above memoises on input identity — so one
+      // unchanged capture invalidated the whole chain and forced a full re-merge of the retained
+      // history. Instrumented in the browser at 4x CPU throttle: a single settled switch to Corp
+      // Announcements re-merged 425,726 rows to paint 42.
+      //
+      // `updatedAt` is the capture's own revision, so an unchanged one cannot produce a changed
+      // merge and the previous array is kept. This is a skip of redundant WORK, never of a read:
+      // the capture is still fetched and still checked on every call, `sharedError` below still
+      // reports staleness from this attempt, and a capture that genuinely moved always re-merges.
+      // The revision lives in `sharedRevisions` under a key no ticker can take (tickers are
+      // `[A-Z0-9&._-]`), so the existing `sharedRevisions.clear()` in invalidate() resets it.
+      const sharedRevision = typeof result.value.updatedAt === 'string' && result.value.updatedAt
+        ? `recent:${result.value.updatedAt}|${result.value.rows.length}` : null;
+      if (!sharedRevision || !shared.length || sharedRevisions.get(SHARED_RECENT_KEY) !== sharedRevision) {
+        shared = mergeAnnouncements(shared, result.value.rows);
+        if (sharedRevision) sharedRevisions.set(SHARED_RECENT_KEY, sharedRevision);
+      }
       sharedError = result.stale ? 'Showing saved additional announcements; shared capture could not be checked.' : null;
     } catch (error) { sharedError = error.message; }
   }

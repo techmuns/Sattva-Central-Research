@@ -60,7 +60,9 @@ not dismiss review feedback or bypass required checks. Artifacts retain the whol
 expire after 90 days, and are renewed by each successful workflow. A prolonged outage
 beyond retention falls back to the committed backup. Payload size limits fail visibly
 without truncation. Resolve an unattended backup PR before relying on it as permanent
-storage. The daily backup can retain a validated early or older artifact without reading
+storage. Its verification wait is 55 minutes, with a 65-minute parent job, so the complete
+50-minute portfolio CI budget can finish; a completed failure still blocks the merge.
+The daily backup can retain a validated early or older artifact without reading
 Telegram, preserving active safety pauses and marking degraded delivery as partial.
 
 Delivery checks at most three candidate runs, keeping the latest successful baseline in
@@ -70,13 +72,37 @@ with degraded delivery exposed. A failed source check is packaged before the wor
 marked failed; a successful artifact upload cannot turn source failure into success.
 
 Collection restoration is stricter than display fallback: an unknown newer source pause
-cannot be discarded. Within the ten most recent runs it can skip an artifact-free failure
-only when authenticated first-attempt job steps prove that no source collection started.
-It cannot jump over an unchecked intervening run. A cancelled runner that leaves only an early checkpoint, an unreadable
-final checkpoint, expired credentials or unavailable provider can require operator attention.
-These boundaries prevent unsafe retries; this is not an uninterruptible service. GitHub
-reruns reuse an artifact identity and cannot bypass this gate. A reviewed recovery should
-use a newly dispatched run, subject to the production-action authorization rule.
+cannot be discarded. It audits consecutive runs in pages of 100, with eight bounded job
+metadata readers, a 500-run budget and a two-minute request deadline. Authenticated
+first-attempt job steps must prove that every skipped run stopped before collection.
+The audit never jumps directly to an old successful baseline. This replaces the ten-run
+window which let repeated failed restores crowd out their own recovery checkpoint.
+
+A verified **public** head can also restore collection after a failed final upload when
+complete job evidence proves both public phases succeeded, API setup was skipped, final
+packaging succeeded and no source-failure marker ran. The audit rejects unknown work,
+reordered/missing steps, account collection, source failures, reruns and cancellations.
+It preserves the head's pauses, source-check time and resumable history/catch-up cursors;
+unpublished later work is replayed from those cursors. Recovery itself remains degraded
+and cannot mark an old capture current. The next normal scheduled collection must read
+the source and publish a fresh checkpoint before health becomes current.
+
+Final publication retries twice, after five and fifteen seconds, using separate immutable
+`telegram-posts-retry-1.json.gz` and `telegram-posts-retry-2.json.gz` files. The reader validates
+their digest, provenance and public schema exactly like the primary final. These steps
+retry upload only; they never reconnect to Telegram or repeat collection. Failure of every
+upload still fails the job. The original source-health check remains independently required.
+
+This addresses the 8 September incident: run 34249292420 collected and packaged 6,195
+posts successfully, but GitHub rejected finalization with HTTP 403 after publishing the
+6,173-post head. Subsequent restores blocked on that head and later on the ten-run limit.
+The regression fixture contains only authenticated job names, order and outcomes from
+that incident, with no credentials or private content.
+
+Unknown source safety, unavailable/expired artifacts, a recovery audit exceeding its
+budget, expired credentials or an unavailable provider can still require operator attention.
+GitHub reruns cannot bypass the safety gate. Any manual production recovery remains
+subject to the exact-action authorization rule; a code merge does not authorize it.
 
 The existing half-hourly operational-health workflow independently reads both published
 posts and timer status. It detects source checks older than thirty minutes, failed or

@@ -14,7 +14,10 @@
       // Private summary records and the account budget use a separate fixed object name.
       { "name": "SCREENER_SUMMARIES", "class_name": "CaptureRegistry" },
       // Alias the existing namespace; the channel timer uses a distinct fixed object name.
-      { "name": "TELEGRAM_SCHEDULER", "class_name": "CaptureRegistry" }
+      { "name": "TELEGRAM_SCHEDULER", "class_name": "CaptureRegistry" },
+      // The one shared watchlist. Same provisioned class, its own fixed object name, so the desk's
+      // list needs no namespace migration and no company-registry shard ever sees its tables.
+      { "name": "SHARED_WATCHLIST", "class_name": "CaptureRegistry" }
     ]
   },
   "migrations": [{ "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] }],
@@ -64,6 +67,15 @@
       "name": "RESEARCH_RATE_LIMITER",
       "namespace_id": "1701",
       "simple": { "limit": 6, "period": 60 }
+    },
+    {
+      // The shared watchlist takes a write whenever somebody stars a company, so its ceiling is
+      // higher than the two above: a reader working through a screener legitimately produces a
+      // burst, and a limit tuned for a paid upstream would refuse ordinary use. This bounds an
+      // unauthenticated write to a shared list; it is not billing-grade accounting.
+      "name": "SHARED_WATCHLIST_LIMITER",
+      "namespace_id": "1703",
+      "simple": { "limit": 60, "period": 60 }
     }
   ]
 

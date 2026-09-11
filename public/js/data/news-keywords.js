@@ -229,16 +229,57 @@ function normalise(value) {
  * are different strengths of evidence and the caller may want to say so — a headline is what the
  * publisher chose to lead with, a standfirst is a paragraph that happened to mention the word.
  */
+// THIRTY REGEXES PER ROW, RE-RUN ON EVERY RENDER, WAS THE SINGLE LARGEST COST IN THE APP.
+//
+// All Alerts classifies the whole retained pool, and every other news surface classifies its own
+// rows, so this ran roughly thirty pattern tests plus two `normalise()` passes across tens of
+// thousands of stories each time anything repainted. Profiled at 4x CPU throttle on a warmed
+// dashboard: 8,552ms inside this one function on a single switch to All Alerts — a third of that
+// tab's entire cost, spent re-deriving an answer that cannot change.
+//
+// It is a pure function of two strings: no pattern carries the `g` flag (asserted below), so
+// `.test()` holds no state, and the same text always yields the same hits. A bounded FIFO keyed on
+// that text is therefore exactly equivalent to recomputing, and the bound keeps a long history
+// from retaining entries for ever. The key is the raw text rather than the normalised form because
+// normalising is itself part of what we are avoiding.
+//
+// The cached array is SHARED between callers rather than copied. Every consumer reads it
+// (`.slice`, `.length`, `.map`, `.some`) and none mutates it; a future caller that needs to mutate
+// must copy first, exactly as `estate.js` and `news.js` already do with `.slice()`.
+const MATCH_CACHE_MAX = 65_536;
+const matchCache = new Map();
+const matchKeys = new Array(MATCH_CACHE_MAX);
+let nextMatchKey = 0;
+// Most stories match nothing at all (measured: the thirty keywords cut the feed by 74%), so the
+// empty result is one shared array instead of tens of thousands of identical allocations.
+const NO_KEYWORDS = [];
+
 export function matchKeywords(title, summary = '') {
-  const head = normalise(title);
-  const body = normalise(summary);
+  const rawTitle = typeof title === 'string' ? title : String(title || '');
+  const rawSummary = typeof summary === 'string' ? summary : String(summary || '');
+  const key = rawSummary ? `${rawTitle}\u0000${rawSummary}` : rawTitle;
+  const hit = matchCache.get(key);
+  if (hit !== undefined) return hit;
+
+  const head = normalise(rawTitle);
+  const body = normalise(rawSummary);
   const both = body ? `${head} ${body}` : head;
-  const hits = [];
+  let hits = null;
+  // A union pre-filter was tried here and MEASURED SLOWER: one alternation of all thirty patterns
+  // backtracks more than thirty independent tests do (9,163ms against 5,561ms on the same warm
+  // pool), so the straight loop stays and the cache above is what does the work.
   for (const k of KEYWORDS) {
     if (!k.test.test(both)) continue;
-    hits.push({ id: k.id, label: k.label, group: k.group, note: k.note || null, where: k.test.test(head) ? 'title' : 'summary' });
+    (hits ||= []).push({ id: k.id, label: k.label, group: k.group, note: k.note || null, where: k.test.test(head) ? 'title' : 'summary' });
   }
-  return hits;
+  const value = hits || NO_KEYWORDS;
+
+  // Direct FIFO eviction, as in announcements-shared.js: no iterator scan over tombstones.
+  matchCache.delete(matchKeys[nextMatchKey]);
+  matchKeys[nextMatchKey] = key;
+  nextMatchKey = (nextMatchKey + 1) % MATCH_CACHE_MAX;
+  matchCache.set(key, value);
+  return value;
 }
 
 // Words that carry no identity: every second Indian company name contains one, so a story matching

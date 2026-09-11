@@ -13,10 +13,12 @@ import { prime as primeCoverage, restoreLastGood } from './data/coverage.js';
 import { loadCompanyCaptureIndex } from './data/company-captures.js';
 import { startCaptureWatchdog } from './data/capture-watchdog.js';
 import { startWatchlistCapture } from './data/watchlist-capture.js';
+import { startWatchlistSync } from './core/watchlist.js';
 // Imported for its side effect as much as for `startHostCapture`: js/core/sdk.js builds the one
 // SDK client at import time, so pulling it in from the bootstrap is what guarantees the client
 // exists — and its window listener is attached — before the host can post `host:init`.
 import { startHostCapture } from './core/host-capture.js';
+import { installFilingReader } from './ui/xbrl-filing.js';
 
 // Add a file here and every tab can read it off `ctx.data.<key>` — no other wiring needed.
 //
@@ -142,12 +144,22 @@ async function boot() {
   // `host:init` handler, and a manual one races that and breaks the handshake permanently.
   startHostCapture();
 
+  // NSE publishes about one announcement in eleven as a raw XBRL data file rather than a PDF, and
+  // a browser renders those as a tree of namespaces. One delegated listener, installed once for
+  // every table, drill and card in the app, opens those readable instead. It changes nothing for
+  // any other link, and a middle-click or ctrl-click still gets the original document.
+  installFilingReader();
+
   // GitHub schedules are best-effort. One small timestamp request checks every committed capture
   // after first paint and dispatches only the ones outside their real operating window. The Worker
   // declines duplicate runs across readers; landed files repaint any feed already on screen.
   void loadCompanyCaptureIndex();
   startCaptureWatchdog();
   startWatchlistCapture();
+  // The watchlist is one list for the whole desk, so this tab keeps it in step with what anyone
+  // else is doing. It is a safety net rather than the mechanism: an edit made here is sent the
+  // moment it is made. See js/core/watchlist.js.
+  startWatchlistSync();
 
   // Install the public app/data cache only after the dashboard is interactive.
   // It warms the complete module graph for future tab switches and repeat visits,

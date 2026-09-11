@@ -2,6 +2,30 @@ import { attributeNewsRow, normalizeNewsText } from './company-news-attribution.
 import { reviewedNewsIdentity } from './company-news-reviewed.js';
 
 const prepared = new WeakMap();
+
+// THE ROW SIDE OF THIS MATCH WAS THE ONLY HALF NOT MEMOISED, AND IT IS THE EXPENSIVE HALF.
+//
+// `candidates()` below has cached the portfolio side against the identity array since it was
+// written. The row side re-ran `normalizeNewsText` — an NFKD normalize plus four Unicode regexes
+// over the headline AND the full publisher article body — for every row, on every call. That is a
+// pure function of text that never changes once captured, and it was being recomputed on every
+// render: measured at 4x CPU throttle, 1,458ms inside `normalizeNewsText` and 2,054ms inside this
+// module on ONE warm tab switch, with no network involved at all.
+//
+// A WeakMap keyed on the row OBJECT is the correct cache here, and safety comes from the key
+// rather than from any invalidation rule: capture rows are replaced, never edited in place, so a
+// row whose text changed is a different object and misses. Nothing has to remember to clear this,
+// which is what makes it safe to add to a hot path — and the entry dies with the row it describes,
+// so a feed that drops rows cannot leak them.
+const rowText = new WeakMap();
+function matchText(row) {
+  const hit = rowText.get(row);
+  if (hit !== undefined) return hit;
+  const body = row.articleBody?.provenance === 'publisher-article-body' ? row.articleBody.text : '';
+  const value = ` ${normalizeNewsText(`${row.title || ''} ${body}`)} `;
+  rowText.set(row, value);
+  return value;
+}
 function candidates(identities) {
   if (prepared.has(identities)) return prepared.get(identities);
   const value = identities.map(identity => {
@@ -17,7 +41,7 @@ function candidates(identities) {
 
 /** Exact reviewed identities only. Query matches and social buzz do not prove an event. */
 export function matchPortfolioNews(row, identities) {
-  const text = ` ${normalizeNewsText(`${row.title || ''} ${row.articleBody?.provenance === 'publisher-article-body' ? row.articleBody.text : ''}`)} `;
+  const text = matchText(row);
   // Cheap candidate generation is not attribution. The exact guard still decides each match,
   // including ambiguous symbols and the reviewed mismatch. This avoids O(rows × portfolio)
   // expensive article parsing every time a parallel feed settles.

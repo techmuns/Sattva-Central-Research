@@ -4,6 +4,7 @@ import { conditionalJson } from '../core/store.js';
 import { dedupeArticles } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
 import { assessTradingViewCoverage } from './tradingview-news-health.js';
+import { holdsTicker } from './row-ticker-index.js';
 
 export const NEWS_SNAPSHOT_POLL_MS = 120000;
 
@@ -145,7 +146,9 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
       return { ...result, partial: !!result.partial || !!readError };
     },
     forTicker: ticker => combinedRows().filter(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()),
-    wasAskedEmpty: ticker => !combinedRows().some(r => String(r.ticker || r.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
+    // Set membership, not a scan: see js/data/row-ticker-index.js. `base.wasAskedEmpty` still
+    // decides whether the company was actually checked — this only answers whether we hold a row.
+    wasAskedEmpty: ticker => !holdsTicker(combinedRows(), ticker) && base.wasAskedEmpty(ticker),
     invalidate() {
       generation++; unwatch(); snapshot = null; combined = null; pending = null; loaded = false; readError = null;
       lastAttempt = null; readerCheckedAt = null; failures = 0; base.invalidate();

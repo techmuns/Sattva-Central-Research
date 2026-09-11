@@ -75,6 +75,8 @@ jobs:
         run: node scripts/verify-capture-onboarding.mjs
       - name: Verify watchlist capture registration and retries
         run: node scripts/verify-capture-registration.mjs
+      - name: Verify the shared watchlist contract, attribution and conflicting edits
+        run: node scripts/verify-shared-watchlist.mjs
       - name: Verify operational filing health
         run: node scripts/verify-filings-health.mjs
       - name: Verify capture watchdog
@@ -89,6 +91,8 @@ jobs:
         run: node scripts/verify-screener-watchlist.mjs
       - name: Verify NSE filing history and scoped search
         run: node scripts/verify-nse-history.mjs
+      - name: Verify NSE XBRL filings render as filings and the fetch allow-list holds
+        run: node scripts/verify-nse-xbrl.mjs
       - name: Verify caller-private combined filings
         run: node scripts/verify-combined-filings.mjs
       - name: Verify read-only DRHP lookup
@@ -227,6 +231,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-nse-history-ui.mjs && node scripts/verify-combined-filings-ui.mjs
+      - name: Verify an NSE XBRL filing opens readable, with the original still one click away
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-nse-xbrl-ui.mjs
       - name: Verify Telegram dates, restricted posts, search and retained refresh
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
@@ -241,6 +249,13 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-source-connections-ui.mjs
+      # Two browser contexts against one server: separate storage, one shared list. That pairing
+      # is the only arrangement in which "everyone sees the same watchlist" is a claim about
+      # anything, so the check runs the real store class behind an in-process route.
+      - name: Verify one shared watchlist across two devices, with named contributors
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-shared-watchlist-ui.mjs
   portfolio-research:
     runs-on: ubuntu-latest
     # Keep all 426 cases. Setup once consumed 14 minutes; budget it separately so the

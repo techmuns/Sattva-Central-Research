@@ -77,8 +77,11 @@ public/
     app.js                    bootstrap: load all JSON, then mount the shell
     core/
       state.js                global state + localStorage + pub/sub
-      watchlist.js            THE WATCHLIST — a set of COMPANIES, not of rows. Backs the star in
-                              every table AND the Watchlist scope; see the scope section below
+      watchlist.js            THE WATCHLIST — a set of COMPANIES, not of rows, and ONE list for the
+                              whole desk rather than one per browser. Backs the star in every table
+                              AND the Watchlist scope; see the scope section below
+      watchlist-people.js     WHO IS ADDING — the shared contributor roster behind the dropdown,
+                              plus which of those names THIS device adds under
       router.js               hash routing (#/ws/tab/subview?scope=)
       live.js                 live-update polling engine
       watch.js                app-wide feed watchers -> the alert stack
@@ -94,6 +97,9 @@ public/
       visual.js               avatars, tiers, status pills, signal dots, legend
       sources.js              data-source registry — the canonical list of every feed and its honest
                               status; read by the beacon below and by each tab's provenance surfaces
+      watchlist-attribution.js  "Who is adding this?" — the prompt on every addition to the shared
+                              watchlist. A growing dropdown of everyone who has added before, so the
+                              first add types a name and every add after it is one key
       twitter-sources.js      "Edit Twitter Sources" — add/remove the X accounts whose posts join
                               the News feed. Opened from the beacon's Twitter / X family
       source-beacon.js        "DATA FLOWING IN" — the lower-left beacon: one launcher, one popover,
@@ -117,6 +123,9 @@ public/
     data/
       scope.js                THE THREE SCOPES in one place — portfolio / watchlist / universe,
                               and the one `filterByScope()` every forScope() is built on
+      watchlist-shared.js     pure shape + identity rules for the shared watchlist, imported by
+                              worker/watchlist-store.mjs too — one definition of what a company,
+                              a contributor and an edit are
       daily-alerts.js         RETAINED HISTORY across NINE feeds. Derived: no file, no route of its own
       ai-alerts.js            EXPLAINABLE seven-day company priority over Daily/General readings
       coverage.js             THE BOOK — the 142 companies the Portfolio toggle means, and the
@@ -215,6 +224,9 @@ scripts/
                                            before history. Public mode needs no Telegram account
 .github/workflows/twitter-refresh.yml      every 30 min + workflow_dispatch from the dashboard when
                                            a reader adds an account; posts from the monitored handles
+worker/watchlist-store.mjs    THE SHARED WATCHLIST'S durable record — SQLite in the provisioned
+                              CaptureRegistry class under one fixed object name. Intents, not lists
+worker/watchlist.mjs          GET/POST /api/watchlist — private-cacheable, ETagged, same-origin writes
 worker/index.js               asset serving + POST /api/live-prices + GET /api/earnings
                               (+ ?fields=prices) + /api/earnings-calendar + /api/concalls
                               + /api/super-investors (+ /{slug})
@@ -1603,8 +1615,24 @@ Every other source here is open. The super-investor API is not: it wants
    **200 with `ok: false` and a `reason`** — the request to our Worker succeeded — cached for 15
    seconds rather than the six hours a success gets, so a corrected token takes effect at once.
 3. **A failed read is never an empty result.** `holdings: []` only ever travels with `ok: false`
-   beside it, and the card says "could not be read". An investor who holds nothing and an investor
-   whose book 500'd must never render the same.
+   beside it, and the card says so. An investor who holds nothing and an investor whose book 500'd
+   must never render the same.
+
+   **AND A FAILED RE-CHECK IS NOT A FAILED READ — that distinction is the whole of `failureFor`.**
+   `loadBook` keeps a book it already holds when a later read fails, which is right, and records
+   the failure beside it, which is also right. `failureFor` then reported the two as one thing, so
+   a card could ask "is there anything to show for this investor?" and get *yes* from `book()` and
+   *no* from `failureFor()` in the same breath. Measured with the upstream answering 502 over the
+   shipped ninety-book capture: **ninety cards printing "This book could not be read", each one
+   directly under its own "as of Jun 2026" line** — read off the very book the message said could
+   not be read — and one coverage line reading *"90 books loaded · 0 unavailable · 90 book reads
+   failed"*. Nothing threw, no count was wrong and no state was lost; every figure was sitting in
+   memory and the paint asked the wrong question. So the two questions are two functions and
+   neither may answer for the other: **`failureFor(slug)` is a GAP** (no book at all — say so, and
+   never as an empty book), **`uncheckedFor(slug)` is a FRESHNESS condition** (a real book of a
+   known age), counted apart as `meta().failedBooks` and `meta().uncheckedBooks`. Anything that
+   reads one of those counts must be checked against the other — `investorCoverageState` reports
+   an unchecked book as retained rather than as evidence that could not be included.
 
 And two that come from the upstream being a live scrape rather than an API over a database:
 
@@ -1629,8 +1657,29 @@ And two that come from the upstream being a live scrape rather than an API over 
   `last-good` entry, and a failure serves that as a **200 with `stale: true`**, its **original**
   `fetchedAt` (restamping it would be the cache claiming freshness it does not have), a
   `staleReason` naming the failure, and a 30-second TTL so recovery reaches the screen quickly.
-  The view carries an amber strip saying exactly that — *real filed holdings of this age*, which is
-  a different statement from the mock ribbon and must not be worded like one.
+- **`caches.default` IS PER-COLO AND EVICTABLE, so `last-good` is a floor and not a dependable
+  one.** A reader routed to a cold colo during an outage got `ok: false` for all ninety books while
+  a complete committed capture of all ninety sat in this Worker's own assets. `investorRoute` takes
+  a `snapshot` fallback and tries it after the edge copy: the edge entry, then
+  `public/data/super-investors.json` through `ASSETS`, then — only then — a named failure. It is a
+  floor and never a substitute, so it is reached only once a live read HAS failed and the edge had
+  nothing, it carries the capture's **own** read time rather than being restamped, it travels as
+  `stale: true`, and **a slug the capture does not hold stays `ok: false`** — answering that one
+  from the file would turn "we have no copy of this" into an investor who discloses nothing, which
+  is the one substitution this route exists to refuse.
+- **THE AGE IS THE CAVEAT, AND ONE QUIET LABEL IS ALL OF IT THAT BELONGS IN THE CHROME.** The view
+  used to carry a full-width amber block — a warning triangle, three sentences about the Worker
+  serving the copy it already had, and the upstream's own error string, `/super-investors returned
+  HTTP 502`, in monospace on a customer screen — over a complete, correct grid of real filed
+  holdings whose only fault was being a few hours old. Amber is semantic here and means *partial*;
+  a quarterly disclosure read this morning is not partial, it is current, and colouring its age as
+  a fault teaches a reader to distrust figures that were never in doubt. So the claim survives in
+  the form a reader can act on — `Ticker Finology · up to date` inside the six-hour source window,
+  the measured age past it, `updating` with no timestamp — and the mechanism, the counts and the
+  upstream's own words for the failure all move into the panel's provenance modal and the source
+  registry. **Moved, not deleted**: an explanation with no door is worse than no explanation, and
+  this is still not the mock ribbon — every figure under the label is a real filing, so the label
+  gives the age and makes no other claim.
 - **Cache the failure too, briefly.** With ninety-one requests behind one outage, a failure that is
   not cached costs every one of them its own full timeout. Both the stale answer and the hard
   failure go into the fresh key for a few seconds, so one reader pays the timeout once instead of
@@ -2227,14 +2276,64 @@ spelling of "everything else" with two scopes and became "the book, or every lis
 never the watchlist" with three. Every `forScope()` in `js/data/` and every scope branch in a tab
 now goes through `filterByScope`/`scopeTickers` instead, so the question is asked in one place.
 
-### The watchlist is a list of COMPANIES
+### The watchlist is a list of COMPANIES, and ONE list for the whole desk
 
-`sattva:watchlist` holds `{ ticker, name, addedAt }`. See *The star marks a COMPANY* above for what
-that changed in `scoreTable`, and `docs/DATA-CONTRACTS.md` for the shape and the legacy prune.
+`sattva:watchlist` holds `{ ticker, name, addedAt, addedBy }`. See *The star marks a COMPANY* above
+for what that changed in `scoreTable`, and `docs/DATA-CONTRACTS.md` for the shape and the legacy
+prune.
 
 `name` exists so a watched company can be **named** on a feed that does not carry it. Printing the
 symbol back where a name belongs would be inventing one — the same class of error as rendering a
 missing value as zero.
+
+**IT IS NO LONGER A LIST PER BROWSER, AND THAT LOCAL ARRAY IS NOW A MIRROR.** It was `localStorage`
+and nothing else, so two people at one desk kept two different watchlists and neither could see the
+other's; the same person on a phone saw a third. Every device held a partial answer and none of them
+said so. The shared list lives on the Worker (`GET`/`POST /api/watchlist`, `worker/watchlist-store.mjs`)
+and `core/watchlist.js` keeps a copy of it, because every scope filter here asks "is this ticker
+watched?" *during a render* and cannot await a network read to decide whether a row is in scope.
+
+Four rules hold that up, and each is a rule this codebase already had:
+
+1. **An edit is sent as what it WAS, not as the list it produced.** A whole-array PUT silently
+   deletes: a tab that loaded the list an hour ago and stars one company would write its stale array
+   over everything anyone else added since, and nothing would report the loss. The outbox holds
+   intents and the server applies them to whatever the list is now.
+2. **A failed read is never an empty list.** `adopt()` runs only on a response that carried
+   companies. A 503, an aborted fetch and a static origin with no Worker all leave the list alone —
+   and a **404 is not a fault**, because serving this dashboard as static files is supported and is
+   how `verify-ui.mjs` runs it.
+3. **`meta().origin` is derived, never assigned** — `live` only once a read in THIS session vouched
+   for what is painted, `store` for bytes kept from an earlier visit, `pending` while the reader's
+   own edit has not been accepted. One "connected" over all three is wrong two thirds of the time.
+4. **The optimistic re-application covers clicks, not guesses.** The outbox is replayed over each
+   snapshot so a reader never watches their own star being undone — but only `add` and `remove`. A
+   `seed` is this device guessing that a company it still holds locally belongs on the shared list,
+   and the server refuses one over any row it already holds, watched **or removed**. Painting a seed
+   before it was accepted put a company somebody had deliberately dropped back on screen for a whole
+   cycle, which is a stale device quietly undoing a deliberate edit.
+
+### AN ADDITION CARRIES THE NAME OF WHOEVER MADE IT — `js/ui/watchlist-attribution.js`
+
+A shared list creates a question a private one never had: **who put this here?** So an addition asks,
+and `watchlistIntent()` refuses an unattributed `add` — enforced in the contract rather than in the
+UI, where a second entry point could quietly skip it.
+
+- **Removing does not ask**, and that asymmetry is deliberate. Unstarring is the undo for a mis-click
+  and has to stay one click, so the contract permits an unattributed removal rather than inventing a
+  name for it. The device's own name still rides along when there is one.
+- **Every add after the first is a selection.** The roster is shared, so a new phone opens with the
+  desk's names in the dropdown instead of an empty box that invites a second spelling of a name
+  already on the list. `personKey()` folds case and spacing; the display name is the latest spelling
+  that person typed.
+- **A device nobody has identified themselves on preselects NOBODY.** Falling back to the top of the
+  roster looks helpful and is the one genuinely damaging default available: the top is whoever added
+  most recently *anywhere on the desk*, so a colleague on a new phone pressing Enter would file their
+  add under that person's name — one person's name on another's work, invisible once it happened.
+- **`addedBy: null` means nothing ever recorded who**, which is a different claim from "nobody" and
+  is never printed as a name. `attributionLabel()` renders it *"Added before names were recorded"*.
+  Companies carried across from a device's pre-shared local list are exactly this case: crediting
+  whoever happens to be at the keyboard would be inventing an attribution.
 
 ### Two denominators that are not the same claim
 
@@ -3368,6 +3467,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change Corporate Announcements | Keep the exchange-wide base in `worker/bse-ann.mjs` + `scripts/scrape-bse-announcements.mjs`. Additional user-requested company/date lookups use `worker/muns.mjs` + `js/data/announcements-extra.js`; they merge with the table and never replace the base capture or claim universe coverage. |
 | Change the NSE live announcements feed | `worker/nse-ann.mjs` (pure parser + name->symbol resolver, shared) + `handleNseAnnouncements` in `worker/index.js` (live route, edge-cached) + `js/data/nse-filings.js` (browser) + `js/tabs/nse-filings.js` (the scoped table). The browser CANNOT read NSE (CORS null), so it must proxy through the Worker; a full desktop user-agent is required or Akamai 430s it. Resolve by NAME — the filename prefix is only 31% reliable |
 | Refresh the NSE snapshot fallback | `node scripts/scrape-nse-announcements.mjs` — reads NSE directly (no token), resolves, commits `public/data/nse-announcements.json`. The live route is the primary read; this is the floor beneath it |
+| Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser + the `src` allow-list, imported by the Worker too) + `handleNseFiling` in `worker/index.js` (`GET /api/nse-filing`) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and a modified click still gets the raw file. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
 | Change how many days of announcements are kept | `ANN_KEEP_DAYS` in `scripts/scrape-bse-announcements.mjs` — a bytes ceiling, ~900 filings a weekday |
 | Change the tracked news keywords, or what a Topic filter offers | `public/js/data/news-keywords.js` — the whole vocabulary is one array; read *Thirty words that make a search feed usable* first. A keyword is a topic and must never become a direction, and `namesCompany` marks a row rather than dropping one |
 | Change what makes a news story material to General Alerts / AI Alerts | `newsSignal()` in `js/data/daily-alerts.js` — it raises IMPORTANCE only, never direction, and the suite asserts that on a risk word |
@@ -3413,7 +3513,9 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change the device-local scope editor | `js/ui/scope-editor.js` (modal) + `js/core/scope-lists.js` (Portfolio/Universe overlay) + `js/core/watchlist.js` (Watchlist) + `/api/stock-search` in `worker/index.js` / `worker/muns.mjs` |
 | Change what the Portfolio scope filters by | `js/data/coverage.js` — read *What "Portfolio" means* above first. It is the only portfolio data here: names and sectors, never a quantity or a value |
 | Add or change a scope | `js/data/scope.js` — the whole vocabulary is there, and every `forScope()` asks it. Read *Three scopes, not two* first; never reintroduce `scope !== 'portfolio'` |
-| Change what the Watchlist scope tracks | `js/core/watchlist.js` (the store) + `watchKey` on the table that stars it — read *The star marks a COMPANY* first |
+| Change what the Watchlist scope tracks | `js/core/watchlist.js` (the device mirror + sync) + `watchKey` on the table that stars it — read *The star marks a COMPANY* and *The watchlist is a list of COMPANIES, and ONE list for the whole desk* first |
+| Change the SHARED watchlist itself — its shape, its conflict rules or its route | `public/js/data/watchlist-shared.js` (the one definition, imported by the Worker too) + `worker/watchlist-store.mjs` + `worker/watchlist.mjs`. Edits are INTENTS, never a whole list; an `add` must name its contributor; a `seed` may not apply over any row that already exists. `node scripts/verify-shared-watchlist.mjs` and `node scripts/verify-shared-watchlist-ui.mjs` are the tests |
+| Change who is asked, or how the contributor dropdown behaves | `js/ui/watchlist-attribution.js` (the prompt) + `js/core/watchlist-people.js` (the roster and this device's own name) — read *An addition carries the name of whoever made it* first. Never preselect a name on a device nobody has identified themselves on |
 | Change AI Alerts ranking or thresholds | `js/data/ai-alerts.js` — keep it deterministic, retain every contribution for verification without rendering the arithmetic, use the real `coverage.js` book, and test `rankReport()` directly |
 | Change what an AI Alerts card SAYS, or the four figures on it | `plainInsight()` / `cardMetrics()` / `plainHeadline()` / `topEvidence()` in `js/data/ai-alerts.js` — all pure and exported. Read *Time to insight is the product's only job* first: no new number, only sentences we wrote may be reworded, the volume cell takes no tone, and the figures follow `READ_ORDER` rather than score order |
 | Change archiving on AI Alerts | `js/core/ai-mute.js` (the store) + the `archived` filter and the Archive / Restore buttons in `js/tabs/ai-alerts.js` — a record is keyed to the evidence it was given for, so a card returns on its own when stronger evidence arrives |
@@ -3488,9 +3590,16 @@ Then run the suite — ~410 Playwright assertions, exits non-zero at the end if 
 node scripts/verify-calendar.mjs
 node scripts/verify-portfolio-calendar.mjs
 node scripts/verify-research.mjs
+node scripts/verify-shared-watchlist.mjs
+node scripts/verify-shared-watchlist-ui.mjs
 node scripts/verify-ui.mjs
 node scripts/verify-sdk.mjs
 ```
+
+`verify-shared-watchlist-ui.mjs` needs no Worker and no egress: it stands up the real
+`SharedWatchlistStore` behind an in-process `/api/watchlist` and drives **two browser contexts** —
+two devices, separate storage, one server — through the real star and prompt. That pairing is the
+only arrangement in which *"everyone sees the same list"* is a claim about anything.
 
 `verify-sdk.mjs` is separate because it needs a different fixture: the dashboard inside an
 **iframe** with a host on the other end of the channel. It drives the **real** shipped SDK bundle —
@@ -3564,6 +3673,12 @@ It covers, beyond the checklist below:
   on its other rows, and a legacy composite row key is pruned rather than filed as a company
 - the Watchlist scope narrows a feed to the starred companies, an EMPTY one narrows to nothing
   rather than to everything, and the pill prints its own denominator
+- **adding to the watchlist asks who is adding it**, records that name against the company, keeps it
+  for next time, and adds NOTHING when the prompt is dismissed; unstarring stays one click
+- **two devices converge on one list**: a company starred on one appears on the other with the same
+  name beside it, a removal reaches it, an outage leaves every row on screen while dropping the
+  `live` claim, an edit made during that outage lands when the server returns, and a stale device
+  cannot resurrect a company somebody removed
 - the URL hash updates; browser back/forward work
 - a reload restores the same route and scope
 - the top-tab underline scales in on the active tab only

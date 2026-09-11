@@ -1089,9 +1089,27 @@ await go('/#/research/breakouts?scope=universe', 2500);
 
   const before = await glyph();
   await star().click();
-  await page.waitForTimeout(400);
+  // THE WATCHLIST IS SHARED NOW, so adding asks whose add it is before anything is stored. The
+  // suite drives that the way a person does rather than seeding the name behind it: the prompt is
+  // part of the control, and a check that skipped it would keep passing after the control broke.
+  await page.waitForSelector('[data-watch-attribution]', { timeout: 5000 });
+  ok('adding to the shared watchlist asks who is adding it',
+    await page.locator('[data-attribution-confirm]').isVisible());
+  const firstRun = await page.locator('[data-attribution-input]').isVisible();
+  if (firstRun) await page.fill('[data-attribution-input]', 'Verification Runner');
+  else await page.selectOption('[data-attribution-select]', { label: 'Verification Runner' });
+  await page.click('[data-attribution-confirm]');
+  await page.waitForTimeout(500);
   const after = await glyph();
   ok('clicking the watchlist star fills it', before === '☆' && after === '★', `${before} → ${after}`);
+  ok('...and the entry records who added it',
+    await page.evaluate((k) => JSON.parse(localStorage.getItem('sattva:watchlist') || '[]')
+      .find((e) => e.ticker === k)?.addedBy === 'Verification Runner', key0));
+  // The name is kept so the next add is a selection rather than typing — that is the whole point
+  // of recording it, and a roster that did not grow would send the reader back to the keyboard.
+  ok('...and the name joins the roster for next time',
+    await page.evaluate(() => JSON.parse(localStorage.getItem('sattva:watchlist:people') || '[]')
+      .some((p) => p.name === 'Verification Runner')));
   // THE STORED ENTRY IS A COMPANY, NOT A ROW. On Breakouts the row key IS the ticker, so the two
   // coincide here — but the shape does not: entries are `{ ticker, name, addedAt }`, because the
   // Watchlist scope has to be able to name a company on a feed that does not carry it.
@@ -1122,6 +1140,9 @@ await go('/#/research/breakouts?scope=universe', 2500);
   await star().click();
   await page.waitForTimeout(400);
   ok('...and clicking it again empties it', (await glyph()) === '☆', await glyph());
+  // Unstarring is the undo for a mis-click and must stay ONE click. The contract allows an
+  // unattributed removal precisely so this never grows a dialog; see watchlistIntent().
+  ok('...without asking who removed it', (await page.locator('[data-watch-attribution]').count()) === 0);
   ok('...and empties the stored watchlist with it',
     await page.evaluate((k) => !JSON.parse(localStorage.getItem('sattva:watchlist') || '[]').some((e) => e.ticker === k), key0));
 }
@@ -4818,13 +4839,23 @@ if (siProbe.state === 'no-route') {
   ok('the derived change equals their latest minus their prior, independently recomputed', moveCheck.length === 0, moveCheck.slice(0, 3).join('; ') || 'all agree');
   ok('...and an appearance or disappearance carries no percentage-point figure', !moveCheck.some((b) => /carries a pp/.test(b)));
 
-  // A book that failed to load must not read as an investor holding nothing.
-  const failed = await page.evaluate(async () => {
+  // A book that failed to load must not read as an investor holding nothing — AND a book that is
+  // merely of a known age must not be reported as one that failed to load. `failureFor` answers
+  // only the first question now, which is what stopped ninety retained books being painted over
+  // with a failure notice while every one of them sat in memory.
+  const investorState = await page.evaluate(async () => {
     const f = await import('/js/data/super-investors.js');
-    return f.list().filter((i) => f.failureFor(i.slug)).map((i) => i.slug);
+    return {
+      gaps: f.list().filter((i) => f.failureFor(i.slug)).map((i) => i.slug),
+      unchecked: f.list().filter((i) => f.uncheckedFor(i.slug)).map((i) => i.slug),
+      drawn: [...document.querySelectorAll('#content-host [data-open-investor]')].filter((el) => /holdings/.test(el.textContent)).length,
+    };
   });
-  if (failed.length) ok('a book that could not be read says so rather than showing as empty', /could not be read/i.test(await hostText()), `${failed.length} failed`);
-  else skip('a book that could not be read says so rather than showing as empty', 'every book loaded in this run');
+  if (investorState.gaps.length) ok('a book with no copy at all says so rather than showing as empty', /not shown as empty/i.test(await hostText()), `${investorState.gaps.length} with no book`);
+  else skip('a book with no copy at all says so rather than showing as empty', 'every investor has a book in this run');
+  ok('a retained book whose re-check failed is never reported as a book that could not be read',
+    investorState.unchecked.every((slug) => !investorState.gaps.includes(slug)),
+    `${investorState.unchecked.length} retained, ${investorState.gaps.length} genuinely missing`);
 
   // The workspace: three panels, every API field reachable.
   await page.locator('#content-host [data-live-section-tabs] [data-tab-id="investors"]').click();

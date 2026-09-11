@@ -164,7 +164,7 @@ export const ADDITIONAL_SOURCES = [
       detail: `${b.quarters?.[0] || 'Period not supplied'}: ${r.quarterlyHoldings?.[b.quarters?.[0]] == null ? 'Filing due / percentage not disclosed; not an exit or sale.' : `${r.quarterlyHoldings[b.quarters[0]]}% disclosed. Not a trade timestamp.`}`,
       url: r.companySlug ? `https://ticker.finology.in/company/${encodeURIComponent(r.companySlug)}` : null, kind: 'snapshot',
     }))), ...confirmed(investors.meta()?.checkedAt || investors.meta()?.capturedAt, day,
-      investors.meta()?.ok === false || !!(investors.meta()?.failedBooks || investors.meta()?.stale || investors.meta()?.pending),
+      investors.meta()?.ok === false || !!(investors.meta()?.failedBooks || investors.meta()?.uncheckedBooks || investors.meta()?.stale || investors.meta()?.pending),
       'Quarterly disclosures dated to source observation, not trades. Every reported period is retained in the source record.') }) },
   { id: 'institutions', label: 'Institutional disclosures', tab: 'super-investors', what: 'All captured institutional holdings and former holdings. Company ownership and fund NAV remain distinct.',
     load: async (refresh) => { await (refresh ? institutions.refresh() : institutions.load()); if (!institutions.isLoaded()) throw Error('Institutional capture unavailable'); },
