@@ -18,6 +18,7 @@ import { formatRelativeTime } from '../core/format.js';
 import { scopeBook, scopeLabel } from '../data/scope.js';
 import * as coverage from '../data/coverage.js';
 import * as feed from '../data/nse-filings.js';
+import { isXbrlFilingUrl } from '../data/nse-xbrl-shared.js';
 
 export const meta = {
   id: 'nse-filings',
@@ -112,8 +113,17 @@ function filingCell(r) {
   if (!linkable(r.url)) {
     return `<span class="text-slate-300" title="This is an exchange notice with no attached document (e.g. a price/volume surveillance alert).">no document</span>`;
   }
+  // AN XBRL FILING OPENS HERE, NOT IN A TAB, AND THE LABEL SAYS SO. About one NSE announcement in
+  // eleven is published as a raw XBRL data file, which a browser renders as SEBI's namespaces; the
+  // reader gets the filing's own fields instead (js/ui/xbrl-filing.js intercepts the click). The
+  // arrow is dropped because nothing leaves the page, and the company and subject ride along so the
+  // panel is titled even for a filing whose issuer this feed could not resolve to a symbol.
+  const xbrl = isXbrlFilingUrl(r.url);
   return `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer"
-      class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">Open filing ↗</a>`;
+      data-filing-company="${escapeHtml(r.company || '')}"
+      data-filing-ticker="${escapeHtml(r.ticker || '')}"
+      data-filing-subject="${escapeHtml(r.subject || '')}"
+      class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">${xbrl ? 'Read filing' : 'Open filing ↗'}</a>`;
 }
 
 function paint(ctx) {

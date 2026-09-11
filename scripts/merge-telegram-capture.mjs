@@ -13,8 +13,10 @@ if (pr.headRefName !== 'codex/telegram-capture' || pr.baseRefName !== 'main' ||
     pr.files.length !== 1 || pr.files[0].path !== 'public/data/telegram-posts.json') throw new Error('Refusing a PR outside the archive-only scope');
 const previousRuns = new Set(json('run', 'list', '--workflow', 'verify.yml', '--branch', pr.headRefName, '--limit', '30', '--json', 'databaseId').map((r) => r.databaseId));
 gh('workflow', 'run', 'verify.yml', '--ref', pr.headRefName);
-const timeout = Number(process.env.TELEGRAM_VERIFY_TIMEOUT_MS || 20 * 60000);
-if (!Number.isSafeInteger(timeout) || timeout < 1000 || timeout > 20 * 60000) throw new Error('Invalid verification timeout');
+// Verify's complete portfolio job allows 50 minutes including setup. The archive must
+// wait for those unchanged checks, rather than abandon a healthy run after 20 minutes.
+const timeout = Number(process.env.TELEGRAM_VERIFY_TIMEOUT_MS || 55 * 60000);
+if (!Number.isSafeInteger(timeout) || timeout < 1000 || timeout > 55 * 60000) throw new Error('Invalid verification timeout');
 const deadline = Date.now() + timeout;
 const pause = () => new Promise((r) => setTimeout(r, Math.max(0, Math.min(20000, deadline - Date.now()))));
 let run;

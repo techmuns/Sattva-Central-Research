@@ -339,7 +339,19 @@ export function render(ctx) {
   uiDispose = wire(ctx.root);
   paintAll();
   paintPortfolioConnection();
-  void prepareResearchSources().catch(() => {});
+  // NOT ON MOUNT. `prepareResearchSources()` calls load() on all 21 registered evidence sources,
+  // and this tab is the DEFAULT LANDING PAGE — so warming here made every reader download the
+  // entire data estate before clicking anything. Measured at 4x CPU throttle on the shipped data:
+  // landing here pulled 150.8MB across 251 requests, against 10.3MB for landing on a light tab.
+  // It was not merely wasted bandwidth. It saturated the connection pool and the main thread for
+  // minutes, and every tab the reader then opened queued behind it — which is what a customer
+  // experiences as "the dashboard takes thirty seconds".
+  //
+  // The warm-up still exists and still costs the same, but it is now paid on INTENT rather than on
+  // arrival: focusing or typing in the composer starts it (see `warmSources` in wire()), and
+  // submitting a question awaits it as it always did. A reader who came to read a tab pays nothing.
+  // Keeping it on mount "so the first answer is fast" charged every reader for a question most of
+  // them never ask.
   connectPortfolio().then(() => { if (ctxRef === ctx) paintPortfolioConnection(); });
   ensureConfig().then(() => {
     if (ctxRef === ctx) paintComposer();
@@ -457,10 +469,18 @@ function wire(root) {
     }
   };
   let draftSave = null;
+  // THE WARM-UP IS PAID ON INTENT, NOT ON ARRIVAL. See the block in render() for why it may not
+  // run on mount. `prepareResearchSources` memoises for 60s and dedupes concurrent callers, so
+  // firing this on focus AND on the first keystroke costs one pass, and `submitCurrent` awaiting
+  // it later joins the same promise rather than starting a second. A reader who touches the
+  // composer has told us they intend to ask; a reader who landed here on the way to another tab
+  // has not.
+  const warmSources = () => { void prepareResearchSources().catch(() => {}); };
   const onInput = () => {
     const session = currentSession();
     if (!session) return;
     session.draft = input.value;
+    warmSources();
     autoSize(input);
     syncSendState();
     // Written to the device on a trailing timer rather than on every keystroke: the draft only has
@@ -478,6 +498,11 @@ function wire(root) {
       root.querySelector('[data-research-reading]').click();
     }
   };
+  // THE WARM-UP IS PAID ON INTENT, NOT ON ARRIVAL. See the block in render() for why it may not
+  // run on mount. `prepareResearchSources` memoises for 60s and dedupes concurrent callers, so
+  // firing this on focus AND on the first keystroke costs one pass, and `submitCurrent` awaiting it
+  // later joins the same promise rather than starting a second. A reader who touches the composer
+  // has told us they intend to ask; a reader who landed here on the way to another tab has not.
   root.addEventListener('click', onClick);
   root.addEventListener('keydown', onWorkspaceKeydown);
   history.addEventListener('close', onHistoryClose);
@@ -485,6 +510,7 @@ function wire(root) {
   transcript.addEventListener('scroll', updateReadingControls, { passive: true });
   input.addEventListener('input', onInput);
   input.addEventListener('keydown', onKeydown);
+  input.addEventListener('focus', warmSources, { once: true });
   return () => {
     history.close();
     history.removeEventListener('close', onHistoryClose);

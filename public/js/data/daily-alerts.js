@@ -1078,9 +1078,15 @@ const investorTicker = (move) => {
 /** The complete/incomplete rule for the investor feed, exported so an outage is testable. */
 export function investorCoverageState(m = {}) {
   const listFailed = m.ok === false;
+  // MISSING EVIDENCE AND UNCONFIRMED EVIDENCE ARE BOTH INCOMPLETE, AND THEY ARE NOT THE SAME
+  // CLAIM. A book with no copy at all contributes no rows and its absence can hide a real move;
+  // a retained book whose latest re-check did not answer contributes every one of its rows and is
+  // simply of a known age. Counting the second as missing is what let this feed report "90 of 90
+  // books available" and "90 could not be included" out of the same metadata.
   const missingBooks = Number(m.pending || 0) + Number(m.failedBooks || 0);
+  const uncheckedBooks = Number(m.uncheckedBooks || 0);
   const staleBooks = Number(m.staleBooks || 0);
-  const incomplete = listFailed || missingBooks > 0 || m.stale === true || staleBooks > 0;
+  const incomplete = listFailed || missingBooks > 0 || m.stale === true || staleBooks > 0 || uncheckedBooks > 0;
   const problems = [
     listFailed
       ? `the investor list could not be read${m.reason || m.message ? ` (${m.reason || m.message})` : ''}`
@@ -1091,8 +1097,11 @@ export function investorCoverageState(m = {}) {
       : m.stale === true
         ? `the investor list is last-good fallback data${m.staleReason ? ` (${m.staleReason})` : ''}`
         : null,
+    uncheckedBooks > 0
+      ? `${uncheckedBooks} investor book${uncheckedBooks === 1 ? ' is' : 's are'} retained from the last good read and could not be re-checked${m.staleReason ? ` (${m.staleReason})` : ''}`
+      : null,
   ].filter(Boolean);
-  return { incomplete, missingBooks, staleBooks, problems };
+  return { incomplete, missingBooks, staleBooks, uncheckedBooks, problems };
 }
 
 /** Quarterly disclosed holding changes. A disappearance is labelled, not overstated as a sale. */

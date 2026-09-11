@@ -2,6 +2,7 @@ import { conditionalJson } from '../core/store.js';
 import { dedupeArticles } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
 import { inNewsWindow, newsShardInWindow, newsHeadCoversArchive } from './news-window.js';
+import { holdsTicker } from './row-ticker-index.js';
 
 // Retained monthly records stay available after they leave the recent head. Scope, search and
 // attribution still run in their existing consumers; storage partitioning is never a filter.
@@ -101,7 +102,9 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
       return { ...result, partial: !!result.partial || !history };
     },
     forTicker: ticker => rows().filter(row => String(row.ticker || row.entityId || '').toUpperCase() === String(ticker).toUpperCase()),
-    wasAskedEmpty: ticker => !rows().some(row => String(row.ticker || row.entityId || '').toUpperCase() === String(ticker).toUpperCase()) && base.wasAskedEmpty(ticker),
+    // Set membership, not a scan: see js/data/row-ticker-index.js. `base.wasAskedEmpty` still
+    // decides whether the company was actually checked — this only answers whether we hold a row.
+    wasAskedEmpty: ticker => !holdsTicker(rows(), ticker) && base.wasAskedEmpty(ticker),
     meta() { const meta = base.meta(); return { ...meta, ok: meta.ok && !error,
       rowCount: rows().length, newsHistory: { loaded, pending: !!pending, error, window: readingWindow() } }; },
     onChange(fn) {

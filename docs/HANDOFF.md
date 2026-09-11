@@ -916,7 +916,9 @@ suite asserts the two can never diverge again.
 
 **Failure states are named, not blank.** `no-token` and `unauthorised` are an operator's problem
 and the panel prints the command that fixes them; `unreachable` / `upstream` are a service's. A
-failed book shows "could not be read", never an empty one — those must never look the same.
+a book with no copy at all says so, never as an empty one — those must never look the same. A
+retained book whose latest re-check failed is NOT that state: it keeps its figures and its age is
+stated once, in the view's freshness label.
 
 **And a second caught bug, this one about speed.** The view is ninety-one requests: the list, then
 one page per book. Four things were wrong at once, and the reader felt all of them as "this is

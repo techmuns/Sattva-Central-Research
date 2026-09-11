@@ -57,6 +57,11 @@ export const KEYS = {
   // above which mirror the upstream's one-page-per-investor shape.
   investorSnapshot: 'investors:snapshot',
   chatter: 'chatter',
+  // The one shared watchlist. Held here for its ETag rather than for its bytes — the list is small
+  // and the saving is the round trip, not the payload. The list the app actually PAINTS from is the
+  // synchronous localStorage copy in core/watchlist.js, because every scope filter in the dashboard
+  // reads it during a render and cannot await IndexedDB to decide whether a row is in scope.
+  sharedWatchlist: 'watchlist:shared',
   // One finished Concall Deep Dive report, under THEIR slug. Unlike every other key here it is not
   // fetched with `conditionalJson`: that dashboard's `GET /api/report` sends no ETag and wraps the
   // body in a status envelope, so there is no validator to send and nothing to 304. The reason to

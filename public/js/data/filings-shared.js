@@ -296,16 +296,40 @@ export function normaliseArticle(r, query = null) {
   };
 }
 
+// `dedupeArticles` calls this once per row and runs on every read of every news feed, so the same
+// handful of thousand addresses are re-parsed continuously. `new URL()` is the cost: measured at 4x
+// CPU throttle on one warm tab switch, 1,058ms here plus 858ms inside the URL constructor itself.
+// Bounded FIFO on the raw string, the same shape as `announcementUrlInfo` in announcements-shared.js
+// — a pure string-to-string function, so a hit cannot differ from a miss, and the bound keeps a long
+// history from retaining addresses indefinitely.
+const canonicalUrlCache = new Map();
+const canonicalUrlKeys = new Array(16_384);
+let nextCanonicalUrlKey = 0;
+
 /** One story at its desktop/mobile/AMP addresses is still one publisher article. */
 export function canonicalArticleUrl(raw) {
+  const cacheable = typeof raw === 'string' && raw.length <= 512;
+  if (cacheable) {
+    const hit = canonicalUrlCache.get(raw);
+    if (hit !== undefined) return hit;
+  }
+  let value;
   try {
     const url = new URL(raw);
     const host = url.hostname.toLowerCase().replace(/^(www|m|amp|mobile)\./, '');
     const path = url.pathname.replace(/\/amp\/?$/i, '').replace(/\/+$/, '');
-    return `${host}${path}${url.search}`;
+    value = `${host}${path}${url.search}`;
   } catch {
-    return String(raw || '');
+    value = String(raw || '');
   }
+  if (cacheable) {
+    // Direct FIFO eviction, as in announcements-shared.js: no iterator scan over tombstones.
+    canonicalUrlCache.delete(canonicalUrlKeys[nextCanonicalUrlKey]);
+    canonicalUrlKeys[nextCanonicalUrlKey] = raw;
+    nextCanonicalUrlKey = (nextCanonicalUrlKey + 1) % canonicalUrlKeys.length;
+    canonicalUrlCache.set(raw, value);
+  }
+  return value;
 }
 
 /**

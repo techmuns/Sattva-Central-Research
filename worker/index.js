@@ -11,6 +11,8 @@
 //   GET  /api/concalls                         ->  live analysis + scheduled Screener document history
 //   GET  /api/super-investors                  ->  the tracked super-investor list (Finology)
 //   GET  /api/super-investors/{slug}           ->  one investor's book, quarter by quarter
+//   GET  /api/watchlist                        ->  the one shared watchlist + contributor roster
+//   POST /api/watchlist                        ->  apply add/remove edits, attributed by name
 //   GET  /api/stock-search?q=                   ->  company search for the scope editor (Muns)
 //   GET  /api/research                          ->  whether Ask Research is configured
 //   POST /api/research                          ->  streamed dashboard-grounded research answer
@@ -63,6 +65,7 @@ import { handleDrhpFilings } from './drhp-filings.mjs';
 import { handleIpoMonitor } from './ipo-monitor.mjs';
 import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
+import { handleWatchlist } from './watchlist.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
 import { readScreenerConcallCollector, readScreenerConcallCollection } from './screener-concalls-collector.mjs';
 import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
@@ -70,6 +73,7 @@ import { mergeEarningsCalendarSources } from '../public/js/data/earnings-calenda
 import { readScreenerInsightsCollector } from './screener-insights-collector.mjs';
 import { SCREENER_INSIGHTS_FRESH_MS, SCREENER_INSIGHTS_WORKFLOW } from '../public/js/data/screener-insights-shared.js';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
+import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
 const MAX_TICKERS = 60;
@@ -134,6 +138,7 @@ export default {
     if (url.pathname === '/api/ipo-monitor') return handleIpoMonitor(request);
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
+    if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
       return handleConcallSummaries(request, env);
 
@@ -164,6 +169,9 @@ export default {
     }
     if (url.pathname === '/api/nse-announcements') {
       return handleNseAnnouncements(request, env, ctx);
+    }
+    if (url.pathname === '/api/nse-filing') {
+      return handleNseFiling(request, ctx);
     }
     if (url.pathname === '/api/concalls') {
       return handleConcalls(request, env, ctx);
@@ -1009,6 +1017,66 @@ async function handleNseAnnouncements(request, env, ctx) {
   }
 }
 
+// ---------------------------------------------------------------------------------------
+// One NSE XBRL filing, rendered readable
+// ---------------------------------------------------------------------------------------
+//
+// Nine per cent of the announcements above link to a raw XBRL file, not a PDF, and a reader who
+// clicks one gets "This XML file does not appear to have any style information associated with
+// it". NSE publish no readable twin (measured: the .html, _WEB.html and /corporate/ixbrl/ shapes
+// all 404) and no `access-control-allow-origin` header at all, so the browser cannot read the file
+// even to render it itself. This route is the only way that filing reaches a human: fetch it with
+// the same desktop user-agent the RSS needs, parse it in the shared module the browser also
+// imports, and return the exchange's own facts as JSON.
+//
+// THE SOURCE URL IS AN ALLOW-LIST, NOT A PARAMETER. `isXbrlFilingUrl` pins the scheme, the exact
+// host and the path prefix; anything else is refused before a request is made. Without that this
+// is an open proxy answering from this dashboard's origin.
+//
+// CACHED HARD, BECAUSE THESE FILES ARE IMMUTABLE. The filename carries the filing's own timestamp,
+// so a given URL is the same bytes for ever - a day at the edge costs NSE one read per filing per
+// day however many readers open it. A failure is cached for seconds only, the same split the
+// Finology client draws, so a transient refusal does not pin an error on every screen.
+const NSE_FILING_TTL_S = 86400;
+const NSE_FILING_FAIL_TTL_S = 15;
+
+async function handleNseFiling(request, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method', error: 'GET only' }, 405);
+  const src = new URL(request.url).searchParams.get('src') || '';
+  if (!isXbrlFilingUrl(src)) {
+    return json({ ok: false, reason: 'unsupported', url: src,
+      error: 'Only NSE XBRL announcement files (nsearchives.nseindia.com/corporate/xbrl/....xml) can be rendered here.' }, 400);
+  }
+
+  const cache = caches.default;
+  const cacheKey = edgeKey(`nse-filing:${src}`);
+  const hit = await cache.match(cacheKey);
+  if (hit) return revalidate(request, new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers), 'x-sattva-cache': 'hit' } }), 'hit');
+
+  try {
+    const res = await fetch(src, { headers: NSE_HEADERS, signal: AbortSignal.timeout(15000) });
+    const xml = await res.text();
+    if (!res.ok) throw new Error(`NSE HTTP ${res.status}`);
+    // A 200 THAT IS NOT THE FILING IS NOT AN EMPTY FILING. Akamai answers a reader it dislikes with
+    // a small "Access Denied" page carrying whatever status it likes, and this document's own shape
+    // is the only positive evidence that it is the document: an XBRL instance with facts in it.
+    const filing = parseXbrlFiling(xml);
+    if (!filing.ok) throw new Error(`NSE returned ${xml.length} bytes carrying no XBRL facts.`);
+
+    const { body, tag } = withTag({ ok: true, url: src, fetchedAt: new Date().toISOString(), ...filing });
+    const stored = tagged(body, tag, NSE_FILING_TTL_S, { 'x-sattva-cache': 'live' });
+    ctx?.waitUntil?.(cache.put(cacheKey, stored.clone()));
+    return revalidate(request, stored, 'miss');
+  } catch (err) {
+    // NAME THE FAILURE AND CARRY THE URL INTO IT. The reader still has the original document a
+    // click away, and the panel says so rather than implying the filing itself is gone - the
+    // chatter route's bare-404 lesson, which cost a long investigation into a healthy upstream.
+    const { body, tag } = withTag({ ok: false, url: src, reason: 'unreachable',
+      error: `NSE could not be read for this filing: ${String(err?.message || err)}` });
+    return revalidate(request, tagged(body, tag, NSE_FILING_FAIL_TTL_S), 'fallback');
+  }
+}
+
 function screenerNeedsRefresh(source, now = Date.now()) {
   const checkedAt = Date.parse(source?.checkedAt || '');
   return (
@@ -1312,21 +1380,50 @@ const ERROR_TTL_S = 15;
 const INVESTOR_SOURCE = 'Ticker Finology, via devde.muns.io';
 
 function handleInvestorList(request, env, ctx) {
-  return investorRoute(request, ctx, 'super-investors', () => fetchInvestorList(fetch, env.MUNS_TOKEN, env.MUNS_BASE), {
-    count: 0,
-    investors: [],
-  });
+  return investorRoute(
+    request,
+    ctx,
+    'super-investors',
+    () => fetchInvestorList(fetch, env.MUNS_TOKEN, env.MUNS_BASE),
+    { count: 0, investors: [] },
+    async () => {
+      const snap = await loadInvestorSnapshot(env, request);
+      return Array.isArray(snap?.investors) && snap.investors.length
+        ? { at: snap.capturedAt, data: { count: snap.count ?? snap.investors.length, dropped: snap.dropped || 0, investors: snap.investors } }
+        : null;
+    },
+  );
 }
 
 function handleInvestorPortfolio(request, env, ctx, slug) {
   if (!isSlug(slug)) {
     return json({ ok: false, error: 'bad-slug', message: 'An investor slug may only contain a-z, 0-9 and hyphens.' }, 400);
   }
-  return investorRoute(request, ctx, `super-investors/${slug}`, () => fetchInvestorPortfolio(fetch, env.MUNS_TOKEN, slug, env.MUNS_BASE), {
-    slug,
-    quarters: [],
-    holdings: [],
-  });
+  return investorRoute(
+    request,
+    ctx,
+    `super-investors/${slug}`,
+    () => fetchInvestorPortfolio(fetch, env.MUNS_TOKEN, slug, env.MUNS_BASE),
+    { slug, quarters: [], holdings: [] },
+    async () => {
+      const book = (await loadInvestorSnapshot(env, request))?.books?.[slug];
+      // ONLY a book the capture actually holds. A slug absent from the file is a book the capture
+      // could not read, and answering it from here would turn "we have no copy of this" into an
+      // investor who discloses nothing — the one substitution this whole route exists to refuse.
+      return book && Array.isArray(book.holdings) ? { at: book.sourceCheckedAt || book.fetchedAt, data: book } : null;
+    },
+  );
+}
+
+/** The committed super-investor capture, read through the ASSETS binding. Null if it isn't there. */
+async function loadInvestorSnapshot(env, request) {
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL('/data/super-investors.json', request.url)));
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1350,7 +1447,7 @@ function handleInvestorPortfolio(request, env, ctx, slug) {
  * outage costs every one of the ninety-one requests its own full timeout, so the failure a reader
  * waits through is ninety-one times longer than the one failure that actually happened.
  */
-async function investorRoute(request, ctx, key, load, empty) {
+async function investorRoute(request, ctx, key, load, empty, snapshot = null) {
   const cache = caches.default;
   const freshKey = edgeKey(key);
   const lastGoodKey = edgeKey(`${key}::last-good`);
@@ -1372,7 +1469,18 @@ async function investorRoute(request, ctx, key, load, empty) {
     // is a service condition, so neither may serve a stale copy or be cached as one.
     if (reason === 'not-found') return json({ ok: false, reason, message: String(err?.message || err), ...empty }, 404);
 
-    const stale = await readLastGood(cache, lastGoodKey);
+    // THE EDGE COPY, THEN THE COMMITTED CAPTURE, THEN — only then — a named failure.
+    //
+    // `caches.default` is per-colo and evictable, so the last-good entry is a good floor and not a
+    // dependable one: a reader routed to a cold colo during an upstream outage got `ok: false` for
+    // every one of ninety books while a complete, committed capture of all ninety sat in this
+    // Worker's own assets. Every other bulk feed here already degrades to its snapshot — that is
+    // what `loadSnapshot` and `loadConcallSnapshot` are — and this one now does too.
+    //
+    // It is a floor, never a substitute: it is reached only after a live read has failed AND the
+    // edge had nothing, it keeps the capture's OWN read time rather than being restamped, and it
+    // travels as `stale: true` so nothing downstream can mistake it for this moment's figures.
+    const stale = (await readLastGood(cache, lastGoodKey)) || (await readSnapshotFallback(snapshot));
     const { body, tag } = stale
       ? withTag({
           ...stale,
@@ -1390,6 +1498,24 @@ async function investorRoute(request, ctx, key, load, empty) {
     const ttl = stale ? INVESTOR_STALE_TTL_S : ERROR_TTL_S;
     ctx?.waitUntil?.(cache.put(freshKey, tagged(body, tag, ttl)));
     return revalidate(request, tagged(body, tag, ttl), stale ? 'stale' : reason);
+  }
+}
+
+/**
+ * The committed capture for this key, shaped like a last-good entry, or null.
+ *
+ * `at` is the capture's own read time and becomes `fetchedAt`, so the age a reader is shown is the
+ * age of the data rather than the age of this request. Never throws, for the same reason
+ * `readLastGood` does not: this runs only after a live read has already failed.
+ */
+async function readSnapshotFallback(snapshot) {
+  if (!snapshot) return null;
+  try {
+    const hit = await snapshot();
+    if (!hit?.data) return null;
+    return { ...hit.data, ok: true, source: INVESTOR_SOURCE, fetchedAt: hit.at || hit.data.fetchedAt || null };
+  } catch {
+    return null;
   }
 }
 

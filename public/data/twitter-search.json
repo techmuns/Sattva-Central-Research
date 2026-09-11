@@ -1,115 +1,115 @@
 {
   "queries": {
     "isin:INE423A01024|Adani Enterprises": {
-      "lastAttemptAt": "2026-09-05T18:28:19+00:00",
+      "lastAttemptAt": "2026-09-11T06:14:53+00:00",
       "error": "search-unavailable"
     },
     "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-09-05T20:35:14+00:00",
+      "lastAttemptAt": "2026-09-11T06:47:56+00:00",
       "error": "search-unavailable"
     },
     "isin:INE674K01013|Aditya Birla Capital": {
-      "lastAttemptAt": "2026-09-05T22:29:10+00:00",
+      "lastAttemptAt": "2026-09-11T07:30:43+00:00",
       "error": "search-unavailable"
     },
     "isin:INE674K01013|ABCAPITAL": {
-      "lastAttemptAt": "2026-09-06T00:08:05+00:00",
+      "lastAttemptAt": "2026-09-11T08:13:44+00:00",
       "error": "search-unavailable"
     },
     "isin:INE679V01027|Aditya Vision": {
-      "lastAttemptAt": "2026-09-06T04:54:38+00:00",
+      "lastAttemptAt": "2026-09-11T08:45:36+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0ALI01010|Advait Energy Transitions": {
-      "lastAttemptAt": "2026-09-06T07:35:40+00:00",
+      "lastAttemptAt": "2026-09-11T09:21:52+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0ALI01010|ADVAIT": {
-      "lastAttemptAt": "2026-09-06T08:25:24+00:00",
+      "lastAttemptAt": "2026-09-11T09:57:21+00:00",
       "error": "search-unavailable"
     },
     "isin:INE914E01040|Alankit": {
-      "lastAttemptAt": "2026-09-06T08:59:26+00:00",
+      "lastAttemptAt": "2026-09-11T10:32:06+00:00",
       "error": "search-unavailable"
     },
     "isin:INE914E01040|ALANKIT": {
-      "lastAttemptAt": "2026-09-06T09:03:32+00:00",
+      "lastAttemptAt": "2026-09-11T11:09:45+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1YPB01014|Allcargo Global": {
-      "lastAttemptAt": "2026-09-06T10:04:00+00:00",
+      "lastAttemptAt": "2026-09-11T11:37:11+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0R4701017|Alpex Solar": {
-      "lastAttemptAt": "2026-09-06T10:57:32+00:00",
+      "lastAttemptAt": "2026-09-11T12:12:02+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0R4701017|ALPEXSOLAR-SM": {
-      "lastAttemptAt": "2026-09-06T11:37:52+00:00",
+      "lastAttemptAt": "2026-09-11T12:57:58+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Global Securities": {
-      "lastAttemptAt": "2026-09-06T12:26:38+00:00",
+      "lastAttemptAt": "2026-09-11T13:30:46+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Credit Capital": {
-      "lastAttemptAt": "2026-09-06T12:59:21+00:00",
+      "lastAttemptAt": "2026-09-11T14:03:12+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|ASHIKA": {
-      "lastAttemptAt": "2026-09-06T13:39:26+00:00",
+      "lastAttemptAt": "2026-09-11T14:34:57+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|Atlanta Electricals": {
-      "lastAttemptAt": "2026-09-06T14:12:02+00:00",
+      "lastAttemptAt": "2026-09-11T15:08:06+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|ATLANTAELE": {
-      "lastAttemptAt": "2026-09-06T14:53:16+00:00",
+      "lastAttemptAt": "2026-09-11T15:32:47+00:00",
       "error": "search-unavailable"
     },
     "isin:INE555B01013|Axiscades Technologies": {
-      "lastAttemptAt": "2026-09-06T15:31:56+00:00",
+      "lastAttemptAt": "2026-09-11T16:17:14+00:00",
       "error": "search-unavailable"
     },
     "isin:INE555B01013|AXISCADES": {
-      "lastAttemptAt": "2026-09-06T16:00:41+00:00",
+      "lastAttemptAt": "2026-09-11T16:50:38+00:00",
       "error": "search-unavailable"
     },
     "isin:INE083K01017|Bengal and Assam Company": {
-      "lastAttemptAt": "2026-09-06T16:45:07+00:00",
+      "lastAttemptAt": "2026-09-11T17:23:42+00:00",
       "error": "search-unavailable"
     },
     "isin:INE083K01017|BENGALASM": {
-      "lastAttemptAt": "2026-09-06T17:19:27+00:00",
+      "lastAttemptAt": "2026-09-11T17:56:41+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
-      "lastAttemptAt": "2026-09-06T17:52:54+00:00",
+      "lastAttemptAt": "2026-09-11T18:30:18+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0HOQ01053|GROWW": {
-      "lastAttemptAt": "2026-09-06T18:26:47+00:00",
+      "lastAttemptAt": "2026-09-11T18:52:42+00:00",
       "error": "search-unavailable"
     },
     "isin:INE376G01013|Biocon": {
-      "lastAttemptAt": "2026-09-06T18:58:02+00:00",
+      "lastAttemptAt": "2026-09-11T19:52:08+00:00",
       "error": "search-unavailable"
     },
     "isin:INE376G01013|BIOCON": {
-      "lastAttemptAt": "2026-09-06T19:32:17+00:00",
+      "lastAttemptAt": "2026-09-11T20:26:59+00:00",
       "error": "search-unavailable"
     },
     "isin:INE476A01022|Canara Bank": {
-      "lastAttemptAt": "2026-09-06T20:08:47+00:00",
+      "lastAttemptAt": "2026-09-11T20:59:33+00:00",
       "error": "search-unavailable"
     },
     "isin:INE476A01022|CANBK": {
-      "lastAttemptAt": "2026-09-06T20:36:32+00:00",
+      "lastAttemptAt": "2026-09-11T21:27:19+00:00",
       "error": "search-unavailable"
     },
     "isin:INE482D01024|Carysil": {
-      "lastAttemptAt": "2026-09-06T21:29:57+00:00",
+      "lastAttemptAt": "2026-09-11T22:09:11+00:00",
       "error": "search-unavailable"
     },
     "isin:INE482D01024|CARYSIL": {
@@ -947,12 +947,196 @@
     "isin:INE089C01029|Sterlite Technologies": {
       "lastAttemptAt": "2026-09-10T04:34:38+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE089C01029|SterliteTech": {
+      "lastAttemptAt": "2026-09-10T05:25:42+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE089C01029|Sterlite analyst day": {
+      "lastAttemptAt": "2026-09-10T05:57:10+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE089C01029|STL analyst day": {
+      "lastAttemptAt": "2026-09-10T06:11:41+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE089C01029|STLTECH": {
+      "lastAttemptAt": "2026-09-10T07:02:45+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE958L01034|String Metaverse": {
+      "lastAttemptAt": "2026-09-10T07:38:47+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE239C01020|Stylam Industries": {
+      "lastAttemptAt": "2026-09-10T08:12:24+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE239C01020|STYLAMIND": {
+      "lastAttemptAt": "2026-09-10T08:44:47+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE659A01023|Sudarshan Chemical Industries": {
+      "lastAttemptAt": "2026-09-10T09:18:30+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE659A01023|SUDARSCHEM": {
+      "lastAttemptAt": "2026-09-10T09:50:36+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE07RO01027|Supriya Lifescience": {
+      "lastAttemptAt": "2026-09-10T10:34:32+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE07RO01027|SUPRIYA": {
+      "lastAttemptAt": "2026-09-10T11:07:40+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE665A01038|Swan Corp": {
+      "lastAttemptAt": "2026-09-10T11:35:35+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE665A01038|SWANCORP": {
+      "lastAttemptAt": "2026-09-10T12:05:57+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE976I01016|Tata Capital": {
+      "lastAttemptAt": "2026-09-10T12:36:49+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE976I01016|TATACAP": {
+      "lastAttemptAt": "2026-09-10T13:16:48+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE142M01025|Tata Technologies": {
+      "lastAttemptAt": "2026-09-10T13:53:14+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE142M01025|TATATECH": {
+      "lastAttemptAt": "2026-09-10T14:27:47+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE508G01029|Time Technoplast": {
+      "lastAttemptAt": "2026-09-10T15:00:40+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE508G01029|TIMETECHNO": {
+      "lastAttemptAt": "2026-09-10T15:30:16+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE615H01020|Titagarh Rail Systems": {
+      "lastAttemptAt": "2026-09-10T16:05:46+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE615H01020|TITAGARH": {
+      "lastAttemptAt": "2026-09-10T16:39:59+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE0OC301013|Turtlemint Fintech Solutions": {
+      "lastAttemptAt": "2026-09-10T17:13:41+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE0OC301013|TURTLEMINT": {
+      "lastAttemptAt": "2026-09-10T17:46:15+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE0CAZ01013|Urban Company": {
+      "lastAttemptAt": "2026-09-10T18:25:02+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE0CAZ01013|URBANCO": {
+      "lastAttemptAt": "2026-09-10T18:38:39+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE879I01012|Valor Estate": {
+      "lastAttemptAt": "2026-09-10T19:35:09+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE879I01012|DB Realty": {
+      "lastAttemptAt": "2026-09-10T20:05:51+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE879I01012|DBREALTY": {
+      "lastAttemptAt": "2026-09-10T20:39:36+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE1CDF01017|Vedanta Aluminium Metal": {
+      "lastAttemptAt": "2026-09-10T21:14:58+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE1CDF01017|VAML": {
+      "lastAttemptAt": "2026-09-10T21:19:10+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE1CLE01013|Vedanta Iron and Steel": {
+      "lastAttemptAt": "2026-09-10T21:56:35+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE1CLE01013|VISL": {
+      "lastAttemptAt": "2026-09-10T22:29:31+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE205A01025|Vedanta": {
+      "lastAttemptAt": "2026-09-10T23:02:30+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE205A01025|VEDL": {
+      "lastAttemptAt": "2026-09-10T23:17:28+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE704J01044|Vedanta Oil and Gas": {
+      "lastAttemptAt": "2026-09-10T23:51:21+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE704J01044|VOGL": {
+      "lastAttemptAt": "2026-09-11T00:28:38+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE694L01019|Vedanta Power": {
+      "lastAttemptAt": "2026-09-11T01:07:58+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE694L01019|VEDPOWER": {
+      "lastAttemptAt": "2026-09-11T01:16:07+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE564S01019|Vikram Kamats Hospitality": {
+      "lastAttemptAt": "2026-09-11T02:13:56+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE18UN01038|GAJA": {
+      "lastAttemptAt": "2026-09-11T02:46:48+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE540H01012|Voltamp Transformers": {
+      "lastAttemptAt": "2026-09-11T03:19:45+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE540H01012|VOLTAMP": {
+      "lastAttemptAt": "2026-09-11T03:52:54+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE377N01017|Waaree Energies": {
+      "lastAttemptAt": "2026-09-11T04:25:50+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE377N01017|WAAREEENER": {
+      "lastAttemptAt": "2026-09-11T04:56:37+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE049B01025|Wockhardt": {
+      "lastAttemptAt": "2026-09-11T05:29:07+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE049B01025|WOCKPHARMA": {
+      "lastAttemptAt": "2026-09-11T06:01:31+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
-    "planned": 230,
+    "planned": 231,
     "attempted": 1,
-    "incomplete": 223,
-    "checkedAt": "2026-09-10T04:34:38.062693+00:00"
+    "incomplete": 231,
+    "checkedAt": "2026-09-11T22:09:11.418167+00:00"
   }
 }
