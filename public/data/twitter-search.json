@@ -608,7 +608,7 @@
       "error": "search-unavailable"
     },
     "isin:INE854B01010|Datasel S.R.L.": {
-      "lastAttemptAt": "2026-09-08T00:44:39+00:00",
+      "lastAttemptAt": "2026-09-12T21:21:51+00:00",
       "error": "search-unavailable"
     },
     "isin:INE854B01010|JAYNECOIND": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-12T20:47:29.564488+00:00"
+    "checkedAt": "2026-09-12T21:21:51.810088+00:00"
   }
 }
