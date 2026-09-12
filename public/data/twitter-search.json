@@ -604,7 +604,7 @@
       "error": "search-unavailable"
     },
     "isin:INE854B01010|Datasel": {
-      "lastAttemptAt": "2026-09-08T00:10:23+00:00",
+      "lastAttemptAt": "2026-09-12T20:47:29+00:00",
       "error": "search-unavailable"
     },
     "isin:INE854B01010|Datasel S.R.L.": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-12T20:06:21.897550+00:00"
+    "checkedAt": "2026-09-12T20:47:29.564488+00:00"
   }
 }
