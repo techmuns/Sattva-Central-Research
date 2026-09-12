@@ -620,7 +620,7 @@
       "error": "search-unavailable"
     },
     "isin:INE700A01033|JUBLPHARMA": {
-      "lastAttemptAt": "2026-09-08T02:06:58+00:00",
+      "lastAttemptAt": "2026-09-12T22:55:44+00:00",
       "error": "search-unavailable"
     },
     "isin:INE303R01014|Kalyan Jewellers India": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-12T22:22:10.246383+00:00"
+    "checkedAt": "2026-09-12T22:55:44.044067+00:00"
   }
 }
