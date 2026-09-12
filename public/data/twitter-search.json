@@ -612,7 +612,7 @@
       "error": "search-unavailable"
     },
     "isin:INE854B01010|JAYNECOIND": {
-      "lastAttemptAt": "2026-09-08T00:48:56+00:00",
+      "lastAttemptAt": "2026-09-12T21:34:18+00:00",
       "error": "search-unavailable"
     },
     "isin:INE700A01033|Jubilant Pharmova LT": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-12T21:21:51.810088+00:00"
+    "checkedAt": "2026-09-12T21:34:18.929183+00:00"
   }
 }
