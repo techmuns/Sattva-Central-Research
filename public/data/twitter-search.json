@@ -628,7 +628,7 @@
       "error": "search-unavailable"
     },
     "isin:INE303R01014|KALYANKJIL": {
-      "lastAttemptAt": "2026-09-08T03:36:43+00:00",
+      "lastAttemptAt": "2026-09-12T23:34:58+00:00",
       "error": "search-unavailable"
     },
     "isin:INE415I01015|Kiri Industries": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-12T23:26:55.916978+00:00"
+    "checkedAt": "2026-09-12T23:34:58.707186+00:00"
   }
 }
