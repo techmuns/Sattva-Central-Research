@@ -624,7 +624,7 @@ function toFeedRow(feed, out, day) {
     const key = `${event.id}:${JSON.stringify(event.sourceRecord || event)}`;
     if (seen.has(key)) return false;
     seen.add(key); return true;
-  }).map((event) => ({ ...event, day: eventDay(event) }));
+  }).map((event) => ({ ...event, day: eventDay(event), feed: feed.id, feedLabel: feed.label, tab: feed.tab }));
   const days = events.map((event) => event.day).filter(Boolean).sort();
   return {
     ...feed,
@@ -761,7 +761,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
 
   const feeds = dedupePublisherAlertFeeds(scopedFeeds, { day, entities: portfolioEntities });
   const events = [];
-  for (const f of feeds) for (const ev of f.events) events.push({ ...ev, feed: f.id, feedLabel: f.label, tab: f.tab });
+  for (const f of feeds) for (const ev of f.events) events.push(ev);
   events.sort(byNewestFirst);
   ensureUniqueIds(events);
   const eventDays = [...new Set(events.map((event) => event.day).filter(Boolean))].sort();
@@ -833,10 +833,11 @@ export function matchesAlertScope(event, { scope, wanted, entityIds, requestedEn
  */
 function ensureUniqueIds(events) {
   const seen = new Map();
-  for (const ev of events) {
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
     const n = seen.get(ev.id) || 0;
     seen.set(ev.id, n + 1);
-    if (n) ev.id = `${ev.id}#${n}`;
+    if (n) events[i] = { ...ev, id: `${ev.id}#${n}` };
   }
   return events;
 }
