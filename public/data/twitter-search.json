@@ -640,7 +640,7 @@
       "error": "search-unavailable"
     },
     "isin:INE082A01010|Kopran": {
-      "lastAttemptAt": "2026-09-08T05:22:53+00:00",
+      "lastAttemptAt": "2026-09-13T01:27:45+00:00",
       "error": "search-unavailable"
     },
     "isin:INE082A01010|KOPRAN": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-13T00:42:22.543892+00:00"
+    "checkedAt": "2026-09-13T01:27:45.289172+00:00"
   }
 }
