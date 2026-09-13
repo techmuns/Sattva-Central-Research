@@ -632,7 +632,7 @@
       "error": "search-unavailable"
     },
     "isin:INE415I01015|Kiri Industries": {
-      "lastAttemptAt": "2026-09-08T04:21:06+00:00",
+      "lastAttemptAt": "2026-09-13T00:07:25+00:00",
       "error": "search-unavailable"
     },
     "isin:INE415I01015|KIRIINDUS": {
@@ -1236,6 +1236,6 @@
     "planned": 231,
     "attempted": 1,
     "incomplete": 221,
-    "checkedAt": "2026-09-12T23:34:58.707186+00:00"
+    "checkedAt": "2026-09-13T00:07:25.162207+00:00"
   }
 }
