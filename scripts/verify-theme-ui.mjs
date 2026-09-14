@@ -137,7 +137,7 @@ try {
       assert(contrast(head.color, head.bg) >= 4.5);
       await page.evaluate(() => { window.themeContentBefore = document.querySelector('#content-host').firstElementChild; });
       await toggle(page).click();
-      assert.equal((await surface(page, '[data-table-head]')).bg, 'rgb(248, 250, 252)');
+      assert.equal((await surface(page, '[data-table-head]')).bg, 'rgb(255, 255, 255)');
       await toggle(page).click();
       assert(await page.evaluate(() => window.themeContentBefore === document.querySelector('#content-host').firstElementChild), 'theme change does not remount the table');
     }

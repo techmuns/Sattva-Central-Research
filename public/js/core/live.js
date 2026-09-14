@@ -81,7 +81,7 @@ export function start(id, { fresh = false } = {}) {
   // A tab switch is not a freshness event. If this poller completed moments ago,
   // keep that result and resume the remainder of its cadence instead of issuing
   // another request merely because its owner was mounted again.
-  if (!(document.hidden || innerWidth === 0)) scheduleWhenDue(poller);
+  if (!(typeof document !== 'undefined' && document.hidden) && !(typeof window !== 'undefined' && window.innerWidth === 0)) scheduleWhenDue(poller);
 }
 
 // Stop polling (called when the owning tab unmounts). Leaves subscribers intact.
@@ -152,7 +152,7 @@ function scheduleWhenDue(poller) {
 
 function tick(poller) {
   if (poller.pending) return poller.pending;
-  if (!poller.running || (document.hidden || innerWidth === 0)) return Promise.resolve({ id: poller.id, skipped: true });
+  if (!poller.running || ((typeof document !== 'undefined' && document.hidden) || (typeof window !== 'undefined' && window.innerWidth === 0))) return Promise.resolve({ id: poller.id, skipped: true });
   clearTimer(poller);
   poller.pending = performTick(poller).finally(() => { poller.pending = null; });
   return poller.pending;
@@ -202,7 +202,7 @@ function safeNotify(cb, ...args) {
 document.addEventListener('visibilitychange', () => {
   for (const poller of pollers.values()) {
     if (!poller.running) continue;
-    if ((document.hidden || innerWidth === 0)) clearTimer(poller);
+    if (((typeof document !== 'undefined' && document.hidden) || (typeof window !== 'undefined' && window.innerWidth === 0))) clearTimer(poller);
     // Returning from a brief app switch must not make every live source fire at
     // once. A source that is genuinely overdue still gets a zero-delay tick.
     else scheduleWhenDue(poller);
