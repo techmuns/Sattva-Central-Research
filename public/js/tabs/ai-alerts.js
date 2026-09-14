@@ -243,7 +243,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
         refresh: forceRefresh,
         load,
         onPartial: (partial) => {
-          if (!current() || !partial.cards.length) return;
+          if (!current()) return;
           report = alerts.withPositionSnapshot(alerts.mergePartialReport(report, partial), checkedSnapshot);
           paint(ctxRef);
         },

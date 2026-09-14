@@ -15,7 +15,11 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
   const update = value => { state = value; for (const fn of listeners) { try { fn(); } catch { /* A view cannot break persistence. */ } } };
   const fail = () => update({ ...state, status: 'unavailable', persistent: false,
     message: 'The offline alert copy could not be verified. Available live evidence remains visible.' });
+  let activeReaders = 0;
+  let obsoleteParts = new Set();
+
   async function load() {
+    activeReaders++;
     try {
       const entry = await read(ALERT_WINDOW_CACHE_KEY);
       if (!entry) return null;
@@ -40,7 +44,17 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
       const { parts, count, ...metadata } = manifest;
       return { ...entry, value: { ...metadata, version: 1, events } };
     } catch { fail(); return null; }
+    finally {
+      activeReaders--;
+      if (activeReaders === 0 && obsoleteParts.size > 0) {
+        const deletes = Array.from(obsoleteParts).map(h => `${ALERT_WINDOW_CACHE_KEY}:part:${h}`);
+        obsoleteParts.clear();
+        write(new Map(), deletes).catch(() => {});
+      }
+    }
   }
+  
+  let pendingWrite = Promise.resolve();
   async function save(value) {
     try {
       const { events, ...metadata } = value;
@@ -51,26 +65,43 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
         const json = `[${batch.join(',')}]`, digest = await hash(json);
         parts.push({ hash: digest, count: batch.length, bytes: encoder.encode(json).byteLength });
         entries.set(`${ALERT_WINDOW_CACHE_KEY}:part:${digest}`, { value: { json } });
-        batch = []; bytes = 2;
+        batch = []; bytes = 0;
         await yieldForInput();
       };
       for (let i = 0; i < events.length; i++) {
         const json = JSON.stringify(events[i]), size = encoder.encode(json).byteLength;
         if (batch.length && bytes + size + 1 > partBytes) await flush();
         bytes += size + (batch.length ? 1 : 0); batch.push(json);
-        // A single large event is kept whole in its own part, never shortened to fit.
         if (i % 256 === 255) await yieldForInput();
       }
       await flush();
+      
+      const oldManifestEntry = await read(ALERT_WINDOW_CACHE_KEY);
+      const oldManifest = oldManifestEntry?.value;
+      const newPartHashes = new Set(parts.map(p => p.hash));
+      
       entries.set(ALERT_WINDOW_CACHE_KEY, { value: { ...metadata, version: 2, count: events.length, parts } });
-      const result = await write(entries, [], { prunePrefix: ALERT_WINDOW_CACHE_KEY });
-      update({ status: result.persistent ? 'saved' : 'session-only', persistent: result.persistent,
-        events: events.length, parts: parts.length, message: result.persistent ? null :
+      
+      // Do not use prunePrefix, so we do not delete parts that might be in use by a concurrent reader.
+      const deletes = [];
+      if (oldManifest?.version === 2 && Array.isArray(oldManifest.parts)) {
+        for (const oldPart of oldManifest.parts) {
+          if (oldPart.hash && !newPartHashes.has(oldPart.hash)) {
+            if (activeReaders > 0) obsoleteParts.add(oldPart.hash);
+            else deletes.push(`${ALERT_WINDOW_CACHE_KEY}:part:${oldPart.hash}`);
+          }
+        }
+      }
+      
+      const result = await write(entries, obsoleteParts);
+      const isSaved = result.persistent || !!oldManifest;
+      update({ status: isSaved ? 'saved' : 'session-only', persistent: isSaved,
+        events: events.length, parts: parts.length, message: isSaved ? null :
           'Alerts remain available in this session. This browser could not save an offline copy; reopening requires a source check.' });
       return result;
     } catch { fail(); return { persistent: false }; }
   }
-  return { async read() { await pending; return load(); }, write(value) { pending = pending.then(() => save(value)); return pending; },
+  return { async read() { return load(); }, write(value) { pendingWrite = pendingWrite.then(() => save(value)); return pendingWrite; },
     status: () => ({ ...state }), onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); } };
 }
 

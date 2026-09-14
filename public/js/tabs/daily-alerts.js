@@ -364,23 +364,21 @@ function paint(ctx) {
   // Preserve the visible row across live repaints inside one horizon, but never carry a deep
   // history scroll offset into the much shorter forward calendar (or vice versa).
   const tablePosition = renderedHorizon === horizon ? captureTablePosition(ctx.root) : null;
-  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition, report?.pending === 0);
-  tableViews[horizon] = table.view;
 
   // NO DESCRIPTION AND NO STAT STRIP. The four cards were the loudest version of
   // the problem: three of them counted rows the table beneath them already lists, and the fourth
   // printed a date the pill now carries. The pill is deliberately passive; full provenance stays
   // in the source registry and export — see the stat-strip opt-out rule in CLAUDE.md.
   if (tableInstance && renderedHorizon === horizon) {
-    const metaDiv = ctx.root.querySelector('.alerts-workspace > section > .flex');
+    const metaDiv = ctx.root.querySelector('[data-section-head] .flex > div:nth-child(2)');
     if (metaDiv) metaDiv.innerHTML = `${livePill(report, day)}${pendingPill(report)}${scopeSummary({
         scope: ctx.scope, count: m.companies || 0, noun: 'companies in loaded history', book: coverage.meta(),
     })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}`;
     
-    const horizonToggleContainer = ctx.root.querySelector('[data-alerts-controls] > div:first-child');
+    const horizonToggleContainer = ctx.root.querySelector('.alerts-horizon-control');
     if (horizonToggleContainer) horizonToggleContainer.outerHTML = horizonToggle(allThrough.length, allUpcoming.length, day, !!report);
     
-    const coveragePanelContainer = ctx.root.querySelector('[data-alerts-coverage]');
+    const coveragePanelContainer = ctx.root.querySelector('.alerts-source-picker');
     if (coveragePanelContainer) coveragePanelContainer.outerHTML = coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length);
     
     wireHorizon(ctx);
@@ -399,6 +397,10 @@ function paint(ctx) {
   tableInstance = null;
   workspaceDispose?.();
   workspaceDispose = null;
+  
+  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition, report?.pending === 0);
+  tableViews[horizon] = table.view;
+
   ctx.root.innerHTML = `
     <div class="alerts-workspace" data-alerts-workspace data-fullscreen-workspace>
     ${sectionHead({
@@ -1019,41 +1021,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
         eventColumn,
         { label: 'Feed', get: (e) => e.feedLabel },
       ];
-  const filters = mode === HORIZON.UPCOMING
-    ? [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v, view) => (view && view.q) ? true : matchesDate(e.day, v) }]
-    : [
-        {
-          label: 'Importance',
-          options: [
-            { value: 'all', label: 'All priorities' },
-            { value: 'high', label: 'High priority only' },
-            { value: 'low', label: 'Low priority only' },
-          ],
-          match: (e, v) => e.importance === v,
-        },
-        {
-          label: 'Direction',
-          options: [
-            { value: 'all', label: 'Every direction' },
-            { value: 'positive', label: 'Positive only' },
-            { value: 'negative', label: 'Negative only' },
-            { value: 'neutral', label: 'Neutral only' },
-          ],
-          match: (e, v) => e.direction === v,
-        },
-        { label: 'Date range', value: '3d', options: dateRangeOptions(events, day, mode), match: (e, v, view) => (view && view.q) ? true : matchesDate(e.day, v) },
-        {
-          label: 'Company relationship',
-          options: [
-            { value: 'all', label: 'All retained records' },
-            { value: 'confirmed', label: 'Matched companies / filings' },
-            { value: 'related', label: 'Related-entity news' },
-            { value: 'uncertain', label: 'Possible news matches' },
-            { value: 'unrelated', label: 'Reviewed unrelated news' },
-          ],
-          match: matchesCompanyRelationship,
-        },
-      ];
+  const filters = buildTableFilters(events, day, mode, matchesDate);
   return scoreTable({
     rows: events,
     key: (e) => e.id,
@@ -1071,8 +1039,6 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     nameAfter: mode === HORIZON.UPCOMING ? 1 : 2,
     dense: true,
     wrapHeads: true,
-    fillMode: 'virtual',
-    virtualRowHeight: 120,
     stickyHead: 'max(320px, calc(100vh - 260px))',
     // The timeline can exceed five thousand rows. Keep all of them in the data model for search,
     // filters, counts and export, while mounting only a bounded viewport window. Historical rows
@@ -1129,6 +1095,45 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     exportName: `sattva-all-alerts-${mode === HORIZON.UPCOMING ? 'upcoming-from' : 'through'}-${day}`,
     onExport: (visible) => exportStream(visible, day, ctx.scope, mode),
   });
+}
+
+function buildTableFilters(events, day, mode, matchesDate) {
+  if (mode === HORIZON.UPCOMING) {
+    return [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v, view) => (view && view.q) ? true : matchesDate(e.day, v) }];
+  }
+  return [
+    {
+      label: 'Importance',
+      options: [
+        { value: 'all', label: 'All priorities' },
+        { value: 'high', label: 'High priority only' },
+        { value: 'low', label: 'Low priority only' },
+      ],
+      match: (e, v) => e.importance === v,
+    },
+    {
+      label: 'Direction',
+      options: [
+        { value: 'all', label: 'Every direction' },
+        { value: 'positive', label: 'Positive only' },
+        { value: 'negative', label: 'Negative only' },
+        { value: 'neutral', label: 'Neutral only' },
+      ],
+      match: (e, v) => e.direction === v,
+    },
+    { label: 'Date range', value: '3d', options: dateRangeOptions(events, day, mode), match: (e, v, view) => (view && view.q) ? true : matchesDate(e.day, v) },
+    {
+      label: 'Company relationship',
+      options: [
+        { value: 'all', label: 'All retained records' },
+        { value: 'confirmed', label: 'Matched companies / filings' },
+        { value: 'related', label: 'Related-entity news' },
+        { value: 'uncertain', label: 'Possible news matches' },
+        { value: 'unrelated', label: 'Reviewed unrelated news' },
+      ],
+      match: matchesCompanyRelationship,
+    },
+  ];
 }
 
 function shiftDay(day, amount) {

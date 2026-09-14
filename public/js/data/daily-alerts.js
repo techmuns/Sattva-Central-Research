@@ -508,6 +508,10 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     if (performance.now() - batchStarted >= 8) { await yieldForInput(); batchStarted = performance.now(); }
   }
   const build = () => assemble({ day, scope, holdings: book, includeHistory, settledFeeds, requestedCompanies });
+  // Publish the in-memory seed snapshot before any network requests start.
+  if (load && onPartial) {
+    try { onPartial(build()); } catch (err) { console.error('[daily-alerts] onPartial threw', err); }
+  }
   // Feed promises often finish in one burst. Building/sorting the entire history after every
   // promise made one cached refresh rebuild a 60k-row pool twenty times before yielding to input.
   // Coalesce progress at the data boundary; throttling only the eventual DOM paint is too late.
@@ -632,6 +636,7 @@ function toFeedRow(feed, out, day) {
   return {
     ...feed,
     status: out.status || 'ok',
+    revision: out.revision || out.snapshotUpdatedAt || out.capturedAt || out.checkedAt || out.asOf || String(events.length),
     count: events.length,
     todayCount: events.filter((event) => event.day === day).length,
     oldestDay: days[0] || null,
@@ -764,8 +769,9 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
 
   const feeds = dedupePublisherAlertFeeds(scopedFeeds, { day, entities: portfolioEntities });
 
+  const currentRevisions = feeds.map(f => f.revision).join(',');
   const inputMatches = lastAssembleInput && lastAssembleInput.scope === scope && lastAssembleInput.day === day &&
-      lastAssembleInput.feeds.length === feeds.length && feeds.every((f, i) => f.events === lastAssembleInput.feeds[i].events);
+      lastAssembleInput.revisions === currentRevisions;
 
   const done = feeds.filter((f) => f.status !== 'pending');
 
@@ -779,7 +785,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   ensureUniqueIds(events);
   const eventDays = [...new Set(events.map((event) => event.day).filter(Boolean))].sort();
 
-  lastAssembleInput = { feeds, scope, day };
+  lastAssembleInput = { scope, day, revisions: currentRevisions };
   lastAssembleOutput = {
     day,
     scope,

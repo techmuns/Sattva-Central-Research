@@ -379,7 +379,7 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  * re-renders its own tbody without the tab getting involved.
  */
 export function scoreTable(config) {
-  const {
+  let {
     rows = [],
     key = (r) => r.ticker,
     // WHICH COMPANY THE STAR MARKS, which is not always which row it sits on.
@@ -501,7 +501,7 @@ export function scoreTable(config) {
   // `filters` takes one config or several. Several render as several <select>s and AND together,
   // which is what lets "PAT grew" and "Consolidated only" be asked at the same time — folding both
   // into one dropdown would make them mutually exclusive for no reason.
-  const filterDefs = filters ? (Array.isArray(filters) ? filters : [filters]) : [];
+  let filterDefs = filters ? (Array.isArray(filters) ? filters : [filters]) : [];
 
   // Internal view state — search text, one value per filter, watchlist-only, sort.
   const view = {
@@ -524,10 +524,14 @@ export function scoreTable(config) {
   }
   if (!showWatchFilter) view.watchOnly = false;
 
-  const totalCount = rows.length;
+  let totalCount = rows.length;
   // Array lookup is materially cheaper than recomputing 50k searchable strings on every
   // keystroke. This per-instance index is filled in idle slices once the final feed paint mounts.
-  const searchTextIndex = searchable ? new Array(rows.length) : null;
+  let searchTextIndex = searchable ? new Array(rows.length) : null;
+  
+  let activeRepaint = null;
+  let isDisposed = false;
+
   const countText = (visible) => {
     const custom = countLabel?.(visible, rows);
     return custom == null || custom === ''
@@ -690,7 +694,7 @@ export function scoreTable(config) {
         if (redFlag) styles.push('box-shadow: inset 3px 0 0 #f43f5e');
         if (isFixed) styles.push(`height:${VIRTUAL_ROW_HEIGHT}px`);
         return `
-          <tr data-row-key="${escapeHtml(slug)}" class="row-line border-b border-slate-100 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${redFlag ? 'bg-rose-50/40 hover:bg-rose-50' : `${extraClass} hover:bg-slate-50`}"
+          <tr data-row-key="${escapeHtml(slug)}" ${row.revision ? `data-revision="${escapeHtml(row.revision)}"` : ''} class="row-line border-b border-slate-100 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${redFlag ? 'bg-rose-50/40 hover:bg-rose-50' : `${extraClass} hover:bg-slate-50`}"
             ${rowIndex === null ? '' : `aria-rowindex="${rowIndex + 2}"`} ${styles.length ? `style="${styles.join(';')}"` : ''}>
             ${
               showRank
@@ -1116,7 +1120,7 @@ export function scoreTable(config) {
       } else {
         // Rebuilt from source, so nothing is stale any more — including the rows the fill has
         // yet to append, which are generated from the same cache this clears against.
-        body.innerHTML = bodyHtml(current, 0, FIRST_PAINT_ROWS);
+        syncListDOM(body, bodyHtml(current, 0, FIRST_PAINT_ROWS));
         staleKeys.clear();
         filled = Math.min(FIRST_PAINT_ROWS, current.length);
         startFill();
@@ -1287,7 +1291,11 @@ export function scoreTable(config) {
     startFill();
     startSearchWarm();
 
+    activeRepaint = repaint;
+
     return () => {
+      isDisposed = true;
+      activeRepaint = null;
       offBookmarks(); offBookmarkCache();
       windowed?.destroy();
       stopFill();
@@ -1300,13 +1308,35 @@ export function scoreTable(config) {
   }
 
   function updateData(newRows, newFilters = undefined) {
-    rows = newRows || [];
+    if (isDisposed) return;
+    if (!newRows) return;
+    
+    const oldRowsByKey = new Map(rows.map(r => [String(key(r)), r]));
+    rows = newRows;
+    for (const row of rows) {
+      const k = String(key(row));
+      const old = oldRowsByKey.get(k);
+      if (!old || old.revision !== row.revision) {
+        rowHtmlCache.delete(k);
+        staleKeys.add(k);
+      }
+    }
+
     if (newFilters !== undefined) {
       filterDefs = newFilters;
-      // we'd need to update the filter UI too, which is hard. 
-      // Actually, updating filter UI is why daily-alerts replaces innerHTML.
+      view.filters = filterDefs.map((f, i) => {
+        const existing = view.filters[i];
+        if (existing && existing !== 'all' && f.options.some(o => o.value === existing)) return existing;
+        return f.value || 'all';
+      });
     }
-    repaint({ resetScroll: false });
+    
+    totalCount = rows.length;
+    searchTextIndex = searchable ? new Array(rows.length) : null;
+    
+    if (activeRepaint) {
+      activeRepaint({ resetScroll: false });
+    }
   }
 
   return { html, wire, view, updateRows: (keys) => updateRows(keys), updateData };

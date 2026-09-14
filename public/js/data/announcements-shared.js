@@ -148,7 +148,15 @@ function mergeAnnouncement(previous, row, sources, sourceUrls) {
   previous.sourceUrls = [...new Map([...previousSourceUrls, ...sourceUrls]
     .map((item) => [`${item.source}|${item.url}`, item])).values()]
     .sort((a, b) => (SOURCE_ORDER.get(a.source) ?? 99) - (SOURCE_ORDER.get(b.source) ?? 99) || a.url.localeCompare(b.url));
-  for (const [field, value] of Object.entries(row)) if (previous[field] == null && value != null) previous[field] = value;
+  for (const [field, value] of Object.entries(row)) {
+    // A newer revision updates canonical fields, but does not overwrite an existing value with null.
+    // Also explicitly update the revision if provided.
+    if (value != null) {
+      if (previous[field] == null || field === 'revision' || field === 'time') {
+        previous[field] = value;
+      }
+    }
+  }
   return previous;
 }
 
