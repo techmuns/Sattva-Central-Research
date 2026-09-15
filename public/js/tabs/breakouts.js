@@ -93,6 +93,7 @@ function paint(ctx) {
   const pageY = window.scrollY;
   const active = ctx.root.contains(document.activeElement) ? document.activeElement : null;
   const selection = active?.selectionStart;
+  const selectionEnd = active?.selectionEnd, selectionDirection = active?.selectionDirection;
   const selector = active?.matches('input[type="search"]') ? 'input[type="search"]' : active?.getAttribute('placeholder') ? `input[placeholder="${CSS.escape(active.getAttribute('placeholder'))}"]` : null;
   const rows = filterByScope(live.decorate(technicals.all()), ctx.scope, coverage.holdings(), s => s.company.ticker);
   const view = {
@@ -104,7 +105,7 @@ function paint(ctx) {
   view(ctx, rows);
   if (scrollTop != null) ctx.root.closest('main').scrollTop = scrollTop;
   window.scrollTo(0, pageY);
-  if (selector) { const input = ctx.root.querySelector(selector); input?.focus({preventScroll:true}); if (selection != null) input?.setSelectionRange(selection, selection); }
+  if (selector) { const input = ctx.root.querySelector(selector); input?.focus({preventScroll:true}); if (selection != null) input?.setSelectionRange(selection, selectionEnd ?? selection, selectionDirection || 'none'); }
 }
 
 // ---- shared cell formatters ---------------------------------------------------------------

@@ -57,6 +57,9 @@ try {
   const choose = async (group, id, param) => {
     await chip(group, id).click();
     await page.waitForFunction(({ param, id }) => new URLSearchParams(location.hash.split('?')[1]).get(param) === id && !document.querySelector('#content-host')?.inert, { param, id });
+    // Routing updates the URL before the next frame paints the filter. Unchanged row
+    // sets cannot establish that the new input is mounted (for example while searched).
+    await page.waitForFunction(({ group, id }) => document.querySelector(`[data-chip-group="${group}"][data-chip-id="${id}"]`)?.classList.contains('bg-indigo-50'), { group, id });
   };
   for (const view of ['technical-scanner', 'fii-accumulation']) {
     await page.goto(`${origin}/#/research/breakouts/${view}?scope=universe`);

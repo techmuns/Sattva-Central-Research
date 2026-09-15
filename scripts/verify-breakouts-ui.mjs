@@ -51,6 +51,9 @@ try{
  const sourceState=()=>page.evaluate(async()=>(await import('/js/ui/sources.js')).sourceGroups().flatMap(group=>group.items).find(item=>item.name.startsWith('Saved price and volume capture')).readState);
  assert.equal(await sourceState(),'read');
  await page.locator('[data-table-search]').fill('Test Company');
+ await page.locator('[data-table-search]').evaluate(input=>input.setSelectionRange(0,input.value.length));
+ await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+ assert.deepEqual(await page.locator('[data-table-search]').evaluate(input=>[input.selectionStart,input.selectionEnd]),[0,'Test Company'.length]);
  await page.locator('[data-row-key="TEST"]').click();
  const popup=page.locator('[data-stat="breakout-price"]');await popup.waitFor();
  assert((await popup.innerText()).includes('₹106'));
