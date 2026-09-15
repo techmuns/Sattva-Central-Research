@@ -67,8 +67,8 @@ try {
   assert.match(await page.locator('#root').innerText(), /Reading sources/);
   await page.evaluate(() => window.fixtureOptions.onPartial(window.fixtureReport([window.fixtureStory, window.fixtureNoise], 'pending')));
   const period = page.getByRole('combobox', { name: 'Date range' });
-  assert.equal(await period.inputValue(), '3d', 'All Alerts opens on the last 3 days');
-  // The real Sept 4 article is older than this fixture's selected three-day period. Choosing
+  assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
+  // The real Sept 4 article is older than this fixture's selected Today period. Choosing
   // All history must still expose it through partial reads, failures, reopening and rollover.
   await period.selectOption('all');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('JM Financial'));

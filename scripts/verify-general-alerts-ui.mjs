@@ -83,6 +83,8 @@ const server = createServer((req, res) => {
       { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T07:00:00Z', subject: 'Analyst day complete source record', description: 'Original analyst presentation', url: 'https://example.test/analyst.pdf' },
       { company: 'Undated issuer', ticker: null, publishedAt: null, subject: 'Undated retained item', url: 'https://example.test/undated.pdf' },
       ...(version > 1 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T08:00:00Z', subject: 'Newly arrived NSE record', url: 'https://example.test/new.pdf' }] : []),
+      ...(version > 2 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:28:00Z`, subject: 'Automatic arrival at the top', url: 'https://example.test/automatic.pdf' }] : []),
+      ...(version > 3 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:29:00Z`, subject: 'Arrival while reading older rows', url: 'https://example.test/reading.pdf' }] : []),
     ] }); return; }
     if (url.pathname === '/api/ipo-monitor') {
       const date = url.searchParams.get('snapshot');
@@ -141,11 +143,14 @@ const stableReadingSurface = (target = page) => target.evaluate(async () => {
   }
 });
 try {
+  await page.clock.install();
   await page.goto(origin);
   await settled();
   console.log('Rendered complete All Alerts pool');
   const period = page.getByRole('combobox', { name: 'Date range', exact: true });
-  assert.equal(await period.inputValue(), '3d', 'All Alerts opens on Last 3 days');
+  assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
+  assert.equal(await page.locator('[data-alert-arrivals]').count(), 1);
+  assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'initial history is not a live arrival');
   for (const label of ['Today', 'Last 3 days', 'Last 7 days', 'Last 14 days', 'Last 30 days', 'This month', 'Date not supplied', 'All history through today']) {
     assert((await period.locator('option').allTextContents()).includes(label), `All Alerts offers ${label}`);
   }
@@ -242,6 +247,7 @@ try {
   console.log('Verified exact All Alerts periods, retained user choice and complete-history company links');
   assert.equal(await page.locator('[data-feed="screener-portfolio-upcoming"]').count(), 1);
   await page.locator('[data-horizon-toggle="upcoming"]').click();
+  assert.equal(await page.locator('[data-alert-arrivals]').count(), 0, 'live arrivals stay in Till Today');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('AGM scheduled'));
   assert.equal(await page.locator('[data-horizon-toggle="upcoming"]').getAttribute('aria-selected'), 'true');
   await page.locator('[data-sources-summary]').click();
@@ -284,6 +290,36 @@ try {
     return !refreshState.isRunning('daily-alerts') && document.querySelector('tbody')?.textContent.includes('Newly arrived NSE record');
   }, null, { timeout: 60000 });
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
+  await page.waitForFunction(() => document.querySelector('[data-arrivals-headline]')?.textContent.includes('Newly arrived NSE record'));
+  assert.equal(await page.locator('[data-arrival-badge]').count(), 1, 'newly received filing is highlighted in the existing table');
+  assert((await page.locator('[data-arrivals-detail]').innerText()).includes('1 received this visit in your filters'));
+  assert((await page.locator('[data-arrivals-headline]').getAttribute('title')).includes('2026-09-04'), 'old source dates never become published-now claims');
+  if (process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT });
+  await page.locator('[data-table-search]').fill('no matching arrival');
+  assert(!(await page.locator('[data-arrivals-detail]').innerText()).includes('received this visit'), 'arrival strip respects search filters');
+  await page.locator('[data-table-search]').fill('Newly arrived NSE record');
+  await page.waitForFunction(() => document.querySelectorAll('[data-arrival-badge]').length === 0, null, { timeout: 25000 });
+  await page.locator('[data-table-search]').fill('');
+  await page.locator('[data-table-search]').fill('Newly arrived NSE record');
+  assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'remounting an old row does not restart the highlight');
+  await page.locator('[data-table-search]').fill('');
+  await period.selectOption('today');
+  version = 3;
+  await page.clock.fastForward(91_000);
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key]')?.textContent.includes('Automatic arrival at the top'), null, { timeout: 60000 });
+  assert.equal(await period.inputValue(), 'today', 'automatic arrival retains Today');
+  assert.equal(await page.locator('[data-table-scroll]').evaluate(node => node.scrollTop), 0, 'newest record is inserted at the top without a click');
+  assert((await page.locator('[data-arrivals-detail]').innerText()).includes('1 received this visit in your filters'));
+  if (process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  assert.equal(await page.locator('.alert-just-arrived td').first().evaluate(node => getComputedStyle(node).animationName), 'none', 'reduced motion keeps a static highlight');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  if (process.env.GENERAL_ALERTS_DARK_SCREENSHOT) {
+    await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; document.body.style.background = '#0f172a'; });
+    await page.screenshot({ path: process.env.GENERAL_ALERTS_DARK_SCREENSHOT });
+    await page.evaluate(() => { delete document.documentElement.dataset.theme; document.body.style.background = '#f6f7fb'; });
+  }
+  await period.selectOption('all');
   console.log('Verified undated search, scope changes and newly arrived filings');
 
   // Stable recall cases and the exact user-reviewed mismatch, independent of today's capture.
@@ -316,6 +352,7 @@ try {
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Session-private fixture'));
   await page.evaluate(() => { window.testContext = { session: {} }; window.testHostMessage(); });
   await page.waitForFunction(() => !document.querySelector('tbody')?.textContent.includes('Session-private fixture'));
+  assert(!(await page.locator('[data-alert-arrivals]').innerText()).includes('Session-private fixture'), 'private receipt disappears with its record');
   assert(await page.evaluate(() => !JSON.stringify(localStorage).includes('Session-private fixture')));
   await page.evaluate(() => window.show('universe'));
   await settled();
@@ -418,6 +455,7 @@ try {
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : 0 };
   });
   assert(beforeRefresh.key && (await page.locator('[data-table-scroll]').evaluate((el) => el.scrollTop)) > 0);
+  version = 4;
   await page.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
   await settled();
   await stableReadingSurface();
@@ -428,6 +466,7 @@ try {
   }, beforeRefresh.key);
   assert.equal(afterRefresh.key, beforeRefresh.key);
   assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
+  assert((await page.locator('[data-arrivals-headline]').innerText()).includes('Arrival while reading older rows'), 'new row arrived above the preserved reading position');
 
   await page.locator('[data-alerts-focus]').click();
   assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'true');
@@ -446,6 +485,7 @@ try {
     await page.setViewportSize({ width, height: 1000 });
     await page.waitForTimeout(300);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), `no page overflow at ${width}px`);
+    if (width === 390 && process.env.GENERAL_ALERTS_MOBILE_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_MOBILE_SCREENSHOT });
   }
   await page.locator('[data-sources-summary]').click();
   const lastSource = page.locator('[data-feed-toggle]').last();
@@ -498,7 +538,7 @@ try {
   await page.goto(`${origin}/embed`);
   const embedded = await (await page.locator('iframe').elementHandle()).contentFrame();
   await settled(embedded);
-  assert.equal(await embedded.getByRole('combobox', { name: 'Date range' }).inputValue(), '3d', 'fresh embedded dashboard also defaults to 3 days');
+  assert.equal(await embedded.getByRole('combobox', { name: 'Date range' }).inputValue(), 'today', 'fresh embedded dashboard also defaults to Today');
   await embedded.getByRole('combobox', { name: 'Date range' }).selectOption('all');
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
     await page.setViewportSize(size);

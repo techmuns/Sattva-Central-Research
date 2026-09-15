@@ -124,14 +124,14 @@ recovery boundaries and local interruption/reload acceptance tests.
 
 ### News delivery integrity (7 September 2026)
 
-**Recent reading defaults (8 September 2026):** at the customer's request, News defaults to Today
-and All Alerts defaults to Last 3 days. Today, Last 3 days, Last 7 days, Last 14 days, Last 30 days
+**Recent reading defaults (updated 15 September 2026):** at the customer's request, News and
+All Alerts default to Today. Today, Last 3 days, Last 7 days, Last 14 days, Last 30 days
 and This month are IST calendar filters; each
 rolling period includes today, and This month can include 31 days. Date not supplied is a separate
 choice: observation timestamps never make undated articles appear current. Portfolio, Watchlist
 and Universe use these same boundaries. All Alerts also retains All history through today,
 Older than 30 days and its unchanged Upcoming horizon. Explicit company "See all" links select
-All history rather than silently applying the 3-day default. Capture cadence, permanent storage,
+All history rather than silently applying the Today default. Capture cadence, permanent storage,
 AI Alerts and research history are unchanged; these are reading windows, not deletion policies.
 
 The recent reader loads only overlapping archive months, including the boundary month needed for

@@ -3,10 +3,14 @@
 Read this before touching anything. `docs/SPEC.md` has the product detail;
 `docs/DATA-CONTRACTS.md` has every JSON shape.
 
-**Reading defaults (8 September 2026):** News opens on Today; All Alerts opens on Last 3 days.
+**Reading defaults (updated 15 September 2026):** News and All Alerts open on Today.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
 All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
+All Alerts' live arrivals strip stays inside Till Today. It follows the existing visible-page
+90-second checks, respects the table filters and uses session receipt times separately from source
+publication dates. Initial history and scope changes establish baselines; only later new identities
+receive a temporary row highlight. Preserve source coverage warnings and chronological ordering.
 IPO Filings opens on Last 7 days (IST), retaining All captured and longer/undated choices;
 explicit company links still open that issuer's complete captured history.
 News uses `recentNews`, separate from the full-history `news` reader in All Alerts / research.
