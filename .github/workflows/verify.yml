@@ -181,6 +181,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-stream-ui.mjs
+      - name: Verify chatter freshness, cached reloads and complete history
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-chatter-reliability-ui.mjs
       - name: Verify Telegram and public chatter portfolio evidence
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -59,7 +59,7 @@ const postReads = [];
 const { page, close } = await researchLocalBrowser({ intercept: async (route, url) => {
   const json = async (body, status = 200) => { await route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) }); return true; };
   if (url.pathname === '/data/telegram-posts.json' || url.pathname === '/api/telegram/posts') return json(failTelegram ? { error: 'fixture outage' } : capture, failTelegram ? 503 : 200);
-  if (url.pathname === '/v1/dashboard') return json({ generatedAt: at, window: '30d', stocks: [
+  if (url.pathname === '/v1/dashboard') return json({ generatedAt: at, window: '30d', overview: { totalPosts: 138 }, pagination: { total: 4, offset: 0, count: 4, hasMore: false }, collection: { intervalMinutes: 120, sources: Object.fromEntries(['valuepickr', 'news', 'tradingqna'].map(source => [source, { state: 'ok', lastSuccessAt: at }])) }, stocks: [
     { ticker: 'jaynecoind', name: 'Jayaswal Neco Industries', mentions: 30, changePct: 200, sentiment: { label: 'neutral' } },
     { ticker: 'stltech', name: 'Sterlite Technologies', mentions: 5 },
     { ticker: 'iifl', name: 'IIFL Finance', mentions: 3 },
@@ -69,7 +69,7 @@ const { page, close } = await researchLocalBrowser({ intercept: async (route, ur
   if (url.pathname.includes('/posts') && url.pathname.startsWith('/v1/stocks/')) {
     const slug = url.pathname.split('/')[3]; postReads.push(slug);
     return json(failPosts ? { error: 'fixture outage' } : { ticker: wrongTopic ? 'wrong-company' : slug, generatedAt: at,
-      counts: { total: 2, filtered: 1 }, posts: [{ id: `post-${slug}`, ticker: slug, source: 'valuepickr', timestamp: at,
+      counts: { total: 1, filtered: 1 }, pagination: { total: 1, offset: 0, count: 1, hasMore: false }, posts: [{ id: `post-${slug}`, ticker: slug, source: 'valuepickr', timestamp: at,
         text: `Literal ${slug} forum text. ${'Discussion context. '.repeat(15)}No independent confirmation.`, url: `https://forum.valuepickr.com/t/${slug}/123?reference=${'a'.repeat(220)}` }] }, failPosts ? 503 : 200);
   }
   return false;
@@ -153,7 +153,7 @@ try {
   assert.equal(empty.sources.find(s => s.id === 'chatter-posts').rows.length, 0);
 
   // Force a stale cache, then fail a fresh read. Prior text survives with partial status.
-  await page.evaluate(async () => { for (const group of (await import('/js/data/chatter-live.js')).loadedPosts()) group.checkedAt = '2020-01-01T00:00:00Z'; });
+  await page.clock.setFixedTime(new Date(Date.parse(at) + 61_000));
   failPosts = true;
   const partial = (await build('Latest chatter on Jayaswal Neco?')).sources.find(s => s.id === 'chatter-posts');
   assert.equal(partial.dataQuality, 'partial'); assert(partial.rows.length); assert.match(partial.note, /failed/);

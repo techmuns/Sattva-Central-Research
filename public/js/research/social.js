@@ -131,7 +131,7 @@ export async function chatterPostEvidence(chatter, entries, plan) {
     // inherit that wait; the shared reader may finish and cache it for a subsequent question.
     let timer;
     try {
-      return await Promise.race([chatter.postsFor(entry.slug, { maxAgeMs: 60_000, timeoutMs: SOCIAL_READ_TIMEOUT_MS }),
+      return await Promise.race([chatter.postsFor(entry.slug, { maxAgeMs: 60_000, requireFresh: true, timeoutMs: SOCIAL_READ_TIMEOUT_MS }),
         new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Chatter posts are still updating.')), SOCIAL_READ_TIMEOUT_MS); })]);
     } finally { clearTimeout(timer); }
   }));

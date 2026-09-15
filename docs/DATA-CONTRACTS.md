@@ -2127,14 +2127,15 @@ ZIP of XML, both of which `node:zlib` and a tag scanner already handle. This rep
 
 ---
 
-## SentimentDash — LIVE, retail chatter, called STRAIGHT FROM THE BROWSER
+## SentimentDash — retained public chatter, read directly from the browser
 
 Companies and topics trending across ValuePickr, TradingQnA and Google News over a rolling 30 days,
 ranked by mention count and keyword-scored for sentiment. Public, unauthenticated, CORS-open.
-Re-scraped twice daily at **01:30 and 13:30 UTC**, so polling faster than hourly asks a question
-whose answer cannot have changed.
+Source checks are requested every two hours through the upstream scheduled collector. Its
+half-hourly scheduling opportunities remain best effort. The page checks every five minutes
+while visible and on return; a saved snapshot paints immediately while revalidation runs.
 
-`GET {base}/dashboard?limit=all` + `GET {base}/health`, where `base` is
+`GET {base}/dashboard?limit=all` (following all pages), where `base` is
 `window.SATTVA_CHATTER_URL` in `public/index.html`, overridable with
 `localStorage['sattva:chatter-base']`. Consumed by `js/data/chatter-live.js`.
 
@@ -2177,11 +2178,11 @@ retreat. Verified against the live endpoint with `curl -D-`:
 | `access-control-expose-headers` | `ETag, X-Data-Generated-At` |
 | `cache-control` | `public, max-age=60, stale-while-revalidate=300` |
 
-So `conditionalJson` revalidates against **their** ETag exactly as it did against ours — a repeat
-fetch answers **304 with no body** — and the device store still means a return visit costs headers.
-Their own `max-age` does the politeness work the edge cache was there for, over data that moves
-twice a day. A side-benefit: Public Chatter is now the one live feed that works when the site is
-served as **plain static files**, with no Worker at all.
+The reader conditionally revalidates with the API ETag and keeps only validated, complete
+responses in the public device store. An unchanged response does not advance source-check
+times. Readable saved rows remain visible after failures; failed or malformed responses never
+replace the last good capture. Public company names are cached separately so cold identity
+resolution does not block a returning reader. Private portfolio membership is not persisted here.
 
 The UI does not render these aggregate facts as a KPI strip. Coverage, total posts and source
 split, market mood and scrape timing are printed as one footnote beneath the active in-page tab.
@@ -2248,26 +2249,40 @@ nothing.
 }
 ```
 
-`health.ageSeconds` is **their** figure, from their `/health` route — how stale the scrape is
-according to the only clock that is authoritative about it, rather than a subtraction between
-their `generatedAt` and ours.
+### Source health, cached reads and retained history
 
-### Failure is reported by kind, and a failed read is never an empty one
+`chatter.meta().health` evaluates `collection.sources` from the dashboard snapshot.
+`generatedAt` is snapshot assembly time. `checkedAt` is a browser/API read, not a source check.
+Only all three recent successful source checks yield “Updated”; missing source metadata is
+unconfirmed, incomplete source work is partial, and a check more than twice the requested
+interval old is delayed. An API failure leaves readable rows with “Saved data”. A 304 or a
+recently rebuilt archive cannot turn stale collection green. Research evidence follows the
+same source-health rules, and awaits bounded fresh detail reads instead of treating a failed
+background check as successful evidence.
 
-`entries: []` only ever travels with `ok: false` and a `reason`, and the tab renders a named panel
-rather than an empty table.
+`GET /archive` exposes retained topics including companies outside the recent list.
+`GET /archive/{slug}/{YYYY-MM}` reads monthly captures with pagination. The reader caches
+complete responses, opens them immediately, then revalidates. All pages are fetched (with an
+explicit failure at the supported safety bound), while only 40 post cards are mounted initially.
+Show more and Load older captured mentions expose the remaining records. The open recent
+mention dialog follows summary changes automatically. Status-only checks preserve the mounted
+search/table; changed data preserves search focus and selection. All poll/listener ownership
+ends when leaving the tab.
 
-| `reason` | Means | What to do |
-| --- | --- | --- |
-| `no-url` | no base configured | set `window.SATTVA_CHATTER_URL` in `public/index.html` |
-| `not-found` | 404 from the host | check the base ends in `/v1` — **and see the 1042 note above if the caller is a Worker** |
-| `unreachable` | the request never completed — DNS, offline, or a refused CORS preflight | wait; the poll retries |
-| `upstream` | it answered with an error status | wait; the poll retries |
-| `shape` | answered, but not in the documented shape | their contract changed |
+The upstream retains topic/month post files independently of its 30-day summary. A failed
+source keeps its last captured layer. Forum head reads and historical reconciliation have
+separate persisted progress, and source cooldowns survive job boundaries. Initial Git-history
+recovery is resumable; the API exposes progress and excludes the original synthetic examples.
+A captured-history archive is not an exhaustive source archive: uncaptured or deleted records
+may be unrecoverable, RSS discovery is bounded, and company matching is heuristic. Matched
+holdings never mean every holding was checked. The footer discloses these limits and actual
+source times. Telegram has its own independent capture contract below.
 
-The `not-found` wording is the one that had to be rewritten. It used to read *"check that it ends
-in /v1 and that the API is deployed"*, which pointed at the one thing that was fine. **A named
-state that names the wrong thing is worse than an unnamed one.**
+Local acceptance: `scripts/verify-chatter-reliability-ui.mjs` tests immediate saved reloads,
+source delay/partial/failure states, conditional refresh, recovery after inactivity, complete
+pagination beyond 1000, archived-only companies, monthly history, invalid snapshot rejection,
+focus preservation and mobile layout. `scripts/verify-research-social.mjs` checks the research
+consumer's warm reuse, failed detail reads and recovery.
 
 ### Verifying without egress — `scripts/stub-chatter.mjs`
 

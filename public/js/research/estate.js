@@ -947,7 +947,7 @@ const BUILDERS = [
     load: () => chatter.load(),
     read({ scope, plan }) {
       const meta = chatter.meta() || {};
-      if (meta.ok !== true) throw new Error(`Public Chatter could not be read (${meta.reason || 'unknown upstream state'}).`);
+      if (!meta.readable) throw new Error(`Public Chatter could not be read (${meta.reason || 'unknown upstream state'}).`);
       const rows = plan.companies.length ? chatter.companies() : chatter.forScope(scope);
       const unresolved = chatter.uncovered();
       const byMentions = (a, b) => (b.mentions ?? 0) - (a.mentions ?? 0);
@@ -955,7 +955,9 @@ const BUILDERS = [
         source: 'SentimentDash — ValuePickr, TradingQnA, Google News',
         asOf: meta.generatedAt || meta.checkedAt || null,
         rowCount: rows.length + unresolved.length,
-        coverage: { coveredRowsInScope: rows.length, coveredCompanies: meta.companies, unresolvedTopics: unresolved.length, totalTopics: meta.total, window: meta.window },
+        dataQuality: meta.health?.state === 'updated' ? 'source-reported' : 'partial',
+        note: 'Public-source discovery does not establish complete company coverage. ' + (meta.health?.label || 'Source checks are unconfirmed.'),
+        coverage: { coveredRowsInScope: rows.length, coveredCompanies: meta.companies, unresolvedTopics: unresolved.length, totalTopics: meta.total, window: meta.window, sourceChecks: meta.collection?.sources || null, archive: meta.collection?.archive || null },
         definition: 'mentionCountChangePct is a change in mention count between scrapes, not a price return. Unresolved topics have no reliable ticker and are never assigned to a company.',
         unresolvedTopics: {
           status: 'unresolved-company-mapping',
@@ -975,9 +977,9 @@ const BUILDERS = [
       return sourcePacket(this.id, {
         source: 'Public Chatter company detail — ValuePickr, TradingQnA, Google News',
         asOf: detail.asOf, rowCount: detail.rows.length, coverage: detail.coverage,
-        dataQuality: detail.failures || chatter.meta()?.ok !== true ? 'partial' : 'source-reported',
-        definition: 'Unverified discussion excerpts, not filings or established facts. Up to 6 company topics read per question, up to 1000 posts per topic; dates belong to posts. Missing or sampled posts do not mean no discussion.',
-        note: detail.failures ? 'Some post reads failed; retained posts remain dated to their original capture. Coverage is incomplete.' : 'Source text is excerpted; open each original URL for the complete post. Unmapped topics cannot establish portfolio-company coverage.',
+        dataQuality: detail.failures || chatter.meta()?.health?.state !== 'updated' ? 'partial' : 'source-reported',
+        definition: 'Unverified discussion excerpts, not filings or established facts. Up to 6 company topics read per question, all available pages per requested topic, within the question deadline; dates belong to posts. Missing or sampled posts do not mean no discussion.',
+        note: detail.failures ? 'Some post reads failed; retained posts remain dated to their original capture. Coverage is incomplete.' : `Source text is excerpted; open each original URL for the complete post. Unmapped topics cannot establish portfolio-company coverage. ${chatter.meta()?.health?.label || 'Source checks unconfirmed.'}`,
         ...chooseRows(detail.rows, plan, row => ({ ticker: row.ticker, company: row.company, topic: row.topic,
           date: row.at, source: row.sourceLabel || row.source, author: row.author || row.handle,
           text: row.text, textTruncated: row.textTruncated, url: row.url,

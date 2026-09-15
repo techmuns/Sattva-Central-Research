@@ -26,6 +26,7 @@ import { escapeHtml } from '../core/dom.js';
 import { snapshotForRow } from '../core/bookmark-record.js';
 import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
 let mentionBookmarkOff = null;
+let mentionLiveOff = null;
 import { formatDate, formatNumber, formatRelativeTime, formatTime } from '../core/format.js';
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
@@ -63,6 +64,8 @@ let mentionRequestToken = 0;
 // destroy so a fresh navigation always honours the link again.
 let routeCompany = null;
 let openedFor = null;
+let paintedChatter = null;
+let historyCatalogueOff = null;
 
 const SECTIONS = [
   { id: 'coverage', label: 'Coverage' },
@@ -161,9 +164,13 @@ export function render(ctx) {
 
 export function destroy() {
   mentionBookmarkOff?.(); mentionBookmarkOff = null;
+  mentionLiveOff?.(); mentionLiveOff = null;
+  historyCatalogueOff?.(); historyCatalogueOff = null;
+  mentionRequestToken++;
   renderToken++;
   cleanup();
   chatterSection = 'coverage';
+  tableViews = { covered: null, other: null, telegram: null };
   // Forget the deep-link so returning to the same company from another chatter alert re-seeds and
   // re-opens rather than being silently ignored as "unchanged".
   routeCompany = null;
@@ -179,7 +186,7 @@ function cleanup() {
       console.error('[chatter] cleanup failed', err);
     }
   }
-  tableViews = { covered: null, other: null, telegram: null };
+  paintedChatter = null;
 }
 
 function clearPaint() {
@@ -215,18 +222,32 @@ const loadingHtml = () => `
 // ---------------------------------------------------------------------------------------
 
 function paint(ctx) {
-  clearPaint();
   const m = chatter.meta();
-  const chatterOk = !!m?.ok;
+  const chatterOk = !!m?.readable;
   // A THIRD STATE, AND IT ONLY BECAME NECESSARY WITH THE SECOND FEED. `chatter.meta()` is null
   // until its cache is built, so `!ok` means BOTH "could not be read" and "has not answered yet".
   // That was harmless while paint() ran only after the chatter load settled; now the Telegram
   // capture — a local file — routinely settles first and paints, and the chatter sections would
   // flash "the feed could not be reached" over a request still in flight. A half-finished read
   // must not be allowed to give a finished answer.
-  const chatterPending = !chatterOk && !chatter.isLoaded() && !m;
+  const chatterPending = !chatterOk && (!chatter.isLoaded() || m?.checking);
   const activeSection = SECTIONS.some((item) => item.id === chatterSection) ? chatterSection : SECTIONS[0].id;
   const onTelegram = activeSection === 'telegram';
+  // A source check or a mention-popup update must not replace the focused table controls.
+  if (!onTelegram && chatterOk && paintedChatter?.rows === chatter.all() &&
+      paintedChatter.scope === ctx.scope && paintedChatter.section === activeSection &&
+      ctx.root.querySelector('[data-chatter-head-meta]')) {
+    ctx.root.querySelector('[data-chatter-head-meta]').innerHTML = chatterHeadMeta(ctx, m);
+    ctx.root.querySelector('[data-chatter-footnotes]')?.replaceWith(htmlElement(chatterFootnotes(m)));
+    wireHistoryButton(ctx);
+    return;
+  }
+  const search = ctx.root.querySelector('[data-table-search]');
+  const searchValue = search?.value;
+  const focusedSearch = search && document.activeElement === search;
+  const selection = focusedSearch ? [search.selectionStart, search.selectionEnd] : null;
+  const scrollTop = ctx.root.querySelector('[data-table-scroll]')?.scrollTop || 0;
+  clearPaint();
 
   // THE TAB NO LONGER DIES WITH ONE FEED, AND THAT IS THE WHOLE REASON THIS FUNCTION WAS
   // RESTRUCTURED. It used to return early on `!m.ok` and render the unavailable panel as the entire
@@ -263,7 +284,7 @@ function paint(ctx) {
   } else if (!chatterOk) {
     panel = unavailablePanel(m?.reason, m?.url);
   } else if (activeSection === 'coverage') {
-    panel = `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : emptyCovered(ctx.scope)}`;
+    panel = `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : m.resolving ? '<p class="text-sm text-slate-500">Matching companies…</p>' : emptyCovered(ctx.scope)}`;
   } else {
     panel = `${sectionHead({
       title: 'Not in our coverage',
@@ -278,9 +299,7 @@ function paint(ctx) {
       description: onTelegram ? telegramDescription() : chatterOk ? description(m.window) : meta.subtitle,
       meta: onTelegram
         ? telegramHeadMeta()
-        : chatterOk
-          ? `<div class="flex flex-wrap items-center justify-end gap-2">${livePill(m)}${scopeSummary({ scope: ctx.scope, count: covered.length, noun: `mentioned · ${m.window}`, book: coverage.meta() })}</div>`
-          : '',
+        : `<div data-chatter-head-meta class="flex flex-wrap items-center justify-end gap-2">${chatterHeadMeta(ctx, m)}</div>`,
     })}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-chatter-section-tabs>
       ${sectionTabs.html}
@@ -295,42 +314,126 @@ function paint(ctx) {
   if (coveredTable) paintDisposers.push(coveredTable.wire(ctx.root));
   if (otherTable) paintDisposers.push(otherTable.wire(ctx.root));
   if (telegramTable) paintDisposers.push(telegramTable.wire(ctx.root));
+  wireHistoryButton(ctx);
+  if (!onTelegram) {
+    const scroller = ctx.root.querySelector('[data-table-scroll]');
+    if (scroller) scroller.scrollTop = scrollTop;
+    if (focusedSearch) {
+      const replacement = ctx.root.querySelector('[data-table-search]');
+      if (replacement && searchValue != null) replacement.value = searchValue;
+      replacement?.focus({ preventScroll: true });
+      if (selection) replacement?.setSelectionRange(...selection);
+    }
+  }
+  paintedChatter = chatterOk && !onTelegram ? { rows: chatter.all(), scope: ctx.scope, section: activeSection } : null;
 }
+
+function htmlElement(html) { const template = document.createElement('template'); template.innerHTML = html.trim(); return template.content.firstElementChild; }
+function chatterHeadMeta(ctx, m) {
+  return `${m ? livePill(m) : ''}${m?.readable ? scopeSummary({ scope: ctx.scope, count: new Set(chatter.forScope(ctx.scope).map(row => row.ticker)).size, noun: `mentioned · ${m.window}`, book: coverage.meta() }) : ''}
+    <button data-chatter-history class="rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-indigo-600 ring-1 ring-slate-200">Captured history</button>`;
+}
+function wireHistoryButton(ctx) { ctx.root.querySelector('[data-chatter-history]')?.addEventListener('click', () => openHistoryCatalogue(ctx)); }
 
 /**
  * Open the real items behind one dashboard count. The detail request is lazy so this table stays a
- * single fetch, while a second click on the same company is served from the small in-memory cache.
+ * small summary read, while repeated company visits use the saved mentions cache.
  */
 function openMentions(entry) {
   if (!entry?.slug) return;
+  historyCatalogueOff?.(); historyCatalogueOff = null;
   mentionBookmarkOff?.(); mentionBookmarkOff = null;
+  mentionLiveOff?.(); mentionLiveOff = null;
   const token = ++mentionRequestToken;
+  const months = Object.keys(entry.archiveTopic?.months || {}).sort().reverse();
+  const archived = !!entry.archiveTopic;
+  let monthIndex = 0, visibleLimit = 40, payloads = new Map();
   openModal(mentionsFrame(entry), {
     size: 'wide',
     onClose: () => {
       mentionBookmarkOff?.(); mentionBookmarkOff = null;
+      mentionLiveOff?.(); mentionLiveOff = null;
       if (token === mentionRequestToken) mentionRequestToken++;
     },
   });
-
-  chatter
-    .postsFor(entry.slug)
-    .then((payload) => {
-      if (token !== mentionRequestToken) return;
-      const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
-      if (body) {
-        body.innerHTML = mentionsBody(entry, payload);
-        mentionBookmarkOff = wireBookmarks(body, button => {
-          const post = payload.posts?.[Number(button.closest('[data-mention-index]')?.dataset.mentionIndex)];
-          return post && mentionSnapshot(post, entry);
-        });
-      }
-    })
-    .catch((error) => {
-      if (token !== mentionRequestToken) return;
-      const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
-      if (body) body.innerHTML = mentionsError(error);
+  const apply = (payload, month = '') => {
+    if (token !== mentionRequestToken) return;
+    payloads.set(month, payload);
+    const all = [...new Map([...payloads.values()].flatMap(value => value.posts || []).map(post => [post.id, post])).values()]
+      .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    const combined = { ...payload, posts: all, visibleLimit, archived, total: archived ? entry.mentions : payload.total };
+    const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
+    if (!body) return;
+    const dialog = body.closest('[data-chatter-mentions-dialog]'), top = dialog.scrollTop;
+    mentionBookmarkOff?.();
+    body.innerHTML = mentionsBody(entry, combined) + (archived && visibleLimit >= all.length && monthIndex < months.length - 1
+      ? '<button data-chatter-older class="mt-4 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600">Load older captured mentions</button>' : '');
+    mentionBookmarkOff = wireBookmarks(body, button => {
+      const post = all[Number(button.closest('[data-mention-index]')?.dataset.mentionIndex)];
+      return post && mentionSnapshot(post, entry);
     });
+    body.querySelector('[data-chatter-older]')?.addEventListener('click', event => { event.currentTarget.disabled = true; monthIndex++; void read(months[monthIndex]); });
+    body.querySelector('[data-chatter-more]')?.addEventListener('click', () => { visibleLimit += 40; apply(payload, month); });
+    body.querySelector('[data-chatter-mention-history]')?.addEventListener('click', async event => {
+      event.currentTarget.disabled = true;
+      try {
+        const index = await chatter.archiveTopics();
+        if (token !== mentionRequestToken) return;
+        const topic = index.topics.find(topic => topic.ticker === entry.slug);
+        if (!topic) throw new Error('No older captures have been published for this company yet.');
+        openMentions({ ...entry, mentions: topic.count, archiveTopic: topic });
+      } catch (error) { if (token === mentionRequestToken) body.querySelector('[data-mention-status]').textContent = error.message; }
+    });
+    dialog.scrollTop = top;
+  };
+  const read = (month, force = false) => chatter.postsFor(entry.slug, { month, force, onUpdate: payload => apply(payload, month) })
+    .then(payload => apply(payload, month)).catch(error => {
+      if (token !== mentionRequestToken) return;
+      const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
+      if (!body) return;
+      if (payloads.size) {
+        const status = body.querySelector('[data-mention-status]');
+        if (status) status.textContent = `Saved mentions remain available. ${error.message}`;
+        if (archived) { monthIndex = Math.max(0, monthIndex - 1); const button = body.querySelector('[data-chatter-older]'); if (button) button.disabled = false; }
+      } else body.innerHTML = mentionsError(error);
+    });
+  void read(months[0]);
+  let generation = chatter.meta()?.generatedAt;
+  if (!archived) mentionLiveOff = chatter.onChange(() => {
+    const next = chatter.meta()?.generatedAt;
+    if (next && next !== generation) { generation = next; void read(undefined, true); }
+  });
+}
+
+function openHistoryCatalogue(ctx) {
+  historyCatalogueOff?.(); historyCatalogueOff = null;
+  mentionLiveOff?.(); mentionLiveOff = null;
+  const token = ++mentionRequestToken;
+  openModal('<div class="p-6"><div class="mb-4 flex items-center justify-between"><h2 class="text-xl font-bold text-slate-900">Captured mention history</h2><button data-modal-close aria-label="Close history" class="text-2xl text-slate-400">&times;</button></div><div data-chatter-history-body>Loading captured history…</div></div>', {
+    size: 'wide', onClose: () => { historyCatalogueOff?.(); historyCatalogueOff = null; if (token === mentionRequestToken) mentionRequestToken++; },
+  });
+  let view = null;
+  const paintHistory = value => {
+    if (token !== mentionRequestToken) return;
+    const body = document.querySelector('[data-chatter-history-body]');
+    if (!body) return;
+    historyCatalogueOff?.();
+    const resolved = chatter.resolveArchiveTopics(value);
+    const rows = chatterSection === 'not-in-coverage' ? resolved.filter(row => !row.ticker) : chatter.forScope(ctx.scope, resolved.filter(row => row.ticker));
+    const table = scoreTable({ rows, key: row => row.slug, name: row => row.name, sub: row => row.ticker || row.slug,
+      nameLabel: 'Company / topic', showRank: false, showAvatar: false, showWatchFilter: false,
+      watchKey: () => null, searchable: row => `${row.name} ${row.ticker || ''} ${row.slug}`,
+      initialSort: { key: 'Latest mention', dir: 'desc' }, initialView: view,
+      columns: [{ label: 'Captured mentions', get: row => formatNumber(row.mentions), sortValue: row => row.mentions },
+        { label: 'Latest mention', get: row => formatDate(row.archiveTopic.latestAt), sortValue: row => row.archiveTopic.latestAt || '' }],
+      onRowClick: openMentions, stickyHead: '50vh', emptyMessage: 'No captured topics match this scope yet.' });
+    body.innerHTML = `<p class="mb-4 text-xs text-slate-500">Retained captures since ${escapeHtml(formatDate(value.startedAt))}. ${value.recovery?.complete === false ? 'Older captures are still being recovered. ' : ''}Source coverage can have gaps; this is not an exhaustive archive.${value.checking ? ' Checking for updates…' : ''}${value.error ? ' The update is unavailable; showing saved history.' : ''}</p>${table.html}`;
+    const off = table.wire(body);
+    historyCatalogueOff = () => { view = table.view; off?.(); };
+  };
+  chatter.archiveTopics({ onUpdate: paintHistory }).then(paintHistory).catch(error => {
+    if (token === mentionRequestToken) { const body = document.querySelector('[data-chatter-history-body]'); if (body) body.textContent = error.message; }
+  });
 }
 
 function mentionsFrame(entry) {
@@ -341,7 +444,7 @@ function mentionsFrame(entry) {
           <div class="min-w-0">
             <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Public mentions</p>
             <h2 class="font-display mt-1 text-xl font-bold text-slate-900">${escapeHtml(entry.name)}</h2>
-            <p class="mt-1 text-xs text-slate-500">${escapeHtml(formatNumber(entry.mentions))} mentions in the latest ${escapeHtml(chatter.meta()?.window || '30d')} snapshot · ${escapeHtml(entry.sourceLabel || 'Source not reported')}</p>
+            <p class="mt-1 text-xs text-slate-500">${escapeHtml(formatNumber(entry.mentions))} ${entry.archiveTopic ? 'captured mentions across retained history' : `mentions in the latest ${escapeHtml(chatter.meta()?.window || '30d')} snapshot · ${escapeHtml(entry.sourceLabel || 'Source not reported')}`}</p>
           </div>
           <button type="button" data-modal-close aria-label="Close mentions" class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
         </div>
@@ -357,20 +460,23 @@ function mentionsFrame(entry) {
 
 function mentionsBody(entry, payload) {
   const posts = payload.posts || [];
+  const visible = posts.slice(0, payload.visibleLimit || 40);
   const total = payload.total ?? posts.length;
-  const moved = total !== entry.mentions;
-  const rows = posts.map((post, index) => mentionRow(post, entry, index)).join('');
+  const moved = !payload.archived && total !== entry.mentions;
+  const rows = visible.map((post, index) => mentionRow(post, entry, index)).join('');
   return `
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
       <p data-chatter-mention-total data-detail-total="${escapeHtml(String(total))}" data-snapshot-total="${escapeHtml(String(entry.mentions))}">
-        Showing ${escapeHtml(formatNumber(posts.length))} of ${escapeHtml(formatNumber(total))} mention${total === 1 ? '' : 's'}, newest first.
+        Showing ${escapeHtml(formatNumber(visible.length))} of ${escapeHtml(formatNumber(total))} mention${total === 1 ? '' : 's'}, newest first.
         ${moved ? `<strong class="font-semibold text-amber-700">The detail feed has changed since the ${escapeHtml(formatNumber(entry.mentions))}-mention snapshot above.</strong>` : ''}
       </p>
       <p>Short excerpt only · open the source for the full context.</p>
     </div>
+    <p data-mention-status class="mb-3 text-xs text-slate-500">${payload.error ? `Update unavailable. ${escapeHtml(payload.error)} Saved mentions remain visible.` : payload.checking ? 'Showing saved or already received mentions while checking for updates…' : ''}</p>
+    ${!payload.archived ? '<button data-chatter-mention-history class="mb-4 text-xs font-semibold text-indigo-600">View captured history</button>' : ''}
     <div class="space-y-3" data-chatter-mention-list>
       ${rows || `<div class="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No mention details were returned for ${escapeHtml(entry.name)}.</div>`}
-    </div>`;
+    </div>${visible.length < posts.length ? '<button data-chatter-more class="mt-4 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600">Show more mentions</button>' : ''}`;
 }
 
 function mentionSnapshot(post, entry) {
@@ -439,15 +545,24 @@ function chatterFootnotes(m) {
     ? `${escapeHtml(mood.labelText)} (${escapeHtml(String(mood.percent.bullish))}% bullish, ${escapeHtml(String(mood.percent.bearish))}% bearish, ${escapeHtml(String(mood.percent.neutral))}% neutral)`
     : 'not reported';
   const scrapeText = m.generatedAt ? formatRelativeTime(new Date(m.generatedAt)) : 'not reported';
-  const sourceAge = m.ageSeconds != null ? `${Math.round(m.ageSeconds / 3600)}h old by the source clock` : 'source age unavailable';
+  const sourceAge = m.ageSeconds != null ? `${Math.round(m.ageSeconds / 3600)}h since this snapshot` : 'source age unavailable';
   return `
     <div data-chatter-footnotes class="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
       <p><strong class="font-semibold text-slate-600">Footnotes.</strong>
         Coverage: ${escapeHtml(formatNumber(m.companies))} of ${escapeHtml(formatNumber(m.total))} feed entries resolve to a company we cover.
         Posts: ${m.totalPosts == null ? 'not reported' : escapeHtml(formatNumber(m.totalPosts))} over ${escapeHtml(m.window)}, across ${escapeHtml(sourceSummary(m.sourceTotals))}.
         Market mood: ${moodText}; keyword-scored by SentimentDash and reproduced unchanged.
-        Last scrape: ${escapeHtml(scrapeText)} (${escapeHtml(sourceAge)}); scheduled at 01:30 and 13:30 UTC.
+        Last scrape: ${escapeHtml(scrapeText)} (${escapeHtml(sourceAge)}).
+        Company matches count mentions found, not successful checks of every holding.
       </p>
+      <details class="mt-2"><summary class="cursor-pointer font-semibold">Source coverage and captured history</summary><div class="mt-2 space-y-1">
+        ${['valuepickr', 'news', 'tradingqna'].map(key => {
+          const source = m.collection?.sources?.[key];
+          return `<p>${escapeHtml(chatter.sourceLabel(key))}: ${source?.lastSuccessAt ? `last successful check ${escapeHtml(formatDate(source.lastSuccessAt))} · ${escapeHtml(formatTime(source.lastSuccessAt))}` : 'successful check not reported'}${source?.state && source.state !== 'ok' ? ` · ${escapeHtml(source.state)}` : ''}${source?.history?.complete === false ? ' · history catch-up in progress' : ''}.</p>`;
+        }).join('')}
+        <p>Source checks are requested every two hours; scheduling and sources can delay delivery. This page checks for published updates every five minutes while visible and on return. Saved data stays available through a failed check.</p>
+        <p>Forums and broad news searches discover mentions; they do not verify every company or every public post. Captured history is retained separately from this 30-day view. ${m.collection?.archive?.recovery?.complete === false ? 'Earlier real captures are still being recovered.' : ''}</p>
+      </div></details>
     </div>`;
 }
 
@@ -528,14 +643,13 @@ function buildTopCards(rows) {
   });
 }
 
-/** The passive green Live status label. */
-const livePill = (m) => `
-  <span data-chatter-live
-    class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-    <span>Live</span>
-    <span class="font-medium text-emerald-600">${escapeHtml(formatNumber(m.total))} entries · ${escapeHtml(m.window)}</span>
-  </span>`;
+/** A readable response does not certify the source collector. */
+const livePill = (m) => {
+  const health = m.health || { state: 'unconfirmed', label: 'Source checks unconfirmed' };
+  const tone = health.state === 'updated' ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : health.state === 'checking' ? 'bg-slate-50 text-slate-600 ring-slate-200' : 'bg-amber-50 text-amber-800 ring-amber-200';
+  const time = health.checkedAt ? ` · ${formatRelativeTime(health.checkedAt)}` : '';
+  return `<span data-chatter-live data-chatter-state="${escapeHtml(health.state)}" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${tone}">${escapeHtml(health.label + time)}</span>`;
+};
 
 // ---------------------------------------------------------------------------------------
 // Tables
@@ -586,7 +700,8 @@ function buildCoveredTable(rows) {
   if (!rows.length) return null;
   const table = scoreTable({
     rows,
-    key: (r) => r.ticker,
+    key: (r) => r.slug,
+    watchKey: (r) => r.ticker,
     name: (r) => r.name,
     sub: (r) => `${r.ticker}${r.matchedName && r.matchedName !== r.name ? ` · ${r.matchedName}` : ''}`,
     // A FUNCTION, not `true`. `scoreTable` calls `searchable(row)` to build the haystack (screener.js),
@@ -660,8 +775,8 @@ const emptyCovered = (scope) => `
     }</h3>
     <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-600">${
       scope === 'portfolio'
-        ? 'The feed was read successfully; none of its entries resolved to a company in the book. That is an answer, not a gap — switch to Universe to see everything it did carry.'
-        : 'The feed was read successfully; no entry resolved to a symbol in our universe or the book. Everything it carried is in the section below.'
+        ? 'No mentions matched the current book in this captured snapshot. Discovery sources do not check every holding; switch to Universe or captured history to browse more.'
+        : 'No captured mentions matched this scope. Source discovery and identity matching can have gaps; browse Not in coverage or captured history for more.'
     }</p>
   </div>`;
 

@@ -1095,12 +1095,14 @@ function fromChatter({ day, wanted, includeHistory }) {
   });
   return {
     events,
-    status: m.ok === false ? 'failed' : 'ok',
-    reachesToday: m.ok === false ? false : generatedDay === day,
-    asOf: latestConfirmation(m.checkedAt, m.generatedAt),
+    status: m.ok === false ? 'failed' : m.health?.state === 'updated' ? 'ok' : 'partial',
+    reachesToday: m.health?.state === 'updated' && istDay(m.health.checkedAt) === day,
+    asOf: m.health?.checkedAt ? new Date(m.health.checkedAt).toISOString() : null,
     note: m.ok === false
       ? `Public Chatter could not be confirmed (${m.reason || 'upstream'}).${events.length ? ' Retained rows remain visible.' : ''}`
-      : generatedDay === day
+      : m.health?.state !== 'updated'
+        ? `${m.health?.label || 'Source checks unconfirmed'}. Captured discussion remains visible; company coverage is not exhaustive.`
+        : generatedDay === day
         ? null
         : `Public Chatter is a rolling snapshot last generated on ${generatedDay || 'an unknown date'}; it is not a post-by-post event log.`,
   };

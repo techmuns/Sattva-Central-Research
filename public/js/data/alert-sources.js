@@ -182,7 +182,7 @@ export const ADDITIONAL_SOURCES = [
       return group.posts.map((r) => record({ id: `chatter-post:${r.source}:${r.id}:${group.slug}`, row: r, at: r.at,
         ticker: company?.ticker, company: company?.name || group.name || group.slug,
         headline: r.text, detail: [r.sourceLabel, r.author || r.handle].filter(Boolean).join(' · '), url: r.url, kind: 'post' }));
-    }), ...confirmed(chatter.meta()?.generatedAt, day), status: 'on-demand',
+    }), asOf: chatter.meta()?.health?.checkedAt ? new Date(chatter.meta().health.checkedAt).toISOString() : null, reachesToday: false, status: 'on-demand',
       note: 'Only detail pages already requested in Public Chatter are loaded. Company summaries are bulk-loaded separately; individual-post coverage is not complete.' }) },
   { id: 'company-documents', label: 'Company documents', tab: 'corp-announcements', what: 'All successful combined-filings lookup results from this session, before tab-specific filters.',
     load: null, read: ({ day }) => privateDocuments('company-documents', day) },

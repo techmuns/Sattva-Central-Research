@@ -1,419 +1,277 @@
-// data/chatter-live.js — the live retail-chatter feed (SentimentDash), loaded once and cached.
-//
-//   load()                    fetch, resolve, cache
-//   companies() / uncovered() the two sections
-//   forScope(scope)           narrow the covered half to the book
-//   meta()                    counts, freshness, provenance
-//   startLive(live) / stopLive(live) / onChange(fn) / newArrivals()
-//
-// WHAT THIS FEED IS
-//   Companies and topics trending across ValuePickr, TradingQnA and Google News over a rolling 30
-//   days, counted and keyword-scored by SentimentDash. THE COUNTS AND THE SENTIMENT ARE THEIRS and
-//   are reproduced, never re-banded — the same rule the Con-call tab follows with StockScans'
-//   result score. The one thing derived here is the NSE symbol, because their payload has none.
-//
-// TWO NUMBERS THAT ARE NOT WHAT THEY LOOK LIKE
-//   `mentionsChangePct` is a change in MENTION COUNT between scrapes. There is no price anywhere
-//   in this API. It is named that way in `sentiment-shared.js` precisely so nothing downstream can
-//   render it as a return by reading the field name, and no surface may colour it like a P&L.
-//   `sparkline` is a per-RUN series, not per-day — points are scrapes, so nothing may put a time
-//   axis under it.
-//
-// THE SPLIT INTO TWO SECTIONS IS A COVERAGE STATEMENT, NOT A TAXONOMY
-//   Entries are discovered bottom-up from forum topics, so the feed mixes companies we cover,
-//   companies we do not, foreign names (`cisco`, `spacex`, `ubs`) and bare themes (`fiis`,
-//   `income`). We do not attempt to say which is which — that would be a judgement we cannot
-//   support. We say only what we can test: whether the slug resolves to a symbol in our own
-//   coverage. Measured on a real run: 45 of 219 do.
-//
-// THE POLL IS HOURLY, AND THAT IS ALREADY GENEROUS
-//   The upstream re-scrapes twice a day, at 01:30 and 13:30 UTC. Anything faster asks a question
-//   whose answer cannot have changed, and an unchanged poll is a bodyless 304 against their ETag.
-
-import { conditionalJson, revalidatedJson, KEYS } from '../core/store.js';
-import { buildResolverIndex, resolveAll, fingerprint, normaliseDashboard, normalisePosts, SOURCE_LABEL } from './sentiment-shared.js';
+// Public Chatter: paint validated device data first, then revalidate the public API.
+// Source publication/check times are never replaced by a browser cache or transport timestamp.
+// The API is called directly: same-account workers.dev proxy calls require service bindings.
+import { readEntry, writeEntry, revalidatedJson, KEYS } from '../core/store.js';
+import { buildResolverIndex, resolveAll, normaliseDashboard, normalisePosts, SOURCE_LABEL } from './sentiment-shared.js';
+import { chatterHealth } from './chatter-health.js';
 import * as coverage from './coverage.js';
 import { filterByScope } from './scope.js';
 
 export const LIVE_ID = 'chatter-live';
-const POLL_MS = 60 * 60 * 1000; // hourly — see the header
-const STORE_KEY = KEYS.chatter;
-
-/**
- * THE BROWSER CALLS THIS API DIRECTLY. IT IS NOT PROXIED, AND IT CANNOT BE.
- *
- * It was, through `/api/chatter` on our own Worker, for the reasons every other upstream is: one
- * fetch per cache window instead of one per reader, and somewhere to turn a failure into a named
- * state. That shipped and returned 404 in production while `curl` got 200 from the same URL.
- *
- * The cause is a platform rule, not our code. **Cloudflare refuses a subrequest from one Worker to
- * another Worker's `*.workers.dev` hostname on the same account** — error 1042, "Worker tried to
- * fetch from another Worker on the same zone, which is not allowed" — and surfaces the refusal as
- * a 404, which is indistinguishable from the upstream not being there. Our other three upstreams
- * (moneycontrol.com, stockscans.in, devde.muns.io) are all off-zone, so this is the only one that
- * could ever have hit it. The relaxation Cloudflare offers applies to custom domains, not to
- * workers.dev.
- *
- * So the browser calls it, exactly as it already calls the Concall Deep Dive Worker — also on
- * workers.dev, also direct, and working for precisely this reason.
- *
- * NOTHING IS LOST BY DOING SO, WHICH IS WHY THIS IS A FIX AND NOT A RETREAT. Verified against the
- * live endpoint: `access-control-allow-origin: *`, `access-control-expose-headers: ETag`, and
- * `If-None-Match` answered with a bodyless 304. So `conditionalJson` revalidates against their tag
- * exactly as it did against ours, and the device store still means a repeat visit costs headers.
- * Their own `cache-control: public, max-age=60, stale-while-revalidate=300` does the politeness
- * work the edge cache was there for, over data that only moves twice a day.
- */
+const POLL_MS = 5 * 60000;
 const DEFAULT_BASE = 'https://sentimentdash-api.tech-441.workers.dev/v1';
-
-/** `localStorage` first so a verification run can point the whole feed at a stub. */
 function baseUrl() {
-  try {
-    const override = localStorage.getItem('sattva:chatter-base');
-    if (override) return override.replace(/\/+$/, '');
-  } catch { /* storage disabled — fall through */ }
-  const configured = typeof window !== 'undefined' ? window.SATTVA_CHATTER_URL : null;
-  return String(configured || DEFAULT_BASE).replace(/\/+$/, '');
+  try { const override = localStorage.getItem('sattva:chatter-base'); if (override) return override.replace(/\/+$/, ''); } catch {}
+  return String(globalThis.window?.SATTVA_CHATTER_URL || DEFAULT_BASE).replace(/\/+$/, '');
 }
-
-let loadPromise = null;
-let cache = null;
-let resolverIndex = null;
-let seenSlugs = null; // populated on first load; anything new after that is an arrival
-let arrivals = [];
-const listeners = new Set();
-const postsCache = new Map();
-const postsInFlight = new Map();
-
-export function load() {
-  if (cache) return Promise.resolve(cache);
-  if (loadPromise) return loadPromise;
-  loadPromise = build().catch((err) => {
-    loadPromise = null; // let a later mount retry rather than wedging the tab
-    throw err;
-  });
-  return loadPromise;
+const storeKey = () => baseUrl() === DEFAULT_BASE ? KEYS.chatter : `${KEYS.chatter}:${baseUrl()}`;
+const resourceKey = path => `${storeKey()}:${path}`;
+const INDEX_KEY = 'chatter:public-resolver';
+let cache = null, rawDashboard = null, loadPromise = null, refreshPromise = null, indexPromise = null;
+let publicNames = [], resolverIndex = null, entriesRevision = '', seenSlugs = null, arrivals = [];
+const listeners = new Set(), postsCache = new Map(), resourceFlights = new Map();
+let catalogue = null;
+function emit() { for (const fn of listeners) { try { fn(cache); } catch (error) { console.error('[chatter-live] listener failed', error); } } }
+function rebuildResolver() {
+  resolverIndex = buildResolverIndex([...publicNames, ...coverage.holdings().filter(row => row.ticker).map(row => ({ ticker: row.ticker, name: row.name }))]);
 }
-
-async function build() {
-  await buildIndex();
-  ingest(await fetchFeed(), { origin: 'live' });
-  return cache;
-}
-
-/**
- * One read of the feed, with every failure mode NAMED rather than thrown.
- *
- * Returns the normalised payload with `ok: true`, or `{ ok: false, reason }`. The reasons matter
- * because the fixes differ: `no-url` and `not-found` are things somebody corrects, `unreachable`,
- * `upstream` and `timeout` are things to wait for, and `shape` means their contract moved.
- *
- * A FAILED READ IS NEVER AN EMPTY ONE. `entries: []` only ever travels with `ok: false` beside it.
- */
-async function fetchFeed() {
-  const base = baseUrl();
-  if (!/^https?:\/\//i.test(base)) return { ok: false, reason: 'no-url' };
-
-  let out;
-  try {
-    out = await conditionalJson(`${base}/dashboard?limit=all`, { key: STORE_KEY, optional: true });
-  } catch {
-    return { ok: false, reason: 'unreachable' };
-  }
-
-  if (!out.value) {
-    // THE URL TRAVELS WITH THE FAILURE. The first version of this recorded only a status code, and
-    // a bare "404" cost a long investigation: the upstream was healthy and answering 200 to curl
-    // the whole time, and nothing on screen or in the payload said which address had actually been
-    // requested. A failure that cannot be diagnosed from its own artefact is half a failure state.
-    const url = `${base}/dashboard`;
-    // `status: 0` from the store means the request never completed at all — DNS, TLS, a blocked
-    // CORS preflight, or an offline device. Anything else is what the server actually said.
-    if (out.status === 0) return { ok: false, reason: 'unreachable', url };
-    if (out.status === 404) return { ok: false, reason: 'not-found', status: 404, url };
-    return { ok: false, reason: 'upstream', status: out.status, url };
-  }
-
-  const shaped = normaliseDashboard(out.value);
-  if (!shaped.entries.length && !shaped.overview) return { ok: false, reason: 'shape' };
-
-  // Their /health carries `ageSeconds` — how stale the scrape is on the clock that is authoritative
-  // about it, rather than a subtraction between their timestamp and ours. Asked alongside and never
-  // instead: a healthy /health with an unreadable /dashboard is still a failure, so this one is
-  // allowed to fail quietly.
-  const health = await fetchHealth(base);
-
-  return {
-    ok: true,
-    reason: null,
-    ...shaped,
-    health,
-    checkedAt: out.checkedAt,
-    fromStore: out.status === 304,
-  };
-}
-
-async function fetchHealth(base) {
-  try {
-    const res = await fetch(`${base}/health`, { headers: { accept: 'application/json' }, cache: 'no-cache' });
-    if (!res.ok) return null;
-    const body = await res.json();
-    // `ageSeconds` is nested under `data`, not at the top level — the integration spec describes it
-    // as available "directly" and reading it that way silently produced null. Found against the
-    // real endpoint; the flat fallback stays in case they hoist it later.
-    const d = body?.data || {};
-    const age = Number(d.ageSeconds ?? body?.ageSeconds);
-    return { status: body?.status ?? null, ageSeconds: Number.isFinite(age) ? age : null };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * The slug → NSE symbol lookup.
- *
- * Three sources, widest last. `universe.json` and the book give 603 symbols and resolved 26 of a
- * real 219-entry run; adding `mc-ticker-map.json` — 1,722 Indian listed companies, already in the
- * repo for the Earnings Hub — takes that to 45, and every one of the extra nineteen is a genuine
- * listed company (NRB Bearings, JNK India, Balu Forge, Northern Arc…). All three files are fetched
- * elsewhere in the app, so on a warm cache this costs a revalidation, not a download.
- */
-async function buildIndex() {
-  if (resolverIndex) return resolverIndex;
-  const sources = [];
-
-  for (const h of coverage.holdings()) if (h.ticker) sources.push({ ticker: h.ticker, name: h.name });
-
-  // Through `revalidatedJson`, not a bare fetch: the Earnings Hub reads these same two files, and
-  // when both tabs are visited in one session the in-flight sharing there turns two downloads of
-  // 163KB and 249KB into one each. Same headers, same revalidation — only the duplication goes.
-  const [uni, mc] = await Promise.all([revalidatedJson('data/universe.json', { optional: true }), revalidatedJson('data/mc-ticker-map.json', { optional: true })]);
-
-  for (const row of Array.isArray(uni) ? uni : []) {
-    const t = String(row['Screener URL'] || '').match(/\/company\/([^/]+)/)?.[1];
-    if (t) sources.push({ ticker: t, name: row.Company });
-  }
-  for (const v of Object.values(mc?.map || {})) if (v?.ticker) sources.push({ ticker: v.ticker, name: v.fullName });
-
-  resolverIndex = buildResolverIndex(sources);
-  return resolverIndex;
-}
-
-function ingest(payload, { origin, checkedAt } = {}) {
-  const ok = !!payload?.ok;
-  const entries = ok ? resolveAll(payload.entries || [], resolverIndex) : [];
-  if (cache?.meta?.generatedAt && payload?.generatedAt && cache.meta.generatedAt !== payload.generatedAt) postsCache.clear();
-
-  // Arrivals: an entry the feed did not carry last time we looked. The first load seeds the set
-  // rather than announcing 219 things that have been sitting there for a fortnight — the same
-  // backlog rule the results and con-call watchers follow.
-  if (seenSlugs === null) {
-    seenSlugs = new Set(entries.map((e) => e.slug));
-  } else {
-    for (const e of entries) {
-      if (seenSlugs.has(e.slug)) continue;
-      seenSlugs.add(e.slug);
-      arrivals.unshift({ ...e, seenAt: Date.now() });
+function refreshIndex() {
+  if (indexPromise) return indexPromise;
+  indexPromise = (async () => {
+    const [uni, mc] = await Promise.all([
+      revalidatedJson('data/universe.json', { optional: true, allowCached: true }),
+      revalidatedJson('data/mc-ticker-map.json', { optional: true, allowCached: true }),
+    ]);
+    if (Array.isArray(uni) && mc?.map) {
+      publicNames = [...uni.flatMap(row => {
+        const ticker = String(row['Screener URL'] || '').match(/\/company\/([^/]+)/)?.[1];
+        return ticker ? [{ ticker, name: row.Company }] : [];
+      }), ...Object.values(mc.map).filter(row => row?.ticker).map(row => ({ ticker: row.ticker, name: row.fullName }))];
+      await writeEntry(INDEX_KEY, { value: publicNames, tag: null });
     }
-    arrivals = arrivals.slice(0, 40);
-  }
-
-  const companies = entries.filter((e) => e.ticker).sort(byMentions);
-  const uncovered = entries.filter((e) => !e.ticker).sort(byMentions);
-
-  cache = {
-    ok,
-    reason: payload?.reason || null,
-    entries,
-    companies,
-    uncovered,
-    byTicker: new Map(companies.map((e) => [e.ticker.toUpperCase(), e])),
-    overview: payload?.overview || null,
-    meta: {
-      ok,
-      reason: payload?.reason || null,
-      url: payload?.url || null,
-      // Their scrape time, and their own view of how stale it is. `ageSeconds` comes from their
-      // /health route — the only clock authoritative about their data — rather than a subtraction
-      // between their timestamp and ours, which are two different clocks.
-      generatedAt: payload?.generatedAt || null,
-      ageSeconds: payload?.health?.ageSeconds ?? null,
-      window: payload?.window || '30d',
-      total: entries.length,
-      companies: companies.length,
-      uncovered: uncovered.length,
-      totalPosts: payload?.overview?.totalPosts ?? null,
-      sourceTotals: payload?.overview?.sourceTotals || null,
-      origin: payload?.fromStore ? 'store' : origin || 'live',
-      checkedAt: payload?.checkedAt || checkedAt || Date.now(),
-    },
-  };
+    rebuildResolver();
+    if (rawDashboard) {
+      const { origin, checkedAt, checking, ok, error, reason } = cache.meta;
+      adopt(rawDashboard, { origin, checkedAt, checking, ok, error, reason, resolving: false });
+    }
+    emit();
+  })().catch(() => { if (cache) cache.meta.resolving = false; emit(); }).finally(() => { indexPromise = null; });
+  return indexPromise;
 }
-
-const byMentions = (a, b) => b.mentions - a.mentions || String(a.name).localeCompare(String(b.name));
-
-// ---------------------------------------------------------------------------------------
-// Accessors — synchronous; call load() first.
-// ---------------------------------------------------------------------------------------
-export const isLoaded = () => !!cache;
-export const all = () => (cache ? cache.entries : []);
-export const companies = () => (cache ? cache.companies : []);
-export const uncovered = () => (cache ? cache.uncovered : []);
-export const loadedPosts = () => [...postsCache.values()];
-export const overview = () => (cache ? cache.overview : null);
-export const meta = () => (cache ? cache.meta : null);
-export const byTicker = (t) => (cache && t ? cache.byTicker.get(String(t).toUpperCase()) || null : null);
-export const newArrivals = () => arrivals;
-export const sourceLabel = (k) => SOURCE_LABEL[k] || k;
-
-/**
- * Load the actual items behind one dashboard mention count, only after the reader asks for them.
- * The detail endpoint is public and already linked by every dashboard row. A per-slug in-memory
- * cache keeps reopening a row instant without turning a table paint into hundreds of requests.
- */
-export function postsFor(slug, { maxAgeMs = 60_000, timeoutMs = 8000 } = {}) {
-  const key = String(slug || '').trim().toLowerCase();
-  if (!key) return Promise.reject(new Error('No chatter topic was supplied.'));
-  if (postsCache.has(key) && Date.now() - Date.parse(postsCache.get(key).checkedAt) < maxAgeMs) return Promise.resolve(postsCache.get(key));
-  if (postsInFlight.has(key)) return postsInFlight.get(key);
-
-  const pending = fetchPosts(key, timeoutMs).finally(() => postsInFlight.delete(key));
-  postsInFlight.set(key, pending);
-  return pending;
+function validateDashboard(body, { complete = false } = {}) {
+  if (!body || !Array.isArray(body.stocks) || !body.overview || !Number.isFinite(Date.parse(body.generatedAt)) ||
+      !Number.isInteger(body.pagination?.total) || body.pagination.total < 0 ||
+      normaliseDashboard(body).entries.length !== body.stocks.length ||
+      new Set(body.stocks.map(row => row.ticker)).size !== body.stocks.length) throw new Error('The chatter summary returned an invalid response.');
+  if (complete && (body.stocks.length !== body.pagination.total || body.pagination.hasMore)) throw new Error('The chatter summary is incomplete.');
 }
-
-async function fetchPosts(slug, timeoutMs) {
+async function jsonResponse(response) {
+  if (!response.ok) throw new Error(`The chatter source returned HTTP ${response.status}.`);
+  if (Number(response.headers.get('content-length')) > 8 * 1024 * 1024) throw new Error('The chatter page exceeds the supported size.');
+  const text = await response.text();
+  if (text.length > 8 * 1024 * 1024) throw new Error('The chatter page exceeds the supported size.');
+  return JSON.parse(text);
+}
+async function fetchDashboard() {
   const base = baseUrl();
   if (!/^https?:\/\//i.test(base)) throw new Error('The chatter feed has no usable address.');
-
-  const url = `${base}/stocks/${encodeURIComponent(slug)}/posts?limit=1000&sort=newest`;
-  let response;
-  try {
-    response = await fetch(url, { headers: { accept: 'application/json' }, cache: 'no-cache', signal: AbortSignal.timeout(timeoutMs) });
-  } catch {
-    throw new Error('The mentions could not be reached.');
+  const stored = await readEntry(storeKey());
+  let validStored = false;
+  try { validateDashboard(stored?.value, { complete: true }); validStored = true; } catch {}
+  const response = await fetch(`${base}/dashboard?limit=all`, { cache: 'no-cache',
+    headers: { accept: 'application/json', ...(validStored && stored.tag ? { 'if-none-match': stored.tag } : {}) }, signal: AbortSignal.timeout(8000) });
+  if (response.status === 304 && validStored) return { value: stored.value, tag: stored.tag };
+  const body = await jsonResponse(response);
+  validateDashboard(body);
+  const stocks = [...body.stocks];
+  let pagination = body.pagination;
+  for (let page = 1; pagination.hasMore; page++) {
+    if (page > 100 || stocks.length >= pagination.total) throw new Error('The chatter summary pagination did not complete.');
+    const next = await jsonResponse(await fetch(`${base}/dashboard?limit=1000&offset=${stocks.length}`, { headers: { accept: 'application/json' }, cache: 'no-cache', signal: AbortSignal.timeout(8000) }));
+    validateDashboard(next);
+    if (next.generatedAt !== body.generatedAt || next.pagination.total !== body.pagination.total || next.pagination.offset !== stocks.length || !next.stocks.length) throw new Error('The chatter summary changed while loading; it will be checked again.');
+    stocks.push(...next.stocks);
+    pagination = next.pagination;
   }
-  if (!response.ok) throw new Error(`The mentions endpoint returned HTTP ${response.status}.`);
-
-  let body;
-  try {
-    body = await response.json();
-  } catch {
-    throw new Error('The mentions endpoint returned an unreadable response.');
-  }
-  if (!Array.isArray(body?.posts) || body.ticker && String(body.ticker).toLowerCase() !== slug) throw new Error('The mentions endpoint returned an unexpected topic or payload.');
-  const normalised = normalisePosts(body);
-  if (normalised.posts.length !== body.posts.length) throw new Error('The mentions endpoint returned incomplete post records.');
-  const result = { ...normalised, slug: normalised.slug || slug, endpoint: url, checkedAt: new Date().toISOString() };
-  postsCache.set(slug, result);
-  for (const fn of listeners) fn();
-  return result;
+  const value = { ...body, stocks, pagination: { ...body.pagination, count: stocks.length, hasMore: false } };
+  validateDashboard(value, { complete: true });
+  if (rawDashboard && Date.parse(value.generatedAt) < Date.parse(rawDashboard.generatedAt)) throw new Error('The source returned an older chatter snapshot.');
+  const tag = response.headers.get('etag');
+  await writeEntry(storeKey(), { value, tag });
+  return { value, tag };
 }
-
-/**
- * Portfolio scope narrows the COVERED half only.
- *
- * The uncovered half has no ticker by definition, so it cannot be filtered by one — and filtering
- * it to nothing would be a silent claim that the book is not discussed, when the truth is that we
- * could not tell. The tab keeps that section whole in both scopes and says so.
- */
-export function forScope(scope, rows = companies()) {
-  return filterByScope(rows, scope, coverage.tracked());
+function adopt(body, details) {
+  const shaped = normaliseDashboard(body);
+  rebuildResolver();
+  const resolved = resolveAll(shaped.entries, resolverIndex);
+  const revision = JSON.stringify(resolved);
+  const entries = revision === entriesRevision && cache ? cache.entries : resolved;
+  entriesRevision = revision;
+  if (!seenSlugs) seenSlugs = new Set(entries.map(row => row.slug));
+  else for (const row of entries) if (!seenSlugs.has(row.slug)) { seenSlugs.add(row.slug); arrivals.unshift({ ...row, seenAt: Date.now() }); }
+  arrivals = arrivals.slice(0, 40);
+  const same = entries === cache?.entries;
+  const companies = same ? cache.companies : entries.filter(row => row.ticker).sort(byMentions);
+  const uncovered = same ? cache.uncovered : entries.filter(row => !row.ticker).sort(byMentions);
+  rawDashboard = body;
+  cache = { ok: true, entries, companies, uncovered, overview: shaped.overview,
+    byTicker: new Map(companies.map(row => [row.ticker.toUpperCase(), row])),
+    meta: { generatedAt: shaped.generatedAt, window: shaped.window, total: entries.length, companies: companies.length,
+      uncovered: uncovered.length, totalPosts: shaped.overview?.totalPosts ?? null, sourceTotals: shaped.overview?.sourceTotals || null,
+      collection: body.collection || null, readable: true, ok: true, reason: null, error: null, ...details } };
 }
-
-// ---------------------------------------------------------------------------------------
-// Live
-// ---------------------------------------------------------------------------------------
-
+const byMentions = (a, b) => b.mentions - a.mentions || String(a.name).localeCompare(String(b.name));
+export function load() {
+  if (cache) { if (!refreshPromise && (!cache.meta.ok || Date.now() - (cache.meta.checkedAt || 0) >= POLL_MS)) void refresh(); return Promise.resolve(cache); }
+  if (loadPromise) return loadPromise;
+  loadPromise = (async () => {
+    const [saved, index] = await Promise.all([readEntry(storeKey()), readEntry(INDEX_KEY)]);
+    if (Array.isArray(index?.value)) publicNames = index.value;
+    rebuildResolver();
+    void refreshIndex();
+    try { validateDashboard(saved?.value, { complete: true }); adopt(saved.value, { origin: 'store', checkedAt: null, checking: true, resolving: !!indexPromise }); } catch {}
+    const checking = refresh();
+    if (cache?.meta.readable) return cache;
+    return checking;
+  })().finally(() => { loadPromise = null; });
+  return loadPromise;
+}
+export function refresh() {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    if (!resolverIndex) rebuildResolver();
+    if (cache) { cache.meta.checking = true; emit(); }
+    try {
+      const { value } = await fetchDashboard();
+      adopt(value, { origin: 'live', checkedAt: Date.now(), checking: false, resolving: !!indexPromise });
+    } catch (error) {
+      const details = { ok: false, checking: false, reason: 'unreachable', error: String(error.message || error), lastAttemptAt: Date.now(), url: `${baseUrl()}/dashboard` };
+      if (cache) { cache.ok = false; cache.meta = { ...cache.meta, ...details }; }
+      else cache = { entries: [], companies: [], uncovered: [], byTicker: new Map(), overview: null, meta: { readable: false, ...details } };
+    }
+    emit();
+    return cache;
+  })().finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+export const isLoaded = () => !!cache;
+export const all = () => cache?.entries || [];
+export const companies = () => cache?.companies || [];
+export const uncovered = () => cache?.uncovered || [];
+export const overview = () => cache?.overview || null;
+export const meta = () => {
+  if (!cache) return null;
+  const value = { ...cache.meta, ageSeconds: rawDashboard ? Math.max(0, (Date.now() - Date.parse(rawDashboard.generatedAt)) / 1000) : null };
+  return { ...value, health: chatterHealth(value) };
+};
+export const byTicker = ticker => ticker ? cache?.byTicker.get(String(ticker).toUpperCase()) || null : null;
+export const newArrivals = () => arrivals;
+export const sourceLabel = key => SOURCE_LABEL[key] || key;
+export function forScope(scope, rows = companies()) { return filterByScope(rows, scope, coverage.tracked()); }
+export function onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 export function startLive(live) {
   if (!live) return () => {};
-  live.register(LIVE_ID, {
-    intervalMs: POLL_MS,
-    fetcher: async () => {
-      const feed = await fetchFeed();
-      // A tick that fails leaves whatever is on screen alone. The tab reported the failure the
-      // first time it happened; replacing a good table with an error because one poll missed
-      // would be worse than saying nothing.
-      if (!feed.ok) throw Error('Public Chatter could not be revalidated.');
-      if (feed.fromStore) {
-        // Revalidated, unchanged. Move "last checked" and nothing else — that is a different fact
-        // from "last scraped", and conflating them would age the data backwards.
-        // A failed first load also creates a cache object, but it does not contain the stored rows.
-        // Recover that case by ingesting the confirmed device payload rather than blessing the
-        // empty failure shell as though it were the payload that received the 304.
-        if (cache?.meta?.ok === true) {
-          cache.meta = { ...cache.meta, ok: true, reason: null, checkedAt: feed.checkedAt || Date.now() };
-          return null;
-        }
-        ingest(feed, { origin: 'store' });
-        return cache;
-      }
-      const before = cache ? fingerprint(cache.entries) : null;
-      ingest(feed);
-      // Repaint only on a real change, so a tick that carried nothing new never throws away the
-      // reader's sort and search.
-      return before !== fingerprint(cache.entries) ? cache : null;
-    },
-  });
-  const off = live.subscribe(LIVE_ID, (payload) => {
-    if (!payload) return;
-    for (const fn of listeners) {
-      try {
-        fn(cache);
-      } catch (err) {
-        console.error('[chatter-live] listener failed', err);
-      }
-    }
-  });
-  live.start(LIVE_ID, { fresh: true });
+  live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: async () => {
+    const value = await refresh();
+    if (!value.meta.ok) throw new Error(value.meta.error || 'Chatter revalidation failed.');
+    return { ...value, partial: meta().health.state !== 'updated' };
+  } });
+  live.start(LIVE_ID, { fresh: !!cache?.meta.checkedAt });
+  const resume = () => { if (!document.hidden && (!cache?.meta.ok || Date.now() - (cache?.meta.checkedAt || 0) >= POLL_MS)) void refresh(); else emit(); };
+  window.addEventListener('focus', resume);
+  window.addEventListener('online', resume);
+  window.addEventListener('pageshow', resume);
+  document.addEventListener('visibilitychange', resume);
   return () => {
-    off();
     live.stop(LIVE_ID);
+    window.removeEventListener('focus', resume); window.removeEventListener('online', resume);
+    window.removeEventListener('pageshow', resume); document.removeEventListener('visibilitychange', resume);
   };
 }
+export const stopLive = live => live?.stop?.(LIVE_ID);
 
-/** Revalidate once for General Alerts without mounting the hourly poller. */
-export async function refresh() {
-  await buildIndex();
-  const feed = await fetchFeed();
-  if (!feed.ok) {
-    if (!cache) ingest(feed, { origin: 'live' });
-    else {
-      // Keep the last good rows visible, but make the failed confirmation explicit to consumers.
-      cache.meta = {
-        ...cache.meta,
-        ok: false,
-        reason: feed.reason || 'upstream',
-        url: feed.url || cache.meta.url || null,
-        checkedAt: Date.now(),
-      };
+// Details and archive indices also survive reloads. Cache reads never advance checkedAt.
+async function cachedResource(path, { validate, fetchValue, onUpdate, maxAgeMs = 60000, force = false, requireFresh = false }) {
+  const key = resourceKey(path);
+  const stored = await readEntry(key);
+  let saved = null;
+  try { validate(stored?.value); saved = stored.value; } catch {}
+  let flight = resourceFlights.get(key);
+  if (flight) { if (onUpdate) flight.callbacks.add(onUpdate); return saved && !requireFresh ? { ...saved, checking: true } : flight.promise; }
+  if (saved && !force && Date.now() - Date.parse(saved.checkedAt || '') < maxAgeMs) return saved;
+  const callbacks = new Set(onUpdate ? [onUpdate] : []);
+  let partial = null;
+  const notify = value => {
+    if (value.posts && !value.complete) {
+      partial = value;
+      if (saved?.posts) value = { ...value, posts: [...new Map([...saved.posts, ...value.posts].map(post => [post.id, post])).values()] };
     }
-    return cache;
-  }
-  if (feed.fromStore) {
-    if (cache?.meta?.ok === true) cache.meta = { ...cache.meta, ok: true, reason: null, checkedAt: feed.checkedAt || Date.now() };
-    else ingest(feed, { origin: 'store' });
-    return cache;
-  }
-  const before = cache ? fingerprint(cache.entries) : null;
-  ingest(feed, { origin: 'live' });
-  if (before !== fingerprint(cache.entries)) {
-    for (const fn of listeners) {
-      try {
-        fn(cache);
-      } catch (err) {
-        console.error('[chatter-live] listener failed', err);
-      }
+    for (const callback of callbacks) callback(value);
+  };
+  const promise = (async () => {
+    try {
+      const value = { ...await fetchValue(notify), checkedAt: new Date().toISOString(), checking: false, error: null };
+      validate(value);
+      await writeEntry(key, { value, tag: null });
+      notify(value);
+      return value;
+    } catch (error) {
+      if (saved) { const value = { ...saved, checking: false, error: String(error.message || error) }; notify(value); return value; }
+      if (partial) { const value = { ...partial, checking: false, error: String(error.message || error) }; notify(value); return value; }
+      throw error;
     }
+  })().finally(() => resourceFlights.delete(key));
+  resourceFlights.set(key, { promise, callbacks });
+  if (saved && !requireFresh) { void promise.catch(() => {}); return { ...saved, checking: true }; }
+  return promise;
+}
+async function readPostPages(path, slug, notify) {
+  const posts = new Map();
+  let first = null, offset = 0;
+  for (let page = 0; page < 100; page++) {
+    const body = await jsonResponse(await fetch(`${baseUrl()}${path}?limit=1000&sort=newest&offset=${offset}`, { headers: { accept: 'application/json' }, cache: 'no-cache', signal: AbortSignal.timeout(8000) }));
+    if (body?.ticker !== slug || !Array.isArray(body.posts) || !Number.isInteger(body.pagination?.total)) throw new Error('The mentions endpoint returned an unexpected topic or payload.');
+    const normal = normalisePosts(body);
+    if (normal.posts.length !== body.posts.length || (body.pagination.offset ?? 0) !== offset) throw new Error('The mentions endpoint returned incomplete post records.');
+    if (first && (body.generatedAt !== first.generatedAt || body.pagination.total !== first.pagination.total)) throw new Error('The mention list changed while loading; please check again.');
+    first ||= body;
+    for (const post of normal.posts) {
+      if (posts.has(post.id)) throw new Error('The mention pages overlap; please check again.');
+      posts.set(post.id, post);
+    }
+    const value = { ...normal, posts: [...posts.values()], slug, endpoint: `${baseUrl()}${path}`, complete: !body.pagination.hasMore, archive: body.archive || null };
+    if (!body.pagination.hasMore) {
+      if (posts.size !== body.pagination.total) throw new Error('The mentions endpoint returned an incomplete list.');
+      postsCache.set(path, value); emit();
+      return value;
+    }
+    if (!body.posts.length) throw new Error('The mention pagination did not advance.');
+    notify({ ...value, checking: true });
+    offset += body.posts.length;
   }
-  return cache;
+  throw new Error('The mention list exceeds the supported page limit; the source total has not been fully loaded.');
 }
-
-export function stopLive(live) {
-  live?.stop?.(LIVE_ID);
+export function postsFor(slug, options = {}) {
+  const key = String(slug || '').trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{0,160}$/.test(key)) return Promise.reject(new Error('No usable chatter topic was supplied.'));
+  const path = options.month ? `/archive/${encodeURIComponent(key)}/${encodeURIComponent(options.month)}` : `/stocks/${encodeURIComponent(key)}/posts`;
+  return cachedResource(path, { ...options,
+    validate: value => { if (value?.slug !== key || !Array.isArray(value.posts) || !value.complete) throw new Error('No complete cached mentions'); },
+    fetchValue: notify => readPostPages(path, key, notify),
+  }).then(value => {
+    postsCache.set(path, value);
+    if (options.requireFresh && (value.error || !value.complete)) throw new Error(value.error || 'The mention read is incomplete.');
+    return value;
+  });
 }
-
-export function onChange(fn) {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
+export function loadedPosts() {
+  const groups = new Map();
+  for (const value of postsCache.values()) {
+    const group = groups.get(value.slug) || { ...value, posts: new Map() };
+    for (const post of value.posts) group.posts.set(post.id, post);
+    groups.set(value.slug, group);
+  }
+  return [...groups.values()].map(group => ({ ...group, posts: [...group.posts.values()] }));
+}
+export function archiveTopics(options = {}) {
+  return cachedResource('/archive', { ...options, maxAgeMs: POLL_MS,
+    validate: value => {
+      if (value?.available !== true || !Array.isArray(value.topics) || value.topics.some(topic => !topic.ticker || !topic.name || !Number.isInteger(topic.count) || !topic.months)) throw new Error('Captured history is not available yet.');
+    },
+    fetchValue: async () => jsonResponse(await fetch(`${baseUrl()}/archive`, { headers: { accept: 'application/json' }, cache: 'no-cache', signal: AbortSignal.timeout(8000) })),
+  }).then(value => { catalogue = value; return value; });
+}
+export function resolveArchiveTopics(value = catalogue) {
+  rebuildResolver();
+  return resolveAll((value?.topics || []).map(topic => ({ slug: topic.ticker, name: topic.name, mentions: topic.count, archiveTopic: topic })), resolverIndex);
 }

@@ -461,9 +461,9 @@ export function sourceGroups() {
             'Mentions of companies and topics across <strong>ValuePickr</strong>, <strong>TradingQnA</strong> and <strong>Google News</strong> over a rolling 30 days, with a keyword-scored sentiment split per entry. ' +
             'The counts and the sentiment are <strong>theirs</strong> and are reproduced unchanged, never re-banded. Called <strong>directly from your browser</strong>, not through this site\'s Worker &mdash; Cloudflare refuses a Worker-to-Worker request inside one account, so a proxy here returned 404 while the API was healthy. Their ETag and a 304 keep it cheap. ' +
             '<strong>"Mentions Δ" is a change in mention volume, not a price move</strong> — there is no price anywhere in this feed.',
-          cadence: 'Re-scraped twice daily, 01:30 and 13:30 UTC · this page polls hourly',
+          cadence: 'Source checks requested every two hours · page checks every five minutes while visible and on return · saved data paints immediately',
           status: 'live',
-          file: 'public/js/data/chatter-live.js · window.SATTVA_CHATTER_URL in index.html',
+          file: 'public/js/data/chatter-live.js · public/js/data/chatter-health.js',
         },
         {
           name: 'Telegram — a public research channel',
@@ -722,7 +722,6 @@ export function sourceGroups() {
     ['Yahoo Finance — EOD OHLCV', technicals.meta(), 96 * 3600000],
     ['Live published-results feed', earningsLive.meta(), 10 * 60000],
     ['Con-call scans — third-party research provider', concalls.meta(), 10 * 60000],
-    ['SentimentDash — mention counts and sentiment', chatter.meta(), 26 * 3600000],
     ['BSE — corporate announcements, indexed by date', annFeed.meta(), 4 * 3600000],
     ['NSE — live exchange announcements', nseFeed.meta(), 15 * 60000],
   ];
@@ -734,6 +733,9 @@ export function sourceGroups() {
       partial: Number(meta?.failed) > 0 || (Array.isArray(meta?.failures) ? meta.failures.length > 0 : Number(meta?.failures) > 0), maxAgeMs });
   }
   const telegramSource = groups.flatMap(g => g.items).find(i => i.name === 'Telegram — a public research channel');
+  const chatterSource = groups.flatMap(g => g.items).find(i => i.name === 'SentimentDash — mention counts and sentiment');
+  if (chatterSource) chatterSource.readState = ({ updated: 'read', checking: 'unconfirmed', failed: 'unavailable',
+    unavailable: 'unavailable', unconfirmed: 'unchecked', delayed: 'dated', partial: 'partial' })[chatter.meta()?.health?.state] || 'unchecked';
   if (telegramSource) telegramSource.readState = sourceReadState(telegramReadHealth(tgMeta || {}));
   // Keep roadmap and credential implementation details in the code/docs, outside the source
   // count. Configured sources with a failed read remain listed with their actual read state.
