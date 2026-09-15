@@ -63,10 +63,16 @@
 .alerts-workspace [data-section-head] h2 { font-size: 20px; }
 .alerts-controls { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
 /* Live receipts belong inside Till Today. Color and motion describe actual checks/arrivals. */
-.alert-arrivals { display: flex; flex: 0 0 auto; align-items: center; gap: 20px; min-width: 0; padding: 12px 16px; margin-bottom: 10px; border: 1px solid rgb(var(--edge-indigo-200, 199 210 254) / .65); border-radius: 14px; background: linear-gradient(105deg, rgb(var(--surface-indigo-50, 238 242 255) / .9), rgb(var(--surface-white, 255 255 255) / .95) 65%); }
+.alert-arrivals { display: flex; flex: 0 0 auto; align-items: center; gap: 20px; min-width: 0; padding: 9px 16px; margin-bottom: 8px; border: 1px solid rgb(var(--edge-indigo-200, 199 210 254) / .65); border-radius: 14px; background: linear-gradient(105deg, rgb(var(--surface-indigo-50, 238 242 255) / .9), rgb(var(--surface-white, 255 255 255) / .95) 65%); }
 .alert-arrivals-identity { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
 .alert-arrivals-identity strong { display: block; color: rgb(var(--text-indigo-700, 67 56 202)); font-size: 13px; letter-spacing: .02em; }
 .alert-arrivals-identity [data-arrivals-status] { display: block; margin-top: 2px; font-size: 11px; color: rgb(var(--text-slate-500, 100 116 139)); }
+.alert-arrivals-compact { display: none; }
+.alert-arrivals.is-compact { flex: 0 0 auto; padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; }
+.alert-arrivals.is-compact .alert-arrivals-identity { gap: 6px; }
+.alert-arrivals.is-compact .alert-arrivals-orbit { width: 18px; height: 18px; box-shadow: none; }
+.alert-arrivals.is-compact .alert-arrivals-identity strong, .alert-arrivals.is-compact [data-arrivals-status], .alert-arrivals.is-compact .alert-arrivals-story, .alert-arrivals.is-compact .alert-arrivals-coverage { display: none; }
+.alert-arrivals.is-compact .alert-arrivals-compact { display: block; white-space: nowrap; font-size: 11px; font-weight: 600; color: rgb(var(--text-indigo-600, 79 70 229)); }
 .alert-arrivals-orbit { position: relative; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid rgb(var(--edge-indigo-200, 199 210 254)); border-radius: 50%; box-shadow: 0 0 0 4px rgb(var(--surface-indigo-100, 224 231 255) / .45); }
 .alert-arrivals-orbit span { width: 8px; height: 8px; border-radius: 50%; background: rgb(var(--text-indigo-500, 99 102 241)); }
 .alert-arrivals[data-checking="true"] .alert-arrivals-orbit::after { content: ''; position: absolute; inset: -1px; border: 2px solid transparent; border-top-color: rgb(var(--text-indigo-500, 99 102 241)); border-radius: 50%; animation: alert-check-orbit 1.5s linear infinite; }
@@ -82,10 +88,13 @@
 @keyframes alert-check-orbit { to { transform: rotate(360deg); } }
 @keyframes alert-row-arrival { 0%, 15% { background-color: rgb(var(--surface-indigo-100, 224 231 255) / .8); } 100% { background-color: transparent; } }
 @media (max-width: 767px) {
-  .alert-arrivals { flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
-  .alert-arrivals-identity { flex: 1; }
-  .alert-arrivals-coverage { max-width: 130px; }
-  .alert-arrivals-story { flex: 0 0 100%; padding: 8px 0 0; border-left: 0; border-top: 1px solid rgb(var(--edge-indigo-200, 199 210 254) / .6); order: 3; }
+  .alert-arrivals { gap: 8px; padding: 6px 10px; }
+  .alert-arrivals-identity { flex: 1; gap: 8px; }
+  .alert-arrivals-orbit { width: 20px; height: 20px; box-shadow: none; }
+  .alert-arrivals-identity strong { display: inline; font-size: 12px; }
+  .alert-arrivals-identity [data-arrivals-status], .alert-arrivals-story { display: none; }
+  .alert-arrivals[data-has-arrivals="true"] .alert-arrivals-compact { display: inline; margin-left: 6px; font-size: 10px; font-weight: 600; color: rgb(var(--text-indigo-600, 79 70 229)); }
+  .alert-arrivals-coverage { max-width: 112px; padding: 4px 0 4px 4px; font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .alert-just-arrived > td { animation: none; background-color: rgb(var(--surface-indigo-50, 238 242 255)); }

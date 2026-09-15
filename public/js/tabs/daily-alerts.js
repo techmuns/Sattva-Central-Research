@@ -826,7 +826,7 @@ function fitStreamToViewport(root) {
   // Source arrivals can wrap the status or toolbar without resizing the window. Observe only
   // the chrome, not the table whose own height we set, to avoid a resize feedback loop.
   const observer = new ResizeObserver(apply);
-  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-table-toolbar]')) observer.observe(node);
+  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-alert-arrivals], [data-table-toolbar]')) observer.observe(node);
   unfit = () => { window.removeEventListener('resize', onResize); observer.disconnect(); };
 }
 

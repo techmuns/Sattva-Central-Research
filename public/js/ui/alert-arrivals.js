@@ -1,8 +1,9 @@
 const HIGHLIGHT_MS = 20_000;
+const compactCount = new Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 });
 const clock = (at) => new Date(at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
 export const arrivalsHtml = `<section class="alert-arrivals" data-alert-arrivals aria-label="Live arrivals in Till Today">
-  <div class="alert-arrivals-identity"><span class="alert-arrivals-orbit" aria-hidden="true"><span></span></span><div><strong>Live arrivals</strong><span data-arrivals-status>Loading history…</span></div></div>
+  <div class="alert-arrivals-identity"><span class="alert-arrivals-orbit" aria-hidden="true"><span></span></span><div><strong>Live arrivals</strong><span data-arrivals-status>Loading history…</span><span class="alert-arrivals-compact" data-arrivals-compact>Watching</span></div></div>
   <div class="alert-arrivals-story"><strong data-arrivals-headline>New alerts appear here automatically</strong><span data-arrivals-detail>Checks every 90 seconds while visible · source timing varies</span></div>
   <button type="button" class="alert-arrivals-coverage" data-arrivals-sources>Source status ↗</button>
   <span class="sr-only" data-arrivals-announcement role="status" aria-live="polite" aria-atomic="true"></span>
@@ -11,7 +12,7 @@ export const arrivalsHtml = `<section class="alert-arrivals" data-alert-arrivals
 // Decorate mounted rows only. The table's reusable markup remains free of expiring badges,
 // so scrolling back to an old virtual row cannot restart its arrival highlight.
 export function createArrivalsUI(tracker) {
-  let root = null, observer = null, timer = null;
+  let root = null, observer = null, timer = null, compactMedia = null, layout = null;
   let recent = [], state = {}, announced = new Set(), announcementIds = [];
   const text = (selector, value) => {
     const node = root?.querySelector(selector);
@@ -58,11 +59,13 @@ export function createArrivalsUI(tracker) {
     text('[data-arrivals-status]', offline ? 'Offline · saved alerts' : document.hidden ? 'Paused while away' : checking ? 'Checking for arrivals…' : 'Watching for new alerts');
     text('[data-arrivals-headline]', latest ? `${latest.company || latest.ticker || latest.feedLabel} · ${latest.headline}` : 'New alerts appear here automatically');
     const at = latest && tracker.time(latest.id);
+    text('[data-arrivals-compact]', offline ? 'Offline' : recent.length ? `${compactCount.format(recent.length)} new` : checking ? 'Checking' : 'Watching');
     text('[data-arrivals-detail]', latest
       ? `${recent.length.toLocaleString('en-IN')} received this visit in your filters · ${latest.feedLabel || 'Source'} · received ${clock(at)} IST`
       : 'Checks every 90 seconds while visible · source timing varies');
     const headline = strip.querySelector('[data-arrivals-headline]');
     headline.title = latest ? `${latest.headline}\nReceived ${clock(at)} IST; source publication: ${latest.day || 'date not supplied'}${latest.time ? ` ${latest.time} IST` : ''}. Records keep their source-date order.` : '';
+    strip.title = `${headline.title || 'New alerts appear automatically.'} Checks every 90 seconds while visible; source timing varies. ${state.coverage?.title || ''}`;
     const button = strip.querySelector('[data-arrivals-sources]');
     button.textContent = `${state.coverage?.label || 'Source status'} ↗`;
     button.title = state.coverage?.title || 'View source check times and coverage';
@@ -78,6 +81,7 @@ export function createArrivalsUI(tracker) {
   function detach() {
     observer?.disconnect(); observer = null;
     clearInterval(timer); timer = null;
+    compactMedia?.removeEventListener('change', layout); compactMedia = null; layout = null;
     root = null;
   }
   return {
@@ -88,6 +92,16 @@ export function createArrivalsUI(tracker) {
       detach(); root = nextRoot;
       const strip = root.querySelector('[data-alert-arrivals]');
       if (!strip) return;
+      // Short desktop frames need the table's reading space. Keep the same live indicator
+      // alongside the horizon controls, with full arrival/source detail in its tooltip.
+      compactMedia = matchMedia('(min-width: 768px) and (max-height: 780px)');
+      layout = () => {
+        strip.classList.toggle('is-compact', compactMedia.matches);
+        if (compactMedia.matches) root.querySelector('[data-alerts-controls]').insertBefore(strip, root.querySelector('.alerts-view-controls'));
+        else root.querySelector('[data-alerts-workspace]').insertBefore(strip, root.querySelector('[data-score-table]'));
+      };
+      compactMedia.addEventListener('change', layout);
+      layout();
       strip.querySelector('[data-arrivals-sources]').onclick = () => {
         const picker = root.querySelector('[data-alerts-sources]');
         if (picker) picker.open = true;
