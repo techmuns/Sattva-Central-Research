@@ -817,10 +817,15 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     // Private results can be cleared while public reads are in flight. Never let an old partial
     // report restore a previous account's rows after logout; read these memory-only feeds afresh.
     let feed = settled;
-    if (PRIVATE_FEEDS.has(settled.id) || settled.portfolioOnly) {
+    if (PRIVATE_FEEDS.has(settled.id)) {
       const current = COLLECTORS[settled.id]({ day });
       current.events = current.events.filter((e) => includeHistory || eventDay(e) === day);
       feed = toFeedRow(settled, current, day);
+    } else if (settled.portfolioOnly) {
+      // The calendar is excluded from the public saved pool. Read its current source cache,
+      // whose source/membership subscriptions invalidate it even while this tab is unmounted.
+      // Recreating unchanged calendar events here would force the whole timeline to sort again.
+      feed = readFeed(feedById.get(settled.id), { day, includeHistory });
     }
     const all = mapPortfolioDiscoveryEvents(feed.id, feed.events, portfolioEntities);
     // The S Screen calendar is already scoped by the exact synchronized portfolio membership.

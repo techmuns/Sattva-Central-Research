@@ -150,6 +150,10 @@ const previousCalls = calls.length;
 console.log('Checking scope and privacy');
 let cachedPartials = 0;
 const portfolio = await alerts.collect({ ...options, scope: 'portfolio', load: false, onPartial: () => cachedPartials++ });
+assert.equal((await alerts.collect({ ...options, scope: 'portfolio', load: false })).events, portfolio.events,
+  'unchanged portfolio-calendar rows reuse the sorted timeline too');
+assert.equal(alerts.adoptAllAlertsReport(portfolio, null, { ...options, scope: 'portfolio' }).events, portfolio.events,
+  'a saved-view adoption reads the current portfolio calendar without rebuilding unchanged rows');
 assert.equal(cachedPartials, 0, 'cached scope changes assemble one completed report, not twenty full intermediate reports');
 const firstTechnical = (report) => report.feeds.find((f) => f.id === 'technicals').events[0];
 const cachedUniverse = await alerts.collect({ ...options, scope: 'universe', load: false });
