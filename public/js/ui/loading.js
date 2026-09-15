@@ -23,7 +23,10 @@ export function coverTableResults(host, scroller, { columns = 4 } = {}) {
   scroller.inert = true;
   scroller.classList.add('table-results-loading');
   host.append(overlay);
-  const align = () => { overlay.style.top = `${scroller.offsetTop}px`; };
+  const align = () => {
+    overlay.style.top = `${scroller.offsetTop}px`;
+    overlay.style.height = `${scroller.offsetHeight}px`;
+  };
   align();
   const observer = new ResizeObserver(align);
   observer.observe(host);

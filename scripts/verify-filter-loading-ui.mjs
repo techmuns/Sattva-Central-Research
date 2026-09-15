@@ -124,6 +124,9 @@ try {
   await page.evaluate(()=>holdFrames());
   await newsPeriod.selectOption('3');
   assert(await page.locator('[data-table-loading]').isVisible(),'large market-news filters use the same placeholders');
+  const mask=await page.locator('[data-table-loading]').boundingBox();
+  const newsArea=await page.locator('[data-news-scroll]').boundingBox();
+  assert(Math.abs(mask.height-newsArea.height)<=1,'the placeholder covers results without covering footer controls');
   assert(await page.locator('[data-news-export]').isDisabled());
   await newsPeriod.selectOption('30');
   await page.evaluate(()=>releaseFrames());await settled();

@@ -3,7 +3,7 @@
 [data-score-table], [data-mcnews-list] { position: relative; }
 [data-export]:disabled, [data-news-export]:disabled { opacity: .5; cursor: progress; box-shadow: none; }
 .table-results-loading { visibility: hidden; }
-.table-loading-placeholder { position: absolute; inset-inline: 0; bottom: 0; z-index: 11; overflow: hidden; pointer-events: none; background: rgb(var(--surface-white, 255 255 255)); }
+.table-loading-placeholder { position: absolute; inset-inline: 0; z-index: 11; overflow: hidden; pointer-events: none; background: rgb(var(--surface-white, 255 255 255)); }
 .loading-grid { min-height: 140px; overflow: hidden; background: rgb(var(--surface-white, 255 255 255)); }
 .loading-grid-row { display: grid; gap: 24px; min-height: 64px; padding: 18px 20px; border-bottom: 1px solid rgb(var(--edge-slate-100, 241 245 249)); }
 .loading-grid-cell { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
