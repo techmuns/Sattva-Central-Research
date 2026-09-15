@@ -17,7 +17,11 @@ that every brief breakout will be observed.
   and calendar completeness is explicitly unknown. Future calendar years are
   also reported as unknown until the calendar is updated.
 - A fixed `CaptureRegistry` object, `breakout-capture:v1`, holds SQLite records.
-  The first authenticated collector begins its durable alarm. Every 15 minutes
+  A main-branch code push starts a separate authenticated bootstrap job, independent
+  of scheduled Actions and source collection. It waits up to eight minutes for
+  publishing and arms the durable alarm without needing an inventory or quote.
+  Failed publishing leaves a visible failed bootstrap job. Each authenticated
+  collector also ensures the alarm is armed. Every 15 minutes
   the alarm checks the fixed workflow and requests a missed run, unless one is
   queued/running or recently created. This uses the existing `GH_DISPATCH_TOKEN`
   and requires no additional Cloudflare cron slot. Reads never activate it.

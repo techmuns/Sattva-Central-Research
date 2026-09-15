@@ -6,7 +6,7 @@ import { BreakoutSchedule } from '../worker/breakout-schedule.mjs';
 import { breakoutCollectorIdentity } from '../worker/breakout-auth.mjs';
 import { handleBreakouts, handleTechnicals } from '../worker/breakouts.mjs';
 import { BREAKOUT_ENDPOINT, marketWindow, expectedSession, quoteFresh, liveBreakout, liveCoverage, validateQuote, recoverySlots } from '../public/js/data/breakout-live-shared.js';
-import { collectBreakouts, breakoutClient, captureTarget } from './collect-breakouts.mjs';
+import { collectBreakouts, breakoutClient, captureTarget, bootstrapBreakouts } from './collect-breakouts.mjs';
 import { baseFromBars, yahooSymbol, parseYahooQuote, upstoxQuotes, recoveryCandles } from './lib/breakout-providers.mjs';
 const AT = Date.parse('2026-09-15T06:30:00Z'), iso = at => new Date(at).toISOString();
 const historyDates = count => {const dates=[];for(let at=AT-86400000;dates.length<count;at-=86400000)if(marketWindow(at).collect)dates.unshift(iso(at).slice(0,10));return dates;};
@@ -87,7 +87,7 @@ test('missed capture recovery is checkpointed, then historical candles are saved
  const summary=await collectBreakouts({targets:[{ticker:'TEST'}],previous:{rows:[prior]},client,now:()=>AT,primary:async()=>quote(),sleep:async()=>{},recovery:async(t,current,from)=>recoverySlots(from,AT).map(at=>quote('TEST',at,{kind:'recovered-candle'}))});
  assert.equal(summary.recovered,4);assert.equal(store.read().gaps[0].reason,'candles-recovered');assert.equal(store.read().rows[0].kind,'quote');
 });
-test('durable timer arms only after collection, avoids duplicate/inflight jobs and dispatches missed runs',async()=>{
+test('durable timer arms explicitly, avoids duplicate/inflight jobs and dispatches missed runs',async()=>{
  const data=storage();let at=AT,posts=0,runs=[];
  const schedule=new BreakoutSchedule(data,{GH_DISPATCH_TOKEN:'fixture',GH_REPO:'techmuns/Sattva-Central-Research',GH_REF:'main'}, {now:()=>at,fetcher:async(url,opts={})=>{
  assert(new URL(url).pathname.includes('breakouts-refresh.yml'));if(opts.method==='POST'){posts++;return new Response(null,{status:204});}return Response.json({workflow_runs:runs});}});
@@ -109,6 +109,7 @@ test('only a signed fixed-workflow main-branch GitHub identity may write',async(
  async function request(patch={}){const encode=x=>Buffer.from(JSON.stringify(x)).toString('base64url');const body=encode({alg:'RS256',kid:'fixture'})+'.'+encode({...claims,...patch});const sig=Buffer.from(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key.privateKey,new TextEncoder().encode(body))).toString('base64url');return new Request(BREAKOUT_ENDPOINT,{headers:{authorization:`Bearer ${body}.${sig}`}});}
  const options={now:AT,fetcher:async url=>{assert.equal(url,'https://token.actions.githubusercontent.com/.well-known/jwks');return Response.json({keys:[jwk]});}};
  assert.equal(await breakoutCollectorIdentity(await request(),options),'1:1');
+ assert.equal(await breakoutCollectorIdentity(await request({event_name:'push'}),options),'1:1');
  for(const patch of [{ref:'refs/heads/feature'},{event_name:'pull_request'},{repository_id:'2'},{workflow_ref:claims.workflow_ref.replace('breakouts','other')},{exp:AT/1000-1}])await assert.rejects(breakoutCollectorIdentity(await request(patch),options));
  await assert.rejects(breakoutClient({env:{ACTIONS_ID_TOKEN_REQUEST_URL:'https://evil.test'},fetcher:async()=>{throw Error('must not fetch');}})({action:'begin'}));
 });
@@ -174,4 +175,16 @@ test('long captures acquire a fresh identity for every checkpoint',async()=>{
  }});
  await client({action:'begin'});await client({action:'checkpoint'});await client({action:'finish'});
  assert.deepEqual(seen,['Bearer token-1','Bearer token-2','Bearer token-3']);
+});
+
+test('merge bootstrap survives delayed publishing and arms without a quote or scheduled run',async()=>{
+ let at=AT,calls=0,armed=0;
+ const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutArm:async()=>{armed++;return {started:true,alarmAt:at+900000};}})}};
+ const result=await bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async input=>{
+  assert.equal(input.action,'arm');if(++calls<3)throw Error('not deployed');
+  const response=await handleBreakouts(new Request(BREAKOUT_ENDPOINT,{method:'POST',body:JSON.stringify(input)}),env,{identity:async()=>'1:1'});
+  return response.json();
+ }});
+ assert(result.schedule.started);assert.equal(armed,1);assert.equal(calls,3);
+ await assert.rejects(bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async()=>{throw Error('unpublished');}}),/publishing/);
 });

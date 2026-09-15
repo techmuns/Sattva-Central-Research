@@ -17,7 +17,7 @@ export async function breakoutCollectorIdentity(request, { fetcher = fetch, now 
       claims.repository !== 'techmuns/Sattva-Central-Research' || String(claims.repository_id) !== '1329567087' ||
       String(claims.repository_owner_id) !== '278697674' || claims.ref !== 'refs/heads/main' ||
       claims.workflow_ref !== `${'techmuns/Sattva-Central-Research'}/.github/workflows/${BREAKOUT_WORKFLOW}@refs/heads/main` ||
-      !['schedule', 'workflow_dispatch', 'repository_dispatch'].includes(claims.event_name) ||
+      !['push', 'schedule', 'workflow_dispatch', 'repository_dispatch'].includes(claims.event_name) ||
       !Number.isFinite(claims.exp) || claims.exp <= seconds || !Number.isFinite(claims.iat) ||
       claims.iat > seconds + 30 || seconds - claims.iat > 600 || !Number.isFinite(claims.nbf) || claims.nbf > seconds + 30 ||
       !/^\d+$/.test(String(claims.run_id || '')) || !/^\d+$/.test(String(claims.run_attempt || '')))

@@ -185,7 +185,7 @@ function captureNote(rows) {
     ${history?.schedule?.overdue ? '<p class="text-amber-800">The backup scheduler needs attention.</p>' : ''}
     <p>Last completed check: ${escapeHtml(live.stamp(health.checkedAt))}. History starts ${escapeHtml(live.stamp(history?.captureStartedAt))}.
     ${escapeHtml(history?.retention || 'Capture has not started. No historical completeness claim is available.')}</p>
-    <p>${escapeHtml((history?.gaps || []).map(gap => `${gap.count} ${gap.reason === 'candles-recovered' ? 'recovered intervals' : 'intervals with gaps'}`).join(' · '))}</p>
+    <p>${escapeHtml((history?.gaps || []).map(gap => `${gap.reason === 'candles-recovered' ? 'Recovered ranges' : 'Ranges with gaps'}: ${gap.count}`).join(' · '))}</p>
     ${health.missing.length ? `<p>Needs checking: ${escapeHtml(health.missing.join(', '))}</p>` : ''}
     </details></div>`;
 }

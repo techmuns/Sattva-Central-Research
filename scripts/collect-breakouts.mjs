@@ -92,7 +92,17 @@ export async function collectBreakouts({ targets, previous = null, client, prima
   return { targetCount: targets.length, saved: rows.length, failures: failures.length, noBase: rows.filter(r => !r.base).length,
     discoveryFailed, recovered, recoveryFailed, upstox: backupReason, completedAt: new Date(now()).toISOString() };
 }
+export async function bootstrapBreakouts({client=breakoutClient(),now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
+  const deadline=now()+8*60000;
+  do {
+    try { const result=await client({action:'arm'}); if(result.schedule?.started && result.schedule.alarmAt) return result; }
+    catch { /* The new Worker may still be publishing. No source collection is needed. */ }
+    await sleep(15000);
+  } while(now()<deadline);
+  throw Error('The backup timer could not start; verify website publishing.');
+}
 async function main() {
+  if(process.argv.includes('--bootstrap')) { await bootstrapBreakouts(); console.log('Durable backup timer started.'); return; }
   const now = Date.now();
   let previous;
   try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }

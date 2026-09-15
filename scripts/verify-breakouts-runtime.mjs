@@ -11,6 +11,7 @@ writeFileSync(join(scratch,'entry.mjs'),`
 import {CaptureRegistry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
 export {CaptureRegistry};
 export default {async fetch(request,env){const body=await request.json(),store=env.STORE.getByName('breakout-local-fixture');
+if(body.action==='arm')return Response.json(await store.breakoutArm());
 if(body.action==='begin')return Response.json(await store.breakoutBegin(body.run,body.targets,false));
 if(body.action==='checkpoint')return Response.json(await store.breakoutCheckpoint(body.run,body.rows,body.failures));
 if(body.action==='finish')return Response.json(await store.breakoutFinish(body.run));
@@ -25,6 +26,8 @@ async function stop(){if(!child||child.exitCode!==null)return;const done=once(ch
 const at=Date.parse('2026-09-15T06:00Z'),row={ticker:'TEST',name:'Test',price:105,volume:2000,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}};
 try{
  await start();assert.equal((await call()).schedule.alarmAt,null);
+ await call({action:'arm'});await stop();await start();
+ assert((await call()).schedule.alarmAt);assert.equal((await call()).capture.state,'not-started');
  await call({action:'begin',run:'1:1',targets:['TEST','MISSING']});
  await call({action:'checkpoint',run:'1:1',rows:[row]});
  await stop();await start();

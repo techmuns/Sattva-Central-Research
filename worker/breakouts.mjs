@@ -20,6 +20,7 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
     catch { return reply({ ok: false, reason: 'collector-identity' }, 403); }
     try {
       const body = await boundedJson(new Response(request.body), 2 * 1024 * 1024);
+      if (body.action === 'arm') return reply({ok:true,schedule:await store.breakoutArm()});
       if (body.action === 'begin') return reply(await store.breakoutBegin(run, body.targets, body.discoveryFailed));
       if (body.action === 'checkpoint') return reply(await store.breakoutCheckpoint(run, body.rows, body.failures));
       if (body.action === 'recovery') return reply(await store.breakoutRecovery(run,body.ticker,body.from,body.to,body.rows));

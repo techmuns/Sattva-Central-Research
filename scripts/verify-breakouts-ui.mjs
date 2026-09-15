@@ -8,7 +8,7 @@ const root=resolve('public'), AT=Date.parse('2026-09-15T06:30:00Z');
 const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=original.companies.find(row=>!row.error);
 const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-10',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-10',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
 let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0;
-const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],rows:['TEST','FUTURE'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
+const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  res.setHeader('cache-control','no-cache');
@@ -38,6 +38,7 @@ try{
  assert.equal(await cell.textContent(),'₹106.00');
  await page.locator('[data-row-key="FUTURE"]').waitFor();
  assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-10')));
+ assert((await page.locator('[data-capture-note]').textContent()).includes('Ranges with gaps: 1'));
  const sourceState=()=>page.evaluate(async()=>(await import('/js/ui/sources.js')).sourceGroups().flatMap(group=>group.items).find(item=>item.name.startsWith('Saved price and volume capture')).readState);
  assert.equal(await sourceState(),'read');
  await page.locator('[data-table-search]').fill('Test Company');

@@ -36,6 +36,7 @@ export class CaptureRegistry extends DurableObject {
   watchlistSnapshot() { return this.watchlist.watchlistSnapshot(); }
   watchlistApply(intents) { return this.watchlist.watchlistApply(intents); }
   request(source) { return this.schedule.request(source); }
+  async breakoutArm() { await this.breakoutSchedule.arm(); return this.breakoutSchedule.status(); }
   async breakoutBegin(run, targets, failed) { const out = this.breakouts.begin(run, targets, failed); await this.breakoutSchedule.arm(); return out; }
   breakoutRecovery(run, ticker, from, to, rows) { return this.breakouts.recovery(run,ticker,from,to,rows); }
   breakoutCheckpoint(run, rows, failures) { return this.breakouts.checkpoint(run, rows, failures); }
