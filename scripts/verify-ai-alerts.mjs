@@ -143,3 +143,17 @@ for (const candidate of byAuthenticatedPayload.cards) {
     enrichCardFromAllAlerts(candidate, indexedReport), 'shared ticker index preserves every selected context record and score');
 }
 console.log('PASS: authenticated size ordering, evidence priority preservation, full-pool zero-score context and missing-size fallback.');
+const vocabularyTrigger = { ...context, id: 'vocabulary-trigger', ticker: 'ALPHA', company: 'Alpha Cement',
+  headline: 'Cement concrete operations', detail: '', keywordIds: [] };
+const vocabularyCandidate = { ...context, id: 'vocabulary-context', ticker: 'ALPHA', company: 'Alpha Concrete',
+  headline: 'Concrete cement disclosure', detail: '', keywordIds: [] };
+const vocabularyReport = { day: '2026-09-04', feeds: [{ id: 'announcements', status: 'ok' }], events: [vocabularyCandidate] };
+const vocabularyCard = { ticker: 'ALPHA', events: [vocabularyTrigger] };
+assert.equal(enrichCardFromAllAlerts(vocabularyCard, vocabularyReport).contextEvents.length, 0,
+  'all trigger and candidate company names are excluded from topic overlap');
+vocabularyTrigger.keywordIds = ['cement']; vocabularyCandidate.keywordIds = ['cement'];
+assert.equal(enrichCardFromAllAlerts(vocabularyCard, vocabularyReport).contextEvents[0]?.id, vocabularyCandidate.id,
+  'explicit keyword IDs remain topics even when their word appears in a company name');
+vocabularyTrigger.keywordIds = []; vocabularyCandidate.keywordIds = [];
+assert.equal(enrichCardFromAllAlerts(vocabularyCard, vocabularyReport).contextEvents.length, 0,
+  'a subsequent context build reads corrected trigger vocabulary');

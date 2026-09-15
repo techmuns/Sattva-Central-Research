@@ -44,6 +44,11 @@ const mapping = securityMap('SYMBOL,ISIN NUMBER\nCORRECT,INE000000001\nCOLLISION
 assert.equal(mapping['500001'].ticker, 'CORRECT', 'cross-exchange security joins use ISIN, not similar symbols');
 assert.equal(exchangeRows({ ...before, securityMap: mapping }).find((r) => r.sourceId === bse.id).ticker, 'CORRECT');
 assert.equal(exchangeRows(before).find((r) => r.sourceId === bse.id).ticker, '500001', 'unmapped BSE securities keep their code');
+for (const value of [0, 0.004, 0.005, 1234.567, 12345678.9, Number.MAX_SAFE_INTEGER]) {
+  const row = exchangeRows({ records: [[nse.id, '2026-09-08', 'EXAMPLE', 'Example', 'Fund', 'Buy', 1, value]] })[0];
+  assert.equal(row.cells['Trade Value'], `≈ ₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+    'shared formatting preserves Indian grouping, zero, fractional rounding and large trade values');
+}
 const partial = await captureExchanges(before, { now: new Date('2026-09-10T12:00:00Z'), fetchText: async (url) => {
   if (url.includes('optionType=bulk_deals')) return csv;
   throw new Error('test source outage');

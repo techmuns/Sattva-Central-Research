@@ -34,6 +34,22 @@ assert.equal(matchPortfolioNews({ title: 'Kissht launches service' }, portfolioN
 assert.equal(matchPortfolioNews({ title: 'Sterlite Power expansion and STL software library' }, identities).length, 0);
 assert.equal(matchPortfolioNews({ title: 'Jayaswal Neco Group promoters face allegations' }, identities).length, 0, 'query-only group abbreviation cannot assert a direct listed-company event');
 assert.equal(matchPortfolioNews({ title: 'Estonia dispute', summary: 'Datasel arbitration' }, identities).length, 0, 'snippet is not confirmed related coverage');
+const orderedIdentities = portfolioNewsEntities([
+  { ticker: 'ALPHA', name: 'Alpha Robotics Limited' },
+  { ticker: 'BETA', name: 'Beta Robotics Limited' },
+  { ticker: 'CAFE', name: 'Café Machines Limited' },
+]);
+assert.deepEqual(matchPortfolioNews({ title: 'Beta Robotics partners with Alpha Robotics and Alpha Robotics' }, orderedIdentities)
+  .map(row => row.ticker), ['ALPHA', 'BETA'], 'one match per identity, in portfolio order rather than article-word order');
+assert.equal(matchPortfolioNews({ title: 'Alphabet Robotics and Betamax Robotics launch products' }, orderedIdentities).length, 0,
+  'candidate words and complete company phrases require exact boundaries');
+assert.deepEqual(matchPortfolioNews({ title: 'Update', articleBody: { provenance: 'publisher-article-body', text: 'CAFÉ MACHINES launches equipment' } }, orderedIdentities)
+  .map(row => row.ticker), ['CAFE'], 'normalized Unicode names in an explicit publisher body remain discoverable');
+assert.equal(matchPortfolioNews({ title: 'Update', articleBody: { provenance: 'search-snippet', text: 'Alpha Robotics launches equipment' } }, orderedIdentities).length, 0,
+  'indexing must not promote a snippet to publisher evidence');
+const sharedHeadline = { title: 'Beta Robotics partners with Alpha Robotics' };
+assert.deepEqual(matchPortfolioNews(sharedHeadline, orderedIdentities.slice(1)).map(row => row.ticker), ['BETA'],
+  'changed portfolio membership builds its own candidate index');
 const related = attributeNewsRow({ title: 'Datasel arbitration over faulty shells', url: 'https://publisher.example/datasel' }, neco);
 assert.equal(related.attribution.status, 'related');
 assert.match(related.attribution.reason, /not a direct event|not JNIL/);

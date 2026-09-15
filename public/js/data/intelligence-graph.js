@@ -45,23 +45,31 @@ const comparisonOf = (event) => Number.isFinite(event.changePoints)
   ? `${event.changePoints > 0 ? '+' : event.changePoints < 0 ? '−' : ''}${Math.abs(event.changePoints).toFixed(1)} percentage points`
   : Number.isFinite(event.changePct) ? signed(event.changePct) : null;
 
-function wordsOf(event, identityWords) {
+function wordsOf(event) {
   const words = clean([event.headline, event.detail, ...(event.keywords || [])].filter(Boolean).join(' ')).split(' ');
-  return new Set(words.filter((word) => word.length >= 4 && !WORDS_TO_IGNORE.has(word) && !identityWords.has(word) && !/^\d+$/.test(word)));
+  return new Set(words.filter((word) => word.length >= 4 && !WORDS_TO_IGNORE.has(word) && !/^\d+$/.test(word)));
 }
 
-function topicsOf(event, identityWords) {
-  return new Set([...(event.keywordIds || []).map((id) => `keyword:${id}`), ...wordsOf(event, identityWords)]);
+function topicsOf(event) {
+  return new Set([...(event.keywordIds || []).map((id) => `keyword:${id}`), ...wordsOf(event)]);
 }
 
-function overlapWith(event, triggers) {
+function prepareTriggers(triggers) {
+  // This preparation belongs to one card build: corrected records are read again on
+  // the next build, while every candidate reuses the same trigger vocabulary.
+  return {
+    identityWords: new Set(triggers.flatMap(row => clean(`${row.ticker || ''} ${row.company || ''}`).split(' '))),
+    topics: triggers.map(topicsOf),
+  };
+}
+
+function overlapWith(event, prepared) {
   // Company identity already gates the join. Its name must not masquerade as a shared topic.
-  const identityWords = new Set([event, ...triggers].flatMap((row) => clean(`${row.ticker || ''} ${row.company || ''}`).split(' ')));
-  const topics = topicsOf(event, identityWords);
+  const identityWords = new Set([...prepared.identityWords, ...clean(`${event.ticker || ''} ${event.company || ''}`).split(' ')]);
+  const topics = [...topicsOf(event)].filter(topic => !identityWords.has(topic));
   let best = [];
-  for (const trigger of triggers) {
-    const triggerTopics = topicsOf(trigger, identityWords);
-    const shared = [...topics].filter((topic) => triggerTopics.has(topic));
+  for (const triggerTopics of prepared.topics) {
+    const shared = topics.filter((topic) => triggerTopics.has(topic));
     if (shared.length > best.length) best = shared;
   }
   return best;
@@ -74,14 +82,14 @@ function sourceReadable(event, feedById) {
   return !!feed && ['ok', 'on-demand'].includes(feed.status);
 }
 
-function contextScore(event, triggers, throughDay, feedById) {
+function contextScore(event, triggers, throughDay, feedById, prepared) {
   if (!sourceReadable(event, feedById)) return null;
   const distance = daysBetween(event.day, throughDay);
   if (distance == null) return null;
   const upcoming = distance > 0;
   if (upcoming && (event.kind !== 'scheduled' || distance > UPCOMING_CONTEXT_DAYS)) return null;
   if (!upcoming && -distance > CONTEXT_LOOKBACK_DAYS) return null;
-  const overlap = overlapWith(event, triggers);
+  const overlap = overlapWith(event, prepared);
   const nearest = triggers.reduce((best, trigger) => Math.min(best, Math.abs(daysBetween(event.day, trigger.day) ?? 999)), Infinity);
   let score = overlap.length * 9;
   if (nearest === 0) score += 8;
@@ -196,8 +204,9 @@ export function enrichCardFromAllAlerts(card, report, { insightCompanies = [], c
   const seen = new Set((card.events || []).map(headlineKey));
   const seenDocuments = new Set((card.events || []).map(documentKey).filter(Boolean));
   const candidates = [];
+  const prepared = prepareTriggers(card.events || []);
   for (const event of pool) {
-    const relation = contextScore(event, card.events || [], report?.day, feedById);
+    const relation = contextScore(event, card.events || [], report?.day, feedById, prepared);
     if (!relation) continue;
     candidates.push({ event, ...relation });
   }

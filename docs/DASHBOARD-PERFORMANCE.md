@@ -1,5 +1,44 @@
 # Dashboard-wide performance, 6 September 2026
 
+## Cold Universe follow-up, 15 September 2026
+
+The first complete Universe normalization now avoids four repeated costs: scanning every
+reviewed company alias for every publisher article, constructing a number formatter for every
+exchange deal, rebuilding trigger vocabulary for every context candidate, and serializing every
+source record before knowing whether its event ID collides. Feed date bounds use a single pass;
+an already-complete Universe report also supplies the public saved window without assembling it twice.
+Identity attribution, exact duplicate handling, scope/privacy, alert scores and history remain unchanged.
+
+A paired local Chrome run used the committed data at `690274a13`, fresh browser contexts with
+service workers blocked, the saved portfolio identity book, a fixed clock at 2026-09-15 07:40 UTC,
+and the same local API fixtures as `verify-tab-performance-ui.mjs`. The exchange snapshot was
+awaited inside the timed interval before collection to remove its independent background-arrival
+race. Both versions called `collect({scope: 'universe', includeHistory: true})`, ranked partial
+reports and then ranked the final result. These are source-processing lab timings, not network
+or field Core Web Vitals, and a card becoming available is not a DOM-paint measurement.
+
+| Measurement | Previous code | Updated code |
+| --- | ---: | ---: |
+| First nonempty ranked partial | 1,104 ms | 553 ms |
+| Complete source collection/normalization | 13,656 ms | 10,713 ms |
+| Final alert ranking | 1,186 ms | 501 ms |
+| Longest observed main-thread task | 3,626 ms | 2,663 ms |
+
+Both runs retained **170,058 events and 167 alert cards**. SHA-256 comparisons matched for every
+normalized event field apart from the separately retained raw source object, and for the complete
+ranked cards including their source records, context, priorities and ordering. Every feed count
+and status also matched. External/private endpoints deliberately return unavailable in this
+fixture; these measurements do not certify production source completeness or freshness.
+
+The targeted discovery, exchange and AI contracts, the full General Alerts scope/privacy/recovery
+suite, the iframe scrolling/search/export sweep, and the returning-session service-worker upgrade
+test passed locally. The release advances to `2026-09-15-universe-first-load-v1`.
+Cold processing still has multi-second tasks and a large retained news payload; this is a measured
+reduction in first-load work, not a claim that every full-history operation is instantaneous.
+The separate DevTools cached-reload trace measured LCP 3.66 s and CLS 0.09 (previously 3.72 s
+and 0.10); it does not establish a material first-paint improvement. Rendering and source
+processing are separate budgets.
+
 ## Release audit, 15 September 2026
 
 The September 12–14 caching, iframe, scrolling and live-update improvements are on main.

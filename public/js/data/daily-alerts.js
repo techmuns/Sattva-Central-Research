@@ -564,7 +564,8 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     // Materialize from the already-settled source records; this starts no second
     // read. Universe is used so the same public snapshot can be narrowed against
     // the current Portfolio or Watchlist after a reload without persisting either.
-    const allPublic = assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
+    const allPublic = scope === 'universe' && !requestedCompanies.length ? completed
+      : assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
     void alertWindowCache.write(materializePublicAlertWindow(allPublic));
   }
   return completed;
@@ -625,22 +626,33 @@ const COLLECTORS = {
 };
 
 function toFeedRow(feed, out, day) {
-  const seen = new Set();
+  const seen = new Map();
   const events = (out.events || []).filter((event) => {
     // Deduplicate exact records within a source, not independent exchange/publisher evidence.
-    const key = `${event.id}:${JSON.stringify(event.sourceRecord || event)}`;
-    if (seen.has(key)) return false;
-    seen.add(key); return true;
+    // Most IDs occur once. Only serialize source records when an ID actually collides.
+    const id = String(event.id);
+    const prior = seen.get(id);
+    if (!prior) { seen.set(id, { first: event, signatures: null }); return true; }
+    prior.signatures ||= new Set([JSON.stringify(prior.first.sourceRecord || prior.first)]);
+    const signature = JSON.stringify(event.sourceRecord || event);
+    if (prior.signatures.has(signature)) return false;
+    prior.signatures.add(signature); return true;
   }).map((event) => ({ ...event, day: eventDay(event), feed: feed.id, feedLabel: feed.label, tab: feed.tab }));
-  const days = events.map((event) => event.day).filter(Boolean).sort();
+  let oldestDay = null, newestDay = null, todayCount = 0;
+  for (const event of events) {
+    if (event.day === day) todayCount++;
+    if (!event.day) continue;
+    if (oldestDay === null || event.day < oldestDay) oldestDay = event.day;
+    if (newestDay === null || event.day > newestDay) newestDay = event.day;
+  }
   return {
     ...feed,
     status: out.status || 'ok',
     revision: out.revision || out.snapshotUpdatedAt || out.capturedAt || out.checkedAt || out.asOf || String(events.length),
     count: events.length,
-    todayCount: events.filter((event) => event.day === day).length,
-    oldestDay: days[0] || null,
-    newestDay: days.at(-1) || null,
+    todayCount,
+    oldestDay,
+    newestDay,
     events,
     // Whether this feed's data actually extends to today. `null` where the feed cannot know.
     reachesToday: out.reachesToday ?? null,

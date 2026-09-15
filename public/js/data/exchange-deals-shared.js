@@ -29,6 +29,7 @@ export function validateExchangeSnapshot(data) {
 }
 export const supplementalInsiders = snapshot => Object.values(snapshot?.insiders?.byTicker || {}).flatMap(entry => entry.trades || []);
 export const sourceCovers = (source, date) => (source?.coverage || []).some((w) => w.from <= date && date <= w.to);
+const tradeValueFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 });
 export function exchangeRows(snapshot) {
   return (snapshot?.records || []).map(([sourceId, date, security, company, client, side, quantity, price, remarks]) => {
     const source = EXCHANGE_SOURCES.find((s) => s.id === sourceId);
@@ -36,7 +37,7 @@ export function exchangeRows(snapshot) {
     return { ticker, date, sourceId, url: source.url, exchangeSecurity: security,
       cells: { 'Trade Category': source.category, Company: snapshot.securityMap?.[security]?.name || company,
         Insider: client, Transaction: side, 'Trade Shares': String(quantity), Price: String(price),
-        'Trade Value': `≈ ₹${(quantity * price).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+        'Trade Value': `≈ ₹${tradeValueFormat.format(quantity * price)}`,
         Exchange: source.exchange, ...(source.exchange === 'BSE' ? { 'BSE Code': security, 'Reported security': company } : {}),
         ...(remarks && remarks !== '-' ? { Remarks: remarks } : {}), Source: source.exchange } };
   });

@@ -28,12 +28,19 @@ function matchText(row) {
 }
 function candidates(identities) {
   if (prepared.has(identities)) return prepared.get(identities);
-  const value = identities.map(identity => {
+  const value = new Map();
+  identities.forEach((identity, order) => {
     const full = reviewedNewsIdentity(identity);
     const names = [full.name, full.legalName, full.ticker, ...(full.formerNames || []), ...(full.brands || []),
       ...(full.aliases || []), ...(full.subsidiaries || []), ...(full.relatedEntities || []).flatMap(r => [r.name, ...(r.aliases || [])])];
-    return { identity, keys: [...new Set(names.filter(Boolean).map(name => normalizeNewsText(name)
-      .replace(/(?:\s+(?:limited|ltd|private|pvt|plc))+$/, '')))].filter(key => key.length >= 4).map(key => ` ${key} `) };
+    const item = { identity, order };
+    const keys = [...new Set(names.filter(Boolean).map(name => normalizeNewsText(name)
+      .replace(/(?:\s+(?:limited|ltd|private|pvt|plc))+$/, '')))].filter(key => key.length >= 4);
+    for (const key of keys) {
+      const firstWord = key.split(' ', 1)[0];
+      if (!value.has(firstWord)) value.set(firstWord, []);
+      value.get(firstWord).push({ item, key: ` ${key} ` });
+    }
   });
   prepared.set(identities, value);
   return value;
@@ -42,10 +49,19 @@ function candidates(identities) {
 /** Exact reviewed identities only. Query matches and social buzz do not prove an event. */
 export function matchPortfolioNews(row, identities) {
   const text = matchText(row);
+  const index = candidates(identities);
+  const matches = new Set();
+  // An exact phrase can only occur if its first word occurs. Indexing this word avoids
+  // searching every reviewed alias for every article in the full Universe capture.
+  for (const word of new Set(text.split(' '))) {
+    for (const { item, key } of index.get(word) || []) {
+      if (!matches.has(item) && text.includes(key)) matches.add(item);
+    }
+  }
   // Cheap candidate generation is not attribution. The exact guard still decides each match,
   // including ambiguous symbols and the reviewed mismatch. This avoids O(rows × portfolio)
   // expensive article parsing every time a parallel feed settles.
-  return candidates(identities).filter(item => item.keys.some(key => text.includes(key)))
+  return [...matches].sort((a, b) => a.order - b.order)
     .map(({ identity }) => attributeNewsRow(row, identity))
     .filter(row => ['confirmed', 'related'].includes(row.attribution.status));
 }
