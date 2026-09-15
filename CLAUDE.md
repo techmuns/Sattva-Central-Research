@@ -9,6 +9,8 @@ All Alerts search respects the visibly selected date interval. Use All history o
 When a large table applies filters, show pulsing empty rows while preserving its dimensions and
 controls. Small local filters remain immediate. Background refreshes retain usable matching rows;
 pending reads with no matching rows show placeholders until they complete or fail.
+Scope, tab and full-view filter changes cover the previous view until its replacement is ready,
+so a follow-up interaction cannot target controls that are about to be replaced.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
 All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.

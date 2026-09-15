@@ -1,6 +1,7 @@
 /* Shared appearance tokens. Tailwind's role palettes live in scripts/theme-palette.cjs. */
 /* Loading rows keep the result area steady while controls remain usable. */
 [data-score-table], [data-mcnews-list] { position: relative; }
+#dashboard-main:has(> [data-table-loading]) { position: relative; }
 [data-export]:disabled, [data-news-export]:disabled { opacity: .5; cursor: progress; box-shadow: none; }
 .table-results-loading { visibility: hidden; }
 .table-loading-placeholder { position: absolute; inset-inline: 0; z-index: 11; overflow: hidden; pointer-events: none; background: rgb(var(--surface-white, 255 255 255)); }

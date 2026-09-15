@@ -9,6 +9,7 @@ import * as live from '../core/live.js';
 import * as watch from '../core/watch.js';
 import * as refreshRegistry from '../core/refresh.js';
 import { tabBar, segmentedToggle, statusControl, emptyState } from './components.js';
+import { coverTableResults } from './loading.js';
 import { closeDrill, closeModal, closeWorkspace, openModal, watchlistEmptyPanel } from './screener.js';
 import { SCOPES, scopeLabel } from '../data/scope.js';
 import * as watchlist from '../core/watchlist.js';
@@ -72,8 +73,10 @@ let chromeDisposers = [];
 let headerDisposer = null;
 let topTabs = null;
 let shellRenderRequest = 0;
+let releaseRouteLoading = null;
 
 export function mount(root) {
+  releaseRouteLoading?.(); releaseRouteLoading = null;
   topTabs?.dispose();
   topTabs = null;
   root.innerHTML = shellTemplate();
@@ -423,6 +426,7 @@ function disposeChrome() {
 function mountTab(root, tabModule, resolved) {
   shellRenderRequest++;
   const reqId = shellRenderRequest;
+  releaseRouteLoading?.(); releaseRouteLoading = null;
   // A drill panel, modal or workspace opened on the previous view must never survive a route
   // change — it would be showing a row that is no longer on screen. `silent` because the URL
   // is already being rewritten by the navigation that triggered this; letting the overlay run
@@ -507,6 +511,10 @@ function mountTab(root, tabModule, resolved) {
   // The route chrome (including the newly active tab's visual state) is now in the DOM.
   // Yield to the browser so the reader gets instant visual feedback of their click, then run the
   // heavy data parsing and DOM rendering of the tab content itself.
+  // Keep old controls out of reach during that yield: otherwise a fast follow-up search can
+  // edit a table that the queued render is about to replace. The current tab still owns its DOM
+  // and view state; only the temporary cover is removed before the latest render runs.
+  if (contentHost.children.length) releaseRouteLoading = coverTableResults(contentHost.parentElement, contentHost);
   if (typeof requestAnimationFrame === 'function') {
     requestAnimationFrame(() => setTimeout(runRender, 0));
   } else {
@@ -515,6 +523,7 @@ function mountTab(root, tabModule, resolved) {
 
   function runRender() {
     if (shellRenderRequest !== reqId) return; // Reader clicked away before this frame
+    releaseRouteLoading?.(); releaseRouteLoading = null;
     root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
     contentHost.setAttribute('data-active-tab', tabModule.meta.id);
     try {

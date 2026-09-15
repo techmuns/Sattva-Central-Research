@@ -79,7 +79,7 @@ try {
     await frame.waitForFunction(id => document.querySelector(`[data-tab-id="${id}"]`)?.getAttribute('aria-selected') === 'true', route.split(/[/?]/)[0]);
     await frame.waitForFunction(() => {
       const panel = document.querySelector('#content-host');
-      return panel?.textContent.trim() && !panel.querySelector('.skeleton-shimmer');
+      return panel?.textContent.trim() && !panel.inert && !panel.querySelector('.skeleton-shimmer');
     }, null, { timeout: 60000 });
     if (section === 'directory') await frame.locator('[data-ipo-view]').selectOption('directory');
     else if (section) await frame.locator('[data-chatter-section-tabs]').getByRole('tab', { name: section, exact: true }).click();

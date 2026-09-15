@@ -52,15 +52,30 @@ try {
   const page = await context.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   const tickers = letters => [...letters].map(letter => identities['ABCDEF'.indexOf(letter)].ticker).sort();
-  const rowsAre = async letters => page.waitForFunction(expected => JSON.stringify([...document.querySelectorAll('#content-host tr[data-row-key]')].map(el => el.dataset.rowKey).sort()) === JSON.stringify(expected), tickers(letters));
+  const rowsAre = async letters => page.waitForFunction(expected => !document.querySelector('#content-host')?.inert && JSON.stringify([...document.querySelectorAll('#content-host tr[data-row-key]')].map(el => el.dataset.rowKey).sort()) === JSON.stringify(expected), tickers(letters));
   const chip = (group, id) => page.locator(`[data-chip-group="${group}"][data-chip-id="${id}"]`);
   const choose = async (group, id, param) => {
     await chip(group, id).click();
-    await page.waitForFunction(({ param, id }) => new URLSearchParams(location.hash.split('?')[1]).get(param) === id, { param, id });
+    await page.waitForFunction(({ param, id }) => new URLSearchParams(location.hash.split('?')[1]).get(param) === id && !document.querySelector('#content-host')?.inert, { param, id });
   };
   for (const view of ['technical-scanner', 'fii-accumulation']) {
     await page.goto(`${origin}/#/research/breakouts/${view}?scope=universe`);
     await rowsAre(view === 'technical-scanner' ? 'ABCDEF' : 'ABCEF');
+    if (view === 'technical-scanner') {
+      // Hold the view replacement between the filter click and its render. The old search
+      // control must not accept input for a view that is about to be replaced.
+      await page.evaluate(() => {
+        const native = window.requestAnimationFrame, queued = [];
+        window.requestAnimationFrame = fn => { queued.push(fn); return queued.length; };
+        window.releaseFilterFrames = () => { window.requestAnimationFrame = native; queued.forEach(fn => native(fn)); };
+        document.querySelector('[data-chip-group="volume"][data-chip-id="1.5"]').click();
+      });
+      assert(await page.locator('#dashboard-main > [data-table-loading]').isVisible(), 'a full-view filter change shows loading feedback');
+      assert(await page.locator('#content-host').evaluate(el => el.inert), 'previous-view controls cannot receive an accidental follow-up interaction');
+      await page.evaluate(() => releaseFilterFrames());
+      await rowsAre('AC');
+      await choose('volume', 'all', 'vol'); await rowsAre('ABCDEF');
+    }
     for (const group of ['volume', 'proximity', 'trend']) assert(await chip(group, 'all').isVisible());
     await choose('volume', '1.5', 'vol'); await rowsAre('AC');
     await choose('proximity', '5', 'near'); await rowsAre('A');
