@@ -363,7 +363,7 @@ try {
       assert.equal(await frame.locator(`[data-feed-toggle="${id}"]`).getAttribute('aria-checked'), 'true');
       const selectedName = await frame.locator('[data-sources-summary]').getAttribute('title');
       assert.notEqual(selectedName, 'Every available source');
-      assert((await frame.locator('.alerts-source-heading p').innerText()).startsWith(selectedName));
+      assert((await frame.locator('[data-alerts-source-description]').innerText()).startsWith(selectedName));
     }
     await frame.locator('[data-feed-toggle="__all"]').click();
     const panel = await frame.locator('[data-alerts-coverage]').boundingBox();

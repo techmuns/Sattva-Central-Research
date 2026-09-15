@@ -394,8 +394,8 @@ function paint(ctx) {
         summary.innerHTML = newSummary.innerHTML;
         summary.title = newSummary.title;
       }
-      const heading = coveragePanelContainer.querySelector('.alerts-source-heading p');
-      const newHeading = newPicker.querySelector('.alerts-source-heading p');
+      const heading = coveragePanelContainer.querySelector('[data-alerts-source-description]');
+      const newHeading = newPicker.querySelector('[data-alerts-source-description]');
       if (heading && newHeading) heading.textContent = newHeading.textContent;
       const status = coveragePanelContainer.querySelector('[data-alerts-source-status]');
       const newStatus = newPicker.querySelector('[data-alerts-source-status]');
@@ -697,7 +697,7 @@ function coveragePanel(feeds, visibleCount, rep, day) {
     <section id="alerts-source-panel" class="alerts-source-panel" data-alerts-coverage aria-label="Alert source filters">
       <div class="alerts-source-heading">
         <div><h3 class="font-semibold text-slate-800">Filter by source</h3>
-          <p class="mt-1 text-xs text-slate-500">${escapeHtml(selectedNames)}. Select one or more feeds.</p>
+          <p class="mt-1 text-xs text-slate-500" data-alerts-source-description>${escapeHtml(selectedNames)}. Select one or more feeds.</p>
           <p class="mt-1 text-xs text-slate-500" data-alerts-source-status>${sourceCoverageSummary(rep, day)}</p></div>
         <button type="button" class="alerts-layout-button" data-sources-close>Done</button>
       </div>
