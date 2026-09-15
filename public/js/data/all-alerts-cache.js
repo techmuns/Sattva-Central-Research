@@ -40,17 +40,22 @@ const mergedEvents = new WeakMap();
  * saved remainder. A successful source is authoritative, including a genuinely empty result.
  * Replace identity groups together: some sources legitimately carry several records per id. */
 export function retainAlertSource(current, previous) {
-  const older = !!(current.asOf && previous?.asOf && Date.parse(current.asOf) < Date.parse(previous.asOf));
+  const previousTime = previous?.evidenceAsOf || previous?.asOf;
+  const currentTime = current.evidenceAsOf || current.asOf;
+  const older = !!(currentTime && previousTime && Date.parse(currentTime) < Date.parse(previousTime));
   if (!previous?.events.length || !publicAlertFeed(current) ||
-      (current.status === 'ok' && !older) || current.events === previous.events) return current;
-  if (!current.events.length) return { ...current, events: previous.events };
+      (current.status === 'ok' && !older)) return current;
+  // Keep the newest evidence generation separately from the current read's source metadata.
+  // Otherwise the first older read lowers the comparison time and a second one can erase it.
+  const retained = { ...current, evidenceAsOf: older || !currentTime ? previousTime : currentTime };
+  if (current.events === previous.events || !current.events.length) return { ...retained, events: previous.events };
   const memo = mergedEvents.get(current.events);
-  if (memo?.previous === previous.events && memo.older === older) return { ...current, events: memo.events };
+  if (memo?.previous === previous.events && memo.older === older) return { ...retained, events: memo.events };
   const preferred = older ? previous.events : current.events;
   const other = older ? current.events : previous.events;
   const ids = new Set(preferred.map(event => event.id));
   const extra = other.filter(event => !ids.has(event.id));
   const events = extra.length ? [...preferred, ...extra] : preferred;
   mergedEvents.set(current.events, { previous: previous.events, older, events });
-  return { ...current, events };
+  return { ...retained, events };
 }

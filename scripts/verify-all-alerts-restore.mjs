@@ -52,6 +52,8 @@ assert.deepEqual(adoptAllAlertsReport(complete, restored, context).events, compl
 assert.equal(adoptAllAlertsReport(report([]), restored, context).events.length, 0, 'an authoritative empty source clears its prior contribution');
 assert.equal(retainAlertSource(source([], 'on-demand'), source([old])).events[0], old, 'an unrequested source cannot erase a previously read public record');
 assert.equal(retainAlertSource({ ...source([]), asOf: '2026-01-01T00:00:00Z' }, source([old])).events[0], old, 'a readable but older capture cannot retract newer saved evidence');
+const olderRead = { ...source([]), asOf: '2026-01-01T00:00:00Z' };
+assert.equal(retainAlertSource(olderRead, retainAlertSource(olderRead, source([old]))).events[0], old, 'repeating the older read cannot lower the retained generation and erase it on the next pass');
 assert.equal(adoptAllAlertsReport(complete, null, { ...context, day: '2026-09-16' }).feeds.find(f => f.id === 'nse-filings').reachesToday, false);
 const duplicateGroup = [event('shared', { headline: 'One' }), event('shared', { headline: 'Two' })];
 assert.equal(retainAlertSource(source(duplicateGroup, 'failed'), source([event('shared'), old])).events.length, 3, 'legitimate same-id source records survive retention');
