@@ -989,6 +989,7 @@ export function scoreTable(config) {
     const scroller = host.querySelector('[data-table-scroll]');
     let filterFrame = 0;
     let filterTask = 0;
+    let filterGeneration = 0;
     let releaseLoading = null;
     let exportWasDisabled = false;
     const filterPending = () => !!(filterFrame || filterTask);
@@ -1013,9 +1014,12 @@ export function scoreTable(config) {
       if (rows.length < 1000 && !filterPending()) { repaint(); return; }
       if (filterPending()) return;
       stopFill();
+      const generation = ++filterGeneration;
       filterFrame = requestAnimationFrame(() => {
+        if (generation !== filterGeneration) return;
         filterFrame = 0;
         filterTask = setTimeout(() => {
+          if (generation !== filterGeneration) return;
           filterTask = 0;
           if (isDisposed || !host.isConnected) { releaseLoading?.(); releaseLoading = null; return; }
           repaint();
@@ -1342,13 +1346,22 @@ export function scoreTable(config) {
 
     syncLoadingState();
     activeRepaint = options => {
-      // A feed arriving during a user change updates `rows`; the queued filter reads it next.
-      if (!filterPending()) repaint(options);
+      // Live removals (including revoked private records) must leave the DOM immediately.
+      // Finish the latest selection with the new rows and retire its deferred callback.
+      const pending = filterPending();
+      if (pending) {
+        filterGeneration++;
+        if (filterFrame) cancelAnimationFrame(filterFrame);
+        clearTimeout(filterTask);
+        filterFrame = 0; filterTask = 0;
+      }
+      repaint(pending ? { resetScroll: true } : options);
     };
 
     return () => {
       isDisposed = true;
       activeRepaint = null;
+      filterGeneration++;
       if (filterFrame) cancelAnimationFrame(filterFrame);
       clearTimeout(filterTask);
       filterFrame = 0; filterTask = 0;

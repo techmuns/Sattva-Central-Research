@@ -94,6 +94,12 @@ try {
   assert.match(await page.locator('[data-row-count]').innerText(),/^3001 of 3001/);
   await page.locator('[data-export]').click();
   assert.equal(await page.evaluate(()=>exported.length),3001,'latest selection includes arrivals while filtering');
+  await page.evaluate(()=>holdFrames());
+  await period.selectOption('all');
+  await page.evaluate(()=>{records=records.filter(row=>row.id!=='0');table.updateData(records);});
+  assert.equal(await page.locator('tr[data-row-key="0"]').count(),0,'a live removal clears the old DOM immediately during a pending filter');
+  await page.evaluate(()=>releaseFrames());await settled();
+  assert.equal(await period.inputValue(),'all');
   await period.selectOption('none');await settled();
   assert.match(await page.locator('tbody').innerText(),/No companies match/,'completed empty results stop loading');
   await page.evaluate(()=>mount({empty:true,loading:true}));
