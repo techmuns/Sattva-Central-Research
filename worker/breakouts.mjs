@@ -46,18 +46,47 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
   } catch { return reply({ ok: false, reason: 'capture-unavailable' }, 503); }
 }
 
-// Read current main data without coupling price delivery to a website rebuild. The URL and file
-// are fixed; credentials are never forwarded. A failed read keeps its separately dated fallback.
-export async function handleTechnicals(request, env, { fetcher = fetch } = {}) {
+// Stream the fixed daily file: parsing and hashing its ~3 MB on every request exceeds
+// the free Worker's CPU budget. The browser validates it before replacing its daily cache.
+async function dailyResponse(source, delivery, ttl) {
+  const maximum = 16*1024*1024;
+  if (!source.ok || Number(source.headers.get('content-length')) > maximum) {
+    await source.body?.cancel(); throw Error('Daily file unavailable');
+  }
+  const reader = source.body?.getReader();
+  let bytes = 0;
+  const body = new ReadableStream({
+    async pull(controller) {
+      try {
+        if (!reader) throw Error('Daily body unavailable');
+        const next = await reader.read();
+        if (next.done) { controller.close(); return; }
+        bytes += next.value.byteLength;
+        if (bytes > maximum) { await reader.cancel(); throw Error('Daily file too large'); }
+        controller.enqueue(next.value);
+      } catch (error) { controller.error(error); }
+    },
+    cancel(reason) { return reader?.cancel(reason); },
+  });
+  const headers = {'content-type':'application/json','cache-control':ttl ? `public, max-age=${ttl}` : 'no-store','x-sattva-delivery':delivery};
+  if (source.headers.has('etag')) headers.etag = source.headers.get('etag');
+  return new Response(body,{headers});
+}
+export async function handleTechnicals(request, env, { fetcher = fetch, edgeCache = globalThis.caches?.default } = {}) {
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
+  const key = new Request(new URL('/api/technicals',request.url));
   try {
-    const response = await fetcher('https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/main/public/data/technicals.json', {
+    const cached = await edgeCache?.match(key).catch(()=>null);
+    if (cached) return revalidate(request,cached,'edge');
+    const source = await fetcher('https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/main/public/data/technicals.json', {
       redirect: 'error', cache: 'no-cache', signal: AbortSignal.timeout(12000) });
-    const data = await boundedJson(response, 16 * 1024 * 1024);
-    if (!Array.isArray(data.companies) || !data.companies.length || !Number.isFinite(Date.parse(data.generated_at))) throw Error('Invalid technicals capture');
-    return conditional(request, { ...data, delivery: 'repository' }, 30);
+    const response = await dailyResponse(source,'repository',60);
+    if (edgeCache) await edgeCache.put(key,response.clone()).catch(()=>{});
+    const result = revalidate(request,response,'repository');
+    if (result.status === 304) await response.body.cancel();
+    return result;
   } catch {
-    const data = await boundedJson(await env.ASSETS.fetch(new Request(new URL('/data/technicals.json', request.url))), 16 * 1024 * 1024);
-    return reply({ ...data, delivery: 'deployed-fallback', deliveryFailed: true });
+    try { return await dailyResponse(await env.ASSETS.fetch(new Request(new URL('/data/technicals.json',request.url))),'deployed-fallback',0); }
+    catch { return reply({ok:false,reason:'daily-file-unavailable'},503); }
   }
 }

@@ -43,7 +43,7 @@ async function buildCache() {
   let payload;
   try {
     payload = await fetchJson('/api/technicals');
-    if (!Array.isArray(payload?.companies) || !payload.companies.length) throw Error('Invalid technicals');
+    if (!Array.isArray(payload?.companies) || !payload.companies.length || !Number.isFinite(Date.parse(payload.generated_at))) throw Error('Invalid technicals');
   } catch { payload = { ...await fetchJson(TECHNICALS_PATH), deliveryFailed: true }; }
   if (cache && Date.parse(payload.generated_at) < Date.parse(cache.meta.generated_at)) {
     cache.meta.deliveryFailed = true;
@@ -113,7 +113,9 @@ function bestFirst(a, b) {
 async function fetchJson(path) {
   const res = await fetch(path, { cache: 'no-cache', signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
-  return res.json();
+  const data = await res.json();
+  if (res.headers.get('x-sattva-delivery') === 'deployed-fallback') data.deliveryFailed = true;
+  return data;
 }
 
 async function applySourceOverlay(rows) {

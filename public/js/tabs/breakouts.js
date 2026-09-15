@@ -53,7 +53,7 @@ export function render(ctx) {
   });
   if (!dataOff) dataOff = technicals.onChange(() => { if (ctxRef) paint(ctxRef); });
   if (!liveOff) liveOff = live.watch(() => { if (ctxRef && technicals.isLoaded()) paint(ctxRef); });
-  if (!dailyTimer) { dailyTimer = setInterval(checkDaily, 15*60000); document.addEventListener('visibilitychange', checkDaily); window.addEventListener('focus', checkDaily); window.addEventListener('online', checkDaily); if (technicals.isLoaded()) checkDaily(); }
+  if (!dailyTimer) { dailyTimer = setInterval(checkDaily, 60000); document.addEventListener('visibilitychange', checkDaily); window.addEventListener('focus', checkDaily); window.addEventListener('online', checkDaily); if (technicals.isLoaded()) checkDaily(); }
   const token = ++renderToken;
   ctx.root.innerHTML = loadingHtml();
 

@@ -6,7 +6,7 @@ import {resolve,sep,extname} from 'node:path';
 const {chromium}=await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root=resolve('public'), AT=Date.parse('2026-09-15T06:30:00Z');
 const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=original.companies.find(row=>!row.error);
-const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-11',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-11',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
+const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-10',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-10',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
 let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0;
 const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],rows:['TEST','FUTURE'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
 const server=createServer((req,res)=>{
@@ -37,7 +37,9 @@ try{
  const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
  assert.equal(await cell.textContent(),'₹106.00');
  await page.locator('[data-row-key="FUTURE"]').waitFor();
- assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-11')));
+ assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-10')));
+ const sourceState=()=>page.evaluate(async()=>(await import('/js/ui/sources.js')).sourceGroups().flatMap(group=>group.items).find(item=>item.name.startsWith('Saved price and volume capture')).readState);
+ assert.equal(await sourceState(),'read');
  await page.locator('[data-table-search]').fill('Test Company');
  await page.locator('[data-row-key="TEST"]').click();
  const popup=page.locator('[data-stat="breakout-price"]');await popup.waitFor();
@@ -48,11 +50,17 @@ try{
  await page.waitForFunction(()=>document.querySelector('[data-cmp="TEST"]')?.textContent==='₹108.00');
  assert((await popup.innerText()).includes('₹108'));assert((await popup.innerText()).includes('+10.20%'));
  assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(),'test company');
- assert((await page.locator('#drill-content').innerText()).includes('2026-09-11'));
+ assert((await page.locator('#drill-content').innerText()).includes('2026-09-10'));
+ daily.generated_at='2026-09-15T06:31:00Z';daily.price_date=daily.companies[0].bar_date='2026-09-11';daily.companies[0].ema50=999;
+ await page.clock.runFor(15*60000);
+ await page.waitForFunction(()=>document.querySelector('#drill-content')?.textContent.includes('close 2026-09-11'));
+ assert((await page.locator('#drill-content').innerText()).includes('999'));
+ assert((await popup.innerText()).includes('₹108'));
  await page.locator('[data-drill-close]').click();
  fail=true;await page.evaluate(()=>window.dispatchEvent(new Event('online')));
  await page.waitForFunction(()=>document.querySelector('[data-live-info]')?.textContent.includes('Partial update'));
  assert.equal(await cell.textContent(),'₹108.00');assert((await cell.locator('..').innerText()).includes('Saved'));
+ assert.equal(await sourceState(),'unavailable');
  fail=false;price=99;
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
  await page.waitForFunction(()=>!document.querySelector('[data-cmp="TEST"]'));

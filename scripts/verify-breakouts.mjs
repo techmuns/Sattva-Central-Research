@@ -100,7 +100,7 @@ test('read routes never arm capture and daily delivery preserves a dated fallbac
  const r=await handleBreakouts(new Request('https://test/api/breakouts'),env,{now:()=>AT});assert.equal(r.status,200);assert.equal(armed,0);
  const denied=await handleBreakouts(new Request(BREAKOUT_ENDPOINT,{method:'POST',body:'{}'}),env,{identity:async()=>{throw Error();}});assert.equal(denied.status,403);
  const fallback=await handleTechnicals(new Request('https://test/api/technicals'),{ASSETS:{fetch:async()=>Response.json({companies:[{ticker:'TEST'}],generated_at:iso(AT-86400000)})}},{fetcher:async()=>{throw Error('offline');}});
- assert.equal((await fallback.json()).deliveryFailed,true);
+ assert.equal(fallback.headers.get('x-sattva-delivery'),'deployed-fallback');assert.equal((await fallback.json()).generated_at,iso(AT-86400000));
 });
 test('only a signed fixed-workflow main-branch GitHub identity may write',async()=>{
  const key=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
@@ -151,4 +151,27 @@ test('later historical corrections retain both observations without duplicating 
  store.recovery('2:1','TEST',from,AT,[quote('TEST',AT,{kind:'recovered-candle',price:101})]);
  store.recovery('3:1','TEST',from,AT,[quote('TEST',AT,{kind:'recovered-candle',price:102})]);
  assert.deepEqual(store.history('TEST').rows.map(row=>row.price).sort(),[101,102]);
+});
+
+test('daily delivery streams the fixed source and reuses its ETag without reparsing it in the Worker',async()=>{
+ const payload={companies:[{ticker:'TEST'}],generated_at:iso(AT)};
+ const response=await handleTechnicals(new Request('https://test/api/technicals'),{}, {fetcher:async url=>{assert(url.endsWith('/main/public/data/technicals.json'));return Response.json(payload,{headers:{etag:'"daily-1"'}});}});
+ assert.equal(response.headers.get('etag'),'"daily-1"');assert.equal(response.headers.get('x-sattva-delivery'),'repository');assert.deepEqual(await response.json(),payload);
+ const notModified=await handleTechnicals(new Request('https://test/api/technicals',{headers:{'if-none-match':'"daily-1"'}}),{}, {fetcher:async()=>Response.json(payload,{headers:{etag:'"daily-1"'}})});
+ assert.equal(notModified.status,304);
+ const brokenCache={match:async()=>{throw Error('cache unavailable');},put:async()=>{throw Error('cache unavailable');}};
+ const uncached=await handleTechnicals(new Request('https://test/api/technicals'),{}, {edgeCache:brokenCache,fetcher:async()=>Response.json(payload)});
+ assert.deepEqual(await uncached.json(),payload);
+ const oversized=await handleTechnicals(new Request('https://test/api/technicals'),{}, {fetcher:async()=>new Response(new Uint8Array(17*1024*1024))});
+ await assert.rejects(oversized.arrayBuffer(),/too large/);
+});
+
+test('long captures acquire a fresh identity for every checkpoint',async()=>{
+ let identities=0;const seen=[];
+ const client=breakoutClient({env:{ACTIONS_ID_TOKEN_REQUEST_URL:'https://test.actions.githubusercontent.com/id',ACTIONS_ID_TOKEN_REQUEST_TOKEN:'fixture'},fetcher:async(url,options)=>{
+  if(new URL(url).pathname==='/id')return Response.json({value:`token-${++identities}`});
+  seen.push(options.headers.authorization);return Response.json({ok:true});
+ }});
+ await client({action:'begin'});await client({action:'checkpoint'});await client({action:'finish'});
+ assert.deepEqual(seen,['Bearer token-1','Bearer token-2','Bearer token-3']);
 });

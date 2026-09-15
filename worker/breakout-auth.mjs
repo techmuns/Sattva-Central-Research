@@ -31,4 +31,3 @@ export async function breakoutCollectorIdentity(request, { fetcher = fetch, now 
     throw Error('Collector signature refused');
   return `${claims.run_id}:${claims.run_attempt}`;
 }
-

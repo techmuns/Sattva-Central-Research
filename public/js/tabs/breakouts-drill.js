@@ -73,9 +73,20 @@ function metaChips(ruleKey, company) {
 export function openTechnicalsDrill(scored) {
   if (!scored) return;
   const c = scored.company?.dailyCompany || scored.company || {};
-  let stopWatching = null;
-  const onClose = () => { stopWatching?.(); stopWatching = null; };
+  let stopWatching = null, stopDaily = null, closed = false;
+  const onClose = () => { closed = true; stopWatching?.(); stopDaily?.(); stopWatching = stopDaily = null; };
   const watchPrice = () => {
+    stopDaily = technicals.onChange(() => {
+      // Defer replacement until notification finishes, so its new subscription is not
+      // visited again by the same Set iteration. Closing in the meantime cancels it.
+      queueMicrotask(() => {
+        const latest = technicals.byTicker(c.ticker);
+        if (closed || !latest || latest === scored) return;
+        const panel = document.getElementById('drill-panel'), scroll = panel?.scrollTop;
+        openTechnicalsDrill(latest);
+        if (panel) panel.scrollTop = scroll;
+      });
+    });
     stopWatching = live.watch(() => {
       const element = document.querySelector('[data-stat="breakout-price"]');
       if (!element) return;
