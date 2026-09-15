@@ -685,6 +685,8 @@
       }
       @media (max-width: 560px) {
         #app:has(.research-workspace) > [data-app-header] > div { gap: 0.4rem; }
+        /* Keep the new 44px bell touch target without taking space from the answer. */
+        #app:has(.research-workspace) > [data-app-header] { padding-top: 0.4rem; padding-bottom: 0.35rem; }
         #app:has(.research-workspace) > [data-app-header], #app:has(.research-workspace) > [data-app-nav], #app:has(.research-workspace) > [data-app-content] { padding-left: 0.5rem; padding-right: 0.5rem; }
         #app:has(.research-workspace) .sattva-product-caption { display: none; }
         #app:has(.research-workspace) .theme-toggle span { display: none; }
