@@ -50,6 +50,11 @@ try {
   await page.clock.setFixedTime(new Date(capture.checkedAt));
   await page.goto(origin);
   const ready = () => page.locator('[data-ipo-refresh]:not([disabled])').waitFor();
+  const filtered = () => page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+  const search = async value => {
+    await page.locator('[data-table-search]').fill(value);
+    await filtered();
+  };
   await ready();
   check('native NSE-style table replaces weekly tracker and scoring', await page.locator('[data-score-table]').count() === 1 && await page.locator('.ipo-board, .ipo-card, [data-ipo-settings]').count() === 0);
   const history = page.getByRole('combobox', { name: 'History range', exact: true });
@@ -84,11 +89,11 @@ try {
   await page.keyboard.press('Escape');
   check('source panel closes with Escape and returns focus', await page.locator('#source-beacon-panel').count() === 0 && await page.locator('[data-beacon-toggle]').evaluate((el) => el === document.activeElement));
   if (process.env.IPO_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.IPO_SCREENSHOT_DIR}/ipo-filings-desktop.png`, fullPage: true });
-  await page.locator('[data-table-search]').fill('EAAA');
+  await search('EAAA');
   check('retained EAAA supplement is searchable', (await page.locator('[data-row-key]').count()) >= 2 && (await page.locator('[data-score-table]').innerText()).includes('EAAA India Alternatives'));
-  await page.locator('[data-table-search]').fill('Edelweiss Alternatives');
+  await search('Edelweiss Alternatives');
   check('issuer aliases are retained', await page.locator('[data-row-key]').count() >= 1);
-  await page.locator('[data-table-search]').fill('');
+  await search('');
   live.companies = [{ id: '999999', company: 'Directory-only <img src=x onerror="window.ipoXss=1">', url: 'https://www.ipoplatform.com/ipo/directory-only/999999', board: 'SME', status: 'Upcoming', openingWindow: '10 Sep - 15 Sep', listingDate: '2026-09-18', observedAt: capture.checkedAt, retained: false }];
   await page.evaluate(() => window.poll.fetcher());
   await page.locator('[data-ipo-view]').selectOption('directory');
@@ -110,6 +115,7 @@ try {
   await page.locator('[data-table-filter="1"]').selectOption('SME');
   await page.locator('[data-table-filter="2"]').selectOption('BSE SME');
   await page.locator('[data-table-filter="0"]').selectOption('DRHP / Draft prospectus');
+  await filtered();
   const visibleBefore = await page.locator('[data-row-count]').innerText();
   await page.locator('[data-ipo-refresh]').click(); await ready();
   check('refresh preserves filters and counts', await page.locator('[data-row-count]').innerText() === visibleBefore && await page.locator('[data-table-filter="1"]').inputValue() === 'SME');
@@ -126,7 +132,7 @@ try {
     filingDate: offset === null ? null : dayOffset(offset), documentDate: null,
     url: `https://www.sebi.gov.in/window-boundary-${index}.pdf`, observedAt: capture.checkedAt,
   })));
-  await page.locator('[data-table-search]').fill('Window boundary');
+  await search('Window boundary');
   await page.evaluate(() => window.poll.fetcher());
   check('automatic arrivals preserve the seven-day choice and include only today through six days ago', await history.inputValue() === '7' && await page.locator('[data-row-key]').count() === 2);
   await history.selectOption('30');
@@ -141,7 +147,7 @@ try {
   await page.locator('[data-ipo-history]').selectOption('undated');
   check('undated documents remain accessible separately', await page.locator('[data-row-key]').count() > 0 && (await page.locator('[data-row-key]').first().innerText()).includes('Date not supplied'));
   await page.locator('[data-ipo-history]').selectOption('all');
-  await page.locator('[data-table-search]').fill('Example new arrival');
+  await search('Example new arrival');
   live.rows.push({ ...capture.rows[0], company: 'Example new arrival', title: 'Example new arrival · DRHP', url: 'https://www.sebi.gov.in/new-arrival.pdf', observedAt: capture.checkedAt });
   await page.evaluate(() => window.poll.fetcher());
   check('a newly published filing arrives through automatic refresh while preserving search', await page.locator('[data-row-key]').count() === 1 && await page.locator('[data-table-search]').inputValue() === 'Example new arrival');
@@ -152,9 +158,9 @@ try {
   await page.keyboard.press('Escape');
   failure = false;
   const bad = { ...capture.rows[0], company: '<img src=x onerror="window.ipoXss=1">', title: 'Escaped document', url: 'https://www.sebi.gov.in/xss-test.pdf', observedAt: capture.checkedAt };
-  live.rows.push(bad); await page.locator('[data-table-search]').fill('onerror'); await page.locator('[data-ipo-refresh]').click(); await ready();
+  live.rows.push(bad); await search('onerror'); await page.locator('[data-ipo-refresh]').click(); await ready();
   check('source HTML is escaped', await page.locator('[data-row-key] img').count() === 0 && await page.evaluate(() => !window.ipoXss));
-  await page.locator('[data-table-search]').fill('');
+  await search('');
   for (const width of [900, 390, 320]) {
     await page.setViewportSize({ width, height: 850 });
     check(`controls remain usable without page overflow at ${width}px`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
