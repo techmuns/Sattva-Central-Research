@@ -326,7 +326,12 @@ try {
   assert((await page.locator('[data-arrivals-detail]').innerText()).includes('1 received this visit in your filters'));
   if (process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  assert.equal(await page.locator('.alert-just-arrived td').first().evaluate(node => getComputedStyle(node).animationName), 'none', 'reduced motion keeps a static highlight');
+  // Source partials can replace a row between locator resolution and evaluate on CI. Inspect
+  // the current connected row in one browser task, while its actual highlight is still active.
+  await page.waitForFunction(() => {
+    const cell = document.querySelector('.alert-just-arrived td');
+    return cell?.isConnected && getComputedStyle(cell).animationName === 'none';
+  }, null, { timeout: 10000 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   if (process.env.GENERAL_ALERTS_DARK_SCREENSHOT) {
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; document.body.style.background = '#0f172a'; });
