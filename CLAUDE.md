@@ -91,7 +91,7 @@ public/
                               plus which of those names THIS device adds under
       router.js               hash routing (#/ws/tab/subview?scope=)
       live.js                 live-update polling engine
-      watch.js                app-wide feed watchers -> the alert stack
+      watch.js                app-wide feed watchers -> the header notification inbox
       store.js                IndexedDB payload cache + conditional fetch (see the caching section)
       sdk.js                  THE Munshot Dashboard SDK client — one, built at import time
       host-context.js         the host's session token + selected company, and `authHeaders()`,
@@ -115,7 +115,7 @@ public/
                               see the section below
       host-ticker.js          the company the HOST has selected, as one header chip. Absent, not
                               empty-stated, when it has selected none — this app is not ticker-bound
-      notifications.js        the live alert stack, lower-right
+      notifications.js        the header bell and notification inbox
       export.js               generic exceljs-from-CDN "Export Excel" helper
       components.js           chrome primitives (tab bar, toggle, search…)
       shell.js                header + tabs + sub-view picker + content host + tab registry
@@ -3208,7 +3208,7 @@ container's innerHTML, you own restoring its scroll position.**
 
 ---
 
-## The header, and the alert stack — `js/ui/notifications.js` + `js/core/watch.js`
+## The header and notification inbox — `js/ui/notifications.js` + `js/core/watch.js`
 
 The header carries the brand, the scope toggle, **one** status pill and a refresh button. There
 used to also be a global search box, a Sources button, a green *"Live · just now"* chip and a white
@@ -3238,29 +3238,27 @@ or not a byte had been confirmed in an hour.
 - `live.refreshAll()` ticks every **running, non-synthetic** poller and resolves when they settle.
   It deliberately does not start stopped ones: a stopped poller belongs to an unmounted tab.
 
-### Alerts: what may interrupt, and what may not
+### Notifications: quiet arrivals in the header
 
-`notifications.push({ key, kind, title, detail, href })` renders a card in the lower-right stack.
-`core/watch.js` feeds it from the two live feeds' existing `onChange` + `newArrivals()`.
+`notifications.push({ key, kind, title, detail, href })` adds an unread item to the header bell.
+The user's 15 September 2026 request replaces the old lower-right pop-up stack: arrivals never
+open a panel, animate, play a sound or expire after a few seconds. One red dot indicates unread
+items. Clicking the bell opens a compact list; opening alone does not mark everything read.
+Opening an item or using its check marks it read; the cross dismisses it. The header also offers
+Mark all as read. Escape, outside click, focus leaving the panel and navigation close the list.
 
-Five rules, and each is load-bearing:
+Stable keys deduplicate arrivals, including previously dismissed events after reload. The existing
+watcher still suppresses initial source backlogs and keeps the existing feed cadence and factual
+wording. The inbox renders thirty items at a time with Show older updates; that presentation
+window never deletes unread entries or source history. Read items remain until dismissed.
 
-1. **An alert is a fact that arrived**, never a summary of what is on screen. A repaint is not an
-   event; a company filing a result and a con-call gaining its analysis are.
-2. **`key` dedupes for the life of the page.** Both feeds re-hand their whole arrival list on every
-   change, so without a stable key the same result re-announces itself on every tick.
-3. **The backlog is suppressed, not replayed.** Arrivals accumulate from page load, so the
-   watcher's first change event would otherwise dump rows the reader has been looking at for ten
-   minutes. `notifications.suppress(keys)` marks them announced without showing them — a
-   notification asserts *this just happened*, and replaying history through it devalues every alert
-   after it.
-4. **z-30: alerts sit under every overlay** (drill 50 < workspace 55 < modal 60). The reader opened
-   those deliberately; a toast landing on top of one is the failure mode this component is one step
-   from.
-5. **The text obeys the same honesty rules as the tables.** `earningsDetail()` routes through
-   `kind` from `classifyChange()`, so a loss-to-profit swing reads *"turned profitable"* rather
-   than a percentage that does not exist; a con-call with no score reads *"analysis pending"*, not
-   `0/100`. The suite asserts both.
+`core/notification-inbox.js` stores public items and read/dismiss receipts on this device, merges
+receipts from other tabs, and keeps session data readable if storage fails. Private research
+completion detail and session links stay in memory and clear on host-session changes; only their
+dedupe/read receipts persist.
+Notifications are not shared desk state and are not an archive of everything the sources publish.
+The reader-opened panel is below drill/workspace/modal overlays and supports keyboard focus,
+light/dark appearance, small screens and the normal returning-session upgrade path.
 
 **The watchers run app-wide, and that is the whole point.** `startLive` / `stopLive` are owned by
 the tab that shows a feed — right for a table, useless for an alert, which is only worth having if

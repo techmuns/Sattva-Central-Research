@@ -23,6 +23,7 @@ import { mountHostTicker } from './host-ticker.js';
 import { mountThemeToggle } from './theme-toggle.js';
 import { BOOKMARK_ICON } from './bookmark-button.js';
 import * as sourceBeacon from './source-beacon.js';
+import * as notifications from './notifications.js';
 
 import * as aiAlerts from '../tabs/ai-alerts.js';
 import * as askResearch from '../tabs/ask-research.js';
@@ -175,6 +176,7 @@ function shellTemplate() {
           <div class="header-personal-controls">
             <button type="button" data-theme-toggle class="theme-toggle" aria-label="Dark mode" aria-pressed="false"></button>
             <a data-header-bookmarks class="header-bookmarks" href="#/research/bookmarks">${BOOKMARK_ICON}<span>Bookmarks</span></a>
+            ${notifications.bellHtml}
           </div>
         </div>
       </div>
@@ -234,6 +236,7 @@ function shellTemplate() {
 function wireStaticHeader(root) {
   headerDisposer?.();
   const offTheme = mountThemeToggle(root.querySelector('[data-theme-toggle]'));
+  const offNotifications = notifications.mountBell(root.querySelector('[data-notification-bell]'));
   const status = statusControl({
     getTimestamp: () => live.getLastDataTick(),
     subscribeTick: live.onGlobalTick,
@@ -265,6 +268,7 @@ function wireStaticHeader(root) {
 
   headerDisposer = () => {
     offTheme();
+    offNotifications();
     offStatus?.();
     offHostTicker?.();
     sourcesBtn?.removeEventListener('click', onSources);

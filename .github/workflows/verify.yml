@@ -23,6 +23,8 @@ jobs:
         run: node scripts/verify-refresh.mjs
       - name: Verify personal notebook snapshot and backup contracts
         run: node scripts/verify-bookmarks.mjs
+      - name: Verify notification receipts, retained unread items and private content isolation
+        run: node scripts/verify-notification-inbox.mjs
       - name: Verify shared technical filter boundaries and counts
         run: node scripts/verify-technical-filters.mjs
       - name: Verify variable-height virtual list geometry
@@ -141,6 +143,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-sattva-deals-ui.mjs
+      - name: Verify quiet header notifications, read state and responsive inbox
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-notifications-ui.mjs
       - name: Verify light and dark appearance across dashboard surfaces
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -1,159 +1,141 @@
-// ui/notifications.js — the live alert stack in the lower-right corner.
-//
-//   notifications.mount();
-//   notifications.push({ key, kind, title, detail, href, at });
-//
-// This is the one surface on the dashboard that speaks without being asked, so the rules it obeys
-// are about restraint rather than richness:
-//
-//   1. AN ALERT IS A FACT THAT ARRIVED, never a summary of what is already on screen. It fires
-//      when a company files a result or a con-call gains its analysis — things that happened
-//      upstream since the reader last looked. A repaint is not an event.
-//   2. `key` DEDUPES FOR THE LIFE OF THE PAGE. Both feeds re-hand their arrival list on every
-//      change, and the same result must never announce itself twice because the poller ticked.
-//   3. IT NEVER COVERS AN OVERLAY. z-30 puts it under the drill (z-50), the workspace (z-55) and
-//      modals (z-60): the reader opened those deliberately and a toast interrupting them would be
-//      the failure mode this whole component is one step away from.
-//   4. NOTHING IS INVENTED TO FILL IT. `detail` is built from fields the feed actually carried; a
-//      result with no reported figure says so rather than showing a zero, and a con-call with no
-//      score says "analysis pending", which is what `pending` means upstream.
-//
-// The stack keeps the newest MAX_VISIBLE and drops the rest — it is an alert strip, not an inbox.
-
+// One quiet inbox in the header. Arrivals update the bell; only the reader opens the list.
 import { escapeHtml } from '../core/dom.js';
 import { formatRelativeTime } from '../core/format.js';
+import { createInbox, STORAGE_KEY } from '../core/notification-inbox.js';
+import { onHostContext } from '../core/host-context.js';
 
-const ROOT_ID = 'notification-root';
-const MAX_VISIBLE = 4;
-const DISMISS_MS = 14000;
-
-// Per-kind styling. Emerald/amber/rose stay semantic elsewhere in the app, so these are
-// deliberately drawn from the brand ramp plus one neutral: an alert is not a pass or a fail.
-const KIND = {
-  earnings: { dot: 'bg-indigo-500', ring: 'ring-indigo-100', chip: 'bg-indigo-50 text-indigo-700', label: 'Result filed' },
-  concall: { dot: 'bg-purple-500', ring: 'ring-purple-100', chip: 'bg-purple-50 text-purple-700', label: 'Con-call' },
-  chatter: { dot: 'bg-pink-500', ring: 'ring-pink-100', chip: 'bg-pink-50 text-pink-700', label: 'Chatter' },
-  // The brand ramp again, not a semantic colour: a published story is neither good news nor bad,
-  // and emerald or rose here would be this dashboard passing judgement on somebody's reporting.
-  news: { dot: 'bg-indigo-400', ring: 'ring-indigo-100', chip: 'bg-indigo-50 text-indigo-700', label: 'Market news' },
-  // Ask Research finishing an answer the reader asked for and then navigated away from. Brand
-  // ramp again: an answer is not a pass or a fail.
-  research: { dot: 'bg-purple-400', ring: 'ring-purple-100', chip: 'bg-purple-50 text-purple-700', label: 'Ask Research' },
-  system: { dot: 'bg-slate-400', ring: 'ring-slate-100', chip: 'bg-slate-100 text-slate-600', label: 'Update' },
-};
-
-const seen = new Set();
-let root = null;
-let seq = 0;
+const inbox = createInbox();
+const LABELS = { earnings: 'Result filed', concall: 'Con-call', chatter: 'Chatter', news: 'Market news', research: 'Ask Research', system: 'Update' };
+const icon = path => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+const CLOSE = icon('<path d="m6 6 12 12M6 18 18 6"/>');
+const CHECK = icon('<path d="m5 12 4 4L19 6"/>');
+export const bellHtml = `<button type="button" class="notification-bell" data-notification-bell aria-label="Notifications" title="Notifications" aria-haspopup="dialog" aria-controls="notification-root" aria-expanded="false">
+  ${icon('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>')}
+  <span class="notification-bell-dot" data-notification-dot hidden aria-hidden="true"></span>
+</button>`;
+let root = null, bell = null, limit = 30;
+const nodes = new Map();
+export const items = () => inbox.items();
+export const unreadCount = () => items().filter(row => row.readAt == null).length;
+export const visibleCount = () => root && !root.hidden ? root.querySelectorAll('[data-notification]').length : 0;
+export const announcedCount = () => inbox.announcedCount();
+export const push = value => inbox.push(value);
+export const suppress = keys => inbox.suppress(keys);
+export const clear = () => inbox.clear();
 
 export function mount() {
-  root = document.getElementById(ROOT_ID);
-  if (root) return root;
-  root = document.createElement('div');
-  root.id = ROOT_ID;
-  // Bottom-right, above content and below every overlay. `pointer-events-none` on the column so
-  // the page stays clickable through the gaps; each card re-enables them for itself.
-  root.className = 'pointer-events-none fixed bottom-4 right-4 z-30 flex w-[min(22rem,calc(100vw-2rem))] flex-col-reverse gap-2';
-  root.setAttribute('role', 'status');
-  root.setAttribute('aria-live', 'polite');
+  if (root?.isConnected) return root;
+  root = document.createElement('section');
+  root.id = 'notification-root'; root.className = 'notification-panel'; root.hidden = true;
+  root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Notifications');
+  root.innerHTML = `<div class="notification-heading"><h2>Notifications</h2><button type="button" data-notification-all>Mark all as read</button><button type="button" class="notification-icon-button" data-notification-panel-close aria-label="Close notifications">${CLOSE}</button></div>
+    <div class="notification-list" data-notification-list><div data-notification-items></div><p class="notification-empty" data-notification-empty>You’re all caught up.<span>New updates will appear here.</span></p><button type="button" class="notification-more" data-notification-more hidden>Show older updates</button></div>
+    <p class="notification-storage" data-notification-storage>Read status saved on this device</p>`;
   document.body.appendChild(root);
-  return root;
+  root.querySelector('[data-notification-all]').onclick = () => inbox.read(items().map(row => row.id));
+  root.querySelector('[data-notification-panel-close]').onclick = () => close(true);
+  root.querySelector('[data-notification-more]').onclick = () => { limit += 30; paint(); };
+  root.addEventListener('click', event => {
+    const action = event.target.closest('[data-notification-action]');
+    if (action?.getAttribute('aria-disabled') === 'true') return;
+    const row = action?.closest('[data-notification-id]');
+    if (!row) return;
+    const id = row.dataset.notificationId;
+    if (action.dataset.notificationAction === 'dismiss') {
+      const focus = row.nextElementSibling?.querySelector('[data-notification-action]') || row.previousElementSibling?.querySelector('[data-notification-action]');
+      inbox.dismiss(id); (focus || root.querySelector('[data-notification-panel-close]')).focus();
+    } else {
+      inbox.read([id]);
+      if (action.dataset.notificationAction === 'open') close(false);
+    }
+  });
+  document.addEventListener('pointerdown', event => { if (!root.hidden && !root.contains(event.target) && !bell?.contains(event.target)) close(false); });
+  document.addEventListener('focusin', event => { if (!root.hidden && !root.contains(event.target) && !bell?.contains(event.target)) close(false); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !root.hidden) { event.preventDefault(); close(true); } });
+  window.addEventListener('hashchange', () => close(false));
+  window.addEventListener('resize', position);
+  window.addEventListener('scroll', position);
+  window.addEventListener('storage', event => { if (event.key === STORAGE_KEY) inbox.sync(event.newValue); });
+  window.addEventListener('pagehide', () => inbox.flush());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) inbox.flush(); });
+  inbox.onChange(paint);
+  onHostContext((_context, changed) => { if (changed?.session) inbox.clearPrivate(); });
+  paint(); return root;
 }
 
-/**
- * Show one alert. Returns false when it was a duplicate, which is the common case: the feeds hand
- * back their whole arrival list on every change and only the unseen part of it is news.
- */
-export function push({ key, kind = 'system', title, detail = '', href = null, image = null, at = Date.now() }) {
-  if (!title) return false;
-  const id = key || `${kind}:${title}:${at}`;
-  if (seen.has(id)) return false;
-  seen.add(id);
-  if (!root) mount();
-
-  const style = KIND[kind] || KIND.system;
-  const card = document.createElement('div');
-  // NO ENTRANCE ANIMATION, DELIBERATELY. This is the one component whose entire job is to be seen,
-  // and an animated entrance made it invisible twice:
-  //
-  //   - `.fade-in` is `animation: … both`, which pins the element at the keyframe's opacity-0 start
-  //     until the animation actually runs. Anything that stops it running — a throttled timeline,
-  //     reduced-motion handling, a screenshot tool that rewinds finite animations — leaves a card
-  //     that is in the DOM, correctly positioned, hit-testable, and completely blank.
-  //   - Replacing it with an opacity-0 start plus a `transition` on the next frame failed the same
-  //     way for the same reason: the resting state was invisible and something else had to happen
-  //     for the reader to see it.
-  //
-  // Both were caught only because a control element rendered beside it and this one did not. So the
-  // rule here is that the card's ONLY state is its final one. A panel the reader navigated to can
-  // afford to fade in — they are waiting for it. An alert cannot: it is unrequested, it is the
-  // whole notification, and "arrived but invisible" is indistinguishable from "never fired".
-  card.className = `pointer-events-auto overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ${style.ring}`;
-  card.dataset.notification = kind;
-  // THE PICTURE THAT COMES WITH THE STORY. Only ever an http(s) value, and only ever the
-  // publisher's own — the same rule the news cards follow, because this is external content and a
-  // `javascript:` or `data:` value must never reach `src`. `onerror` hides it rather than leaving a
-  // broken-image glyph in a card whose whole job is to look deliberate.
-  const thumb =
-    typeof image === 'string' && /^https:\/\//i.test(image)
-      ? `<div class="h-12 w-[68px] flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
-           <img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" onerror="this.parentElement.style.display='none'">
-         </div>`
-      : '';
-
-  card.innerHTML = `
-    <div class="flex items-start gap-3 p-3.5">
-      <span class="mt-1 flex h-2 w-2 flex-shrink-0 rounded-full ${style.dot}"></span>
-      ${thumb}
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2">
-          <span class="rounded-full ${style.chip} px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">${escapeHtml(style.label)}</span>
-          <span class="text-[11px] tabular-nums text-slate-400" data-notification-time>${escapeHtml(formatRelativeTime(at))}</span>
-        </div>
-        <p class="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-900">${escapeHtml(title)}</p>
-        ${detail ? `<p class="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-500">${escapeHtml(detail)}</p>` : ''}
-        ${href ? `<a href="${escapeHtml(href)}" class="mt-2 inline-block text-xs font-semibold text-indigo-600 hover:text-indigo-700" data-notification-link>Open →</a>` : ''}
-      </div>
-      <button type="button" aria-label="Dismiss" data-notification-close
-        class="flex-shrink-0 rounded-lg p-1 text-slate-300 transition-colors hover:bg-slate-50 hover:text-slate-500">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>`;
-
-  // Removal is immediate for the same reason: an exit animation that stalls would leave a dismissed
-  // card on screen, which is the mirror of the bug above.
-  const remove = () => card.remove();
-  card.querySelector('[data-notification-close]').addEventListener('click', remove);
-  card.querySelector('[data-notification-link]')?.addEventListener('click', remove);
-
-  root.appendChild(card);
-  seq += 1;
-
-  // Keep the newest few. `flex-col-reverse` renders the newest at the bottom, so the oldest cards
-  // are the first children.
-  while (root.children.length > MAX_VISIBLE) root.firstElementChild.remove();
-
-  const timer = setTimeout(remove, DISMISS_MS);
-  card.addEventListener('mouseenter', () => clearTimeout(timer)); // reading it should not lose it
-  return true;
+export function mountBell(button) {
+  mount(); bell = button;
+  const toggle = () => root.hidden ? open() : close(true);
+  button.addEventListener('click', toggle); paint();
+  return () => { button.removeEventListener('click', toggle); close(false); if (bell === button) bell = null; };
 }
-
-/**
- * Mark a batch of keys as already announced WITHOUT showing anything.
- *
- * Both feeds carry arrivals accumulated since page load, so the first tick after the watcher
- * starts would otherwise dump a backlog of results the reader has been looking at all along. A
- * notification claims "this just happened"; replaying history through it would make every alert
- * afterwards worth less.
- */
-export function suppress(keys) {
-  for (const k of keys) seen.add(k);
+function open() {
+  if (!bell) return;
+  root.hidden = false; limit = 30; paint(); position();
+  root.querySelector('[data-notification-list]').scrollTop = 0;
+  root.querySelector('[data-notification-panel-close]').focus();
 }
-
-/** Test seam and the "clear all" path. */
-export function clear() {
-  if (root) root.innerHTML = '';
+function close(restoreFocus) {
+  if (!root || root.hidden) return;
+  root.hidden = true; bell?.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) bell?.focus();
 }
-
-export const visibleCount = () => (root ? root.children.length : 0);
-export const announcedCount = () => seq;
+function position() {
+  if (!root || root.hidden || !bell) return;
+  const rect = bell.getBoundingClientRect();
+  if (rect.bottom < 0 || rect.top > innerHeight) { close(false); return; }
+  const width = Math.min(420, innerWidth - 24), top = Math.min(rect.bottom + 10, Math.max(12, innerHeight - 240));
+  root.style.width = `${width}px`;
+  root.style.left = `${Math.max(12, Math.min(rect.right - width, innerWidth - width - 12))}px`;
+  root.style.top = `${top}px`;
+  root.style.maxHeight = `${Math.max(160, Math.min(560, innerHeight - top - 12))}px`;
+}
+function card(row) {
+  const node = document.createElement('article');
+  node.className = 'notification-item'; node.dataset.notification = row.kind; node.dataset.notificationId = row.id;
+  const title = row.href
+    ? `<a data-notification-action="open" data-notification-link href="${escapeHtml(row.href)}" ${row.href.startsWith('https:') ? 'target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(row.title)}</a>`
+    : `<button type="button" data-notification-action="read">${escapeHtml(row.title)}</button>`;
+  node.innerHTML = `<span class="notification-unread-dot" data-notification-unread aria-label="Unread"></span>
+    <div class="notification-copy"><div class="notification-meta"><span>${escapeHtml(LABELS[row.kind] || LABELS.system)}</span><time data-notification-time datetime="${new Date(row.at).toISOString()}">${escapeHtml(formatRelativeTime(row.at))}</time></div>
+    <h3>${title}</h3>${row.detail ? `<p>${escapeHtml(row.detail)}</p>` : ''}
+    ${row.image ? `<img class="notification-thumbnail" src="${escapeHtml(row.image)}" alt="" loading="lazy" decoding="async">` : ''}</div>
+    <div class="notification-actions"><button type="button" class="notification-icon-button" data-notification-action="read" data-notification-read aria-label="Mark as read: ${escapeHtml(row.title)}" title="Mark as read">${CHECK}</button><button type="button" class="notification-icon-button" data-notification-action="dismiss" data-notification-close aria-label="Dismiss: ${escapeHtml(row.title)}" title="Dismiss">${CLOSE}</button></div>`;
+  node.querySelector('img')?.addEventListener('error', event => { event.target.hidden = true; });
+  return node;
+}
+function paint() {
+  const rows = items(), unread = rows.filter(row => row.readAt == null).length;
+  if (bell) {
+    bell.querySelector('[data-notification-dot]').hidden = !unread;
+    bell.setAttribute('aria-label', unread ? `Notifications, ${unread} unread` : 'Notifications');
+    bell.setAttribute('aria-expanded', String(!!root && !root.hidden));
+  }
+  // A dismissed/private-session item must leave the DOM even when the panel is closed.
+  const retained = new Set(rows.map(row => row.id));
+  for (const [id, node] of nodes) if (!retained.has(id)) { node.remove(); nodes.delete(id); }
+  if (!root || root.hidden) return;
+  const list = root.querySelector('[data-notification-list]'), container = root.querySelector('[data-notification-items]');
+  const anchor = [...container.children].find(node => node.getBoundingClientRect().bottom > list.getBoundingClientRect().top);
+  const anchorTop = anchor?.getBoundingClientRect().top;
+  const visible = rows.slice(0, limit), wanted = new Set(visible.map(row => row.id));
+  for (const [id, node] of nodes) if (!wanted.has(id)) { node.remove(); nodes.delete(id); }
+  let cursor = container.firstElementChild;
+  for (const row of visible) {
+    let node = nodes.get(row.id);
+    if (!node) { node = card(row); nodes.set(row.id, node); }
+    if (cursor !== node) container.insertBefore(node, cursor); else cursor = cursor.nextElementSibling;
+    node.dataset.read = String(row.readAt != null);
+    node.querySelector('[data-notification-unread]').hidden = row.readAt != null;
+    const read = node.querySelector('[data-notification-read]');
+    read.setAttribute('aria-label', `${row.readAt != null ? 'Read' : 'Mark as read'}: ${row.title}`);
+    read.title = row.readAt != null ? 'Read' : 'Mark as read';
+    read.setAttribute('aria-disabled', String(row.readAt != null));
+    node.querySelector('[data-notification-time]').textContent = formatRelativeTime(row.at);
+  }
+  if (anchor?.isConnected) list.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+  root.querySelector('[data-notification-empty]').hidden = !!rows.length;
+  root.querySelector('[data-notification-more]').hidden = rows.length <= limit;
+  const all = root.querySelector('[data-notification-all]'); all.disabled = !unread;
+  root.querySelector('[data-notification-storage]').textContent = inbox.saved() ? 'Read status saved on this device' : 'New updates are saved for this visit only';
+}

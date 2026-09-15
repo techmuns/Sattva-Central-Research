@@ -1617,19 +1617,17 @@ console.log('\n— AI alerts —');
   await page.waitForTimeout(600);
   ok('leaving Ask Research mid-answer really does unmount it', awaySession && !(await page.locator('[data-research-input]').count()));
   const landedAway = await page
-    .waitForFunction(() => {
-      return document.querySelectorAll('[data-notification="research"]').length > 0;
+    .waitForFunction(async () => {
+      return (await import('/js/ui/notifications.js')).items().some(row => row.kind === 'research');
     }, null, { timeout: 20000 })
     .then(() => true)
     .catch(() => false);
   ok('...and the answer still arrives while another tab is on screen', landedAway);
   ok('...without persisting private portfolio conversations to device storage',
     await page.evaluate(() => !/OFF_TAB_ANSWER|Dashboard evidence remains traceable/.test(localStorage.getItem('sattva:ask-research:v1') || '')));
-  // Keeping it running silently would be a feature nobody can see, so it announces itself in the
-  // alert stack — the same place a filed result does, under the tab it belongs to.
-  ok('...and says so in the alert stack rather than finishing invisibly',
-    (await page.locator('[data-notification="research"]').count()) > 0,
-    `${await page.locator('#notification-root > *').count()} alert card(s) on screen`);
+  // Off-tab completion marks the same quiet header inbox as a newly filed result.
+  ok('...and marks the header bell without opening a popup',
+    await page.locator('[data-notification-dot]').isVisible() && !(await page.locator('#notification-root').isVisible()));
   await page.evaluate(() => { location.hash = '#/research/ask-research?scope=portfolio'; });
   await page.waitForFunction(() => !document.querySelector('[data-research-input]')?.disabled, null, { timeout: 15000 });
   const backText = await page.locator('[data-research-transcript]').innerText();
@@ -5539,7 +5537,7 @@ console.log('\n— header status and live alerts —');
   ok('refresh reports a result rather than just spinning', /Latest available|\d+ new|Partly refreshed|Couldn|Still updating/i.test(label), label);
   ok('...keeps pending work disabled and allows retry after completion', (await page.locator('[data-header-refresh]').isDisabled()) === /Still updating/.test(label));
 
-  // The alert stack.
+  // The header notification inbox.
   const alerts = await evalSafe(async () => {
     const n = await import('/js/ui/notifications.js');
     n.clear();
@@ -5548,15 +5546,15 @@ console.log('\n— header status and live alerts —');
     n.push({ key: 'v2', kind: 'concall', title: 'Other Co', detail: 'Analysis ready' });
     for (let i = 0; i < 5; i++) n.push({ key: `f${i}`, kind: 'system', title: `Filler ${i}` });
     const root = document.getElementById('notification-root');
-    const r = root.getBoundingClientRect();
     return {
       accepted: first, dupeRejected: dupe === false,
-      cards: root.children.length,
+      cards: n.items().length,
+      quiet: root.hidden && !document.querySelector('[data-notification-dot]').hidden,
       z: Number(getComputedStyle(root).zIndex),
-      bottomRight: window.innerHeight - r.bottom < 40 && window.innerWidth - r.right < 40,
     };
   });
-  ok('an alert renders in the lower-right corner', alerts.accepted && alerts.cards > 0 && alerts.bottomRight, `${alerts.cards} card(s)`);
+  ok('an alert stays in the header bell without a pop-up', alerts.accepted && alerts.cards === 7 && alerts.quiet, `${alerts.cards} retained items`);
+  await page.locator('[data-notification-bell]').click();
   // It has to be VISIBLE, not merely present. The first version used the shared `.fade-in` class —
   // `animation: … both`, which pins the element at the keyframe's opacity-0 start state until the
   // animation actually runs. Anything that stops it running left a correctly-positioned, fully
@@ -5565,7 +5563,7 @@ console.log('\n— header status and live alerts —');
   await page.waitForTimeout(500);
   const visible = await evalSafe(() => {
     const root = document.getElementById('notification-root');
-    const card = root.lastElementChild;
+    const card = root.querySelector('[data-notification]');
     if (!card) return { ok: false, why: 'no card' };
     const r = card.getBoundingClientRect();
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -5585,7 +5583,7 @@ console.log('\n— header status and live alerts —');
     skip('...and is actually painted, not just present at opacity 0', 'compiled stylesheet unavailable — the card has no background to hit-test');
   }
   ok('...the same event never announces twice', alerts.dupeRejected);
-  ok('...and the stack is capped rather than unbounded', alerts.cards <= 4, `${alerts.cards} visible after 7 pushes`);
+  ok('...and all arrivals remain available to read', alerts.cards === 7, `${alerts.cards} retained after 7 pushes`);
 
   // Stacking: a toast must never cover something the reader opened on purpose.
   const drillZ = await evalSafe(() => Number(getComputedStyle(document.getElementById('drill-panel')).zIndex));
@@ -6300,7 +6298,7 @@ console.log('\n— news, announcements and insider trades —');
     await mod.load();
     // The first paint announces NOTHING, whatever it contains. Everything in a capture predates
     // the reader's arrival, and replaying it would make every later alert worth less.
-    return { rows: mod.rows().length, arrivals: mod.newArrivals().length, cards: document.getElementById('notification-root')?.children.length ?? -1 };
+    return { rows: mod.rows().length, arrivals: mod.newArrivals().length, cards: (await import('/js/ui/notifications.js')).items().length };
   });
   ok('the market-news capture announces nothing on the paint that first loads it',
     seeded && seeded.rows > 0 && seeded.arrivals === 0 && seeded.cards === 0,
@@ -6312,7 +6310,8 @@ console.log('\n— news, announcements and insider trades —');
     const out = await mod.refresh();
     await new Promise((r) => setTimeout(r, 900));
     const root = document.getElementById('notification-root');
-    const cards = [...(root?.children || [])];
+    if (root.hidden) document.querySelector('[data-notification-bell]').click();
+    const cards = [...root.querySelectorAll('[data-notification]')];
     const arrivals = mod.newArrivals();
     const first = arrivals[0];
     const text = cards.map((c) => c.innerText.replace(/\s+/g, ' ')).join(' ~ ');
@@ -6338,7 +6337,7 @@ console.log('\n— news, announcements and insider trades —');
       // Re-emitting must not re-announce: the feed re-hands its whole arrival list every change.
     };
   });
-  ok('a story arriving while the reader is here pops an alert', alerted && alerted.added > 0 && alerted.cards > 0,
+  ok('a story arriving while the reader is here enters the notification inbox', alerted && alerted.added > 0 && alerted.cards > 0,
     `${alerted?.added} new, ${alerted?.arrivals} on the arrival list, ${alerted?.cards} card(s)`);
   ok('...labelled as market news and carrying the publisher\'s own headline',
     alerted && alerted.labelled && alerted.verbatim, alerted?.text);
@@ -6346,11 +6345,11 @@ console.log('\n— news, announcements and insider trades —');
     alerted && alerted.withImage > 0 && alerted.thumbs === alerted.withImage,
     `${alerted?.thumbs} of ${alerted?.withImage} card(s) carry their own story's image`);
   const reAnnounced = await evalSafe(async () => {
-    const before = document.getElementById('notification-root')?.children.length ?? 0;
+    const before = (await import('/js/ui/notifications.js')).items().length;
     const mod = await import('/js/data/market-news.js');
     await mod.refresh();
     await new Promise((r) => setTimeout(r, 700));
-    return { before, after: document.getElementById('notification-root')?.children.length ?? 0 };
+    return { before, after: (await import('/js/ui/notifications.js')).items().length };
   });
   ok('...and the same story never announces itself twice', reAnnounced && reAnnounced.after <= reAnnounced.before,
     `${reAnnounced?.before} card(s) before a second check, ${reAnnounced?.after} after`);
