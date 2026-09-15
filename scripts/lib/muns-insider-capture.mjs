@@ -24,7 +24,8 @@ export async function captureMunsInsiders(previous, companies, {
   const byTicker = structuredClone(previous?.byTicker || {});
   const list = [...new Map(companies.filter(c => c.ticker).map(c => [c.ticker.toUpperCase(), c])).entries()];
   const due = ([ticker, company]) => !!company.priority && started - Date.parse(byTicker[ticker]?.lastSuccessAt || '1970-01-01') >= 2 * 3600000;
-  const queue = list.sort((a, b) => Number(due(b)) - Number(due(a)) ||
+  // Workers consume the queue; coverage must keep every intended company throughout the run.
+  const queue = [...list].sort((a, b) => Number(due(b)) - Number(due(a)) ||
     String(byTicker[a[0]]?.checkedAt || '').localeCompare(String(byTicker[b[0]]?.checkedAt || '')));
   let gate = Promise.resolve(), nextStart = started, stopped = false;
   const state = () => ({ source: 'Muns insider disclosures via Sattva', checkedAt: new Date(now()).toISOString(),

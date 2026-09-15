@@ -5003,6 +5003,9 @@ Old records remain additive, including beyond the page's default 30-day reading 
 completed source interval/company response is saved atomically so interrupted jobs can publish
 and resume their completed progress. A failed live portfolio lookup retains the checkpoint and
 reports the error, rather than silently substituting an old book.
+The target manifest retains every intended company through each checkpoint and final publication,
+including completed, failed and pending reads. Consuming the request queue must never shrink the
+coverage denominator; a budget-limited run leaves unattempted targets visibly unchecked.
 
 The schedule runs every 30 minutes during weekday day/evening hours plus a weekend check.
 The browser reads every minute while the feed is visible, and on focus/reconnection; it can
