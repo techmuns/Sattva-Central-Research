@@ -181,23 +181,6 @@ function livePill() {
   const label = !live.snapshot() ? 'Current prices unavailable' : `${health.partial ? 'Partial update' : 'Prices checked'} · ${health.checked}/${health.total}`;
   return {html:`<span data-live-info class="rounded-full px-3 py-1 text-xs ${health.partial ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-700'}" title="Last completed check: ${escapeHtml(live.stamp(health.checkedAt))}">${escapeHtml(label)}</span>`,wire() {}};
 }
-function captureNote(rows) {
-  const health = live.coverageFor(rows.map(s => s.company.ticker)), m = technicals.meta();
-  const history = live.snapshot();
-  return `<div class="mb-4 rounded-xl bg-slate-50 p-3 text-xs text-slate-600" data-capture-note>
-    Prices and volume checked on a 15-minute schedule; updates can be delayed. Quote time is shown beside each price.
-    ${health.partial ? '<strong class="text-amber-800">Some prices or breakout checks are missing, old or still being checked.</strong>' : ''}
-    <div class="mt-1">Daily scores use the close of ${escapeHtml(m?.price_date || 'an unstated session')}${m?.deliveryFailed ? ' · latest daily file unavailable' : ''}.
-    Intraday breakout signals can change. Volume compares today so far with an average full day.</div>
-    <details class="mt-1"><summary class="cursor-pointer">Capture coverage and history</summary>
-    ${history?.schedule?.overdue ? '<p class="text-amber-800">The backup scheduler needs attention.</p>' : ''}
-    <p>Last completed check: ${escapeHtml(live.stamp(health.checkedAt))}. History starts ${escapeHtml(live.stamp(history?.captureStartedAt))}.
-    ${escapeHtml(history?.retention || 'Capture has not started. No historical completeness claim is available.')}</p>
-    <p>${escapeHtml((history?.gaps || []).map(gap => `${gap.reason === 'candles-recovered' ? 'Recovered ranges' : 'Ranges with gaps'}: ${gap.count}`).join(' · '))}</p>
-    ${health.missing.length ? `<p>Needs checking: ${escapeHtml(health.missing.join(', '))}</p>` : ''}
-    </details></div>`;
-}
-
 function scoringHelpModalBody() {
   const byCat = new Map();
   for (const r of ACTIVE_RULES) {
@@ -341,7 +324,6 @@ function renderScanner(ctx, rows) {
     })}
     ${chipBar(TECHNICAL_FILTERS, state, counts)}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${rows.length}</span> companies match these filters.</div>
-    ${captureNote(rows)}
     ${cards.html}
     ${table.html}
     ${legendStrip({ note: `Scored from ${m?.source || 'Yahoo Finance'} daily OHLCV plus NSE delivery data. ${m?.failures || 0} of ${m?.company_count || 0} companies have no usable price history and score 0 of 0.` })}
@@ -525,7 +507,6 @@ function renderStrongBreakouts(ctx, rows) {
       description: 'Companies breaking out of a 6-week base, ranked by daily technical score.',
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: filtered.length, noun: 'candidates', book: coverage.meta() })}</div>`,
     })}
-    ${captureNote(rows)}
     ${chipBar(BREAKOUT_FILTERS, state, counts)}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${withBreakout.length}</span> companies with a detectable base match these filters.</div>
     ${table.html}

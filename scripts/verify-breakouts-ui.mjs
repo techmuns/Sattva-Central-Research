@@ -31,7 +31,7 @@ const server=createServer((req,res)=>{
  if(!file.startsWith(root+sep)){res.writeHead(404).end();return;}
  try{
  let body=readFileSync(file);
- if(path==='/sw.js')body=body.toString().replace('2026-09-15-reliable-breakouts-v1',`breakout-test-${revision}`);
+ if(path==='/sw.js')body=body.toString().replace(/const CACHE_NAME = [^;]+;/, `const CACHE_NAME = 'sattva-dashboard-breakout-test-${revision}';`);
  if(path==='/js/data/breakout-live.js')body=`export const testRelease=${revision};\n`+body.toString();
  res.setHeader('content-type',{'.js':'text/javascript','.json':'application/json','.html':'text/html','.css':'text/css','.svg':'image/svg+xml'}[extname(file)]||'application/octet-stream');res.end(body);
  }catch{res.writeHead(404).end();}
@@ -58,8 +58,7 @@ try{
  await page.locator('[data-row-key="WATCHONLY"]').waitFor();
  await page.evaluate(async()=>{(await import('/js/core/scope-lists.js')).remove('universe',{ticker:'WATCHONLY'});await (await import('/js/data/breakout-live.js')).refresh();});
  await page.waitForFunction(()=>!document.querySelector('[data-row-key="WATCHONLY"]'));
- assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-10')));
- assert((await page.locator('[data-capture-note]').textContent()).includes('Ranges with gaps: 1'));
+ assert.equal(await page.locator('[data-capture-note]').count(),0);
  const sourceState=()=>page.evaluate(async()=>(await import('/js/ui/sources.js')).sourceGroups().flatMap(group=>group.items).find(item=>item.name.startsWith('Saved price and volume capture')).readState);
  assert.equal(await sourceState(),'read');
  await page.locator('[data-table-search]').fill('Test Company');
@@ -119,6 +118,7 @@ try{
  await refreshDaily();await page.waitForFunction(()=>!document.querySelector('[data-cmp="TEST"]'));
  await page.evaluate(()=>{location.hash='#/research/breakouts/technical-scanner?scope=universe';});
  await cell.waitFor();assert.equal(await cell.textContent(),'₹99.00');
+ assert.equal(await page.locator('[data-capture-note]').count(),0);
  await page.locator('[data-row-key="TEST"]').click();await popup.waitFor();
  assert((await popup.innerText()).includes('₹99'));assert((await popup.innerText()).includes('Daily close'));
  assert.deepEqual(errors,[]);
