@@ -15,9 +15,10 @@ export function createAlertArrivals() {
       if (key !== scopeKey) reset(key);
       if (!report || report.cacheSavedAt || report.readError) return;
       for (const feed of report.feeds || []) {
-        // Failed reads may contain a useful subset, but cannot establish a baseline.
-        if (feed.status === 'pending' || feed.status === 'failed') continue;
         const previous = seen.get(feed.id);
+        // Failed/partial first reads cannot establish a baseline. After a baseline exists,
+        // real rows in a partial refresh are still receipts; recovery must not reannounce them.
+        if (!previous && (feed.status === 'pending' || feed.status === 'failed')) continue;
         const ids = previous || new Set();
         for (const event of feed.events || []) {
           if (previous && !ids.has(event.id)) received.set(event.id, { at: now, private: !!event.private });
