@@ -256,6 +256,8 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-horizon-toggle="through"]')?.getAttribute('aria-selected') === 'true');
   await page.evaluate(() => window.show('universe'));
   await settled();
+  assert.equal(await page.locator('[data-alerts-meta] [data-alerts-info]').count(), 0,
+    'source-check badges stay out of the customer reading header');
   await page.locator('[data-sources-summary]').click();
   const coverageText = await page.locator('[data-alerts-coverage]').innerText();
   assert(/partial|check due|on request/i.test(coverageText), 'unfinished and limited sources remain distinguishable from verified empty results');

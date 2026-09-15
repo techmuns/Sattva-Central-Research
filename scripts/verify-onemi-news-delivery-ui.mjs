@@ -59,6 +59,8 @@ try {
   await page.waitForFunction(() => window.fixtureReady);
   assert.equal(await page.evaluate(() => window.fixtureReads[0].refresh), true, 'first open checks source readers');
   const state = page.locator('[data-alerts-coverage-state]');
+  assert.equal(await page.locator('[data-alerts-meta] [data-alerts-coverage-state]').count(), 0,
+    'initial source status belongs in Sources, not the reading header');
   assert.equal(await state.getAttribute('data-alerts-coverage-state'), 'loading');
   assert(!/\bLive\b/.test(await state.innerText()), 'the initial null report is never Live');
   assert.match(await page.locator('[data-horizon-toggle="through"]').innerText(), /…/, 'unchecked is not a confirmed zero');
@@ -94,6 +96,8 @@ try {
     window.fixtureRelease(retained);
   });
   await page.waitForFunction(() => document.querySelector('[data-alerts-coverage-state]')?.dataset.alertsCoverageState === 'partial');
+  assert.equal(await page.locator('[data-alerts-meta] [data-alerts-coverage-state]').count(), 0,
+    'live failures update the Sources details without restoring a header badge');
   assert.match(await page.locator('tbody').innerText(), /JM Financial/, 'failure retains the already-visible exact article');
   assert.equal(await search.inputValue(), 'onemi technology');
   assert.match(await page.locator('[data-feed="news"]').textContent(), /partial/);

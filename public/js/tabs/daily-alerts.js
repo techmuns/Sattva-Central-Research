@@ -372,13 +372,11 @@ function paint(ctx) {
   // history scroll offset into the much shorter forward calendar (or vice versa).
   const tablePosition = renderedHorizon === horizon ? captureTablePosition(ctx.root) : null;
 
-  // NO DESCRIPTION AND NO STAT STRIP. The four cards were the loudest version of
-  // the problem: three of them counted rows the table beneath them already lists, and the fourth
-  // printed a date the pill now carries. The pill is deliberately passive; full provenance stays
-  // in the source registry and export — see the stat-strip opt-out rule in CLAUDE.md.
+  // Keep the reading header focused on scope and history. Source-check details belong
+  // inside Sources; the selected date remains visible in the timeline controls and export.
   if (tableInstance && renderedHorizon === horizon && renderedDay === day && renderedScope === ctx.scope) {
     const metaDiv = ctx.root.querySelector('[data-alerts-meta]');
-    if (metaDiv) metaDiv.innerHTML = `${livePill(report, day)}${pendingPill(report)}${scopeSummary({
+    if (metaDiv) metaDiv.innerHTML = `${scopeSummary({
         scope: ctx.scope, count: m.companies || 0, noun: 'companies in loaded history', book: coverage.meta(),
     })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}`;
     
@@ -388,7 +386,7 @@ function paint(ctx) {
     const coveragePanelContainer = ctx.root.querySelector('.alerts-source-picker');
     if (coveragePanelContainer) {
       const tmp = document.createElement('div');
-      tmp.innerHTML = coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length);
+      tmp.innerHTML = coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length, report, day);
       const newPicker = tmp.firstElementChild;
       const summary = coveragePanelContainer.querySelector('[data-sources-summary]');
       const newSummary = newPicker.querySelector('[data-sources-summary]');
@@ -399,6 +397,9 @@ function paint(ctx) {
       const heading = coveragePanelContainer.querySelector('.alerts-source-heading p');
       const newHeading = newPicker.querySelector('.alerts-source-heading p');
       if (heading && newHeading) heading.textContent = newHeading.textContent;
+      const status = coveragePanelContainer.querySelector('[data-alerts-source-status]');
+      const newStatus = newPicker.querySelector('[data-alerts-source-status]');
+      if (status && newStatus) status.innerHTML = newStatus.innerHTML;
       const grid = coveragePanelContainer.querySelector('[data-alerts-coverage] > div:nth-child(2)');
       const newGrid = newPicker.querySelector('[data-alerts-coverage] > div:nth-child(2)');
       if (grid && newGrid) grid.innerHTML = newGrid.innerHTML;
@@ -428,7 +429,7 @@ function paint(ctx) {
     <div class="alerts-workspace" data-alerts-workspace data-fullscreen-workspace>
     ${sectionHead({
       title: 'All Alerts',
-      meta: `<div class="flex flex-wrap items-center justify-end gap-2" data-alerts-meta>${livePill(report, day)}${pendingPill(report)}${scopeSummary({
+      meta: `<div class="flex flex-wrap items-center justify-end gap-2" data-alerts-meta>${scopeSummary({
         scope: ctx.scope,
         count: m.companies || 0,
         noun: 'companies in loaded history',
@@ -438,7 +439,7 @@ function paint(ctx) {
     <div class="alerts-controls" data-alerts-controls>
       ${horizonToggle(allThrough.length, allUpcoming.length, day, !!report)}
       <div class="alerts-view-controls">
-        ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length)}
+        ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length, report, day)}
         <button type="button" class="alerts-layout-button" data-alerts-focus aria-pressed="${focusMode}"
           title="${focusMode ? 'Restore the app header and navigation (Escape)' : 'Hide the app header and navigation for more table space'}">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -570,19 +571,7 @@ function restoreFocus(root, focus) {
   }
 }
 
-/**
- * The one always-visible statement of what this page is and where it came from.
- *
- * IT CARRIES THE DATE ON ITS FACE, and that is not decoration: this is the one tab defined by a
- * DAY, the date is in IST rather than UTC (a UTC date names yesterday for five and a half hours
- * every evening), and a screenshot travels without the source registry. Detailed provenance stays
- * in that registry and the export.
- *
- * IT IS GREEN ONLY WHEN THE DATA EARNS IT. Every feed reaching today is the claim; one behind is
- * amber and says so, because a chip that reads Live over a feed that has not looked at today is
- * the same false freshness claim as the header chip that tracked a heartbeat and asked no server
- * anything.
- */
+/** Source-check details for the Sources panel and empty-state explanations. */
 export function alertCoverageState(rep) {
   const feeds = (rep?.feeds || []).filter(feed => feed.scopable !== false);
   const failed = feeds.filter(feed => feed.status === 'failed').length;
@@ -600,44 +589,20 @@ export function alertCoverageState(rep) {
     title: 'The loaded source readers have checked the selected Indian date. Collection follows each source’s cadence; this is not a real-time or exhaustive-coverage guarantee.' };
 }
 
-function livePill(rep, day) {
+function sourceCoverageSummary(rep, day) {
   const state = alertCoverageState(rep);
   const label = `${state.label} · ${fmtDay(day)}`;
-  if (state.status !== 'checked') {
-    return `<span data-alerts-info
-       data-alerts-coverage-state="${state.status}"
-       class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-300"
-       title="${escapeHtml(state.title)}">
-       <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> ${escapeHtml(label)}
-     </span>`;
-  }
   return `<span data-alerts-info
      data-alerts-coverage-state="${state.status}"
-     class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200"
-     title="${escapeHtml(state.title)}">
-     <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> ${escapeHtml(label)}
-   </span>`;
+     title="${escapeHtml(state.title)}">${escapeHtml(label)}</span>`;
 }
 
-/** `2026-09-01` -> `01 Sept 2026`, so the chip reads as a date rather than as an id. */
+/** `2026-09-01` -> `01 Sept 2026`. */
 function fmtDay(day) {
   const d = new Date(`${day}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return day;
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
-/**
- * How many feeds have not answered yet — a statement about US, not about the day.
- *
- * It names the count rather than saying "loading", because a partial page that looks finished is
- * the failure this whole tab is built to avoid: a reader who sees four rows and no pill has no way
- * to know that four more feeds are still being read.
- */
-function pendingPill(rep) {
-  const n = rep?.pending ?? 0;
-  if (!n) return '';
-  return pill({ label: `Reading ${n} more ${n === 1 ? 'feed' : 'feeds'}…`, tone: 'neutral' });
-}
-
 /** The retained range currently represented in the scrollable stream. */
 function historyPill(historyMeta) {
   if (!historyMeta?.oldestEventDay || !historyMeta?.newestEventDay) return '';
@@ -686,7 +651,7 @@ function horizonToggle(throughCount, upcomingCount, day, ready = true) {
 // The coverage panel — one row per feed
 // ---------------------------------------------------------------------------------------
 
-function coveragePanel(feeds, visibleCount) {
+function coveragePanel(feeds, visibleCount, rep, day) {
   const box = (on) => `
     <span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-all ${
       on ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm' : 'border-slate-300 bg-white text-transparent group-hover:border-indigo-300'
@@ -732,7 +697,8 @@ function coveragePanel(feeds, visibleCount) {
     <section id="alerts-source-panel" class="alerts-source-panel" data-alerts-coverage aria-label="Alert source filters">
       <div class="alerts-source-heading">
         <div><h3 class="font-semibold text-slate-800">Filter by source</h3>
-          <p class="mt-1 text-xs text-slate-500">${escapeHtml(selectedNames)}. Select one or more feeds.</p></div>
+          <p class="mt-1 text-xs text-slate-500">${escapeHtml(selectedNames)}. Select one or more feeds.</p>
+          <p class="mt-1 text-xs text-slate-500" data-alerts-source-status>${sourceCoverageSummary(rep, day)}</p></div>
         <button type="button" class="alerts-layout-button" data-sources-close>Done</button>
       </div>
       <div class="flex flex-wrap items-center gap-2 text-xs">${feeds.length ? chips.join('') : 'Reading the feeds…'}</div>

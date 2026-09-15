@@ -1778,8 +1778,8 @@ console.log('\n— AI alerts —');
     const m = document.getElementById('subview-mount');
     return !m || m.classList.contains('hidden') || !m.innerText.trim();
   }));
-  // The date is IST, and it is on the FACE of the pill: this is the one tab defined by a day, and
-  // a screenshot travels without the modal behind it.
+  // Source-check details and their Indian date remain inside the open Sources panel.
+  ok('source-check badges stay out of the reading header', (await page.locator('[data-alerts-meta] [data-alerts-info]').count()) === 0);
   const dayPillText = await page.locator('[data-alerts-info]').first().innerText();
   ok('it states the Indian trading date rather than a UTC one',
     /\d{2} \w{3,4} \d{4}/.test(dayPillText), dayPillText.replace(/\s+/g, ' '));
@@ -1841,6 +1841,7 @@ console.log('\n— AI alerts —');
   ok('...while all five states remain distinguishable internally',
     new Set([states.behind.label, states.failed.label, states.pending.label, states.unscoped.label, states.nothing.label]).size === 5);
   // The status label must not bring back the long explainer overlay.
+  if (!(await page.locator('[data-alerts-sources]').evaluate(node => node.open))) await page.locator('[data-sources-summary]').click();
   await page.locator('[data-alerts-info]').first().click();
   await page.waitForTimeout(200);
   ok('the All Alerts status opens no explainer popup',
@@ -2071,6 +2072,7 @@ console.log('\n— AI alerts —');
   // The feed is not offered as a filter here, and the status remains passive.
   const scopedFeeds = await page.$$eval('[data-alerts-coverage] [data-feed]', (els) => els.map((e) => e.dataset.feed));
   ok('market-wide news is not offered as a filter on a narrowed scope', !scopedFeeds.includes('market-news'), scopedFeeds.join(', '));
+  if (!(await page.locator('[data-alerts-sources]').evaluate(node => node.open))) await page.locator('[data-sources-summary]').click();
   await page.locator('[data-alerts-info]').first().click();
   await page.waitForTimeout(200);
   ok('the narrowed-scope status opens no explainer popup',
@@ -2332,6 +2334,7 @@ console.log('\n— AI alerts —');
       opened.length === 1 && opened[0] === rowHref && page.url() === hashBefore,
       `${opened.length} open(s): ${(opened[0] || '(none)').slice(0, 58)} · hash unchanged=${page.url() === hashBefore}`);
   }
+  if (!(await page.locator('[data-alerts-sources]').evaluate(node => node.open))) await page.locator('[data-sources-summary]').click();
   await page.locator('[data-alerts-info]').first().click();
   await page.waitForTimeout(200);
   ok('the alert-stream status remains popup-free after table interaction',

@@ -2753,6 +2753,11 @@ different meanings: *nobody filed*, and *nothing has looked at today yet*. The c
 per feed, when it last looked and whether that reaches today. Same rule as the filings tabs' *"63
 companies have not been checked since"*: **never claim nothing is new.**
 
+The customer-requested All Alerts header cleanup on 15 September keeps aggregate source-check
+status and its date inside the expandable Sources panel as plain text. Do not restore the colored
+coverage or pending-feed badges beside the title. The timeline controls retain the selected date;
+source failures, pending reads, check times and empty-state explanations remain accurate.
+
 It is computed differently depending on what the feed IS, and the distinction matters:
 
 - feeds whose ROWS carry their own date (earnings, con-calls, announcements, insider, news, market news) use
@@ -2765,7 +2770,7 @@ It is computed differently depending on what the feed IS, and the distinction ma
 
 Tickerless investor moves remain visible in Universe and are excluded from ticker-narrowed scopes.
 Missing investor books and degraded earnings/con-call fallbacks are reported as incomplete/failed;
-stale last-good investor books are treated the same way. None is allowed to make the coverage chip
+stale last-good investor books are treated the same way. None is allowed to make the source details
 claim the feed is current. Reading a committed earnings/con-call file dates freshness to the
 upstream `fetchedAt`, not to the moment this browser read the file.
 
