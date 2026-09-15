@@ -94,7 +94,15 @@ export async function collectBreakouts({ targets, previous = null, client, prima
 }
 async function main() {
   const now = Date.now();
-  if (!marketWindow(now).collect) { console.log('Outside market collection hours; no source requests.'); return; }
+  let previous;
+  try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }
+  catch { if (!marketWindow(now).collect) throw Error('Capture service unavailable'); }
+  if (!marketWindow(now).collect && previous?.rows?.length > 0) {
+    console.log('Outside market collection hours; no market-source requests.'); return;
+  }
+  // The first scheduled run also seeds the latest closing observations after hours.
+  // Otherwise a newly published dashboard could display the old CMP until next morning.
+  if (!marketWindow(now).collect && previous?.version !== 1) throw Error('Capture service unavailable');
   const technicals = JSON.parse(readFileSync('public/data/technicals.json', 'utf8'));
   const targets = new Map();
   let discoveryFailed = false;
@@ -110,9 +118,6 @@ async function main() {
     if (!Array.isArray(watchlist.companies)) throw Error('Watchlist unavailable');
     for (const c of watchlist.companies) if (tickerValid(c.ticker)) targets.set(c.ticker, { ticker: c.ticker, name: c.name });
   } catch { discoveryFailed = true; }
-  let previous;
-  try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts`, { signal: AbortSignal.timeout(20000) }), 8 * 1024 * 1024); }
-  catch { /* Initial collection can begin without history. Durable writes never replace it. */ }
   if (discoveryFailed) for (const ticker of previous?.targets || []) if (!targets.has(ticker)) targets.set(ticker, {ticker,name:previous?.rows?.find(row=>row.ticker===ticker)?.name || ticker});
   const client = breakoutClient();
   const summary = await collectBreakouts({ targets: [...targets.values()].sort((a,b)=>(Date.parse(previous?.rows?.find(row=>row.ticker===a.ticker)?.quoteAt)||0)-(Date.parse(previous?.rows?.find(row=>row.ticker===b.ticker)?.quoteAt)||0)), previous, client, discoveryFailed,

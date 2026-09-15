@@ -11,7 +11,8 @@ that every brief breakout will be observed.
 
 - `breakouts-refresh.yml` requests a run every 15 minutes. The collector only
   requests market data during regular-session collection hours (09:15–16:15 IST),
-  with the published 2026 NSE holidays excluded. The November 8 special session
+  with the published 2026 NSE holidays excluded. The first scheduled run also
+  seeds the latest closing observations if the store is empty outside market hours. The November 8 special session
   has no confirmed time in the source calendar, so checks are attempted all day
   and calendar completeness is explicitly unknown. Future calendar years are
   also reported as unknown until the calendar is updated.
@@ -23,7 +24,8 @@ that every brief breakout will be observed.
 - GitHub OIDC permits writes only from the fixed repository, main branch and
   this workflow. No browser credential or long-lived upload secret is needed.
 - Yahoo Finance is the primary quote/history source. Eight requests run at once;
-  a rate limit stops further primary requests. Each completed wave is checkpointed.
+  a rate limit stops further primary requests. Numeric BSE codes and known SME
+  suffix mappings follow the existing daily collector; the exchange is labelled. Each completed wave is checkpointed.
   All committed universe names, technical rows, live portfolio tickers and shared
   watchlist names are included. If live inventory discovery fails, prior targets
   remain included and the capture is explicitly partial. No top-60 limit applies.
