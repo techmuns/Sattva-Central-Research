@@ -3,6 +3,8 @@ import { TelegramSchedule } from './telegram-scheduler.mjs';
 import { ConcallSummaryStore } from './concall-summary-store.mjs';
 import { ConcallSummarySchedule } from './concall-summary-schedule.mjs';
 import { SharedWatchlistStore } from './watchlist-store.mjs';
+import { BreakoutStore } from './breakout-store.mjs';
+import { BreakoutSchedule } from './breakout-schedule.mjs';
 import { CAPTURE_REGISTRY_LIMIT, CAPTURE_REGISTRATION_BATCH, registeredCompany } from '../public/js/data/capture-registration-shared.js';
 
 // Each shard coordinates one bounded set of issuer registrations. No reader identity is stored.
@@ -18,6 +20,8 @@ export class CaptureRegistry extends DurableObject {
     // The shared watchlist lives in its own fixed object (shared-watchlist:v1), so these tables
     // are only ever created on that one. A company-registry shard never calls a watchlist method.
     this.watchlist = new SharedWatchlistStore(ctx.storage);
+    this.breakouts = new BreakoutStore(ctx.storage);
+    this.breakoutSchedule = new BreakoutSchedule(ctx.storage, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS companies (isin TEXT PRIMARY KEY, ticker TEXT NOT NULL, name TEXT NOT NULL)');
   }
   status() { return this.schedule.status(); }
@@ -32,8 +36,17 @@ export class CaptureRegistry extends DurableObject {
   watchlistSnapshot() { return this.watchlist.watchlistSnapshot(); }
   watchlistApply(intents) { return this.watchlist.watchlistApply(intents); }
   request(source) { return this.schedule.request(source); }
+  async breakoutArm() { await this.breakoutSchedule.arm(); return this.breakoutSchedule.status(); }
+  async breakoutBegin(run, targets, failed) { const out = this.breakouts.begin(run, targets, failed); await this.breakoutSchedule.arm(); return out; }
+  breakoutRecovery(run, ticker, from, to, rows) { return this.breakouts.recovery(run,ticker,from,to,rows); }
+  breakoutCheckpoint(run, rows, failures) { return this.breakouts.checkpoint(run, rows, failures); }
+  breakoutFinish(run) { return this.breakouts.finish(run); }
+  breakoutRead() { return this.breakouts.read(); }
+  breakoutHistory(ticker, before) { return this.breakouts.history(ticker, before); }
+  breakoutScheduleStatus() { return this.breakoutSchedule.status(); }
   async alarm() {
-    if (await this.ctx.storage.get('summary-timer')) await this.summarySchedule.wake();
+    if (await this.ctx.storage.get('breakout-timer')) await this.breakoutSchedule.wake();
+    else if (await this.ctx.storage.get('summary-timer')) await this.summarySchedule.wake();
     else await this.schedule.request('cron');
   }
   list() {

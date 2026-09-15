@@ -1,0 +1,72 @@
+name: Breakout price and volume capture
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/breakouts-refresh.yml'
+      - 'scripts/collect-breakouts.mjs'
+      - 'worker/breakout*.mjs'
+      - 'worker/capture-registry-object.mjs'
+      - 'worker/index.js'
+      - 'wrangler.jsonc'
+  schedule:
+    - cron: '2,17,32,47 * * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Who requested collection
+        default: manual
+        type: string
+
+concurrency:
+  group: breakout-market-capture
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  bootstrap:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      # A merge starts the timer independently of scheduled Actions or market-data success.
+      # Wait briefly for the existing publishing pipeline; failed publishing stays a failure.
+      - name: Start the durable backup timer after publishing
+        run: node scripts/collect-breakouts.mjs --bootstrap
+  collect:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      # One shared capture, no data commits or website rebuild per scan. Daily scores retain
+      # their existing completed-session workflow. The collector itself gates market hours.
+      - name: Capture current prices and volume, saving each completed batch
+        env:
+          UPSTOX_ACCESS_TOKEN: ${{ secrets.UPSTOX_ACCESS_TOKEN }}
+          UPSTOX_BACKUP_ENABLED: ${{ vars.UPSTOX_BACKUP_ENABLED }}
+        run: node scripts/collect-breakouts.mjs
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: breakout-health
+          path: artifacts/breakout-health.json
+          if-no-files-found: ignore
+          retention-days: 30

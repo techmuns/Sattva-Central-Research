@@ -33,6 +33,7 @@
 // arrives with a matching `If-None-Match` gets a 304 with no body at all.
 
 import { readTelegramCollector } from './telegram-collector.mjs';
+import { handleBreakouts, handleTechnicals } from './breakouts.mjs';
 import { TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from './telegram-scheduler.mjs';
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
 import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
@@ -141,6 +142,8 @@ export default {
     if (url.pathname === '/api/ipo-monitor') return handleIpoMonitor(request);
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
+    if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health'].includes(url.pathname)) return handleBreakouts(request, env);
+    if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
       return handleConcallSummaries(request, env);

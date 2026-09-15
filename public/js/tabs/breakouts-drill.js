@@ -1,3 +1,4 @@
+import * as live from '../data/breakout-live.js';
 // tabs/breakouts-drill.js — the technicals drill panel.
 //
 // Split out of breakouts.js because the header's global search opens it from ANY tab: pick a
@@ -71,7 +72,32 @@ function metaChips(ruleKey, company) {
  */
 export function openTechnicalsDrill(scored) {
   if (!scored) return;
-  const c = scored.company || {};
+  const c = scored.company?.dailyCompany || scored.company || {};
+  let stopWatching = null, stopDaily = null, closed = false;
+  const onClose = () => { closed = true; stopWatching?.(); stopDaily?.(); stopWatching = stopDaily = null; };
+  const watchPrice = () => {
+    stopDaily = technicals.onChange(() => {
+      // Defer replacement until notification finishes, so its new subscription is not
+      // visited again by the same Set iteration. Closing in the meantime cancels it.
+      queueMicrotask(() => {
+        const latest = technicals.byTicker(c.ticker);
+        if (closed || !latest || latest === scored) return;
+        const panel = document.getElementById('drill-panel'), scroll = panel?.scrollTop;
+        openTechnicalsDrill(latest);
+        if (panel) panel.scrollTop = scroll;
+      });
+    });
+    stopWatching = live.watch(() => {
+      const element = document.querySelector('[data-stat="breakout-price"]');
+      if (!element) return;
+      const info = live.priceInfo(c);
+      element.children[1].textContent = info.price == null ? '—' : `₹${Number(info.price).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}`;
+      element.children[2].textContent = live.priceCaption(info);
+      element.children[2].className = `text-xs ${info.stale ? 'text-amber-700' : 'text-slate-500'}`;
+    });
+  };
+  const info = live.priceInfo(c);
+  const priceStat = {id:'breakout-price',label:'CMP',value:info.price == null ? '—' : `₹${Number(info.price).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}`,caption:live.priceCaption(info),captionWrap:true,tone:'neutral'};
   const tier = scored.hardFails.length ? 'hardfail' : null;
 
   if (scored.tickerError) {
@@ -82,15 +108,16 @@ export function openTechnicalsDrill(scored) {
       linkLabel: 'View on Screener.in ↗',
       headerStats: [
         { label: 'Technicals Score', value: 'No data', tone: 'neutral' },
-        { label: 'Status', value: 'Scrape failed', tone: 'caution' },
+        priceStat,
       ],
       banner: {
         tone: 'slate',
         title: 'No price history for this ticker',
         body: `${scored.tickerError}. Nothing is estimated in its place — the row scores zero of zero and is ranked last.`,
       },
-      groups: [],
+      groups: [], onClose,
     });
+    watchPrice();
     return;
   }
 
@@ -128,12 +155,12 @@ export function openTechnicalsDrill(scored) {
     linkLabel: 'View on Screener.in ↗',
     headerStats: [
       {
-        label: 'Technicals Score',
+        label: 'Daily Technicals Score',
         value: `${fmtPoints(scored.totalPoints)}/${scored.totalMax}`,
-        caption: `${scored.scorePct}%${scored.naCount ? ` · ${scored.naCount} n/a` : ''}`,
+        caption: `${scored.scorePct}% · close ${c.price_date || technicals.meta()?.price_date || 'date unavailable'}`,
         tone: tier === 'hardfail' ? 'negative' : scored.scorePct >= 60 ? 'positive' : scored.scorePct >= 40 ? 'caution' : 'negative',
       },
-      { label: 'CMP', value: c.cmp == null ? '—' : `₹${Number(c.cmp).toLocaleString('en-IN')}`, caption: c.pct_change_today == null ? '' : `${c.pct_change_today > 0 ? '+' : ''}${c.pct_change_today}% today`, tone: c.pct_change_today > 0 ? 'positive' : c.pct_change_today < 0 ? 'negative' : 'neutral' },
+      priceStat,
     ],
     banner: scored.hardFails.length
       ? {
@@ -142,8 +169,9 @@ export function openTechnicalsDrill(scored) {
           body: "Client framework: 'Price < 200 DMA = immediate fail — stock exits pipeline.' All data is present; this is deliberately surfaced as cautionary.",
         }
       : null,
-    groups,
+    groups, onClose,
   });
+  watchPrice();
 }
 
 /** Open the drill by ticker — used by the header's global search from any tab. */

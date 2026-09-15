@@ -1423,6 +1423,7 @@ export function scoreTable(config) {
 
 let drillKeyHandler = null;
 let releaseDrillFocus = null;
+let drillOnClose = null;
 
 /**
  * openDrill({ name, sub, link, linkLabel, headerStats, groups, banner })
@@ -1436,12 +1437,15 @@ let releaseDrillFocus = null;
  *  banner       optional { tone: 'rose'|'amber'|'slate', title, body } strip under the header
  *  beforeGroupsHtml  trusted markup rendered above the rule groups (series tables, charts)
  */
-export function openDrill({ name = '', sub = '', link = null, linkLabel = 'Open source ↗', headerStats = [], groups = [], banner = null, beforeGroupsHtml = '' }) {
+export function openDrill({ name = '', sub = '', link = null, linkLabel = 'Open source ↗', headerStats = [], groups = [], banner = null, beforeGroupsHtml = '', onClose = null }) {
   const panel = document.getElementById('drill-panel');
   const overlay = document.getElementById('drill-overlay');
   const content = document.getElementById('drill-content');
   if (!panel || !overlay || !content) return;
 
+  drillOnClose?.();
+  drillOnClose = typeof onClose === 'function' ? onClose : null;
+  if (drillKeyHandler) document.removeEventListener('keydown', drillKeyHandler);
   const { color, initials } = avatarFor(name);
 
   const bannerTone = {
@@ -1467,10 +1471,10 @@ export function openDrill({ name = '', sub = '', link = null, linkLabel = 'Open 
                ${headerStats
                  .map(
                    (hs) => `
-                 <div class="rounded-lg bg-slate-50 p-3">
+                 <div class="rounded-lg bg-slate-50 p-3"${hs.id ? ` data-stat="${escapeHtml(hs.id)}"` : ''}>
                    <div class="text-xs font-medium text-slate-500">${escapeHtml(hs.label)}</div>
                    <div class="text-2xl font-bold tabular-nums ${METRIC_TONE[hs.tone] || 'text-slate-900'}">${escapeHtml(hs.value)}</div>
-                   ${hs.caption ? `<div class="truncate text-xs text-slate-500">${escapeHtml(hs.caption)}</div>` : ''}
+                   ${hs.caption ? `<div class="${hs.captionWrap ? '' : 'truncate'} text-xs text-slate-500">${escapeHtml(hs.caption)}</div>` : ''}
                  </div>`
                  )
                  .join('')}
@@ -1545,6 +1549,7 @@ export function closeDrill() {
   }
   releaseDrillFocus?.();
   releaseDrillFocus = null;
+  const closed = drillOnClose; drillOnClose = null; closed?.();
 }
 
 let modalKeyHandler = null;
