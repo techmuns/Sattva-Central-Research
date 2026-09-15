@@ -23,10 +23,10 @@ const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
 const WARM_CONCURRENCY = 8;
 
-// Keep the Telegram revision separate from the shared marker: concurrent dashboard
-// releases can update that marker without conflicting with this content fix. Every
+// Keep content revisions separate from the shared marker: concurrent dashboard
+// releases can update that marker without conflicting with these fixes. Every
 // install, read and eviction uses the same combined key, retaining atomic upgrades.
-const CACHE_KEY = `${CACHE_NAME}-telegram-content-v1`;
+const CACHE_KEY = `${CACHE_NAME}-telegram-content-v1-watchlist-reliability-v4`;
 
 function moduleSpecifiers(source) {
   const found = new Set();

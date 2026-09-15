@@ -62,6 +62,7 @@ const STORAGE_KEY = 'sattva:watchlist';
 const MIGRATED_KEY = 'sattva:watchlist:shape';
 const OUTBOX_KEY = 'sattva:watchlist:outbox';
 const SEEDED_KEY = 'sattva:watchlist:seeded';
+const REJECTED_KEY = 'sattva:watchlist:rejected';
 const ROUTE = 'api/watchlist';
 
 // The shared list is small and changes when a person acts, so this is a safety net behind the
@@ -105,19 +106,175 @@ function scheduleWrite() {
   }, WRITE_DEBOUNCE_MS);
 }
 
-function readRaw(key, fallback) {
+// Keep an authoritative session copy when browser storage is denied or full. A failed
+// write must never make the next read fall back to stale disk bytes (or an empty list).
+const sessionValues = new Map();
+const pendingStorage = new Set();
+const pendingStorageBases = new Map();
+const failedStorageReads = new Set();
+const unreadStorage = new Set();
+
+function storedValue(key) {
+  if (pendingStorage.has(key)) return sessionValues.get(key) ?? null;
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : fallback;
+    const value = localStorage.getItem(key);
+    sessionValues.set(key, value);
+    failedStorageReads.delete(key);
+    return value;
   } catch {
-    return fallback; // private mode / storage disabled — the session still works, it just won't persist
+    failedStorageReads.add(key);
+    if (!sessionValues.has(key)) unreadStorage.add(key);
+    return sessionValues.get(key) ?? null;
   }
 }
 
-function read() {
-  const parsed = readRaw(STORAGE_KEY, []);
+const intentKey = intent => intent.id || JSON.stringify([intent.op, intent.ticker, intent.name, intent.by, intent.at]);
+
+function mergeStoredIntents(baseRaw, localRaw, diskRaw) {
+  const base = new Set(parseArray(baseRaw).map(intentKey));
+  const local = parseArray(localRaw);
+  const localKeys = new Set(local.map(intentKey));
+  const removed = new Set([...base].filter(key => !localKeys.has(key)));
+  const merged = new Map(parseArray(diskRaw)
+    .filter(intent => !removed.has(intentKey(intent)))
+    .map(intent => [normTicker(intent.ticker), intent]));
+  for (const intent of local) {
+    // An unchanged base entry removed by a sibling is already acknowledged. Only
+    // this tab's new edits may be re-applied over the current disk queue.
+    if (base.has(intentKey(intent))) continue;
+    const ticker = normTicker(intent.ticker);
+    const sibling = merged.get(ticker);
+    // Both tabs use this device's clock. Keep the newer local click when they edit
+    // the same company; these times never determine ordering on the shared server.
+    if (!sibling || (Date.parse(intent.at) || 0) >= (Date.parse(sibling.at) || 0)) merged.set(ticker, intent);
+  }
+  const next = [...merged.values()];
+  return next.length ? JSON.stringify(next) : null;
+}
+
+function mergeStoredCompanies(baseRaw, localRaw, diskRaw) {
+  const base = new Set(read(parseArray(baseRaw)).map(entry => entry.ticker));
+  const local = new Map(read(parseArray(localRaw)).map(entry => [entry.ticker, entry]));
+  const merged = new Map(read(parseArray(diskRaw)).map(entry => [entry.ticker, entry]));
+  for (const intent of outbox()) {
+    const ticker = normTicker(intent.ticker);
+    if (intent.op === 'remove') merged.delete(ticker);
+    else if (!merged.has(ticker) && (intent.op === 'add' || (local.has(ticker) && !base.has(ticker)))) {
+      // Preserve new local additions, including unnamed contributions sent as
+      // seeds. An old migration seed cannot override a newer sibling removal.
+      merged.set(ticker, local.get(ticker) || {
+        ticker, name: companyName(intent.name), addedAt: intent.at || null, addedBy: personName(intent.by),
+      });
+    }
+  }
+  return JSON.stringify([...merged.values()]);
+}
+
+function persistValue(key, authoritative = false) {
+  if (unreadStorage.has(key) || (key === SEEDED_KEY && unreadStorage.has(STORAGE_KEY))) return;
+  try {
+    let value = sessionValues.get(key);
+    if (key === OUTBOX_KEY || key === REJECTED_KEY) {
+      const disk = localStorage.getItem(key);
+      value = mergeStoredIntents(pendingStorageBases.get(key), value, disk);
+      sessionValues.set(key, value);
+      // If this write fails again, disk entries adopted by the merge are now the
+      // base, so a later sibling acknowledgement cannot resurrect them.
+      pendingStorageBases.set(key, disk);
+    } else if (key === STORAGE_KEY) {
+      const disk = localStorage.getItem(key);
+      if (!authoritative && disk !== pendingStorageBases.get(key)) {
+        // A sibling has advanced the mirror since this tab's last readable copy.
+        // Reconcile pending clicks over it instead of replacing it with an older
+        // failed write. A fresh server adoption can replace the mirror directly.
+        value = mergeStoredCompanies(pendingStorageBases.get(key), value, disk);
+        sessionValues.set(key, value);
+      }
+      pendingStorageBases.set(key, disk);
+    }
+    if (value == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+    pendingStorage.delete(key);
+    pendingStorageBases.delete(key);
+    failedStorageReads.delete(key);
+  } catch {
+    // Retain both the value and the outstanding write for the next sync.
+  }
+}
+
+function saveValue(key, value, authoritative = false) {
+  if (!pendingStorage.has(key)) pendingStorageBases.set(key, sessionValues.get(key) ?? null);
+  sessionValues.set(key, value);
+  pendingStorage.add(key);
+  // Never persist "migration complete" ahead of the edits carrying the old list.
+  if (key !== SEEDED_KEY || !pendingStorage.has(OUTBOX_KEY)) persistValue(key, authoritative);
+}
+
+function retryStorage() {
+  // If storage was denied at startup, its old list/outbox may never have been read.
+  // Recover those bytes before a temporary session copy can overwrite them.
+  for (const key of new Set([OUTBOX_KEY, REJECTED_KEY, STORAGE_KEY, ...unreadStorage])) {
+    if (!unreadStorage.has(key)) continue;
+    try {
+      const raw = localStorage.getItem(key);
+      if (key === OUTBOX_KEY || key === REJECTED_KEY) {
+        saveValue(key, mergeStoredIntents(null, sessionValues.get(key), raw));
+      } else if (key === STORAGE_KEY) {
+        const needsSeed = localStorage.getItem(SEEDED_KEY) !== '1';
+        const recovered = read(parseArray(raw));
+        if (needsSeed) {
+          const queued = new Set(outbox().map(intent => normTicker(intent.ticker)));
+          for (const entry of recovered) {
+            if (!queued.has(entry.ticker)) queue({ op: 'seed', ticker: entry.ticker, name: entry.name });
+          }
+        }
+        if (needsSeed || !confirmed) {
+          // These are actual saved rows, not a server acknowledgement. Keep them
+          // visible and durable until migration can run, even if saving its outbox
+          // is still blocked. Otherwise the empty startup fallback destroys the
+          // only recoverable copy when storage returns before the connection does.
+          const retained = new Map([...recovered, ...read(parseArray(sessionValues.get(key)))]
+            .map(entry => [entry.ticker, entry]));
+          for (const intent of outbox()) {
+            const ticker = normTicker(intent.ticker);
+            if (intent.op === 'remove') retained.delete(ticker);
+            else if (intent.op === 'add' && !retained.has(ticker)) {
+              retained.set(ticker, { ticker, name: companyName(intent.name), addedAt: intent.at || null, addedBy: personName(intent.by) });
+            }
+          }
+          saveValue(key, JSON.stringify([...retained.values()]));
+        }
+        // The recovery above already reconciled these previously unread bytes.
+        if (pendingStorage.has(key)) pendingStorageBases.set(key, raw);
+      }
+      if (!pendingStorage.has(key)) sessionValues.set(key, raw);
+      unreadStorage.delete(key);
+      failedStorageReads.delete(key);
+    } catch {
+      // Still inaccessible; keep the session copy and leave the old bytes untouched.
+    }
+  }
+  // Resolve any sibling acknowledgements before overlaying pending edits on its mirror.
+  for (const key of new Set([OUTBOX_KEY, REJECTED_KEY, ...pendingStorage])) {
+    if (key !== SEEDED_KEY && pendingStorage.has(key)) persistValue(key);
+  }
+  if (pendingStorage.has(SEEDED_KEY) && !pendingStorage.has(OUTBOX_KEY)) persistValue(SEEDED_KEY);
+}
+
+function parseArray(raw, fallback = []) {
+  try {
+    const parsed = JSON.parse(raw || 'null');
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readRaw(key, fallback) {
+  return parseArray(storedValue(key), fallback);
+}
+
+function read(parsed = readRaw(STORAGE_KEY, [])) {
   const out = [];
   const seen = new Set();
   for (const item of parsed) {
@@ -142,13 +299,9 @@ function read() {
   return out;
 }
 
-function write(entries) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    localStorage.setItem(MIGRATED_KEY, '3');
-  } catch {
-    // Nothing to do: the toggle still works for this session.
-  }
+function write(entries, authoritative = false) {
+  saveValue(STORAGE_KEY, JSON.stringify(entries), authoritative);
+  saveValue(MIGRATED_KEY, '3');
 }
 
 /**
@@ -156,14 +309,7 @@ function write(entries) {
  * symbol. Called on first read so an upgrading reader's star count matches what the app can show.
  */
 function migrateOnce() {
-  let done;
-  try {
-    done = localStorage.getItem(MIGRATED_KEY);
-  } catch {
-    return;
-  }
-  if (done === '3') return;
-  write(read());
+  if (storedValue(MIGRATED_KEY) !== '3') write(read());
 }
 migrateOnce();
 
@@ -171,22 +317,36 @@ migrateOnce();
 // The outbox — edits this device has made and the shared list has not accepted yet.
 // It is persisted because the alternative is losing somebody's star to a closed tab or a tunnel.
 
-const outbox = () => readRaw(OUTBOX_KEY, []).filter((i) => i && SYMBOL_RE.test(normTicker(i.ticker)));
+function outbox() {
+  return readRaw(OUTBOX_KEY, []).filter((i) => i && SYMBOL_RE.test(normTicker(i.ticker)));
+}
 
 function writeOutbox(list) {
-  try {
-    if (list.length) localStorage.setItem(OUTBOX_KEY, JSON.stringify(list));
-    else localStorage.removeItem(OUTBOX_KEY);
-  } catch {
-    /* The edit still applies locally and will be re-derived on the next mutation. */
+  saveValue(OUTBOX_KEY, list.length ? JSON.stringify(list) : null);
+}
+
+const rejected = () => readRaw(REJECTED_KEY, []);
+function writeRejected(list) {
+  saveValue(REJECTED_KEY, list.length ? JSON.stringify(list) : null);
+}
+
+function identifiedOutbox() {
+  const list = outbox();
+  if (list.some(intent => !intent.id)) {
+    // Older releases persisted no IDs. Assign them once before sending, so an
+    // acknowledgement can distinguish that edit from a later edit to the same ticker.
+    const identified = list.map(intent => intent.id ? intent : { ...intent, id: crypto.randomUUID() });
+    writeOutbox(identified);
+    return identified;
   }
+  return list;
 }
 
 function queue(intent) {
   // One pending edit per company: starring, unstarring and starring again is one state to send,
   // not three to replay. The newest intent is the one that describes what the reader wants.
   const next = outbox().filter((i) => normTicker(i.ticker) !== intent.ticker);
-  next.push(intent);
+  next.push({ ...intent, id: crypto.randomUUID(), at: new Date().toISOString() });
   writeOutbox(next);
 }
 
@@ -232,7 +392,19 @@ export function size() {
  * `live` over bytes nobody checked.
  */
 export function meta() {
+  const count = size();
   const pending = outbox().length;
+  const refused = rejected();
+  const storageUnavailable = pendingStorage.size > 0 || failedStorageReads.size > 0;
+  const connectionError = storageUnavailable && lastError === UNREACHABLE
+    ? 'The shared watchlist could not be reached. Keep this tab open until your changes have been sent.'
+    : lastError;
+  const capacityError = refused.length
+    ? `The shared watchlist is full, so ${refused.map(entry => entry.ticker).join(', ')} could not be added. Remove a company and try adding again.`
+    : null;
+  const storageError = storageUnavailable
+    ? 'Browser storage is unavailable. This tab keeps a temporary copy; keep it open while changes are pending.'
+    : null;
   return {
     shared: confirmed,
     origin: pending ? 'pending' : confirmed ? 'live' : 'store',
@@ -240,8 +412,10 @@ export function meta() {
     revision: shared.revision,
     updatedAt: shared.updatedAt,
     pending,
-    error: lastError,
-    count: size(),
+    error: [connectionError, capacityError, storageError].filter(Boolean).join(' ') || null,
+    storageAvailable: !storageUnavailable,
+    rejected: refused,
+    count,
   };
 }
 
@@ -271,8 +445,8 @@ export function add(ticker, name = null, by = null) {
     return true;
   }
   entries.push({ ticker: t, name: companyName(name), addedAt: new Date().toISOString(), addedBy: contributor || null });
-  write(entries);
   queue(contributor ? { op: 'add', ticker: t, name: companyName(name), by: contributor } : { op: 'seed', ticker: t, name: companyName(name) });
+  write(entries);
   if (contributor) people.remember(contributor);
   emit();
   scheduleWrite();
@@ -285,8 +459,8 @@ export function remove(ticker, by = null) {
   const next = entries.filter((e) => e.ticker !== t);
   if (next.length === entries.length) return false;
   const contributor = personName(by) || people.me();
-  write(next);
   queue({ op: 'remove', ticker: t, by: contributor || null });
+  write(next);
   if (contributor) people.remember(contributor);
   emit();
   scheduleWrite();
@@ -335,6 +509,9 @@ function adopt(snapshot) {
     if (!ticker || !SYMBOL_RE.test(ticker)) continue;
     byTicker.set(ticker, { ticker, name: companyName(row?.name), addedAt: row?.addedAt || null, addedBy: personName(row?.addedBy) });
   }
+  const refused = rejected();
+  const unresolved = refused.filter(entry => !byTicker.has(normTicker(entry.ticker)));
+  if (unresolved.length !== refused.length) writeRejected(unresolved);
   for (const intent of outbox()) {
     const ticker = normTicker(intent.ticker);
     // A `seed` IS NOT RE-APPLIED, and that distinction is the whole of this loop's honesty.
@@ -358,16 +535,16 @@ function adopt(snapshot) {
   }
   shared = { revision: snapshot.revision ?? null, updatedAt: snapshot.updatedAt || null };
   people.ingest(snapshot.people);
-  write([...byTicker.values()]);
+  write([...byTicker.values()], true);
   return true;
 }
 
 async function flush() {
-  const queued = outbox();
-  if (!queued.length) return true;
-  let remaining = [...queued];
-  while (remaining.length) {
-    const batch = remaining.slice(0, WATCHLIST_INTENT_BATCH);
+  const attempted = new Set();
+  while (true) {
+    const batch = identifiedOutbox().filter(intent => !attempted.has(intent.id)).slice(0, WATCHLIST_INTENT_BATCH);
+    if (!batch.length) break;
+    for (const intent of batch) attempted.add(intent.id);
     const response = await fetch(ROUTE, {
       method: 'POST',
       cache: 'no-store',
@@ -381,16 +558,22 @@ async function flush() {
     if (!response.ok) throw new Error(`watchlist ${response.status}`);
     const body = await response.json();
     if (body?.ok !== true || !Array.isArray(body.companies)) throw new Error('Invalid watchlist response');
-    // Only what the server acknowledged leaves the outbox, so a partial batch retries the rest
-    // rather than reporting an edit that never landed.
-    const done = new Set((body.outcomes || []).map((o) => normTicker(o.ticker)));
-    remaining = remaining.slice(batch.length);
-    writeOutbox([...remaining, ...batch.filter((i) => !done.has(normTicker(i.ticker)))]);
+    // Re-read the CURRENT queue after the await. Its contents may have changed in
+    // this tab or another tab. Only the exact acknowledged edit leaves the queue.
+    const done = new Set((body.outcomes || []).map(outcome => normTicker(outcome.ticker)));
+    const acknowledged = new Set(batch.filter(intent => done.has(intent.ticker)).map(intent => intent.id));
+    writeOutbox(outbox().filter(intent => !acknowledged.has(intent.id)));
+    const refusals = new Map(rejected().map(intent => [intent.ticker, intent]));
+    for (const outcome of body.outcomes || []) {
+      const ticker = normTicker(outcome.ticker);
+      const intent = batch.find(entry => entry.ticker === ticker);
+      if (!intent) continue;
+      if (outcome.outcome === 'full') refusals.set(ticker, intent);
+      else refusals.delete(ticker);
+    }
+    writeRejected([...refusals.values()]);
     shared = { revision: null, updatedAt: null }; // a write always supersedes what we held
     adopt(body);
-    // A company refused for capacity is NOT on the list, and the local copy must not pretend it is.
-    const full = (body.outcomes || []).filter((o) => o.outcome === 'full').map((o) => normTicker(o.ticker));
-    lastError = full.length ? `The shared watchlist is full, so ${full.join(', ')} could not be added.` : null;
   }
   return true;
 }
@@ -407,8 +590,18 @@ export function syncNow({ force = false } = {}) {
   writeTimer = null;
   if (syncing) return syncing;
   if (!force && Date.now() < retryAt) return Promise.resolve(meta());
-  syncing = (async () => {
+  // Assign the in-flight promise before any early return can clear it in finally.
+  syncing = Promise.resolve().then(async () => {
     try {
+      retryStorage();
+      // A queued edit can be left by an interrupted first visit. Preserve the old
+      // device list BEFORE its acknowledgement adopts the server's smaller list.
+      if (outbox().length && !seedOnce({ companies: [] })) {
+        confirmed = false;
+        lastError = null;
+        retryAt = 0;
+        return meta();
+      }
       await flush();
       const read0 = await conditionalJson(ROUTE, { key: KEYS.sharedWatchlist, optional: true });
       if (!read0 || !read0.value) {
@@ -429,13 +622,19 @@ export function syncNow({ force = false } = {}) {
       // Carrying this device's old list across happens BEFORE the adopt, and anything it queues is
       // sent in the same pass — otherwise a seeded company would wait a whole cycle to be decided
       // on, and `meta()` would report a pending edit nobody had made.
-      seedOnce(read0.value);
+      if (!seedOnce(read0.value)) {
+        confirmed = false;
+        lastError = null;
+        retryAt = 0;
+        return meta();
+      }
       if (outbox().length) await flush();
       adopt(read0.value);
       checkedAt = read0.checkedAt || Date.now();
       confirmed = true;
       retryAt = 0;
-      lastError = outbox().length ? lastError : null;
+      lastError = null;
+      retryStorage();
       return meta();
     } catch (error) {
       // A failed re-check is not a failed read: the list already on screen is a real list and stays.
@@ -447,7 +646,7 @@ export function syncNow({ force = false } = {}) {
       syncing = null;
       emit();
     }
-  })();
+  });
   return syncing;
 }
 
@@ -460,24 +659,22 @@ export function syncNow({ force = false } = {}) {
  * which is the one way a well-meaning migration could quietly undo a deliberate edit.
  */
 function seedOnce(snapshot) {
-  let done;
-  try {
-    done = localStorage.getItem(SEEDED_KEY);
-  } catch {
-    return;
-  }
-  if (done === '1') return;
+  // An unread list is protected from persistence until retryStorage recovers it,
+  // so the tab can still work online. A readable legacy list needs its migration
+  // status established before any server response can replace those saved rows.
+  if (unreadStorage.has(STORAGE_KEY)) return true;
+  if (unreadStorage.has(SEEDED_KEY)) return false;
+  const seeded = storedValue(SEEDED_KEY);
+  if (failedStorageReads.has(SEEDED_KEY)) return false;
+  if (seeded === '1') return true;
   const remote = new Set((snapshot.companies || []).map((c) => normTicker(c.ticker)));
   const queued = new Set(outbox().map((i) => normTicker(i.ticker)));
   for (const entry of read()) {
     if (remote.has(entry.ticker) || queued.has(entry.ticker)) continue;
-    queue(entry.addedBy ? { op: 'add', ticker: entry.ticker, name: entry.name, by: entry.addedBy } : { op: 'seed', ticker: entry.ticker, name: entry.name });
+    queue({ op: 'seed', ticker: entry.ticker, name: entry.name });
   }
-  try {
-    localStorage.setItem(SEEDED_KEY, '1');
-  } catch {
-    /* It will be attempted again next visit, and `seed` is idempotent by design. */
-  }
+  saveValue(SEEDED_KEY, '1');
+  return true;
 }
 
 let stopPoll = null;
@@ -497,7 +694,7 @@ export function startWatchlistSync() {
   // Another tab on this device edited the same list. Re-read rather than re-fetch — those bytes
   // are already correct, and the poller covers what happened elsewhere.
   const onStorage = (event) => {
-    if (event.key === STORAGE_KEY || event.key === OUTBOX_KEY) emit();
+    if ([STORAGE_KEY, OUTBOX_KEY, REJECTED_KEY].includes(event.key)) emit();
   };
   document.addEventListener('visibilitychange', onVisible);
   window.addEventListener('online', onOnline);

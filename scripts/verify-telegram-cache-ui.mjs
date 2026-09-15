@@ -7,6 +7,8 @@ import { resolve, extname, sep } from 'node:path';
 
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
+const sharedMarker = readFileSync(resolve(root, 'sw.js'), 'utf8').match(/const CACHE_NAME = `\$\{CACHE_PREFIX\}([^`]+)`;/)?.[1];
+assert(sharedMarker, 'the service worker declares its shared release marker');
 let nextRelease = false, moduleRequested = false, releaseModule, markModuleRequested;
 const heldModule = new Promise(done => { releaseModule = done; });
 const requestedModule = new Promise(done => { markModuleRequested = done; });
@@ -45,7 +47,7 @@ try {
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   const before = await page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith('sattva-dashboard-')));
   assert.equal(before.length, 1, 'legacy app caches are removed after activation');
-  assert(before[0].endsWith('-telegram-content-v1'), 'the Telegram revision creates its own cache');
+  assert(before[0].includes('-telegram-content-v1'), 'the combined cache includes the Telegram revision');
   assert((await page.evaluate(async name => (await (await caches.open(name)).match('/js/tabs/public-chatter.js')).text(), before[0])).includes('telegramMediaLabel'));
 
   nextRelease = true;
@@ -66,7 +68,7 @@ try {
   await page.waitForFunction(() => window.controllerChanges === 1 && navigator.serviceWorker.controller.state === 'activated');
   assert(moduleRequested, 'the new release re-reads the Telegram module');
   const after = await page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith('sattva-dashboard-')));
-  assert.deepEqual(after, ['sattva-dashboard-fixture-next-release-telegram-content-v1'], 'a later shared marker upgrades and evicts the previous combined cache');
+  assert.deepEqual(after, [before[0].replace(sharedMarker, 'fixture-next-release')], 'a later shared marker preserves module revisions and evicts the previous combined cache');
   console.log('PASS Telegram cache revision, legacy eviction, atomic module warm-up and subsequent shared release upgrade.');
 } finally {
   releaseModule();

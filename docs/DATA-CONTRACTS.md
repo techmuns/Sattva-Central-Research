@@ -4293,8 +4293,36 @@ the same distinction the X handle list draws between `adding` and `active`.
 `core/watchlist.js` keeps the synchronous API every scope filter already calls, and adds:
 
 - **An outbox** (`sattva:watchlist:outbox`), persisted, so an edit made while the shared list is
-  unreachable is not lost to a closed tab. One pending edit per company — starring, unstarring and
-  starring again is one state to send, not three to replay.
+  unreachable is not lost to a closed tab when browser storage is available. One pending edit per
+  company — starring, unstarring and starring again is one state to send, not three to replay.
+  Each queued edit has a device-generated `id` and `at`; these are local bookkeeping and are not
+  sent to the server. An acknowledgement removes only those exact edits from the current queue,
+  preserving later additions/removals, including edits queued by another tab. Legacy queued edits
+  receive an ID before they are sent.
+- **Migration precedes acknowledgement adoption.** When an interrupted first visit leaves queued
+  changes, all older device entries are queued as seeds before the first server reply replaces
+  the device copy. Pending explicit edits keep their attribution and take precedence over seeds.
+  The migration-complete marker cannot be persisted before the old entries' outbox.
+  An unreadable migration marker defers migration and replacement of a readable legacy list;
+  it is never interpreted as a missing marker or used to report that list as confirmed.
+- **Storage failure has a session fallback.** The open tab retains both the list and pending edits
+  in memory and exposes `meta().storageAvailable = false` with a reader-facing warning. Reconnection
+  can still send those edits. Failed local writes are retried; storage that was unreadable at
+  startup is recovered before temporary values overwrite its old list or queue. Recovered older
+  companies remain visible and saved while migration is waiting for the server, including when
+  outbox writes still fail; reopening can retry migration from that retained list. A recovered
+  outbox write merges the current disk queue with this tab's changes since its last known disk
+  value. Intent IDs preserve sibling edits without replaying already-acknowledged entries.
+  Recovered mirror writes keep a sibling's newer saved snapshot and overlay outstanding edits;
+  only a fresh server adoption may replace it directly.
+  Same-device edits to one company keep the newer local click; the server still orders accepted
+  operations with its own clock. Closing a tab
+  before an unpersisted edit reaches the server can lose that edit, and the warning says to keep
+  the tab open while changes are pending.
+- **Capacity refusals remain visible.** `sattva:watchlist:rejected` retains rejected intents,
+  exposed as `meta().rejected` and an error in the existing editor status. Successful reads and
+  reopening do not dismiss them. A successful retry or confirmation that another device added
+  the company resolves its refusal.
 - **`meta().origin`**, derived and never assigned: `live` only once a read in *this session* has
   vouched for what is painted, `store` for bytes this device kept from an earlier visit, `pending`
   while an edit of the reader's own has not been accepted. One "connected" over all three would be
