@@ -191,7 +191,7 @@ async function call(fetchImpl, { token, url, method = 'GET', body = null, deadli
 }
 
 /** Runs of one workflow, newest first. A free read — this is the half that may be polled. */
-export async function latestRun(fetchImpl, { token, owner, repo, base = API, now = Date.now, ref = 'main', sleepImpl }, workflow, { perPage = 3, status = null } = {}) {
+export async function latestRun(fetchImpl, { token, owner, repo, base = API, now = Date.now, ref = 'main', sleepImpl }, workflow, { perPage = 3, status = null, complete = false } = {}) {
   const query = new URLSearchParams({ per_page: String(Math.max(1, Math.min(100, perPage))), branch: ref });
   if (status) query.set('status', status);
   const url = `${base}/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs?${query}`;
@@ -199,6 +199,8 @@ export async function latestRun(fetchImpl, { token, owner, repo, base = API, now
   if (!Array.isArray(body?.workflow_runs) || body.workflow_runs.some(run => !Number.isInteger(run?.id) ||
       !['completed', ...ACTIVE_STATUSES].includes(run?.status)))
     throw fail('GitHub run list is invalid; refusing to infer no active runs.', 'invalid-runs');
+  if (complete && body.total_count !== body.workflow_runs.length)
+    throw fail('GitHub active-run inventory is incomplete; refusing queue recovery.', 'invalid-runs');
   return body.workflow_runs.map(shapeRun);
 }
 
@@ -232,8 +234,12 @@ export const isInFlight = run => !!run && ACTIVE_STATUSES.includes(run.status);
  * Returns `{ dispatched: true }`, or `{ dispatched: false, run }` when one was already going —
  * which is not a failure and must not be reported as one.
  */
-export async function dispatchWorkflow(fetchImpl, cfg, workflow, ref, inputs = null) {
+export async function dispatchWorkflow(fetchImpl, cfg, workflow, ref, inputs = null, { recoverTelegramQueues = false } = {}) {
   const { token, owner, repo, base = API, now = Date.now, sleepImpl } = cfg;
+  if (recoverTelegramQueues && (workflow !== TELEGRAM_WORKFLOW || owner !== 'techmuns' ||
+      repo !== 'Sattva-Central-Research' || ref !== 'main' || (cfg.ref || 'main') !== 'main' || base !== API ||
+      !inputs || Object.keys(inputs).length !== 1 || !['auto', 'cron', 'button'].includes(inputs.source)))
+    throw fail('Queue recovery is restricted to the production Telegram workflow.', 'configuration');
 
   // ASK BEFORE STARTING. Their concurrency group would queue a duplicate harmlessly, so this is
   // not about correctness upstream — it is about this dashboard never being the thing that started
@@ -242,10 +248,18 @@ export async function dispatchWorkflow(fetchImpl, cfg, workflow, ref, inputs = n
   // scoped to the target branch, rather than checking just the most recent run. Fail closed
   // when ANY read fails. Workflow concurrency remains the final race-condition guard.
   const checks = await Promise.allSettled(ACTIVE_STATUSES.map(status =>
-    latestRun(fetchImpl, { ...cfg, ref }, workflow, { perPage: 1, status })));
+    latestRun(fetchImpl, { ...cfg, ref }, workflow, { perPage: recoverTelegramQueues && status === 'queued' ? 6 : 1,
+      complete: recoverTelegramQueues && status === 'queued', status })));
   const failed = checks.find(check => check.status === 'rejected');
   if (failed) throw failed.reason;
-  const existing = checks.flatMap(check => check.value).find(isInFlight);
+  const active = checks.flatMap(check => check.value).filter(isInFlight);
+  let existing = recoverTelegramQueues ? active.find(run => run.status !== 'queued') || active[0] : active[0];
+  let recoveredQueuedRunIds = [];
+  if (existing && recoverTelegramQueues && active.every(run => run.status === 'queued') && active.length < 6 &&
+      new Set(active.map(run => run.id)).size === active.length) {
+    const recovered = await supersededEmptyTelegramQueues(fetchImpl, cfg, active);
+    if (recovered) { recoveredQueuedRunIds = active.map(run => run.id); existing = null; }
+  }
   if (existing) return { dispatched: false, run: existing };
 
   const url = `${base}/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`;
@@ -254,5 +268,41 @@ export async function dispatchWorkflow(fetchImpl, cfg, workflow, ref, inputs = n
   // button. That question was answered wrongly twice for want of exactly this.
   const body = inputs ? { ref, inputs } : { ref };
   await call(fetchImpl, { token, url, method: 'POST', body, deadlineAt: now() + DEADLINE_MS, now, sleepImpl });
-  return { dispatched: true, run: null };
+  return { dispatched: true, run: null, ...(recoveredQueuedRunIds.length ? { recoveredQueuedRunIds } : {}) };
+}
+
+// GitHub can retain an unmaterialized request as queued after newer collections finish.
+// Age alone never permits recovery: require a newer success, an unchanged first-attempt
+// run and an authenticated empty job inventory. No cancellation/resume endpoint is used.
+// Existing workflow concurrency and collector restoration remain the execution/safety gates.
+async function supersededEmptyTelegramQueues(fetchImpl, cfg, queued) {
+  const { token, owner, repo, now = Date.now, sleepImpl } = cfg;
+  const at = now();
+  const validId = id => Number.isSafeInteger(id) && id > 0;
+  const old = run => validId(run.id) && Number.isFinite(Date.parse(run.createdAt)) &&
+    at - Date.parse(run.createdAt) > 30 * 60 * 1000;
+  if (!queued.every(old)) return false;
+  const success = (await latestRun(fetchImpl, cfg, TELEGRAM_WORKFLOW, { perPage: 1, status: 'success' }))[0];
+  if (!validId(success?.id) || success.status !== 'completed' || success.conclusion !== 'success' ||
+      !Number.isFinite(Date.parse(success.createdAt)) || Date.parse(success.createdAt) > at + 60000 ||
+      !queued.every(run => success.id > run.id && Date.parse(success.createdAt) > Date.parse(run.createdAt))) return false;
+
+  const deadlineAt = now() + 20000;
+  const read = async path => (await call(fetchImpl, { token,
+    url: `${API}/repos/${owner}/${repo}/actions/runs/${path}`, deadlineAt, now, sleepImpl })).body;
+  const unchanged = (detail, run) => detail?.id === run.id && detail.status === 'queued' && detail.conclusion === null &&
+    detail.run_attempt === 1 && detail.head_branch === 'main' && detail.head_repository?.full_name === `${owner}/${repo}` &&
+    detail.path === `.github/workflows/${TELEGRAM_WORKFLOW}` && ['schedule', 'workflow_dispatch'].includes(detail.event) &&
+    /^[a-f0-9]{40}$/.test(detail.head_sha || '') && detail.created_at === run.createdAt && detail.updated_at === detail.created_at;
+  const audits = await Promise.allSettled(queued.map(async run => {
+    const before = await read(run.id);
+    if (!unchanged(before, run)) return false;
+    const jobs = await read(`${run.id}/attempts/1/jobs?per_page=1`);
+    if (jobs?.total_count !== 0 || !Array.isArray(jobs.jobs) || jobs.jobs.length !== 0) return false;
+    const after = await read(run.id);
+    return unchanged(after, run) && before.head_sha === after.head_sha;
+  }));
+  const failed = audits.find(audit => audit.status === 'rejected');
+  if (failed) throw failed.reason;
+  return audits.every(audit => audit.value === true);
 }

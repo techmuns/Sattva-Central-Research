@@ -24,7 +24,7 @@ export class TestScheduler extends CaptureRegistry {
         await ctx.storage.put('test-posts', (await ctx.storage.get('test-posts') || 0) + 1);
         return new Response(null, {status:204});
       }
-      return Response.json({workflow_runs:[]});
+      return Response.json({total_count:0,workflow_runs:[]});
     };
   }
   async inspect() {

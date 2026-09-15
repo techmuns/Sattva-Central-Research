@@ -36,6 +36,7 @@ export class TelegramSchedule {
       nextAttemptAt: iso(state.nextAttemptAt), lastAttemptAt: iso(state.lastAttemptAt),
       lastResult: state.lastResult || 'not-started', reason: state.reason || null,
       failures: state.failures || 0, activeRun: state.activeRun || null,
+      ...(state.queueRecovery ? { queueRecovery: state.queueRecovery } : {}),
       runOverdue: overdue(state.activeRun, this.now()) };
   }
 
@@ -79,7 +80,7 @@ export class TelegramSchedule {
       if (this.env.GH_REPO !== REPO || (this.env.GH_REF || 'main') !== 'main' || !this.env.GH_DISPATCH_TOKEN)
         throw Object.assign(new Error('Scheduler configuration unavailable'), { code: 'configuration' });
       // Request parameters and preview configuration can never choose the destination or API host.
-      const cfg = { token: this.env.GH_DISPATCH_TOKEN, owner: 'techmuns', repo: 'Sattva-Central-Research', ref: 'main' };
+      const cfg = { token: this.env.GH_DISPATCH_TOKEN, owner: 'techmuns', repo: 'Sattva-Central-Research', ref: 'main', now: this.now };
       const recent = (await latestRun(this.fetcher, cfg, TELEGRAM_WORKFLOW, { perPage: 1 }))[0];
       const started = Date.parse(recent?.createdAt);
       if (Number.isFinite(started) && started > at - TELEGRAM_INTERVAL_MS && started <= at + 60000) {
@@ -89,7 +90,7 @@ export class TelegramSchedule {
         Math.max(at + 60000, started + TELEGRAM_INTERVAL_MS));
         return { ok: !failed, dispatched: false, reason: failed ? 'latest-run-failed' : 'cooling-down', run: recent, cooldownS: TELEGRAM_INTERVAL_MS / 1000 };
       }
-      const out = await dispatchWorkflow(this.fetcher, cfg, TELEGRAM_WORKFLOW, 'main', { source });
+      const out = await dispatchWorkflow(this.fetcher, cfg, TELEGRAM_WORKFLOW, 'main', { source }, { recoverTelegramQueues: true });
       const previous = await this.storage.get(KEY) || {};
       const running = activeRun(out.run, previous.activeRun, at);
       const stalled = overdue(running, at);
@@ -97,7 +98,8 @@ export class TelegramSchedule {
       // Keep exclusion and the next check, but never describe an indefinitely queued run as
       // healthy. Recovery does not cancel jobs or bypass approval/account-review gates.
       await this.finish(at, { lastResult: stalled ? 'blocked' : reason, reason: stalled ? 'run-overdue' : null,
-        failures: 0, activeRun: running });
+        failures: 0, activeRun: running,
+        ...(out.recoveredQueuedRunIds?.length ? { queueRecovery: { checkedAt: iso(at), runIds: out.recoveredQueuedRunIds } } : {}) });
       return { ok: !stalled, dispatched: out.dispatched, reason: stalled ? 'run-overdue' : reason, run: out.run,
         workflow: TELEGRAM_WORKFLOW, source, requestedAt: iso(at) };
     } catch (error) {
