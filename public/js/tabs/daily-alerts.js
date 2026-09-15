@@ -54,12 +54,7 @@ export const meta = {
 const REFRESH_ID = 'daily-alerts';
 const RECHECK_MS = 90_000;
 const arrivals = createAlertArrivals();
-const arrivalsUI = createArrivalsUI(arrivals);
-let checkingToken = null;
-
-function updateArrivalsState() {
-  arrivalsUI.setState({ checking: checkingToken === loadToken, coverage: alertCoverageState(report) });
-}
+const arrivalsUI = createArrivalsUI(arrivals, () => tableInstance?.refreshPresentation());
 
 // ---------------------------------------------------------------------------------------
 // Module state
@@ -205,7 +200,6 @@ export function render(ctx) {
 export function destroy() {
   arrivalsUI.detach();
   arrivals.reset();
-  checkingToken = null;
   ctxRef = null;
   loadToken++;
   clearTimeout(sourceTimer); sourceTimer = null; sourceDirty = false;
@@ -246,8 +240,6 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   // an overlapping one costs a revalidation, not a download.
   const token = ++loadToken;
   collecting++;
-  if (load) checkingToken = token;
-  updateArrivalsState();
   if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
     const next = await alerts.collect({
@@ -286,8 +278,6 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       paintAfterScroll();
     }
   } finally {
-    if (checkingToken === token) checkingToken = null;
-    if (ctxRef) updateArrivalsState();
     collecting--;
     if (sourceDirty) sourceChanged();
   }
@@ -349,7 +339,6 @@ function cancelDeferredPaint() {
 
 function paint(ctx) {
   cancelDeferredPaint();
-  updateArrivalsState();
   const day = report?.day || alerts.today();
   const events = report?.events || [];
   const feeds = report?.feeds || [];
@@ -826,7 +815,7 @@ function fitStreamToViewport(root) {
   // Source arrivals can wrap the status or toolbar without resizing the window. Observe only
   // the chrome, not the table whose own height we set, to avoid a resize feedback loop.
   const observer = new ResizeObserver(apply);
-  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-alert-arrivals], [data-table-toolbar]')) observer.observe(node);
+  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-table-toolbar]')) observer.observe(node);
   unfit = () => { window.removeEventListener('resize', onResize); observer.disconnect(); };
 }
 
@@ -1069,6 +1058,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     preindexSearch: warmSearch,
     onScrollActivity: noteTableScroll,
     onVisibleRowsChange: mode === HORIZON.THROUGH ? rows => arrivalsUI.setRows(rows) : null,
+    presentRows: mode === HORIZON.THROUGH ? (rows, options) => arrivalsUI.presentRows(rows, options) : null,
     rowClass: mode === HORIZON.UPCOMING ? null : alertRowClass,
     initialRowCount: tablePosition?.rendered || 24,
     initialRowKey: tablePosition?.key || null,

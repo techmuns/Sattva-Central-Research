@@ -317,8 +317,7 @@ try {
         headerVisible: getComputedStyle(document.querySelector('[data-app-header]')).display !== 'none' };
     });
     const normal = await measure();
-    assert.equal(await frame.locator('[data-alert-arrivals]').count(), 1, 'one live-arrivals surface survives responsive layout changes');
-    assert(await frame.locator('[data-alert-arrivals]').isVisible(), 'live arrivals remain visible inside the embedded reading view');
+    assert.equal(await frame.locator('[data-alert-arrivals]').count(), 0, 'rows stream directly without a separate live banner');
     assert(normal.pageWidth <= normal.width + 2, `no horizontal page clipping at ${size.width}px`);
     assert(normal.toolbar <= (size.width >= 1024 ? 66 : 165), `search, watchlist and all filters retain a compact row budget: ${JSON.stringify(normal)}`);
     assert((await frame.locator('[data-table-search]').boundingBox()).width >= 160, 'company search remains a usable text field, not a collapsed icon');

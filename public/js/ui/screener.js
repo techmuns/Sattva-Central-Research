@@ -441,6 +441,9 @@ export function scoreTable(config) {
     rowClass = null,
     // Observe the complete filtered model, including rows outside the mounted window.
     onVisibleRowsChange = null,
+    // Optional bounded entrance sequence for a windowed table. Only presentation is paced;
+    // the complete filtered model remains available for counts, search and export.
+    presentRows = null,
     // Seed the search box, filters, watchlist-only and sort from a previous instance's `view`.
     // A tab that rebuilds its table when live data lands would otherwise throw away whatever the
     // reader had typed, filtered and sorted — every time a company reports.
@@ -535,6 +538,7 @@ export function scoreTable(config) {
   let searchTextIndex = searchable ? new Array(rows.length) : null;
   
   let activeRepaint = null;
+  let activePresentation = null;
   let isDisposed = false;
 
   const countText = (visible) => {
@@ -1041,6 +1045,9 @@ export function scoreTable(config) {
         rowHtmlCache.clear(); staleKeys.clear();
       },
     }) : null;
+    activePresentation = windowed && presentRows ? () => {
+      if (!filterPending()) windowed.update(presentRows(current, { resetScroll: false }));
+    } : null;
     let scrollAttached = false;
     let scrollFrame = 0;
 
@@ -1128,7 +1135,7 @@ export function scoreTable(config) {
 
       if (isVirtual) {
         if (windowed) {
-          windowed.update(current, { resetScroll });
+          windowed.update(presentRows ? presentRows(current, { resetScroll }) : current, { resetScroll });
           markPending(0); countEl.textContent = countText(current);
           if (watchCount) watchCount.textContent = String(watchlist.size());
           return;
@@ -1365,6 +1372,7 @@ export function scoreTable(config) {
     return () => {
       isDisposed = true;
       activeRepaint = null;
+      activePresentation = null;
       filterGeneration++;
       if (filterFrame) cancelAnimationFrame(filterFrame);
       clearTimeout(filterTask);
@@ -1414,7 +1422,7 @@ export function scoreTable(config) {
     }
   }
 
-  return { html, wire, view, updateRows: (keys) => updateRows(keys), updateData };
+  return { html, wire, view, updateRows: (keys) => updateRows(keys), updateData, refreshPresentation: () => activePresentation?.() };
 }
 
 // ---------------------------------------------------------------------------------------

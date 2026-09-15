@@ -85,7 +85,10 @@ const server = createServer((req, res) => {
       { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T07:00:00Z', subject: 'Analyst day complete source record', description: 'Original analyst presentation', url: 'https://example.test/analyst.pdf' },
       { company: 'Undated issuer', ticker: null, publishedAt: null, subject: 'Undated retained item', url: 'https://example.test/undated.pdf' },
       ...(version > 1 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: '2026-09-04T08:00:00Z', subject: 'Newly arrived NSE record', url: 'https://example.test/new.pdf' }] : []),
-      ...(version > 2 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:28:00Z`, subject: 'Automatic arrival at the top', url: 'https://example.test/automatic.pdf' }] : []),
+      ...(version > 2 ? [
+        { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:26:00Z`, subject: 'Stream batch first arrival', url: 'https://example.test/stream-first.pdf' },
+        { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:27:00Z`, subject: 'Stream batch second arrival', url: 'https://example.test/stream-second.pdf' },
+        { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:28:00Z`, subject: 'Automatic arrival at the top', url: 'https://example.test/automatic.pdf' }] : []),
       ...(version > 3 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:29:00Z`, subject: 'Arrival while reading older rows', url: 'https://example.test/reading.pdf' }] : []),
     ] }); return; }
     if (url.pathname === '/api/ipo-monitor') {
@@ -151,7 +154,7 @@ try {
   console.log('Rendered complete All Alerts pool');
   const period = page.getByRole('combobox', { name: 'Date range', exact: true });
   assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
-  assert.equal(await page.locator('[data-alert-arrivals]').count(), 1);
+  assert.equal(await page.locator('[data-alert-arrivals]').count(), 0, 'no separate live banner');
   assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'initial history is not a live arrival');
   const selectPeriod = async value => {
     await period.selectOption(value);
@@ -303,14 +306,13 @@ try {
     return !refreshState.isRunning('daily-alerts') && document.querySelector('tbody')?.textContent.includes('Newly arrived NSE record');
   }, null, { timeout: 60000 });
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
-  await page.waitForFunction(() => document.querySelector('[data-arrivals-headline]')?.textContent.includes('Newly arrived NSE record'));
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key] [data-arrival-badge]'));
   assert.equal(await page.locator('[data-arrival-badge]').count(), 1, 'newly received filing is highlighted in the existing table');
-  assert((await page.locator('[data-arrivals-detail]').innerText()).includes('1 received this visit in your filters'));
-  assert((await page.locator('[data-arrivals-headline]').getAttribute('title')).includes('2026-09-04'), 'old source dates never become published-now claims');
+  assert((await page.locator('tbody [data-event-day]').innerText()).includes('4 Sept 2026'), 'old source dates never become published-now claims');
   if (process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT });
   await page.locator('[data-table-search]').fill('no matching arrival');
   await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
-  assert(!(await page.locator('[data-arrivals-detail]').innerText()).includes('received this visit'), 'arrival strip respects search filters');
+  assert.equal(await page.locator('[data-arrivals-announcement]').textContent(), '', 'receipt announcements respect search filters');
   await page.locator('[data-table-search]').fill('Newly arrived NSE record');
   await page.waitForFunction(() => document.querySelectorAll('[data-arrival-badge]').length === 0, null, { timeout: 25000 });
   await page.locator('[data-table-search]').fill('');
@@ -318,12 +320,28 @@ try {
   assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'remounting an old row does not restart the highlight');
   await page.locator('[data-table-search]').fill('');
   await selectPeriod('today');
+  await page.evaluate(() => {
+    window.streamSeen = [];
+    const titles = ['Stream batch first arrival', 'Stream batch second arrival', 'Automatic arrival at the top'];
+    window.streamObserver = new MutationObserver(() => {
+      for (const title of titles) {
+        if (!window.streamSeen.some(item => item.title === title) && document.querySelector('tbody')?.textContent.includes(title))
+          window.streamSeen.push({ title, at: performance.now() });
+      }
+    });
+    window.streamObserver.observe(document.querySelector('[data-table-body]'), { childList: true, subtree: true });
+  });
   version = 3;
   await page.clock.fastForward(91_000);
   await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key]')?.textContent.includes('Automatic arrival at the top'), null, { timeout: 60000 });
+  const streamed = await page.evaluate(() => { window.streamObserver.disconnect(); return window.streamSeen; });
+  assert.deepEqual(streamed.map(item => item.title), ['Stream batch first arrival', 'Stream batch second arrival', 'Automatic arrival at the top']);
+  assert(streamed[1].at - streamed[0].at >= 80 && streamed[2].at - streamed[1].at >= 80,
+    `one source batch enters as three separate rows: ${JSON.stringify(streamed)}`);
+  assert(streamed[2].at - streamed[0].at < 1500, 'the visible stream completes quickly');
+  assert.equal(await page.locator('[data-arrival-badge]').count(), 3, 'each genuine new row receives its own highlight');
   assert.equal(await period.inputValue(), 'today', 'automatic arrival retains Today');
   assert.equal(await page.locator('[data-table-scroll]').evaluate(node => node.scrollTop), 0, 'newest record is inserted at the top without a click');
-  assert((await page.locator('[data-arrivals-detail]').innerText()).includes('1 received this visit in your filters'));
   if (process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   // Source partials can replace a row between locator resolution and evaluate on CI. Inspect
@@ -371,7 +389,7 @@ try {
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Session-private fixture'));
   await page.evaluate(() => { window.testContext = { session: {} }; window.testHostMessage(); });
   await page.waitForFunction(() => !document.querySelector('tbody')?.textContent.includes('Session-private fixture'));
-  assert(!(await page.locator('[data-alert-arrivals]').innerText()).includes('Session-private fixture'), 'private receipt disappears with its record');
+  assert(!(await page.locator('[data-arrivals-announcement]').textContent()).includes('Session-private fixture'), 'private receipt disappears with its record');
   assert(await page.evaluate(() => !JSON.stringify(localStorage).includes('Session-private fixture')));
   await page.evaluate(() => window.show('universe'));
   await settled();
@@ -485,7 +503,7 @@ try {
   }, beforeRefresh.key);
   assert.equal(afterRefresh.key, beforeRefresh.key);
   assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
-  assert((await page.locator('[data-arrivals-headline]').innerText()).includes('Arrival while reading older rows'), 'new row arrived above the preserved reading position');
+  assert((await page.locator('[data-arrivals-announcement]').textContent()).includes('Arrival while reading older rows'), 'new row arrived above the preserved reading position');
 
   await page.locator('[data-alerts-focus]').click();
   assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'true');
@@ -601,6 +619,49 @@ try {
     assert(starts.size >= 2, 'wheel crosses multiple virtual windows');
   }
   await embedded.evaluate(() => window.dispose());
+
+  // Controlled receipts exercise queue boundaries without waiting for another source cycle.
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
+  await embedded.evaluate(async () => {
+    const { scoreTable } = await import('/js/ui/screener.js');
+    const { arrivalsHtml, createArrivalsUI } = await import('/js/ui/alert-arrivals.js');
+    const received = new Map();
+    let table, updates = 0;
+    const ui = createArrivalsUI({ time: id => received.get(id) || 0 }, () => { updates++; table.refreshPresentation(); });
+    const row = id => ({ id, company: id, headline: id });
+    let rows = [row('existing')];
+    table = scoreTable({ rows, key: r => r.id, name: r => r.company, fillMode: 'windowed', stickyHead: '400px',
+      columns: [{ label: 'Event', get: r => r.headline }], onVisibleRowsChange: next => ui.setRows(next),
+      presentRows: (next, options) => ui.presentRows(next, options), onExport: next => { window.streamExport = next.map(r => r.id); } });
+    const root = document.querySelector('#root');
+    root.innerHTML = arrivalsHtml + table.html;
+    const dispose = table.wire(root); ui.attach(root);
+    window.streamFixture = {
+      add(ids) { for (const id of ids) received.set(id, Date.now()); rows = [...ids.map(row), ...rows]; table.updateData(rows); },
+      remove(ids) { rows = rows.filter(r => !ids.includes(r.id)); table.updateData(rows); },
+      dispose() { ui.detach(); dispose(); return updates; },
+      updates: () => updates,
+    };
+  });
+  await embedded.evaluate(() => window.streamFixture.add(['third', 'second', 'first']));
+  assert.deepEqual(await embedded.locator('tr[data-row-key]').evaluateAll(rows => rows.map(r => r.dataset.rowKey)), ['first', 'existing']);
+  await embedded.locator('[data-export]').dispatchEvent('click');
+  assert.deepEqual(await embedded.evaluate(() => window.streamExport), ['third', 'second', 'first', 'existing'], 'export includes the entire batch during the entrance sequence');
+  await embedded.locator('[data-table-search]').fill('second');
+  await page.clock.runFor(500);
+  assert.deepEqual(await embedded.locator('tr[data-row-key]').evaluateAll(rows => rows.map(r => r.dataset.rowKey)), ['second'], 'a changed filter finishes the queue and shows only matching rows');
+  await embedded.locator('[data-table-search]').fill('');
+  await page.clock.runFor(250);
+  await embedded.evaluate(() => { window.streamFixture.add(['revoked-two', 'revoked-one']); window.streamFixture.remove(['revoked-two', 'revoked-one']); });
+  await page.clock.runFor(500);
+  assert.equal(await embedded.locator('tr[data-row-key^="revoked-"]').count(), 0, 'removed records cannot return from an entrance timer');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await embedded.evaluate(() => window.streamFixture.add(['quiet-two', 'quiet-one']));
+  assert.equal(await embedded.locator('tr[data-row-key^="quiet-"]').count(), 2, 'reduced motion shows the complete batch immediately');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const updatesAtDispose = await embedded.evaluate(() => { window.streamFixture.add(['leave-two', 'leave-one']); return window.streamFixture.dispose(); });
+  await page.clock.runFor(500);
+  assert.equal(await embedded.evaluate(() => window.streamFixture.updates()), updatesAtDispose, 'leaving the table cancels queued entrances');
   assert.deepEqual(errors, [], 'zero application errors');
   console.log('PASS: source updates, privacy, filters, cleanup and native iframe wheel scrolling with stable virtual geometry.');
 } finally { await browser.close(); await new Promise((done) => server.close(done)); }

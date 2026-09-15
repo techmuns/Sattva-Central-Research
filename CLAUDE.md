@@ -14,10 +14,13 @@ so a follow-up interaction cannot target controls that are about to be replaced.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
 All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
-All Alerts' live arrivals strip stays inside Till Today. It follows the existing visible-page
-90-second checks, respects the table filters and uses session receipt times separately from source
-publication dates. Initial history and scope changes establish baselines; only later new identities
-receive a temporary row highlight. Preserve source coverage warnings and chronological ordering.
+All Alerts streams newly received rows directly inside Till Today, with no separate live banner.
+The first screen enters one row every 110ms (at most 12 staged rows); the complete filtered model
+is immediately available to counts, search and export. Reduced motion, changed filters and hidden
+pages bypass the entrance queue. Existing visible-page 90-second checks and source cadence remain
+unchanged. Initial history and scope changes establish baselines; only later new identities get
+NEW badges. Receipt time stays separate from publication time. Preserve chronological ordering,
+reading anchors and source coverage details in Sources.
 IPO Filings opens on Last 7 days (IST), retaining All captured and longer/undated choices;
 explicit company links still open that issuer's complete captured history.
 News uses `recentNews`, separate from the full-history `news` reader in All Alerts / research.
