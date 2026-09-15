@@ -125,3 +125,15 @@ assert.equal(mergeInsiderTrades(venues, venues).length, 3, 'archive keeps venue 
 const archivedFeed = withFilingArchive({ rows: () => venues }, 'insider');
 assert.equal(archivedFeed.rows(), archivedFeed.rows(), 'unchanged exchange/archival rows preserve normalized feed cache identity');
 console.log('PASS official deal archive: venue/price identity and stable repeated reads');
+
+const scope = await import('../public/js/data/scope.js');
+const jayBee = exchangeRows(shipped).filter(row => row.ticker === 'JAYBEE');
+assert(jayBee.length > 0, 'retained Jay Bee exchange reports exercise the real portfolio alias');
+assert.deepEqual(scope.filterByScope(jayBee, 'portfolio', [{ ticker: 'JAYBEE-SM' }]), jayBee, 'all retained Jay Bee deals belong to its suffixed portfolio holding without rewriting source rows');
+for (const [alias, symbol] of [['ALPEXSOLAR-SM', 'ALPEXSOLAR'], ['JAYBEE-SM', 'JAYBEE'], ['SAHANA-SM', 'SAHANA']]) {
+  assert(scope.scopeMatcher('portfolio', [{ ticker: alias }]).has(symbol));
+  assert(scope.scopeAllowsTicker('portfolio', alias, [{ ticker: symbol }]), 'reviewed aliases match in either direction');
+}
+assert.equal(scope.scopeAllowsTicker('portfolio', 'UNKNOWN', [{ ticker: 'UNKNOWN-SM' }]), false, 'unknown suffixes cannot join unrelated companies');
+assert.equal(scope.filterByScope(jayBee, 'watchlist').length, 0, 'an empty watchlist still excludes all trades');
+assert.deepEqual(scope.filterByScope(jayBee, 'universe'), jayBee, 'universe retains the original complete exchange records');

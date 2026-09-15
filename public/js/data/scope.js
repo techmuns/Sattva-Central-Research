@@ -22,6 +22,7 @@
 import * as coverage from './coverage.js';
 import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
+import { filingTicker } from './announcement-identity.js';
 
 export const PORTFOLIO = 'portfolio';
 export const WATCHLIST = 'watchlist';
@@ -56,11 +57,7 @@ export function scopeTickers(scope, holdings = null) {
  * contract; this predicate is the editable-list-aware form new code should use.
  */
 export function scopeAllowsTicker(scope, ticker, holdings = null) {
-  const t = String(ticker || '').trim().toUpperCase();
-  if (!t) return false;
-  const wanted = scopeTickers(scope, holdings);
-  if (wanted) return wanted.has(t);
-  return !scopeLists.isRemoved('universe', { ticker: t });
+  return scopeMatcher(scope, holdings).has(ticker);
 }
 
 export function scopeMatcher(scope, holdings = null) {
@@ -68,10 +65,14 @@ export function scopeMatcher(scope, holdings = null) {
   // retained alert pool has tens of thousands of rows and a 100+ company portfolio. Re-reading
   // storage or allocating that entire Set for every row stalls the browser during feed updates.
   // A new pass takes a fresh snapshot, so portfolio/watchlist edits still apply immediately.
-  const wanted = scopeTickers(scope, holdings);
-  const removed = wanted ? null : new Set(scopeLists.removed('universe').map(scopeLists.keyFor));
+  const members = scopeTickers(scope, holdings);
+  // Reviewed SME quote aliases and exchange symbols identify the same company. Match both
+  // sides without rewriting holdings or source records, or guessing unknown suffixes.
+  const wanted = members && new Set([...members].map(filingTicker));
+  const removed = wanted ? null : new Set(scopeLists.removed('universe')
+    .map(entry => scopeLists.keyFor({ ...entry, ticker: filingTicker(entry.ticker) })));
   return { has: (ticker) => {
-    const t = String(ticker || '').trim().toUpperCase();
+    const t = filingTicker(ticker);
     return !!t && (wanted ? wanted.has(t) : !removed.has(`ticker:${t}`));
   } };
 }

@@ -42,8 +42,18 @@ repository, `main` branch and Telegram collection workflow can be dispatched. Pr
 hosts cannot activate collection. The initial ordinary dashboard auto-refresh arms the
 timer; deployment alone does not prove it has started. `GET /api/telegram/schedule` is a
 read-only report of activation, the actual stored alarm, next attempt, active run and last
-result, and never starts work. A run queued or active for over thirty minutes is overdue;
-the timer does not cancel it or start a competing collector.
+result, and never starts work. A run queued or active for over thirty minutes is overdue.
+The timer does not cancel runs, bypass approval waits or compete with an executing job.
+An old queued request can stop blocking the timer only when a newer successful collection
+exists, authenticated first-attempt metadata still matches the fixed main-branch workflow,
+the attempt has zero jobs, and a second metadata read confirms it has remained unchanged
+since creation. This handles the unmaterialized 13 September request 34748860076, which
+stayed queued while newer captures completed. At most five queued requests are audited
+under a shared twenty-second deadline; excess/missing/changed evidence stays blocked.
+Recovery records the ignored request IDs and check time in the timer status. It requests
+an ordinary scheduled collection, without account-resume inputs; workflow concurrency,
+saved source pauses and checkpoint restoration remain in force. Other workflows retain
+their existing active-run exclusion.
 The existing GitHub token can still expire or be revoked; the status then reports failure.
 An operator can disable the timer with Worker variable `TELEGRAM_SCHEDULER_DISABLED=true`;
 the next request/alarm cancels recurrence. Changing production configuration requires the

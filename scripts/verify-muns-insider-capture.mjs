@@ -28,7 +28,22 @@ assert(next.byTicker.HELD.trades.every(r => !('raw' in r)));
 assert.equal(next.byTicker.FAILED.lastSuccessAt, undefined, 'a failed attempt cannot become a successful check');
 assert.equal(next.byTicker.OTHER.lastSuccessAt, new Date(at).toISOString(), 'verified empty still advances that company');
 assert.equal(checkpoints.length, 4, 'each completed answer checkpoints independently');
+const targets = companies.map(c => c.ticker).sort();
+assert.deepEqual(next.targetTickers, targets, 'completed and failed companies remain in the full capture target manifest');
+for (const checkpoint of checkpoints) assert.deepEqual(checkpoint.targetTickers, targets, 'every checkpoint retains the full target manifest while workers consume the queue');
 assert.equal(prior.byTicker.HELD.trades.length, 1, 'prior checkpoint is not mutated');
+
+let clock = at, boundedCalls = 0;
+const boundedCompanies = [...companies, { ticker: 'LATER' }];
+const bounded = await captureMunsInsiders(prior, boundedCompanies, { now: () => clock, budgetMs: 1000, gapMs: 0,
+  request: async () => { boundedCalls++; clock += 1000; return { trades: [] }; },
+});
+assert.equal(boundedCalls, 1, 'the budget stops further source requests');
+assert.deepEqual(bounded.targetTickers, boundedCompanies.map(c => c.ticker).sort(), 'budget expiry retains completed, reserved and still-queued company targets');
+assert.equal(bounded.byTicker.LATER, undefined, 'unattempted targets remain unchecked');
+assert.deepEqual(bounded.byTicker.HELD.trades, prior.byTicker.HELD.trades, 'budget expiry preserves prior history');
+assert.match(insiderSummary({ insiders: bounded }, undefined, at), /3\/5 companies checked/, 'coverage uses the full intended universe after a partial run');
+assert.match(insiderSummary({ insiders: bounded }, undefined, at), /2 unchecked/);
 
 const failedHeld = await captureMunsInsiders(next, [{ ticker: 'HELD' }], { now: () => at + 3600000, gapMs: 0, request: async () => ({ ok: false, reason: 'upstream', message: 'Unavailable' }) });
 assert.deepEqual(failedHeld.byTicker.HELD.trades, next.byTicker.HELD.trades);
@@ -44,6 +59,8 @@ assert.equal(joined.length, 2, 'Muns supplement and retained Screener/Muns rows 
 assert.match(insiderSummary({ insiders: failedHeld }, ['HELD'], at), /1 failed/);
 assert.match(insiderSummary(exchange, ['UNSEEN'], at), /1 unchecked/);
 assert.match(insiderSummary(exchange, ['HELD'], at + 5 * 3600000), /delayed/);
+assert.match(insiderSummary(exchange, undefined, at), /3\/4 companies checked/, 'completed runs include all successful targets in universe coverage');
+assert.match(insiderSummary(exchange, undefined, at), /1 failed/, 'a failed target cannot disappear from universe status');
 assert.throws(() => validateExchangeSnapshot({ ...exchange, insiders: { targetTickers: [], byTicker: { X: {} } } }), /checkpoint/);
 assert.deepEqual(insiderCaptureCompanies([{ ticker: 'HELD', priority: true }], { byTicker: { UNIVERSE: [], HELD: [] } }, exchange).map(c => [c.ticker, !!c.priority]), [['HELD', true], ['UNIVERSE', false]]);
 console.log('PASS Muns supplementation: Sattva portfolio priority, expanding universe, overlap, checkpoint recovery, failures, empty answers, old history and deduplication');

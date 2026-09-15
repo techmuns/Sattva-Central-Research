@@ -32,6 +32,7 @@
 import { normaliseArticle, normaliseInsiderTrades, collectRecords } from '../public/js/data/filings-shared.js';
 import { announcementRange, normaliseCorporateAnnouncements } from '../public/js/data/announcements-shared.js';
 import { DOMESTIC_FORMS, normaliseDomesticFilings } from '../public/js/data/domestic-filings-shared.js';
+import { filingTicker } from '../public/js/data/announcement-identity.js';
 
 export const FASTAPI_BASE = 'https://fastapi.muns.io';
 export const NESTJS_BASE = 'https://devde.muns.io';
@@ -354,7 +355,9 @@ export async function fetchInsiderTrades({ ticker, country = 'india', fromDate =
   const url = `${filingsBase(env)}/filings/data/insider_trades`;
   if (!t) throw new MunsError('shape', 'Insider trades need a ticker.', { url });
 
-  const body = { ticker: t, country };
+  // The book uses reviewed SME aliases; Indian filings accept their exchange symbols.
+  // Keep the requested ticker on returned rows so scheduled/browser reads still join that book.
+  const body = { ticker: country === 'india' ? filingTicker(t) : t, country };
   if (fromDate) body.fromDate = fromDate;
   if (toDate) body.toDate = toDate;
 
