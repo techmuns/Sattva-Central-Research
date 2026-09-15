@@ -26,7 +26,7 @@ const newsFixture = { capturedAt: '2026-09-04T08:00:00Z', entities: newsCases.ma
     url: `https://example.test/${test.id}`, ...test.row })), row => row.ticker) };
 let version = 1;
 const calls = [];
-const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:16px;background:#f6f7fb"><button id="refresh">Refresh</button><main id="root"></main>
+const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body style="padding:16px;background:#f6f7fb"><button id="refresh">Refresh</button><main id="root"></main>
 <script>
 const activeListeners=new Map();
 const listenerSets=new WeakMap();

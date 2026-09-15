@@ -44,7 +44,8 @@ export function createArrivalsUI(tracker) {
     const strip = root?.querySelector('[data-alert-arrivals]');
     if (!strip) return;
     // Screen-reader announcements carry the same privacy/filter boundary as visible headlines.
-    if (announcementIds.some(id => !recent.some(row => row.id === id && tracker.time(id)))) {
+    const currentIds = new Set(recent.map(row => row.id));
+    if (announcementIds.some(id => !currentIds.has(id) || !tracker.time(id))) {
       text('[data-arrivals-announcement]', '');
       announcementIds = [];
     }
