@@ -2348,7 +2348,7 @@ can span 31 days. Date filters never delete archives or change collection cadenc
 archive-derived head covering the period avoids duplicate company-month downloads; a newer index
 or insufficient head coverage loads the overlapping months. Dedicated-publisher and TradingView
 history are also bounded to overlapping months. Undated records remain separately accessible.
-All Alerts uses the same IST presets with Last 3 days as its display default, while retaining
+All Alerts uses the same IST presets with Today as its display default, while retaining
 All history through today, Older than 30 days and the separate Upcoming horizon. Its source
 reader still retains full history, and company "See all" links explicitly open All history.
 An incomplete monthly read preserves the last complete history and reports the gap; it is retried

@@ -38,12 +38,14 @@ import * as records from '../data/alert-records.js';
 import { attributionLabel } from '../data/company-news-attribution.js';
 import { NEWS_PERIODS, newsPeriodBounds } from '../data/news-window.js';
 import { isXbrlFilingUrl, openFilingReader } from '../ui/xbrl-filing.js';
+import { createAlertArrivals } from '../core/alert-arrivals.js';
+import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
 
 export const meta = {
   id: 'daily-alerts',
   title: 'All Alerts',
   layout: 'table',
-  subtitle: 'Opens on the last 3 days (IST); older retained alerts and upcoming schedules remain available.',
+  subtitle: 'Opens on Today (IST); older retained alerts and upcoming schedules remain available.',
   // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
   // collapse — the feed filter in the toolbar does that job without costing a navigation.
   subviews: [],
@@ -51,6 +53,13 @@ export const meta = {
 
 const REFRESH_ID = 'daily-alerts';
 const RECHECK_MS = 90_000;
+const arrivals = createAlertArrivals();
+const arrivalsUI = createArrivalsUI(arrivals);
+let checkingToken = null;
+
+function updateArrivalsState() {
+  arrivalsUI.setState({ checking: checkingToken === loadToken, coverage: alertCoverageState(report) });
+}
 
 // ---------------------------------------------------------------------------------------
 // Module state
@@ -98,6 +107,9 @@ function sourceChanged() {
 }
 
 export function render(ctx) {
+  // A scope/membership change or a return visit starts a fresh baseline, including warm history.
+  arrivals.reset(ctx.scope);
+  arrivalsUI.reset();
   ctxRef = ctx;
   cancelDeferredPaint();
   scrollQuietUntil = 0;
@@ -128,6 +140,7 @@ export function render(ctx) {
   if (!unsubs.length) {
     unsubs.push(alerts.onChange(sourceChanged));
     unsubs.push(records.onChange(() => {
+      arrivals.clearPrivate();
       // Remove private rows synchronously, even while another public source is still loading.
       if (report) { report = { ...report, events: report.events.filter((r) => !r.private) }; if (ctxRef) paint(ctxRef); }
       sourceChanged();
@@ -190,6 +203,9 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  arrivalsUI.detach();
+  arrivals.reset();
+  checkingToken = null;
   ctxRef = null;
   loadToken++;
   clearTimeout(sourceTimer); sourceTimer = null; sourceDirty = false;
@@ -230,6 +246,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   // an overlapping one costs a revalidation, not a download.
   const token = ++loadToken;
   collecting++;
+  if (load) checkingToken = token;
+  updateArrivalsState();
   if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
     const next = await alerts.collect({
@@ -249,12 +267,14 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       onPartial: (partial) => {
         if (token !== loadToken || !ctxRef) return;
         report = partial;
+        arrivals.observe(partial, ctx.scope);
         throttledPaint();
       },
     });
     if (token !== loadToken || !ctxRef) return;
     cancelThrottledPaint();
     report = next;
+    arrivals.observe(next, ctx.scope);
     paintAfterScroll();
   } catch (err) {
     console.error('[daily-alerts] collect failed', err);
@@ -266,6 +286,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       paintAfterScroll();
     }
   } finally {
+    if (checkingToken === token) checkingToken = null;
+    if (ctxRef) updateArrivalsState();
     collecting--;
     if (sourceDirty) sourceChanged();
   }
@@ -327,6 +349,7 @@ function cancelDeferredPaint() {
 
 function paint(ctx) {
   cancelDeferredPaint();
+  updateArrivalsState();
   const day = report?.day || alerts.today();
   const events = report?.events || [];
   const feeds = report?.feeds || [];
@@ -417,6 +440,7 @@ function paint(ctx) {
   }
 
   if (tableDispose) tableDispose();
+  arrivalsUI.detach();
   tableDispose = null;
   tableInstance = null;
   workspaceDispose?.();
@@ -448,11 +472,13 @@ function paint(ctx) {
         <div data-alerts-table-actions></div>
       </div>
     </div>
+    ${horizon === HORIZON.THROUGH ? arrivalsHtml : ''}
     ${table.html}
     </div>`;
 
   tableDispose = table.wire(ctx.root);
   tableInstance = table;
+  arrivalsUI.attach(ctx.root);
   // Wire the shared controls first, then move their existing nodes beside the view controls.
   // Search and the three filters now get a full row even on a narrower laptop. The kit still
   // owns count updates and exports over its complete filtered model, never the mounted rows.
@@ -800,7 +826,7 @@ function fitStreamToViewport(root) {
   // Source arrivals can wrap the status or toolbar without resizing the window. Observe only
   // the chrome, not the table whose own height we set, to avoid a resize feedback loop.
   const observer = new ResizeObserver(apply);
-  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-table-toolbar]')) observer.observe(node);
+  for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], [data-section-head], [data-alerts-controls], [data-alert-arrivals], [data-table-toolbar]')) observer.observe(node);
   unfit = () => { window.removeEventListener('resize', onResize); observer.disconnect(); };
 }
 
@@ -1042,6 +1068,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 120,
     preindexSearch: warmSearch,
     onScrollActivity: noteTableScroll,
+    onVisibleRowsChange: mode === HORIZON.THROUGH ? rows => arrivalsUI.setRows(rows) : null,
     rowClass: mode === HORIZON.UPCOMING ? null : alertRowClass,
     initialRowCount: tablePosition?.rendered || 24,
     initialRowKey: tablePosition?.key || null,
@@ -1115,7 +1142,7 @@ function buildTableFilters(events, day, mode, matchesDate) {
       ],
       match: (e, v) => e.direction === v,
     },
-    { label: 'Date range', value: '3d', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) },
+    { label: 'Date range', value: 'today', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) },
     {
       label: 'Company relationship',
       options: [

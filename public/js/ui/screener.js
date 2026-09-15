@@ -439,6 +439,8 @@ export function scoreTable(config) {
     // Optional per-row tint, e.g. flagging a risk level. Returns Tailwind classes or ''.
     // Kept separate from the built-in red-flag tint, which belongs to the scoring models.
     rowClass = null,
+    // Observe the complete filtered model, including rows outside the mounted window.
+    onVisibleRowsChange = null,
     // Seed the search box, filters, watchlist-only and sort from a previous instance's `view`.
     // A tab that rebuilds its table when live data lands would otherwise throw away whatever the
     // reader had typed, filtered and sorted — every time a company reports.
@@ -874,6 +876,7 @@ export function scoreTable(config) {
     });
 
     let current = initialList;
+    onVisibleRowsChange?.(current);
     let virtualStart = initialVirtualStart;
 
     // ---- the background fill ----------------------------------------------------------
@@ -1120,6 +1123,7 @@ export function scoreTable(config) {
     function paintRows({ resetScroll = true } = {}) {
       stopFill();
       current = visibleRows();
+      onVisibleRowsChange?.(current);
       head.innerHTML = headHtml();
 
       if (isVirtual) {

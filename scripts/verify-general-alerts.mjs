@@ -4,6 +4,40 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createAlertArrivals } from '../public/js/core/alert-arrivals.js';
+
+// Receipt identity is separate from publication date, coverage success and collection size.
+{
+  const arrivals = createAlertArrivals();
+  const event = (id, extra = {}) => ({ id, day: '2020-01-01', ...extra });
+  const feed = (id, events, status = 'ok') => ({ id, events, status });
+  const observe = (feeds, at = 1000, extra = {}) => arrivals.observe({ feeds, ...extra }, 'portfolio', at);
+  observe([feed('a', [event('cached')])], 1000, { cacheSavedAt: 500 });
+  observe([feed('a', [event('history')]), feed('slow', [], 'pending')]);
+  assert.equal(arrivals.time('history'), 0, 'full history after a cache is a baseline');
+  observe([feed('a', [event('history'), event('new')]), feed('slow', [event('late-history')])], 2000);
+  assert.equal(arrivals.time('new'), 2000, 'a new identity receives a browser receipt time');
+  assert.equal(arrivals.time('late-history'), 0, 'delayed initial source is still baseline history');
+  observe([feed('a', [event('new', { headline: 'correction' })])], 3000);
+  observe([feed('a', [event('history'), event('new')])], 4000);
+  assert.equal(arrivals.time('new'), 2000, 'corrections and repeated reports do not reannounce');
+  assert.equal(arrivals.time('history'), 0, 'temporary omissions and date rollover do not invent arrivals');
+  observe([feed('a', [event('partial-arrival')], 'failed')], 4500);
+  observe([feed('a', [event('partial-arrival')])], 4800);
+  assert.equal(arrivals.time('partial-arrival'), 4500, 'real rows in a later partial read are received once, not reannounced on recovery');
+  observe([feed('bad', [event('partial')], 'failed')]);
+  observe([feed('bad', [event('partial'), event('recovered-history')])]);
+  assert.equal(arrivals.time('recovered-history'), 0, 'failed first read cannot establish a baseline');
+  observe([feed('a', [event('private', { private: true })])], 5000);
+  assert.equal(arrivals.time('private'), 5000);
+  arrivals.clearPrivate();
+  assert.equal(arrivals.time('private'), 0, 'private receipts disappear on access invalidation');
+  arrivals.observe({ feeds: [feed('a', [event('new'), event('different-scope')])] }, 'universe', 6000);
+  assert.equal(arrivals.time('new'), 0);
+  assert.equal(arrivals.time('different-scope'), 0, 'scope additions are baseline history');
+  arrivals.reset();
+  assert.equal(arrivals.time('new'), 0, 'receipts are limited to this visit');
+}
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const read = (path) => JSON.parse(readFileSync(resolve(root, path)));
 const storage = new Map();
