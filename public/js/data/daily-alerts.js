@@ -62,6 +62,9 @@ import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSourceDependencies } from './alert-sources.js';
 import * as records from './alert-records.js';
 import { alertWindowCache } from './alert-window-cache.js';
+import { allAlertsCache, materializeAllAlerts, restoreAllAlertSources, retainAlertSource, publicAlertFeed } from './all-alerts-cache.js';
+import { scopeTickers } from './scope.js';
+import * as scopeLists from '../core/scope-lists.js';
 export { ALERT_WINDOW_CACHE_KEY } from './alert-window-cache.js';
 import { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as ALERT_WINDOW_CACHE_DAYS } from '../core/alert-window.js';
@@ -142,6 +145,43 @@ export async function readCachedAlertWindow({ scope = 'portfolio', holdings = nu
     pending: 0,
     cacheSavedAt: entry.savedAt || null,
   };
+}
+
+// Capture membership as well as the scope label. A watchlist edit, Family handoff or Universe
+// exclusion can change the answer without changing the route or any source timestamp.
+export function alertContextKey(scope, holdings = coverage.holdings(), day = today()) {
+  return JSON.stringify([scope, day, portfolioNewsEntities(holdings),
+    [...(scopeTickers(scope, holdings) || [])].sort(), scopeLists.removed('universe')]);
+}
+
+export async function readCachedAllAlerts({ scope, holdings = coverage.holdings(), day = today() }) {
+  const entry = await allAlertsCache.read();
+  const sources = restoreAllAlertSources(entry?.value, FEEDS, day);
+  if (!sources) return null;
+  return { ...assemble({ day, scope, holdings, includeHistory: true,
+    settledFeeds: new Map(sources.map(feed => [feed.id, feed])) }), cacheSavedAt: entry.savedAt || null };
+}
+
+/** Current public source results win over disk. Pending/failed reads retain saved evidence;
+ * successful reads replace their source independently. Every adoption rechecks current scope
+ * and ephemeral sources, so an old account or membership cannot be painted by a late callback. */
+export function adoptAllAlertsReport(incoming, previous, { scope, holdings = coverage.holdings(), day = today() }) {
+  const prior = new Map((previous?.sourceFeeds || []).map(feed => [feed.id, feed]));
+  const sourceReport = incoming || previous;
+  const sources = (sourceReport?.sourceFeeds || []).map(feed => {
+    const current = sourceReport.day === day ? feed : { ...feed, reachesToday: false };
+    return retainAlertSource(current, prior.get(feed.id));
+  });
+  return assemble({ day, scope, holdings, includeHistory: true,
+    settledFeeds: new Map(sources.map(feed => [feed.id, feed])) });
+}
+
+let lastAllAlertsSave = null;
+export function saveAllAlerts(report) {
+  // Do not serialize the whole pool again for duplicate completion notifications.
+  if (report.sourceFeeds === lastAllAlertsSave) return;
+  lastAllAlertsSave = report.sourceFeeds;
+  return allAlertsCache.write(materializeAllAlerts(report));
 }
 
 /** The IST clock time of an instant, as HH:MM, for a row that carries a real timestamp. */
@@ -670,6 +710,8 @@ function toFeedRow(feed, out, day) {
  * are of what has actually been read rather than of what is eventually expected.
  */
 const discoveryMappings = new WeakMap();
+const scopeProjections = new WeakMap();
+let lastPublisherProjection = null;
 export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
   if (!['market-news', 'twitter', 'ipos'].includes(feedId)) return events;
   const signature = JSON.stringify(portfolioEntities);
@@ -708,6 +750,14 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
  * provenance for every contributing route; feed counts and exports use this same unique view.
  */
 export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
+  const news = feeds.find(feed => feed.id === 'news')?.events;
+  const market = feeds.find(feed => feed.id === 'market-news')?.events;
+  const identity = JSON.stringify(entities);
+  if (lastPublisherProjection?.news === news && lastPublisherProjection.market === market &&
+      lastPublisherProjection.day === day && lastPublisherProjection.identity === identity) {
+    return feeds.map(feed => lastPublisherProjection.groups.has(feed.id)
+      ? { ...feed, ...lastPublisherProjection.groups.get(feed.id) } : feed);
+  }
   const byTicker = new Map(entities.filter(entity => entity.ticker).map(entity => [String(entity.ticker).toUpperCase(), entity.entityId]));
   const groups = new Map();
   feeds.forEach((feed, feedIndex) => {
@@ -734,17 +784,23 @@ export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
     for (const item of group) changes.set(`${item.feedIndex}:${item.rowIndex}`, item === winner ? { ...winner.event,
       newsProvenance: [...new Map(provenance.map(record => [JSON.stringify(record), record])).values()] } : null);
   }
-  if (!changes.size) return feeds;
-  return feeds.map((feed, feedIndex) => {
+  const result = !changes.size ? feeds : feeds.map((feed, feedIndex) => {
+    if (!['news', 'market-news'].includes(feed.id)) return feed;
     const events = feed.events.flatMap((event, rowIndex) => {
       const key = `${feedIndex}:${rowIndex}`;
       return !changes.has(key) ? [event] : changes.get(key) ? [changes.get(key)] : [];
     });
     return { ...feed, events, count: events.length, todayCount: events.filter(event => event.day === day).length };
   });
+  lastPublisherProjection = { news, market, day, identity, groups: new Map(result
+    .filter(feed => ['news', 'market-news'].includes(feed.id))
+    .map(feed => [feed.id, { events: feed.events, count: feed.count, todayCount: feed.todayCount }])) };
+  return result;
 }
 
 function assemble({ day, scope, holdings, includeHistory, settledFeeds, requestedCompanies = [] }) {
+  const contextKey = alertContextKey(scope, holdings, day);
+  const projectionKey = JSON.stringify([contextKey, includeHistory, requestedCompanies]);
   const scoped = scopeMatcher(scope, holdings);
   const requested = new Set(requestedCompanies.map(company => company.ticker).filter(Boolean));
   const requestedEntities = new Set(portfolioNewsEntities(requestedCompanies).map(entity => entity.entityId));
@@ -754,13 +810,14 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   const portfolioEntities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
   const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
   const scopeContext = { scope, wanted, entityIds: portfolioNewsIds, requestedEntities };
-  const scopedFeeds = FEEDS.map(
+  const sourceFeeds = FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
-  ).map((settled) => {
+  );
+  const scopedFeeds = sourceFeeds.map((settled) => {
     // Private results can be cleared while public reads are in flight. Never let an old partial
     // report restore a previous account's rows after logout; read these memory-only feeds afresh.
     let feed = settled;
-    if (['company-documents', 'drhp-documents'].includes(settled.id)) {
+    if (PRIVATE_FEEDS.has(settled.id) || settled.portfolioOnly) {
       const current = COLLECTORS[settled.id]({ day });
       current.events = current.events.filter((e) => includeHistory || eventDay(e) === day);
       feed = toFeedRow(settled, current, day);
@@ -771,10 +828,16 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     // the private portfolio schedule leak into Universe or the reader's personal watchlist.
     // Company News has the same legitimate no-ticker case, but carries a stable ISIN entity id
     // instead of being pre-scoped by its collector.
-    const events = all.filter(event => matchesAlertScope(event, scopeContext));
-    const unresolved = all.filter((event) => !event.ticker && !event.entityId).length;
+    let projection = scopeProjections.get(all);
+    if (projection?.key !== projectionKey) {
+      const events = all.filter(event => matchesAlertScope(event, scopeContext));
+      projection = { key: projectionKey, events, todayCount: events.filter(e => e.day === day).length,
+        unresolved: all.filter(event => !event.ticker && !event.entityId).length };
+      scopeProjections.set(all, projection);
+    }
+    const { events, unresolved, todayCount } = projection;
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
-    return { ...feed, events, count: events.length, todayCount: events.filter((e) => e.day === day).length,
+    return { ...feed, events, count: events.length, todayCount,
       sourceCount: all.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };
   });
@@ -784,7 +847,7 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   const inputMatches = lastAssembleInput && lastAssembleInput.scope === scope && lastAssembleInput.day === day &&
       lastAssembleInput.includeHistory === includeHistory && feeds.every((feed, i) => {
         const previous = lastAssembleInput.eventGroups[i];
-        return previous?.length === feed.events.length && feed.events.every((event, j) => event === previous[j]);
+        return previous === feed.events || (previous?.length === feed.events.length && feed.events.every((event, j) => event === previous[j]));
       });
 
   const done = feeds.filter((f) => f.status !== 'pending');
@@ -798,17 +861,20 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     events.sort(byNewestFirst);
     ensureUniqueIds(events);
   }
-  const eventDays = [...new Set(events.map((event) => event.day).filter(Boolean))].sort();
+  const eventDays = inputMatches ? null : [...new Set(events.map((event) => event.day).filter(Boolean))].sort();
 
   lastAssembleInput = { scope, day, includeHistory, eventGroups: feeds.map(feed => feed.events) };
   lastAssembleOutput = {
     day,
     scope,
+    contextKey,
+    sourceFeeds: sourceFeeds.filter(publicAlertFeed),
     includeHistory,
     events,
     feeds,
     pending: feeds.filter((f) => f.status === 'pending').length,
     meta: {
+      ...(inputMatches ? lastAssembleOutput.meta : {
       alerts: events.filter((e) => e.severity === SEVERITY.ALERT).length,
       updates: events.filter((e) => e.severity === SEVERITY.UPDATE).length,
       positive: events.filter((e) => e.direction === DIRECTION.POSITIVE).length,
@@ -819,10 +885,11 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
       days: eventDays.length,
       undated: events.filter((e) => !e.day).length,
       scheduled: events.filter((e) => e.kind === 'scheduled').length,
-      sourceRecords: feeds.reduce((n, f) => n + (f.sourceCount || 0), 0),
-      unresolvedRecords: feeds.reduce((n, f) => n + (f.unresolvedCount || 0), 0),
       oldestEventDay: eventDays[0] || null,
       newestEventDay: eventDays.at(-1) || null,
+      }),
+      sourceRecords: feeds.reduce((n, f) => n + (f.sourceCount || 0), 0),
+      unresolvedRecords: feeds.reduce((n, f) => n + (f.unresolvedCount || 0), 0),
       // The FRESHEST feed and the STALEST feed, both, because one number cannot describe eight
       // captures taken at eight different times and picking the freshest would flatter the rest.
       newestRead: maxTime(done.map((f) => f.asOf)),

@@ -35,6 +35,8 @@ import * as alerts from '../data/daily-alerts.js';
 import * as coverage from '../data/coverage.js';
 import { scopeLabel } from '../data/scope.js';
 import * as records from '../data/alert-records.js';
+import * as watchlist from '../core/watchlist.js';
+import * as scopeLists from '../core/scope-lists.js';
 import { attributionLabel } from '../data/company-news-attribution.js';
 import { NEWS_PERIODS, newsPeriodBounds } from '../data/news-window.js';
 import { isXbrlFilingUrl, openFilingReader } from '../ui/xbrl-filing.js';
@@ -67,6 +69,9 @@ const arrivalsUI = createArrivalsUI(arrivals, () => tableInstance?.refreshPresen
 let ctxRef = null;
 let report = null; // the last collected report
 let loadToken = 0;
+let cacheToken = 0;
+let cacheReady = Promise.resolve();
+let cachedRead = null;
 let unsubs = [];
 const HORIZON = { THROUGH: 'through', UPCOMING: 'upcoming' };
 let horizon = HORIZON.THROUGH;
@@ -85,6 +90,7 @@ let sourceTimer = null;
 let sourceDirty = false;
 let tableDispose = null;
 let tableInstance = null;
+let tableRows = null;
 let workspaceDispose = null;
 let sourcesOpen = false;
 let focusMode = false;
@@ -101,11 +107,21 @@ function sourceChanged() {
   }, 250);
 }
 
+function currentContext() {
+  return { scope: ctxRef.scope, holdings: coverage.holdings(), day: alerts.today() };
+}
+
+function membershipChanged() {
+  if (ctxRef && report?.contextKey !== alerts.alertContextKey(ctxRef.scope)) render(ctxRef);
+}
+
 export function render(ctx) {
   // A scope/membership change or a return visit starts a fresh baseline, including warm history.
   arrivals.reset(ctx.scope);
   arrivalsUI.reset();
   ctxRef = ctx;
+  const restoreToken = ++cacheToken;
+  cancelThrottledPaint();
   cancelDeferredPaint();
   scrollQuietUntil = 0;
 
@@ -134,10 +150,16 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(alerts.onChange(sourceChanged));
+    unsubs.push(coverage.onChange(({ changed }) => { if (changed) membershipChanged(); }));
+    unsubs.push(watchlist.onChange(membershipChanged));
+    unsubs.push(scopeLists.onChange(membershipChanged));
     unsubs.push(records.onChange(() => {
       arrivals.clearPrivate();
       // Remove private rows synchronously, even while another public source is still loading.
-      if (report) { report = { ...report, events: report.events.filter((r) => !r.private) }; if (ctxRef) paint(ctxRef); }
+      if (report && ctxRef) {
+        report = alerts.adoptAllAlertsReport(report, null, currentContext());
+        paint(ctxRef);
+      }
       sourceChanged();
     }));
     const checkVisible = () => {
@@ -175,22 +197,32 @@ export function render(ctx) {
   // on every scope change and the module keeps its last report so a return visit paints instantly
   // — but that report was collected FOR a scope, and painting Universe's rows under a Portfolio
   // pill for the second before the new collect lands is the page stating something untrue.
-  if (report && report.scope !== ctx.scope) report = null;
+  if (report) {
+    report = alerts.adoptAllAlertsReport(report, null, currentContext());
+    // The ready in-memory view is this visit's baseline. A refresh can begin before the
+    // first background check finishes; its new rows must not be mistaken for initial history.
+    arrivals.observe(report, ctx.scope);
+  }
 
   // Paint immediately with whatever is already collected, then collect. A tab that renders nothing
   // until every feed has answered is a blank timeline.
   paint(ctx);
-  if (!report) {
-    const token = ++loadToken;
-    void alerts.readCachedAlertWindow({
+  if (!report || cachedRead) {
+    // A route can render again after the empty seed but before disk answers. Reuse that read
+    // and attach the new owner; cancelling its old callback must not lose restoration entirely.
+    const reading = cachedRead ||= alerts.readCachedAllAlerts({
       scope: ctx.scope,
       holdings: coverage.holdings(),
       day: alerts.today()
-    }).then((cached) => {
-      if (token !== loadToken || ctxRef !== ctx || report || !cached) return;
-      report = cached;
-      paint(ctxRef);
     });
+    cacheReady = reading.then((cached) => {
+      if (restoreToken !== cacheToken || ctxRef !== ctx || !cached) return;
+      // Disk and live reads share a mount, not a request token. Even an empty live seed can
+      // arrive first; completed live sources still win if the saved copy arrives later.
+      report = alerts.adoptAllAlertsReport(report || cached, cached, currentContext());
+      paint(ctxRef);
+    }).catch(() => { /* Source reads remain independent of optional device storage. */ })
+      .finally(() => { if (cachedRead === reading) cachedRead = null; });
   }
   // A short return reuses retained snapshots; reopening after inactivity checks the source
   // readers immediately instead of waiting another full polling interval. No capture dispatch.
@@ -202,6 +234,7 @@ export function destroy() {
   arrivals.reset();
   ctxRef = null;
   loadToken++;
+  cacheToken++;
   clearTimeout(sourceTimer); sourceTimer = null; sourceDirty = false;
   cancelThrottledPaint();
   cancelDeferredPaint();
@@ -233,18 +266,21 @@ export function destroy() {
  * counter, not against a captured ctx, for the same reason the subscriptions are.
  */
 async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {}) {
+  if (!ctx || !ctxRef) return;
   // NO "already collecting" EARLY RETURN. `render()` runs again on every scope change, so bailing
   // out because a collect was in flight would leave the new scope showing the old scope's rows for
   // ever — the guard has to be about which result is allowed to PAINT, not about which reads are
   // allowed to start. Every read below is a conditional GET against a file or a cached route, so
   // an overlapping one costs a revalidation, not a download.
   const token = ++loadToken;
+  const context = currentContext();
+  const contextKey = alerts.alertContextKey(context.scope, context.holdings, context.day);
+  const current = () => token === loadToken && ctxRef && contextKey === alerts.alertContextKey(ctxRef.scope);
   collecting++;
   if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
     const next = await alerts.collect({
-      scope: ctx.scope,
-      holdings: coverage.holdings(),
+      ...context,
       // The source snapshots already retain history. The old tab threw those rows away with
       // `date === today`; the timeline keeps them and lets the table reveal older days as its
       // internal scroller advances. No request per company and no new route are introduced.
@@ -257,17 +293,20 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       // page would sit still until the slowest of them finished, which is the thing this exists to
       // stop. The final report below paints immediately, so the settled state never waits on a timer.
       onPartial: (partial) => {
-        if (token !== loadToken || !ctxRef) return;
-        report = partial;
-        arrivals.observe(partial, ctx.scope);
+        if (!current()) return;
+        report = alerts.adoptAllAlertsReport(partial, report, context);
+        arrivals.observe(report, ctx.scope);
         throttledPaint();
       },
     });
-    if (token !== loadToken || !ctxRef) return;
+    if (!current()) return;
     cancelThrottledPaint();
-    report = next;
-    arrivals.observe(next, ctx.scope);
+    report = alerts.adoptAllAlertsReport(next, report, context);
+    arrivals.observe(report, ctx.scope);
     paintAfterScroll();
+    // A late device read may fill a failed source. Never overwrite its durable copy before
+    // that read had a chance to contribute. Persist only complete collection publications.
+    if (load) void cacheReady.then(() => { if (current() && report) return alerts.saveAllAlerts(report); });
   } catch (err) {
     console.error('[daily-alerts] collect failed', err);
     if (token === loadToken && ctxRef) {
@@ -337,10 +376,27 @@ function cancelDeferredPaint() {
 // Paint
 // ---------------------------------------------------------------------------------------
 
+const horizonPartitions = new WeakMap();
+const EMPTY_EVENTS = [];
+let lastVisible = null;
+function partitionEvents(events, day) {
+  let saved = horizonPartitions.get(events);
+  if (saved?.day === day) return saved;
+  const through = [], upcoming = [];
+  let todayThrough = 0, todayUpcoming = 0;
+  for (const event of events) {
+    if (isUpcomingEvent(event, day)) { upcoming.push(event); if (event.day === day) todayUpcoming++; }
+    else { through.push(event); if (event.day === day) todayThrough++; }
+  }
+  saved = { day, through, upcoming, todayThrough, todayUpcoming, calendar: collapseUpcoming(upcoming) };
+  horizonPartitions.set(events, saved);
+  return saved;
+}
+
 function paint(ctx) {
   cancelDeferredPaint();
   const day = report?.day || alerts.today();
-  const events = report?.events || [];
+  const events = report?.events || EMPTY_EVENTS;
   const feeds = report?.feeds || [];
   const m = report?.meta || {};
 
@@ -352,7 +408,7 @@ function paint(ctx) {
   // actually schedule something. A historical news or insider checkbox with no possible row is
   // clutter, not transparency; the complete source account returns under Till Today.
   const shown = horizon === HORIZON.UPCOMING
-    ? scopedFeeds.filter((f) => ['earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming'].includes(f.id) || f.events.some((event) => isUpcomingEvent(event, day)))
+    ? scopedFeeds.filter((f) => ['earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming'].includes(f.id) || partitionEvents(f.events, day).upcoming.length)
     : scopedFeeds;
   const available = shown.map((f) => f.id);
   // A SELECTION THAT SURVIVES A REPAINT BUT NOT A VANISHED FEED. Rows land while feeds settle and
@@ -363,16 +419,20 @@ function paint(ctx) {
     picked = new Set([...picked].filter((id) => available.includes(id)));
     if (!picked.size || picked.size === available.length) picked = null;
   }
-  const feedVisible = picked ? events.filter((e) => picked.has(e.feed)) : events;
-  const periodEvents = feedVisible.filter((event) => horizon === HORIZON.UPCOMING ? isUpcomingEvent(event, day) : !isUpcomingEvent(event, day));
-  const visible = horizon === HORIZON.UPCOMING ? collapseUpcoming(periodEvents) : periodEvents;
-  const allUpcoming = collapseUpcoming(events.filter((event) => isUpcomingEvent(event, day)));
-  const allThrough = events.filter((event) => !isUpcomingEvent(event, day));
-  const displayFeeds = shown.map((feed) => ({
-    ...feed,
-    count: feed.events.filter((event) => horizon === HORIZON.UPCOMING ? isUpcomingEvent(event, day) : !isUpcomingEvent(event, day)).length,
-    todayCount: feed.events.filter((event) => event.day === day && (horizon === HORIZON.UPCOMING ? isUpcomingEvent(event, day) : !isUpcomingEvent(event, day))).length,
-  }));
+  const partition = partitionEvents(events, day);
+  const allUpcoming = partition.calendar, allThrough = partition.through;
+  const selection = JSON.stringify([day, horizon, picked && [...picked].sort()]);
+  if (lastVisible?.events !== events || lastVisible.selection !== selection) {
+    const period = horizon === HORIZON.UPCOMING ? partition.upcoming : allThrough;
+    const selected = picked ? period.filter(event => picked.has(event.feed)) : period;
+    lastVisible = { events, selection, rows: horizon === HORIZON.UPCOMING ? collapseUpcoming(selected) : selected };
+  }
+  const visible = lastVisible.rows;
+  const displayFeeds = shown.map(feed => {
+    const parts = partitionEvents(feed.events, day);
+    return { ...feed, count: horizon === HORIZON.UPCOMING ? parts.upcoming.length : parts.through.length,
+      todayCount: horizon === HORIZON.UPCOMING ? parts.todayUpcoming : parts.todayThrough };
+  });
 
   const focus = captureFocus(ctx.root);
   // Native details changes `open` synchronously but dispatches `toggle` later.
@@ -424,7 +484,9 @@ function paint(ctx) {
       if (cov) cov.scrollTop = sourceScrollTop;
     }
     
-    tableInstance.updateData(visible, undefined, { loading: !report || report.pending > 0 });
+    const status = { loading: !report || report.pending > 0 };
+    if (tableRows === visible) tableInstance.updateStatus(status);
+    else { tableInstance.updateData(visible, undefined, status); tableRows = visible; }
     return;
   }
 
@@ -467,6 +529,7 @@ function paint(ctx) {
 
   tableDispose = table.wire(ctx.root);
   tableInstance = table;
+  tableRows = visible;
   arrivalsUI.attach(ctx.root);
   // Wire the shared controls first, then move their existing nodes beside the view controls.
   // Search and the three filters now get a full row even on a narrower laptop. The kit still

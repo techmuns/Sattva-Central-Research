@@ -112,7 +112,7 @@ jobs:
       - name: Verify Screener Insights capture and context-only correlation
         run: node scripts/verify-screener-insights.mjs
       - name: Verify complete General Alerts pool and scope isolation
-        run: node scripts/verify-general-alerts.mjs
+        run: node scripts/verify-general-alerts.mjs && node scripts/verify-all-alerts-restore.mjs
       - name: Verify AI alert search and calendar dates
         run: node scripts/verify-ai-alerts.mjs && node scripts/verify-alert-capacity.mjs
       - name: Verify material alert lifecycle and optional social coverage
@@ -222,7 +222,7 @@ jobs:
       - name: Verify All Alerts time horizons, source controls and portfolio calendar isolation
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-general-alerts-ui.mjs
+        run: node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
       - name: Verify the portfolio calendar survives an unreadable S Screen capture
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

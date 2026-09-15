@@ -539,6 +539,7 @@ export function scoreTable(config) {
   
   let activeRepaint = null;
   let activePresentation = null;
+  let activeLoading = null;
   let isDisposed = false;
 
   const countText = (visible) => {
@@ -1013,6 +1014,7 @@ export function scoreTable(config) {
       }
       countEl.textContent = busy ? 'Loading results…' : countText(current);
     }
+    activeLoading = syncLoadingState;
 
     // Large retained tables need a paint before filtering, so the dropdown closes and the
     // reader sees feedback. Read the latest view/data in one queued task: rapid changes cannot
@@ -1373,6 +1375,7 @@ export function scoreTable(config) {
       isDisposed = true;
       activeRepaint = null;
       activePresentation = null;
+      activeLoading = null;
       filterGeneration++;
       if (filterFrame) cancelAnimationFrame(filterFrame);
       clearTimeout(filterTask);
@@ -1422,7 +1425,14 @@ export function scoreTable(config) {
     }
   }
 
-  return { html, wire, view, updateRows: (keys) => updateRows(keys), updateData, refreshPresentation: () => activePresentation?.() };
+  // Source status may change while the immutable row model stays identical. Callers that know
+  // that can update the existing loading state without discarding search, sorting or row caches.
+  function updateStatus(options = {}) {
+    if (isDisposed) return;
+    if (typeof options.loading === 'boolean') loading = options.loading;
+    activeLoading?.();
+  }
+  return { html, wire, view, updateRows: (keys) => updateRows(keys), updateData, updateStatus, refreshPresentation: () => activePresentation?.() };
 }
 
 // ---------------------------------------------------------------------------------------

@@ -9,7 +9,7 @@ const hash = async text => [...new Uint8Array(await crypto.subtle.digest('SHA-25
   .map(byte => byte.toString(16).padStart(2, '0')).join('');
 const yieldForInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
 
-export function createAlertWindowCache({ read = readEntry, write = writeEntryBatch, partBytes = ALERT_CACHE_PART_BYTES } = {}) {
+export function createAlertWindowCache({ read = readEntry, write = writeEntryBatch, partBytes = ALERT_CACHE_PART_BYTES, cacheKey = ALERT_WINDOW_CACHE_KEY } = {}) {
   let state = { status: 'unchecked', persistent: null, events: 0, parts: 0 };
   const listeners = new Set();
   const update = value => { state = value; for (const fn of listeners) { try { fn(); } catch { /* A view cannot break persistence. */ } } };
@@ -24,9 +24,9 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
     // Cleanup shares the writer queue. Recheck the current manifest so a later write that
     // reused an old content hash cannot lose its parts when an earlier reader finishes.
     try {
-      const current = await read(ALERT_WINDOW_CACHE_KEY);
+      const current = await read(cacheKey);
       if (activeReaders) return;
-      const keep = new Set((current?.value?.parts || []).map(part => `${ALERT_WINDOW_CACHE_KEY}:part:${part.hash}`));
+      const keep = new Set((current?.value?.parts || []).map(part => `${cacheKey}:part:${part.hash}`));
       const candidates = [...obsoleteParts];
       await write(new Map(), candidates.filter(key => !keep.has(key)));
       for (const key of candidates) obsoleteParts.delete(key);
@@ -36,7 +36,7 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
   async function load() {
     activeReaders++;
     try {
-      const entry = await read(ALERT_WINDOW_CACHE_KEY);
+      const entry = await read(cacheKey);
       if (!entry) return null;
       const manifest = entry.value;
       if (manifest?.version === 1) return entry; // Older intact caches remain readable.
@@ -46,7 +46,7 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
       for (const part of manifest.parts) {
         if (!/^[a-f0-9]{64}$/.test(part.hash || '') || !Number.isSafeInteger(part.count) || part.count < 1 ||
             !Number.isSafeInteger(part.bytes) || part.bytes < 2) throw Error('Invalid alert cache part');
-        const saved = await read(`${ALERT_WINDOW_CACHE_KEY}:part:${part.hash}`);
+        const saved = await read(`${cacheKey}:part:${part.hash}`);
         const json = saved?.value?.json;
         if (typeof json !== 'string' || encoder.encode(json).byteLength !== part.bytes || await hash(json) !== part.hash)
           throw Error('Incomplete alert cache');
@@ -76,7 +76,7 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
         if (!batch.length) return;
         const json = `[${batch.join(',')}]`, digest = await hash(json);
         parts.push({ hash: digest, count: batch.length, bytes: encoder.encode(json).byteLength });
-        entries.set(`${ALERT_WINDOW_CACHE_KEY}:part:${digest}`, { value: { json } });
+        entries.set(`${cacheKey}:part:${digest}`, { value: { json } });
         batch = []; bytes = 2;
         await yieldForInput();
       };
@@ -88,11 +88,11 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
       }
       await flush();
       
-      const oldManifestEntry = await read(ALERT_WINDOW_CACHE_KEY);
+      const oldManifestEntry = await read(cacheKey);
       const oldManifest = oldManifestEntry?.value;
       const newPartHashes = new Set(parts.map(p => p.hash));
       
-      entries.set(ALERT_WINDOW_CACHE_KEY, { value: { ...metadata, version: 2, count: events.length, parts } });
+      entries.set(cacheKey, { value: { ...metadata, version: 2, count: events.length, parts } });
       
       // Publish first. Readers that already hold the preceding manifest still need its parts.
       const result = await write(entries);
@@ -102,7 +102,7 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
       if (oldManifest?.version === 2 && Array.isArray(oldManifest.parts)) {
         for (const oldPart of oldManifest.parts) {
           if (oldPart.hash && !newPartHashes.has(oldPart.hash)) {
-            obsoleteParts.add(`${ALERT_WINDOW_CACHE_KEY}:part:${oldPart.hash}`);
+            obsoleteParts.add(`${cacheKey}:part:${oldPart.hash}`);
           }
         }
       }

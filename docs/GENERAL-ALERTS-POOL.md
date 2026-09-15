@@ -9,6 +9,36 @@ This is **available retained source coverage**, not a claim to capture every mar
 retention, source outages, absent captures and private/on-demand lookups remain explicit limitations.
 No production collection jobs are dispatched by opening this page.
 
+## Restore and update safeguards (15 September 2026)
+
+All Alerts uses `all-alerts:public-pool:v1`, separate from AI Alerts' fourteen-day window.
+The saved pool keeps public source rows before view scoping and portfolio discovery mapping,
+including full `sourceRecord`, older history, undated/unresolved rows and future schedules.
+Private lookup rows, holding weights and the portfolio-only calendar are excluded. The existing
+partition writer verifies every part and commits parts and manifest atomically; a corrupt or
+unavailable copy falls back to ordinary source loading. No count or date cap trims this pool.
+
+These rules preserve the earlier fixes and are regression-tested:
+
+- Disk restoration and live collection have independent lifecycle guards. An empty initial
+  publication cannot cancel restoration; a late saved copy cannot replace a completed source.
+- A pending, failed or unrequested source retains previously read evidence while accepting new
+  identities and corrections. Each successfully read source replaces its own contribution,
+  including a confirmed empty result; an older capture cannot retract a newer saved reading.
+  Collection still publishes before the slowest source finishes.
+- Membership changes reproject public sources against the current book/watchlist/exclusions.
+  Private sources are read from current session memory on every adoption and return visit.
+- Unchanged immutable source arrays reuse scope/date projections and counts. A status-only
+  table update preserves its search index, filters and scroll state; changed content still
+  invalidates the affected rows. Row counts and exports always describe the complete model.
+- Existing Today/history choices, company links, source controls, layout, private boundaries,
+  arrival animation and collection cadence remain in effect. Ready in-memory evidence sets
+  the arrival baseline before an overlapping refresh; disk history never announces itself as new.
+
+`verify-all-alerts-restore.mjs` and `verify-all-alerts-restore-ui.mjs` exercise these cases alongside
+the existing General Alerts, AI Alerts and cache-capacity suites. This repair does not change
+the shared service worker's data-freshness policy; only its module release revision advances.
+
 ## Included sources
 
 | Source tab | All Alerts records |
