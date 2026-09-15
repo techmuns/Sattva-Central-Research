@@ -9,6 +9,10 @@ import { fileURLToPath } from 'node:url';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const fixtureModule = `
+import { FEEDS } from './daily-alerts-real.js';
+// This fixture has always modelled Company news alone. Keep its source-health assertions
+// about that source while exercising the real report adoption and current scope projection.
+FEEDS.splice(0, FEEDS.length, FEEDS.find(feed => feed.id === 'news'));
 export * from './daily-alerts-real.js';
 export async function collect(options) {
   (window.fixtureReads ||= []).push({refresh:options.refresh,load:options.load});
@@ -30,7 +34,11 @@ const raw = {title:'JM Financial initiates coverage on OnEMI Technology with Buy
 const event = (row) => ({...real.newsSignal(row),id:row.url,sourceRecord:row,headline:row.title,detail:'Published by '+row.source,company:row.company,ticker:row.ticker,entityId:row.entityId,day:row.date,time:'12:48',at:row.publishedAt,url:row.url,feed:'news',feedLabel:'Company news'});
 window.fixtureStory = event(attributeNewsRow(raw,identity));
 window.fixtureNoise = event(attributeNewsRow({...raw,title:'Kiss band announces concert',url:'https://example.test/kiss-band',date:'2026-09-07'},identity));
-window.fixtureReport = (events,status='ok',day='2026-09-07') => ({scope:'portfolio',includeHistory:true,day,events,feeds:[{id:'news',label:'Company news',status,reachesToday:status==='ok',count:events.length,todayCount:0,events}],pending:status==='pending'?1:0,meta:{companies:events.length?1:0,days:1,oldestEventDay:events[0]?.day,newestEventDay:events.at(-1)?.day}});
+window.fixtureReport = (events,status='ok',day=real.today()) => {
+  const feed={...real.FEEDS[0],status,reachesToday:status==='ok',count:events.length,todayCount:0,events};
+  return {scope:'portfolio',includeHistory:true,day,events,feeds:[feed],sourceFeeds:[feed],pending:status==='pending'?1:0,
+    meta:{companies:events.length?1:0,days:1,oldestEventDay:events[0]?.day,newestEventDay:events.at(-1)?.day}};
+};
 window.fixtureRender = () => tab.render({root:document.querySelector('#root'),params:{},scope:'portfolio',data:{}});
 window.fixtureRefresh = () => refresh.refreshAll();
 window.fixtureDestroy = () => tab.destroy();
@@ -101,13 +109,14 @@ try {
   assert.match(await page.locator('tbody').innerText(), /JM Financial/, 'failure retains the already-visible exact article');
   assert.equal(await search.inputValue(), 'onemi technology');
   assert.match(await page.locator('[data-feed="news"]').textContent(), /partial/);
+  await page.clock.setSystemTime(new Date('2026-09-08T09:00:00Z'));
   await page.evaluate(() => { window.fixtureDestroy(); window.fixtureRender(); });
   assert.match(await page.locator('tbody').innerText(), /JM Financial/, 'navigation retains the prior report while rechecking');
   await page.evaluate(() => window.fixtureRelease(window.fixtureReport([window.fixtureStory,window.fixtureNoise], 'ok', '2026-09-08')));
   await page.waitForFunction(() => document.querySelector('[data-alerts-coverage-state]')?.dataset.alertsCoverageState === 'checked');
   assert.match(await page.locator('tbody').innerText(), /JM Financial/, 'date rollover does not drop retained All Alerts news');
   const beforeResume = await page.evaluate(() => window.fixtureReads.length);
-  await page.clock.setSystemTime(new Date('2026-09-07T09:02:00Z'));
+  await page.clock.setSystemTime(new Date('2026-09-08T09:02:00Z'));
   await page.evaluate(() => {
     window.dispatchEvent(new Event('focus'));
     window.dispatchEvent(new Event('online'));
@@ -120,7 +129,7 @@ try {
   assert.deepEqual(errors, []);
   await page.evaluate(() => window.fixtureDestroy());
   const afterDestroy = await page.evaluate(() => window.fixtureReads.length);
-  await page.clock.setSystemTime(new Date('2026-09-07T09:04:00Z'));
+  await page.clock.setSystemTime(new Date('2026-09-08T09:04:00Z'));
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   assert.equal(await page.evaluate(() => window.fixtureReads.length), afterDestroy, 'destroy removes focus rechecks');
   console.log('PASS browser: initial loading is not Live/zero, exact OnEMI KISSHT search, optional noisy-match separation, partial/failure disclosure, search retention, reopening and rollover.');
