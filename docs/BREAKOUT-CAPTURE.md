@@ -39,7 +39,8 @@ that every brief breakout will be observed.
   this new Worker and browser release still requires a successful deployment.
 - Visible dashboards read the saved capture every minute and on focus/return or
   reconnect. Daily data revalidates every 15 minutes and on return when due.
-  Browser reads do not spend Muns quote requests. An already-open popup updates
+  Public capture responses share a 30-second edge cache to reduce database reads;
+  the health endpoint remains uncached. Browser reads do not spend Muns quote requests. An already-open popup updates
   with the table. Search, selected chips, sorting and scroll are retained during
   capture refresh. The service-worker release is advanced for returning readers.
 
@@ -81,7 +82,8 @@ checkpoint replay is refused. No history is deleted when the date or scope chang
 When two or more expected 15-minute slots are missed, the next successful run
 journals the gap and attempts available Yahoo 15-minute candles for the most
 recent five calendar days. Only continuous sessions beginning at 09:15 can supply
-cumulative volume. Completed candle closes are labelled `recovered-candle` and
+cumulative volume. Corrections found during recovery retain both observations; unchanged candles
+are deduplicated. Completed candle closes are labelled `recovered-candle` and
 never replace the latest observed quote. Interrupted or failed recovery remains
 eligible in the following runs. Gaps outside that horizon or unavailable upstream
 remain disclosed. Recovery cannot reconstruct every trade or an intra-candle

@@ -8,7 +8,7 @@ function conditional(request, payload, age = 0) {
   return revalidate(request, tagged(body, tag, age), 'capture');
 }
 
-export async function handleBreakouts(request, env, { fetcher = fetch, now = Date.now, identity = breakoutCollectorIdentity } = {}) {
+export async function handleBreakouts(request, env, { fetcher = fetch, now = Date.now, identity = breakoutCollectorIdentity, edgeCache = globalThis.caches?.default } = {}) {
   const url = new URL(request.url);
   if (!env.CAPTURE_REGISTRY) return reply({ ok: false, reason: 'storage-unavailable' }, 503);
   const store = env.CAPTURE_REGISTRY.getByName(BREAKOUT_OBJECT);
@@ -29,12 +29,20 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
   }
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
   try {
+    const cacheKey = new Request(new URL('/api/breakouts', request.url));
+    if (url.pathname === '/api/breakouts' && edgeCache) {
+      const cached = await edgeCache.match(cacheKey);
+      if (cached) return revalidate(request,cached,'edge');
+    }
     if (url.pathname === '/api/breakouts/history') return reply(await store.breakoutHistory(url.searchParams.get('ticker'), url.searchParams.get('before')));
     const capture = await store.breakoutRead();
     const health = liveCoverage(capture, capture.targets || [], now());
     const schedule = await store.breakoutScheduleStatus();
     if (url.pathname === '/api/breakouts/health') return reply({ ...health, runId: capture.runId, captureStartedAt: capture.captureStartedAt, schedule }, health.partial || !health.total || schedule.overdue ? 503 : 200);
-    return conditional(request, { ...capture, health, schedule });
+    const {body,tag} = withTag({...capture,health,schedule});
+    const response = tagged(body,tag,30);
+    if (edgeCache) await edgeCache.put(cacheKey,response.clone()).catch(()=>{});
+    return revalidate(request,response,'capture');
   } catch { return reply({ ok: false, reason: 'capture-unavailable' }, 503); }
 }
 

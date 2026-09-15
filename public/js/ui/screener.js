@@ -1470,7 +1470,7 @@ export function openDrill({ name = '', sub = '', link = null, linkLabel = 'Open 
                  <div class="rounded-lg bg-slate-50 p-3"${hs.id ? ` data-stat="${escapeHtml(hs.id)}"` : ''}>
                    <div class="text-xs font-medium text-slate-500">${escapeHtml(hs.label)}</div>
                    <div class="text-2xl font-bold tabular-nums ${METRIC_TONE[hs.tone] || 'text-slate-900'}">${escapeHtml(hs.value)}</div>
-                   ${hs.caption ? `<div class="truncate text-xs text-slate-500">${escapeHtml(hs.caption)}</div>` : ''}
+                   ${hs.caption ? `<div class="${hs.captionWrap ? '' : 'truncate'} text-xs text-slate-500">${escapeHtml(hs.caption)}</div>` : ''}
                  </div>`
                  )
                  .join('')}

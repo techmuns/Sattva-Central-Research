@@ -46,7 +46,7 @@ try{
  // A visible automatic interval updates the open popup and table from one shared read.
  await page.clock.runFor(61000);
  await page.waitForFunction(()=>document.querySelector('[data-cmp="TEST"]')?.textContent==='₹108.00');
- assert((await popup.innerText()).includes('₹108'));
+ assert((await popup.innerText()).includes('₹108'));assert((await popup.innerText()).includes('+10.20%'));
  assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(),'test company');
  assert((await page.locator('#drill-content').innerText()).includes('2026-09-11'));
  await page.locator('[data-drill-close]').click();

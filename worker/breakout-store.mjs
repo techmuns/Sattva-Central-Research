@@ -8,7 +8,7 @@ export class BreakoutStore {
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_runs (id TEXT PRIMARY KEY, started INTEGER NOT NULL, manifest TEXT NOT NULL, completed TEXT)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_quotes (run TEXT NOT NULL, ticker TEXT NOT NULL, at INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(run,ticker))');
     sql.exec('CREATE INDEX IF NOT EXISTS breakout_quote_history ON breakout_quotes(ticker,at DESC,run DESC)');
-    sql.exec('CREATE TABLE IF NOT EXISTS breakout_recovered (ticker TEXT NOT NULL, at INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(ticker,at))');
+    sql.exec('CREATE TABLE IF NOT EXISTS breakout_recovered (ticker TEXT NOT NULL, at INTEGER NOT NULL, run TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(ticker,at,run))');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_gaps (ticker TEXT NOT NULL, since INTEGER NOT NULL, until INTEGER NOT NULL, reason TEXT NOT NULL, PRIMARY KEY(ticker,since))');
     sql.exec('CREATE INDEX IF NOT EXISTS breakout_gap_pending ON breakout_gaps(reason,until,ticker)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_latest (ticker TEXT PRIMARY KEY, at INTEGER NOT NULL, payload TEXT NOT NULL)');
@@ -66,7 +66,15 @@ export class BreakoutStore {
     const slots = new Set(recoverySlots(from, to));
     if (rows.some(row => row.ticker !== ticker || row.kind !== 'recovered-candle' || !slots.has(Date.parse(row.quoteAt)))) throw Error('Invalid recovery candle');
     return this.storage.transactionSync(() => {
-      for (const row of rows) this.storage.sql.exec('INSERT OR IGNORE INTO breakout_recovered VALUES(?,?,?)', ticker, Date.parse(row.quoteAt), JSON.stringify(row));
+      for (const row of rows) {
+        const at = Date.parse(row.quoteAt), payload = JSON.stringify(row);
+        const replay = this.storage.sql.exec('SELECT payload FROM breakout_recovered WHERE ticker=? AND at=? AND run=?',ticker,at,run).toArray()[0];
+        if (replay && replay.payload !== payload) throw Error('Conflicting recovery replay');
+        const prior = this.storage.sql.exec('SELECT payload FROM breakout_recovered WHERE ticker=? AND at=? ORDER BY rowid DESC LIMIT 1',ticker,at).toArray()[0];
+        // Keep corrections as separate evidence; repeated unchanged candles need no duplicate.
+        if (prior && JSON.stringify({...JSON.parse(prior.payload),checkedAt:row.checkedAt}) === payload) continue;
+        this.storage.sql.exec('INSERT OR IGNORE INTO breakout_recovered VALUES(?,?,?,?)',ticker,at,run,payload);
+      }
       const filled = new Set(this.storage.sql.exec('SELECT at FROM breakout_recovered WHERE ticker=? AND at>? AND at<=?',ticker,from,to).toArray().map(row=>row.at));
       const remaining = [...slots].filter(at=>!filled.has(at)).length;
       this.storage.sql.exec('INSERT INTO breakout_gaps VALUES(?,?,?,?) ON CONFLICT(ticker,since) DO UPDATE SET until=excluded.until,reason=excluded.reason',ticker,from,to,remaining ? 'unrecovered' : 'candles-recovered');
@@ -108,7 +116,7 @@ export class BreakoutStore {
     if (!tickerValid(ticker)) throw Error('Invalid ticker');
     let cursor;
     if (before) { cursor = JSON.parse(before); if (!Number.isFinite(cursor.at) || !/^\d+:\d+$/.test(cursor.run)) throw Error('Invalid history cursor'); }
-    const query = "SELECT run,at,payload FROM (SELECT run,at,payload FROM breakout_quotes WHERE ticker=? UNION ALL SELECT '0:0' AS run,at,payload FROM breakout_recovered WHERE ticker=?)";
+    const query = "SELECT run,at,payload FROM (SELECT run,at,payload FROM breakout_quotes WHERE ticker=? UNION ALL SELECT '0'||run AS run,at,payload FROM breakout_recovered WHERE ticker=?)";
     const data = cursor ? this.storage.sql.exec(query+' WHERE (at<? OR (at=? AND run<?)) ORDER BY at DESC,run DESC LIMIT 101', ticker,ticker,cursor.at,cursor.at,cursor.run).toArray()
       : this.storage.sql.exec(query+' ORDER BY at DESC,run DESC LIMIT 101',ticker,ticker).toArray();
     const page = data.slice(0, 100), last = page.at(-1);

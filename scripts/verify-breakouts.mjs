@@ -133,3 +133,22 @@ test('future universe rows resolve their Screener symbols before daily scoring c
  assert.equal(captureTarget({name:'Unresolved',ticker:null}),null);
  assert.equal(yahooSymbol({ticker:'ALPEXSOLAR-SM'}),'ALPEXSOLAR.NS');assert.equal(yahooSymbol({ticker:'504346'}),'504346.BO');
 });
+
+test('public capture reads share a short cache; conditional requests retain source timestamps',async()=>{
+ let reads=0,cached=null;
+ const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>{reads++;return {version:1,state:'complete',targets:['TEST'],rows:[quote()],failures:[],completedAt:iso(AT)};},breakoutScheduleStatus:async()=>({started:true})})}};
+ const options={now:()=>AT,edgeCache:{match:async()=>cached?.clone(),put:async(key,response)=>{cached=response;}}};
+ const first=await handleBreakouts(new Request('https://test/api/breakouts'),env,options);
+ const second=await handleBreakouts(new Request('https://test/api/breakouts',{headers:{'if-none-match':first.headers.get('etag')}}),env,options);
+ assert.equal(second.status,304);assert.equal(reads,1);assert.equal((await first.json()).rows[0].quoteAt,iso(AT));
+ await handleBreakouts(new Request('https://test/api/breakouts/health'),env,options);assert.equal(reads,2);
+});
+
+test('later historical corrections retain both observations without duplicating unchanged candles',()=>{
+ const {store}=harness(),from=AT-15*60000;
+ for (const run of ['1:1','2:1','3:1']) store.begin(run,['TEST']);
+ store.recovery('1:1','TEST',from,AT,[quote('TEST',AT,{kind:'recovered-candle',price:101})]);
+ store.recovery('2:1','TEST',from,AT,[quote('TEST',AT,{kind:'recovered-candle',price:101})]);
+ store.recovery('3:1','TEST',from,AT,[quote('TEST',AT,{kind:'recovered-candle',price:102})]);
+ assert.deepEqual(store.history('TEST').rows.map(row=>row.price).sort(),[101,102]);
+});

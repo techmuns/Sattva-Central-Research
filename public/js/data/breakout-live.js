@@ -41,6 +41,9 @@ export function priceInfo(company, now = Date.now()) {
     at: use?.quoteAt || null, source: use?.provider || 'Daily close', stale: !!bad,
     label: use ? `${bad ? 'Saved · ' : ''}${stamp(use.quoteAt)} · ${use.provider}${use.exchange ? ` · ${use.exchange}` : ''}` : `Daily close · ${company.price_date || 'date unavailable'}` };
 }
+export function priceCaption(info) {
+  return [info.change == null ? '' : `${info.change > 0 ? '+' : ''}${Number(info.change).toFixed(2)}% vs previous close`, info.label].filter(Boolean).join(' · ');
+}
 export function stamp(at) {
   return at && Number.isFinite(Date.parse(at)) ? `${new Date(at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} IST` : 'not available';
 }

@@ -81,12 +81,12 @@ export function openTechnicalsDrill(scored) {
       if (!element) return;
       const info = live.priceInfo(c);
       element.children[1].textContent = info.price == null ? '—' : `₹${Number(info.price).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}`;
-      element.children[2].textContent = info.label;
+      element.children[2].textContent = live.priceCaption(info);
       element.children[2].className = `text-xs ${info.stale ? 'text-amber-700' : 'text-slate-500'}`;
     });
   };
   const info = live.priceInfo(c);
-  const priceStat = {id:'breakout-price',label:'CMP',value:info.price == null ? '—' : `₹${Number(info.price).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}`,caption:info.label,tone:'neutral'};
+  const priceStat = {id:'breakout-price',label:'CMP',value:info.price == null ? '—' : `₹${Number(info.price).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}`,caption:live.priceCaption(info),captionWrap:true,tone:'neutral'};
   const tier = scored.hardFails.length ? 'hardfail' : null;
 
   if (scored.tickerError) {

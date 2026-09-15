@@ -136,7 +136,7 @@ function atrCell(v) {
 }
 function cmpCell(c) {
   const info = live.priceInfo(c);
-  return `<span class="font-semibold text-slate-800" data-cmp="${escapeHtml(c.ticker)}">${info.price == null ? '—' : formatRupee(info.price, {decimals:2})}</span>
+  return `<span class="font-semibold text-slate-800" data-cmp="${escapeHtml(c.ticker)}">${info.price == null ? '—' : formatRupee(info.price, {decimals:2})}</span> ${info.change == null ? '' : toneSpan(`${info.change > 0 ? '+' : ''}${Number(info.change).toFixed(2)}%`, info.change >= 0 ? 'pos' : 'neg')}
     <div class="text-[10px] ${info.stale ? 'text-amber-700' : 'text-slate-500'}">${escapeHtml(info.label)}</div>`;
 }
 
