@@ -203,6 +203,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-tab-performance-ui.mjs
+      - name: Verify filter transitions, loading placeholders and latest selection
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-filter-loading-ui.mjs
       - name: Verify All Alerts time horizons, source controls and portfolio calendar isolation
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

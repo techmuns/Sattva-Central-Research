@@ -18,6 +18,7 @@ import { escapeHtml, syncListDOM } from '../core/dom.js';
 import * as store from '../core/watchlist.js';
 import { avatarFor, scoreTier, scoreBadgeClass, tierLabel, tierColor, statusPill, signalDots } from './visual.js';
 import { mountWindowedList } from './windowed-list.js';
+import { coverTableResults } from './loading.js';
 import { state } from '../core/state.js';
 import * as notebook from '../core/bookmarks.js';
 import { snapshotForRow, SECTION_LABELS } from '../core/bookmark-record.js';
@@ -462,6 +463,8 @@ export function scoreTable(config) {
     preindexSearch = true,
     onScrollActivity = null,
     scrollLabel = `${nameLabel} data table`,
+    // Show placeholders only when no matching rows have arrived and a read is still active.
+    loading = false,
   } = config;
 
   // `watchKey` defaults to the row key, which is correct wherever a row is a company. `watchName`
@@ -646,7 +649,8 @@ export function scoreTable(config) {
 
   function bodyHtml(list, from = 0, to = list.length) {
     if (!list.length) {
-      return `<tr><td colspan="${colCount}" class="px-4 py-12 text-center text-slate-400">${escapeHtml(emptyMessage)}</td></tr>`;
+      const message = typeof emptyMessage === 'function' ? emptyMessage() : emptyMessage;
+      return `<tr><td colspan="${colCount}" class="px-4 py-12 text-center text-slate-400">${escapeHtml(message)}</td></tr>`;
     }
     const watched = loadWatchlist();
     const end = Math.min(to, list.length);
@@ -861,6 +865,7 @@ export function scoreTable(config) {
     const watchIcon = host.querySelector('[data-watch-icon]');
     const watchCount = host.querySelector('[data-watch-count]');
     const tableEl = host.querySelector('table');
+    const exportBtn = host.querySelector('[data-export]');
     const offBookmarkCache = notebook.onChange(() => rowHtmlCache.clear());
     const offBookmarks = wireBookmarks(host, button => {
       const slug = button.closest('[data-row-key]')?.dataset.rowKey;
@@ -982,6 +987,42 @@ export function scoreTable(config) {
     // still leaks nothing. Which scroller matters depends on `stickyHead`: with it the tbody is
     // its own scroll container, without it the page scrolls. Both, then.
     const scroller = host.querySelector('[data-table-scroll]');
+    let filterFrame = 0;
+    let filterTask = 0;
+    let releaseLoading = null;
+    let exportWasDisabled = false;
+    const filterPending = () => !!(filterFrame || filterTask);
+
+    function syncLoadingState() {
+      const busy = filterPending() || (loading && current.length === 0);
+      if (busy && !releaseLoading) {
+        releaseLoading = coverTableResults(host, scroller, { columns: colCount });
+        exportWasDisabled = exportBtn.disabled;
+        exportBtn.disabled = true;
+      } else if (!busy && releaseLoading) {
+        releaseLoading(); releaseLoading = null;
+        exportBtn.disabled = exportWasDisabled;
+      }
+      countEl.textContent = busy ? 'Loading results…' : countText(current);
+    }
+
+    // Large retained tables need a paint before filtering, so the dropdown closes and the
+    // reader sees feedback. Read the latest view/data in one queued task: rapid changes cannot
+    // allow an older selection to overwrite the newest one. Small local tables stay immediate.
+    function requestFilterPaint() {
+      if (rows.length < 1000 && !filterPending()) { repaint(); return; }
+      if (filterPending()) return;
+      stopFill();
+      filterFrame = requestAnimationFrame(() => {
+        filterFrame = 0;
+        filterTask = setTimeout(() => {
+          filterTask = 0;
+          if (isDisposed || !host.isConnected) { releaseLoading?.(); releaseLoading = null; return; }
+          repaint();
+        }, 0);
+      });
+      syncLoadingState();
+    }
     const windowed = isWindowed ? mountWindowedList({
       scroller, content: body, items: current, key, rowSelector: 'tr[data-row-key]',
       renderRows: bodyHtml, estimateHeight: VIRTUAL_ROW_HEIGHT, initialKey: initialRowKey,
@@ -1067,7 +1108,12 @@ export function scoreTable(config) {
     // The reorder path needs every next row already in the DOM, which is only true once the fill
     // has finished. Mid-fill it falls through to the rebuild — which is now the cheap path, since
     // a rebuild is a screenful plus a fresh fill rather than 1,722 rows.
-    function repaint({ resetScroll = true } = {}) {
+    function repaint(options) {
+      try { paintRows(options); }
+      finally { syncLoadingState(); }
+    }
+
+    function paintRows({ resetScroll = true } = {}) {
       stopFill();
       current = visibleRows();
       head.innerHTML = headHtml();
@@ -1079,6 +1125,7 @@ export function scoreTable(config) {
           if (watchCount) watchCount.textContent = String(watchlist.size());
           return;
         }
+        if (resetScroll && scroller) scroller.scrollTop = 0;
         const visibleIndex = scroller ? Math.floor(scroller.scrollTop / VIRTUAL_ROW_HEIGHT) : 0;
         virtualStart = -1; // the filtered/sorted row identities changed; force a bounded rebuild
         paintVirtualWindow(visibleIndex - VIRTUAL_OVERSCAN_ROWS);
@@ -1128,6 +1175,7 @@ export function scoreTable(config) {
 
       countEl.textContent = countText(current);
       if (watchCount) watchCount.textContent = String(watchlist.size());
+      if (resetScroll && scroller) scroller.scrollTop = 0;
     }
 
     // Rebuild named rows in place, leaving the row SET — and so the reader's search, filters,
@@ -1191,7 +1239,7 @@ export function scoreTable(config) {
       const k = th.dataset.sort;
       if (view.sort && view.sort.key === k) view.sort.dir = view.sort.dir === 'asc' ? 'desc' : 'asc';
       else view.sort = { key: k, dir: 'desc' };
-      repaint();
+      requestFilterPaint();
     });
 
     // ONE COMPANY CAN BE SEVERAL ROWS. Three announcements from one filer share a watch key
@@ -1259,13 +1307,13 @@ export function scoreTable(config) {
 
     searchEl.addEventListener('input', () => {
       view.q = searchEl.value.trim().toLowerCase();
-      repaint();
+      requestFilterPaint();
     });
 
     filterEls.forEach((el, i) =>
       el.addEventListener('change', () => {
         view.filters[i] = el.value;
-        repaint();
+        requestFilterPaint();
       })
     );
 
@@ -1276,14 +1324,15 @@ export function scoreTable(config) {
       watchBtn.classList.toggle('bg-amber-100', view.watchOnly);
       watchBtn.classList.toggle('border-amber-300', view.watchOnly);
       watchBtn.classList.toggle('text-amber-800', view.watchOnly);
-      repaint();
+      requestFilterPaint();
     });
 
     // Export: `onExport` receives the currently visible rows. Tabs that haven't adopted the
     // real exporter yet fall back to logging intent rather than silently doing nothing.
     // It reads `current` — the row DATA — not the DOM, so a fill still in flight cannot truncate
     // a workbook. That is the whole reason the visible set is tracked as an array.
-    host.querySelector('[data-export]').addEventListener('click', () => {
+    exportBtn.addEventListener('click', () => {
+      if (filterPending() || (loading && current.length === 0)) return;
       if (onExport) onExport(current, exportName);
       else console.info(`[stub] Export Excel → "${exportName}" (${current.length} rows).`);
     });
@@ -1291,11 +1340,19 @@ export function scoreTable(config) {
     startFill();
     startSearchWarm();
 
-    activeRepaint = repaint;
+    syncLoadingState();
+    activeRepaint = options => {
+      // A feed arriving during a user change updates `rows`; the queued filter reads it next.
+      if (!filterPending()) repaint(options);
+    };
 
     return () => {
       isDisposed = true;
       activeRepaint = null;
+      if (filterFrame) cancelAnimationFrame(filterFrame);
+      clearTimeout(filterTask);
+      filterFrame = 0; filterTask = 0;
+      releaseLoading?.(); releaseLoading = null;
       offBookmarks(); offBookmarkCache();
       windowed?.destroy();
       stopFill();
@@ -1307,9 +1364,10 @@ export function scoreTable(config) {
     };
   }
 
-  function updateData(newRows, newFilters = undefined) {
+  function updateData(newRows, newFilters = undefined, options = {}) {
     if (isDisposed) return;
     if (!newRows) return;
+    if (typeof options.loading === 'boolean') loading = options.loading;
     
     const oldRowsByKey = new Map(rows.map(r => [String(key(r)), r]));
     rows = newRows;
@@ -1326,7 +1384,7 @@ export function scoreTable(config) {
       filterDefs = newFilters;
       view.filters = filterDefs.map((f, i) => {
         const existing = view.filters[i];
-        if (existing && existing !== 'all' && f.options.some(o => o.value === existing)) return existing;
+        if (f.options.some(o => o.value === existing)) return existing;
         return f.value || 'all';
       });
     }

@@ -17,6 +17,7 @@ const data = (path) => JSON.parse(readFileSync(resolve(root, `data/${path}`)));
 // Deriving the date keeps the assertion exactly as strong and stops it expiring again.
 const IST_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
 const UPCOMING_DAY = IST_DAY.format(new Date(Date.now() + 5 * 86400000));
+const UPCOMING_FAR_DAY = IST_DAY.format(new Date(Date.now() + 40 * 86400000));
 const newsCases = JSON.parse(readFileSync(new URL('./fixtures/company-news-attribution.json', import.meta.url))).cases
   .filter(test => ['accent', 'ticker-brand', 'no-keyword', 'snippet-only', 'reported-mismatch'].includes(test.id));
 const newsFixture = { capturedAt: '2026-09-04T08:00:00Z', entities: newsCases.map(test => ({ ...test.identity, key: test.identity.ticker })),
@@ -75,6 +76,7 @@ const server = createServer((req, res) => {
       const payload = data('concall-scans.json');
       json({ ...payload, portfolioUpcoming: [
         { id: `STLTECH|${UPCOMING_DAY}|AGM|day`, companyKey: 'STLTECH', ticker: 'STLTECH', name: 'Sterlite Technologies', date: UPCOMING_DAY, time: null, eventType: 'AGM', companyUrl: 'https://www.screener.in/company/STLTECH/', sourceUrl: 'https://www.screener.in/company/STLTECH/', observedAt: '2026-09-04T07:00:00Z' },
+        { id: `STLTECH|${UPCOMING_FAR_DAY}|AGM|day`, companyKey: 'STLTECH', ticker: 'STLTECH', name: 'Sterlite Technologies', date: UPCOMING_FAR_DAY, time: null, eventType: 'AGM', companyUrl: 'https://www.screener.in/company/STLTECH/', sourceUrl: 'https://www.screener.in/company/STLTECH/', observedAt: '2026-09-04T07:00:00Z' },
       ], meta: { ...payload.meta, screener: { status: 'ok', checkedAt: '2026-09-04T07:00:00Z', portfolioUpcomingAvailable: true } } });
       return;
     }
@@ -145,11 +147,15 @@ try {
   await settled();
   console.log('Rendered complete All Alerts pool');
   const period = page.getByRole('combobox', { name: 'Date range', exact: true });
+  const selectPeriod = async value => {
+    await period.selectOption(value);
+    await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+  };
   assert.equal(await period.inputValue(), '3d', 'All Alerts opens on Last 3 days');
   for (const label of ['Today', 'Last 3 days', 'Last 7 days', 'Last 14 days', 'Last 30 days', 'This month', 'Date not supplied', 'All history through today']) {
     assert((await period.locator('option').allTextContents()).includes(label), `All Alerts offers ${label}`);
   }
-  await period.selectOption('all'); // The remaining regression suite deliberately exercises full history.
+  await selectPeriod('all'); // The remaining regression suite deliberately exercises full history.
   await stableReadingSurface(); // Changing the default period can overlap a trailing source repaint.
   const picker = page.locator('[data-alerts-sources]');
   const sourceSummary = page.locator('[data-sources-summary]');
@@ -208,30 +214,29 @@ try {
   });
   await page.locator('[data-table-search]').fill('Date window fixture');
   await page.waitForFunction(() => document.querySelectorAll('tbody tr[data-row-key]').length === 12);
-  await period.selectOption('today');
-  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 12, 'active search includes retained matches outside the date preset');
-  // Isolate the fixture using its source so calendar boundaries are tested without the
-  // deliberately history-wide text search introduced in #187.
+  await selectPeriod('today');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'the selected interval applies while searching');
+  // Isolate the fixture using its source to exercise the same calendar boundaries without search.
   await page.locator('[data-sources-summary]').click();
   await page.locator('[data-feed-toggle="company-documents"]').click();
   await page.locator('[data-sources-close]').click();
   await page.locator('[data-table-search]').fill('');
   for (const [value,count] of [['today',1],['3d',3],['7d',5],['14d',7],['30d',9],
     ['month',dateFixture.dates.filter(day => day >= dateFixture.day.slice(0,7) + '-01').length],['older',2],['undated',1],['all',12]]) {
-    await period.selectOption(value);
+    await selectPeriod(value);
     assert.equal(await page.locator('tbody tr[data-row-key]').count(), count, `All Alerts exact period membership: ${value}`);
   }
-  await period.selectOption('7d');
+  await selectPeriod('7d');
   await page.locator('[data-table-search]').fill('Date window fixture');
   await page.evaluate(() => window.show('portfolio'));
   await settled();
   assert.equal(await period.inputValue(), '7d', 'chosen period survives a source revalidation');
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'date window fixture');
-  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 12, 'retained search still spans history after revalidation');
+  assert.equal(await page.locator('tbody tr[data-row-key]').count(), 5, 'search and the selected interval still agree after revalidation');
   await page.locator('[data-sources-summary]').click();
   await page.locator('[data-feed-toggle="__all"]').click();
   await page.locator('[data-sources-close]').click();
-  await period.selectOption('today');
+  await selectPeriod('today');
   await page.evaluate(() => window.show('portfolio', { company: 'STLTECH' }));
   await settled();
   assert.equal(await period.inputValue(), 'all', 'company See all link explicitly restores complete history');
@@ -250,6 +255,14 @@ try {
   const upcomingHeaders = await page.locator('thead').innerText();
   assert(upcomingHeaders.includes('WHAT IS SCHEDULED'));
   assert(!upcomingHeaders.includes('DIRECTION') && !upcomingHeaders.includes('IMPORTANCE'));
+  await page.locator('[data-feed-toggle="screener-portfolio-upcoming"]').click();
+  await page.locator('[data-table-search]').fill('Sterlite');
+  for (const [value, count] of [['next7', 1], ['next30', 1], ['all', 2]]) {
+    await selectPeriod(value);
+    assert.equal(await page.locator('tbody tr[data-row-key]').count(), count, `upcoming search respects ${value}`);
+  }
+  await page.locator('[data-table-search]').fill('');
+  await page.locator('[data-feed-toggle="__all"]').click();
   if (process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT });
   await page.locator('[data-sources-close]').click();
   await page.locator('[data-horizon-toggle="through"]').click();

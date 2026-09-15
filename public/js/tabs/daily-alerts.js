@@ -412,7 +412,7 @@ function paint(ctx) {
       if (cov) cov.scrollTop = sourceScrollTop;
     }
     
-    tableInstance.updateData(visible);
+    tableInstance.updateData(visible, undefined, { loading: !report || report.pending > 0 });
     return;
   }
 
@@ -1017,6 +1017,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
   const filters = buildTableFilters(events, day, mode, matchesDate);
   return scoreTable({
     rows: events,
+    loading: !report || report.pending > 0,
     key: (e) => e.id,
     watchKey: (e) => e.ticker || null,
     watchName: (e) => e.company,
@@ -1084,7 +1085,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     filters,
     initialSort: { key: 'Date / time', dir: mode === HORIZON.UPCOMING ? 'asc' : 'desc' },
     initialView,
-    emptyMessage: emptyMessageFor(ctx.scope, day, mode),
+    emptyMessage: () => emptyMessageFor(ctx.scope, day, mode),
     exportName: `sattva-all-alerts-${mode === HORIZON.UPCOMING ? 'upcoming-from' : 'through'}-${day}`,
     onExport: (visible) => exportStream(visible, day, ctx.scope, mode),
   });
@@ -1092,7 +1093,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
 
 function buildTableFilters(events, day, mode, matchesDate) {
   if (mode === HORIZON.UPCOMING) {
-    return [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v, view) => (view && view.q) ? true : matchesDate(e.day, v) }];
+    return [{ label: 'Date range', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) }];
   }
   return [
     {
@@ -1114,7 +1115,7 @@ function buildTableFilters(events, day, mode, matchesDate) {
       ],
       match: (e, v) => e.direction === v,
     },
-    { label: 'Date range', value: '3d', options: dateRangeOptions(events, day, mode), match: (e, v, view) => (view && view.q) ? true : matchesDate(e.day, v) },
+    { label: 'Date range', value: '3d', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) },
     {
       label: 'Company relationship',
       options: [
