@@ -5010,6 +5010,9 @@ Indian Muns disclosure requests reuse the reviewed SME aliases in `announcement-
 (Alpex Solar, Jay Bee Laminations and Sahana). The source receives the bare exchange symbol;
 responses retain the requested portfolio ticker. Unknown suffixes and non-India requests are
 unchanged, and source success still requires a readable response.
+Scope matching recognises those same reviewed aliases in both directions, including Watchlist
+membership and Universe exclusions. Raw exchange rows and holdings keep their original tickers;
+older Jay Bee bulk deals therefore remain visible under its `JAYBEE-SM` portfolio holding.
 
 The schedule runs every 30 minutes during weekday day/evening hours plus a weekend check.
 The browser reads every minute while the feed is visible, and on focus/reconnection; it can
