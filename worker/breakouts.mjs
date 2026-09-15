@@ -80,7 +80,7 @@ async function dailyRevision(origin,fetcher,edgeCache) {
   const key=new Request(new URL('/api/technicals/revision',origin));
   try { const cached=await edgeCache?.match(key);if(cached){const value=await boundedJson(cached,2000);if(REVISION.test(value.sha))return value.sha;} } catch { /* Recheck the fixed repository. */ }
   const commits=await boundedJson(await fetcher('https://api.github.com/repos/techmuns/Sattva-Central-Research/commits?path=public%2Fdata%2Ftechnicals.json&per_page=1&sha=main',{
-    headers:{accept:'application/vnd.github+json','user-agent':'SattvaResearch'},redirect:'error',signal:AbortSignal.timeout(10000)}),64000);
+    headers:{accept:'application/vnd.github+json','user-agent':'SattvaResearch'},redirect:'manual',signal:AbortSignal.timeout(10000)}),64000);
   const sha=commits?.[0]?.sha;if(!REVISION.test(sha || ''))throw Error('Daily revision unavailable');
   if(edgeCache)await edgeCache.put(key,Response.json({sha},{headers:{'cache-control':'public, max-age=900'}})).catch(()=>{});
   return sha;
@@ -97,7 +97,9 @@ export async function handleTechnicals(request, env, { fetcher = fetch, edgeCach
     if (cached) return revalidate(request,cached,'edge');
     const revision=companion ? url.searchParams.get('revision') : await dailyRevision(url.origin,fetcher,edgeCache);
     const source = await fetcher(`https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/${revision}/public/data/${file}`, {
-      redirect: 'error', cache: 'no-cache', signal: AbortSignal.timeout(12000) });
+      // Workerd supports manual redirects, not redirect:'error'. Non-2xx responses
+      // are rejected by dailyResponse; never follow a different source location.
+      redirect: 'manual', cache: 'no-cache', signal: AbortSignal.timeout(12000) });
     const response = await dailyResponse(source,'repository',companion ? 86400 : 60,revision);
     if (edgeCache) await edgeCache.put(key,response.clone()).catch(()=>{});
     const result = revalidate(request,response,'repository');
