@@ -39,9 +39,9 @@ assert.equal(restored.events.find(row => row.id === old.id).sourceRecord.origina
 assert((await readCachedAllAlerts({ ...context, scope: 'portfolio', holdings: [] })).events.length === 0, 'saved public data is scoped against the current book');
 
 const emptySeed = report([], 'pending');
-const cachedFirst = adoptAllAlertsReport(emptySeed, restored, context);
-const seedFirst = adoptAllAlertsReport(emptySeed, restored, context);
-assert.deepEqual(seedFirst.events, cachedFirst.events, 'an empty seed cannot displace saved history');
+const seeded = adoptAllAlertsReport(emptySeed, restored, context);
+assert.deepEqual(seeded.events.map(row => row.id).sort(), [old.id, unknown.id, future.id, original.id].sort(),
+  'an empty seed cannot displace any saved historical, undated, future or current record');
 const corrected = event(original.id, { headline: 'Corrected headline', sourceRecord: { corrected: true } });
 const partial = adoptAllAlertsReport(report([corrected, event('new')], 'failed'), restored, context);
 assert.equal(partial.events.length, 5, 'failed partial reads retain other saved records while adding new ones');
