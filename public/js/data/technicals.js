@@ -1,19 +1,4 @@
-// data/technicals.js — the live technicals feed, loaded once and cached.
-//
-// This is the only genuinely live data in the dashboard. It is fetched lazily the first
-// time the Breakouts tab mounts (the other eight tabs shouldn't pay for a ~800KB file),
-// scored once through the ported LKP model, and cached for the life of the page. Sub-view
-// switches, scope changes and sorts all operate on the cached scored list — nothing here
-// refetches or rescores.
-//
-//   await load();                 // idempotent; safe to await from every render()
-//   all()                         // scored rows, best score first
-//   forScope('portfolio')         // narrowed to the synced book (js/data/coverage.js)
-//   byTicker('RELIANCE')          // one scored row
-//   meta()                        // generated_at, source, counts, index, breadth
-//
-// A scored row is `{ ...scoreCompany(c), company: c }` — see scoring/tech-scoring.js.
-
+// Completed-session technical scores; current quotes are maintained separately.
 import { scoreCompany } from '../scoring/tech-scoring.js';
 import { filterByScope } from './scope.js';
 
@@ -35,7 +20,7 @@ export function refresh() {
   refreshPromise = buildCache().then((next) => {
     subscribers.forEach((fn) => fn());
     return next;
-  }).catch((error) => { cache = previous; throw error; })
+  }).catch((error) => { cache = previous; if (cache) cache.meta.deliveryFailed = true; subscribers.forEach(fn => fn()); throw error; })
     .finally(() => { refreshPromise = null; });
   return refreshPromise;
 }
@@ -55,13 +40,22 @@ export function load() {
 }
 
 async function buildCache() {
-  const payload = await fetchJson(TECHNICALS_PATH);
+  let payload;
+  try {
+    payload = await fetchJson('/api/technicals');
+    if (!Array.isArray(payload?.companies) || !payload.companies.length) throw Error('Invalid technicals');
+  } catch { payload = { ...await fetchJson(TECHNICALS_PATH), deliveryFailed: true }; }
+  if (cache && Date.parse(payload.generated_at) < Date.parse(cache.meta.generated_at)) {
+    cache.meta.deliveryFailed = true;
+    return cache;
+  }
   const rows = Array.isArray(payload?.companies) ? payload.companies : [];
 
   // ATR trend accumulator — the ATR Stability rule reads `c.atr_history`. Optional: without
   // it the rule still scores on the absolute level and says the trend is pending.
   const atrHistory = await fetchJson(ATR_HISTORY_PATH).catch(() => ({}));
   for (const row of rows) {
+    row.price_date ??= row.bar_date || null;
     const hist = row.ticker && atrHistory[row.ticker];
     if (Array.isArray(hist)) row.atr_history = hist;
   }
@@ -80,6 +74,7 @@ async function buildCache() {
   cache = {
     meta: {
       generated_at: payload?.generated_at ?? null,
+      deliveryFailed: payload?.deliveryFailed === true,
       // The session the closes belong to — NOT when the file was written. See the scraper.
       price_date: payload?.price_date ?? null,
       price_date_rows: payload?.price_date_rows ?? null,

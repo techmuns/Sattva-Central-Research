@@ -96,9 +96,7 @@ try {
     assert.deepEqual(await page.evaluate(() => exportedRows.map(row => row.ticker).sort()), tickers('AC'));
     if (view === 'technical-scanner') {
       assert.equal(await page.locator('[data-top-idx]').count(), 2, 'top cards obey market filters');
-      await page.locator('[data-refresh-btn]').click();
-      await page.waitForFunction(() => document.querySelector('[data-refresh-label]').textContent === 'Refresh prices');
-      assert.deepEqual([...quoteTickers].sort(), tickers('AC'), 'live quotes target the narrowed market set');
+      assert.equal(quoteTickers.length,0,'view reads saved capture without spending Muns requests');
       await page.locator('[data-table-filter]').selectOption('below200'); await rowsAre('');
       await choose('volume', 'all', 'vol');
       assert.equal(await page.locator('[data-table-filter]').inputValue(), 'below200', 'score selection survives chip changes');

@@ -1,0 +1,76 @@
+// Actual dashboard, local-only capture fixture, including a returning service-worker session.
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFileSync,mkdirSync} from 'node:fs';
+import {resolve,sep,extname} from 'node:path';
+const {chromium}=await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
+const root=resolve('public'), AT=Date.parse('2026-09-15T06:30:00Z');
+const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=original.companies.find(row=>!row.error);
+const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-11',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-11',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
+let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0;
+const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],rows:['TEST','FUTURE'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
+const server=createServer((req,res)=>{
+ const path=new URL(req.url,'http://localhost').pathname;
+ res.setHeader('cache-control','no-cache');
+ const json=value=>{res.setHeader('content-type','application/json');res.end(JSON.stringify(value));};
+ if(path==='/api/breakouts'){reads++;if(fail){res.writeHead(503).end();return;}return json(snapshot());}
+ if(path==='/api/technicals'||path==='/data/technicals.json')return json(daily);
+ if(path==='/api/live-prices'){muns++;res.writeHead(503).end();return;}
+ if(path.startsWith('/api/'))return json({ok:false});
+ const file=resolve(root,`.${path==='/'?'/index.html':path}`);
+ if(!file.startsWith(root+sep)){res.writeHead(404).end();return;}
+ try{
+ let body=readFileSync(file);
+ if(path==='/sw.js')body=body.toString().replace('2026-09-15-reliable-breakouts-v1',`breakout-test-${revision}`);
+ if(path==='/js/data/breakout-live.js')body=`export const testRelease=${revision};\n`+body.toString();
+ res.setHeader('content-type',{'.js':'text/javascript','.json':'application/json','.html':'text/html','.css':'text/css','.svg':'image/svg+xml'}[extname(file)]||'application/octet-stream');res.end(body);
+ }catch{res.writeHead(404).end();}
+});
+await new Promise(done=>server.listen(0,'127.0.0.1',done));
+const origin=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{});
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:1000}});
+ await context.route('**/*',route=>route.request().url().startsWith(origin+'/')?route.continue():route.fulfill({contentType:'text/javascript',body:''}));
+ const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.clock.install({time:AT});
+ await page.goto(`${origin}/#/research/breakouts/strong-breakouts?scope=universe`);
+ const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
+ assert.equal(await cell.textContent(),'₹106.00');
+ await page.locator('[data-row-key="FUTURE"]').waitFor();
+ assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-11')));
+ await page.locator('[data-table-search]').fill('Test Company');
+ await page.locator('[data-row-key="TEST"]').click();
+ const popup=page.locator('[data-stat="breakout-price"]');await popup.waitFor();
+ assert((await popup.innerText()).includes('₹106'));
+ price=108;at=AT+60000;
+ // A visible automatic interval updates the open popup and table from one shared read.
+ await page.clock.runFor(61000);
+ await page.waitForFunction(()=>document.querySelector('[data-cmp="TEST"]')?.textContent==='₹108.00');
+ assert((await popup.innerText()).includes('₹108'));
+ assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(),'test company');
+ assert((await page.locator('#drill-content').innerText()).includes('2026-09-11'));
+ await page.locator('[data-drill-close]').click();
+ fail=true;await page.evaluate(()=>window.dispatchEvent(new Event('online')));
+ await page.waitForFunction(()=>document.querySelector('[data-live-info]')?.textContent.includes('Partial update'));
+ assert.equal(await cell.textContent(),'₹108.00');assert((await cell.locator('..').innerText()).includes('Saved'));
+ fail=false;price=99;
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.waitForFunction(()=>!document.querySelector('[data-cmp="TEST"]'));
+ assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(),'test company');
+ price=110;volume=2200;
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.waitForFunction(()=>document.querySelector('[data-cmp="TEST"]')?.textContent==='₹110.00');
+ assert.equal(muns,0);assert(reads>=4);
+ // Returning readers must actually replace their cached module graph after the release changes.
+ await page.evaluate(async()=>{await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});
+ await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+ await page.reload();await cell.waitFor();
+ assert.equal(await page.evaluate(async()=>(await import('/js/data/breakout-live.js')).testRelease),1);
+ revision=2;
+ await page.evaluate(async()=>{await (await navigator.serviceWorker.getRegistration()).update();});
+ await page.waitForFunction(async()=>(await import('/js/data/breakout-live.js')).testRelease===2,null,{timeout:30000});
+ await cell.waitFor();assert.equal(await cell.textContent(),'₹110.00');await page.clock.runFor(1000);
+ if(process.env.BREAKOUT_SCREENSHOTS){mkdirSync(process.env.BREAKOUT_SCREENSHOTS,{recursive:true});await page.screenshot({path:`${process.env.BREAKOUT_SCREENSHOTS}/breakouts-desktop.png`});await page.setViewportSize({width:390,height:844});await page.screenshot({path:`${process.env.BREAKOUT_SCREENSHOTS}/breakouts-mobile.png`});}
+ assert.deepEqual(errors,[]);
+ console.log('PASS breakout dashboard: automatic price/volume changes, matching open popup, daily score date, new holding, failure retention, filter/search preservation, no Muns calls, returning session release upgrade');
+}finally{await browser.close();await new Promise(done=>server.close(done));}

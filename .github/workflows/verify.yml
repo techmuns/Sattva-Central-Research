@@ -121,6 +121,8 @@ jobs:
         run: npx --yes wrangler@4 deploy --dry-run
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
+      - name: Verify saved breakout capture and recovery
+        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakouts-runtime.mjs
       - name: Verify private summary persistence in the local Worker runtime
         run: node scripts/verify-concall-summaries-runtime.mjs
   browser:
@@ -146,7 +148,7 @@ jobs:
       - name: Verify technical and institutional filters across scopes and refreshes
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-technical-filters-ui.mjs
+        run: node scripts/verify-technical-filters-ui.mjs && node scripts/verify-breakouts-ui.mjs
       - name: Verify inline private summary reader and source parser offline
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -298,12 +298,12 @@ export function sourceGroups() {
           file: 'public/data/atr-history.json',
         },
         {
-          name: 'Munshot quote API — live prices',
-          url: 'https://muns.io',
-          feeds: 'On-demand intraday quotes behind the Breakouts tab\'s "Refresh prices" button, proxied server-side by the Worker so no token reaches the browser. Session-only; nothing is written to the repo. It moves the CMP column ONLY — the 16-rule technicals score stays as computed from the EOD series, and a live cell is marked with an indigo dot saying so. The upstream is cache-backed, so a cold name can overrun the request budget: the response names what did not land and whether another click would fetch it.',
-          cadence: 'On demand · quotes held 45s at the edge · needs the Cloudflare Worker',
+          name: 'Saved price and volume capture — Yahoo Finance / optional Upstox',
+          url: 'https://upstox.com/developer/api-documentation/analytics-token/',
+          feeds: 'One background capture covers the universe, live portfolio and shared watchlist. Yahoo Finance supplies the primary observations; Upstox is an optional credentialed backup. Saved price and cumulative session volume drive breakout checks, while the 16-rule score retains its daily close date. Every price carries its source time. Failures keep dated observations, and available historical candles can recover gaps.',
+          cadence: '15-minute schedule in market hours; GitHub delays and source failures remain visible',
           status: 'live',
-          file: 'worker/index.js · POST /api/live-prices',
+          file: 'GET /api/breakouts · durable saved history',
         },
         {
           name: 'NSE 500 constituent list (Screener export)',
