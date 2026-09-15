@@ -171,6 +171,11 @@ try {
   failed = false; generation = '2026-09-14T00:00:00Z'; revision++;
   await page.evaluate(() => chatter.refresh());
   assert.equal(await page.evaluate(() => chatter.meta().generatedAt), '2026-09-15T12:01:00Z', 'older snapshots cannot roll back the reader');
+  stocks.push(entry('tcs', 'Tata Consultancy Services', 2)); generation = '2026-09-15T12:02:00Z'; revision++;
+  await page.evaluate(() => chatter.refresh());
+  assert.equal(await page.locator('#root tr[data-row-key="tata-consultancy-services"]').count(), 1);
+  assert.equal(await page.locator('#root tr[data-row-key="tcs"]').count(), 1, 'two source topics for one exchange ticker remain separate rows');
+  assert.equal(await page.evaluate(() => chatter.companies().filter(row => row.ticker === 'TCS').length), 2);
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.locator('[data-chatter-history]').isVisible());
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

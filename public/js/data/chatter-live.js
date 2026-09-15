@@ -261,7 +261,7 @@ export function loadedPosts() {
     for (const post of value.posts) group.posts.set(post.id, post);
     groups.set(value.slug, group);
   }
-  return [...groups.values()].map(group => ({ ...group, posts: [...group.posts.values()] }));
+  return [...groups.values()].map(group => ({ ...group, total: Math.max(group.total || 0, group.posts.size), posts: [...group.posts.values()] }));
 }
 export function archiveTopics(options = {}) {
   return cachedResource('/archive', { ...options, maxAgeMs: POLL_MS,

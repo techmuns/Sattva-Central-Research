@@ -115,7 +115,8 @@ ok('every source loads before any source reads, so the company index is built fr
 });
 
 ok('Public Chatter evidence preserves failure state and separately samples unresolved topics', () => {
-  assert.match(estateSource, /if \(meta\.ok !== true\) throw new Error/);
+  assert.match(estateSource, /if \(!meta\.readable\) throw new Error/);
+  assert.match(estateSource, /dataQuality: meta\.health\?\.state === 'updated' \? 'source-reported' : 'partial'/);
   assert.match(estateSource, /const unresolved = chatter\.uncovered\(\);[\s\S]*?unresolvedTopics: \{/);
 });
 

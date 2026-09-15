@@ -552,7 +552,7 @@ function chatterFootnotes(m) {
         Coverage: ${escapeHtml(formatNumber(m.companies))} of ${escapeHtml(formatNumber(m.total))} feed entries resolve to a company we cover.
         Posts: ${m.totalPosts == null ? 'not reported' : escapeHtml(formatNumber(m.totalPosts))} over ${escapeHtml(m.window)}, across ${escapeHtml(sourceSummary(m.sourceTotals))}.
         Market mood: ${moodText}; keyword-scored by SentimentDash and reproduced unchanged.
-        Last scrape: ${escapeHtml(scrapeText)} (${escapeHtml(sourceAge)}).
+        Snapshot assembled: ${escapeHtml(scrapeText)} (${escapeHtml(sourceAge)}).
         Company matches count mentions found, not successful checks of every holding.
       </p>
       <details class="mt-2"><summary class="cursor-pointer font-semibold">Source coverage and captured history</summary><div class="mt-2 space-y-1">
