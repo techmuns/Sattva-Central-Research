@@ -77,7 +77,12 @@ export class BreakoutStore {
       }
       const filled = new Set(this.storage.sql.exec('SELECT at FROM breakout_recovered WHERE ticker=? AND at>? AND at<=?',ticker,from,to).toArray().map(row=>row.at));
       const remaining = [...slots].filter(at=>!filled.has(at)).length;
-      this.storage.sql.exec('INSERT INTO breakout_gaps VALUES(?,?,?,?) ON CONFLICT(ticker,since) DO UPDATE SET until=excluded.until,reason=excluded.reason',ticker,from,to,remaining ? 'unrecovered' : 'candles-recovered');
+      // read() groups several gaps into one retry range. Reconcile each covered
+      // constituent gap as well; partial overlaps must remain outstanding.
+      const gaps = this.storage.sql.exec("SELECT since,until FROM breakout_gaps WHERE ticker=? AND reason='unrecovered' AND since>=? AND until<=?",ticker,from,to).toArray();
+      for (const gap of gaps) if (recoverySlots(gap.since,gap.until).every(at=>filled.has(at)))
+        this.storage.sql.exec("UPDATE breakout_gaps SET reason='candles-recovered' WHERE ticker=? AND since=?",ticker,gap.since);
+      this.storage.sql.exec('INSERT INTO breakout_gaps VALUES(?,?,?,?) ON CONFLICT(ticker,since) DO UPDATE SET until=MAX(breakout_gaps.until,excluded.until),reason=CASE WHEN breakout_gaps.until>excluded.until THEN breakout_gaps.reason ELSE excluded.reason END',ticker,from,to,remaining ? 'unrecovered' : 'candles-recovered');
       return {ok:true,remaining};
     });
   }

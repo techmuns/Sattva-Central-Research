@@ -12,7 +12,10 @@ that every brief breakout will be observed.
 - `breakouts-refresh.yml` requests a run every 15 minutes. The collector only
   requests market data during regular-session collection hours (09:15–16:15 IST),
   with the published 2026 NSE holidays excluded. The first scheduled run also
-  seeds the latest closing observations if the store is empty outside market hours. The November 8 special session
+  seeds the latest closing observations outside market hours and retries incomplete
+  seed manifests. Successful closing observations are reused with their original
+  source/check times; only missing or stale quotes spend more provider requests.
+  The November 8 special session
   has no confirmed time in the source calendar, so checks are attempted all day
   and calendar completeness is explicitly unknown. Future calendar years are
   also reported as unknown until the calendar is updated.
@@ -23,7 +26,8 @@ that every brief breakout will be observed.
   Failed publishing leaves a visible failed bootstrap job. Each authenticated
   collector also ensures the alarm is armed. Every 15 minutes
   the alarm checks the fixed workflow and requests a missed run, unless one is
-  queued/running or recently created. This uses the existing `GH_DISPATCH_TOKEN`
+  queued/running or a collection run was recently created. Successful push-only
+  bootstrap jobs are not counted as price collection. This uses the existing `GH_DISPATCH_TOKEN`
   and requires no additional Cloudflare cron slot. Reads never activate it.
 - GitHub OIDC permits writes only from the fixed repository, main branch and
   this workflow. No browser credential or long-lived upload secret is needed.
@@ -51,6 +55,9 @@ that every brief breakout will be observed.
   the health endpoint remains uncached. Browser reads do not spend Muns quote requests. An already-open popup updates
   with the table. Search, selected chips, sorting and scroll are retained during
   capture refresh. The service-worker release is advanced for returning readers.
+  A completed daily close takes precedence over an older intraday observation of
+  the same date. Extra captured targets appear only in their selected scope;
+  watchlist-only additions do not silently join Universe.
 
 ## Optional free Upstox backup
 

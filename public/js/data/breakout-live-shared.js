@@ -51,6 +51,12 @@ export function quoteFresh(row, now = Date.now()) {
   // After the session, an earlier intraday quote is not a closing observation.
   return Date.parse(row.quoteAt) >= Date.parse(`${row.sessionDate}T15:10:00+05:30`) && Date.parse(row.checkedAt) >= Date.parse(`${row.sessionDate}T15:30:00+05:30`);
 }
+// On the same date, a completed daily close wins over a stale intraday observation.
+// With no daily price, retain the last available observation with its original time.
+export function preferQuote(row, daily, now = Date.now()) {
+  return !!row && (!positive(daily?.cmp) || !daily.price_date || row.sessionDate > daily.price_date ||
+    (row.sessionDate === daily.price_date && quoteFresh(row, now)));
+}
 export function liveBreakout(row) {
   if (!row?.base) return null;
   const b = row.base, range = (b.high - b.low) / b.average * 100;

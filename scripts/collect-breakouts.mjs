@@ -11,6 +11,11 @@ export function captureTarget(company) {
   const ticker = String(company.ticker || /\/company\/([^/]+)/.exec(company['Screener URL'] || '')?.[1] || '').trim().toUpperCase();
   return tickerValid(ticker) ? {ticker,name:company.name || company.Company || ticker,yahooTicker:company.yahooTicker} : null;
 }
+export function closingSeedComplete(capture, now = Date.now()) {
+  if (capture?.state !== 'complete' || capture.discoveryFailed || capture.failures?.length || !capture.targets?.length) return false;
+  const rows = new Map((capture.rows || []).map(row => [row.ticker, row]));
+  return capture.targets.every(ticker => quoteFresh(rows.get(ticker), now));
+}
 export function breakoutClient({ env = process.env, fetcher = fetch } = {}) {
   return async input => {
     const url = new URL(env.ACTIONS_ID_TOKEN_REQUEST_URL || '');
@@ -34,6 +39,8 @@ export async function collectBreakouts({ targets, previous = null, client, prima
   if (!targets.length || targets.length > BREAKOUT_LIMIT || new Set(targets.map(t => t.ticker)).size !== targets.length || targets.some(t => !tickerValid(t.ticker))) throw Error('Invalid inventory');
   await client({ action: 'begin', targets: targets.map(t => t.ticker), discoveryFailed });
   const rows = [], misses = [], bases = new Map();
+  const retained = new Map((previous?.rows || []).map(row => [row.ticker, row]));
+  const closingRetry = !marketWindow(now()).collect;
   for (const row of previous?.rows || []) if (row.sessionDate === marketWindow(now()).day && row.base) bases.set(row.ticker, row.base);
   let rateLimited = false;
   const captureDeadline = now() + 8*60000, recoveryDeadline = now() + 10*60000;
@@ -41,6 +48,10 @@ export async function collectBreakouts({ targets, previous = null, client, prima
   for (let offset = 0; offset < targets.length; offset += 8) {
     const wave = targets.slice(offset, offset + 8), saved = [];
     await Promise.all(wave.map(async target => {
+      // Retry only missing closing observations overnight. Reused observations keep
+      // their actual source/check times; they are not newly fetched prices.
+      const prior = retained.get(target.ticker);
+      if (closingRetry && quoteFresh(prior, now())) { saved.push(prior); rows.push(prior); return; }
       if (now() >= captureDeadline) { misses.push({ target, reason:'unavailable' }); return; }
       if (rateLimited) { misses.push({ target, reason: 'rate-limited' }); return; }
       try {
@@ -117,7 +128,7 @@ async function main() {
   let previous;
   try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }
   catch { if (!marketWindow(now).collect) throw Error('Capture service unavailable'); }
-  if (!marketWindow(now).collect && previous?.rows?.length > 0) {
+  if (!marketWindow(now).collect && closingSeedComplete(previous, now)) {
     console.log('Outside market collection hours; no market-source requests.'); return;
   }
   // The first scheduled run also seeds the latest closing observations after hours.

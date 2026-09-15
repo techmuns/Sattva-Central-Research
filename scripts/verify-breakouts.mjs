@@ -5,8 +5,8 @@ import { BreakoutStore } from '../worker/breakout-store.mjs';
 import { BreakoutSchedule } from '../worker/breakout-schedule.mjs';
 import { breakoutCollectorIdentity } from '../worker/breakout-auth.mjs';
 import { handleBreakouts, handleTechnicals } from '../worker/breakouts.mjs';
-import { BREAKOUT_ENDPOINT, marketWindow, expectedSession, quoteFresh, liveBreakout, liveCoverage, validateQuote, recoverySlots } from '../public/js/data/breakout-live-shared.js';
-import { collectBreakouts, breakoutClient, captureTarget, bootstrapBreakouts } from './collect-breakouts.mjs';
+import { BREAKOUT_ENDPOINT, marketWindow, expectedSession, quoteFresh, preferQuote, liveBreakout, liveCoverage, validateQuote, recoverySlots } from '../public/js/data/breakout-live-shared.js';
+import { collectBreakouts, breakoutClient, captureTarget, bootstrapBreakouts, closingSeedComplete } from './collect-breakouts.mjs';
 import { baseFromBars, yahooSymbol, parseYahooQuote, upstoxQuotes, recoveryCandles } from './lib/breakout-providers.mjs';
 const AT = Date.parse('2026-09-15T06:30:00Z'), iso = at => new Date(at).toISOString();
 const historyDates = count => {const dates=[];for(let at=AT-86400000;dates.length<count;at-=86400000)if(marketWindow(at).collect)dates.unshift(iso(at).slice(0,10));return dates;};
@@ -93,7 +93,49 @@ test('durable timer arms explicitly, avoids duplicate/inflight jobs and dispatch
  assert(new URL(url).pathname.includes('breakouts-refresh.yml'));if(opts.method==='POST'){posts++;return new Response(null,{status:204});}return Response.json({workflow_runs:runs});}});
  assert.equal((await schedule.status()).alarmAt,null);await schedule.arm();assert((await schedule.status()).alarmAt>AT);
  await schedule.wake();assert.equal(posts,1);await schedule.wake();assert.equal(posts,1);
- at+=15*60000;runs=[{id:1,status:'in_progress',created_at:iso(at-60000)}];await schedule.wake();assert.equal(posts,1);assert.equal((await schedule.status()).reason,'running');
+ at+=15*60000;runs=[{id:1,status:'in_progress',event:'schedule',created_at:iso(at-60000)}];await schedule.wake();assert.equal(posts,1);assert.equal((await schedule.status()).reason,'running');
+ at+=15*60000;runs=[{id:2,status:'completed',conclusion:'success',event:'push',created_at:iso(at-60000)},{id:1,status:'completed',conclusion:'success',event:'schedule',created_at:iso(at-30*60000)}];
+ await schedule.wake();assert.equal(posts,2);assert.equal((await schedule.status()).reason,'dispatched');
+});
+test('daily closing price wins over a stale same-session observation',()=>{
+ const daily={cmp:107,price_date:'2026-09-15'},evening=Date.parse('2026-09-15T14:00Z');
+ assert.equal(preferQuote(quote(),daily,AT),true);
+ assert.equal(preferQuote(quote(),daily,evening),false);
+ assert.equal(preferQuote(quote(),{...daily,price_date:'2026-09-11'},evening),true);
+ assert.equal(preferQuote(quote(),{cmp:null},evening),true);
+ assert.equal(preferQuote(quote('TEST',Date.parse('2026-09-15T10:00Z')),daily,evening),true);
+ const friday=Date.parse('2026-09-11T08:30Z'),weekend=Date.parse('2026-09-13T06:30Z');
+ const old=quote('TEST',friday,{sessionDate:'2026-09-11',base:null});
+ assert.equal(preferQuote(old,{cmp:107,price_date:'2026-09-11'},weekend),false);
+});
+test('partial closing seeds retry missing stocks without refetching successful closing observations',async()=>{
+ const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');
+ const saved=quote('TEST',closeAt),previous={version:1,state:'collecting',targets:['TEST','NEW'],rows:[saved],failures:[{ticker:'NEW',reason:'unchecked'}]};
+ assert.equal(closingSeedComplete(previous,evening),false);
+ assert.equal(closingSeedComplete({...previous,state:'complete'},evening),false);
+ const data=storage(),store=new BreakoutStore(data,{now:()=>evening});let requests=[];
+ const client=async({action,...body})=>action==='begin'?store.begin('1:1',body.targets,body.discoveryFailed):action==='checkpoint'?store.checkpoint('1:1',body.rows,body.failures):action==='finish'?store.finish('1:1'):store.recovery('1:1',body.ticker,body.from,body.to,body.rows);
+ await collectBreakouts({targets:[{ticker:'TEST'},{ticker:'NEW'}],previous,client,now:()=>evening,sleep:async()=>{},primary:async target=>{requests.push(target.ticker);return quote(target.ticker,closeAt);}});
+ assert.deepEqual(requests,['NEW']);assert(closingSeedComplete(store.read(),evening));
+ assert.deepEqual(store.read().rows.find(row=>row.ticker==='TEST'),saved);
+ assert.equal(closingSeedComplete({...store.read(),discoveryFailed:true},evening),false);
+ assert.equal(closingSeedComplete({...store.read(),rows:[saved]},evening),false);
+ assert.equal(closingSeedComplete({...store.read(),rows:[quote(),quote('NEW')]},evening),false);
+});
+test('aggregate recovery clears all filled ranges and retains partially covered ranges',()=>{
+ const {store}=harness(),from=AT-90*60000;
+ for (const [i,at] of [from,from+45*60000,AT].entries()) {const run=`${i+1}:1`;store.begin(run,['TEST']);store.checkpoint(run,[quote('TEST',at)]);store.finish(run);}
+ assert.equal(store.read().gaps.find(gap=>gap.reason==='unrecovered').count,2);
+ const candles=recoverySlots(from,AT).map(at=>quote('TEST',at,{kind:'recovered-candle'}));
+ store.recovery('3:1','TEST',from,AT,candles.slice(0,2));
+ assert.equal(store.read().recoveryPending.length,1);
+ // A smaller replay may fill its slots, but cannot shrink the larger pending range.
+ store.recovery('3:1','TEST',from,from+30*60000,[]);
+ assert.equal(store.read().recoveryPending[0].until,AT);
+ store.recovery('3:1','TEST',from,AT,candles.slice(2));
+ assert.equal(store.read().recoveryPending.length,0);
+ assert.equal(store.read().gaps.find(gap=>gap.reason==='candles-recovered').count,2);
+ assert.equal(store.read().rows[0].kind,'quote');assert.equal(store.read().rows[0].quoteAt,iso(AT));
 });
 test('read routes never arm capture and daily delivery preserves a dated fallback',async()=>{
  let armed=0;const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>({version:1,state:'not-started',rows:[],targets:[],failures:[]}),breakoutScheduleStatus:async()=>({started:false}),breakoutBegin:async()=>{armed++;}})}};

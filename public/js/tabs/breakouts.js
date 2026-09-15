@@ -11,6 +11,7 @@ import * as refreshRegistry from '../core/refresh.js';
 import { ACTIVE_RULES } from '../scoring/tech-scoring.js';
 import { openTechnicalsDrill, fmtPoints } from './breakouts-drill.js';
 import * as coverage from '../data/coverage.js';
+import * as scopeLists from '../core/scope-lists.js';
 import { TECHNICAL_FILTERS, TECHNICAL_DEFAULTS, chipCounts } from './technical-filters.js';
 
 export const meta = {
@@ -87,6 +88,11 @@ function loadingHtml() {
     <div class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"></div>`;
 }
 
+function extraScopeTickers(ctx) {
+  return scopeTickers(ctx?.scope, coverage.holdings()) ||
+    new Set(scopeLists.apply('universe', ctx?.data?.universe || []).map(row => row.ticker));
+}
+
 function paint(ctx) {
   tableOff?.(); tableOff = null;
   const scrollTop = ctx.root.closest('main')?.scrollTop;
@@ -95,7 +101,7 @@ function paint(ctx) {
   const selection = active?.selectionStart;
   const selectionEnd = active?.selectionEnd, selectionDirection = active?.selectionDirection;
   const selector = active?.matches('input[type="search"]') ? 'input[type="search"]' : active?.getAttribute('placeholder') ? `input[placeholder="${CSS.escape(active.getAttribute('placeholder'))}"]` : null;
-  const rows = filterByScope(live.decorate(technicals.all()), ctx.scope, coverage.holdings(), s => s.company.ticker);
+  const rows = filterByScope(live.decorate(technicals.all(), extraScopeTickers(ctx)), ctx.scope, coverage.holdings(), s => s.company.ticker);
   const view = {
     'strong-breakouts': renderStrongBreakouts,
     'technical-scanner': renderScanner,
@@ -170,7 +176,7 @@ export function freshnessOf(generatedAt, now = Date.now()) {
 }
 function livePill() {
   const expected = scopeTickers(ctxRef?.scope, coverage.holdings());
-  const tickers = expected ? [...expected] : live.decorate(technicals.all()).map(s => s.company.ticker);
+  const tickers = expected ? [...expected] : filterByScope(live.decorate(technicals.all(), extraScopeTickers(ctxRef)), 'universe', null, s => s.company.ticker).map(s => s.company.ticker);
   const health = live.coverageFor(tickers);
   const label = !live.snapshot() ? 'Current prices unavailable' : `${health.partial ? 'Partial update' : 'Prices checked'} · ${health.checked}/${health.total}`;
   return {html:`<span data-live-info class="rounded-full px-3 py-1 text-xs ${health.partial ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-700'}" title="Last completed check: ${escapeHtml(live.stamp(health.checkedAt))}">${escapeHtml(label)}</span>`,wire() {}};

@@ -29,10 +29,16 @@ export class BreakoutSchedule {
       try {
         if (!this.env.GH_DISPATCH_TOKEN || this.env.GH_REPO !== 'techmuns/Sattva-Central-Research' || (this.env.GH_REF || 'main') !== 'main') throw Error('configuration');
         const cfg = { token: this.env.GH_DISPATCH_TOKEN, owner: 'techmuns', repo: 'Sattva-Central-Research', ref: 'main' };
-        const recent = (await latestRun(this.fetcher, cfg, BREAKOUT_WORKFLOW, { perPage: 1 }))[0];
+        // Push runs only arm this timer; they never collect quotes.
+        const recent = (await latestRun(this.fetcher, cfg, BREAKOUT_WORKFLOW, { perPage: 10 }))
+          .find(run => ['schedule', 'workflow_dispatch', 'repository_dispatch'].includes(run.event));
         if (isInFlight(recent)) { reason = 'running'; overdue = at - Date.parse(recent.createdAt) > 30 * 60000; }
         else if (Date.parse(recent?.createdAt) > at - BREAKOUT_INTERVAL_MS) { reason = recent.conclusion === 'success' ? 'recent-run' : 'recent-run-failed'; overdue = recent.conclusion !== 'success'; }
-        else { await dispatchWorkflow(this.fetcher, cfg, BREAKOUT_WORKFLOW, 'main', { source: 'durable-timer' }); reason = 'dispatched'; }
+        else {
+          const result = await dispatchWorkflow(this.fetcher, cfg, BREAKOUT_WORKFLOW, 'main', { source: 'durable-timer' });
+          reason = result.dispatched ? 'dispatched' : 'running';
+          overdue = !result.dispatched && at - Date.parse(result.run?.createdAt) > 30 * 60000;
+        }
       } catch { reason = 'dispatch-unavailable'; overdue = true; }
     }
     await this.storage.transaction(async tx => {

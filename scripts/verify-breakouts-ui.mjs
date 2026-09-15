@@ -9,7 +9,7 @@ const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=or
 const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-10',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-10',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
 const deployedDaily=structuredClone(daily);
 let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0,dailyFail=false,companionFail=false,dailySha='a'.repeat(40);
-const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
+const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE','WATCHONLY'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE','WATCHONLY'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  res.setHeader('cache-control','no-cache');
@@ -21,6 +21,8 @@ const server=createServer((req,res)=>{
   if(companionFail){res.writeHead(503).end();return;}
   res.setHeader('x-sattva-revision',dailySha);return json(path.endsWith('atr-history')?{TEST:[{date:daily.price_date,atr_pct:1.23}]}:{});
  }
+ if(path==='/data/universe.json')return json(['TEST','FUTURE'].map(ticker=>({Company:ticker,'Screener URL':`https://www.screener.in/company/${ticker}/`})));
+ if(path==='/api/watchlist')return json({ok:true,revision:1,updatedAt:new Date(AT).toISOString(),companies:[{ticker:'WATCHONLY',name:'Watchlist only'}]});
  if(path==='/data/technicals.json')return json(deployedDaily);
  if(path==='/data/atr-history.json')return json({TEST:[{date:'2026-09-10',atr_pct:9.99}]});
  if(path==='/api/live-prices'){muns++;res.writeHead(503).end();return;}
@@ -46,6 +48,16 @@ try{
  assert.equal(await cell.textContent(),'₹106.00');
  assert.equal(await page.evaluate(async()=>(await import('/js/data/technicals.js')).byTicker('TEST').company.atr_history[0].atr_pct),1.23);
  await page.locator('[data-row-key="FUTURE"]').waitFor();
+ assert.equal(await page.locator('[data-row-key="WATCHONLY"]').count(),0);
+ await page.evaluate(async()=>{await (await import('/js/core/watchlist.js')).syncNow({force:true});location.hash='#/research/breakouts/strong-breakouts?scope=watchlist';});
+ await page.locator('[data-row-key="WATCHONLY"]').waitFor();
+ assert.equal(await page.locator('[data-row-key="FUTURE"]').count(),0);
+ await page.evaluate(()=>{location.hash='#/research/breakouts/strong-breakouts?scope=universe';});
+ await cell.waitFor();assert.equal(await page.locator('[data-row-key="WATCHONLY"]').count(),0);
+ await page.evaluate(async()=>{(await import('/js/core/scope-lists.js')).add('universe',{ticker:'WATCHONLY',name:'Explicit addition'});await (await import('/js/data/breakout-live.js')).refresh();});
+ await page.locator('[data-row-key="WATCHONLY"]').waitFor();
+ await page.evaluate(async()=>{(await import('/js/core/scope-lists.js')).remove('universe',{ticker:'WATCHONLY'});await (await import('/js/data/breakout-live.js')).refresh();});
+ await page.waitForFunction(()=>!document.querySelector('[data-row-key="WATCHONLY"]'));
  assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-10')));
  assert((await page.locator('[data-capture-note]').textContent()).includes('Ranges with gaps: 1'));
  const sourceState=()=>page.evaluate(async()=>(await import('/js/ui/sources.js')).sourceGroups().flatMap(group=>group.items).find(item=>item.name.startsWith('Saved price and volume capture')).readState);
@@ -100,6 +112,15 @@ try{
  await page.waitForFunction(async()=>(await import('/js/data/breakout-live.js')).testRelease===2,null,{timeout:30000});
  await cell.waitFor();assert.equal(await cell.textContent(),'₹110.00');await page.clock.runFor(1000);
  if(process.env.BREAKOUT_SCREENSHOTS){mkdirSync(process.env.BREAKOUT_SCREENSHOTS,{recursive:true});await page.screenshot({path:`${process.env.BREAKOUT_SCREENSHOTS}/breakouts-desktop.png`});await page.setViewportSize({width:390,height:844});await page.screenshot({path:`${process.env.BREAKOUT_SCREENSHOTS}/breakouts-mobile.png`});}
+ // Same-date daily close replaces an obsolete intraday quote in filtering and popup.
+ dailySha='d'.repeat(40);daily.generated_at='2026-09-15T14:00:00Z';daily.price_date=daily.companies[0].bar_date='2026-09-15';daily.companies[0].cmp=99;
+ daily.companies[0].consolidation_breakout={...daily.companies[0].consolidation_breakout,quality:'no_breakout',breaks_out:false,today_close:99};
+ await page.clock.setFixedTime(Date.parse('2026-09-15T14:00:00Z'));
+ await refreshDaily();await page.waitForFunction(()=>!document.querySelector('[data-cmp="TEST"]'));
+ await page.evaluate(()=>{location.hash='#/research/breakouts/technical-scanner?scope=universe';});
+ await cell.waitFor();assert.equal(await cell.textContent(),'₹99.00');
+ await page.locator('[data-row-key="TEST"]').click();await popup.waitFor();
+ assert((await popup.innerText()).includes('₹99'));assert((await popup.innerText()).includes('Daily close'));
  assert.deepEqual(errors,[]);
  console.log('PASS breakout dashboard: automatic price/volume changes, matching open popup, daily score date, new holding, failure retention, filter/search preservation, no Muns calls, returning session release upgrade');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

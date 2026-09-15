@@ -1,6 +1,6 @@
 // Shared saved observations: browser reads never trigger requests to a market-data provider.
 import { conditionalJson, readEntry } from '../core/store.js';
-import { validateQuote, quoteFresh, liveBreakout, liveCoverage } from './breakout-live-shared.js';
+import { validateQuote, quoteFresh, preferQuote, liveBreakout, liveCoverage } from './breakout-live-shared.js';
 import { scoreCompany } from '../scoring/tech-scoring.js';
 const KEY = 'sattva:breakout-capture:v1';
 let capture = null, pending = null, failed = false;
@@ -35,7 +35,7 @@ export function quote(ticker) { return byTicker.get(ticker) || null; }
 export function priceInfo(company, now = Date.now()) {
   const q = quote(company.ticker);
   // A newer completed-session close remains useful if the capture service is behind it.
-  const use = q && (!company.price_date || q.sessionDate >= company.price_date) ? q : null;
+  const use = preferQuote(q, company, now) ? q : null;
   const bad = failed || capture?.failures.some(row => row.ticker === company.ticker) || !quoteFresh(use, now);
   return { price: use?.price ?? company.cmp ?? null, change: use ? (use.prevClose ? (use.price / use.prevClose - 1) * 100 : null) : company.pct_change_today,
     at: use?.quoteAt || null, source: use?.provider || 'Daily close', stale: !!bad,
@@ -47,14 +47,14 @@ export function priceCaption(info) {
 export function stamp(at) {
   return at && Number.isFinite(Date.parse(at)) ? `${new Date(at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} IST` : 'not available';
 }
-export function decorate(rows) {
+export function decorate(rows, additionalTickers = new Set()) {
   const combined = new Map(rows.map(row => [row.company.ticker, row]));
-  for (const ticker of capture?.targets || []) if (!combined.has(ticker)) {
+  for (const ticker of capture?.targets || []) if (additionalTickers.has(ticker) && !combined.has(ticker)) {
     combined.set(ticker, scoreCompany({ticker, name: quote(ticker)?.name || ticker, error:'Daily price history pending'}));
   }
   return [...combined.values()].map(scored => {
     const daily = scored.company, q = quote(daily.ticker);
-    const usable = q && (!daily.price_date || q.sessionDate >= daily.price_date);
+    const usable = preferQuote(q, daily);
     if (!usable) return scored;
     // Keep the exact daily inputs for score explanations. Only screening fields use observations.
     return { ...scored, company: { ...daily, dailyCompany: daily, capturedQuote: q,
