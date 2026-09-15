@@ -5006,6 +5006,10 @@ reports the error, rather than silently substituting an old book.
 The target manifest retains every intended company through each checkpoint and final publication,
 including completed, failed and pending reads. Consuming the request queue must never shrink the
 coverage denominator; a budget-limited run leaves unattempted targets visibly unchecked.
+Indian Muns disclosure requests reuse the reviewed SME aliases in `announcement-identity.js`
+(Alpex Solar, Jay Bee Laminations and Sahana). The source receives the bare exchange symbol;
+responses retain the requested portfolio ticker. Unknown suffixes and non-India requests are
+unchanged, and source success still requires a readable response.
 
 The schedule runs every 30 minutes during weekday day/evening hours plus a weekend check.
 The browser reads every minute while the feed is visible, and on focus/reconnection; it can
