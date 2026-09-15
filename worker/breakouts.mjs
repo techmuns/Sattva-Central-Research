@@ -49,7 +49,7 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
 
 // Stream the fixed daily file: parsing and hashing its ~3 MB on every request exceeds
 // the free Worker's CPU budget. The browser validates it before replacing its daily cache.
-async function dailyResponse(source, delivery, ttl) {
+async function dailyResponse(source, delivery, ttl, revision = null) {
   const maximum = 16*1024*1024;
   if (!source.ok || Number(source.headers.get('content-length')) > maximum) {
     await source.body?.cancel(); throw Error('Daily file unavailable');
@@ -70,23 +70,41 @@ async function dailyResponse(source, delivery, ttl) {
     cancel(reason) { return reader?.cancel(reason); },
   });
   const headers = {'content-type':'application/json','cache-control':ttl ? `public, max-age=${ttl}` : 'no-store','x-sattva-delivery':delivery};
+  if (revision) headers['x-sattva-revision'] = revision;
   if (source.headers.has('etag')) headers.etag = source.headers.get('etag');
   return new Response(body,{headers});
 }
+const REVISION = /^[a-f0-9]{40}$/;
+const DAILY_FILES = {'/api/technicals':'technicals.json','/api/technicals/atr-history':'atr-history.json','/api/technicals/source':'technicals-source.json'};
+async function dailyRevision(origin,fetcher,edgeCache) {
+  const key=new Request(new URL('/api/technicals/revision',origin));
+  try { const cached=await edgeCache?.match(key);if(cached){const value=await boundedJson(cached,2000);if(REVISION.test(value.sha))return value.sha;} } catch { /* Recheck the fixed repository. */ }
+  const commits=await boundedJson(await fetcher('https://api.github.com/repos/techmuns/Sattva-Central-Research/commits?path=public%2Fdata%2Ftechnicals.json&per_page=1&sha=main',{
+    headers:{accept:'application/vnd.github+json','user-agent':'SattvaResearch'},redirect:'error',signal:AbortSignal.timeout(10000)}),64000);
+  const sha=commits?.[0]?.sha;if(!REVISION.test(sha || ''))throw Error('Daily revision unavailable');
+  if(edgeCache)await edgeCache.put(key,Response.json({sha},{headers:{'cache-control':'public, max-age=900'}})).catch(()=>{});
+  return sha;
+}
 export async function handleTechnicals(request, env, { fetcher = fetch, edgeCache = globalThis.caches?.default } = {}) {
   if (request.method !== 'GET') return reply({ ok: false, reason: 'method' }, 405);
-  const key = new Request(new URL('/api/technicals',request.url));
+  const url=new URL(request.url),file=DAILY_FILES[url.pathname],companion=url.pathname!=='/api/technicals';
+  if(!file || (companion && !REVISION.test(url.searchParams.get('revision') || ''))) return reply({ok:false,reason:'daily-revision-required'},400);
+  const keyUrl=new URL(url.pathname,url.origin);
+  if(companion)keyUrl.searchParams.set('revision',url.searchParams.get('revision'));
+  const key = new Request(keyUrl);
   try {
     const cached = await edgeCache?.match(key).catch(()=>null);
     if (cached) return revalidate(request,cached,'edge');
-    const source = await fetcher('https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/main/public/data/technicals.json', {
+    const revision=companion ? url.searchParams.get('revision') : await dailyRevision(url.origin,fetcher,edgeCache);
+    const source = await fetcher(`https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/${revision}/public/data/${file}`, {
       redirect: 'error', cache: 'no-cache', signal: AbortSignal.timeout(12000) });
-    const response = await dailyResponse(source,'repository',60);
+    const response = await dailyResponse(source,'repository',companion ? 86400 : 60,revision);
     if (edgeCache) await edgeCache.put(key,response.clone()).catch(()=>{});
     const result = revalidate(request,response,'repository');
     if (result.status === 304) await response.body.cancel();
     return result;
   } catch {
+    if(companion)return reply({ok:false,reason:'daily-companion-unavailable'},503);
     try { return await dailyResponse(await env.ASSETS.fetch(new Request(new URL('/data/technicals.json',request.url))),'deployed-fallback',0); }
     catch { return reply({ok:false,reason:'daily-file-unavailable'},503); }
   }

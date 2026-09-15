@@ -48,7 +48,8 @@ export function render(ctx) {
   if (!refreshOff) refreshOff = refreshRegistry.register('technicals-view', {
     label: 'Technicals', refresh: async () => {
       await technicals.refresh();
-      return live.refresh();
+      const prices = await live.refresh();
+      return {...prices,partial:prices.partial || technicals.meta()?.deliveryFailed === true};
     },
   });
   if (!dataOff) dataOff = technicals.onChange(() => { if (ctxRef) paint(ctxRef); });

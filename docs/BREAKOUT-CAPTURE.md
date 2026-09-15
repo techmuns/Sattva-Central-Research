@@ -38,8 +38,12 @@ that every brief breakout will be observed.
   minutes. Failed or unchecked companies remain explicit. Oldest/unseen names go
   first on the next run, avoiding permanent starvation of the end of the list.
 - Quotes are saved directly to the Worker, without a data commit or website build
-  every 15 minutes. `/api/technicals` independently reads the fixed daily file
-  from GitHub main; a failed read returns a labelled deployed fallback. Publishing
+  every 15 minutes. `/api/technicals` resolves the latest commit of the daily file
+  on GitHub main (a shared 15-minute revision cache), then streams it and its ATR
+  history/optional indicator overlay from that exact revision. Companion routes
+  accept only a commit hash and their fixed file path. If any input is unavailable,
+  the browser keeps its prior complete bundle or a labelled deployed fallback;
+  it never mixes a new score file with old trend inputs. Publishing
   this new Worker and browser release still requires a successful deployment.
 - Visible dashboards read the saved capture every minute and on focus/return or
   reconnect. Daily data revalidates every 15 minutes and on return when due.
@@ -68,6 +72,10 @@ with the previous close. Missing 30-session bases can be fetched from the
 Provider failure, expiry, unmapped symbols and insufficient history remain visible
 as incomplete coverage. A free source does not establish an uptime guarantee or
 customer redistribution permission.
+
+Fresh Yahoo quotes that lack a base also enter the backup history lookup. Their
+price and volume are retained if that lookup fails; a supplied base enriches the
+primary observation before its first checkpoint, without rewriting saved history.
 
 ## Freshness, completeness and history
 

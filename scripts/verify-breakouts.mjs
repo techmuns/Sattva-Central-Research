@@ -156,15 +156,36 @@ test('later historical corrections retain both observations without duplicating 
 
 test('daily delivery streams the fixed source and reuses its ETag without reparsing it in the Worker',async()=>{
  const payload={companies:[{ticker:'TEST'}],generated_at:iso(AT)};
- const response=await handleTechnicals(new Request('https://test/api/technicals'),{}, {fetcher:async url=>{assert(url.endsWith('/main/public/data/technicals.json'));return Response.json(payload,{headers:{etag:'"daily-1"'}});}});
+ const sha='a'.repeat(40),fetcher=raw=>async url=>{if(url.startsWith('https://api.github.com/'))return Response.json([{sha}]);assert(url.endsWith(`/${sha}/public/data/technicals.json`));return raw();};
+ const response=await handleTechnicals(new Request('https://test/api/technicals'),{}, {fetcher:fetcher(()=>Response.json(payload,{headers:{etag:'"daily-1"'}}))});
  assert.equal(response.headers.get('etag'),'"daily-1"');assert.equal(response.headers.get('x-sattva-delivery'),'repository');assert.deepEqual(await response.json(),payload);
- const notModified=await handleTechnicals(new Request('https://test/api/technicals',{headers:{'if-none-match':'"daily-1"'}}),{}, {fetcher:async()=>Response.json(payload,{headers:{etag:'"daily-1"'}})});
+ const notModified=await handleTechnicals(new Request('https://test/api/technicals',{headers:{'if-none-match':'"daily-1"'}}),{}, {fetcher:fetcher(()=>Response.json(payload,{headers:{etag:'"daily-1"'}}))});
  assert.equal(notModified.status,304);
  const brokenCache={match:async()=>{throw Error('cache unavailable');},put:async()=>{throw Error('cache unavailable');}};
- const uncached=await handleTechnicals(new Request('https://test/api/technicals'),{}, {edgeCache:brokenCache,fetcher:async()=>Response.json(payload)});
+ const uncached=await handleTechnicals(new Request('https://test/api/technicals'),{}, {edgeCache:brokenCache,fetcher:fetcher(()=>Response.json(payload))});
  assert.deepEqual(await uncached.json(),payload);
- const oversized=await handleTechnicals(new Request('https://test/api/technicals'),{}, {fetcher:async()=>new Response(new Uint8Array(17*1024*1024))});
+ const oversized=await handleTechnicals(new Request('https://test/api/technicals'),{}, {fetcher:fetcher(()=>new Response(new Uint8Array(17*1024*1024)))});
  await assert.rejects(oversized.arrayBuffer(),/too large/);
+});
+
+test('fresh primary quotes without a base use backup history and survive a backup failure',async()=>{
+ for(const failed of [false,true]){
+  const {store,client}=harness();let used=0;
+  const summary=await collectBreakouts({targets:[{ticker:'TEST'}],client,now:()=>AT,sleep:async()=>{},token:'fixture',primary:async()=>quote('TEST',AT,{base:null}),backup:async targets=>{
+   used++;assert.equal(targets[0].ticker,'TEST');if(failed)throw Error('offline');return {rows:[quote('TEST',AT,{price:110,provider:'Upstox'})]};
+  }});
+  assert.equal(used,1);assert.equal(summary.noBase,failed?1:0);assert.equal(summary.failures,0);
+  assert.equal(store.read().rows[0].price,105);assert.equal(store.read().rows[0].provider,'Yahoo Finance');assert.equal(store.history('TEST').rows.length,1);
+ }
+});
+
+test('daily companion files use the exact daily revision and never silently use deployed inputs',async()=>{
+ const sha='b'.repeat(40),expected={TEST:[{date:'2026-09-11',atr_pct:1.2}]};
+ const request=new Request(`https://test/api/technicals/atr-history?revision=${sha}`);
+ const response=await handleTechnicals(request,{}, {fetcher:async url=>{assert.equal(url,`https://raw.githubusercontent.com/techmuns/Sattva-Central-Research/${sha}/public/data/atr-history.json`);return Response.json(expected);}});
+ assert.equal(response.headers.get('x-sattva-revision'),sha);assert.deepEqual(await response.json(),expected);
+ const failed=await handleTechnicals(request,{ASSETS:{fetch:()=>{throw Error('must not mix revisions');}}},{fetcher:async()=>{throw Error('offline');}});assert.equal(failed.status,503);
+ const refused=await handleTechnicals(new Request('https://test/api/technicals/atr-history?revision=main'),{},{fetcher:()=>{throw Error('must not fetch');}});assert.equal(refused.status,400);
 });
 
 test('long captures acquire a fresh identity for every checkpoint',async()=>{

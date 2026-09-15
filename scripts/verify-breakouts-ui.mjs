@@ -7,14 +7,22 @@ const {chromium}=await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root=resolve('public'), AT=Date.parse('2026-09-15T06:30:00Z');
 const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=original.companies.find(row=>!row.error);
 const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-10',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-10',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
-let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0;
+const deployedDaily=structuredClone(daily);
+let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0,dailyFail=false,companionFail=false,dailySha='a'.repeat(40);
 const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  res.setHeader('cache-control','no-cache');
  const json=value=>{res.setHeader('content-type','application/json');res.end(JSON.stringify(value));};
  if(path==='/api/breakouts'){reads++;if(fail){res.writeHead(503).end();return;}return json(snapshot());}
- if(path==='/api/technicals'||path==='/data/technicals.json')return json(daily);
+ if(path==='/api/technicals') { if(dailyFail){res.writeHead(503).end();return;} res.setHeader('x-sattva-revision',dailySha);return json(daily); }
+ if(path==='/api/technicals/atr-history'||path==='/api/technicals/source') {
+  assert.equal(new URL(req.url,'http://localhost').searchParams.get('revision'),dailySha);
+  if(companionFail){res.writeHead(503).end();return;}
+  res.setHeader('x-sattva-revision',dailySha);return json(path.endsWith('atr-history')?{TEST:[{date:daily.price_date,atr_pct:1.23}]}:{});
+ }
+ if(path==='/data/technicals.json')return json(deployedDaily);
+ if(path==='/data/atr-history.json')return json({TEST:[{date:'2026-09-10',atr_pct:9.99}]});
  if(path==='/api/live-prices'){muns++;res.writeHead(503).end();return;}
  if(path.startsWith('/api/'))return json({ok:false});
  const file=resolve(root,`.${path==='/'?'/index.html':path}`);
@@ -36,6 +44,7 @@ try{
  await page.goto(`${origin}/#/research/breakouts/strong-breakouts?scope=universe`);
  const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
  assert.equal(await cell.textContent(),'₹106.00');
+ assert.equal(await page.evaluate(async()=>(await import('/js/data/technicals.js')).byTicker('TEST').company.atr_history[0].atr_pct),1.23);
  await page.locator('[data-row-key="FUTURE"]').waitFor();
  assert(await page.locator('[data-capture-note]').innerText().then(text=>text.includes('2026-09-10')));
  assert((await page.locator('[data-capture-note]').textContent()).includes('Ranges with gaps: 1'));
@@ -52,12 +61,20 @@ try{
  assert((await popup.innerText()).includes('₹108'));assert((await popup.innerText()).includes('+10.20%'));
  assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(),'test company');
  assert((await page.locator('#drill-content').innerText()).includes('2026-09-10'));
- daily.generated_at='2026-09-15T06:31:00Z';daily.price_date=daily.companies[0].bar_date='2026-09-11';daily.companies[0].ema50=999;
+ dailySha='b'.repeat(40);daily.generated_at='2026-09-15T06:31:00Z';daily.price_date=daily.companies[0].bar_date='2026-09-11';daily.companies[0].ema50=999;
  await page.clock.runFor(15*60000);
  await page.waitForFunction(()=>document.querySelector('#drill-content')?.textContent.includes('close 2026-09-11'));
  assert((await page.locator('#drill-content').innerText()).includes('999'));
  assert((await popup.innerText()).includes('₹108'));
  await page.locator('[data-drill-close]').click();
+ const refreshDaily=()=>page.evaluate(async()=>{const r=await import('/js/core/refresh.js');const result=await r.refreshOne('technicals-view');return {result,lastAt:r.lastRefreshAt('technicals-view')};});
+ const goodDaily=await refreshDaily();assert.equal(goodDaily.result.partial,false);
+ dailyFail=true;await page.clock.runFor(1000);
+ const failedDaily=await refreshDaily();assert.equal(failedDaily.result.partial,true);assert.equal(failedDaily.lastAt,goodDaily.lastAt);
+ dailyFail=false;companionFail=true;dailySha='c'.repeat(40);daily.generated_at='2026-09-15T06:45:00Z';daily.companies[0].ema50=888;
+ assert.equal((await refreshDaily()).result.partial,true);
+ assert.equal(await page.evaluate(async()=>(await import('/js/data/technicals.js')).byTicker('TEST').company.ema50),999);
+ companionFail=false;
  fail=true;await page.evaluate(()=>window.dispatchEvent(new Event('online')));
  await page.waitForFunction(()=>document.querySelector('[data-live-info]')?.textContent.includes('Partial update'));
  assert.equal(await cell.textContent(),'₹108.00');assert((await cell.locator('..').innerText()).includes('Saved'));

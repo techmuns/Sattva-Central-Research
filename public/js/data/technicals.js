@@ -39,12 +39,28 @@ export function load() {
   return loadPromise;
 }
 
-async function buildCache() {
-  let payload;
+async function dailyBundle() {
   try {
-    payload = await fetchJson('/api/technicals');
+    const payload = await fetchJson('/api/technicals');
     if (!Array.isArray(payload?.companies) || !payload.companies.length || !Number.isFinite(Date.parse(payload.generated_at))) throw Error('Invalid technicals');
-  } catch { payload = { ...await fetchJson(TECHNICALS_PATH), deliveryFailed: true }; }
+    const revision=payload.deliveryRevision;
+    if(payload.deliveryFailed || !/^[a-f0-9]{40}$/.test(revision || ''))throw Error('Unpinned daily data');
+    const [atrHistory,overlay]=await Promise.all([
+      fetchJson(`/api/technicals/atr-history?revision=${revision}`),fetchJson(`/api/technicals/source?revision=${revision}`),
+    ]);
+    if(atrHistory?.deliveryRevision!==revision || overlay?.deliveryRevision!==revision)throw Error('Mixed daily revisions');
+    return {payload,atrHistory,overlay};
+  } catch {
+    // Fall back as a whole bundle. Never combine a new daily file with deployed trend inputs.
+    const [payload,atrHistory,overlay]=await Promise.all([
+      fetchJson(TECHNICALS_PATH),fetchJson(ATR_HISTORY_PATH).catch(()=>({})),fetchJson(SOURCE_OVERLAY_PATH).catch(()=>({})),
+    ]);
+    return {payload:{...payload,deliveryFailed:true},atrHistory,overlay};
+  }
+}
+async function buildCache() {
+  const {payload,atrHistory,overlay}=await dailyBundle();
+  if (!Array.isArray(payload?.companies) || !payload.companies.length || !Number.isFinite(Date.parse(payload.generated_at))) throw Error('Invalid daily bundle');
   if (cache && Date.parse(payload.generated_at) < Date.parse(cache.meta.generated_at)) {
     cache.meta.deliveryFailed = true;
     return cache;
@@ -53,7 +69,6 @@ async function buildCache() {
 
   // ATR trend accumulator — the ATR Stability rule reads `c.atr_history`. Optional: without
   // it the rule still scores on the absolute level and says the trend is pending.
-  const atrHistory = await fetchJson(ATR_HISTORY_PATH).catch(() => ({}));
   for (const row of rows) {
     row.price_date ??= row.bar_date || null;
     const hist = row.ticker && atrHistory[row.ticker];
@@ -65,7 +80,7 @@ async function buildCache() {
   // would see on TradingView — and `_source_tech_fields` records which fields were
   // overwritten so rule-meta.js can label the Source chip accurately per rule.
   // We do not build that scraper here; this just honours the file if it appears.
-  await applySourceOverlay(rows);
+  applySourceOverlay(rows,overlay);
 
   const scored = rows.map((c) => scoreCompany(c)).sort(bestFirst);
   const byTicker = new Map();
@@ -75,6 +90,7 @@ async function buildCache() {
     meta: {
       generated_at: payload?.generated_at ?? null,
       deliveryFailed: payload?.deliveryFailed === true,
+      deliveryRevision: payload?.deliveryRevision || null,
       // The session the closes belong to — NOT when the file was written. See the scraper.
       price_date: payload?.price_date ?? null,
       price_date_rows: payload?.price_date_rows ?? null,
@@ -115,16 +131,11 @@ async function fetchJson(path) {
   if (!res.ok) throw new Error(`Failed to load ${path} (${res.status})`);
   const data = await res.json();
   if (res.headers.get('x-sattva-delivery') === 'deployed-fallback') data.deliveryFailed = true;
+  if (res.headers.has('x-sattva-revision')) data.deliveryRevision = res.headers.get('x-sattva-revision');
   return data;
 }
 
-async function applySourceOverlay(rows) {
-  let src;
-  try {
-    src = await fetchJson(SOURCE_OVERLAY_PATH);
-  } catch {
-    return; // absent by design today — nothing to overlay
-  }
+function applySourceOverlay(rows,src) {
   const bySlug = src?.companies || {};
   for (const row of rows) {
     const s = row.ticker && bySlug[row.ticker.toUpperCase()];

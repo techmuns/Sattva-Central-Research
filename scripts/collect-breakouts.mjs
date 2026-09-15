@@ -47,6 +47,9 @@ export async function collectBreakouts({ targets, previous = null, client, prima
         const row = await primary(target, { now });
         if (row.sessionDate === marketWindow(now()).day && row.base) bases.set(target.ticker, row.base);
         if (!quoteFresh(row, now())) { misses.push({ target, reason: 'stale' }); return; }
+        // Delay this row's first checkpoint until its optional base lookup finishes,
+        // so it is saved once without mutating an acknowledged observation.
+        if (token && !row.base) { misses.push({target,reason:'missing-base',quote:row}); return; }
         saved.push(row); rows.push(row);
       } catch (error) {
         if (error.message === 'rate-limited') rateLimited = true;
@@ -58,13 +61,20 @@ export async function collectBreakouts({ targets, previous = null, client, prima
   }
   let backupReason = token ? 'unused' : 'not-configured';
   if (misses.length && token) {
+    let result = {rows:[]};
     try {
-      const result = await backup(misses.map(m => m.target), bases, { token, now });
+      result = await backup(misses.map(m => m.target), bases, { token, now });
+      if (!Array.isArray(result?.rows)) throw Error('Invalid backup result');
       backupReason = result.reason || 'ok';
-      const saved = result.rows.filter(row => quoteFresh(row, now()));
-      for (let i = 0; i < saved.length; i += BREAKOUT_BATCH) await client({ action: 'checkpoint', rows: saved.slice(i, i + BREAKOUT_BATCH).map(row=>validateQuote(row,now())) });
-      rows.push(...saved);
-    } catch { backupReason = 'unavailable'; }
+    } catch { result = {rows:[]}; backupReason = 'unavailable'; }
+    const candidates = new Map(result.rows.map(row=>[row.ticker,row]));
+    const saved = misses.flatMap(m => {
+      const row = candidates.get(m.target.ticker);
+      if (m.quote) return [{...m.quote,...(row?.base && row.sessionDate===m.quote.sessionDate ? {base:row.base,historyBars:row.historyBars || m.quote.historyBars} : {})}];
+      return row && quoteFresh(row,now()) ? [row] : [];
+    });
+    for (let i = 0; i < saved.length; i += BREAKOUT_BATCH) await client({ action: 'checkpoint', rows: saved.slice(i, i + BREAKOUT_BATCH).map(row=>validateQuote(row,now())) });
+    rows.push(...saved);
   }
   const succeeded = new Set(rows.map(row => row.ticker));
   const failures = misses.filter(m => !succeeded.has(m.target.ticker)).map(m => ({ ticker: m.target.ticker, reason: m.reason }));
