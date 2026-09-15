@@ -12,7 +12,7 @@ export const arrivalsHtml = `<section class="alert-arrivals" data-alert-arrivals
 // so scrolling back to an old virtual row cannot restart its arrival highlight.
 export function createArrivalsUI(tracker) {
   let root = null, observer = null, timer = null;
-  let recent = [], state = {}, announced = new Set();
+  let recent = [], state = {}, announced = new Set(), announcementIds = [];
   const text = (selector, value) => {
     const node = root?.querySelector(selector);
     if (node && node.textContent !== value) node.textContent = value;
@@ -43,6 +43,11 @@ export function createArrivalsUI(tracker) {
   function paint() {
     const strip = root?.querySelector('[data-alert-arrivals]');
     if (!strip) return;
+    // Screen-reader announcements carry the same privacy/filter boundary as visible headlines.
+    if (announcementIds.some(id => !recent.some(row => row.id === id && tracker.time(id)))) {
+      text('[data-arrivals-announcement]', '');
+      announcementIds = [];
+    }
     let latest = null;
     for (const row of recent) if (!latest || tracker.time(row.id) > tracker.time(latest.id)) latest = row;
     const offline = navigator.onLine === false;
@@ -65,6 +70,7 @@ export function createArrivalsUI(tracker) {
     if (fresh.length && !document.hidden) {
       text('[data-arrivals-announcement]', `${fresh.length} newly received alert${fresh.length === 1 ? '' : 's'} in Till Today. ${fresh[0].company || ''}: ${fresh[0].headline}`);
       fresh.forEach(row => announced.add(row.id));
+      announcementIds = fresh.map(row => row.id);
     }
     decorate();
   }

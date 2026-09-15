@@ -79,7 +79,7 @@ try {
     await frame.waitForFunction(id => document.querySelector(`[data-tab-id="${id}"]`)?.getAttribute('aria-selected') === 'true', route.split(/[/?]/)[0]);
     await frame.waitForFunction(() => {
       const panel = document.querySelector('#content-host');
-      return panel?.textContent.trim() && !panel.querySelector('.skeleton-shimmer');
+      return panel?.textContent.trim() && !panel.inert && !panel.querySelector('.skeleton-shimmer');
     }, null, { timeout: 60000 });
     if (section === 'directory') await frame.locator('[data-ipo-view]').selectOption('directory');
     else if (section) await frame.locator('[data-chatter-section-tabs]').getByRole('tab', { name: section, exact: true }).click();
@@ -178,29 +178,34 @@ try {
   await frame.locator('[data-export]').click();
   assert.deepEqual(await frame.evaluate(() => exportedIds), Array.from({ length: 3000 }, (_, i) => String(i)), 'export receives every record in exact order, not just mounted rows');
   const search = frame.locator('[data-table-search]');
-  await search.fill('Record 2999');
+  const applySearch = async value => {
+    await search.fill(value);
+    await frame.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+  };
+  await applySearch('Record 2999');
   assert.equal(await frame.locator('tr[data-row-key]').count(), 1, 'search finds the final off-screen record');
   assert.equal(await frame.locator('tr[data-row-key]').getAttribute('data-row-key'), '2999');
   await frame.locator('[data-export]').click();
   assert.deepEqual(await frame.evaluate(() => exportedIds), ['2999'], 'filtered export uses the full matching model');
-  await search.fill('');
+  await applySearch('');
   await frame.locator('th[data-sort="Value"]').click();
+  await frame.waitForFunction(() => !document.querySelector('[data-table-loading]'));
   assert.equal(await frame.locator('tr[data-row-key]').first().getAttribute('data-row-key'), '2999', 'sorting is global');
   await frame.evaluate(() => { records[2999].title = 'Updated live title'; fixtureTable.updateRows(['2999']); });
-  await search.fill('Updated live title');
+  await applySearch('Updated live title');
   assert.equal(await frame.locator('tr[data-row-key]').count(), 1, 'live patches invalidate search text');
   await frame.evaluate(() => {
     records = records.map(row => row.id === '2999' ? { ...row, title: 'Replacement live title' } : row);
     fixtureTable.updateData(records);
   });
   assert.equal(await frame.locator('tr[data-row-key]').count(), 0, 'replacing same-ID records invalidates the old search match');
-  await search.fill('Replacement live title');
+  await applySearch('Replacement live title');
   assert.equal(await frame.locator('tr[data-row-key]').count(), 1);
   assert((await frame.locator('tr[data-row-key]').innerText()).includes('Replacement live title'),
     'a correction without an optional revision field replaces the mounted row markup');
-  await search.fill('does-not-exist');
+  await applySearch('does-not-exist');
   assert.equal(await frame.locator('tr[data-row-key]').count(), 0, 'empty filtered lists are safe');
-  await search.fill('');
+  await applySearch('');
   await scroller.evaluate(el => { el.scrollTop = 30000; });
   await frame.evaluate(async () => { for (let i = 0; i < 5; i++) await new Promise(requestAnimationFrame); });
   const readAnchor = () => scroller.evaluate(el => {

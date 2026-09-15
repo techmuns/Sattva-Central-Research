@@ -1,4 +1,19 @@
 /* Shared appearance tokens. Tailwind's role palettes live in scripts/theme-palette.cjs. */
+/* Loading rows keep the result area steady while controls remain usable. */
+[data-score-table], [data-mcnews-list] { position: relative; }
+#dashboard-main:has(> [data-table-loading]) { position: relative; }
+[data-export]:disabled, [data-news-export]:disabled { opacity: .5; cursor: progress; box-shadow: none; }
+.table-results-loading { visibility: hidden; }
+.table-loading-placeholder { position: absolute; inset-inline: 0; z-index: 11; overflow: hidden; pointer-events: none; background: rgb(var(--surface-white, 255 255 255)); }
+.loading-grid { min-height: 140px; overflow: hidden; background: rgb(var(--surface-white, 255 255 255)); }
+.loading-grid-row { display: grid; gap: 24px; min-height: 64px; padding: 18px 20px; border-bottom: 1px solid rgb(var(--edge-slate-100, 241 245 249)); }
+.loading-grid-cell { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.loading-grid-line { display: block; height: 10px; border-radius: 6px; background: rgb(var(--surface-slate-200, 226 232 240)); animation: loading-pulse 1.5s ease-in-out infinite; }
+.loading-grid-subline { width: 42%; height: 7px; }
+.loading-grid .skeleton-shimmer::after { display: none; }
+@keyframes loading-pulse { 50% { opacity: .4; } }
+@media (max-width: 600px) { .loading-grid-row { gap: 12px; padding-inline: 14px; } }
+@media (prefers-reduced-motion: reduce) { .loading-grid-line { animation: none; } }
 /* Parent state also applies to cached or virtual rows inserted after an access change. */
 [data-summary-available="false"] [data-screener-summary] { display: none; }
 #modal-content[data-summary-view] { max-height: 85vh; max-height: 85dvh; overflow-y: auto; overflow-wrap: anywhere; }

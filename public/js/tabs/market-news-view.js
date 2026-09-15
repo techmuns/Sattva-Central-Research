@@ -26,6 +26,7 @@ import * as refreshRegistry from '../core/refresh.js';
 
 import { sectionHead, openModal } from '../ui/screener.js';
 import { mountWindowedList } from '../ui/windowed-list.js';
+import { coverTableResults, loadingGrid } from '../ui/loading.js';
 import { escapeHtml } from '../core/dom.js';
 import { snapshotForRow } from '../core/bookmark-record.js';
 import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
@@ -73,6 +74,37 @@ let failure = null;
 // value held on the input would be discarded the moment a capture landed.
 let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: DEFAULT_NEWS_PERIOD };
 let fillStop = null;
+let filterFrame = 0;
+let filterTask = 0;
+let releaseFilterLoading = null;
+
+function cancelFilterPaint() {
+  if (filterFrame) cancelAnimationFrame(filterFrame);
+  clearTimeout(filterTask);
+  filterFrame = 0; filterTask = 0;
+  releaseFilterLoading?.(); releaseFilterLoading = null;
+}
+
+function requestRelist(root) {
+  if (filterFrame || filterTask) return;
+  if (marketNews.rows().length < 1000) { relist(root); return; }
+  const list = root.querySelector('[data-mcnews-list]');
+  const scroller = list?.querySelector('[data-news-scroll]');
+  if (!scroller) return;
+  releaseFilterLoading = coverTableResults(list, scroller, { columns: 3 });
+  const exportButton = list.querySelector('[data-news-export]');
+  if (exportButton) exportButton.disabled = true;
+  const count = list.querySelector('[data-news-count]');
+  if (count) count.textContent = 'Loading results…';
+  filterFrame = requestAnimationFrame(() => {
+    filterFrame = 0;
+    filterTask = setTimeout(() => {
+      filterTask = 0;
+      if (!ctxRef || ctxRef.root !== root || !root.isConnected) { cancelFilterPaint(); return; }
+      relist(root);
+    }, 0);
+  });
+}
 // Whether the provenance modal — which holds the Fetch control — is on screen, so a fetch's
 // progress can be re-rendered into it rather than reported to a panel nobody is looking at.
 let modalOpen = false;
@@ -468,7 +500,7 @@ function listHtml(rows) {
           </select>
         </div>
         <div class="flex items-center gap-3">
-          <span class="whitespace-nowrap text-sm text-slate-500"><strong class="text-slate-800">${escapeHtml(formatNumber(rows.length))}</strong> of ${escapeHtml(formatNumber(feedRows().length))} stories</span>
+          <span data-news-count class="whitespace-nowrap text-sm text-slate-500"><strong class="text-slate-800">${escapeHtml(formatNumber(rows.length))}</strong> of ${escapeHtml(formatNumber(feedRows().length))} stories</span>
           <button type="button" data-news-export
             class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
             <span>📊</span><span>Export Excel</span>
@@ -683,6 +715,7 @@ function provenance(m) {
 }
 
 function paint(ctx) {
+  cancelFilterPaint();
   offBookmarks?.(); offBookmarks = null;
   const m = marketNews.meta();
   const rows = feedRows();
@@ -735,6 +768,7 @@ function paint(ctx) {
  * filter is a new list, and holding the old offset would land the reader in the middle of it.
  */
 function relist(root) {
+  cancelFilterPaint();
   const old = root.querySelector('[data-mcnews-list]');
   if (!old) return;
   if (fillStop) {
@@ -742,7 +776,8 @@ function relist(root) {
     fillStop = null;
   }
   const search = old.querySelector('[data-news-search]');
-  const hadFocus = document.activeElement === search;
+  const focusedSelector = ['[data-news-search]', '[data-news-period]', '[data-news-topic]', '[data-news-section]', '[data-news-source]', '[data-news-publisher]']
+    .find(selector => old.querySelector(selector) === document.activeElement);
   const caret = search ? search.selectionStart : null;
 
   const filtered = visibleRows(feedRows());
@@ -750,10 +785,10 @@ function relist(root) {
   wireList(root);
   fillStop = fillRest(root, filtered, 0);
 
-  const next = root.querySelector('[data-news-search]');
-  if (next && hadFocus) {
-    next.focus();
-    if (caret != null) next.setSelectionRange(caret, caret);
+  const next = focusedSelector && root.querySelector(focusedSelector);
+  if (next) {
+    next.focus({ preventScroll: true });
+    if (focusedSelector === '[data-news-search]' && caret != null) next.setSelectionRange(caret, caret);
   }
 }
 
@@ -881,42 +916,43 @@ function wireList(root) {
   const search = root.querySelector('[data-news-search]');
   search?.addEventListener('input', () => {
     listView.q = search.value;
-    relist(root);
+    requestRelist(root);
   });
 
   const topic = root.querySelector('[data-news-topic]');
   const period = root.querySelector('[data-news-period]');
   period?.addEventListener('change', () => {
     listView.period = period.value;
-    relist(root);
+    requestRelist(root);
   });
   if (topic) {
     const onTopic = () => {
       listView.topic = topic.value;
-      relist(root);
+      requestRelist(root);
     };
     topic.addEventListener('change', onTopic);
   }
   const select = root.querySelector('[data-news-section]');
   select?.addEventListener('change', () => {
     listView.section = select.value;
-    relist(root);
+    requestRelist(root);
   });
 
   const sourceSelect = root.querySelector('[data-news-source]');
   sourceSelect?.addEventListener('change', () => {
     listView.source = sourceSelect.value;
-    relist(root);
+    requestRelist(root);
   });
 
   const pub = root.querySelector('[data-news-publisher]');
   pub?.addEventListener('change', () => {
     listView.publisher = pub.value;
-    relist(root);
+    requestRelist(root);
   });
 
   // Reads the ARRAY, never the DOM — a fill still in flight must not be able to truncate a workbook.
   root.querySelector('[data-news-export]')?.addEventListener('click', () => {
+    if (filterFrame || filterTask) return;
     exportVisible(visibleRows(feedRows()), marketNews.meta());
   });
 
@@ -1041,7 +1077,7 @@ export function render(ctx) {
 
   if (!marketNews.isLoaded()) {
     ctx.root.innerHTML = `${sectionHead({ title: 'News', description: DESCRIPTION })}
-      <div class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"></div>`;
+      ${loadingGrid({ columns: 3 })}`;
     marketNews.load().then(() => {
       if (!ctxRef) return;
       paint(ctxRef);
@@ -1056,6 +1092,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  cancelFilterPaint();
   offBookmarks?.(); offBookmarks = null;
   unregisterRefresh?.(); unregisterRefresh = null;
   ctxRef = null;
