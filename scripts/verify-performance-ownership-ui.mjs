@@ -125,6 +125,17 @@ try {
   assert(scroll.checks.every(c=>c.mounted<=100&&c.covered),'every observed viewport has rows from header to bottom');
   console.log(JSON.stringify({experiment:'30 scroll steps over 50000 rows',baseline:baseline||null,...scroll,checks:undefined}));
   if(!baseline){assert(scroll.cells<220,'unchanged cells are reused');assert(scroll.parsedRows<220,'unchanged rows are not reparsed');}
+  if(!baseline){
+    await page.setViewportSize({width:1440,height:2600});
+    await page.locator('[data-table-scroll]').evaluate(node=>{node.style.maxHeight='2200px';node.style.height='2200px'});
+    await page.waitForFunction(()=>{
+      const scroller=document.querySelector('[data-table-scroll]'),bottom=scroller.getBoundingClientRect().bottom;
+      return [...scroller.querySelectorAll('tr[data-row-key]')].some(row=>row.getBoundingClientRect().bottom>=bottom-2);
+    });
+    assert(await page.locator('tr[data-row-key]').count()<=100,'taller viewport remains bounded');
+    await page.locator('[data-table-scroll]').evaluate(node=>{node.style.maxHeight='600px';node.style.height='600px'});
+    await page.setViewportSize({width:1440,height:1000});
+  }
   await page.evaluate(()=>{
     const row=document.querySelectorAll('tr[data-row-key]')[20];window.heldKey=row.dataset.rowKey;
     rows=rows.map(r=>r.id===heldKey?{...r,detail:'Corrected source evidence'}:r);table.updateData(rows);

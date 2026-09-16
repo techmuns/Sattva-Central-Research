@@ -80,7 +80,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   function paint(index, force = false) {
     const count = Math.max(40, Math.min(100, Math.ceil(scroller.clientHeight / 40) + overscan * 2));
     const next = Math.max(0, Math.min(Math.max(0, rows.length - count), index - overscan));
-    if (!force && next === start) return;
+    if (!force && next === start && end === Math.min(rows.length, next + count)) return;
     start = next; end = Math.min(rows.length, start + count);
     const active = content.contains(document.activeElement) ? document.activeElement : null;
     const activeRow = active?.closest(rowSelector);
@@ -158,6 +158,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       paint(held.index, true);
     }
     scheduleMeasure();
+    scheduleViewport();
   });
   observer.observe(scroller); observer.observe(content);
   return {
