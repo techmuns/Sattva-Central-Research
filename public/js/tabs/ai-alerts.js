@@ -10,6 +10,8 @@ import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { normalizeBookmark, snapshotForRow } from '../core/bookmark-record.js';
 import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
+import { reconcileMarkup } from '../ui/reconcile-markup.js';
+import { getHostContext } from '../core/host-context.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
@@ -39,6 +41,8 @@ try { const saved = localStorage.getItem(SORT_KEY); if (Object.hasOwn(SORTS, sav
 
 let ctxRef = null;
 let offBookmarks = null;
+let bookmarkRoot = null;
+let actionGeneration = 0;
 let report = null;
 let loadToken = 0;
 let cacheToken = 0;
@@ -70,6 +74,8 @@ function sourceChanged() {
 // Keep a completed view in memory across tab visits. This lifetime listener also
 // revokes that cached private view if access expires while another tab is open.
 onPortfolioInvalidation((version) => {
+  actionGeneration++;
+  alerts.clearRankingCache();
   cacheToken += 1;
   if (version < 0) {
     // Universe/Watchlist cards also carry membership badges from the private
@@ -111,6 +117,7 @@ function portfolioUnavailable() {
 }
 
 export function render(ctx) {
+  actionGeneration++;
   ctxRef = ctx;
 
   if (!unsubs.length) {
@@ -173,6 +180,8 @@ export function render(ctx) {
 
 export function destroy() {
   offBookmarks?.(); offBookmarks = null;
+  bookmarkRoot = null;
+  actionGeneration++;
   clearTimeout(sourceTimer);
   sourceTimer = null;
   captureDirty = false;
@@ -207,6 +216,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
   sizeError = loadError = '';
   awaitingBook = null;
   const current = () => token === loadToken && !!ctxRef;
+  const book = coverage.holdings();
+  const bookSignature = JSON.stringify(book);
 
   // Public evidence can load while the private connector checks holding sizes.
   // A slow or unavailable size reader must not hold the first alert hostage.
@@ -244,9 +255,10 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
     const [next, positionSizes] = await Promise.all([
       alerts.collect({
         scope: ctx.scope,
-        holdings: coverage.holdings(),
+        holdings: book,
         refresh: forceRefresh,
         load,
+        isCurrent: current,
         onPartial: (partial) => {
           if (!current()) return;
           report = alerts.withPositionSnapshot(alerts.mergePartialReport(report, partial), checkedSnapshot);
@@ -258,8 +270,9 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
     if (!current()) return;
     // The checked book can contain additions/exits since collection began. Read
     // the now-loaded feeds against that book without another network refresh.
-    const completed = positionSizes ? await alerts.collect({ scope: ctx.scope,
-      holdings: coverage.holdings(), positionSizes, load: false }) : next;
+    const completed = positionSizes && JSON.stringify(coverage.holdings()) !== bookSignature
+      ? await alerts.collect({ scope: ctx.scope, holdings: coverage.holdings(), positionSizes, load: false, isCurrent: current })
+      : alerts.withPositionSnapshot(next, positionSizes);
     if (!current()) return;
     report = completed.pending || completed.feeds.some(feed => feed.status === 'failed')
       ? alerts.mergePartialReport(report, completed) : completed;
@@ -275,6 +288,11 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
 }
 
 function paint(ctx) {
+  if (!ctx || ctx !== ctxRef) return;
+  const anchor = [...ctx.root.querySelectorAll('[data-ai-card]')].find(node => {
+    const rect = node.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight;
+  });
+  const anchorTop = anchor?.getBoundingClientRect().top;
   const matches = (query.trim() ? report?.allCards || [] : report?.cards || []).filter((card) => matchesSearch(card, query));
   const cards = sortAlertCards(filteredCards(matches), ctx.scope === 'portfolio' ? sortOrder : sortOrder === 'holdings' ? 'newest' : sortOrder);
   const shown = cards.slice(0, visibleLimit);
@@ -291,10 +309,10 @@ function paint(ctx) {
     });
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
-  ctx.root.querySelector('[data-ai-heading]').innerHTML = head(ctx);
+  reconcileMarkup(ctx.root.querySelector('[data-ai-heading]'), head(ctx));
   const cache = alertWindowCache.status();
-  ctx.root.querySelector('[data-ai-position-status]').innerHTML = positionStatus(ctx) + (cache.message
-    ? `<p data-ai-cache-status role="status" class="mb-4 text-xs text-slate-500">${escapeHtml(cache.message)}</p>` : '');
+  reconcileMarkup(ctx.root.querySelector('[data-ai-position-status]'), positionStatus(ctx) + (cache.message
+    ? `<p data-ai-cache-status role="status" class="mb-4 text-xs text-slate-500">${escapeHtml(cache.message)}</p>` : ''));
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
   // Identical results keep their DOM, expanded evidence and keyboard focus.
   for (const [selector, markup] of [
@@ -302,9 +320,13 @@ function paint(ctx) {
     ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : loadError ? quietFallbackPanel() : loadingPanel()],
   ]) {
     const node = ctx.root.querySelector(selector);
-    if (node._markup !== markup) { node.innerHTML = markup; node._markup = markup; }
+    reconcileMarkup(node, markup);
   }
   wire(ctx, cards.length);
+  if (anchor?.isConnected && anchorTop != null) {
+    const delta = anchor.getBoundingClientRect().top - anchorTop;
+    if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+  }
 }
 
 function positionStatus(ctx) {
@@ -539,14 +561,18 @@ function contextMarkup(card, scope) {
     class="mt-2 block text-xs leading-relaxed text-slate-500 transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${escapeHtml(card.contextSummary)}</a>`;
 }
 
+const cardSnapshots = new WeakMap();
 function cardSnapshot(card) {
-  return normalizeBookmark({ title: card.insight, company: card.company, ticker: card.ticker, entityId: card.entityId,
+  if (cardSnapshots.has(card)) return cardSnapshots.get(card);
+  const snapshot = normalizeBookmark({ title: card.insight, company: card.company, ticker: card.ticker, entityId: card.entityId,
     kind: 'AI Alerts', source: 'Dashboard analysis', sourceId: `${card.key || card.ticker}:${card.evidenceKey || card.insight}`,
     eventDate: latestAlertEvent(card)?.day,
     body: card.events.map(event => [event.headline, event.detail, event.reason].filter(Boolean).join('\n')).join('\n\n'),
     details: card.events.map(event => ({ label: `${event.feedLabel || event.feed} · ${event.day || 'Date not supplied'}`, value: event.headline })),
     links: card.events.filter(event => event.url).map(event => ({ label: event.headline, url: event.url })),
   });
+  cardSnapshots.set(card, snapshot);
+  return snapshot;
 }
 function cardMarkup(card, scope, day, archived = false) {
   const badge = card.badge || { id: 'important', label: 'Important', tone: 'neutral' };
@@ -560,7 +586,7 @@ function cardMarkup(card, scope, day, archived = false) {
   const rest = card.events.length - events.length;
   const signal = latestAlertSignal(card);
   return `
-    <article data-ai-card data-ticker="${escapeHtml(card.ticker || '')}" data-entity-id="${escapeHtml(card.entityId || '')}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
+    <article data-ai-card data-ai-key="${escapeHtml(card.key || card.ticker || card.entityId)}" data-ticker="${escapeHtml(card.ticker || '')}" data-entity-id="${escapeHtml(card.entityId || '')}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
       class="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 ${archived ? 'border-l-slate-200' : tone.edge} bg-white shadow-sm ring-1 ring-slate-100"
       style="content-visibility: auto; contain-intrinsic-size: auto none auto 320px;">
       <div class="flex-1 p-5">
@@ -703,14 +729,29 @@ function filteredCards(cards) {
 }
 
 function wire(ctx, total) {
-  offBookmarks?.();
-  offBookmarks = wireBookmarks(ctx.root, button => {
-    const cardKey = button.closest('[data-ai-notebook-card]')?.dataset.aiNotebookCard;
-    if (cardKey) { const card = report?.cards?.find(card => String(card.key || card.ticker) === cardKey); return card && cardSnapshot(card); }
-    const id = button.closest('[data-ai-notebook-event]')?.dataset.aiNotebookEvent;
-    const event = report?.cards?.flatMap(card => card.events).find(event => String(event.id) === id);
-    return event && snapshotForRow(event, { section: 'daily-alerts' });
-  });
+  if (bookmarkRoot !== ctx.root) {
+    offBookmarks?.();
+    bookmarkRoot = ctx.root;
+    offBookmarks = wireBookmarks(ctx.root, button => {
+      if (ctxRef?.root !== ctx.root || !ctx.root.contains(button)) return null;
+      const model = report?.allCards || report?.cards || [];
+      const owner = button.closest('[data-ai-key]')?.dataset.aiKey;
+      const card = model.find(card => String(card.key || card.ticker || card.entityId) === owner);
+      if (!card) return null;
+      const cardKey = button.closest('[data-ai-notebook-card]')?.dataset.aiNotebookCard;
+      if (cardKey) return cardSnapshot(card);
+      const id = button.closest('[data-ai-notebook-event]')?.dataset.aiNotebookEvent;
+      const event = card.events.find(event => String(event.id) === id);
+      return event && snapshotForRow(event, { section: 'daily-alerts' });
+    }, { captureGuard: () => {
+      const view = ctxRef, generation = actionGeneration, session = getHostContext().session;
+      return () => {
+        const current = getHostContext().session;
+        return ctxRef === view && actionGeneration === generation &&
+          current.token === session.token && current.email === session.email && current.orgId === session.orgId;
+      };
+    } });
+  }
   const sort = ctx.root.querySelector('[data-ai-sort]');
   if (sort) sort.onchange = () => {
     if (!Object.hasOwn(SORTS, sort.value)) return;

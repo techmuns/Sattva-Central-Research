@@ -203,6 +203,19 @@ try {
   await settled();
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
   assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A00', 'weights arriving cannot silently change newest-first order');
+  await page.evaluate(() => {
+    window.stableNodes = ['[data-ai-card][data-ticker="A00"]', '[data-ai-card][data-ticker="A02"]',
+      '[data-ai-cards]', '[data-ai-sort]', '[data-ai-heading] h2', '[data-ai-more]'].map(selector => [selector, document.querySelector(selector)]);
+    window.stableButton = document.querySelector('[data-ai-card][data-ticker="A00"] [data-ai-mute]');
+    window.stableButton.focus({preventScroll:true});
+    window.fixtureEvents = window.fixtureEvents.map(event => event.id === 'A02-announcements'
+      ? {...event, headline:'Corrected A02 material risk disclosure'} : event);
+  });
+  await page.evaluate(() => window.refreshAlerts()); await settled();
+  assert(await page.evaluate(() => window.stableNodes.every(([selector,node]) => node && node === document.querySelector(selector))),
+    'one-card correction preserves unchanged cards, changed-card wrapper, heading, sort, grid and pagination nodes');
+  assert(await page.evaluate(() => document.activeElement === window.stableButton), 'a different card correction preserves the focused action');
+  assert.match(await card('A02').textContent(), /Corrected A02 material risk disclosure/);
   await page.locator('[data-ai-notebook-event] [data-bookmark-key]').first().click();
   await waitFor(page, async () => (await import('/js/core/bookmarks.js')).all().length === 1);
   const savedEvidence = await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all()[0]);
@@ -320,7 +333,10 @@ try {
   assert(!(await renderedText(card('A01').locator('[data-ai-date]'))).includes('IST'), 'mixed day precision does not invent a latest clock');
   assert.equal(await card('A01').locator('[data-ai-date] time').getAttribute('datetime'), '2026-09-04');
   await page.locator('[data-ai-clear]').click();
+  await page.evaluate(() => { window.firstPageCards = [...document.querySelectorAll('[data-ai-card]')]; });
   await page.locator('[data-ai-more]').click();
+  assert(await page.evaluate(() => window.firstPageCards.every(node => node.isConnected &&
+    document.querySelector(`[data-ai-key="${node.dataset.aiKey}"]`) === node)), 'Show more appends without replacing existing card nodes');
   assert.equal(await card('OLD').count(), 1, 'day-14 evidence remains available before midnight');
   assert.match(await page.locator('#root').innerText(), /14-day window/);
   await search.fill('A00');
@@ -470,16 +486,41 @@ try {
   assert.equal(await card('QUIET').count(), 1, 'company search reaches eligible below-threshold cards');
   assert.match(await renderedText(card('QUIET')), /Company update/i);
   assert.match(await page.locator('[data-ai-filter="important"]').innerText(), /0/, 'below-threshold search results do not inflate the Important count');
+  await card('QUIET').locator('[data-ai-notebook-card] [data-bookmark-key]').click();
+  await waitFor(page, async () => (await import('/js/core/bookmarks.js')).all().some(entry => entry.ticker === 'QUIET' && entry.kind === 'AI Alerts'));
+  await card('QUIET').locator('[data-ai-notebook-event] [data-bookmark-key]').click();
+  await waitFor(page, async () => (await import('/js/core/bookmarks.js')).all().filter(entry => entry.ticker === 'QUIET').length === 2);
+  assert.equal(await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all().find(entry => entry.ticker === 'QUIET' && entry.kind === 'Earnings').title),
+    'Routine quarterly reading', 'search-only evidence saves its canonical source snapshot');
   await search.fill('Private Robotics');
   const privateCard = page.locator('[data-ai-card][data-entity-id="isin:INE000009999"]');
   assert.equal(await privateCard.count(), 1);
   assert.equal(await privateCard.getAttribute('data-ticker'), '');
   assert.equal(await privateCard.locator('[data-open-general]').last().getAttribute('data-ticker'), 'Private Robotics');
+  await privateCard.locator('[data-ai-notebook-card] [data-bookmark-key]').click();
+  await waitFor(page, async () => (await import('/js/core/bookmarks.js')).all().some(entry => entry.entityId === 'isin:INE000009999' && entry.kind === 'AI Alerts'));
   await privateCard.locator('[data-ai-mute]').click();
   assert.equal(await privateCard.count(), 0);
   await page.locator('[data-ai-filter="archived"]').click();
   assert.equal(await privateCard.count(), 1, 'tickerless dismissal uses its own stable entity identity');
   await privateCard.locator('[data-ai-unmute]').click();
+  await page.evaluate(async () => {
+    window.dispose();
+    document.body.insertAdjacentHTML('beforeend','<div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div>');
+    const notebook = await import('/js/tabs/bookmarks.js');
+    notebook.render({root:document.querySelector('#root'),scope:'universe',params:{}});
+  });
+  await page.locator('[data-notebook-search]').fill('Quiet Signals');
+  await waitFor(page, () => document.querySelectorAll('[data-notebook-entry]').length === 2);
+  assert.match(await page.locator('[data-notebook-results]').innerText(), /Routine quarterly reading/);
+  for (const entry of await page.locator('[data-notebook-entry]').all()) {
+    await entry.locator('[data-notebook-open]').first().click();
+    assert.match(await page.locator('#modal-content').textContent(), /Quiet Signals|QUIET/);
+    await page.evaluate(async () => (await import('/js/ui/screener.js')).closeModal());
+    await page.clock.runFor(220);
+  }
+  await page.evaluate(async () => { (await import('/js/tabs/bookmarks.js')).destroy(); window.show('universe'); });
+  await settled();
   console.log('PASS: below-threshold company search and tickerless cards, links and dismissal.');
   const capacityContext = await browser.newContext();
   const capacityPage = await capacityContext.newPage();
@@ -535,6 +576,43 @@ try {
   assert.equal(await capacityPage.evaluate(() => window.reads), disposedReads, 'destroy removes freshness intervals and wake listeners');
   await capacityContext.close();
   console.log('PASS: 100,005-event UI, bounded pagination, tail search, same-company partial/failure arrivals, 90-second visible rechecks, inactivity resume and cleanup.');
+  const obsolete = await page.evaluate(async () => {
+    const ai = await import('/js/data/ai-alerts.js');
+    const saved = window.fixtureEvents;
+    let derivationReads = 0, partials = 0;
+    window.fixtureEvents = [{ ...saved[0], get headline() { derivationReads++; return 'Obsolete view evidence'; } }];
+    try {
+      const result = await ai.collect({scope:'universe',load:false,isCurrent:()=>false,onPartial:()=>partials++});
+      return {result,derivationReads,partials};
+    } finally { window.fixtureEvents = saved; }
+  });
+  assert.deepEqual(obsolete, {result:null,derivationReads:0,partials:0}, 'obsolete views skip both partial and final ranking');
+  await page.locator('[data-ai-filter="all"]').click();
+  await search.fill('Quiet Signals');
+  const beforeCancelledSave = await page.evaluate(async () => (await import('/js/core/bookmarks.js')).all().length);
+  await page.evaluate(() => {
+    // Invalidate the owner after the save starts but before its asynchronous key read finishes.
+    const original = IDBObjectStore.prototype.get;
+    IDBObjectStore.prototype.get = function(...args) {
+      const request = original.apply(this, args);
+      if (this.name === 'bookmarks' && this.transaction.mode === 'readwrite') {
+        IDBObjectStore.prototype.get = original;
+        window.dispose(); window.cancelledAtKeyRead = true;
+      }
+      return request;
+    };
+    window.fixtureEvents = window.fixtureEvents.map(event => event.ticker === 'QUIET'
+      ? {...event,id:'quiet-guarded-save',headline:'Another routine quarterly reading'} : event);
+    window.feedChanged();
+  });
+  await page.clock.runFor(300);
+  await waitFor(page, () => document.querySelector('[data-ai-card][data-ticker="QUIET"]')?.textContent.includes('Another routine quarterly reading'));
+  await card('QUIET').locator('[data-ai-notebook-event] [data-bookmark-key]').click();
+  await waitFor(page, () => window.cancelledAtKeyRead && document.body.textContent.includes('This event has changed'));
+  assert.equal(await page.evaluate(async () => {
+    const notebook = await import('/js/core/bookmarks.js'); await notebook.load({force:true}); return notebook.all().length;
+  }), beforeCancelledSave, 'changing the owning view during the save cannot commit the old model');
+  console.log('PASS: obsolete view computations stop and in-flight bookmark saves recheck their owning view before committing.');
   assert.deepEqual(errors, []);
   console.log('PASS: responsive search/cards at 320–1440px, calendar cleanup and zero application errors.');
 } catch (error) {

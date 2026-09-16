@@ -121,6 +121,12 @@ try {
   apiMode = 'invalid';
   await page.evaluate(() => window.insights.load({ refresh: true }));
   assert.deepEqual(await page.evaluate(() => ({ count: window.insights.all().length, failed: window.insights.meta().latestReadFailed })), { count: 1, failed: true });
+  assert(await page.evaluate(() => {
+    window.failedInsights=window.insights.all();
+    return window.failedInsights === window.insights.all() && window.failedInsights[0] === window.insights.company('TEST');
+  }), 'unchanged failed reads expose the same array and company objects');
+  await page.evaluate(() => window.insights.load({refresh:true}));
+  assert(await page.evaluate(() => window.failedInsights === window.insights.all()), 'a repeated failure cannot churn the context model');
   apiMode = 'offline';
   await page.reload();
   await page.waitForFunction(() => window.insights);
@@ -130,6 +136,7 @@ try {
   apiMode = 'ok';
   await page.evaluate(() => window.insights.load({ refresh: true }));
   assert.equal(await page.evaluate(() => window.insights.meta().latestReadFailed), false, 'successful revalidation clears the read failure');
+  assert.equal(await page.evaluate(() => window.insights.all()[0].readStatus), 'ok', 'recovery replaces the failed projection');
   assert.equal(await page.evaluate(async () => {
     const { conditionalJson } = await import('/js/core/store.js');
     let validated = 0;

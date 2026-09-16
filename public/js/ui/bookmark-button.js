@@ -36,7 +36,7 @@ export function showBookmarkMessage(text, { error = false, undo = null } = {}) {
 }
 
 /** Resolve from the owning component's row model, never from serialized HTML or a live URL. */
-export function wireBookmarks(root, resolve) {
+export function wireBookmarks(root, resolve, { captureGuard = () => () => true } = {}) {
   const sync = () => {
     for (const button of root.querySelectorAll('[data-bookmark-key]')) {
       const saved = notebook.has(button.dataset.bookmarkKey);
@@ -52,19 +52,25 @@ export function wireBookmarks(root, resolve) {
     if (!button || !root.contains(button)) return;
     event.preventDefault(); event.stopPropagation();
     if (button.disabled) return;
+    const key = button.dataset.bookmarkKey;
+    const current = captureGuard(button);
     button.disabled = true; button.setAttribute('aria-busy', 'true');
     try {
       await notebook.load();
-      const saved = notebook.get(button.dataset.bookmarkKey);
+      if (!current() || !root.contains(button) || button.dataset.bookmarkKey !== key)
+        throw new Error('This event has changed. Try saving it again.');
+      const saved = notebook.get(key);
       if (saved) {
         await notebook.remove(saved.id);
         showBookmarkMessage('Removed from notebook.', { undo: () => notebook.save(saved) });
       } else {
         const entry = resolve(button);
-        if (!entry) throw new Error('This event has changed. Try saving it again.');
+        if (!entry || entry.id !== key) throw new Error('This event has changed. Try saving it again.');
         // A research answer may have been rendered hours before this click. Its source date
         // stays intact; the saved date records the reader's action, not that earlier render.
-        await notebook.save({ ...entry, savedAt: new Date().toISOString() });
+        await notebook.save({ ...entry, savedAt: new Date().toISOString() }, {
+          validate: () => current() && root.contains(button) && button.dataset.bookmarkKey === key && resolve(button)?.id === key,
+        });
         showBookmarkMessage('Saved to your notebook.');
       }
     } catch (error) { showBookmarkMessage(error.message, { error: true }); }

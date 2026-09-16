@@ -21,6 +21,7 @@ import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
 import { enrichCardFromAllAlerts, indexAlertContext } from './intelligence-graph.js';
 import { canonicalArticleUrl } from './filings-shared.js';
+import { getHostContext } from '../core/host-context.js';
 import { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
@@ -636,7 +637,10 @@ function directionSummary(events) {
 
 // Both the first checked snapshot and the completed rank use the same identity
 // aliases, including tickerless securities and grouped warrant ISINs.
+let lastPositionIndex = null;
 function positionSnapshotIndex({ holdings, sizes }) {
+  const signature = JSON.stringify({ holdings, sizes });
+  if (lastPositionIndex?.signature === signature) return lastPositionIndex.index;
   const index = new Map();
   for (const entity of portfolioNewsEntities(holdings)) {
     const rows = holdings.filter(holding => entity.portfolioIsins.includes(String(holding.isin || '').toUpperCase()) ||
@@ -646,6 +650,7 @@ function positionSnapshotIndex({ holdings, sizes }) {
     const keys = new Set([entity.ticker, entity.entityId, ...rows.flatMap(row => [row.ticker?.toUpperCase(), defaultCompanyNewsEntityId(row)])].filter(Boolean));
     for (const key of keys) index.set(key, weight === null ? null : (index.get(key) || 0) + weight);
   }
+  lastPositionIndex = { signature, index };
   return index;
 }
 
@@ -654,14 +659,31 @@ function positionSnapshotIndex({ holdings, sizes }) {
  * product rules; testing only whatever today's capture happens to contain would leave branches
  * unexercised most days.
  */
-let lastRankInput = null;
-let lastRankOutput = null;
+const rankCache = [];
+const sameRows = (left, right) => left.length === right.length && left.every((row, i) => row === right[i]);
+export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = null; }
 
 export function rankReport(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all() } = {}) {
-  const inputMatches = lastRankInput && lastRankInput.report === report && lastRankInput.positionSizes === positionSizes && lastRankInput.holdings === holdings && lastRankInput.insightCompanies === insightCompanies;
-  if (inputMatches) return lastRankOutput;
-
   const day = report?.day || generalAlerts.today();
+  const events = report?.events || [];
+  const { token, email, orgId } = getHostContext().session;
+  // Source records are immutable publications. Compare every reference, not counts/timestamps;
+  // a same-ID correction publishes a new record. Copy arrays so in-place additions/removals
+  // cannot defeat the comparison. Small membership and health values are compared by content.
+  const input = { day, scope: report?.scope || 'universe', events,
+    health: JSON.stringify((report?.feeds || []).map(feed => [feed.id, feed.status, feed.reachesToday])),
+    book: JSON.stringify(holdings), positions: JSON.stringify(positionSizes),
+    insights: insightCompanies, session: JSON.stringify([token, email, orgId]) };
+  const cached = rankCache.find(entry => entry.input.day === day && entry.input.scope === input.scope &&
+    entry.input.health === input.health && entry.input.book === input.book && entry.input.positions === input.positions &&
+    entry.input.session === input.session && sameRows(entry.input.events, events) && sameRows(entry.input.insights, insightCompanies));
+  if (cached) {
+    const result = { ...cached.result, pending: report?.pending || 0, feeds: report?.feeds || [],
+      meta: { ...cached.result.meta, cacheSavedAt: report?.cacheSavedAt || null } };
+    rankingOptions.set(result, { holdings, positionSizes, insightCompanies });
+    rankingEvidence.set(result, rankingEvidence.get(cached.result));
+    return result;
+  }
   const firstDay = shiftDay(day, -(WINDOW_DAYS - 1));
   // Private weights never come from the persisted names-only coverage list.
   const weights = report?.scope === 'portfolio' && positionSizes?.sizes.complete
@@ -825,8 +847,10 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
   };
   rankingOptions.set(result, { holdings, positionSizes, insightCompanies });
   rankingEvidence.set(result, windowEvidence);
-  lastRankInput = { report, holdings, positionSizes, insightCompanies };
-  lastRankOutput = result;
+  // Bound private, in-memory derivations; alternate partial/final envelopes must not evict
+  // each other's identical evidence on every notification.
+  rankCache.unshift({ input: { ...input, events: [...events], insights: [...insightCompanies] }, result });
+  if (rankCache.length > 4) rankCache.pop();
   return result;
 }
 
@@ -836,26 +860,34 @@ export function mergePartialReport(previous, next) {
   const key = card => card.key || card.ticker || card.entityId;
   const existingVisible = new Set(previous.cards.map(key));
   const arrivingVisible = new Set(next.cards.map(key));
+  const eventKey = event => `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
+  const nextEvidence = new Set((rankingEvidence.get(next) || []).map(eventKey));
+  for (const card of next.allCards) for (const event of [...card.events, ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) nextEvidence.add(eventKey(event));
   // Union EVIDENCE, not whole cards. Keeping the old card until every prior source answers
   // hides a new material story about that same company behind an unrelated slow feed.
   const evidence = new Map();
+  let needsMerge = false;
   for (const report of [previous, next]) for (const card of report.allCards) {
     for (const event of [...card.events, ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) {
-      const id = `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
+      const id = eventKey(event);
+      if (report === previous && !nextEvidence.has(id)) needsMerge = true;
       evidence.set(id, event); // New source corrections win under their stable identity.
     }
   }
   // Even a correction that removes AI eligibility must supersede its old event. Such a row
   // may have no next card at all; retain these current-window inputs in memory, never on disk.
   for (const event of rankingEvidence.get(next) || []) {
-    const id = `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
+    const id = eventKey(event);
     evidence.set(id, event);
   }
-  const merged = rankReport({ day: next.day, scope: next.scope, feeds: next.feeds,
-    pending: next.pending, events: [...evidence.values()] }, rankingOptions.get(next) || rankingOptions.get(previous));
+  // A complete/cumulative publication already includes every retained identity and correction.
+  // Only rank again when we actually added older evidence from an unfinished source.
+  const merged = needsMerge ? rankReport({ day: next.day, scope: next.scope, feeds: next.feeds,
+    pending: next.pending, events: [...evidence.values()] }, rankingOptions.get(next) || rankingOptions.get(previous)) : next;
   const allCards = merged.allCards;
   const newlyVisible = new Set(merged.cards.map(key));
   const cards = allCards.filter(card => existingVisible.has(key(card)) || arrivingVisible.has(key(card)) || newlyVisible.has(key(card)));
+  if (sameRows(cards, merged.cards)) return merged;
   const result = { ...merged, allCards, cards, meta: { ...merged.meta,
     activeCompanies: allCards.length, surfacedCompanies: cards.length, suppressedCompanies: allCards.length - cards.length,
     mustSee: cards.filter(card => card.priority === 'must-see').length,
@@ -871,11 +903,17 @@ export function withPositionSnapshot(report, snapshot) {
   if (!report || report.scope !== 'portfolio' || !snapshot) return report;
   const byKey = positionSnapshotIndex(snapshot);
   const identity = card => [card.key, card.ticker, card.entityId].find(key => byKey.has(key));
-  const decorate = card => ({ ...card, holding: true,
-    holdingWeightPct: byKey.get(identity(card)) ?? null });
+  const decorate = card => {
+    const holdingWeightPct = byKey.get(identity(card)) ?? null;
+    return card.holding && card.holdingWeightPct === holdingWeightPct ? card : { ...card, holding: true, holdingWeightPct };
+  };
   const retained = card => identity(card) !== undefined;
-  const cards = report.cards.filter(retained).map(decorate);
-  const allCards = report.allCards.filter(retained).map(decorate);
+  const projected = report.allCards.filter(retained).map(decorate);
+  const allCards = sameRows(projected, report.allCards) ? report.allCards : projected;
+  const byIdentity = new Map(allCards.map(card => [card.key || card.ticker || card.entityId, card]));
+  const selected = report.cards.filter(retained).map(card => byIdentity.get(card.key || card.ticker || card.entityId));
+  const cards = sameRows(selected, report.cards) ? report.cards : selected;
+  if (cards === report.cards && allCards === report.allCards && report.meta.positionSizes === snapshot.sizes) return report;
   const result = { ...report, cards, allCards, meta: { ...report.meta,
     positionSizes: snapshot.sizes, sortedByHolding: false,
     activeCompanies: allCards.length, surfacedCompanies: cards.length,
@@ -896,7 +934,7 @@ export async function cached({ scope = 'portfolio', holdings = null, positionSiz
 }
 
 /** Collect General Alerts once and rank each partial/final report without adding any request. */
-export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, load = true, onPartial = null } = {}) {
+export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, load = true, onPartial = null, isCurrent = () => true } = {}) {
   const book = holdings || coverage.holdings();
   const insightRead = load ? screenerInsights.load({ refresh }).catch(() => null) : Promise.resolve(null);
   const report = await generalAlerts.collect({
@@ -905,10 +943,12 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
     includeHistory: true,
     refresh,
     load,
-    onPartial: onPartial ? (partial) => onPartial(rankReport(partial, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() })) : null,
+    onPartial: onPartial ? (partial) => { if (isCurrent()) onPartial(rankReport(partial, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() })); } : null,
   });
+  if (!isCurrent()) return null; // Shared collection/storage finishes; obsolete view work stops.
   if (!onPartial) {
     await insightRead;
+    if (!isCurrent()) return null;
     return rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() });
   }
   // A fast burst can finish before General Alerts' coalesced progress timer.
@@ -918,6 +958,7 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
   const ready = rankReport(report, { holdings: book, positionSizes, insightCompanies: insights });
   try { onPartial?.(ready); } catch (err) { console.error('[ai-alerts] onPartial threw', err); }
   await insightRead;
+  if (!isCurrent()) return null;
   const updatedInsights = screenerInsights.all();
   return updatedInsights.length === insights.length && updatedInsights.every((company, i) => company === insights[i])
     ? ready : rankReport(report, { holdings: book, positionSizes, insightCompanies: updatedInsights });

@@ -6,6 +6,13 @@ import { screenerInsightHealth, validateScreenerInsightsCapture } from './screen
 const ENDPOINT = 'api/screener-insights';
 let cache = null;
 let pending = null;
+const EMPTY = Object.freeze([]);
+let failedProjection = null;
+let failedCompanies = new WeakMap();
+const failedCompany = company => {
+  if (!failedCompanies.has(company)) failedCompanies.set(company, { ...company, readStatus: 'failed' });
+  return failedCompanies.get(company);
+};
 const listeners = new Set();
 
 function ingest(payload, checkedAt = Date.now()) {
@@ -29,6 +36,8 @@ function ingest(payload, checkedAt = Date.now()) {
       latestReadFailed: false,
     },
   };
+  failedProjection = null;
+  failedCompanies = new WeakMap();
   listeners.forEach((fn) => fn());
   return cache;
 }
@@ -61,7 +70,11 @@ export async function load({ refresh = false } = {}) {
 }
 
 export const isLoaded = () => !!cache;
-export const all = () => cache?.meta.latestReadFailed ? cache.companies.map((company) => ({ ...company, readStatus: 'failed' })) : cache?.companies || [];
+export const all = () => {
+  if (!cache) return EMPTY;
+  if (!cache.meta.latestReadFailed) return cache.companies;
+  return failedProjection ||= cache.companies.map(failedCompany);
+};
 export const meta = () => cache ? {
   ...cache.meta,
   staleCompanies: cache.companies.filter((company) => screenerInsightHealth(company) !== 'ok').length,
@@ -69,7 +82,7 @@ export const meta = () => cache ? {
 } : null;
 export const company = (ticker) => {
   const item = cache?.byTicker.get(String(ticker || '').toUpperCase()) || null;
-  return item && cache.meta.latestReadFailed ? { ...item, readStatus: 'failed' } : item;
+  return item && cache.meta.latestReadFailed ? failedCompany(item) : item;
 };
 export const forTickers = (tickers) => {
   const wanted = tickers instanceof Set ? tickers : new Set((tickers || []).map((ticker) => String(ticker).toUpperCase()));

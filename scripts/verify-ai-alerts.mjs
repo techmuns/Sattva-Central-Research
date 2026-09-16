@@ -57,7 +57,7 @@ assert.equal(sorting[0].key, 'OLDER', 'sorting is a view and does not mutate sou
 assert.deepEqual(sortAlertCards(sorting.map(c => ({ ...c, holdingWeightPct: null })), 'holdings').map(c => c.key), ['NEWER', 'NEW', 'OLDER', 'UNKNOWN']);
 
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
-const { rankReport, mergePartialReport, withPositionSnapshot } = await import('../public/js/data/ai-alerts.js');
+const { rankReport, mergePartialReport, withPositionSnapshot, clearRankingCache } = await import('../public/js/data/ai-alerts.js');
 const { enrichCardFromAllAlerts, indexAlertContext } = await import('../public/js/data/intelligence-graph.js');
 const sizeHoldings = [
   { ticker: 'LARGE', name: 'Large holding', weightPct: 20 },
@@ -157,3 +157,47 @@ assert.equal(enrichCardFromAllAlerts(vocabularyCard, vocabularyReport).contextEv
 vocabularyTrigger.keywordIds = []; vocabularyCandidate.keywordIds = [];
 assert.equal(enrichCardFromAllAlerts(vocabularyCard, vocabularyReport).contextEvents.length, 0,
   'a subsequent context build reads corrected trigger vocabulary');
+
+// Publication envelopes and status-only progress must not derive the same cards repeatedly.
+clearRankingCache();
+let evidenceReads = 0;
+const observedEvents = report.events.map(event => new Proxy(event, {
+  get(target, key) { evidenceReads++; return target[key]; },
+}));
+const publication = { ...report, events: observedEvents, feeds: feeds.map(feed => ({ ...feed })) };
+const cachedRank = rankReport(publication, { holdings: publicIdentities });
+evidenceReads = 0;
+const statusOnly = rankReport({ ...publication, events: [...observedEvents], pending: 2,
+  cacheSavedAt: 1234, feeds: publication.feeds.map(feed => ({ ...feed, checkedAt: 1234 })) },
+{ holdings: structuredClone(publicIdentities) });
+assert.equal(evidenceReads, 0, 'unchanged record publications skip scoring and context derivation');
+assert.equal(statusOnly.cards, cachedRank.cards);
+assert.equal(statusOnly.allCards, cachedRank.allCards);
+assert.equal(statusOnly.pending, 2);
+assert.equal(statusOnly.meta.cacheSavedAt, 1234);
+assert.equal(statusOnly.feeds[0].checkedAt, 1234, 'status-only envelopes still carry the latest source checks');
+assert.equal(mergePartialReport(cachedRank, statusOnly).cards, cachedRank.cards,
+  'cumulative partials reuse the completed derivation');
+const correction = rankReport({ ...publication, events: observedEvents.map((event, i) => i === 0
+  ? { ...event, headline: 'Same-count corrected evidence' } : event) }, { holdings: publicIdentities });
+assert.equal(correction.allCards.find(card => card.ticker === 'LARGE').events.find(event => event.id === report.events[0].id).headline,
+  'Same-count corrected evidence');
+publication.feeds.forEach(feed => { feed.status = 'failed'; });
+const failedRank = rankReport(publication, { holdings: publicIdentities });
+assert(failedRank.allCards.find(card => card.ticker === 'LARGE').score < cachedRank.allCards.find(card => card.ticker === 'LARGE').score,
+  'score-affecting source health invalidates even when the feed objects and event count are unchanged');
+const notHeld = rankReport(publication, { holdings: [] });
+assert.equal(notHeld.allCards.find(card => card.ticker === 'LARGE').holding, false, 'membership changes remove the held-company signal');
+const nextWindow = rankReport({ ...publication, day: '2026-09-19' }, { holdings: publicIdentities });
+assert.equal(nextWindow.allCards.length, 0, 'date changes re-age unchanged evidence');
+const insight = { ticker: 'LARGE', companyKey: 'LARGE', name: 'Large holding', rows: [] };
+const withInsight = rankReport(publication, { holdings: publicIdentities, insightCompanies: [insight] });
+const failedInsight = rankReport(publication, { holdings: publicIdentities, insightCompanies: [{ ...insight, readStatus: 'failed' }] });
+assert.notEqual(failedInsight.allCards, withInsight.allCards, 'changed Insights status invalidates context derivation');
+const newWeights = { ...sizes, holdings: sizes.holdings.map(holding => ({ ...holding, weightPct: 10 })) };
+assert.equal(rankReport(publication, { holdings: publicIdentities, positionSizes: newWeights }).allCards.find(card => card.ticker === 'LARGE').holdingWeightPct, 10);
+assert.equal(withPositionSnapshot(immediateSizes, sizes), immediateSizes, 'unchanged positions reuse cards and report');
+clearRankingCache();
+assert.notEqual(rankReport(publication, { holdings: publicIdentities }).allCards, failedRank.allCards,
+  'access invalidation discards the previous private derivation');
+console.log('PASS: unchanged publications reuse derivations; corrections, source health, membership, dates, Insights and positions invalidate them.');

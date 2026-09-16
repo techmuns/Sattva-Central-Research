@@ -98,6 +98,14 @@ try {
   const download=await downloadPromise;
   const backup=JSON.parse(readFileSync(await download.path(),'utf8'));
   assert.equal(backup.entries.length,4);
+  const guarded = await page.evaluate(async () => {
+    let checks=0;
+    try { await window.notebook.save({title:'Revoked before commit',kind:'AI Alerts'}, {validate:()=>++checks<3}); }
+    catch(error) { return {checks,message:error.message,count:window.notebook.all().length}; }
+  });
+  assert.equal(guarded.checks,3,'bookmark authorization is rechecked after the asynchronous IndexedDB key read');
+  assert.match(guarded.message,/changed/);
+  assert.equal(guarded.count,4,'a revoked save cannot add a notebook record');
   await assert.rejects(page.evaluate(async backup=>window.notebook.importBackup({...backup,entries:[backup.entries[0],{title:'Invalid'}]}),backup));
   assert.equal(await page.evaluate(()=>window.notebook.all().length),4);
   const firstCard=page.locator('[data-notebook-entry]').first(); const removed=await firstCard.getAttribute('data-notebook-entry');

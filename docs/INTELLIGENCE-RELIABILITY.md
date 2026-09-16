@@ -77,6 +77,29 @@ limits only: company/event search evaluates all eligible cards and their evidenc
 remains the broader retained-record view. Routine/unverified records do not gain priority merely
 because they were collected.
 
+AI Alerts keeps keyed company cards and their controls mounted during background updates and
+pagination. Corrections patch the affected content while preserving unchanged nodes, focus and the
+reading position. Bookmark actions resolve from the complete current result pool, including
+below-threshold search results and tickerless entities; the default score threshold is unchanged.
+An asynchronous save rechecks its owning view, account/access identity and canonical record before
+writing the personal notebook. Saved snapshots retain their existing provenance and privacy rules.
+
+Ranking reuse compares immutable event publications and Insights records plus the full membership,
+positions, Indian calendar day, scope, relevant source health and account/access identity. Same-count
+corrections and failed-source transitions must invalidate it; counts or capture timestamps alone
+are insufficient. The bounded cache stays in memory and is cleared on portfolio invalidation.
+Cumulative partials reuse their ranking; unfinished sources still merge missing older evidence.
+Leaving the view stops its ranking work without cancelling shared collection or retained history.
+Failed Insights projections keep stable identities until the content/status changes. Existing source
+notification coalescing must still deliver the final meaningful update.
+
+Local Chrome measurement on 16 September 2026: five rank/partial-merge cycles with 33,568 synthetic
+records, 1,500 in-window events and 125 companies took 1,243 ms before these changes and 291 ms after.
+The first after-change derivation took 281 ms; subsequent unchanged cycles took 2–3 ms. These are
+unthrottled local JavaScript measurements, not production load times. They justify removing repeat
+work, but do not establish that cold-load computation or every navigation is fast on slower devices.
+Worker/chunking changes remain a separate decision requiring cold-load measurements.
+
 Company-news capture rejects empty provider rows containing only discovery bookkeeping. Legacy
 anonymous observations use a stable, full-content fallback identity, retaining distinct unlinked
 snippets and source links, first/last observation times and query provenance. Repeated seeding

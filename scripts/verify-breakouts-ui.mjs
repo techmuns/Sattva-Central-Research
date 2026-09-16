@@ -32,7 +32,7 @@ const server=createServer((req,res)=>{
  try{
  let body=readFileSync(file);
  if(path==='/sw.js')body=body.toString().replace(/const CACHE_NAME = [^;]+;/, `const CACHE_NAME = 'sattva-dashboard-breakout-test-${revision}';`);
- if(path==='/js/data/breakout-live.js')body=`export const testRelease=${revision};\n`+body.toString();
+ if(['/js/data/breakout-live.js','/js/tabs/ai-alerts.js'].includes(path))body=`export const testRelease=${revision};\n`+body.toString();
  res.setHeader('content-type',{'.js':'text/javascript','.json':'application/json','.html':'text/html','.css':'text/css','.svg':'image/svg+xml'}[extname(file)]||'application/octet-stream');res.end(body);
  }catch{res.writeHead(404).end();}
 });
@@ -106,9 +106,14 @@ try{
  await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
  await page.reload();await cell.waitFor();
  assert.equal(await page.evaluate(async()=>(await import('/js/data/breakout-live.js')).testRelease),1);
+ assert.equal(await page.evaluate(async()=>(await import('/js/tabs/ai-alerts.js')).testRelease),1);
  revision=2;
+ const upgraded=page.waitForEvent('framenavigated',{predicate:frame=>frame===page.mainFrame(),timeout:30000});
  await page.evaluate(async()=>{await (await navigator.serviceWorker.getRegistration()).update();});
- await page.waitForFunction(async()=>(await import('/js/data/breakout-live.js')).testRelease===2,null,{timeout:30000});
+ await upgraded;await cell.waitFor();
+ assert.equal(await page.evaluate(async()=>(await import('/js/data/breakout-live.js')).testRelease),2);
+ assert.equal(await page.evaluate(async()=>(await import('/js/tabs/ai-alerts.js')).testRelease),2,
+  'the returning session also adopts the AI Alerts module and its new reconciliation dependency');
  await cell.waitFor();assert.equal(await cell.textContent(),'₹110.00');await page.clock.runFor(1000);
  if(process.env.BREAKOUT_SCREENSHOTS){mkdirSync(process.env.BREAKOUT_SCREENSHOTS,{recursive:true});await page.screenshot({path:`${process.env.BREAKOUT_SCREENSHOTS}/breakouts-desktop.png`});await page.setViewportSize({width:390,height:844});await page.screenshot({path:`${process.env.BREAKOUT_SCREENSHOTS}/breakouts-mobile.png`});}
  // Same-date daily close replaces an obsolete intraday quote in filtering and popup.

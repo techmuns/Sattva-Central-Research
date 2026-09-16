@@ -64,12 +64,20 @@ async function changed() {
   channel?.postMessage('changed');
 }
 
-export async function save(value) {
+export async function save(value, { validate = () => true } = {}) {
   const entry = normalizeBookmark(value);
+  const assertCurrent = () => { if (!validate()) throw new Error('This event has changed. Try saving it again.'); };
+  assertCurrent();
+  let invalidated = false;
   await transaction('readwrite', store => {
+    assertCurrent();
     const request = store.get(entry.id);
-    request.onsuccess = () => { if (!request.result) store.add(entry); };
-  });
+    request.onsuccess = () => {
+      // Authorization/model ownership can change while IndexedDB opens or reads the key.
+      try { assertCurrent(); } catch { invalidated = true; store.transaction.abort(); return; }
+      if (!request.result) store.add(entry);
+    };
+  }).catch(error => { if (invalidated) throw new Error('This event has changed. Try saving it again.'); throw error; });
   await changed();
   // The browser may decline; backups remain available and the UI never claims cloud sync.
   try { void navigator.storage?.persist?.().catch(() => {}); } catch { /* optional browser capability */ }
