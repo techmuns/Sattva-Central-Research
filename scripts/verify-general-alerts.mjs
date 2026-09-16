@@ -314,3 +314,15 @@ const evidenceRefresh = await alerts.refreshSources();
 assert(calls.slice(evidenceReads).includes('api/screener-insights'), 'Ask Research refresh includes company context outside the alert feed registry');
 assert(evidenceRefresh.failed > 0, 'unavailable context is reported instead of treating retained inputs as fresh');
 console.log(`PASS: 20 feed adapters; ${universe.events.length} retained records; scope parity, undated/upcoming, raw records, privacy, refresh/recovery and AI compatibility.`);
+
+// Selecting a smaller reading period must preserve the complete event contract: canonical
+// identity, corrections, discovery provenance and exported source fields, not just row counts.
+const fullForQuery = await alerts.collect({ ...options, scope: 'universe' });
+for (const days of [1, 3, 7, 14, 30]) {
+  const queryWindow = { from: new Date(Date.parse(options.day + 'T00:00:00Z') - (days - 1) * 86400000).toISOString().slice(0, 10),
+    to: options.day, includeUndated: false };
+  const selected = await alerts.collect({ ...options, scope: 'universe', queryWindow });
+  assert.deepEqual(selected.events, fullForQuery.events.filter(event => alerts.inAlertQuery(event, queryWindow)),
+    `${days}-day query preserves full-history IDs, fields and evidence`);
+}
+console.log('PASS selected-period event equivalence against the full source pool');

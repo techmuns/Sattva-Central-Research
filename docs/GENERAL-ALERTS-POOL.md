@@ -9,6 +9,27 @@ This is **available retained source coverage**, not a claim to capture every mar
 retention, source outages, absent captures and private/on-demand lookups remain explicit limitations.
 No production collection jobs are dispatched by opening this page.
 
+## Selected-period preparation (16 September 2026)
+
+Today, 3/7/14/30 days and This month prepare the selected reading interval before expensive
+news interpretation, discovery mapping, sorting and table search. Source capture, retained
+archives and their validation remain unchanged. Full history, undated records, older dates,
+Upcoming and company evidence links still use the complete source pool. Cross-route news
+companions are retained before canonical selection, even when their publication dates disagree;
+date filtering must not change the winning record or its provenance.
+
+The selected public view uses one replaceable `all-alerts:public-pool:v1:selected-view` cache,
+with its exact query window recorded in the manifest. It cannot replace or pass validation as
+the full-history cache or AI Alerts' separate window. An existing full saved pool can seed a
+smaller query. Broadening a narrow response remains pending until the remaining sources answer;
+failed sources retain saved evidence. Counts describe the selected period, and an unrequested
+Upcoming total is not shown as zero. Source timestamps, private revocation and ordinary
+automatic rechecks retain their existing contracts.
+
+This first performance batch reduces active derived work. It does not implement a byte budget
+for raw source stores or eliminate every overlapping archive read; those require a separate
+storage/query change with the same evidence-equivalence checks.
+
 ## Restore and update safeguards (15 September 2026)
 
 All Alerts uses `all-alerts:public-pool:v1`, separate from AI Alerts' fourteen-day window.

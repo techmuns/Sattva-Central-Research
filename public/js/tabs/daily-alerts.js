@@ -42,6 +42,7 @@ import { NEWS_PERIODS, newsPeriodBounds } from '../data/news-window.js';
 import { isXbrlFilingUrl, openFilingReader } from '../ui/xbrl-filing.js';
 import { createAlertArrivals } from '../core/alert-arrivals.js';
 import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
+import { alertWindowKey } from '../data/all-alerts-cache.js';
 
 export const meta = {
   id: 'daily-alerts',
@@ -72,6 +73,7 @@ let loadToken = 0;
 let cacheToken = 0;
 let cacheReady = Promise.resolve();
 let cachedRead = null;
+let cachedReadKey = null;
 let unsubs = [];
 const HORIZON = { THROUGH: 'through', UPCOMING: 'upcoming' };
 let horizon = HORIZON.THROUGH;
@@ -108,7 +110,11 @@ function sourceChanged() {
 }
 
 function currentContext() {
-  return { scope: ctxRef.scope, holdings: coverage.holdings(), day: alerts.today() };
+  const day = alerts.today();
+  const period = tableViews[HORIZON.THROUGH]?.filters?.[2] || 'today';
+  const queryWindow = horizon === HORIZON.THROUGH && ['today', '3d', '7d', '14d', '30d', 'month'].includes(period)
+    ? newsPeriodBounds(period.replace(/d$/, ''), `${day}T12:00:00+05:30`) : null;
+  return { scope: ctxRef.scope, holdings: coverage.holdings(), day, queryWindow };
 }
 
 function membershipChanged() {
@@ -147,6 +153,10 @@ export function render(ctx) {
     tableInstance = null;
   }
   routeCompany = requestedCompany || null;
+  const context = currentContext();
+  const queryChanged = !!report && alertWindowKey(report.queryWindow) !== alertWindowKey(context.queryWindow);
+  const readKey = alertWindowKey(context.queryWindow);
+  if (cachedReadKey !== readKey) { cachedRead = null; cachedReadKey = readKey; }
 
   if (!unsubs.length) {
     unsubs.push(alerts.onChange(sourceChanged));
@@ -207,14 +217,10 @@ export function render(ctx) {
   // Paint immediately with whatever is already collected, then collect. A tab that renders nothing
   // until every feed has answered is a blank timeline.
   paint(ctx);
-  if (!report || cachedRead) {
+  if (!report || queryChanged || cachedRead) {
     // A route can render again after the empty seed but before disk answers. Reuse that read
     // and attach the new owner; cancelling its old callback must not lose restoration entirely.
-    const reading = cachedRead ||= alerts.readCachedAllAlerts({
-      scope: ctx.scope,
-      holdings: coverage.holdings(),
-      day: alerts.today()
-    });
+    const reading = cachedRead ||= alerts.readCachedAllAlerts(context);
     cacheReady = reading.then((cached) => {
       if (restoreToken !== cacheToken || ctxRef !== ctx || !cached) return;
       // Disk and live reads share a mount, not a request token. Even an empty live seed can
@@ -275,7 +281,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   const token = ++loadToken;
   const context = currentContext();
   const contextKey = alerts.alertContextKey(context.scope, context.holdings, context.day);
-  const current = () => token === loadToken && ctxRef && contextKey === alerts.alertContextKey(ctxRef.scope);
+  const current = () => token === loadToken && ctxRef && contextKey === alerts.alertContextKey(ctxRef.scope) &&
+    alertWindowKey(context.queryWindow) === alertWindowKey(currentContext().queryWindow);
   collecting++;
   if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
@@ -318,7 +325,11 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     }
   } finally {
     collecting--;
-    if (sourceDirty) sourceChanged();
+    // A period switch can still be reading when the visible recheck becomes due. Complete
+    // that check as soon as the read settles instead of missing a whole polling interval.
+    if (!collecting && ctxRef && !(document.hidden || innerWidth === 0) && Date.now() - lastRevalidatedAt >= RECHECK_MS)
+      void recollect(ctxRef, { refresh: true });
+    else if (sourceDirty) sourceChanged();
   }
 }
 
@@ -449,7 +460,7 @@ function paint(ctx) {
   if (tableInstance && renderedHorizon === horizon && renderedDay === day && renderedScope === ctx.scope) {
     const metaDiv = ctx.root.querySelector('[data-alerts-meta]');
     if (metaDiv) metaDiv.innerHTML = `${scopeSummary({
-        scope: ctx.scope, count: m.companies || 0, noun: 'companies in loaded history', book: coverage.meta(),
+        scope: ctx.scope, count: m.companies || 0, noun: report?.queryWindow ? 'companies in selected period' : 'companies in loaded history', book: coverage.meta(),
     })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}`;
     
     const horizonToggleContainer = ctx.root.querySelector('.alerts-horizon-control');
@@ -507,7 +518,7 @@ function paint(ctx) {
       meta: `<div class="flex flex-wrap items-center justify-end gap-2" data-alerts-meta>${scopeSummary({
         scope: ctx.scope,
         count: m.companies || 0,
-        noun: 'companies in loaded history',
+        noun: report?.queryWindow ? 'companies in selected period' : 'companies in loaded history',
         book: coverage.meta(),
       })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}</div>`,
     })}
@@ -686,7 +697,7 @@ function historyPill(historyMeta) {
   if (!historyMeta?.oldestEventDay || !historyMeta?.newestEventDay) return '';
   const dates = historyMeta.days || 1;
   return pill({
-    label: `History · ${dates} ${dates === 1 ? 'date' : 'dates'}`,
+    label: `${report?.queryWindow ? 'Selected period' : 'History'} · ${dates} ${dates === 1 ? 'date' : 'dates'}`,
     tone: 'neutral',
     title: `${fmtDay(historyMeta.oldestEventDay)} through ${fmtDay(historyMeta.newestEventDay)}, newest first.`,
   });
@@ -705,13 +716,14 @@ function calendarPill(events) {
 function horizonToggle(throughCount, upcomingCount, day, ready = true) {
   const tab = (value, label, count) => {
     const active = horizon === value;
+    const known = ready && !(report?.queryWindow && value === HORIZON.UPCOMING);
     return `<button type="button" role="tab" data-horizon-toggle="${value}" aria-selected="${active}" tabindex="${active ? '0' : '-1'}"
       class="inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
         active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
       }">
       ${escapeHtml(label)}
       <span class="rounded-full px-1 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}"
-        title="${ready ? escapeHtml(formatNumber(count)) : 'Still loading'} alerts">${ready ? escapeHtml(formatCompact(count)) : '…'}</span>
+        title="${known ? `${escapeHtml(formatNumber(count))} alerts${report?.queryWindow ? ' in selected period' : ''}` : 'Open to load'}">${known ? escapeHtml(formatCompact(count)) : '…'}</span>
     </button>`;
   };
   return `<div class="alerts-horizon-control">
@@ -721,6 +733,7 @@ function horizonToggle(throughCount, upcomingCount, day, ready = true) {
     </div>
     <p class="alerts-horizon-caption text-xs text-slate-500">${horizon === HORIZON.UPCOMING
       ? `Scheduled events from ${fmtDay(day)} onward, nearest first.`
+      : report?.queryWindow ? 'Showing the selected period. Choose All history to read older alerts.'
       : `Retained events through ${fmtDay(day)}, newest first.`}</p>
   </div>`;
 }
@@ -896,7 +909,7 @@ function wireHorizon(ctx) {
     // A source selection is meaningful inside the horizon where it was made. Carrying an
     // historical-only source into Upcoming would make the calendar look empty on arrival.
     picked = null;
-    paint(ctx);
+    render(ctx);
   };
   root.addEventListener('click', (event) => select(event.target.closest('[data-horizon-toggle]')?.dataset.horizonToggle));
   root.addEventListener('keydown', (event) => {
@@ -1121,6 +1134,9 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     preindexSearch: warmSearch,
     onScrollActivity: noteTableScroll,
     onVisibleRowsChange: mode === HORIZON.THROUGH ? rows => arrivalsUI.setRows(rows) : null,
+    onFilterChange: mode === HORIZON.THROUGH ? (_view, index) => {
+      if (index === 2 && ctxRef && alertWindowKey(report?.queryWindow) !== alertWindowKey(currentContext().queryWindow)) render(ctxRef);
+    } : null,
     presentRows: mode === HORIZON.THROUGH ? (rows, options) => arrivalsUI.presentRows(rows, options) : null,
     rowClass: mode === HORIZON.UPCOMING ? null : alertRowClass,
     initialRowCount: tablePosition?.rendered || 24,

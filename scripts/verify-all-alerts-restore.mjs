@@ -38,6 +38,31 @@ assert.deepEqual(restored.events.map(row => row.id).sort(), saved.events.map(row
 assert.equal(restored.events.find(row => row.id === old.id).sourceRecord.original.length, 600_000);
 assert((await readCachedAllAlerts({ ...context, scope: 'portfolio', holdings: [] })).events.length === 0, 'saved public data is scoped against the current book');
 
+const queryWindow = { from: day, to: day, includeUndated: false };
+const selected = adoptAllAlertsReport(saved, null, { ...context, queryWindow });
+assert.deepEqual(selected.events.map(row => row.id), [original.id]);
+await saveAllAlerts(selected);
+assert.equal(restoreAllAlertSources(materializeAllAlerts(selected), FEEDS, day), null,
+  'a selected-period cache never passes the full-history contract');
+assert.deepEqual((await readCachedAllAlerts(context)).events.map(row => row.id).sort(), saved.events.map(row => row.id).sort(),
+  'saving Today cannot overwrite older, undated or scheduled history');
+assert.deepEqual((await readCachedAllAlerts({ ...context, queryWindow })).events, selected.events);
+const expanding = adoptAllAlertsReport(selected, null, context);
+assert(expanding.feeds.filter(feed => !feed.portfolioOnly && !/documents/.test(feed.id)).every(feed => feed.status === 'pending'),
+  'expanding a successful narrow query still requires checking the remaining history');
+assert.deepEqual(adoptAllAlertsReport(selected, restored, context).events.map(row => row.id).sort(), saved.events.map(row => row.id).sort(),
+  'a narrower read cannot erase saved evidence while history loads');
+
+const crossDate = { day, sourceFeeds: FEEDS.map(feed => ({ ...feed, status: 'ok', events:
+  feed.id === 'news' ? [event('company-route', { feed: 'news', url: 'https://example.test/same-story',
+    attribution: { status: 'confirmed' } })] : feed.id === 'market-news' ? [event('market-route', {
+      feed: 'market-news', day: '2026-08-01', url: 'https://example.test/same-story', attribution: { status: 'uncertain' } })] : [] })) };
+const fullCrossDate = adoptAllAlertsReport(crossDate, null, { ...context, holdings: [] });
+const selectedCrossDate = adoptAllAlertsReport(crossDate, null, { ...context, holdings: [], queryWindow });
+assert.deepEqual(selectedCrossDate.events, fullCrossDate.events.filter(row => row.day === day),
+  'date filtering happens after canonical selection and retains cross-date source provenance');
+assert.equal(selectedCrossDate.events[0].newsProvenance.length, 2);
+
 const emptySeed = report([], 'pending');
 const seeded = adoptAllAlertsReport(emptySeed, restored, context);
 assert.deepEqual(seeded.events.map(row => row.id).sort(), [old.id, unknown.id, future.id, original.id].sort(),

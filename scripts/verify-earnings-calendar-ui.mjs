@@ -111,7 +111,7 @@ try {
   await page.clock.fastForward(60_001);
   await page.waitForFunction(date => window.calendar.errorFor(date), DATE);
   assert.match(await page.locator('[data-cal-info]').textContent(), /Saved schedule · retrying/);
-  assert.equal(await page.locator('[data-table-search]').inputValue(), 'sterlite');
+  assert.equal(await page.locator('[data-table-search]').inputValue(), 'Sterlite');
   assert.equal((await renderedNames(page)).length, 1);
   assert.equal(await page.evaluate(date => calendar.forDate(date).listCapturedAt, DATE), checkedAt);
 
@@ -120,7 +120,7 @@ try {
   await page.clock.fastForward(60_001);
   await page.waitForFunction(date => !calendar.errorFor(date), DATE);
   assert.match(await page.locator('[data-cal-info]').textContent(), /Schedule updated/);
-  assert.equal(await page.locator('[data-table-search]').inputValue(), 'sterlite');
+  assert.equal(await page.locator('[data-table-search]').inputValue(), 'Sterlite');
 
   mode = 'invalid';
   await page.clock.fastForward(60_001);

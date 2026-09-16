@@ -69,6 +69,24 @@ const VIEWS = [
 ];
 
 let disposers = [];
+// Source subscriptions live for the tab; only one table belongs to its current panel.
+let panel = null;
+function disposePanel() {
+  panel?.dispose?.();
+  panel = null;
+}
+function paintPanel(ctx, key, header, makeTable, rows, fallback = '') {
+  if (panel?.key === key && panel.root === ctx.root && ctx.root.querySelector('[data-earnings-body]')) {
+    ctx.root.querySelector('[data-earnings-head]').innerHTML = header;
+    panel.table.updateData(rows);
+    return panel.table;
+  }
+  disposePanel();
+  const table = makeTable?.();
+  ctx.root.innerHTML = `<div data-earnings-head>${header}</div><div data-earnings-body>${table?.html || fallback}</div>`;
+  if (table) panel = { key, root: ctx.root, table, dispose: table.wire(ctx.root) };
+  return table;
+}
 let renderToken = 0;
 let calendarDate = null; // the selected date in the calendar view
 let calendarBusy = false;
@@ -90,6 +108,7 @@ let periodError = null;
 
 function renderFeed(ctx) {
   const token = ++renderToken;
+  disposePanel();
   disposers.forEach((d) => d && d());
   disposers = [];
   calendarBusy = false;
@@ -156,6 +175,7 @@ function renderFeed(ctx) {
 
 function destroyFeed() {
   renderToken++;
+  disposePanel();
   disposers.forEach((d) => d && d());
   disposers = [];
   // Leaving the tab is a deliberate exit; coming back should be a clean table, not last visit's
@@ -401,7 +421,7 @@ function renderLatest(ctx) {
   // Ticker and industry are not columns any more: they live on the second line of the identity
   // cell, where they stay searchable and visible without costing two columns of width. The width
   // freed up goes to the reported figures, which is what the growth percentages are derived from.
-  const table = scoreTable({
+  const makeTable = () => scoreTable({
     rows,
     key: (r) => r.scId,
     // THE STAR MARKS THE COMPANY, NOT THE ROW. `key` above identifies the row and is not a ticker
@@ -474,7 +494,7 @@ function renderLatest(ctx) {
           if (v === 'to-loss') return r.netProfit?.kind === 'slipped-to-loss';
           if (v === 'rev-up-20') return r.revenue?.kind === 'normal' && r.revenue.pct >= 20;
           if (v === 'in-universe') return r.inUniverse;
-          if (v === 'today') return r.resultDate === m?.latestResultDate;
+          if (v === 'today') return r.resultDate === feed.meta()?.latestResultDate;
           return true;
         },
       },
@@ -500,13 +520,11 @@ function renderLatest(ctx) {
     initialSort: { key: 'Date', dir: 'desc' },
     // No onRowClick, deliberately — see "WHY THERE IS NO DRILL PANEL" at the top of this file.
     exportName: 'sattva-earnings',
-    onExport: (visible) => exportResults(visible, m),
+    onExport: (visible) => exportResults(visible, feed.meta()),
     emptyMessage: scopePossessive(ctx.scope) ? `None of ${scopePossessive(ctx.scope)} has reported in this quarter yet.` : 'No results match your filters.',
     initialView: tableView,
   });
-  tableView = table.view;
-
-  ctx.root.innerHTML = `
+  const header = `
     ${sectionHead({
       title: 'Latest Results',
       description: `Every company that has reported this quarter, newest first. Reported figures in ₹ crore${m?.currentPeriod ? `, ${m.currentPeriod} against ${m.priorPeriod}` : ''}.`,
@@ -520,11 +538,11 @@ function renderLatest(ctx) {
            </div>`
         : ''
     }
-    ${table.html}
   `;
+  const table = paintPanel(ctx, JSON.stringify(['reported', ctx.scope, cur, pri, m?.subType]), header, makeTable, rows);
+  tableView = table.view;
   wireViewToggle(ctx.root, ctx);
   wirePeriodToggle(ctx.root, ctx);
-  disposers.push(table.wire(ctx.root));
 }
 
 // ---------------------------------------------------------------------------------------
@@ -738,8 +756,8 @@ function renderCalendar(ctx) {
   const err = calendar.errorFor(wanted);
   const fatal = err && !payload;
 
-  const table = scoped.length
-    ? scoreTable({
+  const makeTable = scoped.length
+    ? () => scoreTable({
         rows: scoped,
         key: (r) => r.eventId || r.scId,
         watchKey: (r) => r.ticker || null,
@@ -767,20 +785,20 @@ function renderCalendar(ctx) {
         searchable: (r) => `${r.name} ${r.ticker || ''} ${r.industry || ''} ${r.exchange || ''} ${r.eventType || ''} ${r.eventSource || ''}`,
         initialSort: { key: 'Time (IST)', dir: 'asc' },
         exportName: 'sattva-earnings-calendar',
-        onExport: (visible) => exportCalendar(visible, payload, wanted),
+        onExport: (visible) => exportCalendar(visible, calendar.forDate(wanted), wanted),
         emptyMessage: 'No companies match your filters.',
         initialView: calendarTableView,
       })
     : null;
-  if (table) calendarTableView = table.view;
-
-  ctx.root.innerHTML = `
+  const header = `
     ${sectionHead({
       title: 'Earnings Calendar',
       description: 'Scheduled results and upcoming con-calls, by date. Pick a date from the strip.',
       controls: `${viewToggle('calendar')}${calendarPill(payload, err)}${scopeSummary({ scope: ctx.scope, count: scoped.length, noun: 'scheduled', book: coverage.meta() })}`,
     })}
     ${dateStrip(wanted, today)}
+  `;
+  const fallback = `
     ${
       fatal
         ? `<div class="rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
@@ -789,9 +807,7 @@ function renderCalendar(ctx) {
              <div class="mt-1 text-xs text-slate-500">${escapeHtml(withoutPublisherName(err))}</div>
              <div class="mx-auto mt-3 max-w-lg text-xs text-slate-400">The Earnings Calendar is the scheduled-events view. Earnings Reported remains available separately for filed results.</div>
            </div>`
-        : table
-          ? table.html
-          : !payload
+        : !payload
             ? '<div class="skeleton-shimmer h-80 rounded-2xl bg-slate-100"></div>'
             : payload.degraded
               ? `<div class="rounded-2xl bg-amber-50 p-5 text-sm leading-relaxed text-amber-900 ring-1 ring-amber-200">
@@ -804,6 +820,8 @@ function renderCalendar(ctx) {
                  </div>`
     }
   `;
+  const table = paintPanel(ctx, JSON.stringify(['calendar', ctx.scope, wanted, !!makeTable]), header, makeTable, scoped, fallback);
+  if (table) calendarTableView = table.view;
   wireViewToggle(ctx.root, ctx);
   for (const btn of ctx.root.querySelectorAll('[data-date]')) {
     btn.addEventListener('click', () => {
@@ -813,7 +831,6 @@ function renderCalendar(ctx) {
     });
   }
   keepActiveVisible(ctx.root);
-  if (table) disposers.push(table.wire(ctx.root));
 }
 
 function eventPill(eventType) {

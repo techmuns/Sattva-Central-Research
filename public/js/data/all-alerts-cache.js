@@ -4,6 +4,13 @@ import { createAlertWindowCache } from './alert-window-cache.js';
 
 export const ALL_ALERTS_CACHE_KEY = 'all-alerts:public-pool:v1';
 export const allAlertsCache = createAlertWindowCache({ cacheKey: ALL_ALERTS_CACHE_KEY });
+const viewCache = createAlertWindowCache({ cacheKey: `${ALL_ALERTS_CACHE_KEY}:selected-view` });
+export const alertWindowKey = window => JSON.stringify(window || null);
+// The selected-period cache has its own contract/key. It can never replace the full archive.
+export function allAlertsViewCache(window) {
+  if (!window) return allAlertsCache;
+  return viewCache;
+}
 const PRIVATE_FEEDS = new Set(['company-documents', 'drhp-documents', 'screener-portfolio-upcoming']);
 export const publicAlertFeed = feed => !PRIVATE_FEEDS.has(feed.id) && !feed.portfolioOnly;
 const publicEvent = event => event && !event.private && !event.portfolioOnly &&
@@ -12,14 +19,15 @@ const publicEvent = event => event && !event.private && !event.portfolioOnly &&
 export function materializeAllAlerts(report) {
   const feeds = (report.sourceFeeds || []).filter(publicAlertFeed);
   return { version: 1, contract: 'all-alerts-public-sources-v1', day: report.day,
+    ...(report.queryWindow ? { queryWindow: report.queryWindow } : {}),
     feeds: feeds.map(({ events, ...feed }) => feed),
     events: feeds.flatMap(feed => feed.events.filter(publicEvent)),
   };
 }
 
-export function restoreAllAlertSources(value, registry, day) {
+export function restoreAllAlertSources(value, registry, day, queryWindow = null) {
   const expected = registry.filter(publicAlertFeed).map(feed => feed.id);
-  if (value?.version !== 1 || value.contract !== 'all-alerts-public-sources-v1' ||
+  if (alertWindowKey(value?.queryWindow) !== alertWindowKey(queryWindow) || value?.version !== 1 || value.contract !== 'all-alerts-public-sources-v1' ||
       !/^\d{4}-\d{2}-\d{2}$/.test(value.day || '') || value.day > day ||
       !Array.isArray(value.feeds) || !Array.isArray(value.events) ||
       value.feeds.length !== expected.length || new Set(value.feeds.map(feed => feed?.id)).size !== expected.length ||

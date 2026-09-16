@@ -215,6 +215,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-tab-performance-ui.mjs
+      - name: Verify bounded Earnings ownership and unchanged scrolling work
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-performance-ownership-ui.mjs
       - name: Verify filter transitions, loading placeholders and latest selection
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -441,6 +441,7 @@ export function scoreTable(config) {
     rowClass = null,
     // Observe the complete filtered model, including rows outside the mounted window.
     onVisibleRowsChange = null,
+    onFilterChange = null,
     // Optional bounded entrance sequence for a windowed table. Only presentation is paced;
     // the complete filtered model remains available for counts, search and export.
     presentRows = null,
@@ -654,10 +655,10 @@ export function scoreTable(config) {
   const isVirtual = isFixed || isWindowed;
   const VIRTUAL_ROW_HEIGHT = Math.max(48, Math.round(Number(virtualRowHeight) || 72));
 
-  function bodyHtml(list, from = 0, to = list.length) {
+  function bodyParts(list, from = 0, to = list.length) {
     if (!list.length) {
       const message = typeof emptyMessage === 'function' ? emptyMessage() : emptyMessage;
-      return `<tr><td colspan="${colCount}" class="px-4 py-12 text-center text-slate-400">${escapeHtml(message)}</td></tr>`;
+      return [`<tr><td colspan="${colCount}" class="px-4 py-12 text-center text-slate-400">${escapeHtml(message)}</td></tr>`];
     }
     const watched = loadWatchlist();
     const end = Math.min(to, list.length);
@@ -665,9 +666,8 @@ export function scoreTable(config) {
     for (let i = from; i < end; i++) {
       const row = list[i];
       const slug = String(key(row));
-      // A virtual row carries aria-rowindex, which is position-dependent. Only a screenful is
-      // generated at once, so bypassing the position-independent cache here is both correct and
-      // bounded. Other modes retain the cache that makes large sorts cheap.
+      // Content is cached by stable identity. The measured window sets aria-rowindex after
+      // moving nodes, so unchanged cells need no serialization just to update their position.
       let html = rowHtmlCache.get(slug);
       if (html === undefined) {
         const wk = watchKeyOf(row);
@@ -676,8 +676,9 @@ export function scoreTable(config) {
       }
       out.push(html);
     }
-    return out.join('');
+    return out;
   }
+  const bodyHtml = (list, from = 0, to = list.length) => bodyParts(list, from, to).join('');
 
   function rowHtml(row, slug, isWatched, watchSlug = null, watchLabel = null, rowIndex = null) {
         const label = String(name(row));
@@ -1038,16 +1039,19 @@ export function scoreTable(config) {
     }
     const windowed = isWindowed ? mountWindowedList({
       scroller, content: body, items: current, key, rowSelector: 'tr[data-row-key]',
-      renderRows: bodyHtml, estimateHeight: VIRTUAL_ROW_HEIGHT, initialKey: initialRowKey,
+      renderRows: bodyHtml, renderParts: bodyParts, estimateHeight: VIRTUAL_ROW_HEIGHT, initialKey: initialRowKey,
       spacerHtml: (height, edge) => `<tr aria-hidden="true"><td data-window-spacer="${edge}" colspan="${colCount}" style="height:${height}px;padding:0;border:0"></td></tr>`,
       onScrollActivity,
       onWindow: (start, total) => {
         host.dataset.virtualStart = start; host.dataset.virtualTotal = total;
         tableEl?.setAttribute('aria-rowcount', String(total + 1));
-        rowHtmlCache.clear(); staleKeys.clear();
+        // Keep a small reusable window; scrolling does not invalidate unchanged row content.
+        while (rowHtmlCache.size > 160) rowHtmlCache.delete(rowHtmlCache.keys().next().value);
+        staleKeys.clear();
       },
     }) : null;
     activePresentation = windowed && presentRows ? () => {
+      rowHtmlCache.clear(); // NEW highlights and entrance state are presentation revisions.
       if (!filterPending()) windowed.update(presentRows(current, { resetScroll: false }));
     } : null;
     let scrollAttached = false;
@@ -1206,6 +1210,7 @@ export function scoreTable(config) {
     updateRows = (keys) => {
       const wanted = new Set([...keys].map(String));
       if (!wanted.size) return 0;
+      for (const k of wanted) rowHtmlCache.delete(k);
       rows.forEach((row, i) => { if (wanted.has(String(key(row))) && searchTextIndex) searchTextIndex[i] = undefined; });
       if (windowed) {
         const touched = [...body.querySelectorAll('tr[data-row-key]')].filter(tr => wanted.has(tr.dataset.rowKey)).length;
@@ -1331,6 +1336,7 @@ export function scoreTable(config) {
       el.addEventListener('change', () => {
         view.filters[i] = el.value;
         requestFilterPaint();
+        onFilterChange?.(view, i);
       })
     );
 
@@ -1373,6 +1379,7 @@ export function scoreTable(config) {
 
     return () => {
       isDisposed = true;
+      rowHtmlCache.clear(); staleKeys.clear();
       activeRepaint = null;
       activePresentation = null;
       activeLoading = null;
