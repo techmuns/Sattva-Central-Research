@@ -27,9 +27,12 @@ that every brief breakout will be observed.
   Failed publishing leaves a visible failed bootstrap job. Each authenticated
   collector also ensures the alarm is armed. Every 15 minutes
   the alarm checks the fixed workflow and requests a missed run, unless one is
-  queued/running or a collection run was recently created. A recently created run
-  defers the alarm only for the remainder of its 15-minute interval. GitHub's
-  creation delay must not turn each timer interval into a 30-minute capture gap.
+  queued/running or a collection run was recently created. Timer-originated runs
+  carry the fixed `Breakout capture · durable-timer` run name and use the stored
+  dispatch time for their next interval, so GitHub's creation delay cannot drift
+  the cadence. Independent scheduled/manual runs defer the alarm only for the
+  remainder of their 15-minute interval. GitHub's creation delay must not turn
+  each timer interval into a 30-minute capture gap.
   Successful push-only
   bootstrap jobs are not counted as price collection. This uses the existing `GH_DISPATCH_TOKEN`
   and requires no additional Cloudflare cron slot. Reads never activate it.
@@ -98,6 +101,9 @@ price and volume are retained if that lookup fails; a supplied base enriches the
 primary observation before its first checkpoint, without rewriting saved history.
 This also applies to retained closing observations missing a base after hours;
 their price, volume and original source/check times remain unchanged.
+With no backup token, missing closing bases retry the primary history instead,
+within the same budget and rate-limit guard. A failed history request retains the
+usable closing observation and continues to report its missing base.
 
 The user configured the Analytics token on 16 September 2026 with a one-year
 validity. Renew before the expiry shown by Upstox (expected around 16 September

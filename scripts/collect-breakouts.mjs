@@ -51,8 +51,14 @@ export async function collectBreakouts({ targets, previous = null, client, prima
     await Promise.all(wave.map(async target => {
       // Retry only missing closing observations overnight. Reused observations keep
       // their actual source/check times; they are not newly fetched prices.
-      const prior = retained.get(target.ticker);
+      let prior = retained.get(target.ticker);
       if (closingRetry && quoteFresh(prior, now())) {
+        if (!prior.base && !token && !rateLimited && now() < captureDeadline) {
+          try {
+            const history = await primary(target, {now});
+            if (history.base && history.sessionDate === prior.sessionDate) prior = {...prior,base:history.base,historyBars:history.historyBars};
+          } catch (error) { if (error.message === 'rate-limited') rateLimited = true; }
+        }
         if (token && !prior.base) { misses.push({target,reason:'missing-base',quote:prior}); return; }
         saved.push(prior); rows.push(prior); return;
       }

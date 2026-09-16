@@ -114,7 +114,7 @@ test('timer restart and GitHub creation delay do not turn 15-minute captures int
  const makeSchedule=()=>new BreakoutSchedule(data,{GH_DISPATCH_TOKEN:'fixture',GH_REPO:'techmuns/Sattva-Central-Research'}, {now:()=>at,fetcher:async(url,options={})=>{
   if(options.method==='POST'){
    dispatches.push(at);
-   runs=[{id:dispatches.length,status:'completed',conclusion:dispatches.length%2?'failure':'success',event:'workflow_dispatch',created_at:iso(at+4000)}];
+   runs=[{id:dispatches.length,status:'completed',conclusion:dispatches.length%2?'failure':'success',event:'workflow_dispatch',display_title:'Breakout capture · durable-timer',created_at:iso(at+(dispatches.length%2?4000:2*60000))}];
    return new Response(null,{status:204});
   }
   return Response.json({workflow_runs:runs});
@@ -126,11 +126,28 @@ test('timer restart and GitHub creation delay do not turn 15-minute captures int
   assert.equal((await makeSchedule().status()).nextAt,await data.getAlarm());
  }
  assert.equal(dispatches.length,8);
- for(let i=1;i<dispatches.length;i++)assert.equal(dispatches[i]-dispatches[i-1],15*60000+4000);
+ for(let i=1;i<dispatches.length;i++)assert.equal(dispatches[i]-dispatches[i-1],15*60000);
  // An independent scheduled capture should defer only until it is 15 minutes old.
  at=await data.getAlarm();runs=[{id:99,status:'completed',conclusion:'success',event:'schedule',created_at:iso(at-5*60000)}];
  await makeSchedule().wake();assert.equal(dispatches.length,8);assert.equal(await data.getAlarm(),at+10*60000);
  at=await data.getAlarm();await makeSchedule().wake();assert.equal(dispatches.length,9);
+ at=await data.getAlarm();runs=[{id:100,status:'completed',conclusion:'success',event:'workflow_dispatch',display_title:'Breakout capture · manual',created_at:iso(at-5*60000)}];
+ await makeSchedule().wake();assert.equal(dispatches.length,9);assert.equal(await data.getAlarm(),at+10*60000);
+ at=await data.getAlarm();await makeSchedule().wake();assert.equal(dispatches.length,10);
+});
+test('closing retries can recover missing history without an Upstox token and retain quotes on failure',async()=>{
+ const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');
+ for(const failure of [null,'unavailable','rate-limited']){
+  const prior=quote('TEST',closeAt,{base:null}),good=quote('GOOD',closeAt),previous={state:'complete',targets:['TEST','GOOD'],rows:[prior,good],failures:[]};
+  const {store,client}=harness(()=>evening);let calls=0;
+  const summary=await collectBreakouts({targets:[{ticker:'TEST'},{ticker:'GOOD'}],previous,client,now:()=>evening,sleep:async()=>{},
+   primary:async target=>{calls++;assert.equal(target.ticker,'TEST');if(failure)throw Error(failure);return quote('TEST',closeAt,{price:110});},
+   backup:async()=>assert.fail('no backup token'),
+  });
+  assert.equal(calls,1);assert.equal(summary.saved,2);assert.equal(summary.failures,0);assert.equal(summary.noBase,failure?1:0);
+  const saved=store.read().rows.find(row=>row.ticker==='TEST');assert.equal(saved.price,prior.price);assert.equal(saved.checkedAt,prior.checkedAt);
+  assert.equal(closingSeedComplete(store.read(),evening),!failure);
+ }
 });
 test('closing retries fill missing history without refetching saved prices or changing source times',async()=>{
  const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');

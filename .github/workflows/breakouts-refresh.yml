@@ -1,4 +1,5 @@
 name: Breakout price and volume capture
+run-name: Breakout capture · ${{ inputs.source || github.event_name }}
 
 on:
   push:
