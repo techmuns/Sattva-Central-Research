@@ -65,7 +65,8 @@ test('collector covers more than 60 stocks, stops on rate limits and saves succe
 });
 test('backup fills missing quotes, reports absent base and never calls Muns',async()=>{
  const {store,client}=harness();let used=false;
- const summary=await collectBreakouts({targets:[{ticker:'TEST'}],client,now:()=>AT,sleep:async()=>{},token:'fixture',primary:async()=>{throw Error('unavailable');},backup:async targets=>{used=true;return {rows:targets.map(t=>quote(t.ticker,AT,{provider:'Upstox',base:null}))};}});
+ const summary=await collectBreakouts({targets:[{ticker:'TEST'}],client,now:()=>AT,sleep:async()=>{},token:'fixture',primary:async()=>{throw Error('unavailable');},backup:async targets=>{used=true;return {rows:targets.map(t=>quote(t.ticker,AT,{provider:'Upstox',base:null})),reason:'instrument-list-unavailable',instrumentFailures:[{exchange:'BSE',reason:'unavailable'}]};}});
+ assert.equal(summary.upstox,'instrument-list-unavailable');assert.deepEqual(summary.upstoxInstrumentFailures,[{exchange:'BSE',reason:'unavailable'}]);
  assert(used);assert.equal(summary.saved,1);assert.equal(summary.noBase,1);assert.equal(store.read().rows[0].provider,'Upstox');
  const result=await upstoxQuotes([{ticker:'TEST'}],new Map([['TEST',base]]),{token:'fixture',now:()=>AT,instruments:[{segment:'NSE_EQ',instrument_type:'EQ',instrument_key:'NSE_EQ|INE000000001',trading_symbol:'TEST'}],fetcher:async(url,opts)=>{
  assert.equal(new URL(url).origin,'https://api.upstox.com');assert.equal(opts.headers.authorization,'Bearer fixture');
@@ -135,6 +136,19 @@ test('timer restart and GitHub creation delay do not turn 15-minute captures int
  await makeSchedule().wake();assert.equal(dispatches.length,9);assert.equal(await data.getAlarm(),at+10*60000);
  at=await data.getAlarm();await makeSchedule().wake();assert.equal(dispatches.length,10);
 });
+test('in-flight captures recheck in one minute without starting duplicates, including a dispatch race',async()=>{
+ const data=storage();let at=AT,runs=[],posts=0,race=false,reads=0;
+ const schedule=new BreakoutSchedule(data,{GH_DISPATCH_TOKEN:'fixture',GH_REPO:'techmuns/Sattva-Central-Research'}, {now:()=>at,fetcher:async(url,options={})=>{
+  if(options.method==='POST'){posts++;runs=[{id:posts,event:'workflow_dispatch',display_title:'Breakout capture · durable-timer',status:'in_progress',created_at:iso(at+4*60000)}];return new Response(null,{status:204});}
+  reads++;return Response.json({workflow_runs:race && reads>1 ? [{id:99,event:'schedule',status:'in_progress',created_at:iso(at-60000)}] : runs});
+ }});
+ await schedule.arm();at=await data.getAlarm();await schedule.wake();const first=at;
+ at=await data.getAlarm();await schedule.wake();assert.equal(posts,1);assert.equal(await data.getAlarm(),first+16*60000);
+ runs[0].status='completed';runs[0].conclusion='success';at=await data.getAlarm();await schedule.wake();assert.equal(posts,2);assert.equal(at-first,16*60000);
+ await schedule.wake();assert.equal(posts,2);
+ at=await data.getAlarm();runs[0].status='completed';runs[0].conclusion='success';race=true;reads=0;
+ await schedule.wake();assert.equal(posts,2);assert.equal(await data.getAlarm(),at+60000);assert.equal((await schedule.status()).reason,'running');
+});
 test('closing retries can recover missing history without an Upstox token and retain quotes on failure',async()=>{
  const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');
  for(const failure of [null,'unavailable','rate-limited']){
@@ -202,7 +216,8 @@ test('Upstox isolates exchange-list outages and stops on rejected credentials',a
    if(unauthorized)return new Response(null,{status:401});
    return Response.json({status:'success',data:{nsdl:{instrument_token:instrument.instrument_key,symbol:'NSDL',last_price:105,net_change:7,volume:2000,last_trade_time:String(AT)}}});
   }});
-  assert.equal(calls.length,3);assert.equal(result.reason,unauthorized?'authentication':'unmapped');assert.equal(result.rows.length,unauthorized?0:1);
+  assert.equal(calls.length,3);assert.equal(result.reason,unauthorized?'authentication':'instrument-list-unavailable');assert.equal(result.rows.length,unauthorized?0:1);
+  assert.deepEqual(result.instrumentFailures,[{exchange:'NSE',reason:'unavailable'}]);
  }
 });
 test('verified portfolio ISINs follow renamed symbols and retain each canonical target',async()=>{
@@ -215,6 +230,17 @@ test('verified portfolio ISINs follow renamed symbols and retain each canonical 
  }});
  assert.equal(result.reason,'unmapped');assert.deepEqual(result.rows.map(row=>row.ticker),['ASHIKA','ASHIKAG']);
  assert.equal(captureTarget({ticker:'TEST',isin:'invalid'}).isin,undefined);
+});
+test('a later Upstox quote-batch timeout preserves earlier successful quotes',async()=>{
+ const targets=Array.from({length:501},(_,i)=>({ticker:`T${i}`}));
+ const instruments=targets.map((t,i)=>({segment:'NSE_EQ',instrument_type:'EQ',instrument_key:`NSE_EQ|INE${String(i).padStart(9,'0')}`,trading_symbol:t.ticker}));
+ let calls=0;
+ const result=await upstoxQuotes(targets,new Map(targets.map(t=>[t.ticker,base])),{instruments,token:'fixture',now:()=>AT,fetcher:async url=>{
+  if(++calls===2)throw Error('timeout');
+  const keys=new URL(url).searchParams.get('instrument_key').split(',');assert.equal(keys.length,500);
+  return Response.json({status:'success',data:Object.fromEntries(keys.map((key,i)=>[key,{instrument_token:key,symbol:`T${i}`,last_price:105,volume:2000,last_trade_time:String(AT)}]))});
+ }});
+ assert.equal(calls,2);assert.equal(result.rows.length,500);assert.equal(result.reason,'unavailable');
 });
 test('partial closing seeds retry missing stocks without refetching successful closing observations',async()=>{
  const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');

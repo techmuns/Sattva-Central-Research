@@ -66,7 +66,7 @@ export function mapUpstoxTargets(targets, instruments) {
     else if (index.get(key)?.instrument_key !== item.instrument_key) index.set(key, null);
   };
   for (const item of instruments) {
-    if (!['NSE_EQ','BSE_EQ'].includes(item.segment) || !new RegExp(`^${item.segment}\\|IN[A-Z0-9]{10}$`).test(item.instrument_key || '') || !item.trading_symbol) continue;
+    if (!item || !['NSE_EQ','BSE_EQ'].includes(item.segment) || !new RegExp(`^${item.segment}\\|IN[A-Z0-9]{10}$`).test(item.instrument_key || '') || !item.trading_symbol) continue;
     const exchange = item.segment.slice(0,3);
     // Cash-market series include SME shares, REITs and InvITs as well as EQ.
     // Match exact exchange identities; never guess a company from its name.
@@ -95,11 +95,12 @@ async function upstoxInstruments(exchange, fetcher) {
 }
 export async function upstoxQuotes(targets, bases, { token, fetcher = fetch, now = Date.now, instruments, historyBudgetMs = 90000 } = {}) {
   if (!token) return { rows: [], reason: 'not-configured' };
+  const instrumentFailures = [];
   if (!instruments) {
     instruments = [];
     for (const exchange of new Set(targets.map(target => upstoxIdentity(target).exchange))) {
       try { instruments = instruments.concat(await upstoxInstruments(exchange, fetcher)); }
-      catch { /* An unavailable exchange stays unmapped; keep the other exchange usable. */ }
+      catch { instrumentFailures.push({exchange,reason:'unavailable'}); }
     }
   }
   const mapped = mapUpstoxTargets(targets, instruments);
@@ -108,9 +109,11 @@ export async function upstoxQuotes(targets, bases, { token, fetcher = fetch, now
     const batch = mapped.slice(i, i + 500);
     const url = new URL('https://api.upstox.com/v2/market-quote/quotes');
     url.searchParams.set('instrument_key', [...new Set(batch.map(target => target.instrumentKey))].join(','));
-    const response = await fetcher(url, { headers: { authorization: `Bearer ${token}`, accept: 'application/json' }, redirect: 'error', signal: AbortSignal.timeout(15000) });
-    if (!response.ok) { await response.body?.cancel(); return { rows, reason: [401,403].includes(response.status) ? 'authentication' : response.status === 429 ? 'rate-limited' : 'unavailable' }; }
-    rows.push(...upstoxRows(await boundedJson(response, 4 * 1024 * 1024), batch, bases, now()));
+    try {
+      const response = await fetcher(url, { headers: { authorization: `Bearer ${token}`, accept: 'application/json' }, redirect: 'error', signal: AbortSignal.timeout(15000) });
+      if (!response.ok) { await response.body?.cancel(); return { rows, instrumentFailures, reason: [401,403].includes(response.status) ? 'authentication' : response.status === 429 ? 'rate-limited' : 'unavailable' }; }
+      rows.push(...upstoxRows(await boundedJson(response, 4 * 1024 * 1024), batch, bases, now()));
+    } catch { return { rows, instrumentFailures, reason: 'unavailable' }; }
   }
   // On a primary-feed outage, obtain the base from Upstox too. This only runs for
   // missing bases, and stops at its deadline or rate limit instead of hammering the source.
@@ -133,7 +136,7 @@ export async function upstoxQuotes(targets, bases, { token, fetcher = fetch, now
       } catch { /* The quote remains usable; the missing base remains explicit. */ }
     }));
   }
-  return { rows, reason: mapped.length < targets.length ? 'unmapped' : historyStopped ? 'history-unavailable' : null };
+  return { rows, instrumentFailures, reason: instrumentFailures.length ? 'instrument-list-unavailable' : mapped.length < targets.length ? 'unmapped' : historyStopped ? 'history-unavailable' : null };
 }
 
 // Recovery uses completed 15-minute candles. These are explicitly labelled historical,

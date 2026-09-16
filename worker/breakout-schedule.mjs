@@ -38,7 +38,10 @@ export class BreakoutSchedule {
         // dispatch time, so GitHub's creation delay cannot accumulate each cycle.
         const recentAt = recent?.event === 'workflow_dispatch' && recent.title === TIMER_RUN_TITLE &&
           lastDispatchAt && createdAt >= lastDispatchAt ? lastDispatchAt : createdAt;
-        if (isInFlight(recent)) { reason = 'running'; overdue = at - Date.parse(recent.createdAt) > 30 * 60000; }
+        if (isInFlight(recent)) {
+          reason = 'running'; overdue = !Number.isFinite(createdAt) || at - createdAt > 30 * 60000;
+          dueAt = at + 60000;
+        }
         else if (recentAt > at - BREAKOUT_INTERVAL_MS) {
           reason = recent.conclusion === 'success' ? 'recent-run' : 'recent-run-failed'; overdue = recent.conclusion !== 'success';
           // Independent scheduled/manual runs defer only the remaining interval.
@@ -49,6 +52,7 @@ export class BreakoutSchedule {
           reason = result.dispatched ? 'dispatched' : 'running';
           if (result.dispatched) lastDispatchAt = at;
           overdue = !result.dispatched && at - Date.parse(result.run?.createdAt) > 30 * 60000;
+          if (!result.dispatched) dueAt = at + 60000;
         }
       } catch { reason = 'dispatch-unavailable'; overdue = true; }
     }

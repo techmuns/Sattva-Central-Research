@@ -33,6 +33,8 @@ that every brief breakout will be observed.
   the cadence. Independent scheduled/manual runs defer the alarm only for the
   remainder of their 15-minute interval. GitHub's creation delay must not turn
   each timer interval into a 30-minute capture gap.
+  Queued/running captures suppress duplicate dispatches and recheck after one
+  minute, including a run that starts between the timer's two GitHub checks.
   Successful push-only
   bootstrap jobs are not counted as price collection. This uses the existing `GH_DISPATCH_TOKEN`
   and requires no additional Cloudflare cron slot. Reads never activate it.
@@ -88,6 +90,9 @@ ISIN never falls back to an unrelated symbol. Shared instruments preserve each
 canonical target without duplicating the requested quote key.
 Ambiguous mappings and cross-exchange guesses
 are refused. A failed exchange list does not discard the other exchange's quotes.
+The health artifact names each unavailable instrument list under
+`upstoxInstrumentFailures`, separately from genuine unmapped identities. A later
+quote-batch timeout retains successful earlier batches.
 Previous close is
 derived from `last_price - net_change`, rather than confusing today's OHLC close
 with the previous close. Missing 30-session bases can be fetched from the

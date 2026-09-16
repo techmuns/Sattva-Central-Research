@@ -81,12 +81,14 @@ export async function collectBreakouts({ targets, previous = null, client, prima
     if (!rateLimited && offset + 8 < targets.length) await sleep(300);
   }
   let backupReason = token ? 'unused' : 'not-configured';
+  let backupInstrumentFailures = [];
   if (misses.length && token) {
     let result = {rows:[]};
     try {
       result = await backup(misses.map(m => m.target), bases, { token, now });
       if (!Array.isArray(result?.rows)) throw Error('Invalid backup result');
       backupReason = result.reason || 'ok';
+      backupInstrumentFailures = result.instrumentFailures || [];
     } catch { result = {rows:[]}; backupReason = 'unavailable'; }
     const candidates = new Map(result.rows.map(row=>[row.ticker,row]));
     const saved = misses.flatMap(m => {
@@ -121,7 +123,7 @@ export async function collectBreakouts({ targets, previous = null, client, prima
     } catch (error) { recoveryFailed++; if (error.message==='rate-limited') rateLimited=true; }
   }
   return { targetCount: targets.length, saved: rows.length, failures: failures.length, noBase: rows.filter(r => !r.base).length,
-    discoveryFailed, recovered, recoveryFailed, upstox: backupReason, completedAt: new Date(now()).toISOString() };
+    discoveryFailed, recovered, recoveryFailed, upstox: backupReason, upstoxInstrumentFailures: backupInstrumentFailures, completedAt: new Date(now()).toISOString() };
 }
 export async function bootstrapBreakouts({client=breakoutClient(),now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   const deadline=now()+8*60000;
