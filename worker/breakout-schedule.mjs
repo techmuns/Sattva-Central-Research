@@ -24,7 +24,7 @@ export class BreakoutSchedule {
       await tx.setAlarm(nextAt); return true;
     });
     if (!claimed) return;
-    let reason = 'closed', overdue = false;
+    let reason = 'closed', overdue = false, dueAt = nextAt;
     if (marketWindow(at).collect) {
       try {
         if (!this.env.GH_DISPATCH_TOKEN || this.env.GH_REPO !== 'techmuns/Sattva-Central-Research' || (this.env.GH_REF || 'main') !== 'main') throw Error('configuration');
@@ -33,7 +33,12 @@ export class BreakoutSchedule {
         const recent = (await latestRun(this.fetcher, cfg, BREAKOUT_WORKFLOW, { perPage: 10 }))
           .find(run => ['schedule', 'workflow_dispatch', 'repository_dispatch'].includes(run.event));
         if (isInFlight(recent)) { reason = 'running'; overdue = at - Date.parse(recent.createdAt) > 30 * 60000; }
-        else if (Date.parse(recent?.createdAt) > at - BREAKOUT_INTERVAL_MS) { reason = recent.conclusion === 'success' ? 'recent-run' : 'recent-run-failed'; overdue = recent.conclusion !== 'success'; }
+        else if (Date.parse(recent?.createdAt) > at - BREAKOUT_INTERVAL_MS) {
+          reason = recent.conclusion === 'success' ? 'recent-run' : 'recent-run-failed'; overdue = recent.conclusion !== 'success';
+          // GitHub creates a run after the dispatch. Wait only the remainder of
+          // its 15-minute interval, rather than skipping another whole interval.
+          dueAt = Math.max(at + 1000, Math.min(nextAt, Date.parse(recent.createdAt) + BREAKOUT_INTERVAL_MS));
+        }
         else {
           const result = await dispatchWorkflow(this.fetcher, cfg, BREAKOUT_WORKFLOW, 'main', { source: 'durable-timer' });
           reason = result.dispatched ? 'dispatched' : 'running';
@@ -43,7 +48,10 @@ export class BreakoutSchedule {
     }
     await this.storage.transaction(async tx => {
       const state = await tx.get(KEY);
-      if (state?.lastAttemptAt === at) await tx.put(KEY, { ...state, reason, overdue });
+      if (state?.lastAttemptAt === at) {
+        await tx.put(KEY, { ...state, nextAt: dueAt, reason, overdue });
+        if (dueAt !== nextAt) await tx.setAlarm(dueAt);
+      }
     });
   }
 }

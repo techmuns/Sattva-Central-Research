@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
+import { gzipSync } from 'node:zlib';
 import { BreakoutStore } from '../worker/breakout-store.mjs';
 import { BreakoutSchedule } from '../worker/breakout-schedule.mjs';
 import { breakoutCollectorIdentity } from '../worker/breakout-auth.mjs';
 import { handleBreakouts, handleTechnicals } from '../worker/breakouts.mjs';
 import { BREAKOUT_ENDPOINT, marketWindow, expectedSession, quoteFresh, preferQuote, liveBreakout, liveCoverage, validateQuote, recoverySlots } from '../public/js/data/breakout-live-shared.js';
 import { collectBreakouts, breakoutClient, captureTarget, bootstrapBreakouts, closingSeedComplete } from './collect-breakouts.mjs';
-import { baseFromBars, yahooSymbol, parseYahooQuote, upstoxQuotes, recoveryCandles } from './lib/breakout-providers.mjs';
+import { baseFromBars, yahooSymbol, parseYahooQuote, mapUpstoxTargets, upstoxQuotes, recoveryCandles } from './lib/breakout-providers.mjs';
 const AT = Date.parse('2026-09-15T06:30:00Z'), iso = at => new Date(at).toISOString();
 const historyDates = count => {const dates=[];for(let at=AT-86400000;dates.length<count;at-=86400000)if(marketWindow(at).collect)dates.unshift(iso(at).slice(0,10));return dates;};
 const base = {high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'};
@@ -19,7 +20,7 @@ function storage() {
  get:async key=>kv.get(key),put:async(key,value)=>kv.set(key,structuredClone(value)),getAlarm:async()=>alarm,setAlarm:async value=>{alarm=value;}};
  out.transaction=async fn=>fn(out);return out;
 }
-function harness() { const data=storage(),store=new BreakoutStore(data,{now:()=>AT});return {data,store,client:async({action,...body})=>action==='begin'?store.begin('1:1',body.targets,body.discoveryFailed):action==='checkpoint'?store.checkpoint('1:1',body.rows,body.failures):action==='recovery'?store.recovery('1:1',body.ticker,body.from,body.to,body.rows):store.finish('1:1')}; }
+function harness(now=()=>AT) { const data=storage(),store=new BreakoutStore(data,{now});return {data,store,client:async({action,...body})=>action==='begin'?store.begin('1:1',body.targets,body.discoveryFailed):action==='checkpoint'?store.checkpoint('1:1',body.rows,body.failures):action==='recovery'?store.recovery('1:1',body.ticker,body.from,body.to,body.rows):store.finish('1:1')}; }
 test('freshness uses source session/time, holidays, closing observations and missing bases',()=>{
  assert.equal(marketWindow(Date.parse('2026-09-14T06:30Z')).collect,false);
  assert.equal(expectedSession(Date.parse('2026-09-15T03:30Z')),'2026-09-11');
@@ -107,6 +108,85 @@ test('daily closing price wins over a stale same-session observation',()=>{
  const friday=Date.parse('2026-09-11T08:30Z'),weekend=Date.parse('2026-09-13T06:30Z');
  const old=quote('TEST',friday,{sessionDate:'2026-09-11',base:null});
  assert.equal(preferQuote(old,{cmp:107,price_date:'2026-09-11'},weekend),false);
+});
+test('timer restart and GitHub creation delay do not turn 15-minute captures into 30-minute captures',async()=>{
+ const data=storage(),dispatches=[];let at=AT,runs=[];
+ const makeSchedule=()=>new BreakoutSchedule(data,{GH_DISPATCH_TOKEN:'fixture',GH_REPO:'techmuns/Sattva-Central-Research'}, {now:()=>at,fetcher:async(url,options={})=>{
+  if(options.method==='POST'){
+   dispatches.push(at);
+   runs=[{id:dispatches.length,status:'completed',conclusion:dispatches.length%2?'failure':'success',event:'workflow_dispatch',created_at:iso(at+4000)}];
+   return new Response(null,{status:204});
+  }
+  return Response.json({workflow_runs:runs});
+ }});
+ await makeSchedule().arm();
+ for(let wakes=0;dispatches.length<8 && wakes<20;wakes++){
+  at=await data.getAlarm();await makeSchedule().wake();
+  const count=dispatches.length;await makeSchedule().wake();assert.equal(dispatches.length,count,'duplicate alarm must not dispatch');
+  assert.equal((await makeSchedule().status()).nextAt,await data.getAlarm());
+ }
+ assert.equal(dispatches.length,8);
+ for(let i=1;i<dispatches.length;i++)assert.equal(dispatches[i]-dispatches[i-1],15*60000+4000);
+ // An independent scheduled capture should defer only until it is 15 minutes old.
+ at=await data.getAlarm();runs=[{id:99,status:'completed',conclusion:'success',event:'schedule',created_at:iso(at-5*60000)}];
+ await makeSchedule().wake();assert.equal(dispatches.length,8);assert.equal(await data.getAlarm(),at+10*60000);
+ at=await data.getAlarm();await makeSchedule().wake();assert.equal(dispatches.length,9);
+});
+test('closing retries fill missing history without refetching saved prices or changing source times',async()=>{
+ const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');
+ for(const failed of [false,true]){
+  const prior=quote('TEST',closeAt,{base:null}),previous={state:'complete',targets:['TEST'],rows:[prior],failures:[]};
+  assert.equal(closingSeedComplete(previous,evening),false);
+  const {store,client}=harness(()=>evening);let used=0;
+  const summary=await collectBreakouts({targets:[{ticker:'TEST'}],previous,client,now:()=>evening,sleep:async()=>{},token:'fixture',
+   primary:async()=>{assert.fail('already have the closing price');},backup:async targets=>{
+    used++;assert.deepEqual(targets,[{ticker:'TEST'}]);if(failed)throw Error('unavailable');return {rows:[quote('TEST',closeAt,{price:110,provider:'Upstox'})]};
+   }});
+  assert.equal(used,1);assert.equal(summary.saved,1);assert.equal(summary.noBase,failed?1:0);
+  const saved=store.read().rows[0];assert.equal(saved.price,prior.price);assert.equal(saved.volume,prior.volume);assert.equal(saved.checkedAt,prior.checkedAt);assert.equal(saved.quoteAt,prior.quoteAt);
+  assert.equal(closingSeedComplete(store.read(),evening),!failed);
+ }
+});
+test('Upstox resolves SME, trusts and BSE codes without mixing exchanges or guessing names',async()=>{
+ const instrument=(segment,type,symbol,isin,code)=>({segment,instrument_type:type,trading_symbol:symbol,instrument_key:`${segment}|${isin}`,exchange_token:code});
+ const instruments=[
+  instrument('NSE_EQ','SM','ALPEXSOLAR','INE0R4701017','22688'),
+  instrument('NSE_EQ','RR','BIRET','INE0FDU25010','2203'),
+  instrument('NSE_EQ','IV','CUBEINVIT','INE0NR623014','15078'),
+  instrument('BSE_EQ','A','NSDL','INE301O01023','544467'),
+  instrument('BSE_EQ','IF','BIRET','INE0FDU25010','543261'),
+  instrument('NSE_EQ','EQ','DUPLICATE','INE000000001'),
+  instrument('NSE_EQ','BE','DUPLICATE','INE000000002'),
+  instrument('NSE_FO','FUT','WRONG','INE000000003'),
+ ];
+ const targets=['ALPEXSOLAR-SM','BIRET','CUBEINVIT','544467','DUPLICATE','WRONG','NSDL','UNKNOWN'].map(ticker=>({ticker}));
+ const mapped=mapUpstoxTargets(targets,instruments);
+ assert.deepEqual(mapped.map(t=>t.ticker),targets.slice(0,4).map(t=>t.ticker));
+ assert.equal(mapped[1].instrumentKey,'NSE_EQ|INE0FDU25010');assert.equal(mapped[3].exchange,'BSE');
+ const result=await upstoxQuotes(targets,new Map(mapped.map(t=>[t.ticker,base])),{instruments,token:'fixture',now:()=>AT,fetcher:async url=>{
+  const keys=new URL(url).searchParams.get('instrument_key').split(',');assert.deepEqual(keys,mapped.map(t=>t.instrumentKey));
+  return Response.json({status:'success',data:Object.fromEntries(mapped.map(t=>[t.instrumentKey,{instrument_token:t.instrumentKey,symbol:t.upstoxSymbol,last_price:105,net_change:7,volume:2000,last_trade_time:String(AT)}]))});
+ }});
+ assert.equal(result.reason,'unmapped');assert.equal(result.rows.length,4);assert.equal(result.rows[3].exchange,'BSE');assert.equal(result.rows[0].ticker,'ALPEXSOLAR-SM');
+ const mismatch=await upstoxQuotes(targets.slice(0,1),new Map(),{instruments,token:'fixture',now:()=>AT,fetcher:async()=>Response.json({status:'success',data:{wrong:{instrument_token:mapped[0].instrumentKey,symbol:'OTHER',last_price:105,volume:2000,last_trade_time:String(AT)}}})});
+ assert.equal(mismatch.rows.length,0);
+});
+test('Upstox isolates exchange-list outages and stops on rejected credentials',async()=>{
+ for(const unauthorized of [false,true]){
+  const calls=[],instrument={segment:'BSE_EQ',instrument_type:'A',trading_symbol:'NSDL',instrument_key:'BSE_EQ|INE301O01023',exchange_token:'544467'};
+  const result=await upstoxQuotes([{ticker:'TEST'},{ticker:'544467'}],new Map([['544467',base]]),{token:'fixture',now:()=>AT,fetcher:async(url,options)=>{
+   calls.push(url);
+   if(new URL(url).hostname==='assets.upstox.com'){
+    assert.equal(options.headers?.authorization,undefined);
+    if(url.endsWith('/NSE.json.gz'))return new Response(null,{status:503});
+    assert(url.endsWith('/BSE.json.gz'));return new Response(gzipSync(JSON.stringify([instrument])));
+   }
+   assert.equal(new URL(url).pathname,'/v2/market-quote/quotes');assert.equal(options.headers.authorization,'Bearer fixture');
+   if(unauthorized)return new Response(null,{status:401});
+   return Response.json({status:'success',data:{nsdl:{instrument_token:instrument.instrument_key,symbol:'NSDL',last_price:105,net_change:7,volume:2000,last_trade_time:String(AT)}}});
+  }});
+  assert.equal(calls.length,3);assert.equal(result.reason,unauthorized?'authentication':'unmapped');assert.equal(result.rows.length,unauthorized?0:1);
+ }
 });
 test('partial closing seeds retry missing stocks without refetching successful closing observations',async()=>{
  const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');

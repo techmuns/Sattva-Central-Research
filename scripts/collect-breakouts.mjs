@@ -14,7 +14,7 @@ export function captureTarget(company) {
 export function closingSeedComplete(capture, now = Date.now()) {
   if (capture?.state !== 'complete' || capture.discoveryFailed || capture.failures?.length || !capture.targets?.length) return false;
   const rows = new Map((capture.rows || []).map(row => [row.ticker, row]));
-  return capture.targets.every(ticker => quoteFresh(rows.get(ticker), now));
+  return capture.targets.every(ticker => quoteFresh(rows.get(ticker), now) && rows.get(ticker).base);
 }
 export function breakoutClient({ env = process.env, fetcher = fetch } = {}) {
   return async input => {
@@ -51,7 +51,10 @@ export async function collectBreakouts({ targets, previous = null, client, prima
       // Retry only missing closing observations overnight. Reused observations keep
       // their actual source/check times; they are not newly fetched prices.
       const prior = retained.get(target.ticker);
-      if (closingRetry && quoteFresh(prior, now())) { saved.push(prior); rows.push(prior); return; }
+      if (closingRetry && quoteFresh(prior, now())) {
+        if (token && !prior.base) { misses.push({target,reason:'missing-base',quote:prior}); return; }
+        saved.push(prior); rows.push(prior); return;
+      }
       if (now() >= captureDeadline) { misses.push({ target, reason:'unavailable' }); return; }
       if (rateLimited) { misses.push({ target, reason: 'rate-limited' }); return; }
       try {
