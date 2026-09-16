@@ -79,7 +79,11 @@ price, cumulative volume and last-trade time. The official NSE/BSE cash-market
 instrument lists include SME shares, REITs and InvITs, not just the NSE EQ series.
 NSE symbols use the existing exact SME/explicit symbol aliases; numeric BSE
 tickers match the BSE exchange code. The returned symbol and instrument key must
-both match the selected instrument. Ambiguous mappings and cross-exchange guesses
+both match the selected instrument. Verified portfolio ISINs take precedence over
+symbols so an issuer rename can resolve without guessing from its name. A conflicting
+ISIN never falls back to an unrelated symbol. Shared instruments preserve each
+canonical target without duplicating the requested quote key.
+Ambiguous mappings and cross-exchange guesses
 are refused. A failed exchange list does not discard the other exchange's quotes.
 Previous close is
 derived from `last_price - net_change`, rather than confusing today's OHLC close

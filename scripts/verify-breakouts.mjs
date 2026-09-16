@@ -188,6 +188,17 @@ test('Upstox isolates exchange-list outages and stops on rejected credentials',a
   assert.equal(calls.length,3);assert.equal(result.reason,unauthorized?'authentication':'unmapped');assert.equal(result.rows.length,unauthorized?0:1);
  }
 });
+test('verified portfolio ISINs follow renamed symbols and retain each canonical target',async()=>{
+ const isin='INE094B01013',instrumentKey=`NSE_EQ|${isin}`;
+ const targets=[captureTarget({ticker:'ASHIKA',isin}),captureTarget({ticker:'ASHIKAG',isin}),captureTarget({ticker:'ASHIKAG',isin:'INE000000001'})];
+ const instruments=[{segment:'NSE_EQ',instrument_type:'BE',instrument_key:instrumentKey,trading_symbol:'ASHIKAG'}];
+ const result=await upstoxQuotes(targets,new Map([['ASHIKA',base],['ASHIKAG',base]]),{token:'fixture',instruments,now:()=>AT,fetcher:async url=>{
+  assert.equal(new URL(url).searchParams.get('instrument_key'),instrumentKey);
+  return Response.json({status:'success',data:{ashika:{instrument_token:instrumentKey,symbol:'ASHIKAG',last_price:105,volume:2000,last_trade_time:String(AT)}}});
+ }});
+ assert.equal(result.reason,'unmapped');assert.deepEqual(result.rows.map(row=>row.ticker),['ASHIKA','ASHIKAG']);
+ assert.equal(captureTarget({ticker:'TEST',isin:'invalid'}).isin,undefined);
+});
 test('partial closing seeds retry missing stocks without refetching successful closing observations',async()=>{
  const evening=Date.parse('2026-09-15T14:00Z'),closeAt=Date.parse('2026-09-15T10:00Z');
  const saved=quote('TEST',closeAt),previous={version:1,state:'collecting',targets:['TEST','NEW'],rows:[saved],failures:[{ticker:'NEW',reason:'unchecked'}]};

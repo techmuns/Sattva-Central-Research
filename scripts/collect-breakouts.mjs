@@ -9,7 +9,8 @@ import { yahooQuote, upstoxQuotes, recoverYahoo } from './lib/breakout-providers
 
 export function captureTarget(company) {
   const ticker = String(company.ticker || /\/company\/([^/]+)/.exec(company['Screener URL'] || '')?.[1] || '').trim().toUpperCase();
-  return tickerValid(ticker) ? {ticker,name:company.name || company.Company || ticker,yahooTicker:company.yahooTicker} : null;
+  return tickerValid(ticker) ? {ticker,name:company.name || company.Company || ticker,yahooTicker:company.yahooTicker,
+    ...(/^IN[A-Z0-9]{10}$/.test(company.isin || '') ? {isin:company.isin} : {})} : null;
 }
 export function closingSeedComplete(capture, now = Date.now()) {
   if (capture?.state !== 'complete' || capture.discoveryFailed || capture.failures?.length || !capture.targets?.length) return false;
@@ -145,12 +146,12 @@ async function main() {
   for (const c of universe) { const target=captureTarget(c); if(target) { if(!targets.has(target.ticker)) targets.set(target.ticker,target); } else discoveryFailed=true; }
   try {
     const book = await loadActivePortfolio(resolve('public/data/portfolio-companies.json'), { live: true });
-    for (const c of book.holdings || []) if (tickerValid(c.ticker)) targets.set(c.ticker, { ticker: c.ticker, name: c.name, yahooTicker: c.yahooTicker });
+    for (const c of book.holdings || []) { const target=captureTarget(c); if(target) targets.set(target.ticker,target); }
   } catch { discoveryFailed = true; }
   try {
     const watchlist = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/watchlist`, { signal: AbortSignal.timeout(20000) }), 2 * 1024 * 1024);
     if (!Array.isArray(watchlist.companies)) throw Error('Watchlist unavailable');
-    for (const c of watchlist.companies) if (tickerValid(c.ticker)) targets.set(c.ticker, { ticker: c.ticker, name: c.name });
+    for (const c of watchlist.companies) if (tickerValid(c.ticker) && !targets.has(c.ticker)) targets.set(c.ticker, captureTarget(c));
   } catch { discoveryFailed = true; }
   if (discoveryFailed) for (const ticker of previous?.targets || []) if (!targets.has(ticker)) targets.set(ticker, {ticker,name:previous?.rows?.find(row=>row.ticker===ticker)?.name || ticker});
   const client = breakoutClient();
