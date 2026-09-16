@@ -78,7 +78,14 @@ try {
   assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
   // The real Sept 4 article is older than this fixture's selected Today period. Choosing
   // All history must still expose it through partial reads, failures, reopening and rollover.
+  // Finish the first request before changing its range. This controlled reader has no real
+  // source store: it must publish the newly requested history rather than assume Today kept it.
+  await page.evaluate(() => window.fixtureRelease(window.fixtureReport([window.fixtureStory, window.fixtureNoise])));
+  await page.waitForFunction(() => document.querySelector('[data-alerts-coverage-state]')?.dataset.alertsCoverageState === 'checked');
   await period.selectOption('all');
+  assert.equal(await page.evaluate(() => window.fixtureReads.length), 2, 'broadening the selected period requests its retained history');
+  assert.equal(await state.getAttribute('data-alerts-coverage-state'), 'loading', 'Today cannot certify that the rest of history has been checked');
+  await page.evaluate(() => window.fixtureOptions.onPartial(window.fixtureReport([window.fixtureStory, window.fixtureNoise], 'pending')));
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('JM Financial'));
   const search = page.locator('[data-table-search]');
   await search.fill('kissht');
