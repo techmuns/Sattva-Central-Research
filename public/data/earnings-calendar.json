@@ -1,11 +1,16 @@
 {
-  "capturedAt": "2026-09-15T07:15:31.159Z",
-  "from": "2026-09-12",
-  "to": "2026-10-06",
+  "capturedAt": "2026-09-16T06:32:28.491Z",
+  "from": "2026-09-13",
+  "to": "2026-10-07",
   "pageSize": 20,
   "source": "Moneycontrol — Earnings Calendar (all-exchange counts plus every earnings-widget pagination page)",
   "note": "The per-date counts and company lists both cover All exchanges. Every published pagination page is captured; counts are re-fetched live by the Worker and these lists are as of capturedAt.",
   "days": [
+    {
+      "date": "2026-10-07",
+      "displayDate": "07 Oct",
+      "count": 0
+    },
     {
       "date": "2026-10-06",
       "displayDate": "06 Oct",
@@ -109,26 +114,21 @@
     {
       "date": "2026-09-16",
       "displayDate": "16 Sep",
-      "count": 2
+      "count": 1
     },
     {
       "date": "2026-09-15",
       "displayDate": "15 Sep",
-      "count": 2
+      "count": 1
     },
     {
       "date": "2026-09-14",
       "displayDate": "14 Sep",
-      "count": 1
+      "count": 0
     },
     {
       "date": "2026-09-13",
       "displayDate": "13 Sep",
-      "count": 0
-    },
-    {
-      "date": "2026-09-12",
-      "displayDate": "12 Sep",
       "count": 0
     }
   ],
@@ -143,16 +143,16 @@
           "displayDate": "21 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 1105.65,
-          "changePct": -2.45,
-          "marketCap": 7104.48,
+          "ltp": 1058.4,
+          "changePct": -2.01,
+          "marketCap": 6800.87,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/pharmaceuticals-drugs/symbiotecpharmalab/SPL14",
           "ticker": "SYMBIOTEC",
           "fullName": "Symbiotec Pharm",
           "industry": "Pharmaceuticals & Drugs",
           "shares": 64256112,
-          "mktCapAtBuild": 7104.48
+          "mktCapAtBuild": 6800.87
         },
         {
           "scId": "KJA",
@@ -162,9 +162,9 @@
           "displayDate": "21 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 8.58,
-          "changePct": 4.76,
-          "marketCap": 1371.51,
+          "ltp": 8.16,
+          "changePct": -4.9,
+          "marketCap": 1304.38,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cigarettes-tobacco/eliteconinternational/KJA"
         }
@@ -173,7 +173,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "15/09/2026"
+      "asOnDate": "16/09/2026"
     },
     "2026-09-18": {
       "rows": [
@@ -185,23 +185,23 @@
           "displayDate": "18 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 0.69,
-          "changePct": 4.55,
-          "marketCap": 39.87,
+          "ltp": 0.71,
+          "changePct": 4.41,
+          "marketCap": 41.02,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/finance-general/toyamsports/OAR",
           "ticker": "TOYAMSL",
           "fullName": "TOYAM SPORTS",
           "industry": "Finance - Stock Broking",
           "shares": 577815000,
-          "mktCapAtBuild": 39.87
+          "mktCapAtBuild": 41.02
         }
       ],
       "scheduledCount": 1,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "15/09/2026"
+      "asOnDate": "16/09/2026"
     },
     "2026-09-17": {
       "rows": [
@@ -213,23 +213,23 @@
           "displayDate": "17 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 115,
-          "changePct": -0.87,
-          "marketCap": 1671.45,
+          "ltp": 110.6,
+          "changePct": -0.62,
+          "marketCap": 1607.5,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/logistics/skywaysairservices/S28",
           "ticker": "SKYWAYS",
           "fullName": "Skyways Air Ser",
           "industry": "Logistics",
           "shares": 145343544,
-          "mktCapAtBuild": 1671.45
+          "mktCapAtBuild": 1607.5
         }
       ],
       "scheduledCount": 1,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "15/09/2026"
+      "asOnDate": "16/09/2026"
     },
     "2026-09-16": {
       "rows": [
@@ -241,42 +241,23 @@
           "displayDate": "16 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 544.3,
-          "changePct": -6.93,
-          "marketCap": 4563.01,
+          "ltp": 530.55,
+          "changePct": 1.32,
+          "marketCap": 4447.74,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/engineering-industrial-equipments/tempsensinstrumentsindia/TII02",
           "ticker": "TEMPSENS",
           "fullName": "Tempsens Instru",
           "industry": "Engineering - Industrial Equipments",
           "shares": 83832691,
-          "mktCapAtBuild": 4563.01
-        },
-        {
-          "scId": "CMI",
-          "name": "CMI",
-          "shortName": null,
-          "resultDate": "2026-09-16",
-          "displayDate": "16 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 2.63,
-          "changePct": 4.78,
-          "marketCap": 4.22,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cables-telephone/cmi/CMI",
-          "ticker": "CMICABLES",
-          "fullName": "CMI",
-          "industry": "Cables",
-          "shares": 16027457,
-          "mktCapAtBuild": 4.22
+          "mktCapAtBuild": 4447.74
         }
       ],
-      "scheduledCount": 2,
+      "scheduledCount": 1,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "15/09/2026"
+      "asOnDate": "16/09/2026"
     },
     "2026-09-15": {
       "rows": [
@@ -288,70 +269,23 @@
           "displayDate": "15 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 370.95,
-          "changePct": -9.04,
-          "marketCap": 1155.46,
+          "ltp": 363.15,
+          "changePct": 8.74,
+          "marketCap": 1131.17,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/film-production-distribution-entertainment/sunshinepictures/SPL13",
           "ticker": "SUNSHINE",
           "fullName": "Sunshine Pict",
           "industry": "Film Production, Distribution & Entertainment",
           "shares": 31148784,
-          "mktCapAtBuild": 1155.46
-        },
-        {
-          "scId": "CMI",
-          "name": "CMI",
-          "shortName": null,
-          "resultDate": "2026-09-15",
-          "displayDate": "15 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 2.63,
-          "changePct": 4.78,
-          "marketCap": 4.22,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cables-telephone/cmi/CMI",
-          "ticker": "CMICABLES",
-          "fullName": "CMI",
-          "industry": "Cables",
-          "shares": 16027457,
-          "mktCapAtBuild": 4.22
-        }
-      ],
-      "scheduledCount": 2,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "15/09/2026"
-    },
-    "2026-09-14": {
-      "rows": [
-        {
-          "scId": "CMI",
-          "name": "CMI",
-          "shortName": null,
-          "resultDate": "2026-09-14",
-          "displayDate": "14 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 2.63,
-          "changePct": 4.78,
-          "marketCap": 4.22,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cables-telephone/cmi/CMI",
-          "ticker": "CMICABLES",
-          "fullName": "CMI",
-          "industry": "Cables",
-          "shares": 16027457,
-          "mktCapAtBuild": 4.22
+          "mktCapAtBuild": 1131.17
         }
       ],
       "scheduledCount": 1,
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "15/09/2026"
+      "asOnDate": "16/09/2026"
     }
   }
 }
