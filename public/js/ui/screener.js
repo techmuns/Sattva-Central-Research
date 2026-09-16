@@ -1405,15 +1405,19 @@ export function scoreTable(config) {
     if (typeof options.loading === 'boolean') loading = options.loading;
     
     const oldRowsByKey = new Map(rows.map(r => [String(key(r)), r]));
+    const removedMarkup = new Set(rowHtmlCache.keys());
     rows = newRows;
     for (const row of rows) {
       const k = String(key(row));
+      removedMarkup.delete(k);
       const old = oldRowsByKey.get(k);
       if (!old || old !== row || old.revision !== row.revision) {
         rowHtmlCache.delete(k);
         staleKeys.add(k);
       }
     }
+    // Drop removed evidence immediately, including private rows revoked during a live read.
+    for (const k of removedMarkup) rowHtmlCache.delete(k);
 
     if (newFilters !== undefined) {
       filterDefs = newFilters;

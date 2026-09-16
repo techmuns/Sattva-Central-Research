@@ -60,7 +60,8 @@ const server = createServer((req,res) => {
   try {
     let body=source(asset);
     if (asset === '/js/tabs/earnings-hub.js') body=body.toString()+'\nexport const ownershipRepaint=ctx=>viewOf(ctx)==="calendar"?renderCalendar(ctx):renderLatest(ctx);';
-    if (asset === '/js/ui/screener.js') body=body.toString().replace('export function scoreTable(', 'function realScoreTable(')+`
+    if (asset === '/js/ui/screener.js') body=body.toString().replace('export function scoreTable(', 'function realScoreTable(')
+      .replace('const rowHtmlCache = new Map();', 'const rowHtmlCache = new Map(); window.cachedRowKeys=()=>[...rowHtmlCache.keys()];')+`
       export function scoreTable(options){
         const table=realScoreTable(options),wire=table.wire;
         table.wire=root=>{window.lifetimes||={made:0,disposed:0};lifetimes.made++;
@@ -143,6 +144,7 @@ try {
   assert.match(await page.locator('tbody').innerText(),/Corrected source evidence/);
   await page.evaluate(()=>{rows=rows.filter(r=>r.id!==heldKey);table.updateData(rows)});
   assert(!(await page.locator('tbody').innerText()).includes('Corrected source evidence'),'removed evidence disappears immediately');
+  if(!baseline)assert(await page.evaluate(()=>!cachedRowKeys().includes(heldKey)), 'removed evidence leaves the markup cache immediately too');
   await page.locator('[data-table-search]').fill('Record 49999');
   await page.waitForFunction(()=>document.querySelectorAll('tr[data-row-key]').length===1&&!document.querySelector('[data-table-loading]'));
   assert.match(await page.locator('tbody').innerText(),/Record 49999/);
