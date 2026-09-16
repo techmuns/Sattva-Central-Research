@@ -461,11 +461,19 @@ function observeSources() {
     [technicals, ['technicals']], [earnings, ['earnings']],
     [concalls, ['concalls', 'scheduled-concalls', 'screener-portfolio-upcoming']],
     [chatter, ['chatter', 'chatter-posts']], [investors, ['investors', 'investor-positions']],
-    [announcements, ['announcements']], [insider, ['insider']], [news, ['news', 'market-news']],
-    [marketNews, ['news', 'market-news']], [records, []], ...additionalSourceDependencies,
+    [announcements, ['announcements']], [insider, ['insider']], [news, ['news']],
+    [marketNews, ['market-news']], [records, []], ...additionalSourceDependencies,
   ];
   for (const [source, ids] of dependencies) source.onChange?.(() => {
     for (const id of ids) normalizedFeeds.delete(id);
+    if (ids.includes('news') || ids.includes('market-news')) {
+      newsCandidates = null;
+      lastNewsSourceQuery = null;
+      // Full source interpretations are independent. Only period queries depend on companions
+      // from the other route; do not reclassify full news on every market-feed status change.
+      const other = ids.includes('news') ? 'market-news' : 'news';
+      if (normalizedFeeds.get(other)?.windowKey !== 'null') normalizedFeeds.delete(other);
+    }
     listeners.forEach((fn) => fn());
   });
   // Some collectors resolve issuer names against the current in-memory portfolio.

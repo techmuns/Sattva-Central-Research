@@ -316,7 +316,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     if (load) void cacheReady.then(() => { if (current() && report) return alerts.saveAllAlerts(report); });
   } catch (err) {
     console.error('[daily-alerts] collect failed', err);
-    if (token === loadToken && ctxRef) {
+    if (current()) {
       // An unexpected assembly failure is not a completed empty check. Retain the last report,
       // including the current search/scroll position, and make the failed refresh visible.
       report = { ...(report || { day: alerts.today(), scope: ctx.scope, events: [], feeds: [] }),
