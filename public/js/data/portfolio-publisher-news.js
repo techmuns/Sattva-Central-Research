@@ -27,7 +27,20 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
   let combined = null, pending = null, archivePending = null, archiveError = null, publisherReadError = null, epoch = 0;
   let identityStamp = null, identities = [];
   const emit = () => listeners.forEach(fn => fn());
-  const offBase = base.onChange(emit), offPublishers = publishers.onChange(emit), offBook = book.onChange(emit);
+  const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
+  async function warmPublished(yieldForInput = yieldToInput) {
+    const published = publishers.rows(), entities = companyIdentities(), window = readingWindow();
+    let started = performance.now();
+    for (const row of published) {
+      if (inNewsWindow(row, window) && include(row)) matchPortfolioNews(row, entities);
+      if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+    }
+  }
+  // A publisher change is announced after its stories' matches are warm, in slices, so the first
+  // `rows()` a listener makes pays for the join rather than for every new story's match. Rows are
+  // always current when read; only the announcement waits for the warm-up.
+  const announcePublishers = () => { warmPublished().catch(() => {}).then(emit); };
+  const offBase = base.onChange(emit), offPublishers = publishers.onChange(announcePublishers), offBook = book.onChange(emit);
 
   function companyIdentities() {
     const holdings = book.holdings();
@@ -149,12 +162,7 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     // portfolio match — in ~12ms slices, so the synchronous rebuild pays only for the join.
     async warm(yieldForInput = () => Promise.resolve()) {
       await base.warm?.(yieldForInput);
-      const published = publishers.rows(), entities = companyIdentities(), window = readingWindow();
-      let started = performance.now();
-      for (const row of published) {
-        if (inNewsWindow(row, window) && include(row)) matchPortfolioNews(row, entities);
-        if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
-      }
+      await warmPublished(yieldForInput);
     },
     setWanted(items = []) {
       for (const item of items) if (item && typeof item === 'object') {

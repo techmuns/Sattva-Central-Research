@@ -370,6 +370,7 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
   // first read after a return paid for all of them in one task. The reading is memoised per
   // (row, identity); touching it here with a yield every ~12ms lets the synchronous read hit it.
   // Same identities, same objects, nothing decided — this only moves when the work happens.
+  const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
   async function warmRows(yieldForInput = () => Promise.resolve()) {
     if (kind !== 'news') return;
     const current = state;
@@ -835,6 +836,10 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       if (t && unresolved && !state.failures.has(t)) state.failures.set(t, { ...info, fromSnapshot: true });
     }
     state.snapshotCount = state.fromSnapshot.size;
+    // The callers announce this capture next, and the first `rows()` after an announcement is
+    // whoever asks first — a poller as easily as the tab. Warm the head's readings here, in
+    // slices, so that first read pays for the join and not for every story's attribution.
+    await warmRows(yieldToInput);
     return state.rows.size > 0 || state.askedEmpty.size > 0 || !!body.queryWindow;
   }
 

@@ -9,6 +9,7 @@ import { holdsTicker } from './row-ticker-index.js';
 // The observation instant is parsed once per row object: the sort above asked `Date.parse` on
 // every comparison of every rebuild (profiled at 482ms on one rebuild of the combined reader).
 // Rows are replaced, never edited; the two stamps are checked on every read regardless.
+const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
 const observationTimes = new WeakMap();
 function observationTime(row) {
   const hit = observationTimes.get(row);
@@ -93,6 +94,19 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
             if (generation !== epoch) return false;
             if (!Array.isArray(part.value?.articles) || (part.value.querySourceCount ?? part.value.articles.length) !== shard.count) throw Error('News archive month incomplete');
             next.set(shard.file, part.value.articles);
+          }
+          // Warm before install: once these records are in `held`, the first `rows()` is whoever
+          // asks first — the source beacon's poller as easily as the tab — and a cold rebuild
+          // attributed ninety thousand rows in one task. Under the identities the rebuild will
+          // use; every held month too when the index moved an identity object.
+          const merged = new Map(identities);
+          for (const [key, identity] of nextIdentities) merged.set(key, identity);
+          const identityMoved = [...nextIdentities].some(([key, identity]) => identities.get(key) !== identity);
+          const lists = [...next.values(), ...(identityMoved ? [...held].filter(([path]) => !next.has(path)).map(([, records]) => records) : [])];
+          let started = performance.now();
+          for (const list of lists) for (const row of list) {
+            attributeNewsRow(row, merged.get(row.entityId) || merged.get(row.ticker) || row);
+            if (performance.now() - started >= 12) { await yieldToInput(); started = performance.now(); if (generation !== epoch) return false; }
           }
           for (const [path, records] of next) held.set(path, records);
           for (const [key, identity] of nextIdentities) identities.set(key, identity);
