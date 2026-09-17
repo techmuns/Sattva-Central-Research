@@ -326,3 +326,29 @@ for (const days of [1, 3, 7, 14, 30]) {
     `${days}-day query preserves full-history IDs, fields and evidence`);
 }
 console.log('PASS selected-period event equivalence against the full source pool');
+
+// ONE IMPLEMENTATION, TWO DRIVERS: the assembly driven in slices equals the assembly driven now —
+// same order, same suffixed ids, same counts — on fresh event objects, so nothing is reused.
+{
+  const feed = (id, events) => ({ ...alerts.FEEDS.find(f => f.id === id), status: 'ok', reachesToday: true, asOf: '2026-09-04T10:00:00Z', note: null, count: events.length, events });
+  const settled = () => new Map([
+    ['announcements', feed('announcements', [
+      { id: 'a1', day: '2026-09-04', at: '2026-09-04', time: '10:15', ticker: 'STLTECH', company: 'Sterlite', headline: 'Order', url: 'https://x/1', direction: 'neutral', importance: 'high', severity: 'alert', kind: 'filing' },
+      { id: 'a2', day: '2026-09-04', at: '2026-09-04', time: '10:15', ticker: 'RELIANCE', company: 'Reliance', headline: 'AGM', url: 'https://x/2', direction: 'neutral', importance: 'low', severity: 'update', kind: 'filing' },
+      { id: 'a3', day: '2026-09-03', at: '2026-09-03', time: null, ticker: 'STLTECH', company: 'Sterlite', headline: 'Rating', url: 'https://x/3', direction: 'negative', importance: 'high', severity: 'alert', kind: 'filing' },
+    ])],
+    ['news', feed('news', [
+      { id: 'n1', day: '2026-09-04', at: '2026-09-04T04:00:00Z', time: '09:30', ticker: 'STLTECH', company: 'Sterlite', headline: 'Story', url: 'https://pub/1', direction: 'neutral', importance: 'low', severity: 'update', kind: 'story' },
+      { id: 'n1', day: '2026-09-04', at: '2026-09-04T04:00:00Z', time: '09:30', ticker: 'RELIANCE', company: 'Reliance', headline: 'Story', url: 'https://pub/1', direction: 'neutral', importance: 'low', severity: 'update', kind: 'story' },
+    ])],
+  ]);
+  const args = { day: '2026-09-04', scope: 'universe', holdings: [], includeHistory: true };
+  const synchronous = alerts.assemble({ ...args, settledFeeds: settled() });
+  const sliced = await alerts.assembleInSlices({ ...args, settledFeeds: settled() }, async () => {});
+  assert.deepEqual(sliced.events, synchronous.events, 'the sliced assembly orders and suffixes exactly as the synchronous one');
+  assert.deepEqual(sliced.meta, synchronous.meta, 'and counts the same');
+  assert.deepEqual(sliced.feeds.map(f => [f.id, f.status, f.count, f.todayCount]), synchronous.feeds.map(f => [f.id, f.status, f.count, f.todayCount]));
+  assert.equal(sliced.events.length, 5);
+  assert.equal(new Set(sliced.events.map(e => e.id)).size, 5, 'a colliding id is suffixed identically by both drives');
+}
+console.log('PASS the sliced assembly equals the synchronous assembly');

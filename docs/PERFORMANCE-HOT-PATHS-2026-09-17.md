@@ -75,16 +75,92 @@ with headroom for a CI runner at half local speed. All Alerts under Universe is 
 that sweep it follows AI Alerts, whose full-history ranking still lands a task of two to three
 seconds under whichever tab follows it (see below).
 
+## Round two, same day: sliced rankings, prepared readers, a sliced assembly
+
+Round one made a repeat read cheap and left the first one alone. Profiled on the corrected tree
+with the same harness (per-long-task attribution, CPU profiler attached), the remaining stalls were
+five one-second tasks while AI Alerts ranked its partial reports over the Universe, a 1.6-second
+block where a sliced rebuild stopped yielding, a 1.0-second block at start-up classifying every
+market-wide story in one pass, a 2.7-second final assembly of the full-history collection landing
+under whichever tab the reader had moved to, and 400–600ms blocks in the NSE, announcement and
+insider collectors classifying every row again after a warm-up that had touched different objects.
+
+### What changed
+
+- **One implementation, two drivers** (`public/js/core/slices.js`). A rebuild or a ranking is a
+  generator that yields once per unit of work; `runSteps` drives it to completion now and
+  `runStepsInSlices` drives the same generator in ~12ms slices with a yield to input between them,
+  stopping — and resolving to `undefined`, never a partial — once `keepGoing()` says nobody is
+  waiting. `rankReport` and `rankReportAsync` are the two drives of one `rankSteps`; the three news
+  readers' `buildRows` / `buildCombined` and the alerts `assembleSteps` are driven the same way;
+  `sortSteps` is a stable merge sort as a generator, ordering exactly as the native stable sort.
+- **AI Alerts ranks in slices**, partial reports through a latest-wins queue that closes before
+  the final report, and keeps a finished ranking so a return visit paints it rather than redoing it.
+- **Readers prepare before they announce.** A reader builds its combined rows in slices before it
+  emits — on a publisher change, a snapshot change and, from this round, a base or book change
+  too — so the first synchronous `rows()` a subscriber makes is a hit. One preparation is shared
+  by concurrent callers, and one the source churn abandoned is tried again against the newer state
+  rather than leaving the next synchronous read to rebuild in one task.
+- **Collectors warm what the assembly reads, on the objects it reads.** Every per-event reading the
+  synchronous collectors and the assembly make — the event itself, its sort day, its canonical
+  address, the portfolio discovery reading and the story reading of each match — is kept on the
+  source row and touched in slices first, through one `touch(event, feedId)` for every warmed
+  feed (company and market-wide news, announcements, insider, NSE, X and IPO rows). What made the
+  first version of that warm-up worthless was object identity: `rows()` handed the read a fresh copy
+  of every row after any invalidation, `fromMarketNews` and the X / IPO adapters built a fresh event
+  per read, and `portfolioNewsEntities` built fresh identity objects per assembly while attribution
+  is cached per (row, identity object). The projection, the promoted insider row, the events, the
+  discovery reading and the identity objects are all kept while their inputs are unchanged now.
+- **The assembly is sliced.** The seed publication, every partial (one at a time, coalesced) and
+  the final report are built through `assembleInSlices`, including the sort and the counts, and the
+  cached All Alerts window is restored the same way. The final report is never published beneath a
+  partial: a partial still building finishes first with its publication withheld.
+- **The source beacon reads the estate off the poller tick**, half a second after it while open and
+  three seconds after it while closed, instead of inside it — where it found the news readers'
+  unions invalidated and not yet prepared and rebuilt them synchronously.
+- **Contracts.** `verify-ai-alerts.mjs` asserts the sliced ranking and merge `deepEqual` their
+  synchronous references (fixture and a 3,000-company synthetic Universe, ten yields, longest
+  stretch 13ms) and the sliced sort against the native sort; `verify-general-alerts.mjs` asserts
+  the sliced assembly equals the synchronous one; `verify-hot-path-memo.mjs` asserts one event per
+  source row, that a warm-up's objects are the read's, and the discovery reading per record; the
+  reader suites assert a sliced preparation reads what a synchronous read reads.
+  `verify-tab-performance-ui.mjs` budgets AI Alerts and All Alerts under Universe.
+
+### Measured after
+
+Longest main-thread task while the route opened and settled, profiler attached, shipped captures:
+
+| Path | Round one | Round two |
+| --- | ---: | ---: |
+| AI Alerts, Universe, cold open — longest task | ~2,400 ms (the ranking) | 131 ms |
+| AI Alerts, Universe, returning session — longest task | 5 × ~1,000 ms (partial rankings) | 431 ms (garbage collection and an IndexedDB completion; no app frame above 30ms) |
+| AI Alerts, then All Alerts (Portfolio, Today) — longest task | 1,536 ms | 866 ms (a source-beacon estate read during the cold load, removed after this profile — see below), then 589 ms (a reader rebuilt during source churn) |
+| All Alerts, Universe, returning session — longest task | 568 ms | 305 ms (the insider seed merge) |
+
+On the AI Alerts → All Alerts transition the final assembly no longer appears in the profile at
+all (it was 2,713, 2,293 and 1,599 ms across this round as each cause was removed). What remains
+on that cold path is source churn: twenty feeds land over half a minute, each announcement
+invalidates the news readers' unions, and a reader asked for its rows before its preparation has
+caught up rebuilds in one task — 589ms for the TradingView union here, and 866ms when the closed
+source beacon read every source's `meta()` three seconds after a tick. The beacon no longer reads
+the estate on a tick while closed (its minute clock still does), which removes the second; the
+first is bounded by the retry in `prepareOnce` and is listed below. Total CPU is not lower — the
+same work is spread — and the heap figures the harness samples are single readings taken
+mid-collection, not a steady state.
+
 ## Still open
 
-- AI Alerts' ranking over the whole Universe (`rankReport` over ~4,000 companies' events) is a
-  2.4-second main-thread task on this machine, and the final assembly of its full-history report
-  lands under whichever tab the reader has moved to (2.8 seconds here). PR #218's ranking cache
-  covers repeats, not the first ranking. The general collector now skips building progress reports
-  nobody will read, which took the trailing work from 4.0 to 2.8 seconds; the ranking itself is a
-  separate piece of work.
-- The cold first read of All Alerts still decodes verified parts and merges the archive on the main
-  thread (tasks of roughly 600 ms). Moving that work to a worker is the audit's item C and is not
-  attempted here.
+- Garbage collection is now the largest single item inside the longest tasks on the returning
+  paths (200–350ms of each): the readers' seed merges and the sliced warm-ups allocate freely. A
+  lower-allocation merge for the insider and news seeds is the next measurable step.
+- Total CPU per collection is unchanged by this work, and the 2.0 GB tab figure was recorded
+  before PR #222 reached that browser; memory is bounded by the same rows the caches key on, and a
+  steady-state heap measurement on a real machine is still owed.
+- `verify-news-working-set.mjs` fails on unmodified `main` with the captures committed on
+  17 September: a story with two publisher twins (a TradingView mirror with an IST publication day
+  inside a 3-day window and a Mint original dated the day before it) is folded by title in the
+  full-history reader, which keeps the out-of-window twin, and kept in the bounded reader, whose
+  publisher window is applied before the fold. Which twin represents a story at a window edge is a
+  reader-design question, not this change's, and is left as is.
 - These are sandbox measurements on the shipped captures, not the customer's machine or the host
-  iframe; the 2.0 GB tab figure was recorded before PR #222 reached that browser.
+  iframe.

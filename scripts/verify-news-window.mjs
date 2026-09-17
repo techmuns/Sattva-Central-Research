@@ -85,4 +85,12 @@ const full = withNewsHistory(base, { read });
 await full.seed();
 assert(full.rows().some(row => row.title === 'old'), 'full archive remains available to other consumers');
 assert(!bounded.rows().some(row => row.title === 'old'), 'full-history read cannot widen the recent reader');
+// A sliced preparation answers exactly what the synchronous read answers, and leaves it a hit.
+const fullRows = full.rows();
+await full.prepareRows();
+assert.equal(full.rows(), fullRows, 'preparing an already-built history keeps it');
+const twin = withNewsHistory(base, { read });
+await twin.seed();
+assert.deepEqual(twin.rows().map(row => [row.title, row.url, row.date]), fullRows.map(row => [row.title, row.url, row.date]),
+  'a reader prepared in slices during its seed reads the same rows as one built synchronously');
 console.log('PASS News windows: IST/leap/year/month boundaries, undated/future separation, verified-head reuse, bounded catch-up, failed-read retention and independent full history.');

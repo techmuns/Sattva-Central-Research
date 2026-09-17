@@ -20,8 +20,28 @@ const WORDS_TO_IGNORE = new Set([
 ]);
 
 const clean = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-const headlineKey = (event) => `${event.day || ''}:${clean(event.headline).slice(0, 180)}`;
-function documentKey(event) {
+
+// EVERY READING BELOW IS ONE PER EVENT OBJECT. Context enrichment runs for every card, and for
+// every candidate event on that company it cleaned the headline, parsed the URL, split the words
+// and parsed the day again — on a Universe ranking that was 4,000 cards × their whole history,
+// profiled at 0.8s of a 1.1s ranking, repeated for every partial publication. Events are
+// immutable publications (a correction is a new object), so the object is the key and each
+// reading is validated on the fields it reads; the value is shared and never mutated by a caller.
+const memo = (readFields, compute) => {
+  const cache = new WeakMap();
+  return (event) => {
+    if (!event || typeof event !== 'object') return compute(event);
+    const fields = readFields(event);
+    const hit = cache.get(event);
+    if (hit && hit.fields.every((value, i) => value === fields[i])) return hit.value;
+    const value = compute(event);
+    cache.set(event, { fields, value });
+    return value;
+  };
+};
+const headlineKey = memo(event => [event.day, event.headline], (event) => `${event.day || ''}:${clean(event.headline).slice(0, 180)}`);
+const documentKey = memo(event => [event.kind, event.url], readDocumentKey);
+function readDocumentKey(event) {
   if (event.kind === 'fundamental-insight' || event.kind === 'scheduled' || !event.url) return null;
   try {
     const url = new URL(event.url);
@@ -34,7 +54,18 @@ function documentKey(event) {
     return url.href;
   } catch { return null; }
 }
-const dayMs = (day) => Date.parse(`${day}T12:00:00Z`);
+// A handful of distinct days are parsed hundreds of thousands of times per ranking (once per
+// candidate × trigger pair); the parse is the cost, so the answer is kept per day string.
+const dayMsCache = new Map();
+const dayMs = (day) => {
+  let ms = dayMsCache.get(day);
+  if (ms === undefined) {
+    ms = Date.parse(`${day}T12:00:00Z`);
+    if (dayMsCache.size >= 4096) dayMsCache.clear();
+    dayMsCache.set(day, ms);
+  }
+  return ms;
+};
 const daysBetween = (a, b) => {
   const left = dayMs(a);
   const right = dayMs(b);
@@ -45,27 +76,28 @@ const comparisonOf = (event) => Number.isFinite(event.changePoints)
   ? `${event.changePoints > 0 ? '+' : event.changePoints < 0 ? '−' : ''}${Math.abs(event.changePoints).toFixed(1)} percentage points`
   : Number.isFinite(event.changePct) ? signed(event.changePct) : null;
 
-function wordsOf(event) {
+const wordsOf = memo(event => [event.headline, event.detail, event.keywords], (event) => {
   const words = clean([event.headline, event.detail, ...(event.keywords || [])].filter(Boolean).join(' ')).split(' ');
   return new Set(words.filter((word) => word.length >= 4 && !WORDS_TO_IGNORE.has(word) && !/^\d+$/.test(word)));
-}
+});
 
-function topicsOf(event) {
-  return new Set([...(event.keywordIds || []).map((id) => `keyword:${id}`), ...wordsOf(event)]);
-}
+const topicsOf = memo(event => [event.keywordIds, wordsOf(event)],
+  (event) => new Set([...(event.keywordIds || []).map((id) => `keyword:${id}`), ...wordsOf(event)]));
+
+const identityWordsOf = memo(event => [event.ticker, event.company], (event) => clean(`${event.ticker || ''} ${event.company || ''}`).split(' '));
 
 function prepareTriggers(triggers) {
   // This preparation belongs to one card build: corrected records are read again on
   // the next build, while every candidate reuses the same trigger vocabulary.
   return {
-    identityWords: new Set(triggers.flatMap(row => clean(`${row.ticker || ''} ${row.company || ''}`).split(' '))),
+    identityWords: new Set(triggers.flatMap(identityWordsOf)),
     topics: triggers.map(topicsOf),
   };
 }
 
 function overlapWith(event, prepared) {
   // Company identity already gates the join. Its name must not masquerade as a shared topic.
-  const identityWords = new Set([...prepared.identityWords, ...clean(`${event.ticker || ''} ${event.company || ''}`).split(' ')]);
+  const identityWords = new Set([...prepared.identityWords, ...identityWordsOf(event)]);
   const topics = [...topicsOf(event)].filter(topic => !identityWords.has(topic));
   let best = [];
   for (const triggerTopics of prepared.topics) {

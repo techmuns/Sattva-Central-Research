@@ -54,6 +54,7 @@ import * as screenerInsights from './screener-insights.js';
 import { isMove } from './finology-shared.js';
 import { announcements, insider, news, createQueryNews } from './filings.js';
 import { insiderTradeSourceUrl, articleUrlKey, canonicalArticleUrl } from './filings-shared.js';
+import { runSteps, runStepsInSlices, sortSteps, yieldToInput as yieldForInputSlice } from '../core/slices.js';
 import { classifyStory } from './news-keywords.js';
 import { announcementSignal } from './filing-signals.js';
 export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
@@ -163,7 +164,8 @@ export async function readCachedAllAlerts({ scope, holdings = coverage.holdings(
     sources = restoreAllAlertSources(entry?.value, FEEDS, day);
   }
   if (!sources) return null;
-  return { ...assemble({ day, scope, holdings, includeHistory: true, queryWindow,
+  // Restored in slices too: a saved full window is a hundred thousand events to order.
+  return { ...await assembleInSlices({ day, scope, holdings, includeHistory: true, queryWindow,
     settledFeeds: new Map(sources.map(feed => [feed.id, feed])) }), cacheSavedAt: entry.savedAt || null };
 }
 
@@ -658,7 +660,7 @@ export async function prepareSources({ refresh = false, feedIds = null } = {}) {
 // object, so touching them here in ~12ms slices with a yield between each turns that one task into
 // forty small ones. Nothing is skipped and nothing is decided here — the collector still reads
 // every row itself and reports its own failures; this only changes when the work happens.
-async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput) {
+async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput, { day, includeHistory, touch = null } = {}) {
   let rows;
   try {
     if (feedId === 'news') await reader.warm?.(yieldForInput);
@@ -667,7 +669,14 @@ async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput) {
   let started = performance.now();
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    try { if (feedId === 'news') companyNewsEvent(row); else classifyStory(row); } catch { /* the collector reports the row's own failure */ }
+    try {
+      // Only what the collector will read: on a single day it reads that day's rows and nothing
+      // older, and a warm-up over the rest would be work — and retained readings — nobody asked for.
+      if (day && !inRequestedWindow(feedId === 'news' ? row.publishedAt || row.date : row.publishedAt, day, includeHistory)) continue;
+      // The event, and through `touch` everything the assembly then reads off it.
+      const event = feedId === 'news' ? companyNewsEvent(row) : marketNewsEvent(row);
+      touch?.(event, feedId);
+    } catch { /* the collector reports the row's own failure */ }
     if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
   }
 }
@@ -690,13 +699,38 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // Start with every source's current in-memory records. Refreshing one source
   // must not temporarily remove all the others from the timeline. The pending
   // status still says these records have not been rechecked by this collection.
+  // WHAT THE ASSEMBLY READS PER EVENT, WARMED IN SLICES BEFORE ANY SYNCHRONOUS READ. The sort day,
+  // the canonical address the publisher dedupe keys on, and for the market-wide feeds the portfolio
+  // discovery reading and the story reading of each match — every one kept on the event or its
+  // record, and matched against the same identity objects the assembly uses (`discoveryEntities`),
+  // so the synchronous assembly that follows hits all of them. Profiled before this: the final
+  // assembly of a full-history collection landed as one 2.3-second task under whichever tab the
+  // reader had moved to, ~700ms of it matching every X post against the book for the first time.
+  const discoveryIdentities = discoveryEntities(book, requestedCompanies);
+  const warmReading = { day, includeHistory, touch: (event, feedId) => {
+    sortDay(event);
+    if (event.url && (feedId === 'news' || feedId === 'market-news')) eventUrlKey(event);
+    if (DISCOVERY_FEEDS.has(feedId)) for (const matched of discoveryFor(event, feedId, discoveryIdentities)) newsSignal(matched);
+  } };
   for (const feed of load ? FEEDS : []) {
+    try {
+      // The in-memory records may be a warm module's or a returning session's cold rows: warm the
+      // per-row readings in slices before the synchronous read, exactly as the loaded read does.
+      if (feed.id === 'news' || feed.id === 'market-news') await warmNewsReadings(feed.id, newsReader, queryWindow, yieldForInput, warmReading);
+      else if (WARMERS[feed.id]) await WARMERS[feed.id](yieldForInput, warmReading);
+    } catch { /* The read below still answers. */ }
     try {
       settledFeeds.set(feed.id, { ...readFeed(feed, { day, includeHistory, queryWindow, newsReader }), status: 'pending' });
     } catch { /* A source with no readable snapshot starts empty. */ }
     if (performance.now() - batchStarted >= 8) { await yieldForInput(); batchStarted = performance.now(); }
   }
-  const build = () => {
+  // EVERY REPORT HERE IS ASSEMBLED IN SLICES. The assembly is one generator (`assembleSteps`):
+  // mapping and scoping feed by feed, the publisher dedupe, a sliced stable sort of the whole
+  // timeline, then the counts — driven in ~12ms slices with a yield to input between them, so
+  // the full-history report of a hundred thousand events never lands as one task. Profiled
+  // before this: the final report of a collection started on AI Alerts landed as a 1.6–2.7
+  // second task under whichever tab the reader had moved to, most of it the sort.
+  const build = async () => {
     // Either news route can finish last. Reconcile companions from both current readers while
     // retaining each request's real pending/failed status; a partial is never a completed check.
     if (queryWindow) for (const id of ['news', 'market-news']) {
@@ -707,27 +741,33 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           note: 'This news view could not be rebuilt. Previously read evidence remains visible.' }); }
       }
     }
-    return assemble({ day, scope, holdings: book, includeHistory, settledFeeds, requestedCompanies, queryWindow });
+    return assembleInSlices({ day, scope, holdings: book, includeHistory, settledFeeds, requestedCompanies, queryWindow }, yieldForInput);
   };
   // Publish the in-memory seed snapshot before any network requests start.
   if (load && onPartial) {
-    try { onPartial(build()); } catch (err) { console.error('[daily-alerts] onPartial threw', err); }
+    try { const seed = await build(); if (isCurrent()) onPartial(seed); } catch (err) { console.error('[daily-alerts] onPartial threw', err); }
   }
   // Feed promises often finish in one burst. Building/sorting the entire history after every
   // promise made one cached refresh rebuild a 60k-row pool twenty times before yielding to input.
   // Coalesce progress at the data boundary; throttling only the eventual DOM paint is too late.
-  let partialTimer = null;
+  // One partial is built at a time: arrivals during a build mark it dirty and one more follows.
+  let partialTimer = null, partialBuild = null, partialDirty = false, closed = false;
   const publishPartial = () => {
     partialTimer = null;
     // A partial nobody will read is not built. AI Alerts hands its own currency check through;
     // once its reader has moved to another tab, assembling and sorting the full-history report
     // for it was a one-to-two second task landing under the tab they had moved to. Collection,
     // the final report and the saved window are unaffected — only the progress publication.
-    if (!isCurrent()) return;
-    try { onPartial?.(build()); } catch (err) { console.error('[daily-alerts] onPartial threw', err); }
+    if (closed || !isCurrent()) return;
+    if (partialBuild) { partialDirty = true; return; }
+    partialBuild = (async () => {
+      try { const report = await build(); if (!closed && isCurrent()) onPartial?.(report); }
+      catch (err) { console.error('[daily-alerts] onPartial threw', err); }
+      finally { partialBuild = null; if (partialDirty) { partialDirty = false; schedulePartial(); } }
+    })();
   };
   const schedulePartial = () => {
-    if (load && onPartial && partialTimer === null) partialTimer = setTimeout(publishPartial, 80);
+    if (!closed && load && onPartial && partialTimer === null) partialTimer = setTimeout(publishPartial, 80);
   };
 
   // EACH FEED SETTLES ON ITS OWN AND THE PAGE PAINTS AS IT DOES.
@@ -757,7 +797,8 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           loadedFeeds.add('news'); normalizedFeeds.delete('news');
         } else if (load) await loadFeed(feed.id, refresh);
         await yieldForInput();
-        if (feed.id === 'news' || feed.id === 'market-news') await warmNewsReadings(feed.id, newsReader, queryWindow, yieldForInput);
+        if (feed.id === 'news' || feed.id === 'market-news') await warmNewsReadings(feed.id, newsReader, queryWindow, yieldForInput, warmReading);
+        else if (WARMERS[feed.id]) { try { await WARMERS[feed.id](yieldForInput, warmReading); } catch { /* The read below still answers. */ } }
         out = readFeed(feed, args);
         if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
         else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
@@ -771,14 +812,18 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     })
   );
 
+  // The final report is never published beneath a partial: a partial still building finishes
+  // first, with its publication withheld, and nothing schedules another.
+  closed = true;
   if (partialTimer !== null) clearTimeout(partialTimer);
-  const completed = build();
+  if (partialBuild) await partialBuild;
+  const completed = await build();
   if (load && !queryWindow) {
     // Materialize from the already-settled source records; this starts no second
     // read. Universe is used so the same public snapshot can be narrowed against
     // the current Portfolio or Watchlist after a reload without persisting either.
     const allPublic = scope === 'universe' && !requestedCompanies.length ? completed
-      : assemble({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds });
+      : await assembleInSlices({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds }, yieldForInput);
     void alertWindowCache.write(materializePublicAlertWindow(allPublic));
   }
   return completed;
@@ -858,6 +903,23 @@ export function onChange(fn) {
   };
 }
 
+// A COLLECTOR READS ONE FEED SYNCHRONOUSLY. The per-row readings it hits are kept on the row
+// objects (above, and in the additional sources), so touching every row in ~12ms slices before
+// the read leaves the read paying for the array and the feed row, never for classifying every
+// filing in one task. A warm-up that fails changes nothing: the read still classifies on demand.
+export async function warmRows(rows, reading, yieldForInput = yieldForInputSlice) {
+  let started = performance.now();
+  for (const row of rows) {
+    try { reading(row); } catch { /* The synchronous read reports a bad row in its own way. */ }
+    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+  }
+}
+const WARMERS = {
+  announcements: (yieldForInput, reading) => warmRows(announcements.rows(), (row) => reading.touch(announcementEvent(row), 'announcements'), yieldForInput),
+  insider: (yieldForInput, reading) => warmRows(insider.rows(), (row) => reading.touch(insiderEvent(row), 'insider'), yieldForInput),
+  ...Object.fromEntries(ADDITIONAL_SOURCES.filter((s) => s.warm).map((s) => [s.id, s.warm])),
+};
+
 const COLLECTORS = {
   technicals: fromTechnicals,
   earnings: fromEarnings,
@@ -926,30 +988,78 @@ function querySourceFeeds(feeds, queryWindow) {
   const key = alertWindowKey(queryWindow);
   if (lastNewsSourceQuery?.company !== company || lastNewsSourceQuery.market !== market || lastNewsSourceQuery.key !== key) {
     const urls = new Set([...company, ...market].filter(event => inAlertQuery(event, queryWindow))
-      .filter(event => event.url).map(event => canonicalArticleUrl(event.url)));
-    const matches = event => inAlertQuery(event, queryWindow) || event.url && urls.has(canonicalArticleUrl(event.url));
+      .filter(event => event.url).map(eventUrlKey));
+    const matches = event => inAlertQuery(event, queryWindow) || event.url && urls.has(eventUrlKey(event));
     lastNewsSourceQuery = { company, market, key, news: company.filter(matches), 'market-news': market.filter(matches) };
   }
   return feeds.map(feed => ({ ...feed, events: ['news', 'market-news'].includes(feed.id)
     ? lastNewsSourceQuery[feed.id] : queryEvents(feed.events, queryWindow) }));
 }
+// `canonicalArticleUrl` keeps a bounded text cache that one pass over every news event evicts as
+// fast as it fills (profiled at 200ms plus the URL parser on one assembly). The event object is
+// stable across assemblies, so its canonical address is kept on it, validated on the url it read.
+const eventUrlKeys = new WeakMap();
+function eventUrlKey(event) {
+  const hit = eventUrlKeys.get(event);
+  if (hit && hit.url === event.url) return hit.key;
+  const key = canonicalArticleUrl(event.url);
+  eventUrlKeys.set(event, { url: event.url, key });
+  return key;
+}
+// THE DISCOVERY READING IS KEPT ON THE SOURCE RECORD. The row this mapping matched against was a
+// fresh copy per assembly, so every cache beneath it — the row's match text, its attribution
+// under each identity, the decorated row's story reading — missed on every assembly: profiled at
+// ~520ms of one 2.7-second seed publication after AI Alerts, with every cache in place. The record
+// is the immutable capture row and the reading depends only on it, the feed and the portfolio
+// identities, so it is validated on those and on the two event fields the projected row reads.
+const discoveryReadings = new WeakMap();
+const entitySignatures = new WeakMap();
+function entitySignature(portfolioEntities) {
+  const hit = entitySignatures.get(portfolioEntities);
+  if (hit !== undefined) return hit;
+  const value = JSON.stringify(portfolioEntities);
+  entitySignatures.set(portfolioEntities, value);
+  return value;
+}
+function discoveryFor(event, feedId, portfolioEntities, signature = entitySignature(portfolioEntities)) {
+  const record = event.sourceRecord && typeof event.sourceRecord === 'object' ? event.sourceRecord : event;
+  const title = feedId === 'ipos' ? `${event.company || ''}: ${event.headline}` : event.headline;
+  const hit = discoveryReadings.get(record);
+  if (hit && hit.feedId === feedId && hit.signature === signature && hit.title === title && hit.url === event.url) return hit.matches;
+  const row = { ...event.sourceRecord, title, url: event.url, summary: event.sourceRecord?.summary };
+  const matches = matchPortfolioNews(row, portfolioEntities);
+  if (feedId === 'twitter') {
+    // A post may discuss the company only in an attached image/thread. Keep exact collector
+    // query context searchable as uncertain, without treating that query as article evidence.
+    for (const query of event.sourceRecord?.matchedQueries || []) {
+      const identity = portfolioEntities.find(e => e.entityId === query.entityId);
+      if (identity && !matches.some(m => m.entityId === identity.entityId)) matches.push(attributeNewsRow(row, identity));
+    }
+  }
+  discoveryReadings.set(record, { feedId, signature, title, url: event.url, matches });
+  return matches;
+}
+// ONE SET OF PORTFOLIO IDENTITY OBJECTS WHILE THE BOOK IS UNCHANGED. `portfolioNewsEntities` builds
+// fresh identity objects on every call, and a story's attribution under an identity is cached per
+// (row, identity OBJECT), so every assembly attributed every matched story again. Equal content
+// keeps the previous objects; a changed book is a changed signature and new objects.
+let discoveryEntityMemo = null;
+function discoveryEntities(holdings, requestedCompanies) {
+  if (discoveryEntityMemo?.holdings === holdings && discoveryEntityMemo.requested === requestedCompanies) return discoveryEntityMemo.entities;
+  const entities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
+  const signature = JSON.stringify(entities);
+  const kept = discoveryEntityMemo?.signature === signature ? discoveryEntityMemo.entities : entities;
+  discoveryEntityMemo = { holdings, requested: requestedCompanies, signature, entities: kept };
+  return kept;
+}
+const DISCOVERY_FEEDS = new Set(['market-news', 'twitter', 'ipos']);
 export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
-  if (!['market-news', 'twitter', 'ipos'].includes(feedId)) return events;
-  const signature = JSON.stringify(portfolioEntities);
+  if (!DISCOVERY_FEEDS.has(feedId)) return events;
+  const signature = entitySignature(portfolioEntities);
   const cached = discoveryMappings.get(events);
   if (cached?.feedId === feedId && cached.signature === signature) return cached.value;
   const value = events.flatMap(event => {
-    const row = { ...event.sourceRecord, title: feedId === 'ipos' ? `${event.company || ''}: ${event.headline}` : event.headline,
-      url: event.url, summary: event.sourceRecord?.summary };
-    const matches = matchPortfolioNews(row, portfolioEntities);
-    if (feedId === 'twitter') {
-      // A post may discuss the company only in an attached image/thread. Keep exact collector
-      // query context searchable as uncertain, without treating that query as article evidence.
-      for (const query of event.sourceRecord?.matchedQueries || []) {
-        const identity = portfolioEntities.find(e => e.entityId === query.entityId);
-        if (identity && !matches.some(m => m.entityId === identity.entityId)) matches.push(attributeNewsRow(row, identity));
-      }
-    }
+    const matches = discoveryFor(event, feedId, portfolioEntities, signature);
     if (!matches.length) return [event];
     return matches.map(matched => ({ ...event, ...newsSignal(matched),
       ...(feedId === 'twitter' ? { aiEligible: false, importance: IMPORTANCE.LOW } : {}),
@@ -973,7 +1083,7 @@ export function mapPortfolioDiscoveryEvents(feedId, events, portfolioEntities) {
 export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
   const news = feeds.find(feed => feed.id === 'news')?.events;
   const market = feeds.find(feed => feed.id === 'market-news')?.events;
-  const identity = JSON.stringify(entities);
+  const identity = entitySignature(entities);
   if (lastPublisherProjection?.news === news && lastPublisherProjection.market === market &&
       lastPublisherProjection.day === day && lastPublisherProjection.identity === identity) {
     return feeds.map(feed => lastPublisherProjection.groups.has(feed.id)
@@ -988,7 +1098,7 @@ export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
       const identity = event.entityId && !event.entityId.startsWith('ticker:') ? event.entityId
         : byTicker.get(ticker) || (ticker ? `ticker:${ticker}` : event.entityId);
       if (!identity || !event.url) return;
-      const key = JSON.stringify([identity, canonicalArticleUrl(event.url)]);
+      const key = JSON.stringify([identity, eventUrlKey(event)]);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push({ event, feed, feedIndex, rowIndex });
     });
@@ -1019,7 +1129,16 @@ export function dedupePublisherAlertFeeds(feeds, { day, entities = [] } = {}) {
   return result;
 }
 
-function assemble({ day, scope, holdings, includeHistory, settledFeeds, requestedCompanies = [], queryWindow = null }) {
+// ONE IMPLEMENTATION, TWO DRIVERS (see core/slices.js). `assemble` answers now, for callers that
+// must; `assembleInSlices` drives the identical generator with a yield to input between feeds,
+// inside the sort and before the counts. Same feeds, same dedupe, same order, same numbers.
+export function assemble(args) {
+  return runSteps(assembleSteps(args));
+}
+export function assembleInSlices(args, yieldForInput = yieldForInputSlice) {
+  return runStepsInSlices(assembleSteps(args), { yieldForInput });
+}
+function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, requestedCompanies = [], queryWindow = null }) {
   const contextKey = alertContextKey(scope, holdings, day);
   const projectionKey = JSON.stringify([contextKey, includeHistory, requestedCompanies, queryWindow]);
   const scoped = scopeMatcher(scope, holdings);
@@ -1028,13 +1147,14 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   // Research can name a public issuer outside the selected view. The view still controls
   // private portfolio-only feeds; public identity expansion must not change that boundary.
   const wanted = { has: ticker => scoped.has(ticker) || requested.has(ticker) };
-  const portfolioEntities = portfolioNewsEntities([...holdings, ...requestedCompanies]);
+  const portfolioEntities = discoveryEntities(holdings, requestedCompanies);
   const portfolioNewsIds = new Set(portfolioEntities.map((entity) => entity.entityId));
   const scopeContext = { scope, wanted, entityIds: portfolioNewsIds, requestedEntities };
   const sourceFeeds = querySourceFeeds(FEEDS.map(
     (feed) => settledFeeds.get(feed.id) || { ...feed, status: 'pending', count: 0, events: [], reachesToday: null, asOf: null, note: null }
   ), queryWindow);
-  const scopedFeeds = sourceFeeds.map((settled) => {
+  const scopedFeeds = [];
+  for (const settled of sourceFeeds) {
     // Private results can be cleared while public reads are in flight. Never let an old partial
     // report restore a previous account's rows after logout; read these memory-only feeds afresh.
     let feed = settled;
@@ -1063,17 +1183,22 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     }
     const { events, unresolved, todayCount } = projection;
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
-    return { ...feed, events, count: events.length, todayCount,
+    scopedFeeds.push({ ...feed, events, count: events.length, todayCount,
       sourceCount: all.length, unresolvedCount: unresolved, scopable: !unscopable,
-      note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null };
-  });
+      note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null });
+    yield;
+  }
 
   const feeds = dedupePublisherAlertFeeds(scopedFeeds, { day, entities: portfolioEntities }).map(feed => {
     if (!queryWindow) return feed;
     const events = queryEvents(feed.events, queryWindow);
     return { ...feed, events, count: events.length, todayCount: events.filter(event => event.day === day).length };
   });
+  yield;
 
+  // The previous report is read in the same synchronous step that decides whether it is reused:
+  // another drive of this generator may finish between two slices and replace it.
+  const previous = lastAssembleOutput;
   const inputMatches = lastAssembleInput && lastAssembleInput.scope === scope && lastAssembleInput.day === day &&
       lastAssembleInput.includeHistory === includeHistory && lastAssembleInput.windowKey === alertWindowKey(queryWindow) && feeds.every((feed, i) => {
         const previous = lastAssembleInput.eventGroups[i];
@@ -1085,13 +1210,34 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
   // A capture timestamp cannot identify a scoped result: membership, private access and
   // same-count corrections can change without advancing it. Reuse only identical records;
   // still recompute source-health metadata on status-only arrivals.
-  const events = inputMatches ? lastAssembleOutput.events : [];
+  const events = inputMatches ? previous.events : [];
+  let counts = inputMatches ? previous.meta : null;
   if (!inputMatches) {
     for (const f of feeds) for (const ev of f.events) events.push(ev);
-    events.sort(byNewestFirst);
+    yield* sortSteps(events, byNewestFirst);
     ensureUniqueIds(events);
+    yield;
+    // One pass for every count, where eight filters over the whole timeline used to be one task.
+    const days = new Set(), companies = new Set();
+    counts = { alerts: 0, updates: 0, positive: 0, negative: 0, neutral: 0, highImportance: 0, companies: 0, days: 0, undated: 0, scheduled: 0, oldestEventDay: null, newestEventDay: null };
+    for (const e of events) {
+      if (e.severity === SEVERITY.ALERT) counts.alerts++;
+      if (e.severity === SEVERITY.UPDATE) counts.updates++;
+      if (e.direction === DIRECTION.POSITIVE) counts.positive++;
+      if (e.direction === DIRECTION.NEGATIVE) counts.negative++;
+      if (e.direction === DIRECTION.NEUTRAL) counts.neutral++;
+      if (e.importance === IMPORTANCE.HIGH) counts.highImportance++;
+      if (e.day) days.add(e.day); else counts.undated++;
+      if (e.kind === 'scheduled') counts.scheduled++;
+      const company = e.ticker || e.entityId;
+      if (company) companies.add(company);
+    }
+    const eventDays = [...days].sort();
+    counts.companies = companies.size;
+    counts.days = eventDays.length;
+    counts.oldestEventDay = eventDays[0] || null;
+    counts.newestEventDay = eventDays.at(-1) || null;
   }
-  const eventDays = inputMatches ? null : [...new Set(events.map((event) => event.day).filter(Boolean))].sort();
 
   lastAssembleInput = { scope, day, includeHistory, windowKey: alertWindowKey(queryWindow), eventGroups: feeds.map(feed => feed.events) };
   lastAssembleOutput = {
@@ -1105,20 +1251,9 @@ function assemble({ day, scope, holdings, includeHistory, settledFeeds, requeste
     feeds,
     pending: feeds.filter((f) => f.status === 'pending').length,
     meta: {
-      ...(inputMatches ? lastAssembleOutput.meta : {
-      alerts: events.filter((e) => e.severity === SEVERITY.ALERT).length,
-      updates: events.filter((e) => e.severity === SEVERITY.UPDATE).length,
-      positive: events.filter((e) => e.direction === DIRECTION.POSITIVE).length,
-      negative: events.filter((e) => e.direction === DIRECTION.NEGATIVE).length,
-      neutral: events.filter((e) => e.direction === DIRECTION.NEUTRAL).length,
-      highImportance: events.filter((e) => e.importance === IMPORTANCE.HIGH).length,
-      companies: new Set(events.map((e) => e.ticker || e.entityId).filter(Boolean)).size,
-      days: eventDays.length,
-      undated: events.filter((e) => !e.day).length,
-      scheduled: events.filter((e) => e.kind === 'scheduled').length,
-      oldestEventDay: eventDays[0] || null,
-      newestEventDay: eventDays.at(-1) || null,
-      }),
+      alerts: counts.alerts, updates: counts.updates, positive: counts.positive, negative: counts.negative, neutral: counts.neutral,
+      highImportance: counts.highImportance, companies: counts.companies, days: counts.days, undated: counts.undated,
+      scheduled: counts.scheduled, oldestEventDay: counts.oldestEventDay, newestEventDay: counts.newestEventDay,
       sourceRecords: feeds.reduce((n, f) => n + (f.sourceCount || 0), 0),
       unresolvedRecords: feeds.reduce((n, f) => n + (f.unresolvedCount || 0), 0),
       // The FRESHEST feed and the STALEST feed, both, because one number cannot describe eight
@@ -1176,13 +1311,27 @@ function ensureUniqueIds(events) {
 }
 
 /** Newest day first, then newest clock time. A row with no time follows timed rows on that day. */
+// EVERY COMPARE READS BOTH ROWS' COMMITTED DAY, and a 43,000-row sort compares about 700,000
+// times. That was a regex test per read and a locale-aware compare per pair — profiled at 212ms
+// of a 1.7s assembly. The day is kept per event object, validated on the two fields it is read
+// from, and equal-shape ISO days and HH:MM clocks are compared by code point, which orders them
+// exactly as `localeCompare` does; strings of different shapes keep the locale compare.
+const sortDays = new WeakMap();
+function sortDay(event) {
+  const hit = sortDays.get(event);
+  if (hit && hit.day === event.day && hit.at === event.at) return hit.value;
+  const value = eventDay(event) || '';
+  sortDays.set(event, { day: event.day, at: event.at, value });
+  return value;
+}
+const newestFirst = (a, b) => a === b ? 0 : a.length === b.length ? (b > a ? 1 : -1) : b.localeCompare(a);
 function byNewestFirst(a, b) {
-  const ad = eventDay(a) || '';
-  const bd = eventDay(b) || '';
-  if (ad !== bd) return bd.localeCompare(ad);
+  const ad = sortDay(a);
+  const bd = sortDay(b);
+  if (ad !== bd) return newestFirst(ad, bd);
   const at = a.time || '';
   const bt = b.time || '';
-  if (at && bt && at !== bt) return bt.localeCompare(at);
+  if (at && bt && at !== bt) return newestFirst(at, bt);
   if (at && !bt) return -1;
   if (bt && !at) return 1;
   // THE SAME DAY AND THE SAME CLOCK TIME IS A TIE, AND A TIE MAY NOT BE LEFT TO INPUT ORDER.
@@ -1528,19 +1677,7 @@ function fromAnnouncements({ day, wanted, includeHistory }) {
   const m = announcements.meta();
   const capturedDay = istDay(m.capturedAt);
   const rows = announcements.rows().filter((r) => inRequestedWindow(r.date, day, includeHistory) && inScope(wanted, r.ticker));
-
-  const events = rows.map((r) => ({
-    id: `ann:${r.newsId || JSON.stringify([r.ticker, r.date, r.url, r.title, r.category])}`,
-    sourceRecord: r,
-    ...announcementSignal(r),
-    time: r.time ? String(r.time).slice(0, 5) : null,
-    at: r.date,
-    ticker: r.ticker || null,
-    company: r.company || r.ticker || '—',
-    headline: r.title || r.headline || 'Filing',
-    detail: [...(r.sources || [r.source]), r.category, r.subCategory].filter(Boolean).join(' · ') || 'Category not carried',
-    url: r.url || null,
-  }));
+  const events = rows.map(announcementEvent);
 
   return {
     events,
@@ -1554,33 +1691,64 @@ function fromAnnouncements({ day, wanted, includeHistory }) {
   };
 }
 
+// ONE EVENT PER SOURCE ROW, KEPT ON THE ROW. A filing row is an immutable capture record and the
+// event read off it depends on nothing else, so it is built once per row object rather than once
+// per collection: classifying every retained BSE filing again was a 400ms task on each open, and
+// the insider table another 400ms. The same object then reaches every assembly, which is also what
+// lets the assembly and ranking caches keyed on event identity hit across publications.
+const announcementEvents = new WeakMap();
+export function announcementEvent(r) {
+  const hit = announcementEvents.get(r);
+  if (hit) return hit;
+  const event = {
+    id: `ann:${r.newsId || JSON.stringify([r.ticker, r.date, r.url, r.title, r.category])}`,
+    sourceRecord: r,
+    ...announcementSignal(r),
+    time: r.time ? String(r.time).slice(0, 5) : null,
+    at: r.date,
+    ticker: r.ticker || null,
+    company: r.company || r.ticker || '—',
+    headline: r.title || r.headline || 'Filing',
+    detail: [...(r.sources || [r.source]), r.category, r.subCategory].filter(Boolean).join(' · ') || 'Category not carried',
+    url: r.url || null,
+  };
+  announcementEvents.set(r, event);
+  return event;
+}
+
+const insiderEvents = new WeakMap();
+export function insiderEvent(r) {
+  const hit = insiderEvents.get(r);
+  if (hit) return hit;
+  const cells = r.cells || {};
+  const pick = (...names) => names.map((n) => cells[n]).find((v) => v != null && v !== '');
+  const event = {
+    // Content-derived rather than position-derived: loading an older day must not rename every
+    // row after it, or a refresh would report the whole timeline as newly arrived.
+    id: `insider:${r.ticker}|${r.date}|${JSON.stringify(cells)}`,
+    sourceRecord: r,
+    ...insiderSignal(cells),
+    time: null,
+    at: r.date,
+    ticker: r.ticker || null,
+    company: pick('Company') || r.ticker || '—',
+    headline: [pick('Insider'), pick('Transaction', 'Acq/Disp', 'Mode')].filter(Boolean).join(' — ') || 'Insider disclosure',
+    detail: [pick('Category'), pick('Mode'), pick('Trade Shares') ? `${pick('Trade Shares')} shares` : null].filter(Boolean).join(' · ') || 'Details not carried',
+    // Prefer the exchange filing URL when one is carried; otherwise use the same exact-insider
+    // public disclosure search as the Insider Trades tab. AI Alerts can then trace this evidence
+    // to a public record instead of ending at a derived dashboard sentence.
+    url: insiderTradeSourceUrl(r),
+  };
+  insiderEvents.set(r, event);
+  return event;
+}
+
 /** Insider and promoter disclosures, classified from the transaction and measurable size. */
 function fromInsider({ day, wanted, includeHistory }) {
   const m = insider.meta();
   const capturedDay = istDay(m.capturedAt);
   const rows = insider.rows().filter((r) => inRequestedWindow(r.date, day, includeHistory) && inScope(wanted, r.ticker));
-
-  const events = rows.map((r) => {
-    const cells = r.cells || {};
-    const pick = (...names) => names.map((n) => cells[n]).find((v) => v != null && v !== '');
-    return {
-      // Content-derived rather than position-derived: loading an older day must not rename every
-      // row after it, or a refresh would report the whole timeline as newly arrived.
-      id: `insider:${r.ticker}|${r.date}|${JSON.stringify(cells)}`,
-      sourceRecord: r,
-      ...insiderSignal(cells),
-      time: null,
-      at: r.date,
-      ticker: r.ticker || null,
-      company: pick('Company') || r.ticker || '—',
-      headline: [pick('Insider'), pick('Transaction', 'Acq/Disp', 'Mode')].filter(Boolean).join(' — ') || 'Insider disclosure',
-      detail: [pick('Category'), pick('Mode'), pick('Trade Shares') ? `${pick('Trade Shares')} shares` : null].filter(Boolean).join(' · ') || 'Details not carried',
-      // Prefer the exchange filing URL when one is carried; otherwise use the same exact-insider
-      // public disclosure search as the Insider Trades tab. AI Alerts can then trace this evidence
-      // to a public record instead of ending at a derived dashboard sentence.
-      url: insiderTradeSourceUrl(r),
-    };
-  });
+  const events = rows.map(insiderEvent);
 
   return {
     events,
@@ -1791,6 +1959,39 @@ export function companyNewsState(day, m = news.meta(), now = Date.now()) {
   };
 }
 
+// ONE EVENT PER MARKET-WIDE STORY, KEPT ON THE ROW — the same arrangement as `announcementEvent`.
+// A fresh event per read defeated every cache keyed on the event beneath it (its canonical
+// address, its sort day, the discovery mapping over the events array), so the trailing assembly
+// paid for all of them again on every read of an unchanged capture.
+const marketNewsEvents = new WeakMap();
+function marketNewsEvent(a) {
+  const hit = marketNewsEvents.get(a);
+  if (hit) return hit;
+  const event = {
+    id: `mcnews:${a.id}`,
+    sourceRecord: a,
+    // TAGGED WITH THE SAME KEYWORDS, BUT NOT PROMOTED BY THEM. The tags let the timeline and
+    // the news list filter market-wide stories by topic. Importance stays low because a
+    // keyword is material ABOUT a company and these rows carry none — "Fraud" on a story
+    // with no company attached names a subject, not an exposure.
+    ...signal(DIRECTION.NEUTRAL, IMPORTANCE.LOW, 'Publisher headline; not directionally graded.', 'Low: a market-wide story carries no company, so a tracked keyword on it names a subject rather than an exposure.'),
+    keywords: classifyStory(a).labels,
+    time: istTime(a.publishedAt),
+    at: a.publishedAt,
+    ticker: null,
+    // "Market-wide" under a heading that says Company is the honest reading of a row that has
+    // no company on it — the section goes in the sub-line, where it describes the story
+    // rather than standing in for a name nobody supplied.
+    company: 'Market-wide',
+    section: a.section || null,
+    headline: a.title || 'Story',
+    detail: a.summary || 'Market-wide story — no company attached',
+    url: a.url || null,
+  };
+  marketNewsEvents.set(a, event);
+  return event;
+}
+
 /**
  * Market-wide stories published today.
  *
@@ -1807,27 +2008,7 @@ function fromMarketNews({ day, scope, includeHistory, queryWindow, newsReader = 
   const events = scopable
     ? newsQueryRows(marketNews, queryWindow, newsReader)
         .filter((a) => inRequestedWindow(a.publishedAt, day, includeHistory))
-        .map((a) => ({
-          id: `mcnews:${a.id}`,
-          sourceRecord: a,
-          // TAGGED WITH THE SAME KEYWORDS, BUT NOT PROMOTED BY THEM. The tags let the timeline and
-          // the news list filter market-wide stories by topic. Importance stays low because a
-          // keyword is material ABOUT a company and these rows carry none — "Fraud" on a story
-          // with no company attached names a subject, not an exposure.
-          ...signal(DIRECTION.NEUTRAL, IMPORTANCE.LOW, 'Publisher headline; not directionally graded.', 'Low: a market-wide story carries no company, so a tracked keyword on it names a subject rather than an exposure.'),
-          keywords: classifyStory(a).labels,
-          time: istTime(a.publishedAt),
-          at: a.publishedAt,
-          ticker: null,
-          // "Market-wide" under a heading that says Company is the honest reading of a row that has
-          // no company on it — the section goes in the sub-line, where it describes the story
-          // rather than standing in for a name nobody supplied.
-          company: 'Market-wide',
-          section: a.section || null,
-          headline: a.title || 'Story',
-          detail: a.summary || 'Market-wide story — no company attached',
-          url: a.url || null,
-        }))
+        .map(marketNewsEvent)
     : [];
 
   return {

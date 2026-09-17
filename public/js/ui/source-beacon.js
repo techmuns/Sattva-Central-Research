@@ -491,14 +491,26 @@ export function mount() {
   // The closed launcher must age and lose its pulse when offline too; opening the panel is not
   // what makes a source check fresh. These listeners perform no network reads.
   const statusClock = setInterval(refreshConnections, 60000);
-  const offTick = live.onGlobalTick(refreshConnections);
+  // Never inside the tick that announced a change: reading every source's `meta()` there found
+  // the news readers' unions invalidated and not yet prepared, and rebuilt them synchronously
+  // — a 1.2-second task on a poller tick (profiled). While the popover is open, read half a
+  // second after the tick, once the readers have announced their prepared rows. While it is
+  // closed the launcher shows one count, and the minute clock above refreshes it: a cold load
+  // announces twenty sources over half a minute, and reading every union after each of them was
+  // still a 0.9-second task under the tab the reader was on.
+  let tickRefresh = null;
+  const refreshAfterTick = () => {
+    if (!open || tickRefresh !== null) return;
+    tickRefresh = setTimeout(() => { tickRefresh = null; refreshConnections(); }, 500);
+  };
+  const offTick = live.onGlobalTick(refreshAfterTick);
   window.addEventListener('offline', refreshConnections);
   window.addEventListener('online', refreshConnections);
 
   return () => {
     close();
     document.removeEventListener('keydown', onKey);
-    clearInterval(statusClock); offTick();
+    clearInterval(statusClock); offTick(); if (tickRefresh !== null) { clearTimeout(tickRefresh); tickRefresh = null; }
     window.removeEventListener('offline', refreshConnections);
     window.removeEventListener('online', refreshConnections);
     rootEl?.remove();

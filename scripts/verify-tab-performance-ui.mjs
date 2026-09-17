@@ -141,11 +141,12 @@ try {
       // Insider Trades froze the page for 1,367ms here before its per-row readings were memoised
       // (docs/PERFORMANCE-HOT-PATHS-2026-09-17.md) and 748ms after. The budget leaves room for a
       // CI runner at half local speed while still failing on a return to per-row recomputation.
-      // All Alerts under Universe is deliberately not budgeted: in this sweep it follows AI Alerts,
-      // whose full-history ranking still lands a two-to-three second task under it — the item
-      // that document lists as still open — and a budget here would measure the runner, not a
-      // regression.
-      const taskBudgetMs = { 'insider-trades?scope=universe': 2500 }[route];
+      // AI Alerts and All Alerts under Universe are budgeted against the sliced ranking and the
+      // sliced assembly (round two in that document): the longest task on each was 2.4 and 2.7
+      // seconds before, and is bounded by garbage collection and the readers' seed merges now
+      // (roughly 200–550ms locally). The budgets fail on a return to one-task ranking or sorting
+      // while leaving a slow runner room.
+      const taskBudgetMs = { 'insider-trades?scope=universe': 2500, 'ai-alerts?scope=universe': 1800, 'daily-alerts?scope=universe': 1800 }[route];
       if (taskBudgetMs) assert(result.maxTaskMs < taskBudgetMs, `${route}: longest main-thread task ${result.maxTaskMs}ms stays under ${taskBudgetMs}ms`);
     }
   }

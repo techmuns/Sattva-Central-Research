@@ -290,3 +290,76 @@ assert(scored(topicEvent).allCards[0].drivers.total > 0, '...while still reachin
 
 console.log('PASS: driver buckets, source phrases, excluded feeds, capped overflow and score neutrality.');
 
+
+// --- the sliced ranking is the synchronous ranking, spread over time --------------------------
+// One generator, two drivers: `rankReportAsync` must resolve to exactly what `rankReport` returns,
+// must yield to input between slices on a large input, and must resolve null — never a partial
+// result — once nobody is waiting for it. Asserted on the fixture above and on a synthetic
+// Universe of 3,000 companies, because the yield only happens where a slice has something to cut.
+const { rankReportAsync, mergePartialReportAsync } = await import('../public/js/data/ai-alerts.js');
+const { runSteps, runStepsInSlices, sortSteps } = await import('../public/js/core/slices.js');
+clearRankingCache();
+const syncFixture = rankReport(report, { holdings: sizeHoldings, positionSizes: sizes });
+clearRankingCache();
+assert.deepEqual(await rankReportAsync(report, { holdings: sizeHoldings, positionSizes: sizes }), syncFixture, 'sliced ranking of the fixture equals the synchronous one');
+const universeFeeds = ['earnings', 'announcements', 'insider', 'technicals', 'investors'].map(id => ({ id, status: 'ok', reachesToday: true }));
+const universeDay = '2026-09-04';
+const universeEvents = [];
+for (let i = 0; i < 3000; i++) {
+  const ticker = `U${String(i).padStart(4, '0')}`;
+  universeFeeds.forEach(({ id }, j) => {
+    const age = (i + j) % 14;
+    const day = new Date(Date.parse(`${universeDay}T00:00:00Z`) - age * 86400000).toISOString().slice(0, 10);
+    universeEvents.push({ id: `${ticker}-${id}-${j}`, ticker, company: `Company ${i}`, feed: id, feedLabel: id, day, time: `${String(9 + j).padStart(2, '0')}:15`,
+      headline: `${ticker} ${id} ${['order win', 'fraud probe', 'buyback', 'results', 'stake sale'][(i + j) % 5]} update`,
+      detail: `Detail ${i} ${j}`, url: `https://example.test/${ticker}/${id}/${j}`, importance: (i + j) % 3 ? 'low' : 'high',
+      direction: ['positive', 'negative', 'neutral'][(i + j) % 3], kind: id === 'technicals' ? 'move' : 'filing',
+      ...(id === 'technicals' ? { movePct: ((i % 13) - 6) * 1.1, volumeX: 1 + (i % 4) } : {}),
+      ...(id === 'investors' ? { investor: `Fund ${i % 7}`, action: ['added', 'reduced', 'new', 'exited'][i % 4], deltaPp: (i % 5) * 0.4 } : {}),
+      ...(id === 'announcements' ? { keywordIds: ['order', 'fraud'].slice(0, 1 + (i % 2)) } : {}) });
+  });
+}
+const universeReport = { day: universeDay, scope: 'universe', feeds: universeFeeds, events: universeEvents };
+const universeHoldings = Array.from({ length: 140 }, (_, i) => ({ ticker: `U${String(i * 21).padStart(4, '0')}`, name: `Company ${i * 21}`, sector: `Sector ${i % 9}` }));
+clearRankingCache();
+const started = performance.now();
+const syncUniverse = rankReport(universeReport, { holdings: universeHoldings });
+const syncMs = performance.now() - started;
+assert(syncUniverse.allCards.length === 3000 && syncUniverse.cards.length > 0, 'the synthetic Universe ranks every company');
+clearRankingCache();
+let yields = 0, longestStretch = 0, lastYield = performance.now();
+const slicedUniverse = await rankReportAsync(universeReport, { holdings: universeHoldings }, { yieldForInput: async () => {
+  const now = performance.now(); longestStretch = Math.max(longestStretch, now - lastYield); yields++;
+  await new Promise(resolve => setTimeout(resolve, 0)); lastYield = performance.now();
+} });
+assert.deepEqual(slicedUniverse, syncUniverse, 'sliced Universe ranking equals the synchronous one, card for card');
+assert(yields > 0, `a ${Math.round(syncMs)}ms ranking yields to input at least once (yielded ${yields} times)`);
+assert(longestStretch < 250, `no stretch between yields exceeds a quarter second (longest ${Math.round(longestStretch)}ms)`);
+clearRankingCache();
+let asked = 0;
+assert.equal(await rankReportAsync(universeReport, { holdings: universeHoldings }, { yieldForInput: async () => { asked++; }, isCurrent: () => false }), null,
+  'a ranking nobody is waiting for resolves null after its first slice');
+assert.equal(asked, 1, 'and stops asking for more time');
+clearRankingCache();
+assert.deepEqual(await mergePartialReportAsync(byPriority, arriving), mergePartialReport(byPriority, arriving), 'the sliced merge equals the synchronous merge');
+assert.deepEqual(await mergePartialReportAsync(byPriority, { ...byPriority, cards: [], allCards: [] }), mergePartialReport(byPriority, { ...byPriority, cards: [], allCards: [] }), 'an empty partial merges the same way in slices');
+function* counting(n) { let sum = 0; for (let i = 1; i <= n; i++) { sum += i; yield; } return sum; }
+assert.equal(runSteps(counting(100)), 5050);
+assert.equal(await runStepsInSlices(counting(100), { sliceMs: 0, yieldForInput: async () => {} }), 5050, 'the sliced driver returns the generator result');
+assert.equal(await runStepsInSlices(counting(100), { sliceMs: 0, yieldForInput: async () => {}, keepGoing: () => false }), undefined, 'an abandoned generator resolves undefined');
+// A sliced stable sort orders exactly as the native stable sort, ties included, however driven.
+let seed = 7;
+const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+const sample = Array.from({ length: 50000 }, (_, i) => ({ key: Math.floor(random() * 300), tie: Math.floor(random() * 4), i }));
+const byKey = (a, b) => a.key - b.key || (a.tie === b.tie ? 0 : a.tie < b.tie ? -1 : 1);
+const native = [...sample].sort(byKey);
+const slicedSort = [...sample];
+let sortYields = 0;
+await runStepsInSlices(sortSteps(slicedSort, byKey, { run: 512, stride: 1024 }), { sliceMs: 0, yieldForInput: async () => { sortYields++; } });
+assert.deepEqual(slicedSort, native, 'the sliced stable sort orders exactly as the native stable sort, ties included');
+assert.deepEqual(runSteps(sortSteps([...sample], byKey)), native, 'driven synchronously it orders the same');
+assert(sortYields > 10, `a large sort yields many times (${sortYields})`);
+assert.deepEqual(runSteps(sortSteps([], byKey)), []);
+assert.deepEqual(runSteps(sortSteps([sample[0]], byKey)), [sample[0]]);
+assert.deepEqual(runSteps(sortSteps([...sample].slice(0, 3000), byKey, { run: 7, stride: 5 })), [...sample].slice(0, 3000).sort(byKey), 'odd run and stride sizes order the same');
+console.log(`PASS: sliced ranking and merge equal their synchronous references (3,000-company Universe: ${Math.round(syncMs)}ms synchronous, ${yields} yields, longest stretch ${Math.round(longestStretch)}ms), and stop when nobody is waiting.`);

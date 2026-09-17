@@ -87,6 +87,14 @@ assert.equal(publishers.rows().length, 2, 'unmatched records remain searchable i
 assert(paints > 0);
 const initial = feed.rows();
 assert.equal(feed.rows(), initial, 'unchanged reads reuse the complete projection');
+// ONE IMPLEMENTATION, TWO DRIVERS: a reader prepared in slices answers exactly what a reader read
+// synchronously answers, and its first synchronous read after the preparation is a hit.
+const prepared = withPortfolioPublisherNews(core, { publishers, book, now: () => now });
+await prepared.prepareRows();
+const preparedRows = prepared.rows();
+assert.equal(prepared.rows(), preparedRows, 'the prepared projection is what the synchronous read returns');
+assert.deepEqual(preparedRows.map(row => [row.ticker, row.url, row.date, row.source]), initial.map(row => [row.ticker, row.url, row.date, row.source]),
+  'the sliced preparation and the synchronous read agree row for row');
 coreDone(); await loading;
 const event = mapPortfolioDiscoveryEvents('market-news', [{ id: et.id, headline: et.title, url: et.url,
   day: '2026-09-04', sourceRecord: et }], portfolioNewsEntities(held))[0];

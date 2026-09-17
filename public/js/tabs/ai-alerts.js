@@ -163,15 +163,20 @@ export function render(ctx) {
   paint(ctx);
   if (!report) {
     const token = ++cacheToken;
+    const restoring = () => token === cacheToken && ctxRef === ctx;
     void alerts.cached({
       scope: ctx.scope,
       holdings: coverage.holdings(),
       positionSizes: cachedPositionSizes(),
-    }).then((cached) => {
-      if (token !== cacheToken || ctxRef !== ctx || !cached || report?.pending === 0) return;
+      isCurrent: restoring,
+    }).then(async (cached) => {
+      if (!restoring() || !cached || report?.pending === 0) return;
       // An empty partial is still an unfinished source read. Merge the retained window beneath
       // any newer live evidence instead of letting that partial suppress a slow cache restore.
-      report = alerts.withPositionSnapshot(report ? alerts.mergePartialReport(cached, report) : cached, cachedPositionSizes());
+      // The merge ranks in slices; a live report that completed meanwhile is never overwritten.
+      const merged = report ? await alerts.mergePartialReportAsync(cached, report, { isCurrent: restoring }) : cached;
+      if (!restoring() || !merged || report?.pending === 0) return;
+      report = alerts.withPositionSnapshot(merged, cachedPositionSizes());
       paint(ctxRef);
     });
   }
@@ -252,6 +257,22 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
     return snapshot;
   });
   paint(ctx);
+  // PARTIALS MERGE IN SLICES, ONE AT A TIME, NEWEST WAITING ONE FIRST. Merging a partial can rank
+  // the union of old and new evidence, which on the whole Universe is a second of CPU; done
+  // synchronously inside the callback it froze the page once per publication. The queue holds at
+  // most one waiting partial because each carries everything before it, and the completed report
+  // below waits for an in-flight merge so the two can never paint out of order.
+  let queuedPartial = null, mergingPartials = null;
+  const mergePartials = async () => {
+    while (queuedPartial && current()) {
+      const partial = queuedPartial;
+      queuedPartial = null;
+      const merged = await alerts.mergePartialReportAsync(report, partial, { isCurrent: current });
+      if (!merged || !current()) return;
+      report = alerts.withPositionSnapshot(merged, checkedSnapshot);
+      paint(ctxRef);
+    }
+  };
   try {
     const [next, positionSizes] = await Promise.all([
       alerts.collect({
@@ -262,21 +283,26 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
         isCurrent: current,
         onPartial: (partial) => {
           if (!current()) return;
-          report = alerts.withPositionSnapshot(alerts.mergePartialReport(report, partial), checkedSnapshot);
-          paint(ctxRef);
+          queuedPartial = partial;
+          if (!mergingPartials) mergingPartials = mergePartials().finally(() => { mergingPartials = null; });
         },
       }),
       positions,
     ]);
     if (!current()) return;
+    queuedPartial = null;
+    if (mergingPartials) await mergingPartials;
+    if (!current() || !next) return;
     // The checked book can contain additions/exits since collection began. Read
     // the now-loaded feeds against that book without another network refresh.
     const completed = positionSizes && JSON.stringify(coverage.holdings()) !== bookSignature
       ? await alerts.collect({ scope: ctx.scope, holdings: coverage.holdings(), positionSizes, load: false, isCurrent: current })
       : alerts.withPositionSnapshot(next, positionSizes);
-    if (!current()) return;
-    report = completed.pending || completed.feeds.some(feed => feed.status === 'failed')
-      ? alerts.mergePartialReport(report, completed) : completed;
+    if (!current() || !completed) return;
+    const settled = completed.pending || completed.feeds.some(feed => feed.status === 'failed')
+      ? await alerts.mergePartialReportAsync(report, completed, { isCurrent: current }) : completed;
+    if (!current() || !settled) return;
+    report = settled;
   } catch (err) {
     if (!current()) return;
     loadError = err?.message || 'The alert feeds could not be refreshed.';

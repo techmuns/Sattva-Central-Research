@@ -8,6 +8,7 @@ import { matchPortfolioNews } from './portfolio-news-matching.js';
 import { dedupeArticles, isoDate } from './filings-shared.js';
 import { inNewsWindow } from './news-window.js';
 import { holdsTicker } from './row-ticker-index.js';
+import { runSteps, runStepsInSlices } from '../core/slices.js';
 
 const indianDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
 /** An explicit publisher calendar date wins; only an instant fallback needs timezone conversion. */
@@ -39,8 +40,16 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
   // A publisher change is announced after its stories' matches are warm, in slices, so the first
   // `rows()` a listener makes pays for the join rather than for every new story's match. Rows are
   // always current when read; only the announcement waits for the warm-up.
-  const announcePublishers = () => { warmPublished().catch(() => {}).then(emit); };
-  const offBase = base.onChange(emit), offPublishers = publishers.onChange(announcePublishers), offBook = book.onChange(emit);
+  const announcePublishers = () => { warmPublished().then(() => prepareRows()).catch(() => {}).then(emit); };
+  // A source announcement moves this counter; a sliced rebuild in flight checks it between slices
+  // instead of asking the readers beneath for their rows, which can itself be a cold rebuild.
+  let sourceRevision = 0;
+  // A base or book change is announced after the join is prepared in slices too, so the first
+  // synchronous read after any announcement finds it ready. Rows are current whenever read.
+  const announcePrepared = () => { prepareRows().catch(() => {}).then(emit); };
+  const offBase = base.onChange(() => { sourceRevision++; announcePrepared(); }),
+    offPublishers = publishers.onChange(() => { sourceRevision++; announcePublishers(); }),
+    offBook = book.onChange(() => { sourceRevision++; announcePrepared(); });
 
   function companyIdentities() {
     const holdings = book.holdings();
@@ -71,10 +80,10 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     projected.set(match, { row, value });
     return value;
   };
-  function rows() {
-    const source = base.rows(), published = publishers.rows(), entities = companyIdentities();
-    const window = readingWindow(), windowKey = JSON.stringify(window);
-    if (combined?.source === source && combined.published === published && combined.entities === entities && combined.windowKey === windowKey) return combined.rows;
+  // The join is one generator, driven synchronously by `rows()` or in ~12ms slices by
+  // `prepareRows()` before a publisher announcement reaches a consumer. Same rows, same order.
+  const newestFirst = (a, b) => a === b ? 0 : a.length === b.length ? (b > a ? 1 : -1) : b.localeCompare(a);
+  function* buildRows(source, published, entities, window) {
     const buckets = new Map();
     const add = row => {
       // A stable ticker joins older ticker-only search copies with newer ISIN-backed identities.
@@ -84,13 +93,58 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     };
     // Head/body-backed publisher matches are preferred over an older uncertain search copy at
     // the same company URL; dedupe never crosses companies or publisher domains.
-    for (const row of published) if (inNewsWindow(row, window) && include(row)) for (const match of matchPortfolioNews(row, entities)) add(projection(match, row));
+    let counted = 0;
+    for (const row of published) {
+      if (inNewsWindow(row, window) && include(row)) for (const match of matchPortfolioNews(row, entities)) add(projection(match, row));
+      if (++counted % 512 === 0) yield;
+    }
     source.filter(row => inNewsWindow(row, window)).forEach(add);
-    const value = [...buckets.values()].flatMap(dedupeArticles)
-      .sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));
+    const value = [];
+    for (const list of buckets.values()) {
+      for (const row of dedupeArticles(list)) value.push(row);
+      yield;
+    }
+    const stamp = row => String(row.publishedAt || row.date || '');
+    value.sort((a, b) => newestFirst(stamp(a), stamp(b)));
+    return value;
+  }
+  const install = (source, published, entities, windowKey, value) => {
     combined = { source, published, entities, windowKey, rows: value,
       publisherCount: value.filter(row => row.discoverySource === 'published-publisher-feed').length };
+  };
+  function rows() {
+    const source = base.rows(), published = publishers.rows(), entities = companyIdentities();
+    const window = readingWindow(), windowKey = JSON.stringify(window);
+    if (combined?.source === source && combined.published === published && combined.entities === entities && combined.windowKey === windowKey) return combined.rows;
+    const value = runSteps(buildRows(source, published, entities, window));
+    install(source, published, entities, windowKey, value);
     return value;
+  }
+  // One preparation in flight: a second caller shares it rather than driving a second rebuild.
+  let preparing = null;
+  function prepareRows(yieldForInput = yieldToInput) {
+    if (!preparing) preparing = prepareOnce(yieldForInput).finally(() => { preparing = null; });
+    return preparing;
+  }
+  // A build the source churn abandoned is tried again against the newer state, a few times: a
+  // preparation that gives up during a cold load leaves the next synchronous read to rebuild
+  // the join in one task, which is exactly what it exists to prevent.
+  async function prepareOnce(yieldForInput) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      // The reader beneath attributes every held row on its first read after a change; warm that
+      // in slices before asking it for rows, so this preparation never pays for it in one task.
+      await base.warm?.(yieldForInput);
+      await base.prepareRows?.(yieldForInput);
+      const at = sourceRevision, generation = epoch;
+      const source = base.rows(), published = publishers.rows(), entities = companyIdentities();
+      const window = readingWindow(), windowKey = JSON.stringify(window);
+      const ready = () => combined?.source === source && combined.published === published && combined.entities === entities && combined.windowKey === windowKey;
+      if (ready()) return;
+      const current = () => sourceRevision === at && epoch === generation && JSON.stringify(readingWindow()) === windowKey;
+      const value = await runStepsInSlices(buildRows(source, published, entities, window), { yieldForInput, keepGoing: current });
+      if (value && current() && !ready()) install(source, published, entities, windowKey, value);
+      if (value || epoch !== generation) return;
+    }
   }
 
   function loadArchive() {
@@ -122,7 +176,10 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
       const outcome = refresh && publishers.isLoaded() ? await publishers.refresh() : await publishers.load();
       if (generation !== epoch) return { available: false };
       publisherReadError = publishers.meta().lastReadFailed ? 'Publisher capture could not be revalidated.' : null;
-      // Publish the bounded head first, independently of company search and monthly history.
+      // Publish the bounded head first, independently of company search and monthly history —
+      // with its join built in slices, so the announcement does not cost a consumer one task.
+      try { await prepareRows(yieldToInput); } catch { /* The synchronous read still answers. */ }
+      if (generation !== epoch) return { available: false };
       emit();
       const history = await loadArchive();
       return { available: !publishers.meta().lastReadFailed, changed: !!outcome?.changed,
@@ -157,12 +214,13 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     };
   }
 
-  return { ...base, rows, meta,
+  return { ...base, rows, meta, prepareRows,
     // Warm the readings `rows()` will hit — the company head below, then each published story's
     // portfolio match — in ~12ms slices, so the synchronous rebuild pays only for the join.
     async warm(yieldForInput = () => Promise.resolve()) {
       await base.warm?.(yieldForInput);
       await warmPublished(yieldForInput);
+      await prepareRows(yieldForInput);
     },
     setWanted(items = []) {
       for (const item of items) if (item && typeof item === 'object') {

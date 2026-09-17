@@ -72,10 +72,18 @@ export const INSIDER_TRADE_CATEGORY = 'Insider trade';
 // to copy every row it kept, so the output of one archive month's merge was a fresh object for
 // the next month's merge — and nothing keyed on a row could ever hit twice. Rows are replaced,
 // never edited, so sharing the object is exactly what the memoised identity below needs.
+// And a row that needs the category is promoted ONCE: the promoted copy is kept on the legacy row,
+// so a merge that runs again over the same retained rows hands out the same objects, and a reading
+// kept on the promoted row (the alerts collector's insider event) survives the next merge.
+const promoted = new WeakMap();
 export function withTradeCategory(row) {
   if (row && typeof row === 'object' && field(row.cells, TRADE_CATEGORY_FIELDS)) return row;
+  const cacheable = row && typeof row === 'object';
+  const hit = cacheable ? promoted.get(row) : undefined;
+  if (hit) return hit;
   const copy = { ...row, cells: { ...(row?.cells || {}) } };
   copy.cells['Trade Category'] = INSIDER_TRADE_CATEGORY;
+  if (cacheable) promoted.set(row, copy);
   return copy;
 }
 

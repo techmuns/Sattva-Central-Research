@@ -24,6 +24,7 @@ import { enrichCardFromAllAlerts, indexAlertContext } from './intelligence-graph
 import { canonicalArticleUrl } from './filings-shared.js';
 import { getHostContext } from '../core/host-context.js';
 import { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
+import { runSteps, runStepsInSlices } from '../core/slices.js';
 export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
 export const MIN_SCORE = 64;
@@ -54,8 +55,24 @@ const FEED_WEIGHT = {
 };
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const validDay = (day) => /^\d{4}-\d{2}-\d{2}$/.test(day || '') &&
-  Number.isFinite(Date.parse(day)) && new Date(day).toISOString().slice(0, 10) === day;
+// A ranking asks these of every event, and a Universe ranking asks them of ~43,000 events on every
+// partial publication. The distinct inputs are a few hundred day strings and the headlines, so
+// each answer is kept per string in a bounded map; the day maps are cleared when they outgrow it.
+const dayCache = (compute) => {
+  const cache = new Map();
+  return (day) => {
+    let value = cache.get(day);
+    if (value === undefined) {
+      value = compute(day);
+      if (cache.size >= 4096) cache.clear();
+      cache.set(day, value);
+    }
+    return value;
+  };
+};
+const validDay = dayCache((day) => /^\d{4}-\d{2}-\d{2}$/.test(day || '') &&
+  Number.isFinite(Date.parse(day)) && new Date(day).toISOString().slice(0, 10) === day);
+const dayStart = dayCache((day) => Date.parse(`${day}T00:00:00Z`));
 
 function shiftDay(day, amount) {
   const d = new Date(`${day}T00:00:00Z`);
@@ -65,8 +82,8 @@ function shiftDay(day, amount) {
 }
 
 function ageInDays(eventDay, throughDay) {
-  const event = Date.parse(`${eventDay}T00:00:00Z`);
-  const through = Date.parse(`${throughDay}T00:00:00Z`);
+  const event = dayStart(eventDay);
+  const through = dayStart(throughDay);
   if (!Number.isFinite(event) || !Number.isFinite(through)) return WINDOW_DAYS;
   return Math.max(0, Math.round((through - event) / 86_400_000));
 }
@@ -78,13 +95,11 @@ function recencyPoints(age) {
   return 2;
 }
 
-function normalizedHeadline(value) {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .slice(0, 140);
-}
+const normalizedHeadline = dayCache((value) => String(value || '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  .slice(0, 140));
 
 const feedFamily = (event) => event.feed === 'nse-filings' ? 'announcements' : event.feed === 'market-news' ? 'news' : event.feed;
 
@@ -664,7 +679,12 @@ const rankCache = [];
 const sameRows = (left, right) => left.length === right.length && left.every((row, i) => row === right[i]);
 export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = null; }
 
-export function rankReport(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all() } = {}) {
+// ONE IMPLEMENTATION, TWO DRIVERS. `rankReport` is the synchronous reference the contract tests
+// assert; `rankReportAsync` walks the same generator and yields to input between cards, so a
+// Universe ranking (~1s of CPU here, once per partial publication) no longer lands as one task.
+// The generator yields once per card in each pass; a driver decides whether a yield costs
+// anything. Nothing about the result depends on the driver: same events, same order, same cards.
+function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all() } = {}) {
   const day = report?.day || generalAlerts.today();
   const events = report?.events || [];
   const { token, email, orgId } = getHostContext().session;
@@ -710,7 +730,8 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     else grouped.set(ticker, [event]);
   }
 
-  let cards = [...grouped].map(([key, rawEvents]) => {
+  let cards = [];
+  for (const [key, rawEvents] of grouped) {
     const ticker = rawEvents.find(e => e.ticker)?.ticker || null;
     const entityId = rawEvents.find(e => e.entityId)?.entityId || null;
     const events = dedupe(rawEvents);
@@ -753,7 +774,7 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     else if (directions.negative > 0) scoreBreakdown.push({ label: 'Consistent negative evidence', points: 4 });
     else if (directions.positive > 1) scoreBreakdown.push({ label: 'Repeated positive evidence', points: 3 });
 
-    return {
+    cards.push({
       key,
       entityId,
       ticker,
@@ -777,8 +798,9 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
       stale: scoredEvents.every((entry) => entry.score.unavailable),
       scoreBreakdown,
       score: scoreBreakdown.reduce((sum, part) => sum + part.points, 0),
-    };
-  });
+    });
+    yield;
+  }
 
   // A simultaneous negative cluster inside one real portfolio sector matters more than the same
   // isolated company event. The boost is intentionally small: it changes ordering, not truth.
@@ -788,7 +810,8 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     negativeBySector.set(card.sector, (negativeBySector.get(card.sector) || 0) + 1);
   }
   const contextIndex = indexAlertContext(supportedReport, insightCompanies);
-  cards = cards.map((card) => {
+  const enriched = [];
+  for (const card of cards) {
     const peers = card.sector ? negativeBySector.get(card.sector) || 0 : 0;
     if (card.hasMaterialNegative && peers > 1) {
       card.scoreBreakdown.push({ label: `${peers} portfolio companies in ${card.sector} have negative signals`, points: 3 });
@@ -812,8 +835,10 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     card.drivers = driversOf(card);
     card.metrics = cardMetrics(card);
     card.badge = cardBadge(card);
-    return enrichCardFromAllAlerts(card, supportedReport, { contextIndex });
-  });
+    enriched.push(enrichCardFromAllAlerts(card, supportedReport, { contextIndex }));
+    yield;
+  }
+  cards = enriched;
 
   cards.sort(
     (a, b) => (weights.size ? (b.holdingWeightPct ?? -1) - (a.holdingWeightPct ?? -1) : 0) || b.score - a.score || b.highCount - a.highCount || String(b.topEvent?.day || '').localeCompare(String(a.topEvent?.day || '')) || a.company.localeCompare(b.company)
@@ -859,12 +884,38 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
   return result;
 }
 
+export function rankReport(report, options = {}) {
+  return runSteps(rankSteps(report, options));
+}
+
+/**
+ * The same ranking, in ~12ms slices with a yield to input between them. Resolves to exactly what
+ * `rankReport` returns for the same inputs, or to null once `isCurrent()` reports that nobody is
+ * waiting for it any more — a ranking abandoned mid-way is never published or cached as a result.
+ */
+export async function rankReportAsync(report, options = {}, { yieldForInput, isCurrent = () => true, sliceMs } = {}) {
+  const result = await runStepsInSlices(rankSteps(report, options), { yieldForInput, sliceMs, keepGoing: isCurrent });
+  return result === undefined ? null : result;
+}
+
 /** Publish new material arrivals while preserving evidence not yet revalidated. */
 export function mergePartialReport(previous, next) {
-  if (!previous || previous.scope !== next.scope || previous.day !== next.day) return next;
-  const key = card => card.key || card.ticker || card.entityId;
-  const existingVisible = new Set(previous.cards.map(key));
-  const arrivingVisible = new Set(next.cards.map(key));
+  const plan = mergePlan(previous, next);
+  if (!plan) return next;
+  return finishMerge(previous, next, plan.rank ? rankReport(plan.rank.report, plan.rank.options) : next);
+}
+
+/** The same merge, ranking in slices where it has to rank at all; null once nobody is waiting. */
+export async function mergePartialReportAsync(previous, next, slicing = {}) {
+  const plan = mergePlan(previous, next);
+  if (!plan) return next;
+  const merged = plan.rank ? await rankReportAsync(plan.rank.report, plan.rank.options, slicing) : next;
+  return merged ? finishMerge(previous, next, merged) : null;
+}
+
+const cardKey = card => card.key || card.ticker || card.entityId;
+function mergePlan(previous, next) {
+  if (!previous || previous.scope !== next.scope || previous.day !== next.day) return null;
   const eventKey = event => `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
   const nextEvidence = new Set((rankingEvidence.get(next) || []).map(eventKey));
   for (const card of next.allCards) for (const event of [...card.events, ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) nextEvidence.add(eventKey(event));
@@ -887,8 +938,14 @@ export function mergePartialReport(previous, next) {
   }
   // A complete/cumulative publication already includes every retained identity and correction.
   // Only rank again when we actually added older evidence from an unfinished source.
-  const merged = needsMerge ? rankReport({ day: next.day, scope: next.scope, feeds: next.feeds,
-    pending: next.pending, events: [...evidence.values()] }, rankingOptions.get(next) || rankingOptions.get(previous)) : next;
+  return { rank: needsMerge ? { report: { day: next.day, scope: next.scope, feeds: next.feeds,
+    pending: next.pending, events: [...evidence.values()] }, options: rankingOptions.get(next) || rankingOptions.get(previous) } : null };
+}
+
+function finishMerge(previous, next, merged) {
+  const key = cardKey;
+  const existingVisible = new Set(previous.cards.map(key));
+  const arrivingVisible = new Set(next.cards.map(key));
   const allCards = merged.allCards;
   const newlyVisible = new Set(merged.cards.map(key));
   const cards = allCards.filter(card => existingVisible.has(key(card)) || arrivingVisible.has(key(card)) || newlyVisible.has(key(card)));
@@ -932,16 +989,35 @@ export function withPositionSnapshot(report, snapshot) {
 }
 
 /** A privacy-safe ready view while the live source modules revalidate. */
-export async function cached({ scope = 'portfolio', holdings = null, positionSizes = null } = {}) {
+export async function cached({ scope = 'portfolio', holdings = null, positionSizes = null, isCurrent = () => true } = {}) {
   const book = holdings || coverage.holdings();
   const report = await generalAlerts.readCachedAlertWindow({ scope, holdings: book });
-  return report ? rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() }) : null;
+  if (!report || !isCurrent()) return null;
+  return rankReportAsync(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() }, { isCurrent });
 }
 
 /** Collect General Alerts once and rank each partial/final report without adding any request. */
 export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, load = true, onPartial = null, isCurrent = () => true } = {}) {
   const book = holdings || coverage.holdings();
   const insightRead = load ? screenerInsights.load({ refresh }).catch(() => null) : Promise.resolve(null);
+  const options = (insightCompanies = screenerInsights.all()) => ({ holdings: book, positionSizes, insightCompanies });
+  // PARTIALS ARE RANKED IN SLICES, AND THE LATEST ONE WINS. Feeds settle over several seconds
+  // and the general collector publishes progress as they do; ranking every publication of the
+  // whole Universe synchronously was five one-second tasks on one open (profiled). A publication
+  // that arrives while an earlier one is still being ranked replaces it in the queue — the reader
+  // is owed the newest evidence, not every intermediate — and nothing is published after the
+  // final report below, so a slow partial can never overwrite the completed ranking.
+  let queued = null, publishing = null, closed = false;
+  const live = () => !closed && isCurrent();
+  const publish = async () => {
+    while (queued && live()) {
+      const partial = queued;
+      queued = null;
+      const ranked = await rankReportAsync(partial, options(), { isCurrent: live });
+      if (!ranked || !live()) return;
+      try { onPartial(ranked); } catch (err) { console.error('[ai-alerts] onPartial threw', err); }
+    }
+  };
   const report = await generalAlerts.collect({
     scope,
     holdings: book,
@@ -949,23 +1025,31 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
     refresh,
     load,
     isCurrent,
-    onPartial: onPartial ? (partial) => { if (isCurrent()) onPartial(rankReport(partial, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() })); } : null,
+    onPartial: onPartial ? (partial) => {
+      if (!live()) return;
+      queued = partial;
+      if (!publishing) publishing = publish().finally(() => { publishing = null; });
+    } : null,
   });
+  closed = true;
+  queued = null;
+  if (publishing) await publishing;
   if (!isCurrent()) return null; // Shared collection/storage finishes; obsolete view work stops.
   if (!onPartial) {
     await insightRead;
     if (!isCurrent()) return null;
-    return rankReport(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() });
+    return rankReportAsync(report, options(), { isCurrent });
   }
   // A fast burst can finish before General Alerts' coalesced progress timer.
   // Publish its completed evidence now: optional operating context must not
   // hold the first cards behind a slow API or the private position-size check.
   const insights = screenerInsights.all();
-  const ready = rankReport(report, { holdings: book, positionSizes, insightCompanies: insights });
+  const ready = await rankReportAsync(report, options(insights), { isCurrent });
+  if (!ready) return null;
   try { onPartial?.(ready); } catch (err) { console.error('[ai-alerts] onPartial threw', err); }
   await insightRead;
   if (!isCurrent()) return null;
   const updatedInsights = screenerInsights.all();
   return updatedInsights.length === insights.length && updatedInsights.every((company, i) => company === insights[i])
-    ? ready : rankReport(report, { holdings: book, positionSizes, insightCompanies: updatedInsights });
+    ? ready : rankReportAsync(report, options(updatedInsights), { isCurrent });
 }

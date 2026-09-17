@@ -97,6 +97,11 @@ try {
   assert(feed.rows().some(r => r.title === next.title), 'new headlines land automatically while open');
   assert.notEqual(feed.rows(), initialRows, 'a new publication invalidates the complete union');
   assert.equal(feed.rows().length, 3, 'stable story IDs deduplicate a corrected headline');
+  // The union a publication announces is prepared in slices before the announcement, so the first
+  // synchronous read is a hit, and preparing an already-built union keeps it.
+  const prepared = feed.rows();
+  await feed.prepareRows();
+  assert.equal(feed.rows(), prepared, 'preparing an already-built union keeps it');
   assert.equal(feed.meta().capturedAt, core.capturedAt);
   publication = healthySnapshot;
   await feed.refreshSnapshot();

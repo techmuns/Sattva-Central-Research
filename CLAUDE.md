@@ -2158,6 +2158,52 @@ Three things to take from it:
 `scripts/verify-hot-path-memo.mjs` asserts every cache is invisible — same answers as a fresh
 computation, live reads where promised, exact byte counts — and runs in the contracts job.
 
+### ONE IMPLEMENTATION, TWO DRIVERS — and prepare before you announce
+
+The caches above made a *repeat* read cheap and left the first one alone: AI Alerts' Universe
+ranking was one 2.4-second task, the news readers' cold rebuilds and the collectors' first
+classification of every filing landed as one-to-two-second tasks under whichever tab the reader had
+moved to, and the final assembly of a full-history collection was a 2.3-second task on its own.
+`docs/PERFORMANCE-HOT-PATHS-2026-09-17.md` (round two) has the measurements. Three rules close it,
+and every one is a scheduling change, never a change to what is collected, matched, ordered or shown:
+
+1. **A rebuild or a ranking is a generator; the driver decides when it runs.** `rankSteps` in
+   `ai-alerts.js` and the `buildRows` / `buildCombined` generators in the three news readers yield
+   once per unit of work — a company's card, a bucket of rows. `runSteps` (`core/slices.js`) drives
+   one to completion now, which is the reference every consumer that must answer synchronously
+   still uses; `runStepsInSlices` drives the **same generator** in ~12ms slices with a yield to
+   input between them. `rankReport` is `runSteps(rankSteps(…))`, `rankReportAsync` is the sliced
+   drive of the identical generator, and `verify-ai-alerts.mjs` asserts the two are `deepEqual` on
+   the fixture and on a 3,000-company synthetic Universe. **Never write the sliced path as a second
+   implementation** — a second implementation is a second answer.
+2. **An abandoned slice resolves to nothing, never to a partial result.** `keepGoing()` is asked
+   between slices — the AI Alerts tab's currency token, a reader's own revision counter — and once
+   it says no the drive returns `undefined`, which every caller reads as *do not install, do not
+   publish*. **`keepGoing` may not ask a reader beneath for its rows**: `base.rows()` between slices
+   was itself a cold synchronous rebuild, 1.6 seconds inside a loop written to avoid exactly that.
+   Compare counters.
+3. **Prepare before you announce, and warm before you read.** A reader builds its combined rows in
+   slices (`prepareRows()`) before it `emit()`s, so the first synchronous `rows()` a subscriber
+   makes is a hit; a collector touches, in slices, every per-row reading its synchronous read and
+   the assembly after it will make (`warmRows`, `warmNewsReadings`, each source's `warm`, all
+   through one `touch(event, feedId)`). A preparation that throws changes nothing — the synchronous
+   read still answers — so every call is `try { await prepare } catch {}`.
+
+**And the warm-up must touch the SAME OBJECTS the read will read, or it warms nothing.** Measured
+after the first round: the insider read classified every row again in one 570ms task directly
+after a sliced warm-up over the same feed, the market-wide news read did the same, and the trailing
+assembly matched every X post against the book cold — because `rows()` handed the read a fresh copy
+of every row (`{ ...row, ticker }`) whenever its snapshot had been invalidated between the two,
+`fromMarketNews` and the X / IPO adapters built a fresh event per row on every read, and
+`portfolioNewsEntities` built fresh identity objects per assembly while `attributeNewsRow` is cached
+per (row, identity OBJECT). A projection built fresh per call defeats every cache keyed beneath it —
+the rule above, arrived at from the warm-up's side. So the projection (`projected()` in
+`filings.js`), the promoted insider row (`withTradeCategory`), the market-wide, X and IPO events
+(`marketNewsEvent`, `twitterRecord`, `ipoRecord`), the portfolio discovery reading (`discoveryFor`,
+keyed on the source record and validated on the book's signature) and the identity objects
+themselves (`discoveryEntities`) are all kept while their inputs are unchanged, and
+`verify-hot-path-memo.mjs` asserts the read returns the objects the warm-up built.
+
 ### Data sources
 
 The header "Sources" modal is generated from `js/ui/sources.js`. **Adding a data source means
@@ -3624,6 +3670,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change how many days of announcements are kept | `ANN_KEEP_DAYS` in `scripts/scrape-bse-announcements.mjs` — a bytes ceiling, ~900 filings a weekday |
 | Change the tracked news keywords, or what a Topic filter offers | `public/js/data/news-keywords.js` — the whole vocabulary is one array; read *Thirty words that make a search feed usable* first. A keyword is a topic and must never become a direction, and `namesCompany` marks a row rather than dropping one |
 | Speed up a per-row helper on a hot path | memoise it on the row object in a `WeakMap`, validated on the fields it reads — read *A per-row cache is keyed on the row object* first; `scripts/verify-hot-path-memo.mjs` is the test |
+| Make a long rebuild or ranking stop blocking the page | write it as a generator and drive it with `runSteps` / `runStepsInSlices` from `js/core/slices.js` — read *One implementation, two drivers* first. The synchronous drive stays the reference, the sliced drive must `deepEqual` it, an abandoned drive resolves to `undefined`, and whatever the synchronous read will touch is warmed in slices first through the collector's `touch` |
 | Change what makes a news story material to General Alerts / AI Alerts | `newsSignal()` in `js/data/daily-alerts.js` — it raises IMPORTANCE only, never direction, and the suite asserts that on a risk word |
 | Change what makes a FILING material | `announcementSignal()` + `BSE_CRITICAL_IS_MATERIAL` in `js/data/daily-alerts.js` — read *A borrowed flag is not a materiality rule* first. One predicate, stated inputs; BSE's critical flag is reproduced and is not the gate |
 | Change the volume/breakout alert, or its threshold | `VOLUME_X` and the participation branch of `fromTechnicals` in `js/data/daily-alerts.js` — volume is neutral because the tape does not say which side it was |

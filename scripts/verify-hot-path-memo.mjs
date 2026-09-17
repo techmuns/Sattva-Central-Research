@@ -11,6 +11,9 @@ import { classifyStory } from '../public/js/data/news-keywords.js';
 import { newsEventTopics } from '../public/js/data/portfolio-news-matching.js';
 import { createAlertWindowCache, utf8Length } from '../public/js/data/alert-window-cache.js';
 import { articleUrlKey, canonicalArticleUrl, dedupeArticles } from '../public/js/data/filings-shared.js';
+import { announcementEvent, insiderEvent, warmRows, mapPortfolioDiscoveryEvents } from '../public/js/data/daily-alerts.js';
+import { nseRecord } from '../public/js/data/alert-sources.js';
+import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
 
 // --- pickField: the object's shape is cached, its values are read live -------------------------
 const cells = { 'Trade Shares': '1,20,000', Exchange: 'NSE', trade_shares: '5', Mode: '-', Price: '' };
@@ -46,6 +49,7 @@ const promoted = withTradeCategory(legacy);
 assert.notEqual(promoted, legacy, 'a legacy row is copied, never edited in place');
 assert.equal(legacy.cells['Trade Category'], undefined);
 assert.equal(promoted.cells['Trade Category'], INSIDER_TRADE_CATEGORY);
+assert.equal(withTradeCategory(legacy), promoted, 'the same legacy row promotes to the same object, so a reading kept on it survives the next merge');
 const frozen = Object.freeze({ ...a, cells: Object.freeze({ ...a.cells, 'Trade Category': 'Insider trade' }) });
 const merged = mergeInsiderTrades([frozen], [trade('Alice', { 'Trade Category': 'Insider trade' })]);
 assert.equal(merged.length, 1, 'a frozen capture row still merges with its duplicate');
@@ -130,4 +134,59 @@ for (const part of manifest.parts) {
 }
 assert.deepEqual((await cache.read()).value.events, events, 'multibyte events round-trip through the cache');
 
-console.log('PASS hot-path caches are invisible: same answers, live edits, shared results, exact byte counts.');
+// --- one event per source row: filings, insider disclosures, NSE rows and market-wide stories ---
+const filing = { newsId: 'n1', ticker: 'TEST', date: '2026-09-10', time: '10:15:00', title: 'Award of order worth Rs 120 crore',
+  category: 'Company Update', subCategory: 'Award of Order / Receipt of Order', url: 'https://www.bseindia.com/x', source: 'BSE' };
+const filingEvent = announcementEvent(filing);
+assert.equal(announcementEvent(filing), filingEvent, 'one announcement event per row object');
+assert.deepEqual(announcementEvent({ ...filing }), filingEvent, 'a structurally equal filing reads the same');
+assert.equal(filingEvent.id, 'ann:n1');
+const disclosure = { ticker: 'TEST', date: '2026-09-10', cells: { Company: 'Test Ltd', Insider: 'Alice', Category: 'Promoter',
+  Transaction: 'Acquisition', Mode: 'Market Purchase', 'Trade Shares': '1,00,000', 'Trade Category': 'Insider trade' } };
+const disclosureEvent = insiderEvent(disclosure);
+assert.equal(insiderEvent(disclosure), disclosureEvent, 'one insider event per row object');
+assert.deepEqual(insiderEvent({ ...disclosure, cells: { ...disclosure.cells } }), disclosureEvent, 'a structurally equal disclosure reads the same');
+assert.equal(disclosureEvent.headline, 'Alice — Acquisition');
+const nseRow = { ticker: 'TEST', company: 'Test Ltd', subject: 'Credit Rating', description: 'Rating reaffirmed',
+  url: 'https://nsearchives.nseindia.com/x.pdf', publishedAt: '2026-09-10T04:45:00Z', receivedAt: '2026-09-10T04:46:00Z' };
+const nseEvent = nseRecord(nseRow);
+assert.equal(nseRecord(nseRow), nseEvent, 'one NSE record per row object');
+assert.deepEqual(nseRecord({ ...nseRow }), nseEvent, 'a structurally equal NSE row reads the same');
+assert.equal(nseEvent.day, '2026-09-10');
+
+// --- warmed in slices before the synchronous read: the read then returns what the warm-up built --
+const filings = Array.from({ length: 6 }, (_, i) => ({ ...filing, newsId: `w${i}` }));
+const warmed = [];
+await warmRows(filings, row => warmed.push(announcementEvent(row)), async () => {});
+assert.equal(warmed.length, 6);
+assert(filings.every((row, i) => announcementEvent(row) === warmed[i]), 'the synchronous read returns the events the warm-up built');
+let yields = 0;
+const touched = new Set();
+await warmRows(Array.from({ length: 40 }, (_, i) => ({ i })), row => {
+  if (row.i === 7) throw new Error('bad row');
+  const until = performance.now() + 1;
+  while (performance.now() < until);
+  touched.add(row.i);
+}, async () => { yields++; });
+assert.equal(touched.size, 39, 'a throwing row is skipped and the rest are still warmed');
+assert(yields >= 2, `a warm-up longer than one slice yields between slices (${yields} yields)`);
+
+// --- the portfolio discovery reading is kept on the source record, not on the copy it matched ---
+const book = [{ ticker: 'ALPHA', name: 'Alpha Robotics Limited', isin: 'INE000A01010' }, { ticker: 'BETA', name: 'Beta Robotics Limited', isin: 'INE000B01010' }];
+const marketStory = { id: 'm1', title: 'Alpha Robotics wins a large order', url: 'https://publisher.example/alpha', publishedAt: '2026-09-10T05:00:00Z' };
+const marketEvent = { id: 'mcnews:m1', sourceRecord: marketStory, headline: marketStory.title, url: marketStory.url, at: marketStory.publishedAt,
+  day: '2026-09-10', ticker: null, company: 'Market-wide', direction: 'neutral', importance: 'low' };
+const discovered = mapPortfolioDiscoveryEvents('market-news', [marketEvent], portfolioNewsEntities(book));
+assert.equal(discovered.length, 1); assert.equal(discovered[0].ticker, 'ALPHA');
+const discoveredAgain = mapPortfolioDiscoveryEvents('market-news', [marketEvent], portfolioNewsEntities(book));
+assert.notEqual(discoveredAgain, discovered, 'a new events array is a new mapping');
+assert.equal(discoveredAgain[0].sourceRecord, discovered[0].sourceRecord,
+  'the matched row is read once per source record, whatever identity objects and events array carry it');
+assert.equal(mapPortfolioDiscoveryEvents('market-news', [marketEvent], portfolioNewsEntities(book.slice(1)))[0].ticker, null,
+  'a changed book is a changed reading');
+// One reading per record, validated on the book: returning to the earlier book recomputes rather
+// than serving the narrowed book's reading, and reads the same company again.
+assert.deepEqual([discoveredAgain[0].ticker, discoveredAgain[0].entityId],
+  [mapPortfolioDiscoveryEvents('market-news', [marketEvent], portfolioNewsEntities(book))[0].ticker, discovered[0].entityId]);
+
+console.log('PASS hot-path caches are invisible: same answers, live edits, shared results, exact byte counts, one event per source row, warmed reads.');

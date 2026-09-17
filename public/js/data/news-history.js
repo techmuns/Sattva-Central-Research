@@ -3,6 +3,11 @@ import { dedupeArticles } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
 import { inNewsWindow, newsShardInWindow, newsHeadCoversArchive } from './news-window.js';
 import { holdsTicker } from './row-ticker-index.js';
+import { runSteps, runStepsInSlices } from '../core/slices.js';
+
+// Equal-shape ISO stamps compare by code point — the same order `localeCompare` gives them, at a
+// fraction of the cost; stamps of different shapes keep the locale compare.
+const newestFirst = (a, b) => a === b ? 0 : a.length === b.length ? (b > a ? 1 : -1) : b.localeCompare(a);
 
 // Retained monthly records stay available after they leave the recent head. Scope, search and
 // attribution still run in their existing consumers; storage partitioning is never a filter.
@@ -24,10 +29,13 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
   let pending = null, error = null, loaded = false, initialized = false, epoch = 0, aborter = null;
   const indexes = new Map(), listeners = new Set();
   const emit = () => listeners.forEach(fn => fn());
-  function rows() {
-    const source = base.rows();
-    const window = readingWindow(), windowKey = JSON.stringify(window);
-    if (combined?.source === source && combined.revision === revision && combined.windowKey === windowKey) return combined.rows;
+  // THE REBUILD IS ONE GENERATOR, DRIVEN NOW OR IN SLICES. `rows()` must answer synchronously,
+  // and a cold rebuild — attributing, bucketing, deduplicating and ordering ninety thousand
+  // retained rows — was a 1.3-second task on the first All Alerts open of a session (profiled).
+  // The archive loader and `warm()` drive the same generator in ~12ms slices and install the
+  // result BEFORE announcing the records, so the synchronous read that follows finds it ready; a
+  // read that arrives first still rebuilds in place. Same buckets, same dedupe, same order.
+  function* buildRows(source, window) {
     const buckets = new Map();
     const add = row => {
       const key = row.ticker || row.entityId || row.company;
@@ -46,11 +54,48 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
       const time = observationTime(row);
       return time !== null ? time : currentRows.has(row) ? Infinity : -Infinity;
     };
-    const value = [...buckets.values()].flatMap(list => dedupeArticles(list.sort((a, b) => observedAt(b) - observedAt(a))))
-      .filter(row => inNewsWindow(row, window))
-      .sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));
+    const value = [];
+    for (const list of buckets.values()) {
+      // Each row's observation instant is read once, before the sort, rather than per compare.
+      const ordered = list.map(row => [observedAt(row), row]).sort((a, b) => b[0] - a[0]).map(pair => pair[1]);
+      for (const row of dedupeArticles(ordered)) if (inNewsWindow(row, window)) value.push(row);
+      yield;
+    }
+    const stamp = row => String(row.publishedAt || row.date || '');
+    value.sort((a, b) => newestFirst(stamp(a), stamp(b)));
+    return value;
+  }
+  function rows() {
+    const source = base.rows();
+    const window = readingWindow(), windowKey = JSON.stringify(window);
+    if (combined?.source === source && combined.revision === revision && combined.windowKey === windowKey) return combined.rows;
+    const value = runSteps(buildRows(source, window));
     combined = { source, revision, windowKey, rows: value };
     return value;
+  }
+  // One preparation in flight: a second caller shares it rather than driving a second rebuild.
+  let preparing = null;
+  function prepareRows(yieldForInput = yieldToInput) {
+    if (!preparing) preparing = prepareOnce(yieldForInput).finally(() => { preparing = null; });
+    return preparing;
+  }
+  // A build the source churn abandoned is tried again against the newer state, a few times: a
+  // preparation that gives up during a cold load leaves the next synchronous read to rebuild
+  // the history in one task, which is exactly what it exists to prevent.
+  async function prepareOnce(yieldForInput) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await base.prepareRows?.(yieldForInput);
+      const source = base.rows();
+      const window = readingWindow(), windowKey = JSON.stringify(window), at = revision, generation = epoch;
+      const ready = () => combined?.source === source && combined.revision === at && combined.windowKey === windowKey;
+      if (ready()) return;
+      // Between slices only this reader's own invariants are checked — asking the reader beneath for
+      // its rows can itself be a cold rebuild. The base is compared once, at install.
+      const current = () => revision === at && epoch === generation && JSON.stringify(readingWindow()) === windowKey;
+      const value = await runStepsInSlices(buildRows(source, window), { yieldForInput, keepGoing: current });
+      if (value && current() && base.rows() === source && !ready()) combined = { source, revision: at, windowKey, rows: value };
+      if (value || epoch !== generation) return;
+    }
   }
   function loadArchive() {
     if (pending) return pending;
@@ -64,6 +109,10 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     const controller = new AbortController();
     aborter = controller;
     pending = (async () => {
+      // `meta()` beneath reads the readers' rows; prepare them in slices first so a cold seed does
+      // not rebuild every union in one task here.
+      try { await base.prepareRows?.(yieldToInput); } catch { /* The synchronous read still answers. */ }
+      if (generation !== epoch) return false;
       const meta = base.meta();
       const window = readingWindow(), windowKey = JSON.stringify(window);
       const paths = [...new Set([meta.archive?.index, meta.tradingViewArchive?.index].filter(Boolean))];
@@ -114,6 +163,8 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
           revision++;
         } catch { failed = true; }
       }
+      // The rebuilt reading is installed before the announcement below; see `buildRows`.
+      try { await prepareRows(yieldToInput); } catch { /* The synchronous read still answers. */ }
       if (generation !== epoch) return false;
       loaded = !failed;
       error = failed ? 'Some retained news history could not be verified. Previously loaded records remain visible.' : null;
@@ -121,7 +172,7 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     })().finally(() => { if (generation === epoch) { pending = null; emit(); } });
     return pending;
   }
-  return { ...base, rows, loadArchive,
+  return { ...base, rows, loadArchive, prepareRows,
     // Warm the readings `rows()` will hit — the readers beneath, then every retained archive row
     // under its index identity — in ~12ms slices. The synchronous rebuild then pays for the
     // dedupe and the sort, not for attributing ninety thousand rows in one task.
@@ -132,6 +183,7 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
         attributeNewsRow(row, identities.get(row.entityId) || identities.get(row.ticker) || row);
         if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
       }
+      await prepareRows(yieldForInput);
     },
     // Another view may have loaded the shared company head without initializing this reader's
     // publisher/TradingView sources. A head alone cannot make this reader skip its own load.
@@ -155,7 +207,9 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     onChange(fn) {
       listeners.add(fn);
       const off = base.onChange(() => {
-        fn();
+        // Relayed after this reader's rows are prepared in slices, so the subscriber's first
+        // synchronous read finds them ready; the rows themselves are current whenever read.
+        prepareRows().catch(() => {}).then(fn);
         // The inner shared poller also runs without an explicit refresh from this wrapper.
         // Follow those automatic checks so retained history stays live in an open News tab.
         if (initialized && !pending) void loadArchive();

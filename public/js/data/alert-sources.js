@@ -20,16 +20,63 @@ const confirmed = (asOf, day, incomplete = false, note = null) => ({
 });
 const slugTicker = (value) => value && !String(value).toUpperCase().startsWith('SCRIP-') ? String(value).toUpperCase() : null;
 
-export function nseRecords(rows) {
-  return rows.map((r) => {
-    const event = record({ id: `nse:${nse.rowKey(r)}`, row: r, at: r.publishedAt,
-      ticker: r.ticker, company: r.company, headline: r.subject || 'NSE filing', detail: r.description,
-      url: r.url, kind: 'filing', ...announcementSignal({ ...r, title: r.subject }) });
-    // Official issuer identity/date/link are required. Raw unresolved records stay in All Alerts.
-    event.aiEligible = event.importance === 'high' && !!event.ticker && !!event.day && !!event.url;
-    return event;
-  });
+// One record per NSE row, kept on the row: classifying the whole retained NSE window was a
+// 450–570ms task on every open (profiled). Rows are immutable capture records, so the row object
+// is the key; `warmNse` below touches them in ~12ms slices before the synchronous read.
+const nseEvents = new WeakMap();
+export function nseRecord(r) {
+  const hit = nseEvents.get(r);
+  if (hit) return hit;
+  const event = record({ id: `nse:${nse.rowKey(r)}`, row: r, at: r.publishedAt,
+    ticker: r.ticker, company: r.company, headline: r.subject || 'NSE filing', detail: r.description,
+    url: r.url, kind: 'filing', ...announcementSignal({ ...r, title: r.subject }) });
+  // Official issuer identity/date/link are required. Raw unresolved records stay in All Alerts.
+  event.aiEligible = event.importance === 'high' && !!event.ticker && !!event.day && !!event.url;
+  nseEvents.set(r, event);
+  return event;
 }
+export function nseRecords(rows) {
+  return rows.map(nseRecord);
+}
+// One record per X post and per IPO row, kept on the row, as above. A fresh record per read
+// defeated every cache keyed on the event beneath it — its sort day, its canonical address, and
+// the portfolio discovery reading, which is validated on the event's own headline and url — so
+// the assembly matched every post against the book again on each read (profiled: ~700ms of one
+// 2.3-second trailing assembly, with the reading itself already memoised).
+const twitterEvents = new WeakMap();
+export function twitterRecord(r) {
+  const hit = twitterEvents.get(r);
+  if (hit) return hit;
+  const event = record({ id: r.id, row: r, at: r.publishedAt, company: `@${r.handle}`, headline: r.title, detail: r.displayName, url: r.url, kind: 'post' });
+  twitterEvents.set(r, event);
+  return event;
+}
+const ipoEvents = new WeakMap();
+export function ipoRecord(r) {
+  const hit = ipoEvents.get(r);
+  if (hit) return hit;
+  const event = record({
+    id: `ipo:${r.id}`, row: r, at: r.filingDate, company: r.company, ticker: r.ticker,
+    headline: `${r.filingType} filing${r.origin === 'supplement' ? ' · tracked-issuer supplement' : ''}`,
+    detail: `${r.title}. ${r.source}${r.note ? `. ${r.note}` : ''}`, url: r.url, kind: 'filing', observedAt: r.observedAt,
+  });
+  ipoEvents.set(r, event);
+  return event;
+}
+// WARM IN SLICES BEFORE THE SYNCHRONOUS READ. `reading.touch(event, feedId)` is the collector's
+// own per-event warm-up (sort day, canonical address, the discovery reading), so what the read
+// and the assembly then hit is exactly what was touched here. A row that throws is left to the
+// synchronous read, which reports it in its own way.
+async function warmRecords(rows, build, feedId, yieldForInput, reading) {
+  let started = performance.now();
+  for (const row of rows) {
+    try { const event = build(row); reading?.touch?.(event, feedId); } catch { /* reported by the synchronous read */ }
+    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+  }
+}
+const warmNse = (yieldForInput, reading) => warmRecords(nse.retainedRows(), nseRecord, 'nse-filings', yieldForInput, reading);
+const warmTwitter = (yieldForInput, reading) => warmRecords(twitter.rows(), twitterRecord, 'twitter', yieldForInput, reading);
+const warmIpos = (yieldForInput, reading) => warmRecords(ipoFilings.rows(), ipoRecord, 'ipos', yieldForInput, reading);
 
 export function ipoRecords(snapshots) {
   const records = new Map();
@@ -83,21 +130,19 @@ function privateDocuments(kind, day) {
 export const ADDITIONAL_SOURCES = [
   { id: 'nse-filings', label: 'NSE filings', tab: 'nse-filings', what: 'Every filing in the available retained NSE window, including unresolved and undated filings.',
     load: async (refresh) => { await nse.load(); if (refresh) await nse.refresh(); await nse.loadHistory(90, { updateWindow: false }); },
+    warm: warmNse,
     read: ({ day }) => { const m = nse.meta(); return { events: nseRecords(nse.retainedRows()),
       ...confirmed(m.capturedAt, day, !!(m.degraded || m.historyUnavailable || m.allMissingDays?.length),
         `Available NSE archive: up to 90 days.${m.degraded ? ` ${m.degraded}` : ''}${m.historyUnavailable ? ' Archive index unavailable.' : ''}${m.allMissingDays?.length ? ` Unread archive days: ${m.allMissingDays.join(', ')}.` : ''}`) }; } },
   { id: 'twitter', label: 'X / Twitter posts', tab: 'news', what: 'Monitored accounts plus company-name searches across authors. Reviewed identity mapping only; posts are unverified discovery leads.',
     load: async (refresh) => { await twitter.load(); if (refresh) await twitter.refresh(); },
-    read: ({ day }) => { const m = twitter.meta(); return { events: twitter.rows().map((r) => record({ id: r.id, row: r, at: r.publishedAt,
-      company: `@${r.handle}`, headline: r.title, detail: r.displayName, url: r.url, kind: 'post' })),
+    warm: warmTwitter,
+    read: ({ day }) => { const m = twitter.meta(); return { events: twitter.rows().map(twitterRecord),
       ...confirmed(m.capturedAt, day, !!(m.lastReadFailed || m.reason || m.failed), m.lastReadFailed ? 'X capture could not be revalidated; retained posts remain visible.' : m.message || 'Captured monitored accounts only; unresolved posts are visible in Universe.') }; } },
   { id: 'ipos', label: 'IPO filings', tab: 'ipos', what: 'The same official-source documents and retained history as the IPOs tab. Filing does not confirm an open/approved IPO.',
     load: (refresh) => refresh ? ipoFilings.refresh() : ipoFilings.load(),
-    read: ({ day }) => { const m = ipoFilings.meta(); return { events: ipoFilings.rows().map((r) => record({
-      id: `ipo:${r.id}`, row: r, at: r.filingDate, company: r.company, ticker: r.ticker,
-      headline: `${r.filingType} filing${r.origin === 'supplement' ? ' · tracked-issuer supplement' : ''}`,
-      detail: `${r.title}. ${r.source}${r.note ? `. ${r.note}` : ''}`, url: r.url, kind: 'filing', observedAt: r.observedAt,
-    })), ...confirmed(m.checkedAt, day, !!m.degraded,
+    warm: warmIpos,
+    read: ({ day }) => { const m = ipoFilings.meta(); return { events: ipoFilings.rows().map(ipoRecord), ...confirmed(m.checkedAt, day, !!m.degraded,
       `Official source check, not a filing timestamp. SEBI recent pages + NSE mainboard/SME + BSE SME + retained captures; not a complete archive. ${m.sources.map((s) => `${s.label}: ${s.status}. ${s.note}`).join(' ')}${m.liveFailed ? ' Live revalidation failed.' : ''}`) }; } },
   { id: 'earnings-calendar', label: 'Earnings calendar', tab: 'earnings-hub', what: 'Every company/date in the captured calendar plus dates explicitly loaded in Earnings Hub. Scheduled, not filed.',
     load: async () => { const [payload, map] = await Promise.all([revalidatedJson('data/earnings-calendar.json'), revalidatedJson('data/mc-ticker-map.json', { optional: true })]);

@@ -134,6 +134,22 @@ const liveNews = new Map(), liveNewsSubscribers = new Set();
  *     is what the provenance modal says — and dropping one would hide it from whichever reader was
  *     looking at that company. Hence: within a company, never across.
  */
+// THE PROJECTED ROW IS KEPT ON THE CAPTURE ROW. A rebuilt snapshot used to hand out a fresh copy of
+// every announcement and insider row, so the event readings the alerts collector keeps per row
+// object missed after any invalidation — a loader landing, an exchange-deal revision — even when
+// the row itself was unchanged (profiled: the insider read classifying every row again, 570ms,
+// after a warm-up over the previous copies). Same content, same object; a changed ticker is a
+// changed projection. Rows are replaced, never edited, so the entry dies with its row.
+const projections = new WeakMap();
+function projected(row, ticker) {
+  if (!row || typeof row !== 'object') return { ...row, ticker };
+  const hit = projections.get(row);
+  if (hit && hit.ticker === ticker) return hit.value;
+  const value = { ...row, ticker };
+  projections.set(row, { ticker, value });
+  return value;
+}
+
 export function createFeed(kind, { read = conditionalJson, allowColdStart = true } = {}) {
   let state = fresh();
   let loading = null;
@@ -357,7 +373,7 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
           if (!state.identities.has(key)) state.identities.set(key, { ticker, name: state.names.get(key) || row.company || row.query });
           const identity = state.identities.get(key);
           out.push(attributeNewsRow(row, identity));
-        } else out.push({ ...row, ticker });
+        } else out.push(projected(row, ticker));
       }
     }
     const value = (kind === 'insider' ? exchangeDeals.combined(out) : out).sort((a, b) => (b.date || '').localeCompare(a.date || ''));

@@ -17,7 +17,14 @@ export * from './daily-alerts-real.js';
 export async function collect(options) {
   (window.fixtureReads ||= []).push({refresh:options.refresh,load:options.load});
   window.fixtureOptions = options;
-  return new Promise(resolve => { window.fixtureRelease = resolve; });
+  // A release completes EVERY read still outstanding, not only the latest: a source announcement
+  // — made after the reader's rows are prepared, so no longer inside the refresh that caused it —
+  // starts one more reassembly while an earlier read is in flight, and a read this fixture never
+  // settled would hold the tab's in-flight count for ever and block the resume check below.
+  return new Promise(resolve => {
+    (window.fixturePending ||= []).push(resolve);
+    window.fixtureRelease = report => { for (const settle of window.fixturePending.splice(0)) settle(report); };
+  });
 }
 `;
 const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:16px;background:#f6f7fb"><main id="root"></main><script type="module">
