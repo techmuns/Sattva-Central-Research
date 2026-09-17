@@ -145,6 +145,17 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
   }
 
   return { ...base, rows, meta,
+    // Warm the readings `rows()` will hit — the company head below, then each published story's
+    // portfolio match — in ~12ms slices, so the synchronous rebuild pays only for the join.
+    async warm(yieldForInput = () => Promise.resolve()) {
+      await base.warm?.(yieldForInput);
+      const published = publishers.rows(), entities = companyIdentities(), window = readingWindow();
+      let started = performance.now();
+      for (const row of published) {
+        if (inNewsWindow(row, window) && include(row)) matchPortfolioNews(row, entities);
+        if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+      }
+    },
     setWanted(items = []) {
       for (const item of items) if (item && typeof item === 'object') {
         const entity = item.entityId ? item : portfolioNewsEntities([item])[0];

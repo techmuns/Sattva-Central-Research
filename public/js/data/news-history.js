@@ -108,6 +108,17 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     return pending;
   }
   return { ...base, rows, loadArchive,
+    // Warm the readings `rows()` will hit — the readers beneath, then every retained archive row
+    // under its index identity — in ~12ms slices. The synchronous rebuild then pays for the
+    // dedupe and the sort, not for attributing ninety thousand rows in one task.
+    async warm(yieldForInput = () => Promise.resolve()) {
+      await base.warm?.(yieldForInput);
+      let started = performance.now();
+      for (const list of held.values()) for (const row of list) {
+        attributeNewsRow(row, identities.get(row.entityId) || identities.get(row.ticker) || row);
+        if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+      }
+    },
     // Another view may have loaded the shared company head without initializing this reader's
     // publisher/TradingView sources. A head alone cannot make this reader skip its own load.
     isLoaded: () => initialized && base.isLoaded(),

@@ -660,8 +660,10 @@ export async function prepareSources({ refresh = false, feedIds = null } = {}) {
 // every row itself and reports its own failures; this only changes when the work happens.
 async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput) {
   let rows;
-  try { rows = feedId === 'news' ? newsQueryRows(reader, queryWindow, reader) : newsQueryRows(marketNews, queryWindow, reader); }
-  catch { return; }
+  try {
+    if (feedId === 'news') await reader.warm?.(yieldForInput);
+    rows = feedId === 'news' ? newsQueryRows(reader, queryWindow, reader) : newsQueryRows(marketNews, queryWindow, reader);
+  } catch { return; }
   let started = performance.now();
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];

@@ -365,6 +365,28 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     return value;
   }
 
+  // WARM THE ATTRIBUTION OF EVERY HELD ROW IN TIME-SLICED CHUNKS. `rows()` attributes each row
+  // under its identity synchronously, and after an invalidation every row is a new object, so the
+  // first read after a return paid for all of them in one task. The reading is memoised per
+  // (row, identity); touching it here with a yield every ~12ms lets the synchronous read hit it.
+  // Same identities, same objects, nothing decided — this only moves when the work happens.
+  async function warmRows(yieldForInput = () => Promise.resolve()) {
+    if (kind !== 'news') return;
+    const current = state;
+    let started = performance.now();
+    for (const [key, list] of current.rows) {
+      if (!current.identities.has(key)) {
+        const row = list[0] || {};
+        current.identities.set(key, { ticker: row.ticker || (row.entityId ? null : key), name: current.names.get(key) || row.company || row.query });
+      }
+      const identity = current.identities.get(key);
+      for (const row of list) {
+        attributeNewsRow(row, identity);
+        if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); if (state !== current) return; }
+      }
+    }
+  }
+
   const forTicker = (ticker) => {
     const t = String(ticker || '').toUpperCase(), held = state.rows.get(t) || [];
     return kind === 'insider' ? exchangeDeals.forTicker(held, t) : held;
@@ -917,6 +939,7 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     refresh,
     refreshSnapshot,
     rows,
+    warm: warmRows,
     forTicker,
     wasAskedEmpty,
     failureFor,

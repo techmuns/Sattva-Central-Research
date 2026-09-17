@@ -140,6 +140,19 @@ export function withTradingViewNews(base, { read = conditionalJson, doc = global
     watch();
   }
   return { ...base, rows: combinedRows, meta, refreshSnapshot,
+    // Warm the readings `combinedRows()` will hit, in ~12ms slices; same identity objects as the
+    // rebuild uses, so every reading it touches is the one the rebuild reuses.
+    async warm(yieldForInput = () => Promise.resolve()) {
+      await base.warm?.(yieldForInput);
+      const identities = new Map();
+      for (const entity of snapshot?.entities || []) for (const key of [entity.entityId, entity.key, entity.ticker].filter(Boolean))
+        identities.set(String(key).toUpperCase(), entity);
+      let started = performance.now();
+      for (const [key, list] of Object.entries(snapshot?.byTicker || {})) for (const row of Array.isArray(list) ? list : []) {
+        if (row?.tradingViewId) attributeNewsRow(row, identities.get(key.toUpperCase()) || row);
+        if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+      }
+    },
     seed: (...args) => initialize('seed', args), load: (...args) => initialize('load', args),
     async refresh(...args) {
       const [result] = await Promise.all([base.refresh(...args), readSnapshot()]);

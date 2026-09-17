@@ -37,7 +37,12 @@ rebuild produced new row objects and every cache keyed on them missed at once.
   reading per row. `portfolio-publisher-news.js`: one projected row per (match, publisher row).
 - `news-history.js`: the observation instant is parsed once per row rather than per comparison.
 - `daily-alerts.js`: `istDay` caches timestamp strings; the query candidate set reads the row's
-  own canonical address.
+  own canonical address; before the synchronous news collectors run, `warmNewsReadings` walks the
+  reader chain's `warm()` and then every candidate row's story reading in ~12ms slices with a
+  yield between each, so a cold full-history pass no longer lands as one multi-second task.
+- `filings.js`, `portfolio-publisher-news.js`, `tradingview-news.js`, `news-history.js`: each
+  reader exposes `warm(yieldForInput)`, which touches the attribution or portfolio match its own
+  `rows()` rebuild will hit, in slices, under the same identity objects the rebuild uses.
 - `alert-window-cache.js`: `utf8Length` measures an event without allocating; the per-part byte
   count the integrity check reads is still the encoder's.
 - `tabs/insider-trades.js`: the content-derived row key and the five filter cells are read once
