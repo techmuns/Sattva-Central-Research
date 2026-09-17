@@ -201,3 +201,92 @@ clearRankingCache();
 assert.notEqual(rankReport(publication, { holdings: publicIdentities }).allCards, failedRank.allCards,
   'access invalidation discards the previous private derivation');
 console.log('PASS: unchanged publications reuse derivations; corrections, source health, membership, dates, Insights and positions invalidate them.');
+
+// ---------------------------------------------------------------------------------------
+// THE DRIVER LAYER — "earnings assumption, valuation or thesis?"
+//
+// Fixtures rather than a capture, for the reason every rule block here uses them: the branches
+// depend on which topic fields a collector happened to write, and no single day can be relied on to
+// hold a dilution filing, a related-entity report and a market-wide story on one company.
+const { driversOf, driversFromEvent, QUESTIONS } = await import('../public/js/data/alert-drivers.js');
+const { announcementSignal } = await import('../public/js/data/filing-signals.js');
+
+const drv = (o) => ({ day: '2026-09-03', ticker: 'ZZTEST', url: 'https://example.test/a', ...o });
+const driverText = (events) => driversOf({ events }).buckets.flatMap((b) => b.drivers.map((x) => `${b.id}:${x.text}`));
+
+assert.deepEqual(QUESTIONS.map((q) => q.id), ['earnings', 'valuation', 'thesis'], 'the three investor questions, in the order a card states them');
+assert.deepEqual(QUESTIONS.map((q) => q.label), ['the earnings assumption', 'the valuation', 'the thesis']);
+
+// The matched rule travels as a FIELD. Recovering it from `signalReason` would be regexing a value
+// we had in hand back out of our own prose, and would empty the mapping silently on a reword.
+assert.equal(announcementSignal({ title: 'Record date for Final Dividend' }).filingRule, 'shareholder distribution');
+assert.equal(announcementSignal({ title: 'Notice of 25th Annual General Meeting' }).filingRule, null);
+
+const mixed = [
+  drv({ feed: 'announcements', keywordIds: ['order'], filingRule: 'shareholder distribution' }),
+  drv({ feed: 'news', keywordIds: ['partnership'] }),
+  drv({ feed: 'news', keywordIds: ['stake-sale'] }),
+  drv({ feed: 'nse-filings', keywordIds: ['fraud'] }),
+];
+for (const expected of ['earnings:Order in a filing', 'earnings:Partnership in the news',
+  'valuation:shareholder distribution in a filing', 'valuation:Stake sale in the news', 'thesis:Fraud in a filing']) {
+  assert(driverText(mixed).includes(expected), `bucketed: ${expected}`);
+}
+assert.deepEqual(driversOf({ events: mixed }).silent, [], 'every question answered leaves nothing silent');
+
+// A question with nothing behind it is STATED; only the whole section drops, and only when no
+// question has an answer at all.
+assert.deepEqual(driversOf({ events: [drv({ feed: 'news', keywordIds: ['order'] })] }).silent.map((q) => q.id), ['valuation', 'thesis']);
+assert.equal(driversOf({ events: [drv({ feed: 'technicals', kind: 'volume', volumeX: 3.1 })] }).buckets.length, 0);
+
+// The same topic in two sources is two drivers — separate records, separate links. Twice in one
+// source is one.
+assert.equal(driverText([drv({ feed: 'announcements', keywordIds: ['order'] }), drv({ feed: 'news', keywordIds: ['order'] })]).length, 2);
+assert.equal(driverText([drv({ feed: 'news', keywordIds: ['order'] }), drv({ feed: 'news', keywordIds: ['order'], url: 'https://example.test/b' })]).length, 1);
+
+// A FEED THAT CARRIES NO TOPIC SUPPLIES NO DRIVER. A volume ratio is not about orders or about
+// governance, and bucketing one would be this dashboard asserting why somebody traded.
+for (const feed of ['technicals', 'investors', 'insider', 'chatter', 'earnings', 'concalls']) {
+  assert.deepEqual(driversFromEvent(drv({ feed, keywordIds: ['order'] })), [], `${feed} supplies no driver`);
+}
+// Market-wide news carries no company, so it can never become a company's driver — the same
+// exclusion All Alerts already applies to the same feed.
+assert.deepEqual(driverText([drv({ feed: 'market-news', keywordIds: ['fraud'] })]), []);
+// ...and a reviewed report about a DIFFERENT company is not this company either.
+assert.deepEqual(driverText([drv({ feed: 'news', keywordIds: ['fraud'],
+  attribution: { version: ATTRIBUTION_VERSION, status: 'related', relationships: [{ relationship: 'subsidiary', evidenceUrl: 'https://example.test/e' }] } })]), []);
+// An analyst's published view is a view OF the company, not an event AT it.
+assert.deepEqual(driverText([drv({ feed: 'news', keywordIds: ['brokerage-research'] })]), []);
+
+// A collector branch that wrote labels and no ids still resolves; an unknown label invents nothing.
+assert.deepEqual(driverText([drv({ feed: 'news', keywords: ['Stake sale'] })]), ['valuation:Stake sale in the news']);
+assert.deepEqual(driverText([drv({ feed: 'news', keywords: ['Not A Tracked Topic'] })]), []);
+
+// A capped bucket COUNTS what it did not print: a truncation nobody can see is the card claiming
+// fewer things bear on the company than its own evidence holds.
+const many = ['order', 'capex', 'commissioning', 'product-launch', 'patent'].map((id) => drv({ feed: 'news', keywordIds: [id] }));
+assert.equal(driversOf({ events: many }).buckets[0].drivers.length, 3);
+assert.equal(driversOf({ events: many }).buckets[0].overflow, 2);
+assert.equal(driversOf({ events: many }).total, 5);
+
+// Every driver carries the event it was read off, so the card can link it to the same record the
+// evidence row uses — and says it matched a topic rather than verifying an event.
+for (const driver of driversOf({ events: mixed }).buckets.flatMap((b) => b.drivers)) {
+  assert(mixed.includes(driver.event), 'a driver carries its own source event');
+  assert(/does not verify|not confirmation/.test(driver.why), 'a driver disclaims verification');
+}
+
+// IT ADDS NO SCORE. It explains a card that was surfaced anyway; it is not a second materiality
+// gate, which is the pattern this codebase keeps having to un-write.
+const scored = (event) => {
+  clearRankingCache();
+  return rankReport({ scope: 'universe', day: '2026-09-03', feeds: [{ id: 'announcements', status: 'ok', reachesToday: true }], events: [event] }, { holdings: [] });
+};
+const topicEvent = { id: 'd1', day: '2026-09-03', ticker: 'ZZTEST', company: 'ZZ Test Ltd', feed: 'announcements', feedLabel: 'Announcements',
+  direction: 'positive', importance: 'high', headline: 'Record date for Final Dividend', filingRule: 'shareholder distribution', keywordIds: ['buyback'], url: 'https://example.test/a' };
+assert.equal(scored(topicEvent).allCards[0].score, scored({ ...topicEvent, filingRule: null, keywordIds: [] }).allCards[0].score,
+  'topics change no score');
+assert(scored(topicEvent).allCards[0].drivers.total > 0, '...while still reaching the card');
+
+console.log('PASS: driver buckets, source phrases, excluded feeds, capped overflow and score neutrality.');
+
