@@ -812,9 +812,15 @@ const LOADERS = {
   'chatter-posts': (refresh) => loadFeed('chatter', refresh),
 };
 
+const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
 async function refreshFilings(feed, refresh) {
   await feed.seed();
   if (refresh && !(await feed.refreshSnapshot()).available) throw Error('Latest filings capture unavailable');
+  // `meta()` below rebuilds the reader's rows synchronously, and after a load every row is new:
+  // warm the readings that rebuild will hit in slices first, so it pays for the join, not for
+  // attributing every retained story in one task. A feed without `warm` (announcements, insider)
+  // is unchanged.
+  await feed.warm?.(yieldToInput);
   const m = feed.meta();
   if (m.reason || m.failed || m.truncated) throw Error(m.message || 'Filings coverage is incomplete');
 }
