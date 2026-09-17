@@ -50,7 +50,29 @@ rebuild produced new row objects and every cache keyed on them missed at once.
 
 ## Measured after
 
-AFTER_TABLE_PLACEHOLDER
+Same harness as the baseline; longest main-thread task while the route opened and settled, CPU
+profiler attached (which inflates every figure a little, before and after alike):
+
+| Path | Before | After |
+| --- | ---: | ---: |
+| Insider Trades, Universe, cold open — longest task | 1,866 ms | 749 ms |
+| Insider Trades — `pickField` self time on that open | 1,920 ms | 77 ms |
+| AI Alerts, then All Alerts (Portfolio, Today) — longest task | 4,242 ms | 1,536 ms |
+| All Alerts (Portfolio, Today) re-entered after AI Alerts — longest task | 4,278 ms | 588 ms |
+| News (Portfolio), then All Alerts (Universe) — longest task | 640 ms | 667 ms |
+| All Alerts, Universe, cold open — longest task | 681 ms | 573 ms |
+
+What moved and why: Insider Trades no longer rebuilds a key map or reparses dates per row; the
+switch from AI Alerts still performs the full-history read AI Alerts asked for, but the
+attribution, classification and event construction now run in ~12ms slices with a yield between
+each, so the one remaining synchronous block is the report assembly and sort. Total CPU for that
+read is unchanged — it is the same work, spread — which is why the settled time of the route is
+similar and its longest task is a third of what it was. Memory is not changed by this work: every
+cache is keyed on a row object that is already retained, or bounded.
+
+`verify-tab-performance-ui.mjs` now asserts a main-thread budget on the two routes that had the
+multi-second tasks (Insider Trades and All Alerts under Universe), with headroom for a CI runner
+running at half local speed.
 
 ## Still open
 

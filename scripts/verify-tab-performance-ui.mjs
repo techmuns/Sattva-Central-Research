@@ -138,6 +138,12 @@ try {
     if (!audit) {
       assert(result.tables.every(t => t.mounted <= 160), `${route}: table DOM stays bounded`);
       assert(result.cards <= 100, `${route}: news card DOM stays bounded`);
+      // The two routes that froze the page for seconds before their per-row readings were
+      // memoised (docs/PERFORMANCE-HOT-PATHS-2026-09-17.md): 1,367ms and 4,350ms here before,
+      // 749ms and 667ms after with a profiler attached. The budget leaves room for a CI runner at
+      // half local speed while still failing on a return to per-row recomputation.
+      const taskBudgetMs = { 'insider-trades?scope=universe': 2500, 'daily-alerts?scope=universe': 2500 }[route];
+      if (taskBudgetMs) assert(result.maxTaskMs < taskBudgetMs, `${route}: longest main-thread task ${result.maxTaskMs}ms stays under ${taskBudgetMs}ms`);
     }
   }
   assert.deepEqual(errors, [], 'zero application exceptions across the complete tab sweep');
