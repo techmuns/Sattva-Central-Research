@@ -70,12 +70,19 @@ read is unchanged — it is the same work, spread — which is why the settled t
 similar and its longest task is a third of what it was. Memory is not changed by this work: every
 cache is keyed on a row object that is already retained, or bounded.
 
-`verify-tab-performance-ui.mjs` now asserts a main-thread budget on the two routes that had the
-multi-second tasks (Insider Trades and All Alerts under Universe), with headroom for a CI runner
-running at half local speed.
+`verify-tab-performance-ui.mjs` now asserts a main-thread budget on Insider Trades under Universe,
+with headroom for a CI runner at half local speed. All Alerts under Universe is not budgeted: in
+that sweep it follows AI Alerts, whose full-history ranking still lands a task of two to three
+seconds under whichever tab follows it (see below).
 
 ## Still open
 
+- AI Alerts' ranking over the whole Universe (`rankReport` over ~4,000 companies' events) is a
+  2.4-second main-thread task on this machine, and the final assembly of its full-history report
+  lands under whichever tab the reader has moved to (2.8 seconds here). PR #218's ranking cache
+  covers repeats, not the first ranking. The general collector now skips building progress reports
+  nobody will read, which took the trailing work from 4.0 to 2.8 seconds; the ranking itself is a
+  separate piece of work.
 - The cold first read of All Alerts still decodes verified parts and merges the archive on the main
   thread (tasks of roughly 600 ms). Moving that work to a worker is the audit's item C and is not
   attempted here.

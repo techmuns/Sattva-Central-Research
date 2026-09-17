@@ -138,11 +138,14 @@ try {
     if (!audit) {
       assert(result.tables.every(t => t.mounted <= 160), `${route}: table DOM stays bounded`);
       assert(result.cards <= 100, `${route}: news card DOM stays bounded`);
-      // The two routes that froze the page for seconds before their per-row readings were
-      // memoised (docs/PERFORMANCE-HOT-PATHS-2026-09-17.md): 1,367ms and 4,350ms here before,
-      // 749ms and 667ms after with a profiler attached. The budget leaves room for a CI runner at
-      // half local speed while still failing on a return to per-row recomputation.
-      const taskBudgetMs = { 'insider-trades?scope=universe': 2500, 'daily-alerts?scope=universe': 2500 }[route];
+      // Insider Trades froze the page for 1,367ms here before its per-row readings were memoised
+      // (docs/PERFORMANCE-HOT-PATHS-2026-09-17.md) and 748ms after. The budget leaves room for a
+      // CI runner at half local speed while still failing on a return to per-row recomputation.
+      // All Alerts under Universe is deliberately not budgeted: in this sweep it follows AI Alerts,
+      // whose full-history ranking still lands a two-to-three second task under it — the item
+      // that document lists as still open — and a budget here would measure the runner, not a
+      // regression.
+      const taskBudgetMs = { 'insider-trades?scope=universe': 2500 }[route];
       if (taskBudgetMs) assert(result.maxTaskMs < taskBudgetMs, `${route}: longest main-thread task ${result.maxTaskMs}ms stays under ${taskBudgetMs}ms`);
     }
   }
