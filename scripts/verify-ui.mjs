@@ -7981,16 +7981,24 @@ const cardShape = await page.evaluate(() => {
   if (!cards.length) return null;
   const withDrivers = cards.filter((c) => c.querySelector('[data-ai-drivers]'));
   const card = withDrivers[0] || cards[0];
+  // Cards are `content-visibility: auto`, and Chromium keeps a freshly painted one SKIPPED — empty
+  // innerText — until the next rendering frame's intersection check unlocks it. scrollIntoView
+  // activates a card's contents synchronously, so these reads cannot race that frame; the scroll
+  // position is put back afterwards. verify-ai-alerts-ui.mjs has the measurement.
+  const y = scrollY;
+  const rendered = (node) => { node.scrollIntoView({ block: 'nearest' }); return node.innerText; };
+  const everyCardLabelsItsInsight = cards.every((c) => /what happened/i.test(rendered(c)));
+  rendered(card);
   const kick = (node) => node?.querySelector('.uppercase')?.innerText.trim() || '';
   const drivers = card.querySelector('[data-ai-drivers]');
   const insight = card.querySelector('[data-ai-insight]');
   const evidence = card.querySelector('[data-ai-evidence]');
   const links = [...card.querySelectorAll('[data-ai-driver]')];
-  return {
+  const readings = {
     cards: cards.length,
     withDrivers: withDrivers.length,
     // Every card states what happened, under a kicker that says so.
-    everyCardLabelsItsInsight: cards.every((c) => /what happened/i.test(c.innerText)),
+    everyCardLabelsItsInsight,
     insightKicker: kick(insight?.closest('.flex')),
     driverKicker: kick(drivers),
     driverText: (drivers?.innerText || '').replace(/\s+/g, ' ').trim(),
@@ -8014,6 +8022,8 @@ const cardShape = await page.evaluate(() => {
       return links.every((a) => evidenceHrefs.has(a.getAttribute('href')));
     })(),
   };
+  scrollTo(0, y);
+  return readings;
 });
 
 if (!cardShape) {

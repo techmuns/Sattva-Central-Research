@@ -287,19 +287,31 @@ try {
   // can show is that the section REACHES THE SCREEN, in the right place, with links that resolve to
   // evidence this card actually holds — a classification of ours with no way to check it would be a
   // judgement with no record behind it.
+  //
+  // Every card is `content-visibility: auto`, and Chromium keeps a freshly inserted one SKIPPED —
+  // placeholder height, empty innerText — until the next rendering frame's intersection check
+  // unlocks the ones near the viewport. Clearing the search re-inserts all eight, so a read that
+  // lands before that frame (likely on a busy runner: measured 3 of 6 local runs under load) finds
+  // no text on ANY card, on screen or off, while textContent still carries it. scrollIntoView
+  // activates a card's contents synchronously, so each card is read the way a reader would see it
+  // and the check no longer races the frame. The scroll position is put back afterwards.
   const shape = await page.evaluate(() => {
     const cards = [...document.querySelectorAll('[data-ai-card]')];
     const card = cards.find((c) => c.querySelector('[data-ai-drivers]'));
     if (!card) return { withDrivers: 0 };
+    const y = scrollY;
+    const rendered = (node) => { node.scrollIntoView({ block: 'nearest' }); return node.innerText; };
+    const everyCardLabelsItsInsight = cards.every((c) => /what happened/i.test(rendered(c)));
+    rendered(card);
     const insight = card.querySelector('[data-ai-insight]');
     const drivers = card.querySelector('[data-ai-drivers]');
     const evidence = card.querySelector('[data-ai-evidence]');
     const links = [...card.querySelectorAll('[data-ai-driver]')];
     const evidenceHrefs = new Set([...card.querySelectorAll('[data-ai-evidence-link]')].map((a) => a.getAttribute('href')));
-    return {
+    const readings = {
       withDrivers: cards.filter((c) => c.querySelector('[data-ai-drivers]')).length,
       total: cards.length,
-      everyCardLabelsItsInsight: cards.every((c) => /what happened/i.test(c.innerText)),
+      everyCardLabelsItsInsight,
       kicker: drivers.querySelector('.uppercase')?.innerText.trim() || '',
       text: drivers.innerText.replace(/\s+/g, ' ').trim(),
       insightBeforeDrivers: !!(insight.compareDocumentPosition(drivers) & Node.DOCUMENT_POSITION_FOLLOWING),
@@ -310,6 +322,8 @@ try {
       disclaims: links.every((a) => /does not verify|not confirmation/i.test(a.getAttribute('title') || '')),
       scriptInjected: card.querySelectorAll('[data-ai-drivers] script, [data-ai-drivers] img').length,
     };
+    scrollTo(0, y);
+    return readings;
   });
   assert.equal(shape.withDrivers, shape.total, 'every card with a tracked topic states which question it bears on');
   assert(shape.everyCardLabelsItsInsight, 'every card labels what happened');
