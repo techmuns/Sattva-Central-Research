@@ -672,7 +672,7 @@ async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput) {
   }
 }
 
-export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null, requestedCompanies = [], queryWindow = null } = {}) {
+export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null, requestedCompanies = [], queryWindow = null, isCurrent = () => true } = {}) {
   observeSources();
   // Pure reassembly of explicitly preloaded source fixtures keeps using those same records.
   const newsReader = queryWindow && (load || queryNewsReaders.has(alertWindowKey(queryWindow))) ? queryNewsReader(queryWindow) : news;
@@ -719,6 +719,11 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   let partialTimer = null;
   const publishPartial = () => {
     partialTimer = null;
+    // A partial nobody will read is not built. AI Alerts hands its own currency check through;
+    // once its reader has moved to another tab, assembling and sorting the full-history report
+    // for it was a one-to-two second task landing under the tab they had moved to. Collection,
+    // the final report and the saved window are unaffected — only the progress publication.
+    if (!isCurrent()) return;
     try { onPartial?.(build()); } catch (err) { console.error('[daily-alerts] onPartial threw', err); }
   };
   const schedulePartial = () => {

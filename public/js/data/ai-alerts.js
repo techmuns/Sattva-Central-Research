@@ -943,6 +943,7 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
     includeHistory: true,
     refresh,
     load,
+    isCurrent,
     onPartial: onPartial ? (partial) => { if (isCurrent()) onPartial(rankReport(partial, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() })); } : null,
   });
   if (!isCurrent()) return null; // Shared collection/storage finishes; obsolete view work stops.
