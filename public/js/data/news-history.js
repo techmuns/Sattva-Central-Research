@@ -6,6 +6,18 @@ import { holdsTicker } from './row-ticker-index.js';
 
 // Retained monthly records stay available after they leave the recent head. Scope, search and
 // attribution still run in their existing consumers; storage partitioning is never a filter.
+// The observation instant is parsed once per row object: the sort above asked `Date.parse` on
+// every comparison of every rebuild (profiled at 482ms on one rebuild of the combined reader).
+// Rows are replaced, never edited; the two stamps are checked on every read regardless.
+const observationTimes = new WeakMap();
+function observationTime(row) {
+  const hit = observationTimes.get(row);
+  if (hit && hit.last === row.lastSeenAt && hit.first === row.firstSeenAt) return hit.time;
+  const parsed = Date.parse(row.lastSeenAt || row.firstSeenAt || '');
+  const time = Number.isFinite(parsed) ? parsed : null;
+  observationTimes.set(row, { last: row.lastSeenAt, first: row.firstSeenAt, time });
+  return time;
+}
 export function withNewsHistory(base, { read = conditionalJson, window: readingWindow = () => null } = {}) {
   let held = new Map(), identities = new Map(), revision = 0, combined = null;
   let pending = null, error = null, loaded = false, initialized = false, epoch = 0, aborter = null;
@@ -30,8 +42,8 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     // Publication dates are not observation times. Raw versions stay in the archive.
     const currentRows = new Set(source);
     const observedAt = row => {
-      const time = Date.parse(row.lastSeenAt || row.firstSeenAt || '');
-      return Number.isFinite(time) ? time : currentRows.has(row) ? Infinity : -Infinity;
+      const time = observationTime(row);
+      return time !== null ? time : currentRows.has(row) ? Infinity : -Infinity;
     };
     const value = [...buckets.values()].flatMap(list => dedupeArticles(list.sort((a, b) => observedAt(b) - observedAt(a))))
       .filter(row => inNewsWindow(row, window))

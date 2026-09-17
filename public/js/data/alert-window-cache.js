@@ -5,6 +5,21 @@ import { readEntry, writeEntryBatch } from '../core/store.js';
 export const ALERT_WINDOW_CACHE_KEY = 'ai-alerts:public-window:v1';
 export const ALERT_CACHE_PART_BYTES = 512 * 1024;
 const encoder = new TextEncoder();
+// UTF-8 length without allocating a byte array per event. `encoder.encode(json).byteLength` on
+// each of 43,000 events cost 1.5s of one All Alerts save (profiled). JSON.stringify never emits a
+// lone surrogate, so a high surrogate always pairs. The per-part `bytes` written to the manifest
+// is still measured by the encoder itself, so the load-time integrity check reads the same number.
+export function utf8Length(text) {
+  let bytes = 0;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xd800 && code <= 0xdbff) { bytes += 4; i++; }
+    else bytes += 3;
+  }
+  return bytes;
+}
 const hash = async text => [...new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(text)))]
   .map(byte => byte.toString(16).padStart(2, '0')).join('');
 const yieldForInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
@@ -102,7 +117,7 @@ export function createAlertWindowCache({ read = readEntry, write = writeEntryBat
         await yieldForInput();
       };
       for (let i = 0; i < events.length; i++) {
-        const json = JSON.stringify(events[i]), size = encoder.encode(json).byteLength;
+        const json = JSON.stringify(events[i]), size = utf8Length(json);
         if (batch.length && bytes + size + 1 > partBytes) await flush();
         bytes += size + (batch.length ? 1 : 0); batch.push(json);
         if (i % 256 === 255) await yieldForInput();

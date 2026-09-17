@@ -26,7 +26,7 @@ const WARM_CONCURRENCY = 8;
 // Keep content revisions separate from the shared marker: concurrent dashboard
 // releases can update that marker without conflicting with these fixes. Every
 // install, read and eviction uses the same combined key, retaining atomic upgrades.
-const CACHE_KEY = `${CACHE_NAME}-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v1-all-alerts-restore-v2-ai-card-updates-v1-performance-ownership-v1-sattva-newsletter-v2-bounded-history-memory-v5`;
+const CACHE_KEY = `${CACHE_NAME}-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v1-all-alerts-restore-v2-ai-card-updates-v1-performance-ownership-v1-sattva-newsletter-v2-bounded-history-memory-v5-hot-path-caches-v1`;
 
 function moduleSpecifiers(source) {
   const found = new Set();

@@ -27,13 +27,40 @@
 // wrote them and are kept as strings unless they are unambiguously numeric — a "value" column that
 // reads "1,20,000 (approx)" is not a number, and coercing it would silently produce 1.2.
 
+// THE FLATTENED KEY MAP IS A PROPERTY OF THE OBJECT'S SHAPE, NOT OF THE CALL. It was rebuilt on
+// every call — profiled at 1,920ms inside this one function on a cold open of Insider Trades,
+// where five filter dropdowns ask each of ~48,000 rows five times and the period filter asks again
+// per row on every evaluation. The shape cache maps each normalised key name to the LAST original
+// key that spells it (the same last-wins rule the flat map had) and reads the value live, so a
+// value edited in place is still seen; only a key added after the first read would be missed, and
+// these upstream records never gain keys once parsed. Normalised candidate names are cached per
+// names array, which is what makes hoisting a caller's list to a module constant pay off.
+const fieldShapes = new WeakMap();
+const fieldNames = new WeakMap();
+const normalKey = (k) => String(k).toLowerCase().replace(/[^a-z0-9]/g, '');
+function shapeOf(obj) {
+  let shape = fieldShapes.get(obj);
+  if (!shape) {
+    shape = new Map();
+    for (const k of Object.keys(obj)) shape.set(normalKey(k), k);
+    fieldShapes.set(obj, shape);
+  }
+  return shape;
+}
+function normalNames(names) {
+  if (!Array.isArray(names)) return Array.from(names, normalKey);
+  let list = fieldNames.get(names);
+  if (!list) { list = names.map(normalKey); fieldNames.set(names, list); }
+  return list;
+}
 /** The first candidate key that carries something. Case- and separator-insensitive. */
 export function pickField(obj, names) {
   if (!obj || typeof obj !== 'object') return null;
-  const flat = new Map();
-  for (const [k, v] of Object.entries(obj)) flat.set(String(k).toLowerCase().replace(/[^a-z0-9]/g, ''), v);
-  for (const n of names) {
-    const v = flat.get(String(n).toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const shape = shapeOf(obj);
+  for (const n of normalNames(names)) {
+    const key = shape.get(n);
+    if (key === undefined) continue;
+    const v = obj[key];
     if (v != null && v !== '' && v !== '-' && v !== 'N/A') return v;
   }
   return null;
@@ -349,12 +376,27 @@ export function anonymousArticleContentKey(row) {
     ? Object.fromEntries(Object.keys(item).sort().map(name => [name, item[name]])) : item);
 }
 
+// A ROW REMEMBERS ITS OWN CANONICAL ADDRESS. The text cache above holds 16,384 addresses, and
+// one dedupe pass over an 81,921-row history evicts it exactly as fast as it fills, so every
+// rebuild of the combined news reader parsed every URL again — profiled at 1,838ms here plus
+// 844ms inside the URL constructor on one switch from AI Alerts to All Alerts. Rows are replaced,
+// never edited, so the row object is the key; the url check guards a normaliser that edits one.
+const articleUrlKeys = new WeakMap();
+export function articleUrlKey(row) {
+  if (row === null || typeof row !== 'object' || !row.url) return null;
+  const hit = articleUrlKeys.get(row);
+  if (hit && hit.url === row.url) return hit.key;
+  const key = canonicalArticleUrl(row.url);
+  articleUrlKeys.set(row, { url: row.url, key });
+  return key;
+}
+
 export function dedupeArticles(list = []) {
   const seenUrl = new Set();
   const seenStory = new Set();
   const seenAnonymous = new Set();
   return list.filter((row) => {
-    const url = row?.url ? canonicalArticleUrl(row.url) : null;
+    const url = articleUrlKey(row);
     if (url) {
       if (seenUrl.has(url)) return false;
       seenUrl.add(url);

@@ -80,7 +80,18 @@ export function isBrokerageResearch(text = '') {
 
 // Event vocabulary is additive to the desk's topic filters. It classifies only the headline or
 // an explicitly bounded publisher body, never a search snippet or related-links strip.
+// Six regexes over the headline and body, per story, per pass — memoised on the row object like
+// `matchText` above, validated on the two fields it reads. Shared result array; copy before mutating.
+const topicReadings = new WeakMap();
 export function newsEventTopics(row = {}) {
+  const cacheable = row !== null && typeof row === 'object';
+  const hit = cacheable ? topicReadings.get(row) : undefined;
+  if (hit && hit.title === row.title && hit.articleBody === row.articleBody) return hit.value;
+  const value = readEventTopics(row);
+  if (cacheable) topicReadings.set(row, { title: row.title, articleBody: row.articleBody, value });
+  return value;
+}
+function readEventTopics(row) {
   const text = `${row.title || ''} ${row.articleBody?.provenance === 'publisher-article-body' ? row.articleBody.text : ''}`;
   return [
     ['Legal dispute / allegations', /\b(arbitrat\w*|lawsuit|litigation|legal dispute|court case|criminal complaint|allegations?|faulty shells?|fake (?:shells?|munitions?)|defective ammunition)\b/i],

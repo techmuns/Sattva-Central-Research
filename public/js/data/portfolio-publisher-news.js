@@ -41,6 +41,23 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     return identities;
   }
 
+  // THE PROJECTED ROW IS BUILT ONCE PER (MATCH, PUBLISHER ROW). `matchPortfolioNews` already
+  // returns the same decorated object for the same story and identity, but this projection spread
+  // it into a fresh object on every rebuild — and the reader rebuilds whenever the publisher
+  // capture or the company head moves. Every cache downstream is keyed on the row object
+  // (attribution, story reading, canonical address, publication day), so a fresh object per
+  // rebuild made all of them miss for every projected story at once: the whole history was
+  // re-read on a switch from AI Alerts to All Alerts. Both inputs are immutable, so the pair is
+  // the key and the projected row is exactly the same value it was.
+  const projected = new WeakMap();
+  const projection = (match, row) => {
+    const hit = projected.get(match);
+    if (hit && hit.row === row) return hit.value;
+    const value = { ...match, source: row.source || row.publisher || null, date: publisherNewsDate(row),
+      discoverySource: 'published-publisher-feed', publisherSourceRecord: row };
+    projected.set(match, { row, value });
+    return value;
+  };
   function rows() {
     const source = base.rows(), published = publishers.rows(), entities = companyIdentities();
     const window = readingWindow(), windowKey = JSON.stringify(window);
@@ -54,10 +71,7 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     };
     // Head/body-backed publisher matches are preferred over an older uncertain search copy at
     // the same company URL; dedupe never crosses companies or publisher domains.
-    for (const row of published) if (inNewsWindow(row, window) && include(row)) for (const match of matchPortfolioNews(row, entities)) add({
-      ...match, source: row.source || row.publisher || null, date: publisherNewsDate(row),
-      discoverySource: 'published-publisher-feed', publisherSourceRecord: row,
-    });
+    for (const row of published) if (inNewsWindow(row, window) && include(row)) for (const match of matchPortfolioNews(row, entities)) add(projection(match, row));
     source.filter(row => inNewsWindow(row, window)).forEach(add);
     const value = [...buckets.values()].flatMap(dedupeArticles)
       .sort((a, b) => String(b.publishedAt || b.date || '').localeCompare(String(a.publishedAt || a.date || '')));

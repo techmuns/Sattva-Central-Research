@@ -53,7 +53,7 @@ import * as screenerInsights from './screener-insights.js';
 // filing would have become a negative alert about a named investor.
 import { isMove } from './finology-shared.js';
 import { announcements, insider, news, createQueryNews } from './filings.js';
-import { insiderTradeSourceUrl, canonicalArticleUrl } from './filings-shared.js';
+import { insiderTradeSourceUrl, articleUrlKey, canonicalArticleUrl } from './filings-shared.js';
 import { classifyStory } from './news-keywords.js';
 import { announcementSignal } from './filing-signals.js';
 export { announcementSignal, BSE_CRITICAL_IS_MATERIAL } from './filing-signals.js';
@@ -201,11 +201,29 @@ function istTime(value) {
 }
 
 /** The IST calendar date of an instant. */
-function istDay(value) {
-  if (!value) return null;
+function istDayOf(value) {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return new Date(d.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+// A pure string-to-string function asked about the same 80,000 timestamps on every pass over the
+// news history (two Date allocations each): bounded FIFO on the raw string, the same shape as
+// `matchKeywords` and `canonicalArticleUrl`. The key is the row's own string, so nothing is copied.
+const IST_DAY_CACHE_MAX = 65_536;
+const istDayCache = new Map();
+const istDayKeys = new Array(IST_DAY_CACHE_MAX);
+let nextIstDayKey = 0;
+function istDay(value) {
+  if (!value) return null;
+  if (typeof value !== 'string') return istDayOf(value);
+  const hit = istDayCache.get(value);
+  if (hit !== undefined) return hit;
+  const day = istDayOf(value);
+  istDayCache.delete(istDayKeys[nextIstDayKey]);
+  istDayKeys[nextIstDayKey] = value;
+  nextIstDayKey = (nextIstDayKey + 1) % IST_DAY_CACHE_MAX;
+  istDayCache.set(value, day);
+  return day;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -546,14 +564,19 @@ function queryNewsReader(queryWindow) {
   trimQueryReaders();
   return entry.reader;
 }
+// `articleUrlKey` (filings-shared.js) is the row's own canonical address: `canonicalArticleUrl`
+// keeps a 16,384-entry text cache, which a pass over 81,921 history rows evicts as fast as it
+// fills, so every switch between the AI window and a selected period parsed every URL again
+// (profiled at 1,635ms plus 868ms inside the URL constructor).
+const rowUrlKey = articleUrlKey;
 function newsQueryRows(reader, queryWindow, companyReader = news) {
   if (!queryWindow) { newsCandidates = null; return reader.rows(); }
   const companyRows = companyReader.rows(), marketRows = marketNews.rows();
   const key = alertWindowKey(queryWindow);
   if (newsCandidates?.companyRows !== companyRows || newsCandidates.marketRows !== marketRows || newsCandidates.key !== key) {
     const selected = row => inAlertQuery({ at: row.publishedAt || row.date }, queryWindow);
-    const urls = new Set([...companyRows, ...marketRows].filter(selected).filter(row => row.url).map(row => canonicalArticleUrl(row.url)));
-    const matches = row => selected(row) || row.url && urls.has(canonicalArticleUrl(row.url));
+    const urls = new Set([...companyRows, ...marketRows].filter(selected).filter(row => row.url).map(rowUrlKey));
+    const matches = row => selected(row) || row.url && urls.has(rowUrlKey(row));
     newsCandidates = { companyRows, marketRows, key, company: companyRows.filter(matches), market: marketRows.filter(matches) };
   }
   return reader === companyReader ? newsCandidates.company : newsCandidates.market;
@@ -626,6 +649,27 @@ export async function prepareSources({ refresh = false, feedIds = null } = {}) {
  * nothing else. A failure becomes a `feeds[]` row saying so — the same rule as everywhere here, a
  * failed read is never an empty result.
  */
+// WARM THE PER-ROW READINGS IN TIME-SLICED CHUNKS BEFORE THE SYNCHRONOUS COLLECTOR RUNS.
+//
+// `fromCompanyNews` classifies and attributes every story in one synchronous pass, and after a
+// release the full-history reader is rebuilt from disk as new row objects, so that pass is cold
+// again on every return: profiled at 4.2 seconds on one main-thread task, landing while the reader
+// had already moved from AI Alerts to All Alerts. The readings themselves are memoised on the row
+// object, so touching them here in ~12ms slices with a yield between each turns that one task into
+// forty small ones. Nothing is skipped and nothing is decided here — the collector still reads
+// every row itself and reports its own failures; this only changes when the work happens.
+async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput) {
+  let rows;
+  try { rows = feedId === 'news' ? newsQueryRows(reader, queryWindow, reader) : newsQueryRows(marketNews, queryWindow, reader); }
+  catch { return; }
+  let started = performance.now();
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    try { classifyStory(row); if (feedId === 'news') newsEventTopics(row); } catch { /* the collector reports the row's own failure */ }
+    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+  }
+}
+
 export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null, requestedCompanies = [], queryWindow = null } = {}) {
   observeSources();
   // Pure reassembly of explicitly preloaded source fixtures keeps using those same records.
@@ -706,6 +750,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           loadedFeeds.add('news'); normalizedFeeds.delete('news');
         } else if (load) await loadFeed(feed.id, refresh);
         await yieldForInput();
+        if (feed.id === 'news' || feed.id === 'market-news') await warmNewsReadings(feed.id, newsReader, queryWindow, yieldForInput);
         out = readFeed(feed, args);
         if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
         else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };

@@ -82,9 +82,20 @@ const FILTER_FIELDS = [
   { label: 'Mode', allLabel: 'All modes', keys: ['mode', 'transaction mode', 'method'], maxWidthPx: 240 },
 ];
 
+const rowKeys = new WeakMap();
+// Read once per row and filter field: the dropdown options ask every row for every field, and the
+// active filters ask again per evaluation. Rows are immutable, and the keys lists are the module
+// constants above, so the (row, keys) pair is a stable key.
+const filterCells = new WeakMap();
 const filterCell = (row, keys) => {
-  const value = pickField(row?.cells, keys);
-  return value == null ? null : String(value).trim() || null;
+  if (row === null || typeof row !== 'object') return null;
+  let cells = filterCells.get(row);
+  if (!cells) { cells = new Map(); filterCells.set(row, cells); }
+  if (cells.has(keys)) return cells.get(keys);
+  const value = pickField(row.cells, keys);
+  const out = value == null ? null : String(value).trim() || null;
+  cells.set(keys, out);
+  return out;
 };
 
 const RANGE_TO_PERIOD = { '1m': '30', '3d': '3', '7d': '7', '14d': '14' };
@@ -140,7 +151,12 @@ const tab = makeFilingsTab({
   // The whole row, because these rows have no id of their own: no URL, no headline, and two filings
   // on one day by two people are a legitimate pair. NEVER the row's index — see the note beside the
   // key builder in filings-tab.js for what that cost the News tab.
-  keyFor: (r) => `${r.ticker || ''}|${r.date || ''}|${Object.values(r.cells || {}).join('|')}`,
+  // Derived once per row object: rows are immutable and the key is a function of their content.
+  keyFor: (r) => {
+    let key = rowKeys.get(r);
+    if (key === undefined) { key = `${r.ticker || ''}|${r.date || ''}|${Object.values(r.cells || {}).join('|')}`; rowKeys.set(r, key); }
+    return key;
+  },
   filters: tradeFilters,
   // Keep the selected period in the URL across links and reloads.
   // Range selection changes only the displayed rows; automatic capture retains its full history.

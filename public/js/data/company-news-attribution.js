@@ -88,13 +88,37 @@ export function companyNewsAttribution(row = {}, identity = {}) {
     evidence: evidence.filter((e, i, all) => all.findIndex(x => x.field === e.field && x.match === e.match && x.kind === e.kind) === i) };
 }
 
-export const attributionFor = (row = {}) => row.attribution?.version === ATTRIBUTION_VERSION
-  ? row.attribution : companyNewsAttribution(row);
+// ONE READING PER ROW OBJECT. Captured rows carry no attribution field, so this ran the three
+// text normalisations and every alias test again for EACH of the four reads the alerts collector
+// makes per story, on every pass — profiled at 2,123ms inside `companyNewsAttribution` on one
+// switch from AI Alerts to All Alerts. Rows are replaced, never edited (verified parts arrive
+// frozen), so a WeakMap keyed on the row object is exactly equivalent to recomputing and the entry
+// dies with the row. The title/summary/url check catches a normaliser that edits a row it built.
+const attributionMemo = new WeakMap();
+export function attributionFor(row = {}) {
+  if (row?.attribution?.version === ATTRIBUTION_VERSION) return row.attribution;
+  if (row === null || typeof row !== 'object') return companyNewsAttribution(row);
+  const hit = attributionMemo.get(row);
+  if (hit && hit.title === row.title && hit.summary === row.summary && hit.url === row.url) return hit.value;
+  const value = companyNewsAttribution(row);
+  attributionMemo.set(row, { title: row.title, summary: row.summary, url: row.url, value });
+  return value;
+}
 
+// ONE DECORATED ROW PER (ROW, IDENTITY), NOT PER ROW. The same story is attributed under several
+// identities in one session — the head reader's fallback identity, the archive index's, each
+// portfolio company a publisher story matches, and the alert collector's own match — and a cache
+// holding only the LAST identity per row was overwritten on every rebuild. Each rebuild then
+// produced a fresh decorated object, and every cache keyed on that object downstream (story
+// reading, canonical address, publication day) missed at once: profiled, one switch from AI
+// Alerts to All Alerts re-read the whole history for 4.5 seconds with every cache in place. The
+// inner map is keyed by the identity object and holds a handful of entries per row at most.
 const decorated = new WeakMap();
 export function attributeNewsRow(row, identity = null) {
-  const old = decorated.get(row);
-  if (old && old.identity === identity) return old.value;
+  let byIdentity = decorated.get(row);
+  if (!byIdentity) { byIdentity = new Map(); decorated.set(row, byIdentity); }
+  const old = byIdentity.get(identity);
+  if (old) return old;
   const attribution = companyNewsAttribution(row, identity || {});
   const value = { ...row, ticker: attribution.queryTicker, company: attribution.queryCompany,
     entityId: attribution.queryEntityId, attribution, queryTicker: attribution.queryTicker,
@@ -102,7 +126,7 @@ export function attributeNewsRow(row, identity = null) {
   if (attribution.status === 'unrelated') {
     value.ticker = null; value.entityId = null; value.company = null;
   }
-  decorated.set(row, { identity, value });
+  byIdentity.set(identity, value);
   return value;
 }
 

@@ -318,10 +318,20 @@ export function namesCompany(row = {}) {
  * strict reading of "company name + keyword" — tracked AND the story names the company — with a
  * unknown identity kept in default views but not in the explicitly strict `targeted` filter.
  */
+// ONE READING PER ROW OBJECT, for the same reason `matchKeywords` caches by text above: the
+// alerts collector reads every story again on every pass, and the text cache alone cannot hold a
+// full history (65,536 entries against 81,921 rows evicts in FIFO order exactly as fast as a pass
+// walks it, so a full pass hit nothing). Rows are replaced, never edited, so the row object is the
+// key; the title/summary/attribution check guards the one normaliser that edits a row it built.
+// The result arrays are SHARED between callers, as `keywords` already was — copy before mutating.
+const storyReadings = new WeakMap();
 export function classifyStory(row = {}) {
+  const cacheable = row !== null && typeof row === 'object';
+  const hit = cacheable ? storyReadings.get(row) : undefined;
+  if (hit && hit.title === row.title && hit.summary === row.summary && hit.attribution === row.attribution) return hit.value;
   const keywords = matchKeywords(row.title, row.summary);
   const named = namesCompany(row);
-  return {
+  const value = {
     attribution: attributionFor(row),
     keywords,
     ids: keywords.map((k) => k.id),
@@ -332,6 +342,8 @@ export function classifyStory(row = {}) {
     tracked: keywords.length > 0,
     targeted: keywords.length > 0 && named === true,
   };
+  if (cacheable) storyReadings.set(row, { title: row.title, summary: row.summary, attribution: row.attribution, value });
+  return value;
 }
 
 // ---------------------------------------------------------------------------------------

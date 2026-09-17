@@ -7,12 +7,31 @@ const canonical = (value) => {
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
 };
 
-const folded = (value) => String(value ?? '')
+const foldText = (value) => String(value ?? '')
   .normalize('NFKD')
   .toLowerCase()
   .replace(/&/g, ' and ')
   .replace(/[^a-z0-9]+/g, ' ')
   .trim();
+// A pure string-to-string function asked the same questions millions of times: every column
+// heading of every row, on every identity, on every cumulative archive merge. Profiled at 628ms
+// self time on one cold open of Insider Trades. Bounded FIFO on the raw string, the same shape as
+// `matchKeywords`; the bound keeps a long history from retaining folded text for ever.
+const FOLD_CACHE_MAX = 65_536;
+const foldCache = new Map();
+const foldKeys = new Array(FOLD_CACHE_MAX);
+let nextFoldKey = 0;
+const folded = (value) => {
+  const key = typeof value === 'string' ? value : String(value ?? '');
+  const hit = foldCache.get(key);
+  if (hit !== undefined) return hit;
+  const out = foldText(key);
+  foldCache.delete(foldKeys[nextFoldKey]);
+  foldKeys[nextFoldKey] = key;
+  nextFoldKey = (nextFoldKey + 1) % FOLD_CACHE_MAX;
+  foldCache.set(key, out);
+  return out;
+};
 
 const compactNumber = (value) => {
   const match = String(value ?? '').match(/[+-]?[\d,]+(?:\.\d+)?/);
@@ -21,13 +40,21 @@ const compactNumber = (value) => {
   return Number.isFinite(number) ? String(number) : '';
 };
 
+// The folded name set is a property of the names list, so the lists below are module constants
+// rather than literals rebuilt (and re-folded) on every call.
+const wantedNames = new WeakMap();
 const field = (cells, names) => {
-  const wanted = new Set(names.map(folded));
+  let wanted = wantedNames.get(names);
+  if (!wanted) { wanted = new Set(names.map(folded)); wantedNames.set(names, wanted); }
   for (const [key, value] of Object.entries(cells || {})) {
     if (wanted.has(folded(key)) && value != null && String(value).trim()) return String(value).trim();
   }
   return '';
 };
+const TRADE_CATEGORY_FIELDS = ['Trade Category', 'Disclosure Type'];
+const PERSON_FIELDS = ['Insider', 'Person', 'Person Name', 'Name of Insider', 'Acquirer', 'Holder'];
+const TRANSACTION_FIELDS = ['Transaction', 'Transaction Type', 'Acq/Disp', 'Acquisition/Disposal'];
+const SHARES_FIELDS = ['Trade Shares', 'Shares', 'Quantity', 'Qty'];
 
 const direction = (value) => {
   const text = folded(value);
@@ -41,11 +68,14 @@ const direction = (value) => {
 export const INSIDER_TRADE_CATEGORY = 'Insider trade';
 
 /** Give older Muns rows the category that was implicit before the Screener market-wide feeds. */
+// A row that already carries its category is returned AS IS rather than copied. Every merge used
+// to copy every row it kept, so the output of one archive month's merge was a fresh object for
+// the next month's merge — and nothing keyed on a row could ever hit twice. Rows are replaced,
+// never edited, so sharing the object is exactly what the memoised identity below needs.
 export function withTradeCategory(row) {
+  if (row && typeof row === 'object' && field(row.cells, TRADE_CATEGORY_FIELDS)) return row;
   const copy = { ...row, cells: { ...(row?.cells || {}) } };
-  if (!field(copy.cells, ['Trade Category', 'Disclosure Type'])) {
-    copy.cells['Trade Category'] = INSIDER_TRADE_CATEGORY;
-  }
+  copy.cells['Trade Category'] = INSIDER_TRADE_CATEGORY;
   return copy;
 }
 
@@ -62,7 +92,21 @@ export function withTradeCategory(row) {
  * Rows without enough shared identity fall back to their complete, sorted content. We never guess
  * two anonymous or undated rows are the same event.
  */
+// ONE IDENTITY PER ROW OBJECT. The identity is a pure function of the row's content and rows are
+// immutable, so the object is the key; a cumulative merge of twelve archive months no longer
+// re-derives every retained row's identity twelve times. The entry dies with the row.
+const identities = new WeakMap();
 export function insiderTradeIdentity(input) {
+  const cacheable = input !== null && typeof input === 'object';
+  if (cacheable) {
+    const hit = identities.get(input);
+    if (hit !== undefined) return hit;
+  }
+  const value = deriveIdentity(input);
+  if (cacheable) identities.set(input, value);
+  return value;
+}
+function deriveIdentity(input) {
   const row = withTradeCategory(input);
   const cells = row.cells;
   // Official exchange reports retain venue, report type and price. They are reconciled
@@ -71,10 +115,10 @@ export function insiderTradeIdentity(input) {
     return JSON.stringify(['exchange', row.sourceId, row.date, row.exchangeSecurity || row.ticker,
       folded(cells.Insider), direction(cells.Transaction), compactNumber(cells['Trade Shares']), compactNumber(cells.Price)]);
   }
-  const category = folded(field(cells, ['Trade Category', 'Disclosure Type']) || INSIDER_TRADE_CATEGORY);
-  const person = folded(field(cells, ['Insider', 'Person', 'Person Name', 'Name of Insider', 'Acquirer', 'Holder']));
-  const transaction = direction(field(cells, ['Transaction', 'Transaction Type', 'Acq/Disp', 'Acquisition/Disposal']));
-  const shares = compactNumber(field(cells, ['Trade Shares', 'Shares', 'Quantity', 'Qty']));
+  const category = folded(field(cells, TRADE_CATEGORY_FIELDS) || INSIDER_TRADE_CATEGORY);
+  const person = folded(field(cells, PERSON_FIELDS));
+  const transaction = direction(field(cells, TRANSACTION_FIELDS));
+  const shares = compactNumber(field(cells, SHARES_FIELDS));
   const ticker = folded(row.ticker);
   const date = String(row.date || '').slice(0, 10);
   if (ticker && date && person && transaction && shares) {

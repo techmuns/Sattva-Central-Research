@@ -37,6 +37,8 @@ jobs:
         run: node scripts/verify-news-window.mjs
       - name: Verify bounded memory, lossless saves and exact news reading windows
         run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node scripts/verify-news-working-set.mjs
+      - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
+        run: node scripts/verify-hot-path-memo.mjs
       - name: Verify lossless news parts and deployable asset sizes
         run: node scripts/verify-news-publication.mjs && node scripts/verify-news-maintenance.mjs && node scripts/partition-news-data.mjs
       - name: Verify direct publisher delivery, OnEMI identity and open-app upgrades

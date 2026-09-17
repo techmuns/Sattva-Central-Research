@@ -2130,6 +2130,32 @@ Three things to take from it:
    set — instead of quietly painting the wrong thing. A caller with a bad key gets a slower paint,
    never a lie.
 
+### A PER-ROW CACHE IS KEYED ON THE ROW OBJECT — and a projection that copies a row defeats it
+
+`docs/PERFORMANCE-HOT-PATHS-2026-09-17.md` has the measurements. The rule that survives:
+
+1. **A pure function of a row is memoised on the row object, in a `WeakMap`.** Rows are replaced,
+   never edited — verified parts arrive frozen — so the object is an exact key and the entry dies
+   with the row. `attributionFor`, `classifyStory`, `newsEventTopics`, `newsPublicationDay`,
+   `articleUrlKey`, `insiderTradeIdentity` and the insider tab's row key all work this way; each
+   checks the one or two fields it reads, so the single normaliser that edits a row it built is
+   still read correctly. A text-keyed FIFO alone is not enough on a full history: 65,536 entries
+   against 81,921 rows evicts exactly as fast as a pass walks it, and a full pass hit nothing.
+2. **A projection that spreads a row into a new object must itself be memoised on its inputs**, or
+   every cache below it misses at once. `portfolio-publisher-news.js` rebuilt every projected story
+   as a fresh object whenever the publisher capture moved, and one switch from AI Alerts to All
+   Alerts re-read the whole history — a 4.7-second main-thread task with every per-row cache in
+   place. `withTradeCategory` returns a row that already carries its category unchanged for the
+   same reason: a cumulative archive merge that copies every row it keeps can never hit twice.
+3. **A property of an object's shape is cached on the object, and the value is read live.**
+   `pickField` rebuilt a flattened key map on every call — 1,920ms on one cold open of Insider
+   Trades, five filter dropdowns asking ~48,000 rows five times each.
+4. **Do not measure bytes with `TextEncoder.encode` per record.** `utf8Length` counts without the
+   allocation; the per-part figure the integrity check reads is still the encoder's own.
+
+`scripts/verify-hot-path-memo.mjs` asserts every cache is invisible — same answers as a fresh
+computation, live reads where promised, exact byte counts — and runs in the contracts job.
+
 ### Data sources
 
 The header "Sources" modal is generated from `js/ui/sources.js`. **Adding a data source means
@@ -3537,6 +3563,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser + the `src` allow-list, imported by the Worker too) + `handleNseFiling` in `worker/index.js` (`GET /api/nse-filing`) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and a modified click still gets the raw file. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
 | Change how many days of announcements are kept | `ANN_KEEP_DAYS` in `scripts/scrape-bse-announcements.mjs` — a bytes ceiling, ~900 filings a weekday |
 | Change the tracked news keywords, or what a Topic filter offers | `public/js/data/news-keywords.js` — the whole vocabulary is one array; read *Thirty words that make a search feed usable* first. A keyword is a topic and must never become a direction, and `namesCompany` marks a row rather than dropping one |
+| Speed up a per-row helper on a hot path | memoise it on the row object in a `WeakMap`, validated on the fields it reads — read *A per-row cache is keyed on the row object* first; `scripts/verify-hot-path-memo.mjs` is the test |
 | Change what makes a news story material to General Alerts / AI Alerts | `newsSignal()` in `js/data/daily-alerts.js` — it raises IMPORTANCE only, never direction, and the suite asserts that on a risk word |
 | Change what makes a FILING material | `announcementSignal()` + `BSE_CRITICAL_IS_MATERIAL` in `js/data/daily-alerts.js` — read *A borrowed flag is not a materiality rule* first. One predicate, stated inputs; BSE's critical flag is reproduced and is not the gate |
 | Change the volume/breakout alert, or its threshold | `VOLUME_X` and the participation branch of `fromTechnicals` in `js/data/daily-alerts.js` — volume is neutral because the tape does not say which side it was |
