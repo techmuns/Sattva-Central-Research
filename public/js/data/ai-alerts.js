@@ -16,6 +16,7 @@
 
 import * as generalAlerts from './daily-alerts.js';
 import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
+import { driversOf } from './alert-drivers.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
@@ -805,6 +806,10 @@ export function rankReport(report, { holdings = coverage.holdings(), positionSiz
     }
     card.priority = card.score >= MUST_SEE_SCORE ? 'must-see' : card.score >= MIN_SCORE || card.materialPortfolioEvent ? 'important' : 'watch';
     card.insight = plainInsight(card);
+    // Which of the three investor questions the card's own evidence bears on. Derived from topic
+    // readings already on those events — it adds no fact, no number and no score, and contributes
+    // nothing to the arithmetic above. See js/data/alert-drivers.js.
+    card.drivers = driversOf(card);
     card.metrics = cardMetrics(card);
     card.badge = cardBadge(card);
     return enrichCardFromAllAlerts(card, supportedReport, { contextIndex });

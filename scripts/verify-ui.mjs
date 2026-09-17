@@ -7717,6 +7717,130 @@ ok('...and a sub-threshold investor move does not trip it', !keywordRules.smallB
 ok('"a move nothing explains" is reported only when the silent feeds were read', keywordRules.unexplainedWhenRead.includes('unexplained-move') && !keywordRules.unexplainedWhenUnread.includes('unexplained-move'));
 ok('the confluence contribution is capped', keywordRules.confluenceMax === 18, `${keywordRules.confluenceMax} points`);
 
+// ---------------------------------------------------------------------------------------
+// THE DRIVER LAYER — "earnings assumption, valuation or thesis?", asserted on fixtures.
+//
+// Same reason as every block above it: the branches here depend on which topic fields a collector
+// happened to write, and a three-day capture cannot be relied on to hold a dilution filing, a
+// related-entity report and a market-wide story on one company in one window. The card assertions
+// further down drive the real shipped data; these assert the rule.
+const driverRules = await page.evaluate(async () => {
+  const d = await import('/js/data/alert-drivers.js');
+  const ai = await import('/js/data/ai-alerts.js');
+  const alerts = await import('/js/data/daily-alerts.js');
+  const { ATTRIBUTION_VERSION } = await import('/js/data/company-news-attribution.js');
+  const ev = (o) => ({ day: '2026-09-03', ticker: 'ZZTEST', feed: o.feed, url: o.url || 'https://example.test/a', ...o });
+  const texts = (card) => d.driversOf(card).buckets.flatMap((b) => b.drivers.map((x) => `${b.id}:${x.text}`));
+
+  const filingRule = (title) => alerts.announcementSignal({ title }).filingRule;
+  const mixed = { events: [
+    ev({ feed: 'announcements', keywordIds: ['order'], filingRule: 'shareholder distribution' }),
+    ev({ feed: 'news', keywordIds: ['partnership'] }),
+    ev({ feed: 'news', keywordIds: ['stake-sale'] }),
+    ev({ feed: 'nse-filings', keywordIds: ['fraud'] }),
+  ] };
+
+  return {
+    // The three questions, in the order a card states them.
+    questions: d.QUESTIONS.map((q) => q.id),
+    labels: d.QUESTIONS.map((q) => q.label),
+
+    // The classifier writes the matched rule as a FIELD; nothing parses it back out of prose.
+    ruleIsAField: filingRule('Record date for Final Dividend') === 'shareholder distribution',
+    ruleIsNullWhenNoneMatched: filingRule('Notice of 25th Annual General Meeting') === null,
+
+    mixedTexts: texts(mixed),
+    mixedSilent: d.driversOf(mixed).silent.map((q) => q.id),
+    // One question answered leaves the other two stated as unanswered, not omitted.
+    oneSidedSilent: d.driversOf({ events: [ev({ feed: 'news', keywordIds: ['order'] })] }).silent.map((q) => q.id),
+    // No question answered at all supplies no buckets, and the card drops the whole section.
+    nothingTracked: d.driversOf({ events: [ev({ feed: 'technicals', kind: 'volume', volumeX: 3.1 })] }).buckets.length,
+
+    // THE SAME TOPIC IN TWO PLACES IS TWO DRIVERS — a filing and a story are separate records with
+    // separate links — and the same topic twice in one place is one.
+    twoPlaces: texts({ events: [ev({ feed: 'announcements', keywordIds: ['order'] }), ev({ feed: 'news', keywordIds: ['order'] })] }),
+    onePlaceTwice: texts({ events: [ev({ feed: 'news', keywordIds: ['order'] }), ev({ feed: 'news', keywordIds: ['order'], url: 'https://example.test/b' })] }),
+
+    // FEEDS THAT CARRY NO TOPIC SUPPLY NO DRIVER. A volume ratio is not about orders or governance,
+    // and bucketing one would be this dashboard asserting why somebody traded.
+    tape: texts({ events: [ev({ feed: 'technicals', kind: 'volume', volumeX: 3.1 })] }),
+    fund: texts({ events: [ev({ feed: 'investors', action: 'exited', investor: 'A Fund' })] }),
+    insider: texts({ events: [ev({ feed: 'insider', direction: 'negative' })] }),
+
+    // MARKET-WIDE NEWS CARRIES NO COMPANY, so it may never become a company's driver.
+    marketWide: texts({ events: [ev({ feed: 'market-news', keywordIds: ['fraud'] })] }),
+    // ...nor may a reviewed report about a DIFFERENT company.
+    relatedEntity: texts({ events: [ev({ feed: 'news', keywordIds: ['fraud'],
+      attribution: { version: ATTRIBUTION_VERSION, status: 'related', relationships: [{ relationship: 'subsidiary', evidenceUrl: 'https://example.test/e' }] } })] }),
+
+    // An analyst's published view is not an event at the company.
+    brokerage: texts({ events: [ev({ feed: 'news', keywordIds: ['brokerage-research'] })] }),
+
+    // A label-only collector branch still resolves, rather than dropping the topic silently.
+    labelOnly: texts({ events: [ev({ feed: 'news', keywords: ['Stake sale'] })] }),
+    unknownLabelInventsNothing: texts({ events: [ev({ feed: 'news', keywords: ['Not A Tracked Topic'] })] }),
+
+    // A capped bucket COUNTS what it did not print.
+    overflow: (() => {
+      const many = { events: ['order', 'capex', 'commissioning', 'product-launch', 'patent'].map((id) => ev({ feed: 'news', keywordIds: [id] })) };
+      const bucket = d.driversOf(many).buckets[0];
+      return { shown: bucket.drivers.length, overflow: bucket.overflow, total: d.driversOf(many).total };
+    })(),
+
+    // It contributes nothing to the ranking arithmetic — it explains a card, it does not surface one.
+    addsNoScore: (() => {
+      const events = [{ id: 'e1', day: '2026-09-03', ticker: 'ZZTEST', company: 'ZZ Test Ltd', feed: 'announcements', feedLabel: 'Announcements',
+        direction: 'positive', importance: 'high', headline: 'Record date for Final Dividend', filingRule: 'shareholder distribution', keywordIds: ['buyback'], url: 'https://example.test/a' }];
+      const withTopics = ai.rankReport({ scope: 'universe', day: '2026-09-03', feeds: [{ id: 'announcements', status: 'ok', reachesToday: true }], events }, { holdings: [] });
+      const bare = ai.rankReport({ scope: 'universe', day: '2026-09-03', feeds: [{ id: 'announcements', status: 'ok', reachesToday: true }],
+        events: [{ ...events[0], filingRule: null, keywordIds: [] }] }, { holdings: [] });
+      const card = withTopics.allCards[0];
+      return { equal: card?.score === bare.allCards[0]?.score, attached: (card?.drivers?.total || 0) > 0 };
+    })(),
+  };
+});
+
+ok('the card names the three investor questions, widest commitment last',
+  driverRules.questions.join(',') === 'earnings,valuation,thesis', driverRules.questions.join(', '));
+ok("...in the sentence form a card reads out", driverRules.labels.join(' / ') === 'the earnings assumption / the valuation / the thesis');
+// Reading our own prose back out is how a consumer breaks silently the day the sentence is reworded.
+ok('the matched filing rule reaches the driver layer as a field, not as parsed prose',
+  driverRules.ruleIsAField && driverRules.ruleIsNullWhenNoneMatched);
+ok('a filing and a story are bucketed onto the questions they bear on',
+  driverRules.mixedTexts.includes('earnings:Order in a filing') &&
+  driverRules.mixedTexts.includes('earnings:Partnership in the news') &&
+  driverRules.mixedTexts.includes('valuation:shareholder distribution in a filing') &&
+  driverRules.mixedTexts.includes('valuation:Stake sale in the news') &&
+  driverRules.mixedTexts.includes('thesis:Fraud in a filing'), driverRules.mixedTexts.join(' | '));
+// "Nothing tracked here bears on the thesis" is a real answer and is how a reader tells a fund-book
+// card from a governance one. What is dropped is the whole section, and only when NO question has
+// an answer: three negatives in a row is noise rather than a reading.
+ok('...a question with nothing behind it is stated, not omitted',
+  driverRules.mixedSilent.length === 0 && driverRules.oneSidedSilent.join(',') === 'valuation,thesis',
+  driverRules.oneSidedSilent.join(', ') || 'none silent');
+ok('...while a card with no tracked topic at all carries no section to be negative in',
+  driverRules.nothingTracked === 0);
+ok('the same topic in two sources is two drivers; twice in one source is one',
+  driverRules.twoPlaces.length === 2 && driverRules.onePlaceTwice.length === 1,
+  `${driverRules.twoPlaces.join(' | ')} vs ${driverRules.onePlaceTwice.join(' | ')}`);
+// A measurement is not a topic. Bucketing a volume ratio would be asserting why somebody traded.
+ok('the tape, the fund books and the insider rows supply no driver at all',
+  !driverRules.tape.length && !driverRules.fund.length && !driverRules.insider.length);
+// The same exclusion General Alerts applies to the same feed, for the same reason.
+ok('market-wide news carries no company, so it can never be a company driver', !driverRules.marketWide.length);
+ok('...and a reviewed related-entity report is not this company either', !driverRules.relatedEntity.length);
+ok("...nor is an analyst's published view an event at the company", !driverRules.brokerage.length);
+ok('a collector that wrote labels and no ids still resolves, and invents nothing from an unknown one',
+  driverRules.labelOnly.includes('valuation:Stake sale in the news') && !driverRules.unknownLabelInventsNothing.length);
+// A truncation nobody can see is the card claiming fewer things bear on the company than its own
+// evidence holds.
+ok('a capped question counts what it did not print',
+  driverRules.overflow.shown === 3 && driverRules.overflow.overflow === 2 && driverRules.overflow.total === 5,
+  `${driverRules.overflow.shown} shown, +${driverRules.overflow.overflow}`);
+// It explains a card that was surfaced anyway; it is not a second materiality gate.
+ok('the driver layer changes no score — it explains a card, it does not surface one',
+  driverRules.addsNoScore.equal && driverRules.addsNoScore.attached);
+
 // --- the two news surfaces, driven ---
 await go('/#/research/news?scope=portfolio', 1800);
 await waitForPanel();
@@ -7847,6 +7971,77 @@ if (!aiCards) {
     (order?.insight || '').slice(0, 100));
   // No score anywhere on the card, exactly as before this layer existed.
   ok('...and still prints no score arithmetic', !/\b\d{1,3}\s*(?:\/\s*100|points)\b/i.test(order?.text || ''));
+}
+
+// --- the card's two labelled readings, driven on the shipped capture ---
+// The rule is asserted on fixtures above; what this cannot get from a fixture is that the section
+// reaches the screen, in the right place, with links that actually resolve.
+const cardShape = await page.evaluate(() => {
+  const cards = [...document.querySelectorAll('[data-ai-card]')];
+  if (!cards.length) return null;
+  const withDrivers = cards.filter((c) => c.querySelector('[data-ai-drivers]'));
+  const card = withDrivers[0] || cards[0];
+  const kick = (node) => node?.querySelector('.uppercase')?.innerText.trim() || '';
+  const drivers = card.querySelector('[data-ai-drivers]');
+  const insight = card.querySelector('[data-ai-insight]');
+  const evidence = card.querySelector('[data-ai-evidence]');
+  const links = [...card.querySelectorAll('[data-ai-driver]')];
+  return {
+    cards: cards.length,
+    withDrivers: withDrivers.length,
+    // Every card states what happened, under a kicker that says so.
+    everyCardLabelsItsInsight: cards.every((c) => /what happened/i.test(c.innerText)),
+    insightKicker: kick(insight?.closest('.flex')),
+    driverKicker: kick(drivers),
+    driverText: (drivers?.innerText || '').replace(/\s+/g, ' ').trim(),
+    // The finding is read before what it bears on, and both before the evidence.
+    insightBeforeDrivers: !!drivers && !!(insight.compareDocumentPosition(drivers) & Node.DOCUMENT_POSITION_FOLLOWING),
+    driversBeforeEvidence: !!drivers && !!evidence && !!(drivers.compareDocumentPosition(evidence) & Node.DOCUMENT_POSITION_FOLLOWING),
+    // EVERY DRIVER IS A LINK TO ITS OWN SOURCE. A classification of ours with no way to check it
+    // would be a judgement with no record behind it.
+    linkCount: links.length,
+    allLinked: links.length > 0 && links.every((a) => {
+      const href = a.getAttribute('href') || '';
+      return /^https?:\/\//.test(href) || href.startsWith('#/research/');
+    }),
+    externalsAreSafe: links.filter((a) => /^https?:\/\//.test(a.getAttribute('href') || ''))
+      .every((a) => a.getAttribute('target') === '_blank' && /noopener/.test(a.getAttribute('rel') || '')),
+    // ...and each one says what it is, rather than asserting the event happened.
+    titlesDisclaimVerification: links.every((a) => /does not verify|not confirmation/i.test(a.getAttribute('title') || '')),
+    // The driver links must point at evidence this card actually holds.
+    hrefsAreOnCard: (() => {
+      const evidenceHrefs = new Set([...card.querySelectorAll('[data-ai-evidence-link]')].map((a) => a.getAttribute('href')));
+      return links.every((a) => evidenceHrefs.has(a.getAttribute('href')));
+    })(),
+  };
+});
+
+if (!cardShape) {
+  skip('the AI Alerts card labels its two readings', 'no company reached the surfaced threshold in this capture');
+} else {
+  ok('every AI Alerts card labels what happened', cardShape.everyCardLabelsItsInsight && /what happened/i.test(cardShape.insightKicker),
+    `${cardShape.cards} card(s) · "${cardShape.insightKicker}"`);
+  if (!cardShape.withDrivers) {
+    // A real answer rather than a failure, exactly as the confluence skip above: no surfaced
+    // company carried a tracked topic today. The rule itself is asserted on fixtures.
+    skip('...and which investor question its evidence bears on', `${cardShape.cards} card(s), none carrying a tracked topic today`);
+  } else {
+    ok('...and which investor question its evidence bears on',
+      /earnings assumption, valuation or thesis/i.test(cardShape.driverKicker),
+      `${cardShape.withDrivers} of ${cardShape.cards} cards · "${cardShape.driverKicker}"`);
+    // The reading is a TOPIC, so the sentence is what a topic supports and no more. "Improves
+    // earnings" would be a direction this dashboard's own feeds refuse to assert.
+    ok('...worded as what the evidence COULD change, never as a verdict',
+      /^Could change /.test(cardShape.driverText.replace(/^.*?\?\s*/, '')) &&
+        !/\b(?:will|improves?|worsens?|beats?|misses?|undervalued|overvalued)\b/i.test(cardShape.driverText),
+      cardShape.driverText.slice(0, 140));
+    ok('...read after the finding and before the evidence', cardShape.insightBeforeDrivers && cardShape.driversBeforeEvidence);
+    // The point of the section: the classification is ours, so the record behind it is one click away.
+    ok('...and every driver links to the source behind it, on this card',
+      cardShape.allLinked && cardShape.hrefsAreOnCard && cardShape.externalsAreSafe,
+      `${cardShape.linkCount} link(s)`);
+    ok('...each saying it matched a topic rather than verifying the event', cardShape.titlesDisclaimVerification);
+  }
 }
 
 // ---------------------------------------------------------------------------------------

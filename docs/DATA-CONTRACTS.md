@@ -4651,6 +4651,48 @@ never parsed back out of a sentence.
 `Reconcile`, because that changes what the reader does next and `Important` does not. The band
 itself stays on the card as `data-priority` and in the filter chips.
 
+### The driver layer — `driversOf(card)` in `js/data/alert-drivers.js`
+
+Derived, pure, and attached to every ranked card as `card.drivers`. It answers the reader's second
+question — *does this change anything I believed?* — by bucketing the topic readings ALREADY on the
+card's events onto the three forms that question takes on this desk.
+
+```js
+{
+  buckets: [{                 // only questions with at least one driver, in QUESTIONS order
+    id: 'earnings',           // 'earnings' | 'valuation' | 'thesis'
+    label: 'the earnings assumption',
+    short: 'Earnings assumption',
+    drivers: [{
+      key: 'earnings:order:a filing',
+      question: 'earnings',
+      label: 'Order',         // the desk's own word, or announcementSignal's own rule name
+      where: 'a filing',      // 'a filing' | 'the news'
+      text: 'Order in a filing',
+      why: 'Matched the tracked keyword Order. A keyword says what a source is about; …',
+      event,                  // the event this was read off — the card links the driver to it
+    }],
+    overflow: 0,              // drivers past the cap, COUNTED rather than dropped
+  }],
+  silent: [{ id: 'thesis', label: 'the thesis', short: 'Thesis' }],
+  total: 5,
+}
+```
+
+| Rule | Why |
+| --- | --- |
+| Adds no fact, no number, no score | Every driver is a topic reading `newsSignal()` / `announcementSignal()` already wrote. `rankReport`'s arithmetic is unchanged — a card scores identically with its topics stripped. |
+| A TOPIC, never a direction | The card says a topic **could change** a question. Strengthening that to a verdict would assert a direction the feeds themselves refuse to assert. |
+| `filingRule` is a field | `announcementSignal` returns its matched rule name directly, so nothing recovers it by parsing `signalReason`. |
+| Only topic-carrying, company-certain feeds | `announcements`, `nse-filings` and confirmed company `news`. The tape, fund books and insider rows carry no topic; **market-wide news carries no company** and related-entity reports are about a different one; `brokerage-research` is a view of the company, not an event at it. |
+| Same topic, two sources → two drivers | A filing and a story are separate records with separate links. The same topic twice in one source is one driver. |
+| A silent question is stated | *"Nothing tracked here bears on the thesis."* The whole section drops only when no question has an answer. |
+
+Two bucket choices are deliberate: **`stake-sale` is valuation** (a block changing hands alters who
+owns the company and what the float is, not what it earns), and **`merger` / `acquisition` are
+thesis** (they move earnings too, but whether the thing being valued is still the same thing is the
+prior question).
+
 ### Screener company Insights — authenticated capture, context only
 
 Screener's company `#insights` tables are captured because they contain source-backed operating

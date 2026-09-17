@@ -814,15 +814,15 @@
       "error": "search-unavailable"
     },
     "isin:INE774D01024|M&MFIN": {
-      "lastAttemptAt": "2026-09-13T07:33:29+00:00",
+      "lastAttemptAt": "2026-09-17T15:51:28+00:00",
       "error": "search-unavailable"
     },
     "isin:INE993A01026|Man Industries (India)": {
-      "lastAttemptAt": "2026-09-13T08:25:07+00:00",
+      "lastAttemptAt": "2026-09-17T16:24:46+00:00",
       "error": "search-unavailable"
     },
     "isin:INE993A01026|MANINDS": {
-      "lastAttemptAt": "2026-09-13T09:00:56+00:00",
+      "lastAttemptAt": "2026-09-17T16:57:24+00:00",
       "error": "search-unavailable"
     },
     "isin:INE103A01014|Mangalore Petrochemicals and Refinery": {
@@ -1506,6 +1506,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 207,
-    "checkedAt": "2026-09-17T14:59:11.543223+00:00"
+    "checkedAt": "2026-09-17T16:57:24.780941+00:00"
   }
 }
