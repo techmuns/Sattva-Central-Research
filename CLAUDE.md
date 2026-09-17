@@ -142,6 +142,8 @@ public/
                               a contributor and an edit are
       daily-alerts.js         RETAINED HISTORY across NINE feeds. Derived: no file, no route of its own
       ai-alerts.js            EXPLAINABLE seven-day company priority over Daily/General readings
+      alert-drivers.js        WHICH INVESTOR QUESTION a tracked topic bears on — earnings assumption,
+                              valuation or thesis. One mapping, read by the AI Alerts card
       coverage.js             THE BOOK — the 142 companies the Portfolio toggle means, and the
                               19 it cannot cover. NOT the ledger; see the section below
       technicals.js           loads + scores the live feed once, caches it
@@ -2537,6 +2539,64 @@ absence produced by our own bookkeeping, presented as an absence of events. So t
 WHICH evidence was dismissed (the card's strongest event id); the card returns by itself the moment
 something stronger arrives, and the record lapses after the alert window it refers to.
 
+### EARNINGS ASSUMPTION, VALUATION OR THESIS — what the evidence bears on
+
+The card answered *what happened*. A reader opens it with a second question — **does this change
+anything I believed?** — and on this desk that question has exactly three forms: the **earnings
+assumption** (what the business earns), the **valuation** (what a share is worth, and how many there
+are) and the **thesis** (whether it is still the business that was bought).
+
+`js/data/alert-drivers.js` is the one mapping from the desk's tracked vocabulary onto those three,
+and the card states it in a sentence under its own kicker: *"Could change **the earnings assumption**
+(Order in a filing; Partnership in the news) and **the valuation** (shareholder distribution in a
+filing). Nothing tracked here bears on the thesis."* **Every driver in it is a link to that event's
+own source** — the same destination, through the same `evidenceDestination`, as the evidence row
+below it. That is the point rather than a nicety: the bucketing is this dashboard's reading, so the
+record behind it has to be one click away, or it is a judgement with no way to check it.
+
+It is a separate file from `news-keywords.js` deliberately. **The keyword list is the desk's; a
+taxonomy of what a topic BEARS ON is ours.** Two different claims, two files, as `stockscans-shared`
+and `finology-shared` are separate from the tabs that read them.
+
+Six rules, and every one is a rule this codebase already had:
+
+1. **It adds no fact, no number and no score.** Every driver is a topic reading already written onto
+   the event by `newsSignal()` or `announcementSignal()`. Nothing here fetches, computes or ranks,
+   and `rankReport`'s arithmetic is untouched — the suite asserts a card's score is identical with
+   the topics stripped out. It explains a card that was surfaced anyway; it is **not** a second
+   materiality gate, which is the pattern this codebase keeps having to un-write.
+2. **It is still a TOPIC reading, never a direction.** `news-keywords.js` rule 1 holds one layer up:
+   "Lawsuit" is a topic and the company can be the plaintiff. So the sentence says a topic **could
+   change** the earnings assumption and may never be strengthened — *"improves earnings"* would be a
+   direction this dashboard's own feeds refuse to assert. The suite asserts the wording in both
+   directions: the sentence starts *Could change*, and carries no verdict word.
+3. **The matched rule travels as a FIELD.** `announcementSignal` now returns `filingRule` beside
+   `keywords`, because recovering it from `signalReason` would be regexing a value back out of our
+   own prose — the error the card rules name directly — and would empty the map silently the day
+   that sentence is reworded.
+4. **A feed with no topic supplies no driver.** The tape, the fund books and the insider rows carry
+   no topic at all; bucketing a volume ratio would be this dashboard asserting *why* somebody traded.
+   `SOURCE_PHRASE` is a map rather than a list of exclusions, so a feed added later is silent by
+   default instead of inheriting a phrase that happens to be wrong for it.
+5. **Market-wide news and related-entity reports are excluded outright.** Market news carries no
+   company — the same reason General Alerts refuses to offer it under a narrowed scope — so filing
+   one under a company's valuation would attribute somebody else's story to them. A reviewed
+   related-entity report is about a *different* company and the card already says so.
+   `brokerage-research` is absent from the mapping for a third reason: an analyst's published view
+   is a view OF the company, not an event AT it.
+6. **A question with nothing behind it is STATED; only the whole section is dropped.** *"Nothing
+   tracked here bears on the thesis"* is a real answer and is how a reader tells a card about a fund
+   book and a volume spike from one about a governance problem. What is omitted is the section
+   entirely, and only when no question has an answer — three negatives in a row is noise. A capped
+   bucket **counts** what it did not print, because a truncation nobody can see is the card claiming
+   fewer things bear on the company than its own evidence holds.
+
+Two bucket choices are worth stating because the obvious answer is the wrong one. **`stake-sale` is
+valuation, not deals**: a block changing hands does not alter what the business earns, it alters who
+owns it and what the float is. **`merger` and `acquisition` are thesis, not earnings**: they plainly
+move future earnings too, but the prior question is whether the thing being valued is still the same
+thing, and that is the one a reader has to answer first.
+
 ### CORRELATION IS THE PRODUCT — the confluence layer
 
 `confluenceOf()` is what answers *"there's a volume breakout and this superstar investor has bought
@@ -3587,6 +3647,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change who is asked, or how the contributor dropdown behaves | `js/ui/watchlist-attribution.js` (the prompt) + `js/core/watchlist-people.js` (the roster and this device's own name) — read *An addition carries the name of whoever made it* first. Never preselect a name on a device nobody has identified themselves on |
 | Change AI Alerts ranking or thresholds | `js/data/ai-alerts.js` — keep it deterministic, retain every contribution for verification without rendering the arithmetic, use the real `coverage.js` book, and test `rankReport()` directly |
 | Change what an AI Alerts card SAYS, or the four figures on it | `plainInsight()` / `cardMetrics()` / `plainHeadline()` / `topEvidence()` in `js/data/ai-alerts.js` — all pure and exported. Read *Time to insight is the product's only job* first: no new number, only sentences we wrote may be reworded, the volume cell takes no tone, and the figures follow `READ_ORDER` rather than score order |
+| Change which investor question a topic bears on, or how a card states it | `js/data/alert-drivers.js` (the one mapping) + `driversMarkup()` in `js/tabs/ai-alerts.js` — read *Earnings assumption, valuation or thesis* first. A driver is a TOPIC reading, so the wording stays "could change"; every driver links to its own source; and the layer adds no score |
 | Change archiving on AI Alerts | `js/core/ai-mute.js` (the store) + the `archived` filter and the Archive / Restore buttons in `js/tabs/ai-alerts.js` — a record is keyed to the evidence it was given for, so a card returns on its own when stronger evidence arrives |
 | Change the General Alerts tab | `js/tabs/daily-alerts.js` (the view) + `js/data/daily-alerts.js` (the readings) — read *General Alerts* above first. It has **no feed of its own** and must never send a request per company |
 | Change General Alerts direction or importance | the exported rules and per-feed collectors in `js/data/daily-alerts.js` — every row carries `signalReason` and `importanceReason`; keep thresholds visible in the source registry and export |
@@ -3706,6 +3767,10 @@ It covers, beyond the checklist below:
   is in that order — widest last
 - **the dashboard opens on Ask Research, in Portfolio scope**; AI Alerts has no sub-view picker and
   its cards are unique by ticker, score-descending and above the surfaced threshold, while score arithmetic stays hidden
+- **every AI Alerts card labels its two readings** — what happened, and which of the earnings
+  assumption / valuation / thesis its evidence bears on — with the second read after the first and
+  before the evidence, worded as what the evidence COULD change rather than as a verdict, and with
+  every driver linking to a source the card itself already holds
 - **Portfolio Analytics is gone and cannot be reached**: an old `#/portfolio/...` link lands on
   Research Central with the URL corrected and the tab bar back, every deleted ledger module and
   payload 404s on the served site, and no Ask Research source carries a ledger figure or a route
