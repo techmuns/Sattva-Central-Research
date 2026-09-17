@@ -667,7 +667,7 @@ async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput) {
   let started = performance.now();
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    try { classifyStory(row); if (feedId === 'news') newsEventTopics(row); } catch { /* the collector reports the row's own failure */ }
+    try { if (feedId === 'news') companyNewsEvent(row); else classifyStory(row); } catch { /* the collector reports the row's own failure */ }
     if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
   }
 }
@@ -1714,11 +1714,17 @@ function fromTechnicals({ day, wanted, includeHistory }) {
   };
 }
 
-/** Company news published today. An editorial headline is not sentiment data, so it stays neutral. */
-function fromCompanyNews({ day, wanted, includeHistory, queryWindow, newsReader = news }) {
-  const rows = newsQueryRows(newsReader, queryWindow, newsReader).filter((r) => inRequestedWindow(r.publishedAt || r.date, day, includeHistory) && inScope(wanted, r.ticker));
-
-  const events = rows.map((r) => ({
+// ONE EVENT PER ROW OBJECT. The collector rebuilt every story's event on every pass — 81,926
+// objects, each spreading a fresh `newsSignal` reading — and after a reader rebuild that pass is
+// cold again. The event is a pure function of the row and the book, so it is memoised on the row
+// and checked against the holdings array; `toFeedRow` copies it before adding feed fields, and no
+// consumer edits it. The warm-up touches it in slices so the synchronous pass only maps.
+const companyNewsEvents = new WeakMap();
+function companyNewsEvent(r) {
+  const holdings = coverage.holdings();
+  const hit = companyNewsEvents.get(r);
+  if (hit && hit.holdings === holdings) return hit.event;
+  const event = {
     // THE TICKER IS PART OF THE IDENTITY. One story is returned by several companies' searches,
     // and a RELIANCE row and an HDFCBANK row about the same article are two rows, not one.
     id: `news:${r.entityId || r.ticker || '?'}|${r.url || JSON.stringify([r.date, r.title, r.source])}`,
@@ -1741,7 +1747,16 @@ function fromCompanyNews({ day, wanted, includeHistory, queryWindow, newsReader 
     detail: [r.source ? `Published by ${r.source}` : 'Publisher not carried',
       attributionFor(r).status === 'related' ? attributionFor(r).reason : null].filter(Boolean).join(' · '),
     url: r.url || null,
-  }));
+  };
+  companyNewsEvents.set(r, { holdings, event });
+  return event;
+}
+
+/** Company news published today. An editorial headline is not sentiment data, so it stays neutral. */
+function fromCompanyNews({ day, wanted, includeHistory, queryWindow, newsReader = news }) {
+  const rows = newsQueryRows(newsReader, queryWindow, newsReader).filter((r) => inRequestedWindow(r.publishedAt || r.date, day, includeHistory) && inScope(wanted, r.ticker));
+
+  const events = rows.map(companyNewsEvent);
 
   return { events, ...companyNewsState(day, newsReader.meta()) };
 }
