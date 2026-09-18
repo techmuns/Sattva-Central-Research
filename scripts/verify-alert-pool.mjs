@@ -309,7 +309,9 @@ console.log('PASS a compact event resolves its full source record from the pool 
   await deleteEntry(KEYS.filingRow('insider', ticker));
   assert.equal(newsFeed.holdsSessionRows(), false, 'the news reader holds only the capture before any live search');
   served.liveNews = { articles: [{ title: 'A story only this session searched for', url: 'https://example.com/only-here', date: day, source: 'Example', summary: 'Live search result.' }] };
-  await newsFeed.load([ticker], { walkWanted: true });
+  // `load()` memoises: the reader was loaded by the oracle. `loadOne(…, { force })` is the live
+  // read a Refresh makes for one company, and it is answered by the fixture above.
+  await newsFeed.loadOne(ticker, { force: true });
   assert.equal(newsFeed.holdsSessionRows(), true, 'a live search this session is a session row');
   assert.deepEqual(await declineReasons(), { news: 'rows read live in this session' }, 'and declines the news feed');
   console.log('PASS rows this session read live decline their feed, through the feed modules; device entries alone do not');
