@@ -249,8 +249,14 @@ served.index = { ...index };
 {
   alertPool.resetForTest();
   const pooled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
-  assert.deepEqual(jsonForm(pooled.events), jsonForm(narrowedWeek.events), 'unreadable members leave the whole period to the live path');
   assert(POOL_FEEDS.every((id) => !alertPool.status().feeds[id]?.pooled), 'no feed is reported as pooled when the members could not be read');
+  // The reference here is the bounded live read itself, not the full history narrowed: with no
+  // feed pooled this IS a bounded live read, and that read can carry one more URL companion at a
+  // window edge than the narrowing does (section 2 says so, and verify-news-working-set.mjs owns
+  // that comparison). What is asserted is that nothing about the failed pool changed the answer.
+  const liveWeek = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
+  assert.deepEqual(jsonForm(pooled.events), jsonForm(liveWeek.events), 'unreadable members leave the whole period to the live path, event for event');
+  assert.deepEqual(jsonForm(pooled.feeds.map(describe)), jsonForm(liveWeek.feeds.map(describe)), 'and the feed rows are the live read\'s');
 }
 served.artifact = 4242001;
 // A shard that does not have the contract's shape is refused before any event is read.
