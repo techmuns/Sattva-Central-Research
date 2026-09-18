@@ -145,13 +145,17 @@ alertPool.resetForTest();
 // context row and market-wide count is the same. Two things are compared on purpose rather than
 // whole: the report's feed rows count what the ranking READ (the AI tab reads `status` off them
 // and prints no count), so they are compared on the fields that describe the source, as the
-// period's rows are above; and a pooled
+// period's rows are above — and under a narrowed scope `build()` ends the note with how many
+// of those events carry no ticker, a count of the same kind, so that clause is set aside too;
+// and a pooled
 // event travels without its `sourceRecord` unless the ranking reads it (`compactAiEvent`), with a
 // notebook snapshot fetching the record from the day shard — section 7 — so the records are
 // stripped from both sides and every other field on every card is compared. Cards are compared
 // one at a time: the JSON form of a whole ranking, every event on it, is what does not fit in
 // memory beside the full history it is being compared with.
 const withoutRecords = (value) => JSON.parse(JSON.stringify(value, (key, held) => (key === 'sourceRecord' ? undefined : held)));
+const UNRESOLVED_CLAUSE = /\s*\d+ records have no resolved ticker and are available in Universe only\./g;
+const describeRanked = (row) => { const out = describe(row); if (typeof out.note === 'string') out.note = out.note.replace(UNRESOLVED_CLAUSE, '') || null; return out; };
 const cardName = (card) => card.ticker || card.entityId || card.key || card.company;
 for (const scope of ['universe', 'portfolio']) {
   const holdings = coverage.holdings();
@@ -166,7 +170,7 @@ for (const scope of ['universe', 'portfolio']) {
   const { topFunnelEvents: readFromFull, ...metaFull } = rankedFull.meta;
   assert.deepEqual(jsonForm(metaPool), jsonForm(metaFull), `${scope}: every figure of the ranking but the count of events read`);
   assert.deepEqual([rankedPool.day, rankedPool.scope, rankedPool.pending], [rankedFull.day, rankedFull.scope, rankedFull.pending], `${scope}: the same day, scope and pending count`);
-  assert.deepEqual(jsonForm(rankedPool.feeds.map(describe)), jsonForm(rankedFull.feeds.map(describe)), `${scope}: the feed rows describe their sources as the full read does`);
+  assert.deepEqual(jsonForm(rankedPool.feeds.map(describeRanked)), jsonForm(rankedFull.feeds.map(describeRanked)), `${scope}: the feed rows describe their sources as the full read does`);
   assert.deepEqual(rankedPool.cards.map(cardName), rankedFull.cards.map(cardName), `${scope}: the surfaced companies, in the same order`);
   assert.deepEqual(rankedPool.allCards.map(cardName), rankedFull.allCards.map(cardName), `${scope}: every ranked company, in the same order`);
   for (let i = 0; i < rankedFull.allCards.length; i++) {
