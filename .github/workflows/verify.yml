@@ -244,7 +244,7 @@ jobs:
       - name: Verify the precomputed alert pool paints the live rows and cards without the captures
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-alert-pool-ui.mjs
+        run: node --max-old-space-size=4096 scripts/verify-alert-pool-ui.mjs
       - name: Verify the portfolio calendar survives an unreadable S Screen capture
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

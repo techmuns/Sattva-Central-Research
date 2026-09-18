@@ -5078,9 +5078,11 @@ static origin), no build yet, or an unreadable member, the browser is on the liv
    the builder's — an event names its company from the book only when its row carries no name.
 
 A period's rows count what they carry (the period and its companions), exactly as the bounded live
-read counts its own rows; the AI pool keeps the full read's figures. A read without loading reuses
-the last pool read in memory. `alertPool.status()` reports, per feed, whether the last collection
-came from the pool and why not.
+read counts its own rows. The AI pool's source rows keep the full read's figures (they describe the
+sources the ranking was read from); the ranking report's own feed rows, built by `toFeedRow`, count
+the events the ranking read, and the AI tab reads their `status` and never a count. A read without
+loading reuses the last pool read in memory. `alertPool.status()` reports, per feed, whether the
+last collection came from the pool and why not.
 
 **Verification.** `scripts/verify-alert-pool.mjs` builds the pool from one full collection over the
 shipped captures and asserts, with no egress: every member carries exactly the collector's events;

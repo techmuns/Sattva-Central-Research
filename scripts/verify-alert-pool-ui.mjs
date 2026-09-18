@@ -164,9 +164,12 @@ try {
   served.status = JSON.parse(JSON.stringify(status));
 
   // 4. AI ALERTS FROM THE AI POOL: the month and day shards are read, no capture is, and the
-  // cards are the live cards.
+  // cards are the live cards. The page is RELOADED first: the reader holds a capture status for
+  // twenty seconds and the one it holds is the moved one this test served at step 3. A revision
+  // never moves back on a deployment, so a fresh page is the honest way to un-move it here.
+  await pooled.page.goto(`${origin}/#/research/ai-alerts?scope=universe`);
   const fromAi = served.requests.length;
-  await pooled.page.evaluate(() => { location.hash = '#/research/ai-alerts?scope=universe'; });
+  await pooled.page.reload();
   const pooledCards = await settledRanking(pooled.page, 180000);
   const aiReads = poolReads(fromAi).filter((path) => path.includes('/ai/'));
   assert(aiReads.length >= index.ai.length, `every AI shard is read (${aiReads.length} of ${index.ai.length})`);

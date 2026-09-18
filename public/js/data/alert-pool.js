@@ -223,6 +223,8 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
     // A period's row counts the events it carries — the selected period and its companions —
     // exactly as the bounded live read counts its own rows. The AI pool keeps the full read's
     // figures: its rows describe the sources the ranking was read from, not the subset it reads.
+    // (The ranking report's own feed rows are rebuilt by `toFeedRow` over what it read; the AI
+    // tab reads their `status` and prints no count.)
     if (mode === 'window') {
       let oldestDay = null, newestDay = null, todayCount = 0;
       for (const event of events) {

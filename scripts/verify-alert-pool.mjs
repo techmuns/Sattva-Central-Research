@@ -53,7 +53,7 @@ const alerts = await import('../public/js/data/daily-alerts.js');
 const alertPool = await import('../public/js/data/alert-pool.js');
 const { news } = await import('../public/js/data/filings.js');
 const { publicAlertFeed } = await import('../public/js/data/all-alerts-cache.js');
-const { rankReport } = await import('../public/js/data/ai-alerts.js');
+const { rankReport, clearRankingCache } = await import('../public/js/data/ai-alerts.js');
 const { writeEntry, deleteEntry, KEYS } = await import('../public/js/core/store.js');
 
 const day = alerts.today();
@@ -114,12 +114,10 @@ const describe = (row) => Object.fromEntries(Object.entries(row).filter(([key]) 
 const figures = (row) => Object.fromEntries(COUNTS.filter((key) => key in row).map((key) => [key, row[key]]));
 alertPool.resetForTest();
 let live = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
-let narrowedWeek = null;
 for (const scope of ['universe', 'portfolio']) {
   const holdings = coverage.holdings();
   const fromPool = await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week, pool: 'window' });
   const narrowed = alerts.assemble({ day, scope, holdings, includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
-  if (scope === 'universe') narrowedWeek = narrowed;
   assert.deepEqual(jsonForm(fromPool.events), jsonForm(narrowed.events), `${scope}: the period's events`);
   assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(narrowed.feeds.map(describe)), `${scope}: the feed rows describe their sources as the full read does`);
   assert.deepEqual(jsonForm(fromPool.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })),
@@ -144,21 +142,46 @@ alertPool.resetForTest();
 
 // 3. THE RANKING FROM THE AI POOL IS THE RANKING FROM THE FULL HISTORY. `topFunnelEvents` is the
 // count of events read, and the AI pool deliberately reads fewer; every card, score, evidence row,
-// context row and market-wide count is the same.
+// context row and market-wide count is the same. Two things are compared on purpose rather than
+// whole: the report's feed rows count what the ranking READ (the AI tab reads `status` off them
+// and prints no count), so they are compared on the fields that describe the source; and a pooled
+// event travels without its `sourceRecord` unless the ranking reads it (`compactAiEvent`), with a
+// notebook snapshot fetching the record from the day shard — section 7 — so the records are
+// stripped from both sides and every other field on every card is compared. Cards are compared
+// one at a time: the JSON form of a whole ranking, every event on it, is what does not fit in
+// memory beside the full history it is being compared with.
+const describeAi = (row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'events' && !['count', 'todayCount', 'oldestDay', 'newestDay'].includes(key)));
+const withoutRecords = (value) => JSON.parse(JSON.stringify(value, (key, held) => (key === 'sourceRecord' ? undefined : held)));
+const cardName = (card) => card.ticker || card.entityId || card.key || card.company;
 for (const scope of ['universe', 'portfolio']) {
   const holdings = coverage.holdings();
   const ai = await alerts.collect({ scope, day, holdings, includeHistory: true, pool: 'ai' });
   const status = alertPool.status();
   assert(POOL_FEEDS.every((id) => status.feeds[id]?.pooled), `${scope}: every pooled feed came from the AI pool (${JSON.stringify(status.feeds)})`);
   const reference = scope === 'universe' ? full : alerts.assemble({ day, scope, holdings, includeHistory: true, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
-  const strip = (report) => { const { topFunnelEvents, ...meta } = report.meta; return jsonForm({ ...report, meta, pending: report.pending }); };
   const rankedPool = rankReport(ai, { holdings, insightCompanies: [] });
   const rankedFull = rankReport(reference, { holdings, insightCompanies: [] });
   assert(rankedFull.cards.length > 0, `${scope}: the reference ranking surfaces cards`);
-  assert.deepEqual(strip(rankedPool), strip(rankedFull), `${scope}: the ranking from the AI pool equals the ranking from the full history`);
-  assert(ai.events.length < reference.events.length, `${scope}: the AI pool reads fewer events than the full history (${ai.events.length} vs ${reference.events.length})`);
-  console.log(`PASS ${scope}: ${rankedPool.cards.length} cards ranked identically from ${ai.events.length} pooled events instead of ${reference.events.length}`);
+  const { topFunnelEvents: readFromPool, ...metaPool } = rankedPool.meta;
+  const { topFunnelEvents: readFromFull, ...metaFull } = rankedFull.meta;
+  assert.deepEqual(jsonForm(metaPool), jsonForm(metaFull), `${scope}: every figure of the ranking but the count of events read`);
+  assert.deepEqual([rankedPool.day, rankedPool.scope, rankedPool.pending], [rankedFull.day, rankedFull.scope, rankedFull.pending], `${scope}: the same day, scope and pending count`);
+  assert.deepEqual(jsonForm(rankedPool.feeds.map(describeAi)), jsonForm(rankedFull.feeds.map(describeAi)), `${scope}: the feed rows describe their sources as the full read does`);
+  assert.deepEqual(rankedPool.cards.map(cardName), rankedFull.cards.map(cardName), `${scope}: the surfaced companies, in the same order`);
+  assert.deepEqual(rankedPool.allCards.map(cardName), rankedFull.allCards.map(cardName), `${scope}: every ranked company, in the same order`);
+  for (let i = 0; i < rankedFull.allCards.length; i++) {
+    assert.deepEqual(withoutRecords(rankedPool.allCards[i]), withoutRecords(rankedFull.allCards[i]), `${scope}: card ${i + 1} (${cardName(rankedFull.allCards[i])}) — score, evidence, context, drivers and figures`);
+  }
+  assert(readFromPool < readFromFull, `${scope}: the AI pool reads fewer events than the full history (${readFromPool} vs ${readFromFull})`);
+  assert(ai.events.some((event) => POOL_FEEDS.includes(event.feed) && event.feed !== 'market-news' && event.sourceRecord == null), `${scope}: pooled AI events travel compact`);
+  console.log(`PASS ${scope}: ${rankedPool.cards.length} cards ranked identically from ${readFromPool} pooled events instead of ${readFromFull}`);
+  clearRankingCache();
 }
+alertPool.resetForTest();
+// THE NARROWED WEEK is the reference for the fallbacks below — the full history assembled to the
+// period, the same code path a period takes over settled sources. It is built here, after the
+// ranking, so that it is not held beside two rankings and the AI pool.
+const narrowedWeek = alerts.assemble({ day, scope: 'universe', holdings: coverage.holdings(), includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
 
 // 4. EVERY REASON THE POOL STANDS ASIDE. Each one is checked on the read itself, and each leaves
 // the collection to the live path for that feed — the same records, read the way they always were.
