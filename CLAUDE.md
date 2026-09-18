@@ -2233,6 +2233,46 @@ keyed on the source record and validated on the book's signature) and the identi
 themselves (`discoveryEntities`) are all kept while their inputs are unchanged, and
 `verify-hot-path-memo.mjs` asserts the read returns the objects the warm-up built.
 
+### THE COLLECTION IS DONE ONCE, ON THE RUNNER — the precomputed alert pool
+
+`docs/DATA-CONTRACTS.md` → *The precomputed alert pool* has the contract. What it is: the alert
+collection every reader performed in the browser (a month of captures downloaded and classified
+for a period view; the retained history for the AI ranking), performed once per capture by
+`scripts/build-alert-pool.mjs` on the runner and published as ONE Actions artifact per build, which
+the Worker serves by byte range (`worker/alert-pool.mjs`) and the browser reads through
+`js/data/alert-pool.js`. Five rules, and every one is a rule this file already had:
+
+1. **It is derived, and the live path is untouched.** No capture, retention rule or collector
+   changed. `collect({ pool })` takes a pooled feed's events from the pool only while every check
+   passes and loads it exactly as before otherwise; a pool that cannot be read at all is the path
+   the dashboard took before the pool existed. A failed read is never an empty feed.
+2. **Exact, by construction and by test.** A pooled event IS the collector's event (JSON form —
+   the technicals rule functions are the one thing no serialisation keeps, and nothing reads them).
+   A period is the union of its day shards in the collector's own order, with the URL companions
+   the news dedupe needs, so `querySourceFeeds` sees what the bounded read gives it. The AI pool
+   carries the subset the ranking can read (`alert-pool-format.js` states it) and the ranking is
+   asserted identical to the full history's in both scopes. `verify-alert-pool.mjs` proves all of it
+   against the shipped captures with no egress, and the runner runs the member check before every
+   upload.
+3. **Verified against the deployment on every read, per feed.** The index names every capture a
+   feed reads and its `revision`; `/api/capture-status` reports the same for the files this
+   deployment serves (and the exchange artifact id from its own edge entry). One capture moved, or
+   not reported, sends that feed — only that feed — down the live path until the next build. A pool
+   built for another day is not used at all.
+4. **A device's own rows keep their feed live.** A company walked live from News or Insider Trades,
+   or an announcement lookup, is a row only the feed module's own merge can place; the pool declines
+   that feed on that device (`listKeys` in `core/store.js`).
+5. **Never commit it.** The newest shard changes with every capture and the repository already takes
+   two hundred capture commits a day into a 1.4 GB pack. The artifact has short retention; a member
+   URL carries its artifact id, so it is immutable and the browser re-downloads exactly the shards a
+   new build changed.
+
+**What it changed for a reader.** All Alerts on Today reads one shard (about a megabyte gzipped,
+125 KB at dawn) instead of the news head, the archives and the exchange captures; AI Alerts reads
+thirty-odd small shards (7.7 MB gzipped in all, 74 KB for today's) and ranks from 55,000 events
+instead of 200,000 — and neither classifies a single row. The notification watcher still polls the
+market-news head from boot on every page; that is its own poll, not the pool's.
+
 ### Data sources
 
 The header "Sources" modal is generated from `js/ui/sources.js`. **Adding a data source means
@@ -3752,6 +3792,9 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change what an AI Alerts card SAYS, or the four figures on it | `plainInsight()` / `cardMetrics()` / `plainHeadline()` / `topEvidence()` in `js/data/ai-alerts.js` — all pure and exported. Read *Time to insight is the product's only job* first: no new number, only sentences we wrote may be reworded, the volume cell takes no tone, and the figures follow `READ_ORDER` rather than score order |
 | Change which investor question a topic bears on, or how a card states it | `js/data/alert-drivers.js` (the one mapping) + `driversMarkup()` in `js/tabs/ai-alerts.js` — read *Earnings assumption, valuation or thesis* first. A driver is a TOPIC reading, so the wording stays "could change"; every driver links to its own source; and the layer adds no score |
 | Change archiving on AI Alerts | `js/core/ai-mute.js` (the store) + the `archived` filter and the Archive / Restore buttons in `js/tabs/ai-alerts.js` — a record is keyed to the evidence it was given for, so a card returns on its own when stronger evidence arrives |
+| Change what the precomputed alert pool carries, or how a period is reassembled from it | `public/js/data/alert-pool-shared.js` (the feeds, the captures each reads, the revision rule, the members) + `public/js/data/alert-pool-format.js` (the shard encoding and decoding, shared by the builder and the browser) — read *The collection is done once, on the runner* first; `node scripts/verify-alert-pool.mjs` is the test |
+| Change when a pooled feed is taken from the pool, or why it is declined | `read()` / `verifyFeed()` / `deviceExtras()` in `public/js/data/alert-pool.js`, and the `pool` branch of `collect()` in `js/data/daily-alerts.js` — every check is per feed, per read, and a declined feed loads as before |
+| Build or publish the pool | `scripts/build-alert-pool.mjs` (`ALERT_POOL_VERIFY=1` re-reads every member) + `.github/workflows/alert-pool-refresh.yml`; the Worker route is `worker/alert-pool.mjs` and `scripts/verify-alert-pool-worker.mjs` drives it in workerd |
 | Change the General Alerts tab | `js/tabs/daily-alerts.js` (the view) + `js/data/daily-alerts.js` (the readings) — read *General Alerts* above first. It has **no feed of its own** and must never send a request per company |
 | Change General Alerts direction or importance | the exported rules and per-feed collectors in `js/data/daily-alerts.js` — every row carries `signalReason` and `importanceReason`; keep thresholds visible in the source registry and export |
 | Change a General Alerts threshold | the exported constants in `js/data/daily-alerts.js` — the source registry, export and tests read those constants rather than retyping them |
@@ -3825,6 +3868,7 @@ node scripts/verify-portfolio-calendar.mjs
 node scripts/verify-research.mjs
 node scripts/verify-shared-watchlist.mjs
 node scripts/verify-shared-watchlist-ui.mjs
+node --max-old-space-size=4096 scripts/verify-alert-pool.mjs
 node scripts/verify-ui.mjs
 node scripts/verify-sdk.mjs
 ```

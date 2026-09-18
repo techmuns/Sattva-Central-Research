@@ -73,6 +73,8 @@ import { portfolioNewsEntities } from './company-news-identity.js';
 import { attributeNewsRow, attributionFor, newsSearchText } from './company-news-attribution.js';
 import { matchPortfolioNews, newsEventTopics } from './portfolio-news-matching.js';
 import { enrichmentCoverageIncomplete } from '../core/news-view-status.js';
+import * as alertPool from './alert-pool.js';
+import { POOL_FEEDS } from './alert-pool-shared.js';
 
 // ---------------------------------------------------------------------------------------
 // Today, in IST
@@ -681,7 +683,7 @@ async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput, { da
   }
 }
 
-export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null, requestedCompanies = [], queryWindow = null, isCurrent = () => true } = {}) {
+export async function collect({ scope = 'universe', day = today(), holdings = null, includeHistory = false, refresh = false, load = true, onPartial = null, requestedCompanies = [], queryWindow = null, isCurrent = () => true, pool = null } = {}) {
   observeSources();
   // Pure reassembly of explicitly preloaded source fixtures keeps using those same records.
   const newsReader = queryWindow && (load || queryNewsReaders.has(alertWindowKey(queryWindow))) ? queryNewsReader(queryWindow) : news;
@@ -689,6 +691,18 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   try {
   const book = holdings || coverage.holdings();
   const settledFeeds = new Map(); // feed id -> the finished feed row
+  // THE PRECOMPUTED POOL, WHERE IT MAY STAND IN FOR A FEED. `pool: 'window'` asks for the selected
+  // period's day shards, `pool: 'ai'` for the ranking's own subset of the retained history; either
+  // way a pooled feed is taken from the pool only while the pool was built for this day from the
+  // capture revisions the Worker serves now and this device holds no rows of its own for it
+  // (js/data/alert-pool.js). A feed the pool declines — or a pool that cannot be read at all —
+  // loads below exactly as it always has. A reassembly without loading reuses the last read.
+  const poolMode = pool === 'window' || pool === 'ai' ? pool : null;
+  const poolOptions = { mode: poolMode, day, queryWindow, refresh, isCurrent, book, newsState: (meta) => companyNewsState(day, meta) };
+  const poolRead = !poolMode ? Promise.resolve(null)
+    : load ? alertPool.read(poolOptions).catch((error) => { console.warn('[daily-alerts] alert pool unavailable', error); return null; })
+      : Promise.resolve(alertPool.current(poolOptions));
+  const poolSeeded = new Set();
   // A warm estate can still require cold normalization. Do not make a tab click synchronously
   // classify every source before the shell can paint. Yield between source-sized batches too;
   // this changes scheduling only, never the records, coverage or private-data filtering.
@@ -735,7 +749,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     // retaining each request's real pending/failed status; a partial is never a completed check.
     if (queryWindow) for (const id of ['news', 'market-news']) {
       const previous = settledFeeds.get(id);
-      if (previous) {
+      if (previous && !poolSeeded.has(id)) {
         try { settledFeeds.set(id, { ...previous, events: readFeed(feedById.get(id), { day, includeHistory, queryWindow, newsReader }).events }); }
         catch { settledFeeds.set(id, { ...previous, status: 'failed', reachesToday: false,
           note: 'This news view could not be rebuilt. Previously read evidence remains visible.' }); }
@@ -788,6 +802,16 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
       // Collect once without company narrowing. Scope is a view over the same source records,
       // never an ingestion filter. Unresolved rows survive in Universe.
       const args = { day, scope: 'universe', wanted: null, includeHistory, queryWindow, newsReader };
+      if (POOL_FEEDS.includes(feed.id)) {
+        let pooled = null;
+        try { pooled = (await poolRead)?.feeds.get(feed.id) || null; } catch { pooled = null; }
+        if (pooled) {
+          poolSeeded.add(feed.id);
+          settledFeeds.set(feed.id, pooled);
+          schedulePartial();
+          return;
+        }
+      }
       try {
         if (load && feed.id === 'news' && newsReader !== news) {
           // The publisher route can correct dates at the same URL. Its complete original pool

@@ -164,3 +164,34 @@ mid-collection, not a steady state.
   reader-design question, not this change's, and is left as is.
 - These are sandbox measurements on the shipped captures, not the customer's machine or the host
   iframe.
+
+## Round three (18 September 2026): the collection is done once, on the runner
+
+The two rounds above made a repeat read cheap and a cold read sliced. The cost they could not
+touch was the input: a period view still downloaded the 72 MB news head, the overlapping archive
+months and every exchange capture, and the AI ranking still read the whole retained history —
+measured in Node at 200,186 events, ~1.2 GB of heap and 25–36 s of CPU for one full collection.
+
+The precomputed alert pool (`docs/DATA-CONTRACTS.md` → *The precomputed alert pool*) performs that
+collection once per capture on the runner and publishes it as one Actions artifact. Measured on
+the shipped captures for 18 September:
+
+| member | events | gzipped |
+| --- | --- | --- |
+| `days/2026-09-18.json.gz` (Today, at dawn) | 450 | 125 KB |
+| `days/2026-09-17.json.gz` (a full weekday) | 8,361 | 2.6 MB |
+| the 31 day shards together | 127,311 | 32 MB |
+| `ai/2026-09-18.json.gz` (today's AI shard) | 290 | 74 KB |
+| the 37 AI shards together | ~55,000 | 7.7 MB |
+
+The runner builds and verifies the whole set in 46 s. A reader on Today reads one day shard and
+classifies nothing; a reader on AI Alerts reads the AI shards (immutable URLs, so a returning
+reader re-downloads only the days a new build changed) and ranks from 55,000 events instead of
+200,000 — with the ranking asserted identical to the full history's. The 14-day window as the
+device cache materialises it was measured first and rejected for this purpose: 84,030 events and
+114 MB raw, because it keeps every unconfirmed company story, which the ranking never reads.
+
+What did not change: the captures, their retention, the live collection, All history, undated
+records, Upcoming and every feed with a live route. `scripts/verify-alert-pool.mjs` is the
+equivalence proof; `scripts/verify-alert-pool-ui.mjs` the browser measurement of what is no longer
+downloaded.

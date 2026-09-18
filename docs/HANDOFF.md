@@ -1133,6 +1133,20 @@ Two traps worth carrying forward:
 
 ---
 
+### The collection is done once, on the runner
+
+Since 18 September 2026 the alert collection behind All Alerts' periods and the AI ranking is
+performed once per capture on the runner (`scripts/build-alert-pool.mjs`,
+`.github/workflows/alert-pool-refresh.yml`) and published as one Actions artifact, `alert-pool`,
+which the Worker serves by byte range (`worker/alert-pool.mjs`) and the browser seeds the collectors
+from (`js/data/alert-pool.js`). Measured: Today reads one shard of 125 KB–2.7 MB gzipped instead of
+the 72 MB news head, the archives and every exchange capture; AI Alerts reads 7.7 MB of shards and
+ranks from 55,000 events instead of 200,000, with the ranking asserted identical. The pool is used
+per feed only while it was built for today from the capture revisions `/api/capture-status` reports
+and the device holds no rows of its own for that feed; otherwise, and on a static origin, the live
+path is what it always was. `docs/DATA-CONTRACTS.md` → *The precomputed alert pool* has the
+contract; `scripts/verify-alert-pool.mjs` is the equivalence proof.
+
 ## 9. Known gaps
 
 These are recorded in `docs/SPEC.md` under each tab's "Still to come". They used to be listed in a

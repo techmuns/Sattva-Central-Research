@@ -5011,6 +5011,92 @@ empty set and ask about nothing. All Alerts Refresh uses the one-shot earnings, 
 chatter revalidators plus one conditional read of the bulk investor snapshot. It never performs
 the Super Investors tab's ninety-one-book revalidation walk.
 
+### The precomputed alert pool — DERIVED, an Actions artifact, never a source
+
+The collection above is expensive: a period view downloads and classifies a month of captures, and
+the AI ranking reads the retained history. `scripts/build-alert-pool.mjs` performs that collection
+ONCE per capture on the runner (`.github/workflows/alert-pool-refresh.yml`, triggered by every
+capture workflow's completion, with a best-effort schedule and `workflow_dispatch` behind it) and
+publishes the result as one Actions artifact, `alert-pool`, that the Worker serves by byte range
+(`worker/alert-pool.mjs`). **Nothing about the captures, their retention or the live collection
+changes.** The pool is an additional derived artifact, verified equal to a fresh collection, and
+every read it cannot answer keeps the path it always took.
+
+| Route | Answer |
+| --- | --- |
+| `GET /api/alert-pool/index` | the latest build's `index.json` plus the `artifact` id it lives in; 60s at the edge, ETagged |
+| `GET /api/alert-pool/<artifact>/days/<YYYY-MM-DD>.json.gz` | one pooled day, every pooled feed, full `sourceRecord`; immutable, cached for days |
+| `GET /api/alert-pool/<artifact>/ai/<span>.json.gz` | one AI span (a month before the pool's days, then each pool day), compact events |
+
+Members are gzip files stored uncompressed inside the artifact ZIP (`compression-level: 0`); the
+Worker reads the ZIP's central directory from the archive's tail, then the member's own bytes, and
+hands them to the browser unchanged with `content-encoding: gzip`. A storage that answers a range
+with the whole archive is refused rather than read into the Worker's memory. With no Worker (a
+static origin), no build yet, or an unreadable member, the browser is on the live path.
+
+**What the pool carries.** `public/js/data/alert-pool-shared.js` is the one definition:
+
+- `POOL_FEEDS`: `technicals`, `announcements`, `insider`, `news`, `market-news` — the feeds read
+  entirely from committed captures (the insider feed also folds in the bulk/block artifact, which the
+  builder reads and the index names by id). NSE filings and IPOs read a live route in the browser;
+  institutions, the calendar and the investor books are cheap; all keep their own path.
+- `POOL_CAPTURES` / `POOL_FEED_CAPTURES`: every capture each pooled feed reads, by the name
+  `/api/capture-status` reports it under (that route now lists the archive indexes, the TradingView
+  and company-news indexes and the shared announcements capture too, and reports the exchange
+  artifact id it is serving from its own edge entry). Each carries a `revision` — every field that
+  can move without `capturedAt` moving (`captureRevision`) — and `capturedAt` stays the single
+  timestamp the capture watchdog reads.
+- A DAY SHARD (`public/js/data/alert-pool-format.js`) holds, per pooled feed, that day's events in
+  the collector's own order (`order` is each event's index in the full feed) with their full
+  `sourceRecord`, plus the URL COMPANIONS the news dedupe needs: events of another day sharing a
+  canonical address with an event of this day, of either news feed. A period is the union of its
+  days' shards, reassembled in feed order, and `querySourceFeeds` then sees exactly what the bounded
+  live read gives it.
+- An AI SHARD holds the events the ranking can read at all — those `newsCanSupportAI` or
+  `isRelatedNewsContext` admits inside `CONTEXT_LOOKBACK_DAYS` (181 days), the tickerless events of
+  the ranking window (they only contribute to the market-wide count), and their URL companions —
+  in COMPACT form: no `sourceRecord`, except that a market-wide story keeps its record (the
+  portfolio discovery mapping runs in the browser against the reader's book and reads its text)
+  and a company story keeps the three provenance fields the dedupe copies. The ranking, priorities,
+  evidence, context rows and market-wide count are identical to the full history's; only
+  `meta.topFunnelEvents`, the count of events read, is smaller. A notebook snapshot taken from a
+  compact event fetches the full record from the day shard first (`alertPool.fullRecord`).
+- The `index.json` carries the build day (IST), the book signature, each capture's revision, each
+  pooled feed's row as the runner read it (the company-news row's inputs to `companyNewsState`, so
+  the browser recomputes its status against the reader's clock), and the member list.
+
+**When a feed is taken from the pool** (`public/js/data/alert-pool.js`), per feed, on every read:
+
+1. the index is for TODAY (IST) — a pool built yesterday is not used at all;
+2. every capture the feed reads carries the same `revision` in `/api/capture-status` as in the
+   index (the exchange artifact: the same id) — a capture that moved, or one the deployment does not
+   report, sends that feed down the live path until the next build;
+3. this device holds no rows of its own for the feed: no company walked live from News or Insider
+   Trades (`filings:news:*`, `filings:insider:*`), no announcement lookups — those rows only the feed
+   module's own merge can place;
+4. for company news, the pool's `bookDependent` flag is false, or the reader's book signature equals
+   the builder's — an event names its company from the book only when its row carries no name.
+
+A period's rows count what they carry (the period and its companions), exactly as the bounded live
+read counts its own rows; the AI pool keeps the full read's figures. A read without loading reuses
+the last pool read in memory. `alertPool.status()` reports, per feed, whether the last collection
+came from the pool and why not.
+
+**Verification.** `scripts/verify-alert-pool.mjs` builds the pool from one full collection over the
+shipped captures and asserts, with no egress: every member carries exactly the collector's events;
+Today, Last 3/7/30 days from the pool equal the full history narrowed to the period (identities,
+every field, order); every feed row, count and figure for Last 7 days in both scopes equals the
+full history narrowed by the real assembly; the ranking from the AI pool equals the ranking from the
+full history in both scopes; and every reason the pool stands aside is checked on the read.
+`scripts/verify-alert-pool-worker.mjs` drives the route in workerd against a fake GitHub and a
+range-serving storage; `scripts/verify-alert-pool-ui.mjs` paints All Alerts and AI Alerts from a
+built pool in Chromium, compares rows and cards with the live collection, and moves one capture's
+revision to see only that feed's capture downloaded.
+
+The one thing the pool does not carry is a rule function: the technicals source record holds the
+scoring rules' functions and a field `Set`, which no serialisation keeps and no alert surface reads —
+the pooled record is the JSON form the export column and the device cache already write.
+
 ---
 
 ## Domestic company filings

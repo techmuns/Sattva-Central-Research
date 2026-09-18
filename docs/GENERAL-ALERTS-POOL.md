@@ -9,6 +9,17 @@ This is **available retained source coverage**, not a claim to capture every mar
 retention, source outages, absent captures and private/on-demand lookups remain explicit limitations.
 No production collection jobs are dispatched by opening this page.
 
+## The precomputed pool (18 September 2026)
+
+Today, Last 3/7/14/30 days and This month, and the AI ranking's evidence, can be answered from the
+precomputed alert pool — the same collection performed once on the runner after every capture and
+published as an Actions artifact (`docs/DATA-CONTRACTS.md` → *The precomputed alert pool*). It is
+exact by construction and by test, and it is used per feed only while the pool was built for today
+from the capture revisions the Worker serves and this device holds no rows of its own for that
+feed. All history, undated records, Upcoming, company evidence links, the private lookups and the
+live-route feeds keep reading the complete source pool exactly as before. Nothing is collected
+less, retained less or shown less.
+
 ## Selected-period preparation (16 September 2026)
 
 Today, 3/7/14/30 days and This month prepare the selected reading interval before expensive

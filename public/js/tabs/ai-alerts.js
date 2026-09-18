@@ -9,6 +9,7 @@ import { sectionHead } from '../ui/screener.js';
 import { scopeSummary, pill } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { normalizeBookmark, snapshotForRow } from '../core/bookmark-record.js';
+import * as alertPool from '../data/alert-pool.js';
 import { bookmarkButton, wireBookmarks } from '../ui/bookmark-button.js';
 import { reconcileMarkup } from '../ui/reconcile-markup.js';
 import { getHostContext } from '../core/host-context.js';
@@ -842,7 +843,11 @@ function wire(ctx, total) {
       if (cardKey) return cardSnapshot(card);
       const id = button.closest('[data-ai-notebook-event]')?.dataset.aiNotebookEvent;
       const event = card.events.find(event => String(event.id) === id);
-      return event && snapshotForRow(event, { section: 'daily-alerts' });
+      if (!event) return null;
+      // Evidence read from the precomputed pool travels without its full source record; the
+      // notebook snapshot is taken from that record, fetched from the pool's own day shard.
+      if (!alertPool.needsFullRecord(event)) return snapshotForRow(event, { section: 'daily-alerts' });
+      return alertPool.fullRecord(event).then(record => snapshotForRow(record ? { ...event, sourceRecord: record } : event, { section: 'daily-alerts' }));
     }, { captureGuard: () => {
       const view = ctxRef, generation = actionGeneration, session = getHostContext().session;
       return () => {

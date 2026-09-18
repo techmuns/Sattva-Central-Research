@@ -1025,6 +1025,9 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
     refresh,
     load,
     isCurrent,
+    // The ranking reads a bounded subset of the retained history (js/data/alert-pool-format.js
+    // states which), and that subset is what the precomputed pool publishes for it.
+    pool: 'ai',
     onPartial: onPartial ? (partial) => {
       if (!live()) return;
       queued = partial;

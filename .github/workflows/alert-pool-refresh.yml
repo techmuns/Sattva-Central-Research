@@ -1,0 +1,79 @@
+name: Alert pool refresh
+
+# THE PRECOMPUTED ALERT POOL — the alert collection every reader used to perform in the browser,
+# performed once here over the committed captures and published as one Actions artifact.
+#
+# WHY AN ARTIFACT AND NOT A COMMIT. The pool's newest shard changes with every capture, and the
+# captures already commit two hundred times a day into a pack of 1.4 GB. Committing forty
+# megabytes of derived gzip after each of them would double that growth for a file nobody needs in
+# git: the Worker reads the latest build's artifact by byte range (worker/alert-pool.mjs), exactly
+# as it reads the bulk/block deals and the Screener collectors. Retention is short because every
+# build supersedes the last; a member URL carries its artifact id, so a browser holding an older
+# build keeps working until it reads the new index.
+#
+# WHEN IT RUNS. After every capture workflow that changes a pooled feed's inputs (workflow_run,
+# which GitHub delivers reliably), on a best-effort schedule in case one of those triggers is
+# missed, and on demand. Runs queue rather than cancel: a build that started on an older main
+# still publishes a consistent pool, and the browser checks every capture revision before it
+# adopts one, so a pool built a minute behind the captures costs a feed its shortcut, never its
+# correctness.
+#
+# NOTHING HERE READS AN UPSTREAM. The builder answers every route from the committed files, and the
+# one artifact it reads (the exchange deals the insider feed folds in) is this repository's own.
+
+on:
+  workflow_run:
+    workflows:
+      - Company news refresh
+      - Market news refresh
+      - RSS news refresh
+      - TradingView portfolio news
+      - Corporate announcements refresh
+      - Filings and four-category trades refresh
+      - Data refresh
+      - Price-move verification
+      - NSE and BSE bulk/block refresh
+      - News capture recovery
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "5,35 * * * *"
+  workflow_dispatch:
+
+run-name: Alert pool refresh (${{ github.event_name == 'workflow_run' && github.event.workflow_run.name || github.event_name }})
+
+concurrency:
+  group: alert-pool
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # A capture that failed changed nothing; the pool it would have moved is still current.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Build the pool from the committed captures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALERT_POOL_VERIFY: "1"
+        run: node --max-old-space-size=6144 scripts/build-alert-pool.mjs "$RUNNER_TEMP/alert-pool"
+      # `compression-level: 0` keeps every member stored as-is inside the archive: the members are
+      # gzip files already, and the Worker hands their bytes to the browser unchanged.
+      - name: Publish the pool
+        uses: actions/upload-artifact@v7
+        with:
+          name: alert-pool
+          path: ${{ runner.temp }}/alert-pool
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 3

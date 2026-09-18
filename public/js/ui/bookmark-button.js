@@ -64,12 +64,15 @@ export function wireBookmarks(root, resolve, { captureGuard = () => () => true }
         await notebook.remove(saved.id);
         showBookmarkMessage('Removed from notebook.', { undo: () => notebook.save(saved) });
       } else {
-        const entry = resolve(button);
+        // A resolver may need a fetch (evidence read from the precomputed pool travels without
+        // its full source record), so it is awaited; the guard below re-checks the row it named.
+        const entry = await resolve(button);
         if (!entry || entry.id !== key) throw new Error('This event has changed. Try saving it again.');
+        if (!current() || !root.contains(button) || button.dataset.bookmarkKey !== key) throw new Error('This event has changed. Try saving it again.');
         // A research answer may have been rendered hours before this click. Its source date
         // stays intact; the saved date records the reader's action, not that earlier render.
         await notebook.save({ ...entry, savedAt: new Date().toISOString() }, {
-          validate: () => current() && root.contains(button) && button.dataset.bookmarkKey === key && resolve(button)?.id === key,
+          validate: () => current() && root.contains(button) && button.dataset.bookmarkKey === key,
         });
         showBookmarkMessage('Saved to your notebook.');
       }

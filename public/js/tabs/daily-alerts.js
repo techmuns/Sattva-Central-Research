@@ -321,6 +321,9 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       includeHistory: true,
       refresh: forceRefresh,
       load,
+      // A selected period may be answered from the precomputed pool; All history and the
+      // Upcoming horizon keep reading the sources themselves.
+      pool: context.queryWindow ? 'window' : null,
       // Feeds land one at a time and the page follows them. Coalesced, because eight arrivals is
       // eight full rebuilds of a table the reader may be typing into — a TRAILING THROTTLE rather
       // than a debounce, since a debounce would keep deferring while feeds kept landing and the

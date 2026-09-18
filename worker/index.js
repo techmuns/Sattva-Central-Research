@@ -82,6 +82,8 @@ import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, a
 import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 
 import { handleExchangeDeals } from './exchange-deals.mjs';
+import { handleAlertPool } from './alert-pool.mjs';
+import { POOL_CAPTURES, captureRevision } from '../public/js/data/alert-pool-shared.js';
 import { EXCHANGE_WORKFLOW } from './exchange-artifact.mjs';
 
 const MUNSHOT_API = 'https://fastapi.muns.io/stock-data';
@@ -354,6 +356,11 @@ export default {
     }
     if (url.pathname === '/api/capture-status') {
       return handleCaptureStatus(request, env, ctx);
+    }
+    // The precomputed alert pool: an index and the immutable members of the latest build's
+    // artifact, read by byte range — see worker/alert-pool.mjs.
+    if (url.pathname === '/api/alert-pool' || url.pathname.startsWith('/api/alert-pool/')) {
+      return handleAlertPool(request, env, ctx);
     }
     if (url.pathname.startsWith('/api/')) {
       return json({ error: 'Not implemented', path: url.pathname }, 404);
@@ -2159,6 +2166,10 @@ const CAPTURE_FILES = {
   corporateActions: '/data/corporate-actions.json',
   technicals: '/data/technicals.json',
   marketNews: '/data/market-news.json',
+  // EVERY CAPTURE THE PRECOMPUTED ALERT POOL IS BUILT FROM, so the browser can tell whether the
+  // pool it is offered was built from the files this deployment serves (js/data/alert-pool.js).
+  // The names above that the pool also reads keep their paths; these are the rest.
+  ...Object.fromEntries(Object.entries(POOL_CAPTURES).filter(([, source]) => source.path).map(([name, source]) => [name, source.path])),
 };
 
 // Read-only health signal for an independent uptime monitor. Never starts a capture or calls Muns.
@@ -2190,7 +2201,7 @@ async function handleCaptureStatus(request, env, ctx) {
   if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
 
   const cache = caches.default;
-  const key = edgeKey('capture-status-v2');
+  const key = edgeKey('capture-status-v3');
   const held = await cache.match(key);
   if (held) {
     return new Response(held.body, {
@@ -2226,6 +2237,8 @@ async function handleCaptureStatus(request, env, ctx) {
         captures[name] = {
           ok: true,
           capturedAt: body.capturedAt || body.generated_at || body.fetchedAt || body.lastRunFinishedAt || null,
+          // Every field that can move without the timestamp moving, for the alert pool's check.
+          revision: captureRevision(body),
           ...(perSource ? { sources: perSource } : {}),
           covered: Number.isFinite(body.covered) ? body.covered : Number.isFinite(body.company_count) ? body.company_count : null,
           failed: Number.isFinite(body.failedCount) ? body.failedCount : Number.isFinite(body.failures) ? body.failures : null,
@@ -2237,6 +2250,15 @@ async function handleCaptureStatus(request, env, ctx) {
     }),
   );
 
+  // THE EXCHANGE ARTIFACT THE INSIDER FEED FOLDS IN is not a file: its identity is the artifact
+  // id the bulk/block route is serving, read off that route's own edge entry. Not cached yet
+  // means not reported — the pool then keeps the live path for insider trades, which is the
+  // read that fills that entry.
+  try {
+    const exchange = await cache.match(new Request(new URL('/api/bulk-block-deals', request.url)));
+    const artifactId = Number(/^"exchange-(\d+)"$/.exec(exchange?.headers.get('etag') || '')?.[1]);
+    captures.exchangeDeals = Number.isSafeInteger(artifactId) ? { ok: true, capturedAt: null, artifactId } : { ok: false, capturedAt: null, artifactId: null, reason: 'not-cached' };
+  } catch { captures.exchangeDeals = { ok: false, capturedAt: null, artifactId: null, reason: 'not-cached' }; }
   const payload = { ok: true, captures, servedAt: new Date().toISOString() };
   const store = new Response(JSON.stringify(payload), {
     headers: { 'content-type': 'application/json', 'cache-control': `max-age=${CAPTURE_STATUS_TTL_S}` },

@@ -246,6 +246,44 @@ export async function readEntries(keys) {
  * milliseconds and there is nothing to do with the result. The in-memory tier is updated
  * synchronously so a read that follows immediately sees the new value either way.
  */
+/**
+ * The keys held under a prefix, from the RAM tier and IndexedDB together, without reading a value.
+ *
+ * The alert pool asks this before it stands in for a feed: a device that walked News or Insider
+ * Trades live, or looked up a company's announcements, holds rows of its own under these keys that
+ * only the feed module's own merge can place — so that feed keeps its live path on that device.
+ * A store that cannot be opened lists only what memory holds; a caller treats that as an answer
+ * about memory, not as proof the disk holds nothing, so the pool asks `isPersistent()` too.
+ */
+export async function listKeys(prefix) {
+  const keys = new Set([...memory.keys()].filter((key) => key.startsWith(prefix)));
+  const db = await openDb();
+  if (!db) return [...keys];
+  await new Promise((resolve) => {
+    let t;
+    try {
+      t = db.transaction(STORE, 'readonly');
+    } catch {
+      return resolve();
+    }
+    let request;
+    try {
+      request = t.objectStore(STORE).openKeyCursor(IDBKeyRange.bound(prefix, `${prefix}\uffff`));
+    } catch {
+      return resolve();
+    }
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return resolve();
+      if (typeof cursor.key === 'string') keys.add(cursor.key);
+      cursor.continue();
+    };
+    request.onerror = () => resolve();
+    t.onabort = () => resolve();
+  });
+  return [...keys];
+}
+
 export function writeEntry(key, { tag, value, savedAt = Date.now() }) {
   const row = { tag: tag || null, savedAt, value };
   remember(key, row);
