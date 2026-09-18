@@ -25,7 +25,9 @@ const { validateShard } = await import('../public/js/data/alert-pool-format.js')
 // step changes to make the pool disagree with the deployment in one particular way.
 const outDir = mkdtempSync(join(tmpdir(), 'alert-pool-'));
 const exchange = { text: readFileSync(resolve(root, 'data/exchange-deals.json'), 'utf8'), id: 4242 };
-const served = { index: null, status: null, artifact: 4242001, requests: [] };
+// `artifact` is what the index names; `memberArtifact` is the build the member route can still
+// answer for — they part in section 5, where the index names a build whose members are gone.
+const served = { index: null, status: null, artifact: 4242001, memberArtifact: 4242001, requests: [] };
 const captureFetch = offlineFetch({ root, exchange, onRequest: (path) => served.requests.push(path) });
 globalThis.fetch = async (input, init) => {
   const path = String(input).split('?')[0];
@@ -36,7 +38,7 @@ globalThis.fetch = async (input, init) => {
   const member = /^api\/alert-pool\/(\d+)\/(.+)$/.exec(path);
   if (member) {
     served.requests.push(path);
-    if (Number(member[1]) !== served.artifact) return new Response('{"ok":false}', { status: 404, headers: { 'content-type': 'application/json' } });
+    if (Number(member[1]) !== served.memberArtifact) return new Response('{"ok":false}', { status: 404, headers: { 'content-type': 'application/json' } });
     try { return new Response(gunzipSync(readFileSync(join(outDir, member[2]))), { headers: { 'content-type': 'application/json' } }); }
     catch { return new Response('{"ok":false}', { status: 404, headers: { 'content-type': 'application/json' } }); }
   }
@@ -239,8 +241,9 @@ served.index = index;
 assert.deepEqual(await declineReasons(), {}, 'and the current pool is adopted again');
 console.log('PASS every reason the pool stands aside is checked on the read, per feed, and leaves that feed to the live path');
 
-// 5. A SHARD THAT DOES NOT READ IS THE POOL FAILING, NOT A FEED'S ANSWER. Every feed takes the
-// live path this time and the period is still exact.
+// 5. A SHARD THAT DOES NOT READ IS THE POOL FAILING, NOT A FEED'S ANSWER. The index names a build
+// whose members the route no longer answers for — an artifact expired between the two reads —
+// so every feed takes the live path this time and the period is still exact.
 served.artifact = 9;
 served.index = { ...index };
 {
