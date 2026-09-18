@@ -5089,7 +5089,11 @@ shipped captures and asserts, with no egress: every member carries exactly the c
 Today, Last 3/7/30 days from the pool equal the full history narrowed to the period (identities,
 every field, order); every feed row, count and figure for Last 7 days in both scopes equals the
 full history narrowed by the real assembly; the ranking from the AI pool equals the ranking from the
-full history in both scopes; and every reason the pool stands aside is checked on the read.
+full history in both scopes — every figure, every feed row's source description, every surfaced and
+ranked company in order, and every card's score, priority, evidence, context, drivers and figures,
+compared card by card with the source records stripped from both sides, because a pooled AI event
+travels compact by contract and the record is fetched from the day shard; and every reason the pool
+stands aside is checked on the read.
 `scripts/verify-alert-pool-worker.mjs` drives the route in workerd against a fake GitHub and a
 range-serving storage; `scripts/verify-alert-pool-ui.mjs` paints All Alerts and AI Alerts from a
 built pool in Chromium, compares rows and cards with the live collection, and moves one capture's

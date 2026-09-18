@@ -2251,9 +2251,10 @@ the Worker serves by byte range (`worker/alert-pool.mjs`) and the browser reads 
    A period is the union of its day shards in the collector's own order, with the URL companions
    the news dedupe needs, so `querySourceFeeds` sees what the bounded read gives it. The AI pool
    carries the subset the ranking can read (`alert-pool-format.js` states it) and the ranking is
-   asserted identical to the full history's in both scopes. `verify-alert-pool.mjs` proves all of it
-   against the shipped captures with no egress, and the runner runs the member check before every
-   upload.
+   asserted identical to the full history's in both scopes, card by card — apart from the source
+   records a compact AI event omits by contract, which a notebook snapshot fetches from the day
+   shard. `verify-alert-pool.mjs` proves all of it against the shipped captures with no egress, and
+   the runner runs the member check before every upload.
 3. **Verified against the deployment on every read, per feed.** The index names every capture a
    feed reads and its `revision`; `/api/capture-status` reports the same for the files this
    deployment serves (and the exchange artifact id from its own edge entry). One capture moved, or
