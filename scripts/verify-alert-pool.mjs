@@ -295,7 +295,6 @@ console.log('PASS a reassembly without loading reuses the pool read in memory');
 }
 console.log('PASS a compact event resolves its full source record from the pool for a notebook snapshot');
 
-rmSync(outDir, { recursive: true, force: true });
 // 8. ROWS THIS SESSION HOLDS BEYOND THE CAPTURE DO DECLINE — through the feed modules themselves,
 // last because they cannot be taken back. A device copy that a tab loads for a company (a
 // filings-tab `load(items)` seeds the device rows for its wanted companies) is a row the pool
@@ -315,4 +314,5 @@ rmSync(outDir, { recursive: true, force: true });
   assert.deepEqual(await declineReasons(), { news: 'rows read live in this session' }, 'and declines the news feed');
   console.log('PASS rows this session read live decline their feed, through the feed modules; device entries alone do not');
 }
+rmSync(outDir, { recursive: true, force: true });
 console.log('PASS alert pool: exact selected periods, exact ranking, honest fallbacks.');
