@@ -2260,9 +2260,15 @@ the Worker serves by byte range (`worker/alert-pool.mjs`) and the browser reads 
    deployment serves (and the exchange artifact id from its own edge entry). One capture moved, or
    not reported, sends that feed — only that feed — down the live path until the next build. A pool
    built for another day is not used at all.
-4. **A device's own rows keep their feed live.** A company walked live from News or Insider Trades,
-   or an announcement lookup, is a row only the feed module's own merge can place; the pool declines
-   that feed on that device (`listKeys` in `core/store.js`).
+4. **Rows the pool cannot carry keep their feed live — and the feed modules say which.** A
+   company walked or searched live in this session, or a device copy a tab loaded that the capture
+   lacks, is a row only the feed module's own merge can place, so the pool declines that feed on
+   that device (`holdsSessionRows()` on the news and insider readers, plus announcement lookups).
+   **A per-company entry left in the device store by an earlier visit is not that.** A reader seeded
+   with no company list never reads it, so a collection made now would not see it either — and
+   declining on its mere presence kept every device that had ever pressed Refresh on News on the
+   28 MB live news path for good, which is how the pool went live and the owner's own browser
+   still downloaded the news working set on every All Alerts open.
 5. **Never commit it.** The newest shard changes with every capture and the repository already takes
    two hundred capture commits a day into a 1.4 GB pack. The artifact has short retention; a member
    URL carries its artifact id, so it is immutable and the browser re-downloads exactly the shards a

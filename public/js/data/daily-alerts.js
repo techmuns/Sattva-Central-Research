@@ -698,7 +698,13 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // (js/data/alert-pool.js). A feed the pool declines — or a pool that cannot be read at all —
   // loads below exactly as it always has. A reassembly without loading reuses the last read.
   const poolMode = pool === 'window' || pool === 'ai' ? pool : null;
-  const poolOptions = { mode: poolMode, day, queryWindow, refresh, isCurrent, book, newsState: (meta) => companyNewsState(day, meta) };
+  // What the pool cannot carry is what the feed modules hold beyond the capture THIS SESSION — a
+  // live walk, a live search, a device copy a tab loaded — and the modules answer that themselves.
+  const sessionRows = (feedId) => {
+    const module = feedId === 'news' ? news : feedId === 'insider' ? insider : null;
+    return module?.holdsSessionRows?.() ? 'rows read live in this session' : null;
+  };
+  const poolOptions = { mode: poolMode, day, queryWindow, refresh, isCurrent, book, newsState: (meta) => companyNewsState(day, meta), sessionRows };
   const poolRead = !poolMode ? Promise.resolve(null)
     : load ? alertPool.read(poolOptions).catch((error) => { console.warn('[daily-alerts] alert pool unavailable', error); return null; })
       : Promise.resolve(alertPool.current(poolOptions));

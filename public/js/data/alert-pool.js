@@ -6,8 +6,9 @@
 // downloading and classifying a month of captures with a few gzip shards — and NOTHING ELSE:
 //
 //   - A feed is stood in for only when the pool was built for TODAY (IST), from the very capture
-//     revisions the Worker is serving now (`/api/capture-status`), and this device holds no rows
-//     of its own for it — a company walked live from News or Insider Trades, an announcement lookup.
+//     revisions the Worker is serving now (`/api/capture-status`), and the collection would read
+//     no rows for it that the pool cannot carry — a company walked or searched live in this
+//     session, a device copy a tab loaded, an announcement lookup (the feed modules answer that).
 //     Any of those false, and that feed loads exactly as it did before, on this visit.
 //   - A window the pool does not cover (All history, undated records, a day before its range), a
 //     static origin with no Worker, an unreadable index or an invalid shard all mean "no pool",
@@ -21,7 +22,7 @@
 // answers it without a request; only the index is revalidated, and only the shards a new build
 // changed are downloaded again. Decoded shards are kept in memory for the current artifact only.
 import { authHeaders } from '../core/host-context.js';
-import { listKeys, readEntry, KEYS } from '../core/store.js';
+import { readEntry, KEYS } from '../core/store.js';
 import { validateShard, assembleFeedEvents } from './alert-pool-format.js';
 import { ALERT_POOL_CONTRACT, POOL_FEEDS, POOL_FEED_CAPTURES, isDay, windowDays, dayMember } from './alert-pool-shared.js';
 
@@ -123,12 +124,23 @@ export function verifyFeed(feedId, index, status) {
   return null;
 }
 
-/** Feeds this device holds rows of its own for, which only the feed module's own merge can place. */
-export async function deviceExtras() {
+/**
+ * Feeds the collection would read rows for that the pool cannot carry. `sessionRows(feedId)` is
+ * the collector's own question to its feed modules — does this reader hold rows this session
+ * supplied beyond the capture (a live walk, a live search, a device copy a tab loaded)? — and a
+ * reason string answers yes. A per-company entry left in the device store by an earlier visit is
+ * deliberately not asked about: a reader seeded with no company list never reads it, so a
+ * collection made now would not see it either, and declining on it kept every device that had
+ * ever pressed Refresh on News on the live news path for good. Announcement lookups are the one
+ * store-held record the shared announcements reader restores on load, so those are still read.
+ */
+export async function deviceExtras(sessionRows = () => null) {
   const extras = new Map();
+  for (const feedId of ['news', 'insider']) {
+    try { const reason = sessionRows(feedId); if (reason) extras.set(feedId, String(reason)); }
+    catch { extras.set(feedId, 'session rows could not be checked'); }
+  }
   try {
-    if ((await listKeys(`${KEYS.filings('news')}:`)).length) extras.set('news', 'companies read live on this device');
-    if ((await listKeys(`${KEYS.filings('insider')}:`)).length) extras.set('insider', 'companies read live on this device');
     const lookups = (await readEntry(KEYS.announcementLookups))?.value;
     if (Array.isArray(lookups?.rows) && lookups.rows.length) extras.set('announcements', 'announcement lookups on this device');
   } catch {
@@ -187,7 +199,7 @@ const readKey = (mode, day, queryWindow) => JSON.stringify([mode, day, queryWind
  * `feeds` maps only the feeds the pool may answer for; every other pooled feed's reason is in
  * `declined`, and the caller loads it as before.
  */
-export async function read({ mode, day, queryWindow = null, refresh = false, isCurrent = () => true, book = [], newsState = (meta) => meta }) {
+export async function read({ mode, day, queryWindow = null, refresh = false, isCurrent = () => true, book = [], newsState = (meta) => meta, sessionRows = () => null }) {
   if (!['window', 'ai'].includes(mode) || !isDay(day)) return null;
   if (Date.now() < disabledUntil && !refresh) return null;
   const index = await readIndex(refresh);
@@ -195,7 +207,7 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
   if (index.day !== day) return null;
   const members = membersFor(mode, index, queryWindow);
   if (!members) return null;
-  const [status, extras] = await Promise.all([readStatus(refresh), deviceExtras()]);
+  const [status, extras] = await Promise.all([readStatus(refresh), deviceExtras(sessionRows)]);
   if (!status || !isCurrent()) return null;
   const declined = new Map();
   const wanted = [];

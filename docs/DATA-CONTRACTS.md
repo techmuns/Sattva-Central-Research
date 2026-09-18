@@ -5071,9 +5071,13 @@ static origin), no build yet, or an unreadable member, the browser is on the liv
 2. every capture the feed reads carries the same `revision` in `/api/capture-status` as in the
    index (the exchange artifact: the same id) — a capture that moved, or one the deployment does not
    report, sends that feed down the live path until the next build;
-3. this device holds no rows of its own for the feed: no company walked live from News or Insider
-   Trades (`filings:news:*`, `filings:insider:*`), no announcement lookups — those rows only the feed
-   module's own merge can place;
+3. the collection would read no rows for the feed that the pool cannot carry: the feed module
+   holds nothing this session supplied beyond the capture (`holdsSessionRows()` — a company walked
+   or searched live, a device copy a tab loaded that the capture lacks) and there are no
+   announcement lookups, which the shared announcements reader restores on load. A per-company
+   entry left in the device store by an earlier visit (`filings:news:*`, `filings:insider:*`) does
+   not count: a reader seeded with no company list never reads it, so a collection made now would
+   not see it either;
 4. for company news, the pool's `bookDependent` flag is false, or the reader's book signature equals
    the builder's — an event names its company from the book only when its row carries no name.
 

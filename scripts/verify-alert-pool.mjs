@@ -27,7 +27,7 @@ const outDir = mkdtempSync(join(tmpdir(), 'alert-pool-'));
 const exchange = { text: readFileSync(resolve(root, 'data/exchange-deals.json'), 'utf8'), id: 4242 };
 // `artifact` is what the index names; `memberArtifact` is the build the member route can still
 // answer for — they part in section 5, where the index names a build whose members are gone.
-const served = { index: null, status: null, artifact: 4242001, memberArtifact: 4242001, requests: [] };
+const served = { index: null, status: null, artifact: 4242001, memberArtifact: 4242001, requests: [], liveNews: null };
 const captureFetch = offlineFetch({ root, exchange, onRequest: (path) => served.requests.push(path) });
 globalThis.fetch = async (input, init) => {
   const path = String(input).split('?')[0];
@@ -41,6 +41,9 @@ globalThis.fetch = async (input, init) => {
     if (Number(member[1]) !== served.memberArtifact) return new Response('{"ok":false}', { status: 404, headers: { 'content-type': 'application/json' } });
     try { return new Response(gunzipSync(readFileSync(join(outDir, member[2]))), { headers: { 'content-type': 'application/json' } }); }
     catch { return new Response('{"ok":false}', { status: 404, headers: { 'content-type': 'application/json' } }); }
+  }
+  if (path.startsWith('api/news') && served.liveNews) {
+    return new Response(JSON.stringify(served.liveNews), { headers: { 'content-type': 'application/json' } });
   }
   if (path === 'api/capture-status') {
     if (!served.status) return new Response('{}', { status: 503, headers: { 'content-type': 'application/json' } });
@@ -191,9 +194,11 @@ const narrowedWeek = alerts.assemble({ day, scope: 'universe', holdings: coverag
 
 // 4. EVERY REASON THE POOL STANDS ASIDE. Each one is checked on the read itself, and each leaves
 // the collection to the live path for that feed — the same records, read the way they always were.
+const { news: newsFeed, insider: insiderFeed } = await import('../public/js/data/filings.js');
+const sessionRowsOf = (id) => ((id === 'news' ? newsFeed : id === 'insider' ? insiderFeed : null)?.holdsSessionRows() ? 'rows read live in this session' : null);
 const declineReasons = async (options = {}) => {
   alertPool.resetForTest();
-  const read = await alertPool.read({ mode: 'window', day, queryWindow: window(1), book: coverage.holdings(), newsState: (meta) => alerts.companyNewsState(day, meta), ...options });
+  const read = await alertPool.read({ mode: 'window', day, queryWindow: window(1), book: coverage.holdings(), newsState: (meta) => alerts.companyNewsState(day, meta), sessionRows: sessionRowsOf, ...options });
   return read ? Object.fromEntries([...read.declined]) : null;
 };
 assert.deepEqual(await declineReasons(), {}, 'a current pool declines nothing');
@@ -226,11 +231,15 @@ served.index = index;
 assert.equal(await declineReasons({ queryWindow: { from: '2020-01-01', to: day, includeUndated: false } }), null, 'a period before the pool is not pooled');
 assert.equal(await declineReasons({ queryWindow: { ...window(1), includeUndated: true } }), null, 'undated records are never answered from the pool');
 assert.equal(await declineReasons({ day: '2020-01-01' }), null, 'a reader on another day than the pool takes the live path');
+// A PER-COMPANY ENTRY LEFT IN THE DEVICE STORE BY AN EARLIER VISIT DECLINES NOTHING. A reader
+// seeded with no company list never reads it, so a collection made now would not see it either;
+// declining on its presence is what kept a browser that had once pressed Refresh on News on the
+// live news path for good. Rows this session actually holds are the last section of this file.
 await writeEntry(KEYS.filingRow('news', 'RELIANCE'), { tag: null, value: { rows: [] } });
-assert.deepEqual(await declineReasons(), { news: 'companies read live on this device' }, 'a device holding live-walked news keeps its live news path');
-await deleteEntry(KEYS.filingRow('news', 'RELIANCE'));
 await writeEntry(KEYS.filingRow('insider', 'RELIANCE'), { tag: null, value: { rows: [] } });
-assert.deepEqual(await declineReasons(), { insider: 'companies read live on this device' });
+assert.deepEqual(await declineReasons(), {}, 'per-company device entries from an earlier visit decline nothing');
+assert.deepEqual(await declineReasons({ sessionRows: (id) => (id === 'news' ? 'rows read live in this session' : null) }), { news: 'rows read live in this session' }, 'a feed module holding session rows declines its feed');
+await deleteEntry(KEYS.filingRow('news', 'RELIANCE'));
 await deleteEntry(KEYS.filingRow('insider', 'RELIANCE'));
 await writeEntry(KEYS.announcementLookups, { tag: null, value: { rows: [{ id: 1 }], queries: [] } });
 assert.deepEqual(await declineReasons(), { announcements: 'announcement lookups on this device' });
@@ -287,4 +296,23 @@ console.log('PASS a reassembly without loading reuses the pool read in memory');
 console.log('PASS a compact event resolves its full source record from the pool for a notebook snapshot');
 
 rmSync(outDir, { recursive: true, force: true });
+// 8. ROWS THIS SESSION HOLDS BEYOND THE CAPTURE DO DECLINE — through the feed modules themselves,
+// last because they cannot be taken back. A device copy that a tab loads for a company (a
+// filings-tab `load(items)` seeds the device rows for its wanted companies) is a row the pool
+// cannot carry; so is a live news search, whose rows every news reader adopts.
+{
+  const ticker = coverage.holdings().find((h) => h.ticker)?.ticker || 'RELIANCE';
+  assert.equal(insiderFeed.holdsSessionRows(), false, 'the insider reader holds only the capture before any tab loads it');
+  await writeEntry(KEYS.filingRow('insider', ticker), { tag: null, value: { rows: [] } });
+  insiderFeed.invalidate(); insiderFeed.setWanted([ticker]); await insiderFeed.seed();
+  assert.equal(insiderFeed.holdsSessionRows(), true, 'a device copy a tab loaded is a session row');
+  assert.deepEqual(await declineReasons(), { insider: 'rows read live in this session' }, 'the collector\'s own question declines the insider feed');
+  await deleteEntry(KEYS.filingRow('insider', ticker));
+  assert.equal(newsFeed.holdsSessionRows(), false, 'the news reader holds only the capture before any live search');
+  served.liveNews = { articles: [{ title: 'A story only this session searched for', url: 'https://example.com/only-here', date: day, source: 'Example', summary: 'Live search result.' }] };
+  await newsFeed.load([ticker], { walkWanted: true });
+  assert.equal(newsFeed.holdsSessionRows(), true, 'a live search this session is a session row');
+  assert.deepEqual(await declineReasons(), { news: 'rows read live in this session' }, 'and declines the news feed');
+  console.log('PASS rows this session read live decline their feed, through the feed modules; device entries alone do not');
+}
 console.log('PASS alert pool: exact selected periods, exact ranking, honest fallbacks.');

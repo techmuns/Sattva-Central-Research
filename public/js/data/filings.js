@@ -966,6 +966,20 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     failureFor,
     meta,
     isLoaded: () => state.loaded,
+    /**
+     * Whether this reader holds rows THIS SESSION supplied beyond the committed capture: a
+     * company walked live, a device copy a tab loaded that was newer than the file or absent
+     * from it, or — for news — a live search whose rows every news reader adopts. Those are the
+     * rows a precomputed pool built from the captures cannot carry, so a collection that would
+     * read them must read the feed itself (js/data/alert-pool.js). A per-company entry sitting in
+     * the device store from an earlier visit is NOT that: a reader seeded with no company list
+     * never reads it, so its presence alone changes nothing about what a collection sees.
+     */
+    holdsSessionRows() {
+      if (kind === 'news' && liveNews.size) return true;
+      for (const ticker of state.rows.keys()) if (!state.fromSnapshot.has(ticker)) return true;
+      return false;
+    },
     dispose() { state = fresh(); rowSnapshot = null; subscribers.clear(); liveNewsSubscribers.delete(adoptLiveNews); },
     invalidate() {
       state = fresh();

@@ -119,6 +119,24 @@ try {
     { technicals: true, announcements: true, insider: true, news: true, 'market-news': true }, `every pooled feed came from the pool (${JSON.stringify(poolState.feeds)})`);
   console.log(`PASS All Alerts Today from the pool: ${pooledKeys.length} rows painted, ${pooledCount}, no capture downloaded`);
 
+  // 1b. A PER-COMPANY ENTRY FROM AN EARLIER VISIT — what a Refresh on the News tab leaves behind
+  // — does not send the feed down the live path: a reader seeded with no company list never reads
+  // it. This is the case the owner's own browser was in on the day the pool went live.
+  await pooled.page.evaluate(async () => {
+    const { writeEntry, KEYS } = await import('/js/core/store.js');
+    await writeEntry(KEYS.filingRow('news', 'RELIANCE'), { tag: null, value: { rows: [] } });
+    await writeEntry(KEYS.filingRow('insider', 'RELIANCE'), { tag: null, value: { rows: [] } });
+  });
+  const fromStale = served.requests.length;
+  await pooled.page.reload();
+  await settledAlerts(pooled.page);
+  await pooled.page.waitForTimeout(1500);
+  assert.deepEqual(captureReads(fromStale), [], `stale device entries download no capture (${captureReads(fromStale).join(', ')})`);
+  const staleState = await pooled.page.evaluate(async () => (await import('/js/data/alert-pool.js')).status().feeds);
+  assert.deepEqual({ news: staleState.news, insider: staleState.insider }, { news: { pooled: true }, insider: { pooled: true } }, `news and insider stay pooled beside stale device entries (${JSON.stringify(staleState)})`);
+  assert.deepEqual(await rowKeys(pooled.page), pooledKeys, 'and the rows are unchanged');
+  console.log('PASS per-company device entries from an earlier visit leave every feed on the pool');
+
   // 2. THE SAME VIEW WITHOUT A POOL: the live collection paints the same rows in the same order.
   served.pool = false;
   const live = await openPage();
