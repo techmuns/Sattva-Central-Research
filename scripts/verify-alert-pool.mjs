@@ -113,11 +113,13 @@ const COUNTS = ['count', 'todayCount', 'sourceCount', 'unresolvedCount', 'oldest
 const describe = (row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'events' && !COUNTS.includes(key)));
 const figures = (row) => Object.fromEntries(COUNTS.filter((key) => key in row).map((key) => [key, row[key]]));
 alertPool.resetForTest();
-const live = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
+let live = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
+let narrowedWeek = null;
 for (const scope of ['universe', 'portfolio']) {
   const holdings = coverage.holdings();
   const fromPool = await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week, pool: 'window' });
   const narrowed = alerts.assemble({ day, scope, holdings, includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
+  if (scope === 'universe') narrowedWeek = narrowed;
   assert.deepEqual(jsonForm(fromPool.events), jsonForm(narrowed.events), `${scope}: the period's events`);
   assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(narrowed.feeds.map(describe)), `${scope}: the feed rows describe their sources as the full read does`);
   assert.deepEqual(jsonForm(fromPool.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })),
@@ -136,6 +138,9 @@ for (const scope of ['universe', 'portfolio']) {
   assert.equal(sourceRecords, s2, `${scope}: source records counted`);
 }
 console.log('PASS Last 7 days from the pool: the full history narrowed, every row, count and figure, in both scopes');
+// The bounded live read has served its purpose; the narrowed full history is the reference below.
+live = null;
+alertPool.resetForTest();
 
 // 3. THE RANKING FROM THE AI POOL IS THE RANKING FROM THE FULL HISTORY. `topFunnelEvents` is the
 // count of events read, and the AI pool deliberately reads fewer; every card, score, evidence row,
@@ -145,7 +150,7 @@ for (const scope of ['universe', 'portfolio']) {
   const ai = await alerts.collect({ scope, day, holdings, includeHistory: true, pool: 'ai' });
   const status = alertPool.status();
   assert(POOL_FEEDS.every((id) => status.feeds[id]?.pooled), `${scope}: every pooled feed came from the AI pool (${JSON.stringify(status.feeds)})`);
-  const reference = scope === 'universe' ? full : await alerts.collect({ scope, day, holdings, includeHistory: true });
+  const reference = scope === 'universe' ? full : alerts.assemble({ day, scope, holdings, includeHistory: true, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
   const strip = (report) => { const { topFunnelEvents, ...meta } = report.meta; return jsonForm({ ...report, meta, pending: report.pending }); };
   const rankedPool = rankReport(ai, { holdings, insightCompanies: [] });
   const rankedFull = rankReport(reference, { holdings, insightCompanies: [] });
@@ -167,7 +172,7 @@ served.status = { ...served.status, captures: { ...served.status.captures, insid
 assert.deepEqual(await declineReasons(), { insider: 'insider: moved' }, 'a capture that moved sends only its feed down the live path');
 {
   const pooled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
-  assert.deepEqual(jsonForm(pooled.events), jsonForm(live.events), 'a declined feed read live still yields the same period');
+  assert.deepEqual(jsonForm(pooled.events), jsonForm(narrowedWeek.events), 'a declined feed read live still yields the same period');
   assert.equal(alertPool.status().feeds.insider.pooled, false);
 }
 served.status = captureStatusFor({ root, exchange });
@@ -214,7 +219,7 @@ served.index = { ...index };
 {
   alertPool.resetForTest();
   const pooled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
-  assert.deepEqual(jsonForm(pooled.events), jsonForm(live.events), 'unreadable members leave the whole period to the live path');
+  assert.deepEqual(jsonForm(pooled.events), jsonForm(narrowedWeek.events), 'unreadable members leave the whole period to the live path');
   assert(POOL_FEEDS.every((id) => !alertPool.status().feeds[id]?.pooled), 'no feed is reported as pooled when the members could not be read');
 }
 served.artifact = 4242001;
@@ -228,7 +233,7 @@ alertPool.resetForTest();
 await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
 served.requests = [];
 const reassembled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window', load: false });
-assert.deepEqual(jsonForm(reassembled.events), jsonForm(live.events), 'a reassembly without loading yields the same period');
+assert.deepEqual(jsonForm(reassembled.events), jsonForm(narrowedWeek.events), 'a reassembly without loading yields the same period');
 assert.deepEqual(served.requests.filter((path) => path.startsWith('api/alert-pool/')), [], 'a reassembly reads no member');
 console.log('PASS a reassembly without loading reuses the pool read in memory');
 

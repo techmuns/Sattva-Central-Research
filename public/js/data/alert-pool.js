@@ -150,7 +150,7 @@ function readShard(index, member, expected) {
     if (!out.ok) throw new Error(`Alert pool member ${member} could not be read (${out.reason}${out.status ? ` ${out.status}` : ''})`);
     return validateShard(out.value, expected);
   })() };
-  entry.promise.catch(() => { if (shards.get(url) === entry) shards.delete(url); });
+  entry.promise.then(() => { entry.settled = true; }, () => { if (shards.get(url) === entry) shards.delete(url); });
   shards.set(url, entry);
   return entry.promise;
 }
@@ -235,8 +235,14 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
     }
     feeds.set(feedId, { ...row, events });
   }
-  const result = { feeds, declined, index, mode, day, queryWindow, at: Date.now() };
+  const result = { feeds, declined, index, mode, day, queryWindow, at: Date.now(), members: members.map((entry) => memberUrl(index, entry.member)) };
   results.set(readKey(mode, day, queryWindow), result);
+  // WHAT STAYS DECODED: the shards behind the latest read of each mode, and nothing else. A
+  // reader who looked at Last 30 days and came back to Today would otherwise keep thirty decoded
+  // day shards for as long as the build lasts — the memory the live path releases with its readers.
+  for (const held of results.values()) if (held.mode === mode && held !== result) results.delete(readKey(held.mode, held.day, held.queryWindow));
+  const keep = new Set([...results.values()].flatMap((held) => held.members));
+  for (const [url, held] of shards) if (!keep.has(url) && held.settled) shards.delete(url);
   return result;
 }
 

@@ -21,7 +21,7 @@ const EXCHANGE_ID = 4242;
 const poolDir = process.env.ALERT_POOL_DIR || mkdtempSync(join(tmpdir(), 'alert-pool-ui-'));
 if (!existsSync(join(poolDir, 'index.json'))) {
   console.log(`building the pool into ${poolDir}`);
-  execFileSync(process.execPath, ['--max-old-space-size=6144', resolve(here, 'build-alert-pool.mjs'), poolDir],
+  execFileSync(process.execPath, ['--max-old-space-size=4096', resolve(here, 'build-alert-pool.mjs'), poolDir],
     { stdio: 'inherit', env: { ...process.env, ALERT_POOL_EXCHANGE_FILE: resolve(root, 'data/exchange-deals.json'), ALERT_POOL_EXCHANGE_ID: String(EXCHANGE_ID) } });
 }
 const index = JSON.parse(readFileSync(join(poolDir, 'index.json'), 'utf8'));
@@ -86,6 +86,19 @@ const settledAlerts = (page) => page.waitForFunction(() => {
   return rows > 0 && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…')) && !document.querySelector('[data-table-loading]');
 }, null, { timeout: 120000 });
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
+// THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
+// route this sandbox cannot answer left a feed failed — and the cards have stopped changing.
+const settledRanking = async (page, timeout) => {
+  await page.waitForFunction(() => { const state = document.querySelector('[data-ai-feed-status]')?.dataset.state; return !!state && state !== 'pending'; }, null, { timeout });
+  let previous = null;
+  for (let i = 0; i < 40; i++) {
+    const cards = await page.evaluate(() => [...document.querySelectorAll('[data-ai-card]')].map((card) => card.dataset.ticker).join(','));
+    if (cards && cards === previous) return cards.split(',');
+    previous = cards;
+    await page.waitForTimeout(1500);
+  }
+  throw new Error('the ranking did not settle');
+};
 const rowCount = (page) => page.evaluate(() => document.querySelector('[data-row-count]')?.textContent.trim() || '');
 const feedChips = (page) => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-feed]')].map((chip) => [chip.dataset.feed, chip.textContent.trim().replace(/\s+/g, ' ')])));
 
@@ -154,19 +167,17 @@ try {
   // cards are the live cards.
   const fromAi = served.requests.length;
   await pooled.page.evaluate(() => { location.hash = '#/research/ai-alerts?scope=universe'; });
-  await pooled.page.waitForFunction(() => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', null, { timeout: 180000 });
-  await pooled.page.waitForTimeout(1500);
+  const pooledCards = await settledRanking(pooled.page, 180000);
   const aiReads = poolReads(fromAi).filter((path) => path.includes('/ai/'));
   assert(aiReads.length >= index.ai.length, `every AI shard is read (${aiReads.length} of ${index.ai.length})`);
   assert.deepEqual(captureReads(fromAi).filter((path) => path !== '/data/insider-trades.json' && !path.startsWith('/data/insider-archive/')), [], `no pooled capture is downloaded for the ranking (${captureReads(fromAi).join(', ')})`);
-  const pooledCards = await pooled.page.evaluate(() => [...document.querySelectorAll('[data-ai-card]')].map((card) => card.dataset.ticker));
   assert(pooledCards.length > 0, 'cards surface from the AI pool');
+  const aiState = await pooled.page.evaluate(async () => (await import('/js/data/alert-pool.js')).status().feeds);
+  assert(Object.values(aiState).every((state) => state.pooled), `every pooled feed came from the AI pool (${JSON.stringify(aiState)})`);
   served.pool = false;
   const liveAi = await openPage();
   await liveAi.page.goto(`${origin}/#/research/ai-alerts?scope=universe`);
-  await liveAi.page.waitForFunction(() => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', null, { timeout: 240000 });
-  await liveAi.page.waitForTimeout(1500);
-  const liveCards = await liveAi.page.evaluate(() => [...document.querySelectorAll('[data-ai-card]')].map((card) => card.dataset.ticker));
+  const liveCards = await settledRanking(liveAi.page, 300000);
   assert.deepEqual(pooledCards, liveCards, 'the AI pool ranks the same companies in the same order as the full history');
   console.log(`PASS AI Alerts from the AI pool: ${pooledCards.length} cards, identical to the live ranking`);
   await liveAi.context.close();

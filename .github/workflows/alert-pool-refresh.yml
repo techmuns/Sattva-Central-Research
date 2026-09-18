@@ -66,7 +66,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ALERT_POOL_VERIFY: "1"
-        run: node --max-old-space-size=6144 scripts/build-alert-pool.mjs "$RUNNER_TEMP/alert-pool"
+        run: node --max-old-space-size=4096 scripts/build-alert-pool.mjs "$RUNNER_TEMP/alert-pool"
       # `compression-level: 0` keeps every member stored as-is inside the archive: the members are
       # gzip files already, and the Worker hands their bytes to the browser unchanged.
       - name: Publish the pool
