@@ -307,6 +307,9 @@ console.log('PASS a compact event resolves its full source record from the pool 
   assert.equal(insiderFeed.holdsSessionRows(), true, 'a device copy a tab loaded is a session row');
   assert.deepEqual(await declineReasons(), { insider: 'rows read live in this session' }, 'the collector\'s own question declines the insider feed');
   await deleteEntry(KEYS.filingRow('insider', ticker));
+  // A reload puts the reader back on the capture alone; here, the same thing in place.
+  insiderFeed.invalidate(); await insiderFeed.seed();
+  assert.equal(insiderFeed.holdsSessionRows(), false, 'seeded again with no company list, the insider reader is back on the capture alone');
   assert.equal(newsFeed.holdsSessionRows(), false, 'the news reader holds only the capture before any live search');
   served.liveNews = { articles: [{ title: 'A story only this session searched for', url: 'https://example.com/only-here', date: day, source: 'Example', summary: 'Live search result.' }] };
   // `load()` memoises: the reader was loaded by the oracle. `loadOne(…, { force })` is the live
