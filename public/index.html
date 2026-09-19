@@ -129,17 +129,42 @@
         font-variant-numeric: tabular-nums;
       }
 
-      /* Slim scrollbars for table bodies, drill panels and dropdowns. */
-      .scrollbar-thin::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+      /*
+       * Scrollbars for drill panels, dialogs and dropdowns.
+       *
+       * `:not(.table-scroll-surface)` is load-bearing rather than tidy. Every data table carries
+       * BOTH classes, this block is defined after tailwind.css, and the two selectors have equal
+       * specificity — so the 8px written here silently won over the table contract's own width
+       * for as long as both existed. The table rule was correct, maintained and overridden. The
+       * tables now keep their own, slightly wider bar and this one governs what it says it does.
+       */
+      .scrollbar-thin:not(.table-scroll-surface) {
+        scrollbar-color: rgb(var(--surface-slate-400, 148 163 184) / 1) transparent;
       }
-      .scrollbar-thin::-webkit-scrollbar-thumb {
-        background: rgb(var(--surface-slate-300, 203 213 225) / 1);
-        border-radius: 4px;
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
       }
-      .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background: rgb(var(--surface-slate-400, 148 163 184) / 1);
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar-thumb {
+        border: 2px solid transparent;
+        background-clip: content-box;
+        border-radius: 9999px;
+        background-color: rgb(var(--surface-slate-300, 203 213 225) / 1);
+      }
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar-thumb:vertical {
+        min-height: 40px;
+      }
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar-thumb:horizontal {
+        min-width: 40px;
+      }
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar-thumb:hover {
+        background-color: rgb(var(--surface-slate-400, 148 163 184) / 1);
+      }
+      .scrollbar-thin:not(.table-scroll-surface)::-webkit-scrollbar-thumb:active {
+        background-color: rgb(var(--surface-slate-500, 100 116 139) / 1);
       }
 
       @keyframes fade-in {
@@ -331,20 +356,35 @@
         }
       }
 
-      /* Restrained scrollbars inside table containers and dropdowns. */
+      /*
+       * The floor every other scroller lands on. Same bargain as the table contract above: a
+       * track wide enough to aim at, a visible thumb two pixels inside it, and a minimum length
+       * so a long list still offers something to grab rather than a sliver.
+       */
       ::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
+        height: 12px;
+        width: 12px;
       }
       ::-webkit-scrollbar-track {
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: rgb(var(--surface-slate-200, 226 232 240) / 1);
+        border: 2px solid transparent;
+        background-clip: content-box;
+        background-color: rgb(var(--surface-slate-300, 203 213 225) / 1);
         border-radius: 9999px;
       }
+      ::-webkit-scrollbar-thumb:vertical {
+        min-height: 40px;
+      }
+      ::-webkit-scrollbar-thumb:horizontal {
+        min-width: 40px;
+      }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgb(var(--surface-slate-300, 203 213 225) / 1);
+        background-color: rgb(var(--surface-slate-400, 148 163 184) / 1);
+      }
+      ::-webkit-scrollbar-thumb:active {
+        background-color: rgb(var(--surface-slate-500, 100 116 139) / 1);
       }
 
       /* Ask Research fills the available frame; only the transcript scrolls. */
