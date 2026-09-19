@@ -18,20 +18,42 @@
  * A slightly larger, higher-contrast thumb is easier to acquire without becoming dashboard
  * chrome. Do not add scroll snapping here: stopping a financial table between rows/columns is a
  * feature, not an error.
+ *
+ * THE THUMB NEEDS A FLOOR, AND THAT IS THE HALF THAT MADE DRAGGING HARD. A scrollbar thumb is
+ * sized in proportion to what it scrolls, so a retained history is a sliver: All Alerts measures
+ * 167,944px of scrollHeight inside a 400px scroller, which is a thumb UNDER ONE PIXEL TALL. No
+ * width setting can rescue that — the bar was wide enough to see and too short to grab, which
+ * reads as a broken control rather than a small one. A per-axis floor is the fix — `min-height`
+ * on the vertical thumb and `min-width` on the horizontal one, never both on both, which would
+ * ask a vertical thumb to be 48px WIDE inside a 14px track — and
+ * the width below is what makes it a comfortable target rather than a precise one.
+ *
+ * The 14px track carries a 2px transparent border under `background-clip: content-box`, so the
+ * bar a reader SEES is 10px — a little thicker than the 8px it replaces — while the area a
+ * pointer may grab is the full 14px. Widening the visible thumb to the whole track would read as
+ * chrome on a page whose tables are the content; widening only the hit area would leave the
+ * control looking exactly as hard to grab as before. This is both.
+ *
+ * `scrollbar-width` is `auto`, never `thin`. Chrome 121+ and Firefox both honour the standard
+ * property, and `thin` there is the opposite of what this rule is for; the ::-webkit-scrollbar
+ * block beneath it covers Safari and older Chrome, so whichever layer an engine picks it lands
+ * on the same comfortable bar. Widening it costs the widest table 6px of its own room and that
+ * was measured before it shipped: the tightest table here (All Alerts) stops shrinking at
+ * 1,224px inside a 1,392px scroller, so every one of them keeps well over 100px of headroom.
  */
 .table-scroll-surface {
   max-width: 100%;
   overscroll-behavior: contain;
   scroll-padding: 1rem;
   scrollbar-color: rgb(var(--edge-slate-400, 148 163 184) / 1) transparent;
-  scrollbar-width: thin;
+  scrollbar-width: auto;
   touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
 }
 
 .table-scroll-surface::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
 }
 
 .table-scroll-surface::-webkit-scrollbar-track {
@@ -39,12 +61,27 @@
 }
 
 .table-scroll-surface::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  background-clip: content-box;
   border-radius: 9999px;
-  background: rgb(var(--surface-slate-400, 148 163 184) / 1);
+  background-color: rgb(var(--surface-slate-400, 148 163 184) / 1);
+}
+
+/* The floor is per axis: a length on the bar that scrolls, never a width on the other one. */
+.table-scroll-surface::-webkit-scrollbar-thumb:vertical {
+  min-height: 48px;
+}
+
+.table-scroll-surface::-webkit-scrollbar-thumb:horizontal {
+  min-width: 48px;
 }
 
 .table-scroll-surface::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--surface-slate-500, 100 116 139) / 1);
+  background-color: rgb(var(--surface-slate-500, 100 116 139) / 1);
+}
+
+.table-scroll-surface::-webkit-scrollbar-thumb:active {
+  background-color: rgb(var(--surface-slate-600, 71 85 105) / 1);
 }
 
 .table-scroll-surface:focus-visible {
