@@ -184,3 +184,124 @@ export function parseXbrlFiling(xml) {
     blocks,
   };
 }
+
+// ---- the filing in one line -------------------------------------------------------------------
+//
+// WHY A BOUNDED READING EXISTS AT ALL. The panel above renders the whole document, which is right
+// on a screen and impossible in an email: the team brief carries up to eighty filings, and a
+// reader who is told only "Acquisition (including agreement to acquire)" has been told the
+// exchange's category and nothing about the event — which is exactly the complaint this closes.
+// So a brief line reproduces as much of the filing as a line can hold and links to the rest.
+//
+// IT REPRODUCES, IT DOES NOT SUMMARISE. Every entry is one fact as filed — the exchange's own
+// label, the company's own value, its own unit — in the document's own words. Nothing is combined,
+// reworded, rounded or inferred, and what is not printed is COUNTED rather than dropped silently:
+// a bounded view that hides its own bound claims the filing says less than it does.
+
+/**
+ * The identification fields, which every REG30 form opens with and which say nothing about the
+ * event. They are excluded here because the surface that shows a line has already named the
+ * company (the brief files every story under it) — and because `parseXbrlFiling` already exposes
+ * each of them by name, so this is the same list read twice rather than a second vocabulary.
+ */
+const IDENTIFICATION = new Set(['NSESymbol', 'NameOfTheCompany', 'ScripCode', 'MSEISymbol', 'ISIN']);
+
+/** Every fact in the filing, in the document's own order, identification aside. */
+export function filingFacts(filing) {
+  const out = [];
+  for (const block of filing?.blocks || []) {
+    for (const fact of block.facts || []) {
+      if (IDENTIFICATION.has(fact.tag)) continue;
+      out.push({ ...fact, block: block.title || null });
+    }
+  }
+  return out;
+}
+
+// A form's own single-word answers and its stamps. These are facts and stay in the filing; they
+// simply go last, because "Whether ... is an outcome of the board meeting: false" is the shape of
+// the document rather than the substance of the event.
+const SINGLE_WORD_ANSWER = /^(?:true|false|yes|no|na|n\/a|nil|none|not applicable|notlisted|not listed)$/i;
+const STAMP = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{1,2}:\d{2}(?::\d{2})?)?$|^\d{1,2}:\d{2}(?::\d{2})?$/;
+
+/**
+ * Does this fact carry a particular of the event — a figure the company declared a unit for, or
+ * text it typed?
+ *
+ * THE TEST IS THE VALUE'S SHAPE, NEVER THE FIELD'S NAME. SEBI's taxonomy is SEBI's and moves on
+ * its own schedule — the parser above reads twelve form types without knowing one field by name,
+ * and a hand-kept list of "interesting fields" here would quietly stop finding the interesting
+ * ones the month a form changes. Measured on the shipped fixtures, the shape test alone puts the
+ * order's amount, counterparty and nature ahead of its yes/no boxes.
+ */
+const figure = (fact) => !!fact.unit;
+const typed = (fact) => {
+  const text = String(fact.value || '').trim();
+  return !SINGLE_WORD_ANSWER.test(text) && !STAMP.test(text) && /\s/.test(text);
+};
+
+// A value longer than this is cut at a word boundary with an ellipsis, so a line stays a line. It
+// is visible truncation of a value that is reachable in full one click away — never a rewording,
+// and never a silent one.
+const VALUE_CHARS = 180;
+const clip = (value) => {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= VALUE_CHARS) return { value: text, clipped: false };
+  const cut = text.slice(0, VALUE_CHARS);
+  const space = cut.lastIndexOf(' ');
+  return { value: `${(space > VALUE_CHARS * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`, clipped: true };
+};
+
+/**
+ * As much of the filing as one line can carry: the first figure the company declared, then the
+ * filing's own particulars in the document's own order, then its single-word answers and stamps —
+ * each as `{ label, value, unit }`, with `omitted` counting every fact left in the document.
+ *
+ * WHY A FIGURE LEADS. A REG30 form opens with two or three clauses of the regulation it is filed
+ * under, and on the shipped fixtures those clauses alone spend most of a line — so document order
+ * on its own puts "Cost of acquisition: 1850000000 INR" and "Amount of the orders or contracts:
+ * 6000000000 INR" outside it. A declared figure is the one particular a reader cannot guess from
+ * the category, so exactly ONE of them is carried to the front. Everything after it stays in the
+ * order the company filed it in; nothing is ranked, weighed or chosen by what it says.
+ *
+ * TWO BOUNDS, AND NEITHER MAY STARVE THE LINE. A fact that does not fit the character budget is
+ * SKIPPED rather than ending the reading — one 165-character regulation clause would otherwise
+ * spend the whole line and leave the counterparty and the nature of the order in the "and 18
+ * more". And one statement repeated across a form's repeated blocks — RailTel files four auditor
+ * re-appointments as four copies of the same six fields — is printed once, because a line that
+ * reads "Designation: Statutory Auditor" four times has told the reader one thing four times.
+ * Both are still counted in `omitted`.
+ */
+export function filingParticulars(filing, { limit = 6, maxChars = 420 } = {}) {
+  const facts = filingFacts(filing);
+  const lead = facts.find(figure);
+  const rest = facts.filter((f) => f !== lead);
+  const ordered = [lead, ...rest.filter(typed), ...rest.filter((f) => !typed(f))].filter(Boolean);
+  const kept = [];
+  const seen = new Set();
+  let chars = 0;
+  for (const fact of ordered) {
+    if (kept.length >= limit) break;
+    const label = String(fact.label || fact.tag);
+    const { value, clipped } = clip(fact.value);
+    const statement = `${label}: ${value}`;
+    if (seen.has(statement)) continue;
+    if (kept.length && chars + statement.length > maxChars) continue;
+    seen.add(statement);
+    kept.push({ tag: fact.tag, label, value, unit: fact.unit || null, clipped });
+    chars += statement.length;
+  }
+  return { facts: kept, omitted: facts.length - kept.length, total: facts.length };
+}
+
+/**
+ * One fact as a sentence: `Label: value UNIT`.
+ *
+ * `pure` is the taxonomy's unit for a number that HAS no unit — a count, a ratio — so it is the one
+ * unit not printed: "4 pure" is the document's plumbing showing through, where "4" is the company's
+ * own value. Every other unit travels, because it is part of what the figure means.
+ */
+export const factStatement = (fact) => `${fact.label || fact.tag}: ${fact.value}${fact.unit && !/^pure$/i.test(fact.unit) ? ` ${fact.unit}` : ''}`;
+
+/** The same reading as one string: `Label: value · Label: value`. */
+export const filingParticularsLine = (filing, options) => filingParticulars(filing, options).facts.map(factStatement).join(' · ');

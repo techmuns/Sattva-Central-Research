@@ -59,6 +59,7 @@ import { matchKeywords } from '../public/js/data/news-keywords.js';
 import { announcementSignal } from '../public/js/data/filing-signals.js';
 import { attributeNewsRow } from '../public/js/data/company-news-attribution.js';
 import { articleUrlKey } from '../public/js/data/filings-shared.js';
+import { factStatement, filingParticulars, isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 import { EDITIONS, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime, previousWeekday } from '../public/js/data/newsletter-shared.js';
 
 export const PRODUCTION_ORIGIN = 'https://sattva-central-research.tech-441.workers.dev';
@@ -91,6 +92,14 @@ export const TEXT_FOLD_MS = 12 * 3600 * 1000;
 export const FAMILY_FOLD_MS = 45 * 60 * 1000;
 // NSE publishes many filings twice — a readable PDF and an XBRL twin minutes apart.
 export const XBRL_TWIN_MS = 30 * 60 * 1000;
+// About one NSE announcement in eleven is a raw XBRL data file with no readable twin, and the
+// exchange's description of one is often its category and nothing else. The filing itself carries
+// the particulars, so the brief reads the ones it is about to print — bounded, because a send is
+// one Worker invocation with a subrequest budget it shares with the quotes, the RSS and the
+// captures, and because a filing nobody is shown is a read nobody needed.
+export const XBRL_DETAIL_LIMIT = 12;
+export const XBRL_DETAIL_POOL = 4;
+export const XBRL_TIMEOUT_MS = 8000;
 
 // The scan, in the order the desk reads it.
 export const MARKET_GROUPS = [
@@ -198,11 +207,46 @@ export async function readMarkets({ env, fetcher = fetch, now = Date.now() } = {
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 // NSE prefixes every description with the filer's own name and "has informed the Exchange about".
 // The block heading already names the company, so the preamble is dropped and the exchange's own
-// description of the filing is the headline — nothing is added, reworded or summarised.
+// description of the filing is the headline — nothing is added, reworded or summarised. Where
+// dropping it would leave the exchange's own category and nothing else, the whole sentence stands
+// instead; see `headlineOfNse` below.
 const NSE_PREAMBLE = /^.{0,160}?\bhas (?:informed|intimated) the exchange\b\s*(?:about|regarding|that|of|on)?\s*(?:the\s+)?/i;
-export function headlineOfNse(row) {
-  const text = String(row.description || '').split('|SUBJECT:')[0].trim();
+const nseText = (row) => String(row.description || '').split('|SUBJECT:')[0].trim();
+
+/** What the filing is ABOUT — the description with the filer's name and the boilerplate dropped. */
+export function eventOfNse(row) {
+  const text = nseText(row);
   return text.replace(NSE_PREAMBLE, '').trim() || text || row.subject || row.company || '';
+}
+
+/**
+ * Does NSE's description say anything the exchange's own subject line does not?
+ *
+ * Measured on the retained capture: a large share of NSE's descriptions are the category and
+ * nothing else — "PB Fintech Limited has informed the Exchange regarding Acquisition (including
+ * agreement to acquire) |SUBJECT: Acquisition (including agreement to acquire)-XBRL". Strip the
+ * preamble from one of those and what is left is the word "Acquisition", which is the filing's
+ * FORM and not its content. That is the row the desk read as telling them nothing.
+ */
+export const categoryOnlyNse = (row) => {
+  const subject = norm(String(row.subject || '').replace(/-\s*xbrl\s*$/i, ''));
+  return !!subject && norm(eventOfNse(row)) === subject;
+};
+
+/**
+ * The headline for a filing NSE published.
+ *
+ * The preamble is dropped because the block heading already names the company — but only where
+ * what remains still says something. Where the description is the bare category, the exchange's
+ * WHOLE sentence stands instead: it names the filer, which a one-word category does not, and it is
+ * still the exchange's own words rather than a headline of ours. The filing's own particulars come
+ * from the filing itself (`readFilingDetails`), never from a sentence we assembled.
+ */
+export function headlineOfNse(row) {
+  const text = nseText(row);
+  const event = text.replace(NSE_PREAMBLE, '').trim();
+  if (!event) return text || row.subject || row.company || '';
+  return categoryOnlyNse(row) ? text : event;
 }
 
 // THE SUBJECT FAMILY, FOR FOLDING ONE FILING LODGED WITH BOTH EXCHANGES. NSE and BSE describe the
@@ -255,7 +299,7 @@ export function foldAnnouncements(rows, { from }) {
   const byTicker = new Map();
   for (const row of rows) {
     if (!byTicker.has(row.ticker)) byTicker.set(row.ticker, []);
-    byTicker.get(row.ticker).push({ ...row, text: norm(row.headline), copies: [] });
+    byTicker.get(row.ticker).push({ ...row, text: norm(row.event || row.headline), copies: [] });
   }
   const out = [];
   for (const list of byTicker.values()) {
@@ -274,7 +318,7 @@ export function foldAnnouncements(rows, { from }) {
       host.copies.push(r, ...r.copies);
       // BSE's headline is often a placeholder ("Intimation attached."); NSE's description of the
       // same filing is then the exchange text worth printing — still an exchange's own words.
-      if (generic(host.headline) && r.text.length > host.text.length) { host.headline = r.headline; host.text = r.text; }
+      if (generic(host.headline) && r.text.length > host.text.length) { host.headline = r.headline; host.event = r.event; host.text = r.text; }
     }
     out.push(...stories);
   }
@@ -299,7 +343,11 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
   };
   const nseRow = (r, ticker) => ({
     exchange: 'NSE', ticker, company: byTicker.get(ticker).name, subject: r.subject || null, category: null, family: familyOf(r.subject),
-    headline: headlineOfNse(r), url: r.url || null, at: Date.parse(r.publishedAt || ''), critical: false,
+    // `headline` is what the reader sees and `event` is what the READINGS are taken from: the
+    // keyword and direction rules are about the filing, and a headline that (rightly) carries the
+    // filer's name would put a company's own name into a vocabulary written for events.
+    headline: headlineOfNse(r), event: eventOfNse(r), categoryOnly: categoryOnlyNse(r),
+    url: r.url || null, at: Date.parse(r.publishedAt || ''), critical: false,
   });
 
   let nse;
@@ -364,7 +412,8 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
         admit({
           exchange: 'BSE', ticker: key, company: byTicker.get(key).name,
           subject: a.subCategory || a.category || null, category: a.category || null, family: familyOf(a.subCategory, a.category),
-          headline: a.headline || a.title || a.subCategory || a.category || key, url: a.url || null, at, critical: a.critical === true,
+          headline: a.headline || a.title || a.subCategory || a.category || key, event: a.headline || a.title || a.subCategory || a.category || key,
+          url: a.url || null, at, critical: a.critical === true,
         });
       }
     }
@@ -373,13 +422,68 @@ export async function readAnnouncements({ env, fetcher = fetch, now = Date.now()
   }
 
   const stories = foldAnnouncements(rows, { from: window.from }).map((row) => {
-    const reading = matchKeywords(row.headline);
-    const signal = announcementSignal({ category: row.category, subCategory: row.subject, headline: row.headline, critical: row.critical });
+    const reading = matchKeywords(row.event || row.headline);
+    const signal = announcementSignal({ category: row.category, subCategory: row.subject, headline: row.event || row.headline, critical: row.critical });
     return { ...row, keywords: reading.map((k) => k.label), keywordIds: reading.map((k) => k.id), keywordGroups: [...new Set(reading.map((k) => k.group))], direction: signal.direction, importance: signal.importance, filingRule: signal.filingRule };
   });
   // A late row an earlier brief already carried is not news twice; a late row nobody sent is.
   const kept = stories.filter((s) => !(s.late && s.keys.some((k) => sent.has(k))));
-  return { nse, history, bse, suppressed: stories.length - kept.length, late: kept.filter((s) => s.late).length, ...group(kept, ANNOUNCEMENT_LIMIT) };
+  const grouped = group(kept, ANNOUNCEMENT_LIMIT);
+  const filings = await readFilingDetails({ fetcher, groups: grouped.groups });
+  return { nse, history, bse, filings, suppressed: stories.length - kept.length, late: kept.filter((s) => s.late).length, ...grouped };
+}
+
+/**
+ * THE FILING'S OWN PARTICULARS, FOR THE FILINGS THIS BRIEF WILL ACTUALLY PRINT.
+ *
+ * "Acquisition (including agreement to acquire)" is what NSE's feed says about one of these rows,
+ * and the desk's complaint about it was exactly right: it names a form, not an event. The document
+ * behind it is an XBRL instance carrying the particulars as separate facts — who, how much, when,
+ * on what terms — and the dashboard already reads those through `parseXbrlFiling` for its own
+ * filing panel. This reads the same document, through the same parser, for the email.
+ *
+ * FOUR THINGS BOUND IT, and they are the rules this file already runs on:
+ *   - it runs AFTER the grouping, so it reads what the brief prints rather than everything the
+ *     window held (80 rows → at most `XBRL_DETAIL_LIMIT` reads);
+ *   - the reads it does spend go FIRST to the rows whose description says least (`categoryOnly`),
+ *     because those are the rows a reader cannot act on;
+ *   - each read has its own timeout and a small pool, so a slow archive costs the send seconds
+ *     rather than the whole edition; and
+ *   - a filing that could not be read leaves the story exactly as it was. Nothing is guessed, and
+ *     a failure is counted (`failed`) rather than silently reading as a filing with no content.
+ */
+export async function readFilingDetails({ fetcher = fetch, groups = [] } = {}) {
+  const items = groups.flatMap((g) => g.items).filter((item) => isXbrlFilingUrl(item.url));
+  if (!items.length) return { candidates: 0, read: 0, ok: 0, failed: 0 };
+  // The thin ones first, then newest first — `group()` already ordered each company's items.
+  const queue = [...items.filter((i) => i.categoryOnly), ...items.filter((i) => !i.categoryOnly)].slice(0, XBRL_DETAIL_LIMIT);
+  let ok = 0;
+  let failed = 0;
+  let next = 0;
+  const worker = async () => {
+    for (let i = next++; i < queue.length; i = next++) {
+      const item = queue[i];
+      try {
+        const res = await fetcher(item.url, { headers: NSE_HEADERS, signal: AbortSignal.timeout(XBRL_TIMEOUT_MS), redirect: 'manual' });
+        const xml = await res.text();
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // A 200 that is not the filing is not an empty filing — the route's rule, for the same
+        // reason: the document's own shape is the only evidence that it IS the document.
+        const filing = parseXbrlFiling(xml);
+        if (!filing.ok) throw new Error('no XBRL facts');
+        const { facts, omitted, total } = filingParticulars(filing);
+        if (!facts.length) throw new Error('no printable fact');
+        item.detail = facts;
+        item.detailOmitted = omitted;
+        item.detailTotal = total;
+        ok += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(XBRL_DETAIL_POOL, queue.length) }, worker));
+  return { candidates: items.length, read: queue.length, ok, failed };
 }
 
 // ---- 3. news on direct holdings ---------------------------------------------------------------------
@@ -627,13 +731,27 @@ const directional = (item) => item.kind === 'filing' || item.kind === 'move';
 export const moodOf = (item) => (directional(item) && item.direction === 'positive' ? MOODS.good
   : directional(item) && item.direction === 'negative' ? MOODS.watch : MOODS.neutral);
 
+/**
+ * "NSE filing · Credit Rating" — the venue, and the exchange's own category where the headline
+ * does not already carry it. A thin description puts that category IN the headline (see
+ * `headlineOfNse`), and printing it again on the line underneath is one thing said twice. The
+ * subject is reproduced as the exchange writes it, `-XBRL` suffix and all; only the comparison
+ * ignores that suffix.
+ */
+export const filingDek = (item) => {
+  const venue = `${item.exchanges.join(' and ')} filing`;
+  const subject = item.subject ? String(item.subject).trim() : '';
+  if (!subject) return venue;
+  return norm(item.headline).includes(norm(subject.replace(/-\s*xbrl\s*$/i, ''))) ? venue : `${venue} · ${subject}`;
+};
+
 /** Every filing and story in the brief as one list, strongest first. */
 export function briefStories(brief) {
   const rows = [];
   for (const g of brief.announcements.groups) {
     for (const item of g.items) rows.push({
       kind: 'filing', ticker: g.ticker, company: g.company, headline: item.headline,
-      dek: [item.exchanges.join(' and '), item.subject].filter(Boolean).join(' filing · ') || null,
+      dek: filingDek(item), detail: Array.isArray(item.detail) && item.detail.length ? item.detail : null, detailOmitted: item.detailOmitted || 0,
       url: item.url, source: item.exchanges.join(' · '), at: item.at,
       keywords: item.keywords, keywordIds: item.keywordIds || [], keywordGroups: item.keywordGroups || [],
       direction: item.direction || 'neutral', importance: item.importance || 'low', late: item.late === true, keys: item.keys || [],
@@ -718,6 +836,10 @@ export function briefSummary(brief) {
     moves: brief.moves?.count ?? 0, late: stats.late,
     suppressed: (brief.announcements.suppressed || 0) + (brief.news.suppressed || 0) + (brief.moves?.suppressed || 0),
     nse: brief.announcements.nse.ok, history: brief.announcements.history?.ok === true, bse: brief.announcements.bse.ok,
+    // How many XBRL filings gave up their own particulars, and how many would not be read. Two
+    // numbers rather than one: a send that reached none of them and a send that had none to reach
+    // are different states, and only the first is worth looking at.
+    filingsRead: brief.announcements.filings?.ok ?? 0, filingsUnread: (brief.announcements.filings?.candidates ?? 0) - (brief.announcements.filings?.ok ?? 0),
     publishers: brief.news.source.ok, tradingView: brief.news.tradingView?.ok === true, prices: brief.moves?.source?.ok === true,
   };
 }
@@ -817,6 +939,30 @@ const caps = (text, extra = '') => `<span style="font-family:${SANS};font-size:1
 // filing never takes the reader away from the brief they were working down.
 const NEW_TAB = 'target="_blank" rel="noopener noreferrer"';
 const link = (url, inner, style) => (url ? `<a href="${esc(url)}" ${NEW_TAB} style="${style}text-decoration:none;">${inner}</a>` : inner);
+
+/**
+ * WHERE "READ" GOES FOR A FILING NSE PUBLISHED AS XBRL — the dashboard's own readable copy of it.
+ *
+ * The exchange's address for one of these is a `WebXMLFile....xml`, and a browser opens it as
+ * "This XML file does not appear to have any style information associated with it" above a tree of
+ * SEBI namespaces. That is what the desk was clicking into. `/filing` renders the same document
+ * server-side through the same parser the dashboard's filing panel uses, and links the original
+ * file from its own head and foot — so this moves where the link LANDS and takes nothing away.
+ * Every other link in the brief still goes straight to the publisher or the exchange.
+ */
+export const readableUrl = (url, dashboardUrl) => (isXbrlFilingUrl(url) && dashboardUrl
+  ? `${dashboardUrl}/filing?src=${encodeURIComponent(url)}` : url);
+
+/** The filing's own particulars, as filed — the label muted, the company's value in full. */
+const detailHtml = (s) => (Array.isArray(s.detail) && s.detail.length ? `
+  <div style="margin-top:5px;font-family:${SANS};font-size:12px;line-height:1.6;color:${BODY2};">${s.detail
+    .map((f) => `<span style="color:${META};">${esc(f.label)}:</span> ${esc(f.value)}${f.unit && !/^pure$/i.test(f.unit) ? ` <span style="color:${META};">${esc(f.unit)}</span>` : ''}`)
+    .join(' &nbsp;·&nbsp; ')}${s.detailOmitted ? ` <span style="color:${META};">· and ${s.detailOmitted} more field${s.detailOmitted === 1 ? '' : 's'} in the filing</span>` : ''}</div>` : '');
+
+/** The filing's own particulars as one line, for the plain-text copy. */
+export const detailLine = (s) => (Array.isArray(s.detail) && s.detail.length
+  ? `${s.detail.map(factStatement).join(' · ')}${s.detailOmitted ? ` · and ${s.detailOmitted} more field${s.detailOmitted === 1 ? '' : 's'} in the filing` : ''}`
+  : null);
 /** The dashboard's All Alerts view, narrowed to one company — the same route the host ticker chip opens. */
 const companyUrl = (dashboardUrl, ticker) => (/^[A-Z0-9&_.-]{1,20}$/.test(ticker || '')
   ? `${dashboardUrl}/#/research/daily-alerts?scope=portfolio&company=${encodeURIComponent(ticker)}` : null);
@@ -860,11 +1006,16 @@ function marketSection(brief) {
 const topicTag = (topic) => caps(esc(topic.label), `color:${topic.color};font-weight:bold;letter-spacing:1px;`);
 
 /** One story under its company: the exchange's or publisher's own headline, then where and when. */
-const companyStory = (s, isFirst) => `<tr><td style="padding:${isFirst ? '10px' : '12px'} 0 11px;${isFirst ? '' : `border-top:1px solid ${RULE};`}">
-  <div style="font-family:${SERIF};font-size:15px;line-height:1.4;font-weight:bold;color:${INK};">${link(s.url, esc(s.headline), `color:${INK};`)}</div>
+const companyStory = (s, isFirst, dashboardUrl) => {
+  const href = readableUrl(s.url, dashboardUrl);
+  const label = href !== s.url ? 'Read the filing →' : 'Read →';
+  return `<tr><td style="padding:${isFirst ? '10px' : '12px'} 0 11px;${isFirst ? '' : `border-top:1px solid ${RULE};`}">
+  <div style="font-family:${SERIF};font-size:15px;line-height:1.4;font-weight:bold;color:${INK};">${link(href, esc(s.headline), `color:${INK};`)}</div>
   ${s.dek ? `<div style="margin-top:4px;font-family:${SANS};font-size:12px;line-height:1.55;color:${BODY2};">${esc(s.dek)}</div>` : ''}
-  <div style="margin-top:6px;font-family:${SANS};font-size:11px;line-height:1.6;color:${META};">${topicTag(s.topic)} &nbsp;·&nbsp; ${dot(s.mood.color)} ${esc(s.mood.label)} · ${esc(s.source)} · ${esc(storyDate(s.at))}, ${esc(istTime(s.at))} IST${s.related ? ' · related entity' : ''}${s.late && s.kind !== 'move' ? ' · arrived after the previous brief' : ''}${s.url ? ` · <a href="${esc(s.url)}" ${NEW_TAB} style="color:${ACCENT};font-weight:bold;text-decoration:none;">Read →</a>` : ''}</div>
+  ${detailHtml(s)}
+  <div style="margin-top:6px;font-family:${SANS};font-size:11px;line-height:1.6;color:${META};">${topicTag(s.topic)} &nbsp;·&nbsp; ${dot(s.mood.color)} ${esc(s.mood.label)} · ${esc(s.source)} · ${esc(storyDate(s.at))}, ${esc(istTime(s.at))} IST${s.related ? ' · related entity' : ''}${s.late && s.kind !== 'move' ? ' · arrived after the previous brief' : ''}${href ? ` · <a href="${esc(href)}" ${NEW_TAB} style="color:${ACCENT};font-weight:bold;text-decoration:none;">${label}</a>` : ''}</div>
 </td></tr>`;
+};
 
 /** A portfolio company and everything filed or published about it in the window. */
 function companyBlock(c, dashboardUrl) {
@@ -883,7 +1034,7 @@ function companyBlock(c, dashboardUrl) {
       </td>
       <td valign="bottom" align="right" style="padding:0 0 8px;border-bottom:2px solid ${INK};font-family:${SANS};font-size:11px;white-space:nowrap;">${href ? `<a href="${esc(href)}" ${NEW_TAB} style="color:${ACCENT};font-weight:bold;text-decoration:none;">On the dashboard →</a>` : ''}</td>
     </tr></table>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${c.stories.map((s, i) => companyStory(s, i === 0)).join('')}</table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${c.stories.map((s, i) => companyStory(s, i === 0, dashboardUrl)).join('')}</table>
   </td></tr>`;
 }
 
@@ -897,6 +1048,15 @@ function sourcesNote(brief) {
   bits.push(a.nse.ok ? `NSE feed read ${istLabel(a.nse.readAt)}` : `NSE feed could not be read (${a.nse.reason || 'unavailable'})`);
   bits.push(a.history?.ok && a.history.days.length ? `retained NSE filings for ${a.history.days.join(', ')} (captured ${dated(a.history.capturedAt)})` : 'no retained NSE filings for this window');
   bits.push(a.bse.ok ? `BSE capture dated ${dated(a.bse.capturedAt)}${before(a.bse.capturedAt) ? ', so later BSE filings follow in the next brief' : ''}` : 'BSE capture unavailable');
+  // COVERAGE THAT STOPS SHORT SAYS SO. A filing whose particulars were read carries them on its
+  // line; one the budget did not reach, or that NSE would not answer for, carries its headline
+  // exactly as before — so the difference between the two is stated rather than inferred from
+  // which rows happen to look fuller.
+  if (brief.announcements.filings?.candidates) {
+    const f = brief.announcements.filings;
+    const unread = f.candidates - f.ok;
+    bits.push(`${f.ok} of ${f.candidates} XBRL filing${f.candidates === 1 ? '' : 's'} read for the particulars they carry${unread ? `, ${unread} not read here and reachable in full through ${unread === 1 ? 'its own link' : 'their own links'}` : ''}`);
+  }
   bits.push(n.source.ok
     ? `publisher feeds (${n.source.publishers.join(', ') || 'four publishers'}) captured ${dated(n.source.capturedAt)}${before(n.source.capturedAt) ? ', so later stories follow in the next brief' : ''}${n.source.reachesWindow === false && n.source.oldestAt ? `, reaching back only to ${istLabel(n.source.oldestAt)}` : ''}`
     : 'publisher capture unavailable');
@@ -994,7 +1154,7 @@ ${parts.join('\n')}
 }
 
 /** The same brief as plain text — what the tests read, and a copy that survives any client. */
-export function renderBriefText(brief, { productName = PRODUCT_NAME, brand = BRAND } = {}) {
+export function renderBriefText(brief, { productName = PRODUCT_NAME, brand = BRAND, dashboardUrl = PRODUCTION_ORIGIN } = {}) {
   const stats = briefStats(brief);
   const lines = [];
   lines.push(brand.toUpperCase(), `${productName} — ${TAGLINES[brief.edition]}`, `${istDateLong(brief.at)} · Edition: ${EDITION_NAME}`);
@@ -1003,7 +1163,14 @@ export function renderBriefText(brief, { productName = PRODUCT_NAME, brand = BRA
   if (!stats.stories) lines.push('Quiet window — nothing to report.');
   for (const c of stats.companies) {
     lines.push('', `${c.company} (${c.ticker}) · ${c.stories.length} update${c.stories.length === 1 ? '' : 's'}`);
-    for (const s of c.stories) lines.push(`  [${s.topic.label}] ${s.headline}`, `    ${s.mood.label} · ${s.source} · ${istLabel(s.at)}${s.late && s.kind !== 'move' ? ' · arrived after the previous brief' : ''}${s.url ? ` · ${s.url}` : ''}`);
+    for (const s of c.stories) {
+      const detail = detailLine(s);
+      const href = readableUrl(s.url, dashboardUrl);
+      lines.push(`  [${s.topic.label}] ${s.headline}`);
+      if (s.dek) lines.push(`    ${s.dek}`);
+      if (detail) lines.push(`    ${detail}`);
+      lines.push(`    ${s.mood.label} · ${s.source} · ${istLabel(s.at)}${s.late && s.kind !== 'move' ? ' · arrived after the previous brief' : ''}${href ? ` · ${href}` : ''}`);
+    }
   }
   lines.push('', 'GLOBAL MARKET SCAN');
   for (const g of MARKET_GROUPS) {

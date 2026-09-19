@@ -20,6 +20,8 @@
 //   GET  /api/stock-search?q=                   ->  company search for the scope editor (Muns)
 //   GET  /api/research                          ->  whether Ask Research is configured
 //   POST /api/research                          ->  streamed dashboard-grounded research answer
+//   GET  /api/nse-filing?src=                  ->  one NSE XBRL announcement, as the exchange's own facts
+//   GET  /filing?src=                          ->  the same filing as a PAGE — where a team-brief link lands
 //
 // Data reads are read-through overlays on committed data. The POST-only refresh routes dispatch
 // fixed repository workflows; credentials remain in the Worker and duplicate runs are declined.
@@ -80,6 +82,7 @@ import { readScreenerInsightsCollector } from './screener-insights-collector.mjs
 import { SCREENER_INSIGHTS_FRESH_MS, SCREENER_INSIGHTS_WORKFLOW } from '../public/js/data/screener-insights-shared.js';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, parseAnnouncements, assertShape as assertNseShape, buildResolver, resolveAll as resolveNse } from './nse-ann.mjs';
 import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
+import { renderFilingFailure, renderFilingPage } from './filing-page.mjs';
 
 import { handleExchangeDeals } from './exchange-deals.mjs';
 import { handleAlertPool } from './alert-pool.mjs';
@@ -364,6 +367,11 @@ export default {
     }
     if (url.pathname.startsWith('/api/')) {
       return json({ error: 'Not implemented', path: url.pathname }, 404);
+    }
+    // The readable filing page — a page rather than JSON, because this is where an email's links
+    // land. See `handleFilingPage`.
+    if (url.pathname === '/filing') {
+      return handleFilingPage(request, env, ctx);
     }
 
     return env.ASSETS.fetch(request);
@@ -1064,18 +1072,19 @@ async function handleNseAnnouncements(request, env, ctx) {
 const NSE_FILING_TTL_S = 86400;
 const NSE_FILING_FAIL_TTL_S = 15;
 
-async function handleNseFiling(request, ctx) {
-  if (request.method !== 'GET') return json({ ok: false, reason: 'method', error: 'GET only' }, 405);
-  const src = new URL(request.url).searchParams.get('src') || '';
-  if (!isXbrlFilingUrl(src)) {
-    return json({ ok: false, reason: 'unsupported', url: src,
-      error: 'Only NSE XBRL announcement files (nsearchives.nseindia.com/corporate/xbrl/....xml) can be rendered here.' }, 400);
-  }
-
+/**
+ * One XBRL filing, read once and held at the edge — the body both readers of it share.
+ *
+ * TWO SURFACES, ONE READ. `/api/nse-filing` answers the dashboard's panel with JSON and `/filing`
+ * answers a link out of the team brief with a page; they are the same document and must never be
+ * able to disagree about it, so the fetch, the allow-list, the shape check and the cache entry are
+ * here and the routes are presentation.
+ */
+async function readNseFiling(src, ctx) {
   const cache = caches.default;
   const cacheKey = edgeKey(`nse-filing:${src}`);
   const hit = await cache.match(cacheKey);
-  if (hit) return revalidate(request, new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers), 'x-sattva-cache': 'hit' } }), 'hit');
+  if (hit) return { payload: await hit.json(), state: 'hit' };
 
   try {
     const res = await fetch(src, { headers: NSE_HEADERS, signal: AbortSignal.timeout(15000) });
@@ -1087,18 +1096,72 @@ async function handleNseFiling(request, ctx) {
     const filing = parseXbrlFiling(xml);
     if (!filing.ok) throw new Error(`NSE returned ${xml.length} bytes carrying no XBRL facts.`);
 
-    const { body, tag } = withTag({ ok: true, url: src, fetchedAt: new Date().toISOString(), ...filing });
-    const stored = tagged(body, tag, NSE_FILING_TTL_S, { 'x-sattva-cache': 'live' });
-    ctx?.waitUntil?.(cache.put(cacheKey, stored.clone()));
-    return revalidate(request, stored, 'miss');
+    const payload = { ok: true, url: src, fetchedAt: new Date().toISOString(), ...filing };
+    const { body, tag } = withTag(payload);
+    ctx?.waitUntil?.(cache.put(cacheKey, tagged(body, tag, NSE_FILING_TTL_S, { 'x-sattva-cache': 'live' })));
+    return { payload, state: 'miss' };
   } catch (err) {
     // NAME THE FAILURE AND CARRY THE URL INTO IT. The reader still has the original document a
-    // click away, and the panel says so rather than implying the filing itself is gone - the
+    // click away, and both surfaces say so rather than implying the filing itself is gone - the
     // chatter route's bare-404 lesson, which cost a long investigation into a healthy upstream.
-    const { body, tag } = withTag({ ok: false, url: src, reason: 'unreachable',
-      error: `NSE could not be read for this filing: ${String(err?.message || err)}` });
-    return revalidate(request, tagged(body, tag, NSE_FILING_FAIL_TTL_S), 'fallback');
+    return {
+      payload: { ok: false, url: src, reason: 'unreachable', error: `NSE could not be read for this filing: ${String(err?.message || err)}` },
+      state: 'fallback',
+    };
   }
+}
+
+async function handleNseFiling(request, ctx) {
+  if (request.method !== 'GET') return json({ ok: false, reason: 'method', error: 'GET only' }, 405);
+  const src = new URL(request.url).searchParams.get('src') || '';
+  if (!isXbrlFilingUrl(src)) {
+    return json({ ok: false, reason: 'unsupported', url: src,
+      error: 'Only NSE XBRL announcement files (nsearchives.nseindia.com/corporate/xbrl/....xml) can be rendered here.' }, 400);
+  }
+  const { payload, state } = await readNseFiling(src, ctx);
+  const { body, tag } = withTag(payload);
+  return revalidate(request, tagged(body, tag, payload.ok ? NSE_FILING_TTL_S : NSE_FILING_FAIL_TTL_S, { 'x-sattva-cache': state === 'hit' ? 'hit' : state === 'miss' ? 'live' : 'fallback' }), state);
+}
+
+// ---------------------------------------------------------------------------------------
+// GET /filing?src=... — THE SAME FILING AS A PAGE, FOR A READER WHO IS NOT ON THE DASHBOARD.
+//
+// The team brief is read in a mail client, so its links have to land somewhere finished. An XBRL
+// announcement linked at its own archive address opens as a tree of SEBI namespaces under "This
+// XML file does not appear to have any style information associated with it" — the exchange's data
+// with none of its meaning, which is what the desk was getting. This route is where those links go
+// now; the original file stays linked from the page, twice.
+//
+// It is a GET that only reads, it is the same allow-list and the same edge entry as the JSON route
+// above, and it renders through `worker/filing-page.mjs` — no script, no stylesheet, no request of
+// its own, because a link out of an email must open the document rather than an application that
+// then fetches it.
+async function handleFilingPage(request, env, ctx) {
+  const url = new URL(request.url);
+  const src = url.searchParams.get('src') || '';
+  const html = (body, status, seconds) => new Response(body, {
+    status,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': `public, max-age=${seconds}`,
+      'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; img-src https: data:",
+      'referrer-policy': 'no-referrer',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+
+  if (request.method !== 'GET') return html(renderFilingFailure({ url: src, reason: 'unsupported' }), 405, 0);
+  // NOTHING ON THIS PAGE COMES FROM ITS QUERY STRING BUT THE ADDRESS OF THE FILING, and that one
+  // parameter is an allow-list rather than a value. A `?subject=` or `?company=` reflected into the
+  // heading would read as this dashboard's own words about a filing while being whoever sent the
+  // link's, on our origin — so the page is titled by the document itself and by nothing else.
+  if (!isXbrlFilingUrl(src)) {
+    return html(renderFilingFailure({ url: src, reason: 'unsupported' }), 400, 0);
+  }
+  const { payload } = await readNseFiling(src, ctx);
+  if (!payload.ok) return html(renderFilingFailure({ url: src, reason: payload.reason, error: payload.error }), 502, 0);
+  const dashboardUrl = String(env.DASHBOARD_ORIGIN || url.origin).replace(/\/+$/, '');
+  return html(renderFilingPage({ filing: payload, url: src, dashboardUrl }), 200, NSE_FILING_TTL_S);
 }
 
 function screenerNeedsRefresh(source, now = Date.now()) {

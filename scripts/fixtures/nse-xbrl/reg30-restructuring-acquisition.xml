@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--REG30 V1.0 (16-10-2025)-->
+<!-- A CONSTRUCTED FIXTURE, not a captured filing. It reproduces the SHAPE of NSE's REG30
+     Restructuring instances - the `OneI`/`OneD` header contexts every one of them opens with and a
+     turnover series dimensioned by financial year - because that shape is what the reader and the
+     brief are tested against. The company, the counterparty and every figure in it are invented and
+     belong to nobody; the two fixtures beside this one are real captures and are marked as such. -->
+<xbrli:xbrl xmlns:in-capmkt="http://www.sebi.gov.in/xbrl/2025-08-31/in-capmkt" xmlns:in-capmkt-ent="http://www.sebi.gov.in/xbrl/Regulation_30_Restructuring/2025-08-31/in-capmkt/in-capmkt-ent" xmlns:xbrldt="http://xbrl.org/2005/xbrldt" xmlns:nonnum="http://www.xbrl.org/dtr/type/non-numeric" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:num="http://www.xbrl.org/dtr/type/numeric" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:xl="http://www.w3.org/1999/xlink">
+<link:schemaRef xlink:type="simple" xlink:href="in-capmkt-ent-2025-08-31.xsd"/>
+<xbrli:context id="OneI"><xbrli:entity><xbrli:identifier scheme="http://www.sebi.gov.in/in-capmkt/NSESymbol">ABCAPITAL</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2026-09-16</xbrli:instant></xbrli:period></xbrli:context>
+<xbrli:context id="OneD"><xbrli:entity><xbrli:identifier scheme="http://www.sebi.gov.in/in-capmkt/NSESymbol">ABCAPITAL</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:startDate>2026-09-16</xbrli:startDate><xbrli:endDate>2026-09-16</xbrli:endDate></xbrli:period></xbrli:context>
+<xbrli:context id="I_FinancialYear1"><xbrli:entity><xbrli:identifier scheme="http://www.sebi.gov.in/in-capmkt/NSESymbol">ABCAPITAL</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2026-09-16</xbrli:instant></xbrli:period><xbrli:scenario><xbrldi:explicitMember dimension="in-capmkt:TurnoverForLastThreeFinancialYearsAxis">in-capmkt:FinancialYear1Member</xbrldi:explicitMember></xbrli:scenario></xbrli:context>
+<xbrli:context id="I_FinancialYear2"><xbrli:entity><xbrli:identifier scheme="http://www.sebi.gov.in/in-capmkt/NSESymbol">ABCAPITAL</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2026-09-16</xbrli:instant></xbrli:period><xbrli:scenario><xbrldi:explicitMember dimension="in-capmkt:TurnoverForLastThreeFinancialYearsAxis">in-capmkt:FinancialYear2Member</xbrldi:explicitMember></xbrli:scenario></xbrli:context>
+<xbrli:unit id="INR"><xbrli:measure>iso4217:INR</xbrli:measure></xbrli:unit>
+<xbrli:unit id="pure"><xbrli:measure>xbrli:pure</xbrli:measure></xbrli:unit>
+<in-capmkt:NSESymbol contextRef="OneI">ABCAPITAL</in-capmkt:NSESymbol>
+<in-capmkt:NameOfTheCompany contextRef="OneI">Aditya Birla Capital Limited</in-capmkt:NameOfTheCompany>
+<in-capmkt:ScripCode contextRef="OneI">540691</in-capmkt:ScripCode>
+<in-capmkt:MSEISymbol contextRef="OneI">NOTLISTED</in-capmkt:MSEISymbol>
+<in-capmkt:ISIN contextRef="OneI">INE674K01013</in-capmkt:ISIN>
+<in-capmkt:TypeOfEventAsPerRegulation30 contextRef="OneI">Acquisition (including agreement to acquire)</in-capmkt:TypeOfEventAsPerRegulation30>
+<in-capmkt:NameOfTheTargetEntity contextRef="OneI">Meridian Analytics Private Limited</in-capmkt:NameOfTheTargetEntity>
+<in-capmkt:WhetherTheAcquisitionWouldFallWithinRelatedPartyTransactions contextRef="OneI">false</in-capmkt:WhetherTheAcquisitionWouldFallWithinRelatedPartyTransactions>
+<in-capmkt:IndustryToWhichTheTargetEntityBelongs contextRef="OneI">Information technology services</in-capmkt:IndustryToWhichTheTargetEntityBelongs>
+<in-capmkt:ObjectsAndEffectsOfAcquisition contextRef="OneD">Strengthening the analytics capability of the lending business. The acquisition does not fall within related party transactions.</in-capmkt:ObjectsAndEffectsOfAcquisition>
+<in-capmkt:BriefDetailsOfAnyGovernmentalOrRegulatoryApprovalsRequiredForTheAcquisition contextRef="OneD">Approval of the Competition Commission of India is not required.</in-capmkt:BriefDetailsOfAnyGovernmentalOrRegulatoryApprovalsRequiredForTheAcquisition>
+<in-capmkt:IndicativeTimePeriodForCompletionOfTheAcquisition contextRef="OneD">On or before 31 December 2026</in-capmkt:IndicativeTimePeriodForCompletionOfTheAcquisition>
+<in-capmkt:NatureOfConsideration contextRef="OneI">Cash</in-capmkt:NatureOfConsideration>
+<in-capmkt:CostOfAcquisitionOrThePriceAtWhichTheSharesAreAcquired contextRef="OneI" unitRef="INR" decimals="0">1850000000</in-capmkt:CostOfAcquisitionOrThePriceAtWhichTheSharesAreAcquired>
+<in-capmkt:PercentageOfShareholdingAcquired contextRef="OneI" unitRef="pure" decimals="2">74.00</in-capmkt:PercentageOfShareholdingAcquired>
+<in-capmkt:DateOfOccurrenceOfEventOrInformation contextRef="OneI">2026-09-16</in-capmkt:DateOfOccurrenceOfEventOrInformation>
+<in-capmkt:TimeOfOccurrenceOfEventOrInformation contextRef="OneI">19:45:00</in-capmkt:TimeOfOccurrenceOfEventOrInformation>
+<in-capmkt:DateOfReport contextRef="OneI">2026-09-16</in-capmkt:DateOfReport>
+<in-capmkt:TurnoverOfTheTargetEntity contextRef="I_FinancialYear1" unitRef="INR" decimals="0">412000000</in-capmkt:TurnoverOfTheTargetEntity>
+<in-capmkt:TurnoverOfTheTargetEntity contextRef="I_FinancialYear2" unitRef="INR" decimals="0">327000000</in-capmkt:TurnoverOfTheTargetEntity>
+</xbrli:xbrl>

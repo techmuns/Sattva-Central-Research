@@ -12,7 +12,8 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
+import { filingFacts, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
+import { renderFilingPage } from '../worker/filing-page.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../public');
@@ -68,6 +69,16 @@ const server = createServer((req, res) => {
     if (src !== XBRL_URL) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: false, reason: 'unsupported', url: src })); return; }
     res.setHeader('content-type', 'application/json');
     res.end(JSON.stringify({ ok: true, url: src, fetchedAt: new Date().toISOString(), ...parseXbrlFiling(xml) }));
+    return;
+  }
+
+  // THE PAGE A LINK OUT OF THE TEAM BRIEF LANDS ON. The Worker serves it from the same parsed
+  // filing as the JSON route above, so the stub renders it the same way — what is under test is
+  // that a reader with nothing but a browser can READ the filing, which is the whole complaint.
+  if (url.pathname === '/filing') {
+    const src = url.searchParams.get('src') || '';
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.end(renderFilingPage({ filing: parseXbrlFiling(xml), url: src, dashboardUrl: 'https://example.test' }));
     return;
   }
 
@@ -193,6 +204,28 @@ await check('with no Worker the panel says so and still hands over the document'
   await closePanel();
   await panel().waitFor({ state: 'detached' });
   workerDown = false;
+});
+
+await check('the filing page opens as a filing, not as XML, with the original one click away', async () => {
+  // This is the email's destination: no dashboard, no script, no stylesheet — just the document.
+  const filing = parseXbrlFiling(xml);
+  const reader = await context.newPage();
+  await reader.goto(`${base}filing?src=${encodeURIComponent(XBRL_URL)}`, { waitUntil: 'load' });
+  const text = await reader.locator('body').innerText();
+  assert.match(text, /Man Industries \(India\) Limited/);
+  assert.doesNotMatch(text, /does not appear to have any style information/i, 'the reader never sees the XML tree');
+  assert.doesNotMatch(text, /<in-capmkt:/, 'no markup reaches the page as text');
+  // Every field the filing carries is on the page, under the exchange's own label.
+  for (const fact of filingFacts(filing)) {
+    assert.ok(text.includes(fact.label), `missing label ${fact.label}`);
+    assert.ok(text.includes(fact.value), `missing value ${fact.value}`);
+  }
+  assert.equal(await reader.locator(`a[href="${XBRL_URL}"]`).count(), 1, 'the original document stays reachable');
+  assert.equal(await reader.locator('script').count(), 0);
+  // It must be legible on the phone an email is read on, without sideways scrolling.
+  await reader.setViewportSize({ width: 390, height: 800 });
+  assert.equal(await reader.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true, 'no sideways scroll at 390px');
+  await reader.close();
 });
 
 await check('the whole run produced no console errors', () => {

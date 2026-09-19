@@ -257,6 +257,9 @@ worker/muns.mjs               the AUTHENTICATED news / insider clients — same 
 worker/bse-ann.mjs            BSE's DATE-indexed announcement feed — open, no credential
 worker/nse-ann.mjs            NSE's LIVE announcements RSS — parser + name->symbol resolver, pure and
                               shared with the scraper. Browser can't read NSE (CORS null); Worker can
+worker/filing-page.mjs        ONE NSE XBRL ANNOUNCEMENT AS A PAGE — `GET /filing?src=`, server-rendered
+                              from the same parser the dashboard's panel uses. Where a team-brief
+                              link lands, because an email opens in a browser and not in the app
 worker/mc-news.mjs            Moneycontrol's market-wide news listing — parser only; nothing on
                               the edge can fetch it, so only the Action ever calls this
 worker/rss-news.mjs           the four RSS publishers behind the same tab — parser + feed list,
@@ -797,7 +800,7 @@ opening in a new tab) and following with the market scan: the **morning brief** 
 happened overnight — the US close, Asia this morning, Brent, gold, silver, the dollar index and
 USD/JPY, plus every filing and story about a DIRECT holding since the previous evening) and the
 **evening brief** at 16:00 IST (the trading day). `docs/DATA-CONTRACTS.md` → *The team brief* has the
-routes, the shapes and the window rule. Eleven rules, and every one of them is a rule this file
+routes, the shapes and the window rule. Twelve rules, and every one of them is a rule this file
 already runs on:
 
 1. **"Direct ones" means `portfolio-companies.json`**, the Portfolio scope's own file, and nothing
@@ -855,6 +858,19 @@ already runs on:
 11. **Coverage that stops short says so.** The publishers' head is a bounded file; when its oldest
     story is later than `since` the sources line says *reaching back only to HH:MM*, and a session
     whose closes have not been captured yet is named as *not yet captured*, never implied quiet.
+12. **A category is not an event, and a filing is not its markup.** NSE writes many descriptions as
+    *"<company> has informed the Exchange regarding <category>"* and publishes about one
+    announcement in eleven as a raw XBRL file, so a story read *"Acquisition (including agreement
+    to acquire)"* and its link opened a tree of SEBI namespaces. Where stripping the preamble would
+    leave the exchange's own subject and nothing more, the WHOLE sentence stands — it names the
+    filer; the keyword and direction readings still come from the stripped event, so a company's
+    name can never reach a vocabulary written for events. The particulars come from the DOCUMENT
+    (`filingParticulars()` over `parseXbrlFiling()`, the dashboard's own filing parser), bounded per
+    send and spent first on the rows whose description says least, printed as the exchange's label
+    and the company's value with what did not fit counted. A filing that could not be read keeps its
+    headline unchanged, and the sources line states how many were read. The link lands on
+    `/filing?src=…` — the same document, rendered — and only for an XBRL file; every other link
+    still goes straight to the publisher or the exchange.
 
 **The brief is asserted against FIXTURES, not against today's capture.** `scripts/fixtures/newsletter/`
 carries a small book, two small filing captures, an NSE history day, a TradingView snapshot and a
@@ -3742,7 +3758,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change Corporate Announcements | Keep the exchange-wide base in `worker/bse-ann.mjs` + `scripts/scrape-bse-announcements.mjs`. Additional user-requested company/date lookups use `worker/muns.mjs` + `js/data/announcements-extra.js`; they merge with the table and never replace the base capture or claim universe coverage. |
 | Change the NSE live announcements feed | `worker/nse-ann.mjs` (pure parser + name->symbol resolver, shared) + `handleNseAnnouncements` in `worker/index.js` (live route, edge-cached) + `js/data/nse-filings.js` (browser) + `js/tabs/nse-filings.js` (the scoped table). The browser CANNOT read NSE (CORS null), so it must proxy through the Worker; a full desktop user-agent is required or Akamai 430s it. Resolve by NAME — the filename prefix is only 31% reliable |
 | Refresh the NSE snapshot fallback | `node scripts/scrape-nse-announcements.mjs` — reads NSE directly (no token), resolves, commits `public/data/nse-announcements.json`. The live route is the primary read; this is the floor beneath it |
-| Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser + the `src` allow-list, imported by the Worker too) + `handleNseFiling` in `worker/index.js` (`GET /api/nse-filing`) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and a modified click still gets the raw file. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
+| Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser, the bounded `filingParticulars()` reading and the `src` allow-list, imported by the Worker too) + `readNseFiling` / `handleNseFiling` / `handleFilingPage` in `worker/index.js` (`GET /api/nse-filing` for the panel, `GET /filing` for the page an email links to) + `worker/filing-page.mjs` (that page) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and a modified click still gets the raw file. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
 | Change how many days of announcements are kept | `ANN_KEEP_DAYS` in `scripts/scrape-bse-announcements.mjs` — a bytes ceiling, ~900 filings a weekday |
 | Change the tracked news keywords, or what a Topic filter offers | `public/js/data/news-keywords.js` — the whole vocabulary is one array; read *Thirty words that make a search feed usable* first. A keyword is a topic and must never become a direction, and `namesCompany` marks a row rather than dropping one |
 | Speed up a per-row helper on a hot path | memoise it on the row object in a `WeakMap`, validated on the fields it reads — read *A per-row cache is keyed on the row object* first; `scripts/verify-hot-path-memo.mjs` is the test |
@@ -3792,7 +3808,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Add or change a scope | `js/data/scope.js` — the whole vocabulary is there, and every `forScope()` asks it. Read *Three scopes, not two* first; never reintroduce `scope !== 'portfolio'` |
 | Change what the Watchlist scope tracks | `js/core/watchlist.js` (the device mirror + sync) + `watchKey` on the table that stars it — read *The star marks a COMPANY* and *The watchlist is a list of COMPANIES, and ONE list for the whole desk* first |
 | Change the SHARED watchlist itself — its shape, its conflict rules or its route | `public/js/data/watchlist-shared.js` (the one definition, imported by the Worker too) + `worker/watchlist-store.mjs` + `worker/watchlist.mjs`. Edits are INTENTS, never a whole list; an `add` must name its contributor; a `seed` may not apply over any row that already exists. `node scripts/verify-shared-watchlist.mjs` and `node scripts/verify-shared-watchlist-ui.mjs` are the tests |
-| Change the team brief — what is in it, how it reads, when it sends | `worker/newsletter-brief.mjs` (the scan, the stories, the fold, the late-arrival look-back and the broadsheet), `worker/newsletter-schedule.mjs` (the alarm and the send), `worker/newsletter-store.mjs` (subscribers, settings, deliveries and the sent-story ledger), `public/js/data/newsletter-shared.js` (editions, windows, addresses — imported by both sides) and `public/js/ui/newsletter.js` (the header control). Read *The team brief* first. `node scripts/verify-newsletter.mjs` and `node scripts/verify-newsletter-ui.mjs` are the tests |
+| Change the team brief — what is in it, how it reads, when it sends | `worker/newsletter-brief.mjs` (the scan, the stories, the fold, the late-arrival look-back, the filing particulars and the broadsheet), `worker/newsletter-schedule.mjs` (the alarm and the send), `worker/newsletter-store.mjs` (subscribers, settings, deliveries and the sent-story ledger), `public/js/data/newsletter-shared.js` (editions, windows, addresses — imported by both sides) and `public/js/ui/newsletter.js` (the header control). Read *The team brief* first. `node scripts/verify-newsletter.mjs` and `node scripts/verify-newsletter-ui.mjs` are the tests |
 | Set up the team brief on a deployment | `MUNS_TOKEN` on the Worker sends it; `DASHBOARD_ORIGIN` and `NEWSLETTER_PRODUCT_NAME` are vars in `wrangler.jsonc`; the `NEWSLETTER` binding and `NEWSLETTER_LIMITER` are there too. Subscribe from the header and the alarm arms itself |
 | Change who is asked, or how the contributor dropdown behaves | `js/ui/watchlist-attribution.js` (the prompt) + `js/core/watchlist-people.js` (the roster and this device's own name) — read *An addition carries the name of whoever made it* first. Never preselect a name on a device nobody has identified themselves on |
 | Change AI Alerts ranking or thresholds | `js/data/ai-alerts.js` — keep it deterministic, retain every contribution for verification without rendering the arithmetic, use the real `coverage.js` book, and test `rankReport()` directly |

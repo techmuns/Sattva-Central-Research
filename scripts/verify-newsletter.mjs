@@ -18,7 +18,7 @@ import {
 import { NewsletterStore } from '../worker/newsletter-store.mjs';
 import {
   MARKET_ROWS, MOVE_PCT, TOPICS, briefStats, briefStories, briefStoryKeys, briefSubject, buildBrief, familyOf, foldAnnouncements,
-  quoteFromChart, renderBriefHtml, renderBriefText, topicOf,
+  quoteFromChart, readableUrl, renderBriefHtml, renderBriefText, topicOf,
 } from '../worker/newsletter-brief.mjs';
 import { NewsletterSchedule, NEWSLETTER_TIMER_KEY, EMAIL_SEND_URL, CATCH_UP_MS, sendEmail } from '../worker/newsletter-schedule.mjs';
 
@@ -59,6 +59,10 @@ class Storage {
 }
 
 const fixture = (name) => readFileSync(new URL(`./fixtures/newsletter/${name}`, import.meta.url), 'utf8');
+// The XBRL fixtures are shared with `verify-nse-xbrl.mjs`: the brief reads a filing through the
+// same parser the dashboard's own filing panel uses, so it must be asserted against the same
+// document rather than against a second copy that could drift from it.
+const xbrlFixture = (name) => readFileSync(new URL(`./fixtures/nse-xbrl/${name}.xml`, import.meta.url), 'utf8');
 const asset = (path) => readFileSync(new URL(`../public${path}`, import.meta.url), 'utf8');
 const assets = {
   fetch: async (request) => {
@@ -106,7 +110,7 @@ const nseXml = () => {
   return xml.replace('<item>', `${item}<item>`);
 };
 
-function makeFetcher({ yahoo = 'ok', nse = 'ok', email = 'ok', log = [] } = {}) {
+function makeFetcher({ yahoo = 'ok', nse = 'ok', xbrl = 'ok', email = 'ok', log = [] } = {}) {
   return async (input, init = {}) => {
     const url = String(input);
     if (url.startsWith('https://query1.finance.yahoo.com/v8/finance/chart/')) {
@@ -116,6 +120,14 @@ function makeFetcher({ yahoo = 'ok', nse = 'ok', email = 'ok', log = [] } = {}) 
       if (yahoo === 'down') return new Response('nope', { status: 503 });
       const file = CHARTS[symbol] || 'yahoo-sp500.json';
       return new Response(fixture(file), { headers: { 'content-type': 'application/json' } });
+    }
+    // The archive, before the feed: an XBRL filing is a document at its own address on the same
+    // host, and the brief reads the ones it is about to print.
+    if (url.startsWith('https://nsearchives.nseindia.com/corporate/xbrl/')) {
+      log.push({ kind: 'xbrl', url });
+      if (xbrl === 'blocked') return new Response('<html>Access Denied</html>', { status: 403 });
+      if (xbrl === 'interstitial') return new Response('<html>Are you a robot?</html>', { status: 200 });
+      return new Response(xbrlFixture('reg30-restructuring-acquisition'), { headers: { 'content-type': 'application/xml' } });
     }
     if (url.startsWith('https://nsearchives.nseindia.com/')) {
       log.push({ kind: 'nse' });
@@ -309,6 +321,7 @@ await test('the morning brief builds from the fixtures and every section states 
   // The BSE capture contributes a second book company, and a filing by a company the desk does
   // not hold is not in the brief at all.
   assert.ok(morning.announcements.groups.some((g) => g.ticker === 'ABCAPITAL'), 'the BSE capture joins on the book too');
+  assert.equal(log.filter((l) => l.kind === 'xbrl').length, 1, 'the one XBRL filing in this window is read, and only it');
   assert.ok(!morning.announcements.groups.some((g) => g.ticker === 'NOTINBOOK'), 'a filing by a company the desk does not hold never reaches the sheet');
   assert.equal(morning.news.source.ok, true);
   assert.ok(morning.news.source.publishers.length >= 1);
@@ -317,6 +330,92 @@ await test('the morning brief builds from the fixtures and every section states 
   assert.equal(story.items.length, 2, 'the publisher story and the one TradingView headline that names the company');
   assert.ok(!story.items.some((i) => /earlier in the week/.test(i.headline)), 'a story published before the window opens stays out');
   for (const g of morning.news.groups) for (const item of g.items) assert.ok(item.at >= morning.window.from && item.at < morning.window.to);
+});
+
+// ---- the filing whose description said nothing ------------------------------------------------
+//
+// THE REPORT THIS CLOSES, in the desk's words: a filing arrived in the brief written as
+// "Acquisition (including agreement to acquire)", which does not tell them anything, and clicking
+// it opened a page of XML. Both halves are asserted here — what the line SAYS, and where it GOES.
+
+const acquisitionStory = () => {
+  const story = briefStories(morning).find((s) => /Acquisition \(including agreement to acquire\)/.test(s.headline));
+  assert.ok(story, 'the XBRL-only acquisition filing is in the brief');
+  return story;
+};
+
+await test('a filing whose description is the bare category still names the company, and carries the filing\'s own particulars', () => {
+  const story = acquisitionStory();
+  // NSE's description of one of these is "<company> has informed the Exchange regarding <category>".
+  // Strip the preamble and what is left names a FORM; the exchange's whole sentence names the filer.
+  assert.ok(story.headline.startsWith('Aditya Birla Capital Limited'), story.headline);
+  assert.ok(story.headline.includes('Acquisition (including agreement to acquire)'), story.headline);
+  // ...and the particulars come from the document, as `label: value` pairs, never as prose of ours.
+  assert.ok(Array.isArray(story.detail) && story.detail.length > 1);
+  const byLabel = new Map(story.detail.map((f) => [f.label, f]));
+  assert.equal(byLabel.get('Name of the target entity').value, 'Meridian Analytics Private Limited');
+  assert.equal(byLabel.get('Cost of acquisition or the price at which the shares are acquired').value, '1850000000');
+  assert.equal(byLabel.get('Cost of acquisition or the price at which the shares are acquired').unit, 'INR');
+  assert.ok(story.detailOmitted > 0, 'what the line did not carry is counted, not dropped silently');
+  // The dek is the venue, and does not repeat the category the headline already carries.
+  assert.equal(story.dek, 'NSE filing');
+});
+
+await test('a headline that names the filer does not put the company into the event vocabulary', () => {
+  const story = acquisitionStory();
+  // The keyword and direction rules read the EVENT, so a filer's own name can never match one.
+  assert.deepEqual(story.keywords, ['Acquisition']);
+  assert.equal(story.topic.id, 'deals');
+  assert.equal(story.mood.id, 'neutral', 'an acquisition intimation is a topic, not a direction');
+});
+
+await test('a filing link lands on the filing, not on a page of XML', () => {
+  const html = renderBriefHtml(morning, { dashboardUrl: 'https://example.test' });
+  const story = acquisitionStory();
+  const reader = `https://example.test/filing?src=${encodeURIComponent(story.url)}`;
+  assert.ok(html.includes(`href="${reader}"`), 'the XBRL filing opens through the dashboard\'s readable copy');
+  assert.ok(!html.includes(`href="${story.url}"`), 'the raw .xml is no longer what a reader clicks');
+  assert.ok(html.includes('Read the filing →'));
+  assert.ok(html.includes('Name of the target entity:') && html.includes('Meridian Analytics Private Limited'));
+  // Every other link in the brief still goes straight to the publisher or the exchange.
+  const pdf = briefStories(morning).find((s) => /\.pdf$/.test(s.url || ''));
+  assert.ok(pdf && html.includes(`href="${pdf.url}"`), 'a PDF filing is untouched');
+  assert.equal(readableUrl(pdf.url, 'https://example.test'), pdf.url);
+  // ...and the plain-text copy carries the same destination and the same particulars.
+  const text = renderBriefText(morning, { dashboardUrl: 'https://example.test' });
+  assert.ok(text.includes(reader));
+  assert.ok(text.includes('Name of the target entity: Meridian Analytics Private Limited'));
+  assert.ok(text.includes('Cost of acquisition or the price at which the shares are acquired: 1850000000 INR'));
+});
+
+await test('the brief says how many filings it read for their particulars', async () => {
+  const f = morning.announcements.filings;
+  assert.deepEqual({ candidates: f.candidates, read: f.read, ok: f.ok, failed: f.failed }, { candidates: 1, read: 1, ok: 1, failed: 0 });
+  const text = renderBriefText(morning);
+  assert.ok(text.includes('1 of 1 XBRL filing read for the particulars they carry'), text.slice(-900));
+  // ...and the delivery log records it, so an operator can see the particulars landing over time.
+  const { briefSummary } = await import('../worker/newsletter-brief.mjs');
+  assert.equal(briefSummary(morning).filingsRead, 1);
+  assert.equal(briefSummary(morning).filingsUnread, 0);
+});
+
+await test('a filing the archive refuses keeps its headline and is counted, never guessed at', async () => {
+  for (const mode of ['blocked', 'interstitial']) {
+    const brief = await buildBrief({
+      edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS,
+      env: { ASSETS: fixtureAssets }, fetcher: makeFetcher({ xbrl: mode }), now: MORNING,
+    });
+    const story = briefStories(brief).find((s) => /Acquisition \(including agreement to acquire\)/.test(s.headline));
+    assert.ok(story, `${mode}: the filing is still in the brief`);
+    assert.equal(story.detail, null, `${mode}: nothing is invented for a filing that could not be read`);
+    assert.ok(story.headline.startsWith('Aditya Birla Capital Limited'), `${mode}: the exchange's own words still stand`);
+    assert.equal(brief.announcements.filings.failed, 1, `${mode}: the failure is counted`);
+    assert.equal(brief.announcements.filings.ok, 0);
+    // A 200 that is not the filing is not a filing with nothing in it — the route's rule.
+    const html = renderBriefHtml(brief, { dashboardUrl: 'https://example.test' });
+    assert.ok(html.includes(`https://example.test/filing?src=${encodeURIComponent(story.url)}`), `${mode}: the link still goes to the readable copy`);
+    assert.ok(!/more fields in the filing/.test(html.slice(html.indexOf(story.headline), html.indexOf(story.headline) + 1200)), `${mode}: no count of fields nobody read`);
+  }
 });
 
 await test('the broadsheet carries the Sattva Ventures masthead, escapes the exchanges\' text and dates every figure', () => {
@@ -363,7 +462,9 @@ await test('the portfolio companies lead the sheet, each company once, strongest
   assert.equal(stats.companies[0].ticker, 'ALANKIT', 'the company with a tracked order and a downgrade leads');
   assert.deepEqual(stats.companies.map((c) => c.ticker), ['ALANKIT', 'ABCAPITAL', 'ADANIENT'],
     'a tracked AND directional filing outranks a merely directional one, which outranks a neutral published story');
-  assert.deepEqual(stats.companies.map((c) => c.score), [4, 2, 0], 'the ladder is the score, and no company invents one');
+  // 4: a tracked keyword, a direction and high importance. 3: ABCAPITAL's acquisition intimation
+  // is tracked and material to the filing rule but carries no direction. 0: a published headline.
+  assert.deepEqual(stats.companies.map((c) => c.score), [4, 3, 0], 'the ladder is the score, and no company invents one');
   assert.equal(stats.companies[0].watch, 1, 'the downgrade is the watch-out');
   assert.equal(stats.companies[0].stories[0].headline.includes('downgrade'), true, 'within a company the tie breaks on recency');
   assert.equal(stats.companies.at(-1).stories[0].mood.id, 'neutral', 'a published headline carries no direction of ours');

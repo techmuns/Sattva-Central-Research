@@ -1,50 +1,61 @@
 {
-  "_fixture": "A stand-in for public/data/nse-filings/2026-09-16.json. Row 1 is NSE's copy of a BSE fixture filing and must fold into it (one story, two venues). Rows 2 and 3 are one analyst-meet intimation NSE published twice, as a readable PDF and an XBRL twin, and must be one story. Row 4 is by a company the desk does not hold.",
-  "day": "2026-09-16",
-  "rows": [
-    {
-      "company": "Aditya Birla Capital Limited",
-      "url": "https://nsearchives.nseindia.com/corporate/ABCAPITAL_16092026191200_office.pdf",
-      "subject": "Updates",
-      "description": "Aditya Birla Capital Limited has informed the Exchange about Intimation under Regulation 30 of the Securities and Exchange Board of India (Listing Obligations and Disclosure Requirements) Regulations, 2015 - Change in registered office address |SUBJECT: Updates",
-      "publishedAt": "2026-09-16T13:42:00.000Z",
-      "symbolHint": "ABCAPITAL",
-      "ticker": "ABCAPITAL",
-      "resolvedBy": "name",
-      "observedAt": "2026-09-16T14:00:00.000Z"
-    },
-    {
-      "company": "Aditya Birla Capital Limited",
-      "url": "https://nsearchives.nseindia.com/corporate/ABCAPITAL_16092026200000_meet.pdf",
-      "subject": "Analysts/Institutional Investor Meet/Con. Call Updates",
-      "description": "Aditya Birla Capital Limited has informed the Exchange about Schedule of analysts or institutional investors meet |SUBJECT: Analysts/Institutional Investor Meet/Con. Call Updates",
-      "publishedAt": "2026-09-16T14:30:00.000Z",
-      "symbolHint": "ABCAPITAL",
-      "ticker": "ABCAPITAL",
-      "resolvedBy": "name",
-      "observedAt": "2026-09-16T15:00:00.000Z"
-    },
-    {
-      "company": "Aditya Birla Capital Limited",
-      "url": "https://nsearchives.nseindia.com/corporate/ABCAPITAL_16092026200500_meet.xml",
-      "subject": "Analyst/Investor Meet Para A-XBRL",
-      "description": "Aditya Birla Capital Limited has informed the Exchange about Schedule of analysts or institutional investors meet |SUBJECT: Analyst/Investor Meet Para A-XBRL",
-      "publishedAt": "2026-09-16T14:35:00.000Z",
-      "symbolHint": "ABCAPITAL",
-      "ticker": "ABCAPITAL",
-      "resolvedBy": "name",
-      "observedAt": "2026-09-16T15:00:00.000Z"
-    },
-    {
-      "company": "Some Company Not Held Limited",
-      "url": "https://nsearchives.nseindia.com/corporate/NOTINBOOK_16092026190000_x.pdf",
-      "subject": "General Updates",
-      "description": "Some Company Not Held Limited has informed the Exchange about General Updates |SUBJECT: General Updates",
-      "publishedAt": "2026-09-16T13:30:00.000Z",
-      "symbolHint": "NOTINBOOK",
-      "ticker": "NOTINBOOK",
-      "resolvedBy": "name",
-      "observedAt": "2026-09-16T14:00:00.000Z"
-    }
-  ]
+ "_fixture": "A stand-in for public/data/nse-filings/2026-09-16.json. Row 1 is NSE's copy of a BSE fixture filing and must fold into it (one story, two venues). Rows 2 and 3 are one analyst-meet intimation NSE published twice, as a readable PDF and an XBRL twin, and must be one story. Row 4 is an XBRL data file with NO readable twin, whose description is the exchange's category and nothing else — the row the desk reported as telling them nothing; its particulars come from the document itself. Row 5 is by a company the desk does not hold.",
+ "day": "2026-09-16",
+ "rows": [
+  {
+   "company": "Aditya Birla Capital Limited",
+   "url": "https://nsearchives.nseindia.com/corporate/ABCAPITAL_16092026191200_office.pdf",
+   "subject": "Updates",
+   "description": "Aditya Birla Capital Limited has informed the Exchange about Intimation under Regulation 30 of the Securities and Exchange Board of India (Listing Obligations and Disclosure Requirements) Regulations, 2015 - Change in registered office address |SUBJECT: Updates",
+   "publishedAt": "2026-09-16T13:42:00.000Z",
+   "symbolHint": "ABCAPITAL",
+   "ticker": "ABCAPITAL",
+   "resolvedBy": "name",
+   "observedAt": "2026-09-16T14:00:00.000Z"
+  },
+  {
+   "company": "Aditya Birla Capital Limited",
+   "url": "https://nsearchives.nseindia.com/corporate/ABCAPITAL_16092026200000_meet.pdf",
+   "subject": "Analysts/Institutional Investor Meet/Con. Call Updates",
+   "description": "Aditya Birla Capital Limited has informed the Exchange about Schedule of analysts or institutional investors meet |SUBJECT: Analysts/Institutional Investor Meet/Con. Call Updates",
+   "publishedAt": "2026-09-16T14:30:00.000Z",
+   "symbolHint": "ABCAPITAL",
+   "ticker": "ABCAPITAL",
+   "resolvedBy": "name",
+   "observedAt": "2026-09-16T15:00:00.000Z"
+  },
+  {
+   "company": "Aditya Birla Capital Limited",
+   "url": "https://nsearchives.nseindia.com/corporate/ABCAPITAL_16092026200500_meet.xml",
+   "subject": "Analyst/Investor Meet Para A-XBRL",
+   "description": "Aditya Birla Capital Limited has informed the Exchange about Schedule of analysts or institutional investors meet |SUBJECT: Analyst/Investor Meet Para A-XBRL",
+   "publishedAt": "2026-09-16T14:35:00.000Z",
+   "symbolHint": "ABCAPITAL",
+   "ticker": "ABCAPITAL",
+   "resolvedBy": "name",
+   "observedAt": "2026-09-16T15:00:00.000Z"
+  },
+  {
+   "company": "Aditya Birla Capital Limited",
+   "url": "https://nsearchives.nseindia.com/corporate/xbrl/REG30_Restructuring_4412_WebXMLFile_20260916_195012345.xml",
+   "subject": "Acquisition (including agreement to acquire)-XBRL",
+   "description": "Aditya Birla Capital Limited has informed the Exchange regarding Acquisition (including agreement to acquire) |SUBJECT: Acquisition (including agreement to acquire)-XBRL",
+   "publishedAt": "2026-09-16T14:20:00.000Z",
+   "symbolHint": null,
+   "ticker": "ABCAPITAL",
+   "resolvedBy": "name",
+   "observedAt": "2026-09-16T15:00:00.000Z"
+  },
+  {
+   "company": "Some Company Not Held Limited",
+   "url": "https://nsearchives.nseindia.com/corporate/NOTINBOOK_16092026190000_x.pdf",
+   "subject": "General Updates",
+   "description": "Some Company Not Held Limited has informed the Exchange about General Updates |SUBJECT: General Updates",
+   "publishedAt": "2026-09-16T13:30:00.000Z",
+   "symbolHint": "NOTINBOOK",
+   "ticker": "NOTINBOOK",
+   "resolvedBy": "name",
+   "observedAt": "2026-09-16T14:00:00.000Z"
+  }
+ ]
 }
