@@ -5,7 +5,8 @@ import {publishCompanies,reportBatches} from './lib/mutual-funds-transport.mjs';
 import {buildOwnership,seededPayload} from './lib/mutual-funds-build.mjs';
 import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
-import {MF_ENDPOINT,MF_ORIGIN,monthKey,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
+import {loadSharedHoldings} from './lib/mutual-funds-feed.mjs';
+import {MF_ENDPOINT,MF_ORIGIN,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
 export function collectorClient({fetcher=fetch,env=process.env,pause=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
@@ -35,15 +36,10 @@ async function main() {
     const client=collectorClient();for(let attempt=0;attempt<45;attempt++){try{await client({action:'arm'});console.log('Mutual Funds timer armed');return;}catch{await new Promise(done=>setTimeout(done,10000));}}
     throw Error('Mutual Funds publishing unavailable');
   }
-  const source=path.resolve(process.env.AMFIBEAS_PATH||'/tmp/sattva-amfibeas-source'),dir=path.join(source,'public/amc-holdings');
+  const source=path.resolve(process.env.AMFIBEAS_PATH||'/tmp/sattva-amfibeas-source');
   const publish=process.argv.includes('--publish');
   const book=await loadActivePortfolio('public/data/portfolio-companies.json',{live:publish});
-  const snapshots=fs.readdirSync(dir).filter(f=>f.endsWith('.json')&&!['index.json','sattva-checks.json'].includes(f)).map(f=>JSON.parse(fs.readFileSync(path.join(dir,f))));
-  const index=JSON.parse(fs.readFileSync(path.join(dir,'index.json')));
-  const checksFile=path.join(dir,'sattva-checks.json');
-  const checks=fs.existsSync(checksFile)?JSON.parse(fs.readFileSync(checksFile)):index.amcs.map(a=>({slug:a.slug,name:a.amc,month:monthKey(a.asOfMonth),status:a.status,checkedAt:a.updatedAt}));
-  const checkMap=new Map(checks.map(c=>[c.slug,c]));
-  const amcs=index.amcs.map(a=>checkMap.get(a.slug)||{slug:a.slug,name:a.amc,month:monthKey(a.asOfMonth),status:'unchecked',checkedAt:null});
+  const {snapshots,amcs}=loadSharedHoldings(source);
   const denomFile=process.env.MF_DENOMINATORS||'artifacts/mutual-funds-denominators.json';
   const denominators=fs.existsSync(denomFile)?JSON.parse(fs.readFileSync(denomFile)):{};
   const identities=Object.values(JSON.parse(fs.readFileSync('public/data/exchange-deals.json')).securityMap||{});

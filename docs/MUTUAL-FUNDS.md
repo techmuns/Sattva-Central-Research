@@ -46,35 +46,31 @@ endpoints can extend this interval. The existing read-only health workflow check
 and the durable timer. `/api/mutual-funds/health` returns 503 for stale, partial, unavailable or
 unfinished capture. Browser reads never start a collector.
 
-The runner checks out current AmfiBeas **data** and pins its public AMC HTTP parsers and dependency
-lock to the reviewed revision in the workflow. Those dependencies live in a separate temporary
-checkout; the dashboard keeps its no-dependency, no-build application contract. Supported AMC
-public page/API/file adapters run server-side; no browser challenge, proxy rotation, Trendlyne
-scrape or licensed Trendlyne API is introduced. There is no claim of contractual Trendlyne parity.
+AmfiBeas owns source collection. Its shared collector runs throughout the month
+with a 15-minute target, retains completed files and source continuation checkpoints,
+and publishes raw snapshots before rebuilding its own dashboard. GitHub queueing,
+source response times and the downstream import interval can add delivery delay.
+There is no claim of zero publication lag or complete Trendlyne parity.
 
-Four isolated source processes run at a time, each with a two-minute budget. A blocked AMC cannot
-hold up all later AMCs. Only the coordinator writes the shared coverage checkpoint, while each
-child atomically replaces its own AMC file. Timeouts retain prior data and record an unavailable
-check. Company-denominator reads have a separate five-minute limit and save each verified result
-as it arrives, so that endpoint cannot indefinitely delay publication of fund disclosures.
-Each source finishes to a local checkpoint. A timed-out or failed source stage still runs the
-publication stage, marking unattempted AMCs unchecked and retaining good company data. A new run
-reconciles the overlapping months in the current source data. Bounded fragments carry individual fund/month observations, with all parts acknowledged before
-a company is complete. SQLite stores one observation per row and immutable corrections plus
-revision references; no upload or database cell grows with the complete history. Newer complete
-scheme inventories can correct removed holdings to nil; partial reports cannot. Source rechecks
-do not copy identical historical books. Upload receipts retain only the three newest runs;
-this does not remove observations, correction chains or the original capture start time. An
-initial universe upload keeps at most four companies in flight, with fragments ordered within
-each company and all acknowledgements awaited before completion. A failed company leaves the
-run partial while other successful company checkpoints survive. Temporary server errors or lost
-acknowledgements retry the exact idempotent request up to three times before the run remains partial. An
-interrupted publish stays `collecting` until every manifest company is acknowledged. A later run
-reconciles it, while older data remains readable. Signed GitHub OIDC claims restrict writes to this
-repository's main-branch collector workflow. Reader routes are read-only and ETagged.
-Scoped summary reads bind the validated ISIN list as one JSON array, preserving
-the full 250-company response below Cloudflare's 100 SQL-parameter limit. The local
-Worker regression covers 100, 101, 118 and 250 requested companies and universe paging.
+The Sattva runner reads the latest AmfiBeas repository data from one coherent commit.
+It requires the versioned `public/amc-holdings/coverage.json` manifest and verifies
+the source inventory, exact file sizes and SHA-256 checksums before import. It does
+not install AmfiBeas dependencies, execute its code or download AMC workbooks.
+Missing or mismatched files fail the import and retain the already published book.
+Unavailable sources remain in coverage while verified files from other AMCs import.
+Source check times pass through unchanged; a new Git commit is not a fresh source check.
+
+The shared manifest includes AMFI directory discovery, newly listed fund houses,
+last complete checks, partial attempts and historical continuation state. Current
+source validation runs upstream, and Sattva retains its own equity/quantity checks
+before projecting company ownership. Shares-outstanding estimates still come from
+AmfiBeas, with Sattva's bounded exchange verification for the current portfolio.
+
+Publication uses ordered, idempotent fragments and retains every captured monthly
+observation and correction. An interrupted upload remains incomplete until all
+companies are acknowledged; successful company checkpoints survive other failures.
+The durable timer and visible-tab revalidation remain automatic. No source parsing
+or new processing is added to the browser.
 
 All captured months and distinct corrections are retained in shared storage, including companies
 that leave the portfolio. Initial history varies by AMC; months absent from the upstream snapshot
@@ -111,85 +107,12 @@ search beyond mounted rows, keyboard close, light/dark/mobile layouts and existi
 upgrade. Ask Research receives all selected portfolio summary rows before other topic samples,
 within its separately validated expanded evidence bound; source coverage remains explicit.
 
-## Quantum monthly disclosure adapter
+## Shared source implementation
 
-Quantum's public portfolio API is queried for the exact reporting year and month,
-including every returned page. A download is accepted only from its official
-FileCDN and only when each parsed scheme confirms the requested reporting month.
-The unfiltered page can list a much older September workbook above the current
-August report; link order is not evidence of freshness. FoF workbooks append a
-labelled "Monthly Portfolio Statement of the Underlying Schemes" section. The
-parser stops at that heading, preserving directly held fund units and excluding
-the underlying funds' equity portfolios from direct company ownership. Previously
-captured Quantum observations already exclude that appendix and remain retained.
-If a changed FoF layout still yields company equity, the check fails and retains
-the last good disclosure until its ownership context can be verified.
-
-## Alternate public disclosure routes
-
-The collector also reads the fund houses' own current catalogues for 360 ONE,
-Axis, LIC, Quant, Mirae, Union, Sundaram, Angel One and Bandhan. These routes replace stale
-filename templates and incomplete discovery in the pinned upstream adapters:
-
-- 360 ONE pairs each file's displayed month with its filename, including the new
-  `month: null` group; Axis recognizes the renamed consolidated monthly workbook.
-- LIC discovers its current monthly category and requires both equity and debt
-  consolidated reports. Quant reads the site's actual monthly list of fund files.
-- Mirae traverses the complete paginated catalogue with stable counts and unique
-  document IDs. It collects the current and three preceding months, current first,
-  to recover missing comparison baselines. Union filters monthly portfolio titles
-  at the source and follows every result page rather than searching its first
-  100 recent notices. Missing or changing pages fail the check.
-- Sundaram enumerates the current public fund-card list; Angel One reads the
-  current monthly download links. No scheme universe is hard-coded.
-- Bandhan uses the public catalogue's normal pagination, validates the trailing
-  report date (a scheme's maturity year can also match a search), and verifies
-  that the first page remained stable after traversing all pages.
-
-Four files per AMC can download concurrently within the existing two-minute AMC
-budget. Every completed file is checkpointed. A failed or interrupted file retains
-the completed reports and older history, while the check remains partial with
-expected, completed, failed and pending file counts. Only permitted disclosure
-hosts are read; unexpected redirects and access refusals fail visibly. These
-checks run independently of the dashboard and add no client-side processing.
-Each partial source also publishes a compact continuation URL. Before collecting,
-the next scheduled runner reads only the coverage manifest and rotates the current
-catalogue to start at that unfinished file. Interrupted or slow runs therefore
-reach later current and historical files instead of repeatedly reading the same
-prefix. Every file remains eligible for correction checks; no permanent skip list
-is used. A source that never started retains its known reporting month and counts.
-Whole-source success and partial attempts have separate timestamps. The published
-manifest preserves the last complete check across repeated failures and runner
-restarts; a newly successful subset only advances its own report timestamps.
-
-Each file must confirm its reporting month. Overseas-only, bullion and overnight
-reports with no tracked Indian shares/units require a recognized scheme type,
-dated monthly header, an ISIN column, reconciled grand total, and only recognized
-cash, bullion or foreign-ISIN positions. Cash/bullion labels use exact forms, so a
-company such as Goldiam cannot be mistaken for gold. Indian shares/units or an unclassified
-position prevent a verified-empty result. A valid empty report can establish an
-exit without removing earlier ownership. Missing files cannot do so.
-Zero, rounded, NIL and missing weights never exempt a populated instrument from
-classification. Empty section headings are recognized only without position amounts.
-Explicit underlying-fund appendices remain excluded. Changed descriptive suffixes retain
-an unambiguous existing scheme name from the complete pre-run identity baseline,
-including history; regular/direct plans and renamed funds are
-never joined by fuzzy matching. Axis's two FoF titles are read from their explicit
-code/name header instead of the generic "Mutual Fund Units" section heading.
-
-Local September 20 checks recovered August reports for all nine routes with no
-current ownership validation findings in the parsed reports. Eight routes completed;
-Bandhan recovered 76 of 78 files, with two overseas FoF reports remaining unverified
-because their holdings omit ISINs. Its coverage correctly stays partial.
-This is evidence for those sources at that
-time, not a guarantee of industry completeness or permanent availability. Trendlyne
-is not connected: its public holdings endpoint refused the direct request. Screener's
-public quarterly shareholding pattern is not a monthly scheme-level substitute.
-Remaining source gaps continue to appear in coverage; there is no promise of zero
-publication lag or an exhaustive history.
-
-`verify-mutual-funds-public.mjs` covers catalogue pagination, period boundaries,
-source refusals, safe file hosts, partial file recovery, verified empty reports,
-scheme identity and comparison-history retention. It runs in the existing source
-verification job. Source tests and publication use the normal pull-request and
-merge-triggered pipeline; no manual production capture is required.
+The source readers and their catalogue, workbook, timeout and recovery tests now
+live in [AmfiBeas](https://github.com/techmuns/AmfiBeas/tree/main/scripts/ingest/amc-factsheets/shared).
+See its [shared feed contract](https://github.com/techmuns/AmfiBeas/blob/main/docs/SHARED-HOLDINGS.md).
+Sattva's tests cover checksum/inventory failures, unsupported feed versions,
+source-clock preservation, interrupted upstream capture, partial source coverage,
+retained history, ownership arithmetic and delivery to all portfolio companies.
+The earlier source findings above remain historical evidence, not current coverage.

@@ -42,8 +42,6 @@ jobs:
     timeout-minutes: 60
     env:
       FAMILY_HOLDINGS_LIVE: 'true'
-      MF_RESUME_LIVE: 'true'
-      AMFIBEAS_REVISION: c1b611828606f01397b7283294fa1672a4fdabfa
     steps:
       - uses: actions/checkout@v5
         with:
@@ -54,25 +52,20 @@ jobs:
           node-version: '22'
       - name: Set isolated source directory
         run: echo "AMFIBEAS_PATH=$RUNNER_TEMP/amfibeas" >> "$GITHUB_ENV"
-      # Dependency runtime belongs to the supplied data project, not this static app.
-      - name: Read AmfiBeas source data and reviewed public-disclosure parsers
+      - name: Read verified AmfiBeas source snapshots
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/techmuns/AmfiBeas.git "$AMFIBEAS_PATH"
-          git -C "$AMFIBEAS_PATH" sparse-checkout set scripts/ingest/amc-factsheets src/data/portfolio-tracker public/amc-holdings
-          git -C "$AMFIBEAS_PATH" fetch --depth 1 origin "$AMFIBEAS_REVISION"
-          git -C "$AMFIBEAS_PATH" checkout FETCH_HEAD -- scripts/ingest/amc-factsheets package.json package-lock.json
-          npm ci --prefix "$AMFIBEAS_PATH" --ignore-scripts
-      - name: Check published AMC disclosures
+          git -C "$AMFIBEAS_PATH" sparse-checkout set public/amc-holdings src/data/portfolio-tracker
+          echo "AMFIBEAS_REVISION=$(git -C "$AMFIBEAS_PATH" rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Verify shared source inventory and snapshot checksums
         id: sources
-        # A terminated source check still publishes every completed checkpoint below.
-        continue-on-error: true
-        run: timeout 35m "$AMFIBEAS_PATH/node_modules/.bin/tsx" scripts/refresh-mutual-funds-sources.mjs
+        run: node scripts/read-mutual-funds-feed.mjs
       - name: Refresh company shares outstanding
-        if: always() && steps.sources.outcome != 'skipped'
+        if: steps.sources.outcome == 'success'
         continue-on-error: true
         run: timeout 5m node scripts/collect-mutual-funds-denominators.mjs
       - name: Publish retained holdings and coverage
-        if: always() && steps.sources.outcome != 'skipped'
+        if: steps.sources.outcome == 'success'
         run: node scripts/collect-mutual-funds.mjs --publish
       - uses: actions/upload-artifact@v5
         if: always()
@@ -81,6 +74,6 @@ jobs:
           path: |
             artifacts/mutual-funds-health.json
             artifacts/mutual-funds-denominators.json
-            ${{ runner.temp }}/amfibeas/public/amc-holdings/sattva-checks.json
+            artifacts/mutual-funds-source.json
           if-no-files-found: warn
           retention-days: 30
