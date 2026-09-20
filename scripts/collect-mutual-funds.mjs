@@ -4,6 +4,7 @@ import {pathToFileURL} from 'node:url';
 import {publishCompanies,reportBatches} from './lib/mutual-funds-transport.mjs';
 import {buildOwnership,seededPayload} from './lib/mutual-funds-build.mjs';
 import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
+import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
 import {MF_ENDPOINT,MF_ORIGIN,monthKey,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
@@ -54,7 +55,7 @@ async function main() {
   const target=targetMonth();
   for(const amc of amcs) {
     const issues=warnings.filter(w=>w.startsWith(amc.slug+':')&&(w.includes(':'+target+':')||w.endsWith(':invalid-month'))).length;
-    if(issues){amc.validationFindings=issues;if(amc.status==='ok')amc.status='partial';}
+    if(issues){amc.validationFindings=issues;if(amc.status==='ok'){amc.status='partial';amc.partialCheckedAt=amc.checkedAt;amc.lastAttemptAt=amc.lastAttemptAt||amc.checkedAt;amc.checkedAt=null;amc.lastCompleteCheckedAt=null;}}
   }
   const meta={state:'complete',checkedAt:amcs.map(c=>c.checkedAt||c.lastAttemptAt).filter(Boolean).sort()[0]||null,
     targetMonth:targetMonth(),amcs,warnings:warnings.length,source:'AMC monthly portfolio disclosures via AmfiBeas',
@@ -62,8 +63,11 @@ async function main() {
     retention:'All captured months and corrected company revisions retained; starting history varies by AMC. No claim of an exhaustive archive.'};
   fs.mkdirSync('artifacts',{recursive:true});fs.writeFileSync('artifacts/mutual-funds-health.json',JSON.stringify({meta,companies:companies.length,warnings},null,2));
   if(publish) {
-    const client=collectorClient(),known=new Map();let cursor='';
-    do {const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?cursor=${cursor}`,{signal:AbortSignal.timeout(30000)}),3*1024*1024);for(const row of r.rows||[])known.set(row.isin,row);cursor=r.nextCursor||'';}while(cursor);
+    const client=collectorClient(),known=new Map();let cursor='',previousChecks=[];
+    do {const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?cursor=${cursor}`,{signal:AbortSignal.timeout(30000)}),3*1024*1024);if(!cursor)previousChecks=r.meta?.amcs||[];for(const row of r.rows||[])known.set(row.isin,row);cursor=r.nextCursor||'';}while(cursor);
+    meta.amcs=reconcileSourceChecks(previousChecks,amcs);
+    meta.checkedAt=meta.amcs.map(c=>c.checkedAt||c.lastAttemptAt).filter(Boolean).sort()[0]||null;
+    fs.writeFileSync('artifacts/mutual-funds-health.json',JSON.stringify({meta,companies:companies.length,warnings},null,2));
     // Reconcile previously captured companies even after an upstream rolling window drops them.
     const present=new Set(companies.map(c=>c.isin));
     for(const row of known.values())if(!present.has(row.isin))companies.push({isin:row.isin,name:row.name,ticker:row.ticker,sector:row.sector,denominator:null,funds:[]});

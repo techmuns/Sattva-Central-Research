@@ -128,7 +128,7 @@ the last good disclosure until its ownership context can be verified.
 ## Alternate public disclosure routes
 
 The collector also reads the fund houses' own current catalogues for 360 ONE,
-Axis, LIC, Quant, Mirae, Union, Sundaram and Angel One. These routes replace stale
+Axis, LIC, Quant, Mirae, Union, Sundaram, Angel One and Bandhan. These routes replace stale
 filename templates and incomplete discovery in the pinned upstream adapters:
 
 - 360 ONE pairs each file's displayed month with its filename, including the new
@@ -142,6 +142,9 @@ filename templates and incomplete discovery in the pinned upstream adapters:
   100 recent notices. Missing or changing pages fail the check.
 - Sundaram enumerates the current public fund-card list; Angel One reads the
   current monthly download links. No scheme universe is hard-coded.
+- Bandhan uses the public catalogue's normal pagination, validates the trailing
+  report date (a scheme's maturity year can also match a search), and verifies
+  that the first page remained stable after traversing all pages.
 
 Four files per AMC can download concurrently within the existing two-minute AMC
 budget. Every completed file is checkpointed. A failed or interrupted file retains
@@ -149,20 +152,28 @@ the completed reports and older history, while the check remains partial with
 expected, completed, failed and pending file counts. Only permitted disclosure
 hosts are read; unexpected redirects and access refusals fail visibly. These
 checks run independently of the dashboard and add no client-side processing.
+Whole-source success and partial attempts have separate timestamps. The published
+manifest preserves the last complete check across repeated failures and runner
+restarts; a newly successful subset only advances its own report timestamps.
 
 Each file must confirm its reporting month. Overseas-only, bullion and overnight
 reports with no tracked Indian shares/units require a recognized scheme type,
 dated monthly header, an ISIN column, reconciled grand total, and only recognized
-cash, bullion or foreign-ISIN positions. Indian shares/units or an unclassified
+cash, bullion or foreign-ISIN positions. Cash/bullion labels use exact forms, so a
+company such as Goldiam cannot be mistaken for gold. Indian shares/units or an unclassified
 position prevent a verified-empty result. A valid empty report can establish an
 exit without removing earlier ownership. Missing files cannot do so. Explicit
 underlying-fund appendices remain excluded. Changed descriptive suffixes retain
-an unambiguous existing scheme name; regular/direct plans and renamed funds are
+an unambiguous existing scheme name from the complete pre-run identity baseline,
+including history; regular/direct plans and renamed funds are
 never joined by fuzzy matching. Axis's two FoF titles are read from their explicit
 code/name header instead of the generic "Mutual Fund Units" section heading.
 
-Local September 20 checks recovered August reports for all eight routes with no
-current ownership validation findings. This is evidence for those sources at that
+Local September 20 checks recovered August reports for all nine routes with no
+current ownership validation findings in the parsed reports. Eight routes completed;
+Bandhan recovered 76 of 78 files, with two overseas FoF reports remaining unverified
+because their holdings omit ISINs. Its coverage correctly stays partial.
+This is evidence for those sources at that
 time, not a guarantee of industry completeness or permanent availability. Trendlyne
 is not connected: its public holdings endpoint refused the direct request. Screener's
 public quarterly shareholding pattern is not a monthly scheme-level substitute.

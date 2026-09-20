@@ -5,7 +5,8 @@ import {execFileSync} from 'node:child_process';
 import {STATUTORY_PAGES,statutoryLinks} from './lib/mutual-funds-discovery.mjs';
 import {atomicJson,runSourcePool} from './lib/mutual-funds-source-pool.mjs';
 import {QUANTUM_PAGE,quantumDisclosures,parseQuantumWorkbook} from './lib/mutual-funds-quantum.mjs';
-import {PUBLIC_PAGES,publicReader,publicDisclosures,readDisclosures,retainDisclosedNames,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
+import {PUBLIC_PAGES,publicReader,publicDisclosures,readDisclosures,schemeNameResolver,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
+import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {monthKey,targetMonth} from '../worker/mutual-funds-model.mjs';
@@ -28,20 +29,22 @@ for(const entry of index.amcs) {
   if(selected&&!selected.includes(entry.slug))continue;
   const startedAt=new Date().toISOString();let result=null;
   const file=path.join(dir,entry.slug+'.json');let old=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):{};
+  const resolveNames=schemeNameResolver(old),priorCheck={slug:entry.slug,lastCompleteCheckedAt:old.lastCompleteCheckedAt||null};
   function saveResult(result,{recordCheck=true}={}) {
     const counts=new Map();for(const s of result.schemes){const m=monthKey(s.asOf);if(m&&m<=targetMonth())counts.set(m,(counts.get(m)||0)+1);}
     const month=[...counts].sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0]))[0]?.[0];
     if(!month)throw Error('Disclosure month unverified');
     const existing=[{asOfMonth:old.asOfMonth,schemes:old.schemes},...(old.history||[])].filter(b=>b.schemes?.length).map(b=>({...b,checkedAt:b.checkedAt||old.fetchedAt,sourceUrl:b.sourceUrl||old.sourceUrl}));
-    const schemes=retainDisclosedNames(result.schemes,old.schemes).map(s=>({...normalizeSchemePct(s),checkedAt:startedAt,sourceUrl:s.sourceUrl||result.usedUrl||old.sourceUrl})),oldMonth=existing.find(b=>monthKey(b.asOfMonth)===month);
+    const schemes=resolveNames(result.schemes).map(s=>({...normalizeSchemePct(s),checkedAt:startedAt,sourceUrl:s.sourceUrl||result.usedUrl||old.sourceUrl})),oldMonth=existing.find(b=>monthKey(b.asOfMonth)===month);
     const names=new Set(schemes.map(s=>s.schemeName)),missing=oldMonth?.schemes.filter(s=>!names.has(s.schemeName)&&!(/^mutual fund units$/i.test(s.schemeName)&&schemes.some(next=>next.validatedSchemeHeader&&next.schemeCode===s.schemeCode)))||[];
     const months=new Map(existing.map(b=>[monthKey(b.asOfMonth),b]));
     months.set(month,{asOfMonth:month,schemes:[...schemes,...missing.map(s=>({...s,checkedAt:s.checkedAt||oldMonth.checkedAt||old.fetchedAt,sourceUrl:s.sourceUrl||oldMonth.sourceUrl||old.sourceUrl}))],checkedAt:startedAt,sourceUrl:result.usedUrl||old.sourceUrl});
     const buckets=[...months].filter(([m])=>m).sort((a,b)=>b[0].localeCompare(a[0])).map(([,b])=>b),latest=buckets[0];
-    const saved={amc:entry.amc,amcSlug:entry.slug,asOfMonth:latest.asOfMonth,schemes:latest.schemes,sourceUrl:latest.sourceUrl||old.sourceUrl,fetchedAt:latest.checkedAt||old.fetchedAt,history:buckets.slice(1)};
+    const partial=Boolean(missing.length||result.failedFiles||result.pendingFiles);
+    const saved={amc:entry.amc,amcSlug:entry.slug,asOfMonth:latest.asOfMonth,schemes:latest.schemes,sourceUrl:latest.sourceUrl||old.sourceUrl,fetchedAt:latest.checkedAt||old.fetchedAt,history:buckets.slice(1),lastCompleteCheckedAt:recordCheck&&!partial?startedAt:old.lastCompleteCheckedAt||null};
     atomicJson(file,saved);old=saved;
     if(!recordCheck)return;
-    const check={slug:entry.slug,name:entry.amc,month,status:missing.length||result.failedFiles||result.pendingFiles?'partial':'ok',checkedAt:startedAt,schemeCount:schemes.length,missingSchemes:missing.length};
+    const check=reconcileSourceChecks([priorCheck],[{slug:entry.slug,name:entry.amc,month,status:partial?'partial':'ok',checkedAt:partial?null:startedAt,lastAttemptAt:startedAt,partialCheckedAt:partial?startedAt:null,schemeCount:schemes.length,missingSchemes:missing.length}])[0];
     for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles'])if(result[key]!==undefined)check[key]=result[key];
     const prior=checks.findIndex(c=>c.slug===entry.slug);if(prior>=0)checks[prior]=check;else checks.push(check);
     atomicJson(checksFile,checks);
@@ -70,7 +73,7 @@ for(const entry of index.amcs) {
         // Update its small check record without rewriting every other month again.
         if(progress.lastCompletedMonth&&progress.lastCompletedMonth!==month) {
           const check=checks.find(c=>c.slug===entry.slug);
-          if(check){for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles'])check[key]=progress[key];check.status=check.missingSchemes||progress.failedFiles||progress.pendingFiles?'partial':'ok';atomicJson(checksFile,checks);}
+          if(check){for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles'])check[key]=progress[key];check.status=check.missingSchemes||progress.failedFiles||progress.pendingFiles?'partial':'ok';check.checkedAt=check.status==='ok'?startedAt:priorCheck.lastCompleteCheckedAt;check.partialCheckedAt=check.status==='partial'?startedAt:null;check.lastCompleteCheckedAt=check.checkedAt;atomicJson(checksFile,checks);}
         }
       };
       result=await readDisclosures(links,{read,parse,month,onCheckpoint:checkpoint});
@@ -101,7 +104,7 @@ for(const entry of index.amcs) {
     }
     if(!result?.schemes?.length)throw Error('Disclosure unavailable');
     saveResult(result);
-  }catch{const check=checks.find(c=>c.slug===entry.slug);if(check){check.status='partial';check.reason='source-check-failed';}else checks.push({slug:entry.slug,name:entry.amc,month:monthKey(entry.asOfMonth),status:'unavailable',checkedAt:null,lastAttemptAt:startedAt});}
+  }catch{const check=checks.find(c=>c.slug===entry.slug);if(check){Object.assign(check,{status:'partial',reason:'source-check-failed',checkedAt:priorCheck.lastCompleteCheckedAt,lastCompleteCheckedAt:priorCheck.lastCompleteCheckedAt,partialCheckedAt:startedAt,lastAttemptAt:startedAt});}else checks.push({slug:entry.slug,name:entry.amc,month:monthKey(entry.asOfMonth),status:'unavailable',checkedAt:priorCheck.lastCompleteCheckedAt,lastCompleteCheckedAt:priorCheck.lastCompleteCheckedAt,lastAttemptAt:startedAt});}
   atomicJson(checksFile,checks);
   console.log(`${entry.slug}: ${checks.at(-1).status} ${checks.at(-1).month||''}`);
 }

@@ -14,6 +14,7 @@ export const PUBLIC_PAGES={
   sundaram:'https://www.sundarammutual.com/portfolio',
   'angel-one':'https://www.angelonemf.com/downloads',
   axis:'https://www.axismf.com/statutory-disclosures/monthly-portfolio',
+  bandhan:'https://bandhanmutual.com/downloads/disclosures',
 };
 const allowed={
   '360-one':url=>url.origin==='https://www.360.one'||url.origin==='https://s3.ap-south-1.amazonaws.com'&&url.pathname.startsWith('/x-web-s3.360.one/'),
@@ -22,6 +23,7 @@ const allowed={
   sundaram:url=>url.origin==='https://www.sundarammutual.com',
   'angel-one':url=>['https://www.angelonemf.com','https://cms.angelonemf.com'].includes(url.origin),
   axis:url=>url.origin==='https://www.axismf.com',
+  bandhan:url=>['https://bandhanmutual.com','https://cmsnew.bandhanmutual.com'].includes(url.origin)||url.origin==='https://storage.googleapis.com'&&url.pathname.startsWith('/nonprod-static-assets-121to59kaawfgfi7bol/'),
 };
 export function publicUrl(slug,input) {
   const url=new URL(input,PUBLIC_PAGES[slug]);
@@ -89,7 +91,33 @@ export async function publicDisclosures(slug,month,read,{axisPublicToken,include
   const json=async(url,options)=>jsonReply(await read(url,options));
   const html=async(url,options)=>(await read(url,options)).toString('utf8');
   if(slug==='360-one')return oneDisclosures(await html(page),month);
-  if(slug==='quant') {
+  if(slug==='bandhan') {
+    const ids=new Set();let first=null,finished=false;
+    const query=p=>{const url=new URL('https://cmsnew.bandhanmutual.com/wp-json/finance-api/v1/posts/scheme-portfolios');url.search=new URLSearchParams({title:`${name} ${year}`,posts_per_page:'100',page:String(p)});return url.href;};
+    for(let p=1;p<=100;p++) {
+      const data=await json(query(p));
+      if(p>1&&data.status==='no_posts_found'&&data.data===undefined){finished=true;break;}
+      if(String(data.status)!=='200'||!Array.isArray(data.data))throw Error('Invalid disclosure index');
+      if(p===1)first=JSON.stringify(data.data);
+      if(!data.data.length){finished=true;break;}
+      for(const item of data.data) {
+        if(!Number.isSafeInteger(item.id)||ids.has(item.id))throw Error('Repeated disclosure page');ids.add(item.id);
+        if(!/monthly/i.test(item.sub_category||''))continue;
+        const end=new Date(Date.UTC(year,num,0)).getUTCDate();
+        const dated=/(\d{1,2}) ([A-Za-z]+) (20\d{2})$/.exec(item.title||'');
+        if(!dated)throw Error('Disclosure index month missing');
+        // Title search also matches a scheme's maturity year, so older August
+        // reports can match "August 2026". Use the actual trailing report date.
+        if(monthKey(`${dated[2].slice(0,3)}-${dated[3]}`)!==month)continue;
+        if(Number(dated[1])!==end)throw Error('Disclosure index month mismatch');
+        const files=item.acf_fields?.disclosure_files;
+        if(!Array.isArray(files)||!files.length)throw Error('Missing monthly file');
+        for(const file of files)links.push({url:file.document_link?.url,text:plain(file.document_name).replace(new RegExp(`\\s+${end} ${name} ${year}$`,'i'),'')});
+      }
+    }
+    if(!finished)throw Error('Incomplete disclosure index');
+    if(JSON.stringify((await json(query(1))).data)!==first)throw Error('Disclosure index changed');
+  } else if(slug==='quant') {
     const data=await json('https://quantmutual.com/statutorydisclosures.aspx/displaydisclouser2',{body:{id:String(num),cat:'MONTHLY PORTFOLIO - FUND - WISE',tab:String(year)}});
     if(typeof data.d!=='string')throw Error('Invalid disclosure index');
     links=anchorFiles(data.d,page);
@@ -170,6 +198,16 @@ export function retainDisclosedNames(schemes,prior=[]) {
   for(const scheme of prior){const key=baseName(scheme.schemeName);if(!names.has(key))names.set(key,new Set());names.get(key).add(scheme.schemeName);}
   return schemes.map(s=>{const known=names.get(baseName(s.schemeName));return known?.size===1?{...s,schemeName:[...known][0]}:s;});
 }
+export function schemeNameResolver(snapshot) {
+  const baseline=[],known=new Set();
+  // Prefer the latest captured spelling, then fill missing identities from
+  // history. Keep this immutable while per-file checkpoints advance the month.
+  for(const schemes of [snapshot.schemes||[],...(snapshot.history||[]).map(b=>b.schemes||[])]) {
+    const additions=schemes.filter(s=>!known.has(baseName(s.schemeName))).map(s=>({schemeName:s.schemeName}));
+    baseline.push(...additions);for(const s of additions)known.add(baseName(s.schemeName));
+  }
+  return schemes=>retainDisclosedNames(schemes,baseline);
+}
 // Some gold, overnight and overseas-only reports contain no Indian shares or units,
 // so the equity parser correctly returns no positions. Verify that exact case
 // without treating an arbitrary empty/malformed workbook as an empty portfolio.
@@ -188,9 +226,17 @@ export function verifiedNonIndianRows(rows,name,month) {
   const grand=rows.find(r=>r.some(v=>/^grand total(?:\s*\(aum\))?$/i.test(String(v||'').trim())));
   if(!grand||![1,100].some(n=>Math.abs(Number(grand[pct])-n)<0.0001))return false;
   for(const row of rows.slice(header+1)) {
-    if(typeof row[pct]!=='number'||row[pct]===0)continue;
+    if(row[pct]===undefined||row[pct]===null||row[pct]===''||row[pct]===0)continue;
     const label=String(row[instrument]||'').trim(),id=String(row[isin]||'').trim();
-    if(/total|net current|net receivable|cash|treps|repo|gold|silver|margin|collateral|^clearing corporation of india limited$/i.test(label))continue;
+    if(/^NIL$/i.test(String(row[pct]).trim()))continue;
+    if(row[pct]==='$'&&/^(?:Cash Margin - CCIL|sub\s*total)$/i.test(label))continue;
+    if(typeof row[pct]!=='number'||!Number.isFinite(row[pct]))return false;
+    if(/^(?:sub\s*total|grand total(?:\s*\(aum\))?|total(?: for money market instruments)?|(?:NCA-)?net current assets|cash and other net current assets|net receivables?\s*\/\s*\(?payables?\)?|clearing corporation of india limited)$/i.test(label))continue;
+    if(/^TREPS(?:\s+\d{2}-[A-Za-z]{3}-20\d{2}\s+DEPO\s+\d+)?$/i.test(label))continue;
+    if(/^Triparty Repo TRP_\d{6}$/i.test(label))continue;
+    if(/^(?:\(a\)\s*)?(?:gold(?: 1 kg bar \(995 fineness\)| 995 purity| - mumbai)?|silver)$/i.test(label))continue;
+    if(/^(?:GOLD \.995 1KG BAR|GOLD 999 100GM BAR|SILVER 999 1KG BAR)$/i.test(label))continue;
+    if(/^(?:GOLD\s*M?|SILVERM?)\s+\d{2}\/\d{2}\/20\d{2}\s+\(FUTURES\)$/i.test(label))continue;
     if(/^[A-Z]{2}[A-Z0-9]{10}$/.test(id)&&!id.startsWith('IN'))continue;
     return false;
   }

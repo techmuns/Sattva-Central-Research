@@ -42,7 +42,7 @@ export async function runSourcePool(entries,{command,args,env=process.env,checks
         try{
           const saved=JSON.parse(fs.readFileSync(file)),match=saved.find(c=>c.slug===entry.slug);
           if(match&&(!reason&&code===0))result=match;
-          else if(match?.schemeCount>0&&match.checkedAt)result={...match,status:'partial',reason:reason||'source-process-failed',lastAttemptAt:startedAt};
+          else if(match?.schemeCount>0&&(match.checkedAt||match.partialCheckedAt))result={...match,status:'partial',reason:reason||'source-process-failed',lastAttemptAt:startedAt};
         }catch{/* A missing checkpoint is not a successful check. */}
         checks.set(entry.slug,result);save();onResult(result);resolve();
       };
