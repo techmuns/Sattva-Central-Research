@@ -3,7 +3,7 @@ import * as coverage from './coverage.js';
 import * as watchlist from '../core/watchlist.js';
 import { filterByScope } from './scope.js';
 const snapshots=new Map(), pending=new Map(), rowsByIsin=new Map();
-let latestMeta={};
+let latestMeta={}, lastDetail=null;
 export const meta=()=>latestMeta;
 export const all=()=>[...rowsByIsin.values()];
 function adopt(payload, {fallback=false}={}) {
@@ -24,7 +24,7 @@ export function load(scope='portfolio', {holdings=coverage.holdings(),refresh=tr
   if(!refresh&&snapshots.has(key))return Promise.resolve(snapshots.get(key));
   const promise=(async()=>{
     try {
-      let payload;
+      let payload,fallback=false;
       if(local()) payload=await revalidatedJson('data/mutual-funds/index.json');
       else {
         const rows=[];let meta={};
@@ -40,10 +40,10 @@ export function load(scope='portfolio', {holdings=coverage.holdings(),refresh=tr
           }while(cursor);
         }
         payload={rows,meta};
-        if(!rows.length&&!meta?.checkedAt)payload=await revalidatedJson('data/mutual-funds/index.json');
+        if(!rows.length&&!meta?.checkedAt){payload=await revalidatedJson('data/mutual-funds/index.json');fallback=true;}
       }
       if(!Array.isArray(payload?.rows))throw Error('Mutual fund capture unavailable');
-      adopt(payload);snapshots.set(key,payload);latestMeta={...payload.meta,readFailed:false};return {...payload,meta:latestMeta};
+      adopt(payload,{fallback});snapshots.set(key,payload);latestMeta={...payload.meta,readFailed:false};return {...payload,meta:latestMeta};
     }catch(error) {
       latestMeta={...latestMeta,readFailed:true};
       if(snapshots.has(key))return {...snapshots.get(key),meta:latestMeta};
@@ -61,11 +61,12 @@ export async function detail(isin,month=null) {
   const params=new URLSearchParams({isin,...(month?{month}:{})});
   try {
     const out=await conditionalJson(`/api/mutual-funds/company?${params}`,{key:`mf-detail:${isin}:${month||'latest'}`,signal:AbortSignal.timeout(15000)});
-    if(out.value?.company || month)return out.value;
+    if(out.value?.company || month){lastDetail={isin,month,payload:out.value};return out.value;}
   } catch(error) {
     if(month)throw error;
     // A dated seed remains readable during first rollout or an unavailable capture.
   }
+  if(lastDetail?.isin===isin && lastDetail.month===month)return {...lastDetail.payload,meta:{...lastDetail.payload.meta,readFailed:true}};
   const seed=await revalidatedJson(`data/mutual-funds/companies/${isin}.json`);
   return {...seed,meta:{...seed.meta,readFailed:true}};
 }

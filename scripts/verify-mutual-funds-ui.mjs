@@ -43,6 +43,7 @@ try{
    const u=new URL(route.request().url());
    if(u.origin!==apiOrigin)return route.fulfill({status:200,body:''});
    if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:'<script type="module">window.feed=await import("/js/data/mutual-funds.js");</script>'});
+   if(u.pathname==='/api/mutual-funds/company')return route.fulfill({status:fail?503:200,contentType:'application/json',body:JSON.stringify({meta:{checkedAt:new Date().toISOString()},company:{isin:u.searchParams.get('isin'),totalShares:version}})});
    if(u.pathname==='/api/mutual-funds'){
      apiCalls++;const ids=u.searchParams.get('isins').split(',');assert(ids.length<=250);
      if(fail)return route.fulfill({status:503,body:'{}'});
@@ -54,7 +55,9 @@ try{
  await apiPage.evaluate(async book=>{window.book=book;await window.feed.load('portfolio',{holdings:book});},apiBook);
  assert.equal(apiCalls,3);assert.equal(await apiPage.evaluate(()=>window.feed.scopedRows('portfolio',window.book).length),502);
  version=2;await apiPage.evaluate(()=>window.feed.load('portfolio',{holdings:window.book}));assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),2);
- fail=true;await apiPage.evaluate(()=>window.feed.load('portfolio',{holdings:window.book}));assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),2);assert(await apiPage.evaluate(()=>window.feed.meta().readFailed));
+ await apiPage.evaluate(()=>window.feed.detail(window.book[0].isin));
+ fail=true;assert.equal(await apiPage.evaluate(async()=>(await window.feed.detail(window.book[0].isin)).company.totalShares),2,'A failed detail refresh retains the latest capture, not the seed');
+ await apiPage.evaluate(()=>window.feed.load('portfolio',{holdings:window.book}));assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),2);assert(await apiPage.evaluate(()=>window.feed.meta().readFailed));
  assert.match(await apiPage.evaluate(()=>window.feed.health({state:'complete',checkedAt:'2026-10-01T00:00:00Z',targetMonth:'2026-08',amcs:[{month:'2026-08',status:'ok'}]},Date.parse('2026-10-01T00:01:00Z'))),/Partial/);
  await apiPage.close();
  await page.evaluate(()=>window.tab.destroy());assert.deepEqual(errors,[]);console.log('PASS Mutual Funds browser: all portfolio rows, private weight order, month-grouped popup, bounded fund rows, offscreen search, keyboard close, dark/mobile rendering and zero page errors');

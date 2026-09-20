@@ -42,7 +42,7 @@ async function main() {
     const issues=warnings.filter(w=>w.startsWith(amc.slug+':')&&(w.includes(':'+target+':')||w.endsWith(':invalid-month'))).length;
     if(issues){amc.validationFindings=issues;if(amc.status==='ok')amc.status='partial';}
   }
-  const meta={state:'complete',checkedAt:checks.every(c=>c.checkedAt)?checks.map(c=>c.checkedAt).sort()[0]:new Date().toISOString(),
+  const meta={state:'complete',checkedAt:amcs.map(c=>c.checkedAt||c.lastAttemptAt).filter(Boolean).sort()[0]||null,
     targetMonth:targetMonth(),amcs,warnings:warnings.length,source:'AMC monthly portfolio disclosures via AmfiBeas',
     sourceRevision:process.env.AMFIBEAS_REVISION||null,
     retention:'All captured months and corrected company revisions retained; starting history varies by AMC. No claim of an exhaustive archive.'};
