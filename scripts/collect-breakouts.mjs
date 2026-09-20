@@ -17,6 +17,14 @@ export function closingSeedComplete(capture, now = Date.now()) {
   const rows = new Map((capture.rows || []).map(row => [row.ticker, row]));
   return capture.targets.every(ticker => quoteFresh(rows.get(ticker), now) && rows.get(ticker).base);
 }
+export async function prepareBreakoutCapture({targets,previous,client,discoveryFailed=false,now=Date.now()}) {
+  // Discovery must reach the minute collector even when closing quotes can be reused.
+  // A primary-service outage still permits the independent fallback capture.
+  const primaryInventoryUpdated=!!await client({action:'inventory',targets,discoveryFailed}).catch(()=>null);
+  const skipCapture=!marketWindow(now).collect && !discoveryFailed &&
+    closingSeedComplete({...previous,targets:targets.map(t=>t.ticker)},now);
+  return {primaryInventoryUpdated,skipCapture};
+}
 export function breakoutClient({ env = process.env, fetcher = fetch } = {}) {
   return async input => {
     const url = new URL(env.ACTIONS_ID_TOKEN_REQUEST_URL || '');
@@ -140,9 +148,6 @@ async function main() {
   let previous;
   try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }
   catch { if (!marketWindow(now).collect) throw Error('Capture service unavailable'); }
-  if (!marketWindow(now).collect && closingSeedComplete(previous, now)) {
-    console.log('Outside market collection hours; no market-source requests.'); return;
-  }
   // The first scheduled run also seeds the latest closing observations after hours.
   // Otherwise a newly published dashboard could display the old CMP until next morning.
   if (!marketWindow(now).collect && previous?.version !== 1) throw Error('Capture service unavailable');
@@ -163,8 +168,12 @@ async function main() {
   } catch { discoveryFailed = true; }
   if (discoveryFailed) for (const ticker of previous?.targets || []) if (!targets.has(ticker)) targets.set(ticker, {ticker,name:previous?.rows?.find(row=>row.ticker===ticker)?.name || ticker});
   const client = breakoutClient();
-  // The primary service must never prevent the independent fallback from collecting.
-  const primaryInventoryUpdated=!!await client({action:'inventory',targets:[...targets.values()],discoveryFailed}).catch(()=>null);
+  const {primaryInventoryUpdated,skipCapture}=await prepareBreakoutCapture({targets:[...targets.values()],previous,client,discoveryFailed,now});
+  if(skipCapture) {
+    console.log(JSON.stringify({outsideMarketHours:true,primaryInventoryUpdated,targetCount:targets.size}));
+    if(!primaryInventoryUpdated)process.exitCode=1;
+    return;
+  }
   const summary = await collectBreakouts({ targets: [...targets.values()].sort((a,b)=>(Date.parse(previous?.rows?.find(row=>row.ticker===a.ticker)?.quoteAt)||0)-(Date.parse(previous?.rows?.find(row=>row.ticker===b.ticker)?.quoteAt)||0)), previous, client, discoveryFailed,
     token: process.env.UPSTOX_BACKUP_ENABLED === 'true' ? process.env.UPSTOX_ACCESS_TOKEN || '' : '' });
   summary.primaryInventoryUpdated=primaryInventoryUpdated;

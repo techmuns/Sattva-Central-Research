@@ -22,6 +22,9 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
   portfolio ISINs, names and explicit symbol aliases. Bases come from the current
   session's fallback history. Missing bases remain partial until that history arrives;
   yesterday's breakout base is never silently relabelled as today's.
+  Inventory is published before an after-hours quote skip; newly added targets still
+  require a closing seed. Partial discovery preserves earlier identities and targets,
+  so a temporarily unavailable portfolio/watchlist cannot erase a renamed stock's ISIN.
 - A successfully checked Upstox quote takes priority. After two minutes without a
   successful primary check, a fresh fallback quote can take over. Last good prices
   survive failures and still show their actual source/trade time. An old last trade

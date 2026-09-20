@@ -108,7 +108,15 @@ export class BreakoutPrimary {
     return this.status();
   }
   async inventory(targets, discoveryFailed=false) {
-    const clean=primaryInventory(targets);
+    let clean=primaryInventory(targets);
+    if(discoveryFailed) {
+      const retained=new Map((this.config(INVENTORY)?.targets || []).map(t=>[t.ticker,t]));
+      for(const target of clean) {
+        const previous=retained.get(target.ticker);
+        retained.set(target.ticker,{...previous,...target,name:target.name===target.ticker && previous?.name?previous.name:target.name});
+      }
+      clean=primaryInventory([...retained.values()]);
+    }
     this.saveConfig(INVENTORY,{targets:clean,discoveryFailed:discoveryFailed===true,checkedAt:this.now()});
     return this.arm();
   }

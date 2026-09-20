@@ -7,6 +7,7 @@ import {BreakoutPrimary, minuteQuotes, primaryInstruments, primaryInventory, cas
 import {handleBreakouts} from '../worker/breakouts.mjs';
 import {MinuteArchive,MINUTE_RETENTION_MS} from '../worker/breakout-archive.mjs';
 import {liveCoverage} from '../public/js/data/breakout-live-shared.js';
+import {prepareBreakoutCapture} from './collect-breakouts.mjs';
 const AT=Date.parse('2026-09-15T06:30:00Z');
 const iso=at=>new Date(at).toISOString();
 const base={high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'};
@@ -85,6 +86,28 @@ test('daily instrument cache supports verified renames and retries list failures
  now+=15*60000;await schedule.mappings(targets);assert.equal(calls,3);
  assert.throws(()=>primaryInventory([{ticker:'TEST',isin:'bad'}]));
  assert.throws(()=>primaryInventory([{ticker:'TEST',yahooTicker:'https://attacker/'}]));
+});
+test('overnight inventory is published before skipping quotes; new targets require a closing seed',async()=>{
+ const now=Date.parse('2026-09-15T14:00Z'),calls=[];
+ const previous={...fallback([row('TEST',Date.parse('2026-09-15T10:00Z'))]),completedAt:iso(now)};
+ const client=async input=>{calls.push(input);return{ok:true};};
+ const same=await prepareBreakoutCapture({targets:[{ticker:'TEST'}],previous,client,now});
+ assert.equal(calls[0].action,'inventory');assert.equal(same.skipCapture,true);assert.equal(same.primaryInventoryUpdated,true);
+ const added=await prepareBreakoutCapture({targets:[{ticker:'TEST'},{ticker:'ADDED'}],previous,client,now});
+ assert.equal(calls[1].targets[1].ticker,'ADDED');assert.equal(added.skipCapture,false);
+ const failed=await prepareBreakoutCapture({targets:[{ticker:'TEST'},{ticker:'ADDED'}],previous,client:async()=>{throw Error('primary unavailable');},now});
+ assert.equal(failed.primaryInventoryUpdated,false);assert.equal(failed.skipCapture,false);
+});
+test('partial discovery retains prior ISINs, aliases and missing targets until complete discovery succeeds',async()=>{
+ const data=storage(),schedule=new BreakoutPrimary(data,{}, {now:()=>AT,instruments:async()=>instruments});
+ await schedule.inventory([{ticker:'OLD',name:'Renamed Company',isin:'INE000000001',yahooTicker:'TEST.NS'},{ticker:'KEEP'}]);
+ await schedule.inventory([{ticker:'OLD'},{ticker:'NEW'}],true);
+ const pending=schedule.config('upstox-inventory');assert.equal(pending.discoveryFailed,true);
+ assert.deepEqual(pending.targets[0],{ticker:'OLD',name:'Renamed Company',isin:'INE000000001',yahooTicker:'TEST.NS'});
+ assert.deepEqual(pending.targets.map(t=>t.ticker),['OLD','KEEP','NEW']);
+ assert.equal((await schedule.mappings(pending.targets)).mapped[0].upstoxSymbol,'TEST');
+ await schedule.inventory([{ticker:'NEW'}],false);
+ assert.deepEqual(schedule.config('upstox-inventory').targets.map(t=>t.ticker),['NEW']);
 });
 test('500 instrument batches preserve earlier quotes when auth fails, and credentials never follow redirects',async()=>{
  const targets=Array.from({length:501},(_,i)=>({ticker:`T${i}`,instrumentKey:`NSE_EQ|${i}`,upstoxSymbol:`T${i}`}));let calls=0;
