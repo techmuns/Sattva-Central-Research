@@ -116,7 +116,7 @@ for(const entry of index.amcs) {
     }
     if(!result?.schemes?.length)throw Error('Disclosure unavailable');
     saveResult(result);
-  }catch{const check=checks.find(c=>c.slug===entry.slug);if(check){Object.assign(check,{status:'partial',reason:'source-check-failed',checkedAt:priorCheck.lastCompleteCheckedAt,lastCompleteCheckedAt:priorCheck.lastCompleteCheckedAt,partialCheckedAt:startedAt,lastAttemptAt:startedAt});}else checks.push({slug:entry.slug,name:entry.amc,month:monthKey(entry.asOfMonth),status:'unavailable',checkedAt:priorCheck.lastCompleteCheckedAt,lastCompleteCheckedAt:priorCheck.lastCompleteCheckedAt,lastAttemptAt:startedAt});}
+  }catch{const check=checks.find(c=>c.slug===entry.slug);if(check){Object.assign(check,{status:'partial',reason:'source-check-failed',checkedAt:priorCheck.lastCompleteCheckedAt,lastCompleteCheckedAt:priorCheck.lastCompleteCheckedAt,partialCheckedAt:startedAt,lastAttemptAt:startedAt});}else checks.push(reconcileSourceChecks([priorCheck],[{slug:entry.slug,name:entry.amc,month:priorCheck.month||monthKey(old.asOfMonth)||monthKey(entry.asOfMonth),status:'unavailable',checkedAt:null,lastAttemptAt:startedAt,reason:'source-discovery-failed'}])[0]);}
   atomicJson(checksFile,checks);
   console.log(`${entry.slug}: ${checks.at(-1).status} ${checks.at(-1).month||''}`);
 }

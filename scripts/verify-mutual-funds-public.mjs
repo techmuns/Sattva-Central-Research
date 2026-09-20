@@ -104,6 +104,8 @@ const result=await readDisclosures(['good','failed','old','later'].map(text=>({t
   if(url==='failed')throw Error('Unavailable');return Buffer.from(url);
 },parse:buffer=>[{schemeName:'Verified fund',asOf:buffer.toString()==='old'?'2026-07-31':'2026-08-31',holdings:[]}],onCheckpoint:p=>checkpoints.push(p)});
 assert.equal(peak,2);assert.equal(result.failedFiles,2);assert.equal(result.schemes.length,2);assert.equal(checkpoints.length,4);
+assert.equal(result.completedFiles,2,'Only successfully parsed files count as completed');
+for(const c of checkpoints)assert.equal(c.completedFiles+c.failedFiles+c.pendingFiles,c.expectedFiles,'Every file has exactly one coverage state');
 assert.equal(checkpoints[0].pendingFiles,3);assert.equal(checkpoints.at(-1).pendingFiles,0);
 assert.equal(result.schemes[1].sourceUrl,'later','A failed download cannot erase another source file');
 assert.equal(result.resumeUrl,'failed');assert.equal(checkpoints[0].resumeUrl,'failed');
@@ -119,6 +121,7 @@ assert.deepEqual(resumeDisclosures(catalogue,{resumeUrl:'removed-file'}),catalog
 let failedProgress;
 await assert.rejects(readDisclosures(catalogue,{month,concurrency:1,read:async()=>{throw Error('Temporary download failure');},parse:()=>[],onCheckpoint:p=>{failedProgress=p;throw Error('Interrupted');}}),/checkpoint failed/);
 assert.equal(failedProgress.schemes.length,0);assert.equal(failedProgress.resumeUrl,'b','Even an attempt with no parsed schemes retains the unfinished tail');
+assert.equal(failedProgress.completedFiles,0);assert.equal(failedProgress.failedFiles,1);
 let finished=0;
 await assert.rejects(readDisclosures([{url:'one'},{url:'two'}],{month,read:async url=>{await new Promise(r=>setTimeout(r,url==='one'?1:15));finished++;return Buffer.from(url);},parse:()=>[{asOf:'2026-08-31'}],onCheckpoint:()=>{throw Error('Disk unavailable');}}),/checkpoint failed/);
 assert.equal(finished,2,'A checkpoint failure must await other in-flight file reads before returning');

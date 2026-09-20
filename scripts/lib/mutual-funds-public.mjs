@@ -283,9 +283,9 @@ export async function readDisclosures(links,{read,parse,month,concurrency=4,onCh
         results[index]=schemes.map(s=>({...s,sourceUrl:link.url}));
       } catch {failures.push(index);results[index]=[];}
       // Persist completed files before another slow file can time out the child.
-      await onCheckpoint({schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:results.filter(s=>s===undefined).length,expectedFiles:links.length,completedFiles:results.filter(Boolean).length,lastCompletedMonth:link.disclosureMonth||month,resumeUrl:resumeUrl()});
+      await onCheckpoint({schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:results.filter(s=>s===undefined).length,expectedFiles:links.length,completedFiles:results.filter(s=>s?.length).length,lastCompletedMonth:link.disclosureMonth||month,resumeUrl:resumeUrl()});
     }
   }));
   if(settled.some(r=>r.status==='rejected'))throw Error('Disclosure checkpoint failed');
-  return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,expectedFiles:links.length,completedFiles:links.length,resumeUrl:resumeUrl()};
+  return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,expectedFiles:links.length,completedFiles:links.length-failures.length,resumeUrl:resumeUrl()};
 }

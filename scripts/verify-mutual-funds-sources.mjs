@@ -136,5 +136,17 @@ if(slug==='hanging'||slug==='checkpointed'||slug==='checkpoint-empty'){
   assert.equal(saved.checks[0].pendingFiles,1,'A timed-out file retains completed reports without claiming a full check');
   const emptyProgress=await runSourcePool([{slug:'checkpoint-empty',amc:'No parsed reports yet'}],{command:process.execPath,args:[script],env,checksFile,timeoutMs:1000});
   assert.equal(emptyProgress.checks[0].schemeCount,0);assert.equal(emptyProgress.checks[0].resumeUrl,'pending.xlsx','Timeout preserves the next file even if earlier downloads all failed');
+  // Exercise the actual source entry point with local adapters. Missing public
+  // Axis client config fails discovery before any network request or file parse.
+  const fixture=path.join(dir,'source-fixture'),adapters=path.join(fixture,'scripts/ingest/amc-factsheets'),holdings=path.join(fixture,'public/amc-holdings');
+  fs.mkdirSync(adapters,{recursive:true});fs.mkdirSync(holdings,{recursive:true});
+  const modules={'fetch.ts':'export const fetchLatest=()=>null;', 'parse.ts':'export const parseAmcWorkbook=()=>[];', 'advisorkhoj.ts':'export const parseZip=()=>[],normalizeSchemePct=s=>s;', 'page-scrape.ts':'export const PAGE_SCRAPE_CONFIG={},pageScrapeAmc=()=>null,downloadAndParse=()=>null;', 'json-api.ts':'export const JSON_API_CONFIG={},jsonApiAmc=()=>null;'};
+  for(const [name,body] of Object.entries(modules))fs.writeFileSync(path.join(adapters,name),body);
+  fs.writeFileSync(path.join(holdings,'index.json'),JSON.stringify({amcs:[{slug:'axis',amc:'Axis',asOfMonth:'2026-06'}]}));
+  fs.writeFileSync(path.join(holdings,'axis.json'),JSON.stringify({asOfMonth:'2026-07',schemes:[]}));
+  const {execFileSync}=await import('node:child_process');
+  execFileSync(process.execPath,[path.resolve('scripts/refresh-mutual-funds-sources.mjs')],{env:{...process.env,AMFIBEAS_PATH:fixture,MF_SOURCE_WORKER:'1',MF_SOURCE_AMCS:'axis',MF_SOURCE_CHECK_FILE:path.join(holdings,'checks.json'),MF_SOURCE_PREVIOUS_CHECK:JSON.stringify({slug:'axis',month:'2026-08',schemeCount:81,status:'ok',checkedAt:'2026-09-20T09:00:00Z',resumeUrl:'pending.xlsx'})},stdio:'pipe',timeout:10000});
+  const discoveryFailure=JSON.parse(fs.readFileSync(path.join(holdings,'checks.json')))[0];
+  assert.equal(discoveryFailure.status,'unavailable');assert.equal(discoveryFailure.month,'2026-08');assert.equal(discoveryFailure.schemeCount,81);assert.equal(discoveryFailure.resumeUrl,'pending.xlsx');assert.equal(discoveryFailure.checkedAt,'2026-09-20T09:00:00Z');
   console.log('PASS source isolation: bounded concurrency, hung source and descendant timeout, later-source progress, failed child, durable checkpoints, preserved check times and interruption');
 } finally {fs.rmSync(dir,{recursive:true,force:true});}
