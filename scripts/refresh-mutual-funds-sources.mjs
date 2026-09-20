@@ -65,7 +65,13 @@ for(const entry of index.amcs) {
         const groups=new Map();for(const scheme of progress.schemes){const key=monthKey(scheme.asOf);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(scheme);}
         // Older reports enrich history, while coverage continues to refer to the
         // current month. Save it last; interrupted history never erases current data.
-        for(const [key,schemes] of [...groups].sort(([a],[b])=>a.localeCompare(b)))saveResult({...progress,schemes,usedUrl:PUBLIC_PAGES[entry.slug]},{recordCheck:key===month});
+        for(const [key,schemes] of [...groups].sort(([a],[b])=>a.localeCompare(b)))if(!progress.lastCompletedMonth||key===progress.lastCompletedMonth)saveResult({...progress,schemes,usedUrl:PUBLIC_PAGES[entry.slug]},{recordCheck:key===month});
+        // A historical file changes progress, not the current month's holdings.
+        // Update its small check record without rewriting every other month again.
+        if(progress.lastCompletedMonth&&progress.lastCompletedMonth!==month) {
+          const check=checks.find(c=>c.slug===entry.slug);
+          if(check){for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles'])check[key]=progress[key];check.status=check.missingSchemes||progress.failedFiles||progress.pendingFiles?'partial':'ok';atomicJson(checksFile,checks);}
+        }
       };
       result=await readDisclosures(links,{read,parse,month,onCheckpoint:checkpoint});
       checkpoint(result);
@@ -95,7 +101,7 @@ for(const entry of index.amcs) {
     }
     if(!result?.schemes?.length)throw Error('Disclosure unavailable');
     saveResult(result);
-  }catch{if(!checks.some(c=>c.slug===entry.slug))checks.push({slug:entry.slug,name:entry.amc,month:monthKey(entry.asOfMonth),status:'unavailable',checkedAt:null,lastAttemptAt:startedAt});}
+  }catch{const check=checks.find(c=>c.slug===entry.slug);if(check){check.status='partial';check.reason='source-check-failed';}else checks.push({slug:entry.slug,name:entry.amc,month:monthKey(entry.asOfMonth),status:'unavailable',checkedAt:null,lastAttemptAt:startedAt});}
   atomicJson(checksFile,checks);
   console.log(`${entry.slug}: ${checks.at(-1).status} ${checks.at(-1).month||''}`);
 }

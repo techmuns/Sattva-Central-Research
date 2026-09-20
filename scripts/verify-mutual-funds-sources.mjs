@@ -30,11 +30,13 @@ assert.deepEqual(directPortfolioRows([...ownRows,...appendix]),ownRows);
 assert.deepEqual(directPortfolioRows(ownRows),ownRows);
 assert.deepEqual(directPortfolioRows([['Company equity','INE090A01021',150]]),[['Company equity','INE090A01021',150]],'Real directly held equity remains intact');
 // Exercise the workbook adapter with injected I/O; the source runtime supplies XLSX.
-const fakeXlsx={read:()=>({SheetNames:['FoF','Equity'],Sheets:{FoF:[...ownRows,...appendix],Equity:[['Direct equity','INE090A01021',150]]}}),utils:{book_new:()=>({}),sheet_to_json:s=>s,aoa_to_sheet:r=>r,book_append_sheet:(book,sheet,name)=>{book[name]=sheet;}},write:book=>book};
+const fakeXlsx={read:()=>({SheetNames:['FoF','Equity'],Sheets:{FoF:[...ownRows,...appendix],Equity:[['Direct equity','INE090A01021',150]]}}),utils:{sheet_to_json:s=>s,aoa_to_sheet:r=>r},write:book=>book.Sheets};
 const parseFixture=book=>{assert.deepEqual(book.FoF,ownRows);assert.equal(book.Equity[0][2],150);return[{asOf:'2026-08-31',holdings:[]}];};
 assert.equal(parseQuantumWorkbook(null,{XLSX:fakeXlsx,parseAmcWorkbook:parseFixture,opts:{},month:'2026-08'}).length,1);
 assert.throws(()=>parseQuantumWorkbook(null,{XLSX:fakeXlsx,parseAmcWorkbook:()=>[{asOf:'2013-09-30'}],opts:{},month:'2026-08'}),/month unverified/);
 assert.throws(()=>parseQuantumWorkbook(null,{XLSX:fakeXlsx,parseAmcWorkbook:()=>[{asOf:'2026-08-31',schemeName:'Quantum Equity FOF',holdings:[{isin:'INE090A01021'}]}],opts:{},month:'2026-08'}),/Ambiguous FoF/);
+const original=Buffer.from('original workbook'),withoutAppendix={...fakeXlsx,read:()=>({SheetNames:['Equity'],Sheets:{Equity:[['Direct equity','INE090A01021',150]]}}),write:()=>{throw Error('Unnecessary workbook rewrite');}};
+parseQuantumWorkbook(original,{XLSX:withoutAppendix,parseAmcWorkbook:buffer=>{assert.equal(buffer,original);return[{asOf:'2026-08-31',schemeName:'Equity Fund',holdings:[]}];},opts:{},month:'2026-08'});
 console.log('PASS Quantum disclosures: exact month, complete pagination, permitted files, actual workbook dates and direct ownership without underlying-fund double counting');
 const dated={isin:'INE123A01016',name:'Captured company',funds:[{id:'amc:fund',name:'Fund',amc:'AMC',months:{'2026-08':{shares:100,checkedAt:'2026-09-20T08:00:00Z',change:100,action:'New'}}}]};
 const missing={isin:dated.isin,name:'Current portfolio name',funds:[]};

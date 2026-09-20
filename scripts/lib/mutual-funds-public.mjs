@@ -204,6 +204,7 @@ export function parsePublicWorkbook(buffer,{XLSX,parseAmcWorkbook,parseVerifiedW
       const row=sheet&&XLSX.utils.sheet_to_json(sheet,{header:1,blankrows:true,defval:null,raw:true})[0];
       if(!row||row[0]!==scheme.schemeCode||!/^Axis .+ FOF$/.test(row[1]||''))throw Error('Scheme title unverified');
       scheme.schemeName=row[1];scheme.validatedSchemeHeader=true;
+      if(scheme.holdings?.some(h=>/^INE/.test(h.isin||'')))throw Error('Ambiguous FoF ownership');
     }
     return schemes;
   }
@@ -217,7 +218,7 @@ export function parsePublicWorkbook(buffer,{XLSX,parseAmcWorkbook,parseVerifiedW
 }
 export async function readDisclosures(links,{read,parse,month,concurrency=4,onCheckpoint=()=>{}}) {
   let cursor=0;const results=new Array(links.length).fill(undefined),failures=[];
-  await Promise.all(Array.from({length:Math.min(concurrency,links.length)},async()=>{
+  const settled=await Promise.allSettled(Array.from({length:Math.min(concurrency,links.length)},async()=>{
     while(cursor<links.length) {
       const index=cursor++,link=links[index];
       try {
@@ -228,8 +229,9 @@ export async function readDisclosures(links,{read,parse,month,concurrency=4,onCh
         results[index]=schemes.map(s=>({...s,sourceUrl:link.url}));
       } catch {failures.push(index);results[index]=[];}
       // Persist completed files before another slow file can time out the child.
-      await onCheckpoint({schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:results.filter(s=>s===undefined).length,expectedFiles:links.length,completedFiles:results.filter(Boolean).length});
+      await onCheckpoint({schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:results.filter(s=>s===undefined).length,expectedFiles:links.length,completedFiles:results.filter(Boolean).length,lastCompletedMonth:link.disclosureMonth||month});
     }
   }));
+  if(settled.some(r=>r.status==='rejected'))throw Error('Disclosure checkpoint failed');
   return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,expectedFiles:links.length,completedFiles:links.length};
 }

@@ -78,6 +78,9 @@ const result=await readDisclosures(['good','failed','old','later'].map(text=>({t
 assert.equal(peak,2);assert.equal(result.failedFiles,2);assert.equal(result.schemes.length,2);assert.equal(checkpoints.length,4);
 assert.equal(checkpoints[0].pendingFiles,3);assert.equal(checkpoints.at(-1).pendingFiles,0);
 assert.equal(result.schemes[1].sourceUrl,'later','A failed download cannot erase another source file');
+let finished=0;
+await assert.rejects(readDisclosures([{url:'one'},{url:'two'}],{month,read:async url=>{await new Promise(r=>setTimeout(r,url==='one'?1:15));finished++;return Buffer.from(url);},parse:()=>[{asOf:'2026-08-31'}],onCheckpoint:()=>{throw Error('Disk unavailable');}}),/checkpoint failed/);
+assert.equal(finished,2,'A checkpoint failure must await other in-flight file reads before returning');
 let attempted=0;
 const refused=publicReader('quant',{execute:async()=>{attempted++;throw Object.assign(Error('curl failed'),{stderr:Buffer.from('curl: (22) The requested URL returned error: 403')});}});
 await assert.rejects(refused('https://quantmutual.com/first.xlsx'),/refused/);

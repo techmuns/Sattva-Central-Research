@@ -34,12 +34,15 @@ export function directPortfolioRows(rows) {
   return at<0?rows:rows.slice(0,at);
 }
 export function parseQuantumWorkbook(buffer,{XLSX,parseAmcWorkbook,opts,month}) {
-  const workbook=XLSX.read(buffer,{type:'buffer',cellDates:false}),direct=XLSX.utils.book_new();
+  const workbook=XLSX.read(buffer,{type:'buffer',cellDates:false});let changed=false;
   for(const name of workbook.SheetNames) {
     const rows=XLSX.utils.sheet_to_json(workbook.Sheets[name],{header:1,blankrows:true,defval:null,raw:true});
-    XLSX.utils.book_append_sheet(direct,XLSX.utils.aoa_to_sheet(directPortfolioRows(rows)),name);
+    const direct=directPortfolioRows(rows);
+    if(direct.length!==rows.length){workbook.Sheets[name]=XLSX.utils.aoa_to_sheet(direct);changed=true;}
   }
-  const schemes=parseAmcWorkbook(XLSX.write(direct,{type:'buffer',bookType:'xlsx'}),opts);
+  // Most reports contain no appendix. Avoid rebuilding every cell and ZIP for
+  // those files, retaining the original workbook's format and numeric values.
+  const schemes=parseAmcWorkbook(changed?XLSX.write(workbook,{type:'buffer',bookType:'xlsx'}):buffer,opts);
   if(!schemes.length||schemes.some(s=>monthKey(s.asOf)!==month))throw Error('Disclosure month unverified');
   // A changed appendix heading must fail visibly instead of reintroducing
   // look-through shares. Review any future FoF layout that reports direct equity.
