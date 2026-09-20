@@ -29,11 +29,31 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
 - Visible readers check saved data every 15 seconds and immediately on opening,
   focus, visibility return and reconnect. The shared edge cache lasts five seconds.
   Opening a dashboard never exposes the token or starts another provider request.
-- Minute observations are archived in 16 indexed SQLite buckets per capture,
-  avoiding a separate indexed history write for every company. No minute observation
-  is deleted. History pagination includes minute captures ordered by capture time;
-  the original quote time is retained in every row. Legacy observations retain their
-  existing history order. Storage is finite and is not an unlimited free archive.
+- Detailed minute observations expire after **four calendar days**, as approved by
+  the user on 20 September 2026. They stay in Cloudflare SQLite, not GitHub files or
+  the dashboard's browser cache. The latest-price index is separate; an outage can
+  retain the last known price with its true date after the detailed archive expires.
+  Cleanup runs every 15 minutes through the minute timer even on holidays, without
+  credentials, or during provider outages; a save also checks cleanup before writing.
+  A delayed alarm may delay physical cleanup. History reads enforce the four-day window.
+- Minute history stores only price, volume and source/check times alongside a compact
+  key. Company identity and breakout base are deduplicated in a daily dictionary;
+  complete payload comparison prevents hash collisions from mixing identities.
+  Sixteen indexed buckets per minute keep write counts down. Dictionary cleanup retains
+  the cutoff day until all of its possible observations have expired.
+- Observed breakout entries, exits and quality changes retain their complete supporting
+  quote separately after minute expiry. The first non-breakout establishes a baseline;
+  missing bases and regressed source times cannot invent a transition. Existing daily
+  and 15-minute history and captured gap records retain their previous policy.
+- Normal dashboard opening/polling reads only the latest-price index and coverage
+  summary. It never queries or downloads the minute/event archives. History is a separate
+  company-specific, 100-row paginated endpoint. Minute captures order by capture time;
+  source quote times remain unchanged. Breakout changes appear once, whether their
+  minute snapshot is still retained or has expired. Storage remains finite.
+- A local 600-company, 30-minute fixture stored 1,421,230 bytes versus 6,205,200 bytes
+  for full quote copies (77% smaller). Its current response was 211,987 bytes raw and
+  20,171 bytes gzip. These are synthetic measurements, not production transfer or
+  database-size guarantees; company names, values and breakout activity vary.
 - Missed minute intervals are counted separately in `primary.gaps`. The existing
   15-minute candle recovery remains available; it does not reconstruct every missed
   one-minute observation. Provider outages, absent symbols and shorter listing histories
@@ -181,7 +201,9 @@ must all be present for a company's breakout check to count as covered. The
 latest run must complete its entire manifest; discovery failures and calendar
 uncertainty prevent a complete-coverage claim.
 
-Every acknowledged quote is retained separately from the latest-quote index.
+Every acknowledged fallback quote is retained separately from the latest-quote index.
+Detailed primary minute quotes use the four-day policy above; detected breakout
+changes survive that expiry.
 A failed run keeps the old observation and adds the failure; it cannot make the
 old quote appear newly checked. Completed runs are idempotent; conflicting
 checkpoint replay is refused. No history is deleted when the date or scope changes.
@@ -199,10 +221,11 @@ breakout that reversed before the candle closed.
 - `/api/breakouts`: current capture, per-ticker failures, recovery gaps and timer.
 - `/api/breakouts/health`: 503 for missing/partial/stale current coverage or an
   overdue timer; this is distinct from historical recovery completeness.
-- `/api/breakouts/history?ticker=...&before=...`: all saved observations with
+- `/api/breakouts/history?ticker=...&before=...`: retained minute observations, breakout changes and existing fallback history with
   keyset pagination (100 per page, follow `nextCursor`), including recovered candles.
 
-The response states capture start and finite storage. No exhaustive pre-capture
+The response states separate minute/fallback capture starts, `minuteRetentionDays: 4`,
+retained breakout changes and finite storage. No exhaustive pre-capture
 archive is claimed. Source records are retained in the existing durable database;
 30-day GitHub health artifacts are diagnostics, not the market-data archive.
 This change adds no paid product, but cannot promise infinite free storage or
@@ -211,7 +234,8 @@ ignore existing platform quotas. Storage failures surface as failed checkpoints.
 ## Validation and operations
 
 Local tests cover dates/holidays, stale quotes, missing bases, failure retention,
-large inventories, rate-limit stopping, fallback mapping/history, signed OIDC,
+large inventories, four-day expiry, retained breakout changes, dictionary collision
+safety, current-reader isolation from history, rate-limit stopping, fallback mapping/history, signed OIDC,
 replay, history pagination, interrupted recovery and delayed-run dispatch. A real
 local workerd test restarts between checkpoints and verifies SQLite/history/alarm
 persistence. Browser tests cover automatic updates, the open popup, future

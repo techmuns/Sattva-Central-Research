@@ -1,7 +1,8 @@
 import { BREAKOUT_BATCH, BREAKOUT_LIMIT, validateQuote, tickerValid, recoverySlots, quoteFresh, marketWindow } from '../public/js/data/breakout-live-shared.js';
 import { PRIMARY_MAX_AGE } from './breakout-primary.mjs';
+import { MinuteArchive, primaryBucket, MINUTE_RETENTION_DAYS, MINUTE_RETENTION_MS } from './breakout-archive.mjs';
+export { primaryBucket } from './breakout-archive.mjs';
 
-export const primaryBucket = ticker => [...ticker].reduce((n,c)=>(n*31+c.charCodeAt(0))%16,0);
 export function mergePrimary(fallback, primary, now=Date.now()) {
   if (!primary) return fallback;
   const targets=[...new Set([...(fallback.targets || []),...primary.targets])];
@@ -30,14 +31,14 @@ export function mergePrimary(fallback, primary, now=Date.now()) {
     completedAt:recent?new Date(primary.completedAt).toISOString():fallback.completedAt,
     discoveryFailed:primary.discoveryFailed || fallback.discoveryFailed===true,
     primary:{at:primary.at,captureStartedAt:new Date(primary.firstAt || primary.at).toISOString(),checkedAt:new Date(primary.completedAt).toISOString(),primaryUsed,fallbackUsed,
-      failures:primary.failures,instrumentFailures:primary.instrumentFailures,gaps:primary.gaps || [],intervalMs:60000},
+      failures:primary.failures,instrumentFailures:primary.instrumentFailures,gaps:primary.gaps || [],intervalMs:60000,minuteRetentionDays:MINUTE_RETENTION_DAYS},
     captureStartedAt:fallback.captureStartedAt || new Date(primary.firstAt || primary.at).toISOString(),
-    retention:'Captured minute snapshots and fallback observations are retained in finite storage. Minute snapshots are not a trade-by-trade archive. Missed intervals use available 15-minute recovery candles; finer gaps remain unrecoverable.'};
+    retention:'Detailed minute snapshots are retained for four calendar days on Cloudflare; detected breakout changes and existing fallback history are retained separately. The dashboard loads current prices only. Minute snapshots are not a trade-by-trade archive. Missed intervals use available 15-minute recovery candles; finer gaps remain unrecoverable.'};
 }
 
 // One fixed object's SQLite tables. Every acknowledged observation survives a later failure.
 export class BreakoutStore {
-  constructor(storage, { now = Date.now } = {}) { this.storage = storage; this.now = now; }
+  constructor(storage, { now = Date.now } = {}) { this.storage = storage; this.now = now; this.archive = new MinuteArchive(storage); }
   init() {
     const sql = this.storage.sql;
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_runs (id TEXT PRIMARY KEY, started INTEGER NOT NULL, manifest TEXT NOT NULL, completed TEXT)');
@@ -52,9 +53,7 @@ export class BreakoutStore {
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_latest (bucket INTEGER PRIMARY KEY, payload TEXT NOT NULL)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_gaps (since INTEGER PRIMARY KEY, until INTEGER NOT NULL, slots INTEGER NOT NULL)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_quote_gaps (since INTEGER PRIMARY KEY, until INTEGER NOT NULL, missing INTEGER NOT NULL, failures TEXT NOT NULL)');
-    // Group minute observations into 16 stable buckets, avoiding hundreds of indexed writes
-    // per minute. No observation is dropped; each bucket has an indexed capture-time cursor.
-    sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_history (bucket INTEGER NOT NULL, at INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(bucket,at))');
+    this.archive.init();
   }
   begin(run, targets, discoveryFailed = false) {
     this.init();
@@ -139,6 +138,7 @@ export class BreakoutStore {
       return { ok: true };
     });
   }
+  primaryPrune() { return this.archive.prune(this.now()); }
   primarySave(input) {
     this.init();
     const {at,completedAt,targets,failures}=input;
@@ -147,22 +147,20 @@ export class BreakoutStore {
       !Array.isArray(input.rows) || !Array.isArray(failures)) throw Error('Invalid primary capture');
     const rows=input.rows.map(r=>validateQuote(r,this.now())), checked=[...rows.map(r=>r.ticker),...failures.map(r=>r.ticker)];
     if (checked.length!==targets.length || new Set(checked).size!==checked.length || checked.some(t=>!targets.includes(t)) || rows.some(r=>r.provider!=='Upstox' || r.kind!=='quote')) throw Error('Incomplete primary capture');
+    this.primaryPrune();
     const cleanFailures=failures.map(r=>({ticker:r.ticker,reason:['unmapped','authentication','rate-limited','stale','unavailable'].includes(r.reason)?r.reason:'unavailable'}));
     return this.storage.transactionSync(()=>{
       const existing=this.storage.sql.exec('SELECT payload FROM breakout_primary_current WHERE id=1').toArray()[0];
       const prior=existing?JSON.parse(existing.payload):null;
       if (prior?.at>=at) return {ok:true,replayed:true};
       const retained=new Map(this.storage.sql.exec('SELECT payload FROM breakout_primary_latest').toArray().flatMap(r=>Object.values(JSON.parse(r.payload))).map(r=>[r.ticker,r]));
-      const buckets=new Map();
+      const accepted=new Set();
       for (const row of rows) {
         const previous=retained.get(row.ticker);
         if(previous && Date.parse(row.quoteAt)<Date.parse(previous.quoteAt)) cleanFailures.push({ticker:row.ticker,reason:'stale'});
-        else retained.set(row.ticker,row);
-        const bucket=primaryBucket(row.ticker);
-        if (!buckets.has(bucket)) buckets.set(bucket,{});
-        buckets.get(bucket)[row.ticker]=row;
+        else {retained.set(row.ticker,row);accepted.add(row.ticker);}
       }
-      for (const [bucket,payload] of buckets) this.storage.sql.exec('INSERT INTO breakout_primary_history VALUES(?,?,?)',bucket,at,JSON.stringify(payload));
+      this.archive.save(rows,at,accepted);
       if(prior && at-prior.at>75000) {
         let slots=0;
         for(let minute=prior.at+60000;minute<at-15000;minute+=60000) if(marketWindow(minute).collect) slots++;
@@ -223,11 +221,12 @@ export class BreakoutStore {
     let cursor;
     if (before) { cursor = JSON.parse(before); if (!Number.isFinite(cursor.at) || !/^\d+:\d+$/.test(cursor.run)) throw Error('Invalid history cursor'); }
     const path=`$."${ticker}"`;
-    const query = "SELECT run,at,payload FROM (SELECT run,at,payload FROM breakout_quotes WHERE ticker=? UNION ALL SELECT '0'||run AS run,at,payload FROM breakout_recovered WHERE ticker=? UNION ALL SELECT '9'||at||':0' AS run,at,json_extract(payload,?) AS payload FROM breakout_primary_history WHERE bucket=? AND json_type(payload,?) IS NOT NULL)";
-    const args=[ticker,ticker,path,primaryBucket(ticker),path];
+    const query = "SELECT run,at,payload FROM (SELECT run,at,payload FROM breakout_quotes WHERE ticker=? UNION ALL SELECT '0'||run AS run,at,payload FROM breakout_recovered WHERE ticker=? UNION ALL SELECT '9'||at||':0' AS run,at,json_extract(payload,?) AS payload FROM breakout_primary_history WHERE bucket=? AND at>=? AND json_type(payload,?) IS NOT NULL UNION ALL SELECT '9'||at||':0' AS run,at,payload FROM breakout_primary_events WHERE ticker=? AND at<?)";
+    const cutoff=this.now()-MINUTE_RETENTION_MS;
+    const args=[ticker,ticker,path,primaryBucket(ticker),cutoff,path,ticker,cutoff];
     const data = cursor ? this.storage.sql.exec(query+' WHERE (at<? OR (at=? AND run<?)) ORDER BY at DESC,run DESC LIMIT 101', ...args,cursor.at,cursor.at,cursor.run).toArray()
       : this.storage.sql.exec(query+' ORDER BY at DESC,run DESC LIMIT 101',...args).toArray();
     const page = data.slice(0, 100), last = page.at(-1);
-    return { rows: page.map(row => JSON.parse(row.payload)), nextCursor: data.length > 100 ? JSON.stringify({ at: last.at, run: last.run }) : null };
+    return { minuteRetentionDays:MINUTE_RETENTION_DAYS, rows: page.map(row => this.archive.decode(row.payload,row.at)), nextCursor: data.length > 100 ? JSON.stringify({ at: last.at, run: last.run }) : null };
   }
 }

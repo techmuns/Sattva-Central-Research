@@ -52,6 +52,7 @@ export class CaptureRegistry extends DurableObject {
   upstoxArm() { return this.breakoutPrimary.arm(); }
   upstoxInventory(targets,failed) { return this.breakoutPrimary.inventory(targets,failed); }
   upstoxStatus() { return this.breakoutPrimary.status(); }
+  breakoutPrimaryPrune() { return this.breakouts.primaryPrune(); }
   breakoutPrimarySave(input) { return this.breakouts.primarySave(input); }
   breakoutReadFallback() { return this.breakouts.readFallback(); }
   async breakoutBegin(run, targets, failed) { const out = this.breakouts.begin(run, targets, failed); await this.breakoutSchedule.arm(); return out; }

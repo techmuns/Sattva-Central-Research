@@ -141,6 +141,7 @@ export class BreakoutPrimary {
     if (!claimed) return;
     let reason='closed', saved=0, failed=0;
     try {
+      await this.store().breakoutPrimaryPrune();
       if (marketWindow(at).collect) {
         if (!this.env.UPSTOX_ACCESS_TOKEN) reason='not-configured';
         else {

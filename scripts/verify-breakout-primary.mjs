@@ -5,6 +5,7 @@ import {gzipSync} from 'node:zlib';
 import {BreakoutStore, mergePrimary} from '../worker/breakout-store.mjs';
 import {BreakoutPrimary, minuteQuotes, primaryInstruments, primaryInventory, cashInstruments} from '../worker/breakout-primary.mjs';
 import {handleBreakouts} from '../worker/breakouts.mjs';
+import {MinuteArchive,MINUTE_RETENTION_MS} from '../worker/breakout-archive.mjs';
 import {liveCoverage} from '../public/js/data/breakout-live-shared.js';
 const AT=Date.parse('2026-09-15T06:30:00Z');
 const iso=at=>new Date(at).toISOString();
@@ -55,7 +56,7 @@ test('one-minute timer persists before I/O, coalesces duplicate wakes and keeps 
  const data=storage();let now=AT,fetches=0;const published=[];
  const make=()=>new BreakoutPrimary(data,{UPSTOX_ACCESS_TOKEN:'fixture'},{now:()=>now,
   instruments:async()=>instruments,quotes:async(mapped,bases)=>{fetches++;assert.equal(mapped[0].ticker,'TEST');assert.deepEqual(bases.get('TEST'),base);assert.equal(await data.getAlarm(),now+60000);return {rows:[row('TEST',now)]};},
-  store:()=>({breakoutReadFallback:async()=>fallback(),breakoutPrimarySave:async p=>published.push(p)})});
+  store:()=>({breakoutPrimaryPrune:async()=>({ok:true}),breakoutReadFallback:async()=>fallback(),breakoutPrimarySave:async p=>published.push(p)})});
  await make().inventory([{ticker:'TEST'}]);
  for(let i=0;i<4;i++){now=await data.getAlarm();await make().wake();await make().wake();}
  assert.equal(fetches,4);assert.equal(published.length,4);assert.equal(published[3].at-published[0].at,180000);
@@ -63,12 +64,13 @@ test('one-minute timer persists before I/O, coalesces duplicate wakes and keeps 
 });
 test('missing token, closed market, failed quote and an interrupted save all retain a future alarm',async()=>{
  for(const mode of ['missing','closed','failure','save']){
-  const data=storage();let now=mode==='closed'?Date.parse('2026-09-20T06:30Z'):AT,called=0;
+  const data=storage();let now=mode==='closed'?Date.parse('2026-09-20T06:30Z'):AT,called=0,cleaned=0;
   const schedule=new BreakoutPrimary(data,mode==='missing'?{}:{UPSTOX_ACCESS_TOKEN:'fixture'},{now:()=>now,
    instruments:async()=>instruments,quotes:async()=>{called++;if(mode==='failure')throw Error('network');return{rows:[row('TEST',now)]};},
-   store:()=>({breakoutReadFallback:async()=>fallback(),breakoutPrimarySave:async()=>{throw Error('storage');}})});
+   store:()=>({breakoutPrimaryPrune:async()=>{cleaned++;return{ok:true};},breakoutReadFallback:async()=>fallback(),breakoutPrimarySave:async()=>{throw Error('storage');}})});
   await schedule.inventory([{ticker:'TEST'}]);now=await data.getAlarm();await schedule.wake();
   assert.equal(await data.getAlarm(),now+60000);assert.equal(called,['missing','closed'].includes(mode)?0:1);
+  assert.equal(cleaned,1,mode);
   assert.equal((await schedule.status()).reason,mode==='missing'?'not-configured':mode==='closed'?'closed':'unavailable');
  }
 });
@@ -165,4 +167,64 @@ test('minute archive start stays distinct from earlier fallback history after re
  store=new BreakoutStore(data,{now:()=>now});
  assert.equal(store.read().captureStartedAt,iso(AT));
  assert.equal(store.read().primary.captureStartedAt,iso(AT+10*60000));
+});
+test('four-day minute expiry preserves boundary observations, breakout changes, fallback history and last prices',()=>{
+ const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});
+ store.begin('1:1',['TEST']);store.checkpoint('1:1',[row('TEST',now,{provider:'Yahoo Finance',price:97})]);store.finish('1:1');
+ const save=price=>store.primarySave(primary([row('TEST',now,{price})],{at:now,completedAt:now}));
+ save(99);now+=60000;save(108);now+=60000;save(109);now+=60000;save(99);
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_events').one().n,2);
+ now=AT+MINUTE_RETENTION_MS+60000;store.primaryPrune();
+ let history=store.history('TEST');
+ assert.equal(history.minuteRetentionDays,4);assert.equal(history.rows.length,4);
+ assert.equal(history.rows.filter(r=>r.breakoutChange).length,2);
+ assert.equal(data.sql.exec('SELECT MIN(at) AS first FROM breakout_primary_history').one().first,AT+60000);
+ now+=86400000;store=new BreakoutStore(data,{now:()=>now});store.primaryPrune();
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_history').one().n,0);
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_metadata').one().n,0);
+ history=store.history('TEST');assert.equal(history.rows.length,3);
+ assert.deepEqual(history.rows.filter(r=>r.breakoutChange).map(r=>r.breakoutChange.to),['no_breakout','strong']);
+ assert.equal(history.rows.find(r=>r.provider==='Yahoo Finance').price,97);
+ assert.equal(store.read().rows[0].price,99);
+});
+test('metadata collisions cannot mix companies, prices, bases or corrected names',()=>{
+ const data=storage(),store=new BreakoutStore(data,{now:()=>AT});
+ store.archive=new MinuteArchive(data,{tag:()=> 'same-hash'});
+ const rows=[row('A',AT,{name:'First',base:null}),row('B',AT,{name:'Second',base:{...base,high:110}})];
+ store.primarySave(primary(rows));
+ assert.deepEqual(store.history('A').rows[0],rows[0]);
+ assert.deepEqual(store.history('B').rows[0],rows[1]);
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_metadata').one().n,2);
+});
+test('history cursors remain stable when a minute observation expires between pages',()=>{
+ const data=storage();let now=AT;const store=new BreakoutStore(data,{now:()=>now});
+ for(let minute=0;minute<110;minute++) {
+  now=AT+minute*60000;
+  store.primarySave(primary([row('TEST',now,{price:minute%2?108:99})],{at:now,completedAt:now}));
+ }
+ const first=store.history('TEST');assert.equal(first.rows.length,100);
+ now=AT+MINUTE_RETENTION_MS+20*60000;store.primaryPrune();
+ const next=store.history('TEST',first.nextCursor);
+ assert.equal(next.rows.length,9);assert.equal(next.nextCursor,null);
+ const seen=new Set(first.rows.map(r=>r.quoteAt));assert(next.rows.every(r=>!seen.has(r.quoteAt)));
+});
+test('600-company minute history stays server-side, compact and absent from the current-price reader',()=>{
+ const data=storage();let now=AT;const store=new BreakoutStore(data,{now:()=>now});
+ let rawBytes=0;
+ for(let minute=0;minute<30;minute++) {
+  now=AT+minute*60000;
+  const rows=Array.from({length:600},(_,i)=>row(`T${i}`,now,{name:`Sample Company ${i}`,price:99+i+minute/100,volume:2000+i*32781+minute,prevClose:98+i,
+   base:{...base,high:100+i,low:95+i,average:97+i,averageVolume:1000+i*1213}}));
+  rawBytes+=Buffer.byteLength(JSON.stringify(rows));
+  store.primarySave(primary(rows,{at:now,completedAt:now}));
+ }
+ const bytes=table=>data.sql.exec(`SELECT COALESCE(SUM(LENGTH(payload)),0) AS bytes FROM ${table}`).one().bytes;
+ const archiveBytes=bytes('breakout_primary_history')+bytes('breakout_primary_metadata');
+ assert(archiveBytes<rawBytes*0.25,`${archiveBytes}/${rawBytes}`);
+ const exec=data.sql.exec;
+ data.sql.exec=(sql,...args)=>{assert(!/FROM breakout_primary_(history|metadata|events)\b/.test(sql),'current-price reads must not load minute history');return exec(sql,...args);};
+ const snapshot=store.read();assert.equal(snapshot.rows.length,600);
+ const currentBytes=Buffer.byteLength(JSON.stringify(snapshot)),compressedBytes=gzipSync(JSON.stringify(snapshot)).byteLength;
+ assert(currentBytes<350000);assert(compressedBytes<30000);
+ console.log(`SIZE 600 companies / 30 minutes: archive ${archiveBytes} bytes versus ${rawBytes} full-row bytes; current response ${currentBytes} bytes, ${compressedBytes} gzip bytes; history excluded`);
 });
