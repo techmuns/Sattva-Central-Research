@@ -86,9 +86,10 @@ try {
   fs.writeFileSync(script,`import fs from 'node:fs';import{spawn}from'node:child_process';
 const slug=process.env.MF_SOURCE_AMCS;
 fs.appendFileSync(process.env.EVENTS,JSON.stringify({slug,event:'start'})+'\\n');
+if(slug==='seeded'){const prior=JSON.parse(process.env.MF_SOURCE_PREVIOUS_CHECK);if(prior?.resumeUrl!=='pending.xlsx')process.exit(3);}
 if(slug==='failed')process.exit(2);
-if(slug==='hanging'||slug==='checkpointed'){
-  if(slug==='checkpointed')fs.writeFileSync(process.env.MF_SOURCE_CHECK_FILE,JSON.stringify([{slug,status:'partial',schemeCount:2,checkedAt:null,partialCheckedAt:'2026-09-20T09:00:00Z',month:'2026-08',expectedFiles:3,completedFiles:2,pendingFiles:1}]));
+if(slug==='hanging'||slug==='checkpointed'||slug==='checkpoint-empty'){
+  if(slug!=='hanging')fs.writeFileSync(process.env.MF_SOURCE_CHECK_FILE,JSON.stringify([{slug,status:'partial',schemeCount:slug==='checkpoint-empty'?0:2,resumeUrl:'pending.xlsx',checkedAt:null,partialCheckedAt:'2026-09-20T09:00:00Z',month:'2026-08',expectedFiles:3,completedFiles:2,pendingFiles:1}]));
   const descendant=spawn(process.execPath,['-e',"process.on('SIGTERM',()=>{});setInterval(()=>{},1000)"],{stdio:'ignore'});
   fs.writeFileSync(process.env.DESCENDANT,String(descendant.pid));
   process.on('SIGTERM',()=>{});setInterval(()=>{},1000);
@@ -117,8 +118,11 @@ if(slug==='hanging'||slug==='checkpointed'){
   try {process.kill(pid,0);const {execFileSync}=await import('node:child_process');assert.match(execFileSync('ps',['-o','stat=','-p',String(pid)],{encoding:'utf8'}),/^\s*Z/);}catch(error){if(error.code!=='ESRCH'&&error.status!==1)throw error;}
 
   const cancel=new AbortController();cancel.abort();
-  const interrupted=await runSourcePool([{slug:'not-started',amc:'Not started'}],{command:process.execPath,args:[script],env,checksFile,signal:cancel.signal});
+  const interrupted=await runSourcePool([{slug:'not-started',amc:'Not started'}],{command:process.execPath,args:[script],env,checksFile,signal:cancel.signal,initial:[{slug:'not-started',month:'2026-08',schemeCount:98,resumeUrl:'pending.xlsx'}]});
   assert(interrupted.interrupted);assert.equal(interrupted.checks[0].status,'unchecked');
+  assert.equal(interrupted.checks[0].month,'2026-08');assert.equal(interrupted.checks[0].schemeCount,98);assert.equal(interrupted.checks[0].resumeUrl,'pending.xlsx');
+  const seeded=await runSourcePool([{slug:'seeded',amc:'Seeded'}],{command:process.execPath,args:[script],env,checksFile,initial:[{slug:'seeded',resumeUrl:'pending.xlsx'}]});
+  assert.equal(seeded.checks[0].status,'ok','A fresh source child receives the previously published continuation point');
   assert.equal(fs.existsSync(`${checksFile}.tmp`),false);
   const activeCancel=new AbortController();
   const active=runSourcePool([{slug:'hanging',amc:'Hanging'},{slug:'queued',amc:'Queued'}],{command:process.execPath,args:[script],env,checksFile,concurrency:1,timeoutMs:10000,signal:activeCancel.signal});
@@ -130,5 +134,7 @@ if(slug==='hanging'||slug==='checkpointed'){
   assert.equal(saved.checks[0].status,'partial');assert.equal(saved.checks[0].schemeCount,2);
   assert.equal(saved.checks[0].checkedAt,null);assert.equal(saved.checks[0].partialCheckedAt,'2026-09-20T09:00:00Z');assert.equal(saved.checks[0].reason,'source-timeout');
   assert.equal(saved.checks[0].pendingFiles,1,'A timed-out file retains completed reports without claiming a full check');
+  const emptyProgress=await runSourcePool([{slug:'checkpoint-empty',amc:'No parsed reports yet'}],{command:process.execPath,args:[script],env,checksFile,timeoutMs:1000});
+  assert.equal(emptyProgress.checks[0].schemeCount,0);assert.equal(emptyProgress.checks[0].resumeUrl,'pending.xlsx','Timeout preserves the next file even if earlier downloads all failed');
   console.log('PASS source isolation: bounded concurrency, hung source and descendant timeout, later-source progress, failed child, durable checkpoints, preserved check times and interruption');
 } finally {fs.rmSync(dir,{recursive:true,force:true});}

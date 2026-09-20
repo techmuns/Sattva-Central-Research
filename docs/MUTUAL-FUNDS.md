@@ -152,6 +152,12 @@ the completed reports and older history, while the check remains partial with
 expected, completed, failed and pending file counts. Only permitted disclosure
 hosts are read; unexpected redirects and access refusals fail visibly. These
 checks run independently of the dashboard and add no client-side processing.
+Each partial source also publishes a compact continuation URL. Before collecting,
+the next scheduled runner reads only the coverage manifest and rotates the current
+catalogue to start at that unfinished file. Interrupted or slow runs therefore
+reach later current and historical files instead of repeatedly reading the same
+prefix. Every file remains eligible for correction checks; no permanent skip list
+is used. A source that never started retains its known reporting month and counts.
 Whole-source success and partial attempts have separate timestamps. The published
 manifest preserves the last complete check across repeated failures and runner
 restarts; a newly successful subset only advances its own report timestamps.

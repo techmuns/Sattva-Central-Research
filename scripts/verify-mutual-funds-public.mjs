@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {anchorFiles,oneDisclosures,publicDisclosures,publicReader,publicUrl,readDisclosures,retainDisclosedNames,schemeNameResolver,verifiedNonIndianRows,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
+import {anchorFiles,oneDisclosures,publicDisclosures,publicReader,publicUrl,readDisclosures,resumeDisclosures,retainDisclosedNames,schemeNameResolver,verifiedNonIndianRows,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
 import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
 import {buildOwnership} from './lib/mutual-funds-build.mjs';
 const reply=value=>Buffer.from(JSON.stringify(value));
@@ -71,6 +71,8 @@ assert.equal(clocks[0].checkedAt,completeTime,'Repeated failure and a runner res
 assert.equal(reconcileSourceChecks([],[{slug:'amc',status:'partial',schemeCount:1,checkedAt:attemptTime}])[0].checkedAt,null,'First partial result cannot establish whole-source freshness');
 assert.equal(reconcileSourceChecks([],[{slug:'amc',status:'partial',lastCompleteCheckedAt:attemptTime}])[0].checkedAt,null,'A collector checkpoint cannot promote a check rejected by publication validation');
 assert.equal(reconcileSourceChecks(clocks,[{slug:'amc',status:'ok',checkedAt:attemptTime}])[0].lastCompleteCheckedAt,attemptTime);
+const queued=reconcileSourceChecks([{slug:'amc',status:'ok',checkedAt:completeTime,month,schemeCount:98,resumeUrl:'pending.xlsx'}],[{slug:'amc',status:'unchecked',month:null,checkedAt:null}])[0];
+assert.equal(queued.month,month);assert.equal(queued.schemeCount,98);assert.equal(queued.resumeUrl,'pending.xlsx');assert.equal(queued.checkedAt,completeTime);assert.equal(queued.status,'unchecked');
 const cashRows=[['quant Overnight Fund'],['Monthly Portfolio Statement as on 31 Aug 2026'],['Name of Instrument','ISIN','% To Net Assets'],['TREPS','INCBLO010926',99],['Net Current Assets','',1],['Grand Total','',100]];
 assert(verifiedNonIndianRows(cashRows,'quant Overnight Fund',month));
 assert(!verifiedNonIndianRows(cashRows,'quant Overnight Fund','2026-07'));
@@ -104,6 +106,19 @@ const result=await readDisclosures(['good','failed','old','later'].map(text=>({t
 assert.equal(peak,2);assert.equal(result.failedFiles,2);assert.equal(result.schemes.length,2);assert.equal(checkpoints.length,4);
 assert.equal(checkpoints[0].pendingFiles,3);assert.equal(checkpoints.at(-1).pendingFiles,0);
 assert.equal(result.schemes[1].sourceUrl,'later','A failed download cannot erase another source file');
+assert.equal(result.resumeUrl,'failed');assert.equal(checkpoints[0].resumeUrl,'failed');
+// Persist the compact coverage record between fresh attempts. Each deliberately
+// interrupted pass must start at its unfinished tail instead of the same prefix.
+const catalogue=['a','b','c','d'].map(url=>({url})),visited=[];let previousProgress=null;
+for(let pass=0;pass<4;pass++) {
+  const ordered=resumeDisclosures(catalogue,JSON.parse(JSON.stringify(previousProgress)));
+  await assert.rejects(readDisclosures(ordered,{month,concurrency:1,read:async url=>{visited.push(url);return Buffer.from(url);},parse:()=>[{asOf:month+'-31'}],onCheckpoint:progress=>{previousProgress={resumeUrl:progress.resumeUrl};throw Error('Simulated process interruption');}}),/checkpoint failed/);
+}
+assert.deepEqual(visited,['a','b','c','d'],'Repeated slow attempts eventually visit every disclosure URL');
+assert.deepEqual(resumeDisclosures(catalogue,{resumeUrl:'removed-file'}),catalogue,'A changed catalogue cannot omit new or corrected files');
+let failedProgress;
+await assert.rejects(readDisclosures(catalogue,{month,concurrency:1,read:async()=>{throw Error('Temporary download failure');},parse:()=>[],onCheckpoint:p=>{failedProgress=p;throw Error('Interrupted');}}),/checkpoint failed/);
+assert.equal(failedProgress.schemes.length,0);assert.equal(failedProgress.resumeUrl,'b','Even an attempt with no parsed schemes retains the unfinished tail');
 let finished=0;
 await assert.rejects(readDisclosures([{url:'one'},{url:'two'}],{month,read:async url=>{await new Promise(r=>setTimeout(r,url==='one'?1:15));finished++;return Buffer.from(url);},parse:()=>[{asOf:'2026-08-31'}],onCheckpoint:()=>{throw Error('Disk unavailable');}}),/checkpoint failed/);
 assert.equal(finished,2,'A checkpoint failure must await other in-flight file reads before returning');

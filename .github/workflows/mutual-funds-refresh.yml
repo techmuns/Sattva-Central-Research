@@ -42,6 +42,7 @@ jobs:
     timeout-minutes: 60
     env:
       FAMILY_HOLDINGS_LIVE: 'true'
+      MF_RESUME_LIVE: 'true'
       AMFIBEAS_REVISION: c1b611828606f01397b7283294fa1672a4fdabfa
     steps:
       - uses: actions/checkout@v5

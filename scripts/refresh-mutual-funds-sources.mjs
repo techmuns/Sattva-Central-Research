@@ -5,20 +5,31 @@ import {execFileSync} from 'node:child_process';
 import {STATUTORY_PAGES,statutoryLinks} from './lib/mutual-funds-discovery.mjs';
 import {atomicJson,runSourcePool} from './lib/mutual-funds-source-pool.mjs';
 import {QUANTUM_PAGE,quantumDisclosures,parseQuantumWorkbook} from './lib/mutual-funds-quantum.mjs';
-import {PUBLIC_PAGES,publicReader,publicDisclosures,readDisclosures,schemeNameResolver,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
+import {PUBLIC_PAGES,publicReader,publicDisclosures,readDisclosures,resumeDisclosures,schemeNameResolver,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
 import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-import {monthKey,targetMonth} from '../worker/mutual-funds-model.mjs';
+import {MF_ORIGIN,monthKey,targetMonth} from '../worker/mutual-funds-model.mjs';
+import * as familyContract from '../public/js/data/family-book-contract.js';
+const boundedJson=familyContract.boundedJson||familyContract.default?.boundedJson;
 const root=path.resolve(process.env.AMFIBEAS_PATH||'');
 if(!process.env.AMFIBEAS_PATH)throw Error('AMFIBEAS_PATH required');
 const opts={pctScale:1,valueToCr:100},dir=path.join(root,'public/amc-holdings');
 const index=JSON.parse(fs.readFileSync(path.join(dir,'index.json')));
 const selected=process.env.MF_SOURCE_AMCS?.split(',').filter(Boolean),checksFile=process.env.MF_SOURCE_CHECK_FILE||path.join(dir,'sattva-checks.json');
-const checks=selected&&fs.existsSync(checksFile)?JSON.parse(fs.readFileSync(checksFile)).filter(c=>!selected.includes(c.slug)):[];
+const previousChecks=fs.existsSync(checksFile)?JSON.parse(fs.readFileSync(checksFile)):[];
+const checks=selected?previousChecks.filter(c=>!selected.includes(c.slug)):[];
 if(!process.env.MF_SOURCE_WORKER) {
+  // Only a compact continuation URL is retained in coverage. Read that manifest
+  // before starting sources so a fresh scheduled runner resumes the unfinished
+  // tail; no extra holdings payload or browser-triggered collection is needed.
+  let initial=previousChecks;
+  if(process.env.MF_RESUME_LIVE==='true') {
+    try{const prior=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?isins=`,{redirect:'error',signal:AbortSignal.timeout(20000)}),1024*1024);if(Array.isArray(prior.meta?.amcs))initial=prior.meta.amcs;}
+    catch{console.warn('Previous source progress unavailable; retained local progress will be used.');}
+  }
   const result=await runSourcePool(index.amcs.filter(e=>!selected||selected.includes(e.slug)),{
-    command:path.join(root,'node_modules/.bin/tsx'),args:[fileURLToPath(import.meta.url)],checksFile,initial:checks,
+    command:path.join(root,'node_modules/.bin/tsx'),args:[fileURLToPath(import.meta.url)],checksFile,initial,
     onResult:c=>console.log(`${c.slug}: ${c.status} ${c.month||''}${c.reason?' '+c.reason:''}`)
   });
   if(result.interrupted)process.exitCode=1;
@@ -29,7 +40,7 @@ for(const entry of index.amcs) {
   if(selected&&!selected.includes(entry.slug))continue;
   const startedAt=new Date().toISOString();let result=null;
   const file=path.join(dir,entry.slug+'.json');let old=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):{};
-  const resolveNames=schemeNameResolver(old),priorCheck={slug:entry.slug,lastCompleteCheckedAt:old.lastCompleteCheckedAt||null};
+  const priorCheck={slug:entry.slug,lastCompleteCheckedAt:old.lastCompleteCheckedAt||null,...JSON.parse(process.env.MF_SOURCE_PREVIOUS_CHECK||'null')},resolveNames=schemeNameResolver(old);
   function saveResult(result,{recordCheck=true}={}) {
     const counts=new Map();for(const s of result.schemes){const m=monthKey(s.asOf);if(m&&m<=targetMonth())counts.set(m,(counts.get(m)||0)+1);}
     const month=[...counts].sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0]))[0]?.[0];
@@ -45,7 +56,7 @@ for(const entry of index.amcs) {
     atomicJson(file,saved);old=saved;
     if(!recordCheck)return;
     const check=reconcileSourceChecks([priorCheck],[{slug:entry.slug,name:entry.amc,month,status:partial?'partial':'ok',checkedAt:partial?null:startedAt,lastAttemptAt:startedAt,partialCheckedAt:partial?startedAt:null,schemeCount:schemes.length,missingSchemes:missing.length}])[0];
-    for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles'])if(result[key]!==undefined)check[key]=result[key];
+    for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles','resumeUrl'])if(result[key]!==undefined)check[key]=result[key];
     const prior=checks.findIndex(c=>c.slug===entry.slug);if(prior>=0)checks[prior]=check;else checks.push(check);
     atomicJson(checksFile,checks);
   }
@@ -57,7 +68,7 @@ for(const entry of index.amcs) {
       // The upstream adapter's checked-in client token is public website config,
       // not a private API credential. Keep it in the pinned source checkout.
       const axisPublicToken=entry.slug==='axis'?/const AXIS_TOKEN\s*=\s*"([^"]+)"/.exec(fs.readFileSync(path.join(root,'scripts/ingest/amc-factsheets/json-api.ts'),'utf8'))?.[1]:undefined;
-      const links=await publicDisclosures(entry.slug,month,read,{axisPublicToken,includeHistory:true});
+      const links=resumeDisclosures(await publicDisclosures(entry.slug,month,read,{axisPublicToken,includeHistory:true}),priorCheck);
       const XLSX=await import(pathToFileURL(path.join(root,'node_modules/xlsx/xlsx.mjs')).href);
       const parse=(buffer,link)=>{
         const schemes=parsePublicWorkbook(buffer,{XLSX,parseAmcWorkbook,parseVerifiedWorkbook:parseQuantumWorkbook,opts,month:link.disclosureMonth||month,link});
@@ -66,14 +77,15 @@ for(const entry of index.amcs) {
       };
       const checkpoint=progress=>{
         const groups=new Map();for(const scheme of progress.schemes){const key=monthKey(scheme.asOf);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(scheme);}
+        if(!checks.some(c=>c.slug===entry.slug))checks.push(reconcileSourceChecks([priorCheck],[{slug:entry.slug,name:entry.amc,month:priorCheck.month||monthKey(old.asOfMonth),status:'partial',checkedAt:null,lastAttemptAt:startedAt,partialCheckedAt:startedAt}])[0]);
         // Older reports enrich history, while coverage continues to refer to the
         // current month. Save it last; interrupted history never erases current data.
         for(const [key,schemes] of [...groups].sort(([a],[b])=>a.localeCompare(b)))if(!progress.lastCompletedMonth||key===progress.lastCompletedMonth)saveResult({...progress,schemes,usedUrl:PUBLIC_PAGES[entry.slug]},{recordCheck:key===month});
         // A historical file changes progress, not the current month's holdings.
         // Update its small check record without rewriting every other month again.
-        if(progress.lastCompletedMonth&&progress.lastCompletedMonth!==month) {
+        if(!groups.has(month)||progress.lastCompletedMonth&&progress.lastCompletedMonth!==month) {
           const check=checks.find(c=>c.slug===entry.slug);
-          if(check){for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles'])check[key]=progress[key];check.status=check.missingSchemes||progress.failedFiles||progress.pendingFiles?'partial':'ok';check.checkedAt=check.status==='ok'?startedAt:priorCheck.lastCompleteCheckedAt;check.partialCheckedAt=check.status==='partial'?startedAt:null;check.lastCompleteCheckedAt=check.checkedAt;atomicJson(checksFile,checks);}
+          if(check){for(const key of ['expectedFiles','completedFiles','failedFiles','pendingFiles','resumeUrl'])check[key]=progress[key];check.status=!groups.has(month)||check.missingSchemes||progress.failedFiles||progress.pendingFiles?'partial':'ok';check.checkedAt=check.status==='ok'?startedAt:priorCheck.lastCompleteCheckedAt;check.partialCheckedAt=check.status==='partial'?startedAt:null;check.lastCompleteCheckedAt=check.checkedAt;atomicJson(checksFile,checks);}
         }
       };
       result=await readDisclosures(links,{read,parse,month,onCheckpoint:checkpoint});

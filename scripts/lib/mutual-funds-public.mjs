@@ -265,8 +265,13 @@ export function parsePublicWorkbook(buffer,{XLSX,parseAmcWorkbook,parseVerifiedW
     return [{schemeCode:book.SheetNames[0],schemeName:link.text,asOf:month+'-'+new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).getUTCDate(),holdings:[],validatedNoIndianHoldings:true}];
   }
 }
+export function resumeDisclosures(links,check) {
+  const at=links.findIndex(l=>l.url===check?.resumeUrl);
+  return at>0?[...links.slice(at),...links.slice(0,at)]:links;
+}
 export async function readDisclosures(links,{read,parse,month,concurrency=4,onCheckpoint=()=>{}}) {
   let cursor=0;const results=new Array(links.length).fill(undefined),failures=[];
+  const resumeUrl=()=>links[results.findIndex(s=>s===undefined)]?.url||links[failures[0]]?.url||null;
   const settled=await Promise.allSettled(Array.from({length:Math.min(concurrency,links.length)},async()=>{
     while(cursor<links.length) {
       const index=cursor++,link=links[index];
@@ -278,9 +283,9 @@ export async function readDisclosures(links,{read,parse,month,concurrency=4,onCh
         results[index]=schemes.map(s=>({...s,sourceUrl:link.url}));
       } catch {failures.push(index);results[index]=[];}
       // Persist completed files before another slow file can time out the child.
-      await onCheckpoint({schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:results.filter(s=>s===undefined).length,expectedFiles:links.length,completedFiles:results.filter(Boolean).length,lastCompletedMonth:link.disclosureMonth||month});
+      await onCheckpoint({schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:results.filter(s=>s===undefined).length,expectedFiles:links.length,completedFiles:results.filter(Boolean).length,lastCompletedMonth:link.disclosureMonth||month,resumeUrl:resumeUrl()});
     }
   }));
   if(settled.some(r=>r.status==='rejected'))throw Error('Disclosure checkpoint failed');
-  return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,expectedFiles:links.length,completedFiles:links.length};
+  return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,expectedFiles:links.length,completedFiles:links.length,resumeUrl:resumeUrl()};
 }

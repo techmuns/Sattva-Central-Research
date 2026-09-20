@@ -12,21 +12,21 @@ export function atomicJson(file,value) {
 // only this coordinator writes the shared coverage checkpoint.
 export async function runSourcePool(entries,{command,args,env=process.env,checksFile,initial=[],concurrency=4,timeoutMs=120000,signal,onResult=()=>{}}) {
   const scratch=fs.mkdtempSync(path.join(os.tmpdir(),'mf-source-checks-'));
-  const checks=new Map(initial.map(c=>[c.slug,c])),cancel=new AbortController();
+  const prior=new Map(initial.map(c=>[c.slug,c])),checks=new Map(prior),cancel=new AbortController();
   const stop=()=>cancel.abort();
   signal?.addEventListener('abort',stop,{once:true});
   if(signal?.aborted)stop();
   process.on('SIGTERM',stop);process.on('SIGINT',stop);
   const save=()=>atomicJson(checksFile,[...checks.values()]);
-  for(const entry of entries)checks.set(entry.slug,{slug:entry.slug,name:entry.amc,month:null,status:'unchecked',checkedAt:null});
+  for(const entry of entries)checks.set(entry.slug,{...prior.get(entry.slug),slug:entry.slug,name:entry.amc,month:prior.get(entry.slug)?.month||null,status:'unchecked',checkedAt:null});
   save();
   let cursor=0;
   async function collect(entry,index) {
     const startedAt=new Date().toISOString(),file=path.join(scratch,`${index}.json`);
-    const unavailable=reason=>({slug:entry.slug,name:entry.amc,month:null,status:'unavailable',checkedAt:null,lastAttemptAt:startedAt,reason});
+    const unavailable=reason=>({...prior.get(entry.slug),slug:entry.slug,name:entry.amc,month:prior.get(entry.slug)?.month||null,status:'unavailable',checkedAt:null,lastAttemptAt:startedAt,reason});
     checks.set(entry.slug,{...unavailable('checking'),status:'checking'});save();
     return new Promise(resolve=>{
-      const child=spawn(command,args,{env:{...env,MF_SOURCE_WORKER:'1',MF_SOURCE_AMCS:entry.slug,MF_SOURCE_CHECK_FILE:file},detached:true,stdio:'ignore'});
+      const child=spawn(command,args,{env:{...env,MF_SOURCE_WORKER:'1',MF_SOURCE_AMCS:entry.slug,MF_SOURCE_CHECK_FILE:file,MF_SOURCE_PREVIOUS_CHECK:JSON.stringify(prior.get(entry.slug)||null)},detached:true,stdio:'ignore'});
       let reason=null,finished=false,hardStop;
       const kill=signal=>{if(child.pid)try{process.kill(-child.pid,signal);}catch{/* Already exited. */}};
       const terminate=value=>{if(finished||reason)return;reason=value;kill('SIGTERM');hardStop=setTimeout(()=>kill('SIGKILL'),1000);};
@@ -42,7 +42,7 @@ export async function runSourcePool(entries,{command,args,env=process.env,checks
         try{
           const saved=JSON.parse(fs.readFileSync(file)),match=saved.find(c=>c.slug===entry.slug);
           if(match&&(!reason&&code===0))result=match;
-          else if(match?.schemeCount>0&&(match.checkedAt||match.partialCheckedAt))result={...match,status:'partial',reason:reason||'source-process-failed',lastAttemptAt:startedAt};
+          else if(match&&(match.schemeCount>0||match.resumeUrl)&&(match.checkedAt||match.partialCheckedAt))result={...match,status:'partial',reason:reason||'source-process-failed',lastAttemptAt:startedAt};
         }catch{/* A missing checkpoint is not a successful check. */}
         checks.set(entry.slug,result);save();onResult(result);resolve();
       };
