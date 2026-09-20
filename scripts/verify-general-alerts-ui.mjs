@@ -635,8 +635,8 @@ try {
       window.testWheelEvents = []; window.testScrollEvents = [];
       document.addEventListener('scroll', event => { if (window.testScrollEvents.length < 20) window.testScrollEvents.push({ target: event.target?.tagName, top: event.target?.scrollTop }); }, { passive: true, capture: true });
       document.addEventListener('wheel', event => {
-        const target = event.target;
-        queueMicrotask(() => window.testWheelEvents.push({ delta: event.deltaY, prevented: event.defaultPrevented, target: target?.outerHTML?.slice(0, 600), path: event.composedPath().filter(el => el?.nodeType === 1).map(el => ({ tag: el.tagName, class: String(el.className).slice(0, 100), overflow: getComputedStyle(el).overflowY, height: el.clientHeight, scrollHeight: el.scrollHeight, top: el.scrollTop })) }));
+        const target = event.target, path = event.composedPath().filter(el => el?.nodeType === 1).map(el => ({ tag: el.tagName, class: String(el.className).slice(0, 100), overflow: getComputedStyle(el).overflowY, height: el.clientHeight, scrollHeight: el.scrollHeight, top: el.scrollTop }));
+        queueMicrotask(() => window.testWheelEvents.push({ delta: event.deltaY, prevented: event.defaultPrevented, target: target?.outerHTML?.slice(0, 600), path }));
       }, { passive: true, once: true });
     });
     // Measured virtual rows can rebase pixel offsets while preserving the
