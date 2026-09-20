@@ -162,8 +162,10 @@ dated monthly header, an ISIN column, reconciled grand total, and only recognize
 cash, bullion or foreign-ISIN positions. Cash/bullion labels use exact forms, so a
 company such as Goldiam cannot be mistaken for gold. Indian shares/units or an unclassified
 position prevent a verified-empty result. A valid empty report can establish an
-exit without removing earlier ownership. Missing files cannot do so. Explicit
-underlying-fund appendices remain excluded. Changed descriptive suffixes retain
+exit without removing earlier ownership. Missing files cannot do so.
+Zero, rounded, NIL and missing weights never exempt a populated instrument from
+classification. Empty section headings are recognized only without position amounts.
+Explicit underlying-fund appendices remain excluded. Changed descriptive suffixes retain
 an unambiguous existing scheme name from the complete pre-run identity baseline,
 including history; regular/direct plans and renamed funds are
 never joined by fuzzy matching. Axis's two FoF titles are read from their explicit
