@@ -28,13 +28,13 @@ for(const entry of index.amcs) {
     if(!month)throw Error('Disclosure month unverified');
     const file=path.join(dir,entry.slug+'.json'),old=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):{};
     const existing=[{asOfMonth:old.asOfMonth,schemes:old.schemes},...(old.history||[])].filter(b=>b.schemes?.length).map(b=>({...b,checkedAt:b.checkedAt||old.fetchedAt,sourceUrl:b.sourceUrl||old.sourceUrl}));
-    const schemes=result.schemes.map(normalizeSchemePct),oldMonth=existing.find(b=>monthKey(b.asOfMonth)===month);
+    const schemes=result.schemes.map(s=>({...normalizeSchemePct(s),checkedAt:startedAt,sourceUrl:result.usedUrl||old.sourceUrl})),oldMonth=existing.find(b=>monthKey(b.asOfMonth)===month);
     // A shorter response cannot erase a previously captured scheme. It also cannot
     // claim a complete AMC check. Retained schemes keep their original dates.
     const names=new Set(schemes.map(s=>s.schemeName));
     const missing=oldMonth?.schemes.filter(s=>!names.has(s.schemeName))||[];
     const months=new Map(existing.map(b=>[monthKey(b.asOfMonth),b]));
-    months.set(month,{asOfMonth:month,schemes:[...schemes,...missing],checkedAt:startedAt,sourceUrl:result.usedUrl||old.sourceUrl});
+    months.set(month,{asOfMonth:month,schemes:[...schemes,...missing.map(s=>({...s,checkedAt:s.checkedAt||oldMonth.checkedAt||old.fetchedAt,sourceUrl:s.sourceUrl||oldMonth.sourceUrl||old.sourceUrl}))],checkedAt:startedAt,sourceUrl:result.usedUrl||old.sourceUrl});
     const buckets=[...months].filter(([m])=>m).sort((a,b)=>b[0].localeCompare(a[0])).map(([,b])=>b),latest=buckets[0];
     fs.writeFileSync(file,JSON.stringify({amc:entry.amc,amcSlug:entry.slug,asOfMonth:latest.asOfMonth,schemes:latest.schemes,sourceUrl:latest.sourceUrl||old.sourceUrl,fetchedAt:latest.checkedAt||old.fetchedAt,history:buckets.slice(1)}));
     checks.push({slug:entry.slug,name:entry.amc,month,status:missing.length?'partial':'ok',checkedAt:startedAt,schemeCount:schemes.length,missingSchemes:missing.length});

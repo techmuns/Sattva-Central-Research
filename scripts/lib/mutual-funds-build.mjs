@@ -8,7 +8,7 @@ const derivative = h => h.quantity < 0 || /[- ](?:\d{1,2}[- ]?)?(?:jan|feb|mar|a
 // Equity ISIN security type 10; retain REIT/InvIT names only when their exact ISIN is in the book.
 const equity = (h, wanted) => validIsin(h.isin) && (/^INE/.test(h.isin) && h.isin.slice(8,10)==='10' || wanted.has(h.isin)) && !/^\s*\d+(\.\d+)?\s*%/.test(h.name || '');
 export function buildOwnership(snapshots, { portfolio = [], identities = [], denominators = {}, now = Date.now() } = {}) {
-  const known = new Map([...identities,...portfolio].map(h=>[h.isin,h])), wanted = new Set(portfolio.map(h=>h.isin)), companies = new Map(), warnings=[];
+  const known = new Map([...identities,...portfolio].map(h=>[h.isin,h])), wanted = new Set(portfolio.map(h=>h.isin)), companies = new Map(), warnings=[], reports=[];
   for (const snapshot of snapshots) {
     const buckets = [{ asOfMonth:snapshot.asOfMonth, schemes:snapshot.schemes }, ...(snapshot.history || [])];
     const schemes = new Map();
@@ -35,7 +35,7 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
           if (rows.has(h.isin)) { rows.set(h.isin,{...h,quantity:null}); warnings.push(`${id}:${month}:duplicate-isin`); }
           else rows.set(h.isin,h);
         }
-        const entry={rows,complete,checkedAt:bucket.checkedAt || snapshot.fetchedAt,sourceUrl:bucket.sourceUrl || snapshot.sourceUrl};
+        const entry={rows,complete,checkedAt:scheme.checkedAt || bucket.checkedAt || snapshot.fetchedAt,sourceUrl:scheme.sourceUrl || bucket.sourceUrl || snapshot.sourceUrl};
         if (fund.months.has(month)) {
           warnings.push(`${id}:${month}:duplicate-scheme`);
           const prior=fund.months.get(month);
@@ -51,6 +51,7 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
       }
     }
     for (const fund of schemes.values()) {
+      for(const [month,m] of fund.months)if(m.complete && Number.isFinite(Date.parse(m.checkedAt)))reports.push({id:fund.id,month,complete:true,checkedAt:m.checkedAt,sourceUrl:m.sourceUrl||null,isins:[...m.rows.keys()].sort()});
       const isins=new Set([...fund.months.values()].flatMap(m=>[...m.rows.keys()]));
       for (const isin of isins) {
         const holding=[...fund.months.values()].map(m=>m.rows.get(isin)).find(Boolean), book=known.get(isin);
@@ -68,7 +69,7 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
     }
   }
   for (const holding of portfolio) if (validIsin(holding.isin) && !companies.has(holding.isin)) companies.set(holding.isin,{isin:holding.isin,name:holding.name,ticker:holding.ticker || null,sector:holding.sector || '',denominator:denominators[holding.isin] || null,funds:[]});
-  return { companies:[...companies.values()],warnings };
+  return { companies:[...companies.values()],warnings,reports };
 }
 export function seededPayload(companies, meta, now=Date.now()) {
   return {meta,rows:companies.map(c=>summaryOf(projectCompany(c,{now}))) };

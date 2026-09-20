@@ -6,7 +6,8 @@ in memory. Without those weights the screen explicitly falls back to Newest. New
 actual disclosure month and source check time; a check is not a new trade date. Watchlist and
 Universe use the existing exact-identity scope rules. The detail popup uses Trendlyne's grouped
 month columns: stock position value in crores, percentage of scheme NAV, shares, absolute change
-and percentage change for the current month; shares and percentage change for earlier months.
+and percentage change for the current month; shares and percentage change for earlier months. A month selector reads any retained period; each
+response contains three displayed months and the previous observation needed for percentage math.
 No charts or extra summary cards are added to the main table.
 
 ## Calculation and source contract
@@ -53,8 +54,12 @@ scrape or licensed Trendlyne API is introduced. There is no claim of contractual
 
 Each source finishes to a local checkpoint. A timed-out or failed source stage still runs the
 publication stage, marking unattempted AMCs unchecked and retaining good company data. A new run
-reconciles the overlapping months in the current source data. Company checkpoints and immutable
-content revisions live in SQLite; source rechecks do not copy identical historical books. An
+reconciles the overlapping months in the current source data. Bounded fragments carry individual fund/month observations, with all parts acknowledged before
+a company is complete. SQLite stores one observation per row and immutable corrections plus
+revision references; no upload or database cell grows with the complete history. Newer complete
+scheme inventories can correct removed holdings to nil; partial reports cannot. Source rechecks
+do not copy identical historical books. Upload receipts retain only the three newest runs;
+this does not remove observations, correction chains or the original capture start time. An
 interrupted publish stays `collecting` until every manifest company is acknowledged. A later run
 reconciles it, while older data remains readable. Signed GitHub OIDC claims restrict writes to this
 repository's main-branch collector workflow. Reader routes are read-only and ETagged.
@@ -67,7 +72,8 @@ it is not the collection clock. All current companies, including future holdings
 against the complete captured stock universe on each collection.
 
 The visible tab revalidates on opening, every minute while visible, on return after inactivity,
-and on reconnection. It retains rows and filters during failures. The shared table kit windows
+and on reconnection. It retains rows and filters during failures, restoring persisted last-good summaries and detail
+even after a reload. The shared table kit windows
 summary rows; detail pages show 50 schemes at a time while searching all schemes. Actual source
 check timestamps stay separate from the displayed month. Private portfolio weights never enter
 public snapshots, API payloads or browser persistence.

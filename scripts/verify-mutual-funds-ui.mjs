@@ -59,6 +59,11 @@ try{
  fail=true;assert.equal(await apiPage.evaluate(async()=>(await window.feed.detail(window.book[0].isin)).company.totalShares),2,'A failed detail refresh retains the latest capture, not the seed');
  await apiPage.evaluate(()=>window.feed.load('portfolio',{holdings:window.book}));assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),2);assert(await apiPage.evaluate(()=>window.feed.meta().readFailed));
  assert.match(await apiPage.evaluate(()=>window.feed.health({state:'complete',checkedAt:'2026-10-01T00:00:00Z',targetMonth:'2026-08',amcs:[{month:'2026-08',status:'ok'}]},Date.parse('2026-10-01T00:01:00Z'))),/Partial/);
+ await apiPage.waitForTimeout(200);await apiPage.reload();await apiPage.waitForFunction(()=>!!window.feed);
+ await apiPage.evaluate(book=>window.feed.load('portfolio',{holdings:book}),apiBook);
+ assert.equal(await apiPage.evaluate(()=>window.feed.all().length),502,'A new session restores every saved API page during an outage');
+ assert.equal(await apiPage.evaluate(async isin=>(await window.feed.detail(isin)).company.totalShares,apiBook[0].isin),2,'A new session restores persisted fund detail');
+ assert(await apiPage.evaluate(()=>window.feed.meta().readFailed));
  await apiPage.close();
  await page.evaluate(()=>window.tab.destroy());assert.deepEqual(errors,[]);console.log('PASS Mutual Funds browser: all portfolio rows, private weight order, month-grouped popup, bounded fund rows, offscreen search, keyboard close, dark/mobile rendering and zero page errors');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

@@ -1,4 +1,4 @@
-import { conditionalJson,revalidatedJson } from '../core/store.js';
+import { conditionalJson,revalidatedJson,readEntry,writeEntry } from '../core/store.js';
 import * as coverage from './coverage.js';
 import * as watchlist from '../core/watchlist.js';
 import { filterByScope } from './scope.js';
@@ -24,7 +24,7 @@ export function load(scope='portfolio', {holdings=coverage.holdings(),refresh=tr
   if(!refresh&&snapshots.has(key))return Promise.resolve(snapshots.get(key));
   const promise=(async()=>{
     try {
-      let payload,fallback=false;
+      let payload,fallback=false,readFailed=false;
       if(local()) payload=await revalidatedJson('data/mutual-funds/index.json');
       else {
         const rows=[];let meta={};
@@ -34,7 +34,10 @@ export function load(scope='portfolio', {holdings=coverage.holdings(),refresh=tr
           let cursor='';
           do {
             const params=new URLSearchParams(batch?{isins:batch.join(',')}:{cursor});
-            const result=await conditionalJson(`/api/mutual-funds?${params}`,{key:`mf:${batch?.join(',')||'universe'}:${cursor}`,signal:AbortSignal.timeout(15000)});
+            const cacheKey=`mf:${batch?.join(',')||'universe'}:${cursor}`;
+            let result;
+            try{result=await conditionalJson(`/api/mutual-funds?${params}`,{key:cacheKey,signal:AbortSignal.timeout(15000)});}
+            catch(error){const saved=await readEntry(cacheKey);if(!saved?.value?.rows)throw error;result={value:saved.value};readFailed=true;}
             if(!Array.isArray(result.value?.rows))throw Error('Mutual fund response unavailable');
             rows.push(...result.value.rows);meta=result.value.meta;cursor=result.value.nextCursor||'';
           }while(cursor);
@@ -43,10 +46,12 @@ export function load(scope='portfolio', {holdings=coverage.holdings(),refresh=tr
         if(!rows.length&&!meta?.checkedAt){payload=await revalidatedJson('data/mutual-funds/index.json');fallback=true;}
       }
       if(!Array.isArray(payload?.rows))throw Error('Mutual fund capture unavailable');
-      adopt(payload,{fallback});snapshots.set(key,payload);latestMeta={...payload.meta,readFailed:false};return {...payload,meta:latestMeta};
+      adopt(payload,{fallback});snapshots.set(key,payload);if(!readFailed&&!fallback)writeEntry(`mf-snapshot:${key}`,{value:payload});latestMeta={...payload.meta,readFailed};return {...payload,meta:latestMeta};
     }catch(error) {
       latestMeta={...latestMeta,readFailed:true};
       if(snapshots.has(key))return {...snapshots.get(key),meta:latestMeta};
+      const saved=await readEntry(`mf-snapshot:${key}`);
+      if(saved?.value?.rows){adopt(saved.value,{fallback:true});snapshots.set(key,saved.value);latestMeta={...saved.value.meta,readFailed:true};return {...saved.value,meta:latestMeta};}
       try {const seed=await revalidatedJson('data/mutual-funds/index.json');adopt(seed,{fallback:true});snapshots.set(key,seed);latestMeta={...seed.meta,readFailed:true};return {...seed,meta:latestMeta};}
       catch {throw error;}
     }
@@ -63,10 +68,13 @@ export async function detail(isin,month=null) {
     const out=await conditionalJson(`/api/mutual-funds/company?${params}`,{key:`mf-detail:${isin}:${month||'latest'}`,signal:AbortSignal.timeout(15000)});
     if(out.value?.company || month){lastDetail={isin,month,payload:out.value};return out.value;}
   } catch(error) {
-    if(month)throw error;
+    // Restore the persisted response below, including older-month reads.
     // A dated seed remains readable during first rollout or an unavailable capture.
   }
   if(lastDetail?.isin===isin && lastDetail.month===month)return {...lastDetail.payload,meta:{...lastDetail.payload.meta,readFailed:true}};
+  const saved=await readEntry(`mf-detail:${isin}:${month||'latest'}`);
+  if(saved?.value?.company)return {...saved.value,meta:{...saved.value.meta,readFailed:true}};
+  if(month)throw Error('Saved month unavailable');
   const seed=await revalidatedJson(`data/mutual-funds/companies/${isin}.json`);
   return {...seed,meta:{...seed.meta,readFailed:true}};
 }

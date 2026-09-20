@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {companyFragments,reportBatches} from './lib/mutual-funds-transport.mjs';
 import {buildOwnership,seededPayload} from './lib/mutual-funds-build.mjs';
 import {MF_ENDPOINT,MF_ORIGIN,monthKey,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
@@ -36,7 +37,7 @@ async function main() {
   const denomFile=process.env.MF_DENOMINATORS||'artifacts/mutual-funds-denominators.json';
   const denominators=fs.existsSync(denomFile)?JSON.parse(fs.readFileSync(denomFile)):{};
   const identities=Object.values(JSON.parse(fs.readFileSync('public/data/exchange-deals.json')).securityMap||{});
-  const {companies,warnings}=buildOwnership(snapshots,{portfolio:book.holdings,identities,denominators});
+  const {companies,warnings,reports}=buildOwnership(snapshots,{portfolio:book.holdings,identities,denominators});
   const target=targetMonth();
   for(const amc of amcs) {
     const issues=warnings.filter(w=>w.startsWith(amc.slug+':')&&(w.includes(':'+target+':')||w.endsWith(':invalid-month'))).length;
@@ -49,19 +50,20 @@ async function main() {
   fs.mkdirSync('artifacts',{recursive:true});fs.writeFileSync('artifacts/mutual-funds-health.json',JSON.stringify({meta,companies:companies.length,warnings},null,2));
   if(publish) {
     const client=collectorClient(),known=new Map();let cursor='';
-    do {const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?cursor=${cursor}`,{signal:AbortSignal.timeout(30000)}),3*1024*1024);for(const row of r.rows||[])known.set(row.isin,row.revision);cursor=r.nextCursor||'';}while(cursor);
-    await client({action:'begin',manifest:{...meta,targets:companies.map(c=>c.isin)}});
-    const unchanged=[];let batch=[],batchBytes=0;
-    const flush=async()=>{if(batch.length)await client({action:'checkpoint',companies:batch});batch=[];batchBytes=0;};
+    do {const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?cursor=${cursor}`,{signal:AbortSignal.timeout(30000)}),3*1024*1024);for(const row of r.rows||[])known.set(row.isin,row);cursor=r.nextCursor||'';}while(cursor);
+    // Reconcile previously captured companies even after an upstream rolling window drops them.
+    const present=new Set(companies.map(c=>c.isin));
+    for(const row of known.values())if(!present.has(row.isin))companies.push({isin:row.isin,name:row.name,ticker:row.ticker,sector:row.sector,denominator:null,funds:[]});
+    await client({action:'begin',manifest:{...meta,targets:companies.map(c=>c.isin),reportCount:reports.length}});
+    for(const batch of reportBatches(reports))await client({action:'reports',reports:batch});
+    const unchanged=[];
     for(const company of companies) {
       const revision=companyRevision(company);
-      if(known.get(company.isin)===revision){unchanged.push({isin:company.isin,revision});continue;}
-      const bytes=Buffer.byteLength(JSON.stringify(company));
-      if(batch.length && (batch.length>=8 || batchBytes+bytes>2*1024*1024))await flush();
-      batch.push(company);batchBytes+=bytes;
+      if(known.get(company.isin)?.revision===revision){unchanged.push({isin:company.isin,revision});continue;}
+      for(const fragment of companyFragments(company))await client({action:'fragment',fragment});
     }
-    await flush();
-    for(let at=0;at<unchanged.length;at+=200)await client({action:'confirm',companies:unchanged.slice(at,at+200)});
+    // Confirmations still reconcile complete reports, including authoritative removals.
+    for(let at=0;at<unchanged.length;at+=25)await client({action:'confirm',companies:unchanged.slice(at,at+25)});
     await client({action:'finish'});await client({action:'arm'});
     console.log(`Published ${companies.length-unchanged.length} changed companies; ${unchanged.length} unchanged.`);
     // Source degradation is operationally visible after every useful checkpoint was saved.

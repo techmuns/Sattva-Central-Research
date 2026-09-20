@@ -49,7 +49,7 @@ export function projectCompany(company, { month = null, now = Date.now() } = {})
     const points = Object.fromEntries(Object.entries(f.months).map(([m,p])=>[m,{...p,...change(p.shares,f.months[previousMonth(m)]?.shares)}]));
     const current = points[latest], older = points[prior];
     return { ...f, months: points, current: current || null, prior: older || null, ...change(current?.shares, older?.shares) };
-  }).filter(f => Object.values(f.months).some(p => p.shares > 0));
+  }).filter(f => f.everHeld || Object.values(f.months).some(p => p.shares > 0));
   const current = funds.filter(f => number(f.current?.shares) !== null);
   const comparable = funds.filter(f => f.change !== null);
   const added = comparable.filter(f => f.change > 0), reduced = comparable.filter(f => f.change < 0);

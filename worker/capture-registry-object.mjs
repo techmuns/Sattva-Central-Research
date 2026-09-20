@@ -65,6 +65,8 @@ export class CaptureRegistry extends DurableObject {
   }
   newsletterSend(input, token) { return this.newsletterSchedule.sendNow(input, token); }
   newsletterPreview(input) { return this.newsletterSchedule.preview(input); }
+  mfReports(run,reports) { return this.mutualFunds.reports(run,reports); }
+  mfFragment(run,fragment) { return this.mutualFunds.fragment(run,fragment); }
   mfBegin(run,manifest) { return this.mutualFunds.begin(run,manifest); }
   mfCheckpoint(run,companies) { return this.mutualFunds.checkpoint(run,companies); }
   mfConfirm(run,companies) { return this.mutualFunds.confirm(run,companies); }

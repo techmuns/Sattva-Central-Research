@@ -39,7 +39,7 @@ let store=new MutualFundsStore(storage,{now:()=>clock});const manifest={targets:
 store.begin('1:1',manifest);store.checkpoint('1:1',[company]);assert.throws(()=>store.finish('1:1'),/Incomplete/);assert.equal(store.read().meta.state,'collecting');
 store=new MutualFundsStore(storage,{now:()=>clock});assert.equal(store.detail(isin).company.totalShares,150);store.checkpoint('1:1',built.companies.filter(c=>c.isin===other));store.finish('1:1');assert.equal(store.read().meta.state,'complete');
 clock+=1000;store.begin('2:1',manifest);store.confirm('2:1',store.read().rows.map(r=>({isin:r.isin,revision:r.revision})));store.finish('2:1');assert.equal(db.prepare('SELECT COUNT(*) AS n FROM mf_revisions').get().n,2,'Unchanged checks do not duplicate stored holdings');
-clock+=1000;store.begin('3:1',manifest);store.checkpoint('3:1',[newer]);assert.equal(store.detail(isin).company.funds[0].months['2026-07'].shares,100);assert.equal(store.detail(isin).company.totalShares,175);assert.throws(()=>store.checkpoint('2:1',[company]),/Inactive/);
+clock+=1000;store.begin('3:1',manifest);store.checkpoint('3:1',[newer]);assert.equal(store.detail(isin).company.funds.find(f=>f.name==='Growth Fund').months['2026-07'].shares,100);assert.equal(store.detail(isin).company.totalShares,175);assert.throws(()=>store.checkpoint('2:1',[company]),/Inactive/);
 assert.equal(store.read([isin]).rows.length,1);assert.equal(store.read([]).rows.length,0);
 const timer=new MutualFundsSchedule(storage,{}, {now:()=>clock});await timer.arm();assert(alarm);await timer.wake();assert.equal((await timer.status()).reason,'dispatch-unavailable');assert(alarm>clock,'Failed dispatch still has a durable next attempt');
 console.log('PASS Mutual Funds SQLite: interrupted collection resumes, completeness gate, unchanged checkpoints, revision retention, older-month retention, scope reads and durable retry timer');
@@ -70,3 +70,22 @@ const fetcher=async(url,options={})=>{
 clock+=20*60000;const healthyTimer=new MutualFundsSchedule(storage,{GH_DISPATCH_TOKEN:'fixture',GH_REPO:'techmuns/Sattva-Central-Research'},{now:()=>clock,fetcher});
 await healthyTimer.wake();assert.equal(dispatched,1);assert.equal((await healthyTimer.status()).reason,'dispatched');
 await healthyTimer.wake();assert.equal(dispatched,1,'Alarm redelivery cannot dispatch twice in the same interval');
+// A corrected complete disclosure removes a former holding, without erasing its old revision.
+clock=now+10000;const currentRevision=store.read([isin]).rows[0].revision;
+store.begin('11:1',{...manifest,targets:[isin],reportCount:1});
+assert.throws(()=>store.confirm('11:1',[{isin,revision:currentRevision}]),/Incomplete source/);
+store.reports('11:1',[{id:company.funds.find(f=>f.name==='Growth Fund').id,month:'2026-08',checkedAt:'2026-09-20T00:00:01Z',complete:true,isins:[],sourceUrl:'https://example.com/corrected.xlsx'}]);
+store.confirm('11:1',[{isin,revision:currentRevision}]);store.finish('11:1');
+assert.equal(store.detail(isin).company.totalShares,0);
+assert(db.prepare('SELECT payload FROM mf_observation_revisions WHERE isin=?').all(isin).some(r=>JSON.parse(r.payload).shares===175),'The retracted disclosure remains auditable');
+// More than the old 3 MiB upload ceiling, split even within one long-lived fund.
+const {companyFragments}=await import('./lib/mutual-funds-transport.mjs');
+const long={isin:other,name:'Long history',funds:[{id:'long:fund',name:'Long Fund',months:{}}]};
+for(let year=2000;year<=2026;year++)for(let m=1;m<=12;m++)long.funds[0].months[`${year}-${String(m).padStart(2,'0')}`]={shares:year*100+m,checkedAt:'2026-09-20',sourceUrl:'https://example.com/'+('a'.repeat(11000))};
+assert(Buffer.byteLength(JSON.stringify(long))>3*1024*1024);const fragments=companyFragments(long);assert(fragments.length>1);assert(fragments.every(f=>Buffer.byteLength(JSON.stringify({fragment:f}))<600*1024));
+store.begin('12:1',{...manifest,targets:[other]});store.fragment('12:1',fragments[0]);assert.throws(()=>store.finish('12:1'),/Incomplete/);
+store=new MutualFundsStore(storage,{now:()=>clock});for(const part of fragments.slice(1))store.fragment('12:1',part);store.finish('12:1');
+assert.equal(store.detail(other,'2001-06').company.funds.find(f=>f.id==='long:fund').current.shares,200106);
+assert.equal(store.detail(other).company.months.length,3);assert(store.detail(other).company.availableMonths.length>300);
+assert(db.prepare('SELECT MAX(LENGTH(payload)) AS n FROM mf_observations').get().n<12000,'Stored rows do not grow with historical depth');
+console.log('PASS complete-report corrections, immutable observation history, multi-part restart and history beyond the former upload ceiling');

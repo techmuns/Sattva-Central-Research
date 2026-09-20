@@ -14,6 +14,8 @@ export async function handleMutualFunds(request,env,{identity=breakoutCollectorI
       const body=await boundedJson(new Response(request.body),3*1024*1024);
       if(body.action==='arm')return reply({ok:true,schedule:await store.mfArm()});
       if(body.action==='begin')return reply(await store.mfBegin(run,body.manifest));
+      if(body.action==='reports')return reply(await store.mfReports(run,body.reports));
+      if(body.action==='fragment')return reply(await store.mfFragment(run,body.fragment));
       if(body.action==='checkpoint')return reply(await store.mfCheckpoint(run,body.companies));
       if(body.action==='confirm')return reply(await store.mfConfirm(run,body.companies));
       if(body.action==='finish')return reply(await store.mfFinish(run));
