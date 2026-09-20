@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {anchorFiles,oneDisclosures,publicDisclosures,publicReader,publicUrl,readDisclosures,resumeDisclosures,retainDisclosedNames,schemeNameResolver,verifiedNonIndianRows,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
-import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
+import {reconcileSourceChecks,lastCompleteCheck} from './lib/mutual-funds-checks.mjs';
 import {buildOwnership} from './lib/mutual-funds-build.mjs';
 const reply=value=>Buffer.from(JSON.stringify(value));
 const month='2026-08';
@@ -64,6 +64,8 @@ assert.equal(resolve([{schemeName:'360 ONE Focused Fund - An Open-Ended New Desc
 assert.equal(resolve([{schemeName:'Historical Fund'}])[0].schemeName,'Historical Fund - An Open Ended Equity Scheme','Missing current identities can be recovered from retained history');
 assert.equal(schemeNameResolver({schemes:[{schemeName:'Fund'},{schemeName:'Fund - An Open Ended Scheme'}]})([{schemeName:'Fund - An Open Ended Changed Scheme'}])[0].schemeName,'Fund - An Open Ended Changed Scheme','Ambiguous identities remain unmerged');
 const completeTime='2026-09-19T00:00:00Z',attemptTime='2026-09-20T00:00:00Z';
+assert.equal(lastCompleteCheck({status:'ok',checkedAt:completeTime,lastCompleteCheckedAt:null}),completeTime,'Legacy successful coverage supplies the baseline before any partial checkpoint or catch');
+assert.equal(lastCompleteCheck({status:'partial',checkedAt:attemptTime}),null,'Legacy partial attempt time is not a completed source check');
 let clocks=reconcileSourceChecks([{slug:'amc',status:'ok',checkedAt:completeTime}],[{slug:'amc',status:'partial',schemeCount:1,checkedAt:attemptTime}]);
 assert.equal(clocks[0].checkedAt,completeTime);assert.equal(clocks[0].lastAttemptAt,attemptTime);assert.equal(clocks[0].partialCheckedAt,attemptTime);
 clocks=reconcileSourceChecks(JSON.parse(JSON.stringify(clocks)),[{slug:'amc',status:'unavailable',checkedAt:null,lastAttemptAt:'2026-09-21T00:00:00Z'}]);
@@ -105,6 +107,7 @@ const result=await readDisclosures(['good','failed','old','later'].map(text=>({t
 },parse:buffer=>[{schemeName:'Verified fund',asOf:buffer.toString()==='old'?'2026-07-31':'2026-08-31',holdings:[]}],onCheckpoint:p=>checkpoints.push(p)});
 assert.equal(peak,2);assert.equal(result.failedFiles,2);assert.equal(result.schemes.length,2);assert.equal(checkpoints.length,4);
 assert.equal(result.completedFiles,2,'Only successfully parsed files count as completed');
+assert.equal(result.pendingFiles,0,'A settled pass explicitly clears a previous interrupted pass pending count');
 for(const c of checkpoints)assert.equal(c.completedFiles+c.failedFiles+c.pendingFiles,c.expectedFiles,'Every file has exactly one coverage state');
 assert.equal(checkpoints[0].pendingFiles,3);assert.equal(checkpoints.at(-1).pendingFiles,0);
 assert.equal(result.schemes[1].sourceUrl,'later','A failed download cannot erase another source file');

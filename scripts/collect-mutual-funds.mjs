@@ -55,7 +55,8 @@ async function main() {
   const target=targetMonth();
   for(const amc of amcs) {
     const issues=warnings.filter(w=>w.startsWith(amc.slug+':')&&(w.includes(':'+target+':')||w.endsWith(':invalid-month'))).length;
-    if(issues){amc.validationFindings=issues;if(amc.status==='ok'){amc.status='partial';amc.partialCheckedAt=amc.checkedAt;amc.lastAttemptAt=amc.lastAttemptAt||amc.checkedAt;amc.checkedAt=null;amc.lastCompleteCheckedAt=null;}}
+    amc.validationFindings=issues;
+    if(issues&&amc.status==='ok'){amc.status='partial';amc.partialCheckedAt=amc.checkedAt;amc.lastAttemptAt=amc.lastAttemptAt||amc.checkedAt;amc.checkedAt=null;amc.lastCompleteCheckedAt=null;}
   }
   const meta={state:'complete',checkedAt:amcs.map(c=>c.checkedAt||c.lastAttemptAt).filter(Boolean).sort()[0]||null,
     targetMonth:targetMonth(),amcs,warnings:warnings.length,source:'AMC monthly portfolio disclosures via AmfiBeas',

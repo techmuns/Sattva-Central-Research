@@ -287,5 +287,5 @@ export async function readDisclosures(links,{read,parse,month,concurrency=4,onCh
     }
   }));
   if(settled.some(r=>r.status==='rejected'))throw Error('Disclosure checkpoint failed');
-  return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,expectedFiles:links.length,completedFiles:links.length-failures.length,resumeUrl:resumeUrl()};
+  return {schemes:results.flatMap(s=>s||[]),failedFiles:failures.length,pendingFiles:0,expectedFiles:links.length,completedFiles:links.length-failures.length,resumeUrl:resumeUrl()};
 }

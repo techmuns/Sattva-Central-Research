@@ -6,7 +6,7 @@ import {STATUTORY_PAGES,statutoryLinks} from './lib/mutual-funds-discovery.mjs';
 import {atomicJson,runSourcePool} from './lib/mutual-funds-source-pool.mjs';
 import {QUANTUM_PAGE,quantumDisclosures,parseQuantumWorkbook} from './lib/mutual-funds-quantum.mjs';
 import {PUBLIC_PAGES,publicReader,publicDisclosures,readDisclosures,resumeDisclosures,schemeNameResolver,parsePublicWorkbook} from './lib/mutual-funds-public.mjs';
-import {reconcileSourceChecks} from './lib/mutual-funds-checks.mjs';
+import {reconcileSourceChecks,lastCompleteCheck} from './lib/mutual-funds-checks.mjs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {MF_ORIGIN,monthKey,targetMonth} from '../worker/mutual-funds-model.mjs';
@@ -41,6 +41,7 @@ for(const entry of index.amcs) {
   const startedAt=new Date().toISOString();let result=null;
   const file=path.join(dir,entry.slug+'.json');let old=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):{};
   const priorCheck={slug:entry.slug,lastCompleteCheckedAt:old.lastCompleteCheckedAt||null,...JSON.parse(process.env.MF_SOURCE_PREVIOUS_CHECK||'null')},resolveNames=schemeNameResolver(old);
+  priorCheck.lastCompleteCheckedAt=lastCompleteCheck(priorCheck);
   function saveResult(result,{recordCheck=true}={}) {
     const counts=new Map();for(const s of result.schemes){const m=monthKey(s.asOf);if(m&&m<=targetMonth())counts.set(m,(counts.get(m)||0)+1);}
     const month=[...counts].sort((a,b)=>b[1]-a[1]||b[0].localeCompare(a[0]))[0]?.[0];
