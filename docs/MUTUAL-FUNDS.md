@@ -80,8 +80,10 @@ public snapshots, API payloads or browser persistence.
 
 ## Initial evidence and limits (20 September 2026)
 
-The first direct source pass returned current August reports for 35 of 50 indexed AMCs. Some current reports also contain instrument/quantity validation findings and remain partial. Ten
-primary adapters were unavailable and five returned an older month. Some retained AmfiBeas
+The first direct source pass returned current August reports for 35 of 50 indexed AMCs.
+Repairing published-file discovery for Abakkus and Old Bridge raised this to 37 of 50, with 33
+passing all instrument/quantity checks. Their public pages had changed structure; the files were
+already published. Eight primary adapters were unavailable and five returned an older month. Some retained AmfiBeas
 historical buckets also contain date/identity parsing findings. Those limitations are exposed;
 a current file timestamp cannot certify full industry coverage. NSE's denominator route refused
 this local environment, so the seed has labelled estimates where a recent one exists, otherwise

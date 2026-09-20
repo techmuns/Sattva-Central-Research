@@ -89,3 +89,10 @@ assert.equal(store.detail(other,'2001-06').company.funds.find(f=>f.id==='long:fu
 assert.equal(store.detail(other).company.months.length,3);assert(store.detail(other).company.availableMonths.length>300);
 assert(db.prepare('SELECT MAX(LENGTH(payload)) AS n FROM mf_observations').get().n<12000,'Stored rows do not grow with historical depth');
 console.log('PASS complete-report corrections, immutable observation history, multi-part restart and history beyond the former upload ceiling');
+
+const {statutoryLinks}=await import('./lib/mutual-funds-discovery.mjs');
+const monthly={title:'August 31, 2026',downloadUrl:null,downloadMedia:{name:'Monthly.xls',url:'/uploads/monthly.xls'}};
+const fortnightly={...monthly,title:'August 15, 2026',downloadMedia:{url:'/uploads/fortnight.xls'}};
+assert.deepEqual(statutoryLinks('abakkus',JSON.stringify(JSON.stringify([monthly,fortnightly])),'2026-08').map(r=>r.url),['https://www.abakkusmf.com/uploads/monthly.xls']);
+assert.equal(statutoryLinks('abakkus',JSON.stringify(monthly),'2026-09').length,0);
+assert.equal(statutoryLinks('old-bridge','<h2>Old Bridge Flexi Cap Fund - August 2026</h2><a href="/uploads/aug.xlsx">Download</a><h2>Financials - August 2026</h2><a href="/uploads/financial.xlsx">Download</a>','2026-08').length,1);

@@ -1,21 +1,33 @@
 // Runs under AmfiBeas's pinned tsx runtime in an isolated checkout. Only its public,
 // first-party HTTP adapters are used; no browser challenge or archive proxy tier.
 import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {STATUTORY_PAGES,statutoryLinks} from './lib/mutual-funds-discovery.mjs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {monthKey,targetMonth} from '../worker/mutual-funds-model.mjs';
 const root=path.resolve(process.env.AMFIBEAS_PATH||'');
 if(!process.env.AMFIBEAS_PATH)throw Error('AMFIBEAS_PATH required');
 const importSource=file=>import(pathToFileURL(path.join(root,'scripts/ingest/amc-factsheets',file)).href);
-const [{fetchLatest},{parseAmcWorkbook},{parseZip,normalizeSchemePct},{PAGE_SCRAPE_CONFIG,pageScrapeAmc},{JSON_API_CONFIG,jsonApiAmc}]=await Promise.all(['fetch.ts','parse.ts','advisorkhoj.ts','page-scrape.ts','json-api.ts'].map(importSource));
+const [{fetchLatest},{parseAmcWorkbook},{parseZip,normalizeSchemePct},{PAGE_SCRAPE_CONFIG,pageScrapeAmc,downloadAndParse},{JSON_API_CONFIG,jsonApiAmc}]=await Promise.all(['fetch.ts','parse.ts','advisorkhoj.ts','page-scrape.ts','json-api.ts'].map(importSource));
 const opts={pctScale:1,valueToCr:100},dir=path.join(root,'public/amc-holdings');
-const index=JSON.parse(fs.readFileSync(path.join(dir,'index.json'))),checks=[];
+const index=JSON.parse(fs.readFileSync(path.join(dir,'index.json')));
+const selected=process.env.MF_SOURCE_AMCS?.split(',').filter(Boolean),checksFile=path.join(dir,'sattva-checks.json');
+const checks=selected&&fs.existsSync(checksFile)?JSON.parse(fs.readFileSync(checksFile)).filter(c=>!selected.includes(c.slug)):[];
 for(const entry of index.amcs) {
+  if(selected&&!selected.includes(entry.slug))continue;
   const startedAt=new Date().toISOString();let result=null;
   // Each AMC uses its configured primary public adapter. A refusal remains a failure;
   // do not switch IPs, challenge clients or archive proxies to get around it.
   try {
-    if(PAGE_SCRAPE_CONFIG[entry.slug])result=pageScrapeAmc(PAGE_SCRAPE_CONFIG[entry.slug],opts,new Date());
+    if(STATUTORY_PAGES[entry.slug]) {
+      const page=STATUTORY_PAGES[entry.slug];
+      const html=execFileSync('curl',['--fail','--location','--silent','--show-error','--max-time','30',page],{encoding:'utf8',maxBuffer:8*1024*1024,timeout:35000});
+      const links=statutoryLinks(entry.slug,html,targetMonth()),schemes=[];
+      for(const link of links)schemes.push(...downloadAndParse([link],opts,page).schemes.map(s=>({...s,sourceUrl:link.url})));
+      result={schemes,usedUrl:page};
+    }
+    else if(PAGE_SCRAPE_CONFIG[entry.slug])result=pageScrapeAmc(PAGE_SCRAPE_CONFIG[entry.slug],opts,new Date());
     else if(JSON_API_CONFIG[entry.slug])result=jsonApiAmc(entry.slug,opts,new Date());
     else if(['sbi','nippon','kotak','icici-pru'].includes(entry.slug)) {
       const file=fetchLatest(entry.slug,3);
@@ -28,7 +40,7 @@ for(const entry of index.amcs) {
     if(!month)throw Error('Disclosure month unverified');
     const file=path.join(dir,entry.slug+'.json'),old=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):{};
     const existing=[{asOfMonth:old.asOfMonth,schemes:old.schemes},...(old.history||[])].filter(b=>b.schemes?.length).map(b=>({...b,checkedAt:b.checkedAt||old.fetchedAt,sourceUrl:b.sourceUrl||old.sourceUrl}));
-    const schemes=result.schemes.map(s=>({...normalizeSchemePct(s),checkedAt:startedAt,sourceUrl:result.usedUrl||old.sourceUrl})),oldMonth=existing.find(b=>monthKey(b.asOfMonth)===month);
+    const schemes=result.schemes.map(s=>({...normalizeSchemePct(s),checkedAt:startedAt,sourceUrl:s.sourceUrl||result.usedUrl||old.sourceUrl})),oldMonth=existing.find(b=>monthKey(b.asOfMonth)===month);
     // A shorter response cannot erase a previously captured scheme. It also cannot
     // claim a complete AMC check. Retained schemes keep their original dates.
     const names=new Set(schemes.map(s=>s.schemeName));
