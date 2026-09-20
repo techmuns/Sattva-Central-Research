@@ -1,0 +1,59 @@
+import { createHash } from 'node:crypto';
+import { monthKey, targetMonth, projectCompany, summaryOf, validIsin, number } from '../../worker/mutual-funds-model.mjs';
+const norm = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const fundKey = (amc, name) => `${amc}:${norm(name)}`;
+// Equity ISIN security type 10; retain REIT/InvIT names only when their exact ISIN is in the book.
+const equity = (h, wanted) => validIsin(h.isin) && (h.isin.slice(8,10)==='10' || wanted.has(h.isin)) && !/^\s*\d+(\.\d+)?\s*%/.test(h.name || '');
+export function buildOwnership(snapshots, { portfolio = [], identities = [], denominators = {}, now = Date.now() } = {}) {
+  const known = new Map([...identities,...portfolio].map(h=>[h.isin,h])), wanted = new Set(portfolio.map(h=>h.isin)), companies = new Map(), warnings=[];
+  for (const snapshot of snapshots) {
+    const buckets = [{ asOfMonth:snapshot.asOfMonth, schemes:snapshot.schemes }, ...(snapshot.history || [])];
+    const schemes = new Map();
+    for (const bucket of buckets) {
+      const month = monthKey(bucket.asOfMonth);
+      if (!month || month>targetMonth(now) || !Array.isArray(bucket.schemes)) { warnings.push(`${snapshot.amcSlug}:invalid-month`); continue; }
+      for (const scheme of bucket.schemes) {
+        if (!scheme.schemeName || !Array.isArray(scheme.holdings) || !scheme.holdings.length) continue;
+        // Exact disclosed names are stable; sheet order / generated d-AMC-N codes are not.
+        const id = fundKey(snapshot.amcSlug,scheme.schemeName);
+        if (!schemes.has(id)) schemes.set(id,{id,name:scheme.schemeName,amc:snapshot.amc,months:new Map()});
+        const fund=schemes.get(id);
+        const own=monthKey(scheme.asOf);
+        if (own && own!==month) { warnings.push(`${id}:${month}:date-mismatch`); continue; }
+        const rows=new Map(), totalPct=scheme.holdings.reduce((s,h)=>s+(number(h.pctToNav) || 0),0);
+        const complete = totalPct >= 95 && totalPct <= 105;
+        for (const holding of scheme.holdings) {
+          if (!equity(holding,wanted)) continue;
+          const h={...holding,quantity:Number.isSafeInteger(holding.quantity)&&holding.quantity>=0?holding.quantity:null};
+          if (rows.has(h.isin)) { rows.set(h.isin,{...h,quantity:null}); warnings.push(`${id}:${month}:duplicate-isin`); }
+          else rows.set(h.isin,h);
+        }
+        const entry={rows,complete,checkedAt:bucket.checkedAt || snapshot.fetchedAt,sourceUrl:bucket.sourceUrl || snapshot.sourceUrl};
+        if (fund.months.has(month)) { warnings.push(`${id}:${month}:duplicate-scheme`); continue; }
+        fund.months.set(month,entry);
+      }
+    }
+    for (const fund of schemes.values()) {
+      const isins=new Set([...fund.months.values()].flatMap(m=>[...m.rows.keys()]));
+      for (const isin of isins) {
+        const holding=[...fund.months.values()].map(m=>m.rows.get(isin)).find(Boolean), book=known.get(isin);
+        if (!companies.has(isin)) companies.set(isin,{isin,name:book?.name || holding.name,ticker:book?.ticker || null,sector:book?.sector || holding.industry || '',denominator:denominators[isin] || null,funds:[]});
+        const months={};
+        for (const [month,m] of fund.months) {
+          const h=m.rows.get(isin);
+          months[month]={shares:h?h.quantity:m.complete?0:null,
+            valueCr:h?number(h.marketValueCr):m.complete?0:null,
+            pctOfAum:h && number(h.pctToNav)!==null && h.pctToNav>=0 && h.pctToNav<=100 ? h.pctToNav : !h&&m.complete?0:null,
+            checkedAt:m.checkedAt || null,sourceUrl:m.sourceUrl || null,absenceVerified:!h&&m.complete};
+        }
+        companies.get(isin).funds.push({id:fund.id,name:fund.name,amc:fund.amc,months});
+      }
+    }
+  }
+  for (const holding of portfolio) if (validIsin(holding.isin) && !companies.has(holding.isin)) companies.set(holding.isin,{isin:holding.isin,name:holding.name,ticker:holding.ticker || null,sector:holding.sector || '',denominator:denominators[holding.isin] || null,funds:[]});
+  return { companies:[...companies.values()],warnings };
+}
+export function seededPayload(companies, meta, now=Date.now()) {
+  return {meta,rows:companies.map(c=>summaryOf(projectCompany(c,{now}))) };
+}
+export const fingerprint = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');

@@ -1,3 +1,4 @@
+import * as mutualFunds from '../data/mutual-funds.js';
 // ui/sources.js — the data-source registry behind the header's "Sources" button.
 //
 // This is presentation metadata, not a data source: it mirrors docs/DATA-CONTRACTS.md so a
@@ -246,6 +247,11 @@ export function sourceGroups() {
         .join(' and ');
 
     const groups = [
+    { title: 'Mutual Funds', icon: '📋', tabs: 'Mutual Funds', items: [{
+      name: 'AMC monthly portfolio disclosures', feeds: mutualFunds.health(), cadence: '15-minute collection target, server-side; monthly source publications',
+      status: 'live', readState: sourceReadState({at:mutualFunds.meta().checkedAt,failed:mutualFunds.meta().readFailed,partial:mutualFunds.health()!=='Latest reported disclosures',maxAgeMs:45*60000}),
+      note: 'AmfiBeas public AMC disclosures. Missing and stale AMC reports remain explicit; only adjacent, comparable months contribute to net change. Estimates of company shares outstanding are labelled. Every captured month is retained.'
+    }] },
     {
       // THE ALERT PAIR COMES FIRST because this is the only group whose whole point is that it
       // introduces NOTHING. A reader is owed "no new feed" before looking for a source that does

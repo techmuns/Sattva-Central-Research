@@ -1,3 +1,4 @@
+import * as mutualFunds from '../tabs/mutual-funds.js';
 // ui/shell.js — the generic app chrome: header, workspace dropdown, top tabs, left rail,
 // and the content host that every tab/portfolio module mounts into. This file owns the
 // workspace/tab registry; individual tab modules stay ignorant of navigation entirely.
@@ -66,7 +67,7 @@ import * as bookmarks from '../tabs/bookmarks.js';
 // an unknown or absent tab, so the order of this array IS the default landing page — there is no
 // second place recording it that could disagree.
 const WORKSPACES = [
-  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, bookmarks, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades] },
+  { id: 'research', label: 'Research Central', tabs: [askResearch, aiAlerts, dailyAlerts, bookmarks, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades, mutualFunds] },
 ];
 
 let contentHost = null;

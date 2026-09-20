@@ -110,7 +110,7 @@ const MEMORY_BUDGET = 24 * 1024 * 1024;
 const memory = createMemoryCache(MEMORY_BUDGET);
 // Unknown/user-authored keys and unsaved writes stay pinned. These public representations can
 // be read from the verified disk copy; no disk eviction or retention rule is introduced here.
-const reconstructible = key => /^(filings:news(?::|$)|news-history:|snapshot:tradingview-news$|market-news(?::|$)|(?:all-alerts:public-pool|ai-alerts:public-window):|news-query:)/.test(key);
+const reconstructible = key => /^(filings:news(?::|$)|news-history:|snapshot:tradingview-news$|market-news(?::|$)|(?:all-alerts:public-pool|ai-alerts:public-window):|news-query:|mf:|mf-detail:)/.test(key);
 function remember(key, row, durable = false) {
   memory.set(key, row, reconstructible(key) ? estimateMemoryBytes(row, MEMORY_BUDGET) : 0,
     durable && reconstructible(key));

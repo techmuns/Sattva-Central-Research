@@ -37,6 +37,8 @@ jobs:
         run: node scripts/verify-news-window.mjs
       - name: Verify bounded memory, lossless saves and exact news reading windows
         run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node scripts/verify-news-working-set.mjs
+      - name: Verify Mutual Fund calculations and resumable capture
+        run: node scripts/verify-mutual-funds.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
         run: node scripts/verify-hot-path-memo.mjs
       - name: Verify lossless news parts and deployable asset sizes
@@ -134,7 +136,7 @@ jobs:
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
       - name: Verify saved breakout capture and recovery
-        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakouts-runtime.mjs
+        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakouts-runtime.mjs && node scripts/verify-mutual-funds-runtime.mjs
       - name: Verify private summary persistence in the local Worker runtime
         run: node scripts/verify-concall-summaries-runtime.mjs
   browser:
@@ -221,6 +223,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-refresh-ui.mjs
+      - name: Verify Mutual Fund portfolio table and grouped detail
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-mutual-funds-ui.mjs
       - name: Verify instant repeat visits and interaction cache boundaries
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

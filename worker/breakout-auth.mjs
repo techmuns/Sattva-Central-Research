@@ -6,17 +6,17 @@ const decode = value => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_
 const parse = value => JSON.parse(new TextDecoder().decode(decode(value)));
 
 // No long-lived upload secret: only this fixed main-branch workflow may change the private store.
-export async function breakoutCollectorIdentity(request, { fetcher = fetch, now = Date.now() } = {}) {
+export async function breakoutCollectorIdentity(request, { fetcher = fetch, now = Date.now(), endpoint = BREAKOUT_ENDPOINT, workflow = BREAKOUT_WORKFLOW } = {}) {
   const token = /^Bearer ([A-Za-z0-9_.-]{1,16000})$/.exec(request.headers.get('authorization') || '')?.[1];
   if (!token) throw Error('Collector identity required');
   const parts = token.split('.');
   if (parts.length !== 3) throw Error('Invalid collector identity');
   const header = parse(parts[0]), claims = parse(parts[1]), seconds = now / 1000;
   if (header.alg !== 'RS256' || typeof header.kid !== 'string' || header.kid.length > 200 ||
-      claims.iss !== ISSUER || claims.aud !== BREAKOUT_ENDPOINT ||
+      claims.iss !== ISSUER || claims.aud !== endpoint ||
       claims.repository !== 'techmuns/Sattva-Central-Research' || String(claims.repository_id) !== '1329567087' ||
       String(claims.repository_owner_id) !== '278697674' || claims.ref !== 'refs/heads/main' ||
-      claims.workflow_ref !== `${'techmuns/Sattva-Central-Research'}/.github/workflows/${BREAKOUT_WORKFLOW}@refs/heads/main` ||
+      claims.workflow_ref !== `${'techmuns/Sattva-Central-Research'}/.github/workflows/${workflow}@refs/heads/main` ||
       !['push', 'schedule', 'workflow_dispatch', 'repository_dispatch'].includes(claims.event_name) ||
       !Number.isFinite(claims.exp) || claims.exp <= seconds || !Number.isFinite(claims.iat) ||
       claims.iat > seconds + 30 || seconds - claims.iat > 600 || !Number.isFinite(claims.nbf) || claims.nbf > seconds + 30 ||
