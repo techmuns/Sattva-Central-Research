@@ -2084,6 +2084,19 @@ wired as if it were live. The pattern for any feed in that state:
 
 ### Performance on large tables
 
+Large scrollable tables now use the measured window in `ui/windowed-list.js` (the legacy
+progressive-fill contract below still applies to explicit idle/scroll modes). During a native
+scrollbar drag, keep rendering the current window but defer height-estimate corrections until
+release: changing the scroll range or writing `scrollTop` during the gesture makes the thumb
+fall behind the pointer. On release, preserve the actual visible row and offset. Pointer release,
+cancellation, window blur and disposal must all release the gesture state/listeners.
+
+The table scrollbar's 14px track and 48px thumb floor require `scrollbar-color: auto` in browsers
+supporting `::-webkit-scrollbar`; a non-auto standard colour disables those pseudo-element rules.
+Firefox retains the standard colour fallback. `scripts/verify-table-drag-ui.mjs` uses native
+pointer gestures with visible browser scrollbars to verify real geometry, down/up dragging,
+stable release, light/dark themes and complete search/export. Resolved CSS alone is insufficient.
+
 `scoreTable` handles 1,700+ rows because of four things — keep them if you touch it:
 - listeners are **delegated** on `<thead>` / `<tbody>`, never per row;
 - row markup is **position-independent** (rank comes from a CSS counter, the click target carries

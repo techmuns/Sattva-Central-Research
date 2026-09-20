@@ -34,10 +34,10 @@
  * chrome on a page whose tables are the content; widening only the hit area would leave the
  * control looking exactly as hard to grab as before. This is both.
  *
- * `scrollbar-width` is `auto`, never `thin`. Chrome 121+ and Firefox both honour the standard
- * property, and `thin` there is the opposite of what this rule is for; the ::-webkit-scrollbar
- * block beneath it covers Safari and older Chrome, so whichever layer an engine picks it lands
- * on the same comfortable bar. Widening it costs the widest table 6px of its own room and that
+ * `scrollbar-width` is `auto`, never `thin`. Browsers with ::-webkit-scrollbar support must
+ * also keep scrollbar-color at auto: a non-auto colour overrides the entire pseudo-element
+ * family, including the track width and thumb length floor. Firefox uses the standard colour
+ * fallback. Widening it costs the widest table 6px of its own room and that
  * was measured before it shipped: the tightest table here (All Alerts) stops shrinking at
  * 1,224px inside a 1,392px scroller, so every one of them keeps well over 100px of headroom.
  */
@@ -49,6 +49,10 @@
   scrollbar-width: auto;
   touch-action: pan-x pan-y;
   -webkit-overflow-scrolling: touch;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  .table-scroll-surface { scrollbar-color: auto; }
 }
 
 .table-scroll-surface::-webkit-scrollbar {
