@@ -171,8 +171,10 @@ export class BreakoutStore {
       for(const row of retained.values()) if(targets.includes(row.ticker)) {
         const bucket=primaryBucket(row.ticker);if(!latest.has(bucket))latest.set(bucket,{});latest.get(bucket)[row.ticker]=row;
       }
-      this.storage.sql.exec('DELETE FROM breakout_primary_latest');
-      for(const [bucket,payload] of latest) this.storage.sql.exec('INSERT INTO breakout_primary_latest VALUES(?,?)',bucket,JSON.stringify(payload));
+      for(let bucket=0;bucket<16;bucket++) {
+        if(latest.has(bucket)) this.storage.sql.exec('INSERT INTO breakout_primary_latest VALUES(?,?) ON CONFLICT(bucket) DO UPDATE SET payload=excluded.payload',bucket,JSON.stringify(latest.get(bucket)));
+        else this.storage.sql.exec('DELETE FROM breakout_primary_latest WHERE bucket=?',bucket);
+      }
       const payload={at,completedAt,firstAt:prior?.firstAt || at,targets,failures:cleanFailures,
         discoveryFailed:input.discoveryFailed===true,instrumentFailures:(input.instrumentFailures || []).filter(e=>['NSE','BSE'].includes(e))};
       this.storage.sql.exec('INSERT INTO breakout_primary_current VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET at=excluded.at,payload=excluded.payload',at,JSON.stringify(payload));
