@@ -7,7 +7,7 @@ export function companyFragments(company,limit=512*1024) {
     for(const [month,point] of Object.entries(months)) {
       const next={...metadata,months:{[month]:point}},size=Buffer.byteLength(JSON.stringify(next));
       if(size+Buffer.byteLength(JSON.stringify(header))>limit)throw Error('One source observation exceeds the transport limit');
-      if(batch.length&&bytes+size>limit){items.push({...header,funds:batch});batch=[];bytes=JSON.stringify(header).length;}
+      if(batch.length&&(batch.length>=500||bytes+size>limit)){items.push({...header,funds:batch});batch=[];bytes=JSON.stringify(header).length;}
       batch.push(next);bytes+=size;
     }
   }
