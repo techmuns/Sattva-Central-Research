@@ -90,6 +90,19 @@ try {
           const target = downward ? step / 30 : 1 - step / 30;
           await page.mouse.move(x, y(target));
           await frames();
+          if (mode === 'windowed' && theme === 'light' && downward && [10, 20].includes(step)) {
+            const update = await page.evaluate(step => {
+              const row = document.querySelector('tr[data-row-key]');
+              const changedKey = row.dataset.rowKey;
+              records = [{ id:'arrival-' + step, name:'New arrival ' + step, detail:'Late source evidence' },
+                ...records.map(record => ({ ...record, name:record.id === changedKey ? 'Corrected ' + changedKey : record.name }))];
+              table.updateData(records);
+              return { total:records.length, changedKey };
+            }, step);
+            await frames();
+            assert((await scroller.locator(`tr[data-row-key="${update.changedKey}"]`).innerText()).includes('Corrected'), 'same-ID corrections appear during the drag');
+            assert((await page.locator('[data-row-count]').textContent()).includes(String(update.total)), 'incoming records enter the complete model during the drag');
+          }
           const state = await scroller.evaluate(el => {
             const box = el.getBoundingClientRect(), head = el.querySelector('thead').getBoundingClientRect();
             const rows = [...el.querySelectorAll('tr[data-row-key]')];
@@ -111,7 +124,11 @@ try {
         assert.equal(settled.key, held.key, 'releasing the thumb preserves the visible record');
         assert(Math.abs(settled.offset - held.offset) < 2, 'releasing the thumb preserves its reading offset');
         if (downward) assert(await scroller.locator('tr[data-row-key="2999"]').count(), 'drag reaches the final record');
-        else assert.equal(await scroller.evaluate(el => el.scrollTop), 0, 'reverse drag reaches the top');
+        else {
+          assert.equal(await scroller.evaluate(el => el.scrollTop), 0, 'reverse drag reaches the top');
+          assert.equal(await scroller.locator('tr[data-row-key]').first().getAttribute('data-row-key'),
+            await page.evaluate(() => records[0].id), 'queued arrivals appear automatically after release');
+        }
       }
       console.log(`PASS ${mode}/${theme}: native down/up drag, max thumb drift ${(maxDrift * 100).toFixed(2)}%, stable release and full history reachability`);
     }
@@ -121,8 +138,46 @@ try {
   await page.locator('[data-table-search]').fill('Record 2999');
   await page.waitForFunction(() => !document.querySelector('[data-table-loading]') && document.querySelectorAll('tr[data-row-key]').length === 1);
   assert.equal(await page.locator('tr[data-row-key]').getAttribute('data-row-key'), '2999');
+  // Overlay scrollbars have no layout gutter. Hide only the visual track to exercise the same
+  // real client-box geometry on every CI platform, then dispatch its edge hit explicitly.
+  for (const finish of ['pointercancel', 'blur', 'removal']) {
+    await page.evaluate(() => mount('windowed'));
+    await scroller.evaluate(el => { el.style.scrollbarWidth = 'none'; });
+    await frames();
+    await scroller.evaluate(el => {
+      const box = el.getBoundingClientRect();
+      el.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true, button:0, pointerId:7,
+        pointerType:'mouse', clientX:box.right - 6, clientY:box.top + 8 }));
+      el.scrollTop = 50000;
+      scrollWrites = [];
+    });
+    await frames();
+    assert.equal(await scroller.evaluate(el => el.offsetWidth - el.clientWidth), 0, 'overlay fixture has no gutter');
+    assert.equal(await page.evaluate(() => scrollWrites.length), 0, 'overlay-edge drag also defers measurements');
+    const held = await reading();
+    if (finish === 'removal') {
+      await page.evaluate(key => {
+        records = records.filter(row => row.id !== key);
+        table.updateData(records);
+      }, held.key);
+      assert.equal(await scroller.locator(`tr[data-row-key="${held.key}"]`).count(), 0, 'revoked rows disappear even while the thumb is held');
+    } else {
+      await page.evaluate(finish => {
+        records = [{ id:'late', name:'Late arrival', detail:'Retained evidence' }, ...records];
+        table.updateData(records);
+        if (finish === 'blur') window.dispatchEvent(new Event('blur'));
+        else document.dispatchEvent(new PointerEvent('pointercancel', { bubbles:true, pointerId:7 }));
+      }, finish);
+      await frames();
+      const settled = await reading();
+      assert.equal(settled.key, held.key, `${finish} preserves the visible record`);
+      assert(Math.abs(settled.offset - held.offset) < 2, `${finish} preserves the visible offset`);
+    }
+    await page.locator('[data-export]').click();
+    assert.deepEqual(await page.evaluate(() => exported), await page.evaluate(() => records.map(row => row.id)), 'latest arrivals and removals survive gesture cleanup');
+  }
   assert.deepEqual(errors, [], 'zero application exceptions');
-  console.log('PASS complete export and offscreen search after native scrollbar gestures');
+  console.log('PASS live arrivals/corrections, overlay hit testing, cancellation/blur, immediate removals, complete export and offscreen search');
 } finally {
   await browser.close();
   await new Promise(done => server.close(done));

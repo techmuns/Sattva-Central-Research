@@ -42,6 +42,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   let width = scroller.clientWidth;
   let draggingScrollbar = false;
   let settleScrollbar = false;
+  let pendingRows = null;
   const head = () => content === scroller ? 0 : Math.max(0,
     content.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop);
   const rowTop = () => Math.max(0, scroller.scrollTop - head());
@@ -84,10 +85,15 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       spacers();
       if (scroller.scrollTop > 0) scroller.scrollTop = head() + geometry.offset(held.index) + held.inside;
     }
-    onWindow?.(start, rows.length);
+    onWindow?.(start, pendingRows?.length ?? rows.length);
     // Measuring shorter rows can expose an unpainted part of the viewport without another
     // user scroll. Recheck coverage on the next frame after the spacer/anchor correction.
     if (changed) scheduleViewport();
+    if (pendingRows) {
+      const next = pendingRows;
+      pendingRows = null;
+      update(next);
+    }
   }
   const scheduleMeasure = () => { if (!measureFrame && !disposed) measureFrame = requestAnimationFrame(measure); };
   function onPointerDown(event) {
@@ -95,7 +101,16 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     const box = scroller.getBoundingClientRect();
     const left = box.left + scroller.clientLeft;
     const right = left + scroller.clientWidth;
-    if (event.clientX < left || event.clientX >= right) draggingScrollbar = true;
+    const top = box.top + scroller.clientTop;
+    if (event.clientY < top || event.clientY >= top + scroller.clientHeight) return;
+    const style = getComputedStyle(scroller);
+    const gutter = scroller.offsetWidth - scroller.clientWidth
+      - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.borderRightWidth) || 0);
+    // Native overlay thumbs hit the scroller itself but sit inside its client box. Ordinary
+    // row/control presses still target their own elements and were excluded above.
+    const overlayEdge = gutter < 1 && (style.direction === 'rtl'
+      ? event.clientX <= left + 16 : event.clientX >= right - 16);
+    if (event.clientX < left || event.clientX >= right || overlayEdge) draggingScrollbar = true;
   }
   function endScrollbarDrag() {
     if (!draggingScrollbar) return;
@@ -156,7 +171,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
       const replacement = [...content.querySelectorAll(rowSelector)].find(el => (el.dataset.rowKey || el.dataset.newsKey) === activeKey);
       (replacement?.querySelectorAll('a,button,input,[tabindex]')[focusIndex] || scroller).focus({ preventScroll: true });
     }
-    onWindow?.(start, rows.length);
+    onWindow?.(start, pendingRows?.length ?? rows.length);
     scheduleMeasure();
   }
   function scheduleViewport() {
@@ -169,6 +184,39 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     });
   }
   function onScroll() { onScrollActivity?.(); scheduleViewport(); }
+  function update(next, { resetScroll = false } = {}) {
+    if (draggingScrollbar && !resetScroll) {
+      const nextByKey = new Map(next.map(row => [String(key(row)), row]));
+      if (rows.every(row => nextByKey.has(String(key(row))))) {
+        // The caller has already adopted the complete source model for counts/search/export.
+        // Delay only additions/reordering in this rendered view. Patch existing identities now
+        // so corrections (including changes to private content) are never held until release.
+        pendingRows = next;
+        rows = rows.map(row => nextByKey.get(String(key(row))));
+        paint(geometry.indexAt(rowTop()), true);
+        return;
+      }
+    }
+    // Explicit filters and removals take precedence over the gesture: revoked records must
+    // disappear immediately, and an older queued presentation must never restore them.
+    pendingRows = null;
+    draggingScrollbar = false;
+    const held = !resetScroll && scroller.scrollTop > 0 ? anchor() : null;
+    const heldKey = held && rows[held.index] ? String(key(rows[held.index])) : null;
+    rows = next;
+    const keys = new Set(rows.map(row => String(key(row))));
+    for (const k of measured.keys()) if (!keys.has(k)) measured.delete(k);
+    resetGeometry();
+    if (resetScroll) scroller.scrollTop = 0;
+    const nextIndex = heldKey == null ? -1 : rows.findIndex(row => String(key(row)) === heldKey);
+    if (nextIndex >= 0) {
+      // Source updates can insert rows or replace their objects without changing the record
+      // being read. Preserve that record and its within-row offset across new measurements.
+      const top = head() + geometry.offset(nextIndex) + held.inside;
+      paint(nextIndex, true);
+      scroller.scrollTop = top;
+    } else paint(geometry.indexAt(rowTop()), true);
+  }
   resetGeometry();
   scroller.style.overflowAnchor = 'none';
   scroller.addEventListener('scroll', onScroll, { passive: true });
@@ -192,26 +240,11 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   });
   observer.observe(scroller); observer.observe(content);
   return {
-    update(next, { resetScroll = false } = {}) {
-      const held = !resetScroll && scroller.scrollTop > 0 ? anchor() : null;
-      const heldKey = held && rows[held.index] ? String(key(rows[held.index])) : null;
-      rows = next;
-      const keys = new Set(rows.map(row => String(key(row))));
-      for (const k of measured.keys()) if (!keys.has(k)) measured.delete(k);
-      resetGeometry();
-      if (resetScroll) scroller.scrollTop = 0;
-      const nextIndex = heldKey == null ? -1 : rows.findIndex(row => String(key(row)) === heldKey);
-      if (nextIndex >= 0) {
-        // Source updates can insert rows or replace their objects without changing the record
-        // being read. Preserve that record and its within-row offset across new measurements.
-        const top = head() + geometry.offset(nextIndex) + held.inside;
-        paint(nextIndex, true);
-        scroller.scrollTop = top;
-      } else paint(geometry.indexAt(rowTop()), true);
-    },
+    update,
     refresh() { paint(geometry.indexAt(rowTop()), true); },
     destroy() {
       disposed = true;
+      pendingRows = null;
       observer.disconnect(); scroller.removeEventListener('scroll', onScroll);
       scroller.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('pointerup', endScrollbarDrag, true);

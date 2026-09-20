@@ -2090,6 +2090,10 @@ scrollbar drag, keep rendering the current window but defer height-estimate corr
 release: changing the scroll range or writing `scrollTop` during the gesture makes the thumb
 fall behind the pointer. On release, preserve the actual visible row and offset. Pointer release,
 cancellation, window blur and disposal must all release the gesture state/listeners.
+Live updates keep existing row corrections visible while queuing only additions/reordering until
+release; counts, search and export adopt the complete current model immediately. Explicit filters
+and removed/revoked records interrupt the gesture and apply immediately. Overlay thumbs are inside
+the client box, so scrollbar hit detection cannot rely on a reserved layout gutter alone.
 
 The table scrollbar's 14px track and 48px thumb floor require `scrollbar-color: auto` in browsers
 supporting `::-webkit-scrollbar`; a non-auto standard colour disables those pseudo-element rules.
