@@ -49,7 +49,7 @@ jobs:
       - name: Verify bounded memory, lossless saves and exact news reading windows
         run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node scripts/verify-news-working-set.mjs
       - name: Verify Mutual Fund calculations and resumable capture
-        run: node scripts/verify-mutual-funds.mjs
+        run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-sources.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
         run: node scripts/verify-hot-path-memo.mjs
       - name: Verify lossless news parts and deployable asset sizes

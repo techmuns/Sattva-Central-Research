@@ -67,7 +67,8 @@ jobs:
         run: timeout 35m "$AMFIBEAS_PATH/node_modules/.bin/tsx" scripts/refresh-mutual-funds-sources.mjs
       - name: Refresh company shares outstanding
         if: always() && steps.sources.outcome != 'skipped'
-        run: node scripts/collect-mutual-funds-denominators.mjs
+        continue-on-error: true
+        run: timeout 5m node scripts/collect-mutual-funds-denominators.mjs
       - name: Publish retained holdings and coverage
         if: always() && steps.sources.outcome != 'skipped'
         run: node scripts/collect-mutual-funds.mjs --publish

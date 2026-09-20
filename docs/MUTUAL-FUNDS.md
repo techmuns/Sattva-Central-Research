@@ -52,6 +52,11 @@ checkout; the dashboard keeps its no-dependency, no-build application contract. 
 public page/API/file adapters run server-side; no browser challenge, proxy rotation, Trendlyne
 scrape or licensed Trendlyne API is introduced. There is no claim of contractual Trendlyne parity.
 
+Four isolated source processes run at a time, each with a two-minute budget. A blocked AMC cannot
+hold up all later AMCs. Only the coordinator writes the shared coverage checkpoint, while each
+child atomically replaces its own AMC file. Timeouts retain prior data and record an unavailable
+check. Company-denominator reads have a separate five-minute limit and save each verified result
+as it arrives, so that endpoint cannot indefinitely delay publication of fund disclosures.
 Each source finishes to a local checkpoint. A timed-out or failed source stage still runs the
 publication stage, marking unattempted AMCs unchecked and retaining good company data. A new run
 reconciles the overlapping months in the current source data. Bounded fragments carry individual fund/month observations, with all parts acknowledged before
