@@ -11,7 +11,7 @@
 // so the Worker can import it without dragging the browser's data modules into its bundle.
 import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 
-export const ALERT_POOL_CONTRACT = 'alert-pool-v1';
+export const ALERT_POOL_CONTRACT = 'alert-pool-v2';
 export const ALERT_POOL_ARTIFACT = 'alert-pool';
 export const ALERT_POOL_WORKFLOW = 'alert-pool-refresh.yml';
 export const ALERT_POOL_INDEX_MEMBER = 'index.json';

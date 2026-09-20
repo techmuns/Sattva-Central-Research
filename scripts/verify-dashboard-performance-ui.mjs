@@ -45,6 +45,8 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__performanceRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
+    } else if (pathname === '/js/data/alert-pool-format.js') {
+      res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__alertPoolRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/css/tailwind.css') {
       res.end(`${readFileSync(path, 'utf8')}\n:root { --table-scroll-release: ${previousRelease ? 'previous' : 'current'}; }`);
     } else res.end(readFileSync(path));
@@ -155,6 +157,8 @@ try {
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'previous', 'returning session has the older table renderer cached');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--table-scroll-release').trim()), 'previous', 'returning session has the older scrollbar stylesheet cached');
+  await page.evaluate(() => import('/js/data/alert-pool-format.js'));
+  assert.equal(await page.evaluate(() => globalThis.__alertPoolRelease), 'previous', 'the retained session has the older alert-pool module');
   offline = false;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
@@ -165,6 +169,8 @@ try {
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
   assert.equal(await page.evaluate(() => globalThis.__tableScrollRelease), 'current', 'existing session receives the scrolling fix');
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--table-scroll-release').trim()), 'current', 'existing session receives the scrollbar stylesheet fix');
+  await page.evaluate(() => import('/js/data/alert-pool-format.js'));
+  assert.equal(await page.evaluate(() => globalThis.__alertPoolRelease), 'current', 'the same returning session receives the context retention fix');
   const upgradedCaches = await page.evaluate(() => caches.keys());
   assert(!upgradedCaches.some(name => name.includes('previous-fixture')), 'activation removes the superseded app cache');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'automatic upgrade retains reader preferences');

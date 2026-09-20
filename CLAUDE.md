@@ -4292,3 +4292,11 @@ Targets and workflow inputs are fixed server-side; no reader can redirect them.
 Persisted dispatch attempts and the run-list guard avoid immediate duplicate
 dispatch after a lost response or object eviction. Neither task's failure cancels
 an active upstream run. Verification: `node scripts/verify-mutual-funds-schedule.mjs`.
+
+
+The alert pool's v2 contract preserves raw market-news records across the existing
+180-day context window: company attribution happens when the reader's book is
+applied, so raw unattributed records cannot be discarded at the seven-day ranking
+boundary. Older v1 pools are rejected, and changes to the pool builder/format
+trigger a new shared build. The module cache revision advances with this change;
+verification covers an existing session receiving the replacement module.

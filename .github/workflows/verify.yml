@@ -262,7 +262,6 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-filter-loading-ui.mjs
-
       - name: Verify the precomputed alert pool paints the live rows and cards without the captures
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

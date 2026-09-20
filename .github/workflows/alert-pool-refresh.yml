@@ -22,6 +22,13 @@ name: Alert pool refresh
 # one artifact it reads (the exchange deals the insider feed folds in) is this repository's own.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/js/data/alert-pool-*.js'
+      - 'scripts/lib/alert-pool-build.mjs'
+      - 'scripts/build-alert-pool.mjs'
+      - '.github/workflows/alert-pool-refresh.yml'
   workflow_run:
     workflows:
       - Company news refresh
