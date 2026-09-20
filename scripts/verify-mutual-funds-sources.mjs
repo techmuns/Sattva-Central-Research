@@ -5,6 +5,7 @@ import path from 'node:path';
 import {runSourcePool} from './lib/mutual-funds-source-pool.mjs';
 import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {projectCompany} from '../worker/mutual-funds-model.mjs';
+import {publishCompanies} from './lib/mutual-funds-transport.mjs';
 const dated={isin:'INE123A01016',name:'Captured company',funds:[{id:'amc:fund',name:'Fund',amc:'AMC',months:{'2026-08':{shares:100,checkedAt:'2026-09-20T08:00:00Z',change:100,action:'New'}}}]};
 const missing={isin:dated.isin,name:'Current portfolio name',funds:[]};
 const retained=retainSeedObservations([missing],[{company:dated}])[0];
@@ -20,6 +21,15 @@ assert.equal(retainSeedObservations([],[{company:dated}]).length,1,'Historical s
 const seedFiles=fs.readdirSync('public/data/mutual-funds/companies').filter(f=>f.endsWith('.json'));
 for(const file of seedFiles){const seed=JSON.parse(fs.readFileSync(`public/data/mutual-funds/companies/${file}`));const result=projectCompany(retainSeedObservations([],[seed])[0],{now:Date.parse('2026-09-20T12:00:00Z')});assert.equal(result.totalShares,seed.company.totalShares);assert.equal(result.netChange,seed.company.netChange);}
 console.log(`PASS retained seed capture: newer observations win, missing sources retain history, and ${seedFiles.length} portfolio totals survive normalization`);
+const books=Array.from({length:7},(_,i)=>({...dated,isin:`INE123A0101${i}`,funds:[{...dated.funds[0],months:Object.fromEntries(Array.from({length:8},(_,m)=>[`2026-0${m+1}`,{shares:100,checkedAt:'2026-09-20T08:00:00Z',sourceUrl:'https://example.test/'+('a'.repeat(100))}]))}]}));
+let inFlight=0,peak=0;const parts=new Map(),acknowledged=new Set();
+const receiver=async({fragment:f})=>{inFlight++;peak=Math.max(peak,inFlight);assert.equal(f.part,parts.get(f.company.isin)||0);await new Promise(done=>setTimeout(done,5));parts.set(f.company.isin,f.part+1);if(f.part===f.parts-1)acknowledged.add(f.company.isin);inFlight--;};
+await publishCompanies(books,receiver,{concurrency:3,limit:700});
+assert.equal(inFlight,0);assert.equal(peak,3);assert.equal(acknowledged.size,books.length);assert([...parts.values()].every(n=>n>1));
+acknowledged.clear();parts.clear();
+await assert.rejects(publishCompanies(books,async body=>{if(body.fragment.company.isin===books[0].isin)throw Error('Transport failure');await receiver(body);},{concurrency:3,limit:700}),/1 company uploads/);
+assert.equal(inFlight,0);assert.equal(acknowledged.size,books.length-1,'One failed company cannot discard the other acknowledged checkpoints');
+console.log('PASS bounded publication: independent stocks overlap, each company remains ordered, and failures wait for all other checkpoints');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mf-source-pool-test-'));
 try {
   const script=path.join(dir,'source.mjs'),events=path.join(dir,'events'),checksFile=path.join(dir,'checks.json');

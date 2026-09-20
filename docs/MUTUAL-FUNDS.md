@@ -65,6 +65,9 @@ revision references; no upload or database cell grows with the complete history.
 scheme inventories can correct removed holdings to nil; partial reports cannot. Source rechecks
 do not copy identical historical books. Upload receipts retain only the three newest runs;
 this does not remove observations, correction chains or the original capture start time. An
+initial universe upload keeps at most four companies in flight, with fragments ordered within
+each company and all acknowledgements awaited before completion. A failed company leaves the
+run partial while other successful company checkpoints survive. An
 interrupted publish stays `collecting` until every manifest company is acknowledged. A later run
 reconciles it, while older data remains readable. Signed GitHub OIDC claims restrict writes to this
 repository's main-branch collector workflow. Reader routes are read-only and ETagged.

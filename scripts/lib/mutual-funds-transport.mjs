@@ -20,3 +20,16 @@ export function reportBatches(reports,limit=1024*1024) {
   for(const report of reports){const size=Buffer.byteLength(JSON.stringify(report));if(size>limit)throw Error('One source report exceeds the transport limit');if(batch.length&&(batch.length>=100||bytes+size>limit)){batches.push(batch);batch=[];bytes=0;}batch.push(report);bytes+=size;}
   if(batch.length)batches.push(batch);return batches;
 }
+// Keep network latency from serializing the whole stock universe. A company's
+// fragments remain ordered; every in-flight acknowledgement settles before return.
+export async function publishCompanies(companies,client,{concurrency=4,limit=512*1024}={}) {
+  let cursor=0;const failures=[];
+  await Promise.all(Array.from({length:Math.min(concurrency,companies.length)},async()=>{
+    while(cursor<companies.length) {
+      const company=companies[cursor++];
+      try {for(const fragment of companyFragments(company,limit))await client({action:'fragment',fragment});}
+      catch {failures.push(company.isin);}
+    }
+  }));
+  if(failures.length)throw Error(`${failures.length} company uploads were not acknowledged`);
+}

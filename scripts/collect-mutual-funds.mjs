@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {companyFragments,reportBatches} from './lib/mutual-funds-transport.mjs';
+import {publishCompanies,reportBatches} from './lib/mutual-funds-transport.mjs';
 import {buildOwnership,seededPayload} from './lib/mutual-funds-build.mjs';
 import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {MF_ENDPOINT,MF_ORIGIN,monthKey,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
@@ -61,12 +61,13 @@ async function main() {
     for(const row of known.values())if(!present.has(row.isin))companies.push({isin:row.isin,name:row.name,ticker:row.ticker,sector:row.sector,denominator:null,funds:[]});
     await client({action:'begin',manifest:{...meta,targets:companies.map(c=>c.isin),reportCount:reports.length}});
     for(const batch of reportBatches(reports))await client({action:'reports',reports:batch});
-    const unchanged=[];
+    const unchanged=[],changed=[];
     for(const company of companies) {
       const revision=companyRevision(company);
       if(known.get(company.isin)?.revision===revision){unchanged.push({isin:company.isin,revision});continue;}
-      for(const fragment of companyFragments(company))await client({action:'fragment',fragment});
+      changed.push(company);
     }
+    await publishCompanies(changed,client);
     // Confirmations still reconcile complete reports, including authoritative removals.
     for(let at=0;at<unchanged.length;at+=25)await client({action:'confirm',companies:unchanged.slice(at,at+25)});
     await client({action:'finish'});await client({action:'arm'});
