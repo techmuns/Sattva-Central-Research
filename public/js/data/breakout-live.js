@@ -65,13 +65,13 @@ export function decorate(rows, additionalTickers = new Set()) {
 }
 export function coverageFor(tickers) {
   const health = liveCoverage(capture, tickers);
-  return { ...health, partial: health.partial || failed || capture?.schedule?.overdue === true };
+  return { ...health, partial: health.partial || failed || capture?.schedule?.overdue === true || capture?.primarySchedule?.overdue === true };
 }
 // Lifecycle belongs to the visible view; shared reads are coalesced across table and popup.
 export function watch(fn) {
   const check = () => { if (document.visibilityState !== 'hidden') void refresh(); };
   const off = onChange(fn);
-  const timer = setInterval(check, 60000);
+  const timer = setInterval(check, 15000);
   document.addEventListener('visibilitychange', check);
   window.addEventListener('focus', check); window.addEventListener('online', check);
   check();

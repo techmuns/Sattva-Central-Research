@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/breakouts-refresh.yml'
       - 'scripts/collect-breakouts.mjs'
+      - 'worker/upstox*.mjs'
       - 'worker/breakout*.mjs'
       - 'worker/capture-registry-object.mjs'
       - 'worker/index.js'
@@ -43,7 +44,7 @@ jobs:
           node-version: '22'
       # A merge starts the timer independently of scheduled Actions or market-data success.
       # Wait briefly for the existing publishing pipeline; failed publishing stays a failure.
-      - name: Start the durable backup timer after publishing
+      - name: Start the minute primary collector and 15-minute fallback timer after publishing
         run: node scripts/collect-breakouts.mjs --bootstrap
   collect:
     if: github.ref == 'refs/heads/main' && github.event_name != 'push'

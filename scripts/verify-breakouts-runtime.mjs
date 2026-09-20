@@ -6,11 +6,14 @@ import {join,resolve} from 'node:path';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {createServer} from 'node:http';
+import {gzipSync} from 'node:zlib';
 const scratch=mkdtempSync(join(tmpdir(),'breakouts-runtime-')),port=19874,origin=`http://127.0.0.1:${port}`;
 const config=join(scratch,'wrangler.json');
 const revision='a'.repeat(40);let redirectCommit=false,redirectRaw=false,followed=0;
 const upstream=createServer((req,res)=>{
  const path=new URL(req.url,'http://fixture').pathname;
+ if(path==='/instruments'){res.end(gzipSync(JSON.stringify([{segment:'NSE_EQ',instrument_key:'NSE_EQ|INE000000001',trading_symbol:'TEST'}])));return;}
+ if(path==='/quotes'){assert.equal(req.headers.authorization,'Bearer local-fixture');res.setHeader('content-type','application/json');res.end(JSON.stringify({status:'success',data:{TEST:{instrument_token:'NSE_EQ|INE000000001',symbol:'TEST',last_price:111,volume:2500,net_change:11,last_trade_time:Date.parse('2026-09-15T06:00Z')}}}));return;}
  if(path==='/redirect-target'){followed++;res.end('{}');return;}
  if((path==='/commits' && redirectCommit) || (path!=='/commits' && redirectRaw)) {res.writeHead(302,{location:'/redirect-target'}).end();return;}
  res.setHeader('content-type','application/json');res.setHeader('etag','"fixture"');
@@ -19,10 +22,17 @@ const upstream=createServer((req,res)=>{
 await new Promise(done=>upstream.listen(0,'127.0.0.1',done));
 const upstreamOrigin=`http://127.0.0.1:${upstream.address().port}`;
 writeFileSync(join(scratch,'entry.mjs'),`
-import {CaptureRegistry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
+import {CaptureRegistry as Registry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
 import {handleTechnicals} from ${JSON.stringify(resolve('worker/breakouts.mjs'))};
-export {CaptureRegistry};
+import {primaryInstruments,minuteQuotes} from ${JSON.stringify(resolve('worker/breakout-primary.mjs'))};
+export class CaptureRegistry extends Registry {constructor(ctx,env){super(ctx,env);this.breakouts.now=()=>Date.parse('2026-09-15T06:02Z');}}
 export default {async fetch(request,env){const body=await request.json();
+if(body.action==='native-upstox') {
+ const fetcher=(url,options)=>fetch(${JSON.stringify(upstreamOrigin)}+(new URL(url).hostname==='assets.upstox.com'?'/instruments':'/quotes'),options);
+ const instruments=await primaryInstruments('NSE',fetcher);
+ const result=await minuteQuotes([{ticker:'TEST',upstoxSymbol:'TEST',instrumentKey:instruments[0].instrument_key}],new Map(),'local-fixture',{fetcher,now:()=>Date.parse('2026-09-15T06:00Z')});
+ return Response.json({instruments,result});
+}
 if(body.action==='daily') {
  const fetcher=(url,options)=>{const source=new URL(url);if(!['api.github.com','raw.githubusercontent.com'].includes(source.hostname))throw Error('Unexpected source');
    return fetch(${JSON.stringify(upstreamOrigin)}+(source.hostname==='api.github.com'?'/commits':source.pathname),options);};
@@ -36,8 +46,10 @@ if(body.action==='checkpoint')return Response.json(await store.breakoutCheckpoin
 if(body.action==='finish')return Response.json(await store.breakoutFinish(body.run));
 if(body.action==='recovery')return Response.json(await store.breakoutRecovery(body.run,body.ticker,body.from,body.to,body.rows));
 if(body.action==='history')return Response.json(await store.breakoutHistory(body.ticker,body.before));
+if(body.action==='primary-save')return Response.json(await store.breakoutPrimarySave(body.input));
+if(body.action==='primary-inventory')return Response.json(await env.CAPTURE_REGISTRY.getByName('breakout-upstox:v1').upstoxInventory(body.targets,false));
 return Response.json({capture:await store.breakoutRead(),schedule:await store.breakoutScheduleStatus()});}};`);
-writeFileSync(config,JSON.stringify({name:'breakout-local-test',main:join(scratch,'entry.mjs'),compatibility_date:'2026-05-23',durable_objects:{bindings:[{name:'STORE',class_name:'CaptureRegistry'}]},migrations:[{tag:'v1',new_sqlite_classes:['CaptureRegistry']}]}));
+writeFileSync(config,JSON.stringify({name:'breakout-local-test',main:join(scratch,'entry.mjs'),compatibility_date:'2026-05-23',durable_objects:{bindings:[{name:'STORE',class_name:'CaptureRegistry'},{name:'CAPTURE_REGISTRY',class_name:'CaptureRegistry'}]},migrations:[{tag:'v1',new_sqlite_classes:['CaptureRegistry']}]}));
 let child,logs='';
 async function call(body={}){const res=await fetch(origin,{method:'POST',body:JSON.stringify(body),signal:AbortSignal.timeout(5000)});assert(res.ok,await res.clone().text());return res.json();}
 async function start(){child=spawn('npx',['--yes','--offline','wrangler@4','dev','--local','--config',config,'--ip','127.0.0.1','--port',String(port),'--persist-to',join(scratch,'state')],{cwd:scratch,detached:true,env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{logs=(logs+chunk).slice(-12000);});const deadline=Date.now()+90000;while(Date.now()<deadline){if(child.exitCode!==null)throw Error(logs);try{await call();return;}catch{}await new Promise(done=>setTimeout(done,400));}throw Error(logs);}
@@ -45,6 +57,7 @@ async function stop(){if(!child||child.exitCode!==null)return;const done=once(ch
 const at=Date.parse('2026-09-15T06:00Z'),row={ticker:'TEST',name:'Test',price:105,volume:2000,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}};
 try{
  await start();assert.equal((await call()).schedule.alarmAt,null);
+ const native=await call({action:'native-upstox'});assert.equal(native.instruments.length,1);assert.equal(native.result.rows[0].price,111);
  // Use native workerd fetch against a local HTTP source. A mocked fetch cannot
  // detect request options rejected by the production runtime before any I/O.
  const daily=await call({action:'daily',path:'/api/technicals'});
@@ -65,5 +78,11 @@ try{
  state=await call();assert.equal(state.capture.state,'complete');assert.equal(state.capture.failures.length,1);assert.equal(state.capture.recoveryPending.length,1);
  const history=await call({action:'history',ticker:'TEST'});assert.equal(history.rows.length,2);assert(history.rows.some(row=>row.kind==='recovered-candle'));
  assert.equal(state.capture.rows[0].kind,'quote');
- console.log('PASS local workerd: native daily-file fetch and redirect refusal; breakout SQL/RPC, incremental capture, failed targets, independent alarm, recovered candles and history survive restarts');
+ const minuteAt=at+60000;
+ await call({action:'primary-inventory',targets:Array.from({length:1000},(_,i)=>({ticker:'T'+i,name:'Long instrument name '.repeat(7)}))});
+ await call({action:'primary-save',input:{at:minuteAt,completedAt:minuteAt,targets:['TEST'],rows:[{...row,provider:'Upstox',price:111}],failures:[]}});
+ await stop();await start();
+ const retained=await call({action:'history',ticker:'TEST'});assert.equal(retained.rows.length,3);assert.equal(retained.rows[0].provider,'Upstox');
+ assert((await call()).capture.primary);
+ console.log('PASS local workerd: native gzip and authenticated Upstox quote fetch; daily-file redirects; minute/fallback SQL history, large inventory, independent alarms and recovery survive restarts');
 }finally{await stop();await new Promise(done=>upstream.close(done));rmSync(scratch,{recursive:true,force:true});}

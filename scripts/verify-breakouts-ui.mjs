@@ -9,7 +9,7 @@ const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=or
 const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-10',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-10',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
 const deployedDaily=structuredClone(daily);
 let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0,dailyFail=false,companionFail=false,dailySha='a'.repeat(40);
-const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE','WATCHONLY'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE','WATCHONLY'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
+const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE','WATCHONLY'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE','WATCHONLY'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Upstox',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  res.setHeader('cache-control','no-cache');
@@ -45,7 +45,7 @@ try{
  await page.clock.install({time:AT});
  await page.goto(`${origin}/#/research/breakouts/strong-breakouts?scope=universe`);
  const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
- assert.equal(await cell.textContent(),'₹106.00');
+ assert.equal(await cell.textContent(),'₹106.00');assert((await cell.locator('..').innerText()).includes('Upstox'));
  assert.equal(await page.evaluate(async()=>(await import('/js/data/technicals.js')).byTicker('TEST').company.atr_history[0].atr_pct),1.23);
  await page.locator('[data-row-key="FUTURE"]').waitFor();
  assert.equal(await page.locator('[data-row-key="WATCHONLY"]').count(),0);

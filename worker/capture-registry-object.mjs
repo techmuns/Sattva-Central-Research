@@ -5,6 +5,7 @@ import { ConcallSummarySchedule } from './concall-summary-schedule.mjs';
 import { SharedWatchlistStore } from './watchlist-store.mjs';
 import { BreakoutStore } from './breakout-store.mjs';
 import { BreakoutSchedule } from './breakout-schedule.mjs';
+import { BreakoutPrimary, PRIMARY_OBJECT, PRIMARY_TIMER } from './breakout-primary.mjs';
 import { NewsletterStore } from './newsletter-store.mjs';
 import { NewsletterSchedule, NEWSLETTER_TIMER_KEY } from './newsletter-schedule.mjs';
 import { CAPTURE_REGISTRY_LIMIT, CAPTURE_REGISTRATION_BATCH, registeredCompany } from '../public/js/data/capture-registration-shared.js';
@@ -24,6 +25,7 @@ export class CaptureRegistry extends DurableObject {
     this.watchlist = new SharedWatchlistStore(ctx.storage);
     this.breakouts = new BreakoutStore(ctx.storage);
     this.breakoutSchedule = new BreakoutSchedule(ctx.storage, env);
+    this.breakoutPrimary = new BreakoutPrimary(ctx.storage, env);
     // The team brief lives in its own fixed object (team-brief:v1): subscribers and the delivery
     // log in SQLite, the send timer in KV, and the alarm below is what actually emails the desk.
     this.newsletter = new NewsletterStore(ctx.storage);
@@ -42,7 +44,16 @@ export class CaptureRegistry extends DurableObject {
   watchlistSnapshot() { return this.watchlist.watchlistSnapshot(); }
   watchlistApply(intents) { return this.watchlist.watchlistApply(intents); }
   request(source) { return this.schedule.request(source); }
-  async breakoutArm() { await this.breakoutSchedule.arm(); return this.breakoutSchedule.status(); }
+  async breakoutArm() {
+    await this.breakoutSchedule.arm();
+    await this.env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxArm();
+    return this.breakoutSchedule.status();
+  }
+  upstoxArm() { return this.breakoutPrimary.arm(); }
+  upstoxInventory(targets,failed) { return this.breakoutPrimary.inventory(targets,failed); }
+  upstoxStatus() { return this.breakoutPrimary.status(); }
+  breakoutPrimarySave(input) { return this.breakouts.primarySave(input); }
+  breakoutReadFallback() { return this.breakouts.readFallback(); }
   async breakoutBegin(run, targets, failed) { const out = this.breakouts.begin(run, targets, failed); await this.breakoutSchedule.arm(); return out; }
   breakoutRecovery(run, ticker, from, to, rows) { return this.breakouts.recovery(run,ticker,from,to,rows); }
   breakoutCheckpoint(run, rows, failures) { return this.breakouts.checkpoint(run, rows, failures); }
@@ -62,7 +73,8 @@ export class CaptureRegistry extends DurableObject {
   newsletterSend(input, token) { return this.newsletterSchedule.sendNow(input, token); }
   newsletterPreview(input) { return this.newsletterSchedule.preview(input); }
   async alarm() {
-    if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) await this.newsletterSchedule.wake();
+    if (await this.ctx.storage.get(PRIMARY_TIMER)) await this.breakoutPrimary.wake();
+    else if (await this.ctx.storage.get(NEWSLETTER_TIMER_KEY)) await this.newsletterSchedule.wake();
     else if (await this.ctx.storage.get('breakout-timer')) await this.breakoutSchedule.wake();
     else if (await this.ctx.storage.get('summary-timer')) await this.summarySchedule.wake();
     else await this.schedule.request('cron');

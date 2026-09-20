@@ -272,7 +272,7 @@ test('aggregate recovery clears all filled ranges and retains partially covered 
  assert.equal(store.read().rows[0].kind,'quote');assert.equal(store.read().rows[0].quoteAt,iso(AT));
 });
 test('read routes never arm capture and daily delivery preserves a dated fallback',async()=>{
- let armed=0;const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>({version:1,state:'not-started',rows:[],targets:[],failures:[]}),breakoutScheduleStatus:async()=>({started:false}),breakoutBegin:async()=>{armed++;}})}};
+ let armed=0;const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>({version:1,state:'not-started',rows:[],targets:[],failures:[]}),upstoxStatus:async()=>({started:false}),breakoutScheduleStatus:async()=>({started:false}),breakoutBegin:async()=>{armed++;}})}};
  const r=await handleBreakouts(new Request('https://test/api/breakouts'),env,{now:()=>AT});assert.equal(r.status,200);assert.equal(armed,0);
  const denied=await handleBreakouts(new Request(BREAKOUT_ENDPOINT,{method:'POST',body:'{}'}),env,{identity:async()=>{throw Error();}});assert.equal(denied.status,403);
  const fallback=await handleTechnicals(new Request('https://test/api/technicals'),{ASSETS:{fetch:async()=>Response.json({companies:[{ticker:'TEST'}],generated_at:iso(AT-86400000)})}},{fetcher:async()=>{throw Error('offline');}});
@@ -313,7 +313,7 @@ test('future universe rows resolve their Screener symbols before daily scoring c
 
 test('public capture reads share a short cache; conditional requests retain source timestamps',async()=>{
  let reads=0,cached=null;
- const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>{reads++;return {version:1,state:'complete',targets:['TEST'],rows:[quote()],failures:[],completedAt:iso(AT)};},breakoutScheduleStatus:async()=>({started:true})})}};
+ const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>{reads++;return {version:1,state:'complete',targets:['TEST'],rows:[quote()],failures:[],completedAt:iso(AT)};},upstoxStatus:async()=>({started:true}),breakoutScheduleStatus:async()=>({started:true})})}};
  const options={now:()=>AT,edgeCache:{match:async()=>cached?.clone(),put:async(key,response)=>{cached=response;}}};
  const first=await handleBreakouts(new Request('https://test/api/breakouts'),env,options);
  const second=await handleBreakouts(new Request('https://test/api/breakouts',{headers:{'if-none-match':first.headers.get('etag')}}),env,options);
@@ -376,7 +376,7 @@ test('long captures acquire a fresh identity for every checkpoint',async()=>{
 
 test('merge bootstrap survives delayed publishing and arms without a quote or scheduled run',async()=>{
  let at=AT,calls=0,armed=0;
- const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutArm:async()=>{armed++;return {started:true,alarmAt:at+900000};}})}};
+ const env={CAPTURE_REGISTRY:{getByName:()=>({upstoxStatus:async()=>({started:true,alarmAt:at+60000}),breakoutArm:async()=>{armed++;return {started:true,alarmAt:at+900000};}})}};
  const result=await bootstrapBreakouts({now:()=>at,sleep:async ms=>{at+=ms;},client:async input=>{
   assert.equal(input.action,'arm');if(++calls<3)throw Error('not deployed');
   const response=await handleBreakouts(new Request(BREAKOUT_ENDPOINT,{method:'POST',body:JSON.stringify(input)}),env,{identity:async()=>'1:1'});

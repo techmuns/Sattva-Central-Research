@@ -134,7 +134,7 @@ jobs:
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
       - name: Verify saved breakout capture and recovery
-        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakouts-runtime.mjs
+        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakout-primary.mjs && node scripts/verify-breakouts-runtime.mjs
       - name: Verify private summary persistence in the local Worker runtime
         run: node scripts/verify-concall-summaries-runtime.mjs
   browser:

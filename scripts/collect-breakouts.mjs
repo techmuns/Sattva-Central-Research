@@ -128,7 +128,7 @@ export async function collectBreakouts({ targets, previous = null, client, prima
 export async function bootstrapBreakouts({client=breakoutClient(),now=Date.now,sleep=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   const deadline=now()+8*60000;
   do {
-    try { const result=await client({action:'arm'}); if(result.schedule?.started && result.schedule.alarmAt) return result; }
+    try { const result=await client({action:'arm'}); if(result.schedule?.started && result.schedule.alarmAt && result.primary?.started && result.primary.alarmAt) return result; }
     catch { /* The new Worker may still be publishing. No source collection is needed. */ }
     await sleep(15000);
   } while(now()<deadline);
@@ -163,11 +163,14 @@ async function main() {
   } catch { discoveryFailed = true; }
   if (discoveryFailed) for (const ticker of previous?.targets || []) if (!targets.has(ticker)) targets.set(ticker, {ticker,name:previous?.rows?.find(row=>row.ticker===ticker)?.name || ticker});
   const client = breakoutClient();
+  // The primary service must never prevent the independent fallback from collecting.
+  const primaryInventoryUpdated=!!await client({action:'inventory',targets:[...targets.values()],discoveryFailed}).catch(()=>null);
   const summary = await collectBreakouts({ targets: [...targets.values()].sort((a,b)=>(Date.parse(previous?.rows?.find(row=>row.ticker===a.ticker)?.quoteAt)||0)-(Date.parse(previous?.rows?.find(row=>row.ticker===b.ticker)?.quoteAt)||0)), previous, client, discoveryFailed,
     token: process.env.UPSTOX_BACKUP_ENABLED === 'true' ? process.env.UPSTOX_ACCESS_TOKEN || '' : '' });
+  summary.primaryInventoryUpdated=primaryInventoryUpdated;
   mkdirSync('artifacts', { recursive: true });
   writeFileSync('artifacts/breakout-health.json', JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary));
-  if (summary.failures || summary.noBase || summary.discoveryFailed || !marketWindow(now).calendarKnown) process.exitCode = 1;
+  if (summary.failures || summary.noBase || summary.discoveryFailed || !primaryInventoryUpdated || !marketWindow(now).calendarKnown) process.exitCode = 1;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main().catch(() => { console.error('Breakout capture did not complete. Saved checkpoints are retained; inspect the capture health endpoint.'); process.exitCode = 1; });

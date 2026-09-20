@@ -2,6 +2,7 @@ import { BREAKOUT_ORIGIN, BREAKOUT_OBJECT, liveCoverage } from '../public/js/dat
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { breakoutCollectorIdentity } from './breakout-auth.mjs';
 import { withTag, tagged, revalidate } from './http.mjs';
+import { PRIMARY_OBJECT } from './breakout-primary.mjs';
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
 function conditional(request, payload, age = 0) {
   const { body, tag } = withTag(payload);
@@ -20,7 +21,8 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
     catch { return reply({ ok: false, reason: 'collector-identity' }, 403); }
     try {
       const body = await boundedJson(new Response(request.body), 2 * 1024 * 1024);
-      if (body.action === 'arm') return reply({ok:true,schedule:await store.breakoutArm()});
+      if (body.action === 'arm') return reply({ok:true,schedule:await store.breakoutArm(),primary:await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxStatus()});
+      if (body.action === 'inventory') return reply({ok:true,primary:await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxInventory(body.targets,body.discoveryFailed)});
       if (body.action === 'begin') return reply(await store.breakoutBegin(run, body.targets, body.discoveryFailed));
       if (body.action === 'checkpoint') return reply(await store.breakoutCheckpoint(run, body.rows, body.failures));
       if (body.action === 'recovery') return reply(await store.breakoutRecovery(run,body.ticker,body.from,body.to,body.rows));
@@ -39,9 +41,10 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
     const capture = await store.breakoutRead();
     const health = liveCoverage(capture, capture.targets || [], now());
     const schedule = await store.breakoutScheduleStatus();
-    if (url.pathname === '/api/breakouts/health') return reply({ ...health, runId: capture.runId, captureStartedAt: capture.captureStartedAt, schedule }, health.partial || !health.total || schedule.overdue ? 503 : 200);
-    const {body,tag} = withTag({...capture,health,schedule});
-    const response = tagged(body,tag,30);
+    const primarySchedule = await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxStatus().catch(()=>({configured:null,reason:'unavailable',overdue:true}));
+    if (url.pathname === '/api/breakouts/health') return reply({ ...health, runId: capture.runId, captureStartedAt: capture.captureStartedAt, schedule,primarySchedule }, health.partial || !health.total || schedule.overdue || primarySchedule.overdue ? 503 : 200);
+    const {body,tag} = withTag({...capture,health,schedule,primarySchedule});
+    const response = tagged(body,tag,5);
     if (edgeCache) await edgeCache.put(cacheKey,response.clone()).catch(()=>{});
     return revalidate(request,response,'capture');
   } catch { return reply({ ok: false, reason: 'capture-unavailable' }, 503); }
