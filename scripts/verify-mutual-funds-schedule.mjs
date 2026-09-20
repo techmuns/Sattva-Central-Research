@@ -45,3 +45,7 @@ for(const source of [undefined,{lastAttemptAt:epoch,reason:'recent-failure'}]) {
   const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({source})})}};
   assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503);
 }
+
+f=fixture({source:[{...run(9,50,'in_progress'),display_title:'AMC holdings · scheme-benchmarks'},run(8,20)],consumer:[run(2,2)]});
+await f.make().wake();assert.equal((await f.make().status()).source.reason,'run-overdue');assert.equal((await f.make().status()).source.run.id,9);
+assert.equal(f.posts.filter(p=>p.upstream).length,0,'An older blocking run remains overdue when found by the final dispatch guard');

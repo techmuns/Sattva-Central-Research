@@ -38,7 +38,8 @@ export class MutualFundsSchedule {
           source.lastDispatchAt=at;
           await this.storage.put(MF_TIMER,{...state,source});
           const out=await dispatchWorkflow(this.fetcher,upstream,MF_SOURCE_WORKFLOW,'main',{mode:'monthly',commit:'true'});
-          source.reason=out.dispatched?'dispatched':'running';
+          if(out.run)source.run=out.run;
+          source.reason=out.dispatched?'dispatched':at-Date.parse(out.run?.createdAt)>45*60000?'run-overdue':'running';
           nextAt=Math.min(nextAt,at+60000);
         }
       } catch(error) {source.reason=error.code==='forbidden'||error.code==='not-found'||error.code==='unauthorised'?'access-unavailable':'dispatch-unavailable';}
@@ -49,7 +50,7 @@ export class MutualFundsSchedule {
       else if(at-(state.importLastDispatchAt||0)<90000){reason='awaiting-run';nextAt=Math.min(nextAt,at+60000);}
       else {
         await this.storage.transaction(async tx=>{const latest=await tx.get(MF_TIMER);await tx.put(MF_TIMER,{...latest,importLastDispatchAt:at});});
-        const out=await dispatchWorkflow(this.fetcher,cfg,MF_WORKFLOW,'main',{source:'durable-timer'});reason=out.dispatched?'dispatched':'running';if(out.dispatched&&completedSource)importSourceRun=completedSource.id;
+        const out=await dispatchWorkflow(this.fetcher,cfg,MF_WORKFLOW,'main',{source:'durable-timer'});reason=out.dispatched?'dispatched':at-Date.parse(out.run?.createdAt)>45*60000?'run-overdue':'running';if(out.dispatched&&completedSource)importSourceRun=completedSource.id;
       }
     } catch { /* Persist a failed dispatch, never a source-success timestamp. */ }
     await this.storage.transaction(async tx=>{const state=await tx.get(MF_TIMER);if(state?.lastAttemptAt===at){await tx.put(MF_TIMER,{...state,nextAt,reason,...(source?{source}:{}),...(importSourceRun?{importSourceRun}:{})});await tx.setAlarm(nextAt);}});
