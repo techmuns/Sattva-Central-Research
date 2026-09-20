@@ -38,6 +38,7 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
       if (cached) return revalidate(request,cached,'edge');
     }
     if (url.pathname === '/api/breakouts/history') return reply(await store.breakoutHistory(url.searchParams.get('ticker'), url.searchParams.get('before')));
+    if (url.pathname === '/api/breakouts/fallback') return reply(await store.breakoutReadFallback());
     const capture = await store.breakoutRead();
     const schedule = await store.breakoutScheduleStatus();
     const primarySchedule = await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxStatus().catch(()=>({configured:null,reason:'unavailable',overdue:true}));

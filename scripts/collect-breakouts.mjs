@@ -146,7 +146,7 @@ async function main() {
   if(process.argv.includes('--bootstrap')) { await bootstrapBreakouts(); console.log('Durable backup timer started.'); return; }
   const now = Date.now();
   let previous;
-  try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }
+  try { previous = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/breakouts/fallback`, {signal:AbortSignal.timeout(20000)}), 8*1024*1024); }
   catch { if (!marketWindow(now).collect) throw Error('Capture service unavailable'); }
   // The first scheduled run also seeds the latest closing observations after hours.
   // Otherwise a newly published dashboard could display the old CMP until next morning.

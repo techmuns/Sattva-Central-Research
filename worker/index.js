@@ -154,7 +154,7 @@ export default {
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
     if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health'].includes(url.pathname)) return handleMutualFunds(request, env);
-    if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health'].includes(url.pathname)) return handleBreakouts(request, env);
+    if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health', '/api/breakouts/fallback'].includes(url.pathname)) return handleBreakouts(request, env);
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
     if (url.pathname === '/api/newsletter' || url.pathname.startsWith('/api/newsletter/')) return handleNewsletter(request, env);

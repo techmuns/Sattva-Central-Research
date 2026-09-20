@@ -75,9 +75,17 @@ export function liveCoverage(capture, tickers, now = Date.now()) {
     !capture.primary || !!capture.primary.failures?.length || !!capture.primary.instrumentFailures?.length ||
     !['ok','closed','checking'].includes(primary.reason) ||
     (marketWindow(now).open && now-Date.parse(capture.primary.checkedAt)>120000));
+  const archive={missedMinutes:0,missingMinuteQuotes:0,fallbackGapIntervals:0};
+  for(const gap of capture?.primary?.gaps || []) {
+    archive.missedMinutes+=gap.missedMinutes || 0;
+    archive.missingMinuteQuotes+=gap.missingMinuteQuotes || 0;
+  }
+  for(const gap of capture?.gaps || []) if(gap.reason!=='candles-recovered')archive.fallbackGapIntervals+=gap.count || 0;
+  const archiveIncomplete=Object.values(archive).some(n=>n>0);
   return { checked: tickers.length - missing.length, total: tickers.length, missing,
     partial: !tickers.length || !!missing.length || pending || primaryPartial || capture?.discoveryFailed === true || !marketWindow(now).calendarKnown,
     primaryPartial,
+    archiveIncomplete,archiveStatus:archiveIncomplete?'incomplete':'no-known-gaps',archive,
     checkedAt: capture?.completedAt || null, pending };
 }
 

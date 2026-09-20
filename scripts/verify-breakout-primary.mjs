@@ -98,6 +98,17 @@ test('overnight inventory is published before skipping quotes; new targets requi
  const failed=await prepareBreakoutCapture({targets:[{ticker:'TEST'},{ticker:'ADDED'}],previous,client:async()=>{throw Error('primary unavailable');},now});
  assert.equal(failed.primaryInventoryUpdated,false);assert.equal(failed.skipCapture,false);
 });
+test('a healthy primary close cannot suppress retries of the independent fallback capture',async()=>{
+ const now=Date.parse('2026-09-15T14:00Z');
+ const fallbackOnly={...fallback(),failures:[{ticker:'TEST',reason:'unavailable'}]};
+ const combined=mergePrimary(fallbackOnly,primary([row('TEST',Date.parse('2026-09-15T10:00Z'))],{at:now,completedAt:now}),now);
+ assert.equal(combined.failures.length,0);assert.equal(combined.rows[0].provider,'Upstox');
+ const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>combined,breakoutReadFallback:async()=>fallbackOnly})}};
+ const response=await handleBreakouts(new Request('https://site/api/breakouts/fallback'),env,{now:()=>now});
+ assert.equal(response.status,200);
+ const previous=await response.json();assert.equal(previous.failures.length,1);
+ assert.equal((await prepareBreakoutCapture({targets:[{ticker:'TEST'}],previous,client:async()=>({ok:true}),now})).skipCapture,false);
+});
 test('partial discovery retains prior ISINs, aliases and missing targets until complete discovery succeeds',async()=>{
  const data=storage(),schedule=new BreakoutPrimary(data,{}, {now:()=>AT,instruments:async()=>instruments});
  await schedule.inventory([{ticker:'OLD',name:'Renamed Company',isin:'INE000000001',yahooTicker:'TEST.NS'},{ticker:'KEEP'}]);
@@ -190,6 +201,33 @@ test('per-target failed minute intervals survive successful recovery and object 
  assert.equal(intervals[0].since,AT+60000);assert.equal(intervals[0].until,AT+3*60000);assert.equal(intervals[0].missing,2);
  assert.deepEqual(JSON.parse(intervals[0].failures),[{ticker:'TEST',reason:'authentication'}]);
  assert.equal(intervals[2].since,AT+5*60000);assert.equal(store.history('TEST').rows.length,5);
+});
+test('older changing failure sets compact into durable totals without current-reader history scans',()=>{
+ const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});
+ for(let minute=0;minute<60;minute++) {
+  now=AT+minute*60000;
+  const missing=minute%2?'A':'B',success=minute%2?'B':'A';
+  store.primarySave(primary([row(success,now)],{at:now,completedAt:now,targets:['A','B'],failures:[{ticker:missing,reason:'unavailable'}]}));
+ }
+ const before=store.read().primary.gaps;assert.equal(before.find(g=>g.kind==='missing-quotes').intervals,60);
+ now+=MINUTE_RETENTION_MS+60000;store.primaryPrune();store=new BreakoutStore(data,{now:()=>now});store.primaryPrune();
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_quote_gaps').one().n,0);
+ assert.deepEqual(store.read().primary.gaps,before);
+ const totals=store.history('A').olderGapTotals;assert.equal(totals.length,1);assert.equal(totals[0].missingMinutes,30);
+ assert.equal(store.history('B').olderGapTotals[0].missingMinutes,30);
+ const exec=data.sql.exec;
+ data.sql.exec=(sql,...args)=>{assert(!/FROM breakout_primary_(quote_gaps|gaps|gap_archive)\b/.test(sql));return exec(sql,...args);};
+ assert.equal(store.read().primary.gaps.find(g=>g.kind==='missing-quotes').missingMinuteQuotes,60);
+});
+test('fresh current prices expose incomplete historical coverage separately',async()=>{
+ const capture=mergePrimary(fallback(),primary(undefined,{gaps:[{kind:'missing-quotes',missingMinuteQuotes:3},{kind:'missed-collection',missedMinutes:2}]}),AT);
+ const schedule={started:true,configured:true,overdue:false,reason:'ok'};
+ const health=liveCoverage({...capture,primarySchedule:schedule},['TEST'],AT);
+ assert.equal(health.partial,false);assert.equal(health.archiveIncomplete,true);assert.equal(health.archiveStatus,'incomplete');
+ assert.deepEqual(health.archive,{missedMinutes:2,missingMinuteQuotes:3,fallbackGapIntervals:0});
+ const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>capture,breakoutScheduleStatus:async()=>({started:true}),upstoxStatus:async()=>schedule})}};
+ const response=await handleBreakouts(new Request('https://site/api/breakouts/health'),env,{now:()=>AT});
+ assert.equal((await response.json()).archiveStatus,'incomplete');
 });
 test('minute archive start stays distinct from earlier fallback history after restart',()=>{
  const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});

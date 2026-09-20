@@ -49,22 +49,25 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
 - Observed breakout entries, exits and quality changes retain their complete supporting
   quote separately after minute expiry. The first non-breakout establishes a baseline;
   missing bases and regressed source times cannot invent a transition. Existing daily
-  and 15-minute history and captured gap records retain their previous policy.
+  and 15-minute history retain their previous policy. Failure-interval detail uses the same four-day
+  window, then compacts into durable per-company/reason counts with first/last bounds.
+  Lifetime missed-minute and missing-quote totals survive cleanup. Current-price reads
+  load a single summary record, never scan the growing failure journal.
 - Normal dashboard opening/polling reads only the latest-price index and coverage
   summary. It never queries or downloads the minute/event archives. History is a separate
   company-specific, 100-row paginated endpoint. Minute captures order by capture time;
   source quote times remain unchanged. Breakout changes appear once, whether their
   minute snapshot is still retained or has expired. Storage remains finite.
 - A local 600-company, 30-minute fixture stored 1,421,230 bytes versus 6,205,200 bytes
-  for full quote copies (77% smaller). Its current response was 211,987 bytes raw and
-  20,171 bytes gzip. These are synthetic measurements, not production transfer or
+  for full quote copies (77% smaller). Its current response was 211,981 bytes raw and
+  20,169 bytes gzip. These are synthetic measurements, not production transfer or
   database-size guarantees; company names, values and breakout activity vary.
 - Missed minute intervals are counted separately in `primary.gaps`. The existing
   15-minute candle recovery remains available; it does not reconstruct every missed
   one-minute observation. Provider outages, absent symbols and shorter listing histories
   remain explicit partial coverage. Consecutive failures with the same target/reason
   set are retained as intervals, including the number of missing target-minute quotes;
-  successful recovery does not erase those intervals. `primary.captureStartedAt`
+  successful recovery does not erase their missing-quote counts. `primary.captureStartedAt`
   identifies when minute collection began, separately from older fallback history.
 - A usable fallback quote does not make a failed primary feed healthy. Missing server
   credentials, instrument-list failures, failed quote batches, overdue checks and primary
@@ -224,8 +227,13 @@ remain disclosed. Recovery cannot reconstruct every trade or an intra-candle
 breakout that reversed before the candle closed.
 
 - `/api/breakouts`: current capture, per-ticker failures, recovery gaps and timer.
+- `/api/breakouts/fallback`: the persisted fallback capture used by GitHub closing
+  checks and recovery; healthy minute quotes cannot suppress fallback retries.
 - `/api/breakouts/health`: 503 for missing/partial/stale current coverage or an
   overdue timer; this is distinct from historical recovery completeness.
+  `archiveStatus: incomplete`, `archiveIncomplete` and the archive counters disclose
+  known history gaps even after prices recover. Sources remains partial and explains
+  those gaps separately from current-price freshness.
 - `/api/breakouts/history?ticker=...&before=...`: retained minute observations, breakout changes and existing fallback history with
   keyset pagination (100 per page, follow `nextCursor`), including recovered candles.
 

@@ -51,8 +51,6 @@ export class BreakoutStore {
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_failures (run TEXT NOT NULL, ticker TEXT NOT NULL, reason TEXT NOT NULL, PRIMARY KEY(run,ticker))');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_current (id INTEGER PRIMARY KEY, at INTEGER NOT NULL, payload TEXT NOT NULL)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_latest (bucket INTEGER PRIMARY KEY, payload TEXT NOT NULL)');
-    sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_gaps (since INTEGER PRIMARY KEY, until INTEGER NOT NULL, slots INTEGER NOT NULL)');
-    sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_quote_gaps (since INTEGER PRIMARY KEY, until INTEGER NOT NULL, missing INTEGER NOT NULL, failures TEXT NOT NULL)');
     this.archive.init();
   }
   begin(run, targets, discoveryFailed = false) {
@@ -164,14 +162,19 @@ export class BreakoutStore {
       if(prior && at-prior.at>75000) {
         let slots=0;
         for(let minute=prior.at+60000;minute<at-15000;minute+=60000) if(marketWindow(minute).collect) slots++;
-        if(slots) this.storage.sql.exec('INSERT OR IGNORE INTO breakout_primary_gaps VALUES(?,?,?)',prior.at,at,slots);
+        if(slots) {
+          this.storage.sql.exec('INSERT OR IGNORE INTO breakout_primary_gaps VALUES(?,?,?)',prior.at,at,slots);
+          this.archive.recordGap('missed-collection',slots,prior.at,at);
+        }
       }
       if(cleanFailures.length) {
         const failures=JSON.stringify([...cleanFailures].sort((a,b)=>a.ticker.localeCompare(b.ticker)));
         const gap=this.storage.sql.exec('SELECT * FROM breakout_primary_quote_gaps ORDER BY since DESC LIMIT 1').toArray()[0];
-        if(gap && gap.until>=at-15000 && gap.failures===failures)
+        const extendsGap=gap && gap.until>=at-15000 && gap.failures===failures;
+        if(extendsGap)
           this.storage.sql.exec('UPDATE breakout_primary_quote_gaps SET until=?,missing=missing+? WHERE since=?',at+60000,cleanFailures.length,gap.since);
         else this.storage.sql.exec('INSERT INTO breakout_primary_quote_gaps VALUES(?,?,?,?)',at,at+60000,cleanFailures.length,failures);
+        this.archive.recordGap('missing-quotes',cleanFailures.length,at,at+60000,!extendsGap);
       }
       const latest=new Map();
       for(const row of retained.values()) if(targets.includes(row.ticker)) {
@@ -191,9 +194,7 @@ export class BreakoutStore {
     const fallback=this.readFallback();
     const primary=this.storage.sql.exec('SELECT payload FROM breakout_primary_current WHERE id=1').toArray()[0];
     const rows=primary?this.storage.sql.exec('SELECT payload FROM breakout_primary_latest').toArray().flatMap(r=>Object.values(JSON.parse(r.payload))):[];
-    const gaps=primary?[
-      ...this.storage.sql.exec("SELECT 'missed-collection' AS kind,COUNT(*) AS intervals,SUM(slots) AS missedMinutes,MIN(since) AS since,MAX(until) AS until FROM breakout_primary_gaps").toArray(),
-      ...this.storage.sql.exec("SELECT 'missing-quotes' AS kind,COUNT(*) AS intervals,SUM(missing) AS missingMinuteQuotes,MIN(since) AS since,MAX(until) AS until FROM breakout_primary_quote_gaps").toArray()]:[];
+    const gaps=primary?this.archive.gaps():[];
     return mergePrimary(fallback,primary?{...JSON.parse(primary.payload),rows,gaps}:null,this.now());
   }
   readFallback() {
@@ -227,6 +228,6 @@ export class BreakoutStore {
     const data = cursor ? this.storage.sql.exec(query+' WHERE (at<? OR (at=? AND run<?)) ORDER BY at DESC,run DESC LIMIT 101', ...args,cursor.at,cursor.at,cursor.run).toArray()
       : this.storage.sql.exec(query+' ORDER BY at DESC,run DESC LIMIT 101',...args).toArray();
     const page = data.slice(0, 100), last = page.at(-1);
-    return { minuteRetentionDays:MINUTE_RETENTION_DAYS, rows: page.map(row => this.archive.decode(row.payload,row.at)), nextCursor: data.length > 100 ? JSON.stringify({ at: last.at, run: last.run }) : null };
+    return { minuteRetentionDays:MINUTE_RETENTION_DAYS, olderGapTotals:this.archive.gapTotals(ticker), rows: page.map(row => this.archive.decode(row.payload,row.at)), nextCursor: data.length > 100 ? JSON.stringify({ at: last.at, run: last.run }) : null };
   }
 }

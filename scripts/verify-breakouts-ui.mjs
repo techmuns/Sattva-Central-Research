@@ -61,7 +61,7 @@ try{
  await page.waitForFunction(()=>!document.querySelector('[data-row-key="WATCHONLY"]'));
  assert.equal(await page.locator('[data-capture-note]').count(),0);
  const sourceState=()=>page.evaluate(async()=>(await import('/js/ui/sources.js')).sourceGroups().flatMap(group=>group.items).find(item=>item.name.startsWith('Saved price and volume capture')).readState);
- assert.equal(await sourceState(),'read');
+ assert.equal(await sourceState(),'partial');
  await page.locator('[data-table-search]').fill('Test Company');
  await page.locator('[data-table-search]').evaluate(input=>input.setSelectionRange(0,input.value.length));
  await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
