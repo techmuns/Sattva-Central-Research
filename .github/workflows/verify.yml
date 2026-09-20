@@ -7,6 +7,17 @@ on:
     branches: [main]
 
 jobs:
+  workflow-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate collector and verification workflow contexts
+        run: |
+          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz -o "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= .github/workflows/mutual-funds-refresh.yml .github/workflows/verify.yml
   contracts:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -37,6 +48,8 @@ jobs:
         run: node scripts/verify-news-window.mjs
       - name: Verify bounded memory, lossless saves and exact news reading windows
         run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node scripts/verify-news-working-set.mjs
+      - name: Verify Mutual Fund calculations and resumable capture
+        run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-sources.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
         run: node scripts/verify-hot-path-memo.mjs
       - name: Verify lossless news parts and deployable asset sizes
@@ -114,7 +127,7 @@ jobs:
       - name: Verify IPOPlatform pagination, archive integrity and repeat collection
         run: node scripts/verify-ipo-platform.mjs
       - name: Verify Screener concall pagination, deduplication and artifact integrity
-        run: node scripts/verify-screener-concalls.mjs
+        run: node scripts/verify-screener-concalls.mjs && node scripts/verify-concall-delivery.mjs
       - name: Verify private summaries, dynamic portfolio queue, durable quota and authorisation
         run: node scripts/verify-concall-summaries.mjs
       - name: Verify Screener Insights capture and context-only correlation
@@ -134,7 +147,7 @@ jobs:
       - name: Verify durable company registry in the local Worker runtime
         run: node scripts/verify-capture-registry-runtime.mjs && node scripts/verify-telegram-scheduler-runtime.mjs
       - name: Verify saved breakout capture and recovery
-        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakout-primary.mjs && node scripts/verify-breakouts-runtime.mjs
+        run: node scripts/verify-breakouts.mjs && node scripts/verify-breakout-primary.mjs && node scripts/verify-breakouts-runtime.mjs && node scripts/verify-mutual-funds-runtime.mjs
       - name: Verify private summary persistence in the local Worker runtime
         run: node scripts/verify-concall-summaries-runtime.mjs
   browser:
@@ -221,6 +234,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-refresh-ui.mjs
+      - name: Verify Mutual Fund portfolio table and grouped detail
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-mutual-funds-ui.mjs
       - name: Verify instant repeat visits and interaction cache boundaries
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

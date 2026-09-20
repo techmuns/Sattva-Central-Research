@@ -47,6 +47,8 @@ try {
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   const before = await page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith('sattva-dashboard-')));
   assert.equal(before.length, 1, 'legacy app caches are removed after activation');
+  assert(before[0].includes('-mutual-funds-v1'), 'the release includes the Mutual Fund module');
+  assert((await page.evaluate(async name => (await (await caches.open(name)).match('/js/tabs/mutual-funds.js')).text(), before[0])).includes('MF shares held'));
   assert(before[0].includes('-telegram-content-v1'), 'the combined cache includes the Telegram revision');
   assert((await page.evaluate(async name => (await (await caches.open(name)).match('/js/tabs/public-chatter.js')).text(), before[0])).includes('telegramMediaLabel'));
 
@@ -69,7 +71,8 @@ try {
   assert(moduleRequested, 'the new release re-reads the Telegram module');
   const after = await page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith('sattva-dashboard-')));
   assert.deepEqual(after, [before[0].replace(sharedMarker, 'fixture-next-release')], 'a later shared marker preserves module revisions and evicts the previous combined cache');
-  console.log('PASS Telegram cache revision, legacy eviction, atomic module warm-up and subsequent shared release upgrade.');
+  assert((await page.evaluate(async name => (await (await caches.open(name)).match('/js/tabs/mutual-funds.js')).text(), after[0])).includes('MF shares held'), 'a returning session receives the Mutual Funds module');
+  console.log('PASS Mutual Funds and Telegram cache revision, legacy eviction, atomic module warm-up and subsequent shared release upgrade.');
 } finally {
   releaseModule();
   await browser.close();

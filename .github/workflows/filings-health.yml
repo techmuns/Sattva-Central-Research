@@ -42,6 +42,9 @@ jobs:
           FILINGS_HEALTH_BASE: https://sattva-central-research.tech-441.workers.dev
           TELEGRAM_HEALTH_REPORT: ${{ runner.temp }}/telegram-health.json
         run: node scripts/check-telegram-health.mjs
+      - name: Check Mutual Fund disclosure coverage and timer
+        if: always()
+        run: curl --fail-with-body --silent --show-error --max-time 30 https://sattva-central-research.tech-441.workers.dev/api/mutual-funds/health --output "${{ runner.temp }}/mutual-funds-health.json"
       - name: Check scheduled collectors and build pipelines
         if: always()
         env:
@@ -58,4 +61,5 @@ jobs:
             ${{ runner.temp }}/tradingview-health.json
             ${{ runner.temp }}/workflow-health.json
             ${{ runner.temp }}/telegram-health.json
+            ${{ runner.temp }}/mutual-funds-health.json
           if-no-files-found: warn

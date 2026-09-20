@@ -5474,3 +5474,21 @@ marked `≈`, while other source values retain their units.
 
 Offline checks: `verify-exchange-deals.mjs`, `verify-muns-insider-capture.mjs`,
 `verify-exchange-worker-runtime.mjs` and `verify-sattva-deals-ui.mjs`.
+
+## Mutual Fund ownership
+
+`GET /api/mutual-funds?isins=ISIN,...` returns `{meta, rows, nextCursor}`. Up to 250
+exact ISINs may be selected; unscoped reads use a 250-company keyset page. Each summary
+carries the actual month, total shares, comparable net/addition/reduction shares, fund counts,
+company percentage with denominator provenance, insight and largest buyer/seller. Missing
+comparisons and unverified quantities are null. `GET /api/mutual-funds/company?isin=...`
+returns all retained scheme/month observations for that company with server-computed changes;
+`month=YYYY-MM` selects an older anchor. Source statuses, attempted/check timestamps and
+capture completeness are independent of these figures. Read responses use content ETags.
+
+The collector's fixed-origin POST route accepts only signed main-workflow GitHub OIDC identities.
+Begin declares the complete target manifest, checkpoint writes bounded company batches, confirm
+acknowledges unchanged source content, and finish requires every target. Failed/interrupted runs
+preserve the last good company data. The durable timer and source health are exposed read-only
+at `/api/mutual-funds/health`. See [Mutual Fund ownership](MUTUAL-FUNDS.md) for calculation,
+publication, retention and incomplete-source boundaries.

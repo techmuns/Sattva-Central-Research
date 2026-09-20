@@ -93,63 +93,63 @@
       "pending": []
     },
     "isin:INE914E01040|ALANKIT": {
-      "lastAttemptAt": "2026-09-15T20:36:48+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-09-20T08:09:45+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 21,
       "lastSuccessAt": "2026-09-15T20:36:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1YPB01014|Allcargo Global": {
-      "lastAttemptAt": "2026-09-15T20:36:48+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-09-20T08:43:00+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 8,
       "lastSuccessAt": "2026-09-15T20:36:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0R4701017|Alpex Solar": {
-      "lastAttemptAt": "2026-09-15T20:36:48+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-09-20T09:14:15+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 35,
       "lastSuccessAt": "2026-09-15T20:36:48+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0R4701017|ALPEXSOLAR-SM": {
-      "lastAttemptAt": "2026-09-15T20:36:48+00:00",
+      "lastAttemptAt": "2026-09-20T09:49:03+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Global Securities": {
-      "lastAttemptAt": "2026-09-15T21:11:30+00:00",
+      "lastAttemptAt": "2026-09-20T09:55:08+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Credit Capital": {
-      "lastAttemptAt": "2026-09-15T21:44:02+00:00",
+      "lastAttemptAt": "2026-09-20T10:29:14+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|ASHIKA": {
-      "lastAttemptAt": "2026-09-15T22:16:02+00:00",
+      "lastAttemptAt": "2026-09-20T11:11:40+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|Atlanta Electricals": {
-      "lastAttemptAt": "2026-09-15T22:33:19+00:00",
+      "lastAttemptAt": "2026-09-20T11:44:46+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|ATLANTAELE": {
-      "lastAttemptAt": "2026-09-15T23:19:21+00:00",
+      "lastAttemptAt": "2026-09-20T12:17:47+00:00",
       "error": "search-unavailable"
     },
     "isin:INE555B01013|Axiscades Technologies": {
-      "lastAttemptAt": "2026-09-15T23:52:24+00:00",
+      "lastAttemptAt": "2026-09-20T12:48:21+00:00",
       "error": "search-unavailable"
     },
     "isin:INE555B01013|AXISCADES": {
-      "lastAttemptAt": "2026-09-16T00:23:19+00:00",
+      "lastAttemptAt": "2026-09-20T13:24:03+00:00",
       "error": "search-unavailable"
     },
     "isin:INE083K01017|Bengal and Assam Company": {
-      "lastAttemptAt": "2026-09-16T00:54:09+00:00",
+      "lastAttemptAt": "2026-09-20T13:49:49+00:00",
       "error": "search-unavailable"
     },
     "isin:INE083K01017|BENGALASM": {
@@ -1630,6 +1630,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 226,
-    "checkedAt": "2026-09-20T07:36:48.893921+00:00"
+    "checkedAt": "2026-09-20T13:49:49.301095+00:00"
   }
 }

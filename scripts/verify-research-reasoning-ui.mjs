@@ -43,7 +43,7 @@ try {
     }
     assert(r.context.candidates.every(c => c.weightPct === null));
     assert.match(r.context.holdingsBasis, /ownership and weights not established/);
-    assert.equal(r.sources.length, 20);
+    assert.equal(r.sources.length, 21);
     assert(r.sources.some(s => s.count));
     assert(r.chars <= 30000);
     assert(r.preview.items.every(p => p.kind === 'excerpt' || p.kind === 'headline'));

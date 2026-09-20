@@ -1,3 +1,4 @@
+import { handleMutualFunds } from './mutual-funds.mjs';
 // Cloudflare Worker entry point.
 //
 // The dashboard is static assets (./public), served through the ASSETS binding. This Worker
@@ -152,6 +153,7 @@ export default {
     if (url.pathname === '/api/ipo-monitor') return handleIpoMonitor(request);
     if (url.pathname === '/api/ipo-filings') return handleIpoFilings(request, { readPlatform: ({ signal }) => readPlatformCollector({ token: env.GH_DISPATCH_TOKEN, signal }) });
     if (url.pathname === '/api/capture-registration') return handleCaptureRegistration(request, env);
+    if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health'].includes(url.pathname)) return handleMutualFunds(request, env);
     if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health'].includes(url.pathname)) return handleBreakouts(request, env);
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
@@ -1368,7 +1370,15 @@ async function handleConcalls(request, env, ctx) {
     return revalidate(request, tagged(body, tag, CONCALL_HEAD_TTL_S, { 'x-sattva-head': head.fresh ? 'fresh' : 'cached' }), head.fresh ? 'miss' : 'hit');
   } catch (err) {
     const fallback = await loadConcallSnapshot(env, request);
-    if (!fallback) {
+    const screener = (await screenerRead) || { value: { capture: null, source: null } };
+    const stockscansRows = Array.isArray(fallback?.rows) ? fallback.rows : [];
+    // The independently collected documents must survive every analysis failure too. Otherwise
+    // a failed StockScans schedule removes all Summary buttons despite healthy private coverage.
+    // Even a missing analysis snapshot can still serve the validated document-only library.
+    const rows = screener.value.capture
+      ? enrichConcallScans(stockscansRows, screener.value.capture.rows)
+      : stockscansRows;
+    if (!fallback && !rows.length) {
       return json({ ok: false, degraded: `StockScans is unreachable and no snapshot is available: ${String(err.message || err)}`, rows: [] }, 502);
     }
     // The calendar read is carried INTO the fallback. The committed snapshot is a capture of
@@ -1376,13 +1386,18 @@ async function handleConcalls(request, env, ctx) {
     // outage reads to the browser as the S Screen dashboard having nothing on it — one upstream's
     // failure emptying an unrelated one's feed, on a cold device with nothing retained to soften
     // it. `null` where the artifact genuinely could not be read; its rows where it could.
-    const screener = (await screenerRead) || { value: { capture: null, source: null } };
     const { body, tag } = withTag({
       ...fallback,
       ok: true,
+      rows,
+      upcoming: fallback?.upcoming || [],
+      today: fallback?.today || { day: null, rows: [] },
       portfolioUpcoming: Array.isArray(screener.value?.capture?.portfolioUpcoming) ? screener.value.capture.portfolioUpcoming : null,
-      meta: { ...(fallback.meta || {}), screener: screener.value?.source || fallback.meta?.screener || null },
-      degraded: `StockScans is unavailable (${String(err.message || err)}) — showing the last committed snapshot.`,
+      meta: { ...(fallback?.meta || {}), total: rows.length, stockscansTotal: stockscansRows.length,
+        screener: screener.value?.source || fallback?.meta?.screener || null },
+      degraded: `StockScans is unavailable (${String(err.message || err)}) — ${stockscansRows.length
+        ? 'showing the last committed analysis snapshot with available collected documents.'
+        : 'no analysis snapshot is available; showing collected documents only.'}`,
     });
     return revalidate(request, tagged(body, tag, 15), 'fallback'); // retry sooner than a normal window
   }
