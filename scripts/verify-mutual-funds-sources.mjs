@@ -7,6 +7,34 @@ import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {projectCompany} from '../worker/mutual-funds-model.mjs';
 import {publishCompanies} from './lib/mutual-funds-transport.mjs';
 import {collectorClient} from './collect-mutual-funds.mjs';
+import {quantumDisclosures,directPortfolioRows,parseQuantumWorkbook} from './lib/mutual-funds-quantum.mjs';
+const quantumFile={FactSheetDate:'/Date(1788114600000)/',SchemeId:-1,FactSheetFreq:1,IsActive:1,FileUrl:'https://www.quantumamc.com/FileCDN/FactSheet/august-2026.xlsx'};
+const quantumReply=(page,files,pages=1)=>({success:true,pageIndex:page,totalPageCount:pages,objProductPortfolioList:files});
+const requested=[];
+const quantumLinks=await quantumDisclosures('2026-08',async url=>{
+  const q=new URL(url).searchParams;requested.push(Number(q.get('pageIndex')));
+  assert.equal(q.get('yearId'),'2026');assert.equal(q.get('monthId'),'8');assert.equal(q.get('Frequency'),'1');
+  return requested.length===1?quantumReply(1,[{...quantumFile,FactSheetDate:'/Date(1380499200000)/'},
+    {...quantumFile,FactSheetFreq:2},{...quantumFile,SchemeId:4},{...quantumFile,IsActive:0},
+    {...quantumFile,FileUrl:'https://example.test/report.xlsx'}],2):quantumReply(2,[quantumFile,quantumFile],2);
+});
+assert.deepEqual(requested,[1,2]);assert.deepEqual(quantumLinks,[quantumFile.FileUrl]);
+await assert.rejects(quantumDisclosures('2026-08',async()=>quantumReply(1,[quantumFile],51)),/Incomplete/);
+await assert.rejects(quantumDisclosures('2026-08',async()=>quantumReply(1,[],1)),/unavailable/);
+await assert.rejects(quantumDisclosures('2026-08',async url=>quantumReply(Number(new URL(url).searchParams.get('pageIndex')),[],2)),/unavailable/);
+await assert.rejects(quantumDisclosures('2026-08',async url=>quantumReply(Number(new URL(url).searchParams.get('pageIndex')),[],Number(new URL(url).searchParams.get('pageIndex'))===1?2:1)),/changed/);
+const ownRows=[['Quantum Diversified Equity All Cap Active FOF'],['Fund units','INF209K01WE3',1347101]];
+const appendix=[['Monthly Portfolio Statement of the Underlying Schemes of Quantum Diversified Equity All Cap Active FOF'],['Underlying company','INE090A01021',10000000]];
+assert.deepEqual(directPortfolioRows([...ownRows,...appendix]),ownRows);
+assert.deepEqual(directPortfolioRows(ownRows),ownRows);
+assert.deepEqual(directPortfolioRows([['Company equity','INE090A01021',150]]),[['Company equity','INE090A01021',150]],'Real directly held equity remains intact');
+// Exercise the workbook adapter with injected I/O; the source runtime supplies XLSX.
+const fakeXlsx={read:()=>({SheetNames:['FoF','Equity'],Sheets:{FoF:[...ownRows,...appendix],Equity:[['Direct equity','INE090A01021',150]]}}),utils:{book_new:()=>({}),sheet_to_json:s=>s,aoa_to_sheet:r=>r,book_append_sheet:(book,sheet,name)=>{book[name]=sheet;}},write:book=>book};
+const parseFixture=book=>{assert.deepEqual(book.FoF,ownRows);assert.equal(book.Equity[0][2],150);return[{asOf:'2026-08-31',holdings:[]}];};
+assert.equal(parseQuantumWorkbook(null,{XLSX:fakeXlsx,parseAmcWorkbook:parseFixture,opts:{},month:'2026-08'}).length,1);
+assert.throws(()=>parseQuantumWorkbook(null,{XLSX:fakeXlsx,parseAmcWorkbook:()=>[{asOf:'2013-09-30'}],opts:{},month:'2026-08'}),/month unverified/);
+assert.throws(()=>parseQuantumWorkbook(null,{XLSX:fakeXlsx,parseAmcWorkbook:()=>[{asOf:'2026-08-31',schemeName:'Quantum Equity FOF',holdings:[{isin:'INE090A01021'}]}],opts:{},month:'2026-08'}),/Ambiguous FoF/);
+console.log('PASS Quantum disclosures: exact month, complete pagination, permitted files, actual workbook dates and direct ownership without underlying-fund double counting');
 const dated={isin:'INE123A01016',name:'Captured company',funds:[{id:'amc:fund',name:'Fund',amc:'AMC',months:{'2026-08':{shares:100,checkedAt:'2026-09-20T08:00:00Z',change:100,action:'New'}}}]};
 const missing={isin:dated.isin,name:'Current portfolio name',funds:[]};
 const retained=retainSeedObservations([missing],[{company:dated}])[0];

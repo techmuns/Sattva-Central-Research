@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {STATUTORY_PAGES,statutoryLinks} from './lib/mutual-funds-discovery.mjs';
 import {atomicJson,runSourcePool} from './lib/mutual-funds-source-pool.mjs';
+import {QUANTUM_PAGE,quantumDisclosures,parseQuantumWorkbook} from './lib/mutual-funds-quantum.mjs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {monthKey,targetMonth} from '../worker/mutual-funds-model.mjs';
@@ -34,6 +35,13 @@ for(const entry of index.amcs) {
       const links=statutoryLinks(entry.slug,html,targetMonth()),schemes=[];
       for(const link of links)schemes.push(...downloadAndParse([link],opts,page).schemes.map(s=>({...s,sourceUrl:link.url})));
       result={schemes,usedUrl:page};
+    }
+    else if(entry.slug==='quantum') {
+      const month=targetMonth(),XLSX=await import(pathToFileURL(path.join(root,'node_modules/xlsx/xlsx.mjs')).href);
+      const download=url=>execFileSync('curl',['--fail','--location','--silent','--show-error','--max-time','30','--max-filesize','20000000',url],{maxBuffer:20*1024*1024,timeout:35000});
+      const links=await quantumDisclosures(month,url=>JSON.parse(download(url).toString('utf8'))),schemes=[];
+      for(const url of links)schemes.push(...parseQuantumWorkbook(download(url),{XLSX,parseAmcWorkbook,opts,month}).map(s=>({...s,sourceUrl:url})));
+      result={schemes,usedUrl:QUANTUM_PAGE};
     }
     else if(PAGE_SCRAPE_CONFIG[entry.slug])result=pageScrapeAmc(PAGE_SCRAPE_CONFIG[entry.slug],opts,new Date());
     else if(JSON_API_CONFIG[entry.slug])result=jsonApiAmc(entry.slug,opts,new Date());
