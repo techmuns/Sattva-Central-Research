@@ -617,6 +617,7 @@ try {
   // inactivity checks installed a context-wide fake requestAnimationFrame.
   const wheelPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   wheelPage.on('pageerror', error => errors.push(error.message));
+  wheelPage.on('console', message => { if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) errors.push(message.text()); });
   await wheelPage.route('**/*', route => route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
   await wheelPage.goto(`${origin}/embed`);
   const wheelFrame = await (await wheelPage.locator('iframe').elementHandle()).contentFrame();
@@ -630,6 +631,7 @@ try {
     document.querySelector('.alerts-horizon-caption')?.textContent.includes('Retained events through') &&
     Number(document.querySelector('[data-score-table]')?.dataset.virtualTotal) > 1000 &&
     !document.querySelector('[data-table-loading]'));
+  await settled(wheelFrame);
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
     await wheelPage.setViewportSize(size);
     const scroller = wheelFrame.locator('[data-table-scroll]');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {MutualFundsSchedule,MF_TIMER} from '../worker/mutual-funds-schedule.mjs';
 const epoch=Date.parse('2026-09-20T20:00:00Z');
-function fixture({source=[],consumer=[],denySource=false,loseSourcePost=false}={}) {
+function fixture({source=[],consumer=[],denySource=false,loseSourcePost=false,loseConsumerPost=false}={}) {
   let clock=epoch,alarm=null;const data=new Map(),posts=[];
   const storage={get:async k=>structuredClone(data.get(k)),put:async(k,v)=>data.set(k,structuredClone(v)),getAlarm:async()=>alarm,setAlarm:async v=>{alarm=v;}};storage.transaction=async fn=>fn(storage);
   const fetcher=async(url,opt={})=>{
@@ -12,7 +12,7 @@ function fixture({source=[],consumer=[],denySource=false,loseSourcePost=false}={
     if(opt.method==='POST'){
       assert(alarm>clock,'A fallback alarm must exist before any dispatch');
       posts.push({upstream,body:JSON.parse(opt.body)});
-      if(upstream&&loseSourcePost)throw Error('Response lost');
+      if((upstream&&loseSourcePost)||(!upstream&&loseConsumerPost))throw Error('Response lost');
       return new Response(null,{status:204});
     }
     const runs=upstream?source:consumer;
@@ -41,7 +41,7 @@ for(const conclusion of ['failure','cancelled','timed_out']) {
   f=fixture({source:[run(1,3,'completed',conclusion)],consumer:[run(2,2)]});await f.make().wake();
   assert.equal((await f.make().status()).source.reason,'recent-failure');
 }
-for(const source of [undefined,{lastAttemptAt:epoch,reason:'recent-failure'}]) {
+for(const source of [undefined,...['recent-failure','dispatched','running','awaiting-run','access-unavailable','dispatch-unavailable','run-overdue'].map(reason=>({lastAttemptAt:epoch,reason}))]) {
   const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({source})})}};
   assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503);
 }
@@ -49,3 +49,32 @@ for(const source of [undefined,{lastAttemptAt:epoch,reason:'recent-failure'}]) {
 f=fixture({source:[{...run(9,50,'in_progress'),display_title:'AMC holdings · scheme-benchmarks'},run(8,20)],consumer:[run(2,2)]});
 await f.make().wake();assert.equal((await f.make().status()).source.reason,'run-overdue');assert.equal((await f.make().status()).source.run.id,9);
 assert.equal(f.posts.filter(p=>p.upstream).length,0,'An older blocking run remains overdue when found by the final dispatch guard');
+
+const consumer=[];
+f=fixture({source:[run(10,3)],consumer,loseConsumerPost:true});await f.make().wake();
+assert.equal(f.data.get(MF_TIMER).importPendingSourceRun,10);
+assert.equal(f.posts.length,1);
+consumer.unshift(run(20,-0.5)); // accepted POST finishes during the uncertainty interval
+f.advance(90000);await f.make().wake();
+assert.equal(f.posts.length,1,'A completed accepted importer is reconciled after its POST response was lost');
+assert.equal(f.data.get(MF_TIMER).importSourceRun,10);
+assert.equal(f.data.get(MF_TIMER).importPendingSourceRun,null);
+
+const prior=run(20,0);
+f=fixture({source:[run(10,3)],consumer:[prior],loseConsumerPost:true});await f.make().wake();
+f.advance(90000);await f.make().wake();
+assert.equal(f.posts.length,2,'A run already known before dispatch cannot reconcile a lost POST');
+const healthyEnv={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
+assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),healthyEnv)).status,200);
+console.log('PASS unfinished source health, accepted importer reconciliation and pre-dispatch run exclusion');
+
+const changingSource=[run(10,3)],changingConsumer=[];
+f=fixture({source:changingSource,consumer:changingConsumer,loseConsumerPost:true});await f.make().wake();
+changingConsumer.unshift(run(20,-0.5));changingSource.unshift(run(11,-1));
+f.advance(90000);await f.make().wake();
+assert.equal(f.posts.length,2,'A newly completed source still imports after the older claim reconciles');
+assert.equal(f.data.get(MF_TIMER).importSourceRun,10);
+assert.equal(f.data.get(MF_TIMER).importPendingSourceRun,11,'Reconciling the old claim cannot clear the newer uncertain claim');
+changingConsumer.unshift(run(21,-2));f.advance(90000);await f.make().wake();
+assert.equal(f.posts.length,2);
+assert.equal(f.data.get(MF_TIMER).importSourceRun,11);
