@@ -624,20 +624,35 @@ try {
     await stableReadingSurface(embedded);
     await scroller.evaluate(el => { el.scrollTop = 0; el.scrollIntoView({ block: 'end' }); });
     await stableReadingSurface(embedded);
-    const box = await scroller.boundingBox();
-    await page.mouse.move(box.x + 200, Math.min(size.height - 40, box.y + box.height / 2));
-    let previous = 0;
+    // Measured virtual rows can rebase pixel offsets while preserving the
+    // record under the reader's eyes. Assert logical reading progress instead.
+    const readingPosition = (previous = null) => {
+      const el = document.querySelector('[data-table-scroll]');
+      const boundary = el.getBoundingClientRect().top + el.querySelector('thead').offsetHeight;
+      const row = [...el.querySelectorAll('tr[data-row-key]')].find(r => r.getBoundingClientRect().bottom > boundary);
+      if (!row) return null;
+      const box = row.getBoundingClientRect();
+      const position = Number(row.getAttribute('aria-rowindex')) + (boundary - box.top) / box.height;
+      return previous === null ? position : position > previous;
+    };
+    let previous = await embedded.evaluate(readingPosition);
+    assert(Number.isFinite(previous), 'a visible record establishes the initial reading position');
     const starts = new Set();
     for (let step = 0; step < 24; step++) {
+      // Locator hover waits for a stable, hittable target after iframe resize
+      // and window replacement; a cached bounding-box point does not.
+      await scroller.hover();
       await page.mouse.wheel(0, 180);
       try {
-        await embedded.waitForFunction(top => document.querySelector('[data-table-scroll]').scrollTop > top, previous);
+        await embedded.waitForFunction(readingPosition, previous);
       } catch (error) {
         const state = await scroller.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight,
           scrollHeight: el.scrollHeight, bounds: el.getBoundingClientRect().toJSON(),
           documentScroll: window.scrollY, viewport: { width: innerWidth, height: innerHeight } }));
-        throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, box, state })}`, { cause: error });
+        throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, state })}`, { cause: error });
       }
+      await stableReadingSurface(embedded);
+      const position = await embedded.evaluate(readingPosition);
       const sample = await embedded.evaluate(async () => {
         await new Promise(requestAnimationFrame);
         await new Promise(requestAnimationFrame);
@@ -651,10 +666,10 @@ try {
           gaps: boxes.slice(1).map((box, i) => Math.abs(box.top - boxes[i].bottom)),
           visible: !!visible && visible.getBoundingClientRect().top < el.getBoundingClientRect().bottom };
       });
-      assert(sample.top > previous && sample.visible, `wheel advances through visible records inside ${size.width}px iframe (step ${step}, previous ${previous}): ${JSON.stringify(sample)}`);
+      assert(position > previous && sample.visible, `wheel advances through visible records inside ${size.width}px iframe (step ${step}, previous ${previous}, position ${position}): ${JSON.stringify(sample)}`);
       assert(sample.count <= 64 && sample.heights.every(height => height > 0), 'natural-height rows remain visible and bounded');
       assert(Math.max(0, ...sample.gaps) <= 2, `window replacement keeps rows contiguous: ${Math.max(0, ...sample.gaps)}px gap/overlap`);
-      previous = sample.top;
+      previous = position;
       starts.add(sample.start);
     }
     assert(starts.size >= 2, 'wheel crosses multiple virtual windows');
