@@ -72,6 +72,9 @@ acknowledgements retry the exact idempotent request up to three times before the
 interrupted publish stays `collecting` until every manifest company is acknowledged. A later run
 reconciles it, while older data remains readable. Signed GitHub OIDC claims restrict writes to this
 repository's main-branch collector workflow. Reader routes are read-only and ETagged.
+Scoped summary reads bind the validated ISIN list as one JSON array, preserving
+the full 250-company response below Cloudflare's 100 SQL-parameter limit. The local
+Worker regression covers 100, 101, 118 and 250 requested companies and universe paging.
 
 All captured months and distinct corrections are retained in shared storage, including companies
 that leave the portfolio. Initial history varies by AMC; months absent from the upstream snapshot

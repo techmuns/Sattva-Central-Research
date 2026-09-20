@@ -149,7 +149,9 @@ export class MutualFundsStore {
   }
   read(isins=null,cursor='') {
     this.init();if(isins && (isins.length>250 || isins.some(id=>!validIsin(id))))throw Error('Invalid ISINs');
-    const list=isins?.length ? this.storage.sql.exec(`SELECT summary FROM mf_companies WHERE isin IN (${isins.map(()=>'?').join(',')}) ORDER BY isin`,...isins).toArray()
+    // Cloudflare SQLite allows only 100 bound parameters. Bind the validated
+    // scope as one JSON array so the full 250-company API page remains readable.
+    const list=isins?.length ? this.storage.sql.exec('SELECT summary FROM mf_companies WHERE isin IN (SELECT value FROM json_each(?)) ORDER BY isin',JSON.stringify(isins)).toArray()
       : isins ? [] : this.storage.sql.exec('SELECT summary FROM mf_companies WHERE isin>? ORDER BY isin LIMIT 251',cursor).toArray();
     const rows=list.slice(0,250).map(row=>{const r=JSON.parse(row.summary);if(r.denominator && this.now()-Date.parse(r.denominator.checkedAt)>7*86400000){r.companyPct=null;r.denominatorFresh=false;}return r;}),meta=this.status();
     return {meta:{...meta,health:coverageState(meta,this.now())},rows,nextCursor:list.length>250?rows.at(-1).isin:null};
