@@ -632,10 +632,11 @@ try {
     // Activate the iframe on a non-interactive date cell before native input.
     await scroller.click({ position: { x: 4, y: 100 } });
     await wheelFrame.evaluate(() => {
-      window.testWheelEvents = [];
+      window.testWheelEvents = []; window.testScrollEvents = [];
+      document.addEventListener('scroll', event => { if (window.testScrollEvents.length < 20) window.testScrollEvents.push({ target: event.target?.tagName, top: event.target?.scrollTop }); }, { passive: true, capture: true });
       document.addEventListener('wheel', event => {
         const target = event.target;
-        queueMicrotask(() => window.testWheelEvents.push({ delta: event.deltaY, prevented: event.defaultPrevented, target: target?.tagName, role: target?.getAttribute?.('role') }));
+        queueMicrotask(() => window.testWheelEvents.push({ delta: event.deltaY, prevented: event.defaultPrevented, target: target?.outerHTML?.slice(0, 600), path: event.composedPath().filter(el => el?.nodeType === 1).map(el => ({ tag: el.tagName, class: String(el.className).slice(0, 100), overflow: getComputedStyle(el).overflowY, height: el.clientHeight, scrollHeight: el.scrollHeight, top: el.scrollTop })) }));
       }, { passive: true, once: true });
     });
     // Measured virtual rows can rebase pixel offsets while preserving the
@@ -655,14 +656,14 @@ try {
     for (let step = 0; step < 24; step++) {
       // Locator hover waits for a stable, hittable target after iframe resize
       // and window replacement; a cached bounding-box point does not.
-      await scroller.hover();
+      await scroller.hover({ position: { x: 4, y: 100 } });
       await wheelPage.mouse.wheel(0, 180);
       try {
         await wheelFrame.waitForFunction(readingPosition, previous);
       } catch (error) {
         const state = await scroller.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight,
           scrollHeight: el.scrollHeight, bounds: el.getBoundingClientRect().toJSON(),
-          documentScroll: window.scrollY, wheelEvents: window.testWheelEvents, activeElement: document.activeElement?.outerHTML?.slice(0, 200), viewport: { width: innerWidth, height: innerHeight } }));
+          documentScroll: window.scrollY, wheelEvents: window.testWheelEvents, scrollEvents: window.testScrollEvents, activeElement: document.activeElement?.outerHTML?.slice(0, 200), viewport: { width: innerWidth, height: innerHeight } }));
         throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, state })}`, { cause: error });
       }
       await stableReadingSurface(wheelFrame);
