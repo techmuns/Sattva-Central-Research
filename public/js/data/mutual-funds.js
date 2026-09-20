@@ -59,8 +59,15 @@ export async function detail(isin,month=null) {
     return data;
   }
   const params=new URLSearchParams({isin,...(month?{month}:{})});
-  const out=await conditionalJson(`/api/mutual-funds/company?${params}`,{key:`mf-detail:${isin}:${month||'latest'}`,signal:AbortSignal.timeout(15000)});
-  return out.value;
+  try {
+    const out=await conditionalJson(`/api/mutual-funds/company?${params}`,{key:`mf-detail:${isin}:${month||'latest'}`,signal:AbortSignal.timeout(15000)});
+    if(out.value?.company || month)return out.value;
+  } catch(error) {
+    if(month)throw error;
+    // A dated seed remains readable during first rollout or an unavailable capture.
+  }
+  const seed=await revalidatedJson(`data/mutual-funds/companies/${isin}.json`);
+  return {...seed,meta:{...seed.meta,readFailed:true}};
 }
 export function health(m=latestMeta,now=Date.now()) {
   if(m.readFailed)return 'Read failed · showing saved disclosures';
