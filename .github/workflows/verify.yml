@@ -233,6 +233,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-performance-ownership-ui.mjs
+      - name: Verify native table scrollbar dragging and reading position
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-table-drag-ui.mjs
       - name: Verify filter transitions, loading placeholders and latest selection
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

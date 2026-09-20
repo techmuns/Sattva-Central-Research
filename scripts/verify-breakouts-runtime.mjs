@@ -22,10 +22,14 @@ const upstream=createServer((req,res)=>{
 await new Promise(done=>upstream.listen(0,'127.0.0.1',done));
 const upstreamOrigin=`http://127.0.0.1:${upstream.address().port}`;
 writeFileSync(join(scratch,'entry.mjs'),`
-import {CaptureRegistry as Registry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
+import {CaptureRegistry as BaseCaptureRegistry} from ${JSON.stringify(resolve('worker/capture-registry-object.mjs'))};
 import {handleTechnicals} from ${JSON.stringify(resolve('worker/breakouts.mjs'))};
 import {primaryInstruments,minuteQuotes} from ${JSON.stringify(resolve('worker/breakout-primary.mjs'))};
-export class CaptureRegistry extends Registry {constructor(ctx,env){super(ctx,env);this.breakouts.now=()=>Date.parse('2026-09-15T06:02Z');}}
+// Pin only the fixture store clock to its dated candles. The real alarm clock remains live
+// across restarts; otherwise the five-day recovery assertion expires as calendar time advances.
+export class CaptureRegistry extends BaseCaptureRegistry {
+ constructor(state,env){super(state,env);this.breakouts.now=()=>Date.parse('2026-09-15T06:05Z');}
+}
 export default {async fetch(request,env){const body=await request.json();
 if(body.action==='native-upstox') {
  const fetcher=(url,options)=>fetch(${JSON.stringify(upstreamOrigin)}+(new URL(url).hostname==='assets.upstox.com'?'/instruments':'/quotes'),options);
