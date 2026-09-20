@@ -155,6 +155,7 @@ export class BreakoutPrimary {
         else {
           const store=this.store(), fallback=await store.breakoutReadFallback();
           const inventory=this.config(INVENTORY);
+          const inventoryStale=!inventory || this.now()-inventory.checkedAt>20*60000;
           const targets=inventory?.targets || primaryInventory((fallback.targets || []).map(ticker=>({ticker,name:fallback.rows.find(r=>r.ticker===ticker)?.name})));
           const mapping=await this.mappings(targets);
           const session=expectedSession(at), previousSession=expectedSession(Date.parse(`${session}T09:00:00+05:30`));
@@ -163,9 +164,9 @@ export class BreakoutPrimary {
           const valid=result.rows.filter(r=>quoteFresh(r,this.now())), success=new Set(valid.map(r=>r.ticker)), mapped=new Set(mapping.mapped.map(r=>r.ticker));
           const failures=targets.filter(t=>!success.has(t.ticker)).map(t=>({ticker:t.ticker,reason:!mapped.has(t.ticker)?'unmapped':result.reason || 'stale'}));
           await store.breakoutPrimarySave({at,completedAt:this.now(),targets:targets.map(t=>t.ticker),rows:valid,failures,
-            discoveryFailed:inventory?.discoveryFailed ?? fallback.discoveryFailed ?? true,instrumentFailures:mapping.failed});
+            discoveryFailed:inventoryStale || (inventory?.discoveryFailed ?? fallback.discoveryFailed ?? true),instrumentFailures:mapping.failed});
           saved=valid.length; failed=failures.length;
-          reason=result.reason || (mapping.failed.length?'instrument-list-unavailable':failed?'partial':'ok');
+          reason=result.reason || (mapping.failed.length?'instrument-list-unavailable':inventoryStale?'inventory-stale':failed?'partial':'ok');
         }
       }
     } catch { reason='unavailable'; }

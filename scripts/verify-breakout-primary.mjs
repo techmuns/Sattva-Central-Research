@@ -109,6 +109,15 @@ test('partial discovery retains prior ISINs, aliases and missing targets until c
  await schedule.inventory([{ticker:'NEW'}],false);
  assert.deepEqual(schedule.config('upstox-inventory').targets.map(t=>t.ticker),['NEW']);
 });
+test('fresh quotes cannot hide an overdue inventory check',async()=>{
+ const data=storage();let now=AT,saved;
+ const schedule=new BreakoutPrimary(data,{UPSTOX_ACCESS_TOKEN:'fixture'},{now:()=>now,instruments:async()=>instruments,
+  quotes:async()=>({rows:[row('TEST',now)]}),store:()=>({breakoutPrimaryPrune:async()=>({ok:true}),breakoutReadFallback:async()=>fallback(),breakoutPrimarySave:async p=>{saved=p;}})});
+ await schedule.inventory([{ticker:'TEST'}]);now+=21*60000;await schedule.wake();
+ assert.equal(saved.rows.length,1);assert.equal(saved.discoveryFailed,true);assert.equal((await schedule.status()).reason,'inventory-stale');
+ await schedule.inventory([{ticker:'TEST'}]);now+=60000;await schedule.wake();
+ assert.equal(saved.discoveryFailed,false);assert.equal((await schedule.status()).reason,'ok');
+});
 test('500 instrument batches preserve earlier quotes when auth fails, and credentials never follow redirects',async()=>{
  const targets=Array.from({length:501},(_,i)=>({ticker:`T${i}`,instrumentKey:`NSE_EQ|${i}`,upstoxSymbol:`T${i}`}));let calls=0;
  const result=await minuteQuotes(targets,new Map(),'secret-fixture',{now:()=>AT,fetcher:async(url,opts)=>{

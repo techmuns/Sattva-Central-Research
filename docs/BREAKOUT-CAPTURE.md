@@ -25,6 +25,8 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
   Inventory is published before an after-hours quote skip; newly added targets still
   require a closing seed. Partial discovery preserves earlier identities and targets,
   so a temporarily unavailable portfolio/watchlist cannot erase a renamed stock's ISIN.
+  An inventory check older than 20 minutes remains partial even if its known stocks
+  still have fresh quotes; primary collection continues through that discovery outage.
 - A successfully checked Upstox quote takes priority. After two minutes without a
   successful primary check, a fresh fallback quote can take over. Last good prices
   survive failures and still show their actual source/trade time. An old last trade
