@@ -31,7 +31,7 @@ export async function handleMutualFunds(request,env,{identity=breakoutCollectorI
       :await store.mfRead(ids,url.searchParams.get('cursor')||'');
     if(url.pathname==='/api/mutual-funds/health') {
       const schedule=await store.mfScheduleStatus();
-      return reply({...payload.meta,schedule},payload.meta.health.state!=='current'||schedule.overdue||['dispatch-unavailable','run-overdue'].includes(schedule.reason)||!schedule.source?.lastAttemptAt||schedule.source?.reason!=='recent-run'?503:200);
+      return reply({...payload.meta,schedule},payload.meta.health.state!=='current'||schedule.overdue||schedule.reason!=='recent-run'||!schedule.source?.lastAttemptAt||schedule.source?.reason!=='recent-run'?503:200);
     }
     const {body,tag}=withTag(payload);return revalidate(request,tagged(body,tag,0),'capture');
   }catch{return reply({ok:false,reason:'capture-unavailable'},503);}

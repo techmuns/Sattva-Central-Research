@@ -64,7 +64,7 @@ const prior=run(20,0);
 f=fixture({source:[run(10,3)],consumer:[prior],loseConsumerPost:true});await f.make().wake();
 f.advance(90000);await f.make().wake();
 assert.equal(f.posts.length,2,'A run already known before dispatch cannot reconcile a lost POST');
-const healthyEnv={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
+const healthyEnv={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({reason:'recent-run',source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
 assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),healthyEnv)).status,200);
 console.log('PASS unfinished source health, accepted importer reconciliation and pre-dispatch run exclusion');
 
@@ -78,3 +78,24 @@ assert.equal(f.data.get(MF_TIMER).importPendingSourceRun,11,'Reconciling the old
 changingConsumer.unshift(run(21,-2));f.advance(90000);await f.make().wake();
 assert.equal(f.posts.length,2);
 assert.equal(f.data.get(MF_TIMER).importSourceRun,11);
+
+
+for(const reason of [undefined,'dispatched','running','awaiting-run','recent-failure','dispatch-unavailable','run-overdue']) {
+  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({reason,source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
+  assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503,'A fresh source cannot hide an unfinished or failed import');
+}
+const justCompleted=run(40,40);justCompleted.updated_at=new Date(epoch-60000).toISOString();
+f=fixture({source:[justCompleted],consumer:[run(2,2)]});await f.make().wake();
+assert.equal((await f.make().status()).source.reason,'recent-run');
+assert.equal(f.posts.filter(p=>p.upstream).length,0,'A long source run is due fifteen minutes after completion');
+assert.equal(f.alarm,epoch+60000,'A dispatched importer is polled promptly until completion');
+f=fixture({source:[run(10,3)],consumer:[justCompleted]});f.data.set(MF_TIMER,{importSourceRun:10});await f.make().wake();
+assert.equal((await f.make().status()).reason,'recent-run');
+assert.equal(f.posts.length,0,'A long successful import is not immediately repeated');
+
+const uncertainSource=[];
+f=fixture({source:uncertainSource,consumer:[run(2,2)],loseSourcePost:true});await f.make().wake();
+assert.equal(f.alarm,epoch+60000,'An uncertain source POST is reconciled in one minute');
+uncertainSource.unshift(run(50,-0.5));f.advance(60000);await f.make().wake();
+assert.deepEqual(f.posts.map(p=>p.upstream),[true,false],'A quickly completed source imports without waiting another collection interval');
+console.log('PASS end-to-end health, completed-run cadence and prompt source/import reconciliation');

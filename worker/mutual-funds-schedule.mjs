@@ -2,6 +2,7 @@ import { dispatchWorkflow, latestRun, isInFlight } from './github-actions.mjs';
 import { MF_INTERVAL, MF_WORKFLOW } from './mutual-funds-model.mjs';
 export const MF_TIMER='mutual-funds-timer';
 export const MF_SOURCE_WORKFLOW='amc-factsheet-monthly.yml';
+const completedAt=run=>Date.parse(run?.updatedAt||run?.createdAt);
 export class MutualFundsSchedule {
   constructor(storage,env,{now=Date.now,fetcher=fetch}={}) {Object.assign(this,{storage,env,now,fetcher});}
   async status() { const state=await this.storage.get(MF_TIMER)||{};const alarmAt=await this.storage.getAlarm();return {...state,alarmAt,overdue:state.started && (!alarmAt||this.now()>state.nextAt+120000)}; }
@@ -27,9 +28,9 @@ export class MutualFundsSchedule {
         if(isInFlight(latest)) {
           source.reason=at-Date.parse(latest.createdAt)>45*60000?'run-overdue':'running';
           nextAt=Math.min(nextAt,at+60000);
-        } else if(at-Date.parse(latest?.createdAt)<MF_INTERVAL) {
+        } else if(at-completedAt(latest)<MF_INTERVAL) {
           source.reason=latest.conclusion==='success'?'recent-run':'recent-failure';
-          nextAt=Math.min(nextAt,Math.max(at+1000,Date.parse(latest.createdAt)+MF_INTERVAL));
+          nextAt=Math.min(nextAt,Math.max(at+1000,completedAt(latest)+MF_INTERVAL));
         } else if(at-(state.source?.lastDispatchAt||0)<90000) {
           // A lost response may already have dispatched; allow run-list visibility
           // before another attempt, including after the object is evicted.
@@ -42,7 +43,10 @@ export class MutualFundsSchedule {
           source.reason=out.dispatched?'dispatched':at-Date.parse(out.run?.createdAt)>45*60000?'run-overdue':'running';
           nextAt=Math.min(nextAt,at+60000);
         }
-      } catch(error) {source.reason=error.code==='forbidden'||error.code==='not-found'||error.code==='unauthorised'?'access-unavailable':'dispatch-unavailable';}
+      } catch(error) {
+        source.reason=error.code==='forbidden'||error.code==='not-found'||error.code==='unauthorised'?'access-unavailable':'dispatch-unavailable';
+        if(error.code==='dispatch-uncertain')nextAt=Math.min(nextAt,at+60000);
+      }
       const consumerRuns=(await latestRun(this.fetcher,cfg,MF_WORKFLOW,{perPage:10})).filter(r=>r.event!=='push');
       const recent=consumerRuns[0];
       // GitHub can accept POST while its response is lost. Reconcile the claim
@@ -56,11 +60,12 @@ export class MutualFundsSchedule {
       }
       const newlyPublished=completedSource&&completedSource.id!==state.importSourceRun;
       if(isInFlight(recent)){reason=at-Date.parse(recent.createdAt)>45*60000?'run-overdue':'running';nextAt=at+60000;}
-      else if(!newlyPublished&&at-Date.parse(recent?.createdAt)<MF_INTERVAL){reason=recent.conclusion==='success'?'recent-run':'recent-failure';nextAt=Math.min(nextAt,Math.max(at+1000,Date.parse(recent.createdAt)+MF_INTERVAL));}
+      else if(!newlyPublished&&at-completedAt(recent)<MF_INTERVAL){reason=recent.conclusion==='success'?'recent-run':'recent-failure';nextAt=Math.min(nextAt,Math.max(at+1000,completedAt(recent)+MF_INTERVAL));}
       else if(at-(state.importLastDispatchAt||0)<90000){reason='awaiting-run';nextAt=Math.min(nextAt,at+60000);}
       else {
         await this.storage.transaction(async tx=>{const latest=await tx.get(MF_TIMER);await tx.put(MF_TIMER,{...latest,importLastDispatchAt:at,importPendingSourceRun:completedSource?.id||null,importKnownRuns:consumerRuns.map(r=>r.id)});});
         const out=await dispatchWorkflow(this.fetcher,cfg,MF_WORKFLOW,'main',{source:'durable-timer'});reason=out.dispatched?'dispatched':at-Date.parse(out.run?.createdAt)>45*60000?'run-overdue':'running';if(out.dispatched&&completedSource)importSourceRun=completedSource.id;
+        nextAt=Math.min(nextAt,at+60000);
       }
     } catch(error) {
       // Reconcile an accepted-but-unacknowledged POST promptly after eviction.
