@@ -623,22 +623,19 @@ try {
   await settled(wheelFrame);
   assert.equal(await wheelFrame.getByRole('combobox', { name: 'Date range' }).inputValue(), 'today', 'fresh embedded dashboard also defaults to Today');
   await wheelFrame.getByRole('combobox', { name: 'Date range' }).selectOption('all');
+  // Switching from Today starts a separate historical source read. The old
+  // four-row table can remain geometrically stable while that read is pending.
+  await settled(wheelFrame);
+  await wheelFrame.waitForFunction(() =>
+    document.querySelector('.alerts-horizon-caption')?.textContent.includes('Retained events through') &&
+    Number(document.querySelector('[data-score-table]')?.dataset.virtualTotal) > 1000 &&
+    !document.querySelector('[data-table-loading]'));
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
     await wheelPage.setViewportSize(size);
     const scroller = wheelFrame.locator('[data-table-scroll]');
     await stableReadingSurface(wheelFrame);
     await scroller.evaluate(el => { el.scrollTop = 0; el.scrollIntoView({ block: 'end' }); });
     await stableReadingSurface(wheelFrame);
-    // Activate the iframe on a non-interactive date cell before native input.
-    await scroller.click({ position: { x: 4, y: 100 } });
-    await wheelFrame.evaluate(() => {
-      window.testWheelEvents = []; window.testScrollEvents = [];
-      document.addEventListener('scroll', event => { if (window.testScrollEvents.length < 20) window.testScrollEvents.push({ target: event.target?.tagName, top: event.target?.scrollTop }); }, { passive: true, capture: true });
-      document.addEventListener('wheel', event => {
-        const target = event.target, path = event.composedPath().filter(el => el?.nodeType === 1).map(el => ({ tag: el.tagName, class: String(el.className).slice(0, 100), overflow: getComputedStyle(el).overflowY, height: el.clientHeight, scrollHeight: el.scrollHeight, top: el.scrollTop }));
-        queueMicrotask(() => window.testWheelEvents.push({ delta: event.deltaY, prevented: event.defaultPrevented, target: target?.outerHTML?.slice(0, 600), path }));
-      }, { passive: true, once: true });
-    });
     // Measured virtual rows can rebase pixel offsets while preserving the
     // record under the reader's eyes. Assert logical reading progress instead.
     const readingPosition = (previous = null) => {
@@ -663,7 +660,7 @@ try {
       } catch (error) {
         const state = await scroller.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight,
           scrollHeight: el.scrollHeight, bounds: el.getBoundingClientRect().toJSON(),
-          documentScroll: window.scrollY, wheelEvents: window.testWheelEvents, scrollEvents: window.testScrollEvents, activeElement: document.activeElement?.outerHTML?.slice(0, 200), viewport: { width: innerWidth, height: innerHeight } }));
+          documentScroll: window.scrollY, virtualTotal: el.closest('[data-score-table]')?.dataset.virtualTotal, viewport: { width: innerWidth, height: innerHeight } }));
         throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, state })}`, { cause: error });
       }
       await stableReadingSurface(wheelFrame);
