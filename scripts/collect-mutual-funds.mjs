@@ -3,6 +3,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {companyFragments,reportBatches} from './lib/mutual-funds-transport.mjs';
 import {buildOwnership,seededPayload} from './lib/mutual-funds-build.mjs';
+import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {MF_ENDPOINT,MF_ORIGIN,monthKey,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
@@ -37,7 +38,11 @@ async function main() {
   const denomFile=process.env.MF_DENOMINATORS||'artifacts/mutual-funds-denominators.json';
   const denominators=fs.existsSync(denomFile)?JSON.parse(fs.readFileSync(denomFile)):{};
   const identities=Object.values(JSON.parse(fs.readFileSync('public/data/exchange-deals.json')).securityMap||{});
-  const {companies,warnings,reports}=buildOwnership(snapshots,{portfolio:book.holdings,identities,denominators});
+  const built=buildOwnership(snapshots,{portfolio:book.holdings,identities,denominators});
+  const {warnings,reports}=built;
+  const seedDir='public/data/mutual-funds/companies';
+  const seeds=fs.existsSync(seedDir)?fs.readdirSync(seedDir).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(fs.readFileSync(path.join(seedDir,f)))):[];
+  const companies=retainSeedObservations(built.companies,seeds);
   const target=targetMonth();
   for(const amc of amcs) {
     const issues=warnings.filter(w=>w.startsWith(amc.slug+':')&&(w.includes(':'+target+':')||w.endsWith(':invalid-month'))).length;

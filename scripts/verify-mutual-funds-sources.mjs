@@ -3,6 +3,23 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {runSourcePool} from './lib/mutual-funds-source-pool.mjs';
+import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
+import {projectCompany} from '../worker/mutual-funds-model.mjs';
+const dated={isin:'INE123A01016',name:'Captured company',funds:[{id:'amc:fund',name:'Fund',amc:'AMC',months:{'2026-08':{shares:100,checkedAt:'2026-09-20T08:00:00Z',change:100,action:'New'}}}]};
+const missing={isin:dated.isin,name:'Current portfolio name',funds:[]};
+const retained=retainSeedObservations([missing],[{company:dated}])[0];
+assert.equal(retained.funds[0].months['2026-08'].shares,100,'A failed source cannot remove the initial captured report');
+assert.equal(retained.name,'Current portfolio name');
+assert.equal(retained.funds[0].months['2026-08'].change,undefined,'Derived display math is not a source observation');
+const older=structuredClone(dated);older.funds[0].months['2026-08']={shares:50,checkedAt:'2026-09-20T07:00:00Z'};
+assert.equal(retainSeedObservations([older],[{company:dated}])[0].funds[0].months['2026-08'].shares,100);
+const corrected=structuredClone(dated);corrected.funds[0].months['2026-08']={shares:0,checkedAt:'2026-09-20T09:00:00Z',absenceVerified:true};
+const merged=retainSeedObservations([corrected],[{company:dated}])[0];
+assert.equal(merged.funds[0].months['2026-08'].shares,0,'A newer confirmed nil holding supersedes the dated seed');
+assert.equal(retainSeedObservations([],[{company:dated}]).length,1,'Historical seed companies survive leaving the current source window');
+const seedFiles=fs.readdirSync('public/data/mutual-funds/companies').filter(f=>f.endsWith('.json'));
+for(const file of seedFiles){const seed=JSON.parse(fs.readFileSync(`public/data/mutual-funds/companies/${file}`));const result=projectCompany(retainSeedObservations([],[seed])[0],{now:Date.parse('2026-09-20T12:00:00Z')});assert.equal(result.totalShares,seed.company.totalShares);assert.equal(result.netChange,seed.company.netChange);}
+console.log(`PASS retained seed capture: newer observations win, missing sources retain history, and ${seedFiles.length} portfolio totals survive normalization`);
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mf-source-pool-test-'));
 try {
   const script=path.join(dir,'source.mjs'),events=path.join(dir,'events'),checksFile=path.join(dir,'checks.json');

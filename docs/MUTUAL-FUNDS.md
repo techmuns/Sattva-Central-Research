@@ -73,7 +73,9 @@ All captured months and distinct corrections are retained in shared storage, inc
 that leave the portfolio. Initial history varies by AMC; months absent from the upstream snapshot
 cannot be claimed recovered. Storage is finite and no exhaustive industry archive is promised.
 The committed portfolio seed is a dated fallback for static/local operation and initial rollout;
-it is not the collection clock. All current companies, including future holdings, are matched
+its source observations also join durable capture, so a failed first download cannot discard
+already captured disclosures. Newer verified observations and confirmed removals take precedence;
+the seed is not the collection clock. All current companies, including future holdings, are matched
 against the complete captured stock universe on each collection.
 
 The visible tab revalidates on opening, every minute while visible, on return after inactivity,
