@@ -2,8 +2,11 @@ import { createHash } from 'node:crypto';
 import { monthKey, targetMonth, projectCompany, summaryOf, validIsin, number } from '../../worker/mutual-funds-model.mjs';
 const norm = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const fundKey = (amc, name) => `${amc}:${norm(name)}`;
+// AMC sheets can reuse the underlying equity ISIN for futures. Those contracts
+// are exposure, not owned shares, and must not poison the matching cash holding.
+const derivative = h => h.quantity < 0 || /[- ](?:\d{1,2}[- ]?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[- ]*(?:20)?\d{2}\b|\b(?:futures?|options?|derivatives?)\b/i.test(h.name||'');
 // Equity ISIN security type 10; retain REIT/InvIT names only when their exact ISIN is in the book.
-const equity = (h, wanted) => validIsin(h.isin) && (h.isin.slice(8,10)==='10' || wanted.has(h.isin)) && !/^\s*\d+(\.\d+)?\s*%/.test(h.name || '');
+const equity = (h, wanted) => validIsin(h.isin) && (/^INE/.test(h.isin) && h.isin.slice(8,10)==='10' || wanted.has(h.isin)) && !/^\s*\d+(\.\d+)?\s*%/.test(h.name || '');
 export function buildOwnership(snapshots, { portfolio = [], identities = [], denominators = {}, now = Date.now() } = {}) {
   const known = new Map([...identities,...portfolio].map(h=>[h.isin,h])), wanted = new Set(portfolio.map(h=>h.isin)), companies = new Map(), warnings=[];
   for (const snapshot of snapshots) {
@@ -21,9 +24,12 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
         const own=monthKey(scheme.asOf);
         if (own && own!==month) { warnings.push(`${id}:${month}:date-mismatch`); continue; }
         const rows=new Map(), totalPct=scheme.holdings.reduce((s,h)=>s+(number(h.pctToNav) || 0),0);
-        const complete = totalPct >= 95 && totalPct <= 105;
+        let complete = totalPct >= 95 && totalPct <= 105;
         for (const holding of scheme.holdings) {
-          if (!equity(holding,wanted)) continue;
+          if (!equity(holding,wanted) || derivative(holding)) continue;
+          // Tata's instrument footnote marker lacks asset-class context in the
+          // flattened upstream data. Withhold it until its section is verified.
+          if(snapshot.amcSlug==='tata' && /\^/.test(holding.name||'')){warnings.push(`${id}:${month}:unclassified-instrument`);complete=false;continue;}
           const h={...holding,quantity:Number.isSafeInteger(holding.quantity)&&holding.quantity>=0?holding.quantity:null};
           if(h.quantity===null)warnings.push(`${id}:${month}:missing-quantity`);
           if (rows.has(h.isin)) { rows.set(h.isin,{...h,quantity:null}); warnings.push(`${id}:${month}:duplicate-isin`); }

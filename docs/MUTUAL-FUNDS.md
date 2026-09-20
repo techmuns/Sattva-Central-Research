@@ -16,7 +16,9 @@ browser receives small summaries and fetches a company's precomputed detail only
 Company identity is an exact ISIN join, with the existing exchange security master supplying
 symbols; the active Family book overrides display names. Scheme identity uses AMC plus the
 normalized disclosed scheme name, never sheet order. Renamed schemes are separate until a reviewed
-crosswalk establishes continuity. Duplicate scheme/ISIN observations and inconsistent historical
+crosswalk establishes continuity. Explicit derivative contracts and short positions are excluded from share ownership, even when
+they carry the underlying equity ISIN. Instruments whose cash/derivative section is unresolved
+remain withheld. Duplicate scheme/ISIN observations and inconsistent historical
 month labels are recorded as validation findings rather than guessed.
 
 Net change is additions minus reductions **only for schemes reporting both adjacent calendar
@@ -72,7 +74,7 @@ public snapshots, API payloads or browser persistence.
 
 ## Initial evidence and limits (20 September 2026)
 
-The first direct source pass returned current August reports for 35 of 50 indexed AMCs. Ten
+The first direct source pass returned current August reports for 35 of 50 indexed AMCs. Some current reports also contain instrument/quantity validation findings and remain partial. Ten
 primary adapters were unavailable and five returned an older month. Some retained AmfiBeas
 historical buckets also contain date/identity parsing findings. Those limitations are exposed;
 a current file timestamp cannot certify full industry coverage. NSE's denominator route refused

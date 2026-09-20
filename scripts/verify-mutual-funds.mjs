@@ -13,6 +13,7 @@ assert.equal(change(100,0).action,'New');assert.equal(change(100,0).changePct,nu
 // Unknown or partial sheets cannot establish a zero. Non-adjacent periods cannot establish MoM.
 const partial=structuredClone(snapshot);partial.schemes[1].holdings[0].pctToNav=40;
 assert.equal(projectCompany(buildOwnership([partial],{now}).companies.find(c=>c.isin===isin),{now}).funds.find(f=>f.name==='Exit Fund').change,null);
+const futures=structuredClone(snapshot);futures.schemes[0].holdings.push({...h(isin,-20),name:'Fixture-SEP2026'}, {...h(isin,30),name:'Fixture-29-Sep-2026'});assert.equal(projectCompany(buildOwnership([futures],{now}).companies.find(c=>c.isin===isin),{now}).totalShares,150,'Derivative exposure is not owned shares');
 const duplicate=structuredClone(snapshot);duplicate.schemes.push(sc('Growth Fund','2026-08',[h(isin,999)]));assert.equal(projectCompany(buildOwnership([duplicate],{now}).companies.find(c=>c.isin===isin),{now}).funds.find(f=>f.name==='Growth Fund').current.shares,null);
 const missing=structuredClone(company);missing.funds[0].months['2026-06']=missing.funds[0].months['2026-07'];delete missing.funds[0].months['2026-07'];assert.equal(projectCompany(missing,{now}).funds[0].change,null);
 const newer=structuredClone(company);delete newer.funds[0].months['2026-07'];newer.funds[0].months['2026-08'].shares=175;
