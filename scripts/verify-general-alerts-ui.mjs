@@ -613,17 +613,22 @@ try {
 
   // Exercise the actual tab inside a short host iframe, with real wheel input. Measured rows
   // may have different natural heights; verify contiguous geometry across window replacements.
-  await page.goto(`${origin}/embed`);
-  const embedded = await (await page.locator('iframe').elementHandle()).contentFrame();
-  await settled(embedded);
-  assert.equal(await embedded.getByRole('combobox', { name: 'Date range' }).inputValue(), 'today', 'fresh embedded dashboard also defaults to Today');
-  await embedded.getByRole('combobox', { name: 'Date range' }).selectOption('all');
+  // Native gestures must use the browser's real animation clock. Earlier
+  // inactivity checks installed a context-wide fake requestAnimationFrame.
+  const wheelPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  wheelPage.on('pageerror', error => errors.push(error.message));
+  await wheelPage.route('**/*', route => route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
+  await wheelPage.goto(`${origin}/embed`);
+  const wheelFrame = await (await wheelPage.locator('iframe').elementHandle()).contentFrame();
+  await settled(wheelFrame);
+  assert.equal(await wheelFrame.getByRole('combobox', { name: 'Date range' }).inputValue(), 'today', 'fresh wheelFrame dashboard also defaults to Today');
+  await wheelFrame.getByRole('combobox', { name: 'Date range' }).selectOption('all');
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
-    await page.setViewportSize(size);
-    const scroller = embedded.locator('[data-table-scroll]');
-    await stableReadingSurface(embedded);
+    await wheelPage.setViewportSize(size);
+    const scroller = wheelFrame.locator('[data-table-scroll]');
+    await stableReadingSurface(wheelFrame);
     await scroller.evaluate(el => { el.scrollTop = 0; el.scrollIntoView({ block: 'end' }); });
-    await stableReadingSurface(embedded);
+    await stableReadingSurface(wheelFrame);
     // Measured virtual rows can rebase pixel offsets while preserving the
     // record under the reader's eyes. Assert logical reading progress instead.
     const readingPosition = (previous = null) => {
@@ -635,25 +640,25 @@ try {
       const position = Number(row.getAttribute('aria-rowindex')) + (boundary - box.top) / box.height;
       return previous === null ? position : position > previous;
     };
-    let previous = await embedded.evaluate(readingPosition);
+    let previous = await wheelFrame.evaluate(readingPosition);
     assert(Number.isFinite(previous), 'a visible record establishes the initial reading position');
     const starts = new Set();
     for (let step = 0; step < 24; step++) {
       // Locator hover waits for a stable, hittable target after iframe resize
       // and window replacement; a cached bounding-box point does not.
       await scroller.hover();
-      await page.mouse.wheel(0, 180);
+      await wheelPage.mouse.wheel(0, 180);
       try {
-        await embedded.waitForFunction(readingPosition, previous);
+        await wheelFrame.waitForFunction(readingPosition, previous);
       } catch (error) {
         const state = await scroller.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight,
           scrollHeight: el.scrollHeight, bounds: el.getBoundingClientRect().toJSON(),
           documentScroll: window.scrollY, viewport: { width: innerWidth, height: innerHeight } }));
         throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, state })}`, { cause: error });
       }
-      await stableReadingSurface(embedded);
-      const position = await embedded.evaluate(readingPosition);
-      const sample = await embedded.evaluate(async () => {
+      await stableReadingSurface(wheelFrame);
+      const position = await wheelFrame.evaluate(readingPosition);
+      const sample = await wheelFrame.evaluate(async () => {
         await new Promise(requestAnimationFrame);
         await new Promise(requestAnimationFrame);
         const el = document.querySelector('[data-table-scroll]');
@@ -674,6 +679,14 @@ try {
     }
     assert(starts.size >= 2, 'wheel crosses multiple virtual windows');
   }
+  await wheelFrame.evaluate(() => window.dispose());
+
+  await wheelPage.close();
+
+  // Return to the clock-controlled context for receipt timing assertions.
+  await page.goto(`${origin}/embed`);
+  const embedded = await (await page.locator('iframe').elementHandle()).contentFrame();
+  await settled(embedded);
   await embedded.evaluate(() => window.dispose());
 
   // Controlled receipts exercise queue boundaries without waiting for another source cycle.
