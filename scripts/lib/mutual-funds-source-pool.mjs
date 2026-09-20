@@ -39,7 +39,11 @@ export async function runSourcePool(entries,{command,args,env=process.env,checks
         // Also stop any curl process left behind by an unexpectedly exited child.
         kill('SIGKILL');
         let result=unavailable(reason||'source-process-failed');
-        if(!reason&&code===0)try{const saved=JSON.parse(fs.readFileSync(file));const match=saved.find(c=>c.slug===entry.slug);if(match)result=match;}catch{/* A missing checkpoint is not a successful check. */}
+        try{
+          const saved=JSON.parse(fs.readFileSync(file)),match=saved.find(c=>c.slug===entry.slug);
+          if(match&&(!reason&&code===0))result=match;
+          else if(match?.schemeCount>0&&match.checkedAt)result={...match,status:'partial',reason:reason||'source-process-failed',lastAttemptAt:startedAt};
+        }catch{/* A missing checkpoint is not a successful check. */}
         checks.set(entry.slug,result);save();onResult(result);resolve();
       };
       child.once('error',()=>finish(null));child.once('close',finish);

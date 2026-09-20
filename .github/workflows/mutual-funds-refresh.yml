@@ -7,6 +7,7 @@ on:
       - '.github/workflows/mutual-funds-refresh.yml'
       - 'worker/mutual-funds*.mjs'
       - 'scripts/*mutual-funds*.mjs'
+      - 'scripts/lib/mutual-funds*.mjs'
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:

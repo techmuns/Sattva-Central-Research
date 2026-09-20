@@ -8,6 +8,7 @@ import {projectCompany} from '../worker/mutual-funds-model.mjs';
 import {publishCompanies} from './lib/mutual-funds-transport.mjs';
 import {collectorClient} from './collect-mutual-funds.mjs';
 import {quantumDisclosures,directPortfolioRows,parseQuantumWorkbook} from './lib/mutual-funds-quantum.mjs';
+import './verify-mutual-funds-public.mjs';
 const quantumFile={FactSheetDate:'/Date(1788114600000)/',SchemeId:-1,FactSheetFreq:1,IsActive:1,FileUrl:'https://www.quantumamc.com/FileCDN/FactSheet/august-2026.xlsx'};
 const quantumReply=(page,files,pages=1)=>({success:true,pageIndex:page,totalPageCount:pages,objProductPortfolioList:files});
 const requested=[];
@@ -84,7 +85,8 @@ try {
 const slug=process.env.MF_SOURCE_AMCS;
 fs.appendFileSync(process.env.EVENTS,JSON.stringify({slug,event:'start'})+'\\n');
 if(slug==='failed')process.exit(2);
-if(slug==='hanging'){
+if(slug==='hanging'||slug==='checkpointed'){
+  if(slug==='checkpointed')fs.writeFileSync(process.env.MF_SOURCE_CHECK_FILE,JSON.stringify([{slug,status:'partial',schemeCount:2,checkedAt:'2026-09-20T09:00:00Z',month:'2026-08',expectedFiles:3,completedFiles:2,pendingFiles:1}]));
   const descendant=spawn(process.execPath,['-e',"process.on('SIGTERM',()=>{});setInterval(()=>{},1000)"],{stdio:'ignore'});
   fs.writeFileSync(process.env.DESCENDANT,String(descendant.pid));
   process.on('SIGTERM',()=>{});setInterval(()=>{},1000);
@@ -122,5 +124,9 @@ if(slug==='hanging'){
   const stopped=await active;
   assert(stopped.interrupted);assert.equal(stopped.checks.find(c=>c.slug==='hanging').reason,'interrupted');
   assert.equal(stopped.checks.find(c=>c.slug==='queued').status,'unchecked','Cancellation cannot start another source');
+  const saved=await runSourcePool([{slug:'checkpointed',amc:'Checkpointed'}],{command:process.execPath,args:[script],env,checksFile,timeoutMs:1000});
+  assert.equal(saved.checks[0].status,'partial');assert.equal(saved.checks[0].schemeCount,2);
+  assert.equal(saved.checks[0].checkedAt,'2026-09-20T09:00:00Z');assert.equal(saved.checks[0].reason,'source-timeout');
+  assert.equal(saved.checks[0].pendingFiles,1,'A timed-out file retains completed reports without claiming a full check');
   console.log('PASS source isolation: bounded concurrency, hung source and descendant timeout, later-source progress, failed child, durable checkpoints, preserved check times and interruption');
 } finally {fs.rmSync(dir,{recursive:true,force:true});}

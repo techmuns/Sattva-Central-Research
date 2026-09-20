@@ -16,7 +16,7 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
       const month = monthKey(bucket.asOfMonth);
       if (!month || month>targetMonth(now) || !Array.isArray(bucket.schemes)) { warnings.push(`${snapshot.amcSlug}:invalid-month`); continue; }
       for (const scheme of bucket.schemes) {
-        if (!scheme.schemeName || !Array.isArray(scheme.holdings) || !scheme.holdings.length) continue;
+        if (!scheme.schemeName || !Array.isArray(scheme.holdings) || (!scheme.holdings.length && scheme.validatedNoIndianHoldings!==true)) continue;
         // Exact disclosed names are stable; sheet order / generated d-AMC-N codes are not.
         const id = fundKey(snapshot.amcSlug,scheme.schemeName);
         if (!schemes.has(id)) schemes.set(id,{id,name:scheme.schemeName,amc:snapshot.amc,months:new Map()});
@@ -24,7 +24,7 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
         const own=monthKey(scheme.asOf);
         if (own && own!==month) { warnings.push(`${id}:${month}:date-mismatch`); continue; }
         const rows=new Map(), totalPct=scheme.holdings.reduce((s,h)=>s+(number(h.pctToNav) || 0),0);
-        let complete = totalPct >= 95 && totalPct <= 105;
+        let complete = scheme.validatedNoIndianHoldings===true&&scheme.holdings.length===0 || totalPct >= 95 && totalPct <= 105;
         for (const holding of scheme.holdings) {
           if (!equity(holding,wanted) || derivative(holding)) continue;
           // Tata's instrument footnote marker lacks asset-class context in the
