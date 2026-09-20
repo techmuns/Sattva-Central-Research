@@ -37,6 +37,11 @@ async function main() {
   const denominators=fs.existsSync(denomFile)?JSON.parse(fs.readFileSync(denomFile)):{};
   const identities=Object.values(JSON.parse(fs.readFileSync('public/data/exchange-deals.json')).securityMap||{});
   const {companies,warnings}=buildOwnership(snapshots,{portfolio:book.holdings,identities,denominators});
+  const target=targetMonth();
+  for(const amc of amcs) {
+    const issues=warnings.filter(w=>w.startsWith(amc.slug+':')&&(w.includes(':'+target+':')||w.endsWith(':invalid-month'))).length;
+    if(issues){amc.validationFindings=issues;if(amc.status==='ok')amc.status='partial';}
+  }
   const meta={state:'complete',checkedAt:checks.every(c=>c.checkedAt)?checks.map(c=>c.checkedAt).sort()[0]:new Date().toISOString(),
     targetMonth:targetMonth(),amcs,warnings:warnings.length,source:'AMC monthly portfolio disclosures via AmfiBeas',
     sourceRevision:process.env.AMFIBEAS_REVISION||null,
@@ -46,12 +51,16 @@ async function main() {
     const client=collectorClient(),known=new Map();let cursor='';
     do {const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?cursor=${cursor}`,{signal:AbortSignal.timeout(30000)}),3*1024*1024);for(const row of r.rows||[])known.set(row.isin,row.revision);cursor=r.nextCursor||'';}while(cursor);
     await client({action:'begin',manifest:{...meta,targets:companies.map(c=>c.isin)}});
-    const unchanged=[];
+    const unchanged=[];let batch=[],batchBytes=0;
+    const flush=async()=>{if(batch.length)await client({action:'checkpoint',companies:batch});batch=[];batchBytes=0;};
     for(const company of companies) {
       const revision=companyRevision(company);
       if(known.get(company.isin)===revision){unchanged.push({isin:company.isin,revision});continue;}
-      await client({action:'checkpoint',companies:[company]});
+      const bytes=Buffer.byteLength(JSON.stringify(company));
+      if(batch.length && (batch.length>=8 || batchBytes+bytes>2*1024*1024))await flush();
+      batch.push(company);batchBytes+=bytes;
     }
+    await flush();
     for(let at=0;at<unchanged.length;at+=200)await client({action:'confirm',companies:unchanged.slice(at,at+200)});
     await client({action:'finish'});await client({action:'arm'});
     console.log(`Published ${companies.length-unchanged.length} changed companies; ${unchanged.length} unchanged.`);

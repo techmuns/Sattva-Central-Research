@@ -13,6 +13,7 @@ assert.equal(change(100,0).action,'New');assert.equal(change(100,0).changePct,nu
 // Unknown or partial sheets cannot establish a zero. Non-adjacent periods cannot establish MoM.
 const partial=structuredClone(snapshot);partial.schemes[1].holdings[0].pctToNav=40;
 assert.equal(projectCompany(buildOwnership([partial],{now}).companies.find(c=>c.isin===isin),{now}).funds.find(f=>f.name==='Exit Fund').change,null);
+const duplicate=structuredClone(snapshot);duplicate.schemes.push(sc('Growth Fund','2026-08',[h(isin,999)]));assert.equal(projectCompany(buildOwnership([duplicate],{now}).companies.find(c=>c.isin===isin),{now}).funds.find(f=>f.name==='Growth Fund').current.shares,null);
 const missing=structuredClone(company);missing.funds[0].months['2026-06']=missing.funds[0].months['2026-07'];delete missing.funds[0].months['2026-07'];assert.equal(projectCompany(missing,{now}).funds[0].change,null);
 const newer=structuredClone(company);delete newer.funds[0].months['2026-07'];newer.funds[0].months['2026-08'].shares=175;
 const merged=mergeCompany(company,newer);assert.equal(merged.funds[0].months['2026-07'].shares,100);assert.equal(merged.funds[0].months['2026-08'].shares,175);

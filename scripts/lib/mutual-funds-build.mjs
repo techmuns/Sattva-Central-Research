@@ -25,11 +25,22 @@ export function buildOwnership(snapshots, { portfolio = [], identities = [], den
         for (const holding of scheme.holdings) {
           if (!equity(holding,wanted)) continue;
           const h={...holding,quantity:Number.isSafeInteger(holding.quantity)&&holding.quantity>=0?holding.quantity:null};
+          if(h.quantity===null)warnings.push(`${id}:${month}:missing-quantity`);
           if (rows.has(h.isin)) { rows.set(h.isin,{...h,quantity:null}); warnings.push(`${id}:${month}:duplicate-isin`); }
           else rows.set(h.isin,h);
         }
         const entry={rows,complete,checkedAt:bucket.checkedAt || snapshot.fetchedAt,sourceUrl:bucket.sourceUrl || snapshot.sourceUrl};
-        if (fund.months.has(month)) { warnings.push(`${id}:${month}:duplicate-scheme`); continue; }
+        if (fund.months.has(month)) {
+          warnings.push(`${id}:${month}:duplicate-scheme`);
+          const prior=fund.months.get(month);
+          // Conflicting sheets with the same identity cannot select an arbitrary winner.
+          for(const isin of new Set([...prior.rows.keys(),...rows.keys()])) {
+            const before=prior.rows.get(isin),after=rows.get(isin);
+            if(!before || !after || before.quantity!==after.quantity) prior.rows.set(isin,{...(before||after),quantity:null});
+          }
+          prior.complete=false;
+          continue;
+        }
         fund.months.set(month,entry);
       }
     }
