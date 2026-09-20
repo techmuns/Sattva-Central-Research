@@ -41,7 +41,6 @@ jobs:
     timeout-minutes: 60
     env:
       FAMILY_HOLDINGS_LIVE: 'true'
-      AMFIBEAS_PATH: ${{ runner.temp }}/amfibeas
       AMFIBEAS_REVISION: c1b611828606f01397b7283294fa1672a4fdabfa
     steps:
       - uses: actions/checkout@v5
@@ -51,6 +50,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Set isolated source directory
+        run: echo "AMFIBEAS_PATH=$RUNNER_TEMP/amfibeas" >> "$GITHUB_ENV"
       # Dependency runtime belongs to the supplied data project, not this static app.
       - name: Read AmfiBeas source data and reviewed public-disclosure parsers
         run: |
