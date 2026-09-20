@@ -7,7 +7,7 @@ import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {MF_ENDPOINT,MF_ORIGIN,monthKey,targetMonth,projectCompany,companyRevision} from '../worker/mutual-funds-model.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
-export function collectorClient({fetcher=fetch,env=process.env}={}) {
+export function collectorClient({fetcher=fetch,env=process.env,pause=ms=>new Promise(done=>setTimeout(done,ms))}={}) {
   let token=null,expires=0;
   return async body=>{
     if(!token||Date.now()>expires) {
@@ -17,8 +17,16 @@ export function collectorClient({fetcher=fetch,env=process.env}={}) {
       const reply=await boundedJson(await fetcher(url,{headers:{authorization:`Bearer ${env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}`},redirect:'error',signal:AbortSignal.timeout(15000)}),64000);
       token=reply.value;expires=Date.now()+240000;
     }
-    const reply=await boundedJson(await fetcher(MF_ENDPOINT,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(60000)}),1024*1024);
-    if(!reply.ok)throw Error('Capture not acknowledged');return reply;
+    // Every action is idempotent for this run/fragment identity, including when
+    // the server committed a checkpoint but its acknowledgement was lost.
+    for(let attempt=0;attempt<4;attempt++) {
+      let response;
+      try {response=await fetcher(MF_ENDPOINT,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(60000)});}
+      catch(error){if(attempt===3)throw error;await pause(1000*2**attempt);continue;}
+      if([500,502,503,504].includes(response.status)&&attempt<3){await response.body?.cancel();await pause(1000*2**attempt);continue;}
+      const reply=await boundedJson(response,1024*1024);
+      if(!reply.ok)throw Error('Capture not acknowledged');return reply;
+    }
   };
 }
 async function main() {

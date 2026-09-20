@@ -31,5 +31,5 @@ export async function publishCompanies(companies,client,{concurrency=4,limit=512
       catch {failures.push(company.isin);}
     }
   }));
-  if(failures.length)throw Error(`${failures.length} company uploads were not acknowledged`);
+  if(failures.length)throw Error(`${failures.length} company uploads were not acknowledged: ${failures.slice(0,5).join(', ')}`);
 }
