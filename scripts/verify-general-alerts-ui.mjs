@@ -621,7 +621,7 @@ try {
   await wheelPage.goto(`${origin}/embed`);
   const wheelFrame = await (await wheelPage.locator('iframe').elementHandle()).contentFrame();
   await settled(wheelFrame);
-  assert.equal(await wheelFrame.getByRole('combobox', { name: 'Date range' }).inputValue(), 'today', 'fresh wheelFrame dashboard also defaults to Today');
+  assert.equal(await wheelFrame.getByRole('combobox', { name: 'Date range' }).inputValue(), 'today', 'fresh embedded dashboard also defaults to Today');
   await wheelFrame.getByRole('combobox', { name: 'Date range' }).selectOption('all');
   for (const size of [{ width: 1440, height: 800 }, { width: 1024, height: 640 }]) {
     await wheelPage.setViewportSize(size);
@@ -629,6 +629,15 @@ try {
     await stableReadingSurface(wheelFrame);
     await scroller.evaluate(el => { el.scrollTop = 0; el.scrollIntoView({ block: 'end' }); });
     await stableReadingSurface(wheelFrame);
+    // Activate the iframe on a non-interactive date cell before native input.
+    await scroller.click({ position: { x: 4, y: 100 } });
+    await wheelFrame.evaluate(() => {
+      window.testWheelEvents = [];
+      document.addEventListener('wheel', event => {
+        const target = event.target;
+        queueMicrotask(() => window.testWheelEvents.push({ delta: event.deltaY, prevented: event.defaultPrevented, target: target?.tagName, role: target?.getAttribute?.('role') }));
+      }, { passive: true, once: true });
+    });
     // Measured virtual rows can rebase pixel offsets while preserving the
     // record under the reader's eyes. Assert logical reading progress instead.
     const readingPosition = (previous = null) => {
@@ -653,7 +662,7 @@ try {
       } catch (error) {
         const state = await scroller.evaluate(el => ({ top: el.scrollTop, height: el.clientHeight,
           scrollHeight: el.scrollHeight, bounds: el.getBoundingClientRect().toJSON(),
-          documentScroll: window.scrollY, viewport: { width: innerWidth, height: innerHeight } }));
+          documentScroll: window.scrollY, wheelEvents: window.testWheelEvents, activeElement: document.activeElement?.outerHTML?.slice(0, 200), viewport: { width: innerWidth, height: innerHeight } }));
         throw Error(`Native iframe wheel did not advance: ${JSON.stringify({ size, step, previous, state })}`, { cause: error });
       }
       await stableReadingSurface(wheelFrame);
