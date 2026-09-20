@@ -37,7 +37,14 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
 - Missed minute intervals are counted separately in `primary.gaps`. The existing
   15-minute candle recovery remains available; it does not reconstruct every missed
   one-minute observation. Provider outages, absent symbols and shorter listing histories
-  remain explicit partial coverage.
+  remain explicit partial coverage. Consecutive failures with the same target/reason
+  set are retained as intervals, including the number of missing target-minute quotes;
+  successful recovery does not erase those intervals. `primary.captureStartedAt`
+  identifies when minute collection began, separately from older fallback history.
+- A usable fallback quote does not make a failed primary feed healthy. Missing server
+  credentials, instrument-list failures, failed quote batches, overdue checks and primary
+  storage failures remain partial in Sources and return 503 from the health endpoint.
+  Saved prices remain readable while either collector is impaired.
 
 ### Server token setup
 

@@ -39,9 +39,9 @@ export async function handleBreakouts(request, env, { fetcher = fetch, now = Dat
     }
     if (url.pathname === '/api/breakouts/history') return reply(await store.breakoutHistory(url.searchParams.get('ticker'), url.searchParams.get('before')));
     const capture = await store.breakoutRead();
-    const health = liveCoverage(capture, capture.targets || [], now());
     const schedule = await store.breakoutScheduleStatus();
     const primarySchedule = await env.CAPTURE_REGISTRY.getByName(PRIMARY_OBJECT).upstoxStatus().catch(()=>({configured:null,reason:'unavailable',overdue:true}));
+    const health = liveCoverage({...capture,primarySchedule}, capture.targets || [], now());
     if (url.pathname === '/api/breakouts/health') return reply({ ...health, runId: capture.runId, captureStartedAt: capture.captureStartedAt, schedule,primarySchedule }, health.partial || !health.total || schedule.overdue || primarySchedule.overdue ? 503 : 200);
     const {body,tag} = withTag({...capture,health,schedule,primarySchedule});
     const response = tagged(body,tag,5);

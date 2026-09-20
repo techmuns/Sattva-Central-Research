@@ -70,8 +70,14 @@ export function liveCoverage(capture, tickers, now = Date.now()) {
   const failed = new Set((capture?.failures || []).map(item => item.ticker));
   const missing = tickers.filter(ticker => failed.has(ticker) || !quoteFresh(rows.get(ticker), now) || !rows.get(ticker)?.base);
   const pending = capture?.state !== 'complete';
+  const primary=capture?.primarySchedule;
+  const primaryPartial=!!primary && (primary.configured!==true || !primary.started || primary.overdue===true ||
+    !capture.primary || !!capture.primary.failures?.length || !!capture.primary.instrumentFailures?.length ||
+    !['ok','closed','checking'].includes(primary.reason) ||
+    (marketWindow(now).open && now-Date.parse(capture.primary.checkedAt)>120000));
   return { checked: tickers.length - missing.length, total: tickers.length, missing,
-    partial: !tickers.length || !!missing.length || pending || capture?.discoveryFailed === true || !marketWindow(now).calendarKnown,
+    partial: !tickers.length || !!missing.length || pending || primaryPartial || capture?.discoveryFailed === true || !marketWindow(now).calendarKnown,
+    primaryPartial,
     checkedAt: capture?.completedAt || null, pending };
 }
 

@@ -29,7 +29,7 @@ export function mergePrimary(fallback, primary, now=Date.now()) {
     state:recent?'complete':fallback.state,
     completedAt:recent?new Date(primary.completedAt).toISOString():fallback.completedAt,
     discoveryFailed:primary.discoveryFailed || fallback.discoveryFailed===true,
-    primary:{at:primary.at,checkedAt:new Date(primary.completedAt).toISOString(),primaryUsed,fallbackUsed,
+    primary:{at:primary.at,captureStartedAt:new Date(primary.firstAt || primary.at).toISOString(),checkedAt:new Date(primary.completedAt).toISOString(),primaryUsed,fallbackUsed,
       failures:primary.failures,instrumentFailures:primary.instrumentFailures,gaps:primary.gaps || [],intervalMs:60000},
     captureStartedAt:fallback.captureStartedAt || new Date(primary.firstAt || primary.at).toISOString(),
     retention:'Captured minute snapshots and fallback observations are retained in finite storage. Minute snapshots are not a trade-by-trade archive. Missed intervals use available 15-minute recovery candles; finer gaps remain unrecoverable.'};
@@ -51,6 +51,7 @@ export class BreakoutStore {
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_current (id INTEGER PRIMARY KEY, at INTEGER NOT NULL, payload TEXT NOT NULL)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_latest (bucket INTEGER PRIMARY KEY, payload TEXT NOT NULL)');
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_gaps (since INTEGER PRIMARY KEY, until INTEGER NOT NULL, slots INTEGER NOT NULL)');
+    sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_quote_gaps (since INTEGER PRIMARY KEY, until INTEGER NOT NULL, missing INTEGER NOT NULL, failures TEXT NOT NULL)');
     // Group minute observations into 16 stable buckets, avoiding hundreds of indexed writes
     // per minute. No observation is dropped; each bucket has an indexed capture-time cursor.
     sql.exec('CREATE TABLE IF NOT EXISTS breakout_primary_history (bucket INTEGER NOT NULL, at INTEGER NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(bucket,at))');
@@ -167,6 +168,13 @@ export class BreakoutStore {
         for(let minute=prior.at+60000;minute<at-15000;minute+=60000) if(marketWindow(minute).collect) slots++;
         if(slots) this.storage.sql.exec('INSERT OR IGNORE INTO breakout_primary_gaps VALUES(?,?,?)',prior.at,at,slots);
       }
+      if(cleanFailures.length) {
+        const failures=JSON.stringify([...cleanFailures].sort((a,b)=>a.ticker.localeCompare(b.ticker)));
+        const gap=this.storage.sql.exec('SELECT * FROM breakout_primary_quote_gaps ORDER BY since DESC LIMIT 1').toArray()[0];
+        if(gap && gap.until>=at-15000 && gap.failures===failures)
+          this.storage.sql.exec('UPDATE breakout_primary_quote_gaps SET until=?,missing=missing+? WHERE since=?',at+60000,cleanFailures.length,gap.since);
+        else this.storage.sql.exec('INSERT INTO breakout_primary_quote_gaps VALUES(?,?,?,?)',at,at+60000,cleanFailures.length,failures);
+      }
       const latest=new Map();
       for(const row of retained.values()) if(targets.includes(row.ticker)) {
         const bucket=primaryBucket(row.ticker);if(!latest.has(bucket))latest.set(bucket,{});latest.get(bucket)[row.ticker]=row;
@@ -185,7 +193,9 @@ export class BreakoutStore {
     const fallback=this.readFallback();
     const primary=this.storage.sql.exec('SELECT payload FROM breakout_primary_current WHERE id=1').toArray()[0];
     const rows=primary?this.storage.sql.exec('SELECT payload FROM breakout_primary_latest').toArray().flatMap(r=>Object.values(JSON.parse(r.payload))):[];
-    const gaps=primary?this.storage.sql.exec('SELECT COUNT(*) AS intervals,SUM(slots) AS missedMinutes,MIN(since) AS since,MAX(until) AS until FROM breakout_primary_gaps').toArray():[];
+    const gaps=primary?[
+      ...this.storage.sql.exec("SELECT 'missed-collection' AS kind,COUNT(*) AS intervals,SUM(slots) AS missedMinutes,MIN(since) AS since,MAX(until) AS until FROM breakout_primary_gaps").toArray(),
+      ...this.storage.sql.exec("SELECT 'missing-quotes' AS kind,COUNT(*) AS intervals,SUM(missing) AS missingMinuteQuotes,MIN(since) AS since,MAX(until) AS until FROM breakout_primary_quote_gaps").toArray()]:[];
     return mergePrimary(fallback,primary?{...JSON.parse(primary.payload),rows,gaps}:null,this.now());
   }
   readFallback() {

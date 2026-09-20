@@ -5,6 +5,7 @@ import {gzipSync} from 'node:zlib';
 import {BreakoutStore, mergePrimary} from '../worker/breakout-store.mjs';
 import {BreakoutPrimary, minuteQuotes, primaryInstruments, primaryInventory, cashInstruments} from '../worker/breakout-primary.mjs';
 import {handleBreakouts} from '../worker/breakouts.mjs';
+import {liveCoverage} from '../public/js/data/breakout-live-shared.js';
 const AT=Date.parse('2026-09-15T06:30:00Z');
 const iso=at=>new Date(at).toISOString();
 const base={high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'};
@@ -116,4 +117,52 @@ test('late source responses cannot replace newer saved primary prices; missed mi
  store.primarySave(primary([row('TEST',AT-60000,{price:99,checkedAt:iso(now)})],{at:now,completedAt:now}));
  const capture=store.read();assert.equal(capture.rows[0].price,108);assert.equal(capture.failures[0].reason,'stale');
  assert.equal(capture.primary.gaps[0].missedMinutes,4);assert.equal(store.history('TEST').rows.length,2);
+});
+test('usable fallback cannot hide primary authentication, list, timer or storage failures',async()=>{
+ const ready={started:true,configured:true,reason:'ok',overdue:false};
+ const good=mergePrimary(fallback(),primary(),AT);
+ assert.equal(liveCoverage({...good,primarySchedule:ready},['TEST'],AT).partial,false);
+ for(const mode of ['authentication','rate-limited','unavailable','instruments','overdue','missing-token','missing-capture','storage']) {
+  let capture=good, schedule={...ready};
+  if(['authentication','rate-limited','unavailable'].includes(mode)) capture=mergePrimary(fallback(),primary([],{targets:['TEST'],failures:[{ticker:'TEST',reason:mode}]}),AT);
+  if(mode==='instruments') capture=mergePrimary(fallback(),primary(undefined,{instrumentFailures:['NSE']}),AT);
+  if(mode==='overdue') schedule.overdue=true;
+  if(mode==='missing-token') schedule={...schedule,configured:false,reason:'not-configured'};
+  if(mode==='missing-capture') capture=fallback();
+  const env={CAPTURE_REGISTRY:{getByName:()=>({breakoutRead:async()=>capture,breakoutScheduleStatus:async()=>({started:true,overdue:false}),upstoxStatus:async()=>{if(mode==='storage')throw Error('unavailable');return schedule;}})}};
+  const read=await handleBreakouts(new Request('https://site/api/breakouts'),env,{now:()=>AT,edgeCache:null});
+  assert.equal(read.status,200,mode);const payload=await read.json();
+  assert.equal(payload.rows.length,1,mode);assert.equal(payload.health.primaryPartial,true,mode);
+  const health=await handleBreakouts(new Request('https://site/api/breakouts/health'),env,{now:()=>AT,edgeCache:null});
+  assert.equal(health.status,503,mode);
+ }
+ assert.equal(liveCoverage({...good,primarySchedule:ready},['TEST'],AT+121000).primaryPartial,true);
+});
+test('per-target failed minute intervals survive successful recovery and object restart',()=>{
+ const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});
+ const save=(failures=[])=>store.primarySave(primary(['TEST','OTHER'].filter(t=>!failures.some(f=>f.ticker===t)).map(t=>row(t,now)),{at:now,completedAt:now,targets:['TEST','OTHER'],failures}));
+ save();
+ now+=60000;save([{ticker:'TEST',reason:'authentication'}]);
+ now+=60000;save([{ticker:'TEST',reason:'authentication'}]);
+ now+=60000;save([{ticker:'OTHER',reason:'unmapped'}]);
+ now+=60000;save();
+ now+=60000;save([{ticker:'OTHER',reason:'unmapped'}]);
+ now+=60000;save();
+ store=new BreakoutStore(data,{now:()=>now});
+ const capture=store.read(),gap=capture.primary.gaps.find(g=>g.kind==='missing-quotes');
+ assert.equal(capture.failures.length,0);assert.equal(capture.primary.failures.length,0);
+ assert.equal(gap.intervals,3);assert.equal(gap.missingMinuteQuotes,4);
+ const intervals=data.sql.exec('SELECT * FROM breakout_primary_quote_gaps ORDER BY since').toArray();
+ assert.equal(intervals[0].since,AT+60000);assert.equal(intervals[0].until,AT+3*60000);assert.equal(intervals[0].missing,2);
+ assert.deepEqual(JSON.parse(intervals[0].failures),[{ticker:'TEST',reason:'authentication'}]);
+ assert.equal(intervals[2].since,AT+5*60000);assert.equal(store.history('TEST').rows.length,5);
+});
+test('minute archive start stays distinct from earlier fallback history after restart',()=>{
+ const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});
+ store.begin('1:1',['TEST']);store.checkpoint('1:1',[row('TEST')]);store.finish('1:1');
+ now+=10*60000;store.primarySave(primary([row('TEST',now)],{at:now,completedAt:now}));
+ now+=60000;store.primarySave(primary([row('TEST',now)],{at:now,completedAt:now}));
+ store=new BreakoutStore(data,{now:()=>now});
+ assert.equal(store.read().captureStartedAt,iso(AT));
+ assert.equal(store.read().primary.captureStartedAt,iso(AT+10*60000));
 });
