@@ -42,7 +42,7 @@ for(const conclusion of ['failure','cancelled','timed_out']) {
   assert.equal((await f.make().status()).source.reason,'recent-failure');
 }
 for(const source of [undefined,...['recent-failure','dispatched','running','awaiting-run','access-unavailable','dispatch-unavailable','run-overdue'].map(reason=>({lastAttemptAt:epoch,reason}))]) {
-  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({source})})}};
+  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({reason:'recent-run',source})})}};
   assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503);
 }
 
