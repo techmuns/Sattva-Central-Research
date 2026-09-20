@@ -28,7 +28,7 @@ export class MutualFundsSchedule {
           source.reason=at-Date.parse(latest.createdAt)>45*60000?'run-overdue':'running';
           nextAt=Math.min(nextAt,at+60000);
         } else if(at-Date.parse(latest?.createdAt)<MF_INTERVAL) {
-          source.reason='recent-run';
+          source.reason=latest.conclusion==='success'?'recent-run':'recent-failure';
           nextAt=Math.min(nextAt,Math.max(at+1000,Date.parse(latest.createdAt)+MF_INTERVAL));
         } else if(at-(state.source?.lastDispatchAt||0)<90000) {
           // A lost response may already have dispatched; allow run-list visibility

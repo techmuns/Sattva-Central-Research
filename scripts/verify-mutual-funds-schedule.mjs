@@ -34,3 +34,14 @@ f=fixture({loseSourcePost:true});await f.make().wake();assert.equal(f.posts.filt
 f=fixture({source:[run(1,50,'in_progress')]});await f.make().wake();assert.equal((await f.make().status()).source.reason,'run-overdue');assert.equal(f.posts.filter(p=>p.upstream).length,0);
 f=fixture({source:[{...run(9,1),display_title:'AMC holdings · scheme-benchmarks'},run(8,20)],consumer:[run(2,2)]});await f.make().wake();assert.equal(f.posts.filter(p=>p.upstream).length,1,'Benchmark refresh cannot establish holdings freshness');
 console.log('PASS durable upstream cadence, independent importer, completion wake, credential isolation, uncertainty, overdue health and eviction');
+
+// A retained complete snapshot cannot hide a failed or never-checked source timer.
+const {handleMutualFunds}=await import('../worker/mutual-funds.mjs');
+for(const conclusion of ['failure','cancelled','timed_out']) {
+  f=fixture({source:[run(1,3,'completed',conclusion)],consumer:[run(2,2)]});await f.make().wake();
+  assert.equal((await f.make().status()).source.reason,'recent-failure');
+}
+for(const source of [undefined,{lastAttemptAt:epoch,reason:'recent-failure'}]) {
+  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({source})})}};
+  assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503);
+}
