@@ -4274,3 +4274,21 @@ one inline action joined by exact source summary IDs. The live Family Office por
 every discovery, including future additions/exits. Preserve the durable rolling quota, failure
 cooldowns, retained history, reader verification and source coverage gaps. Collection is opt-in;
 merging this implementation does not enable the production gates or establish live compatibility.
+
+### Shared AMC collection watchdog (20 September 2026)
+
+The Mutual Funds durable timer also watches `techmuns/AmfiBeas`'s fixed
+`amc-factsheet-monthly.yml` workflow every 15 minutes. It does not depend on GitHub
+cron delivery or an open browser. A completed source run prompts the downstream
+import; source failures do not block importing retained disclosures. Completion
+means a run finished, not that its source coverage is complete. Both source and
+importer dispatch health remain visible at the existing health endpoint.
+
+`GH_AMFI_DISPATCH_TOKEN`, when configured, is a separate Actions-write credential
+for AmfiBeas. Otherwise the timer uses `GH_DISPATCH_TOKEN`; this only works if its
+existing scope covers AmfiBeas. Permission failures are reported explicitly. Do
+not broaden credentials or configure production secrets without authorization.
+Targets and workflow inputs are fixed server-side; no reader can redirect them.
+Persisted dispatch attempts and the run-list guard avoid immediate duplicate
+dispatch after a lost response or object eviction. Neither task's failure cancels
+an active upstream run. Verification: `node scripts/verify-mutual-funds-schedule.mjs`.

@@ -66,7 +66,7 @@ try {
 
 let dispatched=0;
 const fetcher=async(url,options={})=>{
-  if(options.method==='POST'){dispatched++;assert.match(url,/mutual-funds-refresh.yml\/dispatches$/);return new Response(null,{status:204});}
+  if(options.method==='POST'){if(url.includes('/Sattva-Central-Research/')){dispatched++;assert.match(url,/mutual-funds-refresh.yml\/dispatches$/);}else assert.match(url,/AmfiBeas\/actions\/workflows\/amc-factsheet-monthly.yml\/dispatches$/);return new Response(null,{status:204});}
   return Response.json({total_count:0,workflow_runs:[]});
 };
 clock+=20*60000;const healthyTimer=new MutualFundsSchedule(storage,{GH_DISPATCH_TOKEN:'fixture',GH_REPO:'techmuns/Sattva-Central-Research'},{now:()=>clock,fetcher});
