@@ -326,7 +326,7 @@ function renderScanner(ctx, rows) {
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${rows.length}</span> companies match these filters.</div>
     ${cards.html}
     ${table.html}
-    ${legendStrip({ note: `Scored from ${m?.source || 'Yahoo Finance'} daily OHLCV plus NSE delivery data. ${m?.failures || 0} of ${m?.company_count || 0} companies have no usable price history and score 0 of 0.` })}
+    ${legendStrip({ note: `Scored from Muns API daily OHLCV plus NSE delivery data. ${m?.failures || 0} of ${m?.company_count || 0} companies have no usable price history and score 0 of 0.` })}
   `;
 
   pill.wire(ctx.root);

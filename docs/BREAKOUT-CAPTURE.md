@@ -4,6 +4,8 @@ The daily technical score and the current price are separate measurements. The
 16-rule score still uses the completed daily series. Strong Breakouts recomputes
 its 30-session base breakout and volume classification from captured price and
 cumulative session volume. Table and popup share the same price and source time.
+The customer-facing price-service label is **Muns API**. Stored provider fields,
+original timestamps and detailed Sources retain Upstox/Yahoo provenance.
 Upstox supplies one shared price/volume snapshot per minute in market hours.
 The existing 15-minute GitHub capture is the fallback and supplies daily bases
 and candle recovery. These are periodic snapshots, not a trade-by-trade stream.

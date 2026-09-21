@@ -402,7 +402,7 @@ function openInstitutionCompany(key) {
           A dash means not disclosed, not zero.
         </p>
         <div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Company institution comparison table">
-          <table class="min-w-[980px] w-full text-sm">
+          <table data-column-layout="filed:1" class="min-w-[980px] w-full text-sm">
             <thead class="bg-slate-50"><tr>
               <th scope="col" class="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">Institution</th>
               <th scope="col" class="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">Status</th>

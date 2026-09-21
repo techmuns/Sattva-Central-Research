@@ -49,7 +49,7 @@ try{
  await page.clock.install({time:AT});
  await page.goto(`${origin}/#/research/breakouts/strong-breakouts?scope=universe`);
  const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
- assert.equal(await cell.textContent(),'₹106.00');assert((await cell.locator('..').innerText()).includes('Upstox'));
+ assert.equal(await cell.textContent(),'₹106.00');assert((await cell.locator('..').innerText()).includes('Muns API'));
  await page.locator('[data-row-key="DHOOTTRANS"]').waitFor();
  assert.equal(await page.locator('[data-row-key="ID"]').count(),0);
  assert.equal(await page.evaluate(async()=>(await import('/js/data/technicals.js')).byTicker('TEST').company.atr_history[0].atr_pct),1.23);

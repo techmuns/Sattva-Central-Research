@@ -2142,6 +2142,25 @@ wired as if it were live. The pattern for any feed in that state:
 - Document the swap in `docs/DATA-CONTRACTS.md` under a "Wiring the real feed" heading — the list
   of files to touch, in order.
 
+### Remembered table column order
+
+`ui/column-order.js` enhances every table with pointer dragging and Alt + Left/Right;
+Alt + Home restores the default. `data-column-layout` identifies custom tables, while
+`columnLayoutKey` can override a shared renderer's default identity. Preferences stay in
+this browser's local storage, independently per route/table and across scopes, refreshes and
+reloads. Date-stamped exports must not create a fresh layout every day. Cleared or disabled
+browser storage cannot provide permanent retention; a failed save is disclosed visibly.
+
+Keep this presentation-only: do not change source rows, searches, exports or collection.
+Only the drop moves mounted cells; pointer movement updates a header indicator. The single
+child-list observer handles new/replaced rows before paint and disconnects for its own writes.
+Do not add per-row listeners or full-dataset work. Grouped headings move with their descendants;
+individual child columns move within their group so month attribution remains correct.
+Preserve semantic cell styles (never style the identity cell by its current position).
+Sorting buttons may opt into heading drags with `data-column-drag-handle`; ordinary header
+links and controls keep their own interactions. A completed drag must not trigger sorting.
+Verify with `verify-column-order-ui.mjs` and `verify-column-order-upgrade-ui.mjs`.
+
 ### Performance on large tables
 
 Large scrollable tables now use the measured window in `ui/windowed-list.js` (the legacy

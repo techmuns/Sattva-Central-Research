@@ -40,6 +40,10 @@ try{
  }
  await ownershipSearch.fill('');await page.waitForTimeout(350);
  assert(await page.locator('text=MF shares held').count());assert(await page.locator('text=Insight summary').count());
+ const net=page.locator('[data-table-head] th').filter({hasText:'Net monthly shares'}), shares=page.locator('[data-table-head] th').filter({hasText:'MF shares held'});
+ const a=await net.boundingBox(),b=await shares.boundingBox();await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width-2,b.y+b.height/2,{steps:8});await page.mouse.up();
+ assert.match(await page.locator('[data-table-head] th').nth(3).textContent(),/Net monthly shares/,'requested MF layout');
+
  const book=JSON.parse(readFileSync(root+'/data/portfolio-companies.json'));const seed=JSON.parse(readFileSync(root+'/data/mutual-funds/index.json'));const held=seed.rows.find(r=>r.funds===undefined&&r.holders>10);assert(held);
  await page.evaluate(h=>{window.testBook=[{isin:h.isin,weightPct:90}];window.mount('portfolio');},held);await page.waitForTimeout(400);
  const first=page.locator('[data-row-key]').first();assert.equal(await first.getAttribute('data-row-key'),held.isin,'Largest holdings uses private portfolio weight');
@@ -49,6 +53,12 @@ try{
  mkdirSync('artifacts/mutual-funds-ui',{recursive:true});await page.screenshot({path:'artifacts/mutual-funds-ui/detail.png'});
  await page.keyboard.press('Escape');await page.waitForTimeout(150);assert(await page.locator('#modal-overlay').evaluate(e=>e.classList.contains('hidden')));
  await page.screenshot({path:'artifacts/mutual-funds-ui/table.png'});
+ await page.getByRole('button',{name:'Coverage',exact:true}).click();await page.waitForSelector('#modal-content .mf-detail-table');
+ assert.equal(await page.locator('#modal-content th').first().evaluate(e=>getComputedStyle(e).textAlign),'left');
+ await page.locator('#modal-content th').first().focus();await page.keyboard.press('Alt+ArrowRight');
+ assert.equal(await page.locator('#modal-content th.mf-identity').evaluate(e=>getComputedStyle(e).textAlign),'left','coverage identity styling follows its column');
+ await page.keyboard.press('Escape');
+
  await page.selectOption('[data-mf-sort]','newest');
  // Large table filters must search beyond the rendered DOM window.
  const search=page.locator('input[placeholder="Search company..."]');await search.fill(book.holdings.at(-1).name);await page.waitForTimeout(400);assert((await page.locator('[data-row-key]').count())>=1);
@@ -68,6 +78,10 @@ try{
  const header=key=>page.locator(`[data-mf-fund-sort="${key}"]`);
  assert.equal(await header('change').locator('..').getAttribute('aria-sort'),'descending');
  await header('name').click();assert.equal(await firstFund(),'Fund 01');
+ const from=await header('shares').boundingBox(),to=await header('valueCr').locator('..').boundingBox();
+ await page.mouse.move(from.x+from.width/2,from.y+from.height/2);await page.mouse.down();await page.mouse.move(to.x+to.width-2,to.y+to.height/2,{steps:8});await page.mouse.up();
+ assert.equal(await firstFund(),'Fund 01','Dragging the sort button does not activate its sort');
+ assert.equal(await page.locator('.mf-detail-table thead tr').nth(1).locator('th').nth(1).locator('button').getAttribute('data-mf-fund-sort'),'shares');
  await page.locator('[data-mf-next]').click();assert.match(await page.locator('[data-mf-page]').textContent(),/^51–54/);
  await header('shares').locator('..').click();assert.equal(await firstFund(),'Fund 52','Sort includes funds beyond the previous rendered page');assert.match(await page.locator('[data-mf-page]').textContent(),/^1–50/);
  await header('shares').press('Enter');assert.equal(await firstFund(),'New Fund','The second click/keyboard activation sorts ascending');
@@ -86,6 +100,7 @@ try{
  fixture.company.name='Refreshed fixture company';await page.clock.fastForward(61000);
  await page.waitForSelector('h2:has-text("Refreshed fixture company")');
  assert.equal(await header('name').locator('..').getAttribute('aria-sort'),'descending');
+ assert.equal(await page.locator('.mf-detail-table thead tr').nth(1).locator('th').nth(1).locator('button').getAttribute('data-mf-fund-sort'),'shares','Automatic refresh retains the column layout and sort');
  assert.equal(await page.locator('[data-mf-fund-search]').inputValue(),'Fund 0','Automatic refresh retains the query');assert.equal(await firstFund(),'Fund 09','Automatic refresh retains sorting');
  await page.keyboard.press('Escape');await page.locator(`[data-row-key="${held.isin}"]`).click();await page.waitForSelector('[data-mf-fund-sort="change"]');
  assert.equal(await header('change').locator('..').getAttribute('aria-sort'),'descending','Opening another detail starts with the normal monthly-change ordering');

@@ -342,7 +342,7 @@ function openCompanyDetail(item, comparison) {
           A dash means not disclosed, not zero.
         </p>
         <div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Company investor comparison table">
-          <table class="min-w-[850px] w-full text-sm">
+          <table data-column-layout="live:1" class="min-w-[850px] w-full text-sm">
             <thead class="bg-slate-50">
               <tr>
                 <th scope="col" class="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">Investor</th>
@@ -823,7 +823,7 @@ function holdingsPanel() {
   // out in row 1 of the export. The disclosure did not go anywhere; the repetition did.
   return `
     <div class="table-scroll-surface overflow-x-auto rounded-xl ring-1 ring-slate-200" tabindex="0" role="region" aria-label="Investor holdings table">
-      <table class="w-full text-sm">
+      <table data-column-layout="live:2" class="w-full text-sm">
         <thead class="bg-slate-50">
           <tr>
             <th scope="col" class="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-600">Company</th>

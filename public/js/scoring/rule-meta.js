@@ -31,7 +31,7 @@ const COMPUTED_FROM_YAHOO = (c) => {
   const ticker = c?.ticker || String(c?.screenerUrl || '').match(/\/company\/([^/]+)/)?.[1] || '';
   return {
     url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS/history` : 'https://finance.yahoo.com',
-    label: 'Calculated (from Yahoo OHLCV)',
+    label: 'Calculated (Muns API daily OHLCV)',
     section: 'Daily closes — see input source on Yahoo Finance',
   };
 };

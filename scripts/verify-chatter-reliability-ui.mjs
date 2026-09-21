@@ -133,6 +133,8 @@ try {
   assert.equal(postCalls, 2, 'all mention pages, including beyond 1000, are retained');
   assert.deepEqual(await page.locator('[data-mention-id]').evaluateAll(rows => rows.slice(0, 3).map(row => row.dataset.mentionId)), ['new-post', 'post-0', 'post-1'], 'publication instants, not timestamp text, sentiment or source pagination, determine newest first');
   const dialog = page.locator('[data-chatter-mentions-dialog]');
+  // Complete the opening transform before measuring a reading anchor.
+  await page.locator('#modal-container').evaluate(node => node.getAnimations().forEach(animation => animation.finish()));
   await dialog.evaluate(node => { node.scrollTop = node.scrollHeight; });
   await page.waitForFunction(() => document.querySelectorAll('[data-chatter-mention-row]').length === 80);
   assert.equal(await page.locator('[data-mention-id]').nth(40).getAttribute('data-mention-id'), 'post-39', 'scroll continues with the next older card');

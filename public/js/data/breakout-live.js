@@ -38,12 +38,12 @@ export function priceInfo(company, now = Date.now()) {
   const use = preferQuote(q, company, now) ? q : null;
   const bad = failed || capture?.failures.some(row => row.ticker === company.ticker) || !quoteFresh(use, now);
   const reason = capture?.failures.find(row=>row.ticker===company.ticker)?.reason;
-  const status = reason==='suspended' ? 'Unavailable on Upstox · ' : '';
+  const status = reason==='suspended' ? 'Unavailable on Muns API · ' : '';
   const tradeLabel = use?.feedAt && Date.parse(use.feedAt)-Date.parse(use.quoteAt)>20*60000
     ? `Last trade ${stamp(use.quoteAt)} · Feed ${stamp(use.feedAt)}` : stamp(use?.quoteAt);
   return { price: use?.price ?? company.cmp ?? null, change: use ? (use.prevClose ? (use.price / use.prevClose - 1) * 100 : null) : company.pct_change_today,
     at: use?.quoteAt || null, source: use?.provider || 'Daily close', stale: !!bad,
-    label: status + (use ? `${bad ? 'Saved · ' : ''}${tradeLabel} · ${use.provider}${use.exchange ? ` · ${use.exchange}` : ''}` : `Daily close · ${company.price_date || 'date unavailable'}`) };
+    label: status + (use ? `${bad ? 'Saved · ' : ''}${tradeLabel} · Muns API${use.exchange ? ` · ${use.exchange}` : ''}` : `Daily close · ${company.price_date || 'date unavailable'}`) };
 }
 export function priceCaption(info) {
   return [info.change == null ? '' : `${info.change > 0 ? '+' : ''}${Number(info.change).toFixed(2)}% vs previous close`, info.label].filter(Boolean).join(' · ');
