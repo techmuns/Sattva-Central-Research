@@ -92,6 +92,13 @@ try{
  await basic.locator('th').first().focus();await page.keyboard.press('Alt+ArrowRight');await settle();
  await basic.locator('th').filter({hasText:'Value'}).click();await settle();
  assert.deepEqual(await basic.locator('tbody tr').first().locator('td').allTextContents(),['1','Alpha']);
+ // A sortable button explicitly doubles as a drag handle without consuming normal clicks.
+ await basic.locator('th').filter({hasText:'Value'}).evaluate(th=>th.innerHTML='<button data-column-drag-handle>Value</button>');
+ await basic.locator('button').scrollIntoViewIfNeeded();
+ await drag(basic.locator('button'),basic.locator('th').filter({hasText:'Name'}),true);
+ assert.deepEqual(await basic.locator('tbody tr').first().locator('td').allTextContents(),['Alpha','1'],'dragging the sort button does not sort');
+ await basic.locator('button').click();await settle();
+ assert.deepEqual(await basic.locator('tbody tr').first().locator('td').allTextContents(),['Beta','2'],'the next click still sorts');
  // Group headings travel with all their child columns; leaf moves stay inside their month.
  const grouped=page.locator('[data-column-layout="grouped"]');
  await grouped.locator('th').filter({hasText:'August'}).focus();await page.keyboard.press('Alt+ArrowRight');await settle();

@@ -295,7 +295,7 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 @media print { .brief-button, .brief-panel { display: none !important; } }
 
 /* Column moves leave the body untouched until release. No extra header width. */
-[data-column-reorder] { cursor: grab; touch-action: pan-y; user-select: none; }
+[data-column-reorder], [data-column-reorder] [data-column-drag-handle] { cursor: grab; touch-action: pan-y; user-select: none; }
 [data-column-reorder]:focus-visible { outline: 2px solid var(--accent-600); outline-offset: -3px; }
 [data-column-dragging] { cursor: grabbing; opacity: .6; }
 [data-column-drop="before"] { box-shadow: inset 3px 0 var(--accent-600); }

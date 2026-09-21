@@ -29,7 +29,7 @@ try{
    if(u.pathname==='/data/mutual-funds/index.json')return route.fulfill({contentType:'application/json',body:JSON.stringify(fixtureSeed)});
    return route.continue();
  });
- await page.goto(origin);await page.waitForSelector('[data-row-key]');
+ await page.clock.install();await page.goto(origin);await page.waitForSelector('[data-row-key]');
  assert(await page.locator('text=MF ownership').count());
  const ownershipSearch=page.locator('input[placeholder="Search company..."]');
  for(const [i,r] of ownershipFixtures.entries()) {
@@ -64,6 +64,47 @@ try{
  const search=page.locator('input[placeholder="Search company..."]');await search.fill(book.holdings.at(-1).name);await page.waitForTimeout(400);assert((await page.locator('[data-row-key]').count())>=1);
  await search.fill('');await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.screenshot({path:'artifacts/mutual-funds-ui/dark.png'});
  await page.setViewportSize({width:420,height:850});await page.screenshot({path:'artifacts/mutual-funds-ui/mobile.png'});
+ // Every popup header sorts all matching funds before pagination, using raw numbers.
+ const fixture=JSON.parse(readFileSync(root+`/data/mutual-funds/companies/${held.isin}.json`));
+ const [current,prior,older]=fixture.company.months;
+ assert(current&&prior&&older);
+ fixture.company.funds=Array.from({length:52},(_,offset)=>{const i=offset+1;return {id:`sort:${i}`,name:`Fund ${String(i).padStart(2,'0')}`,amc:'Fixture',current:{shares:i*100,valueCr:53-i,pctOfAum:i/10},change:i-26,changePct:i*2,action:i>26?'Added':'Reduced',months:{[prior]:{shares:(53-i)*10,changePct:-i},[older]:{shares:5000-i*3,changePct:i}}};});
+ fixture.company.funds.push({id:'missing',name:'Missing Fund',amc:'Fixture',current:{},change:null,changePct:null,action:'Pending',months:{}},{id:'new',name:'New Fund',amc:'Fixture',current:{shares:1,valueCr:0,pctOfAum:0},change:1,changePct:null,action:'New',months:{[prior]:{shares:0,changePct:null},[older]:{shares:0,changePct:null}}});
+ await page.route(`**/data/mutual-funds/companies/${held.isin}.json*`,route=>route.fulfill({contentType:'application/json',body:JSON.stringify(fixture)}));
+ await page.setViewportSize({width:1500,height:1000});await page.evaluate(()=>window.mount('universe'));
+ await page.locator('input[placeholder="Search company..."]').fill(held.name);await page.locator(`[data-row-key="${held.isin}"]`).click();
+ await page.waitForSelector('[data-mf-fund-sort="name"]');
+ const firstFund=()=>page.locator('.mf-detail-table tbody tr').first().locator('td').first().locator('span').textContent();
+ const header=key=>page.locator(`[data-mf-fund-sort="${key}"]`);
+ assert.equal(await header('change').locator('..').getAttribute('aria-sort'),'descending');
+ await header('name').click();assert.equal(await firstFund(),'Fund 01');
+ const from=await header('shares').boundingBox(),to=await header('valueCr').locator('..').boundingBox();
+ await page.mouse.move(from.x+from.width/2,from.y+from.height/2);await page.mouse.down();await page.mouse.move(to.x+to.width-2,to.y+to.height/2,{steps:8});await page.mouse.up();
+ assert.equal(await firstFund(),'Fund 01','Dragging the sort button does not activate its sort');
+ assert.equal(await page.locator('.mf-detail-table thead tr').nth(1).locator('th').nth(1).locator('button').getAttribute('data-mf-fund-sort'),'shares');
+ await page.locator('[data-mf-next]').click();assert.match(await page.locator('[data-mf-page]').textContent(),/^51–54/);
+ await header('shares').locator('..').click();assert.equal(await firstFund(),'Fund 52','Sort includes funds beyond the previous rendered page');assert.match(await page.locator('[data-mf-page]').textContent(),/^1–50/);
+ await header('shares').press('Enter');assert.equal(await firstFund(),'New Fund','The second click/keyboard activation sorts ascending');
+ await page.locator('[data-mf-next]').click();assert.equal(await page.locator('.mf-detail-table tbody tr').last().locator('td span').first().textContent(),'Missing Fund','Missing shares remain last in ascending order');
+ // Distinct expected extrema expose sorting the wrong month, percentages as text, or rendered commas.
+ for(const [key,descending,ascending] of [['valueCr','Fund 01','New Fund'],['pctOfAum','Fund 52','New Fund'],['change','Fund 52','Fund 01'],['changePct','Fund 52','Fund 01'],['shares:0','Fund 01','New Fund'],['changePct:0','Fund 01','Fund 52'],['shares:1','Fund 01','New Fund'],['changePct:1','Fund 52','Fund 01']]){
+   await header(key).click();assert.equal(await firstFund(),descending,`${key} descending`);
+   assert.equal(await header(key).locator('..').getAttribute('aria-sort'),'descending');
+   await header(key).click();assert.equal(await firstFund(),ascending,`${key} ascending`);
+   assert.equal(await header(key).locator('..').getAttribute('aria-sort'),'ascending');
+ }
+ await header('changePct').click();await page.locator('[data-mf-next]').click();
+ assert.deepEqual(await page.locator('.mf-detail-table tbody tr').locator('td:first-child > span').allTextContents(),['Fund 02','Fund 01','Missing Fund','New Fund'],'Missing and New percentages have no numeric rank in either direction');
+ await header('name').click();await header('name').click();assert.equal(await firstFund(),'New Fund');
+ await page.locator('[data-mf-fund-search]').fill('Fund 0');assert.equal(await firstFund(),'Fund 09','Search retains the chosen sort');
+ fixture.company.name='Refreshed fixture company';await page.clock.fastForward(61000);
+ await page.waitForSelector('h2:has-text("Refreshed fixture company")');
+ assert.equal(await header('name').locator('..').getAttribute('aria-sort'),'descending');
+ assert.equal(await page.locator('.mf-detail-table thead tr').nth(1).locator('th').nth(1).locator('button').getAttribute('data-mf-fund-sort'),'shares','Automatic refresh retains the column layout and sort');
+ assert.equal(await page.locator('[data-mf-fund-search]').inputValue(),'Fund 0','Automatic refresh retains the query');assert.equal(await firstFund(),'Fund 09','Automatic refresh retains sorting');
+ await page.keyboard.press('Escape');await page.locator(`[data-row-key="${held.isin}"]`).click();await page.waitForSelector('[data-mf-fund-sort="change"]');
+ assert.equal(await header('change').locator('..').getAttribute('aria-sort'),'descending','Opening another detail starts with the normal monthly-change ordering');
+ await page.keyboard.press('Escape');
  // Exercise the production reader on a local-only mocked origin, including pagination and failure.
  const apiPage=await browser.newPage();const apiOrigin='http://mutual-funds.test';let apiCalls=0,version=1,fail=false,privateFail=false,privateFailureReason=null;
  const apiBook=Array.from({length:502},(_,i)=>({isin:`INE${String(i).padStart(9,'0')}`,ticker:`FIX${i}`,name:`Fixture ${i}`}));

@@ -2157,6 +2157,8 @@ child-list observer handles new/replaced rows before paint and disconnects for i
 Do not add per-row listeners or full-dataset work. Grouped headings move with their descendants;
 individual child columns move within their group so month attribution remains correct.
 Preserve semantic cell styles (never style the identity cell by its current position).
+Sorting buttons may opt into heading drags with `data-column-drag-handle`; ordinary header
+links and controls keep their own interactions. A completed drag must not trigger sorting.
 Verify with `verify-column-order-ui.mjs` and `verify-column-order-upgrade-ui.mjs`.
 
 ### Performance on large tables

@@ -243,7 +243,7 @@ export function installColumnOrder(root = document) {
   }
   listen(root, 'pointerdown', event => {
     suppressClick = null; // A new deliberate click must never be swallowed after a drag.
-    if (event.button !== 0 || !event.isPrimary || event.target.closest('a,button,input,select,textarea')) return;
+    if (event.button !== 0 || !event.isPrimary || event.target.closest('a,button:not([data-column-drag-handle]),input,select,textarea')) return;
     const cell = event.target.closest('[data-column-reorder]');
     const match = targetNode(cell);
     if (!match?.node) return;
