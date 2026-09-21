@@ -41,8 +41,8 @@ the host has refused access. Counts alone enter public workflow logs; no provide
 pages or observations are uploaded as public artifacts or committed snapshots. A failed or incomplete capture exits with a failed health gate after saving progress; it is never an all-green run with silently missing pages.
 
 `/api/mutual-funds/private` and `/api/mutual-funds/private/company` require a verified Munshot session. `MF_SCANNER_READER_EMAILS` can configure an MF-only
-reader allowlist without granting access to private Screener summaries. When unset,
-the existing private-reader policy remains the fallback. Sign-in verification and
+reader allowlist without granting access to private Screener summaries. Existing
+private readers remain eligible; this setting adds MF-only readers. Sign-in verification and
 access-policy failures are reported separately.
 They reject cross-site readers and return `private, no-store`. Public MF endpoints
 continue to serve only primary data. The dashboard keeps supplemental responses in

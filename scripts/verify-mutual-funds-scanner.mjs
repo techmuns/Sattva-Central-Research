@@ -103,6 +103,8 @@ const profile=async()=>Response.json({email:'reader@example.com'});
 const scopedEnv={MF_SCANNER_READER_EMAILS:'reader@example.com',SCREENER_SUMMARY_READER_EMAILS:'other@example.com'};
 assert((await authoriseMutualFundsReader(readerRequest,scopedEnv,{fetcher:profile})).ok);assert.equal(scopedEnv.SCREENER_SUMMARY_READER_EMAILS,'other@example.com');
 assert(!(await authoriseMutualFundsReader(readerRequest,{...scopedEnv,MF_SCANNER_READER_EMAILS:'other@example.com'},{fetcher:profile})).ok);
+assert((await authoriseMutualFundsReader(readerRequest,{MF_SCANNER_READER_EMAILS:'extra@example.com',SCREENER_SUMMARY_READER_EMAILS:'reader@example.com'},{fetcher:profile})).ok,'An MF-only addition never revokes existing private-reader access');
+assert((await authoriseMutualFundsReader(readerRequest,{MF_SCANNER_READER_EMAILS:'extra@example.com',MUNS_TOKEN:'owner-fixture-token'},{fetcher:profile})).ok,'The existing verified owner remains eligible');
 assert.equal((await authoriseMutualFundsReader(readerRequest,scopedEnv,{fetcher:async()=>new Response('{}',{status:503})})).reason,'identity-unavailable');
 assert.equal((await authoriseMutualFundsReader(readerRequest,{}, {fetcher:profile})).reason,'configuration-unavailable');
 assert.match(supplementStatus({supplementAccess:'identity-unavailable'}),/sign-in verification unavailable/);

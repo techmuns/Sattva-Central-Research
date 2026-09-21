@@ -6,10 +6,12 @@ import {callerToken} from './muns.mjs';
 export async function authoriseMutualFundsReader(request,env,{fetcher=fetch}={}) {
   const token=callerToken(request);if(!token)return {ok:false,reason:'no-session'};
   let reader;try{reader=await readProfile(token,fetcher);}catch{return {ok:false,reason:'identity-unavailable'};}
-  const configured=env.MF_SCANNER_READER_EMAILS??env.SCREENER_SUMMARY_READER_EMAILS;
-  const allowed=String(configured||'').split(',').map(v=>v.trim().toLowerCase()).filter(Boolean);
-  if(allowed.length)return {ok:allowed.includes(reader),reason:'access'};
-  if(!env.MUNS_TOKEN)return {ok:false,reason:'configuration-unavailable'};
+  const emails=value=>String(value||'').split(',').map(v=>v.trim().toLowerCase()).filter(Boolean);
+  const additional=emails(env.MF_SCANNER_READER_EMAILS);
+  if(additional.includes(reader))return {ok:true};
+  const existing=emails(env.SCREENER_SUMMARY_READER_EMAILS);
+  if(existing.length)return {ok:existing.includes(reader),reason:'access'};
+  if(!env.MUNS_TOKEN)return {ok:false,reason:additional.length?'access':'configuration-unavailable'};
   try{return {ok:reader===await readProfile(env.MUNS_TOKEN,fetcher),reason:'access'};}
   catch{return {ok:false,reason:'configuration-unavailable'};}
 }
