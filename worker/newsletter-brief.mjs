@@ -653,7 +653,7 @@ export function briefWindow(edition, day, settings, { to = null } = {}) {
  * the page instead. `sent` is the keys of the stories earlier briefs carried, from the delivery
  * log: a story from the previous window is included only if none of them sent it.
  */
-export async function buildBrief({ edition, day, settings, env, fetcher = fetch, now = Date.now(), to = null, sent = null }) {
+export async function buildBrief({ edition, day, settings, env, fetcher = fetch, now = Date.now(), to = null, sent = null, includeAi = true }) {
   if (!EDITIONS[edition]) throw Object.assign(new Error('Unknown edition'), { code: 'invalid-edition' });
   const book = await readAsset(env, BOOK_PATH);
   if (!Array.isArray(book?.holdings)) throw Object.assign(new Error('The portfolio book could not be read'), { code: 'book-unavailable' });
@@ -673,7 +673,9 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
     book: { asOf: book.asOf || null, lines: book.count ?? book.holdings.length, listed: holdings.length },
     markets, announcements, news, moves,
   };
-  brief.ai = await readAiNotes({ env, fetcher, now, companies: briefCompanies(briefStories(brief)) });
+  const companies = briefCompanies(briefStories(brief));
+  brief.ai = includeAi ? await readAiNotes({ env, fetcher, now, companies })
+    : { ok: false, reason: 'preview', eligible: companies.reduce((n, c) => n + c.clusters.filter(k => k.kind === 'story').length, 0), requested: 0, answered: 0, items: {} };
   return brief;
 }
 
@@ -1077,7 +1079,7 @@ export function sourcesNote(brief) {
     bits.push('session closes unavailable, so price moves are not included');
   }
   const ai = brief.ai;
-  if (ai?.eligible) bits.push(ai.ok ? `AI notes on ${ai.answered} of ${ai.eligible} eligible updates; other updates retain their source text` : `AI notes unavailable (${ai.reason || 'unavailable'}); source text retained`);
+  if (ai?.eligible) bits.push(ai.reason === 'preview' ? 'AI notes are added to sent editions; this preview shows source text' : ai.ok ? `AI notes on ${ai.answered} of ${ai.eligible} eligible updates; other updates retain their source text` : `AI notes unavailable (${ai.reason || 'unavailable'}); source text retained`);
   const late = briefStats(brief).late;
   const carried = late ? ` ${late} item${late === 1 ? '' : 's'} from before this window were not in the previous brief and ${late === 1 ? 'is' : 'are'} included.` : '';
   return `Window ${windowLine(brief)} · ${bits.join(' · ')}.${carried}`;

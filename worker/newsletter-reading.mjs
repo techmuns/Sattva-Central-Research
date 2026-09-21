@@ -19,7 +19,7 @@ export function relatedReports(a, b, company) {
   const x = words(a.headline, company), y = words(b.headline, company);
   const shared = [...x].filter(w => y.has(w)).length;
   // Preserve corrections, denials and opposite transaction directions as standalone updates.
-  const qualifiers = /\b(?:not|no|denies?|denied|correction|revised|cancels?|cancelled|rises?|rose|falls?|fell|up|down|increases?|decreases?|buys?|sells?|sale|sold|acquires?|exits?)\b/g;
+  const qualifiers = /\b(?:not|no|denies?|denied|correction|revised|cancels?|cancelled|approv(?:e[sd]?|al)|reject(?:s|ed|ion)?|accept(?:s|ed|ance)?|declin(?:e[sd]?)|wins?|won|los(?:e[sd]?|t)|grants?|granted|refus(?:e[sd]?)|withdraw(?:s|n)?|withdrew|revok(?:e[sd]?)|suspend(?:s|ed)?|resum(?:e[sd]?)|rises?|rose|falls?|fell|up|down|increases?|decreases?|buys?|sells?|sale|sold|acquires?|exits?)\b/g;
   const stance = s => [...new Set(s.toLowerCase().match(qualifiers) || [])].sort().join('|');
   return stance(a.headline) === stance(b.headline) && shared >= 4 && shared / (x.size + y.size - shared) >= 0.65;
 }

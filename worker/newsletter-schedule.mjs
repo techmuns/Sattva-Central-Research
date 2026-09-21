@@ -199,10 +199,10 @@ export class NewsletterSchedule {
       const reason = error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map((r) => ({ email: r.email, ok: false, reason })) });
     }
-    let pdfUrl;
+    let pdfUrl, documentId;
     try {
-      const id = this.store.saveDocument(renderBriefPdf(brief, this.renderOptions()), pdfFilename(brief));
-      pdfUrl = `${this.dashboardUrl()}/api/newsletter/pdf/${id}`;
+      documentId = this.store.saveDocument(renderBriefPdf(brief, this.renderOptions()), pdfFilename(brief), key);
+      pdfUrl = `${this.dashboardUrl()}/api/newsletter/pdf/${documentId}`;
     } catch {
       return finish({ sent: 0, failed: list.length, reason: 'pdf-failed', outcomes: list.map(r => ({ email: r.email, ok: false, reason: 'pdf-failed' })) });
     }
@@ -215,6 +215,7 @@ export class NewsletterSchedule {
     });
     const sent = outcomes.filter((o) => o.ok).length;
     const failed = outcomes.length - sent;
+    this.store.finishDocument(documentId, outcomes);
     // The desk has read these once it was sent to the desk; a test copy to one person is not that.
     const stories = sent && source !== 'test' ? briefStoryKeys(brief) : null;
     return finish({ sent, failed, reason: sent ? null : outcomes[0]?.reason || 'failed', outcomes, subject, summary: briefSummary(brief), stories });
@@ -247,7 +248,7 @@ export class NewsletterSchedule {
     const now = this.now();
     let brief;
     try {
-      brief = await buildBrief({ edition, day: istDay(now), settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to: now, sent: this.store.sentStoryKeys() });
+      brief = await buildBrief({ edition, day: istDay(now), settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to: now, sent: this.store.sentStoryKeys(), includeAi: false });
     } catch (error) {
       return { ok: false, reason: error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed' };
     }

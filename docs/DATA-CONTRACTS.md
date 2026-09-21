@@ -4674,7 +4674,8 @@ test still builds against the shipped files and asserts structure and honesty on
 Emails retain the Sattva masthead, use a fluid 760px sheet, and label optional AI summary and
 potential-impact notes. The existing Bedrock credential/configuration supplies at most 40 notes
 per build, with a 45-second deadline and a 128KB response ceiling. Failed/partial notes preserve
-source text and report coverage. Preview reads now use `NEWSLETTER_LIMITER` as well as writes.
+source text and report coverage. Public previews never invoke paid AI; their notes explain that AI readings are added on sends.
+Preview source reads also use `NEWSLETTER_LIMITER`.
 Related news is grouped conservatively across publishers; all headlines, summaries, links and
 sent-story keys survive. Distinct filings are never grouped by the reading layer.
 
@@ -4685,10 +4686,13 @@ contain no subscriber addresses or credentials and are not listed by the newslet
 PDFs survive delivery-log pruning and source refreshes, with no automatic expiration. Downloads
 read stored bytes only and return `application/pdf`, attachment disposition, private/no-store,
 noindex and no-referrer headers. Unknown/malformed IDs return 404; unsupported methods return 405.
-A storage/export failure is recorded as `pdf-failed` before any email is sent.
+A storage/export failure is recorded as `pdf-failed` before any email is sent. Confirmed rejected
+sends delete their provisional document. Uncertain outcomes (timeouts, connection loss, 5xx or
+malformed responses) retain the link because a message may have been accepted; a separate
+`delivery_key` and `delivery_state` remain on the document even after delivery-log pruning.
 
 `GET /api/newsletter/preview?edition=morning&format=pdf` builds a current, unsent PDF preview. It
-does not persist a document or alter delivery/story ledgers. Both the HTML/text email footers and
+does not invoke AI, persist a document or alter delivery/story ledgers. Both the HTML/text email footers and
 every PDF page say **Automated by Munshot**. PDF pages preserve source links, XBRL readable URLs,
 quoted source details, market timestamps and coverage notes. PDF base fonts render INR for the
 rupee sign and normalize punctuation; unsupported glyphs are displayed as Unicode code points.

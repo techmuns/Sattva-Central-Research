@@ -25,6 +25,9 @@ for (const other of [
   row(first.headline, { source: 'Mint', at: at + 86400001 }),
   row(first.headline, { kind: 'filing' }),
 ]) assert.equal(relatedReports(first, other, 'Alankit'), false);
+for (const [positive, negative] of [['approves', 'rejects'], ['wins', 'loses'], ['grants', 'revokes']]) {
+  assert.equal(relatedReports(row(`Acme ${positive} airport software contract worth 2600 crore`), row(`Acme ${negative} airport software contract worth 2600 crore`, { source: 'Mint' }), 'Acme'), false);
+}
 assert.equal(clusterStories([row('Regulation 30', { kind: 'filing' }), row('Regulation 30', { kind: 'filing', at: at + 1000 })]).length, 2);
 assert.equal(clusterStories([first, second]).flatMap(k => [k.main, ...k.others]).length, 2);
 assert.deepEqual(parseAiNotes('[{"id":"x","summary":{},"impact":"bad"}]', new Set(['x'])), {});
@@ -141,12 +144,28 @@ assert.equal(aiCalls, callsBefore, 'rejected previews never start AI');
 const savedKeys = [...store.sentStoryKeys()];
 const preview = await handleNewsletter(new Request(`${PRODUCTION_ORIGIN}/api/newsletter/preview?format=pdf`), apiEnv);
 assert.equal(preview.headers.get('content-type'), 'application/pdf');
+assert.equal(aiCalls, callsBefore, 'public previews never call paid AI even with configured credentials');
 assert.equal(emails.length, 1, 'PDF requests and previews do not send email');
 assert.deepEqual([...store.sentStoryKeys()], savedKeys);
 assert.deepEqual(restarted.document(documentId), saved, 'new previews cannot overwrite a sent edition');
 const after = await schedule.deliver({ edition: 'morning', day: '2026-09-17', at, key: 'fixture-edition', source: 'timer', now: at });
 assert.equal(after.reason, 'already-sent');
 assert.equal(emails.length, 1);
+
+// Confirmed rejection reclaims its PDF. Unknown outcomes preserve a possibly delivered link,
+// retaining its own delivery association even after the short delivery log has been pruned.
+for (const [name, emailResponse, expectedDocs, state] of [
+  ['refused', async () => new Response('', { status: 403 }), 0, null],
+  ['timeout', async () => { throw new DOMException('timeout', 'TimeoutError'); }, 1, 'delivery-uncertain'],
+]) {
+  const before = store.rows('SELECT COUNT(*) AS n FROM newsletter_documents')[0].n;
+  const failing = new NewsletterSchedule(storage, env, store, { now: () => at, fetcher: (url, init) => url === EMAIL_SEND_URL ? emailResponse() : fetcher(url, init) });
+  const result = await failing.deliver({ edition: 'morning', day: '2026-09-17', at, key: `failed-${name}`, source: 'test', now: at });
+  assert.equal(result.sent, 0);
+  assert.equal(store.rows('SELECT COUNT(*) AS n FROM newsletter_documents')[0].n, before + expectedDocs);
+  if (state) assert.equal(store.rows('SELECT delivery_state FROM newsletter_documents WHERE delivery_key = ?', `failed-${name}`)[0].delivery_state, state);
+}
+assert.deepEqual(store.document(documentId), saved, 'failed later sends cannot remove a successfully sent PDF');
 
 if (process.env.NEWSLETTER_PREVIEW_DIR) {
   mkdirSync(process.env.NEWSLETTER_PREVIEW_DIR, { recursive: true });

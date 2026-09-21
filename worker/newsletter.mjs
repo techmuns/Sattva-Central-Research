@@ -68,7 +68,7 @@ export async function handleNewsletter(request, env) {
     if (request.method !== 'GET') return fail('method', 405);
     const edition = url.searchParams.get('edition') || 'morning';
     if (!EDITION_IDS.includes(edition)) return fail('invalid-edition', 400);
-    // Previews now include a paid AI reading; apply the existing per-client request budget.
+    // Bound preview feed reads. The preview builder never runs paid AI enrichment.
     if (!env.NEWSLETTER_LIMITER) return fail('newsletter-unavailable', 503);
     const allowance = await env.NEWSLETTER_LIMITER.limit({ key: request.headers.get('cf-connecting-ip') || 'unknown' });
     if (!allowance.success) return fail('rate-limit', 429);

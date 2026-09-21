@@ -882,7 +882,10 @@ The fluid email sheet and downloadable A4 PDF carry **Automated by Munshot** in 
 Sent editions save one immutable PDF before sending, under an unguessable UUID link in
 `newsletter_documents`; those PDFs survive delivery-log pruning and contain no recipient data.
 `GET /api/newsletter/pdf/<uuid>` downloads the saved bytes without fetching sources or AI again.
-Preview `format=pdf` builds a current preview; it does not send or save an edition. Links grant
+Preview `format=pdf` builds a current source-only preview; it does not call AI, send, or save an
+edition. Confirmed rejected sends delete their provisional PDF. Unknown delivery outcomes (timeouts,
+connection loss, 5xx or malformed responses) keep the link, with an independently retained delivery
+key/state so they remain identifiable after delivery-log pruning. Links grant
 access to that edition to anyone holding them. PDF base fonts render rupees as INR, normalize
 punctuation/Latin accents, and display unsupported glyphs as Unicode code points rather than omit
 source text. The PDF exporter is dependency-free; `scripts/verify-newsletter-reading.mjs` tests the

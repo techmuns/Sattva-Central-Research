@@ -64,6 +64,9 @@ export class NewsletterStore {
     // Added after the table shipped: a deployment whose log predates it gains the column in place.
     const columns = this.storage.sql.exec('PRAGMA table_info(newsletter_deliveries)').toArray();
     if (!columns.some((c) => c.name === 'stories')) this.storage.sql.exec('ALTER TABLE newsletter_deliveries ADD COLUMN stories TEXT');
+    const documentColumns = this.storage.sql.exec('PRAGMA table_info(newsletter_documents)').toArray();
+    if (!documentColumns.some(c => c.name === 'delivery_key')) this.storage.sql.exec('ALTER TABLE newsletter_documents ADD COLUMN delivery_key TEXT');
+    if (!documentColumns.some(c => c.name === 'delivery_state')) this.storage.sql.exec("ALTER TABLE newsletter_documents ADD COLUMN delivery_state TEXT NOT NULL DEFAULT 'pending'");
     this.initialised = true;
   }
 
@@ -220,11 +223,24 @@ export class NewsletterStore {
 
   // Immutable PDFs have opaque bearer links and no subscriber addresses. Keep them independently
   // of the short delivery log: pruning that log must not break a previously emailed download.
-  saveDocument(body, filename) {
+  saveDocument(body, filename, deliveryKey) {
     if (!(body instanceof Uint8Array) || body.byteLength > 1_500_000) throw new Error('Invalid newsletter PDF');
     const id = crypto.randomUUID();
-    this.rows('INSERT INTO newsletter_documents (id, filename, body, created_at) VALUES (?, ?, ?, ?)', id, filename, body, iso(this.now()));
+    this.rows('INSERT INTO newsletter_documents (id, filename, body, created_at, delivery_key) VALUES (?, ?, ?, ?, ?)', id, filename, body, iso(this.now()), deliveryKey);
     return id;
+  }
+
+  finishDocument(id, outcomes) {
+    if (outcomes.some(o => o.ok)) {
+      this.rows("UPDATE newsletter_documents SET delivery_state = 'sent' WHERE id = ?", id);
+    } else if (outcomes.length && outcomes.every(o => ['unauthorised', 'rate-limited', 'refused', 'no-token'].includes(o.reason))) {
+      this.rows('DELETE FROM newsletter_documents WHERE id = ?', id);
+    } else {
+      // A timeout, connection loss, 5xx or malformed response can follow an accepted email.
+      // Keep its link usable, but track that state and the delivery key independently of log
+      // pruning, so uncertain/interrupted documents remain identifiable rather than orphaned.
+      this.rows("UPDATE newsletter_documents SET delivery_state = 'delivery-uncertain' WHERE id = ?", id);
+    }
   }
 
   document(id) {
