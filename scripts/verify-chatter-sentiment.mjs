@@ -26,10 +26,12 @@ const posts = ['bullish', ...Array(9).fill('neutral'), ...Array(3).fill('bearish
 assert.equal(mentionSentiment(posts, { complete: true }).label, 'mixed');
 assert.equal(mentionSentiment(posts.slice(0, 2), { complete: false, total: 13 }).label, 'unconfirmed', 'first page cannot decide the summary');
 assert.equal(mentionSentiment([...posts, { sentiment: null }], { complete: true }).label, 'unconfirmed');
-const legacy = { id: 'old', feed: 'chatter', direction: 'negative', headline: 'Bearish public chatter', day: '2026-09-20' };
+const legacy = { id: 'old', feed: 'chatter', direction: 'negative', severity: 'alert', reason: 'Source sentiment: Bearish.', headline: 'Bearish public chatter', day: '2026-09-20' };
 assert.equal(restoreChatterAlert(legacy).direction, 'neutral');
 assert.equal(restoreChatterAlert(legacy).id, legacy.id, 'retain the captured observation');
 assert.doesNotMatch(restoreChatterAlert(legacy).headline, /Bearish/);
+assert.doesNotMatch(restoreChatterAlert(legacy).reason, /Bearish/);
+assert.equal(restoreChatterAlert(legacy).severity, 'update');
 const current = { ...legacy, chatterReadingVersion: 1 };
 assert.equal(restoreChatterAlert(current), current);
 const unrelated = { ...legacy, feed: 'news' };

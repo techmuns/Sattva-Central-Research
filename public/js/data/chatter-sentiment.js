@@ -37,6 +37,7 @@ export function chatterTopic(event) {
 
 export function restoreChatterAlert(event) {
   if (event.feed !== 'chatter' || event.chatterReadingVersion === 1) return event;
-  return { ...event, chatterTopic: chatterTopic(event), direction: 'neutral', headline: 'Public chatter (30-day snapshot)',
-    signalReason: 'Saved snapshot sentiment has not been verified. Open the mentions for context.' };
+  const reason = 'Saved snapshot sentiment has not been verified. Open the mentions for context.';
+  return { ...event, chatterTopic: chatterTopic(event), direction: 'neutral', severity: 'update',
+    headline: 'Public chatter (30-day snapshot)', signalReason: reason, reason };
 }
