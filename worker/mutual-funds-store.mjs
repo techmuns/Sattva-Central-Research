@@ -1,3 +1,4 @@
+import {readableOwnership} from '../public/js/data/mutual-funds-ownership.js';
 import { mergeCompany, projectCompany, summaryOf, validIsin, coverageState, companyRevision, monthKey, previousMonth, targetMonth } from './mutual-funds-model.mjs';
 import { contentTag } from './http.mjs';
 // One observation per row. No database cell or upload grows with a company's history.
@@ -96,7 +97,7 @@ export class MutualFundsStore {
       const hash=companyRevision(company),priorPart=this.storage.sql.exec('SELECT hash FROM mf_parts WHERE run=? AND isin=? AND part=?',run,company.isin,part).toArray()[0];
       if(priorPart){if(priorPart.hash!==hash)throw Error('Fragment changed');return {ok:true};}
       const {funds,...incoming}=company,old=this.storage.sql.exec('SELECT payload FROM mf_companies WHERE isin=?',company.isin).toArray()[0];
-      const previous=old?JSON.parse(old.payload):null,metadata=mergeCompany({...previous,funds:[]},{...incoming,funds:[]});delete metadata.funds;
+      const previous=old?JSON.parse(old.payload):null,metadata=mergeCompany({...previous,funds:[]},{...incoming,funds:[]},{now:this.now()});delete metadata.funds;
       const payload=JSON.stringify(metadata),metadataChanged=!old||old.payload!==payload;
       this.storage.sql.exec('INSERT INTO mf_companies VALUES(?,?,?,?,?) ON CONFLICT(isin) DO UPDATE SET payload=excluded.payload',company.isin,payload,'{}','','');
       const changes=[];
@@ -155,7 +156,7 @@ export class MutualFundsStore {
     // scope as one JSON array so the full 250-company API page remains readable.
     const list=isins?.length ? this.storage.sql.exec('SELECT summary FROM mf_companies WHERE isin IN (SELECT value FROM json_each(?)) ORDER BY isin',JSON.stringify(isins)).toArray()
       : isins ? [] : this.storage.sql.exec('SELECT summary FROM mf_companies WHERE isin>? ORDER BY isin LIMIT 251',cursor).toArray();
-    const rows=list.slice(0,250).map(row=>{const r=JSON.parse(row.summary);if(r.denominator && this.now()-Date.parse(r.denominator.checkedAt)>7*86400000){r.companyPct=null;r.denominatorFresh=false;}return r;}),meta=this.status();
+    const rows=list.slice(0,250).map(row=>{const r=JSON.parse(row.summary);return readableOwnership(r,this.now());}),meta=this.status();
     return {meta:{...meta,health:coverageState(meta,this.now())},rows,nextCursor:list.length>250?rows.at(-1).isin:null};
   }
   detail(isin,month=null) {

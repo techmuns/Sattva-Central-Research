@@ -1,3 +1,4 @@
+import {readableOwnership} from './mutual-funds-ownership.js';
 import { conditionalJson,revalidatedJson,readEntry,writeEntry } from '../core/store.js';
 import * as coverage from './coverage.js';
 import * as watchlist from '../core/watchlist.js';
@@ -9,7 +10,7 @@ let latestMeta={}, lastDetail=null;
 const privateRows=new Map(),privatePending=new Map(),sessionListeners=new Set();
 let privateMeta=null,generation=0;
 export const meta=()=>({...latestMeta,...(hostToken()?privateMeta:{supplementAccess:'no-session'})});
-export const all=()=>[...new Map([...rowsByIsin,...(hostToken()?privateRows:[])]).values()];
+export const all=()=>[...new Map([...rowsByIsin,...(hostToken()?privateRows:[])]).values()].map(row=>readableOwnership(row));
 export const onSessionChange=fn=>{sessionListeners.add(fn);return()=>sessionListeners.delete(fn);};
 onHostContext((_context,changes)=>{if(changes?.session){generation++;privateRows.clear();privatePending.clear();privateMeta=null;for(const fn of sessionListeners)fn();}});
 async function privateRequest(path) {
@@ -103,7 +104,7 @@ export async function detail(isin,month=null) {
     try {
       const payload=await privateRequest(`/api/mutual-funds/private/company?${new URLSearchParams({isin,...(month?{month}:{})})}`);
       if(epoch!==generation)throw Error('Session changed');
-      if(payload.company?.isin===isin)return payload;
+      if(payload.company?.isin===isin)return {...payload,company:readableOwnership(payload.company)};
     } catch(error) {
       if(epoch!==generation)throw Error('Session changed');
       privateRows.clear();
@@ -111,7 +112,7 @@ export async function detail(isin,month=null) {
     }
   }
   const result=await detailPublic(isin,month);
-  return {...result,meta:{...result.meta,...(hostToken()?privateMeta:{supplementAccess:'no-session'})}};
+  return {...result,company:result.company?readableOwnership(result.company):null,meta:{...result.meta,...(hostToken()?privateMeta:{supplementAccess:'no-session'})}};
 }
 async function detailPublic(isin,month=null) {
   if(!/^IN[A-Z0-9]{10}$/.test(isin || ''))throw Error('No confirmed equity identity');

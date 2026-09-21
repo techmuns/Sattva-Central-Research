@@ -1,3 +1,4 @@
+import { freshShareCount,selectShareCount } from '../public/js/data/mutual-funds-ownership.js';
 import { contentTag } from './http.mjs';
 // All ownership arithmetic runs in the collector / Worker, never in the browser.
 export const MF_OBJECT = 'mutual-funds:v1';
@@ -23,7 +24,7 @@ export function change(current, prior) {
   return { change: delta, changePct: prior > 0 ? delta/prior*100 : null,
     action: !delta ? 'No material change' : prior === 0 ? 'New' : current === 0 ? 'Exited' : delta > 0 ? 'Added' : 'Reduced' };
 }
-export function mergeCompany(previous, incoming) {
+export function mergeCompany(previous, incoming, {now=Date.now()}={}) {
   if (!validIsin(incoming?.isin) || !Array.isArray(incoming.funds)) throw Error('Invalid company');
   const funds = new Map((previous?.funds || []).map(f => [f.id, structuredClone(f)]));
   for (const next of incoming.funds) {
@@ -39,9 +40,9 @@ export function mergeCompany(previous, incoming) {
     }
     funds.set(next.id, { ...old, ...next, months });
   }
-  const denominator = incoming.denominator && (!previous?.denominator || incoming.denominator.checkedAt >= previous.denominator.checkedAt)
-    ? incoming.denominator : previous?.denominator || null;
-  return { ...previous, ...incoming, denominator, funds: [...funds.values()] };
+  const denominator = selectShareCount(previous?.denominator,incoming.denominator,now);
+  const shareCountCheck = Date.parse(incoming.shareCountCheck?.lastAttemptAt)>= (Date.parse(previous?.shareCountCheck?.lastAttemptAt)||0) ? incoming.shareCountCheck : previous?.shareCountCheck;
+  return { ...previous, ...incoming, denominator, ...(shareCountCheck?{shareCountCheck}:{}), funds: [...funds.values()] };
 }
 export function projectCompany(company, { month = null, now = Date.now() } = {}) {
   const months = [...new Set(company.funds.flatMap(f => Object.keys(f.months)))].filter(m => m <= targetMonth(now)).sort().reverse();
@@ -57,7 +58,7 @@ export function projectCompany(company, { month = null, now = Date.now() } = {})
   const totalShares = current.length ? current.reduce((s,f) => s+f.current.shares,0) : null;
   const netChange = comparable.length ? comparable.reduce((s,f) => s+f.change,0) : null;
   const denominator = company.denominator;
-  const denominatorFresh = denominator?.shares > 0 && Number.isSafeInteger(denominator.shares) && now-Date.parse(denominator.checkedAt) >= -60000 && now-Date.parse(denominator.checkedAt) <= 7*86400000;
+  const denominatorFresh = freshShareCount(denominator,now);
   const companyPct = totalShares !== null && denominatorFresh ? totalShares/denominator.shares*100 : null;
   const topBuyer = added.sort((a,b)=>b.change-a.change)[0], topSeller = reduced.sort((a,b)=>a.change-b.change)[0];
   const fmt = n => Math.abs(n).toLocaleString('en-IN');
@@ -69,6 +70,7 @@ export function projectCompany(company, { month = null, now = Date.now() } = {})
     addedFunds: added.length, reducedFunds: reduced.length, holders: current.filter(f=>f.current.shares>0).length,
     comparableFunds: comparable.length, pendingFunds: funds.length-comparable.length,
     companyPct: companyPct <= 100 ? companyPct : null, denominatorFresh,
+    ownershipUnavailable: totalShares===null?'missing-mf-shares':!denominator?'missing-share-count':!denominatorFresh?'stale-share-count':companyPct>100?'inconsistent-share-count':null,
     direction: netChange === null ? 'Pending' : netChange > 0 ? 'Added' : netChange < 0 ? 'Reduced' : 'No material change',
     insight, topBuyer: topBuyer ? { name:topBuyer.name,change:topBuyer.change } : null,
     topSeller: topSeller ? { name:topSeller.name,change:topSeller.change } : null,

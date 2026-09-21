@@ -54,6 +54,7 @@
 // was read, and a source that could not be read says so in the email rather than going quiet.
 
 import { clusterStories, readAiNotes } from './newsletter-reading.mjs';
+import { reviewNewsEvents, newsEventsNote } from './newsletter-events.mjs';
 import { FEED_URL as NSE_FEED_URL, HEADERS as NSE_HEADERS, assertShape as assertNseShape, buildResolver, parseAnnouncements, resolveAll } from './nse-ann.mjs';
 import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
 import { matchPortfolioNews } from '../public/js/data/portfolio-news-matching.js';
@@ -673,6 +674,7 @@ export async function buildBrief({ edition, day, settings, env, fetcher = fetch,
     book: { asOf: book.asOf || null, lines: book.count ?? book.holdings.length, listed: holdings.length },
     markets, announcements, news, moves,
   };
+  news.dedup = await reviewNewsEvents({ news, env, fetcher, enabled: includeAi });
   const companies = briefCompanies(briefStories(brief));
   brief.ai = includeAi ? await readAiNotes({ env, fetcher, now, companies })
     : { ok: false, reason: 'preview', eligible: companies.reduce((n, c) => n + c.clusters.filter(k => k.kind === 'story').length, 0), requested: 0, answered: 0, items: {} };
@@ -766,6 +768,7 @@ export function briefStories(brief) {
   for (const g of brief.news.groups) {
     for (const item of g.items) rows.push({
       kind: 'news', ticker: g.ticker, company: g.company, headline: item.headline,
+      eventId: item.eventId,
       dek: item.summary || null, url: item.url, source: item.publisher || 'Publisher not recorded', at: item.at,
       keywords: item.keywords, keywordIds: item.keywordIds || [], keywordGroups: item.keywordGroups || [],
       direction: 'neutral', importance: item.keywords.length ? 'high' : 'low', related: item.attribution === 'related', late: item.late === true, keys: item.keys || [],
@@ -840,6 +843,7 @@ export function briefSummary(brief) {
     quotesFailed: brief.markets.failed,
     announcements: brief.announcements.count,
     news: brief.news.count,
+    newsReviewed: brief.news.dedup?.reviewed || 0, newsCombined: brief.news.dedup?.combined || 0, newsReviewReason: brief.news.dedup?.reason || null,
     updates: stats.updates, aiAnswered: brief.ai?.answered || 0, aiEligible: brief.ai?.eligible || 0, aiReason: brief.ai?.reason || null,
     stories: stats.stories, companies: stats.companies.length, good: stats.good, watch: stats.watch,
     moves: brief.moves?.count ?? 0, late: stats.late,
@@ -1079,6 +1083,8 @@ export function sourcesNote(brief) {
     bits.push('session closes unavailable, so price moves are not included');
   }
   const ai = brief.ai;
+  const eventNote = newsEventsNote(n.dedup);
+  if (eventNote) bits.push(eventNote);
   if (ai?.eligible) bits.push(ai.reason === 'preview' ? 'AI notes are added to sent editions; this preview shows source text' : ai.ok ? `AI notes on ${ai.answered} of ${ai.eligible} eligible updates; other updates retain their source text` : `AI notes unavailable (${ai.reason || 'unavailable'}); source text retained`);
   const late = briefStats(brief).late;
   const carried = late ? ` ${late} item${late === 1 ? '' : 's'} from before this window were not in the previous brief and ${late === 1 ? 'is' : 'are'} included.` : '';

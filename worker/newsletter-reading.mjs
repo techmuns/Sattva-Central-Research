@@ -1,22 +1,14 @@
 // Reading layer adapted from Glow's brief. Source rows and sent-story keys remain intact.
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { bedrockConfig, bedrockConfigured, claudeCredential } from './research-claude.mjs';
+import { relatedNewsReports } from './newsletter-events.mjs';
 
-const normal = text => String(text).toLowerCase().replace(/\s+/g, ' ').trim();
-
-// Only matching syndicated headlines are grouped. Word-overlap and verb dictionaries cannot
-// establish equivalent meaning: a single unfamiliar decision verb can reverse the report.
-// Source summaries may differ, so retain every one in both the visible coverage and AI input.
-export function relatedReports(a, b) {
-  return a.kind === 'news' && b.kind === 'news' && a.ticker === b.ticker && a.source !== b.source
-    && a.related === b.related && Math.abs(a.at - b.at) <= 86400000
-    && normal(a.headline) === normal(b.headline);
-}
+export const relatedReports = relatedNewsReports;
 
 export function clusterStories(stories) {
   const clusters = [];
   for (const s of stories) {
-    // Check every member so a publisher's separate records never share a cluster.
+    // A semantic group is fixed before rendering; compare every member, never token unions.
     const match = clusters.find(c => [c.main, ...c.others].every(r => relatedReports(r, s)));
     if (match) match.others.push(s);
     else clusters.push({ main: s, others: [], kind: s.kind === 'move' ? 'move' : 'story' });

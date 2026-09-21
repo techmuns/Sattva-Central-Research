@@ -1,3 +1,4 @@
+import {readableOwnership} from '../public/js/data/mutual-funds-ownership.js';
 import { validIsin, monthKey, targetMonth, previousMonth, summaryOf, companyRevision } from './mutual-funds-model.mjs';
 import { supplementCompany } from './mutual-funds-scanner-model.mjs';
 const INTERVAL=15*60000, GAP=5000, LEASE=90000;
@@ -150,7 +151,7 @@ export class MutualFundsScannerStore {
     const saved=new Map(this.storage.sql.exec('SELECT isin,summary FROM mf_scanner_targets WHERE summary IS NOT NULL AND isin IN (SELECT value FROM json_each(?))',JSON.stringify(ids)).toArray().map(r=>[r.isin,JSON.parse(r.summary)]));
     const primary=new Map(base.rows.map(r=>[r.isin,r]));
     return {...base,nextCursor:candidates.length>250?ids.at(-1):null,meta:{...base.meta,supplement:this.status()},rows:ids.map(id=>saved.get(id)||primary.get(id)).filter(Boolean).map(r=>{
-      if(r.denominator&&this.now()-Date.parse(r.denominator.checkedAt)>7*86400000)return {...r,companyPct:null,denominatorFresh:false};return r;
+      return readableOwnership(r,this.now());
     })};
   }
   detail(isin,month=null) {

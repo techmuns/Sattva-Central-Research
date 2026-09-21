@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-21T02:39:58.247Z",
+  "capturedAt": "2026-09-21T07:02:49.982Z",
   "from": "2026-09-18",
   "to": "2026-10-12",
   "pageSize": 20,
@@ -143,16 +143,16 @@
           "displayDate": "21 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 1095.1,
-          "changePct": 4.73,
-          "marketCap": 7036.69,
+          "ltp": 1150.2,
+          "changePct": 5.03,
+          "marketCap": 7390.74,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/pharmaceuticals-drugs/symbiotecpharmalab/SPL14",
           "ticker": "SYMBIOTEC",
           "fullName": "Symbiotec Pharm",
           "industry": "Pharmaceuticals & Drugs",
           "shares": 64256112,
-          "mktCapAtBuild": 7036.69
+          "mktCapAtBuild": 7390.74
         },
         {
           "scId": "KJA",
@@ -162,9 +162,9 @@
           "displayDate": "21 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 8,
-          "changePct": 3.09,
-          "marketCap": 1278.8,
+          "ltp": 8.14,
+          "changePct": 1.75,
+          "marketCap": 1301.18,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cigarettes-tobacco/eliteconinternational/KJA"
         }
@@ -185,9 +185,9 @@
           "displayDate": "18 Sep",
           "quarter": "NA",
           "time": null,
-          "ltp": 0.77,
-          "changePct": 4.05,
-          "marketCap": 44.49,
+          "ltp": 0.8,
+          "changePct": 3.9,
+          "marketCap": 46.23,
           "exchange": "N",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/finance-general/toyamsports/OAR",
           "ticker": "TOYAMSL",
