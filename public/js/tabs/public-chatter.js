@@ -380,7 +380,8 @@ function openMentions(entry) {
     const anchorIndex = anchorId ? all.findIndex(post => post.id === anchorId) : -1;
     if (anchorIndex >= visibleLimit) combined.visibleLimit = visibleLimit = anchorIndex + 40;
     mentionBookmarkOff?.();
-    body.innerHTML = mentionsBody(entry, combined) + (archived && visibleLimit >= all.length && monthIndex < months.length - 1
+    // Finish the current month's pages before offering the next older month.
+    body.innerHTML = mentionsBody(entry, combined) + (archived && payloads.get(months[monthIndex])?.complete && visibleLimit >= all.length && monthIndex < months.length - 1
       ? '<button data-chatter-older class="mt-4 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600">Load older captured mentions</button>' : '');
     mentionBookmarkOff = wireBookmarks(body, button => {
       const post = all[Number(button.closest('[data-mention-index]')?.dataset.mentionIndex)];
