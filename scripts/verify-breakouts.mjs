@@ -9,10 +9,59 @@ import { handleBreakouts, handleTechnicals } from '../worker/breakouts.mjs';
 import { BREAKOUT_ENDPOINT, marketWindow, expectedSession, quoteFresh, preferQuote, liveBreakout, liveCoverage, validateQuote, recoverySlots } from '../public/js/data/breakout-live-shared.js';
 import { collectBreakouts, breakoutClient, captureTarget, bootstrapBreakouts, closingSeedComplete } from './collect-breakouts.mjs';
 import { baseFromBars, yahooSymbol, parseYahooQuote, mapUpstoxTargets, upstoxQuotes, recoveryCandles } from './lib/breakout-providers.mjs';
+import { upstoxRows } from '../worker/upstox-market.mjs';
+import { tickerFromScreenerUrl, marketTicker } from '../public/js/data/market-identity.js';
 const AT = Date.parse('2026-09-15T06:30:00Z'), iso = at => new Date(at).toISOString();
 const historyDates = count => {const dates=[];for(let at=AT-86400000;dates.length<count;at-=86400000)if(marketWindow(at).collect)dates.unshift(iso(at).slice(0,10));return dates;};
 const base = {high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'};
 const quote = (ticker='TEST', at=AT, extra={}) => validateQuote({ticker,price:105,volume:2000,prevClose:98,quoteAt:iso(at),checkedAt:iso(at),sessionDate:'2026-09-15',provider:'Yahoo Finance',base,...extra},at);
+test('reviewed Screener IDs resolve consistently; unknown IDs never become a stock called ID',()=>{
+ const url='https://www.screener.in/company/id/1286088/consolidated/';
+ assert.equal(tickerFromScreenerUrl(url),'DHOOTTRANS');
+ assert.equal(marketTicker({ticker:'ID',screenerUrl:url}),'DHOOTTRANS');
+ assert.equal(captureTarget({ticker:'ID',screenerUrl:url}).ticker,'DHOOTTRANS');
+ assert.equal(captureTarget({'Screener URL':url}).ticker,'DHOOTTRANS');
+ assert.equal(tickerFromScreenerUrl('/company/id/999999/'),null);
+ assert.equal(captureTarget({ticker:'ID',screenerUrl:'/company/id/999999/'}),null);
+ assert.equal(tickerFromScreenerUrl('/company/504375/'),'504375');
+});
+test('equity lookup excludes same-symbol bonds while preserving SME and trust units',()=>{
+ const instrument=(type,symbol,isin)=>({segment:'NSE_EQ',instrument_type:type,trading_symbol:symbol,instrument_key:'NSE_EQ|'+isin});
+ const instruments=[instrument('D1','CHOLAFIN','INE121A08PJ0'),instrument('EQ','CHOLAFIN','INE121A01024'),
+  instrument('D1','MOTHERSON','INE775A08105'),instrument('EQ','MOTHERSON','INE775A01035'),instrument('IV','NHIT','INE0H7R23014')];
+ const mapped=mapUpstoxTargets(['CHOLAFIN','MOTHERSON','NHIT'].map(ticker=>({ticker})),instruments);
+ assert.deepEqual(mapped.map(row=>row.instrumentKey),['NSE_EQ|INE121A01024','NSE_EQ|INE775A01035','NSE_EQ|INE0H7R23014']);
+ assert.equal(mapUpstoxTargets([{ticker:'CHOLAFIN'}],instruments.slice(0,1)).length,0);
+ const bengal=mapUpstoxTargets([{ticker:'BENGALASM',isin:'INE083K01017'}],[
+  {...instrument('EQ','BENGALASM','INE083K01017')},
+  {segment:'BSE_EQ',instrument_type:'B',trading_symbol:'BENGALASM',instrument_key:'BSE_EQ|INE083K01017',exchange_token:'533095'}]);
+ assert.equal(bengal[0].exchange,'BSE');assert.equal(yahooSymbol({ticker:'BENGALASM'}),'BENGALASM.BO');
+ const bse=[{segment:'BSE_EQ',instrument_type:'IF',trading_symbol:'ALTIUSINVIT',exchange_token:'543225',instrument_key:'BSE_EQ|INE0BWS23018'},
+  {segment:'BSE_EQ',instrument_type:'P',trading_symbol:'IDREAM',exchange_token:'504375',instrument_key:'BSE_EQ|INE459E01012'}];
+ assert.deepEqual(['543225','504375'].map(ticker=>yahooSymbol({ticker})),['ALTIUSINVIT.BO','IDREAM.BO']);
+ assert.deepEqual(mapUpstoxTargets(['543225','504375'].map(ticker=>({ticker})),bse).map(t=>t.instrumentKey),bse.map(t=>t.instrument_key));
+});
+test('a fresh Upstox feed preserves old last-trade times without making a new breakout',()=>{
+ const target={ticker:'NHIT',instrumentKey:'NSE_EQ|INE0H7R23014',upstoxSymbol:'NHIT',exchange:'NSE'};
+ const trade=AT-4*86400000;
+ const payload=timestamp=>({status:'success',data:{quote:{instrument_token:target.instrumentKey,symbol:'NHIT',last_price:105,volume:0,net_change:0,last_trade_time:String(trade),timestamp}}});
+ for(const timestamp of [iso(AT),String(AT),AT]){
+  const q=upstoxRows(payload(timestamp),[target],new Map([['NHIT',base]]),AT)[0];
+  assert.equal(q.quoteAt,iso(trade));assert.equal(q.feedAt,iso(AT));assert.equal(q.sessionDate,'2026-09-15');
+  assert.equal(q.volume,0);assert.equal(quoteFresh(q,AT),true);assert.equal(liveBreakout(q),null);
+  assert.equal(preferQuote(q,{cmp:104,price_date:'2026-09-15'},AT),false);
+  assert.equal(quoteFresh(q,AT+21*60000),false);
+ }
+ const noBase=new Map();
+ assert.equal(quoteFresh(upstoxRows(payload(iso(trade)),[target],noBase,AT)[0],AT),false);
+ assert.equal(quoteFresh(upstoxRows(payload(undefined),[target],noBase,AT)[0],AT),false);
+ const current=upstoxRows(payload(iso(AT)),[target],noBase,AT)[0];
+ assert.throws(()=>validateQuote({...current,provider:'Yahoo Finance'},AT),/feed time/);
+ assert.throws(()=>validateQuote({...current,feedAt:iso(AT+120000)},AT),/feed time/);
+ assert.throws(()=>validateQuote({...current,sessionDate:'2026-09-11'},AT),/observation/);
+ const bad=payload(iso(AT));bad.data.quote.last_trade_time='';assert.equal(upstoxRows(bad,[target],noBase,AT).length,0);
+ const oldVolume=payload(iso(AT));oldVolume.data.quote.volume=100;assert.equal(upstoxRows(oldVolume,[target],noBase,AT).length,0);
+});
 function storage() {
  const db=new DatabaseSync(':memory:'),kv=new Map();let alarm=null;
  const out={sql:{exec(sql,...args){const rows=db.prepare(sql).all(...args);return {toArray:()=>rows,one:()=>{assert.equal(rows.length,1);return rows[0];}};}},

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
+import { tickerFromScreenerUrl as extractTicker } from '../public/js/data/market-identity.js';
+import { yahooSymbol } from '../worker/upstox-market.mjs';
 // Technicals scraper: pulls daily OHLC for every company we cover (and the Nifty
 // 500 index) from Yahoo Finance, computes the technical indicators the client's
 // scoring framework needs, and writes a single public/data/technicals.json that
@@ -166,7 +168,7 @@ async function run() {
     // Numeric tickers (e.g. "504346") are BSE codes for stocks without
     // an NSE listing — go straight to .BO and skip the doomed .NS call.
     const tickerIsNumeric = /^\d+$/.test(ticker);
-    const primarySym = tickerIsNumeric ? `${ticker}.BO` : `${ticker}.NS`;
+    const primarySym = yahooSymbol({ticker});
     process.stdout.write(`[${i + 1}/${companies.length}] ${c.Company.padEnd(28).slice(0, 28)} ${primarySym.padEnd(16)} `);
     try {
       let bars = await fetchBars(primarySym, start, end);
@@ -355,12 +357,6 @@ function flush(scraped, indexBars, failures) {
     companies: results,
   };
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
-}
-
-function extractTicker(url) {
-  // /company/ICICIAMC/ or /company/ICICIAMC/consolidated/ → ICICIAMC
-  const m = String(url || "").match(/\/company\/([^/]+)/);
-  return m ? m[1].toUpperCase() : null;
 }
 
 /**

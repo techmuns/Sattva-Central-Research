@@ -5,10 +5,12 @@ import { pathToFileURL } from 'node:url';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { BREAKOUT_ENDPOINT, BREAKOUT_ORIGIN, BREAKOUT_BATCH, BREAKOUT_LIMIT, marketWindow, quoteFresh, tickerValid, validateQuote, recoverySlots } from '../public/js/data/breakout-live-shared.js';
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
+import { marketTicker } from '../public/js/data/market-identity.js';
+import { upstoxIdentity } from '../worker/upstox-market.mjs';
 import { yahooQuote, upstoxQuotes, recoverYahoo } from './lib/breakout-providers.mjs';
 
 export function captureTarget(company) {
-  const ticker = String(company.ticker || /\/company\/([^/]+)/.exec(company['Screener URL'] || '')?.[1] || '').trim().toUpperCase();
+  const ticker = marketTicker(company);
   return tickerValid(ticker) ? {ticker,name:company.name || company.Company || ticker,yahooTicker:company.yahooTicker,
     ...(/^IN[A-Z0-9]{10}$/.test(company.isin || '') ? {isin:company.isin} : {})} : null;
 }
@@ -50,7 +52,8 @@ export async function collectBreakouts({ targets, previous = null, client, prima
   const rows = [], misses = [], bases = new Map();
   const retained = new Map((previous?.rows || []).map(row => [row.ticker, row]));
   const closingRetry = !marketWindow(now()).collect;
-  for (const row of previous?.rows || []) if (row.sessionDate === marketWindow(now()).day && row.base) bases.set(row.ticker, row.base);
+  const exchanges = new Map(targets.map(target=>[target.ticker,upstoxIdentity(target).exchange]));
+  for (const row of previous?.rows || []) if (row.sessionDate === marketWindow(now()).day && row.base && row.exchange===exchanges.get(row.ticker)) bases.set(row.ticker, row.base);
   let rateLimited = false;
   const captureDeadline = now() + 8*60000, recoveryDeadline = now() + 10*60000;
   // Small waves checkpoint independently. An interrupted run retains every acknowledged wave.

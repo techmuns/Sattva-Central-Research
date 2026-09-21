@@ -8,8 +8,11 @@ const root=resolve('public'), AT=Date.parse('2026-09-15T06:30:00Z');
 const original=JSON.parse(readFileSync(`${root}/data/technicals.json`)), seed=original.companies.find(row=>!row.error);
 const daily={...original,generated_at:'2026-09-15T01:30:00Z',price_date:'2026-09-10',companies:[{...seed,ticker:'TEST',name:'Test Company',cmp:105,bar_date:'2026-09-10',price_date:undefined,sma200:90,high_52w:120,consolidation_breakout:{...seed.consolidation_breakout,quality:'strong'}}],company_count:1,failures:0};
 const deployedDaily=structuredClone(daily);
+daily.companies.push({ticker:'ID',name:'Dhoot Transmission',screenerUrl:'https://www.screener.in/company/id/1286088/consolidated/',error:'Daily history pending'});
+daily.company_count++;
 let price=106,volume=2000,at=AT,fail=false,revision=1,reads=0,muns=0,historyReads=0,dailyFail=false,companionFail=false,dailySha='a'.repeat(40);
-const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE','WATCHONLY'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE','WATCHONLY'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Upstox',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
+let noTrades=false;
+const snapshot=()=>({version:1,state:'complete',targets:['TEST','FUTURE','WATCHONLY','DHOOTTRANS'],startedAt:new Date(at-1000).toISOString(),completedAt:new Date(at).toISOString(),captureStartedAt:'2026-09-15T03:45:00Z',failures:[],gaps:[{count:1,reason:'candles-unavailable',since:AT-3600000,until:AT}],rows:['TEST','FUTURE','WATCHONLY','DHOOTTRANS'].map(ticker=>({ticker,name:ticker==='TEST'?'Test Company':'Future Holding',price,volume:noTrades?0:volume,prevClose:98,quoteAt:new Date(noTrades?AT-4*86400000:at).toISOString(),...(noTrades?{feedAt:new Date(at).toISOString()}:{}),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Upstox',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}}))});
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  res.setHeader('cache-control','no-cache');
@@ -47,6 +50,8 @@ try{
  await page.goto(`${origin}/#/research/breakouts/strong-breakouts?scope=universe`);
  const cell=page.locator('[data-cmp="TEST"]');await cell.waitFor();
  assert.equal(await cell.textContent(),'₹106.00');assert((await cell.locator('..').innerText()).includes('Upstox'));
+ await page.locator('[data-row-key="DHOOTTRANS"]').waitFor();
+ assert.equal(await page.locator('[data-row-key="ID"]').count(),0);
  assert.equal(await page.evaluate(async()=>(await import('/js/data/technicals.js')).byTicker('TEST').company.atr_history[0].atr_pct),1.23);
  await page.locator('[data-row-key="FUTURE"]').waitFor();
  assert.equal(await page.locator('[data-row-key="WATCHONLY"]').count(),0);
@@ -127,6 +132,17 @@ try{
  assert.equal(await page.locator('[data-capture-note]').count(),0);
  await page.locator('[data-row-key="TEST"]').click();await popup.waitFor();
  assert((await popup.innerText()).includes('₹99'));assert((await popup.innerText()).includes('Daily close'));
+ await page.locator('[data-drill-close]').click();
+ // A provider update is current even without a new trade. Keep the actual old trade
+ // time visible and never turn yesterday's price into today's breakout candidate.
+ noTrades=true;at=Date.parse('2026-09-15T14:00:00Z');
+ await page.evaluate(async()=>{await (await import('/js/data/breakout-live.js')).refresh();});
+ const quietCell=page.locator('[data-cmp="FUTURE"]');
+ assert((await quietCell.locator('..').innerText()).includes('Last trade'));
+ assert((await quietCell.locator('..').innerText()).includes('11 Sept'));
+ assert.equal(await cell.textContent(),'₹99.00','an old trade must not replace a newer completed daily close');
+ await page.evaluate(()=>{location.hash='#/research/breakouts/strong-breakouts?scope=universe';});
+ await page.waitForFunction(()=>!document.querySelector('[data-cmp="TEST"]'));
  assert.equal(historyReads,0,'opening, polling, popup and scope changes must never download minute history');
  assert.deepEqual(errors,[]);
  console.log('PASS breakout dashboard: automatic price/volume changes, matching open popup, daily score date, new holding, failure retention, filter/search preservation, no Muns calls, returning session release upgrade');

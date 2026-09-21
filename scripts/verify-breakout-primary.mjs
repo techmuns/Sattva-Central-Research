@@ -87,6 +87,33 @@ test('daily instrument cache supports verified renames and retries list failures
  assert.throws(()=>primaryInventory([{ticker:'TEST',isin:'bad'}]));
  assert.throws(()=>primaryInventory([{ticker:'TEST',yahooTicker:'https://attacker/'}]));
 });
+test('native instrument parsing retains share series and suspension status refreshes from the provider',async()=>{
+ let now=AT,suspended=true,saved;
+ const share={...instruments[0],instrument_type:'EQ'};
+ const bond={...share,instrument_type:'D1',instrument_key:'NSE_EQ|INE000000002'};
+ const parsed=await cashInstruments(new Response(JSON.stringify([bond,share])).body,'NSE');
+ assert.deepEqual(parsed.map(row=>row.instrument_type),['D1','EQ']);
+ const schedule=new BreakoutPrimary(storage(),{UPSTOX_ACCESS_TOKEN:'fixture'},{now:()=>now,
+  instruments:async ex=>ex==='SUSPENDED'?[share]:suspended?[]:parsed,
+  quotes:async mapped=>({rows:mapped.length?[row('TEST',now,{sessionDate:iso(now).slice(0,10)})]:[]}),
+  store:()=>({breakoutPrimaryPrune:async()=>{},breakoutReadFallback:async()=>fallback(),breakoutPrimarySave:async value=>{saved=value;}})});
+ await schedule.inventory([{ticker:'TEST'}]);await schedule.wake();
+ assert.deepEqual(saved.failures,[{ticker:'TEST',reason:'suspended'}]);
+ const store=new BreakoutStore(storage(),{now:()=>now});store.primarySave(saved);
+ assert.equal(store.read().failures[0].reason,'suspended');
+ suspended=false;now+=86400000;await schedule.inventory([{ticker:'TEST'}]);await schedule.wake();
+ assert.deepEqual(saved.failures,[]);assert.equal(saved.rows.length,1);
+});
+test('feed update times survive compact history without creating one metadata record per minute',()=>{
+ const data=storage();let now=AT;const store=new BreakoutStore(data,{now:()=>now});
+ for(let i=0;i<5;i++) {now=AT+i*60000;store.primarySave(primary([row('TEST',AT-4*86400000,{sessionDate:'2026-09-15',volume:0,feedAt:iso(now),checkedAt:iso(now)})],{at:now,completedAt:now}));}
+ const history=store.history('TEST');assert.equal(history.rows.length,5);
+ assert.equal(history.rows[0].quoteAt,iso(AT-4*86400000));assert.equal(history.rows[0].feedAt,iso(now));
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_metadata').one().n,1);
+ assert.equal(data.sql.exec('SELECT COUNT(*) AS n FROM breakout_primary_events').one().n,0);
+ const bse=primary([row('TEST',now,{exchange:'BSE',base:null})],{at:now,completedAt:now});
+ assert.equal(mergePrimary(fallback(),bse,now).rows[0].base,null,'NSE volume history must never become a BSE breakout base');
+});
 test('overnight inventory is published before skipping quotes; new targets require a closing seed',async()=>{
  const now=Date.parse('2026-09-15T14:00Z'),calls=[];
  const previous={...fallback([row('TEST',Date.parse('2026-09-15T10:00Z'))]),completedAt:iso(now)};

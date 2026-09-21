@@ -264,3 +264,28 @@ production API and asset release separately from GitHub's fallback Deploy status
 that workflow can succeed while its publishing job is skipped. This implementation
 and its local tests do not certify production activation or Upstox credentials.
 Manual deployment or production-run dispatch requires explicit authorization.
+
+## Individual quote gaps: 21 September 2026
+
+The follow-up audit of all ten failed identities found different causes:
+
+| Company / stored identity | Finding and treatment |
+| --- | --- |
+| CHOLAFIN, MOTHERSON | Upstox's NSE cash master contains both EQ shares and D1 bonds under each symbol. Preserve `instrument_type` in the streamed master and index eligible share / SME / trust series only. Ambiguous equity identities still fail closed. |
+| Dhoot Transmission (`ID`) | `/company/id/1286088/` is a Screener website ID, not an exchange symbol. Its page explicitly links NSE `DHOOTTRANS`, matching Upstox ISIN `INE01NH01023`. One reviewed URL resolver serves the universe adapter, daily scraper, reader and capture inventory. Unknown numeric website IDs never become `ID` targets. Existing daily error rows are resolved while the next scheduled daily scrape catches up. |
+| BENGALASM | The observed NSE quote was old. Use verified BSE code `533095`, ISIN `INE083K01017`, consistently for quote requests and future history. Yahoo's corresponding symbol is `BENGALASM.BO` (its numeric-code URL returns 404). Never copy NSE volume/base history into a BSE quote. |
+| VERTIS, NHIT, 543225 (Altius), 504375 (IDream) | These instrument identities exist. Keep the provider's feed-update timestamp separate from its last-trade timestamp. A fresh zero-volume session can have an older last trade; it must not manufacture today's breakout. A stale/missing provider timestamp or conflicting session volume remains a gap. Yahoo's verified BSE aliases `ALTIUSINVIT.BO` and `IDREAM.BO` restore available history for the numeric targets while Upstox retains exact BSE-code matching. Actual quote availability is verified after the automatic deployment, not inferred from successful mapping. |
+| JBCHEPHARM, FCONSUMER | Both appear in Upstox's suspended-instrument master. Read that public file only when normal mapping leaves unresolved targets, cache it with the daily mappings, and report `suspended` rather than `unmapped`. The daily refresh automatically rechecks availability. Keep company/history rows; never substitute another company's price. |
+
+Evidence: [Upstox instrument files](https://upstox.com/developer/api-documentation/instruments/),
+[full-quote timestamp definitions](https://upstox.com/developer/api-documentation/get-full-market-quote/),
+[Dhoot's Screener identity](https://www.screener.in/company/id/1286088/consolidated/).
+All master-file observations above were read on 21 September 2026.
+
+`feedAt` is optional for backwards compatibility. It is sourced only from Upstox,
+never replaced with the request/check time. `quoteAt` always remains the original
+last-trade time. Cross-session feed observations require zero current-session volume;
+a newer completed daily close wins over an older trade. The compact minute archive
+stores the changing feed timestamp in its tuple, keeping one shared metadata record
+instead of duplicating it every minute. Returning sessions receive this change through
+the service-worker release increment. No new main-page explanatory banner is added.

@@ -800,10 +800,10 @@ resolves it from the list for every derived view, so one person is one string on
 **not** a regex that strips the suffix: the list is the authoritative display name, and a pattern
 match would quietly fail the day they reword it.
 
-### The team brief — two emails a weekday, built at the edge
+### The team brief — two editions a weekday, built at the edge
 
 The **Newsletter** button beside the header bell subscribes the desk to two Sattva Ventures-branded
-emails a weekday, each leading with the portfolio companies (one block per company, every link
+briefs a weekday, each leading with the portfolio companies (one block per company, every link
 opening in a new tab) and following with the market scan: the **morning brief** at 08:00 IST (what
 happened overnight — the US close, Asia this morning, Brent, gold, silver, the dollar index and
 USD/JPY, plus every filing and story about a DIRECT holding since the previous evening) and the
@@ -886,6 +886,21 @@ already runs on:
 
 The reading layer groups only matching syndicated headlines from different publishers, retaining every
 source link and summary. Distinct filings remain distinct after the existing exchange-twin fold.
+`newsletter-email.mjs` measures the final UTF-8 HTML, including escaped text, URLs, AI notes and
+recipient footers. Editions up to 90,000 bytes stay in one email; larger editions use numbered
+parts with distinct subjects, usually two. Keep companies together unless one company alone is
+too large, then split between complete updates with a continued heading. Keep all source rows,
+AI notes and identities; use additional parts on exceptionally busy days rather than omit content.
+The market scan is in the final part and the complete-edition PDF is linked from every part.
+Repeated inline formatting and duplicate heading links are reduced without removing the Read or
+dashboard links. The transport rejects any final body above the byte budget. A pathological update
+that cannot fit alone fails the plan as `email-too-large` before any PDF is saved or email sent.
+Delivery progress is saved after each part: `sent` counts recipients who received every part,
+`partial-send` is a failure state, and only confirmed delivered story keys enter read history,
+including after an interrupted run. The once-per-edition claim still prevents replay duplicates;
+unknown sends are not automatically retried. Preview `part=1|2|…` shows the same boundaries with
+links to the other preview parts; PDF/text previews remain complete. Offline and browser tests in
+`scripts/verify-newsletter-email.mjs` cover size boundaries, Unicode, source conservation and failure.
 The fluid email sheet and downloadable A4 PDF carry **Automated by Munshot** in their footers.
 Sent editions save one immutable PDF before sending, under an unguessable UUID link in
 `newsletter_documents`; those PDFs survive delivery-log pruning and contain no recipient data.

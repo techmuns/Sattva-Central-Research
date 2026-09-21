@@ -207,18 +207,24 @@ export class NewsletterStore {
   }
 
   finishDelivery(key, { sent = 0, failed = 0, reason = null, outcomes = [], subject = null, summary = null, stories = null } = {}) {
+    this.recordDeliveryProgress(key, { sent, failed, reason, outcomes, subject, summary, stories }, true);
+    this.pruneDeliveries();
+  }
+
+  // Persist each accepted part before the next external send. A restart leaves the edition
+  // unfinished with its actual part outcomes; only confirmed story keys become read history.
+  recordDeliveryProgress(key, { sent = 0, failed = 0, reason = null, outcomes = [], subject = null, summary = null, stories = null } = {}, finished = false) {
     const keys = Array.isArray(stories) ? stories.filter((k) => typeof k === 'string' && k.length <= 512).slice(0, 2000) : null;
     this.rows(
       'UPDATE newsletter_deliveries SET finished_at = ?, sent = ?, failed = ?, reason = ?, subject = ?, outcomes = ?, summary = ?, stories = ? WHERE key = ?',
-      iso(this.now()), sent, failed, reason, subject, JSON.stringify(outcomes || []), summary ? JSON.stringify(summary) : null, keys ? JSON.stringify(keys) : null, key,
+      finished ? iso(this.now()) : null, sent, failed, reason, subject, JSON.stringify(outcomes || []), summary ? JSON.stringify(summary) : null, keys ? JSON.stringify(keys) : null, key,
     );
-    this.pruneDeliveries();
   }
 
   /** The keys of every story the last few SENT deliveries carried — what the next brief may treat as read. */
   sentStoryKeys(limit = SENT_HISTORY) {
     const out = new Set();
-    for (const row of this.rows('SELECT stories FROM newsletter_deliveries WHERE stories IS NOT NULL AND sent > 0 ORDER BY started_at DESC LIMIT ?', limit)) {
+    for (const row of this.rows('SELECT stories FROM newsletter_deliveries WHERE stories IS NOT NULL ORDER BY started_at DESC LIMIT ?', limit)) {
       for (const key of parseJson(row.stories, [])) if (typeof key === 'string') out.add(key);
     }
     return out;

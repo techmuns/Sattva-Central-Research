@@ -1,10 +1,14 @@
 import { istDate, validateQuote } from '../public/js/data/breakout-live-shared.js';
 
+// Verified against each provider's exact BSE identity, 21 September 2026.
+const YAHOO_BSE = {BENGALASM:'BENGALASM.BO','543225':'ALTIUSINVIT.BO','504375':'IDREAM.BO'};
 export const yahooSymbol = target => {
   if (target.yahooTicker) return /\.(NS|BO)$/.test(target.yahooTicker) ? target.yahooTicker : `${target.yahooTicker}.NS`;
+  if (YAHOO_BSE[target.ticker]) return YAHOO_BSE[target.ticker];
   return /^\d+$/.test(target.ticker) ? `${target.ticker}.BO` : `${target.ticker.replace(/-SM$/, '')}.NS`;
 };
 const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
+const sourceTime = value => typeof value === 'number' || /^\d{13}$/.test(value || '') ? Number(value) : Date.parse(value);
 export function upstoxRows(payload, targets, bases, now = Date.now()) {
   if (payload?.status !== 'success' || !payload.data) throw Error('unavailable');
   const requested = new Map();
@@ -14,8 +18,11 @@ export function upstoxRows(payload, targets, bases, now = Date.now()) {
     for (const target of requested.get(data.instrument_token) || []) {
       if (data.symbol !== target.upstoxSymbol) continue;
       try {
+        const tradeAt = Number(data.last_trade_time), sourceAt = sourceTime(data.timestamp);
+        if (!Number.isFinite(tradeAt) || tradeAt <= 0) continue;
+        const feedAt = Number.isFinite(sourceAt) && sourceAt >= tradeAt && sourceAt <= now + 60000 ? sourceAt : null;
         rows.push(validateQuote({ ticker: target.ticker, name: target.name, price: data.last_price, volume: data.volume,
-          quoteAt: new Date(Number(data.last_trade_time)).toISOString(), sessionDate: istDate(Number(data.last_trade_time)),
+          quoteAt: new Date(tradeAt).toISOString(), ...(feedAt ? {feedAt:new Date(feedAt).toISOString()} : {}), sessionDate: istDate(feedAt || tradeAt),
           checkedAt: new Date(now).toISOString(), provider: 'Upstox', exchange: target.exchange,
           prevClose: number(data.net_change) == null ? null : data.last_price - data.net_change,
           base: bases.get(target.ticker) || null }, now));
@@ -26,7 +33,8 @@ export function upstoxRows(payload, targets, bases, now = Date.now()) {
 }
 export const upstoxIdentity = target => {
   const symbol = yahooSymbol(target);
-  return {exchange: symbol.endsWith('.BO') ? 'BSE' : 'NSE', symbol: symbol.slice(0,-3)};
+  const exchange = symbol.endsWith('.BO') ? 'BSE' : 'NSE';
+  return {exchange, symbol: exchange==='BSE' && /^\d+$/.test(target.ticker) ? target.ticker : symbol.slice(0,-3)};
 };
 export function mapUpstoxTargets(targets, instruments) {
   const index = new Map();
@@ -37,6 +45,9 @@ export function mapUpstoxTargets(targets, instruments) {
   for (const item of instruments) {
     if (!item || !['NSE_EQ','BSE_EQ'].includes(item.segment) || !new RegExp(`^${item.segment}\\|IN[A-Z0-9]{10}$`).test(item.instrument_key || '') || !item.trading_symbol) continue;
     const exchange = item.segment.slice(0,3);
+    // NSE_EQ also contains corporate bonds with the SAME trading symbol as shares.
+    // These securities cannot identify a share-price target. Keep SME/trust series.
+    if (exchange === 'NSE' && item.instrument_type && !['EQ','BE','BZ','SM','ST','SZ','RR','IV','IT','E1'].includes(item.instrument_type)) continue;
     // Cash-market series include SME shares, REITs and InvITs as well as EQ.
     // Match exact exchange identities; never guess a company from its name.
     add(`${exchange}:symbol:${item.trading_symbol}`, item);

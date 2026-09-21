@@ -32,33 +32,39 @@ export function expectedSession(now = Date.now()) {
   return null;
 }
 export function validateQuote(row, now = Date.now()) {
+  const feedAt = row?.feedAt;
+  if (feedAt != null && (row.provider !== 'Upstox' || !Number.isFinite(Date.parse(feedAt)) || Date.parse(feedAt) > now + 60000 || Date.parse(feedAt) < Date.parse(row.quoteAt))) throw Error('Invalid feed time');
+  if (feedAt && istDate(row.quoteAt)!==istDate(feedAt) && row.volume!==0) throw Error('Conflicting session volume');
   if (!row || !tickerValid(row.ticker) || !positive(row.price) || !Number.isFinite(row.volume) || row.volume < 0 ||
       !['Yahoo Finance', 'Upstox'].includes(row.provider) || !Number.isFinite(Date.parse(row.quoteAt)) ||
       !Number.isFinite(Date.parse(row.checkedAt)) || Date.parse(row.quoteAt) > now + 60000 || Date.parse(row.checkedAt) > now + 60000 ||
-      row.sessionDate !== istDate(row.quoteAt)) throw Error('Invalid market observation');
+      row.sessionDate !== istDate(feedAt || row.quoteAt)) throw Error('Invalid market observation');
   const base = row.base;
   if (base != null && (!positive(base.high) || !positive(base.low) || base.high < base.low || !positive(base.average) ||
       !positive(base.averageVolume) || base.count !== 30 || !/^\d{4}-\d{2}-\d{2}$/.test(base.to) || base.to >= row.sessionDate)) throw Error('Invalid breakout base');
   return { ticker: row.ticker, name: String(row.name || row.ticker).slice(0, 180), price: row.price,
     volume: row.volume, prevClose: positive(row.prevClose) ? row.prevClose : null,
     quoteAt: new Date(row.quoteAt).toISOString(), checkedAt: new Date(row.checkedAt).toISOString(),
+    ...(feedAt ? {feedAt:new Date(feedAt).toISOString()} : {}),
     sessionDate: row.sessionDate, provider: row.provider, exchange: row.exchange === 'BSE' ? 'BSE' : 'NSE', kind: row.kind === 'recovered-candle' ? 'recovered-candle' : 'quote',
     base: base ? { high: base.high, low: base.low, average: base.average, averageVolume: base.averageVolume, count: 30, to: base.to } : null };
 }
 export function quoteFresh(row, now = Date.now()) {
   if (!row || row.sessionDate !== expectedSession(now)) return false;
-  if (marketWindow(now).open) return now - Date.parse(row.quoteAt) <= BREAKOUT_MAX_AGE_MS;
+  const sourceAt = row.feedAt || row.quoteAt;
+  if (marketWindow(now).open) return now - Date.parse(sourceAt) <= BREAKOUT_MAX_AGE_MS;
   // After the session, an earlier intraday quote is not a closing observation.
-  return Date.parse(row.quoteAt) >= Date.parse(`${row.sessionDate}T15:10:00+05:30`) && Date.parse(row.checkedAt) >= Date.parse(`${row.sessionDate}T15:30:00+05:30`);
+  return Date.parse(sourceAt) >= Date.parse(`${row.sessionDate}T15:10:00+05:30`) && Date.parse(row.checkedAt) >= Date.parse(`${row.sessionDate}T15:30:00+05:30`);
 }
 // On the same date, a completed daily close wins over a stale intraday observation.
 // With no daily price, retain the last available observation with its original time.
 export function preferQuote(row, daily, now = Date.now()) {
+  if (row && positive(daily?.cmp) && daily.price_date && istDate(row.quoteAt)<daily.price_date) return false;
   return !!row && (!positive(daily?.cmp) || !daily.price_date || row.sessionDate > daily.price_date ||
     (row.sessionDate === daily.price_date && quoteFresh(row, now)));
 }
 export function liveBreakout(row) {
-  if (!row?.base) return null;
+  if (!row?.base || istDate(row.quoteAt)!==row.sessionDate) return null;
   const b = row.base, range = (b.high - b.low) / b.average * 100;
   const ratio = row.volume / b.averageVolume, breaks = row.price > b.high;
   return { base_range_pct: range, base_max: b.high, today_close: row.price, today_volume_ratio: ratio,

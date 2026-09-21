@@ -12,10 +12,8 @@
 // `universeRaw` rather than widening the legacy shape.
 
 // "https://www.screener.in/company/PGHH/" -> "PGHH"
-export function tickerFromScreenerUrl(url) {
-  const m = String(url || '').match(/\/company\/([^/]+)/);
-  return m ? m[1].toUpperCase() : null;
-}
+import { tickerFromScreenerUrl } from './market-identity.js';
+export { tickerFromScreenerUrl } from './market-identity.js';
 
 // "27,582 Cr." -> 27582 (₹ crore, as a number). Returns null when unparseable.
 export function parseMarketCapCr(value) {

@@ -1,6 +1,7 @@
 // Completed-session technical scores; current quotes are maintained separately.
 import { scoreCompany } from '../scoring/tech-scoring.js';
 import { filterByScope } from './scope.js';
+import { marketTicker } from './market-identity.js';
 
 const TECHNICALS_PATH = 'data/technicals.json';
 const ATR_HISTORY_PATH = 'data/atr-history.json';
@@ -70,6 +71,7 @@ async function buildCache() {
   // ATR trend accumulator — the ATR Stability rule reads `c.atr_history`. Optional: without
   // it the rule still scores on the absolute level and says the trend is pending.
   for (const row of rows) {
+    row.ticker = marketTicker(row) || row.ticker;
     row.price_date ??= row.bar_date || null;
     const hist = row.ticker && atrHistory[row.ticker];
     if (Array.isArray(hist)) row.atr_history = hist;

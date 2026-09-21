@@ -8,6 +8,7 @@ export const PRIMARY_INTERVAL = 60000;
 export const PRIMARY_MAX_AGE = 120000;
 const INVENTORY = 'upstox-inventory';
 const UPSTOX_CLIENT = 'SattvaCentralResearch/1.0';
+const MAPPING_VERSION = 2;
 
 export function primaryInventory(targets) {
   if (!Array.isArray(targets) || !targets.length || targets.length > BREAKOUT_LIMIT || new Set(targets.map(t => t.ticker)).size !== targets.length) throw Error('Invalid inventory');
@@ -35,7 +36,7 @@ export async function cashInstruments(stream, exchange) {
           else if(c==='}' || c===']')depth--;
           if (!depth) {
             const item=JSON.parse(pending.slice(start,cursor+1));
-            if (item.segment===`${exchange}_EQ`) rows.push({segment:item.segment,instrument_key:item.instrument_key,trading_symbol:item.trading_symbol,exchange_token:item.exchange_token});
+            if (item.segment===`${exchange}_EQ` || (exchange==='SUSPENDED' && ['NSE_EQ','BSE_EQ'].includes(item.segment))) rows.push({segment:item.segment,instrument_type:item.instrument_type,instrument_key:item.instrument_key,trading_symbol:item.trading_symbol,exchange_token:item.exchange_token});
             start=-1;phase='comma';
           }
         } else if (/\s/.test(c)) continue;
@@ -54,7 +55,9 @@ export async function cashInstruments(stream, exchange) {
 export async function primaryInstruments(exchange, fetcher = fetch) {
   // Native Workers fetch has no default User-Agent. Upstox's CDN rejects the
   // anonymous request; identify this application without impersonating a browser.
-  const response = await fetcher(`https://assets.upstox.com/market-quote/instruments/exchange/${exchange}.json.gz`, {headers:{'user-agent':UPSTOX_CLIENT},redirect:'manual',signal:AbortSignal.timeout(12000)});
+  if (!['NSE','BSE','SUSPENDED'].includes(exchange)) throw Error('Invalid exchange');
+  const file = exchange==='SUSPENDED' ? 'suspended-instrument' : exchange;
+  const response = await fetcher(`https://assets.upstox.com/market-quote/instruments/exchange/${file}.json.gz`, {headers:{'user-agent':UPSTOX_CLIENT},redirect:'manual',signal:AbortSignal.timeout(12000)});
   if (!response.ok || !response.body) { await response.body?.cancel(); throw Error('instrument-list-unavailable'); }
   const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
   return cashInstruments(stream,exchange);
@@ -126,7 +129,7 @@ export class BreakoutPrimary {
   async mappings(targets) {
     const signature=JSON.stringify(targets), day=istDate(this.now());
     const prior=this.config('upstox-mappings');
-    if (prior?.client===UPSTOX_CLIENT && prior.day===day && prior.signature===signature && this.now()<prior.retryAt) return prior;
+    if (prior?.client===UPSTOX_CLIENT && prior.version===MAPPING_VERSION && prior.day===day && prior.signature===signature && this.now()<prior.retryAt) return prior;
     const mapped=[], failed=[];
     for (const exchange of new Set(targets.map(t=>upstoxIdentity(t).exchange))) {
       const subset=targets.filter(t=>upstoxIdentity(t).exchange===exchange);
@@ -137,7 +140,12 @@ export class BreakoutPrimary {
         if (prior?.signature===signature) mapped.push(...prior.mapped.filter(t=>t.exchange===exchange));
       }
     }
-    const result={client:UPSTOX_CLIENT,day,signature,mapped,failed,retryAt:this.now()+(failed.length?15*60000:86400000)};
+    const missing=targets.filter(t=>!mapped.some(m=>m.ticker===t.ticker)), suspended=[];
+    if (missing.length) {
+      try { suspended.push(...mapUpstoxTargets(missing,await this.instruments('SUSPENDED',this.fetcher)).map(t=>t.ticker)); }
+      catch { failed.push('SUSPENDED'); }
+    }
+    const result={client:UPSTOX_CLIENT,version:MAPPING_VERSION,day,signature,mapped,suspended,failed,retryAt:this.now()+(failed.length?15*60000:86400000)};
     this.saveConfig('upstox-mappings',result); return result;
   }
   async wake() {
@@ -162,10 +170,11 @@ export class BreakoutPrimary {
           const targets=inventory?.targets || primaryInventory((fallback.targets || []).map(ticker=>({ticker,name:fallback.rows.find(r=>r.ticker===ticker)?.name})));
           const mapping=await this.mappings(targets);
           const session=expectedSession(at), previousSession=expectedSession(Date.parse(`${session}T09:00:00+05:30`));
-          const bases=new Map((fallback.rows || []).filter(r=>r.sessionDate===session && r.base?.to===previousSession).map(r=>[r.ticker,r.base]));
+          const exchanges=new Map(mapping.mapped.map(t=>[t.ticker,t.exchange]));
+          const bases=new Map((fallback.rows || []).filter(r=>r.sessionDate===session && r.base?.to===previousSession && r.exchange===exchanges.get(r.ticker)).map(r=>[r.ticker,r.base]));
           const result=await this.quotes(mapping.mapped,bases,this.env.UPSTOX_ACCESS_TOKEN,{fetcher:this.fetcher,now:this.now});
           const valid=result.rows.filter(r=>quoteFresh(r,this.now())), success=new Set(valid.map(r=>r.ticker)), mapped=new Set(mapping.mapped.map(r=>r.ticker));
-          const failures=targets.filter(t=>!success.has(t.ticker)).map(t=>({ticker:t.ticker,reason:!mapped.has(t.ticker)?'unmapped':result.reason || 'stale'}));
+          const failures=targets.filter(t=>!success.has(t.ticker)).map(t=>({ticker:t.ticker,reason:mapping.suspended.includes(t.ticker)?'suspended':!mapped.has(t.ticker)?'unmapped':result.reason || 'stale'}));
           await store.breakoutPrimarySave({at,completedAt:this.now(),targets:targets.map(t=>t.ticker),rows:valid,failures,
             discoveryFailed:inventoryStale || (inventory?.discoveryFailed ?? fallback.discoveryFailed ?? true),instrumentFailures:mapping.failed});
           saved=valid.length; failed=failures.length;

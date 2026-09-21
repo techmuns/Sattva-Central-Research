@@ -4626,7 +4626,13 @@ GET of the panel, and re-armed at the end of every wake. `worker/newsletter-sche
    `/api/newsletter/send`; it is passed as a value for that send and never stored.
 4. **Every failure is a named reason per recipient** — `unauthorised`, `rate-limited`, `upstream`,
    `refused`, `timeout`, `unreachable`, `invalid-response` — and never the upstream's own text.
-   `sent` counts successes only.
+   `sent` counts recipients whose complete set of parts was accepted. A partly delivered edition
+   returns `partial-send`, never a full-success count. Each recipient outcome additionally carries
+   `parts: [{ part, total, bytes, ok, status, reason }]`. Parts pending or in flight have
+   `not-attempted` / `sending` reasons. Summary adds `emailParts` and `htmlBytes` (the per-part
+   maximum personalised sizes). Progress is persisted before and after each send; an interruption
+   keeps `finishedAt: null` and the actual accepted parts. The private story ledger includes only
+   confirmed parts, even if no recipient received the entire edition. Test copies still add none.
 5. **`renderOptions()` is what every render of the sheet is built with.** It carries
    `NEWSLETTER_PRODUCT_NAME` and the store's own `settings`, because leaving either out is
    invisible: a declared Worker var nothing reads looks like a var that does not work, and a footer
@@ -4636,8 +4642,26 @@ GET of the panel, and re-armed at the end of every wake. `worker/newsletter-sche
 `POST /api/newsletter/send` `{ edition, to: 'me' | 'all', email? }` builds the edition **now**,
 covering its window up to now (the sheet says `built on request`), and sends it to one address as a
 test copy or to every subscriber of that edition; "everyone" cools down for five minutes and never
-claims the scheduled key. `GET /api/newsletter/preview?edition=morning[&format=text]` renders
-the same build without sending.
+claims the scheduled key. `GET /api/newsletter/preview?edition=morning[&part=1][&format=text]` renders
+the same build without sending. HTML defaults to part 1, includes preview navigation and returns
+`x-newsletter-part` / `x-newsletter-parts`; invalid or nonexistent parts return 400. Text and PDF
+previews contain the entire edition.
+
+`worker/newsletter-email.mjs` keeps each outgoing HTML body at **90,000 UTF-8 bytes**, below the
+approximately 102 KB Gmail clipping threshold documented in
+[Mailchimp's clipping guidance](https://mailchimp.com/help/gmail-is-clipping-my-email/). Count final
+escaped content, URLs, inline styles, AI notes and recipient attribution, not JavaScript string
+length or just visible text. Short editions remain a single email. Larger editions split at company
+boundaries, or between complete updates if a single company exceeds the budget. Subjects, mastheads
+and closing notices identify Part 1 of 2 etc.; additional numbered parts preserve unusually busy
+editions. No source text or AI annotation is cut to meet the budget. Only the final part contains
+the global market scan. Each part includes the same complete-edition PDF, source coverage,
+unsubscribe link and Munshot footer. The send adapter independently refuses an oversized body.
+A single unfit update or a plan above 99 parts returns `email-too-large` before any send or PDF
+write, retaining unsent story eligibility. Existing source selection limits and disclosed coverage
+remain unchanged. Parts are submitted sequentially for each recipient, with three recipients in
+parallel; the sender cannot guarantee the receiving provider's inbox arrival order. Durable edition
+claims prevent replaying uncertain sends; no automatic resend is added.
 
 **The panel is deliberately minimal.** It offers your own address with Subscribe / Unsubscribe, the
 other addresses on the list with × and one field to add a teammate, and Preview Morning · Evening.

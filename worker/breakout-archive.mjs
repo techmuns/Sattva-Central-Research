@@ -42,7 +42,7 @@ export class MinuteArchive {
           sql.exec('INSERT INTO breakout_primary_events VALUES(?,?,?)',row.ticker,at,JSON.stringify(row));
         }
       }
-      const {price,volume,quoteAt,checkedAt,...metadata}=row;
+      const {price,volume,quoteAt,checkedAt,feedAt,...metadata}=row;
       const payload=JSON.stringify(metadata),hash=this.tag(payload);
       let key=hash,collision=0;
       for(;;) {
@@ -53,17 +53,17 @@ export class MinuteArchive {
       }
       const bucket=primaryBucket(row.ticker);
       if(!buckets.has(bucket))buckets.set(bucket,{});
-      buckets.get(bucket)[row.ticker]=[key,price,volume,Date.parse(quoteAt),Date.parse(checkedAt)];
+      buckets.get(bucket)[row.ticker]=[key,price,volume,Date.parse(quoteAt),Date.parse(checkedAt),...(feedAt ? [Date.parse(feedAt)] : [])];
     }
     for(const [bucket,payload] of buckets)sql.exec('INSERT INTO breakout_primary_history VALUES(?,?,?)',bucket,at,JSON.stringify(payload));
   }
   decode(payload,at) {
     const value=JSON.parse(payload);
     if(!Array.isArray(value))return value; // Existing full-row snapshots remain readable until expiry.
-    const [key,price,volume,quoteAt,checkedAt]=value;
+    const [key,price,volume,quoteAt,checkedAt,feedAt]=value;
     const metadata=this.storage.sql.exec('SELECT payload FROM breakout_primary_metadata WHERE day=? AND key=?',Math.floor(at/DAY),key).toArray()[0];
     if(!metadata)throw Error('Minute metadata unavailable');
-    return {...JSON.parse(metadata.payload),price,volume,quoteAt:new Date(quoteAt).toISOString(),checkedAt:new Date(checkedAt).toISOString()};
+    return {...JSON.parse(metadata.payload),price,volume,quoteAt:new Date(quoteAt).toISOString(),checkedAt:new Date(checkedAt).toISOString(),...(feedAt ? {feedAt:new Date(feedAt).toISOString()} : {})};
   }
   prune(now) {
     this.init();

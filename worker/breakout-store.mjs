@@ -18,7 +18,7 @@ export function mergePrimary(fallback, primary, now=Date.now()) {
     const goodPrimary=timely && !primaryFailures.has(ticker) && quoteFresh(p,now);
     const goodFallback=f && !fallbackFailures.has(ticker) && quoteFresh(f,now);
     // Daily history may finish after the minute's quote, without changing its price/source time.
-    if (p && !p.base && f?.base && f.sessionDate===p.sessionDate) p={...p,base:f.base};
+    if (p && !p.base && f?.base && f.sessionDate===p.sessionDate && f.exchange===p.exchange) p={...p,base:f.base};
     const row=goodPrimary?p:goodFallback?f:!p?f:!f?p:Date.parse(p.quoteAt)>=Date.parse(f.quoteAt)?p:f;
     if (row) rows.push(row);
     if (goodPrimary) primaryUsed++;
@@ -146,7 +146,7 @@ export class BreakoutStore {
     const rows=input.rows.map(r=>validateQuote(r,this.now())), checked=[...rows.map(r=>r.ticker),...failures.map(r=>r.ticker)];
     if (checked.length!==targets.length || new Set(checked).size!==checked.length || checked.some(t=>!targets.includes(t)) || rows.some(r=>r.provider!=='Upstox' || r.kind!=='quote')) throw Error('Incomplete primary capture');
     this.primaryPrune();
-    const cleanFailures=failures.map(r=>({ticker:r.ticker,reason:['unmapped','authentication','rate-limited','stale','unavailable'].includes(r.reason)?r.reason:'unavailable'}));
+    const cleanFailures=failures.map(r=>({ticker:r.ticker,reason:['unmapped','suspended','authentication','rate-limited','stale','unavailable'].includes(r.reason)?r.reason:'unavailable'}));
     return this.storage.transactionSync(()=>{
       const existing=this.storage.sql.exec('SELECT payload FROM breakout_primary_current WHERE id=1').toArray()[0];
       const prior=existing?JSON.parse(existing.payload):null;
@@ -185,7 +185,7 @@ export class BreakoutStore {
         else this.storage.sql.exec('DELETE FROM breakout_primary_latest WHERE bucket=?',bucket);
       }
       const payload={at,completedAt,firstAt:prior?.firstAt || at,targets,failures:cleanFailures,
-        discoveryFailed:input.discoveryFailed===true,instrumentFailures:(input.instrumentFailures || []).filter(e=>['NSE','BSE'].includes(e))};
+        discoveryFailed:input.discoveryFailed===true,instrumentFailures:(input.instrumentFailures || []).filter(e=>['NSE','BSE','SUSPENDED'].includes(e))};
       this.storage.sql.exec('INSERT INTO breakout_primary_current VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET at=excluded.at,payload=excluded.payload',at,JSON.stringify(payload));
       return {ok:true,saved:rows.length};
     });

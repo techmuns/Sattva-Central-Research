@@ -314,6 +314,7 @@ export function sourceGroups() {
           cadence: `${breakoutCapture?.primarySchedule?.configured ? 'Upstox every minute in market hours' : 'Upstox minute feed awaits the server token'}; 15-minute fallback. ${breakoutHealth.total ? `${breakoutHealth.checked} of ${breakoutHealth.total} companies have current usable observations.` : 'No shared capture has been read yet.'} Last completed source check: ${breakoutCapture?.completedAt ? breakoutLive.stamp(breakoutCapture.completedAt) : 'not available'}.${breakoutHealth.archiveIncomplete ? ` History has recorded gaps: ${breakoutHealth.archive.missedMinutes} missed minute checks, ${breakoutHealth.archive.missingMinuteQuotes} missing company-minute quotes and ${breakoutHealth.archive.fallbackGapIntervals} fallback intervals. Current-price freshness is separate.` : ''}`,
           status: 'live', readState: breakoutState,
           file: 'GET /api/breakouts · durable saved history',
+          details: (breakoutCapture?.failures || []).map(row=>`${row.ticker}: ${row.reason==='suspended'?'not available for trading on Upstox':row.reason==='unmapped'?'exchange identity unavailable':row.reason==='stale'?'no current source observation':row.reason}`),
         },
         {
           name: 'NSE 500 constituent list (Screener export)',
