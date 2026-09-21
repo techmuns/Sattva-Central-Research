@@ -106,7 +106,7 @@ function quarterTableHtml(quarters) {
     <div class="mb-5">
       <div class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Eight-quarter series</div>
       <div class="table-scroll-surface scrollbar-thin overflow-x-auto rounded-xl ring-1 ring-slate-100" tabindex="0" role="region" aria-label="Eight-quarter earnings table">
-        <table class="w-full text-[11px]">
+        <table data-column-layout="earnings-drill:1" class="w-full text-[11px]">
           <thead class="bg-slate-50/70">
             <tr>
               <th scope="col" class="whitespace-nowrap px-2 py-1.5 text-left font-bold uppercase tracking-wide text-slate-500">Metric</th>

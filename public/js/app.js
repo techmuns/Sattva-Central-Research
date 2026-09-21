@@ -1,3 +1,4 @@
+import { installColumnOrder } from './ui/column-order.js';
 // app.js — bootstrap: load the JSON data set once, then mount the shell (which starts the
 // router and renders the first tab). Every tab reads its slice off `state.data` via ctx.data,
 // so there is exactly one fetch pass at startup and pollers handle everything after that.
@@ -136,6 +137,7 @@ async function boot() {
       </div>`;
     return;
   }
+  installColumnOrder();
   mount(root);
   
 

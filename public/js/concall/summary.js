@@ -29,7 +29,7 @@ function bodyHtml(body) {
       const tag = block.ordered ? 'ol' : 'ul';
       return `<${tag} class="${block.ordered ? 'list-decimal' : 'list-disc'} space-y-2 pl-5 text-sm leading-relaxed text-slate-700">${block.items.map(item => `<li>${e(item)}</li>`).join('')}</${tag}>`;
     }
-    return `<div class="overflow-x-auto"><table class="w-full text-left text-sm text-slate-700"><tbody>${block.rows.map(row => `<tr class="border-b border-slate-100">${row.map(cell => `<td class="px-3 py-2 align-top">${e(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    return `<div class="overflow-x-auto"><table data-column-layout="summary:1" class="w-full text-left text-sm text-slate-700"><tbody>${block.rows.map(row => `<tr class="border-b border-slate-100">${row.map(cell => `<td class="px-3 py-2 align-top">${e(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }).join('');
 }
 function coverageNote() {
@@ -118,7 +118,7 @@ function coverageHtml() {
     <p class="text-xs text-slate-500">Portfolio checked: ${e(date(state?.portfolioCheckedAt))}<br>Source catalogue checked: ${e(date(state?.sourceCheckedAt))}</p>
     <p data-summary-schedule class="text-xs text-slate-500">Automatic collection: ${e(summaryScheduleMessage(state) || (state?.enabled ? 'Timer scheduled; source coverage is reported separately.' : 'Not enabled.'))}<br>Timer last checked: ${e(date(state?.schedule?.lastAttemptAt ? new Date(state.schedule.lastAttemptAt).toISOString() : null))}<br>Next timer check: ${e(date(state?.schedule?.alarmAt ? new Date(state.schedule.alarmAt).toISOString() : null))}</p>
     <p class="text-xs text-slate-500">New holdings join automatically on the next successful portfolio and catalogue check. Saved notes have no automatic expiry. Source corrections without a new summary ID are not re-fetched automatically.</p>
-    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
+    ${state?.holdings?.length ? `<div class="max-h-[520px] overflow-auto"><table data-column-layout="summary:2" class="w-full text-left text-sm text-slate-700"><thead><tr><th class="p-2">Company</th><th class="p-2">Saved</th><th class="p-2">Pending</th><th class="p-2">Coverage</th></tr></thead><tbody>${state.holdings.map(holding => `<tr class="border-b border-slate-100"><td class="p-2">${e(holding.name)}</td><td class="p-2">${e(holding.ready)}</td><td class="p-2">${e(holding.pending)}</td><td class="p-2">${e(labels[holding.discovery] || 'Unchecked')}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
 }
 export function openSummaryCoverage() {
   const version = modal(coverageHtml());

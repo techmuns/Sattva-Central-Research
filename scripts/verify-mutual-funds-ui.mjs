@@ -22,6 +22,10 @@ try{
  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.fulfill({status:200,body:''}));
  await page.goto(origin);await page.waitForSelector('[data-row-key]');
  assert(await page.locator('text=MF shares held').count());assert(await page.locator('text=Insight summary').count());
+ const net=page.locator('[data-table-head] th').filter({hasText:'Net monthly shares'}), shares=page.locator('[data-table-head] th').filter({hasText:'MF shares held'});
+ const a=await net.boundingBox(),b=await shares.boundingBox();await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width-2,b.y+b.height/2,{steps:8});await page.mouse.up();
+ assert.match(await page.locator('[data-table-head] th').nth(3).textContent(),/Net monthly shares/,'requested MF layout');
+
  const book=JSON.parse(readFileSync(root+'/data/portfolio-companies.json'));const seed=JSON.parse(readFileSync(root+'/data/mutual-funds/index.json'));const held=seed.rows.find(r=>r.funds===undefined&&r.holders>10);assert(held);
  await page.evaluate(h=>{window.testBook=[{isin:h.isin,weightPct:90}];window.mount('portfolio');},held);await page.waitForTimeout(400);
  const first=page.locator('[data-row-key]').first();assert.equal(await first.getAttribute('data-row-key'),held.isin,'Largest holdings uses private portfolio weight');

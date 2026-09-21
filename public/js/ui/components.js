@@ -1,3 +1,4 @@
+import { installColumnOrder } from './column-order.js';
 // ui/components.js — shared UI primitives reused by every tab. Each primitive is a pure
 // function: it returns either a plain HTML string, or `{ html, wire(root) }` when it needs
 // event listeners / measurement after being inserted into the DOM. `wire()` never mutates
@@ -265,7 +266,7 @@ export function segmentedToggle({ options, activeValue, onChange }) {
 
 // Sortable, sticky-header data table. Horizontal-scrolls inside its own container so the page
 // body never scrolls sideways. Zebra-free — rows differentiate on hover only.
-export function dataTable({ columns, rows, sortable = true, initialSort = null, emptyMessage = 'No data yet.', scrollLabel = 'Scrollable data table' }) {
+export function dataTable({ columnLayoutKey = null, columns, rows, sortable = true, initialSort = null, emptyMessage = 'No data yet.', scrollLabel = 'Scrollable data table' }) {
   function cellValue(row, col) {
     return col.render ? col.render(row) : escapeHtml(row[col.key] ?? '—');
   }
@@ -286,7 +287,7 @@ export function dataTable({ columns, rows, sortable = true, initialSort = null, 
 
   const html = `
     <div class="table-scroll-surface overflow-x-auto rounded-2xl ring-1 ring-slate-100" data-table-wrap tabindex="0" role="region" aria-label="${escapeHtml(scrollLabel)}">
-      <table class="w-full min-w-max border-collapse text-sm">
+      <table data-column-layout="${escapeHtml(columnLayoutKey || `data:${columns[0]?.key || scrollLabel}`)}" class="w-full min-w-max border-collapse text-sm">
         <thead class="sticky top-0 z-10 bg-slate-50 ">
           <tr>
             ${columns
@@ -305,6 +306,7 @@ export function dataTable({ columns, rows, sortable = true, initialSort = null, 
     </div>`;
 
   function wire(root) {
+    installColumnOrder();
     if (!sortable) return () => {};
     const wrap = root.querySelector('[data-table-wrap]');
     const tbody = wrap.querySelector('[data-table-body]');
