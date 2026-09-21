@@ -47,3 +47,24 @@ const settled = disk.get(STORAGE_KEY);
 raced.sync(settled); raced.flush();
 assert.equal(disk.get(STORAGE_KEY), settled, 'reconciliation has a stable serialized result');
 console.log('PASS notification inbox: arrival dedupe, read/dismiss persistence, cross-tab receipts, all unread retained, safe links/dates, private research isolation and unavailable storage');
+
+const legacyChatter = { version: 1, items: [
+  { id: 'chatter:coforge', kind: 'chatter', title: 'Coforge', detail: 'Now discussed — 13 mentions in 30 days · Bearish (SentimentDash)',
+    at: 100, receivedAt: 120, readAt: 130, href: '#/research/public-chatter' },
+  { id: 'chatter:closed', dismissedAt: 140 },
+] };
+disk.set(STORAGE_KEY, JSON.stringify(legacyChatter));
+const migrated = createInbox(options);
+assert.doesNotMatch(migrated.items()[0].detail, /Bearish/);
+assert.equal(migrated.items()[0].readAt, 130);
+assert.equal(migrated.items()[0].receivedAt, 120);
+assert.equal(migrated.items().length, 1, 'migration does not resurrect a dismissal');
+assert.equal(migrated.announcedCount(), 0, 'migration never creates a new arrival');
+assert.equal(migrated.push({ key: 'chatter:coforge', kind: 'chatter', title: 'Coforge' }), false);
+migrated.push({ key: 'chatter:new', kind: 'chatter', title: 'New company', detail: 'Mixed (SentimentDash tags)' });
+migrated.flush();
+assert.doesNotMatch(disk.get(STORAGE_KEY), /Bearish/);
+assert.equal(createInbox(options).items().find(row => row.id === 'chatter:new').detail, 'Mixed (SentimentDash tags)');
+migrated.sync(JSON.stringify(legacyChatter)); migrated.flush();
+assert.doesNotMatch(disk.get(STORAGE_KEY), /Bearish/, 'an older open tab cannot resurrect a superseded directional detail');
+console.log('PASS old chatter notifications lose unsupported verdicts while retaining dates, receipts and dedupe; new summaries survive reload');

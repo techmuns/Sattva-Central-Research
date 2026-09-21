@@ -53,6 +53,9 @@ individual keyword tags as source readings. AI chatter links open the exact topi
 dialog, including after delayed identity resolution. The dialog separates the complete window
 from the latest dated mention. Old cached directional summaries without verifiable counts retain
 their observations but lose their unsupported verdict until the source is re-read.
+This applies to both persisted alert caches and notification details; read/dismiss receipts and
+captured dates survive the upgrade. Legacy alert IDs recover their exact topic. Sentiment sorts
+follow the displayed summary, not the provider's superseded score.
 
 Material, company-attributed portfolio news and linked exchange disclosures remain eligible for
 AI Alerts throughout the existing 14-day window. Recency still reduces their ranking score;

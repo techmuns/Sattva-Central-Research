@@ -1,6 +1,7 @@
 // All Alerts retains the full public source pool. AI Alerts' bounded, attributed window is a
 // different contract. Store source rows before scope/discovery mapping, with full export evidence.
 import { createAlertWindowCache } from './alert-window-cache.js';
+import { restoreChatterAlert } from './chatter-sentiment.js';
 
 export const ALL_ALERTS_CACHE_KEY = 'all-alerts:public-pool:v1';
 export const allAlertsCache = createAlertWindowCache({ cacheKey: ALL_ALERTS_CACHE_KEY });
@@ -36,7 +37,7 @@ export function restoreAllAlertSources(value, registry, day, queryWindow = null)
   for (const event of value.events) {
     if (!publicEvent(event) || typeof event.id !== 'string' || !groups.has(event.feed) ||
         typeof event.headline !== 'string' || (event.day != null && !/^\d{4}-\d{2}-\d{2}$/.test(event.day))) return null;
-    groups.get(event.feed).push(event);
+    groups.get(event.feed).push(restoreChatterAlert(event));
   }
   // A saved source check is retained, not advanced to this visit. Revalidation starts pending.
   return value.feeds.map(feed => ({ ...feed, events: groups.get(feed.id), status: 'pending',

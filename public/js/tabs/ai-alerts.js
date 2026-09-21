@@ -16,6 +16,7 @@ import { getHostContext } from '../core/host-context.js';
 import { formatNumber } from '../core/format.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/ai-alerts.js';
+import { chatterTopic } from '../data/chatter-sentiment.js';
 import { driversFromEvent, QUESTIONS } from '../data/alert-drivers.js';
 import { alertWindowCache } from '../data/alert-window-cache.js';
 import * as screenerInsights from '../data/screener-insights.js';
@@ -806,7 +807,7 @@ export function evidenceDestination(event = {}, scope = 'portfolio') {
   if (event.feed === 'chatter' || event.feed === 'chatter-posts') {
     const params = new URLSearchParams({ scope: String(scope || 'portfolio'), open: 'mentions' });
     if (event.ticker) params.set('company', String(event.ticker));
-    const topic = event.chatterTopic || event.sourceRecord?.slug;
+    const topic = chatterTopic(event);
     if (topic) params.set('topic', topic);
     return { href: `#/research/public-chatter?${params}`, external: false,
       label: 'Read mentions →', ariaLabel: `Open public mentions for ${event.company || event.ticker || 'this company'}` };

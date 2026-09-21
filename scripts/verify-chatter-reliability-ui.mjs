@@ -208,6 +208,22 @@ try {
   await cold.getByRole('button', { name: 'Close mentions', exact: true }).click();
   await cold.evaluate(() => chatter.refresh());
   assert.equal(await cold.locator('[data-chatter-mentions-dialog]').count(), 0, 'background updates do not reopen a dismissed dialog');
+  const summaries = [
+    { ...entry('coforge', 'Coforge', 13), sentiment: { bullish: 1, bearish: 3, neutral: 9, label: 'bearish', score: -5 } },
+    { ...entry('tata-consultancy-services', 'Tata Consultancy Services', 10), sentiment: { bullish: 8, bearish: 0, neutral: 2, label: 'bullish', score: -10 } },
+    { ...entry('infosys', 'Infosys', 10), sentiment: { bullish: 0, bearish: 8, neutral: 2, label: 'bearish', score: 10 } },
+  ];
+  stocks = [...summaries, ...summaries.map((row, i) => ({ ...row, ticker: `unresolved-topic-${i}`, name: `Unresolved topic ${i}` }))];
+  revision++;
+  await cold.evaluate(() => { tab.destroy(); window.renderScope('universe'); });
+  await cold.evaluate(() => chatter.refresh());
+  await cold.locator('[data-table-search]').first().fill('');
+  for (const section of ['coverage', 'not-in-coverage']) {
+    await cold.locator(`[data-chatter-section-tabs] [data-tab-id="${section}"]`).click();
+    await cold.locator('th[data-sort]').filter({ hasText: /^Sentiment/ }).click();
+    const labels = await cold.locator('tbody tr[data-row-key]').evaluateAll(rows => rows.map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent.trim()).find(text => ['Mixed', 'Bullish', 'Bearish'].includes(text))));
+    assert.deepEqual(labels, ['Mixed', 'Bullish', 'Bearish'], `${section} sorts displayed summaries, not deliberately conflicting source scores`);
+  }
   await cold.close();
   console.log('PASS exact chatter collector reading, delayed company resolution and dismissed-dialog stability');
   assert.deepEqual(errors, []);

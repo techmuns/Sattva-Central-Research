@@ -28,8 +28,15 @@ export function mentionSentiment(posts, { complete = false, total = posts.length
 
 // Old materialized alerts omitted source records, so their broad directional
 // headline cannot be verified offline. Retain the observation, not its verdict.
+export function chatterTopic(event) {
+  const topic = event.chatterTopic || event.sourceRecord?.slug ||
+    (event.feed === 'chatter' ? /^chatter:([^:]+):/.exec(event.id || '')?.[1] :
+      event.feed === 'chatter-posts' ? /:([^:]+)$/.exec(event.id || '')?.[1] : null);
+  return typeof topic === 'string' && /^[a-z0-9][a-z0-9._-]{0,160}$/i.test(topic) ? topic.toLowerCase() : null;
+}
+
 export function restoreChatterAlert(event) {
   if (event.feed !== 'chatter' || event.chatterReadingVersion === 1) return event;
-  return { ...event, direction: 'neutral', headline: 'Public chatter (30-day snapshot)',
+  return { ...event, chatterTopic: chatterTopic(event), direction: 'neutral', headline: 'Public chatter (30-day snapshot)',
     signalReason: 'Saved snapshot sentiment has not been verified. Open the mentions for context.' };
 }

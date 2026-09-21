@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chatterSentiment, mentionSentiment, restoreChatterAlert } from '../public/js/data/chatter-sentiment.js';
+import { chatterSentiment, mentionSentiment, restoreChatterAlert, chatterTopic } from '../public/js/data/chatter-sentiment.js';
 import { normaliseEntry, normalisePost } from '../public/js/data/sentiment-shared.js';
 
 const reading = (bullish, bearish, neutral) => chatterSentiment({ bullish, bearish, neutral }, bullish + bearish + neutral);
@@ -34,4 +34,9 @@ const current = { ...legacy, chatterReadingVersion: 1 };
 assert.equal(restoreChatterAlert(current), current);
 const unrelated = { ...legacy, feed: 'news' };
 assert.equal(restoreChatterAlert(unrelated), unrelated);
+const cachedTopic = { ...legacy, id: 'chatter:tata-consultancy-services:2026-09-21T00:15:56Z', ticker: 'TCS' };
+assert.equal(restoreChatterAlert(cachedTopic).chatterTopic, 'tata-consultancy-services');
+assert.equal(chatterTopic(cachedTopic), 'tata-consultancy-services');
+assert.equal(chatterTopic({ feed: 'chatter-posts', id: 'chatter-post:news:article-id:coforge' }), 'coforge');
+assert.equal(chatterTopic({ ...cachedTopic, chatterTopic: '../other' }), null);
 console.log('PASS complete, opposing, minority, missing, malformed and partial chatter splits; raw provenance and legacy alert retention');

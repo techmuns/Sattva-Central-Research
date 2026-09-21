@@ -749,7 +749,7 @@ function buildCoveredTable(rows) {
         get: (r) => sentimentPill(r.sentimentReading),
         html: true,
         sortable: true,
-        sortValue: (r) => r.sentiment.score ?? 0,
+        sortValue: (r) => r.sentimentReading.labelText,
       },
       {
         label: 'Bull / Bear',
@@ -823,7 +823,7 @@ function buildOtherTable(rows) {
     columns: [
       { label: 'Mentions', get: mentionsCell, html: true, align: 'right', sortable: true, sortValue: (r) => r.mentions },
       { label: 'Mentions Δ', get: mentionsDeltaCell, html: true, align: 'right', sortable: true, sortValue: (r) => r.mentionsChangePct ?? -Infinity },
-      { label: 'Sentiment', get: (r) => sentimentPill(r.sentimentReading), html: true, sortable: true, sortValue: (r) => r.sentiment.score ?? 0 },
+      { label: 'Sentiment', get: (r) => sentimentPill(r.sentimentReading), html: true, sortable: true, sortValue: (r) => r.sentimentReading.labelText },
       { label: 'Sources', get: sourceCell, html: true },
     ],
   });

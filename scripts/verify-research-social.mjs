@@ -98,6 +98,8 @@ try {
   assert.equal(posts.rows[0].url, `https://forum.valuepickr.com/t/jaynecoind/123?reference=${'a'.repeat(220)}`, 'long source links remain exact');
   assert(summary.rows.some(r => r.mentionCountChangePct === 200));
   assert.match(summary.definition, /not a price return/);
+  assert.match(summary.definition, /not the latest post or an outlook/);
+  assert.match(summary.definition, /sourceSentiment is unverified provenance/);
   assert.match(posts.definition, /Unverified/);
   assert.equal(providerEvidence(packet).sources.find(s => s.id === 'telegram').rows.length, tg.rows.length);
   assert(validateResearchBody({ question: 'Summarise available evidence.', evidence: packet }).ok);

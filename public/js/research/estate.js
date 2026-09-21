@@ -961,7 +961,7 @@ const BUILDERS = [
         dataQuality: meta.health?.state === 'updated' ? 'source-reported' : 'partial',
         note: 'Public-source discovery does not establish complete company coverage. ' + (meta.health?.label || 'Source checks are unconfirmed.'),
         coverage: { coveredRowsInScope: rows.length, coveredCompanies: meta.companies, unresolvedTopics: unresolved.length, totalTopics: meta.total, window: meta.window, sourceChecks: meta.collection?.sources || null, archive: meta.collection?.archive || null },
-        definition: 'Sentiment summarizes keyword-based source tags across the whole window, not the latest mention or an investment outlook. Opposing tags are Mixed; a Bullish/Bearish summary requires a majority of all mentions and no opposing tags. sourceSentiment preserves the provider aggregate for provenance, not a verified direction. mentionCountChangePct is mention volume, not a price return. Unresolved topics cannot be assigned to a company.',
+        definition: 'Mention change is volume, not a price return. Sentiment describes whole-window keyword tags, not the latest post or an outlook. Opposing tags are Mixed. sourceSentiment is unverified provenance. Unresolved topics cannot be assigned to companies.',
         unresolvedTopics: {
           status: 'unresolved-company-mapping',
           rowCount: unresolved.length,

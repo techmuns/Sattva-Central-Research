@@ -749,6 +749,10 @@ try {
   }, chatterStock);
   await settled();
   const chatterLink = page.locator('[data-ai-evidence-link]').filter({ hasText: 'Mixed public chatter' });
+  const legacyHref = await page.evaluate(async () => (await import('/js/tabs/ai-alerts.js')).evidenceDestination({
+    feed: 'chatter', id: 'chatter:tata-consultancy-services:2026-09-21T00:15:56Z', ticker: 'TCS',
+  }).href);
+  assert.match(legacyHref, /topic=tata-consultancy-services/, 'a legacy AI cache link preserves the exact topic even without its sourceRecord');
   await search.fill('Coforge');
   await waitFor(page, () => document.querySelector('[data-ai-card][data-ticker="COFORGE"]'));
   assert.equal(await chatterLink.count(), 1);

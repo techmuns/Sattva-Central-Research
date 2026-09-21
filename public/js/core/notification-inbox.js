@@ -13,8 +13,11 @@ export function createInbox({ storage = () => globalThis.localStorage, now = Dat
     if (validTime(row.dismissedAt)) return { id: row.id, dismissedAt: time(row.dismissedAt) };
     if (row.private === true && !row.title) return { id: row.id, private: true, readAt: validTime(row.readAt) ? time(row.readAt) : null };
     if (typeof row.title !== 'string' || !row.title.trim()) return null;
+    const oldChatter = row.kind === 'chatter' && row.chatterReadingVersion !== 1;
     return { id: row.id, kind: typeof row.kind === 'string' ? row.kind : 'system', title: row.title,
-      detail: typeof row.detail === 'string' ? row.detail : '', href: safeHref(row.href), image: safeImage(row.image),
+      detail: oldChatter ? 'Public mentions captured. Open Public Chatter to check the source tags and dates.' : typeof row.detail === 'string' ? row.detail : '',
+      ...(row.kind === 'chatter' ? { chatterReadingVersion: 1 } : {}),
+      href: safeHref(row.href), image: safeImage(row.image),
       ...(row.kind === 'research' ? { private: true } : {}),
       at: validTime(row.at) ? time(row.at) : now(), receivedAt: validTime(row.receivedAt) ? time(row.receivedAt) : now(),
       readAt: validTime(row.readAt) ? time(row.readAt) : null };
@@ -61,7 +64,8 @@ export function createInbox({ storage = () => globalThis.localStorage, now = Dat
       if (typeof title !== 'string' || !title.trim()) return false;
       const id = String(key || (kind === 'research' ? `research:${now()}:${announced}` : `${kind}:${title}:${at}`));
       if (suppressed.has(id) || records.has(id)) return false;
-      merge({ id, kind, title, detail, href, image, at, receivedAt: now(), readAt: null });
+      merge({ id, kind, title, detail, href, image, at, receivedAt: now(), readAt: null,
+        ...(kind === 'chatter' ? { chatterReadingVersion: 1 } : {}) });
       announced++; changed(); return true;
     },
     suppress(keys) { for (const key of keys) suppressed.add(String(key)); },
