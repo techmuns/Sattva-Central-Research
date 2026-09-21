@@ -42,7 +42,7 @@ for(const conclusion of ['failure','cancelled','timed_out']) {
   assert.equal((await f.make().status()).source.reason,'recent-failure');
 }
 for(const source of [undefined,...['recent-failure','dispatched','running','awaiting-run','access-unavailable','dispatch-unavailable','run-overdue'].map(reason=>({lastAttemptAt:epoch,reason}))]) {
-  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({reason:'recent-run',source})})}};
+  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScannerStatus:async()=>({}),mfScheduleStatus:async()=>({reason:'recent-run',source})})}};
   assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503);
 }
 
@@ -64,7 +64,7 @@ const prior=run(20,0);
 f=fixture({source:[run(10,3)],consumer:[prior],loseConsumerPost:true});await f.make().wake();
 f.advance(90000);await f.make().wake();
 assert.equal(f.posts.length,2,'A run already known before dispatch cannot reconcile a lost POST');
-const healthyEnv={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({reason:'recent-run',source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
+const healthyEnv={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScannerStatus:async()=>({}),mfScheduleStatus:async()=>({reason:'recent-run',source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
 assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),healthyEnv)).status,200);
 console.log('PASS unfinished source health, accepted importer reconciliation and pre-dispatch run exclusion');
 
@@ -81,7 +81,7 @@ assert.equal(f.data.get(MF_TIMER).importSourceRun,11);
 
 
 for(const reason of [undefined,'dispatched','running','awaiting-run','recent-failure','dispatch-unavailable','run-overdue']) {
-  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScheduleStatus:async()=>({reason,source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
+  const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async()=>({meta:{health:{state:'current'}}}),mfScannerStatus:async()=>({}),mfScheduleStatus:async()=>({reason,source:{lastAttemptAt:epoch,reason:'recent-run'}})})}};
   assert.equal((await handleMutualFunds(new Request('https://test/api/mutual-funds/health'),env)).status,503,'A fresh source cannot hide an unfinished or failed import');
 }
 const justCompleted=run(40,40);justCompleted.updated_at=new Date(epoch-60000).toISOString();

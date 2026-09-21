@@ -1,6 +1,6 @@
 import { validIsin, monthKey, targetMonth, previousMonth, summaryOf, companyRevision } from './mutual-funds-model.mjs';
 import { supplementCompany } from './mutual-funds-scanner-model.mjs';
-const INTERVAL=15*60000, GAP=2000, LEASE=90000;
+const INTERVAL=15*60000, GAP=5000, LEASE=90000;
 const validUrl=url=>/^https:\/\/mfscanner\.com\/(?:stock\/[a-z0-9-]+)?$/.test(url||'');
 
 // Private supplement tables share the primary object's transaction boundary.

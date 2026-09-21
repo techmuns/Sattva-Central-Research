@@ -44,7 +44,7 @@ function profileEmail(profile) {
   if (emails.length !== 1) throw Error('Private reader identity unavailable');
   return emails[0];
 }
-async function readProfile(token, fetcher) {
+export async function readProfile(token, fetcher) {
   const response = await fetcher(PROFILE, { headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
     redirect: 'manual', cache: 'no-store', signal: AbortSignal.timeout(10000) });
   return profileEmail(await boundedJson(response, 64000));

@@ -24,7 +24,8 @@ export async function scannerFetch(url,{fetcher=fetch}={}) {
 }
 export async function collectScanner({client=collectorClient(),fetcher=fetch,sleep=pause,now=Date.now,companies,maxRequests=180}={}) {
   await client({action:'scanner-inventory',companies});
-  let requestId=0,catalogue=null,completed=0,failed=0;
+  let requestId=0,catalogue=null,completed=0,failed=0,reason=null;const failures={};
+  const recordFailure=kind=>{failed++;failures[kind]=(failures[kind]||0)+1;};
   const reserve=async kind=>{
     const id=String(++requestId);
     for(;;){const r=await client({action:'scanner-reserve',requestId:id,kind});if(r.waitUntil&&r.reason==='spacing'){await sleep(Math.min(3000,Math.max(1,r.waitUntil-now())));continue;}return r;}
@@ -36,21 +37,22 @@ export async function collectScanner({client=collectorClient(),fetcher=fetch,sle
     if(!fetched.failure){try{catalogue=parseScannerCatalogue(fetched.html);}catch{fetched.failure='invalid-page';}}
     await client({action:'scanner-complete',input:{reservation:catalog.reservation,catalogue,failure:fetched.failure||null,retryAfterMs:fetched.retryAfterMs}});
     if(fetched.failure) {
-      if(['http-403','http-429'].includes(fetched.failure)||!catalog.savedCatalogue)return {completed,failed:1,reason:fetched.failure};
-      catalogue=catalog.savedCatalogue;failed++;
+      recordFailure(fetched.failure);
+      if(['http-403','http-429'].includes(fetched.failure)||!catalog.savedCatalogue)return {completed,failed,failures,reason:fetched.failure};
+      catalogue=catalog.savedCatalogue;
     }
   } else return {completed,failed,reason:catalog.reason};
   for(let i=0;i<Math.min(maxRequests,companies.length);i++) {
     const task=await reserve('stock');if(!task.reservation)break;
     const {company,reservation}=task,url=task.url||scannerStockUrl(catalogue,company);
-    if(!url){await client({action:'scanner-complete',input:{reservation,isin:company.isin,failure:'unmatched'}});failed++;continue;}
+    if(!url){await client({action:'scanner-complete',input:{reservation,isin:company.isin,failure:'unmatched'}});recordFailure('unmatched');continue;}
     const fetched=await scannerFetch(url,{fetcher});let page=null;
     if(!fetched.failure){try{page=parseScannerStock(fetched.html,{isin:company.isin,url,now:now(),checkedAt:new Date(now()).toISOString()});}catch{fetched.failure='invalid-page';}}
     await client({action:'scanner-complete',input:{reservation,isin:company.isin,page,failure:fetched.failure||null,retryAfterMs:fetched.retryAfterMs}});
-    if(fetched.failure)failed++;else completed++;
-    if(['http-403','http-429'].includes(fetched.failure))break;
+    if(fetched.failure)recordFailure(fetched.failure);else completed++;
+    if(['http-403','http-429'].includes(fetched.failure)){reason=fetched.failure;break;}
   }
-  return {completed,failed};
+  return {completed,failed,failures,reason};
 }
 export const scannerCaptureHealthy=(result,status)=>!result.failed&&status?.expectedCompanies>0&&status.currentCompanies===status.expectedCompanies&&!['source-cooldown','in-flight','reservation-expired'].includes(result.reason);
 async function main() {
@@ -62,6 +64,8 @@ async function main() {
   // Counts only: this public repository's workflow logs/artifacts must not
   // publish source pages, scheme observations, or the private portfolio.
   console.log(`MF Scanner: ${result.completed} pages saved; ${result.failed} pages unavailable${result.reason?`; ${result.reason}`:''}.`);
+  if(result.failures&&Object.keys(result.failures).length)console.log(`Failure counts: ${JSON.stringify(result.failures)}`);
+  if(status?.cooldownUntil>Date.now())console.log(`Source access paused until ${new Date(status.cooldownUntil).toISOString()}; saved progress is retained.`);
   if(!scannerCaptureHealthy(result,status)) {
     console.error(`MF Scanner coverage incomplete: ${status?.currentCompanies||0}/${status?.expectedCompanies||companies.length} current company pages. Saved observations remain available; the next automatic run resumes collection.`);
     process.exitCode=1;
