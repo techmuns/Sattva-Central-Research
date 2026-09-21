@@ -886,7 +886,7 @@ already runs on:
 
 The reading layer retains every source link, summary and delivery identity. `newsletter-events.mjs`
 checks reworded news about the same company before the separate AI-notes request: one bounded
-30-second Bedrock call per built send, at most 80 reports / 96,000 UTF-8 bytes. Whole companies
+30-second Bedrock call per built send, at most 80 reports / 96,000 UTF-8 bytes, with at most 24,000 bytes of HTML-escaped source rows per company to keep a merged update small enough for email. Whole companies
 that exceed the budget remain unchecked; source text is never truncated for the decision. Accept
 only a complete, disjoint partition of known IDs, with all-pairs company, attribution, 24-hour,
 figure and stage guards. The model must keep materially new or conflicting developments separate.

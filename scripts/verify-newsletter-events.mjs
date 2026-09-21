@@ -95,6 +95,10 @@ const partial = await reviewNewsEvents({ news: tooLong, env, fetcher: async (url
 assert.equal(partial.partial, true);
 assert.equal(partial.reviewed, 5);
 assert.equal(partial.eligible, 10);
+const longReports = news();
+for (const r of longReports.groups[0].items) r.summary = '&'.repeat(3500);
+assert.ok(JSON.stringify(longReports).length < EVENT_REQUEST_BYTES, 'raw model input alone would fit');
+assert.equal((await reviewNewsEvents({ news: longReports, env, fetcher: forbidden })).reason, 'limit', 'HTML escaping and cumulative source size prevent oversized semantic groups');
 
 // Exercise each deployment's actual company grouping, rendering and delivery identities.
 const ASSETS = { fetch: async request => new URL(request.url).pathname === '/data/portfolio-companies.json'
@@ -134,6 +138,12 @@ if (existsSync(new URL('../worker/newsletter-pdf.mjs', import.meta.url))) {
   assert.ok(parts.length > 1);
   assert.ok(parts.every(p => p.bytes <= 90000));
   assert.equal(new Set(parts.flatMap(p => p.keys)).size, 240, 'semantic grouping also preserves every source across multiple email parts');
+  const longBrief = structuredClone(brief);
+  longBrief.news.groups = longReports.groups;
+  const longParts = renderBriefEmails(longBrief);
+  assert.ok(longParts.length > 1, 'long reports remain separable into safe email parts');
+  assert.ok(longParts.every(p => p.bytes <= 90000));
+  assert.equal(new Set(longParts.flatMap(p => p.keys)).size, 10);
   if (out) writeFileSync(`${out}/repeated-news.pdf`, pdf);
 }
 console.log('PASS repeated-news partition, source retention, safety guards, failure/preview/budget handling, rendered email and saved edition');
