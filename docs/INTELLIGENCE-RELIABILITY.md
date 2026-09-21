@@ -56,6 +56,8 @@ their observations but lose their unsupported verdict until the source is re-rea
 This applies to both persisted alert caches and notification details; read/dismiss receipts and
 captured dates survive the upgrade. Legacy alert IDs recover their exact topic. Sentiment sorts
 follow the displayed summary, not the provider's superseded score.
+Where All Alerts retained complete source counts, rebuild the saved summary from those counts
+even during an outage. This confirms the historical split, never the current source check.
 
 Material, company-attributed portfolio news and linked exchange disclosures remain eligible for
 AI Alerts throughout the existing 14-day window. Recency still reduces their ranking score;

@@ -33,6 +33,13 @@ for (const queryWindow of [null, { from: day, to: day, includeUndated: false }])
   assert.doesNotMatch(chatter.headline, /Bearish/);
   assert.equal(retainAlertSource({ id: 'chatter', status: 'failed', events: [] }, restored.find(feed => feed.id === 'chatter')).events[0], chatter,
     'failed revalidation retains the migrated observation, not the old directional verdict');
+  const full = restoreAllAlertSources({ ...legacyChatter, ...(queryWindow ? { queryWindow } : {}),
+    events: [{ ...oldChatter, sourceRecord: { slug: 'tata-consultancy-services', mentions: 13, sentiment: { bullish: 1, bearish: 3, neutral: 9, label: 'bearish' } } }],
+  }, FEEDS, day, queryWindow).find(feed => feed.id === 'chatter');
+  assert.equal(full.events[0].headline, 'Mixed public chatter (30d snapshot)');
+  assert.match(full.events[0].signalReason, /Most mentions are tagged neutral/);
+  assert.equal(full.status, 'pending');
+  assert.equal(retainAlertSource({ id: 'chatter', status: 'failed', events: [] }, full).events[0], full.events[0]);
 }
 assert.deepEqual(value.events.map(row => row.id), [old.id, unknown.id, future.id, original.id]);
 assert.equal(value.events[0].sourceRecord.original.length, 600_000, 'export evidence is never clipped to a cache part size');

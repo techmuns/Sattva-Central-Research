@@ -37,6 +37,17 @@ export function chatterTopic(event) {
 
 export function restoreChatterAlert(event) {
   if (event.feed !== 'chatter' || event.chatterReadingVersion === 1) return event;
+  // All Alerts retained full source records, unlike the bounded AI cache. A
+  // complete saved split is still evidence during an outage; only freshness is
+  // unconfirmed. Recompute its reading without advancing any date/check time.
+  const reading = chatterSentiment(event.sourceRecord?.sentiment, event.sourceRecord?.mentions);
+  if (reading.label !== 'unconfirmed') {
+    const reason = `Saved 30-day snapshot: ${reading.reason} Keyword-based source tags, not the latest mention's direction or an investment assessment.`;
+    return { ...event, chatterTopic: chatterTopic(event), chatterReadingVersion: 1,
+      direction: reading.direction, severity: reading.direction === 'negative' ? 'alert' : 'update',
+      headline: `${reading.labelText} public chatter (30d snapshot)`,
+      detail: `${reading.reason}${event.detail ? ` ${event.detail}` : ''}`, signalReason: reason, reason };
+  }
   const reason = 'Saved snapshot sentiment has not been verified. Open the mentions for context.';
   return { ...event, chatterTopic: chatterTopic(event), direction: 'neutral', severity: 'update',
     headline: 'Public chatter (30-day snapshot)', signalReason: reason, reason };

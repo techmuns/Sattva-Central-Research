@@ -41,4 +41,13 @@ assert.equal(restoreChatterAlert(cachedTopic).chatterTopic, 'tata-consultancy-se
 assert.equal(chatterTopic(cachedTopic), 'tata-consultancy-services');
 assert.equal(chatterTopic({ feed: 'chatter-posts', id: 'chatter-post:news:article-id:coforge' }), 'coforge');
 assert.equal(chatterTopic({ ...cachedTopic, chatterTopic: '../other' }), null);
+const fullSaved = { ...cachedTopic, sourceRecord: entry };
+const restoredFull = restoreChatterAlert(fullSaved);
+assert.equal(restoredFull.headline, 'Mixed public chatter (30d snapshot)');
+assert.match(restoredFull.signalReason, /1 bullish, 3 bearish, 9 neutral/);
+assert.equal(restoredFull.direction, 'neutral');
+assert.equal(restoredFull.day, fullSaved.day);
+assert.equal(restoredFull.sourceRecord, entry, 'keep raw provenance with its historical provider band');
+assert.equal(restoreChatterAlert(restoredFull), restoredFull, 'restoration is idempotent');
+assert.equal(restoreChatterAlert({ ...fullSaved, sourceRecord: { mentions: 13, sentiment: { bullish: 1, bearish: 3, neutral: 8 } } }).headline, 'Public chatter (30-day snapshot)');
 console.log('PASS complete, opposing, minority, missing, malformed and partial chatter splits; raw provenance and legacy alert retention');
