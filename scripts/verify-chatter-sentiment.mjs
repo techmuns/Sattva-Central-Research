@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict';
 import { chatterSentiment, mentionSentiment, restoreChatterAlert, chatterTopic } from '../public/js/data/chatter-sentiment.js';
 import { normaliseEntry, normalisePost } from '../public/js/data/sentiment-shared.js';
+import { newestMentions } from '../public/js/data/chatter-mentions.js';
+
+const dated = [
+  { id: 'unknown', at: 'unknown', sentiment: 'bullish' },
+  { id: 'offset', at: '2026-09-21T10:00:00+05:30' },
+  { id: 'newest', at: '2026-09-21T05:00:00Z', sentiment: 'neutral' },
+  { id: 'tied', at: '2026-09-21T00:00:00-05:00', sentiment: 'bearish' },
+  { id: 'missing', at: null },
+];
+assert.deepEqual(newestMentions(dated).map(post => post.id), ['newest', 'tied', 'offset', 'missing', 'unknown']);
+assert.deepEqual(newestMentions([...dated].reverse()).map(post => post.id), ['newest', 'tied', 'offset', 'missing', 'unknown'], 'ties stay stable across source page reordering');
+assert.equal(dated[0].id, 'unknown', 'sorting does not mutate source records');
 
 const reading = (bullish, bearish, neutral) => chatterSentiment({ bullish, bearish, neutral }, bullish + bearish + neutral);
 assert.equal(reading(1, 3, 9).label, 'mixed', 'Coforge: the old bearish net score is not the window summary');

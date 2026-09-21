@@ -31,7 +31,7 @@ is the two months exposed by a verified stock page; subsequent captured months a
 retained. Older primary history remains available. There is no historical backfill
 claim for months that MF Scanner's stock page did not expose.
 
-Source requests have a persisted reservation and two-second host spacing. A page
+Source requests have a persisted reservation and five-second host spacing. A page
 is due again after 15 minutes, and abandoned reservations expire. HTTP 403 stops
 requests for 24 hours; 429 respects Retry-After with a minimum one-hour cooldown.
 Neither a process restart nor another workflow run bypasses that budget. Lost reservation acknowledgements replay the same unexpired lease, while completed leases cannot fetch twice. Source
@@ -40,8 +40,10 @@ rotation is used. A failed catalogue check can use the saved catalogue except wh
 the host has refused access. Counts alone enter public workflow logs; no provider
 pages or observations are uploaded as public artifacts or committed snapshots. A failed or incomplete capture exits with a failed health gate after saving progress; it is never an all-green run with silently missing pages.
 
-`/api/mutual-funds/private` and `/api/mutual-funds/private/company` require the same
-verified account-owner/allowlisted Munshot session as private Screener summaries.
+`/api/mutual-funds/private` and `/api/mutual-funds/private/company` require a verified Munshot session. `MF_SCANNER_READER_EMAILS` can configure an MF-only
+reader allowlist without granting access to private Screener summaries. Existing
+private readers remain eligible; this setting adds MF-only readers. Sign-in verification and
+access-policy failures are reported separately.
 They reject cross-site readers and return `private, no-store`. Public MF endpoints
 continue to serve only primary data. The dashboard keeps supplemental responses in
 memory and clears them and open detail on a session change; IndexedDB and the
@@ -57,3 +59,9 @@ Verification: `node scripts/verify-mutual-funds-scanner.mjs`,
 `node scripts/verify-mutual-funds-runtime.mjs`, and the Mutual Funds browser test in
 CI cover data integrity, primary precedence, private/public separation, restart,
 source cooldown and browser persistence boundaries.
+
+The public health endpoint exposes only aggregate source-check counts, failure
+state counts and source cooldown/check times for the supplement. It never exposes
+portfolio identities, fund observations or private source pages. Capture logs
+record failure categories and cooldown deadlines, while saved cooldowns survive
+code changes and continue to prevent early source requests.

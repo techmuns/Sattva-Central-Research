@@ -197,6 +197,35 @@ test('late source responses cannot replace newer saved primary prices; missed mi
  const capture=store.read();assert.equal(capture.rows[0].price,108);assert.equal(capture.failures[0].reason,'stale');
  assert.equal(capture.primary.gaps[0].missedMinutes,4);assert.equal(store.history('TEST').rows.length,2);
 });
+test('a reviewed exchange change replaces the old venue without regressing either trade tape',()=>{
+ const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});
+ store.primarySave(primary());
+ now+=60000;
+ const bse=row('TEST',AT-3600000,{exchange:'BSE',price:104,feedAt:iso(now),checkedAt:iso(now),base:null});
+ store.primarySave(primary([bse],{at:now,completedAt:now}));
+ store=new BreakoutStore(data,{now:()=>now});
+ assert.equal(store.read().rows[0].exchange,'BSE');assert.equal(store.read().rows[0].price,104);
+ assert.equal(store.read().primary.primaryUsed,1);assert.equal(store.read().failures.length,0);
+ // An old NSE response arriving late cannot undo the venue handover.
+ now+=60000;store.primarySave(primary([row()],{at:now,completedAt:now}));
+ assert.equal(store.read().rows[0].exchange,'BSE');assert.equal(store.read().primary.failures[0].reason,'stale');
+ // A newly checked but older BSE trade also cannot replace its saved trade.
+ now+=60000;store.primarySave(primary([{...bse,price:90,quoteAt:iso(AT-3660000),feedAt:iso(now),checkedAt:iso(now)}],{at:now,completedAt:now}));
+ assert.equal(store.read().rows[0].price,104);assert.equal(store.history('TEST').rows.length,4);
+});
+test('fallback exchange handover keeps matching history and survives restart and delayed old responses',()=>{
+ const data=storage();let now=AT;let store=new BreakoutStore(data,{now:()=>now});
+ const save=(run,value)=>{store.begin(run,['TEST']);store.checkpoint(run,[value]);store.finish(run);};
+ save('1:1',row('TEST',AT,{provider:'Yahoo Finance'}));
+ now+=60000;
+ const bse=row('TEST',AT-3600000,{provider:'Yahoo Finance',exchange:'BSE',price:104,checkedAt:iso(now),base:{...base,high:110}});
+ save('2:1',bse);store=new BreakoutStore(data,{now:()=>now});
+ assert.equal(store.readFallback().rows[0].exchange,'BSE');assert.equal(store.readFallback().rows[0].base.high,110);
+ now+=60000;save('3:1',row('TEST',AT,{provider:'Yahoo Finance'}));
+ assert.equal(store.readFallback().rows[0].exchange,'BSE');
+ now+=60000;save('4:1',{...bse,price:90,quoteAt:iso(AT-3660000),checkedAt:iso(now)});
+ assert.equal(store.readFallback().rows[0].price,104);assert.equal(store.history('TEST').rows.length,4);
+});
 test('usable fallback cannot hide primary authentication, list, timer or storage failures',async()=>{
  const ready={started:true,configured:true,reason:'ok',overdue:false};
  const good=mergePrimary(fallback(),primary(),AT);

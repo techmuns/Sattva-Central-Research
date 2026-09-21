@@ -40,6 +40,9 @@ provider aggregate separately. This supersedes older instructions to repeat its 
 Chatter evidence on AI cards opens `public-chatter?open=mentions` with the exact topic and company.
 Snapshot dates must not be described as individual publication dates. Verify with
 `verify-chatter-sentiment.mjs` and `verify-chatter-reliability-ui.mjs`.
+Mention cards read newest first by parsed source publication time, with undated items last.
+Scrolling reveals older cards and, in captured history, older months; keep the buttons for
+keyboard access and explicit retries. Refreshes preserve the reader's visible mention.
 
 1. **Follow `AGENTS.md`: create a `codex/*` branch and pull request for every change.**
    Never commit, push or reset directly on `main`. Address review feedback and merge after

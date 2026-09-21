@@ -41,14 +41,14 @@ try{
  await search.fill('');await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.screenshot({path:'artifacts/mutual-funds-ui/dark.png'});
  await page.setViewportSize({width:420,height:850});await page.screenshot({path:'artifacts/mutual-funds-ui/mobile.png'});
  // Exercise the production reader on a local-only mocked origin, including pagination and failure.
- const apiPage=await browser.newPage();const apiOrigin='http://mutual-funds.test';let apiCalls=0,version=1,fail=false,privateFail=false;
+ const apiPage=await browser.newPage();const apiOrigin='http://mutual-funds.test';let apiCalls=0,version=1,fail=false,privateFail=false,privateFailureReason=null;
  const apiBook=Array.from({length:502},(_,i)=>({isin:`INE${String(i).padStart(9,'0')}`,ticker:`FIX${i}`,name:`Fixture ${i}`}));
  await apiPage.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.origin!==apiOrigin)return route.fulfill({status:200,body:''});
    if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:'<script type="module">window.feed=await import("/js/data/mutual-funds.js");</script>'});
    if(u.pathname==='/js/core/host-context.js')return route.fulfill({contentType:'text/javascript',body:`let token=null;const listeners=[];window.testSession=value=>{token=value;listeners.forEach(fn=>fn({}, {session:true}));};export const hostToken=()=>token;export const authHeaders=()=>token?{authorization:'Bearer '+token}:{};export const onHostContext=fn=>{listeners.push(fn);return()=>{};};`});
-   if(u.pathname==='/api/mutual-funds/private'||u.pathname==='/api/mutual-funds/private/company'){assert.equal(route.request().headers().authorization,'Bearer fixture-private');if(privateFail)return route.fulfill({status:503,body:'{}'});return route.fulfill({contentType:'application/json',headers:{'cache-control':'private, no-store'},body:JSON.stringify({rows:(u.searchParams.get('isins')||'').split(',').filter(Boolean).map(isin=>({...apiBook.find(h=>h.isin===isin),totalShares:999999})),meta:{supplement:{currentCompanies:502,expectedCompanies:502}},company:{isin:u.searchParams.get('isin'),totalShares:999999}})});}
+   if(u.pathname==='/api/mutual-funds/private'||u.pathname==='/api/mutual-funds/private/company'){assert.equal(route.request().headers().authorization,'Bearer fixture-private');if(privateFailureReason)return route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({reason:privateFailureReason})});if(privateFail)return route.fulfill({status:503,body:'{}'});return route.fulfill({contentType:'application/json',headers:{'cache-control':'private, no-store'},body:JSON.stringify({rows:(u.searchParams.get('isins')||'').split(',').filter(Boolean).map(isin=>({...apiBook.find(h=>h.isin===isin),totalShares:999999})),meta:{supplement:{currentCompanies:502,expectedCompanies:502}},company:{isin:u.searchParams.get('isin'),totalShares:999999}})});}
    if(u.pathname==='/api/mutual-funds/company')return route.fulfill({status:fail?503:200,contentType:'application/json',body:JSON.stringify({meta:{checkedAt:new Date().toISOString()},company:{isin:u.searchParams.get('isin'),totalShares:version}})});
    if(u.pathname==='/api/mutual-funds'){
      apiCalls++;const ids=u.searchParams.get('isins').split(',');assert(ids.length<=250);
@@ -83,6 +83,8 @@ try{
  privateFail=false;await apiPage.evaluate(book=>window.feed.load('portfolio',{holdings:book}),apiBook);
  assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),999999,'Private data returns after recovery');
  assert(!await apiPage.evaluate(()=>window.feed.meta().supplementReadFailed));
+ for(const reason of ['identity-unavailable','configuration-unavailable','no-session']){privateFailureReason=reason;await apiPage.evaluate(book=>window.feed.load('portfolio',{holdings:book}),apiBook);assert.equal(await apiPage.evaluate(()=>window.feed.meta().supplementAccess),reason,'Authentication failures retain their verified reason');assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),3);}
+ privateFailureReason=null;
  await apiPage.evaluate(()=>window.testSession(null));assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),3);
  await apiPage.reload();await apiPage.waitForFunction(()=>!!window.feed);fail=true;
  await apiPage.evaluate(book=>window.feed.load('portfolio',{holdings:book}),apiBook);

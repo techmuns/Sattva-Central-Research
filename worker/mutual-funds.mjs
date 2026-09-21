@@ -2,10 +2,11 @@ import { MF_OBJECT,MF_ENDPOINT,MF_WORKFLOW,MF_SCANNER_WORKFLOW,MF_ORIGIN,validIs
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { breakoutCollectorIdentity } from './breakout-auth.mjs';
 import { withTag,tagged,revalidate } from './http.mjs';
-import { authoriseSummaryReader } from './concall-summary-auth.mjs';
+import { authoriseMutualFundsReader } from './mutual-funds-auth.mjs';
+import { scannerOperationalStatus } from './mutual-funds-scanner-model.mjs';
 const reply=(body,status=200)=>Response.json(body,{status,headers:{'cache-control':'no-store'}});
 const privateReply=(body,status=200)=>Response.json(body,{status,headers:{'cache-control':'private, no-store',vary:'Authorization','x-content-type-options':'nosniff'}});
-export async function handleMutualFunds(request,env,{identity=breakoutCollectorIdentity,authorise=authoriseSummaryReader}={}) {
+export async function handleMutualFunds(request,env,{identity=breakoutCollectorIdentity,authorise=authoriseMutualFundsReader}={}) {
   const url=new URL(request.url);
   if(!env.CAPTURE_REGISTRY)return reply({ok:false,reason:'storage-unavailable'},503);
   const store=env.CAPTURE_REGISTRY.getByName(MF_OBJECT);
@@ -49,7 +50,8 @@ export async function handleMutualFunds(request,env,{identity=breakoutCollectorI
       :await store.mfRead(ids,url.searchParams.get('cursor')||'');
     if(url.pathname==='/api/mutual-funds/health') {
       const schedule=await store.mfScheduleStatus();
-      return reply({...payload.meta,schedule},payload.meta.health.state!=='current'||schedule.overdue||schedule.reason!=='recent-run'||!schedule.source?.lastAttemptAt||schedule.source?.reason!=='recent-run'?503:200);
+      const supplement=scannerOperationalStatus(await store.mfScannerStatus());
+      return reply({...payload.meta,schedule,supplement},payload.meta.health.state!=='current'||schedule.overdue||schedule.reason!=='recent-run'||!schedule.source?.lastAttemptAt||schedule.source?.reason!=='recent-run'?503:200);
     }
     const {body,tag}=withTag(payload);return revalidate(request,tagged(body,tag,0),'capture');
   }catch{return (privateRead?privateReply:reply)({ok:false,reason:'capture-unavailable'},503);}

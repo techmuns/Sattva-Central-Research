@@ -289,3 +289,11 @@ a newer completed daily close wins over an older trade. The compact minute archi
 stores the changing feed timestamp in its tuple, keeping one shared metadata record
 instead of duplicating it every minute. Returning sessions receive this change through
 the service-worker release increment. No new main-page explanatory banner is added.
+
+Production verification exposed a retained-store handover case: the last NSE trade
+was later than BSE's last trade, so the old monotonic-trade guard rejected valid BSE
+observations after the reviewed mapping changed. Both primary and fallback stores
+now compare collection time when the exchange changes, while keeping the original
+last-trade ordering within the same exchange. Delayed old-venue responses cannot
+restore the previous exchange. Quote freshness still uses provider timestamps,
+never collection time; both venues' original observations remain in history.

@@ -7,7 +7,7 @@ import { chatterHealth } from '../public/js/data/chatter-health.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public'), initialAt = '2026-09-15T12:00:00Z';
 let now = initialAt, generation = initialAt, revision = 1, failed = false, malformed = false, delayMs = 0, postDelayMs = 0;
-let calls = 0, postCalls = 0, indexDelayMs = 0;
+let calls = 0, postCalls = 0, indexDelayMs = 0, olderUnavailable = false;
 let collection = { intervalMinutes: 120, state: 'ok', discoveryOnly: true,
   sources: Object.fromEntries(['valuepickr', 'news', 'tradingqna'].map(source => [source, { state: 'ok', lastSuccessAt: initialAt, history: { complete: true } }])) };
 const state = { readable: true, ok: true, collection };
@@ -20,6 +20,9 @@ const entry = (ticker, name, mentions) => ({ ticker, name, mentions, mentionsPre
   sentiment: { label: 'neutral', score: 0, bullish: 0, bearish: 0, neutral: mentions }, sources: { valuepickr: mentions } });
 let stocks = [entry('tata-consultancy-services', 'Tata Consultancy Services', 1001), entry('infosys', 'Infosys', 1), entry('some-topic', 'Some topic', 1)];
 let posts = Array.from({ length: 1001 }, (_, i) => ({ id: `post-${i}`, source: 'valuepickr', timestamp: new Date(Date.parse(initialAt) - (i + 1) * 1000).toISOString(), text: `Mention fixture ${i}`, url: `https://example.test/post/${i}`, sentiment: 'neutral', author: 'Fixture author' }));
+posts[0].timestamp = '2026-09-15T17:29:59+05:30';
+posts[1].timestamp = '2026-09-15T06:59:58-05:00';
+posts[1000].timestamp = 'unavailable';
 const archive = { available: true, version: 1, startedAt: '2026-07-01T12:00:00Z', recovery: { complete: true }, topics: [
   { ticker: 'old-company', name: 'Old Company', count: 5, latestAt: '2026-08-03T12:00:00Z', months: { '2026-08': { count: 3 }, '2026-07': { count: 2 } } },
 ] };
@@ -59,6 +62,7 @@ const server = createServer((request, response) => {
   if (detail || history) {
     postCalls++;
     setTimeout(() => {
+      if (history?.[1] === '2026-07' && olderUnavailable) return json({ error: 'offline' }, 503);
       const slug = detail?.[1] || 'old-company';
       const rows = history ? posts.slice(0, history[1] === '2026-08' ? 3 : 2).map((post, i) => ({ ...post, id: `${history[1]}-${i}`, timestamp: `${history[1]}-0${3-i}T12:00:00Z` })) : posts;
       const offset = Number(url.searchParams.get('offset') || 0), page = rows.slice(offset, offset + 1000);
@@ -122,12 +126,40 @@ try {
   assert(await search.evaluate(input => document.activeElement === input), 'new arrivals retain keyboard focus');
   console.log('PASS cache-first opening, complete summary pagination, source-status changes, outage retention, automatic arrivals and focused search');
 
+  posts.reverse(); // Deliberately unsorted pages: the newest record arrives after page one.
   await page.locator('#root tbody tr[data-row-key="tata-consultancy-services"]').click();
   await page.waitForFunction(() => chatter.loadedPosts().some(group => group.posts.length === 1002));
   assert.equal(await page.locator('[data-chatter-mention-row]').count(), 40, 'large detail lists have a bounded first paint');
   assert.equal(postCalls, 2, 'all mention pages, including beyond 1000, are retained');
+  assert.deepEqual(await page.locator('[data-mention-id]').evaluateAll(rows => rows.slice(0, 3).map(row => row.dataset.mentionId)), ['new-post', 'post-0', 'post-1'], 'publication instants, not timestamp text, sentiment or source pagination, determine newest first');
+  const dialog = page.locator('[data-chatter-mentions-dialog]');
+  await dialog.evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await page.waitForFunction(() => document.querySelectorAll('[data-chatter-mention-row]').length === 80);
+  assert.equal(await page.locator('[data-mention-id]').nth(40).getAttribute('data-mention-id'), 'post-39', 'scroll continues with the next older card');
   await page.locator('[data-chatter-more]').click();
-  assert.equal(await page.locator('[data-chatter-mention-row]').count(), 80);
+  assert.equal(await page.locator('[data-chatter-mention-row]').count(), 120, 'keyboard-accessible pagination remains available');
+  // New arrivals go first without replacing the mention currently being read.
+  await dialog.evaluate(node => { node.scrollTop = 1600; });
+  const anchor = await page.locator('[data-mention-id]').evaluateAll(rows => {
+    const headerBottom = document.querySelector('[data-chatter-mentions-dialog]').firstElementChild.getBoundingClientRect().bottom;
+    const row = rows.find(row => row.getBoundingClientRect().bottom > headerBottom);
+    return { id: row.dataset.mentionId, top: row.getBoundingClientRect().top };
+  });
+  posts.push({ ...posts.at(-1), id: 'newer-post', timestamp: '2026-09-15T12:01:30Z', text: 'Newer source observation' });
+  generation = '2026-09-15T12:01:30Z'; revision++;
+  await page.evaluate(() => chatter.refresh());
+  await page.waitForFunction(() => document.querySelector('[data-mention-id]')?.dataset.mentionId === 'newer-post');
+  assert(Math.abs(await page.locator(`[data-mention-id="${anchor.id}"]`).evaluate(row => row.getBoundingClientRect().top) - anchor.top) < 2, 'live arrivals preserve the visible reading anchor');
+  // Read every display batch; undated records stay available at the end.
+  while (await page.locator('[data-chatter-more]').count()) {
+    const count = await page.locator('[data-mention-id]').count();
+    await dialog.evaluate(node => { node.scrollTop = node.scrollHeight; });
+    await page.waitForFunction(count => document.querySelectorAll('[data-mention-id]').length > count, count);
+  }
+  assert.equal(await page.locator('[data-mention-id]').count(), 1003);
+  assert.equal(await page.locator('[data-mention-id]').last().getAttribute('data-mention-id'), 'post-1000');
+  assert.match(await page.locator('[data-mention-id]').last().innerText(), /Time not published/);
+  assert.equal(new Set(await page.locator('[data-mention-id]').evaluateAll(rows => rows.map(row => row.dataset.mentionId))).size, 1003, 'scrolling retains every distinct mention');
   await page.getByRole('button', { name: 'Close mentions', exact: true }).click();
   await page.clock.fastForward(61000);
   postDelayMs = 2500;
@@ -144,10 +176,21 @@ try {
   await page.locator('[data-chatter-history-body] tbody tr[data-row-key="old-company"]').click();
   await page.locator('[data-chatter-older]').waitFor();
   assert.equal(await page.locator('[data-chatter-mention-row]').count(), 3);
+  olderUnavailable = true;
+  await page.setViewportSize({ width: 390, height: 500 });
+  await page.locator('[data-chatter-mentions-dialog]').evaluate(node => { node.scrollTop = node.scrollHeight; });
+  await page.waitForFunction(() => document.querySelector('[data-mention-status]')?.textContent.includes('Saved mentions remain available.'));
+  assert.equal(await page.locator('[data-mention-id]').count(), 3, 'an older-month outage retains already loaded mentions');
+  const afterOlderFailure = postCalls;
+  await page.locator('[data-chatter-mentions-dialog]').evaluate(node => { node.scrollTop -= 1; node.dispatchEvent(new Event('scroll')); });
+  assert.equal(postCalls, afterOlderFailure, 'scroll does not repeatedly retry a failed older month');
+  olderUnavailable = false;
   await page.locator('[data-chatter-older]').click();
   await page.waitForFunction(() => document.querySelectorAll('[data-chatter-mention-row]').length === 5);
+  assert.deepEqual(await page.locator('[data-mention-id]').evaluateAll(rows => rows.map(row => row.dataset.mentionId)), ['2026-08-0', '2026-08-1', '2026-08-2', '2026-07-0', '2026-07-1'], 'older months continue the publication timeline');
   assert.equal(await page.locator('[data-chatter-older]').count(), 0);
   await page.getByRole('button', { name: 'Close mentions', exact: true }).click();
+  await page.setViewportSize({ width: 1440, height: 900 });
   console.log('PASS instant cached mentions, pagination beyond 1000, bounded rendering and archived-only companies across retained months');
 
   const beforeHidden = calls;
@@ -170,7 +213,7 @@ try {
   assert.equal(await page.evaluate(() => chatter.byTicker('TCS').mentions), 1002, 'malformed responses never replace the last-good disk capture');
   failed = false; generation = '2026-09-14T00:00:00Z'; revision++;
   await page.evaluate(() => chatter.refresh());
-  assert.equal(await page.evaluate(() => chatter.meta().generatedAt), '2026-09-15T12:01:00Z', 'older snapshots cannot roll back the reader');
+  assert.equal(await page.evaluate(() => chatter.meta().generatedAt), '2026-09-15T12:01:30Z', 'older snapshots cannot roll back the reader');
   stocks.push(entry('tcs', 'Tata Consultancy Services', 2)); generation = '2026-09-15T12:02:00Z'; revision++;
   await page.evaluate(() => chatter.refresh());
   assert.equal(await page.locator('#root tr[data-row-key="tata-consultancy-services"]').count(), 1);

@@ -89,5 +89,14 @@ try{
  await stop();await start();
  const retained=await call({action:'history',ticker:'TEST'});assert.equal(retained.rows.length,3);assert.equal(retained.rows[0].provider,'Upstox');
  assert((await call()).capture.primary);
+ // Migrate both retained stores from NSE to BSE, whose last trade can be older.
+ const handoverAt=at+4*60000;
+ const bse={...row,exchange:'BSE',quoteAt:new Date(at-60000).toISOString(),checkedAt:new Date(handoverAt).toISOString(),price:104};
+ await call({action:'begin',run:'2:1',targets:['TEST']});
+ await call({action:'checkpoint',run:'2:1',rows:[bse]});await call({action:'finish',run:'2:1'});
+ await call({action:'primary-save',input:{at:handoverAt,completedAt:handoverAt,targets:['TEST'],rows:[{...bse,provider:'Upstox',feedAt:bse.checkedAt}],failures:[]}});
+ await stop();await start();
+ state=await call();assert.equal(state.capture.rows[0].exchange,'BSE');assert.equal(state.capture.rows[0].price,104);
+ assert.equal(state.capture.primary.primaryUsed,1);assert.equal(state.capture.primary.failures.length,0);
  console.log('PASS local workerd: native gzip and authenticated Upstox quote fetch; daily-file redirects; minute/fallback SQL history, large inventory, independent alarms and recovery survive restarts');
 }finally{await stop();await new Promise(done=>upstream.close(done));rmSync(scratch,{recursive:true,force:true});}

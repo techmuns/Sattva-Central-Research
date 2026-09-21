@@ -3,6 +3,14 @@ import { PRIMARY_MAX_AGE } from './breakout-primary.mjs';
 import { MinuteArchive, primaryBucket, MINUTE_RETENTION_DAYS, MINUTE_RETENTION_MS } from './breakout-archive.mjs';
 export { primaryBucket } from './breakout-archive.mjs';
 
+function replacesQuote(row, previous) {
+  if (!previous) return true;
+  // Last-trade clocks belong to separate exchange tapes. A reviewed venue change
+  // follows the later collection; within one venue, never regress its last trade.
+  const time = row.exchange === previous.exchange ? 'quoteAt' : 'checkedAt';
+  return Date.parse(row[time]) >= Date.parse(previous[time]);
+}
+
 export function mergePrimary(fallback, primary, now=Date.now()) {
   if (!primary) return fallback;
   const targets=[...new Set([...(fallback.targets || []),...primary.targets])];
@@ -82,11 +90,13 @@ export class BreakoutStore {
         if (scan.completed && !prior) throw Error('Capture already completed');
         if (prior && prior.payload !== payload) throw Error('Conflicting checkpoint replay');
         this.storage.sql.exec('INSERT OR IGNORE INTO breakout_quotes VALUES(?,?,?,?)', run, row.ticker, Date.parse(row.quoteAt), payload);
-        const latest = this.storage.sql.exec('SELECT at FROM breakout_latest WHERE ticker=?',row.ticker).toArray()[0];
+        const latest = this.storage.sql.exec('SELECT at,payload FROM breakout_latest WHERE ticker=?',row.ticker).toArray()[0];
+        const previous = latest ? JSON.parse(latest.payload) : null;
         const until = Date.parse(row.quoteAt);
-        if (latest && recoverySlots(Math.max(latest.at,until-5*86400000),until).length >= 2)
+        if (previous?.exchange === row.exchange && recoverySlots(Math.max(latest.at,until-5*86400000),until).length >= 2)
           this.storage.sql.exec("INSERT OR IGNORE INTO breakout_gaps VALUES(?,?,?,'unrecovered')",row.ticker,latest.at,until);
-        this.storage.sql.exec('INSERT INTO breakout_latest VALUES(?,?,?) ON CONFLICT(ticker) DO UPDATE SET at=excluded.at,payload=excluded.payload WHERE excluded.at>=breakout_latest.at', row.ticker, Date.parse(row.quoteAt), payload);
+        if (replacesQuote(row, previous))
+          this.storage.sql.exec('INSERT INTO breakout_latest VALUES(?,?,?) ON CONFLICT(ticker) DO UPDATE SET at=excluded.at,payload=excluded.payload', row.ticker, Date.parse(row.quoteAt), payload);
         this.storage.sql.exec('DELETE FROM breakout_failures WHERE run=? AND ticker=?', run, row.ticker);
       }
       for (const row of failures) {
@@ -155,7 +165,7 @@ export class BreakoutStore {
       const accepted=new Set();
       for (const row of rows) {
         const previous=retained.get(row.ticker);
-        if(previous && Date.parse(row.quoteAt)<Date.parse(previous.quoteAt)) cleanFailures.push({ticker:row.ticker,reason:'stale'});
+        if(!replacesQuote(row,previous)) cleanFailures.push({ticker:row.ticker,reason:'stale'});
         else {retained.set(row.ticker,row);accepted.add(row.ticker);}
       }
       this.archive.save(rows,at,accepted);
