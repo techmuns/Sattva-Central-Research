@@ -238,6 +238,8 @@ export class NewsletterSchedule {
     } else {
       return { ok: false, reason: 'invalid-target' };
     }
+    const budget = this.store.claimManualDelivery(now);
+    if (!budget.ok) return { ok: false, reason: 'manual-send-budget', retryAt: budget.retryAt };
     const key = `manual:${edition}:${day}:${now}:${to}`;
     return this.deliver({ edition, day, at: now, key, source: to === 'me' ? 'test' : 'button', now, recipients, token, to: now });
   }

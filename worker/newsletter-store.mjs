@@ -33,6 +33,8 @@ import {
 
 export const NEWSLETTER_OBJECT = 'team-brief:v1';
 export const DELIVERY_HISTORY = 12;
+export const MANUAL_SEND_LIMIT = 4;
+export const MANUAL_SEND_WINDOW_MS = 24 * 3600 * 1000;
 // Three weekdays of editions: a story that fell out of two consecutive windows is old news, and a
 // capture that lands later than that is an outage the sources line already reports.
 export const SENT_HISTORY = 6;
@@ -58,6 +60,7 @@ export class NewsletterStore {
       started_at TEXT NOT NULL, finished_at TEXT, source TEXT NOT NULL,
       recipients INTEGER NOT NULL, sent INTEGER, failed INTEGER, reason TEXT,
       subject TEXT, outcomes TEXT, summary TEXT)`);
+    this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_manual_attempts (id TEXT PRIMARY KEY, at INTEGER NOT NULL)');
     this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_documents (id TEXT PRIMARY KEY, filename TEXT NOT NULL, body BLOB NOT NULL, created_at TEXT NOT NULL)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_state ON newsletter_subscribers(state, seq)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_delivery_time ON newsletter_deliveries(started_at)');
@@ -219,6 +222,19 @@ export class NewsletterStore {
       for (const key of parseJson(row.stories, [])) if (typeof key === 'string') out.add(key);
     }
     return out;
+  }
+
+  // Reserve a manual attempt before any model, PDF, or email work. This desk-wide rolling
+  // budget survives object restarts and cannot be bypassed with another address or client IP.
+  // Scheduled editions use their existing once-per-edition claims and do not spend this budget.
+  claimManualDelivery(now = this.now()) {
+    return this.storage.transactionSync(() => {
+      this.rows('DELETE FROM newsletter_manual_attempts WHERE at <= ?', now - MANUAL_SEND_WINDOW_MS);
+      const budget = this.rows('SELECT COUNT(*) AS count, MIN(at) AS first FROM newsletter_manual_attempts')[0];
+      if (budget.count >= MANUAL_SEND_LIMIT) return { ok: false, retryAt: iso(budget.first + MANUAL_SEND_WINDOW_MS) };
+      this.rows('INSERT INTO newsletter_manual_attempts (id, at) VALUES (?, ?)', crypto.randomUUID(), now);
+      return { ok: true };
+    });
   }
 
   // Immutable PDFs have opaque bearer links and no subscriber addresses. Keep them independently

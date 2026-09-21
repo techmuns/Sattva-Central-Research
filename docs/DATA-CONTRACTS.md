@@ -4676,8 +4676,15 @@ potential-impact notes. The existing Bedrock credential/configuration supplies a
 per build, with a 45-second deadline and a 128KB response ceiling. Failed/partial notes preserve
 source text and report coverage. Public previews never invoke paid AI; their notes explain that AI readings are added on sends.
 Preview source reads also use `NEWSLETTER_LIMITER`.
-Related news is grouped conservatively across publishers; all headlines, summaries, links and
-sent-story keys survive. Distinct filings are never grouped by the reading layer.
+Only matching syndicated headlines are grouped across publishers; all headlines, summaries, links and
+sent-story keys survive. Distinct filings are never grouped by the reading layer. Each related summary also reaches the AI
+input so qualifiers in another publisher’s standfirst remain part of the evidence.
+
+Manual sends reserve one of four desk-wide attempts per rolling 24 hours in
+`newsletter_manual_attempts` before source, AI, PDF or email work. A refusal returns
+`manual-send-budget` with `retryAt`; a different IP, recipient or edition does not bypass it.
+The budget survives object restarts. Scheduled editions remain independent and retain the existing
+once-per-edition delivery claims.
 
 The top-right **Download PDF** button in a sent email points to
 `GET /api/newsletter/pdf/<uuid>`. A delivery saves its PDF bytes in `newsletter_documents` before

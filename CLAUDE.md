@@ -876,7 +876,7 @@ already runs on:
     `/filing?src=…` — the same document, rendered — and only for an XBRL file; every other link
     still goes straight to the publisher or the exchange.
 
-The reading layer groups only strongly matching news from different publishers, retaining every
+The reading layer groups only matching syndicated headlines from different publishers, retaining every
 source link and summary. Distinct filings remain distinct after the existing exchange-twin fold.
 The fluid email sheet and downloadable A4 PDF carry **Automated by Munshot** in their footers.
 Sent editions save one immutable PDF before sending, under an unguessable UUID link in
@@ -885,7 +885,9 @@ Sent editions save one immutable PDF before sending, under an unguessable UUID l
 Preview `format=pdf` builds a current source-only preview; it does not call AI, send, or save an
 edition. Confirmed rejected sends delete their provisional PDF. Unknown delivery outcomes (timeouts,
 connection loss, 5xx or malformed responses) keep the link, with an independently retained delivery
-key/state so they remain identifiable after delivery-log pruning. Links grant
+key/state so they remain identifiable after delivery-log pruning. Manual sends have a desk-wide
+limit of four attempts per rolling 24 hours, reserved durably before AI/PDF/email work; scheduled
+editions keep their existing independent once-per-edition claim. Links grant
 access to that edition to anyone holding them. PDF base fonts render rupees as INR, normalize
 punctuation/Latin accents, and display unsupported glyphs as Unicode code points rather than omit
 source text. The PDF exporter is dependency-free; `scripts/verify-newsletter-reading.mjs` tests the

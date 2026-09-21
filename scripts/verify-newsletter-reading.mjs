@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { clusterStories, relatedReports, parseAiNotes, readAiNotes, AI_ITEM_LIMIT, AI_RESPONSE_BYTES } from '../worker/newsletter-reading.mjs';
+import { clusterStories, relatedReports, parseAiNotes, aiItemsFor, readAiNotes, AI_ITEM_LIMIT, AI_RESPONSE_BYTES } from '../worker/newsletter-reading.mjs';
 import { buildBrief, briefStoryKeys, briefStats, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from '../worker/newsletter-brief.mjs';
 import { renderBriefPdf } from '../worker/newsletter-pdf.mjs';
 import { NewsletterStore } from '../worker/newsletter-store.mjs';
@@ -25,7 +25,7 @@ for (const other of [
   row(first.headline, { source: 'Mint', at: at + 86400001 }),
   row(first.headline, { kind: 'filing' }),
 ]) assert.equal(relatedReports(first, other, 'Alankit'), false);
-for (const [positive, negative] of [['approves', 'rejects'], ['wins', 'loses'], ['grants', 'revokes']]) {
+for (const [positive, negative] of [['approves', 'rejects'], ['wins', 'loses'], ['grants', 'revokes'], ['allows', 'bans'], ['authorises', 'prohibits'], ['clears', 'blocks'], ['starts', 'stops']]) {
   assert.equal(relatedReports(row(`Acme ${positive} airport software contract worth 2600 crore`), row(`Acme ${negative} airport software contract worth 2600 crore`, { source: 'Mint' }), 'Acme'), false);
 }
 assert.equal(clusterStories([row('Regulation 30', { kind: 'filing' }), row('Regulation 30', { kind: 'filing', at: at + 1000 })]).length, 2);
@@ -69,9 +69,10 @@ const beforeKeys = briefStoryKeys(brief);
 const company = brief.news.groups[0];
 // Same report, another publisher: all original links, source text and sent keys must survive.
 const original = company.items[0];
-company.items.push({ ...original, publisher: 'Another publisher', url: 'https://example.test/related?x=1&y=2', keys: ['related-key'], late: true });
+company.items.push({ ...original, publisher: 'Another publisher', url: 'https://example.test/related?x=1&y=2', summary: 'The transaction remains subject to approval.', keys: ['related-key'], late: true });
 const stats = briefStats(brief);
 assert.ok(stats.updates < stats.stories);
+assert.ok(aiItemsFor(stats.companies).some(i => i.related.some(r => r.summary === 'The transaction remains subject to approval.')), 'the model sees the related report caveat');
 assert.ok(briefStoryKeys(brief).includes('related-key'));
 for (const key of beforeKeys) assert.ok(briefStoryKeys(brief).includes(key));
 brief.ai = await readAiNotes({ env, fetcher, companies: stats.companies, now: at });
@@ -166,6 +167,14 @@ for (const [name, emailResponse, expectedDocs, state] of [
   if (state) assert.equal(store.rows('SELECT delivery_state FROM newsletter_documents WHERE delivery_key = ?', `failed-${name}`)[0].delivery_state, state);
 }
 assert.deepEqual(store.document(documentId), saved, 'failed later sends cannot remove a successfully sent PDF');
+
+// Manual sends have a desk-wide durable budget; no source, model or email I/O follows refusal.
+for (let n = 0; n < 4; n++) assert.equal(restarted.claimManualDelivery(at + n).ok, true);
+assert.equal(new NewsletterStore(storage).claimManualDelivery(at + 100).ok, false);
+const noWork = new NewsletterSchedule(storage, env, restarted, { now: () => at + 200, fetcher: async () => { throw new Error('budget refusal must precede network work'); } });
+assert.equal((await noWork.sendNow({ edition: 'morning', to: 'me', email: 'another@example.test' })).reason, 'manual-send-budget');
+assert.equal((await noWork.sendNow({ edition: 'evening', to: 'all' })).reason, 'manual-send-budget');
+assert.equal(restarted.claimManualDelivery(at + 86400000).ok, true, 'an expired reservation becomes available again');
 
 if (process.env.NEWSLETTER_PREVIEW_DIR) {
   mkdirSync(process.env.NEWSLETTER_PREVIEW_DIR, { recursive: true });
