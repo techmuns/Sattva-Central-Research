@@ -803,6 +803,14 @@ function eventMarkup(event, scope, day) {
  * clickable while taking the reader only to another AI summary.
  */
 export function evidenceDestination(event = {}, scope = 'portfolio') {
+  if (event.feed === 'chatter' || event.feed === 'chatter-posts') {
+    const params = new URLSearchParams({ scope: String(scope || 'portfolio'), open: 'mentions' });
+    if (event.ticker) params.set('company', String(event.ticker));
+    const topic = event.chatterTopic || event.sourceRecord?.slug;
+    if (topic) params.set('topic', topic);
+    return { href: `#/research/public-chatter?${params}`, external: false,
+      label: 'Read mentions →', ariaLabel: `Open public mentions for ${event.company || event.ticker || 'this company'}` };
+  }
   const external = safeSourceUrl(event.url);
   if (external) {
     return {

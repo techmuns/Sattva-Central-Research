@@ -33,6 +33,14 @@ filters, and test both recent delivery and older-history access. See the reliabi
 
 ## Hard rules
 
+Public Chatter correction (21 September 2026): `chatter-sentiment.js` owns the customer summary
+of source tags. Both directions present means Mixed; a single direction needs a majority of all
+mentions with no opposing tags; missing/inconsistent counts are Unconfirmed. Preserve the raw
+provider aggregate separately. This supersedes older instructions to repeat its company band.
+Chatter evidence on AI cards opens `public-chatter?open=mentions` with the exact topic and company.
+Snapshot dates must not be described as individual publication dates. Verify with
+`verify-chatter-sentiment.mjs` and `verify-chatter-reliability-ui.mjs`.
+
 1. **Follow `AGENTS.md`: create a `codex/*` branch and pull request for every change.**
    Never commit, push or reset directly on `main`. Address review feedback and merge after
    required checks pass, respecting review gates and the user's production-action limits.

@@ -290,7 +290,7 @@ export function chatterDetail(r) {
   const n = r.mentions === 1 ? '1 mention' : `${r.mentions} mentions`;
   // Their sentiment word, not a score of ours, and no percentage — `mentionsChangePct` is mention
   // volume and putting it in a one-line alert is exactly where it would be read as a price move.
-  return `Now discussed${where} — ${n} in 30 days · ${r.sentiment.labelText} (SentimentDash)`;
+  return `Now discussed${where} — ${n} in 30 days · ${r.sentimentReading?.labelText || 'Unconfirmed'} (SentimentDash tags)`;
 }
 
 export function stop() {

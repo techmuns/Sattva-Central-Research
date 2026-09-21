@@ -46,6 +46,7 @@ import * as marketNews from './market-news.js';
 import * as earnings from './earnings-live.js';
 import * as concalls from './concall-scans.js';
 import * as chatter from './chatter-live.js';
+import { restoreChatterAlert } from './chatter-sentiment.js';
 import * as investors from './super-investors.js';
 import * as screenerInsights from './screener-insights.js';
 // ONE definition of what a filed-book change is — see `isMove` there. A negative filter here
@@ -137,7 +138,7 @@ export async function readCachedAlertWindow({ scope = 'portfolio', holdings = nu
   const entityIds = new Set(portfolioNewsEntities(holdings || coverage.holdings()).map(e => e.entityId));
   const scopeContext = { scope, wanted, entityIds };
   const events = entry.value.events.filter((event) => event.day >= firstDay && event.day <= day &&
-    matchesAlertScope(event, scopeContext));
+    matchesAlertScope(event, scopeContext)).map(restoreChatterAlert);
   const sameDay = entry.value.day === day;
   return {
     day,
@@ -1553,8 +1554,8 @@ function fromChatter({ day, wanted, includeHistory }) {
   const inWindow = inRequestedWindow(generatedDay, day, includeHistory);
   const rows = inWindow ? chatter.all().filter((r) => inScope(wanted, r.ticker)) : [];
   const events = rows.map((r) => {
-    const label = String(r.sentiment?.label || 'neutral').toLowerCase();
-    const direction = label === 'bullish' ? DIRECTION.POSITIVE : label === 'bearish' ? DIRECTION.NEGATIVE : DIRECTION.NEUTRAL;
+    const reading = r.sentimentReading;
+    const direction = reading.direction;
     const mentions = numeric(r.mentions) || 0;
     const change = numeric(r.mentionsChangePct);
     const importance = mentions >= CHATTER_HIGH_MENTIONS || (change != null && Math.abs(change) >= CHATTER_HIGH_CHANGE_PCT)
@@ -1567,10 +1568,12 @@ function fromChatter({ day, wanted, includeHistory }) {
     return {
       id: `chatter:${r.slug || r.ticker}:${m.generatedAt || generatedDay}`,
       sourceRecord: r,
+      chatterReadingVersion: 1,
+      chatterTopic: r.slug,
       ...signal(
         direction,
         importance,
-        `Source rolling-${m.window || '30d'} sentiment: ${r.sentiment?.labelText || r.sentiment?.label || 'Neutral'}.`,
+        `Rolling-${m.window || '30d'} snapshot: ${reading.reason} Tags are keyword-based source readings, not an investment assessment or the latest mention's direction.`,
         importance === IMPORTANCE.HIGH
           ? `High: ${threshold.join(' and ')} reached the stated chatter threshold.`
           : `Low: fewer than ${CHATTER_HIGH_MENTIONS} mentions and less than ${CHATTER_HIGH_CHANGE_PCT}% absolute mention change.`
@@ -1582,8 +1585,8 @@ function fromChatter({ day, wanted, includeHistory }) {
       day: generatedDay,
       ticker: r.ticker || null,
       company: r.name || r.ticker || '—',
-      headline: `${r.sentiment?.labelText || r.sentiment?.label || 'Neutral'} public chatter`,
-      detail: `${mentions} mentions in the rolling ${m.window || '30d'} window${change == null ? '' : ` · ${change > 0 ? '+' : ''}${change.toFixed(0)}% vs prior window`}`,
+      headline: `${reading.labelText} public chatter (${m.window || '30d'} snapshot)`,
+      detail: `${reading.reason} ${mentions} mentions in the rolling ${m.window || '30d'} window${change == null ? '' : ` · ${change > 0 ? '+' : ''}${change.toFixed(0)}% vs prior window`}`,
       url: m.url || null,
     };
   });

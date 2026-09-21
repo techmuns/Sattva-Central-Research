@@ -30,6 +30,7 @@ let mentionLiveOff = null;
 import { formatDate, formatNumber, formatRelativeTime, formatTime } from '../core/format.js';
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
+import { mentionSentiment } from '../data/chatter-sentiment.js';
 import * as coverage from '../data/coverage.js';
 import * as telegram from '../data/telegram-posts.js';
 import { telegramReadHealth } from '../data/telegram-health.js';
@@ -99,7 +100,20 @@ export function render(ctx) {
   // come after it. Only a NEW company reseeds — a scope toggle repaints with the same param and must
   // leave whatever the reader has since typed alone, exactly as companySeededView does elsewhere.
   const requestedCompany = String(ctx?.params?.company || '').trim().toUpperCase();
+  const requestedTopic = String(ctx?.params?.topic || '').trim().toLowerCase();
+  const requestKey = requestedTopic || requestedCompany;
   const wantMentions = ctx?.params?.open === 'mentions';
+  const openRequestedMentions = () => {
+    if (!wantMentions || !requestKey || openedFor === requestKey) return;
+    const entry = requestedTopic
+      ? chatter.all().find(row => row.slug === requestedTopic)
+      : chatter.byTicker(requestedCompany);
+    // A captured topic can have left the current summary. Its posts still have
+    // their own endpoint; a topic link must not silently open another slug.
+    const target = entry || (/^[a-z0-9][a-z0-9._-]{0,160}$/.test(requestedTopic)
+      ? { slug: requestedTopic, ticker: requestedCompany || null, name: requestedCompany || requestedTopic } : null);
+    if (target) { openedFor = requestKey; openMentions(target); }
+  };
   if (requestedCompany && requestedCompany !== routeCompany) {
     chatterSection = 'coverage';
     tableViews = { covered: { q: requestedCompany }, other: tableViews.other, telegram: tableViews.telegram };
@@ -126,17 +140,11 @@ export function render(ctx) {
       // to find the company and click again. Guarded on `openedFor` so a live repaint or a scope
       // toggle does not reopen it, and searched off the full covered set (not the scoped view) so it
       // still opens for a holding even if the current scope would have filtered the row away.
-      if (wantMentions && requestedCompany && requestedCompany !== openedFor) {
-        const entry = (chatter.companies() || []).find((e) => String(e.ticker || '').toUpperCase() === requestedCompany);
-        if (entry) {
-          openMentions(entry);
-          openedFor = requestedCompany;
-        }
-      }
+      openRequestedMentions();
       disposers.push(chatter.startLive(ctx.live));
       disposers.push(
         chatter.onChange(() => {
-          if (token === renderToken) paint(ctx);
+          if (token === renderToken) { paint(ctx); openRequestedMentions(); }
         }),
       );
     });
@@ -444,7 +452,7 @@ function mentionsFrame(entry) {
           <div class="min-w-0">
             <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-600">Public mentions</p>
             <h2 class="font-display mt-1 text-xl font-bold text-slate-900">${escapeHtml(entry.name)}</h2>
-            <p class="mt-1 text-xs text-slate-500">${escapeHtml(formatNumber(entry.mentions))} ${entry.archiveTopic ? 'captured mentions across retained history' : `mentions in the latest ${escapeHtml(chatter.meta()?.window || '30d')} snapshot · ${escapeHtml(entry.sourceLabel || 'Source not reported')}`}</p>
+            <p class="mt-1 text-xs text-slate-500">${entry.mentions == null ? 'Public mentions' : `${escapeHtml(formatNumber(entry.mentions))} ${entry.archiveTopic ? 'captured mentions across retained history' : `mentions in the latest ${escapeHtml(chatter.meta()?.window || '30d')} snapshot · ${escapeHtml(entry.sourceLabel || 'Source not reported')}`}`}</p>
           </div>
           <button type="button" data-modal-close aria-label="Close mentions" class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
         </div>
@@ -462,7 +470,10 @@ function mentionsBody(entry, payload) {
   const posts = payload.posts || [];
   const visible = posts.slice(0, payload.visibleLimit || 40);
   const total = payload.total ?? posts.length;
-  const moved = !payload.archived && total !== entry.mentions;
+  const moved = !payload.archived && entry.mentions != null && total !== entry.mentions;
+  const reading = mentionSentiment(posts, payload);
+  const latest = posts.filter(post => Number.isFinite(Date.parse(post.at))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  const latestText = latest ? `Latest dated mention: source-tagged ${latest.sentiment || 'unclassified'} · ${formatDate(latest.at)} · ${formatTime(latest.at)}.` : 'Latest mention date is unavailable.';
   const rows = visible.map((post, index) => mentionRow(post, entry, index)).join('');
   return `
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
@@ -473,6 +484,7 @@ function mentionsBody(entry, payload) {
       <p>Short excerpt only · open the source for the full context.</p>
     </div>
     <p data-mention-status class="mb-3 text-xs text-slate-500">${payload.error ? `Update unavailable. ${escapeHtml(payload.error)} Saved mentions remain visible.` : payload.checking ? 'Showing saved or already received mentions while checking for updates…' : ''}</p>
+    <p data-chatter-sentiment-summary class="mb-3 text-xs text-slate-500">${escapeHtml(reading.reason)} ${payload.complete && !payload.archived ? escapeHtml(latestText) : ''} Tags come from SentimentDash’s keyword rules; neutral means no clear source tag, not a verified neutral outlook. The window summary does not describe the latest mention alone.</p>
     ${!payload.archived ? '<button data-chatter-mention-history class="mb-4 text-xs font-semibold text-indigo-600">View captured history</button>' : ''}
     <div class="space-y-3" data-chatter-mention-list>
       ${rows || `<div class="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No mention details were returned for ${escapeHtml(entry.name)}.</div>`}
@@ -496,7 +508,7 @@ function mentionRow(post, entry, index) {
         <span>${escapeHtml(author)}</span>
         <span aria-hidden="true">·</span>
         <span>${escapeHtml(when)}</span>
-        <span class="ml-auto">${sentimentPill({ label: post.sentiment, labelText: titleCase(post.sentiment) })}</span>
+        <span class="ml-auto">${sentimentPill({ label: post.sentiment, labelText: `Source: ${post.sentiment ? titleCase(post.sentiment) : 'Unclassified'}` })}</span>
       </div>
       <p class="mt-2 text-sm font-medium leading-relaxed text-slate-800">${escapeHtml(excerpt || 'No excerpt was published.')}</p>
       <div class="mt-3 flex items-center justify-between gap-3">
@@ -552,6 +564,7 @@ function chatterFootnotes(m) {
         Coverage: ${escapeHtml(formatNumber(m.companies))} of ${escapeHtml(formatNumber(m.total))} feed entries resolve to a company we cover.
         Posts: ${m.totalPosts == null ? 'not reported' : escapeHtml(formatNumber(m.totalPosts))} over ${escapeHtml(m.window)}, across ${escapeHtml(sourceSummary(m.sourceTotals))}.
         Market mood: ${moodText}; keyword-scored by SentimentDash and reproduced unchanged.
+        Company summaries describe the source tags: opposing bullish/bearish tags are Mixed; Bullish or Bearish requires a majority of all mentions and no opposing tags. Missing or inconsistent counts are Unconfirmed. These are not investment assessments.
         Snapshot assembled: ${escapeHtml(scrapeText)} (${escapeHtml(sourceAge)}).
         Company matches count mentions found, not successful checks of every holding.
       </p>
@@ -584,8 +597,9 @@ function exportChatterRows(rows, { covered }) {
   const banner = {
     __banner: true,
     text:
-      `REAL DATA, NOT OURS. Public Chatter mention counts and sentiment are computed by SentimentDash ` +
+      `Public Chatter mention counts and individual sentiment tags are computed by SentimentDash ` +
       `across ValuePickr, TradingQnA and Google News over ${m?.window || 'the reported window'}. ` +
+      `Company summaries describe those tags: opposing tags are Mixed; a directional majority with no opposing tags is Bullish or Bearish; otherwise Neutral. Incomplete splits are Unconfirmed. ` +
       `The NSE symbol and coverage classification are ours. Captured ${m?.generatedAt || 'time not reported'}; ` +
       `exported ${new Date().toISOString()}. Mention change is volume between scrapes, never a price return.`,
   };
@@ -606,7 +620,8 @@ function exportChatterRows(rows, { covered }) {
     { header: 'Previous mentions', key: 'mentions_prev', width: 18, get: (r) => value(r, (x) => x.mentionsPrev ?? '') },
     { header: 'Mention change %', key: 'mention_change', width: 18, get: (r) => value(r, (x) => x.mentionsChangePct ?? '') },
     { header: 'Mention direction', key: 'direction', width: 18, get: (r) => value(r, (x) => x.direction || '') },
-    { header: 'Sentiment', key: 'sentiment', width: 16, get: (r) => value(r, (x) => x.sentiment?.labelText || '') },
+    { header: 'Sentiment', key: 'sentiment', width: 16, get: (r) => value(r, (x) => x.sentimentReading?.labelText || '') },
+    { header: 'Source aggregate label', key: 'source_sentiment', width: 22, get: (r) => value(r, (x) => x.sentiment?.labelText || '') },
     { header: 'Sentiment score', key: 'sentiment_score', width: 17, get: (r) => value(r, (x) => x.sentiment?.score ?? '') },
     { header: 'Bullish mentions', key: 'bullish', width: 17, get: (r) => value(r, (x) => x.sentiment?.bullish ?? '') },
     { header: 'Bearish mentions', key: 'bearish', width: 17, get: (r) => value(r, (x) => x.sentiment?.bearish ?? '') },
@@ -631,7 +646,7 @@ function buildTopCards(rows) {
     items: ranked.map((r) => ({
       key: r.slug,
       name: r.name,
-      sub: `${r.ticker} · ${r.sentiment.labelText}`,
+      sub: `${r.ticker} · ${r.sentimentReading.labelText}`,
       value: formatNumber(r.mentions),
       unit: r.mentions === 1 ? 'mention' : 'mentions',
       caption: `Last ${windowLabel(chatter.meta()?.window)}`,
@@ -692,8 +707,10 @@ const sentimentFilter = () => ({
     { value: 'bullish', label: 'Bullish' },
     { value: 'bearish', label: 'Bearish' },
     { value: 'neutral', label: 'Neutral' },
+    { value: 'mixed', label: 'Mixed' },
+    { value: 'unconfirmed', label: 'Unconfirmed' },
   ],
-  match: (r, v) => r.sentiment.label === v,
+  match: (r, v) => r.sentimentReading.label === v,
 });
 
 function buildCoveredTable(rows) {
@@ -729,7 +746,7 @@ function buildCoveredTable(rows) {
       },
       {
         label: 'Sentiment',
-        get: (r) => sentimentPill(r.sentiment),
+        get: (r) => sentimentPill(r.sentimentReading),
         html: true,
         sortable: true,
         sortValue: (r) => r.sentiment.score ?? 0,
@@ -806,7 +823,7 @@ function buildOtherTable(rows) {
     columns: [
       { label: 'Mentions', get: mentionsCell, html: true, align: 'right', sortable: true, sortValue: (r) => r.mentions },
       { label: 'Mentions Δ', get: mentionsDeltaCell, html: true, align: 'right', sortable: true, sortValue: (r) => r.mentionsChangePct ?? -Infinity },
-      { label: 'Sentiment', get: (r) => sentimentPill(r.sentiment), html: true, sortable: true, sortValue: (r) => r.sentiment.score ?? 0 },
+      { label: 'Sentiment', get: (r) => sentimentPill(r.sentimentReading), html: true, sortable: true, sortValue: (r) => r.sentiment.score ?? 0 },
       { label: 'Sources', get: sourceCell, html: true },
     ],
   });

@@ -230,7 +230,7 @@ export const ADDITIONAL_SOURCES = [
     read: ({ day }) => ({ events: chatter.loadedPosts().flatMap((group) => {
       const company = chatter.all().find((r) => r.slug === group.slug);
       return group.posts.map((r) => record({ id: `chatter-post:${r.source}:${r.id}:${group.slug}`, row: r, at: r.at,
-        ticker: company?.ticker, company: company?.name || group.name || group.slug,
+        ticker: company?.ticker, company: company?.name || group.name || group.slug, chatterTopic: group.slug,
         headline: r.text, detail: [r.sourceLabel, r.author || r.handle].filter(Boolean).join(' · '), url: r.url, kind: 'post' }));
     }), asOf: chatter.meta()?.health?.checkedAt ? new Date(chatter.meta().health.checkedAt).toISOString() : null, reachesToday: false, status: 'on-demand',
       note: 'Only detail pages already requested in Public Chatter are loaded. Company summaries are bulk-loaded separately; individual-post coverage is not complete.' }) },

@@ -707,6 +707,66 @@ try {
     const notebook = await import('/js/core/bookmarks.js'); await notebook.load({force:true}); return notebook.all().length;
   }), beforeCancelledSave, 'changing the owning view during the save cannot commit the old model');
   console.log('PASS: obsolete view computations stop and in-flight bookmark saves recheck their owning view before committing.');
+  // The real card link must land in the real mentions dialog, even when the
+  // snapshot supplies an external API URL. A tab-only link was the original bug.
+  const chatterStock = { ticker: 'coforge', name: 'Coforge', mentions: 13, mentionsPrev: 13,
+    sentiment: { bullish: 1, bearish: 3, neutral: 9, label: 'bearish', labelText: 'Bearish', score: -0.15 },
+    sources: { news: 13 }, sourceLabel: 'Google News' };
+  const chatterPosts = ['bullish', ...Array(9).fill('neutral'), ...Array(3).fill('bearish')].map((sentiment, i) => ({
+    id: `coforge-${i}`, ticker: 'coforge', source: 'news', sentiment, author: 'Fixture publisher',
+    timestamp: i === 0 ? '2026-09-18T07:47:25Z' : `2026-09-09T03:${String(59-i).padStart(2, '0')}:00Z`,
+    text: i === 0 ? 'Coforge: positive brokerage commentary' : `Earlier Coforge report ${i}`,
+    url: `https://example.test/coforge/${i}`,
+  }));
+  await page.route(`${origin}/v1/**`, route => {
+    const posts = route.request().url().includes('/posts');
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify(posts
+      ? { ticker: 'coforge', generatedAt: '2026-09-21T00:15:56Z', counts: { total: 13 }, posts: chatterPosts, pagination: { total: 13, offset: 0, hasMore: false } }
+      : { generatedAt: '2026-09-21T00:15:56Z', window: '30d', overview: { totalPosts: 13 }, stocks: [chatterStock], pagination: { total: 1, hasMore: false } }) });
+  });
+  await page.evaluate(async stock => {
+    const { normaliseEntry } = await import('/js/data/sentiment-shared.js');
+    const row = normaliseEntry(stock);
+    window.dispose();
+    window.primeCoverage({ holdings: [{ ticker: 'COFORGE', name: 'Coforge' }] });
+    window.fixtureEvents = [
+      { id: 'coforge-chatter', ticker: 'COFORGE', company: 'Coforge', day: window.currentDay(), feed: 'chatter',
+        tab: 'public-chatter', headline: `${row.sentimentReading.labelText} public chatter (30d snapshot)`,
+        sourceRecord: row, direction: row.sentimentReading.direction, importance: 'high', url: 'https://example.test/dashboard' },
+      { id: 'coforge-filing', ticker: 'COFORGE', company: 'Coforge', day: window.currentDay(), feed: 'earnings',
+        headline: 'Coforge reported earnings', direction: 'neutral', importance: 'high' },
+    ];
+    window.SATTVA_CHATTER_URL = location.origin + '/v1';
+    document.body.insertAdjacentHTML('beforeend', '<style>#modal-overlay{position:fixed;inset:0;z-index:60;overflow:auto;background:#0f172a88;padding:40px;align-items:center;justify-content:center}#modal-overlay.is-open{display:flex}#modal-overlay.is-open #modal-container{opacity:1;transform:scale(1)}#modal-container{width:100%;background:white;border-radius:24px}</style><div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div>');
+    window.addEventListener('hashchange', async () => {
+      window.dispose();
+      const tab = await import('/js/tabs/public-chatter.js');
+      const live = await import('/js/core/live.js');
+      const params = Object.fromEntries(new URLSearchParams(location.hash.split('?')[1]));
+      tab.render({ root: document.querySelector('#root'), scope: 'universe', params, live });
+    }, { once: true });
+    window.show('universe');
+  }, chatterStock);
+  await settled();
+  const chatterLink = page.locator('[data-ai-evidence-link]').filter({ hasText: 'Mixed public chatter' });
+  await search.fill('Coforge');
+  await waitFor(page, () => document.querySelector('[data-ai-card][data-ticker="COFORGE"]'));
+  assert.equal(await chatterLink.count(), 1);
+  assert.match(await chatterLink.getAttribute('href'), /open=mentions.*company=COFORGE.*topic=coforge/);
+  assert.equal(await chatterLink.getAttribute('target'), null);
+  await chatterLink.click();
+  await waitFor(page, () => document.querySelectorAll('[data-chatter-mention-row]').length === 13);
+  await page.clock.runFor(300);
+  assert(await page.locator('[data-chatter-mentions-dialog]').isVisible());
+  assert.equal(await page.locator('[data-chatter-mentions-dialog]').getAttribute('data-chatter-slug'), 'coforge');
+  const summary = await page.locator('[data-chatter-sentiment-summary]').innerText();
+  assert.match(summary, /1 bullish, 3 bearish, 9 neutral/);
+  assert.match(summary, /Most mentions are tagged neutral/);
+  assert.match(summary, /Latest dated mention: source-tagged bullish/);
+  assert.match(await page.locator('[data-chatter-mention-row]').first().innerText(), /Source: Bullish/);
+  assert.equal(await page.locator('[data-chatter-mention-row]').filter({ hasText: 'Source: Bearish' }).count(), 3);
+  await page.screenshot({ path: '/tmp/sattva-chatter-dialog.png' });
+  console.log('PASS: an actual AI chatter line opens Coforge’s dialog with the full mixed split, latest bullish mention and original source links.');
   assert.deepEqual(errors, []);
   console.log('PASS: responsive search/cards at 320–1440px, calendar cleanup and zero application errors.');
 } catch (error) {

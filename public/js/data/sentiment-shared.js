@@ -16,9 +16,10 @@
 // THE COUNTS AND THE SENTIMENT ARE THEIRS. THE NSE SYMBOL IS OURS.
 //
 // Everything under `raw` is reproduced from the API unchanged — mentions, changePct, the
-// sentiment split, the source breakdown, the sparkline. We do not re-band their sentiment or
-// recompute their percentages, for the same reason the Con-call tab does not re-band StockScans'
-// result score: a band of our invention under their number would read as their judgement.
+// sentiment split, the source breakdown, the sparkline. `sentiment` preserves their aggregate.
+// `sentimentReading` separately describes the complete split for customer summaries: opposing
+// tags are Mixed and a directional minority cannot outweigh neutral mentions. It is explicitly
+// our description of source tags, not their score's band or an interpretation of the source text.
 //
 // The one thing this file derives is `ticker` — the NSE symbol — because the API has none.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@
 // `changePct` IS A CHANGE IN MENTION COUNT, NOT A PRICE MOVE. It compares this scrape's mentions
 // against the previous scrape's. There is no price anywhere in this API. It travels as
 // `mentionsChangePct` here so no consumer can mistake it for a return by reading the field name.
+
+import { chatterSentiment } from './chatter-sentiment.js';
 
 const str = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 const num = (v) => {
@@ -88,6 +91,7 @@ export function normaliseEntry(raw) {
     // Named for what it is. See the header: this is mention volume, never a price move.
     mentionsChangePct: num(raw?.changePct),
     direction: ['up', 'down', 'flat'].includes(raw?.direction) ? raw.direction : 'flat',
+    sentimentReading: chatterSentiment(s, raw?.mentions),
     sentiment: {
       ...sentimentCounts(s),
       score: num(s?.score),
@@ -181,7 +185,7 @@ export function normalisePost(raw) {
     at: str(raw?.timestamp),
     text: str(raw?.text) || '',
     url: str(raw?.url),
-    sentiment: SENTIMENTS.includes(raw?.sentiment) ? raw.sentiment : 'neutral',
+    sentiment: SENTIMENTS.includes(raw?.sentiment) ? raw.sentiment : null,
     likes: int(raw?.likes) ?? 0,
     comments: int(raw?.comments) ?? 0,
     slug: str(raw?.ticker),

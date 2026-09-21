@@ -2129,6 +2129,14 @@ ZIP of XML, both of which `node:zlib` and a tag scanner already handle. This rep
 
 ## SentimentDash — retained public chatter, read directly from the browser
 
+`normaliseEntry().sentiment` retains SentimentDash's aggregate unchanged; `sentimentReading`
+describes its complete counts for the UI, notifications, alerts and research. Opposing tags yield
+Mixed; Bullish/Bearish requires a majority of all mentions with no opposing tags. A remaining
+complete split is Neutral; missing/inconsistent/empty splits are Unconfirmed. Unknown post tags
+remain null (displayed Unclassified), never silently Neutral. All are keyword-source readings,
+not new semantic analysis. The mentions dialog shows complete-window counts separately from
+the latest dated mention. AI links retain `chatterTopic` even in the public cached window.
+
 Companies and topics trending across ValuePickr, TradingQnA and Google News over a rolling 30 days,
 ranked by mention count and keyword-scored for sentiment. Public, unauthenticated, CORS-open.
 Source checks are requested every two hours through the upstream scheduled collector. Its

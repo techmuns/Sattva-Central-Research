@@ -732,7 +732,8 @@ function chatterRow(row) {
     topic: clipped(row.name || row.slug, 80),
     mentions: row.mentions ?? null,
     mentionCountChangePct: row.mentionsChangePct ?? null,
-    sentiment: row.sentiment ?? row.sentimentLabel ?? null,
+    sentiment: row.sentimentReading || null,
+    sourceSentiment: row.sentiment ?? row.sentimentLabel ?? null,
     sentimentScore: row.sentimentScore ?? null,
     sources: row.sources || row.sourceTotals || null,
   };
@@ -960,7 +961,7 @@ const BUILDERS = [
         dataQuality: meta.health?.state === 'updated' ? 'source-reported' : 'partial',
         note: 'Public-source discovery does not establish complete company coverage. ' + (meta.health?.label || 'Source checks are unconfirmed.'),
         coverage: { coveredRowsInScope: rows.length, coveredCompanies: meta.companies, unresolvedTopics: unresolved.length, totalTopics: meta.total, window: meta.window, sourceChecks: meta.collection?.sources || null, archive: meta.collection?.archive || null },
-        definition: 'mentionCountChangePct is a change in mention count between scrapes, not a price return. Unresolved topics have no reliable ticker and are never assigned to a company.',
+        definition: 'Sentiment summarizes keyword-based source tags across the whole window, not the latest mention or an investment outlook. Opposing tags are Mixed; a Bullish/Bearish summary requires a majority of all mentions and no opposing tags. sourceSentiment preserves the provider aggregate for provenance, not a verified direction. mentionCountChangePct is mention volume, not a price return. Unresolved topics cannot be assigned to a company.',
         unresolvedTopics: {
           status: 'unresolved-company-mapping',
           rowCount: unresolved.length,

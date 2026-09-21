@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import { chatterSentiment, mentionSentiment, restoreChatterAlert } from '../public/js/data/chatter-sentiment.js';
+import { normaliseEntry, normalisePost } from '../public/js/data/sentiment-shared.js';
+
+const reading = (bullish, bearish, neutral) => chatterSentiment({ bullish, bearish, neutral }, bullish + bearish + neutral);
+assert.equal(reading(1, 3, 9).label, 'mixed', 'Coforge: the old bearish net score is not the window summary');
+assert.equal(reading(1, 3, 9).direction, 'neutral', 'mixed chatter cannot create a bearish risk cluster');
+assert.match(reading(1, 3, 9).reason, /Most mentions are tagged neutral/);
+for (const counts of [[9, 1, 0], [1, 9, 0], [1, 1, 0]]) assert.equal(reading(...counts).label, 'mixed');
+assert.equal(reading(6, 0, 4).label, 'bullish');
+assert.equal(reading(0, 6, 4).label, 'bearish');
+for (const counts of [[1, 0, 9], [0, 1, 9], [5, 0, 5], [0, 5, 5], [0, 0, 10]]) assert.equal(reading(...counts).label, 'neutral');
+assert.equal(reading(0, 0, 0).label, 'unconfirmed');
+for (const counts of [{ bullish: 0, bearish: 3 }, { bullish: -1, bearish: 2, neutral: 9 }, { bullish: 0.5, bearish: 0.5, neutral: 9 }, { bullish: '1', bearish: 0, neutral: 9 }]) {
+  assert.equal(chatterSentiment(counts, 10).label, 'unconfirmed');
+}
+assert.equal(chatterSentiment({ bullish: 1, bearish: 0, neutral: 2 }, 10).label, 'unconfirmed');
+const raw = { ticker: 'coforge', mentions: 13, sentiment: { bullish: 1, bearish: 3, neutral: 9, label: 'bearish', labelText: 'Bearish', score: -0.15 } };
+const entry = normaliseEntry(raw);
+assert.equal(entry.sentimentReading.label, 'mixed');
+assert.equal(entry.sentiment.label, 'bearish', 'preserve the provider aggregate for provenance');
+assert.equal(entry.sentiment.score, -0.15);
+assert.equal(normaliseEntry({ ticker: 'unknown', mentions: 3 }).sentimentReading.label, 'unconfirmed');
+assert.equal(normalisePost({ id: 'unknown', sentiment: 'missing' }).sentiment, null);
+const posts = ['bullish', ...Array(9).fill('neutral'), ...Array(3).fill('bearish')].map(sentiment => ({ sentiment }));
+assert.equal(mentionSentiment(posts, { complete: true }).label, 'mixed');
+assert.equal(mentionSentiment(posts.slice(0, 2), { complete: false, total: 13 }).label, 'unconfirmed', 'first page cannot decide the summary');
+assert.equal(mentionSentiment([...posts, { sentiment: null }], { complete: true }).label, 'unconfirmed');
+const legacy = { id: 'old', feed: 'chatter', direction: 'negative', headline: 'Bearish public chatter', day: '2026-09-20' };
+assert.equal(restoreChatterAlert(legacy).direction, 'neutral');
+assert.equal(restoreChatterAlert(legacy).id, legacy.id, 'retain the captured observation');
+assert.doesNotMatch(restoreChatterAlert(legacy).headline, /Bearish/);
+const current = { ...legacy, chatterReadingVersion: 1 };
+assert.equal(restoreChatterAlert(current), current);
+const unrelated = { ...legacy, feed: 'news' };
+assert.equal(restoreChatterAlert(unrelated), unrelated);
+console.log('PASS complete, opposing, minority, missing, malformed and partial chatter splits; raw provenance and legacy alert retention');

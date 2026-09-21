@@ -7,7 +7,7 @@ import { chatterHealth } from '../public/js/data/chatter-health.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public'), initialAt = '2026-09-15T12:00:00Z';
 let now = initialAt, generation = initialAt, revision = 1, failed = false, malformed = false, delayMs = 0, postDelayMs = 0;
-let calls = 0, postCalls = 0;
+let calls = 0, postCalls = 0, indexDelayMs = 0;
 let collection = { intervalMinutes: 120, state: 'ok', discoveryOnly: true,
   sources: Object.fromEntries(['valuepickr', 'news', 'tradingqna'].map(source => [source, { state: 'ok', lastSuccessAt: initialAt, history: { complete: true } }])) };
 const state = { readable: true, ok: true, collection };
@@ -31,8 +31,8 @@ import * as live from '/js/core/live.js';
 window.SATTVA_CHATTER_URL = location.origin + '/v1';
 coverage.prime({holdings:[{ticker:'TCS',name:'Tata Consultancy Services'},{ticker:'INFY',name:'Infosys'}]});
 window.chatter=chatter; window.live=live; window.tab=tab;
-window.renderScope=(scope)=>tab.render({root:document.querySelector('#root'),scope,live,params:{}});
-window.renderScope('universe');
+window.renderScope=(scope,params={})=>tab.render({root:document.querySelector('#root'),scope,live,params});
+window.renderScope('universe',Object.fromEntries(new URLSearchParams(location.search)));
 </script></body></html>`;
 const server = createServer((request, response) => {
   const url = new URL(request.url, 'http://localhost'), path = url.pathname;
@@ -67,7 +67,7 @@ const server = createServer((request, response) => {
         pagination: { total: rows.length, offset, count: page.length, hasMore: offset + page.length < rows.length } });
     }, postDelayMs); return;
   }
-  if (path === '/data/universe.json') { json(['TCS', 'INFY', 'OLDCO'].map((ticker, i) => ({ Company: ['Tata Consultancy Services', 'Infosys', 'Old Company'][i], 'Screener URL': `https://www.screener.in/company/${ticker}/` }))); return; }
+  if (path === '/data/universe.json') { setTimeout(() => json(['TCS', 'INFY', 'OLDCO', 'COFORGE'].map((ticker, i) => ({ Company: ['Tata Consultancy Services', 'Infosys', 'Old Company', 'Coforge'][i], 'Screener URL': `https://www.screener.in/company/${ticker}/` }))), indexDelayMs); return; }
   if (path === '/data/mc-ticker-map.json') { json({ map: {} }); return; }
   if (path.startsWith('/api/')) { json({}); return; }
   try {
@@ -183,6 +183,33 @@ try {
   const afterDestroy = calls;
   await page.clock.fastForward(6 * 60000);
   assert.equal(calls, afterDestroy, 'tab teardown stops its poller');
+  generation = '2026-09-21T00:15:56Z'; revision++;
+  stocks = [{ ...entry('coforge', 'Coforge', 13), sentiment: { bullish: 1, bearish: 3, neutral: 9, label: 'bearish', labelText: 'Bearish' } }];
+  posts = ['bullish', ...Array(9).fill('neutral'), ...Array(3).fill('bearish')].map((sentiment, i) => ({
+    id: `coforge-${i}`, source: 'news', sentiment, text: `Coforge mention ${i}`, timestamp: i ? '2026-09-09T04:00:00Z' : '2026-09-18T07:47:25Z', url: `https://example.test/coforge/${i}`,
+  }));
+  indexDelayMs = 750;
+  const cold = await browser.newPage();
+  cold.on('pageerror', error => errors.push(error.message));
+  await cold.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
+  await cold.goto(`${origin}/?company=COFORGE&open=mentions`);
+  await cold.locator('[data-chatter-mention-row]').first().waitFor();
+  assert.equal(await cold.locator('[data-chatter-mentions-dialog]').getAttribute('data-chatter-slug'), 'coforge', 'company-only links open after the delayed resolver arrives');
+  assert.match(await cold.locator('[data-chatter-sentiment-summary]').innerText(), /1 bullish, 3 bearish, 9 neutral/);
+  const event = await cold.evaluate(async () => {
+    const daily = await import('/js/data/daily-alerts.js');
+    const report = await daily.collect({ day: '2026-09-21', scope: 'universe', includeHistory: true, load: false });
+    return report.events.find(event => event.feed === 'chatter' && event.ticker === 'COFORGE');
+  });
+  assert.equal(event.direction, 'neutral', 'actual collector cannot make Coforge mixed chatter a bearish risk leg');
+  assert.equal(event.headline, 'Mixed public chatter (30d snapshot)');
+  assert.equal(event.chatterTopic, 'coforge');
+  assert.match(event.signalReason, /keyword-based source readings/);
+  await cold.getByRole('button', { name: 'Close mentions', exact: true }).click();
+  await cold.evaluate(() => chatter.refresh());
+  assert.equal(await cold.locator('[data-chatter-mentions-dialog]').count(), 0, 'background updates do not reopen a dismissed dialog');
+  await cold.close();
+  console.log('PASS exact chatter collector reading, delayed company resolution and dismissed-dialog stability');
   assert.deepEqual(errors, []);
   console.log('PASS hidden/resume/reconnect cadence, aged status, invalid-response retention, rollback rejection, mobile layout and poll cleanup; no browser errors');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
