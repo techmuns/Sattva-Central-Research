@@ -25,6 +25,8 @@ let combined=supplementCompany(primary,page,{now:clock});assert.equal(combined.f
 const verified=structuredClone(primary);verified.funds[0].months['2026-08']={shares:0,absenceVerified:true};assert.equal(supplementCompany(verified,page,{now:clock}).totalShares,0,'Verified primary absence wins over a backup');
 const duplicate=structuredClone(page);duplicate.funds.push({...duplicate.funds[0],id:'scanner:another-slug'});assert.equal(supplementCompany(primary,duplicate,{now:clock}).totalShares,null,'Ambiguous duplicate backup schemes are withheld');
 assert.equal(supplementCompany(primary,{...page,funds:[]},{now:clock}).netChange,null,'An omitted fund is never an exit');
+const conflicting=structuredClone(primary);conflicting.funds[0].name='HDFC Old Name Fund';conflicting.funds[0].months={'2026-08':{shares:120}};
+assert.equal(supplementCompany(conflicting,page,{now:clock}).totalShares,120,'An unresolved rename cannot inflate an AMC above both source inventories');
 const completeAmc={...page,funds:[{...page.funds[0],name:'HDFC Other Fund'}]};assert.equal(supplementCompany({...primary,funds:[]},completeAmc,{now:clock,amcs:[{slug:'hdfc',month:'2026-08',status:'ok'}]}).totalShares,null);
 
 const db=new DatabaseSync(':memory:');
@@ -56,4 +58,12 @@ response=await handleMutualFunds(new Request(MF_ORIGIN+`/api/mutual-funds/privat
 response=await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/private',{headers:{origin:'https://untrusted.example'}}),env,{authorise:async()=>{throw Error('Must reject origin first');}});assert.equal(response.status,403);
 let fetchCalls=0;const denied=await scannerFetch(url,{fetcher:async(_url,options)=>{fetchCalls++;assert.equal(options.redirect,'manual');assert.equal(options.headers.authorization,undefined);return new Response('',{status:429,headers:{'retry-after':'7200'}});}});assert.equal(fetchCalls,1);assert.equal(denied.retryAfterMs,7200000);
 const out=await collectScanner({companies:[{isin,name:'Fixture Bank'}],client:async body=>body.action==='scanner-reserve'?{ok:true,reason:'source-cooldown'}:{ok:true},fetcher:()=>{throw Error('Cooldown must prevent source requests');}});assert.equal(out.reason,'source-cooldown');
+// A future portfolio company can arrive in the supplement before primary import.
+clock+=3*3600000;const newIsin='INE040A01034';store.inventory([{isin,name:'Fixture Bank'},{isin:newIsin,name:'New holding'}]);
+task=store.reserve('6:1','1');assert.equal(task.company.isin,newIsin);
+const next=structuredClone(page);next.isin=newIsin;next.checkedAt=new Date(clock).toISOString();next.funds[0].amc='navi';
+for(const point of Object.values(next.funds[0].months))point.checkedAt=next.checkedAt;
+store.complete('6:1',{reservation:task.reservation,isin:newIsin,page:next});
+assert.equal(base.read([newIsin]).rows.length,0);assert.equal(store.read([newIsin]).rows[0].totalShares,150);
+assert(store.read(null).rows.some(r=>r.isin===newIsin),'Universe pagination includes private-only identities');
 console.log('PASS MF Scanner: exact identities/months/counts, pending vs exits, primary precedence, duplicate guards, private API boundary, durable corrections, resume, rate budget and cooldown');

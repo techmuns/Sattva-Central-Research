@@ -55,7 +55,7 @@ function paint(loading=false) {
 function paintStatus() {
   if(!ctx)return;
   const m=feed.meta();
-  ctx.root.querySelector('[data-mf-status]').textContent=`${feed.health()} · Checked ${checked(m)}${m.supplementReadFailed?' · MF Scanner read unavailable':m.supplement?` · MF Scanner ${m.supplement.currentCompanies}/${m.supplement.expectedCompanies} companies checked`:m.supplementAccess==='no-session'?' · Sign in through Munshot for private MF Scanner holdings':''}`;
+  ctx.root.querySelector('[data-mf-status]').textContent=`${feed.health()} · Checked ${checked(m)}${m.supplementReadFailed?' · MF Scanner read unavailable':m.supplementAccess==='access'?' · Private MF Scanner access unavailable':m.supplement?` · MF Scanner ${m.supplement.currentCompanies}/${m.supplement.expectedCompanies} companies checked`:m.supplementAccess==='no-session'?' · Sign in through Munshot for private MF Scanner holdings':''}`;
   const sizeNode=ctx.root.querySelector('[data-mf-sizes]'),sizes=cachedPositionSizes();
   sizeNode.innerHTML=sort==='holdings'&&ctx.scope==='portfolio'&&!sizes?.sizes?.complete
     ? portfolioConnectionState()==='locked'?'<button data-mf-unlock class="text-indigo-600">Unlock portfolio for Largest holdings</button> · Newest shown while sizes are unavailable.' : 'Portfolio sizes unavailable · Newest shown.' : '';
