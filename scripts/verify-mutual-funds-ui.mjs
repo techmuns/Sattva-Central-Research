@@ -19,8 +19,26 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));const origin=`http://
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH});
 try{
  const page=await browser.newPage({viewport:{width:1500,height:1000}});page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
- await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.fulfill({status:200,body:''}));
+ const fixtureSeed=JSON.parse(readFileSync(root+'/data/mutual-funds/index.json'));
+ const fixtureBook=JSON.parse(readFileSync(root+'/data/portfolio-companies.json')).holdings;
+ const ownershipFixtures=fixtureSeed.rows.filter(r=>r.totalShares>0&&fixtureBook.some(h=>h.isin===r.isin)).slice(0,3);
+ ownershipFixtures.forEach((r,i)=>Object.assign(r,{companyPct:i===1?5:10,denominator:{shares:r.totalShares*(i===1?20:10),checkedAt:new Date(Date.now()-(i===2?8:0)*86400000).toISOString(),sourceName:'Moneycontrol',source:'https://example.com/shares',kind:i===1?'estimate':'reported'}}));
+ await page.route('**/*',route=>{
+   const u=new URL(route.request().url());
+   if(u.origin!==origin)return route.fulfill({status:200,body:''});
+   if(u.pathname==='/data/mutual-funds/index.json')return route.fulfill({contentType:'application/json',body:JSON.stringify(fixtureSeed)});
+   return route.continue();
+ });
  await page.clock.install();await page.goto(origin);await page.waitForSelector('[data-row-key]');
+ assert(await page.locator('text=MF ownership').count());
+ const ownershipSearch=page.locator('input[placeholder="Search company..."]');
+ for(const [i,r] of ownershipFixtures.entries()) {
+   await ownershipSearch.fill(fixtureBook.find(h=>h.isin===r.isin).name);await page.waitForTimeout(350);
+   const value=page.locator(`[data-row-key="${r.isin}"] span[title^="MF shares held ÷"]`);
+   assert.equal(await value.innerText(),i===0?'10%':i===1?'≈5%':'—');
+   assert.match(await value.getAttribute('title'),i===2?/Percentage withheld/:/Moneycontrol/);
+ }
+ await ownershipSearch.fill('');await page.waitForTimeout(350);
  assert(await page.locator('text=MF shares held').count());assert(await page.locator('text=Insight summary').count());
  const book=JSON.parse(readFileSync(root+'/data/portfolio-companies.json'));const seed=JSON.parse(readFileSync(root+'/data/mutual-funds/index.json'));const held=seed.rows.find(r=>r.funds===undefined&&r.holders>10);assert(held);
  await page.evaluate(h=>{window.testBook=[{isin:h.isin,weightPct:90}];window.mount('portfolio');},held);await page.waitForTimeout(400);

@@ -1,29 +1,26 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {HEADERS} from '../worker/nse-ann.mjs';
 import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
 import {atomicJson} from './lib/mutual-funds-files.mjs';
+import {collectShareCounts} from './lib/mutual-funds-denominators.mjs';
+import {MF_ORIGIN,validIsin} from '../worker/mutual-funds-model.mjs';
 const book=await loadActivePortfolio('public/data/portfolio-companies.json');
-const source=path.join(process.env.AMFIBEAS_PATH,'src/data/portfolio-tracker/shares-outstanding.json');
-const estimates=JSON.parse(fs.readFileSync(source)).companies||{},denominators={};
-for(const h of book.holdings) {
-  const e=estimates[h.isin];
-  if(e?.sharesOutstanding>0&&Number.isSafeInteger(e.sharesOutstanding))denominators[h.isin]={shares:e.sharesOutstanding,checkedAt:e.asOf,asOf:e.asOf,source:e.source,kind:'estimate',method:'Market capitalization divided by quoted price; rounded source values'};
-}
+const read=(file,fallback)=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):fallback;
+const source=path.join(process.env.AMFIBEAS_PATH||'/tmp/sattva-amfibeas-source','src/data/portfolio-tracker/shares-outstanding.json');
+const estimates=read(source,{}).companies||{},previous={},checks={},companies=new Map();
+// Resume the oldest unchecked company across automatic runs, including Universe.
+let cursor='';const seen=new Set();
+do {
+  if(seen.has(cursor))throw Error('Repeated ownership cursor');seen.add(cursor);
+  const r=await boundedJson(await fetch(`${MF_ORIGIN}/api/mutual-funds?${new URLSearchParams({cursor})}`,{signal:AbortSignal.timeout(15000),redirect:'error'}),3*1024*1024);
+  if(!Array.isArray(r.rows))throw Error('Ownership inventory unavailable');
+  for(const row of r.rows)if(validIsin(row.isin)){companies.set(row.isin,row);previous[row.isin]=row.denominator;checks[row.isin]=row.shareCountCheck;}
+  cursor=r.nextCursor||'';
+}while(cursor);
+for(const h of book.holdings)if(validIsin(h.isin))companies.set(h.isin,h);
 fs.mkdirSync('artifacts',{recursive:true});
-const save=()=>atomicJson('artifacts/mutual-funds-denominators.json',denominators);
-save();
-// Source denials are respected. A denied NSE session is not retried under another identity.
-for(const h of book.holdings.filter(h=>h.ticker)) {
-  try {
-    const url=`https://www.nseindia.com/api/quote-equity?symbol=${encodeURIComponent(h.ticker)}`;
-    const response=await fetch(url,{headers:HEADERS,redirect:'error',signal:AbortSignal.timeout(12000)});
-    if([401,403,429].includes(response.status)){await response.body?.cancel();break;}
-    const data=await boundedJson(response,1024*1024),shares=Number(data.securityInfo?.issuedSize);
-    if(data.info?.isin===h.isin&&Number.isSafeInteger(shares)&&shares>0){denominators[h.isin]={shares,checkedAt:new Date().toISOString(),asOf:data.metadata?.lastUpdateTime||null,source:url,kind:'exchange',method:'NSE issued shares, exact ISIN match'};save();}
-  }catch{/* A failed denominator read cannot invent a value. */}
-  await new Promise(done=>setTimeout(done,200));
-}
-save();
-console.log(`${Object.values(denominators).filter(d=>d.kind==='exchange').length} exchange denominators; ${Object.values(denominators).filter(d=>d.kind==='estimate').length} explicitly labelled estimates`);
+const result=await collectShareCounts({companies:[...companies.values()],portfolioIsins:book.holdings.map(h=>h.isin),previous,checks,estimates,
+  map:read('public/data/mc-ticker-map.json',{}).map||{},identities:Object.entries(read('public/data/exchange-deals.json',{}).securityMap||{}).map(([bseCode,r])=>({...r,bseCode})),
+  save:({denominators,checks})=>{atomicJson('artifacts/mutual-funds-denominators.json',denominators);atomicJson('artifacts/mutual-funds-share-count-checks.json',checks);}});
+console.log(`Company share counts: ${result.attempted} checked; ${result.deferred} resume on the next automatic run.`);

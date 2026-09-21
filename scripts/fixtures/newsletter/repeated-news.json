@@ -1,0 +1,37 @@
+{
+  "description": "Public captured headlines behind the customer screenshot on 21 September 2026. Expected editorial partition: Gulf project discussions (four reports), and current order-book total (one report). Model replies in offline tests are fixtures, not a live model accuracy evaluation.",
+  "ticker": "ENGINERSIN",
+  "company": "Engineers India Ltd",
+  "reports": [
+    {
+      "headline": "EIL in talks with Saudi Arabia, UAE for oil infra projects to bypass Strait of Hormuz",
+      "publisher": "Business Line",
+      "url": "https://in.tradingview.com/news/moodys:5adafbd712754:0-eil-in-talks-with-saudi-arabia-uae-for-oil-infra-projects-to-bypass-strait-of-hormuz/",
+      "publishedAt": "2026-09-19T07:31:40.000Z"
+    },
+    {
+      "headline": "EIL Sees More Pipeline and Storage Opportunities in Gulf",
+      "publisher": "Economic Times",
+      "url": "https://in.tradingview.com/news/moodys:8828124915b4a:0-eil-sees-more-pipeline-and-storage-opportunities-in-gulf/",
+      "publishedAt": "2026-09-19T04:15:39.000Z"
+    },
+    {
+      "headline": "EIL Sees Prospect as Saudi, UAE Plan to Expand Pipeline, Storage",
+      "publisher": "Economic Times",
+      "url": "https://in.tradingview.com/news/moodys:fc9e5cecb5700:0-eil-sees-prospect-as-saudi-uae-plan-to-expand-pipeline-storage/",
+      "publishedAt": "2026-09-19T04:15:31.000Z"
+    },
+    {
+      "headline": "EIL eyes oil pipeline, storage projects in Saudi Arabia, UAE",
+      "publisher": "Mint",
+      "url": "https://in.tradingview.com/news/moodys:3f82f2e379b26:0-eil-eyes-oil-pipeline-storage-projects-in-saudi-arabia-uae/",
+      "publishedAt": "2026-09-18T19:49:45.000Z"
+    },
+    {
+      "headline": "Engineers India Exec Says Current Order Book At 170 Billion Rupees",
+      "publisher": "Reuters",
+      "url": "https://in.tradingview.com/news/reuters.com,2026:newsml_FWN459122:0-engineers-india-exec-says-current-order-book-at-170-billion-rupees/",
+      "publishedAt": "2026-09-18T11:35:25.000Z"
+    }
+  ]
+}

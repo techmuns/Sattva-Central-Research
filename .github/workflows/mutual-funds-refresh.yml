@@ -74,6 +74,7 @@ jobs:
           path: |
             artifacts/mutual-funds-health.json
             artifacts/mutual-funds-denominators.json
+            artifacts/mutual-funds-share-count-checks.json
             artifacts/mutual-funds-source.json
           if-no-files-found: warn
           retention-days: 30

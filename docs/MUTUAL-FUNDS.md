@@ -30,10 +30,27 @@ certification that the AMC's report is exhaustive. Corporate actions can change 
 cash trading. New positions show “New”, not a percentage calculated by dividing by zero.
 
 “MF shares held” sums quantities reported for the displayed month and is explicitly subject to
-coverage. Company ownership equals those shares / company shares outstanding. NSE issued shares
-are accepted only on an exact ISIN match; a refused session stops further NSE reads. AmfiBeas's
-market-cap/price estimates remain separately labelled with `≈` and source/date/method. Denominators
-older than seven days, invalid values, and ratios over 100% produce an unavailable percentage.
+coverage. The MF ownership column equals those shares ÷ company shares outstanding × 100.
+NSE issued shares are preferred, then Moneycontrol's directly supplied `SHRS` field. Both
+require an exact live ISIN match, a positive safe integer and a source quote no older than seven
+days. A refusal stops further reads to that source for the run. The Moneycontrol map discovers
+codes (including BSE-only identities); its stored counts and file timestamp are never used as a
+fresh denominator. AmfiBeas's market-cap/price estimates are the last resort, labelled `≈`.
+A newer estimate cannot displace a fresh directly supplied count. Missing/invalid quantities,
+share counts or source dates, counts older than seven days and ratios over 100% withhold the
+percentage. Saved browser rows also expire during outages.
+
+The tooltip and company detail expose the formula, count, provider, actual successful check,
+source quote date and a failed latest attempt separately. Providers do not supply the count's
+own effective date; the quote timestamp is not represented as one. Historical MF months use the
+latest available denominator, not a reconstructed historical capital structure. The numerator
+remains subject to disclosed scheme coverage; this is not a claim of total industry ownership.
+
+The existing automatic collector checks share counts daily, prioritizing the live portfolio
+(including new holdings) and continuing across every captured Universe company. Each pass is
+bounded to 200 companies/four minutes. Persisted per-company attempt checkpoints resume the
+oldest unchecked company on later runs; failures preserve the last good value and its date.
+Unavailable identities remain explicit. No manual refresh or new browser collection is needed.
 Fund AUM % is the AMC-disclosed position weight. The screenshot-compatible AUM (Cr) column means
 **the stock position's market value**, not the fund's total assets; its tooltip states this.
 
@@ -64,7 +81,7 @@ The shared manifest includes AMFI directory discovery, newly listed fund houses,
 last complete checks, partial attempts and historical continuation state. Current
 source validation runs upstream, and Sattva retains its own equity/quantity checks
 before projecting company ownership. Shares-outstanding estimates still come from
-AmfiBeas, with Sattva's bounded exchange verification for the current portfolio.
+AmfiBeas, with Sattva's bounded NSE/Moneycontrol reads providing direct counts first.
 
 Publication uses ordered, idempotent fragments and retains every captured monthly
 observation and correction. An interrupted upload remains incomplete until all
