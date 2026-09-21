@@ -27,7 +27,7 @@ const server = createServer((req, res) => {
     let body = readFileSync(file);
     if (pathname === '/sw.js') {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
-      if (!upgraded) body = body.replace('2026-09-21-chatter-truth-v1', 'previous-chatter-release');
+      if (!upgraded) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-chatter-release`;');
     }
     // Model the previous normalizer's behavior inside a genuinely controlled,
     // warm session. Every other module and the update lifecycle are real.
@@ -54,7 +54,7 @@ try {
   await page.waitForFunction(() => document.querySelector('output')?.textContent === 'mixed', { timeout: 30000 });
   assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), true);
   const after = await page.evaluate(() => caches.keys());
-  assert(after.some(key => key.includes('2026-09-21-chatter-truth-v1')));
+  assert(after.some(key => key.startsWith('sattva-dashboard-') && !before.includes(key)));
   assert(!after.some(key => key.includes('previous-chatter-release')), 'old immutable module cache is removed');
   assert.deepEqual(errors, []);
   console.log('PASS already-open controlled dashboard upgrades from old bearish summary to mixed and evicts its old module cache without a manual reload');
