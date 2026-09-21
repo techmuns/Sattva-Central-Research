@@ -52,13 +52,19 @@ export async function collectScanner({client=collectorClient(),fetcher=fetch,sle
   }
   return {completed,failed};
 }
+export const scannerCaptureHealthy=(result,status)=>!result.failed&&status?.expectedCompanies>0&&status.currentCompanies===status.expectedCompanies&&!['source-cooldown','in-flight','reservation-expired'].includes(result.reason);
 async function main() {
   const book=await loadActivePortfolio('public/data/portfolio-companies.json',{live:true});
   const identities=Object.values(JSON.parse(fs.readFileSync('public/data/exchange-deals.json')).securityMap||{});
   const companies=book.holdings.filter(h=>/^IN[A-Z0-9]{10}$/.test(h.isin||'')).map(h=>({isin:h.isin,name:h.name,ticker:h.ticker,aliases:[h.matchedName,h.bookName,...identities.filter(c=>c.isin===h.isin).map(c=>c.name)].filter(Boolean)}));
-  const result=await collectScanner({companies});
+  const client=collectorClient(),result=await collectScanner({companies,client});
+  const status=(await client({action:'scanner-status'})).supplement;
   // Counts only: this public repository's workflow logs/artifacts must not
   // publish source pages, scheme observations, or the private portfolio.
   console.log(`MF Scanner: ${result.completed} pages saved; ${result.failed} pages unavailable${result.reason?`; ${result.reason}`:''}.`);
+  if(!scannerCaptureHealthy(result,status)) {
+    console.error(`MF Scanner coverage incomplete: ${status?.currentCompanies||0}/${status?.expectedCompanies||companies.length} current company pages. Saved observations remain available; the next automatic run resumes collection.`);
+    process.exitCode=1;
+  }
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(()=>{console.error('Private MF Scanner collection interrupted; saved progress will resume automatically.');process.exitCode=1;});

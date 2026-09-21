@@ -42,23 +42,29 @@ export class MutualFundsScannerStore {
     return this.storage.transactionSync(()=>{
       const now=this.now(),control=this.get('control',{});
       if(control.blockedUntil>now)return {ok:true,waitUntil:control.blockedUntil,reason:'source-cooldown'};
-      // Replaying a lost acknowledgement never authorises a second HTTP request.
-      const receipt=this.get(`receipt:${key}`);if(receipt)return {ok:true,reason:'already-reserved'};
+      // The collector retries a reservation before making its source request.
+      // Replay the same lease after a lost acknowledgement, without spending
+      // another request. Completed or expired leases cannot fetch again.
+      const receipt=this.get(`receipt:${key}`);
+      if(receipt)return this.get(`done:${key}`)?{ok:true,reason:'already-completed'}:receipt.at+LEASE>now?receipt.payload:{ok:true,reason:'reservation-expired'};
       if(control.nextAt>now)return {ok:true,waitUntil:control.nextAt,reason:'spacing'};
       if(kind==='catalogue') {
         const saved=this.get('catalogue');
         if(saved && now-Date.parse(saved.checkedAt)<INTERVAL)return {ok:true,catalogue:saved.entries};
         if(control.catalogueLease>now)return {ok:true,waitUntil:control.catalogueLease,reason:'in-flight'};
         this.set('control',{...control,nextAt:now+GAP,catalogueLease:now+LEASE,catalogueRequest:key});
-        this.set(`receipt:${key}`,now);return {ok:true,reservation:key,url:'https://mfscanner.com/',savedCatalogue:saved?.entries||null};
+        const payload={ok:true,reservation:key,url:'https://mfscanner.com/',savedCatalogue:saved?.entries||null};
+        this.set(`receipt:${key}`,{at:now,payload});return payload;
       }
       const target=this.storage.sql.exec('SELECT * FROM mf_scanner_targets WHERE active=1 AND next_at<=? AND lease<=? ORDER BY next_at,isin LIMIT 1',now,now).toArray()[0];
       if(!target)return {ok:true,reason:'nothing-due'};
       this.storage.sql.exec('UPDATE mf_scanner_targets SET request=?,lease=?,next_at=?,state=? WHERE isin=?',key,now+LEASE,now+INTERVAL,'checking',target.isin);
-      this.set('control',{...control,nextAt:now+GAP});this.set(`receipt:${key}`,now);
+      this.set('control',{...control,nextAt:now+GAP});
+      const payload={ok:true,reservation:key,company:JSON.parse(target.company),url:target.url};
+      this.set(`receipt:${key}`,{at:now,payload});
       // Coordination receipts have no disclosure data and need only a day.
-      this.storage.sql.exec("DELETE FROM mf_scanner_meta WHERE key LIKE 'receipt:%' AND CAST(value AS INTEGER)<?",now-86400000);
-      return {ok:true,reservation:key,company:JSON.parse(target.company),url:target.url};
+      this.storage.sql.exec("DELETE FROM mf_scanner_meta WHERE key LIKE 'receipt:%' AND json_extract(value,'$.at')<?",now-86400000);
+      return payload;
     });
   }
   complete(run,input) {

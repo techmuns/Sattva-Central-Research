@@ -61,6 +61,11 @@ try {
   const evidence=await buildResearchEvidence({question:'Which mutual funds added or sold stocks across the portfolio last month?',prepared:{deferred:{},loadErrors:new Map()}});
   const mf=evidence.sources.find(s=>s.id==='mutual-funds');assert.equal(mf.rows.length,book.holdings.length);assert.equal(mf.rowCount,book.holdings.length);
   const {validateResearchBody}=await import('../worker/research.mjs');assert(validateResearchBody({question:'Which mutual funds bought?',evidence}).ok);
+  const {fitEvidenceToBudget}=await import('../public/js/research/estate.js');
+  const enriched=structuredClone(evidence);const packet=enriched.sources.find(s=>s.id==='mutual-funds');
+  packet.source+='; private MF Scanner supplement';for(const row of packet.rows)row.mfScanner={source:'MF Scanner',month:'2026-08',checkedAt:'2026-09-21T01:00:00.000Z',checkState:'ok',unpublishedFunds:2,ambiguousFunds:1};
+  const fitted=fitEvidenceToBudget(enriched,37000);assert.equal(fitted.sources.find(s=>s.id==='mutual-funds').rows.length,book.holdings.length,'Backup provenance cannot crowd portfolio companies out of the answer');
+  assert(validateResearchBody({question:'Which mutual funds bought?',evidence:fitted}).ok);
   console.log(`PASS Ask Research: every ${book.holdings.length} portfolio company survives the provider evidence budget and Worker validation`);
 }finally{globalThis.fetch=originalFetch;}
 

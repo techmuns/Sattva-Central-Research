@@ -17,6 +17,16 @@
 
 const UI_ONLY_SOURCE_FIELDS = new Set(['route', 'description']);
 
+// Ownership answers keep the whole portfolio and per-stock backup provenance.
+// State the column names once instead of repeating them for every company.
+export function providerMutualFunds(source) {
+  if(source?.id!=='mutual-funds'||!Array.isArray(source.rows)||source.rows.some(r=>!r||typeof r!=='object'||Array.isArray(r)))return source;
+  const rows=source.rows.map(row=>Object.fromEntries(Object.entries(row).flatMap(([key,value])=>key==='mfScanner'&&value&&typeof value==='object'&&!Array.isArray(value)
+    ?Object.entries(value).map(([field,item])=>[`mfScanner.${field}`,item]):[[key,value]])));
+  const columns=[...new Set(rows.flatMap(row=>Object.keys(row)))];
+  return {...source,columns,rows:rows.map(row=>columns.map(key=>row[key]??null))};
+}
+
 // A column schema removes five repeated JSON keys per holding without sampling
 // away any ISIN, unresolved symbol, fund or weight from the complete denominator.
 export function providerPositions(positions) {
@@ -56,7 +66,7 @@ export function providerEvidence(evidence = {}) {
     },
     sources: sources.map((source) => {
       if (!source || typeof source !== 'object') return source;
-      return Object.fromEntries(Object.entries(source).filter(([key]) => !UI_ONLY_SOURCE_FIELDS.has(key)));
+      return providerMutualFunds(Object.fromEntries(Object.entries(source).filter(([key]) => !UI_ONLY_SOURCE_FIELDS.has(key))));
     }),
   };
 }

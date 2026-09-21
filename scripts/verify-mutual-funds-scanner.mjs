@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {parseScannerStock,parseScannerCatalogue,scannerStockUrl} from './lib/mutual-funds-scanner.mjs';
-import {scannerFetch,collectScanner} from './collect-mutual-funds-scanner.mjs';
+import {scannerFetch,collectScanner,scannerCaptureHealthy} from './collect-mutual-funds-scanner.mjs';
 import {supplementCompany} from '../worker/mutual-funds-scanner-model.mjs';
 import {MutualFundsStore} from '../worker/mutual-funds-store.mjs';
 import {MutualFundsScannerStore} from '../worker/mutual-funds-scanner-store.mjs';
@@ -34,8 +34,8 @@ const storage={sql:{exec(sql,...args){const rows=db.prepare(sql).all(...args);re
 const base=new MutualFundsStore(storage,{now:()=>clock});let store=new MutualFundsScannerStore(storage,base,{now:()=>clock});base.scanner=store;
 base.begin('1:1',{targets:[isin],amcs:[{slug:'hdfc',status:'partial',month:'2026-08'}]});base.checkpoint('1:1',[primary]);base.finish('1:1');
 store.inventory([{isin,name:'Fixture Bank'}]);
-const reserved=store.reserve('2:1','1','catalogue');assert.equal(store.reserve('2:1','1','catalogue').reason,'already-reserved');
-store.complete('2:1',{reservation:reserved.reservation,catalogue});clock+=2100;
+const reserved=store.reserve('2:1','1','catalogue');assert.deepEqual(store.reserve('2:1','1','catalogue'),reserved,'A lost reservation acknowledgement replays the same lease');
+store.complete('2:1',{reservation:reserved.reservation,catalogue});assert.equal(store.reserve('2:1','1','catalogue').reason,'already-completed');clock+=2100;
 let task=store.reserve('2:1','2');page=parse(sample);store.complete('2:1',{reservation:task.reservation,isin,page});store.complete('2:1',{reservation:task.reservation,isin,page});
 assert.equal(base.read([isin]).rows[0].totalShares,100,'Public API never includes a private observation');
 assert.equal(store.read([isin]).rows[0].totalShares,150);
@@ -69,3 +69,15 @@ store.complete('6:1',{reservation:task.reservation,isin:newIsin,page:next});
 assert.equal(base.read([newIsin]).rows.length,0);assert.equal(store.read([newIsin]).rows[0].totalShares,150);
 assert(store.read(null).rows.some(r=>r.isin===newIsin),'Universe pagination includes private-only identities');
 console.log('PASS MF Scanner: exact identities/months/counts, pending vs exits, primary precedence, duplicate guards, private API boundary, durable corrections, resume, rate budget and cooldown');
+
+const {mutualFundEvidenceRows}=await import('../public/js/data/mutual-funds-evidence.js');
+const evidence=mutualFundEvidenceRows([{...combined,supplement:{...combined.supplement,used:true}}],{checkedAt:'2026-09-18',supplementReadFailed:true});
+assert.equal(evidence[0].primaryCheckedAt,undefined,'Primary date is carried once at packet level');assert.equal(evidence[0].mfScanner.source,'MF Scanner');assert.equal(evidence[0].mfScanner.checkState,'read-failed');assert.equal(evidence[0].mfScanner.checkedAt,combined.supplement.checkedAt);
+assert(scannerCaptureHealthy({failed:0},{expectedCompanies:2,currentCompanies:2}));
+assert(!scannerCaptureHealthy({failed:1},{expectedCompanies:2,currentCompanies:2}));
+assert(!scannerCaptureHealthy({failed:0},{expectedCompanies:2,currentCompanies:1}));
+assert(!scannerCaptureHealthy({failed:0,reason:'source-cooldown'},{expectedCompanies:2,currentCompanies:2}));
+console.log('PASS research source provenance and unattended incomplete-capture health gate');
+
+const {providerMutualFunds}=await import('../public/js/research/evidence-shared.js');const packed=providerMutualFunds({id:'mutual-funds',source:'AmfiBeas; MF Scanner',asOf:'2026-09-18',rows:evidence});
+assert.equal(packed.rows[0][packed.columns.indexOf('mfScanner.checkedAt')],combined.supplement.checkedAt);assert.equal(packed.rows[0][packed.columns.indexOf('mfScanner.checkState')],'read-failed');

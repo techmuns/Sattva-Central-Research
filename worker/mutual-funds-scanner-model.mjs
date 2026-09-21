@@ -53,7 +53,8 @@ export function supplementCompany(primary, supplemental, {amcs=[],month=null,now
     ambiguous++;if(quantity(f.months[latest]))supplemented--;return false;
   });
   const result=projectCompany({...base,funds:selected},{month:latest,now});
+  const usedPoints=selected.flatMap(f=>[f.months[latest],f.months[previousMonth(latest)]]).filter(p=>p?.source==='MF Scanner'&&quantity(p));
   const available=[...new Set([...(primary?.availableMonths||[]),...(supplemental?.availableMonths||[]),...funds.flatMap(f=>Object.keys(f.months))])].filter(m=>m<=targetMonth(now)).sort().reverse();
   return {...result,months:[latest,previousMonth(latest),previousMonth(previousMonth(latest))],availableMonths:available,
-    supplement:{source:'MF Scanner',checkedAt:supplemental?.checkedAt||null,month:supplemental?.month||null,supplementedFunds:supplemented,ambiguousFunds:ambiguous,conflictingObservations:conflicts,unreportedFunds:supplemental?.unreportedFunds||0,unknownAmcs:supplemental?.unknownAmcs||0}};
+    supplement:{source:'MF Scanner',used:usedPoints.length>0,checkedAt:usedPoints.map(p=>p.checkedAt).filter(Boolean).sort().at(-1)||supplemental?.checkedAt||null,month:supplemental?.month||null,supplementedFunds:supplemented,ambiguousFunds:ambiguous,conflictingObservations:conflicts,unreportedFunds:supplemental?.unreportedFunds||0,unknownAmcs:supplemental?.unknownAmcs||0}};
 }
