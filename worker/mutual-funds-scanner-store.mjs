@@ -96,6 +96,7 @@ export class MutualFundsScannerStore {
           this.storage.sql.exec('UPDATE mf_scanner_targets SET url=?,coverage=?,checked=? WHERE isin=?',page.sourceUrl,JSON.stringify(coverage),page.checkedAt,isin);
         }
         this.storage.sql.exec('UPDATE mf_scanner_targets SET lease=0,next_at=?,state=? WHERE isin=?',now+INTERVAL,failure||'ok',isin);
+        if(['http-error','invalid-page'].includes(failure))this.storage.sql.exec('UPDATE mf_scanner_targets SET url=NULL WHERE isin=?',isin);
         this.set(`attempt:${isin}`,stamp);
         this.refresh(isin);
       }

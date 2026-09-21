@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict';
 import {MutualFundsSchedule,MF_TIMER} from '../worker/mutual-funds-schedule.mjs';
 const epoch=Date.parse('2026-09-20T20:00:00Z');
-function fixture({source=[],consumer=[],denySource=false,loseSourcePost=false,loseConsumerPost=false}={}) {
+function fixture({source=[],consumer=[],scanner=[run(9000,0)],denySource=false,denyScanner=false,loseSourcePost=false,loseConsumerPost=false,loseScannerPost=false}={}) {
   let clock=epoch,alarm=null;const data=new Map(),posts=[];
   const storage={get:async k=>structuredClone(data.get(k)),put:async(k,v)=>data.set(k,structuredClone(v)),getAlarm:async()=>alarm,setAlarm:async v=>{alarm=v;}};storage.transaction=async fn=>fn(storage);
   const fetcher=async(url,opt={})=>{
-    const upstream=url.includes('/AmfiBeas/');
+    const upstream=url.includes('/AmfiBeas/'),isScanner=url.includes('/mutual-funds-scanner.yml/');
     assert.match(url,/^https:\/\/api.github.com\/repos\/techmuns\/(AmfiBeas|Sattva-Central-Research)\/actions\/workflows\//);
     assert.equal(opt.headers.authorization,upstream?'Bearer upstream-fixture':'Bearer consumer-fixture');
-    if(upstream&&denySource)return new Response('',{status:403});
+    if(upstream&&denySource || isScanner&&denyScanner)return new Response('',{status:403});
     if(opt.method==='POST'){
       assert(alarm>clock,'A fallback alarm must exist before any dispatch');
-      posts.push({upstream,body:JSON.parse(opt.body)});
-      if((upstream&&loseSourcePost)||(!upstream&&loseConsumerPost))throw Error('Response lost');
+      posts.push({upstream,scanner:isScanner,body:JSON.parse(opt.body)});
+      if((upstream&&loseSourcePost)||(!upstream&&!isScanner&&loseConsumerPost)||(isScanner&&loseScannerPost))throw Error('Response lost');
       return new Response(null,{status:204});
     }
-    const runs=upstream?source:consumer;
+    const runs=isScanner?scanner:upstream?source:consumer;
     const active=new URL(url).searchParams.get('status');
     return Response.json({total_count:runs.length,workflow_runs:active?runs.filter(r=>r.status===active):runs});
   };
@@ -99,3 +99,10 @@ assert.equal(f.alarm,epoch+60000,'An uncertain source POST is reconciled in one 
 uncertainSource.unshift(run(50,-0.5));f.advance(60000);await f.make().wake();
 assert.deepEqual(f.posts.map(p=>p.upstream),[true,false],'A quickly completed source imports without waiting another collection interval');
 console.log('PASS end-to-end health, completed-run cadence and prompt source/import reconciliation');
+
+// Backup capture is independent of a running or failed primary importer.
+f=fixture({source:[run(1,20,'in_progress')],consumer:[run(2,20,'in_progress')],scanner:[],loseScannerPost:true});await f.make().wake();
+assert.equal(f.posts.filter(p=>p.scanner).length,1);assert.equal(f.posts.filter(p=>!p.scanner).length,0);
+f.advance(60000);await f.make().wake();assert.equal(f.posts.filter(p=>p.scanner).length,1,'Lost backup dispatch acknowledgement is not blindly retried');
+f=fixture({scanner:[],denyScanner:true});await f.make().wake();assert.equal((await f.make().status()).scanner.reason,'access-unavailable');assert.equal(f.posts.length,2,'Backup permissions cannot stop primary collection');
+console.log('PASS independent MF Scanner workflow cadence, source/import isolation and persisted dispatch uncertainty');

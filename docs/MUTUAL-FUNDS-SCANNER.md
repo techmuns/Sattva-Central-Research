@@ -1,9 +1,9 @@
 # Private MF Scanner supplement
 
 MF Scanner stock pages supplement the primary AMC/AmfiBeas disclosures for the
-live Family Office portfolio. The existing Mutual Funds workflow runs a separate
-collector job, so a failed primary import does not prevent supplemental capture.
-The existing durable watchdog and GitHub schedule continue to drive the workflow.
+live Family Office portfolio. A dedicated workflow and concurrency group prevent a slow or failed primary
+import from holding up supplemental capture. The existing durable watchdog drives
+both workflows independently; the backup also has its own GitHub schedule.
 The target is a check every 15 minutes, subject to run duration and source access.
 This is monthly disclosed ownership, not live trading or a guarantee of complete
 industry coverage.

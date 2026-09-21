@@ -1,0 +1,32 @@
+name: Private MF Scanner capture
+run-name: Private MF Scanner capture · ${{ inputs.source || github.event_name }}
+on:
+  schedule:
+    - cron: '10,25,40,55 * * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Collection trigger
+        type: string
+        default: manual
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: mutual-fund-scanner
+  cancel-in-progress: false
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Capture private MF Scanner supplement
+        run: node scripts/collect-mutual-funds-scanner.mjs

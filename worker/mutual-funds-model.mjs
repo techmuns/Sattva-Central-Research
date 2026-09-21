@@ -4,6 +4,7 @@ export const MF_OBJECT = 'mutual-funds:v1';
 export const MF_ORIGIN = 'https://sattva-central-research.tech-441.workers.dev';
 export const MF_ENDPOINT = `${MF_ORIGIN}/api/mutual-funds/collector`;
 export const MF_WORKFLOW = 'mutual-funds-refresh.yml';
+export const MF_SCANNER_WORKFLOW = 'mutual-funds-scanner.yml';
 export const MF_INTERVAL = 15 * 60000;
 export const validIsin = value => /^IN[A-Z0-9]{10}$/.test(value || '');
 export const number = value => typeof value === 'number' && Number.isFinite(value) ? value : null;

@@ -1,4 +1,4 @@
-import { MF_OBJECT,MF_ENDPOINT,MF_WORKFLOW,MF_ORIGIN,validIsin } from './mutual-funds-model.mjs';
+import { MF_OBJECT,MF_ENDPOINT,MF_WORKFLOW,MF_SCANNER_WORKFLOW,MF_ORIGIN,validIsin } from './mutual-funds-model.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { breakoutCollectorIdentity } from './breakout-auth.mjs';
 import { withTag,tagged,revalidate } from './http.mjs';
@@ -11,9 +11,11 @@ export async function handleMutualFunds(request,env,{identity=breakoutCollectorI
   const store=env.CAPTURE_REGISTRY.getByName(MF_OBJECT);
   if(url.pathname==='/api/mutual-funds/collector') {
     if(request.method!=='POST'||url.origin!==MF_ORIGIN)return reply({ok:false},403);
-    let run;try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:MF_WORKFLOW});}catch{return reply({ok:false,reason:'identity'},403);}
+    let body;try{body=await boundedJson(new Response(request.body),3*1024*1024);}catch{return reply({ok:false,reason:'invalid-body'},400);}
+    if(!body||typeof body!=='object'||Array.isArray(body))return reply({ok:false,reason:'invalid-body'},400);
+    const scannerAction=['scanner-inventory','scanner-reserve','scanner-complete','scanner-status'].includes(body.action);
+    let run;try{run=await identity(request,{endpoint:MF_ENDPOINT,workflow:scannerAction?MF_SCANNER_WORKFLOW:MF_WORKFLOW});}catch{return reply({ok:false,reason:'identity'},403);}
     try{
-      const body=await boundedJson(new Response(request.body),3*1024*1024);
       if(body.action==='arm')return reply({ok:true,schedule:await store.mfArm()});
       if(body.action==='begin')return reply(await store.mfBegin(run,body.manifest));
       if(body.action==='reports')return reply(await store.mfReports(run,body.reports));
