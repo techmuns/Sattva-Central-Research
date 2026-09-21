@@ -422,7 +422,7 @@ await test('the broadsheet carries the Sattva Ventures masthead, escapes the exc
   const html = renderBriefHtml(morning, { dashboardUrl: 'https://example.test', recipient: { email: 'pratik@muns.io', addedBy: 'Ravi' } });
   assert.match(html, /^<!doctype html>/);
   assert.ok(html.includes('<meta name="color-scheme" content="light">'));
-  assert.ok(html.includes('letter-spacing:6px;color:#0f172a;">SATTVA VENTURES</div>'), 'the masthead is the family office\'s name');
+  assert.ok(html.includes('letter-spacing:3px;color:#0f172a;">SATTVA VENTURES</div>'), 'the masthead is the family office\'s name');
   assert.ok(!html.includes('MUNSHOT'), 'no Munshot masthead on a Sattva Ventures brief');
   assert.ok(html.includes('border-top:3px double #0f172a'), 'the double rule');
   assert.ok(html.includes('Research Central — Morning Portfolio Brief'));
@@ -599,9 +599,9 @@ await test('a capture that landed after the previous brief went out is carried b
   assert.ok(late.length >= 8, `every fixture row sits in the morning window: ${late.length}`);
   assert.ok(late.every((s) => s.late), 'nothing in the evening window itself, so every story is a late arrival');
   const html = renderBriefHtml(unsent, { dashboardUrl: 'https://example.test' });
-  assert.ok(html.includes(`${late.length} arrived after the previous brief`), 'the summary line counts them');
-  assert.ok(html.includes('· arrived after the previous brief'), 'and each one says so');
-  assert.ok(html.includes(`${late.length} items from before this window arrived after the previous brief and are included.`));
+  assert.ok(html.includes(`${late.length} not in the previous brief`), 'the summary line counts them');
+  assert.ok(html.includes('· not in the previous brief'), 'and each one says so');
+  assert.ok(html.includes(`${late.length} items from before this window were not in the previous brief and are included.`));
   const all = await evening(sent);
   assert.equal(briefStories(all).length, 0, 'once the morning brief carried them, the evening repeats none');
   assert.equal(all.announcements.suppressed + all.news.suppressed + all.moves.suppressed, late.length);
@@ -732,7 +732,7 @@ await test('a missed morning brief\'s window is carried by the evening brief as 
   clock = istInstant('2026-09-17', '16:00') + 5000;
   await schedule.wake();
   const html = log.filter((l) => l.kind === 'email').at(-1).html;
-  assert.ok(html.includes('Evening Portfolio Brief') && html.includes('Alankit') && html.includes('arrived after the previous brief'));
+  assert.ok(html.includes('Evening Portfolio Brief') && html.includes('Alankit') && html.includes('not in the previous brief'));
   assert.ok(store.delivery('2026-09-17:evening').summary.late > 0);
 });
 

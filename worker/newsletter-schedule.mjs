@@ -1,3 +1,4 @@
+import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
 import { buildBrief, briefStoryKeys, briefSubject, briefSummary, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
 import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledEditions } from '../public/js/data/newsletter-shared.js';
 
@@ -198,10 +199,17 @@ export class NewsletterSchedule {
       const reason = error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map((r) => ({ email: r.email, ok: false, reason })) });
     }
+    let pdfUrl;
+    try {
+      const id = this.store.saveDocument(renderBriefPdf(brief, this.renderOptions()), pdfFilename(brief));
+      pdfUrl = `${this.dashboardUrl()}/api/newsletter/pdf/${id}`;
+    } catch {
+      return finish({ sent: 0, failed: list.length, reason: 'pdf-failed', outcomes: list.map(r => ({ email: r.email, ok: false, reason: 'pdf-failed' })) });
+    }
     const subject = briefSubject(brief);
     const outcomes = [];
     await pooled(list, SEND_POOL, async (recipient) => {
-      const html = renderBriefHtml(brief, this.renderOptions(recipient));
+      const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), pdfUrl });
       const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject, html, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
       outcomes.push({ email: recipient.email, ok: result.ok, status: result.status, reason: result.reason });
     });
@@ -245,7 +253,8 @@ export class NewsletterSchedule {
     }
     return {
       ok: true, edition, subject: briefSubject(brief), builtAt: iso(now), summary: briefSummary(brief),
-      body: format === 'text' ? renderBriefText(brief, this.renderOptions()) : renderBriefHtml(brief, this.renderOptions()),
+      filename: format === 'pdf' ? pdfFilename(brief) : undefined,
+      body: format === 'pdf' ? renderBriefPdf(brief, this.renderOptions()) : format === 'text' ? renderBriefText(brief, this.renderOptions()) : renderBriefHtml(brief, this.renderOptions()),
     };
   }
 }

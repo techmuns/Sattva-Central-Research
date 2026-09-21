@@ -58,6 +58,7 @@ export class NewsletterStore {
       started_at TEXT NOT NULL, finished_at TEXT, source TEXT NOT NULL,
       recipients INTEGER NOT NULL, sent INTEGER, failed INTEGER, reason TEXT,
       subject TEXT, outcomes TEXT, summary TEXT)`);
+    this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_documents (id TEXT PRIMARY KEY, filename TEXT NOT NULL, body BLOB NOT NULL, created_at TEXT NOT NULL)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_state ON newsletter_subscribers(state, seq)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_delivery_time ON newsletter_deliveries(started_at)');
     // Added after the table shipped: a deployment whose log predates it gains the column in place.
@@ -215,6 +216,21 @@ export class NewsletterStore {
       for (const key of parseJson(row.stories, [])) if (typeof key === 'string') out.add(key);
     }
     return out;
+  }
+
+  // Immutable PDFs have opaque bearer links and no subscriber addresses. Keep them independently
+  // of the short delivery log: pruning that log must not break a previously emailed download.
+  saveDocument(body, filename) {
+    if (!(body instanceof Uint8Array) || body.byteLength > 1_500_000) throw new Error('Invalid newsletter PDF');
+    const id = crypto.randomUUID();
+    this.rows('INSERT INTO newsletter_documents (id, filename, body, created_at) VALUES (?, ?, ?, ?)', id, filename, body, iso(this.now()));
+    return id;
+  }
+
+  document(id) {
+    if (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(id || '')) return null;
+    const row = this.rows('SELECT filename, body FROM newsletter_documents WHERE id = ?', id)[0];
+    return row ? { filename: row.filename, body: new Uint8Array(row.body) } : null;
   }
 
   pruneDeliveries() {

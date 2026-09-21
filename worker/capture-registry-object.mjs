@@ -76,6 +76,7 @@ export class CaptureRegistry extends DurableObject {
     return { ...out, snapshot: this.newsletter.snapshot(), schedule: await this.newsletterSchedule.status() };
   }
   newsletterSend(input, token) { return this.newsletterSchedule.sendNow(input, token); }
+  newsletterPdf(id) { return this.newsletter.document(id); }
   newsletterPreview(input) { return this.newsletterSchedule.preview(input); }
   mfReports(run,reports) { return this.mutualFunds.reports(run,reports); }
   mfFragment(run,fragment) { return this.mutualFunds.fragment(run,fragment); }

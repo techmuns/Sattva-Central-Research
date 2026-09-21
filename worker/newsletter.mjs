@@ -40,20 +40,44 @@ async function guardWrite(request, env, url) {
   return null;
 }
 
+const pdfHeaders = filename => ({
+  'content-type': 'application/pdf',
+  'content-disposition': `attachment; filename="${/^sattva-[0-9-]+-(?:morning|evening)-brief\.pdf$/.test(filename || '') ? filename : 'sattva-portfolio-brief.pdf'}"`,
+  'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff',
+  'referrer-policy': 'no-referrer', 'x-robots-tag': 'noindex, nofollow',
+});
+
 export async function handleNewsletter(request, env) {
   const url = new URL(request.url);
   if (!env.NEWSLETTER) return fail('newsletter-unavailable', 503);
   const object = env.NEWSLETTER.getByName(NEWSLETTER_OBJECT);
   const dashboardUrl = String(env.DASHBOARD_ORIGIN || url.origin).replace(/\/+$/, '');
 
+  // Opaque links identify one saved edition. This path never rebuilds, calls sources, or sends.
+  if (url.pathname.startsWith('/api/newsletter/pdf/')) {
+    if (request.method !== 'GET') return fail('method', 405);
+    const id = url.pathname.slice('/api/newsletter/pdf/'.length);
+    if (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(id)) return fail('not-found', 404);
+    let document;
+    try { document = await object.newsletterPdf(id); } catch { return fail('newsletter-unavailable', 503); }
+    if (!document) return fail('not-found', 404);
+    return new Response(document.body, { headers: pdfHeaders(document.filename) });
+  }
+
   if (url.pathname === '/api/newsletter/preview') {
     if (request.method !== 'GET') return fail('method', 405);
     const edition = url.searchParams.get('edition') || 'morning';
     if (!EDITION_IDS.includes(edition)) return fail('invalid-edition', 400);
-    const format = url.searchParams.get('format') === 'text' ? 'text' : 'html';
+    // Previews now include a paid AI reading; apply the existing per-client request budget.
+    if (!env.NEWSLETTER_LIMITER) return fail('newsletter-unavailable', 503);
+    const allowance = await env.NEWSLETTER_LIMITER.limit({ key: request.headers.get('cf-connecting-ip') || 'unknown' });
+    if (!allowance.success) return fail('rate-limit', 429);
+    const requested = url.searchParams.get('format');
+    const format = ['text', 'pdf'].includes(requested) ? requested : 'html';
     let out;
     try { out = await object.newsletterPreview({ edition, format }); } catch { return fail('newsletter-unavailable', 503); }
     if (!out?.ok) return fail(out?.reason || 'preview-failed', 503);
+    if (format === 'pdf') return new Response(out.body, { headers: pdfHeaders(out.filename) });
     return new Response(out.body, {
       headers: {
         'content-type': format === 'text' ? 'text/plain; charset=utf-8' : 'text/html; charset=utf-8',
