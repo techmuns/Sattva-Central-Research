@@ -30,7 +30,7 @@ function ownershipNote(r) {
 const checked=m=>m.checkedAt?new Date(m.checkedAt).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'})+' IST':'Not checked';
 export function render(context) {
   cleanup();ctx=context;sequence++;
-  ctx.root.innerHTML=`<section class="mf-module"><div class="mf-toolbar"><label>Sort <select data-mf-sort aria-label="Sort mutual funds"><option value="holdings">Largest holdings</option><option value="newest">Newest</option></select></label><span data-mf-status class="text-xs text-slate-500">Checking disclosures…</span><button data-mf-coverage class="text-xs text-indigo-600">Coverage</button></div><p data-mf-sizes class="text-xs text-slate-500"></p><div data-mf-table></div></section>`;
+  ctx.root.innerHTML=`<section class="mf-module"><div class="mf-toolbar"><label>Sort <select data-mf-sort aria-label="Sort mutual funds"><option value="holdings">Largest holdings</option><option value="newest">Newest</option></select></label><button data-mf-coverage class="text-xs text-indigo-600">Coverage</button></div><p data-mf-sizes class="text-xs text-slate-500"></p><div data-mf-table></div></section>`;
   ctx.root.querySelector('[data-mf-sort]').value=sort;
   ctx.root.querySelector('[data-mf-sort]').onchange=e=>{sort=e.target.value;if(table)table.view.sort=null;paint();};
   ctx.root.querySelector('[data-mf-coverage]').onclick=showCoverage;
@@ -71,7 +71,7 @@ function paint(loading=false) {
 function paintStatus() {
   if(!ctx)return;
   const m=feed.meta();
-  ctx.root.querySelector('[data-mf-status]').textContent=[`${feed.health()} · Checked ${checked(m)}`,supplementStatus(m)].filter(Boolean).join(' · ');
+  ctx.root.querySelector('[data-mf-coverage]').title=[`${feed.health()} · Checked ${checked(m)}`,supplementStatus(m)].filter(Boolean).join(' · ');
   const sizeNode=ctx.root.querySelector('[data-mf-sizes]'),sizes=cachedPositionSizes();
   sizeNode.innerHTML=sort==='holdings'&&ctx.scope==='portfolio'&&!sizes?.sizes?.complete
     ? portfolioConnectionState()==='locked'?'<button data-mf-unlock class="text-indigo-600">Unlock portfolio for Largest holdings</button> · Newest shown while sizes are unavailable.' : 'Portfolio sizes unavailable · Newest shown.' : '';
