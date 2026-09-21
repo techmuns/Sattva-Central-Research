@@ -248,6 +248,8 @@ try {
   // a whole 44px row (scripts/verify-research-stream-ui.mjs asserts that reading space). Assert the
   // exception rather than leaving it to hold by accident of which route this suite happens to open.
   await page.goto(`${base}/#/research/ask-research?scope=portfolio`);
+  // The header mounts before the destination workspace; compact styling depends on that workspace.
+  await page.locator('.research-workspace').waitFor();
   await button().waitFor();
   const compact = await button().evaluate((n) => {
     const r = n.getBoundingClientRect();
