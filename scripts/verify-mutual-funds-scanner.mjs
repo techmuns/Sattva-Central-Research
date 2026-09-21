@@ -19,6 +19,8 @@ for(const malformed of [sample.replace(isin,'INE040A01034'),sample.replace('Augu
 const pending=parse(html(row('a','A','pending','100','—','—')+row('b','B','new','0','20','+20')));assert.equal(pending.funds[0].months['2026-08'].shares,null);
 const catHTML='<html><span>1</span> stocks.<a href="/stock/fixture-bank">Fixture Bank Limited</a></html>';
 const catalogue=parseScannerCatalogue(catHTML);assert.equal(scannerStockUrl(catalogue,{name:'Fixture Bank',ticker:'FIX'}),url);assert.throws(()=>parseScannerCatalogue(catHTML.replace('>1<','>2<')));
+assert.equal(scannerStockUrl([{name:'The North & South Bank Ltd.',url}],{name:'N&S Bank',aliases:['North and South Bank Ltd']}),url,'Company aliases survive articles and ampersand formatting');
+assert.equal(scannerStockUrl([{name:'Fixture Electrical Eqp Ltd',url}],{name:'Fixture Electrical Equipments Ltd'}),url,'Common source abbreviations can discover a page; its exact ISIN is still mandatory');
 
 const primary={isin,name:'Fixture Bank',month:'2026-08',funds:[{id:'hdfc:hdfc fixture fund',name:'HDFC Fixture Fund',amc:'HDFC',months:{'2026-07':{shares:100},'2026-06':{shares:75}}}]};
 let combined=supplementCompany(primary,page,{now:clock});assert.equal(combined.funds.length,1);assert.equal(combined.totalShares,150);assert.equal(combined.netChange,50);assert.equal(combined.funds[0].months['2026-06'].shares,75);
@@ -81,3 +83,13 @@ console.log('PASS research source provenance and unattended incomplete-capture h
 
 const {providerMutualFunds}=await import('../public/js/research/evidence-shared.js');const packed=providerMutualFunds({id:'mutual-funds',source:'AmfiBeas; MF Scanner',asOf:'2026-09-18',rows:evidence});
 assert.equal(packed.rows[0][packed.columns.indexOf('mfScanner.checkedAt')],combined.supplement.checkedAt);assert.equal(packed.rows[0][packed.columns.indexOf('mfScanner.checkState')],'read-failed');
+const {supplementStatus}=await import('../public/js/data/mutual-funds-supplement.js');
+const backupStatus=supplementStatus({checkedAt:'2026-09-21T05:00:00Z',supplement:{currentCompanies:1,expectedCompanies:1,companies:[{checkedAt:'2026-09-20T04:00:00Z'}],catalogue:{state:'timeout',lastAttemptAt:'2026-09-21T03:00:00Z'}}});
+assert.match(backupStatus,/1\/1 companies checked/);assert.match(backupStatus,/20 Sept 2026/);assert.match(backupStatus,/Catalogue check unavailable \(21 Sept 2026/);
+assert.match(supplementStatus({supplementReadFailed:true}),/primary disclosures shown/);
+const largeBook=Array.from({length:5000},(_,i)=>({isin:`INE${String(i).padStart(9,'0')}`,name:`Fixture ${i}`}));
+store.inventory(largeBook);assert.equal(store.status().expectedCompanies,5000,'The complete validated portfolio is accepted');
+assert.equal(store.status().companies.some(c=>c.isin===newIsin),false,'Exited holdings leave the active inventory');
+assert.equal(store.read([newIsin]).rows[0].totalShares,150,'Exited holdings retain their captured history');
+assert.throws(()=>store.inventory([...largeBook,{isin:'INE999999999',name:'Over limit'}]));
+console.log('PASS backup check dates, failed catalogue visibility and full 5000-holding inventory reconciliation');

@@ -4,7 +4,7 @@ const AMC={ANGELONE:'angel-one',CANARA:'canara-robeco',EDELWEISS:'edelweiss',HDF
   AXIS:'axis',BANDHAN:'bandhan',BAJAJ:'bajaj-finserv',BARODA:'baroda-bnp-paribas',BOI:'bank-of-india',DSP:'dsp',FRANKLIN:'franklin-templeton',GROWW:'groww',HSBC:'hsbc',ICICI:'icici-pru',INVESCO:'invesco',ITI:'iti',JM:'jm-financial',KOTAK:'kotak',LIC:'lic',MAHINDRA:'mahindra',MIRAE:'mirae',MOTILAL:'motilal-oswal',NIPPON:'nippon',OLDBRIDGE:'old-bridge',PPFAS:'ppfas',PGIM:'pgim-india',QUANT:'quant',QUANTUM:'quantum',SBI:'sbi',SHRIRAM:'shriram',SUNDARAM:'sundaram',TAURUS:'taurus',TRUST:'trust',UNIFI:'unifi',UTI:'uti',ZERODHA:'zerodha',ASK:'ask',CARNELIAN:'carnelian',LAKSHYA:'lakshya',MONARCH:'monarch',NUVAMA:'nuvama',
   ABSL:'absl',JIOBLACKROCK:'jio-blackrock',HELIOS:'helios','360ONE':'360-one',NJ:'nj',ABAKKUS:'abakkus',WEALTHCO:'the-wealth-company',CHOICE:'choice',CAPITALMIND:'capitalmind'};
 export const scannerAmc=code=>AMC[code]||null;
-export const scannerName=value=>String(value||'').toLowerCase().replace(/\b(?:limited|ltd|private|pvt)\b/g,'').replace(/[^a-z0-9]/g,'');
+export const scannerName=value=>String(value||'').toLowerCase().replace(/^the\s+/,'').replace(/\b(?:eqp|equipments)\b/g,'equipment').replace(/\b(?:limited|ltd|private|pvt|and)\b/g,'').replace(/[^a-z0-9]/g,'');
 // Formatting and share-class suffixes are not distinct equity portfolios. Keep
 // strategy words (including ETF, index and retirement sub-plans) in the key.
 export const scannerFundKey=name=>String(name||'').toLowerCase().replace(/\(\s*an open[- ]ended[\s\S]*$/,'')

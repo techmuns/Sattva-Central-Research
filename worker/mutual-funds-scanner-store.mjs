@@ -24,7 +24,7 @@ export class MutualFundsScannerStore {
   set(key,value) {this.storage.sql.exec('INSERT INTO mf_scanner_meta VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',key,JSON.stringify(value));}
   inventory(companies) {
     this.init();
-    if(!Array.isArray(companies)||!companies.length||companies.length>2500||new Set(companies.map(c=>c.isin)).size!==companies.length||companies.some(c=>!validIsin(c.isin)||typeof c.name!=='string'||c.name.length>300||JSON.stringify(c).length>4000))throw Error('Invalid private portfolio');
+    if(!Array.isArray(companies)||!companies.length||companies.length>5000||new Set(companies.map(c=>c.isin)).size!==companies.length||companies.some(c=>!validIsin(c.isin)||typeof c.name!=='string'||c.name.length>300||JSON.stringify(c).length>4000))throw Error('Invalid private portfolio');
     return this.storage.transactionSync(()=>{
       this.storage.sql.exec('UPDATE mf_scanner_targets SET active=0');
       for(const c of companies)this.storage.sql.exec("INSERT INTO mf_scanner_targets VALUES(?,?,1,NULL,0,NULL,'pending',NULL,0,NULL,NULL) ON CONFLICT(isin) DO UPDATE SET company=excluded.company,active=1",c.isin,JSON.stringify(c));

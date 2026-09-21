@@ -7,11 +7,11 @@ import {boundedJson} from './family-book-contract.js';
 const snapshots=new Map(), pending=new Map(), rowsByIsin=new Map();
 let latestMeta={}, lastDetail=null;
 const privateRows=new Map(),privatePending=new Map(),sessionListeners=new Set();
-let privateMeta=null,privateDetail=null,generation=0;
+let privateMeta=null,generation=0;
 export const meta=()=>({...latestMeta,...(hostToken()?privateMeta:{supplementAccess:'no-session'})});
 export const all=()=>[...new Map([...rowsByIsin,...(hostToken()?privateRows:[])]).values()];
 export const onSessionChange=fn=>{sessionListeners.add(fn);return()=>sessionListeners.delete(fn);};
-onHostContext((_context,changes)=>{if(changes?.session){generation++;privateRows.clear();privatePending.clear();privateMeta=null;privateDetail=null;for(const fn of sessionListeners)fn();}});
+onHostContext((_context,changes)=>{if(changes?.session){generation++;privateRows.clear();privatePending.clear();privateMeta=null;for(const fn of sessionListeners)fn();}});
 async function privateRequest(path) {
   const response=await fetch(path,{headers:{accept:'application/json',...authHeaders(path)},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(20000)});
   if(!response.ok){await response.body?.cancel();throw Object.assign(Error('Supplement unavailable'),{access:response.status===401||response.status===403});}
@@ -34,7 +34,10 @@ export async function load(scope='portfolio',options={}) {
         for(const row of rows)privateRows.set(row.isin,row);privateMeta={supplement,supplementAccess:'ready'};
       } catch(error) {
         if(epoch!==generation)return;
-        if(error.access){privateRows.clear();privateDetail=null;privateMeta={supplementAccess:'access'};}
+        // A saved merged response must never shadow a newer primary capture.
+        // Supplemental history remains on the server for the next healthy read.
+        privateRows.clear();
+        if(error.access){privateMeta={supplementAccess:'access'};}
         else privateMeta={...privateMeta,supplementReadFailed:true};
       }
     })().finally(()=>{if(epoch===generation)privatePending.delete(key);});
@@ -100,14 +103,15 @@ export async function detail(isin,month=null) {
     try {
       const payload=await privateRequest(`/api/mutual-funds/private/company?${new URLSearchParams({isin,...(month?{month}:{})})}`);
       if(epoch!==generation)throw Error('Session changed');
-      if(payload.company?.isin===isin){privateDetail={isin,month,payload};return payload;}
+      if(payload.company?.isin===isin)return payload;
     } catch(error) {
       if(epoch!==generation)throw Error('Session changed');
-      if(error.access){privateRows.clear();privateDetail=null;privateMeta={supplementAccess:'access'};}
-      else if(privateDetail?.isin===isin&&privateDetail.month===month)return {...privateDetail.payload,meta:{...privateDetail.payload.meta,supplementReadFailed:true}};
+      privateRows.clear();
+      privateMeta=error.access?{supplementAccess:'access'}:{...privateMeta,supplementReadFailed:true};
     }
   }
-  return detailPublic(isin,month);
+  const result=await detailPublic(isin,month);
+  return {...result,meta:{...result.meta,...(hostToken()?privateMeta:{supplementAccess:'no-session'})}};
 }
 async function detailPublic(isin,month=null) {
   if(!/^IN[A-Z0-9]{10}$/.test(isin || ''))throw Error('No confirmed equity identity');

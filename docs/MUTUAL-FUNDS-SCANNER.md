@@ -19,6 +19,8 @@ and possible renames are withheld, with counts retained in each stock's suppleme
 metadata. Source timestamps, per-page failures and unresolved identities are
 separate from primary AMC coverage. A checked stock page is not proof that an
 entire AMC or every portfolio company is covered.
+The status includes the backup's own latest page check and any failed catalogue
+check, even when saved routes allowed company pages to be checked successfully.
 
 The fixed Mutual Funds Durable Object stores private, normalized observations and
 immutable corrections separately from public holdings. Capture prepares cached
@@ -46,6 +48,10 @@ memory and clears them and open detail on a session change; IndexedDB and the
 service worker never persist them. Standalone readers without a verified Munshot
 session see primary data and a sign-in explanation. The existing table and popup
 layout are retained; source links identify MF Scanner observations. Ask Research carries the backup source, month, check time and check state per contributing stock. Column-based provider encoding keeps the complete portfolio within the existing evidence budget.
+If the private API fails, fresh primary disclosures take precedence over an older
+merged response. The server retains supplemental history for recovery. Inventory
+reconciliation accepts the live-book contract's full 5,000 holdings; page capture
+and reader responses remain bounded.
 
 Verification: `node scripts/verify-mutual-funds-scanner.mjs`,
 `node scripts/verify-mutual-funds-runtime.mjs`, and the Mutual Funds browser test in
