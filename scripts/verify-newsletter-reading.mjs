@@ -10,6 +10,7 @@ import { NewsletterStore } from '../worker/newsletter-store.mjs';
 import { NewsletterSchedule, EMAIL_SEND_URL } from '../worker/newsletter-schedule.mjs';
 import { handleNewsletter } from '../worker/newsletter.mjs';
 import { istInstant, DEFAULT_SETTINGS } from '../public/js/data/newsletter-shared.js';
+import { reviewNewsEvents } from '../worker/newsletter-events.mjs';
 
 const at = istInstant('2026-09-17', '08:00');
 const row = (headline, overrides = {}) => ({ kind: 'news', ticker: 'ALANKIT', company: 'Alankit', headline, at, source: 'Reuters', score: 2, ...overrides });
@@ -53,7 +54,12 @@ const fetcher = async (url, init = {}) => {
   if (String(url).includes('.amazonaws.com/')) {
     aiCalls++;
     assert.equal(init.redirect, 'manual');
-    const request = JSON.parse(init.body), items = JSON.parse(request.messages[0].content).ITEMS;
+    const request = JSON.parse(init.body), input = JSON.parse(request.messages[0].content), items = input.ITEMS;
+    if (input.REPORTS) {
+      const groups = new Map();
+      for (const r of input.REPORTS) { const key = `${r.ticker}:${r.headline}`; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(r.id); }
+      return Response.json({ content: [{ type: 'text', text: JSON.stringify([...groups.values()]) }] });
+    }
     assert.ok(items.length <= AI_ITEM_LIMIT);
     assert.ok(!init.body.includes('fixture-token'));
     return Response.json({ content: [{ type: 'text', text: JSON.stringify(items.map(i => ({ id: i.id, summary: i.headline, impact: 'The business impact cannot be assessed from the headline alone; the source provides the details.' }))) }] });
@@ -63,13 +69,14 @@ const fetcher = async (url, init = {}) => {
   return new Response('', { status: 503 });
 };
 const brief = await buildBrief({ edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS, env, fetcher, now: at });
-assert.equal(aiCalls, 1);
+assert.equal(aiCalls, 2, 'one repeated-news check, then one notes request');
 assert.ok(brief.ai.answered > 0);
 const beforeKeys = briefStoryKeys(brief);
 const company = brief.news.groups[0];
 // Same report, another publisher: all original links, source text and sent keys must survive.
 const original = company.items[0];
 company.items.push({ ...original, publisher: 'Another publisher', url: 'https://example.test/related?x=1&y=2', summary: 'The transaction remains subject to approval.', keys: ['related-key'], late: true });
+brief.news.dedup = await reviewNewsEvents({ news: brief.news, env, fetcher });
 const stats = briefStats(brief);
 assert.ok(stats.updates < stats.stories);
 assert.ok(aiItemsFor(stats.companies).some(i => i.related.some(r => r.summary === 'The transaction remains subject to approval.')), 'the model sees the related report caveat');

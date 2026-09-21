@@ -101,7 +101,7 @@ jobs:
       - name: Verify the shared watchlist contract, attribution and conflicting edits
         run: node scripts/verify-shared-watchlist.mjs
       - name: Verify the team brief — contract, store, fixture-built editions and the sending alarm
-        run: node scripts/verify-newsletter.mjs && node scripts/verify-newsletter-reading.mjs && node scripts/verify-newsletter-email.mjs
+        run: node scripts/verify-newsletter.mjs && node scripts/verify-newsletter-reading.mjs && node scripts/verify-newsletter-email.mjs && node scripts/verify-newsletter-events.mjs
       - name: Verify operational filing health
         run: node scripts/verify-filings-health.mjs
       - name: Verify capture watchdog

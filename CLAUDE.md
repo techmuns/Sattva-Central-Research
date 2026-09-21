@@ -884,8 +884,20 @@ already runs on:
     `/filing?src=…` — the same document, rendered — and only for an XBRL file; every other link
     still goes straight to the publisher or the exchange.
 
-The reading layer groups only matching syndicated headlines from different publishers, retaining every
-source link and summary. Distinct filings remain distinct after the existing exchange-twin fold.
+The reading layer retains every source link, summary and delivery identity. `newsletter-events.mjs`
+checks reworded news about the same company before the separate AI-notes request: one bounded
+30-second Bedrock call per built send, at most 80 reports / 96,000 UTF-8 bytes. Whole companies
+that exceed the budget remain unchecked; source text is never truncated for the decision. Accept
+only a complete, disjoint partition of known IDs, with all-pairs company, attribution, 24-hour,
+figure and stage guards. The model must keep materially new or conflicting developments separate.
+Persist the resulting `eventId` on the brief's news rows so rendering, email parts, AI notes and
+PDFs use identical membership. Public previews call neither AI pass. Failure retains separate
+reports except exact syndicated headlines; the sources line and delivery summary disclose scope
+and failure. This is within-edition grouping, not semantic suppression of future news: every
+original key still reaches the existing sent-story ledger, and a later development remains eligible.
+The public Engineers India fixture and `verify-newsletter-events.mjs` exercise grouping and lossless
+rendering with stubbed model replies; they do not establish live model accuracy. Distinct filings
+remain distinct after the existing exchange-twin fold.
 `newsletter-email.mjs` measures the final UTF-8 HTML, including escaped text, URLs, AI notes and
 recipient footers. Editions up to 90,000 bytes stay in one email; larger editions use numbered
 parts with distinct subjects, usually two. Keep companies together unless one company alone is
