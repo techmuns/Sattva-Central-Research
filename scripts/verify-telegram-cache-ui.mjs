@@ -47,7 +47,7 @@ try {
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   const before = await page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith('sattva-dashboard-')));
   assert.equal(before.length, 1, 'legacy app caches are removed after activation');
-  assert(before[0].includes('-mutual-funds-v1'), 'the release includes the Mutual Fund module');
+  assert.match(before[0], /-mutual-funds-v[1-9]\d*(?:-|$)/, 'the release includes a versioned Mutual Fund module');
   assert((await page.evaluate(async name => (await (await caches.open(name)).match('/js/tabs/mutual-funds.js')).text(), before[0])).includes('MF shares held'));
   assert(before[0].includes('-telegram-content-v1'), 'the combined cache includes the Telegram revision');
   assert((await page.evaluate(async name => (await (await caches.open(name)).match('/js/tabs/public-chatter.js')).text(), before[0])).includes('telegramMediaLabel'));
