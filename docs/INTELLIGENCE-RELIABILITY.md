@@ -58,6 +58,11 @@ captured dates survive the upgrade. Legacy alert IDs recover their exact topic. 
 follow the displayed summary, not the provider's superseded score.
 Where All Alerts retained complete source counts, rebuild the saved summary from those counts
 even during an outage. This confirms the historical split, never the current source check.
+Mention cards sort by source publication instant (including timezone offsets), newest first,
+with missing/invalid dates last. Scrolling reveals the next display batch and older captured
+months in history; it must not truncate retained posts or reorder by sentiment. New arrivals
+preserve the visible reading anchor. Failed older-month reads retain the list and require an
+explicit retry rather than repeatedly retrying on scroll.
 
 Material, company-attributed portfolio news and linked exchange disclosures remain eligible for
 AI Alerts throughout the existing 14-day window. Recency still reduces their ranking score;

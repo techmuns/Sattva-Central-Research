@@ -31,6 +31,7 @@ import { formatDate, formatNumber, formatRelativeTime, formatTime } from '../cor
 import { exportRows, todayStamp } from '../ui/export.js';
 import * as chatter from '../data/chatter-live.js';
 import { mentionSentiment } from '../data/chatter-sentiment.js';
+import { newestMentions } from '../data/chatter-mentions.js';
 import * as coverage from '../data/coverage.js';
 import * as telegram from '../data/telegram-posts.js';
 import { telegramReadHealth } from '../data/telegram-health.js';
@@ -356,6 +357,7 @@ function openMentions(entry) {
   const months = Object.keys(entry.archiveTopic?.months || {}).sort().reverse();
   const archived = !!entry.archiveTopic;
   let monthIndex = 0, visibleLimit = 40, payloads = new Map();
+  let olderPending = false, olderFailed = false;
   openModal(mentionsFrame(entry), {
     size: 'wide',
     onClose: () => {
@@ -367,12 +369,16 @@ function openMentions(entry) {
   const apply = (payload, month = '') => {
     if (token !== mentionRequestToken) return;
     payloads.set(month, payload);
-    const all = [...new Map([...payloads.values()].flatMap(value => value.posts || []).map(post => [post.id, post])).values()]
-      .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    const all = newestMentions([...new Map([...payloads.values()].flatMap(value => value.posts || []).map(post => [post.id, post])).values()]);
     const combined = { ...payload, posts: all, visibleLimit, archived, total: archived ? entry.mentions : payload.total };
     const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
     if (!body) return;
     const dialog = body.closest('[data-chatter-mentions-dialog]'), top = dialog.scrollTop;
+    const headerBottom = dialog.firstElementChild.getBoundingClientRect().bottom;
+    const anchor = top > 0 ? [...body.querySelectorAll('[data-mention-id]')].find(row => row.getBoundingClientRect().bottom > headerBottom) : null;
+    const anchorId = anchor?.dataset.mentionId, anchorTop = anchor?.getBoundingClientRect().top;
+    const anchorIndex = anchorId ? all.findIndex(post => post.id === anchorId) : -1;
+    if (anchorIndex >= visibleLimit) combined.visibleLimit = visibleLimit = anchorIndex + 40;
     mentionBookmarkOff?.();
     body.innerHTML = mentionsBody(entry, combined) + (archived && visibleLimit >= all.length && monthIndex < months.length - 1
       ? '<button data-chatter-older class="mt-4 rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600">Load older captured mentions</button>' : '');
@@ -380,7 +386,20 @@ function openMentions(entry) {
       const post = all[Number(button.closest('[data-mention-index]')?.dataset.mentionIndex)];
       return post && mentionSnapshot(post, entry);
     });
-    body.querySelector('[data-chatter-older]')?.addEventListener('click', event => { event.currentTarget.disabled = true; monthIndex++; void read(months[monthIndex]); });
+    const older = body.querySelector('[data-chatter-older]');
+    if (older) {
+      older.disabled = olderPending;
+      older.addEventListener('click', async () => {
+        if (olderPending) return;
+        olderPending = true; olderFailed = false; older.disabled = true; monthIndex++;
+        await read(months[monthIndex]);
+        olderPending = false;
+        if (token === mentionRequestToken) {
+          const button = body.querySelector('[data-chatter-older]');
+          if (button) button.disabled = false;
+        }
+      });
+    }
     body.querySelector('[data-chatter-more]')?.addEventListener('click', () => { visibleLimit += 40; apply(payload, month); });
     body.querySelector('[data-chatter-mention-history]')?.addEventListener('click', async event => {
       event.currentTarget.disabled = true;
@@ -393,16 +412,29 @@ function openMentions(entry) {
       } catch (error) { if (token === mentionRequestToken) body.querySelector('[data-mention-status]').textContent = error.message; }
     });
     dialog.scrollTop = top;
+    const restored = anchorId && [...body.querySelectorAll('[data-mention-id]')].find(row => row.dataset.mentionId === anchorId);
+    if (restored) dialog.scrollTop += restored.getBoundingClientRect().top - anchorTop;
+    // Keep keyboard-accessible buttons while allowing uninterrupted reading by scroll.
+    dialog.onscroll = () => {
+      if (token !== mentionRequestToken || dialog.scrollTop <= 0 || dialog.scrollHeight - dialog.scrollTop - dialog.clientHeight > 240) return;
+      const more = body.querySelector('[data-chatter-more]');
+      if (more) more.click();
+      else if (!olderPending && !olderFailed) body.querySelector('[data-chatter-older]')?.click();
+    };
   };
-  const read = (month, force = false) => chatter.postsFor(entry.slug, { month, force, onUpdate: payload => apply(payload, month) })
+  const read = (month, force = false) => chatter.postsFor(entry.slug, { month, force, requireFresh: olderPending, onUpdate: payload => apply(payload, month) })
     .then(payload => apply(payload, month)).catch(error => {
       if (token !== mentionRequestToken) return;
       const body = document.querySelector('#modal-content [data-chatter-mentions-body]');
       if (!body) return;
       if (payloads.size) {
+        if (archived) {
+          olderFailed = true; monthIndex = Math.max(0, monthIndex - 1);
+          const savedMonth = payloads.has(month) ? month : [...payloads.keys()].at(-1);
+          apply({ ...payloads.get(savedMonth), checking: false, error: error.message }, savedMonth);
+        }
         const status = body.querySelector('[data-mention-status]');
         if (status) status.textContent = `Saved mentions remain available. ${error.message}`;
-        if (archived) { monthIndex = Math.max(0, monthIndex - 1); const button = body.querySelector('[data-chatter-older]'); if (button) button.disabled = false; }
       } else body.innerHTML = mentionsError(error);
     });
   void read(months[0]);
@@ -472,13 +504,13 @@ function mentionsBody(entry, payload) {
   const total = payload.total ?? posts.length;
   const moved = !payload.archived && entry.mentions != null && total !== entry.mentions;
   const reading = mentionSentiment(posts, payload);
-  const latest = posts.filter(post => Number.isFinite(Date.parse(post.at))).sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  const latest = posts.find(post => Number.isFinite(Date.parse(post.at)));
   const latestText = latest ? `Latest dated mention: source-tagged ${latest.sentiment || 'unclassified'} · ${formatDate(latest.at)} · ${formatTime(latest.at)}.` : 'Latest mention date is unavailable.';
   const rows = visible.map((post, index) => mentionRow(post, entry, index)).join('');
   return `
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
       <p data-chatter-mention-total data-detail-total="${escapeHtml(String(total))}" data-snapshot-total="${escapeHtml(String(entry.mentions))}">
-        Showing ${escapeHtml(formatNumber(visible.length))} of ${escapeHtml(formatNumber(total))} mention${total === 1 ? '' : 's'}, newest first.
+        Showing ${escapeHtml(formatNumber(visible.length))} of ${escapeHtml(formatNumber(total))} mention${total === 1 ? '' : 's'}, newest first by publication time. Scroll down for older mentions.${posts.some(post => !Number.isFinite(Date.parse(post.at))) ? ' Mentions without a publication time appear last.' : ''}
         ${moved ? `<strong class="font-semibold text-amber-700">The detail feed has changed since the ${escapeHtml(formatNumber(entry.mentions))}-mention snapshot above.</strong>` : ''}
       </p>
       <p>Short excerpt only · open the source for the full context.</p>
@@ -498,10 +530,10 @@ function mentionSnapshot(post, entry) {
 function mentionRow(post, entry, index) {
   const href = safeExternalUrl(post.url);
   const author = post.author || post.handle || post.community || post.sourceLabel || 'Source';
-  const when = post.at ? `${formatDate(post.at)} · ${formatTime(post.at)}` : 'Time not published';
+  const when = Number.isFinite(Date.parse(post.at)) ? `${formatDate(post.at)} · ${formatTime(post.at)}` : 'Time not published';
   const excerpt = shortExcerpt(post.text);
   return `
-    <article class="rounded-xl border border-slate-200 bg-white p-4" data-chatter-mention-row data-mention-index="${index}">
+    <article class="rounded-xl border border-slate-200 bg-white p-4" data-chatter-mention-row data-mention-index="${index}" data-mention-id="${escapeHtml(post.id)}">
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
         <span class="font-semibold text-slate-700">${escapeHtml(post.sourceLabel || post.community || 'Source')}</span>
         <span aria-hidden="true">·</span>
