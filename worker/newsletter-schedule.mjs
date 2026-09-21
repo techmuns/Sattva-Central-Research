@@ -1,6 +1,6 @@
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
 import { buildBrief, briefSubject, briefSummary, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
-import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails } from './newsletter-email.mjs';
+import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys } from './newsletter-email.mjs';
 import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledEditions } from '../public/js/data/newsletter-shared.js';
 
 // THE TIMER THAT SENDS THE BRIEF, AND THE ONE PLACE AN EMAIL LEAVES THIS DASHBOARD.
@@ -225,12 +225,16 @@ export class NewsletterSchedule {
     }
     const subject = briefSubject(brief);
     const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes) };
-    const deliveredKeys = new Set();
+    const acceptedParts = new Set();
+    const deliveredStories = () => {
+      const keys = source !== 'test' ? acceptedStoryKeys(messages, acceptedParts) : [];
+      return keys.length ? keys : null;
+    };
     const outcomes = list.map(recipient => ({ email: recipient.email, ok: false, status: null, reason: 'not-attempted',
       parts: messages.map((message, i) => ({ part: i + 1, total: messages.length, bytes: message.bytes, ok: false, status: null, reason: 'not-attempted' })) }));
     const progress = () => this.store.recordDeliveryProgress(key, { outcomes, subject, summary,
       sent: outcomes.filter(o => o.ok).length, reason: 'sending',
-      stories: source !== 'test' && deliveredKeys.size ? [...deliveredKeys] : null });
+      stories: deliveredStories() });
     progress();
     await pooled(list.map((recipient, i) => ({ recipient, outcome: outcomes[i] })), SEND_POOL, async ({ recipient, outcome }) => {
       // Sequence parts for each reader; a failed part does not discard later updates. The
@@ -243,9 +247,10 @@ export class NewsletterSchedule {
         progress();
         const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject: message.subject, html, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
         Object.assign(part, result);
-        if (result.ok) for (const storyKey of message.keys) deliveredKeys.add(storyKey);
+        if (result.ok) acceptedParts.add(i);
         outcome.ok = outcome.parts.every(p => p.ok);
-        outcome.status = outcome.parts.find(p => !p.ok)?.status ?? result.status;
+        const unfinished = outcome.parts.find(p => !p.ok);
+        outcome.status = unfinished ? unfinished.status : result.status;
         outcome.reason = outcome.ok ? null : outcome.parts.some(p => p.ok) ? 'partial-send' : outcome.parts.find(p => !p.ok)?.reason;
         progress();
       }
@@ -254,7 +259,7 @@ export class NewsletterSchedule {
     const failed = outcomes.length - sent;
     const partOutcomes = outcomes.flatMap(o => o.parts);
     this.store.finishDocument(documentId, partOutcomes);
-    const stories = source !== 'test' && deliveredKeys.size ? [...deliveredKeys] : null;
+    const stories = deliveredStories();
     const reason = !failed ? null : partOutcomes.some(p => p.ok) ? 'partial-send' : outcomes[0]?.reason || 'failed';
     return finish({ sent, failed, reason, outcomes, subject, summary, stories });
   }

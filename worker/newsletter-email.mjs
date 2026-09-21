@@ -18,6 +18,14 @@ const sliceCompany = (company, clusters, continued = false) => {
 };
 const keysFor = companies => [...new Set(companies.flatMap(c => c.stories.flatMap(s => s.keys || [])))];
 
+// A legacy fallback identity (for example a filing's text prefix) can belong to distinct
+// updates in different parts. Do not let an accepted part's shared key hide an unsent update.
+// Unique delivered URLs still suppress the updates the desk actually received.
+export function acceptedStoryKeys(messages, acceptedParts) {
+  const pending = new Set(messages.flatMap((m, i) => acceptedParts.has(i) ? [] : m.keys));
+  return [...new Set(messages.flatMap((m, i) => acceptedParts.has(i) ? m.keys : []))].filter(key => !pending.has(key));
+}
+
 /** Plan once per edition, using the largest recipient footer. Company order and cluster IDs
  * remain unchanged, so AI notes and the sent-story ledger still refer to the original evidence.
  * Whole companies stay together unless one company cannot fit by itself. The market scan is
