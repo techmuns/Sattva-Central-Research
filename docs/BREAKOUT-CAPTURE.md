@@ -18,6 +18,11 @@ and candle recovery. These are periodic snapshots, not a trade-by-trade stream.
   targets need two quote requests per minute, shared by all readers. Exact NSE/BSE
   identities are cached daily, with failed instrument lists retried after 15 minutes.
   The large official gzip lists are streamed and only cash identities are retained.
+  Native Worker requests explicitly identify `SattvaCentralResearch/1.0`; unlike
+  Node fetch, Workers supplies no default User-Agent. On 21 September the missing
+  header reproduced a CDN 403 for both lists, while the identified request loaded
+  them successfully. The client version invalidates the prior failed list cache once,
+  so the next normal minute alarm retries after this transport correction is published.
 - Authenticated fallback runs publish the complete discovered inventory, including
   portfolio ISINs, names and explicit symbol aliases. Bases come from the current
   session's fallback history. Missing bases remain partial until that history arrives;

@@ -7,6 +7,7 @@ export const PRIMARY_TIMER = 'upstox-minute-timer';
 export const PRIMARY_INTERVAL = 60000;
 export const PRIMARY_MAX_AGE = 120000;
 const INVENTORY = 'upstox-inventory';
+const UPSTOX_CLIENT = 'SattvaCentralResearch/1.0';
 
 export function primaryInventory(targets) {
   if (!Array.isArray(targets) || !targets.length || targets.length > BREAKOUT_LIMIT || new Set(targets.map(t => t.ticker)).size !== targets.length) throw Error('Invalid inventory');
@@ -51,7 +52,9 @@ export async function cashInstruments(stream, exchange) {
   } finally {await reader.cancel().catch(()=>{});}
 }
 export async function primaryInstruments(exchange, fetcher = fetch) {
-  const response = await fetcher(`https://assets.upstox.com/market-quote/instruments/exchange/${exchange}.json.gz`, {redirect:'manual',signal:AbortSignal.timeout(12000)});
+  // Native Workers fetch has no default User-Agent. Upstox's CDN rejects the
+  // anonymous request; identify this application without impersonating a browser.
+  const response = await fetcher(`https://assets.upstox.com/market-quote/instruments/exchange/${exchange}.json.gz`, {headers:{'user-agent':UPSTOX_CLIENT},redirect:'manual',signal:AbortSignal.timeout(12000)});
   if (!response.ok || !response.body) { await response.body?.cancel(); throw Error('instrument-list-unavailable'); }
   const stream = response.body.pipeThrough(new DecompressionStream('gzip'));
   return cashInstruments(stream,exchange);
@@ -63,7 +66,7 @@ export async function minuteQuotes(mapped, bases, token, {fetcher = fetch, now =
     const batch = mapped.slice(offset,offset+500), url = new URL('https://api.upstox.com/v2/market-quote/quotes');
     url.searchParams.set('instrument_key',[...new Set(batch.map(t=>t.instrumentKey))].join(','));
     try {
-      const response = await fetcher(url,{headers:{authorization:`Bearer ${token}`,accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(10000)});
+      const response = await fetcher(url,{headers:{authorization:`Bearer ${token}`,accept:'application/json','user-agent':UPSTOX_CLIENT},redirect:'manual',signal:AbortSignal.timeout(10000)});
       if (!response.ok) {
         reason = [401,403].includes(response.status) ? 'authentication' : response.status === 429 ? 'rate-limited' : 'unavailable';
         await response.body?.cancel(); break;
@@ -123,7 +126,7 @@ export class BreakoutPrimary {
   async mappings(targets) {
     const signature=JSON.stringify(targets), day=istDate(this.now());
     const prior=this.config('upstox-mappings');
-    if (prior?.day===day && prior.signature===signature && this.now()<prior.retryAt) return prior;
+    if (prior?.client===UPSTOX_CLIENT && prior.day===day && prior.signature===signature && this.now()<prior.retryAt) return prior;
     const mapped=[], failed=[];
     for (const exchange of new Set(targets.map(t=>upstoxIdentity(t).exchange))) {
       const subset=targets.filter(t=>upstoxIdentity(t).exchange===exchange);
@@ -134,7 +137,7 @@ export class BreakoutPrimary {
         if (prior?.signature===signature) mapped.push(...prior.mapped.filter(t=>t.exchange===exchange));
       }
     }
-    const result={day,signature,mapped,failed,retryAt:this.now()+(failed.length?15*60000:86400000)};
+    const result={client:UPSTOX_CLIENT,day,signature,mapped,failed,retryAt:this.now()+(failed.length?15*60000:86400000)};
     this.saveConfig('upstox-mappings',result); return result;
   }
   async wake() {

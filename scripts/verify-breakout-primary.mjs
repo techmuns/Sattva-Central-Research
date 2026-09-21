@@ -98,6 +98,13 @@ test('overnight inventory is published before skipping quotes; new targets requi
  const failed=await prepareBreakoutCapture({targets:[{ticker:'TEST'},{ticker:'ADDED'}],previous,client:async()=>{throw Error('primary unavailable');},now});
  assert.equal(failed.primaryInventoryUpdated,false);assert.equal(failed.skipCapture,false);
 });
+test('a pre-fix instrument failure retries on the next minute without waiting for its old cooldown',async()=>{
+ const data=storage(),targets=[{ticker:'TEST'}];let calls=0;
+ const schedule=new BreakoutPrimary(data,{}, {now:()=>AT,instruments:async()=>{calls++;return instruments;}});
+ schedule.saveConfig('upstox-mappings',{day:'2026-09-15',signature:JSON.stringify(targets),mapped:[],failed:['NSE'],retryAt:AT+15*60000});
+ const repaired=await schedule.mappings(targets);assert.equal(calls,1);assert.equal(repaired.mapped.length,1);assert.deepEqual(repaired.failed,[]);
+ await schedule.mappings(targets);assert.equal(calls,1);
+});
 test('a healthy primary close cannot suppress retries of the independent fallback capture',async()=>{
  const now=Date.parse('2026-09-15T14:00Z');
  const fallbackOnly={...fallback(),failures:[{ticker:'TEST',reason:'unavailable'}]};
@@ -132,14 +139,14 @@ test('fresh quotes cannot hide an overdue inventory check',async()=>{
 test('500 instrument batches preserve earlier quotes when auth fails, and credentials never follow redirects',async()=>{
  const targets=Array.from({length:501},(_,i)=>({ticker:`T${i}`,instrumentKey:`NSE_EQ|${i}`,upstoxSymbol:`T${i}`}));let calls=0;
  const result=await minuteQuotes(targets,new Map(),'secret-fixture',{now:()=>AT,fetcher:async(url,opts)=>{
-  calls++;assert.equal(new URL(url).hostname,'api.upstox.com');assert.equal(opts.redirect,'manual');assert.equal(opts.headers.authorization,'Bearer secret-fixture');
+  calls++;assert.equal(new URL(url).hostname,'api.upstox.com');assert.equal(opts.redirect,'manual');assert.equal(opts.headers.authorization,'Bearer secret-fixture');assert.equal(opts.headers['user-agent'],'SattvaCentralResearch/1.0');
   if(calls===2)return new Response(null,{status:401});
   return Response.json({status:'success',data:Object.fromEntries(targets.slice(0,500).map(t=>[t.ticker,{instrument_token:t.instrumentKey,symbol:t.upstoxSymbol,last_price:108,volume:2300,net_change:8,last_trade_time:AT}]))});
  }});
  assert.equal(calls,2);assert.equal(result.rows.length,500);assert.equal(result.reason,'authentication');
  const redirected=await minuteQuotes(targets.slice(0,1),new Map(),'secret-fixture',{fetcher:async()=>new Response(null,{status:302,headers:{location:'https://attacker/'}})});
  assert.equal(redirected.reason,'unavailable');assert.equal(redirected.rows.length,0);
- const decoded=await primaryInstruments('NSE',async()=>new Response(gzipSync(JSON.stringify(instruments))));
+ const decoded=await primaryInstruments('NSE',async(url,opts)=>{assert.equal(opts.headers['user-agent'],'SattvaCentralResearch/1.0');assert.equal(opts.headers.authorization,undefined);assert.equal(opts.redirect,'manual');return new Response(gzipSync(JSON.stringify(instruments)));});
  assert.deepEqual(JSON.parse(JSON.stringify(decoded)),instruments);
 });
 test('public reads expose primary readiness but cannot activate collection or accept a token',async()=>{

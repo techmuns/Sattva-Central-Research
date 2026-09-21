@@ -12,6 +12,7 @@ const config=join(scratch,'wrangler.json');
 const revision='a'.repeat(40);let redirectCommit=false,redirectRaw=false,followed=0;
 const upstream=createServer((req,res)=>{
  const path=new URL(req.url,'http://fixture').pathname;
+ if(['/instruments','/quotes'].includes(path) && req.headers['user-agent']!=='SattvaCentralResearch/1.0'){res.writeHead(403).end('Application identification required');return;}
  if(path==='/instruments'){res.end(gzipSync(JSON.stringify([{segment:'NSE_EQ',instrument_key:'NSE_EQ|INE000000001',trading_symbol:'TEST'}])));return;}
  if(path==='/quotes'){assert.equal(req.headers.authorization,'Bearer local-fixture');res.setHeader('content-type','application/json');res.end(JSON.stringify({status:'success',data:{TEST:{instrument_token:'NSE_EQ|INE000000001',symbol:'TEST',last_price:111,volume:2500,net_change:11,last_trade_time:Date.parse('2026-09-15T06:00Z')}}}));return;}
  if(path==='/redirect-target'){followed++;res.end('{}');return;}
