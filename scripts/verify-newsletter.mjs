@@ -436,7 +436,7 @@ await test('the broadsheet carries the Sattva Ventures masthead, escapes the exc
   assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
   assert.ok(/Close · \w{3} \d{2}:\d{2} \w+/.test(html), 'a closed market prints its close time');
   assert.ok(/Live · \w{3} \d{2}:\d{2} \w+/.test(html), 'a trading market prints its last print');
-  assert.ok(html.includes('color:#3b82f6;font-weight:bold'), 'the Orders topic colour appears');
+  assert.match(html, /<strong style="[^"]*color:#3b82f6;[^"]*">ORDERS<\/strong>/, 'the Orders topic keeps its bold label and colour');
   assert.ok(/\b1 watch-out\b/.test(html), 'the downgrade filing is counted as a watch-out on the stats line');
   assert.ok(html.includes('#f43f5e'), 'the watch-out colour appears');
   assert.ok(html.includes('Read →'), 'every story offers Read →');
@@ -676,15 +676,16 @@ await test('the alarm sends the morning brief to its subscribers once, with html
   clock = MORNING + 5000;
   await schedule.wake();
   const emails = log.filter((l) => l.kind === 'email');
-  assert.deepEqual(emails.map((e) => e.to).sort(), ['meera@muns.io', 'pratik@muns.io'], 'only morning subscribers, ravi is evening-only');
+  assert.deepEqual([...new Set(emails.map((e) => e.to))].sort(), ['meera@muns.io', 'pratik@muns.io'], 'only morning subscribers, ravi is evening-only');
+  const delivery = store.delivery('2026-09-17:morning');
+  assert.equal(emails.length, 2 * delivery.summary.emailParts, 'every subscriber receives every part');
   for (const e of emails) {
     assert.equal(e.method, 'POST');
     assert.equal(e.auth, 'Bearer team-secret-token');
     assert.ok(e.html && e.text === undefined, 'exactly one of html/text');
-    assert.match(e.subject, /^Sattva Ventures · \d+ updates? on your portfolio companies — 17 Sep$/);
+    assert.match(e.subject, /^Sattva Ventures · \d+ updates? on your portfolio companies — 17 Sep(?: · Morning · Part \d+ of \d+)?$/);
     assert.ok(e.html.includes('SATTVA VENTURES'));
   }
-  const delivery = store.delivery('2026-09-17:morning');
   assert.equal(delivery.sent, 2); assert.equal(delivery.failed, 0); assert.equal(delivery.source, 'timer');
   assert.ok(delivery.finishedAt);
   assert.equal(delivery.summary.quotes, MARKET_ROWS.length);
@@ -783,7 +784,7 @@ await test('a test copy goes to one address only, covers up to now, and never cl
   const out = await schedule.sendNow({ edition: 'morning', to: 'me', email: 'Pratik@muns.io' }, 'reader-session-token');
   assert.equal(out.ok, true); assert.equal(out.sent, 1);
   const emails = log.filter((l) => l.kind === 'email');
-  assert.equal(emails.length, 1); assert.equal(emails[0].to, 'pratik@muns.io');
+  assert.equal(emails.length, out.summary.emailParts); assert.ok(emails.every(e => e.to === 'pratik@muns.io'));
   assert.equal(emails[0].auth, 'Bearer reader-session-token', 'the reader\'s own token stands in when the Worker has none');
   assert.ok(emails[0].html.includes('This is a test copy you asked for.'));
   assert.ok(emails[0].html.includes('built on request'));

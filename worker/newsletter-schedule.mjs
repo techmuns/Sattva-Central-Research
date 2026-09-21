@@ -1,5 +1,6 @@
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
-import { buildBrief, briefStoryKeys, briefSubject, briefSummary, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { buildBrief, briefSubject, briefSummary, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails } from './newsletter-email.mjs';
 import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledEditions } from '../public/js/data/newsletter-shared.js';
 
 // THE TIMER THAT SENDS THE BRIEF, AND THE ONE PLACE AN EMAIL LEAVES THIS DASHBOARD.
@@ -49,6 +50,7 @@ async function pooled(items, size, fn) {
  */
 export async function sendEmail({ fetcher = fetch, token, email, subject, html = null, text = null, signal, base = EMAIL_SEND_URL }) {
   if ((html == null) === (text == null)) throw new Error('sendEmail takes exactly one of html or text');
+  if (emailBytes(html ?? text) > EMAIL_HTML_BYTES) return { ok: false, status: null, reason: 'email-too-large' };
   const body = html != null ? { email, subject, html } : { email, subject, text };
   let res;
   try {
@@ -199,6 +201,21 @@ export class NewsletterSchedule {
       const reason = error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map((r) => ({ email: r.email, ok: false, reason })) });
     }
+    // Plan for the longest personalised footer so all recipients receive identical boundaries.
+    // PDF UUIDs have a fixed length: use a placeholder to validate the complete plan before
+    // storing a document or sending anything. No render/oversize failure can send half a plan.
+    // All non-test footers share one sentence, plus optional escaped attribution. A test
+    // footer is always shorter. Avoid rendering the whole edition for each of 100 readers.
+    const footerBytes = r => r.test ? 0 : 100 + emailBytes(r.addedBy ? ` Added by ${String(r.addedBy).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))}.` : '');
+    const footerRecipient = list.reduce((largest, r) => footerBytes(r) > footerBytes(largest) ? r : largest, list[0]);
+    const placeholder = `${this.dashboardUrl()}/api/newsletter/pdf/00000000-0000-0000-0000-000000000000`;
+    let messages;
+    try {
+      messages = renderBriefEmails(brief, { ...this.renderOptions(footerRecipient), pdfUrl: placeholder });
+    } catch (error) {
+      const reason = error?.code === 'email-too-large' ? 'email-too-large' : 'build-failed';
+      return finish({ sent: 0, failed: list.length, reason, outcomes: list.map(r => ({ email: r.email, ok: false, reason })) });
+    }
     let pdfUrl, documentId;
     try {
       documentId = this.store.saveDocument(renderBriefPdf(brief, this.renderOptions()), pdfFilename(brief), key);
@@ -207,18 +224,39 @@ export class NewsletterSchedule {
       return finish({ sent: 0, failed: list.length, reason: 'pdf-failed', outcomes: list.map(r => ({ email: r.email, ok: false, reason: 'pdf-failed' })) });
     }
     const subject = briefSubject(brief);
-    const outcomes = [];
-    await pooled(list, SEND_POOL, async (recipient) => {
-      const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), pdfUrl });
-      const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject, html, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
-      outcomes.push({ email: recipient.email, ok: result.ok, status: result.status, reason: result.reason });
+    const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes) };
+    const deliveredKeys = new Set();
+    const outcomes = list.map(recipient => ({ email: recipient.email, ok: false, status: null, reason: 'not-attempted',
+      parts: messages.map((message, i) => ({ part: i + 1, total: messages.length, bytes: message.bytes, ok: false, status: null, reason: 'not-attempted' })) }));
+    const progress = () => this.store.recordDeliveryProgress(key, { outcomes, subject, summary,
+      sent: outcomes.filter(o => o.ok).length, reason: 'sending',
+      stories: source !== 'test' && deliveredKeys.size ? [...deliveredKeys] : null });
+    progress();
+    await pooled(list.map((recipient, i) => ({ recipient, outcome: outcomes[i] })), SEND_POOL, async ({ recipient, outcome }) => {
+      // Sequence parts for each reader; a failed part does not discard later updates. The
+      // edition claim prevents duplicate sends, including after uncertain upstream timeouts.
+      for (let i = 0; i < messages.length; i++) {
+        const message = messages[i], part = outcome.parts[i];
+        const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), pdfUrl, part: message.part });
+        part.reason = 'sending';
+        part.bytes = emailBytes(html);
+        progress();
+        const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject: message.subject, html, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
+        Object.assign(part, result);
+        if (result.ok) for (const storyKey of message.keys) deliveredKeys.add(storyKey);
+        outcome.ok = outcome.parts.every(p => p.ok);
+        outcome.status = outcome.parts.find(p => !p.ok)?.status ?? result.status;
+        outcome.reason = outcome.ok ? null : outcome.parts.some(p => p.ok) ? 'partial-send' : outcome.parts.find(p => !p.ok)?.reason;
+        progress();
+      }
     });
     const sent = outcomes.filter((o) => o.ok).length;
     const failed = outcomes.length - sent;
-    this.store.finishDocument(documentId, outcomes);
-    // The desk has read these once it was sent to the desk; a test copy to one person is not that.
-    const stories = sent && source !== 'test' ? briefStoryKeys(brief) : null;
-    return finish({ sent, failed, reason: sent ? null : outcomes[0]?.reason || 'failed', outcomes, subject, summary: briefSummary(brief), stories });
+    const partOutcomes = outcomes.flatMap(o => o.parts);
+    this.store.finishDocument(documentId, partOutcomes);
+    const stories = source !== 'test' && deliveredKeys.size ? [...deliveredKeys] : null;
+    const reason = !failed ? null : partOutcomes.some(p => p.ok) ? 'partial-send' : outcomes[0]?.reason || 'failed';
+    return finish({ sent, failed, reason, outcomes, subject, summary, stories });
   }
 
   /** A send somebody pressed: a test copy to one address, or the edition to everyone, built now. */
@@ -245,7 +283,7 @@ export class NewsletterSchedule {
   }
 
   /** The edition as it would be sent now, rendered but not sent. */
-  async preview({ edition, format = 'html' } = {}) {
+  async preview({ edition, format = 'html', part = 1 } = {}) {
     if (!EDITIONS[edition]) return { ok: false, reason: 'invalid-edition' };
     const now = this.now();
     let brief;
@@ -253,6 +291,15 @@ export class NewsletterSchedule {
       brief = await buildBrief({ edition, day: istDay(now), settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to: now, sent: this.store.sentStoryKeys(), includeAi: false });
     } catch (error) {
       return { ok: false, reason: error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed' };
+    }
+    if (format === 'html') {
+      let messages;
+      try { messages = renderBriefEmails(brief, this.renderOptions()); }
+      catch (error) { return { ok: false, reason: error?.code || 'build-failed' }; }
+      const message = messages[part - 1];
+      if (!message) return { ok: false, reason: 'invalid-part' };
+      return { ok: true, edition, subject: message.subject, builtAt: iso(now), summary: briefSummary(brief),
+        part, parts: messages.length, body: renderBriefHtml(brief, { ...this.renderOptions(), part: message.part, preview: true }) };
     }
     return {
       ok: true, edition, subject: briefSubject(brief), builtAt: iso(now), summary: briefSummary(brief),
