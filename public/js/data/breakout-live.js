@@ -43,7 +43,7 @@ export function priceInfo(company, now = Date.now()) {
     ? `Last trade ${stamp(use.quoteAt)} · Feed ${stamp(use.feedAt)}` : stamp(use?.quoteAt);
   return { price: use?.price ?? company.cmp ?? null, change: use ? (use.prevClose ? (use.price / use.prevClose - 1) * 100 : null) : company.pct_change_today,
     at: use?.quoteAt || null, source: use?.provider || 'Daily close', stale: !!bad,
-    label: status + (use ? `${bad ? 'Saved · ' : ''}${tradeLabel} · Muns API${use.exchange ? ` · ${use.exchange}` : ''}` : `Daily close · ${company.price_date || 'date unavailable'}`) };
+    label: status + (use ? `${bad ? 'Saved · ' : ''}${tradeLabel} · Muns API live price${use.exchange ? ` · ${use.exchange}` : ''}` : `Daily close · ${company.price_date || 'date unavailable'}`) };
 }
 export function priceCaption(info) {
   return [info.change == null ? '' : `${info.change > 0 ? '+' : ''}${Number(info.change).toFixed(2)}% vs previous close`, info.label].filter(Boolean).join(' · ');
