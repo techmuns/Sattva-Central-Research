@@ -14,7 +14,7 @@ export const onSessionChange=fn=>{sessionListeners.add(fn);return()=>sessionList
 onHostContext((_context,changes)=>{if(changes?.session){generation++;privateRows.clear();privatePending.clear();privateMeta=null;for(const fn of sessionListeners)fn();}});
 async function privateRequest(path) {
   const response=await fetch(path,{headers:{accept:'application/json',...authHeaders(path)},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(20000)});
-  if(!response.ok){let reason='access';try{const body=await boundedJson(response,4096);if(['identity-unavailable','configuration-unavailable'].includes(body.reason))reason=body.reason;}catch{/* No source body is needed to reject a failed read. */}throw Object.assign(Error('Supplement unavailable'),{access:response.status===401||response.status===403,reason});}
+  if(!response.ok){let reason='access';try{const body=await boundedJson(new Response(response.body),4096);if(['no-session','identity-unavailable','configuration-unavailable'].includes(body.reason))reason=body.reason;}catch{/* No source body is needed to reject a failed read. */}throw Object.assign(Error('Supplement unavailable'),{access:response.status===401||response.status===403,reason});}
   return boundedJson(response,5*1024*1024);
 }
 export async function load(scope='portfolio',options={}) {
