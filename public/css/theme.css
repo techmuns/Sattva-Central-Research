@@ -302,4 +302,4 @@ html[data-theme="dark"] ::selection { background: #4338ca; color: #fff; }
 [data-column-drop="after"] { box-shadow: inset -3px 0 var(--accent-600); }
 .column-layout-status { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .column-layout-status[data-unavailable] { width: auto; height: auto; clip-path: none; bottom: 16px; left: 16px; right: 16px; padding: 12px; z-index: 100; border-radius: 8px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-900); box-shadow: 0 2px 12px rgb(0 0 0 / .15); }
-[data-column-custom] > thead > tr > .left-0, [data-column-custom] > tbody > tr > .left-0 { left: auto; }
+[data-column-custom] > thead > tr > .left-0:not(:first-child), [data-column-custom] > tbody > tr > .left-0:not(:first-child) { left: auto; }

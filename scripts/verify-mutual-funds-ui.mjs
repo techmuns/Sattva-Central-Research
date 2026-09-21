@@ -35,6 +35,12 @@ try{
  mkdirSync('artifacts/mutual-funds-ui',{recursive:true});await page.screenshot({path:'artifacts/mutual-funds-ui/detail.png'});
  await page.keyboard.press('Escape');await page.waitForTimeout(150);assert(await page.locator('#modal-overlay').evaluate(e=>e.classList.contains('hidden')));
  await page.screenshot({path:'artifacts/mutual-funds-ui/table.png'});
+ await page.getByRole('button',{name:'Coverage',exact:true}).click();await page.waitForSelector('#modal-content .mf-detail-table');
+ assert.equal(await page.locator('#modal-content th').first().evaluate(e=>getComputedStyle(e).textAlign),'left');
+ await page.locator('#modal-content th').first().focus();await page.keyboard.press('Alt+ArrowRight');
+ assert.equal(await page.locator('#modal-content th.mf-identity').evaluate(e=>getComputedStyle(e).textAlign),'left','coverage identity styling follows its column');
+ await page.keyboard.press('Escape');
+
  await page.selectOption('[data-mf-sort]','newest');
  // Large table filters must search beyond the rendered DOM window.
  const search=page.locator('input[placeholder="Search company..."]');await search.fill(book.holdings.at(-1).name);await page.waitForTimeout(400);assert((await page.locator('[data-row-key]').count())>=1);
