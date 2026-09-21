@@ -43,6 +43,8 @@ try{
    const u=new URL(route.request().url());
    if(u.origin!==apiOrigin)return route.fulfill({status:200,body:''});
    if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:'<script type="module">window.feed=await import("/js/data/mutual-funds.js");</script>'});
+   if(u.pathname==='/js/core/host-context.js')return route.fulfill({contentType:'text/javascript',body:`let token=null;const listeners=[];window.testSession=value=>{token=value;listeners.forEach(fn=>fn({}, {session:true}));};export const hostToken=()=>token;export const authHeaders=()=>token?{authorization:'Bearer '+token}:{};export const onHostContext=fn=>{listeners.push(fn);return()=>{};};`});
+   if(u.pathname==='/api/mutual-funds/private'||u.pathname==='/api/mutual-funds/private/company'){assert.equal(route.request().headers().authorization,'Bearer fixture-private');return route.fulfill({contentType:'application/json',headers:{'cache-control':'private, no-store'},body:JSON.stringify({rows:(u.searchParams.get('isins')||'').split(',').filter(Boolean).map(isin=>({...apiBook.find(h=>h.isin===isin),totalShares:999999})),meta:{supplement:{currentCompanies:502,expectedCompanies:502}},company:{isin:u.searchParams.get('isin'),totalShares:999999}})});}
    if(u.pathname==='/api/mutual-funds/company')return route.fulfill({status:fail?503:200,contentType:'application/json',body:JSON.stringify({meta:{checkedAt:new Date().toISOString()},company:{isin:u.searchParams.get('isin'),totalShares:version}})});
    if(u.pathname==='/api/mutual-funds'){
      apiCalls++;const ids=u.searchParams.get('isins').split(',');assert(ids.length<=250);
@@ -64,6 +66,16 @@ try{
  assert.equal(await apiPage.evaluate(()=>window.feed.all().length),502,'A new session restores every saved API page during an outage');
  assert.equal(await apiPage.evaluate(async isin=>(await window.feed.detail(isin)).company.totalShares,apiBook[0].isin),2,'A new session restores persisted fund detail');
  assert(await apiPage.evaluate(()=>window.feed.meta().readFailed));
+ // Private responses stay in memory and disappear on logout / a new page session.
+ fail=false;await apiPage.evaluate(()=>window.testSession('fixture-private'));
+ await apiPage.evaluate(book=>window.feed.load('portfolio',{holdings:book}),apiBook);
+ assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),999999);
+ assert.equal(await apiPage.evaluate(async isin=>(await window.feed.detail(isin)).company.totalShares,apiBook[0].isin),999999);
+ await apiPage.evaluate(()=>window.testSession(null));assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),2);
+ await apiPage.reload();await apiPage.waitForFunction(()=>!!window.feed);fail=true;
+ await apiPage.evaluate(book=>window.feed.load('portfolio',{holdings:book}),apiBook);
+ assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),2,'Private summaries never entered the persistent public cache');
+ assert.equal(await apiPage.evaluate(async isin=>(await window.feed.detail(isin)).company.totalShares,apiBook[0].isin),2,'Private detail never entered the persistent public cache');
  await apiPage.close();
  await page.evaluate(()=>window.tab.destroy());assert.deepEqual(errors,[]);console.log('PASS Mutual Funds browser: all portfolio rows, private weight order, month-grouped popup, bounded fund rows, offscreen search, keyboard close, dark/mobile rendering and zero page errors');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

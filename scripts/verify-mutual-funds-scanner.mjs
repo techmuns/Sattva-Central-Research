@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {parseScannerStock,parseScannerCatalogue,scannerStockUrl} from './lib/mutual-funds-scanner.mjs';
+import {scannerFetch,collectScanner} from './collect-mutual-funds-scanner.mjs';
+import {supplementCompany} from '../worker/mutual-funds-scanner-model.mjs';
+import {MutualFundsStore} from '../worker/mutual-funds-store.mjs';
+import {MutualFundsScannerStore} from '../worker/mutual-funds-scanner-store.mjs';
+import {handleMutualFunds} from '../worker/mutual-funds.mjs';
+import {MF_ORIGIN} from '../worker/mutual-funds-model.mjs';
+
+let clock=Date.parse('2026-09-21T01:00:00Z');const isin='INE090A01021',url='https://mfscanner.com/stock/fixture-bank';
+// Synthetic markup only; no copied provider pages or private portfolios in Git.
+const row=(slug,name,action,prior,current,delta)=>`<tr><td><a href="/fund/${slug}">${name}</a><span>HDFC</span></td><td>${action}</td><td>${prior}</td><td>${current}</td><td>${delta}</td><td>—</td></tr>`;
+const html=(rows,count=1)=>`<html><head><link rel="canonical" href="${url}"><meta name="description" content="Holdings — ${count} schemes, share counts"></head><body><span>${isin}</span> · fund activity <table><thead><tr>${['Fund','Action','July 2026','August 2026','Δ shares','Value (₹Cr)'].map(v=>`<th>${v}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></body></html>`;
+const sample=html(row('hdfc-fixture','HDFC Fixture Fund','increased','100','150','+50'));
+const parse=s=>parseScannerStock(s,{isin,url,checkedAt:new Date(clock).toISOString(),now:clock});
+let page=parse(sample);assert.equal(page.funds[0].months['2026-08'].shares,150);
+for(const malformed of [sample.replace(isin,'INE040A01034'),sample.replace('August 2026','October 2026'),sample.replace('+50','+60'),sample.replace('1 schemes','2 schemes'),sample.replace('</html>',''),html(row('a','A','held','100','100','0')+row('a','A','held','100','100','0'),2)])assert.throws(()=>parse(malformed));
+const pending=parse(html(row('a','A','pending','100','—','—')+row('b','B','new','0','20','+20')));assert.equal(pending.funds[0].months['2026-08'].shares,null);
+const catHTML='<html><span>1</span> stocks.<a href="/stock/fixture-bank">Fixture Bank Limited</a></html>';
+const catalogue=parseScannerCatalogue(catHTML);assert.equal(scannerStockUrl(catalogue,{name:'Fixture Bank',ticker:'FIX'}),url);assert.throws(()=>parseScannerCatalogue(catHTML.replace('>1<','>2<')));
+
+const primary={isin,name:'Fixture Bank',month:'2026-08',funds:[{id:'hdfc:hdfc fixture fund',name:'HDFC Fixture Fund',amc:'HDFC',months:{'2026-07':{shares:100},'2026-06':{shares:75}}}]};
+let combined=supplementCompany(primary,page,{now:clock});assert.equal(combined.funds.length,1);assert.equal(combined.totalShares,150);assert.equal(combined.netChange,50);assert.equal(combined.funds[0].months['2026-06'].shares,75);
+const verified=structuredClone(primary);verified.funds[0].months['2026-08']={shares:0,absenceVerified:true};assert.equal(supplementCompany(verified,page,{now:clock}).totalShares,0,'Verified primary absence wins over a backup');
+const duplicate=structuredClone(page);duplicate.funds.push({...duplicate.funds[0],id:'scanner:another-slug'});assert.equal(supplementCompany(primary,duplicate,{now:clock}).totalShares,null,'Ambiguous duplicate backup schemes are withheld');
+assert.equal(supplementCompany(primary,{...page,funds:[]},{now:clock}).netChange,null,'An omitted fund is never an exit');
+const completeAmc={...page,funds:[{...page.funds[0],name:'HDFC Other Fund'}]};assert.equal(supplementCompany({...primary,funds:[]},completeAmc,{now:clock,amcs:[{slug:'hdfc',month:'2026-08',status:'ok'}]}).totalShares,null);
+
+const db=new DatabaseSync(':memory:');
+const storage={sql:{exec(sql,...args){const rows=db.prepare(sql).all(...args);return{toArray:()=>rows,one:()=>{assert.equal(rows.length,1);return rows[0];}};}},transactionSync(fn){db.exec('BEGIN');try{const r=fn();db.exec('COMMIT');return r;}catch(e){db.exec('ROLLBACK');throw e;}}};
+const base=new MutualFundsStore(storage,{now:()=>clock});let store=new MutualFundsScannerStore(storage,base,{now:()=>clock});base.scanner=store;
+base.begin('1:1',{targets:[isin],amcs:[{slug:'hdfc',status:'partial',month:'2026-08'}]});base.checkpoint('1:1',[primary]);base.finish('1:1');
+store.inventory([{isin,name:'Fixture Bank'}]);
+const reserved=store.reserve('2:1','1','catalogue');assert.equal(store.reserve('2:1','1','catalogue').reason,'already-reserved');
+store.complete('2:1',{reservation:reserved.reservation,catalogue});clock+=2100;
+let task=store.reserve('2:1','2');page=parse(sample);store.complete('2:1',{reservation:task.reservation,isin,page});store.complete('2:1',{reservation:task.reservation,isin,page});
+assert.equal(base.read([isin]).rows[0].totalShares,100,'Public API never includes a private observation');
+assert.equal(store.read([isin]).rows[0].totalShares,150);
+assert.equal(store.status().currentCompanies,1);
+store=new MutualFundsScannerStore(storage,base,{now:()=>clock});base.scanner=store;
+assert.equal(store.read([isin]).rows[0].totalShares,150,'Private observations survive object restart');
+clock+=2100;assert.equal(store.reserve('3:1','1').reason,'nothing-due');
+clock+=16*60000;task=store.reserve('3:1','2');store.complete('3:1',{reservation:task.reservation,isin,failure:'timeout'});
+assert.equal(store.read([isin]).rows[0].totalShares,150);assert.equal(store.status().currentCompanies,0,'Failed checks do not certify freshness');
+clock+=16*60000;task=store.reserve('3:1','3');store.complete('3:1',{reservation:task.reservation,isin,failure:'http-429',retryAfterMs:7200000});
+assert.equal(store.reserve('3:1','4').reason,'source-cooldown');
+clock+=1000;store=new MutualFundsScannerStore(storage,base,{now:()=>clock});base.scanner=store;assert.equal(store.reserve('4:1','1').reason,'source-cooldown','Cooldown survives process and run changes');
+// Primary capture refreshes the cached private total in the same transaction.
+const corrected=structuredClone(primary);corrected.funds[0].months['2026-08']={shares:160,checkedAt:new Date(clock).toISOString()};
+base.begin('5:1',{targets:[isin],amcs:[{slug:'hdfc',status:'ok',month:'2026-08'}]});base.checkpoint('5:1',[corrected]);base.finish('5:1');assert.equal(store.read([isin]).rows[0].totalShares,160);assert.equal(db.prepare('SELECT COUNT(*) n FROM mf_scanner_history').get().n,2);
+
+let privateCalls=0;const env={CAPTURE_REGISTRY:{getByName:()=>({mfRead:async ids=>base.read(ids),mfPrivateRead:async ids=>{privateCalls++;return store.read(ids);}})}};
+let response=await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/private'),env,{authorise:async()=>({ok:false,reason:'no-session'})});assert.equal(response.status,401);assert.equal(privateCalls,0);assert.match(response.headers.get('cache-control'),/private.*no-store/);
+response=await handleMutualFunds(new Request(MF_ORIGIN+`/api/mutual-funds/private?isins=${isin}`),env,{authorise:async()=>({ok:true})});assert.equal(response.status,200);assert.equal(response.headers.get('vary'),'Authorization');assert.equal((await response.json()).rows[0].totalShares,160);
+response=await handleMutualFunds(new Request(MF_ORIGIN+'/api/mutual-funds/private',{headers:{origin:'https://untrusted.example'}}),env,{authorise:async()=>{throw Error('Must reject origin first');}});assert.equal(response.status,403);
+let fetchCalls=0;const denied=await scannerFetch(url,{fetcher:async(_url,options)=>{fetchCalls++;assert.equal(options.redirect,'manual');assert.equal(options.headers.authorization,undefined);return new Response('',{status:429,headers:{'retry-after':'7200'}});}});assert.equal(fetchCalls,1);assert.equal(denied.retryAfterMs,7200000);
+const out=await collectScanner({companies:[{isin,name:'Fixture Bank'}],client:async body=>body.action==='scanner-reserve'?{ok:true,reason:'source-cooldown'}:{ok:true},fetcher:()=>{throw Error('Cooldown must prevent source requests');}});assert.equal(out.reason,'source-cooldown');
+console.log('PASS MF Scanner: exact identities/months/counts, pending vs exits, primary precedence, duplicate guards, private API boundary, durable corrections, resume, rate budget and cooldown');

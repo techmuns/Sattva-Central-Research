@@ -83,6 +83,7 @@ export class MutualFundsStore {
     // Revision records form an immutable chain of point references, never a growing full blob.
     if(revision!==row.revision)this.storage.sql.exec('INSERT OR IGNORE INTO mf_revisions VALUES(?,?,?,?)',isin,revision,new Date(this.now()).toISOString(),JSON.stringify({previous:row.revision,metadata:JSON.parse(row.payload),changes}));
     this.storage.sql.exec('UPDATE mf_companies SET summary=?,revision=?,input_revision=? WHERE isin=?',JSON.stringify(summary),revision,inputRevision||row.input_revision,isin);
+    this.scanner?.refresh(isin);
   }
   fragment(run,{company,part,parts,revision}) {
     this.init();if(!Number.isSafeInteger(part)||!Number.isSafeInteger(parts)||parts<1||parts>100000||part<0||part>=parts||typeof revision!=='string'||revision.length>100)throw Error('Invalid fragment');
@@ -127,6 +128,7 @@ export class MutualFundsStore {
         const row=this.storage.sql.exec('SELECT input_revision FROM mf_companies WHERE isin=?',item.isin).toArray()[0];if(!row||row.input_revision!==item.revision)throw Error('Revision changed');
         const changes=[];this.reconcile(run,item.isin,changes);if(changes.length)this.saveSummary(item.isin,changes);
         this.storage.sql.exec('INSERT OR IGNORE INTO mf_received VALUES(?,?)',run,item.isin);
+        this.scanner?.refresh(item.isin);
       }
       return {ok:true};
     });

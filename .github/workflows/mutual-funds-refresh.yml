@@ -23,6 +23,20 @@ concurrency:
   group: mutual-fund-disclosures
   cancel-in-progress: false
 jobs:
+  scanner:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Capture private MF Scanner supplement
+        run: node scripts/collect-mutual-funds-scanner.mjs
   bootstrap:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
