@@ -15,7 +15,7 @@
 // No server and no egress.
 
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -172,6 +172,15 @@ reads(nse('BHEL', 'Disclosures under Reg. 29(2) of SEBI (SAST) Regulations, 2011
 reads(bse('CROMPTON', 'Promoter group has acquired equity shares of the company from open market', 'Acquisition'), null);
 reads(bse('CROMPTON', 'Incorporation of a wholly owned subsidiary', 'Acquisition'), null);
 reads(bse('CROMPTON', 'Completion of acquisition of 100% stake in Butterfly Gandhimathi Appliances', 'Acquisition'), ['Revenue', 'EBITDA', 'Net Debt']);
+// A completed acquisition that cites the takeover regulations it was made under keeps its KPIs, as it
+// keeps its high Acquisition reading in filing-signals.js; the same words about a promoter buying the
+// company's own shares, or an acquisition that has not completed, still name none.
+reads(bse('CROMPTON', 'Completion of acquisition of 51% stake pursuant to SEBI (SAST) Regulations, 2011', 'Acquisition'), ['Revenue', 'EBITDA', 'Net Debt'],
+  'a completed acquisition citing SAST is a business bought');
+reads(bse('CROMPTON', 'Completion of acquisition of shares of the Company by the promoter under SEBI (SAST) Regulations, 2011', 'Acquisition'), null,
+  "a promoter's completed purchase of the company's own shares is not a business bought");
+reads(bse('CROMPTON', 'Intimation under SEBI (SAST) Regulations, 2011 - acquisition of equity shares', 'Acquisition'), null,
+  'the regulations named without a completed acquisition still name nothing');
 
 // Credit ratings — and a broker's stock call, which is not one.
 reads(news('JSL', 'ICRA downgrades Jindal Stainless long-term rating to AA-'), ['Finance Cost']);
@@ -327,3 +336,82 @@ assert.equal(without.allCards.find((c) => c.ticker === 'BHEL').kpis, null, 'no o
 assert.deepEqual(withKpis.allCards.map((c) => [c.ticker, c.score, c.priority]), without.allCards.map((c) => [c.ticker, c.score, c.priority]),
   'the KPI layer adds no score and changes no priority');
 console.log('PASS ranking: cards carry the KPI line for a resolved company, none for an unresolved one, and every score and priority is unchanged.');
+
+// ---------------------------------------------------------------------------------------
+// 7. The file is re-read on the page's checks, and a gap in it is said rather than hidden
+
+const realNow = Date.now;
+let clock = realNow();
+Date.now = () => clock;
+let served = committed;
+let requests = 0;
+let refuse = false;
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (path) => {
+  requests += 1;
+  assert.equal(String(path), kpi.KPI_FILE);
+  if (refuse) throw new Error('offline');
+  return new Response(JSON.stringify(served), { headers: { 'content-type': 'application/json' } });
+};
+try {
+  const held = kpi.prime(committed);
+  assert.equal(await kpi.load(), held, 'a copy confirmed moments ago is not asked for again');
+  assert.equal(requests, 0);
+  clock += kpi.RECHECK_MS + 1;
+  assert.equal(await kpi.load(), held, 'an unchanged file keeps the same ontology, so the ranking memo survives the check');
+  assert.equal(requests, 1);
+  clock += kpi.RECHECK_MS + 1;
+  served = { ...committed, companies: { ...committed.companies, NEWHOLDING: { group: 'banks', sector: 'Financial Services', industry: 'Private Sector Bank', via: 'pair' } } };
+  const changed = await kpi.load();
+  assert.notEqual(changed, held, 'a republished file replaces the ontology without a reload');
+  assert.equal(kpi.snapshot(), changed);
+  assert.equal(kpi.companyContext(changed, 'NEWHOLDING').group, 'banks', 'a newly classified holding is placed on the next check');
+  clock += kpi.RECHECK_MS + 1;
+  refuse = true;
+  assert.equal(await kpi.load(), changed, 'a failed re-read keeps the copy it had');
+  assert.equal(kpi.status().state, 'ready');
+  assert.match(kpi.status().recheckError, /could not be re-read/, 'and says the re-read failed');
+  refuse = false;
+  assert.equal(await kpi.load(), changed, 'the next check asks again at once and, finding it unchanged, keeps it');
+  assert.equal(kpi.status().recheckError, null);
+  kpi.prime(null);
+  refuse = true;
+  assert.equal(await kpi.load(), null, 'a first read that fails holds nothing');
+  assert.equal(kpi.status().state, 'failed');
+  refuse = false;
+  kpi.prime({ ...committed, counts: { ...committed.counts, unresolved: 3, classificationFailed: 2 } });
+  assert.equal(kpi.status().classificationFailed, 2, "the classification's failed re-reads travel with the file");
+  assert.equal(kpi.status().unresolved, 3);
+} finally {
+  Date.now = realNow;
+  globalThis.fetch = realFetch;
+  kpi.prime(committed);
+}
+
+// A holding whose latest re-read failed fails the scheduled job too, even though its earlier
+// classification is kept — and the built file carries every failure for the source registry.
+const gapScratch = mkdtempSync(join(tmpdir(), 'sector-kpis-gap-'));
+try {
+  const classification = readJson('public/data/company-classification.json');
+  const [kept, lost] = book.map((h) => h.ticker).filter((t) => classification.companies[t]).slice(0, 2);
+  delete classification.companies[lost];
+  classification.failed = { [kept]: { reason: 'HTTP 503', at: '2026-09-23T01:40:00.000Z' }, [lost]: { reason: 'HTTP 404', at: '2026-09-23T01:40:05.000Z' } };
+  const classificationPath = join(gapScratch, 'company-classification.json');
+  const out = join(gapScratch, 'sector-kpis.json');
+  writeFileSync(classificationPath, JSON.stringify(classification));
+  const env = { ...process.env, SECTOR_KPIS_CLASSIFICATION: classificationPath, SECTOR_KPIS_OUT: out };
+  const built = spawnSync(process.execPath, ['scripts/build-sector-kpis.mjs'], { encoding: 'utf8', env });
+  assert.equal(built.status, 0, built.stderr || built.stdout);
+  const payload = readJson(out);
+  assert.equal(payload.counts.classificationFailed, 2);
+  assert.deepEqual(payload.classificationFailed[kept], { reason: 'HTTP 503', at: '2026-09-23T01:40:00.000Z', retained: true });
+  assert.equal(payload.classificationFailed[lost].retained, false);
+  const check = spawnSync(process.execPath, ['scripts/build-sector-kpis.mjs', '--check-book'], { encoding: 'utf8', env });
+  assert.equal(check.status, 1, 'the job fails');
+  assert.match(check.stderr, new RegExp(`${kept}: latest page re-read failed \\(HTTP 503\\); the earlier classification is kept`));
+  assert.match(check.stderr, new RegExp(`${lost}: page not read \\(HTTP 404\\)`));
+} finally {
+  rmSync(gapScratch, { recursive: true, force: true });
+}
+console.log('PASS freshness: the file is re-read on the page\'s checks, an unchanged file keeps its ontology, a changed one is adopted, a failed re-read keeps the held copy and says so, and a failed classification re-read is carried into the file and fails the scheduled job.');
+

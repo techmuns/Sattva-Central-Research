@@ -765,7 +765,9 @@ downstream means *no KPI row*, never a nearest sector's KPIs.
   "overrides": [{ "id": "nse-reit", "group": "reit", "reason": "…" }],
   "companies": { "BHEL": { "group": "capital_goods", "sector": "Capital Goods", "industry": "Heavy Electrical Equipment", "via": "pair" } },
   "unresolved": { },                                          // classified, but no group — listed, never guessed
-  "counts": { "companies": 599, "resolved": 599, "unresolved": 0, "byVia": { "pair": 593, "override": 6 }, "byGroup": { … } }
+  "classificationFailed": { },                                // TICKER → { reason, at, retained }: latest page re-read failed
+  "counts": { "companies": 599, "resolved": 599, "unresolved": 0, "classificationFailed": 0,
+              "byVia": { "pair": 593, "override": 6 }, "byGroup": { … } }
 }
 ```
 
@@ -783,15 +785,20 @@ to `main`. It is cheap because only a company with no page classification, or on
 costs a request, and **a run that changes nothing writes nothing** except a weekly heartbeat
 (`CLASSIFY_HEARTBEAT_DAYS`, 7) — so `capturedAt` means *last checked*, and the source registry reads a
 classification older than nine days as a refresh that is due. The job publishes what it read and then
-**fails** if any listed holding carries no KPI group (`node scripts/build-sector-kpis.mjs --check-book`,
-which names each one and why), because a card silently missing its KPI line looks exactly like one
-whose evidence names no KPI. `verify-kpi-impact.mjs` fails if the committed JSON is not what the
+**fails** if any listed holding carries no KPI group, or is kept on a classification whose latest page
+re-read failed (`node scripts/build-sector-kpis.mjs --check-book`, which names each one and why),
+because a card silently missing its KPI line looks exactly like one whose evidence names no KPI. The
+classification's failures travel in the file as `classificationFailed`, so the source registry reads
+a partly read classification as *Partial coverage* rather than taking a recent build time as proof
+that every company was read. `verify-kpi-impact.mjs` fails if the committed JSON is not what the
 fixture and the classification build.
 
 **Consumed by** — AI Alerts only, as a display reading: it adds no score and no alert. The browser's
 read of the file has a state of its own (`kpiImpact.status()`: idle, loading, ready or failed, with
 the reason and time); a failed read is said on the AI Alerts page and in the source registry rather
-than passing for cards whose evidence names nothing. The rules that turn an event into KPIs, and the
+than passing for cards whose evidence names nothing. The file is re-read on the page's own checks once
+the held copy is older than `RECHECK_MS` (60s) — a conditional request — and a changed file is adopted
+without a reload; a failed re-read keeps the held copy and is reported beside it. The rules that turn an event into KPIs, and the
 traps each rule is measured against, are in the header of `js/data/kpi-impact.js` and in
 `CLAUDE.md` → *KPIs in play*.
 

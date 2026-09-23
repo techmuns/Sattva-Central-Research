@@ -152,6 +152,13 @@ function main() {
     byVia[resolved.via] = (byVia[resolved.via] || 0) + 1;
   }
 
+  // A company whose latest page re-read failed is carried here with the reason, whether or not an
+  // earlier classification is kept for it: the file is otherwise indistinguishable from a complete one,
+  // and the source registry reads this to say the coverage is partial rather than "Connected".
+  const classificationFailed = Object.fromEntries(Object.entries(classification.failed || {})
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([ticker, entry]) => [ticker, { reason: entry?.reason || null, at: entry?.at || null, retained: !!classification.companies?.[ticker] }]));
+
   const payload = {
     _provenance: 'The sector → KPI ontology (scripts/fixtures/sector-kpi-ontology.yaml, reproduced unchanged) and every classified company resolved into it. Built by scripts/build-sector-kpis.mjs; read by public/js/data/kpi-impact.js. See docs/DATA-CONTRACTS.md → Sector KPIs.',
     source: {
@@ -169,17 +176,19 @@ function main() {
     overrides: GROUP_OVERRIDES.map(({ id, group, reason }) => ({ id, group, reason })),
     companies,
     unresolved,
+    classificationFailed,
     counts: {
       companies: Object.keys(companies).length + Object.keys(unresolved).length,
       resolved: Object.keys(companies).length,
       unresolved: Object.keys(unresolved).length,
+      classificationFailed: Object.keys(classificationFailed).length,
       byVia,
       byGroup: Object.fromEntries(Object.entries(byGroup).sort(([a], [b]) => a.localeCompare(b))),
     },
   };
   writeFileSync(OUT, `${JSON.stringify(payload)}\n`);
   console.log(`build-sector-kpis: ${pairs} pairs, ${Object.keys(groups).length} groups, ${Object.keys(kpis).length} KPIs, ${tableRows} seeded rows${reconciled ? ` (export matched: ${reconciled.rows} rows, ${reconciled.pairs} pairs)` : ''}.`);
-  console.log(`build-sector-kpis: ${payload.counts.resolved} of ${payload.counts.companies} companies resolved (${JSON.stringify(byVia)}); ${payload.counts.unresolved} unresolved.`);
+  console.log(`build-sector-kpis: ${payload.counts.resolved} of ${payload.counts.companies} companies resolved (${JSON.stringify(byVia)}); ${payload.counts.unresolved} unresolved; ${payload.counts.classificationFailed} whose latest page re-read failed.`);
   if (payload.counts.unresolved) {
     const sample = Object.entries(unresolved).slice(0, 12).map(([t, e]) => `${t} (${e.sector} › ${e.industry})`).join('; ');
     console.log(`build-sector-kpis: unresolved — ${sample}${payload.counts.unresolved > 12 ? '; …' : ''}`);
@@ -188,9 +197,11 @@ function main() {
 }
 
 /**
- * Every listed holding the built file cannot place, with the reason — for the scheduled job, which
- * publishes what it read and then fails naming these. A holding with no KPI group looks, on a card,
- * exactly like evidence that names no KPI, so the gap has to be a failed run rather than a quiet one.
+ * Every listed holding the built file cannot place, or can place only on a classification whose latest
+ * re-read failed — with the reason — for the scheduled job, which publishes what it read and then fails
+ * naming these. A holding with no KPI group looks, on a card, exactly like evidence that names no KPI,
+ * so the gap has to be a failed run rather than a quiet one; and a kept classification whose re-read
+ * failed is the same gap waiting to happen, so it fails the run too rather than passing on old data.
  */
 export function missingBook({ out = OUT, book = 'public/data/portfolio-companies.json' } = {}) {
   const built = JSON.parse(readFileSync(out, 'utf8'));
@@ -198,8 +209,11 @@ export function missingBook({ out = OUT, book = 'public/data/portfolio-companies
   const holdings = existsSync(book) ? JSON.parse(readFileSync(book, 'utf8')).holdings || [] : [];
   return holdings
     .map((holding) => String(holding.ticker || '').toUpperCase())
-    .filter((ticker) => ticker && !built.companies?.[ticker])
+    .filter((ticker) => ticker && (!built.companies?.[ticker] || failed[ticker]))
     .map((ticker) => {
+      if (built.companies?.[ticker]) {
+        return { ticker, reason: `latest page re-read failed (${failed[ticker].reason || 'no reason given'}); the earlier classification is kept`, retained: true };
+      }
       const unresolved = built.unresolved?.[ticker];
       return { ticker, reason: unresolved ? `classified ${unresolved.sector} › ${unresolved.industry}, which the ontology maps to no group`
         : failed[ticker]?.reason ? `page not read (${failed[ticker].reason})` : 'never classified' };
@@ -214,10 +228,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (process.argv.includes('--check-book')) {
       const missing = missingBook();
       if (missing.length) {
-        console.error(`build-sector-kpis: ${missing.length} listed holding(s) carry no KPI group — ${missing.map((m) => `${m.ticker}: ${m.reason}`).join('; ')}`);
+        console.error(`build-sector-kpis: ${missing.length} listed holding(s) carry no KPI group or a failed re-read — ${missing.map((m) => `${m.ticker}: ${m.reason}`).join('; ')}`);
         process.exit(1);
       }
-      console.log('build-sector-kpis: every listed holding resolves to a KPI group.');
+      console.log('build-sector-kpis: every listed holding resolves to a KPI group, and every latest re-read landed.');
     } else main();
   } catch (err) { console.error(err.message || err); process.exit(1); }
 }

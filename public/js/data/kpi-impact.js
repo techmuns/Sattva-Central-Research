@@ -50,21 +50,30 @@ import { revalidatedJson } from '../core/store.js';
 import { isRelatedNewsContext, newsCanSupportAI } from './company-news-attribution.js';
 import { isBrokerageResearch } from './portfolio-news-matching.js';
 import { KEYWORDS } from './news-keywords.js';
-import { LEGAL_ORDER } from './filing-signals.js';
+import { ACQUISITION_COMPLETED, LEGAL_ORDER } from './filing-signals.js';
 
 export const KPI_FILE = 'data/sector-kpis.json';
 /** The most KPI chips one card DRAWS. The model keeps every KPI; the rest are a "+N" that names them. */
 export const KPI_CHIP_LIMIT = 4;
 
 // ---------------------------------------------------------------------------------------
-// THE ONTOLOGY, LOADED ONCE
+// THE ONTOLOGY, LOADED AND KEPT CURRENT
 
 let ontology = null;
+let heldText = null;
+let confirmedAt = 0;
 let pending = null;
 // WHAT THE LAST READ OF THE FILE CAME TO, kept apart from the ontology itself. A card with no KPI
 // line means "nothing on it names a KPI" only while this says `ready`; after a failed read it means
 // "the sector file could not be read", and the source registry and the AI Alerts page say which.
-let readStatus = { state: 'idle', error: null, checkedAt: null };
+let readStatus = { state: 'idle', error: null, checkedAt: null, recheckError: null };
+
+/**
+ * How long a held copy counts as checked. The daily classification job publishes a new file while a
+ * dashboard can stay open for days, so every AI Alerts check (on open, on Refresh, every 90 seconds
+ * while visible) asks again once this has passed — one conditional GET, a 304 when nothing moved.
+ */
+export const RECHECK_MS = 60_000;
 
 /** Validate and index a sector-kpis.json payload. Throws on a shape this module cannot read. */
 export function indexOntology(payload) {
@@ -81,41 +90,64 @@ export function indexOntology(payload) {
   return { payload, kpis, groups, companies, globals: new Set(globals), groupKpis, mentionIndex: new Map() };
 }
 
+// A PAYLOAD WHOSE CONTENT DID NOT CHANGE KEEPS THE ONTOLOGY IT ALREADY HAS. The ranking is memoised
+// on this object (ai-alerts.js), so replacing it with an identical copy on every check would re-rank
+// every card for nothing; a changed file — a new holding, a corrected mapping — replaces it.
+function adopt(payload) {
+  const text = JSON.stringify(payload);
+  if (!ontology || text !== heldText) { ontology = indexOntology(payload); heldText = text; }
+  confirmedAt = Date.now();
+  readStatus = { state: 'ready', error: null, checkedAt: new Date(confirmedAt).toISOString(), recheckError: null };
+  return ontology;
+}
+
 /** Seed the module from a payload already in hand (tests, a bootstrap that loaded it). */
 export function prime(payload) {
-  ontology = payload ? indexOntology(payload) : null;
-  if (ontology) readStatus = { state: 'ready', error: null, checkedAt: new Date().toISOString() };
-  return ontology;
+  if (!payload) { ontology = null; heldText = null; confirmedAt = 0; return null; }
+  return adopt(payload);
 }
 
 /** The loaded ontology, or null until `load()` has resolved (or if the file could not be read). */
 export const snapshot = () => ontology;
 
 /**
- * `idle` (not asked for yet), `loading`, `ready` or `failed` — with the reason and when this browser
- * last tried. A copy of the object, so a caller cannot edit the module's record of what happened.
+ * `idle` (not asked for yet), `loading`, `ready` or `failed` — with the reason, when this browser
+ * last confirmed the file, and `recheckError` when a later re-read failed while an earlier copy is
+ * still in use. The classification's own gaps travel with it: companies whose latest page re-read
+ * failed, and classified companies the ontology maps to no group. A copy of the object, so a caller
+ * cannot edit the module's record of what happened.
  */
-export const status = () => ({ ...readStatus, builtAt: ontology?.payload?.source?.classificationCapturedAt || null });
+export const status = () => ({
+  ...readStatus,
+  builtAt: ontology?.payload?.source?.classificationCapturedAt || null,
+  classificationFailed: ontology ? Number(ontology.payload?.counts?.classificationFailed) || 0 : null,
+  unresolved: ontology ? Number(ontology.payload?.counts?.unresolved) || 0 : null,
+});
 
 /**
- * Read `sector-kpis.json` once. A failure resolves to null and is not cached, so a later call can
- * try again. Cards carry no KPI line meanwhile, and `status()` says the file could not be read — a
- * missing line must never pass for "nothing here moves a KPI".
+ * Read `sector-kpis.json`, and read it again once the held copy is older than `RECHECK_MS`. A first
+ * read that fails resolves to null and is not cached, so a later call can try again; cards carry no
+ * KPI line meanwhile, and `status()` says the file could not be read — a missing line must never
+ * pass for "nothing here moves a KPI". A RE-READ that fails keeps the copy already held, which was a
+ * real read of a real file, and records the failure beside it: a failed re-check is not a failed read.
  */
 export function load() {
-  if (ontology) return Promise.resolve(ontology);
+  if (ontology && Date.now() - confirmedAt < RECHECK_MS) return Promise.resolve(ontology);
   if (!pending) {
-    readStatus = { ...readStatus, state: 'loading' };
-    const settle = (state, error = null) => { readStatus = { state, error, checkedAt: new Date().toISOString() }; };
+    const held = ontology;
+    if (!held) readStatus = { ...readStatus, state: 'loading' };
     pending = revalidatedJson(KPI_FILE, { optional: true })
       .then((payload) => {
-        if (!payload) throw new Error('the sector file is not published on this deployment');
-        const indexed = prime(payload);
-        settle('ready');
-        return indexed;
+        if (!payload) throw new Error(held ? 'the sector file could not be re-read' : 'the sector file is not published on this deployment');
+        return adopt(payload);
       })
       .catch((err) => {
-        settle('failed', String(err?.message || err || 'the sector file could not be read'));
+        const error = String(err?.message || err || 'the sector file could not be read');
+        if (held && ontology === held) {
+          readStatus = { ...readStatus, state: 'ready', recheckError: error };
+          return held;
+        }
+        readStatus = { state: 'failed', error, checkedAt: new Date().toISOString(), recheckError: null };
         return null;
       })
       .finally(() => { pending = null; });
@@ -330,7 +362,13 @@ const ACQUIRES = /\b(?:acquisition of|acquires?|acquired|acquiring|to acquire|co
 // A takeover-regulation shareholding disclosure, a promoter buying the company's own shares, a new
 // subsidiary, money put into one, land, and the company as the TARGET are none of them a business
 // being bought.
-const NOT_A_PURCHASE = /\b(?:sast|substantial acquisition|takeovers?\)?\s+regulations|regulation\s*(?:10|29|31)|reg\.?\s*(?:10|29|31)|open market|promoters?\b[^.]{0,40}\bacquir\w*|acquir\w*\s+(?:the\s+)?(?:equity\s+)?shares\s+of\s+the\s+company|incorporat\w*|conversion of|inter[- ]?(?:corporate|company) loan|further investment|capital infusion|infus\w+|subscri\w+\s+(?:to|of|in)\s+(?:the\s+)?(?:rights|equity|shares)|pledge|encumbrance|open offer|acquisition of (?:land|property|premises|office|plot)|acquired by|to be acquired|takeover by)\b/;
+const NOT_A_PURCHASE = /\b(?:regulation\s*(?:10|29|31)|reg\.?\s*(?:10|29|31)|open market|promoters?\b[^.]{0,40}\bacquir\w*|by\s+(?:the\s+)?promoters?|shares\s+of\s+the\s+company|incorporat\w*|conversion of|inter[- ]?(?:corporate|company) loan|further investment|capital infusion|infus\w+|subscri\w+\s+(?:to|of|in)\s+(?:the\s+)?(?:rights|equity|shares)|pledge|encumbrance|open offer|acquisition of (?:land|property|premises|office|plot)|acquired by|to be acquired|takeover by)\b/;
+// SEBI's (Substantial Acquisition of Shares and Takeovers) Regulations are NAMED by an ownership
+// disclosure, and also by a completed acquisition of a listed business made under them. The name
+// alone refuses a purchase only when no acquisition completed — the exception the materiality rule
+// makes (filing-signals.js) — so a card that keeps its Acquisition reading keeps its KPIs too.
+const SAST_NAME = /\b(?:sast|substantial acquisition|takeovers?\)?\s+regulations)\b/;
+const notAPurchase = (text) => NOT_A_PURCHASE.test(text) || (SAST_NAME.test(text) && !ACQUISITION_COMPLETED.test(text));
 const DIVESTS = /\b(?:slump sale|hive[- ]?off|divest(?:s|ed|ing|ment|iture)?|sale of (?:its |the |entire )?(?:business|undertaking|division|unit|plant|brand|facility|(?:\d+(?:\.\d+)?%\s+)?(?:stake|shareholding|equity stake) in (?:its |the )?(?:subsidiary|associate|joint venture|jv|step[- ]down)))\b/;
 const NOT_A_BUSINESS_SALE = /\b(?:promoters?|offer for sale|ofs|block deal|bulk deal|open market|pledge)\b/;
 
@@ -569,7 +607,7 @@ export const TRIGGERS = [
   {
     id: 'acquisition',
     label: 'Acquisition',
-    detect: (e, r, ids) => (ids.has('acquisition') && ACQUIRES.test(r.text) && !NOT_A_PURCHASE.test(r.text) ? { kind: 'default' } : null),
+    detect: (e, r, ids) => (ids.has('acquisition') && ACQUIRES.test(r.text) && !notAPurchase(r.text) ? { kind: 'default' } : null),
     groups: {
       banks: ['advances', 'deposits'], nbfc: ['aum'], insurance: ['gross_written_premium'], capital_markets: ['aum_capital_markets'],
       investment_vehicles: NONE, diversified_holding: ['segment_revenue'],

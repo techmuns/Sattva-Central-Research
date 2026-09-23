@@ -3114,20 +3114,30 @@ no alert. Nine rules, every one asserted by `verify-kpi-impact.mjs` or `verify-k
    read the whole list, and the `+N` chip's title names the ones it holds, so a fifth KPI is never
    reduced to a count. A filed comparison from zero (`from-zero`, 78 lines in the shipped feed) is
    still a KPI in play, worded *from zero*; one the source could not make (`na`) names nothing.
-8. **A failed read of the sector file is a state, not an absence.** `kpiImpact.status()` records idle,
-   loading, ready or failed with the reason; a failure is said on the AI Alerts page and in the source
-   registry, which also reads a classification older than nine days as a refresh that is due.
+8. **A failed read of the sector file is a state, not an absence — and the file is re-read while the
+   page stays open.** `kpiImpact.status()` records idle, loading, ready or failed with the reason; a
+   failure is said on the AI Alerts page and in the source registry, which also reads a classification
+   older than nine days as a refresh that is due. Every AI Alerts check re-reads the file once the held
+   copy is older than `RECHECK_MS` (60s) — a conditional GET, 304 when unmoved — and adopts a changed
+   one without a reload; an unchanged payload keeps the same object, so the ranking memo survives. A
+   failed re-read keeps the copy it had and says so (*Saved copy*), never *no ontology*. The file also
+   carries the classification's own gaps (`classificationFailed`, `unresolved`): either one makes the
+   registry row *Partial coverage* rather than *Connected*, whatever the build time says.
 9. **Events carry what the card reads.** The AI pool drops `sourceRecord`, so the earnings event
    carries `resultBasis` and `metrics` (each metric's own label, change and kind) and the con-call
    event `tags`, as fields; nothing is parsed back out of `detail`. The card's sentence reads the same
    `metrics` (`resultFigures`), which is what lets a card ranked from the pool state a filed result's
    figures exactly as the full history does. A pool built before these fields existed simply yields
    fewer chips until its next build.
+10. **The takeover regulations' NAME is not a reason to doubt a completed acquisition.** The same
+   exception as the materiality rule: *"Completion of acquisition of 51% stake pursuant to SEBI (SAST)
+   Regulations"* keeps both its high Acquisition reading and its KPIs, while a promoter's purchase of
+   the company's own shares, or the regulations named with no completed acquisition, names none.
 
 Classification: `.github/workflows/sector-kpis-refresh.yml` runs `node scripts/classify-companies.mjs
 && node scripts/build-sector-kpis.mjs` daily, commits to `main`, and then fails naming any listed
-holding left without a KPI group (`--check-book`) — a quiet gap would look like evidence that names
-no KPI. An unchanged day writes nothing but a weekly heartbeat. All 107 listed book companies and the
+holding left without a KPI group, or kept on a classification whose latest re-read failed
+(`--check-book`) — a quiet gap would look like evidence that names no KPI. An unchanged day writes nothing but a weekly heartbeat. All 107 listed book companies and the
 NSE-500 resolve today (593 exact pairs, 6 REITs by the one stated override); an SME symbol is read
 without its `-SM` suffix and a company Screener files under another code is found by an EXACT name
 match on Screener's own search. A company outside the book and the NSE-500 carries no row until it
