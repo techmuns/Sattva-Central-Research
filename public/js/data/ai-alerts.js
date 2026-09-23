@@ -949,6 +949,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       mixed,
       highCount,
       materialPortfolioEvent,
+      materialStoryUpdate: events.some(isMaterialStoryUpdate),
       evidenceKey: JSON.stringify(materialEvidence(events)),
       hasMaterialNegative,
       feedCount: feeds.length,
@@ -987,7 +988,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       // would push a company above the deliberately bounded 100-point scale.
       card.scoreBreakdown.push({ label: '100-point priority scale cap', points: card.score - unclamped });
     }
-    card.priority = card.score >= MUST_SEE_SCORE ? 'must-see' : card.score >= MIN_SCORE || card.materialPortfolioEvent ? 'important' : 'watch';
+    card.priority = card.score >= MUST_SEE_SCORE ? 'must-see' : card.score >= MIN_SCORE || card.materialPortfolioEvent || card.materialStoryUpdate ? 'important' : 'watch';
     card.insight = plainInsight(card);
     card.badge = cardBadge(card);
     enriched.push(enrichCardFromAllAlerts(card, supportedReport, { contextIndex }));
@@ -998,7 +999,9 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   cards.sort(
     (a, b) => (weights.size ? (b.holdingWeightPct ?? -1) - (a.holdingWeightPct ?? -1) : 0) || b.score - a.score || b.highCount - a.highCount || String(b.topEvent?.day || '').localeCompare(String(a.topEvent?.day || '')) || a.company.localeCompare(b.company)
   );
-  const surfaced = cards.filter((card) => card.score >= MIN_SCORE || card.materialPortfolioEvent);
+  // A new checked development must stand on its own after the original evidence ages out.
+  // Keep the measured score and the source's importance tag; neither is a new-facts gate.
+  const surfaced = cards.filter((card) => card.score >= MIN_SCORE || card.materialPortfolioEvent || card.materialStoryUpdate);
   const marketWide = (report?.events || []).filter(
     (event) => !event.ticker && !event.entityId && event.day && event.day >= firstDay && event.day <= day
   ).length;

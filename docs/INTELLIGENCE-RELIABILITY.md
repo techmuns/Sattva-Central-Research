@@ -51,6 +51,9 @@ developments, resurface archived alerts and show what changed. Repeated publicat
 advance the development's first source time or inflate its event count. Raw source records stay
 searchable through `sourceEvents` and All Alerts. A grouping failure leaves distinct reports
 visible with a partial grouping status, independent of source freshness.
+Checked material developments surface in Portfolio and Universe even when their source tag is
+low or the earlier story has left the 14-day window. Preserve the source tag and measured score;
+the new development itself is a reason to surface it. Old facts and later copies still age out.
 
 The reader's decision cache provides up to 180 source days of earlier story context; clearing or
 evicting device storage can require rechecking. Semantic checks happen while reading AI Alerts,

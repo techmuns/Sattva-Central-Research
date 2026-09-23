@@ -40,7 +40,7 @@ console.log('PASS: complete partitions, cross-company boundaries, and new stages
 const classify = reports => {
   const developments = new Map();
   for (const item of reports) {
-    const change = /cancels/.test(item.headline) ? 'cancellation' : /RBI approves/.test(item.headline) ? 'approval' : /revised cash/.test(item.headline) ? 'terms' : 'new';
+    const change = /cancels/.test(item.headline) ? 'cancellation' : /completes/.test(item.headline) ? 'completion' : /RBI approves/.test(item.headline) ? 'approval' : /revised cash/.test(item.headline) ? 'terms' : 'new';
     const key = item.known?.development || change;
     if (!developments.has(key)) developments.set(key, { reports: [], change });
     developments.get(key).reports.push(item.id);
@@ -107,6 +107,8 @@ assert(!mute.isHidden('ALPHA', JSON.stringify(materialEvidence([sameUrlCorrectio
 assert.equal(outage.project([event('type1', 'General Updates'), event('type2', 'General Updates')]).length, 2,
   'generic filing labels do not establish event identity');
 const { writeEntry } = await import('../public/js/core/store.js');
+const laterCompletion = event('completion', 'Alpha Bank completes merger with Beta Bank', { day: '2026-10-10', importance: 'low' });
+await reader.review([laterCompletion]);
 await writeEntry('ai-alerts:story-decisions:v1', saved);
 await storyGrouping.load();
 const rank = items => rankReport({ day: '2026-09-26', scope: 'portfolio', feeds: [{ id: 'news', status: 'ok', reachesToday: true }], events: items },
@@ -123,6 +125,14 @@ assert.equal(evolved.cards[0].events.flatMap(e => e.storyReports).length, 101);
 const outside = rankReport({ day: '2026-10-10', scope: 'portfolio', feeds: [{id:'news',status:'ok',reachesToday:true}], events: [late] },
   {holdings:[{ticker:'ALPHA'}]});
 assert.equal(outside.cards.length,0,'old facts do not re-enter the review window');
+for (const scope of ['portfolio', 'universe']) {
+  const fresh = rankReport({ day: laterCompletion.day, scope, feeds: [{id:'news',status:'ok',reachesToday:true}], events: [laterCompletion] },
+    {holdings: scope === 'portfolio' ? [{ticker:'ALPHA'}] : []});
+  assert.equal(fresh.cards.length,1,'a low-tagged material development surfaces after all earlier evidence ages out');
+  assert.equal(fresh.cards[0].priority,'important');
+  assert.equal(fresh.cards[0].events[0].importance,'low','the original source tag stays intact');
+  assert(fresh.cards[0].events[0].storyHistory.length > 0,'the original story remains accessible in history');
+}
 console.log('PASS: 100 reports from 65 outlets become one development; new facts resurface, late copies stay quiet, every source/history survives reload and failure.');
 
 const db = new DatabaseSync(':memory:');
