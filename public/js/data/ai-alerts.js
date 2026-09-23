@@ -15,7 +15,7 @@
 // within the selected filter; the materiality threshold and alert priority remain evidence-based.
 
 import { storyGrouping } from './alert-stories.js';
-import { STORY_FEEDS, storyRecord, storyKey } from './alert-stories-shared.js';
+import { STORY_FEEDS, storyRecord, storyKey, isMaterialStoryUpdate } from './alert-stories-shared.js';
 import * as generalAlerts from './daily-alerts.js';
 import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
@@ -126,7 +126,7 @@ function dedupe(events) {
 // Stable content identities for read/dismiss state. A new material item must resurface a company
 // even when an older, higher-scoring item remains on top. Routine observations do not wake it.
 export function materialEvidence(events = []) {
-  const material = events.filter((event) => event.importance === 'high');
+  const material = events.filter((event) => event.importance === 'high' || isMaterialStoryUpdate(event));
   const identity = event => {
     const record = storyRecord(event);
     return record ? JSON.stringify(['story-source', storyKey(record)])
@@ -749,7 +749,7 @@ export function plainHeadline(event) {
  */
 export function leadEvent(card) {
   const events = card?.events || [];
-  const newest = [...events].filter(e => e.importance === 'high').sort((a, b) => `${b.day} ${b.time || ''}`.localeCompare(`${a.day} ${a.time || ''}`))[0];
+  const newest = [...events].filter(e => e.importance === 'high' || isMaterialStoryUpdate(e)).sort((a, b) => `${b.day} ${b.time || ''}`.localeCompare(`${a.day} ${a.time || ''}`))[0];
   if (newest?.storyId && newest.storyChange !== 'new' && !isTypeOnly(plainHeadline(newest))) return newest;
   return events.find((event) => !isTypeOnly(plainHeadline(event)))
     || events.find((event) => plainHeadline(event).trim())

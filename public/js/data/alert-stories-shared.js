@@ -6,6 +6,7 @@ export const STORY_BYTES = 120000;
 export const STORY_HISTORY_DAYS = 180;
 export const STORY_FEEDS = new Set(['news', 'market-news', 'announcements', 'nse-filings']);
 export const STORY_CHANGES = new Set(['new', 'approval', 'terms', 'figures', 'correction', 'denial', 'cancellation', 'completion', 'development']);
+export const isMaterialStoryUpdate = event => !!event.storyId && STORY_CHANGES.has(event.storyChange) && event.storyChange !== 'new';
 const normal = value => String(value || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
 const validDay = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 export const storyBytes = value => new TextEncoder().encode(JSON.stringify(value)).length;

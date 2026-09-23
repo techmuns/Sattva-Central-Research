@@ -76,6 +76,12 @@ assert.equal(topEvidence({ events: grouped }, 4).length, 1, 'one story row, hist
 assert.equal(topEvidence({ events: grouped }, 4)[0].storyChange, 'cancellation');
 assert.equal(latestAlertSignal({ events: grouped }).day, '2026-09-26');
 assert.equal(grouped.at(-1).storyHistory.length, 3);
+const quietApproval = { ...approval, importance: 'low' };
+await reader.review([...hundred, quietApproval]);
+const quietUpdate = reader.project([...hundred, quietApproval]);
+mute.hide('ALPHA', JSON.stringify(firstScore));
+assert(!mute.isHidden('ALPHA', JSON.stringify(materialEvidence(quietUpdate))), 'a checked material development wakes the story even with a low source tag');
+assert.equal(latestAlertSignal({ events: quietUpdate }).day, quietApproval.day, 'a checked material development advances the reading order');
 assert(matchesSearch({ sourceEvents: [...hundred, late, approval, terms, cancel] }, 'revised cash'));
 const restored = createStoryGrouping({ read: async () => saved, write: async () => {}, fetcher: () => { throw Error('offline'); }, now: () => Date.parse('2026-09-26T12:00:00Z') });
 await restored.load();
@@ -109,6 +115,7 @@ assert.equal(many.cards[0].contextEvents.length, 0, 'copies cannot return as rel
 const evolved = rank([...hundred, approval]);
 assert.equal(evolved.cards[0].events.length, 2);
 assert.match(evolved.cards[0].insight, /RBI approves/);
+assert.match(rank([...hundred, quietApproval]).cards[0].insight, /RBI approves/, 'a low-tagged material development leads the claim');
 assert.equal(evolved.cards[0].events.flatMap(e => e.storyReports).length, 101);
 const outside = rankReport({ day: '2026-10-10', scope: 'portfolio', feeds: [{id:'news',status:'ok',reachesToday:true}], events: [late] },
   {holdings:[{ticker:'ALPHA'}]});
