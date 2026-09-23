@@ -77,7 +77,7 @@ export function matchesSearch(card, query) {
     card.company, card.ticker, card.sector, card.insight, card.contextSummary, card.badge?.label,
     ...(card.feedLabels || []),
     ...(card.confluence || []).flatMap((pattern) => [pattern.label, pattern.short, pattern.detail]),
-    ...(card.events || []).flatMap((event) => [event.company, event.ticker, event.headline, event.detail, event.feedLabel, event.feed, event.day, formatDay(event.day), event.time]),
+    ...(card.sourceEvents || card.events || []).flatMap((event) => [event.company, event.ticker, event.headline, event.detail, event.feedLabel, event.feed, event.day, formatDay(event.day), event.time]),
     ...(card.contextEvents || []).flatMap((event) => [event.headline, event.detail, event.feedLabel, event.metric, event.day]),
     ...(card.upcomingEvents || []).flatMap((event) => [event.headline, event.detail, event.feedLabel, event.day]),
   ].join(' '));

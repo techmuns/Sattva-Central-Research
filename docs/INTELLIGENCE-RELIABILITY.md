@@ -44,6 +44,24 @@ certify that no records have been missed.
 
 ## Alert evidence retention
 
+AI Alerts story grouping is an additive reading of public news and exchange disclosures.
+Equivalent reports share one development with all source links. Material changes (including
+new terms/figures, approvals, completion, denial, cancellation and corrections) remain separate
+developments, resurface archived alerts and show what changed. Repeated publication cannot
+advance the development's first source time or inflate its event count. Raw source records stay
+searchable through `sourceEvents` and All Alerts. A grouping failure leaves distinct reports
+visible with a partial grouping status, independent of source freshness.
+
+The reader's decision cache provides up to 180 source days of earlier story context; clearing or
+evicting device storage can require rechecking. Semantic checks happen while reading AI Alerts,
+with existing source revalidation, not as an independent ingestion guarantee. Source collectors
+and durable source archives continue unchanged without an open browser. The shared review cache
+lasts seven days, requests are bounded to 80 records / 120 KB, and 300 attempts per rolling day.
+A company whose known context cannot fit a complete check remains partially grouped. These bounds
+must not delete, truncate or hide its reports. No outlet allow-list or publisher-count cap limits
+the news/disclosure reports admitted to grouping.
+
+
 Public Chatter summaries describe the full source-tag split, not the provider's net-score band
 or the latest mention alone. Opposing bullish/bearish tags are Mixed; directional summaries
 require a majority of all mentions with no opposing tags. Missing, inconsistent or empty splits

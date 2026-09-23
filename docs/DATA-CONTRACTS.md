@@ -5559,3 +5559,23 @@ acknowledges unchanged source content, and finish requires every target. Failed/
 preserve the last good company data. The durable timer and source health are exposed read-only
 at `/api/mutual-funds/health`. See [Mutual Fund ownership](MUTUAL-FUNDS.md) for calculation,
 publication, retention and incomplete-source boundaries.
+
+
+### AI Alert story reading (23 September 2026)
+
+`POST /api/alert-stories` is same-origin and accepts `{version:1,reports:[...]}`. Reports have
+request-local ids, public company/attribution identity, feed, URL, source day/time, original
+headline/description, direction and importance. Optional `known` carries a stable story and
+development id. Responses partition every id once as `{ok:true,stories:[{developments:[{reports,
+change}]}]}`. No generated factual summary is displayed. Unknown ids, omitted/duplicate members,
+merged known developments, changed figures/stages, incomplete replies and source mismatches are
+refused. Failure responses contain no replacement source list.
+
+The separately named durable object caches a SHA-256 of the entire allow-listed request, so one
+caller's supplied text cannot change another request's cached reading. Reservation and rolling
+budget writes precede model I/O. In-flight duplicates wait; failures retain a five-minute cooldown.
+Browser decisions are keyed by complete public input, so same-URL/headline body corrections are
+new evidence. `storyReports` keeps the underlying source events, `storyHistory` keeps earlier
+checked developments, and `sourceEvents` remains the ungrouped searchable input on each card.
+The original capture/feed contracts and All Alerts exports are unchanged. The alert pool v3 adds
+company-news `storyText` so pooled and direct readers classify the same supplied facts.

@@ -14,6 +14,8 @@
 // from the authenticated Family parent can order cards by holding size. Size changes ordering
 // within the selected filter; the materiality threshold and alert priority remain evidence-based.
 
+import { storyGrouping } from './alert-stories.js';
+import { STORY_FEEDS, storyRecord, storyKey } from './alert-stories-shared.js';
 import * as generalAlerts from './daily-alerts.js';
 import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
@@ -28,7 +30,8 @@ export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
 export const MIN_SCORE = 64;
 export const MUST_SEE_SCORE = 82;
-export const onChange = generalAlerts.onChange;
+export const onChange = fn => { const a = generalAlerts.onChange(fn), b = storyGrouping.onChange(fn); return () => { a(); b(); }; };
+export const storyStatus = report => storyGrouping.status(report?.allCards?.flatMap(card => card.sourceEvents || card.events) || []);
 // Keep ranking inputs in memory only; private position sizes must never enter a saved report.
 const rankingOptions = new WeakMap();
 const rankingEvidence = new WeakMap();
@@ -105,10 +108,12 @@ const feedFamily = (event) => event.feed === 'nse-filings' ? 'announcements' : e
 /** Syndicated links and duplicate exchange disclosures are not independent corroboration. */
 function dedupe(events) {
   const seen = new Set();
+  events = storyGrouping.project(events);
   // Prefer the useful copy when one exchange supplied a generic label and the other a full
   // subject. Stable ordering also stops equivalent source arrival order changing read state.
   return [...events].sort((a, b) => Number(b.importance === 'high') - Number(a.importance === 'high') ||
     String(a.feed).localeCompare(String(b.feed)) || String(a.id).localeCompare(String(b.id))).filter((event) => {
+    if (STORY_FEEDS.has(event.feed)) return true;
     const family = feedFamily(event);
     const key = `${family}:${event.day}:${normalizedHeadline(event.headline) || event.id}`;
     const link = event.url && ['announcements', 'news'].includes(family) ? `${family}:url:${canonicalArticleUrl(event.url)}` : null;
@@ -122,9 +127,14 @@ function dedupe(events) {
 // even when an older, higher-scoring item remains on top. Routine observations do not wake it.
 export function materialEvidence(events = []) {
   const material = events.filter((event) => event.importance === 'high');
-  return [...new Set((material.length ? material : events).map((event) => JSON.stringify([
-    feedFamily(event), event.id || null, event.day, event.headline, event.direction, event.importance,
-  ])))].sort();
+  const identity = event => {
+    const record = storyRecord(event);
+    return record ? JSON.stringify(['story-source', storyKey(record)])
+      : JSON.stringify([feedFamily(event), event.id || null, event.day, event.headline, event.direction, event.importance]);
+  };
+  return [...new Set((material.length ? material : events).map(event => event.developmentId
+    ? JSON.stringify(['story-development', event.developmentId, event.direction, event.importance,
+      (event.storyReports || [event]).map(identity).sort()]) : identity(event.storyReports?.[0] || event)))].sort();
 }
 
 function eventScore(event, day, feedState) {
@@ -647,7 +657,16 @@ export function topEvidence(card, limit = 3, { maxPerSource = MAX_PER_SOURCE } =
   // Grouped by FAMILY, in the order each family's strongest event appears — so the rounds below
   // hand out slots by independent source, in score order within each one.
   const bySource = new Map();
-  for (const event of card?.events || []) {
+  const latest = new Map();
+  for (const event of card?.events || []) if (event.storyId) {
+    const held = latest.get(event.storyId);
+    if (!held || `${event.day} ${event.time || ''}` > `${held.day} ${held.time || ''}`) latest.set(event.storyId, event);
+  }
+  const emitted = new Set();
+  for (const source of card?.events || []) {
+    const event = source.storyId ? latest.get(source.storyId) : source;
+    if (emitted.has(event)) continue;
+    emitted.add(event);
     const family = feedFamily(event);
     const found = bySource.get(family);
     if (found) found.push(event);
@@ -730,6 +749,8 @@ export function plainHeadline(event) {
  */
 export function leadEvent(card) {
   const events = card?.events || [];
+  const newest = [...events].filter(e => e.importance === 'high').sort((a, b) => `${b.day} ${b.time || ''}`.localeCompare(`${a.day} ${a.time || ''}`))[0];
+  if (newest?.storyId && newest.storyChange !== 'new' && !isTypeOnly(plainHeadline(newest))) return newest;
   return events.find((event) => !isTypeOnly(plainHeadline(event)))
     || events.find((event) => plainHeadline(event).trim())
     || card?.topEvent
@@ -828,11 +849,11 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   // Source records are immutable publications. Compare every reference, not counts/timestamps;
   // a same-ID correction publishes a new record. Copy arrays so in-place additions/removals
   // cannot defeat the comparison. Small membership and health values are compared by content.
-  const input = { day, scope: report?.scope || 'universe', events,
+  const input = { storyRevision: storyGrouping.revision(), day, scope: report?.scope || 'universe', events,
     health: JSON.stringify((report?.feeds || []).map(feed => [feed.id, feed.status, feed.reachesToday])),
     book: JSON.stringify(holdings), positions: JSON.stringify(positionSizes),
     insights: insightCompanies, session: JSON.stringify([token, email, orgId]) };
-  const cached = rankCache.find(entry => entry.input.day === day && entry.input.scope === input.scope &&
+  const cached = rankCache.find(entry => entry.input.storyRevision === input.storyRevision && entry.input.day === day && entry.input.scope === input.scope &&
     entry.input.health === input.health && entry.input.book === input.book && entry.input.positions === input.positions &&
     entry.input.session === input.session && sameRows(entry.input.events, events) && sameRows(entry.input.insights, insightCompanies));
   if (cached) {
@@ -871,7 +892,8 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   for (const [key, rawEvents] of grouped) {
     const ticker = rawEvents.find(e => e.ticker)?.ticker || null;
     const entityId = rawEvents.find(e => e.entityId)?.entityId || null;
-    const events = dedupe(rawEvents);
+    const events = dedupe(rawEvents).filter(event => event.day >= firstDay && event.day <= day);
+    if (!events.length) { yield; continue; }
     const scoredEvents = events
       .map((event) => ({ event, score: eventScore(event, day, feedById.get(event.feed)) }))
       .sort((a, b) => b.score.points - a.score.points || String(b.event.day).localeCompare(String(a.event.day)) || String(b.event.time || '').localeCompare(String(a.event.time || '')));
@@ -921,6 +943,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       holdingWeightPct: weights.get(key) ?? weights.get(entityId) ?? null,
       // Cards show the strongest evidence first. General Alerts remains the chronological record.
       events: scoredEvents.map((entry) => entry.event),
+      sourceEvents: rawEvents,
       topEvent: top?.event || events[0],
       directions,
       mixed,
@@ -1050,13 +1073,13 @@ function mergePlan(previous, next) {
   if (!previous || previous.scope !== next.scope || previous.day !== next.day) return null;
   const eventKey = event => `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
   const nextEvidence = new Set((rankingEvidence.get(next) || []).map(eventKey));
-  for (const card of next.allCards) for (const event of [...card.events, ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) nextEvidence.add(eventKey(event));
+  for (const card of next.allCards) for (const event of [...(card.sourceEvents || card.events), ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) nextEvidence.add(eventKey(event));
   // Union EVIDENCE, not whole cards. Keeping the old card until every prior source answers
   // hides a new material story about that same company behind an unrelated slow feed.
   const evidence = new Map();
   let needsMerge = false;
   for (const report of [previous, next]) for (const card of report.allCards) {
-    for (const event of [...card.events, ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) {
+    for (const event of [...(card.sourceEvents || card.events), ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) {
       const id = eventKey(event);
       if (report === previous && !nextEvidence.has(id)) needsMerge = true;
       evidence.set(id, event); // New source corrections win under their stable identity.
@@ -1123,6 +1146,7 @@ export function withPositionSnapshot(report, snapshot) {
 /** A privacy-safe ready view while the live source modules revalidate. */
 export async function cached({ scope = 'portfolio', holdings = null, positionSizes = null, isCurrent = () => true } = {}) {
   const book = holdings || coverage.holdings();
+  await storyGrouping.load();
   const report = await generalAlerts.readCachedAlertWindow({ scope, holdings: book });
   if (!report || !isCurrent()) return null;
   return rankReportAsync(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() }, { isCurrent });
@@ -1168,6 +1192,11 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
   });
   closed = true;
   queued = null;
+  if (typeof window !== 'undefined' && isCurrent()) {
+    const first = shiftDay(report.day || generalAlerts.today(), -(WINDOW_DAYS - 1));
+    void storyGrouping.review(report.events.filter(event => event.day >= first && event.day <= report.day &&
+      (newsCanSupportAI(event) || isRelatedNewsContext(event))), { isCurrent });
+  }
   if (publishing) await publishing;
   if (!isCurrent()) return null; // Shared collection/storage finishes; obsolete view work stops.
   if (!onPartial) {

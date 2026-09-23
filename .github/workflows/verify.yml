@@ -104,6 +104,10 @@ jobs:
         run: node scripts/verify-shared-watchlist.mjs
       - name: Verify the team brief — contract, store, fixture-built editions and the sending alarm
         run: node scripts/verify-newsletter.mjs && node scripts/verify-newsletter-reading.mjs && node scripts/verify-newsletter-email.mjs && node scripts/verify-newsletter-events.mjs
+      - name: Verify story grouping, material updates, history and durable review budget
+        run: node scripts/verify-alert-stories.mjs
+      - name: Verify story grouping in the local Worker runtime
+        run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-alert-stories-runtime.mjs'
       - name: Verify operational filing health
         run: node scripts/verify-filings-health.mjs
       - name: Verify capture watchdog
@@ -171,6 +175,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
+      - name: Verify AI story updates, sources and returning-session upgrade
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-alert-stories-ui.mjs
       - name: Verify Sattva deals across scopes, automatic refresh and history
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
