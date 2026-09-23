@@ -1486,6 +1486,14 @@ function fromEarnings({ day, wanted, includeHistory }) {
       // recovering the basis by parsing the headline above would lose it the day that is reworded.
       resultBasis: basis,
       url: r.mcUrl || null,
+      // THE TWO FILED COMPARISONS AS FIELDS — the source's own label, change and kind, unreworded.
+      // The card's sentence (`resultFigures`) and its KPI row (kpi-impact.js) both read them here,
+      // because the AI pool drops `sourceRecord`: a figure read only off the record reached the
+      // card from the full history and silently vanished from the same card built from the pool.
+      metrics: {
+        revenue: r.revenue ? { label: r.revenue.label || 'Revenue', pct: numeric(r.revenue.pct), kind: r.revenue.kind || null } : null,
+        netProfit: r.netProfit ? { label: r.netProfit.label || 'Net Profit', pct: numeric(r.netProfit.pct), kind: r.netProfit.kind || null } : null,
+      },
     };
   });
   return {
@@ -1534,6 +1542,9 @@ function fromConcalls({ day, wanted, includeHistory }) {
       headline: `Con-call ${analysed ? 'analysis published' : 'held; analysis pending'}`,
       detail: [result, ...(r.tags || [])].join(' · '),
       url: r.transcriptUrl || null,
+      // The research provider's own highlights, verbatim, as a field: kpi-impact.js reads the KPIs
+      // they name, and `sourceRecord` does not survive into the AI pool.
+      tags: Array.isArray(r.tags) ? r.tags.filter((tag) => typeof tag === 'string') : [],
     };
   });
   return {

@@ -7832,7 +7832,9 @@ const driverRules = await page.evaluate(async () => {
       const bare = ai.rankReport({ scope: 'universe', day: '2026-09-03', feeds: [{ id: 'announcements', status: 'ok', reachesToday: true }],
         events: [{ ...events[0], filingRule: null, keywordIds: [] }] }, { holdings: [] });
       const card = withTopics.allCards[0];
-      return { equal: card?.score === bare.allCards[0]?.score, attached: (card?.drivers?.total || 0) > 0 };
+      // The reading rides the ROW now rather than a card-level object, so what has to hold is that the
+      // event the card surfaced still answers `driversFromEvent` — that is what the row chip reads.
+      return { equal: card?.score === bare.allCards[0]?.score, attached: (card?.events || []).some((event) => d.driversFromEvent(event).length > 0) };
     })(),
   };
 });

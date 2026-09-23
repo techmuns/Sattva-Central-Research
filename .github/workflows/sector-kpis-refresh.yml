@@ -1,0 +1,69 @@
+name: Sector KPIs refresh
+
+# The company classification behind AI Alerts' "KPIs in play": NSE's four-level industry
+# classification for every listed holding and the NSE-500, resolved into the desk's sector → KPI
+# ontology (scripts/classify-companies.mjs, then scripts/build-sector-kpis.mjs).
+#
+# Daily, so a holding added to the book carries its KPI line within a day. Cheap, because only a
+# company with no page classification — or one older than 90 days — costs a request, and a run
+# that changes nothing writes nothing except a weekly heartbeat. What was read is published even
+# when a holding could not be classified, and the run then FAILS naming it: a card that silently
+# lacks its KPI line looks exactly like one whose evidence names no KPI.
+on:
+  schedule:
+    - cron: "37 1 * * *"
+  workflow_dispatch:
+
+run-name: Sector KPIs refresh (${{ github.event_name == 'schedule' && 'github-cron' || 'manual' }})
+
+concurrency:
+  group: sector-kpis-refresh
+  cancel-in-progress: false
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Classify companies (NSE-500 export, then Screener pages)
+        run: node scripts/classify-companies.mjs
+
+      - name: Resolve them into the sector → KPI ontology
+        run: node scripts/build-sector-kpis.mjs
+
+      - name: Commit the classification to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/company-classification.json public/data/sector-kpis.json
+          if git diff --cached --quiet; then
+            echo "No classification changes to commit."
+            exit 0
+          fi
+          git commit -m "Sector KPIs refresh ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — fetching + rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { echo "Rebase failed — aborting."; git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          echo "Push failed after 4 attempts."
+          exit 1
+
+      - name: Check every listed holding is classified
+        run: node scripts/build-sector-kpis.mjs --check-book

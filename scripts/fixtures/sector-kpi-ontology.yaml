@@ -1,0 +1,4022 @@
+# Sector/industry -> KPI ontology. Seeded into `sector_kpis` by POST /sector-kpis/seed.
+#
+# sector_industry_map holds the EXACT sector and industry strings found on the
+# `stocks` table - all 644 pairs, verified against it - so a ticker resolves by
+# matching them directly. Do not reword them: a changed string stops matching.
+#
+# Adding a KPI: define it under kpi_definitions (display_name, aliases,
+# unit_hints, value_type are all required), then list its key in a kpi_group.
+# Its display_name is what lands in the table, and it must not repeat one of the
+# global_kpis - those are added to every pair already, so a repeat is deduped
+# away and the group silently loses a KPI.
+
+version: 2
+global_kpis:
+  revenue:
+    display_name: Revenue
+    aliases:
+    - net revenue
+    - net sales
+    - total revenue
+    - total income from operations
+    - revenue from operations
+    - gross revenue
+    - sales
+    - turnover
+    - net turnover
+    - operating revenue
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    - bn
+    - million
+    - billion
+    - rs cr
+    - inr cr
+    value_type: currency
+  ebitda:
+    display_name: EBITDA
+    aliases:
+    - ebitda
+    - operating profit
+    - operating ebitda
+    - reported ebitda
+    - core ebitda
+    - adj ebitda
+    - adjusted ebitda
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    - million
+    value_type: currency
+  ebit:
+    display_name: EBIT
+    aliases:
+    - ebit
+    - earnings before interest and tax
+    - operating profit after depreciation
+    - ebit (excl. oi)
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  pat:
+    display_name: PAT
+    aliases:
+    - pat
+    - net profit
+    - profit after tax
+    - reported pat
+    - reported net profit
+    - net income
+    - profit for the period
+    - profit for the year
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    - million
+    value_type: currency
+  adjusted_pat:
+    display_name: Adjusted PAT
+    aliases:
+    - adjusted pat
+    - adj pat
+    - adj. pat
+    - core pat
+    - normalised pat
+    - normalized pat
+    - recurring pat
+    - reported adjusted pat
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  eps:
+    display_name: EPS
+    aliases:
+    - eps
+    - earnings per share
+    - diluted eps
+    - basic eps
+    - reported eps
+    - adj eps
+    - adjusted eps
+    unit_hints:
+    - rs
+    - inr
+    - ₹
+    value_type: currency
+  ebitda_margin:
+    display_name: EBITDA Margin
+    aliases:
+    - ebitda margin
+    - ebitda%
+    - ebitda margin %
+    - operating profit margin
+    - opm
+    - adj ebitda margin
+    - adjusted ebitda margin
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  ebit_margin:
+    display_name: EBIT Margin
+    aliases:
+    - ebit margin
+    - ebit margin %
+    - ebit%
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  gross_margin:
+    display_name: Gross Margin
+    aliases:
+    - gross margin
+    - gross profit margin
+    - gross margin %
+    - gross%
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  operating_margin:
+    display_name: Operating Margin
+    aliases:
+    - operating margin
+    - operating margin %
+    - operating profit %
+    - op margin
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  net_profit_margin:
+    display_name: Net Profit Margin
+    aliases:
+    - net profit margin
+    - pat margin
+    - net margin
+    - npm
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  other_income:
+    display_name: Other Income
+    aliases:
+    - other income
+    - non-operating income
+    - other operating income
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  finance_cost:
+    display_name: Finance Cost
+    aliases:
+    - finance cost
+    - finance costs
+    - interest cost
+    - interest expense
+    - interest and finance charges
+    - borrowing cost
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  depreciation:
+    display_name: Depreciation & Amortisation
+    aliases:
+    - depreciation
+    - d&a
+    - depreciation and amortisation
+    - depreciation and amortization
+    - depreciation & amortisation
+    - da
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  tax_rate:
+    display_name: Effective Tax Rate
+    aliases:
+    - tax rate
+    - effective tax rate
+    - ettr
+    - tax %
+    unit_hints:
+    - '%'
+    value_type: percentage
+  capex:
+    display_name: Capital Expenditure
+    aliases:
+    - capex
+    - capital expenditure
+    - additions to fixed assets
+    - gross capex
+    - net capex
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  net_debt:
+    display_name: Net Debt
+    aliases:
+    - net debt
+    - net borrowings
+    - net debt position
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  debt_to_equity:
+    display_name: Debt to Equity
+    aliases:
+    - debt to equity
+    - d/e ratio
+    - d/e
+    - debt equity ratio
+    - leverage ratio
+    - net d/e
+    - net debt to equity
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+  working_capital:
+    display_name: Working Capital
+    aliases:
+    - working capital
+    - net working capital
+    - nwc
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    - days
+    value_type: currency
+  cash_flow_from_operations:
+    display_name: Cash Flow from Operations
+    aliases:
+    - cash flow from operations
+    - operating cash flow
+    - cfo
+    - ocf
+    - cash from operations
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  free_cash_flow:
+    display_name: Free Cash Flow
+    aliases:
+    - free cash flow
+    - fcf
+    - free cashflow
+    - free cash generation
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  roe:
+    display_name: Return on Equity
+    aliases:
+    - roe
+    - return on equity
+    - return on net worth
+    - ronw
+    unit_hints:
+    - '%'
+    value_type: percentage
+  roce:
+    display_name: Return on Capital Employed
+    aliases:
+    - roce
+    - return on capital employed
+    - return on invested capital
+    - roic
+    unit_hints:
+    - '%'
+    value_type: percentage
+  volume:
+    display_name: Volume
+    aliases:
+    - volume
+    - total volume
+    - volumes
+    - sales volume
+    - dispatches
+    unit_hints:
+    - mt
+    - kt
+    - mn mt
+    - lakh units
+    - units
+    - mn units
+    - tonnes
+    value_type: number
+  realization:
+    display_name: Realization
+    aliases:
+    - realization
+    - realisation
+    - net realization
+    - net realisation
+    - average realization
+    - avg realization
+    - per unit realization
+    - price realization
+    unit_hints:
+    - rs/mt
+    - rs/unit
+    - inr/unit
+    - rs/tonne
+    value_type: currency
+  market_share:
+    display_name: Market Share
+    aliases:
+    - market share
+    - mkt share
+    - volume market share
+    - value market share
+    unit_hints:
+    - '%'
+    value_type: percentage
+  gross_profit:
+    display_name: Gross Profit
+    aliases:
+    - gross profit
+    - gross income
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  total_assets:
+    display_name: Total Assets
+    aliases:
+    - total assets
+    - total asset base
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  total_equity:
+    display_name: Total Equity
+    aliases:
+    - total equity
+    - shareholders equity
+    - net worth
+    - shareholders funds
+    - total shareholders equity
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  total_debt:
+    display_name: Total Debt
+    aliases:
+    - total debt
+    - total borrowings
+    - gross debt
+    - total loans
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  roa:
+    display_name: Return on Assets
+    aliases:
+    - roa
+    - return on assets
+    unit_hints:
+    - '%'
+    value_type: percentage
+  inventory_days:
+    display_name: Inventory Days
+    aliases:
+    - inventory days
+    - inventory turnover days
+    - days inventory outstanding
+    - dio
+    unit_hints:
+    - days
+    value_type: days
+  receivable_days:
+    display_name: Receivable Days
+    aliases:
+    - receivable days
+    - debtors days
+    - debtor days
+    - days sales outstanding
+    - dso
+    unit_hints:
+    - days
+    value_type: days
+  payable_days:
+    display_name: Payable Days
+    aliases:
+    - payable days
+    - creditor days
+    - days payable outstanding
+    - dpo
+    unit_hints:
+    - days
+    value_type: days
+  cash_and_equivalents:
+    display_name: Cash and Equivalents
+    aliases:
+    - cash and equivalents
+    - cash and cash equivalents
+    - cash balance
+    - cash on hand
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  dividend_per_share:
+    display_name: Dividend Per Share
+    aliases:
+    - dividend per share
+    - dps
+    - dividend
+    unit_hints:
+    - rs
+    - inr
+    - ₹
+    value_type: currency
+  book_value_per_share:
+    display_name: Book Value Per Share
+    aliases:
+    - book value per share
+    - bvps
+    - book value
+    unit_hints:
+    - rs
+    - inr
+    - ₹
+    value_type: currency
+  price_to_earnings:
+    display_name: Price to Earnings
+    aliases:
+    - p/e
+    - pe ratio
+    - pe multiple
+    - price to earnings
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+  ev_to_ebitda:
+    display_name: EV/EBITDA
+    aliases:
+    - ev/ebitda
+    - enterprise value to ebitda
+    - ev ebitda
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+  price_to_book:
+    display_name: Price to Book
+    aliases:
+    - p/b
+    - pb ratio
+    - price to book
+    - price to book value
+    - p/bv
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+kpi_definitions:
+  active_clients:
+    display_name: Active Clients
+    aliases:
+    - active clients
+    - active client base
+    - nse active clients
+    - unique active clients
+    unit_hints: &id004
+    - units
+    - nos
+    - count
+    value_type: count
+  ad_spend_to_sales:
+    display_name: Advertising Spend to Sales
+    aliases:
+    - advertising spend to sales
+    - a&p spend
+    - ad spend
+    - advertising and promotion
+    - a&p to sales
+    unit_hints:
+    - '%'
+    value_type: percentage
+  adr:
+    display_name: Average Daily Rate
+    aliases:
+    - adr
+    - average daily rate
+    - average room rate
+    - arr
+    unit_hints:
+    - rs
+    - inr
+    value_type: currency
+  advances:
+    display_name: Advances / Loan Book
+    aliases:
+    - advances
+    - total advances
+    - loan book
+    - gross advances
+    - loans and advances
+    - net advances
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  advertising_revenue:
+    display_name: Advertising Revenue
+    aliases:
+    - advertising revenue
+    - ad revenue
+    - advertisement revenue
+    - ad sales
+    unit_hints: &id001
+    - cr
+    - crore
+    - mn
+    - bn
+    - million
+    - billion
+    value_type: currency
+  anda_filings:
+    display_name: ANDA Filings
+    aliases:
+    - anda filings
+    - anda filed
+    - cumulative andas
+    - pending anda approvals
+    unit_hints:
+    - nos
+    - number
+    value_type: count
+  annualised_premium_equivalent:
+    display_name: Annualised Premium Equivalent
+    aliases:
+    - annualised premium equivalent
+    - ape
+    - annual premium equivalent
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  area_launched:
+    display_name: Area Launched
+    aliases:
+    - area launched
+    - launched area
+    - new launches
+    - project launches
+    - launch area
+    unit_hints:
+    - mn sq ft
+    - lakh sq ft
+    - sq ft
+    value_type: number
+  area_sold:
+    display_name: Area Sold
+    aliases:
+    - area sold
+    - sold area
+    - volume sold
+    - units sold
+    unit_hints:
+    - mn sq ft
+    - lakh sq ft
+    - sq ft
+    - units
+    value_type: number
+  arpu:
+    display_name: ARPU
+    aliases:
+    - arpu
+    - average revenue per user
+    - blended arpu
+    - mobile arpu
+    - wireless arpu
+    unit_hints:
+    - rs
+    - inr
+    - rs/month
+    value_type: currency
+  arpu_media:
+    display_name: ARPU (Media)
+    aliases:
+    - arpu media
+    - average revenue per subscriber media
+    unit_hints: *id001
+    value_type: currency
+  ask:
+    display_name: Available Seat Kilometres
+    aliases:
+    - ask
+    - available seat kilometres
+    - available seat km
+    - capacity (ask)
+    unit_hints:
+    - mn
+    - bn
+    value_type: number
+  asp:
+    display_name: Average Selling Price
+    aliases:
+    - asp
+    - average selling price
+    - average price
+    - net asp
+    - blended asp
+    - per unit asp
+    unit_hints:
+    - rs/unit
+    - inr/unit
+    - lakh/unit
+    - rs lakh
+    value_type: currency
+  asp_hardware:
+    display_name: ASP (Hardware)
+    aliases:
+    - asp hardware
+    - average selling price hardware
+    unit_hints: *id001
+    value_type: currency
+  asp_semiconductors:
+    display_name: ASP (Semiconductors)
+    aliases:
+    - asp semiconductors
+    - average selling price semiconductors
+    unit_hints: *id001
+    value_type: currency
+  atc_losses:
+    display_name: AT and C Losses
+    aliases:
+    - at and c losses
+    - atc losses
+    - aggregate technical and commercial losses
+    unit_hints: &id002
+    - '%'
+    value_type: percentage
+  atpu:
+    display_name: Average Treatment Per Unit
+    aliases:
+    - atpu
+    - average treatment per unit
+    - average length of stay
+    - alos
+    unit_hints:
+    - days
+    - nos
+    value_type: days
+  attrition:
+    display_name: Attrition Rate
+    aliases:
+    - attrition
+    - attrition rate
+    - trailing twelve month attrition
+    - ttm attrition
+    - annualised attrition
+    unit_hints:
+    - '%'
+    value_type: percentage
+  attrition_services:
+    display_name: Attrition (Services)
+    aliases:
+    - attrition services
+    - employee attrition services
+    unit_hints: *id002
+    value_type: percentage
+  aum:
+    display_name: Assets Under Management
+    aliases:
+    - aum
+    - assets under management
+    - loan book
+    - managed assets
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  aum_capital_markets:
+    display_name: Assets Under Management (AMC)
+    aliases:
+    - aum amc
+    - average aum
+    - quarterly average aum
+    - qaaum
+    - closing aum
+    unit_hints: *id001
+    value_type: currency
+  aum_fund:
+    display_name: AUM (Fund)
+    aliases:
+    - aum fund
+    - fund assets
+    - net assets
+    - total net assets
+    unit_hints: *id001
+    value_type: currency
+  aum_insurance:
+    display_name: AUM (Insurance)
+    aliases:
+    - aum
+    - assets under management
+    - investment assets
+    - policyholder fund
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  average_daily_turnover:
+    display_name: Average Daily Turnover
+    aliases:
+    - average daily turnover
+    - adto
+    - daily average turnover
+    unit_hints: *id001
+    value_type: currency
+  average_order_value:
+    display_name: Average Order Value
+    aliases:
+    - average order value
+    - aov
+    - average ticket size
+    unit_hints: *id001
+    value_type: currency
+  average_revenue_per_occupied_bed:
+    display_name: ARPOB
+    aliases:
+    - arpob
+    - average revenue per occupied bed
+    - revenue per occupied bed
+    unit_hints:
+    - rs
+    - rs lakh
+    - inr
+    value_type: currency
+  average_selling_price_realty:
+    display_name: Average Selling Price (per sq ft)
+    aliases:
+    - average selling price
+    - asp
+    - per sq ft realization
+    - price per sq ft
+    - realization per sq ft
+    unit_hints:
+    - rs/sq ft
+    - inr/sq ft
+    value_type: currency
+  average_transaction_value:
+    display_name: Average Transaction Value
+    aliases:
+    - average transaction value
+    - atv
+    - average bill value
+    - average basket value
+    - ticket size
+    unit_hints:
+    - rs
+    - inr
+    - usd
+    value_type: currency
+  bid_win_rate:
+    display_name: Bid Win Rate
+    aliases:
+    - bid win rate
+    - win rate
+    - strike rate
+    - tender win rate
+    - order win ratio
+    unit_hints:
+    - '%'
+    value_type: percentage
+  billing_rate:
+    display_name: Billing Rate
+    aliases:
+    - billing rate
+    - realisation per hour
+    - rate per hour
+    unit_hints: *id001
+    value_type: currency
+  book_to_bill:
+    display_name: Book-to-Bill Ratio
+    aliases:
+    - book to bill
+    - book-to-bill
+    - book to bill ratio
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+  book_to_bill_defense:
+    display_name: Book to Bill (Defence)
+    aliases:
+    - book to bill defence
+    - book to bill defense
+    unit_hints: &id003
+    - x
+    - ratio
+    value_type: ratio
+  book_to_bill_semiconductors:
+    display_name: Book to Bill (Semiconductors)
+    aliases:
+    - book to bill semiconductors
+    unit_hints: *id003
+    value_type: ratio
+  brokerage_revenue:
+    display_name: Brokerage Revenue
+    aliases:
+    - brokerage revenue
+    - broking income
+    - brokerage income
+    unit_hints: *id001
+    value_type: currency
+  campus_count:
+    display_name: Campus / Centre Count
+    aliases:
+    - campus count
+    - centre count education
+    - number of schools
+    - number of campuses
+    unit_hints: *id004
+    value_type: count
+  capacity_utilization:
+    display_name: Capacity Utilization
+    aliases:
+    - capacity utilization
+    - capacity utilisation
+    - utilization rate
+    - plant utilization
+    - capacity util
+    unit_hints:
+    - '%'
+    value_type: percentage
+  capacity_utilization_auto_components:
+    display_name: Capacity Utilization (Auto Components)
+    aliases:
+    - capacity utilisation auto components
+    - capacity utilization auto components
+    unit_hints: *id002
+    value_type: percentage
+  capacity_utilization_capital_goods:
+    display_name: Capacity Utilization (Capital Goods)
+    aliases:
+    - capacity utilization
+    - plant utilisation
+    - manufacturing utilisation
+    unit_hints:
+    - '%'
+    value_type: percentage
+  capacity_utilization_durables:
+    display_name: Capacity Utilization (Durables)
+    aliases:
+    - capacity utilisation durables
+    - capacity utilization durables
+    unit_hints: *id002
+    value_type: percentage
+  capacity_utilization_education:
+    display_name: Capacity Utilization (Education)
+    aliases:
+    - capacity utilisation education
+    - seat utilisation
+    - occupancy education
+    unit_hints: *id002
+    value_type: percentage
+  capacity_utilization_packaging:
+    display_name: Capacity Utilization (Packaging)
+    aliases:
+    - capacity utilisation packaging
+    - capacity utilization packaging
+    unit_hints: *id002
+    value_type: percentage
+  capacity_utilization_paper:
+    display_name: Capacity Utilization (Paper)
+    aliases:
+    - capacity utilisation paper
+    - capacity utilization paper
+    unit_hints: *id002
+    value_type: percentage
+  capacity_utilization_textiles:
+    display_name: Capacity Utilization (Textiles)
+    aliases:
+    - capacity utilisation textiles
+    - capacity utilization textiles
+    - spindle utilisation
+    unit_hints: *id002
+    value_type: percentage
+  capital_adequacy_ratio:
+    display_name: Capital Adequacy Ratio
+    aliases:
+    - capital adequacy ratio
+    - car
+    - crar
+    - tier 1 capital ratio
+    - tier 1 ratio
+    unit_hints:
+    - '%'
+    value_type: percentage
+  capital_adequacy_ratio_nbfc:
+    display_name: Capital Adequacy Ratio
+    aliases:
+    - capital adequacy ratio
+    - car
+    - crar
+    unit_hints:
+    - '%'
+    value_type: percentage
+  casa_ratio:
+    display_name: CASA Ratio
+    aliases:
+    - casa ratio
+    - casa%
+    - casa
+    - current account savings account ratio
+    unit_hints:
+    - '%'
+    value_type: percentage
+  cask:
+    display_name: CASK
+    aliases:
+    - cask
+    - cost per available seat km
+    - unit cost
+    - ex-fuel cask
+    unit_hints:
+    - rs
+    - paisa
+    - rs/ask
+    value_type: currency
+  centre_count:
+    display_name: Centre / Lab Count
+    aliases:
+    - centre count
+    - lab count
+    - number of labs
+    - collection centres
+    - patient service centres
+    unit_hints: *id004
+    value_type: count
+  channel_partner_count:
+    display_name: Channel Partner Count
+    aliases:
+    - channel partners
+    - distributor count
+    - reseller count
+    - partner network
+    unit_hints:
+    - partners
+    - count
+    value_type: count
+  churn_rate:
+    display_name: Churn Rate
+    aliases:
+    - churn rate
+    - monthly churn
+    - subscriber churn
+    unit_hints:
+    - '%'
+    value_type: percentage
+  client_count:
+    display_name: Client Count
+    aliases:
+    - client count
+    - active clients services
+    - number of clients
+    unit_hints: *id004
+    value_type: count
+  collections:
+    display_name: Collections
+    aliases:
+    - collections
+    - cash collections
+    - customer collections
+    - total collections
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  combined_ratio:
+    display_name: Combined Ratio
+    aliases:
+    - combined ratio
+    - combined ratio %
+    unit_hints:
+    - '%'
+    value_type: percentage
+  constant_currency_growth:
+    display_name: Constant Currency Growth
+    aliases:
+    - constant currency growth
+    - cc growth
+    - constant currency revenue growth
+    - organic cc growth
+    unit_hints:
+    - '%'
+    value_type: percentage
+  content_cost:
+    display_name: Content Cost
+    aliases:
+    - content cost
+    - programming cost
+    - content spend
+    unit_hints: *id001
+    value_type: currency
+  content_per_vehicle:
+    display_name: Content per Vehicle
+    aliases:
+    - content per vehicle
+    - cpv
+    - kit value
+    unit_hints: *id001
+    value_type: currency
+  conversion_margin:
+    display_name: Conversion Margin
+    aliases:
+    - conversion margin
+    - value added margin packaging
+    unit_hints: *id002
+    value_type: percentage
+  conversion_rate_retail:
+    display_name: Conversion Rate (Retail)
+    aliases:
+    - conversion rate
+    - footfall conversion
+    - walk-in conversion
+    - bill conversion
+    unit_hints:
+    - '%'
+    value_type: percentage
+  cost_of_borrowing:
+    display_name: Cost of Borrowing
+    aliases:
+    - cost of borrowing
+    - cost of funds
+    - cost of debt
+    - borrowing cost
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  cost_of_funds:
+    display_name: Cost of Funds
+    aliases:
+    - cost of funds
+    - cost of deposits
+    - cost of liabilities
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  cost_of_production:
+    display_name: Cost of Production
+    aliases:
+    - cost of production
+    - cop
+    - cash cost
+    - c1 cost
+    - production cost per tonne
+    - cost per tonne
+    unit_hints:
+    - usd/tonne
+    - rs/tonne
+    value_type: currency
+  cost_of_production_mining:
+    display_name: Cost of Production (Mining)
+    aliases:
+    - cost of production mining
+    - cash cost mining
+    - cost per tonne mining
+    unit_hints: *id001
+    value_type: currency
+  cost_per_tonne:
+    display_name: Cost per Tonne
+    aliases:
+    - cost per tonne
+    - total cost per tonne
+    - operating cost per tonne
+    - variable cost per tonne
+    unit_hints:
+    - rs/mt
+    - rs/tonne
+    value_type: currency
+  cost_per_tonne_km:
+    display_name: Cost per Tonne-Km
+    aliases:
+    - cost per tonne km
+    - cost per tonne-kilometre
+    - freight cost per km
+    - operating cost per km
+    unit_hints:
+    - rs/tonne-km
+    - usd/tonne-km
+    value_type: currency
+  cost_to_income:
+    display_name: Cost to Income Ratio
+    aliases:
+    - cost to income ratio
+    - cost income ratio
+    - c/i ratio
+    - opex to income
+    unit_hints:
+    - '%'
+    value_type: percentage
+  credit_cost:
+    display_name: Credit Cost
+    aliases:
+    - credit cost
+    - credit costs
+    - provision cost
+    - pcr
+    - provisioning cost
+    unit_hints:
+    - '%'
+    - bps
+    - cr
+    value_type: percentage
+  customer_count:
+    display_name: Customer Count
+    aliases:
+    - customer count
+    - consumers served
+    - connections
+    - customer base utilities
+    unit_hints: *id004
+    value_type: count
+  data_usage:
+    display_name: Data Usage per User
+    aliases:
+    - data usage per user
+    - data per user
+    - average data usage
+    - data consumption per user
+    unit_hints:
+    - gb/user
+    - gb
+    - gb/month
+    value_type: number
+  deal_wins:
+    display_name: Deal Wins (TCV)
+    aliases:
+    - deal wins
+    - tcv
+    - total contract value
+    - new deal wins
+    - large deal wins
+    - new deals
+    unit_hints:
+    - mn
+    - bn
+    - usd mn
+    - usd bn
+    value_type: currency
+  dealer_count:
+    display_name: Dealer / Distributor Count
+    aliases:
+    - dealer count
+    - dealers
+    - distributor count
+    - retail touchpoints
+    unit_hints: *id004
+    value_type: count
+  delivery_mix:
+    display_name: Delivery / Dine-in Mix
+    aliases:
+    - delivery mix
+    - dine-in mix
+    - takeaway mix
+    - channel mix restaurants
+    unit_hints: *id002
+    value_type: percentage
+  deposits:
+    display_name: Deposits
+    aliases:
+    - deposits
+    - total deposits
+    - deposit base
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  design_wins:
+    display_name: Design Wins
+    aliases:
+    - design wins
+    - new design wins
+    unit_hints: *id004
+    value_type: count
+  disbursements:
+    display_name: Disbursements
+    aliases:
+    - disbursements
+    - disbursement
+    - gross disbursements
+    - fresh disbursements
+    - loan disbursements
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  distribution_loss:
+    display_name: Distribution Loss
+    aliases:
+    - distribution loss
+    - t and d losses
+    - transmission and distribution losses
+    unit_hints: *id002
+    value_type: percentage
+  distribution_outlets:
+    display_name: Distribution Outlets
+    aliases:
+    - distribution outlets
+    - outlet reach
+    - retail outlets
+    - direct reach
+    - total reach
+    - distribution reach
+    unit_hints:
+    - mn outlets
+    - lakh outlets
+    - outlets
+    value_type: count
+  distribution_per_unit:
+    display_name: Distribution per Unit
+    aliases:
+    - distribution per unit
+    - dpu
+    - distribution yield reit
+    unit_hints: *id001
+    value_type: currency
+  distribution_yield:
+    display_name: Distribution Yield
+    aliases:
+    - distribution yield
+    - payout yield
+    - income yield fund
+    unit_hints: *id002
+    value_type: percentage
+  dividend_income:
+    display_name: Dividend Income
+    aliases:
+    - dividend income
+    - dividend received from subsidiaries
+    unit_hints: *id001
+    value_type: currency
+  domestic_formulations:
+    display_name: Domestic Formulations Revenue
+    aliases:
+    - domestic formulations
+    - india business
+    - domestic business
+    - india formulations
+    - domestic formulation revenue
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  domestic_volumes:
+    display_name: Domestic Volumes
+    aliases:
+    - domestic volumes
+    - domestic sales
+    - domestic dispatches
+    - domestic units
+    unit_hints:
+    - units
+    - lakh units
+    - 000 units
+    value_type: number
+  ebit_margin_it:
+    display_name: EBIT Margin
+    aliases:
+    - ebit margin
+    - it ebit margin
+    - operating margin
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  ebitda_margin_telecom:
+    display_name: EBITDA Margin
+    aliases:
+    - ebitda margin
+    - service ebitda margin
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  ebitda_per_tonne:
+    display_name: EBITDA per Tonne
+    aliases:
+    - ebitda per tonne
+    - ebitda/tonne
+    - ebitda per mt
+    - operating profit per tonne
+    unit_hints:
+    - rs/mt
+    - rs/tonne
+    value_type: currency
+  ebitda_per_vehicle:
+    display_name: EBITDA per Vehicle
+    aliases:
+    - ebitda per vehicle
+    - ebitda per unit
+    - operating profit per unit
+    unit_hints:
+    - rs/unit
+    - inr/unit
+    value_type: currency
+  expense_ratio:
+    display_name: Expense Ratio
+    aliases:
+    - expense ratio
+    - management expense ratio
+    unit_hints:
+    - '%'
+    value_type: percentage
+  expense_ratio_fund:
+    display_name: Expense Ratio (Fund)
+    aliases:
+    - ter
+    - total expense ratio
+    - fund expense ratio
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  export_order_share:
+    display_name: Export Order Share
+    aliases:
+    - export order share
+    - export orders
+    - export mix
+    - overseas order share
+    unit_hints:
+    - '%'
+    value_type: percentage
+  export_share_auto_components:
+    display_name: Export Share (Auto Components)
+    aliases:
+    - export share auto components
+    - exports mix auto components
+    unit_hints: *id002
+    value_type: percentage
+  export_share_textiles:
+    display_name: Export Share (Textiles)
+    aliases:
+    - export share textiles
+    - exports mix textiles
+    unit_hints: *id002
+    value_type: percentage
+  export_volumes:
+    display_name: Export Volumes
+    aliases:
+    - export volumes
+    - exports
+    - export units
+    unit_hints:
+    - units
+    - lakh units
+    value_type: number
+  exports:
+    display_name: Export Revenue
+    aliases:
+    - export revenue
+    - exports
+    - international revenue
+    - regulated markets revenue
+    - emerging markets revenue
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  fab_utilization:
+    display_name: Fab Utilization
+    aliases:
+    - fab utilisation
+    - fab utilization
+    - foundry utilisation
+    unit_hints: *id002
+    value_type: percentage
+  fee_income:
+    display_name: Fee Income
+    aliases:
+    - fee income
+    - non-interest income
+    - non interest income
+    - other income
+    - fees and commission income
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  fee_per_student:
+    display_name: Fee per Student
+    aliases:
+    - fee per student
+    - revenue per student
+    - average fee realisation
+    unit_hints: *id001
+    value_type: currency
+  fleet_size:
+    display_name: Fleet Size
+    aliases:
+    - fleet size
+    - vehicles owned
+    - fleet count
+    - number of vessels
+    - trucks
+    unit_hints:
+    - vehicles
+    - vessels
+    - units
+    value_type: count
+  fnb_revenue_share:
+    display_name: F&B Revenue Share
+    aliases:
+    - f&b revenue share
+    - food and beverage revenue
+    - f&b mix
+    - non-room revenue
+    unit_hints:
+    - '%'
+    value_type: percentage
+  footfall:
+    display_name: Footfall
+    aliases:
+    - footfall
+    - store footfall
+    - customer footfall
+    - walk-ins
+    - visitors
+    unit_hints:
+    - mn
+    - lakh
+    - visits
+    value_type: count
+  gross_npa:
+    display_name: Gross NPA
+    aliases:
+    - gross npa
+    - gnpa
+    - gross npa %
+    - gross npa ratio
+    - gross npas
+    unit_hints:
+    - '%'
+    - cr
+    - crore
+    value_type: percentage
+  gross_npa_nbfc:
+    display_name: Gross NPA
+    aliases:
+    - gross npa
+    - gnpa
+    - gross npa %
+    - stage 3 assets
+    unit_hints:
+    - '%'
+    - cr
+    value_type: percentage
+  gross_refining_margin:
+    display_name: Gross Refining Margin
+    aliases:
+    - gross refining margin
+    - grm
+    - reported grm
+    - core grm
+    - benchmark grm
+    unit_hints:
+    - usd/bbl
+    - $/bbl
+    - rs/bbl
+    value_type: currency
+  gross_written_premium:
+    display_name: Gross Written Premium
+    aliases:
+    - gross written premium
+    - gwp
+    - gross premium
+    - written premium
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  headcount:
+    display_name: Headcount
+    aliases:
+    - headcount
+    - total headcount
+    - employee count
+    - total employees
+    - workforce
+    - total workforce
+    unit_hints:
+    - nos
+    - number
+    value_type: count
+  headcount_services:
+    display_name: Headcount (Services)
+    aliases:
+    - headcount services
+    - employee count services
+    - total employees services
+    unit_hints: *id004
+    value_type: count
+  holding_company_discount:
+    display_name: Holding Company Discount
+    aliases:
+    - holding company discount
+    - holdco discount
+    unit_hints: *id002
+    value_type: percentage
+  indigenisation_share:
+    display_name: Indigenisation Share
+    aliases:
+    - indigenisation share
+    - indigenization share
+    - local content share
+    unit_hints: *id002
+    value_type: percentage
+  input_cost_textiles:
+    display_name: Cotton / Input Cost
+    aliases:
+    - cotton price
+    - raw material cost
+    - yarn cost
+    - input cost
+    - cotton cost
+    unit_hints:
+    - rs/candy
+    - rs/kg
+    value_type: currency
+  installed_base:
+    display_name: Installed Base
+    aliases:
+    - installed base
+    - installations
+    - units installed
+    unit_hints: *id004
+    value_type: count
+  installed_capacity:
+    display_name: Installed Capacity
+    aliases:
+    - installed capacity
+    - total installed capacity
+    - capacity
+    - generation capacity
+    - operational capacity
+    unit_hints:
+    - mw
+    - gw
+    - mwp
+    value_type: number
+  inventory_turns_hardware:
+    display_name: Inventory Turns (Hardware)
+    aliases:
+    - inventory turns
+    - inventory turnover
+    - stock turns
+    - channel inventory turns
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+  ip_volumes:
+    display_name: Inpatient Volumes
+    aliases:
+    - inpatient volumes
+    - ip volumes
+    - inpatients
+    - ip patients
+    unit_hints:
+    - nos
+    - number
+    value_type: count
+  lme_price:
+    display_name: LME Price
+    aliases:
+    - lme price
+    - average lme price
+    - lme aluminium price
+    - lme copper price
+    - lme zinc price
+    unit_hints:
+    - usd/tonne
+    - $/tonne
+    value_type: currency
+  load_factor_logistics:
+    display_name: Load Factor (Logistics)
+    aliases:
+    - load factor
+    - capacity utilisation
+    - truck utilisation
+    - vessel utilisation
+    - fleet utilization
+    unit_hints:
+    - '%'
+    value_type: percentage
+  loan_growth:
+    display_name: Loan Growth
+    aliases:
+    - loan growth
+    - credit growth
+    - advances growth
+    - loan book growth
+    unit_hints:
+    - '%'
+    value_type: percentage
+  loss_ratio:
+    display_name: Loss Ratio
+    aliases:
+    - loss ratio
+    - claims ratio
+    - incurred loss ratio
+    unit_hints:
+    - '%'
+    value_type: percentage
+  marketing_margin:
+    display_name: Marketing Margin
+    aliases:
+    - marketing margin
+    - retail margin
+    - fuel marketing margin
+    - marketing profitability
+    unit_hints:
+    - rs/litre
+    - usd/bbl
+    value_type: currency
+  minutes_of_usage:
+    display_name: Minutes of Usage
+    aliases:
+    - minutes of usage
+    - mou
+    - voice mou
+    - minutes on network
+    unit_hints:
+    - min/month
+    - mn min
+    value_type: number
+  nav:
+    display_name: Net Asset Value
+    aliases:
+    - nav
+    - net asset value
+    - nav per unit
+    - nav per share
+    unit_hints: *id001
+    value_type: currency
+  nav_holding:
+    display_name: NAV (Holding Co)
+    aliases:
+    - nav holding
+    - net asset value holding company
+    - sum of the parts value
+    unit_hints: *id001
+    value_type: currency
+  net_interest_income:
+    display_name: Net Interest Income
+    aliases:
+    - net interest income
+    - nii
+    - interest income net of expense
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  net_interest_margin:
+    display_name: Net Interest Margin
+    aliases:
+    - net interest margin
+    - nim
+    - nim%
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  net_interest_margin_nbfc:
+    display_name: Net Interest Margin
+    aliases:
+    - net interest margin
+    - nim
+    - nim%
+    - spread
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  net_npa:
+    display_name: Net NPA
+    aliases:
+    - net npa
+    - nnpa
+    - net npa %
+    - net npa ratio
+    - net npas
+    unit_hints:
+    - '%'
+    - cr
+    - crore
+    value_type: percentage
+  net_npa_nbfc:
+    display_name: Net NPA
+    aliases:
+    - net npa
+    - nnpa
+    - net npa %
+    unit_hints:
+    - '%'
+    - cr
+    value_type: percentage
+  net_operating_income:
+    display_name: Net Operating Income
+    aliases:
+    - net operating income
+    - noi
+    unit_hints: *id001
+    value_type: currency
+  net_written_premium:
+    display_name: Net Written Premium
+    aliases:
+    - net written premium
+    - nwp
+    - net earned premium
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  new_business_premium:
+    display_name: New Business Premium
+    aliases:
+    - new business premium
+    - nbp
+    - individual new business premium
+    - retail new business premium
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  new_product_revenue_share:
+    display_name: New Product Revenue Share
+    aliases:
+    - new product revenue share
+    - innovation contribution
+    - npd contribution
+    - new launches share
+    unit_hints:
+    - '%'
+    value_type: percentage
+  occupancy_rate:
+    display_name: Occupancy Rate
+    aliases:
+    - occupancy rate
+    - bed occupancy
+    - occupancy %
+    - bed occupancy rate
+    unit_hints:
+    - '%'
+    value_type: percentage
+  occupancy_rate_hotels:
+    display_name: Occupancy Rate
+    aliases:
+    - occupancy rate
+    - occupancy
+    - occupancy %
+    - hotel occupancy
+    unit_hints:
+    - '%'
+    value_type: percentage
+  occupancy_reit:
+    display_name: Occupancy (REIT)
+    aliases:
+    - occupancy reit
+    - committed occupancy
+    - portfolio occupancy
+    unit_hints: *id002
+    value_type: percentage
+  occupied_beds:
+    display_name: Occupied Beds
+    aliases:
+    - occupied beds
+    - average occupied beds
+    - aob
+    - beds occupied
+    unit_hints:
+    - nos
+    - beds
+    value_type: count
+  oem_aftermarket_mix:
+    display_name: OEM / Aftermarket Mix
+    aliases:
+    - oem mix
+    - aftermarket mix
+    - replacement mix
+    unit_hints: *id002
+    value_type: percentage
+  online_revenue_share:
+    display_name: Online Revenue Share
+    aliases:
+    - online revenue share
+    - e-commerce mix
+    - omnichannel mix
+    - digital revenue share
+    - online contribution
+    unit_hints:
+    - '%'
+    value_type: percentage
+  op_volumes:
+    display_name: Outpatient Volumes
+    aliases:
+    - outpatient volumes
+    - op volumes
+    - outpatients
+    - op patients
+    - op footfall
+    unit_hints:
+    - nos
+    - number
+    value_type: count
+  order_book:
+    display_name: Order Book
+    aliases:
+    - order book
+    - order backlog
+    - total order book
+    - outstanding order book
+    - backlog
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  order_book_defense:
+    display_name: Order Book (Defence)
+    aliases:
+    - order book defence
+    - order book defense
+    - order backlog defence
+    unit_hints: *id001
+    value_type: currency
+  order_book_execution:
+    display_name: Order Book Execution
+    aliases:
+    - order book execution
+    - execution rate
+    - order execution
+    unit_hints:
+    - '%'
+    - months
+    value_type: percentage
+  order_book_hardware:
+    display_name: Order Book (Hardware)
+    aliases:
+    - order book hardware
+    - order backlog hardware
+    unit_hints: *id001
+    value_type: currency
+  order_book_infra:
+    display_name: Order Book
+    aliases:
+    - order book
+    - outstanding order book
+    - backlog
+    - order backlog
+    - executable order book
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  order_book_textiles:
+    display_name: Order Book (Textiles)
+    aliases:
+    - order book
+    - confirmed orders
+    - order position
+    unit_hints:
+    - rs cr
+    - usd mn
+    value_type: currency
+  order_book_to_sales:
+    display_name: Order Book to Sales
+    aliases:
+    - order book to sales
+    - order book to revenue
+    - ob/sales
+    - book to revenue
+    unit_hints:
+    - x
+    - times
+    value_type: ratio
+  order_inflow:
+    display_name: Order Inflow
+    aliases:
+    - order inflow
+    - new orders
+    - fresh orders
+    - order intake
+    - order wins
+    - new order wins
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  order_inflow_defense:
+    display_name: Order Inflow (Defence)
+    aliases:
+    - order inflow defence
+    - order inflow defense
+    - new orders defence
+    unit_hints: *id001
+    value_type: currency
+  order_inflow_infra:
+    display_name: Order Inflow
+    aliases:
+    - order inflow
+    - fresh order inflow
+    - new orders won
+    - new project awards
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  paid_subscribers:
+    display_name: Paid Subscribers
+    aliases:
+    - paid subscribers
+    - paying subscribers
+    - subscriber base media
+    unit_hints: *id004
+    value_type: count
+  passenger_load_factor:
+    display_name: Passenger Load Factor
+    aliases:
+    - passenger load factor
+    - plf
+    - load factor
+    - seat load factor
+    unit_hints:
+    - '%'
+    value_type: percentage
+  passengers_carried:
+    display_name: Passengers Carried
+    aliases:
+    - passengers carried
+    - total passengers
+    - passenger traffic
+    - pax
+    - total pax
+    unit_hints:
+    - mn
+    - lakh
+    - nos
+    value_type: count
+  patients_served:
+    display_name: Patients Served
+    aliases:
+    - patients served
+    - patient count
+    - patient volumes
+    unit_hints: *id004
+    value_type: count
+  plant_load_factor:
+    display_name: Plant Load Factor
+    aliases:
+    - plant load factor
+    - plf
+    - capacity utilization
+    - load factor
+    unit_hints:
+    - '%'
+    value_type: percentage
+  premium_discount_to_nav:
+    display_name: Premium / Discount to NAV
+    aliases:
+    - premium to nav
+    - discount to nav
+    - nav premium
+    - nav discount
+    unit_hints: *id002
+    value_type: percentage
+  premium_growth:
+    display_name: Premium Growth
+    aliases:
+    - premium growth
+    - gwp growth
+    - new business premium growth
+    unit_hints:
+    - '%'
+    value_type: percentage
+  presales:
+    display_name: Pre-Sales
+    aliases:
+    - pre-sales
+    - presales
+    - bookings
+    - new bookings
+    - gross bookings
+    - new sales
+    - sales bookings
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    - mn sq ft
+    - lakh sq ft
+    - units
+    value_type: currency
+  price_growth:
+    display_name: Price / Mix Growth
+    aliases:
+    - price growth
+    - price mix growth
+    - pricing growth
+    - mix benefit
+    unit_hints:
+    - '%'
+    value_type: percentage
+  production_volume:
+    display_name: Production Volume
+    aliases:
+    - production volume
+    - production
+    - oil production
+    - gas production
+    - hydrocarbon production
+    - o+og production
+    unit_hints:
+    - mmt
+    - mmscmd
+    - kbpd
+    - mn boe
+    value_type: number
+  production_volume_metals:
+    display_name: Production Volume
+    aliases:
+    - production
+    - total production
+    - metal production
+    - output
+    unit_hints:
+    - kt
+    - mt
+    - mn tonnes
+    - tonnes
+    value_type: number
+  production_volume_mining:
+    display_name: Production Volume (Mining)
+    aliases:
+    - production volume mining
+    - ore produced
+    - mined volume
+    - run of mine
+    unit_hints: &id005
+    - mt
+    - tonnes
+    - kt
+    value_type: count
+  production_volume_paper:
+    display_name: Production Volume (Paper)
+    aliases:
+    - production volume paper
+    - paper produced
+    - tonnes produced paper
+    unit_hints: *id005
+    value_type: count
+  project_execution_margin:
+    display_name: Project Execution Margin
+    aliases:
+    - project execution margin
+    - epc margin
+    - project margin
+    - contract margin
+    unit_hints:
+    - '%'
+    value_type: percentage
+  provision_coverage_ratio:
+    display_name: Provision Coverage Ratio
+    aliases:
+    - provision coverage ratio
+    - pcr
+    - provision coverage
+    unit_hints:
+    - '%'
+    value_type: percentage
+  pulp_cost:
+    display_name: Pulp / Input Cost
+    aliases:
+    - pulp cost
+    - wood cost
+    - waste paper cost
+    - input cost paper
+    unit_hints: *id001
+    value_type: currency
+  r_and_d_spend:
+    display_name: R&D Spend
+    aliases:
+    - r&d spend
+    - r&d expense
+    - research and development expense
+    - r&d cost
+    - r&d expenditure
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  realization_cement:
+    display_name: Realization per Tonne
+    aliases:
+    - realization
+    - realisation
+    - cement realization
+    - net realization
+    - per tonne realization
+    - average realization
+    - blended realization
+    unit_hints:
+    - rs/mt
+    - rs/tonne
+    - inr/tonne
+    value_type: currency
+  realization_chemicals:
+    display_name: Realization per Tonne
+    aliases:
+    - realization
+    - net realization
+    - average realization
+    - per tonne realization
+    unit_hints:
+    - rs/tonne
+    - usd/tonne
+    value_type: currency
+  realization_durables:
+    display_name: Realization (Durables)
+    aliases:
+    - realisation durables
+    - realization durables
+    - asp durables
+    unit_hints: *id001
+    value_type: currency
+  realization_logistics:
+    display_name: Realization per Unit
+    aliases:
+    - yield
+    - freight yield
+    - realization per tonne
+    - per tonne yield
+    - revenue per teu
+    unit_hints:
+    - rs/tonne
+    - usd/teu
+    value_type: currency
+  realization_metals:
+    display_name: Realization
+    aliases:
+    - realization
+    - net realization
+    - average realization
+    - blended realization
+    unit_hints:
+    - rs/tonne
+    - usd/tonne
+    value_type: currency
+  realization_mining:
+    display_name: Realization (Mining)
+    aliases:
+    - realisation mining
+    - realization mining
+    - price per tonne mining
+    unit_hints: *id001
+    value_type: currency
+  realization_oil:
+    display_name: Realization
+    aliases:
+    - realization
+    - net realization
+    - crude realization
+    - oil realization
+    unit_hints:
+    - usd/bbl
+    - rs/barrel
+    value_type: currency
+  realization_packaging:
+    display_name: Realization (Packaging)
+    aliases:
+    - realisation packaging
+    - realization packaging
+    - price per tonne packaging
+    unit_hints: *id001
+    value_type: currency
+  realization_paper:
+    display_name: Realization (Paper)
+    aliases:
+    - realisation paper
+    - realization paper
+    - price per tonne paper
+    unit_hints: *id001
+    value_type: currency
+  realization_textiles:
+    display_name: Realization (Textiles)
+    aliases:
+    - realisation textiles
+    - realization textiles
+    - price per kg
+    - price per metre
+    unit_hints: *id001
+    value_type: currency
+  refinery_utilization:
+    display_name: Refinery Utilisation
+    aliases:
+    - refinery utilisation
+    - refinery utilization
+    - capacity utilisation
+    - operating rate
+    unit_hints:
+    - '%'
+    value_type: percentage
+  regulatory_approvals:
+    display_name: Regulatory Approvals
+    aliases:
+    - regulatory approvals
+    - fda approvals
+    - ce approvals
+    - 510k clearances
+    unit_hints: *id004
+    value_type: count
+  releasing_spread:
+    display_name: Re-leasing Spread
+    aliases:
+    - re-leasing spread
+    - releasing spread
+    - rental escalation
+    - same store rental growth
+    unit_hints: *id002
+    value_type: percentage
+  rental_income:
+    display_name: Rental Income
+    aliases:
+    - rental income
+    - lease rentals
+    - gross rentals
+    unit_hints: *id001
+    value_type: currency
+  reserves:
+    display_name: Reserves
+    aliases:
+    - reserves
+    - proven reserves
+    - probable reserves
+    - reserve base
+    unit_hints: *id005
+    value_type: count
+  restaurant_operating_margin:
+    display_name: Restaurant Operating Margin
+    aliases:
+    - restaurant operating margin
+    - store level ebitda margin
+    - restaurant ebitda margin
+    unit_hints: *id002
+    value_type: percentage
+  retention_rate:
+    display_name: Retention Rate
+    aliases:
+    - retention rate
+    - student retention
+    - renewal rate
+    unit_hints: *id002
+    value_type: percentage
+  return_on_assets_bank:
+    display_name: Return on Assets
+    aliases:
+    - return on assets
+    - roa
+    unit_hints:
+    - '%'
+    value_type: percentage
+  return_on_equity_bank:
+    display_name: Return on Equity
+    aliases:
+    - return on equity
+    - roe
+    unit_hints:
+    - '%'
+    value_type: percentage
+  revenue_backlog:
+    display_name: Revenue Backlog
+    aliases:
+    - revenue backlog
+    - contracted backlog
+    - order backlog services
+    unit_hints: *id001
+    value_type: currency
+  revenue_per_employee:
+    display_name: Revenue per Employee
+    aliases:
+    - revenue per employee
+    - revenue productivity
+    - per capita revenue
+    unit_hints:
+    - usd
+    - rs lakh
+    - mn
+    value_type: currency
+  revenue_per_patient:
+    display_name: Revenue per Patient
+    aliases:
+    - revenue per patient
+    - realisation per patient
+    - average revenue per patient
+    unit_hints: *id001
+    value_type: currency
+  revenue_per_sqft:
+    display_name: Revenue per Sq Ft
+    aliases:
+    - revenue per sq ft
+    - sales per sq ft
+    - sales density
+    - revenue per square foot
+    unit_hints:
+    - rs/sq ft
+    - inr/sq ft
+    value_type: currency
+  revenue_per_test:
+    display_name: Revenue per Test
+    aliases:
+    - revenue per test
+    - realisation per test
+    - realization per test
+    unit_hints: *id001
+    value_type: currency
+  revenue_usd:
+    display_name: Revenue (USD)
+    aliases:
+    - revenue in usd
+    - dollar revenue
+    - usd revenue
+    - revenue (usd)
+    unit_hints:
+    - mn
+    - bn
+    - million
+    - billion
+    - usd mn
+    - usd bn
+    value_type: currency
+  revpar:
+    display_name: RevPAR
+    aliases:
+    - revpar
+    - rev par
+    - revenue per available room
+    unit_hints:
+    - rs
+    - inr
+    value_type: currency
+  room_keys:
+    display_name: Room Keys
+    aliases:
+    - room keys
+    - keys
+    - rooms inventory
+    - room count
+    - keys added
+    - pipeline keys
+    unit_hints:
+    - keys
+    - rooms
+    value_type: count
+  room_nights_sold:
+    display_name: Room Nights Sold
+    aliases:
+    - room nights sold
+    - room nights
+    - occupied room nights
+    unit_hints:
+    - nights
+    - mn nights
+    value_type: count
+  rural_revenue_share:
+    display_name: Rural Revenue Share
+    aliases:
+    - rural revenue share
+    - rural mix
+    - rural salience
+    - rural contribution
+    unit_hints:
+    - '%'
+    value_type: percentage
+  sales_volume_metals:
+    display_name: Sales Volume
+    aliases:
+    - sales volume
+    - volumes
+    - total volumes
+    - dispatches
+    unit_hints:
+    - kt
+    - mt
+    - mn tonnes
+    value_type: number
+  sales_volume_mining:
+    display_name: Sales Volume (Mining)
+    aliases:
+    - sales volume mining
+    - despatches mining
+    - ore sold
+    unit_hints: *id005
+    value_type: count
+  sales_volume_paper:
+    display_name: Sales Volume (Paper)
+    aliases:
+    - sales volume paper
+    - paper sold
+    - despatches paper
+    unit_hints: *id005
+    value_type: count
+  same_store_sales_growth:
+    display_name: Same Store Sales Growth
+    aliases:
+    - same store sales growth
+    - sssg
+    - like for like growth
+    - lfl growth
+    - lfl sales growth
+    unit_hints:
+    - '%'
+    value_type: percentage
+  same_store_sales_growth_restaurants:
+    display_name: Same Store Sales Growth (Restaurants)
+    aliases:
+    - same store sales growth restaurants
+    - sssg restaurants
+    - like for like sales restaurants
+    unit_hints: *id002
+    value_type: percentage
+  segment_ebit:
+    display_name: Segment EBIT
+    aliases:
+    - segment ebit
+    - segmental ebit
+    - segment result
+    unit_hints: *id001
+    value_type: currency
+  segment_revenue:
+    display_name: Segment Revenue
+    aliases:
+    - segment revenue
+    - segmental revenue
+    - business segment revenue
+    unit_hints: *id001
+    value_type: currency
+  service_centre_count:
+    display_name: Service Centre Count
+    aliases:
+    - service centre count
+    - service network
+    - service centers
+    - after-sales network
+    unit_hints:
+    - centres
+    - count
+    value_type: count
+  service_revenue_share:
+    display_name: Service Revenue Share
+    aliases:
+    - service revenue share
+    - aftermarket revenue share
+    - consumables mix
+    unit_hints: *id002
+    value_type: percentage
+  sip_flows:
+    display_name: SIP Flows
+    aliases:
+    - sip flows
+    - sip inflows
+    - monthly sip
+    - systematic investment plan flows
+    unit_hints: *id001
+    value_type: currency
+  slippage_ratio:
+    display_name: Slippage Ratio
+    aliases:
+    - slippage ratio
+    - slippages
+    - slippage rate
+    - fresh slippages
+    unit_hints:
+    - '%'
+    - cr
+    - crore
+    value_type: percentage
+  solvency_ratio:
+    display_name: Solvency Ratio
+    aliases:
+    - solvency ratio
+    - solvency margin
+    unit_hints:
+    - '%'
+    - x
+    value_type: ratio
+  store_count:
+    display_name: Store Count
+    aliases:
+    - store count
+    - number of stores
+    - total stores
+    - store additions
+    - outlets
+    - total outlets
+    unit_hints:
+    - nos
+    - number
+    value_type: count
+  store_count_restaurants:
+    display_name: Store Count (Restaurants)
+    aliases:
+    - store count restaurants
+    - outlet count
+    - number of restaurants
+    - stores added
+    unit_hints: *id004
+    value_type: count
+  stripping_ratio:
+    display_name: Stripping Ratio
+    aliases:
+    - stripping ratio
+    - strip ratio
+    - waste to ore ratio
+    unit_hints: *id003
+    value_type: ratio
+  student_enrollments:
+    display_name: Student Enrollments
+    aliases:
+    - student enrollments
+    - student enrolments
+    - admissions
+    - students enrolled
+    unit_hints: *id004
+    value_type: count
+  subscribers:
+    display_name: Subscribers
+    aliases:
+    - subscribers
+    - total subscribers
+    - mobile subscribers
+    - wireless subscribers
+    - active subscribers
+    unit_hints:
+    - mn
+    - lakh
+    - million
+    value_type: count
+  subscription_revenue:
+    display_name: Subscription Revenue
+    aliases:
+    - subscription revenue
+    - subscription income
+    unit_hints: *id001
+    value_type: currency
+  tariff:
+    display_name: Tariff
+    aliases:
+    - tariff
+    - average tariff
+    - tariff realization
+    - per unit tariff
+    - blended tariff
+    unit_hints:
+    - rs/unit
+    - rs/kwh
+    - inr/kwh
+    value_type: currency
+  tariff_utilities:
+    display_name: Tariff (Utilities)
+    aliases:
+    - tariff utilities
+    - average tariff utilities
+    - realisation per unit
+    unit_hints:
+    - rs/kwh
+    - inr/kwh
+    value_type: currency
+  tests_conducted:
+    display_name: Tests Conducted
+    aliases:
+    - tests conducted
+    - number of tests
+    - test volumes
+    - samples processed
+    unit_hints: *id004
+    value_type: count
+  throughput:
+    display_name: Throughput
+    aliases:
+    - throughput
+    - refinery throughput
+    - crude throughput
+    - total throughput
+    - processing throughput
+    unit_hints:
+    - mmt
+    - mn bbl
+    - bbl/day
+    - kbpd
+    value_type: number
+  toll_revenue:
+    display_name: Toll Revenue
+    aliases:
+    - toll revenue
+    - toll collection
+    - toll income
+    - user fee revenue
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    value_type: currency
+  tonnage_handled:
+    display_name: Tonnage Handled
+    aliases:
+    - tonnage handled
+    - cargo volume
+    - cargo handled
+    - freight tonnage
+    - throughput tonnage
+    unit_hints:
+    - mt
+    - mmt
+    - tonnes
+    value_type: number
+  total_return:
+    display_name: Total Return
+    aliases:
+    - total return
+    - fund return
+    - nav return
+    unit_hints: *id002
+    value_type: percentage
+  tracking_error:
+    display_name: Tracking Error
+    aliases:
+    - tracking error
+    - tracking difference
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  units_generated:
+    display_name: Units Generated
+    aliases:
+    - units generated
+    - energy generated
+    - generation
+    - total generation
+    - power generation
+    - mus generated
+    unit_hints:
+    - mu
+    - mus
+    - gwh
+    - bu
+    - billion units
+    value_type: number
+  units_outstanding:
+    display_name: Units Outstanding
+    aliases:
+    - units outstanding
+    - units in issue
+    unit_hints: *id004
+    value_type: count
+  units_shipped:
+    display_name: Units Shipped
+    aliases:
+    - units shipped
+    - shipments
+    - volume shipped hardware
+    unit_hints: *id004
+    value_type: count
+  units_sold:
+    display_name: Units Sold / Distributed
+    aliases:
+    - units sold
+    - units distributed
+    - energy sold
+    - mu sold
+    - million units sold
+    unit_hints:
+    - mu
+    - gwh
+    - kwh
+    value_type: count
+  units_sold_devices:
+    display_name: Units Sold (Devices)
+    aliases:
+    - units sold devices
+    - device shipments
+    - instruments sold
+    unit_hints: *id004
+    value_type: count
+  us_revenue:
+    display_name: US Revenue
+    aliases:
+    - us revenue
+    - north america revenue
+    - us business
+    - us generics
+    - us formulations
+    unit_hints:
+    - cr
+    - crore
+    - mn
+    - usd mn
+    value_type: currency
+  utilization_rate:
+    display_name: Utilization Rate
+    aliases:
+    - utilization rate
+    - utilisation rate
+    - employee utilization
+    - billed utilization
+    - billing utilization
+    unit_hints:
+    - '%'
+    value_type: percentage
+  utilization_services:
+    display_name: Utilization (Services)
+    aliases:
+    - utilisation services
+    - utilization services
+    - billable utilisation
+    unit_hints: *id002
+    value_type: percentage
+  viewership_share:
+    display_name: Viewership Share
+    aliases:
+    - viewership share
+    - trp
+    - grp
+    - audience share
+    unit_hints: *id002
+    value_type: percentage
+  vnb_margin:
+    display_name: VNB Margin
+    aliases:
+    - vnb margin
+    - value of new business margin
+    - new business margin
+    unit_hints:
+    - '%'
+    value_type: percentage
+  volume_auto_components:
+    display_name: Volume (Auto Components)
+    aliases:
+    - volume auto components
+    - units supplied
+    - components shipped
+    unit_hints: *id004
+    value_type: count
+  volume_cement:
+    display_name: Volume
+    aliases:
+    - cement volume
+    - dispatches
+    - cement dispatches
+    - sales volume
+    - grey cement volume
+    unit_hints:
+    - mt
+    - mn mt
+    - lmt
+    value_type: number
+  volume_durables:
+    display_name: Volume (Durables)
+    aliases:
+    - volume durables
+    - units sold durables
+    - durables volume
+    unit_hints: *id004
+    value_type: count
+  volume_growth:
+    display_name: Volume Growth
+    aliases:
+    - volume growth
+    - domestic volume growth
+    - underlying volume growth
+    - uvg
+    unit_hints:
+    - '%'
+    value_type: percentage
+  volume_packaging:
+    display_name: Volume (Packaging)
+    aliases:
+    - volume packaging
+    - tonnes sold packaging
+    - production volume packaging
+    unit_hints: *id005
+    value_type: count
+  volume_textiles:
+    display_name: Volume (Textiles)
+    aliases:
+    - volume textiles
+    - production volume textiles
+    - metres produced
+    - kgs produced
+    unit_hints:
+    - kg
+    - mt
+    - tonnes
+    - metres
+    value_type: count
+  volumes_auto:
+    display_name: Volumes
+    aliases:
+    - volumes
+    - total volumes
+    - unit sales
+    - wholesale volumes
+    - retail volumes
+    - domestic volumes
+    - vehicle sales
+    unit_hints:
+    - units
+    - lakh units
+    - 000 units
+    - nos
+    value_type: number
+  volumes_chemicals:
+    display_name: Sales Volume
+    aliases:
+    - volume
+    - sales volume
+    - production volume
+    - total volumes
+    unit_hints:
+    - mt
+    - kt
+    - mn tonnes
+    - tonnes
+    value_type: number
+  volumes_logistics:
+    display_name: Volumes
+    aliases:
+    - volumes
+    - freight volumes
+    - cargo volumes
+    - tonnage
+    - total tonnage
+    unit_hints:
+    - mt
+    - mn tonnes
+    - teu
+    - mn teu
+    value_type: number
+  wafer_shipments:
+    display_name: Wafer / Unit Shipments
+    aliases:
+    - wafer shipments
+    - units shipped semiconductors
+    - chip shipments
+    unit_hints: *id004
+    value_type: count
+  wale:
+    display_name: WALE
+    aliases:
+    - wale
+    - weighted average lease expiry
+    - weighted average lease term
+    unit_hints:
+    - years
+    - yrs
+    value_type: count
+  warranty_cost_durables:
+    display_name: Warranty Cost to Sales (Durables)
+    aliases:
+    - warranty cost
+    - warranty provision
+    - after-sales cost
+    - service cost to sales
+    unit_hints:
+    - '%'
+    value_type: percentage
+  warranty_cost_to_sales:
+    display_name: Warranty Cost to Sales
+    aliases:
+    - warranty cost to sales
+    - warranty provision
+    - warranty expense
+    - after-sales cost
+    unit_hints:
+    - '%'
+    value_type: percentage
+  yield:
+    display_name: Yield
+    aliases:
+    - yield
+    - passenger yield
+    - revenue per passenger km
+    - rask
+    - revenue per ask
+    unit_hints:
+    - rs
+    - paisa
+    - rs/pkm
+    value_type: currency
+  yield_on_advances:
+    display_name: Yield on Advances
+    aliases:
+    - yield on advances
+    - yield on loans
+    - loan yield
+    - interest yield
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+  yield_on_aum:
+    display_name: Yield on AUM
+    aliases:
+    - yield on aum
+    - aum yield
+    - management fee yield
+    unit_hints:
+    - '%'
+    - bps
+    value_type: percentage
+kpi_groups:
+  aerospace_defense:
+  - order_book_defense
+  - order_inflow_defense
+  - book_to_bill_defense
+  - indigenisation_share
+  auto:
+  - volumes_auto
+  - asp
+  - domestic_volumes
+  - export_volumes
+  - ebitda_per_vehicle
+  auto_components:
+  - content_per_vehicle
+  - volume_auto_components
+  - oem_aftermarket_mix
+  - export_share_auto_components
+  - capacity_utilization_auto_components
+  aviation:
+  - passenger_load_factor
+  - passengers_carried
+  - yield
+  - cask
+  - ask
+  banks:
+  - net_interest_income
+  - net_interest_margin
+  - gross_npa
+  - net_npa
+  - casa_ratio
+  - loan_growth
+  - advances
+  - deposits
+  - cost_of_funds
+  - yield_on_advances
+  - credit_cost
+  - provision_coverage_ratio
+  - slippage_ratio
+  - cost_to_income
+  - capital_adequacy_ratio
+  - return_on_assets_bank
+  - return_on_equity_bank
+  - fee_income
+  business_services:
+  - revenue_backlog
+  - headcount_services
+  - utilization_services
+  - billing_rate
+  - client_count
+  - attrition_services
+  capital_goods:
+  - order_inflow
+  - order_book
+  - book_to_bill
+  - order_book_execution
+  - capacity_utilization_capital_goods
+  - export_order_share
+  capital_markets:
+  - aum_capital_markets
+  - average_daily_turnover
+  - active_clients
+  - brokerage_revenue
+  - yield_on_aum
+  - sip_flows
+  cement:
+  - volume_cement
+  - realization_cement
+  - ebitda_per_tonne
+  - cost_per_tonne
+  - capacity_utilization
+  chemicals:
+  - volumes_chemicals
+  - realization_chemicals
+  - capacity_utilization
+  - ebitda_per_tonne
+  consumer_durables:
+  - volume_durables
+  - realization_durables
+  - dealer_count
+  - capacity_utilization_durables
+  - service_centre_count
+  - warranty_cost_durables
+  consumer_staples:
+  - volume_growth
+  - price_growth
+  - distribution_outlets
+  - rural_revenue_share
+  - ad_spend_to_sales
+  - new_product_revenue_share
+  diagnostics:
+  - tests_conducted
+  - patients_served
+  - revenue_per_test
+  - revenue_per_patient
+  - centre_count
+  diversified_holding:
+  - segment_revenue
+  - segment_ebit
+  - nav_holding
+  - holding_company_discount
+  - dividend_income
+  education:
+  - student_enrollments
+  - fee_per_student
+  - campus_count
+  - retention_rate
+  - capacity_utilization_education
+  hardware:
+  - units_shipped
+  - asp_hardware
+  - order_book_hardware
+  - inventory_turns_hardware
+  - channel_partner_count
+  - warranty_cost_to_sales
+  hospitals:
+  - occupied_beds
+  - average_revenue_per_occupied_bed
+  - occupancy_rate
+  - ip_volumes
+  - op_volumes
+  - atpu
+  hotels:
+  - revpar
+  - adr
+  - occupancy_rate_hotels
+  - room_nights_sold
+  - room_keys
+  - fnb_revenue_share
+  infrastructure:
+  - order_inflow_infra
+  - order_book_infra
+  - toll_revenue
+  - bid_win_rate
+  - order_book_to_sales
+  - project_execution_margin
+  insurance:
+  - gross_written_premium
+  - net_written_premium
+  - combined_ratio
+  - loss_ratio
+  - expense_ratio
+  - solvency_ratio
+  - premium_growth
+  - new_business_premium
+  - vnb_margin
+  - annualised_premium_equivalent
+  - aum_insurance
+  investment_vehicles:
+  - nav
+  - aum_fund
+  - expense_ratio_fund
+  - tracking_error
+  - distribution_yield
+  - premium_discount_to_nav
+  - total_return
+  - units_outstanding
+  it_services:
+  - revenue_usd
+  - constant_currency_growth
+  - headcount
+  - attrition
+  - utilization_rate
+  - revenue_per_employee
+  - ebit_margin_it
+  - deal_wins
+  logistics:
+  - volumes_logistics
+  - realization_logistics
+  - tonnage_handled
+  - fleet_size
+  - load_factor_logistics
+  - cost_per_tonne_km
+  media:
+  - advertising_revenue
+  - subscription_revenue
+  - paid_subscribers
+  - viewership_share
+  - arpu_media
+  - content_cost
+  medical_devices:
+  - units_sold_devices
+  - installed_base
+  - service_revenue_share
+  - regulatory_approvals
+  metals:
+  - production_volume_metals
+  - sales_volume_metals
+  - lme_price
+  - cost_of_production
+  - realization_metals
+  mining:
+  - production_volume_mining
+  - sales_volume_mining
+  - stripping_ratio
+  - realization_mining
+  - cost_of_production_mining
+  - reserves
+  nbfc:
+  - aum
+  - disbursements
+  - net_interest_margin_nbfc
+  - gross_npa_nbfc
+  - net_npa_nbfc
+  - cost_of_borrowing
+  - capital_adequacy_ratio_nbfc
+  oil_gas:
+  - gross_refining_margin
+  - throughput
+  - production_volume
+  - realization_oil
+  - refinery_utilization
+  - marketing_margin
+  packaging:
+  - volume_packaging
+  - realization_packaging
+  - capacity_utilization_packaging
+  - conversion_margin
+  paper:
+  - production_volume_paper
+  - sales_volume_paper
+  - realization_paper
+  - capacity_utilization_paper
+  - pulp_cost
+  pharma:
+  - domestic_formulations
+  - us_revenue
+  - exports
+  - r_and_d_spend
+  - anda_filings
+  power:
+  - units_generated
+  - plant_load_factor
+  - tariff
+  - installed_capacity
+  real_estate:
+  - presales
+  - collections
+  - area_launched
+  - area_sold
+  - average_selling_price_realty
+  reit:
+  - occupancy_reit
+  - net_operating_income
+  - rental_income
+  - wale
+  - distribution_per_unit
+  - releasing_spread
+  restaurants:
+  - same_store_sales_growth_restaurants
+  - store_count_restaurants
+  - average_order_value
+  - delivery_mix
+  - restaurant_operating_margin
+  retail:
+  - same_store_sales_growth
+  - store_count
+  - revenue_per_sqft
+  - footfall
+  - conversion_rate_retail
+  - average_transaction_value
+  - online_revenue_share
+  semiconductors:
+  - wafer_shipments
+  - asp_semiconductors
+  - fab_utilization
+  - design_wins
+  - book_to_bill_semiconductors
+  telecom:
+  - subscribers
+  - arpu
+  - data_usage
+  - minutes_of_usage
+  - churn_rate
+  - ebitda_margin_telecom
+  textiles:
+  - capacity_utilization_textiles
+  - volume_textiles
+  - realization_textiles
+  - export_share_textiles
+  - order_book_textiles
+  - input_cost_textiles
+  utilities:
+  - units_sold
+  - atc_losses
+  - distribution_loss
+  - customer_count
+  - tariff_utilities
+sector_industry_map:
+  Automobile and Auto Components:
+    2/3 Wheelers: auto
+    Auto Components & Equipments: auto_components
+    Auto Dealer: auto
+    Passenger Cars & Utility Vehicles: auto
+    Trading - Auto Components: auto_components
+    Tyres & Rubber Products: auto_components
+  Basic Materials:
+    Agricultural Inputs: chemicals
+    Aluminum: metals
+    Building Materials: cement
+    Chemicals: chemicals
+    Coking Coal: mining
+    Copper: metals
+    Forest Products: paper
+    Gold: metals
+    Lumber & Wood Production: paper
+    Major Chemicals: chemicals
+    Metal Mining: mining
+    Other Industrial Metals & Mining: mining
+    Other Metals and Minerals: mining
+    Other Precious Metals & Mining: metals
+    Paper: paper
+    Paper & Paper Products: paper
+    Precious Metals: metals
+    Silver: metals
+    Specialty Chemicals: chemicals
+    Steel: metals
+  Capital Goods:
+    Abrasives & Bearings: capital_goods
+    Aerospace & Defense: aerospace_defense
+    Aluminium Copper & Zinc Products: metals
+    Cables - Electricals: capital_goods
+    Castings & Forgings: capital_goods
+    Commercial Vehicles: auto
+    Compressors Pumps & Diesel Engines: capital_goods
+    Construction Vehicles: capital_goods
+    Dealers���Commercial Vehicles Tractors Construction Vehicles: capital_goods
+    Electrodes & Refractories: chemicals
+    Glass - Industrial: chemicals
+    Heavy Electrical Equipment: capital_goods
+    Industrial Products: capital_goods
+    Iron & Steel Products: metals
+    Other Electrical Equipment: capital_goods
+    Other Industrial Products: capital_goods
+    Packaging: packaging
+    Plastic Products - Industrial: packaging
+    Railway Wagons: capital_goods
+    Rubber: textiles
+    Ship Building & Allied Services: aerospace_defense
+    Tractors: auto
+  Chemicals:
+    Carbon Black: chemicals
+    Commodity Chemicals: chemicals
+    Dyes And Pigments: chemicals
+    Explosives: chemicals
+    Fertilizers: chemicals
+    Industrial Gases: chemicals
+    Pesticides & Agrochemicals: chemicals
+    Petrochemicals: chemicals
+    Printing Inks: chemicals
+    Specialty Chemicals: chemicals
+    Trading - Chemicals: chemicals
+  Commodities:
+    Aluminium: metals
+    Carbon Black: chemicals
+    Cement & Cement Products: cement
+    Commodity Chemicals: chemicals
+    Copper: metals
+    Diversified Metals: metals
+    Dyes And Pigments: chemicals
+    Explosives: chemicals
+    Ferro & Silica Manganese: metals
+    Fertilizers: chemicals
+    Forest Products: paper
+    Industrial Gases: chemicals
+    Industrial Minerals: mining
+    Iron & Steel: metals
+    Jute & Jute Products: textiles
+    Other Construction Materials: cement
+    Paper & Paper Products: paper
+    Pesticides & Agrochemicals: chemicals
+    Petrochemicals: chemicals
+    Pig Iron: metals
+    Precious Metals: metals
+    Printing Inks: chemicals
+    Specialty Chemicals: chemicals
+    Sponge Iron: metals
+    Trading - Chemicals: chemicals
+    Trading - Metals: mining
+    Trading - Minerals: mining
+    Zinc: metals
+  Communication Services:
+    Advertising Agencies: media
+    Broadcasting: media
+    Electronic Gaming & Multimedia: media
+    Entertainment: media
+    Internet Content & Information: media
+    Publishing: media
+    Telecom Services: telecom
+  Construction:
+    Civil Construction: infrastructure
+  Construction Materials:
+    Cement & Cement Products: cement
+    Other Construction Materials: cement
+  Consumer Cyclical:
+    Apparel Manufacturing: textiles
+    Apparel Retail: textiles
+    Auto & Truck Dealerships: auto
+    Auto Manufacturers: auto
+    Auto Parts: auto_components
+    Department Stores: retail
+    Footwear & Accessories: textiles
+    Furnishings, Fixtures & Appliances: consumer_durables
+    Gambling: hotels
+    Home Improvement Retail: retail
+    Internet Retail: retail
+    Leisure: hotels
+    Lodging: hotels
+    Luxury Goods: consumer_durables
+    Packaging & Containers: packaging
+    Personal Services: business_services
+    Recreational Vehicles: auto
+    Residential Construction: infrastructure
+    Resorts & Casinos: hotels
+    Restaurants: restaurants
+    Specialty Retail: retail
+    Textile Manufacturing: textiles
+    Travel Services: hotels
+  Consumer Defensive:
+    Beverages - Brewers: consumer_staples
+    Beverages - Non-Alcoholic: consumer_staples
+    Beverages - Wineries & Distilleries: consumer_staples
+    Confectioners: consumer_staples
+    Discount Stores: retail
+    Education & Training Services: education
+    Farm Products: consumer_staples
+    Food Distribution: consumer_staples
+    Grocery Stores: retail
+    Household & Personal Products: consumer_staples
+    Packaged Foods: consumer_staples
+    Tobacco: consumer_staples
+  Consumer Discretionary:
+    2/3 Wheelers: auto
+    Advertising: media
+    Advertising & Media Agencies: media
+    Aerospace: aerospace_defense
+    Air Freight/Delivery Services: logistics
+    Amusement Parks/ Other Recreation: hotels
+    Apparel: textiles
+    Auto & Home Supply Stores: retail
+    Auto -Dealer: auto_components
+    Auto Components & Equipments: auto_components
+    Auto Parts:O.E.M.: auto_components
+    Automotive Aftermarket: auto_components
+    Books: media
+    Broadcasting: media
+    Building Materials: cement
+    Building Products: infrastructure
+    Catalog/Specialty Distribution: retail
+    Ceramics: consumer_durables
+    Clothing/Shoe/Accessory Stores: retail
+    Construction/Ag Equipment/Trucks: capital_goods
+    Consumer Electronics: consumer_durables
+    Consumer Electronics/Appliances: consumer_durables
+    Consumer Electronics/Video Chains: consumer_durables
+    Consumer Specialties: consumer_staples
+    Containers/Packaging: packaging
+    Cycles: auto
+    Department/Specialty Retail Stores: retail
+    Digital Entertainment: media
+    Distributors: business_services
+    Diversified Commercial Services: business_services
+    Diversified Retail: retail
+    Diversified consumer products: consumer_staples
+    Durable Goods: consumer_durables
+    E-Learning: education
+    E-Retail/ E-Commerce: retail
+    Education: education
+    Electronic Components: semiconductors
+    Electronic Media: media
+    Electronics Distribution: business_services
+    Engineering & Construction: infrastructure
+    Film Production Distribution & Exhibition: media
+    Food Distributors: consumer_staples
+    Food Storage Facilities: consumer_staples
+    Footwear: textiles
+    Furniture Home Furnishing: consumer_durables
+    Garments & Apparels: textiles
+    Gems Jewellery And Watches: consumer_durables
+    General Bldg Contractors - Nonresidential Bldgs: infrastructure
+    Glass - Consumer: consumer_durables
+    Granites & Marbles: chemicals
+    Home Furnishings: consumer_durables
+    Homebuilding: real_estate
+    Hotels & Resorts: hotels
+    Hotels/Resorts: hotels
+    Household Appliances: consumer_durables
+    Houseware: consumer_durables
+    Industrial Machinery/Components: capital_goods
+    Industrial Specialties: capital_goods
+    Internet & Catalogue Retail: retail
+    Leather And Leather Products: textiles
+    Leisure Products: consumer_durables
+    Marine Transportation: logistics
+    Media & Entertainment: media
+    Metal Fabrications: metals
+    Military/Government/Technical: aerospace_defense
+    Miscellaneous manufacturing industries: business_services
+    Motor Vehicles: auto
+    Movies/Entertainment: media
+    Newspapers/Magazines: media
+    Office Equipment/Supplies/Services: hardware
+    Oil and Gas Field Machinery: oil_gas
+    Other Consumer Services: business_services
+    Other Specialty Stores: retail
+    Other Textile Products: textiles
+    Package Goods/Cosmetics: consumer_staples
+    Paints: chemicals
+    Paints/Coatings: chemicals
+    Passenger Cars & Utility Vehicles: auto
+    Pharmacy Retail: retail
+    Plastic Products - Consumer: packaging
+    Plywood Boards/ Laminates: paper
+    Print Media: media
+    Printing & Publication: media
+    Professional Services: business_services
+    Professional and commerical equipment: business_services
+    Publishing: media
+    'RETAIL: Building Materials': retail
+    Real Estate related services: real_estate
+    Recreational Games/Products/Toys: consumer_durables
+    Rental/Leasing Companies: business_services
+    Residential Commercial Projects: real_estate
+    Restaurants: restaurants
+    Retail-Auto Dealers and Gas Stations: retail
+    Sanitary Ware: consumer_durables
+    Services-Misc. Amusement & Recreation: hotels
+    Shoe Manufacturing: textiles
+    Speciality Retail: retail
+    Specialty Chemicals: chemicals
+    Specialty Foods: consumer_staples
+    TV Broadcasting & Software Production: media
+    Telecommunications Equipment: hardware
+    Textiles: textiles
+    Tobacco: consumer_staples
+    Tools/Hardware: capital_goods
+    Tour Travel Related Services: hotels
+    Trading - Auto Components: auto_components
+    Trading - Textile Products: textiles
+    Transportation Services: logistics
+    Tyres & Rubber Products: auto_components
+    Web based media and service: media
+    Wellness: hospitals
+    Wholesale Distributors: retail
+  Consumer Durables:
+    Ceramics: consumer_durables
+    Consumer Electronics: consumer_durables
+    Cycles: auto
+    Footwear: textiles
+    Furniture Home Furnishing: consumer_durables
+    Gems Jewellery And Watches: consumer_durables
+    Glass - Consumer: consumer_durables
+    Granites & Marbles: chemicals
+    Household Appliances: consumer_durables
+    Houseware: consumer_durables
+    Leather And Leather Products: textiles
+    Leisure Products: consumer_durables
+    Paints: chemicals
+    Plastic Products - Consumer: packaging
+    Plywood Boards/ Laminates: paper
+    Sanitary Ware: consumer_durables
+  Consumer Services:
+    Amusement Parks/ Other Recreation: hotels
+    Diversified Retail: retail
+    E-Learning: education
+    E-Retail/ E-Commerce: retail
+    Education: education
+    Hotels & Resorts: hotels
+    Internet & Catalogue Retail: retail
+    Other Consumer Services: business_services
+    Pharmacy Retail: retail
+    Restaurants: restaurants
+    Speciality Retail: retail
+    Tour Travel Related Services: hotels
+    Wellness: hospitals
+  Consumer Staples:
+    Apparel: textiles
+    Beverages (Production/Distribution): consumer_staples
+    Consumer Electronics/Appliances: consumer_durables
+    Diversified Electronic Products: business_services
+    Farming/Seeds/Milling: consumer_staples
+    Food Chains: restaurants
+    Meat/Poultry/Fish: consumer_staples
+    Packaged Foods: consumer_staples
+    Retail-Drug Stores and Proprietary Stores: retail
+    Specialty Foods: consumer_staples
+  Diversified:
+    Diversified: diversified_holding
+  Energy:
+    Coal: mining
+    Coal Mining: mining
+    'Electric Utilities: Central': utilities
+    Electrical Products: capital_goods
+    Gas Transmission/Marketing: oil_gas
+    Industrial Machinery/Components: capital_goods
+    Integrated oil Companies: oil_gas
+    LPG/CNG/PNG/LNG Supplier: oil_gas
+    Lubricants: oil_gas
+    Natural Gas Distribution: oil_gas
+    Offshore Support Solution Drilling: oil_gas
+    Oil & Gas Drilling: oil_gas
+    Oil & Gas E&P: oil_gas
+    Oil & Gas Equipment & Services: oil_gas
+    Oil & Gas Integrated: oil_gas
+    Oil & Gas Midstream: oil_gas
+    Oil & Gas Production: oil_gas
+    Oil & Gas Refining & Marketing: oil_gas
+    Oil Equipment & Services: oil_gas
+    Oil Exploration & Production: oil_gas
+    Oil Refining/Marketing: oil_gas
+    Oil Storage & Transportation: oil_gas
+    Oilfield Services/Equipment: oil_gas
+    Refineries & Marketing: oil_gas
+    Thermal Coal: mining
+    Trading - Gas: oil_gas
+    Trading Coal: mining
+    Uranium: mining
+  Fast Moving Consumer Goods:
+    Animal Feed: consumer_staples
+    Breweries & Distilleries: consumer_staples
+    Cigarettes & Tobacco Products: consumer_staples
+    Dairy Products: consumer_staples
+    Diversified FMCG: consumer_staples
+    Edible Oil: consumer_staples
+    Household Products: consumer_staples
+    Meat Products including Poultry: consumer_staples
+    Other Agricultural Products: consumer_staples
+    Other Beverages: consumer_staples
+    Other Food Products: consumer_staples
+    Packaged Foods: consumer_staples
+    Personal Care: consumer_staples
+    Seafood: consumer_staples
+    Stationary: consumer_durables
+    Sugar: consumer_staples
+    Tea & Coffee: consumer_staples
+  Finance:
+    Accident &Health Insurance: insurance
+    Banks: banks
+    Blank Checks: investment_vehicles
+    Commercial Banks: banks
+    Diversified Financial Services: capital_markets
+    Finance Companies: nbfc
+    Finance/Investors Services: nbfc
+    'Finance: Consumer Services': nbfc
+    Investment Bankers/Brokers/Service: capital_markets
+    Investment Managers: capital_markets
+    Life Insurance: insurance
+    Major Banks: banks
+    Property-Casualty Insurers: insurance
+    Real Estate: real_estate
+    Savings Institutions: banks
+    Specialty Insurers: insurance
+    Trusts Except Educational Religious and Charitable: investment_vehicles
+  Financial:
+    Asset Management: capital_markets
+    Banks - Diversified: banks
+    Banks - Regional: banks
+    Capital Markets: capital_markets
+    Closed-End Fund - Debt: investment_vehicles
+    Closed-End Fund - Equity: investment_vehicles
+    Closed-End Fund - Foreign: investment_vehicles
+    Credit Services: nbfc
+    Exchange Traded Fund: investment_vehicles
+    Financial Conglomerates: diversified_holding
+    Financial Data & Stock Exchanges: capital_markets
+    Insurance - Diversified: insurance
+    Insurance - Life: insurance
+    Insurance - Property & Casualty: insurance
+    Insurance - Reinsurance: insurance
+    Insurance - Specialty: insurance
+    Insurance Brokers: insurance
+    Mortgage Finance: nbfc
+    Shell Companies: investment_vehicles
+  Financial Services:
+    Asset Management Company: capital_markets
+    Depositories Clearing Houses and Other Intermediaries: capital_markets
+    Exchange and Data Platform: capital_markets
+    Financial Institution: nbfc
+    Financial Products Distributor: capital_markets
+    Financial Technology (Fintech): capital_markets
+    General Insurance: insurance
+    Holding Company: diversified_holding
+    Housing Finance Company: nbfc
+    Insurance Distributors: insurance
+    Investment Company: investment_vehicles
+    Life Insurance: insurance
+    Microfinance Institutions: nbfc
+    Mutual Fund Scheme - ETF: investment_vehicles
+    Non Banking Financial Company (NBFC): nbfc
+    Other Bank: banks
+    Other Capital Market related Services: capital_markets
+    Other Financial Services: capital_markets
+    Private Sector Bank: banks
+    Public Sector Bank: banks
+    Ratings: capital_markets
+    Stockbroking & Allied: capital_markets
+  Forest Materials:
+    Jute & Jute Products: textiles
+    Paper & Paper Products: paper
+  Health Care:
+    'Biotechnology: Biological Products (No Diagnostic Substances)': pharma
+    'Biotechnology: Commercial Physical & Biological Resarch': pharma
+    'Biotechnology: Electromedical & Electrotherapeutic Apparatus': medical_devices
+    'Biotechnology: In Vitro & In Vivo Diagnostic Substances': diagnostics
+    'Biotechnology: Pharmaceutical Preparations': pharma
+    Hospital/Nursing Management: hospitals
+    Industrial Specialties: capital_goods
+    Managed Health Care: hospitals
+    Medical Electronics: medical_devices
+    Medical Specialities: medical_devices
+    Medical/Dental Instruments: medical_devices
+    Medical/Nursing Services: hospitals
+    Medicinal Chemicals and Botanical Products: pharma
+    Misc Health and Biotechnology Services: pharma
+    Ophthalmic Goods: medical_devices
+    Other Pharmaceuticals: pharma
+    Pharmaceuticals and Biotechnology: pharma
+    Precision Instruments: business_services
+  Healthcare:
+    Biotechnology: pharma
+    Diagnostics & Research: diagnostics
+    Drug Manufacturers - General: pharma
+    Drug Manufacturers - Specialty & Generic: pharma
+    Health Information Services: diagnostics
+    Healthcare Plans: hospitals
+    Healthcare Research Analytics & Technology: diagnostics
+    Healthcare Service Provider: hospitals
+    Hospital: hospitals
+    Medical Care Facilities: hospitals
+    Medical Devices: medical_devices
+    Medical Distribution: medical_devices
+    Medical Equipment & Supplies: medical_devices
+    Medical Instruments & Supplies: medical_devices
+    Pharmaceuticals: pharma
+  Industrials:
+    Abrasives & Bearings: capital_goods
+    Aerospace: aerospace_defense
+    Aerospace & Defense: aerospace_defense
+    Agricultural Chemicals: chemicals
+    Airlines: aviation
+    Airports & Air Services: aviation
+    Aluminium Copper & Zinc Products: metals
+    Aluminum: metals
+    Auto Manufacturing: auto
+    Auto Parts:O.E.M.: auto_components
+    'Biotechnology: Laboratory Analytical Instruments': medical_devices
+    Broadcasting: media
+    Building Materials: cement
+    Building Products: infrastructure
+    Building Products & Equipment: infrastructure
+    Business Equipment & Supplies: business_services
+    Cables - Electricals: capital_goods
+    Castings & Forgings: capital_goods
+    Civil Construction: infrastructure
+    Commercial Vehicles: auto
+    Compressors Pumps & Diesel Engines: capital_goods
+    Conglomerates: diversified_holding
+    Construction Vehicles: capital_goods
+    Construction/Ag Equipment/Trucks: capital_goods
+    Consulting Services: it_services
+    Containers/Packaging: packaging
+    Dealers-Commercial Vehicles Tractors Construction Vehicles: capital_goods
+    Diversified Commercial Services: business_services
+    Electrical Equipment & Parts: capital_goods
+    Electrical Products: capital_goods
+    Electrodes & Refractories: chemicals
+    Engineering & Construction: infrastructure
+    Environmental Services: utilities
+    Farm & Heavy Construction Machinery: capital_goods
+    Farming/Seeds/Milling: consumer_staples
+    Fluid Controls: business_services
+    Garments and Clothing: textiles
+    Glass - Industrial: chemicals
+    Heavy Electrical Equipment: capital_goods
+    Home Furnishings: consumer_durables
+    Homebuilding: real_estate
+    Industrial Distribution: business_services
+    Industrial Machinery/Components: capital_goods
+    Industrial Products: capital_goods
+    Industrial Specialties: capital_goods
+    Integrated Freight & Logistics: logistics
+    Iron & Steel Products: metals
+    Major Chemicals: chemicals
+    Marine Shipping: logistics
+    Marine Transportation: logistics
+    Medical Specialities: medical_devices
+    Metal Fabrication: metals
+    Metal Fabrications: metals
+    Military/Government/Technical: aerospace_defense
+    Mining & Quarrying of Nonmetallic Minerals (No Fuels): mining
+    Misc Corporate Leasing Services: business_services
+    Miscellaneous: diversified_holding
+    Office Equipment/Supplies/Services: hardware
+    Ordnance And Accessories: aerospace_defense
+    Other Electrical Equipment: capital_goods
+    Other Industrial Products: capital_goods
+    Other Specialty Stores: retail
+    Other Transportation: logistics
+    Packaging: packaging
+    Plastic Products: packaging
+    Plastic Products - Industrial: packaging
+    Pollution & Treatment Controls: business_services
+    Pollution Control Equipment: business_services
+    Precious Metals: metals
+    Railroads: logistics
+    Railway Wagons: capital_goods
+    Rental & Leasing Services: business_services
+    Rubber: textiles
+    Security & Protection Services: business_services
+    Ship Building & Allied Services: aerospace_defense
+    Specialty Business Services: business_services
+    Specialty Chemicals: chemicals
+    Specialty Industrial Machinery: capital_goods
+    Staffing & Employment Services: business_services
+    Steel/Iron Ore: metals
+    Telecommunications Equipment: hardware
+    Tools & Accessories: capital_goods
+    Tractors: auto
+    Trucking: logistics
+    Trucking Freight/Courier Services: logistics
+    Waste Management: utilities
+    Water Sewer Pipeline Comm & Power Line Construction: infrastructure
+    Wholesale Distributors: retail
+  Information Technology:
+    Computers - Software & Consulting: it_services
+    Computers Hardware & Equipments: hardware
+    IT Enabled Services: it_services
+    Software Products: it_services
+  Media Entertainment & Publication:
+    Advertising & Media Agencies: media
+    Digital Entertainment: media
+    Electronic Media: media
+    Film Production Distribution & Exhibition: media
+    Media & Entertainment: media
+    Print Media: media
+    Printing & Publication: media
+    TV Broadcasting & Software Production: media
+    Web based media and service: media
+  Metals & Mining:
+    Aluminium: metals
+    Copper: metals
+    Diversified Metals: metals
+    Ferro & Silica Manganese: metals
+    Industrial Minerals: mining
+    Iron & Steel: metals
+    Sponge Iron: metals
+    Trading - Metals: mining
+    Trading - Minerals: mining
+    Zinc: metals
+  Miscellaneous:
+    Diversified Commercial Services: business_services
+    Industrial Machinery/Components: capital_goods
+    Miscellaneous: diversified_holding
+    Multi-Sector Companies: diversified_holding
+    Office Equipment/Supplies/Services: hardware
+  Oil Gas & Consumable Fuels:
+    Coal: mining
+    Gas Transmission/Marketing: oil_gas
+    LPG/CNG/PNG/LNG Supplier: oil_gas
+    Lubricants: oil_gas
+    Offshore Support Solution Drilling: oil_gas
+    Oil Equipment & Services: oil_gas
+    Oil Exploration & Production: oil_gas
+    Oil Storage & Transportation: oil_gas
+    Refineries & Marketing: oil_gas
+    Trading - Coal: mining
+    Trading - Gas: oil_gas
+  Power:
+    Integrated Power Utilities: utilities
+    Power - Transmission: power
+    Power Distribution: power
+    Power Generation: power
+    Power Trading: power
+  Real Estate:
+    Building operators: infrastructure
+    Homebuilding: real_estate
+    Other Consumer Services: business_services
+    REIT - Diversified: reit
+    REIT - Healthcare Facilities: reit
+    REIT - Hotel & Motel: reit
+    REIT - Industrial: reit
+    REIT - Mortgage: reit
+    REIT - Office: reit
+    REIT - Residential: reit
+    REIT - Retail: reit
+    REIT - Specialty: reit
+    Real Estate: real_estate
+    Real Estate - Development: real_estate
+    Real Estate - Diversified: real_estate
+    Real Estate Investment Trusts: real_estate
+    Real Estate Services: real_estate
+  Realty:
+    Real Estate related services: real_estate
+    Residential Commercial Projects: real_estate
+  Services:
+    Airline: aviation
+    Airport & Airport services: aviation
+    Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO): it_services
+    Consulting Services: it_services
+    Data Processing Services: it_services
+    Diversified Commercial Services: business_services
+    Dredging: infrastructure
+    Logistics Solution Provider: logistics
+    Port & Port services: logistics
+    Road Assets - Toll Annuity Hybrid-Annuity: infrastructure
+    Road Assets–Toll Annuity Hybrid-Annuity: infrastructure
+    Road Transport: logistics
+    Shipping: logistics
+    Trading & Distributors: retail
+    Transport Related Services: logistics
+  Technology:
+    Communication Equipment: hardware
+    Computer Hardware: hardware
+    Computer Manufacturing: hardware
+    'Computer Software: Prepackaged Software': it_services
+    'Computer Software: Programming Data Processing': it_services
+    Computer peripheral equipment: hardware
+    Consumer Electronics: consumer_durables
+    Consumer Electronics/Appliances: consumer_durables
+    EDP Services: it_services
+    Electrical Products: capital_goods
+    Electronic Components: semiconductors
+    Electronics & Computer Distribution: business_services
+    Industrial Machinery/Components: capital_goods
+    Information Technology Services: it_services
+    Office Equipment/Supplies/Services: hardware
+    Radio And Television Broadcasting And Communications Equipment: hardware
+    'Retail: Computer Software & Peripheral Equipment': retail
+    Scientific & Technical Instruments: business_services
+    Semiconductor Equipment & Materials: semiconductors
+    Semiconductors: semiconductors
+    Software - Application: it_services
+    Software - Infrastructure: it_services
+    Solar: power
+  Telecommunication:
+    Other Telecom Services: telecom
+    Telecom - Cellular & Fixed line services: telecom
+    Telecom - Equipment & Accessories: telecom
+    Telecom - Infrastructure: telecom
+  Telecommunications:
+    Cable & Other Pay Television Services: telecom
+    Computer Communications Equipment: hardware
+    Metal Fabrications: metals
+    Telecommunications Equipment: hardware
+  Textiles:
+    Garments & Apparels: textiles
+    Other Textile Products: textiles
+    Trading - Textile Products: textiles
+  Utilities:
+    'Electric Utilities: Central': utilities
+    Environmental Services: utilities
+    Integrated Power Utilities: utilities
+    Multi Utilities: utilities
+    Natural Gas Distribution: oil_gas
+    Oil & Gas Production: oil_gas
+    Oil/Gas Transmission: oil_gas
+    Other Utilities: utilities
+    Power - Transmission: power
+    Power Distribution: power
+    Power Generation: power
+    Power Trading: power
+    Telecommunications Equipment: hardware
+    Utilities - Diversified: utilities
+    Utilities - Independent Power Producers: utilities
+    Utilities - Regulated Electric: utilities
+    Utilities - Regulated Gas: utilities
+    Utilities - Regulated Water: utilities
+    Utilities - Renewable: utilities
+    Waste Management: utilities
+    Water Supply: utilities
+    Water Supply & Management: utilities
+negative_labels:
+- rating
+- target price
+- tp
+- cmp
+- current market price
+- recommendation
+- buy
+- sell
+- hold
+- accumulate
+- reduce
+- outperform
+- underperform
+- neutral
+- market perform
+- overweight
+- underweight
+- add
+- reco
+- analyst
+- analyst name
+- brokerage
+- report date
+- initiation
+- price objective
+- fair value
+- intrinsic value
+- upside
+- downside
+- risk
+- key risks
+- risks to our call
+- investment thesis
+- rationale
+- sector weighting
+- index weighting
+- nifty
+- sensex
+- beta
+- 52 week high
+- 52 week low
+- market cap
+- mcap
+- shares outstanding
+- promoter holding
+- fii holding
+- dii holding
+- public holding
+- face value
+- isin
+- bloomberg code
+- reuters code
+- nse symbol
+- bse code
+- stock code
+- page
+- source
+- note
+- e
+- est
+- estimated
+- consensus
