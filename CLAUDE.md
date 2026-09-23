@@ -3119,7 +3119,9 @@ no alert. Nine rules, every one asserted by `verify-kpi-impact.mjs` or `verify-k
    failure is said on the AI Alerts page and in the source registry, which also reads a classification
    older than nine days as a refresh that is due. Every AI Alerts check re-reads the file once the held
    copy is older than `RECHECK_MS` (60s) — a conditional GET, 304 when unmoved — and adopts a changed
-   one without a reload; an unchanged payload keeps the same object, so the ranking memo survives. A
+   one without a reload; an unchanged payload keeps the same object, so the ranking memo survives. The
+   re-read never holds up a paint: the held copy answers at once and the new one lands behind it, so
+   the saved view never waits on the network (offline, a request can hang until its own timeout). A
    failed re-read keeps the copy it had and says so (*Saved copy*), never *no ontology*. The file also
    carries the classification's own gaps (`classificationFailed`, `unresolved`): either one makes the
    registry row *Partial coverage* rather than *Connected*, whatever the build time says.

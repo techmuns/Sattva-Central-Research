@@ -130,8 +130,14 @@ export const status = () => ({
  * KPI line meanwhile, and `status()` says the file could not be read — a missing line must never
  * pass for "nothing here moves a KPI". A RE-READ that fails keeps the copy already held, which was a
  * real read of a real file, and records the failure beside it: a failed re-check is not a failed read.
+ *
+ * A RE-READ NEVER HOLDS UP A PAINT. With a copy in hand the call answers with it at once and the
+ * re-read lands behind it — the ranking reads `snapshot()` when it runs, so the collection that
+ * started the re-read ranks on its answer — because the saved AI Alerts view must not wait on the
+ * network, least of all offline, where a request can hang until its own timeout. `wait: true` is for
+ * a caller that has nothing to paint until the answer arrives (the tests).
  */
-export function load() {
+export function load({ wait = false } = {}) {
   if (ontology && Date.now() - confirmedAt < RECHECK_MS) return Promise.resolve(ontology);
   if (!pending) {
     const held = ontology;
@@ -152,7 +158,7 @@ export function load() {
       })
       .finally(() => { pending = null; });
   }
-  return pending;
+  return ontology && !wait ? Promise.resolve(ontology) : pending;
 }
 
 /** The company's resolved sector context, or null where the classification does not reach it. */

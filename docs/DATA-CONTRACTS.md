@@ -797,8 +797,9 @@ fixture and the classification build.
 read of the file has a state of its own (`kpiImpact.status()`: idle, loading, ready or failed, with
 the reason and time); a failed read is said on the AI Alerts page and in the source registry rather
 than passing for cards whose evidence names nothing. The file is re-read on the page's own checks once
-the held copy is older than `RECHECK_MS` (60s) — a conditional request — and a changed file is adopted
-without a reload; a failed re-read keeps the held copy and is reported beside it. The rules that turn an event into KPIs, and the
+the held copy is older than `RECHECK_MS` (60s) — a conditional request that never holds up a paint,
+the held copy answering while it runs — and a changed file is adopted without a reload; a failed
+re-read keeps the held copy and is reported beside it. The rules that turn an event into KPIs, and the
 traps each rule is measured against, are in the header of `js/data/kpi-impact.js` and in
 `CLAUDE.md` → *KPIs in play*.
 
