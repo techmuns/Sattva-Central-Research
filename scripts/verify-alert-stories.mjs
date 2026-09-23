@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { mock } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import { storyRecord, storyKey, storyDigest, validateStoryRequest, validateStoryGroups, sameDevelopmentSafe } from '../public/js/data/alert-stories-shared.js';
 import { createStoryGrouping, storyGrouping } from '../public/js/data/alert-stories.js';
 import { AlertStoriesStore, STORY_DAILY_REQUESTS } from '../worker/alert-stories-store.mjs';
 import { handleAlertStories } from '../worker/alert-stories.mjs';
 import { ATTRIBUTION_VERSION } from '../public/js/data/company-news-attribution.js';
+// Keep retention and archive receipts relative to the same fixture day, including future CI runs.
+mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-09-26T12:00:00Z') });
 const storage = new Map();
 globalThis.localStorage = { getItem: k => storage.get(k) || null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) };
 const { rankReport, materialEvidence, clearRankingCache, topEvidence } = await import('../public/js/data/ai-alerts.js');
@@ -147,3 +150,4 @@ assert.equal((await handleAlertStories(request('https://foreign.example'), env, 
 assert((await (await handleAlertStories(request(), env, { fetcher: model })).json()).ok);
 assert((await (await handleAlertStories(request(), env, { fetcher: model })).json()).ok); assert.equal(calls, 1);
 console.log('PASS: same-origin route, exact-request cache, concurrent reservation and durable rolling request budget.');
+mock.timers.reset();
