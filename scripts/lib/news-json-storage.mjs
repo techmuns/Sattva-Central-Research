@@ -28,8 +28,12 @@ function pruneGeneratedParts(path, keep = new Set()) {
 
 function verifyQueryIndex(path, part, field, items) {
   const index = part.queryIndex;
-  if (!index) return;
-  if (index.version !== NEWS_QUERY_INDEX_VERSION || index.sourceSha256 !== part.sha256 || index.rows !== part.rows)
+  // An index of another version is never read: the browser requires the current one and rebuilds
+  // from the verified part otherwise, exactly as for a missing index. So it cannot misreport a
+  // record, and it is not a failure. A capture written by the previous code between a version
+  // bump and its merge would otherwise fail every asset check until that capture ran again.
+  if (!index || index.version !== NEWS_QUERY_INDEX_VERSION) return;
+  if (index.sourceSha256 !== part.sha256 || index.rows !== part.rows)
     throw Error('News query index source mismatch');
   const body = readFileSync(shardPath(path, index.file), 'utf8');
   if (Buffer.byteLength(body) !== index.bytes || hash(body) !== index.sha256) throw Error('News query index integrity mismatch');

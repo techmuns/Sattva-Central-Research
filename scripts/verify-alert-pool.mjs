@@ -64,6 +64,14 @@ const { writeEntry, deleteEntry, KEYS } = await import('../public/js/core/store.
 const day = alerts.today();
 const window = (days) => ({ from: new Date(Date.parse(day) - (days - 1) * 86400000).toISOString().slice(0, 10), to: day, includeUndated: false });
 const shortEvent = (event) => ({ id: event.id, feed: event.feed, day: event.day, headline: event.headline });
+// Compare every field and the exact order without holding two extra JSON copies
+// of the entire history or rendering hundreds of thousands of rows on a failure.
+const assertEvents = (actual, expected, message) => {
+  assert.equal(actual.length, expected.length, `${message}: event count`);
+  for (let i = 0; i < expected.length; i++) {
+    assert.deepEqual(jsonForm(actual[i]), jsonForm(expected[i]), `${message}: event ${i + 1} (${expected[i].id})`);
+  }
+};
 
 // A raw publisher story gains company attribution after the pool is decoded.
 // It must survive outside the ranking week because the card still reads it as context.
@@ -117,7 +125,7 @@ for (const [label, queryWindow] of [['Today', window(1)], ['Last 3 days', window
   assert.deepEqual(Object.fromEntries(POOL_FEEDS.map((id) => [id, status.feeds[id]?.pooled])), Object.fromEntries(POOL_FEEDS.map((id) => [id, true])), `${label}: every pooled feed came from the pool (${JSON.stringify(status.feeds)})`);
   const expected = full.events.filter((event) => alerts.inAlertQuery(event, queryWindow));
   assert.deepEqual(pooled.events.map(shortEvent), expected.map(shortEvent), `${label}: the same events in the same order`);
-  assert.deepEqual(jsonForm(pooled.events), jsonForm(expected), `${label}: every field, reason and provenance`);
+  assertEvents(pooled.events, expected, `${label}: every field, reason and provenance`);
   const dataReads = served.requests.filter((path) => /^data\/(news|insider-trades|corp-announcements|technicals|market-news)\.json$/.test(path));
   assert.deepEqual(dataReads, [], `${label}: no pooled capture is downloaded (${dataReads.join(', ')})`);
   console.log(`PASS ${label}: ${pooled.events.length} events from the pool equal the full history narrowed to the period`);
@@ -138,7 +146,7 @@ for (const scope of ['universe', 'portfolio']) {
   const holdings = coverage.holdings();
   const fromPool = await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week, pool: 'window' });
   const narrowed = alerts.assemble({ day, scope, holdings, includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
-  assert.deepEqual(jsonForm(fromPool.events), jsonForm(narrowed.events), `${scope}: the period's events`);
+  assertEvents(fromPool.events, narrowed.events, `${scope}: the period's events`);
   assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(narrowed.feeds.map(describe)), `${scope}: the feed rows describe their sources as the full read does`);
   assert.deepEqual(jsonForm(fromPool.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })),
     jsonForm(narrowed.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })), `${scope}: every count`);
@@ -221,7 +229,7 @@ served.status = { ...served.status, captures: { ...served.status.captures, insid
 assert.deepEqual(await declineReasons(), { insider: 'insider: moved' }, 'a capture that moved sends only its feed down the live path');
 {
   const pooled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
-  assert.deepEqual(jsonForm(pooled.events), jsonForm(narrowedWeek.events), 'a declined feed read live still yields the same period');
+  assertEvents(pooled.events, narrowedWeek.events, 'a declined feed read live still yields the same period');
   assert.equal(alertPool.status().feeds.insider.pooled, false);
 }
 served.status = captureStatusFor({ root, exchange });
@@ -279,7 +287,7 @@ served.index = { ...index };
   // window edge than the narrowing does (section 2 says so, and verify-news-working-set.mjs owns
   // that comparison). What is asserted is that nothing about the failed pool changed the answer.
   const liveWeek = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
-  assert.deepEqual(jsonForm(pooled.events), jsonForm(liveWeek.events), 'unreadable members leave the whole period to the live path, event for event');
+  assertEvents(pooled.events, liveWeek.events, 'unreadable members leave the whole period to the live path, event for event');
   assert.deepEqual(jsonForm(pooled.feeds.map(describe)), jsonForm(liveWeek.feeds.map(describe)), 'and the feed rows are the live read\'s');
 }
 served.artifact = 4242001;
@@ -293,7 +301,7 @@ alertPool.resetForTest();
 await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
 served.requests = [];
 const reassembled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window', load: false });
-assert.deepEqual(jsonForm(reassembled.events), jsonForm(narrowedWeek.events), 'a reassembly without loading yields the same period');
+assertEvents(reassembled.events, narrowedWeek.events, 'a reassembly without loading yields the same period');
 assert.deepEqual(served.requests.filter((path) => path.startsWith('api/alert-pool/')), [], 'a reassembly reads no member');
 console.log('PASS a reassembly without loading reuses the pool read in memory');
 

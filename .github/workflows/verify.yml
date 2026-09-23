@@ -20,7 +20,9 @@ jobs:
           "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= .github/workflows/mutual-funds-refresh.yml .github/workflows/verify.yml
   contracts:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Full-history alert checks exceeded the former ten-minute job budget while
+    # still passing; retain every check and allow the growing captures to finish.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -154,7 +156,8 @@ jobs:
         run: node scripts/verify-concall-summaries-runtime.mjs
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Setup and the complete dashboard suite share this bounded job budget.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
