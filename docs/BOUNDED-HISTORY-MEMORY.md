@@ -8,7 +8,9 @@ public transport, not collection scope, retention, company matching, or AI evide
 - News and selected-period All Alerts locate dates using compact, integrity-checked part indexes.
   They load matching raw parts and every connected URL/TradingView identity's correction/provenance companions before
   applying the existing canonicalizers. A fingerprint collision can only overfetch; record
-  identity continues to use the original full URL and company identity.
+  identity continues to use the original full URL and company identity. Index version 4 adds the
+  story key `dedupeArticles` folds on (outlet, headline and date), because a TradingView copy shares
+  nothing else with its original, and past midnight IST it lands on the next day.
 - Large captures use transport version 2: records are grouped by date, with a validated complete
   permutation back to their original positions. Full hydration must equal the original object,
   including record order, fields, source timestamps, tickerless rows and empty buckets. Version 1

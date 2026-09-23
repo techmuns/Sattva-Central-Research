@@ -409,9 +409,11 @@ try {
   assert(jayaswalResults.includes('Indian manufacturer shares a business update'), 'snippet-only coverage remains in company search');
   assert(jayaswalResults.includes('Possible match — unverified'), 'uncertainty is visible without a hover');
   if (process.env.NEWS_ATTRIBUTION_SCREENSHOT) await page.screenshot({ path: process.env.NEWS_ATTRIBUTION_SCREENSHOT });
+  // Read through `searchedText` for the reason given above it: on 23 September 2026 the NESTLEIND
+  // search matched 58 rows, the window drew 40 of them down to 7 September, and this 4 September
+  // fixture sat below it — a check on the capture's size that had turned red on its own.
   for (const [query, title] of [['NESTLEIND', 'Nestlé India'], ['Avenue Supermarts', 'DMart reports']]) {
-    await page.locator('[data-table-search]').fill(query);
-    await page.waitForFunction(text => document.querySelector('tbody')?.textContent.includes(text), title);
+    assert((await searchedText(query)).includes(title), `a ${query} search finds "${title}" wherever the capture places it`);
   }
   await page.evaluate(() => window.show('universe'));
   await settled();
