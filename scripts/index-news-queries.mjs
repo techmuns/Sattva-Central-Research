@@ -8,7 +8,7 @@ import { shardSpec, shardPath, parseShard } from '../public/js/core/json-shards.
 import { newsQueryIndexRow, NEWS_QUERY_INDEX_VERSION } from '../public/js/data/news-query-index.js';
 import { readNewsJson, writeNewsJson } from './lib/news-json-storage.mjs';
 const digest = body => createHash('sha256').update(body).digest('hex');
-const files = ['public/data/news.json', ...['company-news', 'tradingview-news', 'market-news'].flatMap(family =>
+const files = ['public/data/news.json', ...['company-news', 'tradingview-news'].flatMap(family =>
   readdirSync(`public/data/${family}`).filter(name => /^(\d{4}-\d{2}|undated|latest)\.json$/.test(name)).map(name => `public/data/${family}/${name}`))];
 if (process.argv.includes('--repartition')) {
   if (!process.argv.includes('--write')) throw Error('Repartitioning requires --write');
