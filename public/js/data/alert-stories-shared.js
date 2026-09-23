@@ -7,6 +7,17 @@ export const STORY_HISTORY_DAYS = 180;
 export const STORY_FEEDS = new Set(['news', 'market-news', 'announcements', 'nse-filings']);
 export const STORY_CHANGES = new Set(['new', 'approval', 'terms', 'figures', 'correction', 'denial', 'cancellation', 'completion', 'development']);
 export const isMaterialStoryUpdate = event => !!event.storyId && STORY_CHANGES.has(event.storyChange) && event.storyChange !== 'new';
+/** Source clocks win when both exist. A newly checked development wins an otherwise unknown
+ * same-day order, without assigning it an invented publication time or advancing repeat copies. */
+export function compareStoryRecency(a, b) {
+  const day = String(a.day || '').localeCompare(String(b.day || ''));
+  if (day) return day;
+  const clock = value => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value)) ? value : '';
+  const aTime = clock(a.time), bTime = clock(b.time);
+  const sequence = a.storyId && a.storyId === b.storyId ? (a.storySequence || 0) - (b.storySequence || 0) : 0;
+  if (sequence && (!aTime || !bTime)) return sequence;
+  return aTime.localeCompare(bTime) || sequence;
+}
 const normal = value => String(value || '').normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
 const validDay = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 export const storyBytes = value => new TextEncoder().encode(JSON.stringify(value)).length;

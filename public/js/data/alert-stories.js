@@ -9,7 +9,7 @@ const order = (a, b) => a.day.localeCompare(b.day) || a.time.localeCompare(b.tim
 /** The only persistent inputs are public source text and its checked membership, never a card/book. */
 export function createStoryGrouping({ read = readEntry, write = writeEntry, fetcher = (...args) => fetch(...args), now = () => Date.now() } = {}) {
   const decisions = new Map(), listeners = new Set(), failures = new Map();
-  let loading, running, waiting, revision = 0, checking = false, attempted = false;
+  let loading, running, waiting, revision = 0, sequence = 0, checking = false, attempted = false;
   let historyRevision = -1, histories = new Map();
   const emit = () => { revision++; for (const fn of listeners) { try { fn(); } catch { /* A view cannot break saved readings. */ } } };
   const cutoff = () => new Date(now() - STORY_HISTORY_DAYS * 86400000).toISOString().slice(0, 10);
@@ -19,7 +19,10 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
         const saved = (await read(CACHE))?.value;
         if (saved?.version === STORY_VERSION && Array.isArray(saved.entries)) for (const entry of saved.entries) {
           if ((entry?.first?.day || entry?.record?.day) >= cutoff() && /^s:[a-f0-9]{64}$/.test(entry.story || '') && /^d:[a-f0-9]{64}$/.test(entry.development || '') &&
-              typeof entry.record.headline === 'string' && typeof entry.record.text === 'string') decisions.set(storyKey(entry.record), entry);
+              typeof entry.record.headline === 'string' && typeof entry.record.text === 'string') {
+            decisions.set(storyKey(entry.record), entry);
+            if (Number.isSafeInteger(entry.sequence) && entry.sequence > sequence) sequence = entry.sequence;
+          }
         }
       } catch { /* Sources remain usable when the optional reading cache is unavailable. */ }
       emit();
@@ -48,13 +51,14 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
         const members = dev.reports.map(id => byId.get(id)).sort(order);
         const existing = members.map(r => decision(r)).find(Boolean);
         const development = existing?.development || `d:${await storyDigest(storyKey(members[0]))}`;
+        const developmentSequence = existing ? (existing.sequence || 0) : ++sequence;
         const change = existing?.change || (story.developments.length > 1 || all.some(r => r.known) ? dev.change : 'new');
         // A development keeps its first source publication, independent of when copies arrive.
         const first = existing?.first || { day: members[0].day, time: members[0].time };
         const lead = existing?.lead || (() => { const { id, known, ...record } = members[0]; return record; })();
         for (const report of members) {
           const { id, known, ...record } = report;
-          decisions.set(storyKey(record), { record, story: storyId, development, change, first, lead });
+          decisions.set(storyKey(record), { record, story: storyId, development, sequence: developmentSequence, change, first, lead });
         }
       }
     }
@@ -167,6 +171,7 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
           ...(['announcements', 'nse-filings'].includes(entry.lead.feed) ? { filingSubject: entry.lead.headline, filingDescription: entry.lead.text } : {}) } : {}),
         day: first.day, time: first.time || null,
         storyReports: sources, storyId: entry?.story || null, developmentId: entry?.development || null,
+        storySequence: entry?.sequence || 0,
         storyChange: entry?.change || 'new', storyReviewed: !!entry,
         storyHistory: entry ? [...(histories.get(entry.story) || [])].filter(([id]) => id !== entry.development)
           .map(([developmentId, records]) => ({ developmentId, reports: records.sort(order) })) : [],

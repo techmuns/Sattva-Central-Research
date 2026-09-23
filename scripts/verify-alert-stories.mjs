@@ -11,9 +11,9 @@ import { ATTRIBUTION_VERSION } from '../public/js/data/company-news-attribution.
 mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-09-26T12:00:00Z') });
 const storage = new Map();
 globalThis.localStorage = { getItem: k => storage.get(k) || null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) };
-const { rankReport, materialEvidence, clearRankingCache, topEvidence } = await import('../public/js/data/ai-alerts.js');
+const { rankReport, materialEvidence, clearRankingCache, topEvidence, leadEvent } = await import('../public/js/data/ai-alerts.js');
 const mute = await import('../public/js/core/ai-mute.js');
-const { latestAlertSignal, matchesSearch } = await import('../public/js/ui/ai-alert-utils.js');
+const { latestAlertSignal, latestAlertEvent, matchesSearch } = await import('../public/js/ui/ai-alert-utils.js');
 
 const event = (id, headline = 'Alpha Bank proposes merger with Beta Bank', extra = {}) => ({ id, headline, company: 'Alpha Bank', ticker: 'ALPHA', day: '2026-09-23', time: '09:00',
   feed: 'news', feedLabel: 'Company news', url: `https://outlet-${id}.example/report`, detail: '', importance: 'high', direction: 'neutral',
@@ -134,6 +134,29 @@ for (const scope of ['portfolio', 'universe']) {
   assert(fresh.cards[0].events[0].storyHistory.length > 0,'the original story remains accessible in history');
 }
 console.log('PASS: 100 reports from 65 outlets become one development; new facts resurface, late copies stay quiet, every source/history survives reload and failure.');
+
+let clocklessSaved;
+const clockless = createStoryGrouping({read: async()=>null,write:async(_key,value)=>{clocklessSaved=value;},fetcher,
+  now:()=>Date.parse('2026-09-26T12:00:00Z')});
+await clockless.review([proposal,copy]);
+const noClockApproval = {...approval,day:proposal.day,time:null};
+const noClockTerms = {...terms,day:proposal.day,time:null};
+for (const update of [noClockApproval,noClockTerms]) {
+  await clockless.review([update]);
+  const events=clockless.project([proposal,noClockApproval,...(update===noClockTerms?[noClockTerms]:[])]);
+  assert.equal(topEvidence({events},1)[0].headline,update.headline,'a same-day development with an unknown clock is visible');
+  assert.equal(leadEvent({events}).headline,update.headline);
+  assert.equal(latestAlertEvent({events}).headline,update.headline);
+  assert.equal(latestAlertSignal({events}).time,null,'no publication time is invented');
+}
+const sequence=clockless.project([noClockTerms])[0].storySequence;
+const termsCopy={...noClockTerms,url:'https://later-copy.example/terms',time:'16:00'};
+await clockless.review([termsCopy]);
+assert.equal(clockless.project([termsCopy])[0].storySequence,sequence,'a later copy cannot advance discovery order');
+const clocklessRestored=createStoryGrouping({read:async()=>clocklessSaved,now:()=>Date.parse('2026-09-26T12:00:00Z')});
+await clocklessRestored.load();
+assert.equal(clocklessRestored.project([noClockTerms])[0].storySequence,sequence,'discovery order survives reload');
+console.log('PASS: clockless same-day developments lead the story, without inventing publication times or advancing copies.');
 
 const db = new DatabaseSync(':memory:');
 const durable = { sql: { exec(query, ...args) { const statement = db.prepare(query); return { toArray: () => statement.all(...args) }; } }, transactionSync(fn) {

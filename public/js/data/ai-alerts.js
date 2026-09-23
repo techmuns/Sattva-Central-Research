@@ -15,7 +15,7 @@
 // within the selected filter; the materiality threshold and alert priority remain evidence-based.
 
 import { storyGrouping } from './alert-stories.js';
-import { STORY_FEEDS, storyRecord, storyKey, isMaterialStoryUpdate } from './alert-stories-shared.js';
+import { STORY_FEEDS, storyRecord, storyKey, isMaterialStoryUpdate, compareStoryRecency } from './alert-stories-shared.js';
 import * as generalAlerts from './daily-alerts.js';
 import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
@@ -660,7 +660,7 @@ export function topEvidence(card, limit = 3, { maxPerSource = MAX_PER_SOURCE } =
   const latest = new Map();
   for (const event of card?.events || []) if (event.storyId) {
     const held = latest.get(event.storyId);
-    if (!held || `${event.day} ${event.time || ''}` > `${held.day} ${held.time || ''}`) latest.set(event.storyId, event);
+    if (!held || compareStoryRecency(event, held) > 0) latest.set(event.storyId, event);
   }
   const emitted = new Set();
   for (const source of card?.events || []) {
@@ -749,7 +749,7 @@ export function plainHeadline(event) {
  */
 export function leadEvent(card) {
   const events = card?.events || [];
-  const newest = [...events].filter(e => e.importance === 'high' || isMaterialStoryUpdate(e)).sort((a, b) => `${b.day} ${b.time || ''}`.localeCompare(`${a.day} ${a.time || ''}`))[0];
+  const newest = [...events].filter(e => e.importance === 'high' || isMaterialStoryUpdate(e)).sort((a, b) => compareStoryRecency(b, a))[0];
   if (newest?.storyId && newest.storyChange !== 'new' && !isTypeOnly(plainHeadline(newest))) return newest;
   return events.find((event) => !isTypeOnly(plainHeadline(event)))
     || events.find((event) => plainHeadline(event).trim())

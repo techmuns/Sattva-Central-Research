@@ -1,6 +1,6 @@
 // Display helpers keep calendar ages independent of a cached report's collection date.
 import { isRelatedNewsContext } from '../data/company-news-attribution.js';
-import { isMaterialStoryUpdate } from '../data/alert-stories-shared.js';
+import { isMaterialStoryUpdate, compareStoryRecency } from '../data/alert-stories-shared.js';
 const DAY_MS = 86_400_000;
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 export const currentDay = (now = Date.now()) => new Date(now + 5.5 * 3600_000).toISOString().slice(0, 10);
@@ -49,8 +49,7 @@ export function latestAlertSignal(card) {
 
 /** Keep the event that advanced the card visible, even when older evidence scores higher. */
 export function latestAlertEvent(card) {
-  return alertSignals(card).filter(event => Number.isFinite(dayMillis(event.day))).sort((a, b) =>
-    b.day.localeCompare(a.day) || String(latestSignal([b])?.time || '').localeCompare(String(latestSignal([a])?.time || '')))[0] || null;
+  return alertSignals(card).filter(event => Number.isFinite(dayMillis(event.day))).sort((a, b) => compareStoryRecency(b, a))[0] || null;
 }
 
 export function sortAlertCards(cards, order = 'newest') {

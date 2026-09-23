@@ -84,7 +84,7 @@ try {
   await page.waitForFunction(()=>document.querySelector('[data-ai-story-status]')?.textContent==='Repeated coverage grouped');
   await card.waitFor({state:'detached'});
   assert.equal(await card.count(),0,'more coverage remains archived');
-  await page.evaluate(e=>{window.fixtureEvents.push(e);window.changed();},event('rbi','RBI approves Alpha Bank merger with Beta Bank',{time:'11:00',importance:'low'}));
+  await page.evaluate(e=>{window.fixtureEvents.push(e);window.changed();},event('rbi','RBI approves Alpha Bank merger with Beta Bank',{time:null,importance:'low'}));
   await card.locator('[data-ai-updated]').waitFor();
   assert.match(await card.locator('[data-ai-insight]').innerText(),/RBI approves/);
   assert.equal(await card.locator('[data-ai-evidence] > li').count(),1);
