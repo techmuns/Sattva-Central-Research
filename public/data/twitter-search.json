@@ -1380,15 +1380,15 @@
       "error": "search-unavailable"
     },
     "isin:INE526E01018|SPR Auto Technologies": {
-      "lastAttemptAt": "2026-09-18T22:53:21+00:00",
+      "lastAttemptAt": "2026-09-23T14:22:24+00:00",
       "error": "search-unavailable"
     },
     "isin:INE526E01018|Shriram Pistons & Rings": {
-      "lastAttemptAt": "2026-09-18T23:23:49+00:00",
+      "lastAttemptAt": "2026-09-23T14:51:31+00:00",
       "error": "search-unavailable"
     },
     "isin:INE526E01018|SHRIPISTON": {
-      "lastAttemptAt": "2026-09-18T23:45:08+00:00",
+      "lastAttemptAt": "2026-09-23T15:33:54+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1NPP01017|Siemens Energy India": {
@@ -1703,7 +1703,7 @@
   "coverage": {
     "planned": 232,
     "attempted": 1,
-    "incomplete": 221,
-    "checkedAt": "2026-09-23T13:52:06.745164+00:00"
+    "incomplete": 232,
+    "checkedAt": "2026-09-23T15:33:54.583922+00:00"
   }
 }
