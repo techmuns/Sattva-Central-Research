@@ -1,0 +1,4343 @@
+{
+ "_provenance": "NSE four-level industry classification as printed by Screener: the NSE-500 export for index members, each company's public page for the rest. Read by scripts/build-sector-kpis.mjs; see docs/DATA-CONTRACTS.md → Sector KPIs.",
+ "source": "Screener (NSE industry classification)",
+ "generator": "scripts/classify-companies.mjs",
+ "capturedAt": "2026-09-23T07:52:35.631Z",
+ "scope": "book",
+ "counts": {
+  "companies": 599,
+  "fromExport": 534,
+  "fromPages": 65,
+  "failed": 0,
+  "pagesReadThisRun": 3
+ },
+ "companies": {
+  "504375": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "543225": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Infrastructure",
+   "source": "export"
+  },
+  "544467": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Depositories, Clearing Houses and Other Intermediaries",
+   "source": "export"
+  },
+  "360ONE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Stockbroking & Allied",
+   "source": "export"
+  },
+  "3MINDIA": {
+   "broadSector": "Diversified",
+   "sector": "Diversified",
+   "broadIndustry": "Diversified",
+   "industry": "Diversified",
+   "source": "export"
+  },
+  "AADHARHFC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "AARTIIND": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "ABB": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "ABBOTINDIA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ABCAPITAL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "ABDL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Beverages",
+   "industry": "Breweries & Distilleries",
+   "source": "export"
+  },
+  "ABREL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "ABSLAMC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Asset Management Company",
+   "source": "export"
+  },
+  "ACC": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "ACE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Agricultural, Commercial & Construction Vehicles",
+   "industry": "Construction Vehicles",
+   "source": "export"
+  },
+  "ACMESOLAR": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "ACUTAAS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ADANIENSOL": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Distribution",
+   "source": "export"
+  },
+  "ADANIENT": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Metals & Minerals Trading",
+   "industry": "Trading - Minerals",
+   "source": "export"
+  },
+  "ADANIGREEN": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "ADANIPORTS": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Infrastructure",
+   "industry": "Port & Port services",
+   "source": "export"
+  },
+  "ADANIPOWER": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Integrated Power Utilities",
+   "source": "export"
+  },
+  "ADVAIT": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "code": "IN070203002",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:29:45.972Z"
+  },
+  "AEGISLOG": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Gas",
+   "industry": "Trading - Gas",
+   "source": "export"
+  },
+  "AEGISVOPAK": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Oil",
+   "industry": "Oil Storage & Transportation",
+   "source": "export"
+  },
+  "AEQUS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "AETHER": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "AFFLE": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "AGARWALEYE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "AGL": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Logistics Solution Provider",
+   "code": "IN090102002",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:29:51.334Z"
+  },
+  "AIAENG": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Castings & Forgings",
+   "source": "export"
+  },
+  "AIIL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "AJANTPHARM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ALANKIT": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Commercial Services & Supplies",
+   "industry": "Diversified Commercial Services",
+   "code": "IN090104004",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:29:48.643Z"
+  },
+  "ALIVUS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ALKEM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ALPEXSOLAR-SM": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "code": "IN070203002",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:52:27.237Z",
+   "screenerPath": "/company/ALPEXSOLAR/"
+  },
+  "AMAGI": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "AMBER": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "source": "export"
+  },
+  "AMBUJACEM": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "ANANDRATHI": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Financial Products Distributor",
+   "source": "export"
+  },
+  "ANANTRAJ": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "ANGELONE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Stockbroking & Allied",
+   "source": "export"
+  },
+  "ANTHEM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Biotechnology",
+   "source": "export"
+  },
+  "ANURAS": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "APARINDS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "APLAPOLLO": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "APLLTD": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "APOLLO": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "APOLLOHOSP": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "APOLLOTYRE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Tyres & Rubber Products",
+   "source": "export"
+  },
+  "APTUS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "ARE&M": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "ARVIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Textiles",
+   "broadIndustry": "Textiles & Apparels",
+   "industry": "Garments & Apparels",
+   "source": "export"
+  },
+  "ASAHIINDIA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "ASHIKA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "code": "IN050101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:52:33.097Z",
+   "screenerPath": "/company/ASHIKAG/"
+  },
+  "ASHOKLEY": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Agricultural, Commercial & Construction Vehicles",
+   "industry": "Commercial Vehicles",
+   "source": "export"
+  },
+  "ASIANPAINT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Paints",
+   "source": "export"
+  },
+  "ASKAUTOLTD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "ASTERDM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "ASTRAL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Plastic Products - Industrial",
+   "source": "export"
+  },
+  "ASTRAMICRO": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "ASTRAZEN": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ATGL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Gas",
+   "industry": "LPG/CNG/PNG/LNG Supplier",
+   "source": "export"
+  },
+  "ATHERENERG": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "2/3 Wheelers",
+   "source": "export"
+  },
+  "ATLANTAELE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "code": "IN070203001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:29:58.783Z"
+  },
+  "ATUL": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "AUBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Other Bank",
+   "source": "export"
+  },
+  "AUROPHARMA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "AVALON": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "AVL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Speciality Retail",
+   "code": "IN020603001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:29:43.215Z"
+  },
+  "AWL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Edible Oil",
+   "source": "export"
+  },
+  "AXISBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "AXISCADES": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "code": "IN070201001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:01.245Z"
+  },
+  "AZAD": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "BAGMANE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Real Estate Investment Trusts (REITs)",
+   "source": "export"
+  },
+  "BAJAJ-AUTO": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "2/3 Wheelers",
+   "source": "export"
+  },
+  "BAJAJFINSV": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Holding Company",
+   "source": "export"
+  },
+  "BAJAJHFL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "BAJAJHLDNG": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Holding Company",
+   "source": "export"
+  },
+  "BAJFINANCE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "BALKRISIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Tyres & Rubber Products",
+   "source": "export"
+  },
+  "BALRAMCHIN": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Sugar",
+   "source": "export"
+  },
+  "BANDHANBNK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "BANKBARODA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "BANKINDIA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "BASF": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "BAYERCROP": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Pesticides & Agrochemicals",
+   "source": "export"
+  },
+  "BBOX": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "BDL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "BEL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "BELRISE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "BEML": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Agricultural, Commercial & Construction Vehicles",
+   "industry": "Construction Vehicles",
+   "source": "export"
+  },
+  "BENGALASM": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "code": "IN050101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:03.798Z"
+  },
+  "BERGEPAINT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Paints",
+   "source": "export"
+  },
+  "BHARATCOAL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Consumable Fuels",
+   "industry": "Coal",
+   "source": "export"
+  },
+  "BHARATFORG": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "BHARTIARTL": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Cellular & Fixed line services",
+   "source": "export"
+  },
+  "BHARTIHEXA": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Cellular & Fixed line services",
+   "source": "export"
+  },
+  "BHEL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "BIKAJI": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Packaged Foods",
+   "source": "export"
+  },
+  "BIOCON": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "BIRET": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Real Estate Investment Trusts (REITs)",
+   "source": "export"
+  },
+  "BLS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Tour, Travel Related Services",
+   "code": "IN020601005",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:23:47.194Z"
+  },
+  "BLUESTARCO": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "source": "export"
+  },
+  "BOSCHLTD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "BPCL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Refineries & Marketing",
+   "source": "export"
+  },
+  "BRIGADE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "BRITANNIA": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Packaged Foods",
+   "source": "export"
+  },
+  "BSE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Exchange and Data Platform",
+   "source": "export"
+  },
+  "CAMS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Depositories, Clearing Houses and Other Intermediaries",
+   "source": "export"
+  },
+  "CANBK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "CANFINHOME": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "code": "IN050101002",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:24:02.326Z"
+  },
+  "CANHLIFE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "Life Insurance",
+   "source": "export"
+  },
+  "CAPLIPOINT": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "CARBORUNIV": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Abrasives & Bearings",
+   "source": "export"
+  },
+  "CARTRADE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "E-Retail/ E-Commerce",
+   "source": "export"
+  },
+  "CARYSIL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "code": "IN020201007",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:06.298Z"
+  },
+  "CASTROLIND": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Lubricants",
+   "source": "export"
+  },
+  "CCL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Tea & Coffee",
+   "source": "export"
+  },
+  "CDSL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Depositories, Clearing Houses and Other Intermediaries",
+   "source": "export"
+  },
+  "CEATLTD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Tyres & Rubber Products",
+   "source": "export"
+  },
+  "CEMPRO": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "CENTRALBK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "CENTURYPLY": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Plywood Boards/ Laminates",
+   "source": "export"
+  },
+  "CESC": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Integrated Power Utilities",
+   "source": "export"
+  },
+  "CGCL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "CGPOWER": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "CHALET": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "source": "export"
+  },
+  "CHAMBLFERT": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Fertilizers",
+   "source": "export"
+  },
+  "CHENNPETRO": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Refineries & Marketing",
+   "source": "export"
+  },
+  "CHOICEIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Holding Company",
+   "source": "export"
+  },
+  "CHOLAFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "CHOLAHLDNG": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "CIEINDIA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "CIPLA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "CLEANMAX": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "CMPDI": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "COALINDIA": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Consumable Fuels",
+   "industry": "Coal",
+   "source": "export"
+  },
+  "COCHINSHIP": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Ship Building & Allied Services",
+   "source": "export"
+  },
+  "COFORGE": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "COHANCE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "COLPAL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "CONCOR": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Logistics Solution Provider",
+   "source": "export"
+  },
+  "CONCORDBIO": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "COROMANDEL": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Fertilizers",
+   "source": "export"
+  },
+  "CORONA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "CPPLUS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "CRAFTSMAN": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "CREDITACC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Microfinance Institutions",
+   "source": "export"
+  },
+  "CRISIL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Other Financial Services",
+   "source": "export"
+  },
+  "CROMPTON": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "source": "export"
+  },
+  "CUB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "CUBEINVIT": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Infrastructure",
+   "industry": "Road AssetsToll, Annuity, Hybrid-Annuity",
+   "source": "export"
+  },
+  "CUMMINSIND": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "source": "export"
+  },
+  "CUPID": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "DABUR": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "DALBHARAT": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "DATAPATTNS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "DBREALTY": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "code": "IN020501001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:45.905Z"
+  },
+  "DCMSHRIRAM": {
+   "broadSector": "Diversified",
+   "sector": "Diversified",
+   "broadIndustry": "Diversified",
+   "industry": "Diversified",
+   "source": "export"
+  },
+  "DCW": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Petrochemicals",
+   "code": "IN010101006",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:24:15.006Z"
+  },
+  "DEEPAKFERT": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Commodity Chemicals",
+   "source": "export"
+  },
+  "DEEPAKNTR": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "DELHIVERY": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Logistics Solution Provider",
+   "source": "export"
+  },
+  "DEVYANI": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Restaurants",
+   "source": "export"
+  },
+  "DIACABS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "DIVISLAB": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "DIXON": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Consumer Electronics",
+   "source": "export"
+  },
+  "DLF": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "DMART": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Diversified Retail",
+   "source": "export"
+  },
+  "DOMS": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Household Products",
+   "industry": "Stationary",
+   "source": "export"
+  },
+  "DRREDDY": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ECLERX": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Commercial Services & Supplies",
+   "industry": "Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO)",
+   "source": "export"
+  },
+  "EDELWEISS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Holding Company",
+   "code": "IN050101006",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:24:19.985Z"
+  },
+  "EICHERMOT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "2/3 Wheelers",
+   "source": "export"
+  },
+  "EIDPARRY": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Other Food Products",
+   "source": "export"
+  },
+  "EIHOTEL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "source": "export"
+  },
+  "ELGIEQUIP": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "source": "export"
+  },
+  "EMAMILTD": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "EMBASSY": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Real Estate Investment Trusts (REITs)",
+   "source": "export"
+  },
+  "EMCURE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "EMMVEE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "ENDURANCE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "ENGINERSIN": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "ENRIN": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "ERIS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ESCORTS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Agricultural, Commercial & Construction Vehicles",
+   "industry": "Tractors",
+   "source": "export"
+  },
+  "ETERNAL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "E-Retail/ E-Commerce",
+   "source": "export"
+  },
+  "EXIDEIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "FACT": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Fertilizers",
+   "source": "export"
+  },
+  "FCONSUMER": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Diversified Retail",
+   "code": "IN020603003",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:08.833Z"
+  },
+  "FEDERALBNK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "FINCABLES": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Cables - Electricals",
+   "source": "export"
+  },
+  "FINEORG": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "FIVESTAR": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "FLUOROCHEM": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "FORCEMOT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "Passenger Cars & Utility Vehicles",
+   "source": "export"
+  },
+  "FORTIS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "FRACTAL": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "FSL": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Commercial Services & Supplies",
+   "industry": "Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO)",
+   "source": "export"
+  },
+  "GABRIEL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "GAEL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Other Agricultural Products",
+   "code": "IN040101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:24:35.777Z"
+  },
+  "GAIL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Gas",
+   "industry": "Gas Transmission/Marketing",
+   "source": "export"
+  },
+  "GAJA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Asset Management Company",
+   "code": "IN050103001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:11.591Z"
+  },
+  "GALLANTT": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "GESHIP": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Shipping",
+   "source": "export"
+  },
+  "GICRE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "General Insurance",
+   "source": "export"
+  },
+  "GILLETTE": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "GLAND": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "GLAXO": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "GLENMARK": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "GMDCLTD": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Minerals & Mining",
+   "industry": "Industrial Minerals",
+   "source": "export"
+  },
+  "GMRAIRPORT": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Infrastructure",
+   "industry": "Airport & Airport services",
+   "source": "export"
+  },
+  "GOCLCORP": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Explosives",
+   "code": "IN010101005",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:14.129Z"
+  },
+  "GODFRYPHLP": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Cigarettes & Tobacco Products",
+   "industry": "Cigarettes & Tobacco Products",
+   "source": "export"
+  },
+  "GODIGIT": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "General Insurance",
+   "source": "export"
+  },
+  "GODREJAGRO": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Animal Feed",
+   "code": "IN040104001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:16.718Z"
+  },
+  "GODREJCP": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "GODREJIND": {
+   "broadSector": "Diversified",
+   "sector": "Diversified",
+   "broadIndustry": "Diversified",
+   "industry": "Diversified",
+   "source": "export"
+  },
+  "GODREJPROP": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "GPIL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "GRANULES": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "GRAPHITE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Electrodes & Refractories",
+   "source": "export"
+  },
+  "GRASIM": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "GRAVITA": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Minerals & Mining",
+   "industry": "Industrial Minerals",
+   "source": "export"
+  },
+  "GRINDWELL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Abrasives & Bearings",
+   "source": "export"
+  },
+  "GROWW": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Stockbroking & Allied",
+   "source": "export"
+  },
+  "GRSE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "GRWRHITECH": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Plastic Products - Industrial",
+   "source": "export"
+  },
+  "GUJENERGY": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Gas",
+   "industry": "LPG/CNG/PNG/LNG Supplier",
+   "source": "export"
+  },
+  "GVT&D": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "HAL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "HAPPYFORGE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Castings & Forgings",
+   "source": "export"
+  },
+  "HATSUN": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Dairy Products",
+   "source": "export"
+  },
+  "HAVELLS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Consumer Electronics",
+   "source": "export"
+  },
+  "HBLENGINE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Other Industrial Products",
+   "source": "export"
+  },
+  "HCLTECH": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "HDBFS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "HDFCAMC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Asset Management Company",
+   "source": "export"
+  },
+  "HDFCBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "HDFCLIFE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "Life Insurance",
+   "source": "export"
+  },
+  "HEG": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Electrodes & Refractories",
+   "source": "export"
+  },
+  "HEROMOTOCO": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "2/3 Wheelers",
+   "source": "export"
+  },
+  "HEXT": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "HFCL": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Infrastructure",
+   "source": "export"
+  },
+  "HINDALCO": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Non - Ferrous Metals",
+   "industry": "Aluminium",
+   "source": "export"
+  },
+  "HINDCOPPER": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Non - Ferrous Metals",
+   "industry": "Copper",
+   "source": "export"
+  },
+  "HINDPETRO": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Refineries & Marketing",
+   "source": "export"
+  },
+  "HINDUNILVR": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Diversified FMCG",
+   "industry": "Diversified FMCG",
+   "source": "export"
+  },
+  "HINDZINC": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Non - Ferrous Metals",
+   "industry": "Zinc",
+   "source": "export"
+  },
+  "HONASA": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "HONAUT": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "HORIZONIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "code": "IN020501001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:19.194Z"
+  },
+  "HSCL": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Carbon Black",
+   "source": "export"
+  },
+  "HUDCO": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Financial Institution",
+   "source": "export"
+  },
+  "HYUNDAI": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "Passenger Cars & Utility Vehicles",
+   "source": "export"
+  },
+  "ICICIAMC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Asset Management Company",
+   "source": "export"
+  },
+  "ICICIBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "ICICIGI": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "General Insurance",
+   "source": "export"
+  },
+  "ICICIPRULI": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "Life Insurance",
+   "source": "export"
+  },
+  "IDBI": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "IDEA": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Cellular & Fixed line services",
+   "source": "export"
+  },
+  "IDFCFIRSTB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "IFCI": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Financial Institution",
+   "source": "export"
+  },
+  "IGIL": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Commercial Services & Supplies",
+   "industry": "Diversified Commercial Services",
+   "source": "export"
+  },
+  "IGL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Gas",
+   "industry": "LPG/CNG/PNG/LNG Supplier",
+   "source": "export"
+  },
+  "IIFL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "IKS": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "INDGN": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Healthcare Research, Analytics & Technology",
+   "source": "export"
+  },
+  "INDHOTEL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "source": "export"
+  },
+  "INDIANB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "INDIGO": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Airline",
+   "source": "export"
+  },
+  "INDIGRID": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power - Transmission",
+   "source": "export"
+  },
+  "INDOFARM": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Agricultural, Commercial & Construction Vehicles",
+   "industry": "Construction Vehicles",
+   "code": "IN070202003",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:21.865Z"
+  },
+  "INDOMIM": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "INDUSINDBK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "INDUSTOWER": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Infrastructure",
+   "source": "export"
+  },
+  "INFY": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "INGERRAND": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "source": "export"
+  },
+  "INOXINDIA": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Other Industrial Products",
+   "source": "export"
+  },
+  "INOXWIND": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "INTERARCH": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "code": "IN070101001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:24.578Z"
+  },
+  "IOB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "IOC": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Refineries & Marketing",
+   "source": "export"
+  },
+  "IPCALAB": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "IRB": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "IRCTC": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Tour, Travel Related Services",
+   "source": "export"
+  },
+  "IREDA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Financial Institution",
+   "source": "export"
+  },
+  "IRFC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Financial Institution",
+   "source": "export"
+  },
+  "ISGEC": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "code": "IN070101001",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:25:14.800Z"
+  },
+  "ITC": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Diversified FMCG",
+   "industry": "Diversified FMCG",
+   "source": "export"
+  },
+  "ITCHOTELS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "source": "export"
+  },
+  "ITI": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom -  Equipment & Accessories",
+   "industry": "Telecom -  Equipment & Accessories",
+   "source": "export"
+  },
+  "J&KBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "JAYBEE-SM": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "code": "IN070205015",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:52:35.619Z",
+   "screenerPath": "/company/JAYBEE/"
+  },
+  "JAYNECOIND": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "code": "IN070205015",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:25:22.559Z"
+  },
+  "JBCHEPHARM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "JBMA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "JINDALSAW": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "JINDALSTEL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "JIOFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "JKCEMENT": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "JNPR": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "JPPOWER": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "code": "IN110101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:25:24.999Z"
+  },
+  "JSL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "JSWCEMENT": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "JSWDULUX": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Paints",
+   "source": "export"
+  },
+  "JSWENERGY": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "JSWHL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "JSWINFRA": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Infrastructure",
+   "industry": "Port & Port services",
+   "source": "export"
+  },
+  "JSWSTEEL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "JUBLFOOD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Restaurants",
+   "source": "export"
+  },
+  "JUBLPHARMA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "JYOTHYLAB": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Household Products",
+   "industry": "Household Products",
+   "code": "IN040106001",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:25:27.486Z"
+  },
+  "JYOTICNC": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "KAJARIACER": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Ceramics",
+   "source": "export"
+  },
+  "KALYANKJIL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Gems, Jewellery And Watches",
+   "source": "export"
+  },
+  "KANSAINER": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Paints",
+   "source": "export"
+  },
+  "KARURVYSYA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "KAYNES": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "KEC": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "KEI": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Cables - Electricals",
+   "source": "export"
+  },
+  "KFINTECH": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Depositories, Clearing Houses and Other Intermediaries",
+   "source": "export"
+  },
+  "KIMS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "KIOCL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Sponge Iron",
+   "source": "export"
+  },
+  "KIRIINDUS": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Dyes And Pigments",
+   "code": "IN010101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:29.327Z"
+  },
+  "KIRLOSBROS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "source": "export"
+  },
+  "KIRLOSENG": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "source": "export"
+  },
+  "KISSHT": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Other Financial Services",
+   "code": "IN050101005",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:44.304Z"
+  },
+  "KOPRAN": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "code": "IN060101001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:31.814Z"
+  },
+  "KOTAKBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "KOVAI": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "code": "IN060103001",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:25:32.822Z"
+  },
+  "KPIL": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "KPITTECH": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "KPRMILL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Textiles",
+   "broadIndustry": "Textiles & Apparels",
+   "industry": "Other Textile Products",
+   "source": "export"
+  },
+  "KROSS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "code": "IN020102001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:34.329Z"
+  },
+  "KRT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Real Estate Investment Trusts (REITs)",
+   "source": "export"
+  },
+  "KSB": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "source": "export"
+  },
+  "LALPATHLAB": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Healthcare Service Provider",
+   "source": "export"
+  },
+  "LAURUSLABS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "LENSKART": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Speciality Retail",
+   "source": "export"
+  },
+  "LGEINDIA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "source": "export"
+  },
+  "LICHSGFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "LICI": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "Life Insurance",
+   "source": "export"
+  },
+  "LINDEINDIA": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Industrial Gases",
+   "source": "export"
+  },
+  "LLOYDSENGG": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "LLOYDSENT": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Metals & Minerals Trading",
+   "industry": "Trading - Metals",
+   "source": "export"
+  },
+  "LLOYDSME": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Minerals & Mining",
+   "industry": "Industrial Minerals",
+   "source": "export"
+  },
+  "LMW": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "LODHA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "LT": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "LTF": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "LTFOODS": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Other Agricultural Products",
+   "source": "export"
+  },
+  "LTM": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "LTTS": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "LUPIN": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "M&M": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "Passenger Cars & Utility Vehicles",
+   "source": "export"
+  },
+  "M&MFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "MAHABANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "MAHSCOOTER": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "MANAPPURAM": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "MANINDS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "code": "IN070205015",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:36.837Z"
+  },
+  "MANIPALHOS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "MANKIND": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "MANYAVAR": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Speciality Retail",
+   "source": "export"
+  },
+  "MARICO": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Edible Oil",
+   "source": "export"
+  },
+  "MARUTI": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "Passenger Cars & Utility Vehicles",
+   "source": "export"
+  },
+  "MAXHEALTH": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "MAZDOCK": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Ship Building & Allied Services",
+   "source": "export"
+  },
+  "MCX": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Exchange and Data Platform",
+   "source": "export"
+  },
+  "MEDANTA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "MEESHO": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "E-Retail/ E-Commerce",
+   "source": "export"
+  },
+  "MENONBE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "code": "IN020102001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:39.362Z"
+  },
+  "METROBRAND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Footwear",
+   "source": "export"
+  },
+  "MFSL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "Life Insurance",
+   "source": "export"
+  },
+  "MINDACORP": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "MINDSPACE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Real Estate Investment Trusts (REITs)",
+   "source": "export"
+  },
+  "MOTHERSON": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "MOTILALOFS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Stockbroking & Allied",
+   "source": "export"
+  },
+  "MPHASIS": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "MRF": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Tyres & Rubber Products",
+   "source": "export"
+  },
+  "MRPL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Refineries & Marketing",
+   "source": "export"
+  },
+  "MSUMI": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "MTARTECH": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "MUTHOOTFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "NAM-INDIA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Asset Management Company",
+   "source": "export"
+  },
+  "NATCOPHARM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "NATIONALUM": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Non - Ferrous Metals",
+   "industry": "Aluminium",
+   "source": "export"
+  },
+  "NAUKRI": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Internet & Catalogue Retail",
+   "source": "export"
+  },
+  "NAVA": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "NAVINFLUOR": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "NAZARA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Media, Entertainment & Publication",
+   "broadIndustry": "Entertainment",
+   "industry": "Digital Entertainment",
+   "source": "export"
+  },
+  "NBCC": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "NESTLEIND": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Packaged Foods",
+   "source": "export"
+  },
+  "NETWEB": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "NEULANDLAB": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "NH": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "NHIT": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Infrastructure",
+   "industry": "Road AssetsToll, Annuity, Hybrid-Annuity",
+   "source": "export"
+  },
+  "NHPC": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "NIACL": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "General Insurance",
+   "source": "export"
+  },
+  "NILKAMAL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Plastic Products - Consumer",
+   "code": "IN020201011",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:41.837Z"
+  },
+  "NIVABUPA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "General Insurance",
+   "source": "export"
+  },
+  "NLCINDIA": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "NMDC": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Minerals & Mining",
+   "industry": "Industrial Minerals",
+   "source": "export"
+  },
+  "NSLNISP": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "NTPC": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "NTPCGREEN": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "NUVAMA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Stockbroking & Allied",
+   "source": "export"
+  },
+  "NXST": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Real Estate Investment Trusts (REITs)",
+   "source": "export"
+  },
+  "NYKAA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "E-Retail/ E-Commerce",
+   "source": "export"
+  },
+  "OBEROIRLTY": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "OFSS": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Software Products",
+   "source": "export"
+  },
+  "OIL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Oil",
+   "industry": "Oil Exploration & Production",
+   "source": "export"
+  },
+  "OLAELEC": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "2/3 Wheelers",
+   "source": "export"
+  },
+  "ONESOURCE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ONGC": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Oil",
+   "industry": "Oil Exploration & Production",
+   "source": "export"
+  },
+  "OSWALPUMPS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Compressors, Pumps & Diesel Engines",
+   "code": "IN070205017",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:46.833Z"
+  },
+  "PAGEIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Textiles",
+   "broadIndustry": "Textiles & Apparels",
+   "industry": "Garments & Apparels",
+   "source": "export"
+  },
+  "PARADEEP": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Fertilizers",
+   "source": "export"
+  },
+  "PARKHOSPS": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "PATANJALI": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Edible Oil",
+   "source": "export"
+  },
+  "PAYTM": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Financial Technology (Fintech)",
+   "industry": "Financial Technology (Fintech)",
+   "source": "export"
+  },
+  "PCBL": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Carbon Black",
+   "source": "export"
+  },
+  "PERSISTENT": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "PETRONET": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Gas",
+   "industry": "LPG/CNG/PNG/LNG Supplier",
+   "source": "export"
+  },
+  "PFC": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Financial Institution",
+   "source": "export"
+  },
+  "PFIZER": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "PFOCUS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Media, Entertainment & Publication",
+   "broadIndustry": "Entertainment",
+   "industry": "Media & Entertainment",
+   "source": "export"
+  },
+  "PGEL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Consumer Electronics",
+   "source": "export"
+  },
+  "PGHH": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Personal Products",
+   "industry": "Personal Care",
+   "source": "export"
+  },
+  "PHOENIXLTD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "PIDILITIND": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "PIIND": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Pesticides & Agrochemicals",
+   "source": "export"
+  },
+  "PINELABS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Financial Technology (Fintech)",
+   "industry": "Financial Technology (Fintech)",
+   "source": "export"
+  },
+  "PIRAMALFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "PNB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "PNBHOUSING": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "POLICYBZR": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Financial Technology (Fintech)",
+   "industry": "Financial Technology (Fintech)",
+   "source": "export"
+  },
+  "POLYCAB": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Cables - Electricals",
+   "source": "export"
+  },
+  "POLYMED": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Equipment & Supplies",
+   "industry": "Medical Equipment & Supplies",
+   "source": "export"
+  },
+  "POONAWALLA": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "POWERGRID": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power - Transmission",
+   "source": "export"
+  },
+  "POWERINDIA": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "PPLPHARMA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "PRAVEG": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "code": "IN020601001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:49.552Z"
+  },
+  "PRAXIS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Speciality Retail",
+   "code": "IN020603001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:52.051Z"
+  },
+  "PREMIERENE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "PRESTIGE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "PRIVISCL": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "PROTEAN": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "code": "IN080102001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:54.856Z"
+  },
+  "PRUDENT": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Financial Products Distributor",
+   "source": "export"
+  },
+  "PSB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "PTCIL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Castings & Forgings",
+   "source": "export"
+  },
+  "PWL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Other Consumer Services",
+   "industry": "E-Learning",
+   "source": "export"
+  },
+  "QPOWER": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "code": "IN070203001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:57.394Z"
+  },
+  "RADICO": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Beverages",
+   "industry": "Breweries & Distilleries",
+   "source": "export"
+  },
+  "RAIN": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Petrochemicals",
+   "code": "IN010101006",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:30:59.871Z"
+  },
+  "RAINBOW": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "source": "export"
+  },
+  "RAMCOCEM": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "RATNAMANI": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "RBLBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "RCF": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Fertilizers",
+   "code": "IN010102001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:02.351Z"
+  },
+  "RECLTD": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Financial Institution",
+   "source": "export"
+  },
+  "REDINGTON": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Commercial Services & Supplies",
+   "industry": "Trading & Distributors",
+   "source": "export"
+  },
+  "RELIANCE": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Petroleum Products",
+   "industry": "Refineries & Marketing",
+   "source": "export"
+  },
+  "RKFORGE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "RPSGVENT": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Commercial Services & Supplies",
+   "industry": "Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO)",
+   "code": "IN090104005",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:04.871Z"
+  },
+  "RRKABEL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Cables - Electricals",
+   "source": "export"
+  },
+  "RUBICON": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "RVNL": {
+   "broadSector": "Industrials",
+   "sector": "Construction",
+   "broadIndustry": "Construction",
+   "industry": "Civil Construction",
+   "source": "export"
+  },
+  "SAGILITY": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "SAIL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "SAILIFE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "SAMHI": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "code": "IN020601001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:10.079Z"
+  },
+  "SAMMAANCAP": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Housing Finance Company",
+   "source": "export"
+  },
+  "SANSERA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "SANSTAR": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Other Agricultural Products",
+   "code": "IN040101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:12.632Z"
+  },
+  "SARDAEN": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "SASKEN": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "code": "IN080102001",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:27:31.309Z"
+  },
+  "SBICARD": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "SBIFUNDS": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Capital Markets",
+   "industry": "Asset Management Company",
+   "source": "export"
+  },
+  "SBILIFE": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "Life Insurance",
+   "source": "export"
+  },
+  "SBIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "SCHAEFFLER": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "SCHNEIDER": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "SCI": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Shipping",
+   "source": "export"
+  },
+  "SEJALLTD": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Glass - Industrial",
+   "code": "IN070205013",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:15.168Z"
+  },
+  "SETL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "code": "IN070204008",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:28.057Z"
+  },
+  "SHADOWFAX": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Services",
+   "industry": "Logistics Solution Provider",
+   "source": "export"
+  },
+  "SHAILY": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Plastic Products - Consumer",
+   "source": "export"
+  },
+  "SHALBY": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Hospital",
+   "code": "IN060103001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:17.722Z"
+  },
+  "SHILCTECH": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "code": "IN070203002",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:20.209Z"
+  },
+  "SHILPAMED": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "SHK": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "code": "IN010101002",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:07.591Z"
+  },
+  "SHOPERSTOP": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Diversified Retail",
+   "code": "IN020603003",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:26:31.794Z"
+  },
+  "SHREDIGCEM": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "code": "IN010203001",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:26:34.438Z"
+  },
+  "SHREECEM": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "SHRIPISTON": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "SHRIRAMFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "SHYAMMETL": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "SIEMENS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "SIGMAADV": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "SJVN": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "SKFINDUS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Abrasives & Bearings",
+   "source": "export"
+  },
+  "SKYGOLD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Gems, Jewellery And Watches",
+   "code": "IN020201005",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:22.917Z"
+  },
+  "SOBHA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Realty",
+   "broadIndustry": "Realty",
+   "industry": "Residential, Commercial Projects",
+   "source": "export"
+  },
+  "SOFTTECH": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "code": "IN080101001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:25.548Z"
+  },
+  "SOLARINDS": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Explosives",
+   "source": "export"
+  },
+  "SONACOMS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "SPLPETRO": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Petrochemicals",
+   "source": "export"
+  },
+  "SRF": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Commodity Chemicals",
+   "source": "export"
+  },
+  "STARHEALTH": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Insurance",
+   "industry": "General Insurance",
+   "source": "export"
+  },
+  "STLTECH": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom -  Equipment & Accessories",
+   "industry": "Telecom -  Equipment & Accessories",
+   "source": "export"
+  },
+  "STYLAMIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Plywood Boards/ Laminates",
+   "code": "IN020201012",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:30.581Z"
+  },
+  "SUDARSCHEM": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Dyes And Pigments",
+   "code": "IN010101004",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:33.275Z"
+  },
+  "SUMICHEM": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Pesticides & Agrochemicals",
+   "source": "export"
+  },
+  "SUNDARMFIN": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "SUNDRMFAST": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "SUNPHARMA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "SUNTV": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Media, Entertainment & Publication",
+   "broadIndustry": "Entertainment",
+   "industry": "TV Broadcasting & Software Production",
+   "source": "export"
+  },
+  "SUPREMEIND": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Plastic Products - Industrial",
+   "source": "export"
+  },
+  "SUPRIYA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "code": "IN060101001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:35.759Z"
+  },
+  "SUZLON": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "SWANCORP": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Petrochemicals",
+   "code": "IN010101006",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:38.293Z"
+  },
+  "SWANDEF": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Ship Building & Allied Services",
+   "source": "export"
+  },
+  "SWIGGY": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "E-Retail/ E-Commerce",
+   "source": "export"
+  },
+  "SYNGENE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Healthcare Research, Analytics & Technology",
+   "source": "export"
+  },
+  "SYRMA": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Industrial Products",
+   "source": "export"
+  },
+  "TATACAP": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Non Banking Financial Company (NBFC)",
+   "source": "export"
+  },
+  "TATACHEM": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Commodity Chemicals",
+   "source": "export"
+  },
+  "TATACOMM": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Services",
+   "industry": "Telecom - Cellular & Fixed line services",
+   "source": "export"
+  },
+  "TATACONSUM": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Agricultural Food & other Products",
+   "industry": "Tea & Coffee",
+   "source": "export"
+  },
+  "TATAELXSI": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "TATAINVEST": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "TATAPOWER": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Integrated Power Utilities",
+   "source": "export"
+  },
+  "TATASTEEL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "TATATECH": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Services",
+   "industry": "IT Enabled Services",
+   "source": "export"
+  },
+  "TBOTEK": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Tour, Travel Related Services",
+   "source": "export"
+  },
+  "TCS": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "TDPOWERSYS": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "TECHM": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "TEJASNET": {
+   "broadSector": "Telecommunication",
+   "sector": "Telecommunication",
+   "broadIndustry": "Telecom - Equipment & Accessories",
+   "industry": "Telecom - Equipment & Accessories",
+   "code": "IN100102001",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:26:52.347Z"
+  },
+  "TENNIND": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "THANGAMAYL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Gems, Jewellery And Watches",
+   "source": "export"
+  },
+  "THELEELA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "source": "export"
+  },
+  "THERMAX": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "TIINDIA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "TIMETECHNO": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Plastic Products - Industrial",
+   "code": "IN070205009",
+   "source": "page",
+   "checkedAt": "2026-09-23T06:26:55.125Z"
+  },
+  "TIMKEN": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Abrasives & Bearings",
+   "source": "export"
+  },
+  "TITAGARH": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Manufacturing",
+   "industry": "Railway Wagons",
+   "code": "IN070204005",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:40.767Z"
+  },
+  "TITAN": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Gems, Jewellery And Watches",
+   "source": "export"
+  },
+  "TMB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "TMCV": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Agricultural, Commercial & Construction Vehicles",
+   "industry": "Commercial Vehicles",
+   "source": "export"
+  },
+  "TMPV": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "Passenger Cars & Utility Vehicles",
+   "source": "export"
+  },
+  "TORNTPHARM": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "TORNTPOWER": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Integrated Power Utilities",
+   "source": "export"
+  },
+  "TRAVELFOOD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Restaurants",
+   "source": "export"
+  },
+  "TRENT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Speciality Retail",
+   "source": "export"
+  },
+  "TRIDENT": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Textiles",
+   "broadIndustry": "Textiles & Apparels",
+   "industry": "Other Textile Products",
+   "source": "export"
+  },
+  "TRITURBINE": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "source": "export"
+  },
+  "TURTLEMINT": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Financial Technology (Fintech)",
+   "industry": "Financial Technology (Fintech)",
+   "code": "IN050105001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:43.415Z"
+  },
+  "TVSHLTD": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Finance",
+   "industry": "Investment Company",
+   "source": "export"
+  },
+  "TVSMOTOR": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Automobiles",
+   "industry": "2/3 Wheelers",
+   "source": "export"
+  },
+  "UBL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Beverages",
+   "industry": "Breweries & Distilleries",
+   "source": "export"
+  },
+  "UCOBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "UJJIVANSFB": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Other Bank",
+   "source": "export"
+  },
+  "ULTRACEMCO": {
+   "broadSector": "Commodities",
+   "sector": "Construction Materials",
+   "broadIndustry": "Cement & Cement Products",
+   "industry": "Cement & Cement Products",
+   "source": "export"
+  },
+  "UNIONBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Public Sector Bank",
+   "source": "export"
+  },
+  "UNITDSPR": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Beverages",
+   "industry": "Breweries & Distilleries",
+   "source": "export"
+  },
+  "UNOMINDA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "UPL": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Fertilizers & Agrochemicals",
+   "industry": "Pesticides & Agrochemicals",
+   "source": "export"
+  },
+  "URBANCO": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "E-Retail/ E-Commerce",
+   "source": "export"
+  },
+  "USHAMART": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "VAML": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Non - Ferrous Metals",
+   "industry": "Aluminium",
+   "source": "export"
+  },
+  "VBL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Beverages",
+   "industry": "Other Beverages",
+   "source": "export"
+  },
+  "VEDL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Diversified Metals",
+   "industry": "Diversified Metals",
+   "source": "export"
+  },
+  "VEDPOWER": {
+   "broadSector": "Utilities",
+   "sector": "Power",
+   "broadIndustry": "Power",
+   "industry": "Power Generation",
+   "source": "export"
+  },
+  "VENTIVE": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Leisure Services",
+   "industry": "Hotels & Resorts",
+   "source": "export"
+  },
+  "VERTIS": {
+   "broadSector": "Services",
+   "sector": "Services",
+   "broadIndustry": "Transport Infrastructure",
+   "industry": "Road AssetsToll, Annuity, Hybrid-Annuity",
+   "source": "export"
+  },
+  "VGUARD": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "source": "export"
+  },
+  "VIJAYA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Healthcare Services",
+   "industry": "Healthcare Service Provider",
+   "source": "export"
+  },
+  "VINATIORGA": {
+   "broadSector": "Commodities",
+   "sector": "Chemicals",
+   "broadIndustry": "Chemicals & Petrochemicals",
+   "industry": "Specialty Chemicals",
+   "source": "export"
+  },
+  "VISL": {
+   "broadSector": "Commodities",
+   "sector": "Metals & Mining",
+   "broadIndustry": "Ferrous Metals",
+   "industry": "Iron & Steel",
+   "source": "export"
+  },
+  "VMM": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Services",
+   "broadIndustry": "Retailing",
+   "industry": "Diversified Retail",
+   "source": "export"
+  },
+  "VOGL": {
+   "broadSector": "Energy",
+   "sector": "Oil, Gas & Consumable Fuels",
+   "broadIndustry": "Oil",
+   "industry": "Oil Exploration & Production",
+   "source": "export"
+  },
+  "VOLTAMP": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Heavy Electrical Equipment",
+   "code": "IN070203001",
+   "source": "page",
+   "checkedAt": "2026-09-23T07:31:48.618Z"
+  },
+  "VOLTAS": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Consumer Durables",
+   "broadIndustry": "Consumer Durables",
+   "industry": "Household Appliances",
+   "source": "export"
+  },
+  "VTL": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Textiles",
+   "broadIndustry": "Textiles & Apparels",
+   "industry": "Other Textile Products",
+   "source": "export"
+  },
+  "WAAREEENER": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Electrical Equipment",
+   "industry": "Other Electrical Equipment",
+   "source": "export"
+  },
+  "WELCORP": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Industrial Products",
+   "industry": "Iron & Steel Products",
+   "source": "export"
+  },
+  "WELSPUNLIV": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Textiles",
+   "broadIndustry": "Textiles & Apparels",
+   "industry": "Other Textile Products",
+   "source": "export"
+  },
+  "WIPRO": {
+   "broadSector": "Information Technology",
+   "sector": "Information Technology",
+   "broadIndustry": "IT - Software",
+   "industry": "Computers - Software & Consulting",
+   "source": "export"
+  },
+  "WOCKPHARMA": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "YESBANK": {
+   "broadSector": "Financial Services",
+   "sector": "Financial Services",
+   "broadIndustry": "Banks",
+   "industry": "Private Sector Bank",
+   "source": "export"
+  },
+  "ZENTEC": {
+   "broadSector": "Industrials",
+   "sector": "Capital Goods",
+   "broadIndustry": "Aerospace & Defense",
+   "industry": "Aerospace & Defense",
+   "source": "export"
+  },
+  "ZFCVINDIA": {
+   "broadSector": "Consumer Discretionary",
+   "sector": "Automobile and Auto Components",
+   "broadIndustry": "Auto Components",
+   "industry": "Auto Components & Equipments",
+   "source": "export"
+  },
+  "ZYDUSLIFE": {
+   "broadSector": "Healthcare",
+   "sector": "Healthcare",
+   "broadIndustry": "Pharmaceuticals & Biotechnology",
+   "industry": "Pharmaceuticals",
+   "source": "export"
+  },
+  "ZYDUSWELL": {
+   "broadSector": "Fast Moving Consumer Goods",
+   "sector": "Fast Moving Consumer Goods",
+   "broadIndustry": "Food Products",
+   "industry": "Packaged Foods",
+   "source": "export"
+  }
+ },
+ "failed": {}
+}

@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-21-column-order-v3`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-23-nse-original-link-v1`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -33,7 +33,7 @@ const WARM_CONCURRENCY = 8;
 // Keep content revisions separate from the shared marker: concurrent dashboard
 // releases can update that marker without conflicting with these fixes. Every
 // install, read and eviction uses the same combined key, retaining atomic upgrades.
-const CACHE_KEY = `${CACHE_NAME}-news-story-companions-v1-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v1-all-alerts-restore-v2-ai-card-updates-v1-story-updates-v1-performance-ownership-v1-sattva-newsletter-v2-bounded-history-memory-v5-hot-path-caches-v1-sliced-rankings-v1-alert-pool-v2-scrollbar-grab-v1-filing-particulars-v1-table-drag-v2-mutual-funds-v10-upstox-minute-v2-muns-price-label-v2`;
+const CACHE_KEY = `${CACHE_NAME}-news-story-companions-v1-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v1-all-alerts-restore-v2-ai-card-updates-v1-story-updates-v1-performance-ownership-v1-sattva-newsletter-v2-bounded-history-memory-v5-hot-path-caches-v1-sliced-rankings-v1-alert-pool-v2-scrollbar-grab-v1-filing-particulars-v1-table-drag-v2-mutual-funds-v10-upstox-minute-v2-muns-price-label-v2-kpi-impact-v2`;
 
 function moduleSpecifiers(source) {
   const found = new Set();

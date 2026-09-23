@@ -38,6 +38,7 @@ import * as superInvestors from '../data/super-investors.js';
 // three read the same constant, so changing it cannot leave one of them describing the old filter.
 import * as dailyAlerts from '../data/daily-alerts.js';
 import * as aiAlerts from '../data/ai-alerts.js';
+import * as kpiImpact from '../data/kpi-impact.js';
 import { ipoSourceGroup } from './ipo-sources.js';
 import { newsSourceItems, newsSourceMeta, screenerInsightsSource } from './news-sources.js';
 import { sourceConnection, sourceSummary, sourceReadState } from './source-connections.js';
@@ -270,6 +271,41 @@ export function sourceGroups() {
           cadence: 'All Alerts revalidates on visit, Refresh and every 90 seconds while visible. Source updates reuse loaded records; no per-company walks or upstream job dispatches.',
           status: 'derived',
           file: 'js/data/ai-alerts.js · js/tabs/ai-alerts.js · js/data/daily-alerts.js · js/tabs/daily-alerts.js',
+        },
+        {
+          name: 'Sector → KPI ontology — "KPIs in play" on AI Alerts',
+          url: 'https://www.screener.in/',
+          // Every figure is read from the loaded file when this opens; the ontology loads with AI
+          // Alerts, so before that the clauses simply drop out.
+          feeds: 'The desk\'s sector → KPI ontology (the same one the <code class="rounded bg-slate-100 px-1">sector_kpis</code> table is seeded from), reproduced unchanged, with each company filed under NSE\'s own industry classification as Screener prints it. An AI Alerts card names the KPIs of <em>its company\'s own sector</em> that its evidence bears on — an order win is Order Inflow and Order Book for a capital-goods company and Deal Wins for an IT company; a QIP is a bank\'s Capital Adequacy Ratio — read deterministically from the filing rule, the tracked keyword, a con-call highlight or a filed result. No model call and no score: a company whose sector is not resolved, and evidence that names no KPI, carry no line.' +
+            (() => {
+              const resolved = num(() => kpiImpact.snapshot()?.payload?.counts?.resolved);
+              const groupCount = num(() => Object.keys(kpiImpact.snapshot()?.groups || {}).length);
+              return resolved && groupCount ? ` ${formatNumber(resolved)} companies are resolved into ${formatNumber(groupCount)} KPI groups.` : '';
+            })(),
+          cadence: 'Read with AI Alerts and re-read on its checks (on open, on Refresh, every 90 seconds while visible) — a conditional request that costs nothing when the file has not moved. The company classification is checked daily by sector-kpis-refresh.yml — only a new holding, or a page older than 90 days, costs a request, and an unchanged week still records a check. The ontology changes only when the desk\'s file does.',
+          status: 'static',
+          // THE LAST READ, NOT A PERMANENT "Reference data". A failed read is said here with its reason,
+          // because a card with no KPI line looks the same whether nothing named a KPI or the file
+          // could not be read; a classification older than its weekly rebuild allows reads as due;
+          // and a classification with companies whose latest re-read failed, or that map to no group,
+          // is PARTIAL — a recent build time is not proof that every company was read.
+          ...(() => {
+            const state = kpiImpact.status();
+            if (state.state === 'failed') {
+              return { readState: 'unavailable', details: [`The sector file could not be read (${state.error || 'no reason given'}). AI Alerts cards carry no KPI line until it loads — that is not a finding that nothing moved a KPI.`] };
+            }
+            if (state.state !== 'ready') return {};
+            const details = [state.builtAt ? `Classification built ${state.builtAt.slice(0, 10)}; confirmed by this browser ${String(state.checkedAt || '').slice(0, 16).replace('T', ' ')} UTC.` : 'The classification carries no build time.'];
+            if (state.classificationFailed) details.push(`${formatNumber(state.classificationFailed)} ${state.classificationFailed === 1 ? 'company' : 'companies'} could not be re-read on the latest run; the earlier classification is kept where there was one, and the scheduled job fails until the page is read.`);
+            if (state.unresolved) details.push(`${formatNumber(state.unresolved)} classified ${state.unresolved === 1 ? 'company maps' : 'companies map'} to no KPI group, so ${state.unresolved === 1 ? 'its cards carry' : 'their cards carry'} no KPI line.`);
+            if (state.recheckError) {
+              details.push(`The latest re-read of the file failed (${state.recheckError}); the copy confirmed at that time is still in use.`);
+              return { readState: 'unconfirmed', details };
+            }
+            return { readState: sourceReadState({ at: state.builtAt, maxAgeMs: 9 * 86_400_000, partial: !!(state.classificationFailed || state.unresolved) }), details };
+          })(),
+          file: 'public/data/sector-kpis.json · public/data/company-classification.json · scripts/fixtures/sector-kpi-ontology.yaml',
         },
       ],
     },

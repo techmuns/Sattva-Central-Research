@@ -48,7 +48,7 @@ function head({ title, sub, meta }) {
 }
 
 const sourceLink = (url, label) => `
-  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
+  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" data-xbrl-original
      class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">${escapeHtml(label)} &#8599;</a>`;
 
 /**
@@ -191,6 +191,8 @@ export function installFilingReader(root = document) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const anchor = e.target.closest?.('a[href]');
     if (!anchor || !isXbrlFilingUrl(anchor.href)) return;
+    // The reader's explicit source link must leave the dashboard, not reopen this panel.
+    if (anchor.hasAttribute('data-xbrl-original')) return;
     e.preventDefault();
     e.stopPropagation();
     const row = anchor.closest('[data-row-key]');

@@ -75,6 +75,7 @@ and the device store*.
 | `technicals.json`, `atr-history.json`, `technicals-source.json` | `js/data/technicals.js` (Breakouts, global search) | ~800KB |
 | `chatter-valuepickr.json`, `chatter-telegram.json` | `js/data/chatter.js` (Public Chatter) | ~160KB |
 | `earnings-live.json`, `mc-ticker-map.json`, `result-returns.json` | `js/data/earnings-live.js` (Earnings Hub) | ~1.2MB |
+| `sector-kpis.json` | `js/data/kpi-impact.js` (AI Alerts) | ~120KB (~20KB gzipped) |
 
 The three Super Investors files load at bootstrap and seed `js/data/investors.js` through
 `prime()`, because the investor grid needs all three together on first paint.
@@ -706,6 +707,101 @@ change with each shareholding filing.
 **Real source** — Screener.in screen export over the NSE 500.
 **Consumed by** — the technicals scraper (its input list), global search, and every tab's Universe
 scope.
+
+---
+
+## Sector KPIs — `public/data/company-classification.json` and `public/data/sector-kpis.json`
+
+The "KPIs in play" row on an AI Alerts card: which of the company's **own sector's** KPIs the card's
+evidence bears on. Two files, built by two scripts, read by `js/data/kpi-impact.js` alone.
+
+**The ontology is the desk's, reproduced unchanged.** `scripts/fixtures/sector-kpi-ontology.yaml` is
+the file Munshot's `POST /sector-kpis/seed` reads: 40 global KPIs, 243 group KPIs in 41 groups, and
+644 (sector, industry) → group pairs holding the exact strings of the `stocks` table. It is read by
+`scripts/lib/yaml-lite.mjs` (no dependency; its output is byte-identical to PyYAML's for this file,
+and anything outside the subset it implements throws). The build recomputes the seeded table — one
+row per pair per distinct KPI name, globals included — and gets **29,465 rows over 644 pairs**, which
+matched the 23 September 2026 export row for row; `SECTOR_KPIS_CSV=<export>` re-runs that check.
+
+### `public/data/company-classification.json` — `scripts/classify-companies.mjs`
+
+NSE's four-level industry classification as Screener prints it. The NSE-500 comes from
+`universe.json`'s own columns with no request; every other company in scope (the book first — 55 of
+Sattva's 107 listed lines are outside the NSE-500) is read from its public Screener page, where the Peer
+comparison header links Broad Sector › Sector › Broad Industry › Industry to stable market codes. An
+SME symbol is read without its `-SM` series suffix; a company Screener files under another code is
+found by an exact name match on Screener's own search and keeps that path as `screenerPath`.
+
+```jsonc
+{
+  "capturedAt": "2026-09-23T06:27:31.329Z",
+  "scope": "book",                     // or "tracked": adds tracked-universe.json
+  "counts": { "companies": 599, "fromExport": 534, "fromPages": 65, "failed": 0, "pagesReadThisRun": 3 },
+  "companies": {
+    "BHEL": { "broadSector": "Industrials", "sector": "Capital Goods", "broadIndustry": "Electrical Equipment",
+              "industry": "Heavy Electrical Equipment", "source": "export" },
+    "AARTIDRUGS": { "broadSector": "Healthcare", "sector": "Healthcare", "broadIndustry": "Pharmaceuticals & Biotechnology",
+                    "industry": "Pharmaceuticals", "code": "IN060101001", "source": "page", "checkedAt": "2026-09-23T06:23:29.244Z" },
+    "ASHIKA": { …, "source": "page", "screenerPath": "/company/ASHIKAG/" }   // only where the symbol page does not exist
+  },
+  "failed": { }                         // TICKER → { reason, at }; a failure keeps any earlier classification
+}
+```
+
+A page is re-read only after `CLASSIFY_MAX_AGE_DAYS` (90): a classification changes with a
+restructuring, not a price. **A failed read is never an empty result** — the company keeps its
+earlier classification and is listed under `failed`; a company never classified is absent, which
+downstream means *no KPI row*, never a nearest sector's KPIs.
+
+### `public/data/sector-kpis.json` — `scripts/build-sector-kpis.mjs`
+
+```jsonc
+{
+  "source": { "ontology": "scripts/fixtures/sector-kpi-ontology.yaml", "version": 2, "sha256": "2f70…", "pairs": 644,
+              "tableRows": 29465, "classificationCapturedAt": "…" },
+  "globals": ["revenue", "ebitda", …],                       // the 40 global KPI keys
+  "kpis": { "order_inflow": { "name": "Order Inflow", "aliases": ["order inflow", "new orders", …], "type": "currency" }, … },
+  "groups": { "capital_goods": { "label": "Capital Goods", "kpis": ["order_inflow", "order_book", …] }, … },
+  "overrides": [{ "id": "nse-reit", "group": "reit", "reason": "…" }],
+  "companies": { "BHEL": { "group": "capital_goods", "sector": "Capital Goods", "industry": "Heavy Electrical Equipment", "via": "pair" } },
+  "unresolved": { },                                          // classified, but no group — listed, never guessed
+  "classificationFailed": { },                                // TICKER → { reason, at, retained }: latest page re-read failed
+  "counts": { "companies": 599, "resolved": 599, "unresolved": 0, "classificationFailed": 0,
+              "byVia": { "pair": 593, "override": 6 }, "byGroup": { … } }
+}
+```
+
+**Resolution** (`js/data/sector-kpis-shared.js`, shared by the build and the browser) compares labels
+by their letters and digits only — Screener writes "Gems, Jewellery And Watches" and even
+"Road AssetsToll" where the table has "Gems Jewellery And Watches" and "Road Assets–Toll" — and tries,
+in order: the one stated override; the (sector, industry) pair; the pair with a broader level
+substituted; the industry alone **only** where it maps to one group across the whole ontology. The
+override is NSE's REIT industry, which the ontology maps to the developer group (pre-sales,
+collections) while carrying its own `reit` group; it is printed in the file with that reason.
+
+**Refresh** — `.github/workflows/sector-kpis-refresh.yml`, daily at 01:37 UTC (after the morning
+book sync), runs `node scripts/classify-companies.mjs && node scripts/build-sector-kpis.mjs` and commits
+to `main`. It is cheap because only a company with no page classification, or one older than 90 days,
+costs a request, and **a run that changes nothing writes nothing** except a weekly heartbeat
+(`CLASSIFY_HEARTBEAT_DAYS`, 7) — so `capturedAt` means *last checked*, and the source registry reads a
+classification older than nine days as a refresh that is due. The job publishes what it read and then
+**fails** if any listed holding carries no KPI group, or is kept on a classification whose latest page
+re-read failed (`node scripts/build-sector-kpis.mjs --check-book`, which names each one and why),
+because a card silently missing its KPI line looks exactly like one whose evidence names no KPI. The
+classification's failures travel in the file as `classificationFailed`, so the source registry reads
+a partly read classification as *Partial coverage* rather than taking a recent build time as proof
+that every company was read. `verify-kpi-impact.mjs` fails if the committed JSON is not what the
+fixture and the classification build.
+
+**Consumed by** — AI Alerts only, as a display reading: it adds no score and no alert. The browser's
+read of the file has a state of its own (`kpiImpact.status()`: idle, loading, ready or failed, with
+the reason and time); a failed read is said on the AI Alerts page and in the source registry rather
+than passing for cards whose evidence names nothing. The file is re-read on the page's own checks once
+the held copy is older than `RECHECK_MS` (60s) — a conditional request that never holds up a paint,
+the held copy answering while it runs — and a changed file is adopted without a reload; a failed
+re-read keeps the held copy and is reported beside it. The rules that turn an event into KPIs, and the
+traps each rule is measured against, are in the header of `js/data/kpi-impact.js` and in
+`CLAUDE.md` → *KPIs in play*.
 
 ---
 

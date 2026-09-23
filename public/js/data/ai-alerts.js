@@ -18,6 +18,7 @@ import { storyGrouping } from './alert-stories.js';
 import { STORY_FEEDS, storyRecord, storyKey, isMaterialStoryUpdate, compareStoryRecency } from './alert-stories-shared.js';
 import * as generalAlerts from './daily-alerts.js';
 import { newsCanSupportAI, isRelatedNewsContext } from './company-news-attribution.js';
+import * as kpiImpact from './kpi-impact.js';
 import { defaultCompanyNewsEntityId, portfolioNewsEntities } from './company-news-identity.js';
 import * as coverage from './coverage.js';
 import * as screenerInsights from './screener-insights.js';
@@ -600,7 +601,13 @@ function insiderSize(event) {
  * turn one into a percentage — see *A percentage across a sign change is not a growth rate*.
  */
 function resultFigures(event) {
-  const row = event.sourceRecord || {};
+  // THE EVENT'S OWN `metrics` FIELD FIRST. The AI pool drops `sourceRecord`, so reading the figures
+  // only off the record stated them on a card ranked from the full history and silently dropped
+  // them from the same card ranked from the pool — a difference the pool's card-for-card check
+  // would report the first week a company in the window filed a result. The record remains the
+  // reading for an event saved before the field existed; both carry the source's own label, change
+  // and kind, so the two cannot disagree.
+  const row = event.metrics || event.sourceRecord || {};
   const out = [];
   for (const metric of [row.netProfit, row.revenue]) {
     if (!metric) continue;
@@ -842,7 +849,7 @@ export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = 
 // Universe ranking (~1s of CPU here, once per partial publication) no longer lands as one task.
 // The generator yields once per card in each pass; a driver decides whether a yield costs
 // anything. Nothing about the result depends on the driver: same events, same order, same cards.
-function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all() } = {}) {
+function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = null, insightCompanies = screenerInsights.all(), sectorKpis = kpiImpact.snapshot() } = {}) {
   const day = report?.day || generalAlerts.today();
   const events = report?.events || [];
   const { token, email, orgId } = getHostContext().session;
@@ -852,10 +859,11 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
   const input = { storyRevision: storyGrouping.revision(), day, scope: report?.scope || 'universe', events,
     health: JSON.stringify((report?.feeds || []).map(feed => [feed.id, feed.status, feed.reachesToday])),
     book: JSON.stringify(holdings), positions: JSON.stringify(positionSizes),
-    insights: insightCompanies, session: JSON.stringify([token, email, orgId]) };
+    insights: insightCompanies, kpis: sectorKpis, session: JSON.stringify([token, email, orgId]) };
   const cached = rankCache.find(entry => entry.input.storyRevision === input.storyRevision && entry.input.day === day && entry.input.scope === input.scope &&
     entry.input.health === input.health && entry.input.book === input.book && entry.input.positions === input.positions &&
-    entry.input.session === input.session && sameRows(entry.input.events, events) && sameRows(entry.input.insights, insightCompanies));
+    entry.input.session === input.session && entry.input.kpis === sectorKpis && sameRows(entry.input.events, events) &&
+    sameRows(entry.input.insights, insightCompanies));
   if (cached) {
     const result = { ...cached.result, pending: report?.pending || 0, feeds: report?.feeds || [],
       meta: { ...cached.result.meta, cacheSavedAt: report?.cacheSavedAt || null } };
@@ -990,6 +998,11 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
     }
     card.priority = card.score >= MUST_SEE_SCORE ? 'must-see' : card.score >= MIN_SCORE || card.materialPortfolioEvent || card.materialStoryUpdate ? 'important' : 'watch';
     card.insight = plainInsight(card);
+    // WHICH OF THE COMPANY'S OWN SECTOR KPIs the evidence names — read off the same events, through
+    // the desk's sector → KPI ontology. Like the topic chips on the rows it adds no score and no
+    // alert; a company whose sector is not resolved, or whose evidence names no KPI, carries null.
+    // See js/data/kpi-impact.js.
+    card.kpis = kpiImpact.kpiImpactOf(card, sectorKpis);
     card.badge = cardBadge(card);
     enriched.push(enrichCardFromAllAlerts(card, supportedReport, { contextIndex }));
     yield;
@@ -1149,9 +1162,12 @@ export function withPositionSnapshot(report, snapshot) {
 /** A privacy-safe ready view while the live source modules revalidate. */
 export async function cached({ scope = 'portfolio', holdings = null, positionSizes = null, isCurrent = () => true } = {}) {
   const book = holdings || coverage.holdings();
-  await storyGrouping.load();
+  // The sector → KPI file is small and static; it is read beside the cached window, never after it.
+  const readings = Promise.all([kpiImpact.load(), storyGrouping.load()]);
   const report = await generalAlerts.readCachedAlertWindow({ scope, holdings: book });
   if (!report || !isCurrent()) return null;
+  await readings;
+  if (!isCurrent()) return null;
   return rankReportAsync(report, { holdings: book, positionSizes, insightCompanies: screenerInsights.all() }, { isCurrent });
 }
 
@@ -1159,6 +1175,10 @@ export async function cached({ scope = 'portfolio', holdings = null, positionSiz
 export async function collect({ scope = 'portfolio', holdings = null, positionSizes = null, refresh = false, load = true, onPartial = null, isCurrent = () => true } = {}) {
   const book = holdings || coverage.holdings();
   const insightRead = load ? screenerInsights.load({ refresh }).catch(() => null) : Promise.resolve(null);
+  // Started with the collection and awaited before the first completed ranking, so a card that
+  // arrives with its evidence also arrives with its KPI line. A failed read resolves to null and the
+  // cards simply carry none — and `kpiImpact.status()` says the file could not be read.
+  const kpiRead = kpiImpact.load();
   const options = (insightCompanies = screenerInsights.all()) => ({ holdings: book, positionSizes, insightCompanies });
   // PARTIALS ARE RANKED IN SLICES, AND THE LATEST ONE WINS. Feeds settle over several seconds
   // and the general collector publishes progress as they do; ranking every publication of the
@@ -1201,6 +1221,7 @@ export async function collect({ scope = 'portfolio', holdings = null, positionSi
       (newsCanSupportAI(event) || isRelatedNewsContext(event))), { isCurrent });
   }
   if (publishing) await publishing;
+  await kpiRead;
   if (!isCurrent()) return null; // Shared collection/storage finishes; obsolete view work stops.
   if (!onPartial) {
     await insightRead;
