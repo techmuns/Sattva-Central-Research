@@ -9,6 +9,7 @@ import { shardSpec, shardPath } from '../public/js/core/json-shards.js';
 import { createNewsWorkingSet } from '../public/js/data/news-working-set.js';
 import { newsQueryIndexRow, newsQueryIdentity } from '../public/js/data/news-query-index.js';
 import { newsPeriodBounds } from '../public/js/data/news-window.js';
+import { dedupeArticles } from '../public/js/data/filings-shared.js';
 const dir = mkdtempSync(join(tmpdir(), 'sattva-query-boundaries-'));
 const originalFetch = globalThis.fetch, originalNow = Date.now, originalDocument = globalThis.document, originalTimeout = globalThis.setTimeout;
 const digest = data => createHash('sha256').update(data).digest('hex');
@@ -118,6 +119,36 @@ try {
   assert.equal(newValue.queryWindow.from, window.from, 'in-flight old preparation cannot certify a new period');
   assert.deepEqual(newValue.byTicker.ALPHA, rows.filter(row => row.date === '2026-08-01' || row.url === rows[0].url || row.tradingViewId === 'same-story'));
   switching.release(); gate = null;
+
+  // A REPUBLISHED COPY IS FOLDED ON ITS HEADLINE, SO THE HEADLINE IS A COMPANION. TradingView
+  // republishes an outlet's story under its own address with that outlet's name, headline and date,
+  // and `dedupeArticles` folds the pair on exactly that. Past midnight IST the copy lands on the
+  // next day, and a one-day read that could not see the original kept a copy the full history drops
+  // (Mint's Pine Labs story, 21 September 2026, republished at 00:06 IST on the 22nd).
+  {
+    const synDir = join(dir, 'syndication');
+    mkdirSync(synDir, { recursive: true });
+    const original = { title: 'Mastercard to exit Alpha in a block deal', ticker: 'ALPHA', source: 'Mint', date: '2026-09-15',
+      publishedAt: '2026-09-15T15:15:53Z', url: 'https://publisher.test/alpha-block-deal', description: 'Original detail. '.repeat(150) };
+    const copy = { ...original, publishedAt: '2026-09-15T18:36:26Z', url: 'https://tradingview.test/news/alpha-block-deal', tradingViewId: 'tv-copy' };
+    const otherOutlet = { ...original, source: 'Business Standard', url: 'https://other.test/alpha-block-deal' };
+    const synValue = { capturedAt: value.capturedAt, byTicker: { ALPHA: [original, otherOutlet, copy] } };
+    const synPath = join(synDir, 'news.json');
+    for (const maxBytes of [32768, 4096]) {
+      writeNewsJson(synPath, synValue, { maxBytes });
+      const synWorking = createNewsWorkingSet({ window: () => ({ from: '2026-09-16', to: '2026-09-16', includeUndated: false }),
+        read: async input => input === 'data/news.json' ? { value: JSON.parse(readFileSync(synPath)), checkedAt: now }
+          : { value: { capturedAt: value.capturedAt, byTicker: {} } },
+        fetcher: async input => new Response(readFileSync(join(synDir, String(input).replace(/^data\//, '')))),
+        diskRead: () => undefined, diskWrite: () => {} });
+      assert.equal(!!shardSpec(JSON.parse(readFileSync(synPath))), maxBytes < 32768, 'both the inline and the partitioned index are read');
+      await synWorking.prepare();
+      assert.deepEqual((await synWorking.read('data/news.json')).value.byTicker.ALPHA, [original, copy],
+        `${maxBytes}: a copy published past midnight IST brings the original it folds into, and nothing another outlet printed`);
+      synWorking.release();
+    }
+    assert.deepEqual(dedupeArticles([original, otherOutlet, copy]), [original, otherOutlet], 'the pair folds as the full history folds it');
+  }
 
   // Exercise the real facade and explicit live searches in separate windows. Empty Today
   // must not trigger a company walk; the changing IST day is evaluated on every refresh.
