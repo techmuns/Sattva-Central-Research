@@ -34,7 +34,7 @@ try {
   await page.route('**/api/bulk-block-deals/refresh*', route => route.fulfill({ json: { ok: true, dispatched: false } }));
   await page.route('**/*', route => new URL(route.request().url()).origin === base ? route.fallback() : route.abort());
   await page.goto(`${base}/#/research/insider-trades?scope=portfolio`);
-  await page.waitForFunction(() => document.querySelector('[data-exchange-status]')?.textContent.includes('Muns insider'));
+  await page.locator('[data-insider-source-link]').first().waitFor();
   const period = () => page.getByRole('combobox', { name: 'Trade period', exact: true });
   assert.equal(await period().inputValue(), '30');
   for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
@@ -92,7 +92,11 @@ try {
   assert(Object.values(exported.at(-1)).includes('NSE'), 'Excel includes exchange');
   payload = { ...payload, updatedAt: '2026-09-10T04:02:00Z', sources: payload.sources.map(s => s.id === 'bse-bulk' ? { ...s, ok: false, error: 'Test outage' } : s) };
   await page.clock.fastForward(61000);
-  await page.waitForFunction(() => document.querySelector('[data-exchange-status]')?.textContent.includes('Test outage'));
+  await page.waitForFunction(async () => (await import('/js/data/filings.js')).insider.meta().exchanges?.summary.includes('Test outage'));
+  await page.locator('[data-filings-method]').click();
+  await page.getByRole('dialog').getByText(/Test outage/).waitFor();
+  await page.getByRole('dialog').getByText(/Muns insider disclosures/).waitFor();
+  await page.getByRole('dialog').locator('[data-modal-close]').click();
   assert(await page.getByText('NEW SATTVA DEAL', { exact: true }).count(), 'failed source retains visible evidence');
   await search().fill(''); await period().selectOption('30');
   await page.screenshot({ path: '/tmp/sattva-deals-desktop.png', fullPage: true });
