@@ -138,7 +138,7 @@ function tradeFilters(rows) {
 const tab = makeFilingsTab({
   id: 'insider-trades',
   title: 'Bulk/Block Deal',
-  subtitle: 'Automatically refreshed bulk deals, block deals, SAST and insider disclosures for the companies in scope. Last 30 days shown by default; choose another period to see retained trades.',
+  subtitle: '',
   feed,
   noun: 'trades',
   nameLabel: 'Insider',
@@ -216,7 +216,8 @@ const tab = makeFilingsTab({
     });
     return cols;
   },
-  status: (m) => `<p class="mb-3 text-xs text-slate-500" data-filings-info data-exchange-status>${escapeHtml(m.exchanges?.summary || 'NSE / BSE reports are loading.')}<br>${escapeHtml(m.disclosuresStatus || '')}</p>`,
+  // Source checks stay in the existing provenance dialog, out of the table header.
+  status: () => '',
   provenance: (m) => `<div class="px-7 py-6">
       <div class="mb-3 flex items-start justify-between gap-4">
         <h2 class="font-display text-xl font-bold text-slate-900">Bulk/Block Deal</h2>
@@ -250,6 +251,7 @@ const tab = makeFilingsTab({
         ${m.headers?.length ? `<p class="mt-2 text-xs">Their columns on this pull: ${m.headers.map((h) => `<code class="rounded bg-slate-100 px-1">${escapeHtml(h)}</code>`).join(' ')}</p>` : ''}
 
         ${coverageBlock(m)}
+        ${m.disclosuresStatus ? `<p class="mt-2 text-xs">${escapeHtml(m.disclosuresStatus)}</p>` : ''}
 
         <p class="mt-4 text-xs text-slate-500">A dash means <em>the source left that cell empty</em> — never zero.</p>
       </div>
