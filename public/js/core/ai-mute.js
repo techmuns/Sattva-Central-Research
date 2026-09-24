@@ -94,20 +94,7 @@ export function isHidden(ticker, seenId = null) {
     } catch { return null; }
   };
   const current = evidence(seenId), seen = evidence(entry.seen);
-  if (current) {
-    const parts = item => { try { const p = JSON.parse(item); return p[0] === 'story-development' && Array.isArray(p[4]) ? p : null; } catch { return null; } };
-    return !!seen && current.length > 0 && current.every(item => {
-      if (seen.includes(item)) return true;
-      const development = parts(item);
-      return seen.some(old => {
-        const prior = parts(old);
-        if (development && prior && development[1] === prior[1] && development[2] === prior[2] && development[3] === prior[3]) return true;
-        // Finishing a duplicate check cannot wake evidence already read before that check.
-        const aliases = development?.[4] || [item], previous = prior?.[4] || [old];
-        return aliases.some(alias => previous.includes(alias));
-      });
-    });
-  }
+  if (current) return !!seen && current.length > 0 && current.every((item) => seen.includes(item));
   return !seen && entry.seen === String(seenId);
 }
 

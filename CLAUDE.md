@@ -2725,34 +2725,6 @@ contract does not cover: a tab the shell decided not to mount.
 
 ## AI Alerts — the explainable priority layer
 
-**Story evolution (23 September 2026):** `alert-stories.js` groups public company news and
-exchange disclosures across publishers, keeping every original record in `card.sourceEvents`.
-`card.events` contains distinct developments for ranking; one story row opens its earlier
-developments and source links. A new material fact must resurface an archived alert, even if
-an older event is stronger. Another outlet's equivalent report must not add a ranking bonus or
-advance the event's source date. `materialEvidence` and `ai-mute.js` recognise development
-identities and pre-review receipts; review completion itself is not a new fact.
-
-The same-origin `/api/alert-stories` route uses the existing server-only Bedrock transport and
-validates a complete partition, attribution, figures and stages. Exact request results are cached
-on the separately named `ai-alert-story-reviews:v1` CaptureRegistry object; reservations enforce
-300 requests per rolling day across callers, including failures. No namespace migration or extra
-collector is needed. The reader checks in bounded batches of 80 reports (120 KB), continuing
-large groups against one representative of each known development. It preserves all reports if
-limits, incomplete model replies, unavailable service or ambiguity prevent a safe grouping.
-The grouping status is separate from source freshness. Do not turn a failed grouping into an
-empty feed or a claim that all duplicates were removed.
-
-Public decisions persist in the device cache for up to 180 source days. These are reading
-annotations, not an exhaustive story archive; original source history remains in All Alerts.
-An input correction invalidates its annotation. Never send private records/holdings to this route,
-truncate source text to force a match, or discard members after picking a lead. Compact alert
-pools must retain `storyText`; the v3 contract prevents adopting older pools that lack it.
-Verification: `verify-alert-stories`, `verify-alert-stories-ui` (including a warm-session upgrade),
-`verify-alert-stories-runtime`, the existing AI/retention/alert-pool checks. Model replies are
-fixture-controlled; deterministic safety and integration checks do not certify live model accuracy.
-
-
 `js/data/ai-alerts.js` reads `daily-alerts.js` once in retained-history mode, then groups the last
 seven Indian dates by ticker. It adds no source and generates no fact. The ranking is deliberately
 deterministic: importance, source materiality, recency, explicit direction, real Portfolio

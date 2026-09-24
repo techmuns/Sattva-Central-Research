@@ -73,7 +73,6 @@ import { handleDrhpFilings } from './drhp-filings.mjs';
 import { handleIpoMonitor } from './ipo-monitor.mjs';
 import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
-import { handleAlertStories } from './alert-stories.mjs';
 import { handleWatchlist } from './watchlist.mjs';
 import { handleNewsletter } from './newsletter.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
@@ -157,7 +156,6 @@ export default {
     if (['/api/mutual-funds','/api/mutual-funds/company','/api/mutual-funds/collector','/api/mutual-funds/health','/api/mutual-funds/private','/api/mutual-funds/private/company'].includes(url.pathname)) return handleMutualFunds(request, env);
     if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health', '/api/breakouts/fallback'].includes(url.pathname)) return handleBreakouts(request, env);
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
-    if (url.pathname === '/api/alert-stories') return handleAlertStories(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
     if (url.pathname === '/api/newsletter' || url.pathname.startsWith('/api/newsletter/')) return handleNewsletter(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')

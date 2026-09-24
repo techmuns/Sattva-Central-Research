@@ -11,7 +11,9 @@
 // so the Worker can import it without dragging the browser's data modules into its bundle.
 import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 
-export const ALERT_POOL_CONTRACT = 'alert-pool-v3';
+// v4, not a return to v2: the story fields v3 added are gone again, and a contract only moves
+// forward so no device can re-adopt a pool built by either earlier reader.
+export const ALERT_POOL_CONTRACT = 'alert-pool-v4';
 export const ALERT_POOL_ARTIFACT = 'alert-pool';
 export const ALERT_POOL_WORKFLOW = 'alert-pool-refresh.yml';
 export const ALERT_POOL_INDEX_MEMBER = 'index.json';

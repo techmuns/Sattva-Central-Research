@@ -226,16 +226,15 @@ export function indexAlertContext(report, insightCompanies = []) {
 
 export function enrichCardFromAllAlerts(card, report, { insightCompanies = [], contextIndex = null } = {}) {
   const ticker = String(card?.ticker || '').toUpperCase();
-  const originals = (card?.events || []).flatMap(event => event.storyReports || [event]);
-  const triggerIds = new Set(originals.map((event) => event.id));
+  const triggerIds = new Set((card?.events || []).map((event) => event.id));
   const index = contextIndex || indexAlertContext(report, insightCompanies);
   const feedById = index.feeds;
   const pool = !ticker || !triggerIds.size ? [] : [
     ...(index.events.get(ticker) || []).filter(event => !triggerIds.has(event.id)),
     ...insightEvents(index.insights.get(ticker) || [], report?.day),
   ];
-  const seen = new Set(originals.map(headlineKey));
-  const seenDocuments = new Set(originals.map(documentKey).filter(Boolean));
+  const seen = new Set((card.events || []).map(headlineKey));
+  const seenDocuments = new Set((card.events || []).map(documentKey).filter(Boolean));
   const candidates = [];
   const prepared = prepareTriggers(card.events || []);
   for (const event of pool) {

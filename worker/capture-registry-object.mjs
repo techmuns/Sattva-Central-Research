@@ -1,4 +1,3 @@
-import { AlertStoriesStore } from './alert-stories-store.mjs';
 import { MutualFundsStore } from './mutual-funds-store.mjs';
 import { MutualFundsScannerStore } from './mutual-funds-scanner-store.mjs';
 import { MutualFundsSchedule, MF_TIMER } from './mutual-funds-schedule.mjs';
@@ -27,7 +26,6 @@ export class CaptureRegistry extends DurableObject {
     // The shared watchlist lives in its own fixed object (shared-watchlist:v1), so these tables
     // are only ever created on that one. A company-registry shard never calls a watchlist method.
     this.watchlist = new SharedWatchlistStore(ctx.storage);
-    this.alertStories = new AlertStoriesStore(ctx.storage);
     this.mutualFunds = new MutualFundsStore(ctx.storage);
     this.mutualFundsScanner = new MutualFundsScannerStore(ctx.storage,this.mutualFunds);
     this.mutualFunds.scanner = this.mutualFundsScanner;
@@ -50,8 +48,6 @@ export class CaptureRegistry extends DurableObject {
   summaryReserve(run, requestId) { return this.summaries.reserve(run, requestId); }
   summaryComplete(run, input) { return this.summaries.complete(run, input); }
   summaryRead(ids) { return this.summaries.read(ids); }
-  storyReviewReserve(key) { return this.alertStories.reserve(key); }
-  storyReviewComplete(key, token, result) { return this.alertStories.complete(key, token, result); }
   watchlistSnapshot() { return this.watchlist.watchlistSnapshot(); }
   watchlistApply(intents) { return this.watchlist.watchlistApply(intents); }
   request(source) { return this.schedule.request(source); }
