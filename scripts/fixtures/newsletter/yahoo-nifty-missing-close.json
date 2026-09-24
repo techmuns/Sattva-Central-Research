@@ -1,0 +1,130 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "INR",
+          "symbol": "^NSEI",
+          "exchangeName": "NSI",
+          "fullExchangeName": "NSE",
+          "instrumentType": "INDEX",
+          "firstTradeDate": 1190000700,
+          "regularMarketTime": 1790157680,
+          "hasPrePostMarketData": false,
+          "gmtoffset": 19800,
+          "timezone": "IST",
+          "exchangeTimezoneName": "Asia/Kolkata",
+          "regularMarketPrice": 23446.8,
+          "regularMarketChangePercent": 0.139,
+          "fulldayPrice": 23446.8,
+          "fulldayChange": 32.5,
+          "fulldayChangePercent": 0.139,
+          "fiftyTwoWeekHigh": 26373.2,
+          "fiftyTwoWeekLow": 22182.55,
+          "regularMarketDayHigh": 23466.9,
+          "regularMarketDayLow": 23349.55,
+          "regularMarketVolume": 0,
+          "longName": "NIFTY 50",
+          "shortName": "NIFTY 50",
+          "chartPreviousClose": 23270.6,
+          "priceHint": 2,
+          "currentTradingPeriod": {
+            "pre": {
+              "timezone": "IST",
+              "start": 1790221500,
+              "end": 1790221500,
+              "gmtoffset": 19800
+            },
+            "regular": {
+              "timezone": "IST",
+              "start": 1790221500,
+              "end": 1790244000,
+              "gmtoffset": 19800
+            },
+            "post": {
+              "timezone": "IST",
+              "start": 1790244000,
+              "end": 1790244000,
+              "gmtoffset": 19800
+            }
+          },
+          "dataGranularity": "1d",
+          "range": "5d",
+          "validRanges": [
+            "1d",
+            "5d",
+            "1mo",
+            "3mo",
+            "6mo",
+            "1y",
+            "2y",
+            "5y",
+            "10y",
+            "ytd",
+            "max"
+          ]
+        },
+        "timestamp": [
+          1789616700,
+          1789703100,
+          1789962300,
+          1790048700,
+          1790135100
+        ],
+        "indicators": {
+          "quote": [
+            {
+              "volume": [
+                259700,
+                375300,
+                213600,
+                null,
+                0
+              ],
+              "open": [
+                23195.25,
+                23334.69921875,
+                23330.19921875,
+                null,
+                23352.150390625
+              ],
+              "high": [
+                23363.55078125,
+                23389.150390625,
+                23466.80078125,
+                null,
+                23466.900390625
+              ],
+              "close": [
+                23270.599609375,
+                23346.400390625,
+                23414.30078125,
+                null,
+                null
+              ],
+              "low": [
+                23193.650390625,
+                23286.599609375,
+                23314.80078125,
+                null,
+                23349.55078125
+              ]
+            }
+          ],
+          "adjclose": [
+            {
+              "adjclose": [
+                23270.599609375,
+                23346.400390625,
+                23414.30078125,
+                null,
+                null
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "error": null
+  }
+}

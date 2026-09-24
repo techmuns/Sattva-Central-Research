@@ -817,12 +817,12 @@ already runs on:
 1. **"Direct ones" means `portfolio-companies.json`**, the Portfolio scope's own file, and nothing
    wider. A line with no NSE symbol is still a holding and is still the denominator — the brief
    counts companies reported against the book's **listed** lines, exactly as `scopeSummary` does.
-2. **Every figure carries its own state and time.** Quotes are read from Yahoo's chart endpoint at
-   send time and Yahoo's own session bounds decide `Close · Wed 16:00 EDT` versus `Live · Thu 07:58
-   JST`. **A symbol Yahoo refuses prints `unavailable` and never a number** — this dashboard keeps
-   no macro series store, so there is no second reading to fall back to, and a stale close dressed
-   as this morning's is the one thing the row may not become. A source that cannot be read says so
-   in the email — `NSE feed could not be read (blocked)` — rather than going quiet.
+2. **Every figure carries its own state, full date and provider.** Market quotes use validated
+   NSE/BSE observations, exact Upstox cash-index identities and Yahoo daily bars. Daily changes
+   compare the immediately preceding trading session, never the chart-range reference close.
+   Missing/conflicting figures are withheld; stale and delayed observations retain their labels
+   and stay out of the headline glance. No provider's level is mixed with another's close. This
+   dashboard has no macro-series fallback. See *Newsletter market comparisons* below.
 3. **Source headlines and particulars stay verbatim.** Optional AI summary and potential-impact
    notes, adapted from Glow on 21 September 2026, are labelled separately and use only supplied
    headlines/summaries. They never change the topic, mood, source rows or sent-story ledger.
@@ -4499,3 +4499,13 @@ applied, so raw unattributed records cannot be discarded at the seven-day rankin
 boundary. Older v1 pools are rejected, and changes to the pool builder/format
 trigger a new shared build. The module cache revision advances with this change;
 verification covers an existing session receiving the replacement module.
+
+## Newsletter market comparisons (24 September 2026)
+
+`worker/newsletter-markets.mjs` validates exact NSE/BSE/Upstox/Yahoo index identities, actual
+quote timestamps and immediately preceding daily closes. Never use chartPreviousClose from a
+multi-day range, combine one provider’s level with another’s close, or turn an intraday/stale
+observation into a fresh close. Keep conflicts/missing comparisons explicit in HTML, text, PDF
+and delivery summaries. Sattva has no macro-series fallback. See
+`docs/NEWSLETTER-MARKET-ACCURACY.md`; run `scripts/verify-newsletter-markets.mjs` with the newsletter
+regressions. Historical sent editions and PDFs remain unchanged.
