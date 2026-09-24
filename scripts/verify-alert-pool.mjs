@@ -90,8 +90,8 @@ console.log('PASS older unattributed market news becomes identical company conte
 
 // 1. THE ORACLE: the full-history collection the browser performs without any pool.
 console.log(`collecting the full history for ${day} (the oracle)`);
-const full = await alerts.collect({ scope: 'universe', day, includeHistory: true });
-const sourceFeeds = full.sourceFeeds.filter(publicAlertFeed);
+let full = await alerts.collect({ scope: 'universe', day, includeHistory: true });
+let sourceFeeds = full.sourceFeeds.filter(publicAlertFeed);
 assert(full.feeds.find((feed) => feed.id === 'news').count > 0, 'the oracle must actually load retained news');
 const index = writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(), captures: captureIdentities({ root, exchange }) });
 verifyPoolMembers({ outDir, sourceFeeds, index });
@@ -206,6 +206,18 @@ for (const scope of ['universe', 'portfolio']) {
   }
   assert(readFromPool < readFromFull, `${scope}: the AI pool reads fewer events than the full history (${readFromPool} vs ${readFromFull})`);
   assert(ai.events.some((event) => POOL_FEEDS.includes(event.feed) && event.feed !== 'market-news' && event.sourceRecord == null), `${scope}: pooled AI events travel compact`);
+  // Verify bookmarks against the AI collection already under comparison. Recollecting the
+  // complete AI history later held another large pool beside the fallback reports in CI.
+  if (scope === 'universe') {
+    const compact = ai.sourceFeeds.find((feed) => feed.id === 'insider').events.find((event) => event.day && index.days.some((entry) => entry.day === event.day));
+    assert(compact && alertPool.needsFullRecord(compact), 'an insider event from the AI pool travels without its record');
+    const record = await alertPool.fullRecord(compact);
+    const original = full.sourceFeeds.find((feed) => feed.id === 'insider').events.find((event) => event.id === compact.id);
+    assert.deepEqual(record, jsonForm(original.sourceRecord), 'the record comes back from the day shard exactly');
+    const marketWide = ai.sourceFeeds.find((feed) => feed.id === 'market-news').events[0];
+    assert(!marketWide || !alertPool.needsFullRecord(marketWide), 'a market-wide story keeps its record in the AI pool');
+    console.log('PASS a compact event resolves its full source record from the pool for a notebook snapshot');
+  }
   console.log(`PASS ${scope}: ${rankedPool.cards.length} cards ranked identically from ${readFromPool} pooled events instead of ${readFromFull}`);
   clearRankingCache();
 }
@@ -214,6 +226,7 @@ alertPool.resetForTest();
 // period, the same code path a period takes over settled sources. It is built here, after the
 // ranking, so that it is not held beside two rankings and the AI pool.
 const narrowedWeek = alerts.assemble({ day, scope: 'universe', holdings: coverage.holdings(), includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
+full = null; sourceFeeds = null;
 
 // 4. EVERY REASON THE POOL STANDS ASIDE. Each one is checked on the read itself, and each leaves
 // the collection to the live path for that feed — the same records, read the way they always were.
@@ -318,23 +331,14 @@ console.log('PASS unreadable members and invalid shards leave the collection to 
 alertPool.resetForTest();
 await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window' });
 served.requests = [];
-const reassembled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window', load: false });
-assertEvents(reassembled.events, narrowedWeek.events, 'a reassembly without loading yields the same period');
+{
+  const reassembled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week, pool: 'window', load: false });
+  assertEvents(reassembled.events, narrowedWeek.events, 'a reassembly without loading yields the same period');
+}
 assert.deepEqual(served.requests.filter((path) => path.startsWith('api/alert-pool/')), [], 'a reassembly reads no member');
 console.log('PASS a reassembly without loading reuses the pool read in memory');
 
-// 7. A BOOKMARK TAKEN FROM A COMPACT EVENT REACHES THE FULL SOURCE RECORD IN THE DAY SHARD.
-{
-  const ai = await alerts.collect({ scope: 'universe', day, includeHistory: true, pool: 'ai' });
-  const compact = ai.sourceFeeds.find((feed) => feed.id === 'insider').events.find((event) => event.day && index.days.some((entry) => entry.day === event.day));
-  assert(compact && alertPool.needsFullRecord(compact), 'an insider event from the AI pool travels without its record');
-  const record = await alertPool.fullRecord(compact);
-  const original = full.sourceFeeds.find((feed) => feed.id === 'insider').events.find((event) => event.id === compact.id);
-  assert.deepEqual(record, jsonForm(original.sourceRecord), 'the record comes back from the day shard exactly');
-  const marketWide = ai.sourceFeeds.find((feed) => feed.id === 'market-news').events[0];
-  assert(!marketWide || !alertPool.needsFullRecord(marketWide), 'a market-wide story keeps its record in the AI pool');
-}
-console.log('PASS a compact event resolves its full source record from the pool for a notebook snapshot');
+// 7. Full bookmark evidence was checked alongside the actual AI collection in section 3.
 
 // 8. ROWS THIS SESSION HOLDS BEYOND THE CAPTURE DO DECLINE — through the feed modules themselves,
 // last because they cannot be taken back. A device copy that a tab loads for a company (a
