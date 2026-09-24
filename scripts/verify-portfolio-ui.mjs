@@ -120,7 +120,7 @@ try {
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH, fullPage: true });
 
   await child.evaluate(() => { location.hash = '#/research/ai-alerts?scope=portfolio'; });
-  await research.locator('[data-ai-size-note]').waitFor({ timeout: 60_000 });
+  await research.locator('[data-ai-holding-size]').first().waitFor({ timeout: 60_000 });
   assert.equal(await research.getByRole('combobox', { name:'Sort AI Alerts' }).inputValue(), 'newest');
   await research.getByRole('combobox', { name:'Sort AI Alerts' }).selectOption('holdings');
   assert.equal(await page.locator('#portfolio-sync-status').isVisible(), false, 'authenticated sizes replace the public snapshot status');
@@ -131,7 +131,7 @@ try {
   assert(percentages.every(Number.isFinite));
   assert(percentages.every((w, i) => i === 0 || w <= percentages[i - 1]), 'largest holdings appear first');
   assert.equal(questions.length, 2, 'holding size requests do not invoke a model');
-  assert.match(await research.locator('[data-ai-size-note]').innerText(), /30 Jun 2026/);
+  assert.match(await research.locator('[data-ai-holding-size]').first().getAttribute('title'), /30 Jun 2026/);
   assert(await child.evaluate(() => !JSON.stringify(localStorage).includes('weightPct')), 'private sizes are never persisted');
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH.replace(/\.png$/, '-sizes.png'), fullPage: true });
   outage = true;
@@ -141,9 +141,9 @@ try {
   assert.equal(await research.locator('[data-ai-holding-size]').count(), 0, 'failed revalidation removes old private sizes');
   outage = false;
   await child.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
-  await research.locator('[data-ai-size-note]').waitFor();
+  await research.locator('[data-ai-holding-size]').first().waitFor();
   await recheckBook(family);
-  await research.locator('[data-ai-size-note]').waitFor({ timeout: 60_000 });
+  await research.locator('[data-ai-holding-size]').first().waitFor({ timeout: 60_000 });
   await child.evaluate(() => { location.hash = '#/research/ask-research?scope=portfolio'; });
   await input.waitFor();
 
