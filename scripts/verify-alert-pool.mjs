@@ -9,12 +9,34 @@ import { join, resolve, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { spawnSync } from 'node:child_process';
+
+// Each phase uses the full captured dataset and the same frozen clock/artifact. Isolating
+// browser-lifetime caches between independent scenarios keeps this oracle inside the CI heap
+// limit as history grows; no fixture, field comparison or failure scenario is dropped.
+const phase = process.env.ALERT_POOL_TEST_PHASE;
+if (!phase) {
+  const poolDir = mkdtempSync(join(tmpdir(), 'alert-pool-'));
+  const clock = String(Date.now());
+  try {
+    for (const name of ['periods', 'rankings', 'fallbacks']) {
+      const child = spawnSync(process.execPath, ['--max-old-space-size=4096', fileURLToPath(import.meta.url)], {
+        stdio: 'inherit', env: { ...process.env, ALERT_POOL_TEST_PHASE: name, ALERT_POOL_TEST_DIR: poolDir, ALERT_POOL_TEST_NOW: clock },
+      });
+      assert.equal(child.status, 0, `${name} verification failed (${child.signal || child.error || child.status})`);
+    }
+  } finally { rmSync(poolDir, { recursive: true, force: true }); }
+  console.log('PASS alert pool: exact selected periods, exact ranking, honest fallbacks.');
+  process.exit(0);
+}
+assert(['periods', 'rankings', 'fallbacks'].includes(phase), 'known verification phase');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = process.env.ALERT_POOL_CAPTURE_ROOT ? resolve(process.env.ALERT_POOL_CAPTURE_ROOT) : resolve(here, '../public');
 const storage = new Map();
 globalThis.localStorage = { getItem: (key) => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) };
-const now = Date.now();
+const now = Number(process.env.ALERT_POOL_TEST_NOW);
+assert(Number.isFinite(now) && now > 0, 'a frozen verification clock');
 Date.now = () => now;
 
 const { offlineFetch, captureIdentities, captureStatusFor, writePoolMembers, verifyPoolMembers, jsonForm } = await import('./lib/alert-pool-build.mjs');
@@ -23,7 +45,8 @@ const { validateShard, buildAiShards } = await import('../public/js/data/alert-p
 
 // THE ROUTES THE BROWSER READS, answered from the pool this test builds. `served` is what a test
 // step changes to make the pool disagree with the deployment in one particular way.
-const outDir = mkdtempSync(join(tmpdir(), 'alert-pool-'));
+const outDir = process.env.ALERT_POOL_TEST_DIR;
+assert(outDir, 'a shared verification artifact directory');
 const exchange = { text: readFileSync(resolve(root, 'data/exchange-deals.json'), 'utf8'), id: 4242 };
 // `artifact` is what the index names; `memberArtifact` is the build the member route can still
 // answer for — they part in section 5, where the index names a build whose members are gone.
@@ -89,13 +112,19 @@ assert.doesNotThrow(() => validateShard({ version: 1, contract: ALERT_POOL_CONTR
 console.log('PASS older unattributed market news becomes identical company context after pooling; old contracts are rejected');
 
 // 1. THE ORACLE: the full-history collection the browser performs without any pool.
-console.log(`collecting the full history for ${day} (the oracle)`);
+console.log(`collecting the full history for ${day} (${phase} oracle)`);
 let full = await alerts.collect({ scope: 'universe', day, includeHistory: true });
 let sourceFeeds = full.sourceFeeds.filter(publicAlertFeed);
 assert(full.feeds.find((feed) => feed.id === 'news').count > 0, 'the oracle must actually load retained news');
-const index = writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(), captures: captureIdentities({ root, exchange }) });
-verifyPoolMembers({ outDir, sourceFeeds, index });
-console.log(`PASS the pool's members carry exactly the collector's events (${index.days.length} day shards, ${index.ai.length} AI shards)`);
+const index = phase === 'periods'
+  ? writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(), captures: captureIdentities({ root, exchange }) })
+  : JSON.parse(readFileSync(join(outDir, 'index.json'), 'utf8'));
+assert.equal(index.day, day);
+assert.deepEqual(index.captures, captureIdentities({ root, exchange }), 'all phases use the same captured inputs');
+if (phase === 'periods') {
+  verifyPoolMembers({ outDir, sourceFeeds, index });
+  console.log(`PASS the pool's members carry exactly the collector's events (${index.days.length} day shards, ${index.ai.length} AI shards)`);
+}
 
 // WHAT DOES NOT SURVIVE JSON, AND WHERE. A pooled event is the collector's event in JSON form;
 // the only difference between that and the live object must be a technicals rule function or
@@ -118,7 +147,7 @@ served.status = captureStatusFor({ root, exchange });
 
 // 2. SELECTED PERIODS FROM THE POOL EQUAL THE FULL HISTORY NARROWED TO THEM — identities, every
 // field, provenance and order — and no capture file is downloaded to get there.
-for (const [label, queryWindow] of [['Today', window(1)], ['Last 3 days', window(3)], ['Last 7 days', window(7)], ['Last 30 days', window(30)]]) {
+if (phase === 'periods') for (const [label, queryWindow] of [['Today', window(1)], ['Last 3 days', window(3)], ['Last 7 days', window(7)], ['Last 30 days', window(30)]]) {
   served.requests = [];
   const pooled = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow, pool: 'window' });
   const status = alertPool.status();
@@ -140,33 +169,35 @@ const week = window(7);
 const COUNTS = ['count', 'todayCount', 'sourceCount', 'unresolvedCount', 'oldestDay', 'newestDay'];
 const describe = (row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'events' && !COUNTS.includes(key)));
 const figures = (row) => Object.fromEntries(COUNTS.filter((key) => key in row).map((key) => [key, row[key]]));
-alertPool.resetForTest();
-let live = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
-for (const scope of ['universe', 'portfolio']) {
-  const holdings = coverage.holdings();
-  const fromPool = await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week, pool: 'window' });
-  const narrowed = alerts.assemble({ day, scope, holdings, includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
-  assertEvents(fromPool.events, narrowed.events, `${scope}: the period's events`);
-  assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(narrowed.feeds.map(describe)), `${scope}: the feed rows describe their sources as the full read does`);
-  assert.deepEqual(jsonForm(fromPool.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })),
-    jsonForm(narrowed.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })), `${scope}: every count`);
-  for (const row of fromPool.sourceFeeds.filter((feed) => POOL_FEEDS.includes(feed.id))) {
-    const days = row.events.map((event) => event.day).filter(Boolean).sort();
-    assert.equal(row.oldestDay, days[0] || null, `${scope}: ${row.id} oldestDay is the oldest day it carries`);
-    assert.equal(row.newestDay, days.at(-1) || null, `${scope}: ${row.id} newestDay is the newest day it carries`);
-    assert.equal(row.count, row.events.length, `${scope}: ${row.id} counts what it carries`);
+if (phase === 'periods') {
+  alertPool.resetForTest();
+  let live = await alerts.collect({ scope: 'universe', day, includeHistory: true, queryWindow: week });
+  for (const scope of ['universe', 'portfolio']) {
+    const holdings = coverage.holdings();
+    const fromPool = await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week, pool: 'window' });
+    const narrowed = alerts.assemble({ day, scope, holdings, includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
+    assertEvents(fromPool.events, narrowed.events, `${scope}: the period's events`);
+    assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(narrowed.feeds.map(describe)), `${scope}: the feed rows describe their sources as the full read does`);
+    assert.deepEqual(jsonForm(fromPool.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })),
+      jsonForm(narrowed.feeds.map(figures)).map((f) => ({ count: f.count, todayCount: f.todayCount, sourceCount: f.sourceCount, unresolvedCount: f.unresolvedCount })), `${scope}: every count`);
+    for (const row of fromPool.sourceFeeds.filter((feed) => POOL_FEEDS.includes(feed.id))) {
+      const days = row.events.map((event) => event.day).filter(Boolean).sort();
+      assert.equal(row.oldestDay, days[0] || null, `${scope}: ${row.id} oldestDay is the oldest day it carries`);
+      assert.equal(row.newestDay, days.at(-1) || null, `${scope}: ${row.id} newestDay is the newest day it carries`);
+      assert.equal(row.count, row.events.length, `${scope}: ${row.id} counts what it carries`);
+    }
+    const liveRows = scope === 'universe' ? live : await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week });
+    assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(liveRows.feeds.map(describe)), `${scope}: status, capture time, note and freshness are the live read's`);
+    const { sourceRecords, unresolvedRecords, ...meta } = fromPool.meta;
+    const { sourceRecords: s2, unresolvedRecords: u2, ...expectedMeta } = narrowed.meta;
+    assert.deepEqual(meta, expectedMeta, `${scope}: the counts and freshness figures`);
+    assert.equal(sourceRecords, s2, `${scope}: source records counted`);
   }
-  const liveRows = scope === 'universe' ? live : await alerts.collect({ scope, day, holdings, includeHistory: true, queryWindow: week });
-  assert.deepEqual(jsonForm(fromPool.feeds.map(describe)), jsonForm(liveRows.feeds.map(describe)), `${scope}: status, capture time, note and freshness are the live read's`);
-  const { sourceRecords, unresolvedRecords, ...meta } = fromPool.meta;
-  const { sourceRecords: s2, unresolvedRecords: u2, ...expectedMeta } = narrowed.meta;
-  assert.deepEqual(meta, expectedMeta, `${scope}: the counts and freshness figures`);
-  assert.equal(sourceRecords, s2, `${scope}: source records counted`);
+  console.log('PASS Last 7 days from the pool: the full history narrowed, every row, count and figure, in both scopes');
+  // The bounded live read has served its purpose; the narrowed full history is the reference below.
+  live = null;
+  alertPool.resetForTest();
 }
-console.log('PASS Last 7 days from the pool: the full history narrowed, every row, count and figure, in both scopes');
-// The bounded live read has served its purpose; the narrowed full history is the reference below.
-live = null;
-alertPool.resetForTest();
 
 // 3. THE RANKING FROM THE AI POOL IS THE RANKING FROM THE FULL HISTORY. `topFunnelEvents` is the
 // count of events read, and the AI pool deliberately reads fewer; every card, score, evidence row,
@@ -185,7 +216,7 @@ const withoutRecords = (value) => JSON.parse(JSON.stringify(value, (key, held) =
 const UNRESOLVED_CLAUSE = /\s*\d+ records have no resolved ticker and are available in Universe only\./g;
 const describeRanked = (row) => { const out = describe(row); if (typeof out.note === 'string') out.note = out.note.replace(UNRESOLVED_CLAUSE, '') || null; return out; };
 const cardName = (card) => card.ticker || card.entityId || card.key || card.company;
-for (const scope of ['universe', 'portfolio']) {
+if (phase === 'rankings') for (const scope of ['universe', 'portfolio']) {
   const holdings = coverage.holdings();
   const ai = await alerts.collect({ scope, day, holdings, includeHistory: true, pool: 'ai' });
   const status = alertPool.status();
@@ -222,6 +253,7 @@ for (const scope of ['universe', 'portfolio']) {
   clearRankingCache();
 }
 alertPool.resetForTest();
+if (phase !== 'fallbacks') process.exit(0);
 // THE NARROWED WEEK is the reference for the fallbacks below — the full history assembled to the
 // period, the same code path a period takes over settled sources. It is built here, after the
 // ranking, so that it is not held beside two rankings and the AI pool.
@@ -364,5 +396,4 @@ console.log('PASS a reassembly without loading reuses the pool read in memory');
   assert.deepEqual(await declineReasons(), { news: 'rows read live in this session' }, 'and declines the news feed');
   console.log('PASS rows this session read live decline their feed, through the feed modules; device entries alone do not');
 }
-rmSync(outDir, { recursive: true, force: true });
-console.log('PASS alert pool: exact selected periods, exact ranking, honest fallbacks.');
+console.log('PASS alert pool fallback and session-row checks.');
