@@ -1,0 +1,54 @@
+{
+  "timestamp": "23-Sep-2026 15:30",
+  "data": [
+    {
+      "index": "NIFTY 50",
+      "last": 23446.8,
+      "previousClose": 23329,
+      "variation": 117.8,
+      "percentChange": 0.5
+    },
+    {
+      "index": "NIFTY BANK",
+      "last": 56548.9,
+      "previousClose": 56215.55,
+      "variation": 333.35,
+      "percentChange": 0.59
+    },
+    {
+      "index": "NIFTY 500",
+      "last": 22935.1,
+      "previousClose": 22794.2,
+      "variation": 140.9,
+      "percentChange": 0.62
+    },
+    {
+      "index": "NIFTY MIDCAP 100",
+      "last": 62396.45,
+      "previousClose": 61963.15,
+      "variation": 433.3,
+      "percentChange": 0.7
+    },
+    {
+      "index": "NIFTY SMALLCAP 100",
+      "last": 19991.5,
+      "previousClose": 19815.45,
+      "variation": 176.05,
+      "percentChange": 0.89
+    },
+    {
+      "index": "INDIA VIX",
+      "last": 10.29,
+      "previousClose": 11,
+      "variation": -0.71,
+      "percentChange": -6.41
+    },
+    {
+      "index": "NIFTY IT",
+      "last": 28334.05,
+      "previousClose": 28582.1,
+      "variation": -248.05,
+      "percentChange": -0.87
+    }
+  ]
+}

@@ -7,11 +7,13 @@ import {authHeaders,hostToken,onHostContext} from '../core/host-context.js';
 import {boundedJson} from './family-book-contract.js';
 const snapshots=new Map(), pending=new Map(), rowsByIsin=new Map();
 let latestMeta={}, lastDetail=null;
-const privateRows=new Map(),privatePending=new Map(),sessionListeners=new Set();
+const privateRows=new Map(),privatePending=new Map(),sessionListeners=new Set(),updateListeners=new Set();
 let privateMeta=null,generation=0;
-export const meta=()=>({...latestMeta,...(hostToken()?privateMeta:{supplementAccess:'no-session'})});
+export const meta=()=>({...latestMeta,...(hostToken()?privateMeta:{supplementAccess:'no-session'}),revalidating:pending.size>0||privatePending.size>0});
 export const all=()=>[...new Map([...rowsByIsin,...(hostToken()?privateRows:[])]).values()].map(row=>readableOwnership(row));
 export const onSessionChange=fn=>{sessionListeners.add(fn);return()=>sessionListeners.delete(fn);};
+export const onUpdate=fn=>{updateListeners.add(fn);return()=>updateListeners.delete(fn);};
+const notify=()=>{for(const fn of updateListeners)fn();};
 onHostContext((_context,changes)=>{if(changes?.session){generation++;privateRows.clear();privatePending.clear();privateMeta=null;for(const fn of sessionListeners)fn();}});
 async function privateRequest(path) {
   const response=await fetch(path,{headers:{accept:'application/json',...authHeaders(path)},cache:'no-store',redirect:'error',signal:AbortSignal.timeout(20000)});
@@ -41,14 +43,19 @@ export async function load(scope='portfolio',options={}) {
         if(error.access){privateMeta={supplementAccess:error.reason};}
         else privateMeta={...privateMeta,supplementReadFailed:true};
       }
-    })().finally(()=>{if(epoch===generation)privatePending.delete(key);});
+    })().finally(()=>{if(epoch===generation){privatePending.delete(key);notify();}});
     privatePending.set(key,request);
   }
   await privatePending.get(key);
   return {...result,rows:ids.map(id=>hostToken()&&privateRows.get(id)||rowsByIsin.get(id)).filter(Boolean),meta:meta()};
 }
 function adopt(payload, {fallback=false}={}) {
-  for(const row of payload.rows) if(!fallback || !rowsByIsin.has(row.isin)) rowsByIsin.set(row.isin,row);
+  for(const row of payload.rows) if(!fallback || !rowsByIsin.has(row.isin)) {
+    // A changed primary capture must be visible immediately, even while the
+    // authenticated supplemental read is still in flight.
+    if(JSON.stringify(rowsByIsin.get(row.isin))!==JSON.stringify(row))privateRows.delete(row.isin);
+    rowsByIsin.set(row.isin,row);
+  }
 }
 const local=()=>['localhost','127.0.0.1'].includes(location.hostname);
 export function scopedRows(scope='portfolio',holdings=coverage.holdings()) {
@@ -64,6 +71,16 @@ function loadPublic(scope='portfolio', {holdings=coverage.holdings(),refresh=tru
   if(pending.has(key))return pending.get(key);
   if(!refresh&&snapshots.has(key))return Promise.resolve(snapshots.get(key));
   const promise=(async()=>{
+    // Restore the existing public snapshot before asking the network. This is
+    // the same cache previously consulted only after a full request timeout.
+    if(!snapshots.has(key)) {
+      const saved=await readEntry(`mf-snapshot:${key}`);
+      if(Array.isArray(saved?.value?.rows)) {
+        adopt(saved.value,{fallback:true});snapshots.set(key,saved.value);
+        if(!latestMeta.checkedAt)latestMeta={...saved.value.meta,origin:'store'};
+        notify();
+      }
+    }
     try {
       let payload,fallback=false,readFailed=false;
       if(local()) payload=await revalidatedJson('data/mutual-funds/index.json');
@@ -87,7 +104,7 @@ function loadPublic(scope='portfolio', {holdings=coverage.holdings(),refresh=tru
         if(!rows.length&&!meta?.checkedAt){payload=await revalidatedJson('data/mutual-funds/index.json');fallback=true;}
       }
       if(!Array.isArray(payload?.rows))throw Error('Mutual fund capture unavailable');
-      adopt(payload,{fallback});snapshots.set(key,payload);if(!readFailed&&!fallback)writeEntry(`mf-snapshot:${key}`,{value:payload});latestMeta={...payload.meta,readFailed};return {...payload,meta:latestMeta};
+      adopt(payload,{fallback});snapshots.set(key,payload);if(!readFailed&&!fallback)writeEntry(`mf-snapshot:${key}`,{value:payload});latestMeta={...payload.meta,readFailed,origin:readFailed?'store':fallback||local()?'snapshot':'live'};return {...payload,meta:latestMeta};
     }catch(error) {
       latestMeta={...latestMeta,readFailed:true};
       if(snapshots.has(key))return {...snapshots.get(key),meta:latestMeta};
@@ -96,7 +113,7 @@ function loadPublic(scope='portfolio', {holdings=coverage.holdings(),refresh=tru
       try {const seed=await revalidatedJson('data/mutual-funds/index.json');adopt(seed,{fallback:true});snapshots.set(key,seed);latestMeta={...seed.meta,readFailed:true};return {...seed,meta:latestMeta};}
       catch {throw error;}
     }
-  })().finally(()=>pending.delete(key));pending.set(key,promise);return promise;
+  })().finally(()=>{pending.delete(key);notify();});pending.set(key,promise);return promise;
 }
 export async function detail(isin,month=null) {
   if(hostToken()&&!local()) {

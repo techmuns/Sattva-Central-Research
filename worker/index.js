@@ -1165,7 +1165,8 @@ async function handleFilingPage(request, env, ctx) {
   const { payload } = await readNseFiling(src, ctx);
   if (!payload.ok) return html(renderFilingFailure({ url: src, reason: payload.reason, error: payload.error }), 502, 0);
   const dashboardUrl = String(env.DASHBOARD_ORIGIN || url.origin).replace(/\/+$/, '');
-  return html(renderFilingPage({ filing: payload, url: src, dashboardUrl }), 200, NSE_FILING_TTL_S);
+  // Parsed source facts remain cached for a day; presentation must revalidate after a release.
+  return html(renderFilingPage({ filing: payload, url: src, dashboardUrl }), 200, 0);
 }
 
 function screenerNeedsRefresh(source, now = Date.now()) {

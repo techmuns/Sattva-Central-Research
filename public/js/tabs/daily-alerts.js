@@ -39,7 +39,7 @@ import * as watchlist from '../core/watchlist.js';
 import * as scopeLists from '../core/scope-lists.js';
 import { attributionLabel } from '../data/company-news-attribution.js';
 import { NEWS_PERIODS, newsPeriodBounds } from '../data/news-window.js';
-import { isXbrlFilingUrl, openFilingReader } from '../ui/xbrl-filing.js';
+import { openFilingSource } from '../ui/xbrl-filing.js';
 import { createAlertArrivals } from '../core/alert-arrivals.js';
 import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
 import { alertWindowKey } from '../data/all-alerts-cache.js';
@@ -1181,15 +1181,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     // article, which is the rule that actually matters (see the con-call link rule in CLAUDE.md).
     onRowClick: (e) => {
       if (e.url) {
-        // AN NSE XBRL FILING IS A DOCUMENT, NOT A PAGE. Opening one in a tab shows the reader SEBI's
-        // namespaces; `openFilingReader` lays out the same filing's own fields. Every other URL is
-        // somebody's page and still opens as one. The Link column's anchor is intercepted centrally
-        // (see js/ui/xbrl-filing.js); a row click never becomes an anchor, so it asks here.
-        if (isXbrlFilingUrl(e.url)) {
-          void openFilingReader(e.url, { company: e.company, ticker: e.ticker, subject: e.headline });
-          return;
-        }
-        window.open(e.url, '_blank', 'noopener,noreferrer');
+        void openFilingSource(e.url, { company: e.company, ticker: e.ticker, subject: e.headline });
         return;
       }
       // FALL BACK TO THE TAB, ON THE COMPANY — not just the tab. A row with no source URL (public

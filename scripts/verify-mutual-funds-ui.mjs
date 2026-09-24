@@ -23,10 +23,11 @@ try{
  const fixtureBook=JSON.parse(readFileSync(root+'/data/portfolio-companies.json')).holdings;
  const ownershipFixtures=fixtureSeed.rows.filter(r=>r.totalShares>0&&fixtureBook.some(h=>h.isin===r.isin)).slice(0,3);
  ownershipFixtures.forEach((r,i)=>Object.assign(r,{companyPct:i===1?5:10,denominator:{shares:r.totalShares*(i===1?20:10),checkedAt:new Date(Date.now()-(i===2?8:0)*86400000).toISOString(),sourceName:'Moneycontrol',source:'https://example.com/shares',kind:i===1?'estimate':'reported'}}));
- await page.route('**/*',route=>{
+ let seedGate=null;
+ await page.route('**/*',async route=>{
    const u=new URL(route.request().url());
    if(u.origin!==origin)return route.fulfill({status:200,body:''});
-   if(u.pathname==='/data/mutual-funds/index.json')return route.fulfill({contentType:'application/json',body:JSON.stringify(fixtureSeed)});
+   if(u.pathname==='/data/mutual-funds/index.json'){if(seedGate)await seedGate;return route.fulfill({contentType:'application/json',body:JSON.stringify(fixtureSeed)});}
    return route.continue();
  });
  await page.clock.install();await page.goto(origin);await page.waitForSelector('[data-row-key]');
@@ -39,6 +40,11 @@ try{
    assert.match(await value.getAttribute('title'),i===2?/Percentage withheld/:/Moneycontrol/);
  }
  await ownershipSearch.fill('');await page.waitForTimeout(350);
+ const unmatched=fixtureSeed.rows.find(r=>r.totalShares===null&&!r.pendingFunds&&fixtureBook.some(h=>h.isin===r.isin));assert(unmatched);
+ await ownershipSearch.fill(fixtureBook.find(h=>h.isin===unmatched.isin).name);await page.waitForTimeout(350);
+ assert(await page.getByText('No disclosure',{exact:true}).count());
+ await ownershipSearch.fill('');await page.waitForTimeout(350);
+ assert.equal(await page.getByText('Awaiting comparison',{exact:true}).count(),0);
  assert(await page.locator('text=MF shares held').count());assert(await page.locator('text=Insight summary').count());
  const net=page.locator('[data-table-head] th').filter({hasText:'Net monthly shares'}), shares=page.locator('[data-table-head] th').filter({hasText:'MF shares held'});
  const a=await net.boundingBox(),b=await shares.boundingBox();await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width-2,b.y+b.height/2,{steps:8});await page.mouse.up();
@@ -156,5 +162,17 @@ try{
  assert.equal(await apiPage.evaluate(()=>window.feed.all()[0].totalShares),3,'Private summaries never entered the persistent public cache');
  assert.equal(await apiPage.evaluate(async isin=>(await window.feed.detail(isin)).company.totalShares,apiBook[0].isin),3,'Private detail never entered the persistent public cache');
  await apiPage.close();
+ // A real table paints from persisted summaries while the refresh is held open.
+ let releaseSeed;seedGate=new Promise(done=>releaseSeed=done);
+ await page.reload();await page.waitForSelector('[data-row-key]');
+ const cachedSearch=page.locator('input[placeholder="Search company..."]');
+ const cachedCompany=ownershipFixtures[0];
+ await cachedSearch.fill(fixtureBook.find(h=>h.isin===cachedCompany.isin).name);await page.waitForTimeout(350);
+ const cachedRow=page.locator(`[data-row-key="${cachedCompany.isin}"]`);
+ assert((await cachedRow.textContent()).includes(cachedCompany.totalShares.toLocaleString('en-IN')),'saved rows render before the response');
+ const oldShares=cachedCompany.totalShares;cachedCompany.totalShares=oldShares+123;
+ releaseSeed();seedGate=null;
+ await page.waitForFunction(({isin,shares})=>document.querySelector(`[data-row-key="${isin}"]`)?.textContent.includes(shares),{isin:cachedCompany.isin,shares:cachedCompany.totalShares.toLocaleString('en-IN')});
+ assert.equal(await cachedSearch.inputValue(),fixtureBook.find(h=>h.isin===cachedCompany.isin).name,'background corrections preserve search');
  await page.evaluate(()=>window.tab.destroy());assert.deepEqual(errors,[]);console.log('PASS Mutual Funds browser: all portfolio rows, private weight order, month-grouped popup, bounded fund rows, offscreen search, keyboard close, dark/mobile rendering and zero page errors');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

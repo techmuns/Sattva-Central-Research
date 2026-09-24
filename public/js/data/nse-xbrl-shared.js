@@ -51,6 +51,10 @@ export function isXbrlFilingUrl(url) {
   return /\.xml$/i.test(path);
 }
 
+/** Version the rendered view to bypass older day-cached HTML; source identities stay at NSE. */
+export const readableFilingUrl = (url) => isXbrlFilingUrl(url)
+  ? `/filing?src=${encodeURIComponent(url)}&view=2` : url;
+
 const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
 // Kept here rather than imported from worker/nse-ann.mjs: this module may not depend on the Worker

@@ -1,3 +1,4 @@
+import { openFilingSource } from '../ui/xbrl-filing.js';
 import * as refreshRegistry from '../core/refresh.js';
 import { sectionHead, scoreTable } from '../ui/screener.js';
 import { exportRows } from '../ui/export.js';
@@ -82,7 +83,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
         rows: result.documents, key: (r) => `${r.form}|${r.url}`, name: (r) => r.title, nameLabel: 'Document',
         watchKey: (r) => r.ticker, watchName: (r) => companies.find((c) => c.ticker === r.ticker)?.name || r.ticker,
         sub: (r) => r.ticker, link: (r) => r.url, showScore: false, showRank: false,
-        onRowClick: (r) => window.open(r.url, '_blank', 'noopener,noreferrer'),
+        onRowClick: (r) => openFilingSource(r.url, { ticker: r.ticker, subject: r.title }),
         searchable: (r) => `${r.title} ${r.date || ''} ${DOMESTIC_FORMS[r.form] || ''}`,
         columns: [
           { label: 'Type', get: (r) => DOMESTIC_FORMS[r.form] || 'Not specified' },
