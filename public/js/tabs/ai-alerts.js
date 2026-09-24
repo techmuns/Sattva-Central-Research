@@ -19,6 +19,9 @@ import * as alerts from '../data/ai-alerts.js';
 import { KPI_CHIP_LIMIT, kpiLine, status as kpiStatus } from '../data/kpi-impact.js';
 import { chatterTopic } from '../data/chatter-sentiment.js';
 import { driversFromEvent, QUESTIONS } from '../data/alert-drivers.js';
+import { developmentSource, foldedSummary, foldedList, KIND_LABEL } from '../data/alert-developments.js';
+import { noteRequestFor, requestNotes, onNotes } from '../data/alert-notes.js';
+import { noteBodyHtml, NOTE_DISCLOSURE } from '../ui/alert-note.js';
 import * as screenerInsights from '../data/screener-insights.js';
 import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
@@ -127,6 +130,8 @@ export function render(ctx) {
   if (!unsubs.length) {
     unsubs.push(watchCalendar());
     unsubs.push(watchFreshness());
+    // A "So what?" note landing repaints through `reconcileMarkup`, which replaces only the note.
+    unsubs.push(onNotes(() => { if (ctxRef) paint(ctxRef); }));
     unsubs.push(onCaptureLanded(sourceChanged));
     unsubs.push(alerts.onChange(sourceChanged));
     unsubs.push(onPortfolioConnection((connected) => {
@@ -351,6 +356,9 @@ function paint(ctx) {
     reconcileMarkup(node, markup);
   }
   wire(ctx, cards.length);
+  // THE SECOND BULLET IS ASKED FOR THE CARDS ON SCREEN AND NO OTHERS — see data/alert-notes.js.
+  // An answered, pending or held question is not asked again; a stored note costs no model call.
+  if (report) requestNotes(shown.map((card) => cardNoteRequest(card)).filter(Boolean));
   if (anchor?.isConnected && anchorTop != null) {
     const delta = anchor.getBoundingClientRect().top - anchorTop;
     if (Math.abs(delta) > 1) window.scrollBy(0, delta);
@@ -726,6 +734,71 @@ function cardSnapshot(card) {
   cardSnapshots.set(card, snapshot);
   return snapshot;
 }
+/**
+ * The "So what?" question for a card: its lead development's, built from that development's lead
+ * alone so the row in All Alerts asks the identical question and shares the note. Kept per card.
+ */
+const cardNoteRequests = new WeakMap();
+function cardNoteRequest(card) {
+  if (cardNoteRequests.has(card)) return cardNoteRequests.get(card);
+  const dev = alerts.leadDevelopment(card);
+  // A related-entity report is about somebody else and is never asked about (`noteKindOf`).
+  const request = dev ? noteRequestFor(dev, { fallback: alerts.plainHeadline(dev.lead) }) : null;
+  cardNoteRequests.set(card, request);
+  return request;
+}
+
+// What the lead development IS, in the desk's words — "Corporate announcement" for the company's
+// own filing, "News" for a publisher's report — and the feed's own label for a measurement.
+const MEASUREMENT_LABEL = { earnings: 'Result', concalls: 'Con-call', insider: 'Insider / deal', investors: 'Investor holding',
+  technicals: 'Price & volume', chatter: 'Public chatter', 'screener-insights': 'Insight' };
+function kindLabel(dev) {
+  if (!dev?.lead) return '';
+  return dev.kind ? KIND_LABEL[dev.kind] : MEASUREMENT_LABEL[dev.lead.feed] || dev.lead.feedLabel || dev.lead.feed || '';
+}
+
+/**
+ * THE FIRST BULLET: what happened, what kind of item it is, and a link to the record itself.
+ *
+ * The customer's reading of Puravankara: a ₹2,600 crore redevelopment win was the company's own
+ * BSE announcement and the card led with a publisher's write-up of it, as generic news. The lead is
+ * now the development's (data/alert-developments.js) — the filing wherever there is one — so the
+ * chip says "Corporate announcement", the source says which exchanges filed it, and the sentence
+ * opens that filing. The reports folded under it are counted beside it and listed in its title.
+ */
+function whatHappenedMarkup(card, scope) {
+  const dev = alerts.leadDevelopment(card);
+  const lead = dev?.lead || alerts.leadEvent(card);
+  const destination = lead ? evidenceDestination(lead, scope) : null;
+  const folded = dev ? foldedSummary(dev) : '';
+  const source = dev ? developmentSource(dev) : '';
+  const chipTone = dev?.kind === 'filing' ? 'bg-indigo-50 text-indigo-700 ring-indigo-100' : 'bg-slate-50 text-slate-600 ring-slate-200';
+  const meta = dev ? `
+    <div data-ai-lead-meta class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span data-ai-kind="${escapeHtml(dev.kind || lead?.feed || '')}" class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${chipTone}">${escapeHtml(kindLabel(dev))}</span>
+      ${source && dev.kind ? `<span data-ai-lead-source class="text-[11px] font-semibold text-slate-500">${escapeHtml(source)}</span>` : ''}
+      ${folded ? `<span data-ai-folded class="text-[11px] text-slate-400" title="${escapeHtml(`Folded into this item — the same development, so it is counted once:\n${foldedList(dev, { limit: 25 })}`)}">+ ${escapeHtml(folded)}</span>` : ''}
+    </div>` : '';
+  const sentence = escapeHtml(card.insight);
+  const title = lead ? ` title="${escapeHtml(`${lead.feedLabel || lead.feed} · ${lead.headline || ''}`)}"` : '';
+  const body = destination
+    ? `<a data-ai-lead-link href="${escapeHtml(destination.href)}" ${destination.external ? 'target="_blank" rel="noopener noreferrer"' : ''}
+        aria-label="${escapeHtml(destination.ariaLabel)}" class="rounded transition hover:text-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">${sentence}</a>`
+    : sentence;
+  return `${meta}<p data-ai-insight class="font-display mt-1 text-[17px] font-bold leading-snug text-slate-900"${title}>${body}</p>`;
+}
+
+/**
+ * THE SECOND BULLET: so what — the likely earnings or valuation implication, written by the model
+ * and marked AI on its face. Absent (with its reason) rather than guessed; see ui/alert-note.js.
+ */
+function soWhatMarkup(card) {
+  const request = cardNoteRequest(card);
+  if (!request) return '';
+  return cardSection('So what? · AI reading', `<p data-ai-note="${escapeHtml(request.handle)}" class="mt-0.5 text-[15px] font-medium leading-snug text-slate-800">${noteBodyHtml(request)}</p>`,
+    `data-ai-sowhat title="${escapeHtml(NOTE_DISCLOSURE)}"`);
+}
+
 function cardMarkup(card, scope, day, archived = false) {
   const sizes = report?.meta?.positionSizes;
   const sizeTitle = sizes ? `Workbook period · ${fmtDay(sizes.bookAsOf)}. Portfolio checked ${sizes.checkedAt}. ${sizes.valuation === 'workbook' ? 'Weights use the latest uploaded workbook marks.' : 'Weights use available prices; quote freshness varies.'} Percentages include held equities, ETFs and liquid positions in the listed book.` : '';
@@ -736,13 +809,13 @@ function cardMarkup(card, scope, day, archived = false) {
     neutral: { edge: 'border-l-slate-300', badge: 'bg-white text-slate-600 ring-slate-200' },
   }[badge.tone] || { edge: 'border-l-slate-300', badge: 'bg-white text-slate-600 ring-slate-200' };
   const newest = latestAlertEvent(card);
-  const events = byNewestFirst(alerts.topEvidence(newest ? { ...card, events: [newest, ...card.events.filter(event => event !== newest)] } : card, EVIDENCE_ROWS));
-  const rest = card.events.length - events.length;
+  // One row per DEVELOPMENT (see `topEvidence`): the newest signal is pinned by its development's
+  // lead, so a report folded under a filing can never come back as a second row of its own.
+  const events = byNewestFirst(card.developments?.length
+    ? alerts.topEvidence(card, EVIDENCE_ROWS, { first: newest })
+    : alerts.topEvidence(newest ? { ...card, events: [newest, ...card.events.filter(event => event !== newest)] } : card, EVIDENCE_ROWS));
+  const rest = (card.developments?.length || card.events.length) - events.length;
   const signal = latestAlertSignal(card);
-  // The sentence is one source's own claim, sometimes chosen from the exchange's description and
-  // sometimes clipped on a word boundary — so the untouched wording, and which feed it came from,
-  // stay one hover away. See `plainHeadline` / `filingClaim`.
-  const lead = alerts.leadEvent(card);
   return `
     <article data-ai-card data-ai-key="${escapeHtml(card.key || card.ticker || card.entityId)}" data-ticker="${escapeHtml(card.ticker || '')}" data-entity-id="${escapeHtml(card.entityId || '')}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
       class="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 ${archived ? 'border-l-slate-200' : tone.edge} bg-white shadow-sm ring-1 ring-slate-100"
@@ -763,12 +836,13 @@ function cardMarkup(card, scope, day, archived = false) {
         </p>
         ${Number.isFinite(card.holdingWeightPct) ? `<p data-ai-holding-size title="${escapeHtml(sizeTitle)}" class="mt-1 text-xs font-semibold text-indigo-700">${card.holdingWeightPct > 0 && card.holdingWeightPct < 0.01 ? '&lt;0.01' : card.holdingWeightPct.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of listed portfolio</p>` : ''}
 
-        ${cardSection('What happened', `<p data-ai-insight class="font-display mt-0.5 text-[17px] font-bold leading-snug text-slate-900"${lead ? ` title="${escapeHtml(`${lead.feedLabel || lead.feed} · ${lead.headline || ''}`)}"` : ''}>${escapeHtml(card.insight)}</p>${confluenceMarkup(card)}`)}
+        ${cardSection('What happened', `${whatHappenedMarkup(card, scope)}${confluenceMarkup(card)}`)}
+        ${soWhatMarkup(card)}
         ${kpiMarkup(card, scope)}
 
         ${listHeadMarkup(card)}
         <ul data-ai-evidence class="mt-1 space-y-0.5">
-          ${events.map((event) => eventMarkup(event, scope, day)).join('')}
+          ${events.map((event) => eventMarkup(event, scope, day, alerts.developmentOfEvent(card, event))).join('')}
         </ul>
         ${contextMarkup(card, scope)}
       </div>
@@ -809,14 +883,16 @@ const DOT_TONE = {
  * published a clock, the IST time. A relative age invented down to the hour for a day-only feed
  * would be this dashboard being precise about something nobody measured.
  */
-function eventMarkup(event, scope, day) {
+function eventMarkup(event, scope, day, dev = null) {
   const destination = evidenceDestination(event, scope);
   const tag = alerts.FEED_TAG[event.feed] || String(event.feedLabel || event.feed || '').toUpperCase();
   const age = relativeAge(event.day, day);
   const when = `${fmtDay(event.day)}${event.time ? ` · ${event.time} IST` : ' · day only'}`;
   // Plain where this dashboard wrote the sentence, verbatim where somebody else did — see
-  // `plainHeadline`. The tooltip always carries the feed's own wording so nothing is lost.
-  const claim = alerts.plainHeadline(event);
+  // `plainHeadline`. The tooltip always carries the feed's own wording so nothing is lost. A row
+  // that stands for a development prints that development's line and counts what folded under it.
+  const claim = dev ? alerts.developmentClaim(dev) : alerts.plainHeadline(event);
+  const folded = dev ? foldedSummary(dev) : '';
   const readings = driverReadings(event);
   // THE CHIP MUST REACH A SCREEN READER TOO. The link carries an aria-label, which replaces its
   // own contents for assistive technology — so a chip rendered inside it would be silently dropped
@@ -836,6 +912,7 @@ function eventMarkup(event, scope, day) {
         <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT_TONE[event.direction] || DOT_TONE.neutral}" aria-hidden="true"></span>
         <span class="min-w-0 flex-1">
           <span class="line-clamp-2 block text-sm font-medium leading-snug text-slate-800 group-hover:text-slate-900" title="${escapeHtml(event.headline || '')}">${escapeHtml(claim)}</span>
+          ${folded ? `<span data-ai-event-folded class="block text-[11px] text-slate-400" title="${escapeHtml(foldedList(dev, { limit: 25 }))}">+ ${escapeHtml(folded)}</span>` : ''}
           ${driverChipsMarkup(readings)}
         </span>
         <span data-ai-event-source class="mt-0.5 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider ${recent ? 'text-slate-600' : 'text-slate-400'}" title="${escapeHtml(`${event.feedLabel || event.feed} · ${when}`)}">${escapeHtml(tag)} · <time data-ai-age data-day="${escapeHtml(event.day)}" datetime="${escapeHtml(event.time ? `${event.day}T${event.time}+05:30` : event.day)}">${escapeHtml(age)}</time></span>

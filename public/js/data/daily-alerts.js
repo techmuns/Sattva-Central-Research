@@ -964,6 +964,22 @@ const COLLECTORS = {
   ...Object.fromEntries(ADDITIONAL_SOURCES.map((s) => [s.id, s.read])),
 };
 
+// THE PROJECTION IS KEPT PER SOURCE EVENT. Every read of a feed spread each event into a new
+// object, so every per-row reading downstream — the development fold, the search text, the
+// ranking's own cache — missed on every collection, and a 124,000-row All Alerts stream re-folded
+// from nothing on each partial publication (measured: 0.4–1.2s of sliced work per update, long
+// enough for a newly arrived filing to reach the table after the reader had looked). Rows are
+// replaced, never edited, so the same source event under the same feed is the same projection.
+const projections = new WeakMap();
+function projectedEvent(event, feed) {
+  const day = eventDay(event);
+  const hit = projections.get(event);
+  if (hit && hit.day === day && hit.feed === feed.id && hit.feedLabel === feed.label && hit.tab === feed.tab) return hit;
+  const value = { ...event, day, feed: feed.id, feedLabel: feed.label, tab: feed.tab };
+  projections.set(event, value);
+  return value;
+}
+
 function toFeedRow(feed, out, day) {
   const seen = new Map();
   const events = (out.events || []).filter((event) => {
@@ -976,7 +992,7 @@ function toFeedRow(feed, out, day) {
     const signature = JSON.stringify(event.sourceRecord || event);
     if (prior.signatures.has(signature)) return false;
     prior.signatures.add(signature); return true;
-  }).map((event) => ({ ...event, day: eventDay(event), feed: feed.id, feedLabel: feed.label, tab: feed.tab }));
+  }).map((event) => projectedEvent(event, feed));
   let oldestDay = null, newestDay = null, todayCount = 0;
   for (const event of events) {
     if (event.day === day) todayCount++;
@@ -1771,8 +1787,20 @@ export function announcementEvent(r) {
     // is already reproduced in `detail`; naming it separately is what lets the card fall back to
     // it without splitting a joined string, and nothing here is reworded.
     filingSubject: r.title || r.headline || null,
+    // A row lodged on both exchanges is merged keeping the first exchange's subject — NSE's bare
+    // "Press Release" — and BSE's full title arrives as `headline` beside it. It is the same filing's
+    // other statement of itself, kept so the alert surfaces can print the one that says what happened.
+    filingHeadline: r.title && r.headline && r.headline !== r.title ? r.headline : null,
     filingSubCategory: r.subCategory || null,
-    filingDescription: r.description || null,
+    // NSE's own description of a filing reaches this feed as `summary` on the company-capture rows
+    // ("…titled \"Puravankara secures Rs 2,600 crore redevelopment project…\"") and as `description`
+    // on the exchange-wide ones. Reading only the second left those rows with the bare subject
+    // "Press Release" as their claim.
+    filingDescription: r.description || r.summary || null,
+    // One PDF lodged on both exchanges carries one hash, which is how the alert surfaces know the two
+    // rows are one filing (js/data/alert-developments.js). A top-level field, because the AI pool
+    // carries events without their source record.
+    documentHash: r.documentHash || null,
   };
   announcementEvents.set(r, event);
   return event;

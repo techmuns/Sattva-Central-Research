@@ -5071,6 +5071,115 @@ told about Friday's, with nothing on screen saying so. Entries lapse after seven
 beyond the alert window the events they refer to have left it. Nothing is ever deleted: the
 `Archived · n` chip is always on screen and `Restore` is one click.
 
+### One development, one item — `js/data/alert-developments.js` (DERIVED)
+
+The customer's reading of Puravankara (September 2026): one ₹2,600 crore Goregaon redevelopment win
+reached the desk as its BSE announcement, the NSE copies and a stream of publisher write-ups — seven
+or eight items of one event — and the card led with a write-up, so a corporate announcement read as
+generic news. Both alert surfaces now FOLD what one development produced into one item. Nothing is
+collected, stored or deleted by it; every source row is still in the report, the pool and the export.
+
+What folds (company by company, never across two companies):
+
+| Rule | Folds |
+| --- | --- |
+| exchange copy | rows with one `documentHash`; rows lodged within `FILING_COPY_MINUTES` (60) whose statements are the same text; NSE's structured-form subject (*Resignation of Director/KMP/SMP*) beside the statement it categorises; a row on the OTHER, named exchange within the hour sharing a word or figure. The last two need the source's own time on both rows and both exchanges named. |
+| report of it | a publisher story whose headline shares a figure and a word with the development, three of its words (four if a rupee figure disagrees), or two within `NEAR_HOURS` (36) — counted against what the development is ABOUT (its first row and its filings), inside `DEVELOPMENT_WINDOW_DAYS` (7). |
+
+What never folds: a related-entity report, a reviewed-unrelated result, a denial / cancellation /
+clarification with what it answers, a prospective story with a completed one unless a rupee figure
+agrees, a second filing by its words alone (only as an exchange copy), and — as an OPENER — a
+possible search match: an uncertain story may join a development a filing or a confirmed report
+opened, and nothing ever joins one it opened.
+
+The development object: `{ id, key, lead, members, others, kind, label, venues, filings, reports,
+posts, publishers, importance, importanceReason, importanceFrom, direction, signalReason,
+directionFrom, day, time, latestDay, latestTime, statement, companyNames }`. `lead` is the company's
+own filing where there is one (a statement before a bare category, the richer statement, BSE before
+NSE), then the confirmed, material, earliest report. `kind` is `filing` / `news` / `post`, or null for a
+measurement (a price move, a result, a disclosure), which is always its own development. `label` is
+**Corporate announcement** for a filing. Importance and direction are the lead's, or a member's
+where the lead's is weaker, and the row says which member (`importanceFrom`, `directionFrom`).
+
+**LINE 1** (`developmentLine`) is the lead's own statement — the filing's chosen statement or the
+publisher's headline — with three typographic changes: the company's own name opening the line is
+dropped (the item is headed with it), a trailing masthead is dropped, and rupee amounts print the
+Indian way (*Rs. 2600 Crore* → *₹2,600 Cr*). For a filing the statement is the SHORTEST of the company's
+and the exchange's own texts that names at least four things, keeps half of what the richest names
+and carries every rupee amount (*Launch of phase 6 of the existing project Provident Equinox*, not
+NSE's long description of it; never a bare category like *Giving guarantees/indemnity*), with
+*Intimation of* dropped. All Alerts prints that statement on a filing row with the company name kept
+(the table is not headed with it) and the source's own headline on every other row; the untouched
+subject is the row's title and is exported.
+
+Where it is read:
+
+- **AI Alerts** (`rankSteps`): each card folds its window's events (`card.developments`, in score
+  order). The first bullet is the lead development's LINE 1 (`whatHappened`); evidence rows go one per
+  development (`topEvidence`); the counts behind the score read developments (thirty write-ups of one
+  win are one high-importance event); the card's date is its newest material development's lead
+  (a late write-up does not make last week's win today's news); and the archive identity
+  (`materialEvidence`) is one per development — a further report of an archived development does not
+  bring the card back, a new development or the company's own filing arriving after the news does.
+- **All Alerts**: Till Today shows one row per development (`foldAlertRows`, sliced past 2,500 rows
+  with `foldAlertRowsInSlices` — the same answer), labelled *Corporate announcement · BSE · NSE* where
+  the lead is a filing, the row opening the filing, *Also · 2 exchange copies · 30 news reports* with
+  every member listed in its title. Search reads every member; the Date range and Company relationship
+  filters match a row when its lead or any member does; the export adds Kind, Development (short line),
+  So what? (AI), Also reported (count) and Also reported (source · date — headline — link). Upcoming is
+  not folded. The feed chips still count what each source holds.
+
+Only compact fields are read — the headline, the filing's own subject, title and description, the
+URL, the detail line, the day and time and the document hash — so an AI-pool event, which drops its
+source record, folds exactly as the full event does. `node scripts/verify-alert-developments.mjs`.
+
+### The alerts' "So what?" line — `POST /api/alert-notes`
+
+The second bullet of an alert: the likely earnings or valuation implication of the development, one
+line, written by Claude on Bedrock (`CLAUDE_KEY` on the Worker, the credential Ask Research and the
+brief's filing notes use; never the browser). It is the one reading on either alert surface that is not a stated rule, so it carries the
+brief's constraints and is refused rather than repaired when it breaks one.
+
+Request (same origin only, `ALERT_NOTES_LIMITER` 30/min per address, ≤ `NOTE_REQUEST_ITEMS` (8) items,
+≤ 32 KB):
+
+```json
+{ "items": [{ "id": "0", "kind": "filing", "company": "Puravankara Ltd", "ticker": "PURVA",
+  "sector": "Realty", "day": "2026-09-17", "line": "Secures ₹2,600 Cr redevelopment project in Goregaon",
+  "headline": "Puravankara Limited secures Rs. 2600 Crore redevelopment project in Goregaon",
+  "detail": "BSE · Press Release / Media Release", "related": [] }] }
+```
+
+`kind` is one of `filing`, `news`, `result`, `insider`, `investor` — a price or volume reading, public
+chatter, a con-call's third-party analysis, a social post and an unconfirmed or related-entity report
+are never asked about. The page asks for the developments on screen only: the lead development of each
+visible AI Alerts card, and the material developments mounted in All Alerts' viewport. The question is
+built from the development's LEAD alone, so the card and the row ask the identical question and share
+one note.
+
+Response: `{ ok: true, notes: { "<id>": { note, model, stored } }, missing: { "<id>": reason }, checkedAt }`.
+`ok: false` carries a `reason` and no `notes`. Reasons, each printed on the card in words
+(`NOTE_REASON`): `no-worker` (a static origin — 404/405/501), `no-key`, `refused`, `rate-limited`,
+`budget`, `upstream`, `timeout`, `unreadable`, `empty`, `invalid`, and the three refusals of a written
+note — `unhedged` (it said "will"), `advice`, `price-call` — plus `unsupported-figure` (it named a
+number the source does not state; the current and next fiscal-year labels from CONTEXT are the only
+figures it may add).
+
+The store — one Durable Object, `alert-notes:v1`, on the `ALERT_NOTES` binding (the provisioned
+CaptureRegistry class, its own storage): table `alert_notes (key, note, model, created_at)` keyed by
+the SHA-256 of everything the model was given (`noteContent`: prompt version, company, ticker, sector,
+industry, kind, day, line, headline, detail, related — never the caller's id, so nobody can file a
+note against somebody else's text), and `alert_notes_meta.budget` `{ day, used }` bounding NEW notes to
+`NOTE_DAILY_LIMIT` (1,200) per Indian day. A stored note is served to every later reader at no model
+cost; two readers asking at once share one request. Notes older than `NOTE_KEEP_DAYS` (60) are dropped
+on the first spend of a day. The browser keeps notes in memory only.
+
+The model sees the development's statement, headline and detail, the company's name and sector, the
+day, and CONTEXT `{ today, fiscalYears: { current: "FY27 (April 2026 – March 2027)", next: "FY28" } }`
+— no link, no document, nothing fetched. The line is marked **So what? · AI reading** on its face, with
+the disclosure (`NOTE_DISCLOSURE`) on the card, the row and the export banner.
+`node scripts/verify-alert-notes.mjs`.
+
 ## Tracked news keywords — DERIVED, no file and no route of its own
 
 `js/data/news-keywords.js` is pure, has no dependencies and writes nothing. It exports `KEYWORDS`

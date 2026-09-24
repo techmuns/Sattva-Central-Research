@@ -11,6 +11,7 @@ import { BreakoutSchedule } from './breakout-schedule.mjs';
 import { BreakoutPrimary, PRIMARY_OBJECT, PRIMARY_TIMER } from './breakout-primary.mjs';
 import { NewsletterStore } from './newsletter-store.mjs';
 import { NewsletterSchedule, NEWSLETTER_TIMER_KEY } from './newsletter-schedule.mjs';
+import { AlertNotesStore } from './alert-notes-store.mjs';
 import { CAPTURE_REGISTRY_LIMIT, CAPTURE_REGISTRATION_BATCH, registeredCompany } from '../public/js/data/capture-registration-shared.js';
 
 // Each shard coordinates one bounded set of issuer registrations. No reader identity is stored.
@@ -37,6 +38,9 @@ export class CaptureRegistry extends DurableObject {
     // log in SQLite, the send timer in KV, and the alarm below is what actually emails the desk.
     this.newsletter = new NewsletterStore(ctx.storage);
     this.newsletterSchedule = new NewsletterSchedule(ctx.storage, env, this.newsletter);
+    // The alerts' "So what?" notes live in their own fixed object (alert-notes:v1); its tables are
+    // created on first use there and nowhere else. See worker/alert-notes-store.mjs.
+    this.notes = new AlertNotesStore(ctx.storage, env);
     this.ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS companies (isin TEXT PRIMARY KEY, ticker TEXT NOT NULL, name TEXT NOT NULL)');
   }
   status() { return this.schedule.status(); }
@@ -97,6 +101,8 @@ export class CaptureRegistry extends DurableObject {
   mfScannerStatus() { return this.mutualFundsScanner.status(); }
   mfPrivateRead(isins,cursor) { return this.mutualFundsScanner.read(isins,cursor); }
   mfPrivateDetail(isin,month) { return this.mutualFundsScanner.detail(isin,month); }
+  alertNotesRead(items) { return this.notes.read(items); }
+  alertNotesStatus() { return this.notes.status(); }
   async alarm() {
     if (await this.ctx.storage.get(MF_TIMER)) { await this.mutualFundsSchedule.wake(); return; }
     if (await this.ctx.storage.get(PRIMARY_TIMER)) await this.breakoutPrimary.wake();

@@ -43,6 +43,11 @@ import { openFilingSource } from '../ui/xbrl-filing.js';
 import { createAlertArrivals } from '../core/alert-arrivals.js';
 import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
 import { alertWindowKey } from '../data/all-alerts-cache.js';
+import { foldAlertRows, foldAlertRowsInSlices, foldedAlready, sameRowSequence, developmentOfRow, developmentLine, developmentSource,
+  foldedSummary, foldedList, developmentSearchText, KIND_LABEL } from '../data/alert-developments.js';
+import { plainHeadline } from '../data/ai-alerts.js';
+import { noteRequestFor, requestNotes, onNotes } from '../data/alert-notes.js';
+import { noteRowHtml, noteExportText } from '../ui/alert-note.js';
 
 export const meta = {
   id: 'daily-alerts',
@@ -95,6 +100,12 @@ let horizon = HORIZON.THROUGH;
 let renderedHorizon = HORIZON.THROUGH;
 let renderedDay = null;
 let renderedScope = null;
+// The reader's own inputs at the last completed paint, and the view whose FOLDED rows are on
+// screen — see ONE VIEW AT A TIME in `paint`. `showingProvisional` marks rows shown before their
+// first fold landed.
+let renderedView = null;
+let settledView = null;
+let showingProvisional = false;
 let tableViews = { [HORIZON.THROUGH]: null, [HORIZON.UPCOMING]: null }; // one view per time horizon
 let routeCompany = null; // a company deep-link supplied by an AI Alert card
 // WHICH FEEDS ARE TICKED. `null` means All — deliberately not "a Set holding every id", because
@@ -179,6 +190,12 @@ export function render(ctx) {
 
   if (!unsubs.length) {
     unsubs.push(alerts.onChange(sourceChanged));
+    // A note landing redraws only the rows that draw it; the reader's row and scroll stay put.
+    unsubs.push(onNotes((handles) => {
+      const keys = new Set();
+      for (const handle of handles) for (const key of rowsByNoteHandle.get(handle) || []) keys.add(key);
+      if (keys.size && tableInstance) tableInstance.updateRows(keys);
+    }));
     unsubs.push(coverage.onChange(({ changed }) => { if (changed) membershipChanged(); }));
     unsubs.push(watchlist.onChange(membershipChanged));
     unsubs.push(scopeLists.onChange(membershipChanged));
@@ -266,6 +283,12 @@ export function destroy() {
   arrivalsUI.detach();
   arrivals.reset();
   ctxRef = null;
+  foldToken++;
+  foldingRows = null;
+  renderedView = settledView = null;
+  showingProvisional = false;
+  clearTimeout(noteTimer); noteTimer = 0;
+  rowsByNoteHandle.clear();
   loadToken++;
   cacheToken++;
   clearTimeout(sourceTimer); sourceTimer = null; sourceDirty = false;
@@ -417,6 +440,106 @@ function cancelDeferredPaint() {
 // Paint
 // ---------------------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------------------
+// ONE DEVELOPMENT, ONE ROW
+//
+// The customer's reading of Puravankara: one ₹2,600 crore redevelopment win reached this stream as
+// its BSE filing, two NSE rows and a stream of publisher write-ups — seven or eight rows of one
+// event. So the Till Today stream is FOLDED (data/alert-developments.js): each development is one
+// row, led by the company's own filing where there is one and labelled a Corporate announcement,
+// with every other member counted on the row, listed in its title, searchable and exported. Nothing
+// is dropped and no feed count moves; the feed chips still count what each source holds.
+//
+// A LARGE STREAM FOLDS IN SLICES. A day's few thousand rows fold in a few tens of milliseconds;
+// the full retained history does not, so past `SYNC_FOLD_ROWS` the same fold runs in ~12ms slices
+// and the table keeps what it shows (or its placeholders) until the folded rows land. One
+// implementation, two drivers: the sliced answer is exactly the synchronous one.
+// ---------------------------------------------------------------------------------------
+const SYNC_FOLD_ROWS = 2500;
+let foldToken = 0;
+let foldingRows = null;
+const unfoldable = new WeakSet();
+
+function foldedStream(rows) {
+  if (!rows.length || unfoldable.has(rows)) return rows;
+  if (foldedAlready(rows) || rows.length <= SYNC_FOLD_ROWS) {
+    try { return foldAlertRows(rows); } catch { unfoldable.add(rows); return rows; }
+  }
+  if (foldingRows !== rows) {
+    // A report re-published with the same rows (a source settling with nothing new for this view)
+    // leaves the fold already running to finish; its answer is this array's answer too.
+    if (foldingRows && sameRowSequence(foldingRows, rows)) { foldingRows = rows; return null; }
+    foldingRows = rows;
+    const token = ++foldToken;
+    void foldAlertRowsInSlices(rows, { keepGoing: () => token === foldToken && !!ctxRef }).then((folded) => {
+      if (token !== foldToken) return;
+      foldingRows = null;
+      if (folded && ctxRef) paintAfterScroll();
+    }).catch(() => {
+      // A fold that fails shows the stream unfolded rather than not at all.
+      if (token !== foldToken) return;
+      foldingRows = null;
+      unfoldable.add(rows);
+      if (ctxRef) paintAfterScroll();
+    });
+  }
+  return null;
+}
+
+// THE "SO WHAT?" LINE ON A ROW. Asked for the material developments mounted on screen, never the
+// whole stream (data/alert-notes.js), and drawn once a note has landed (ui/alert-note.js). The
+// question is built from the development's lead alone, so a row here and its company's card in AI
+// Alerts ask the identical question and share one stored note.
+const rowNoteRequests = new WeakMap();
+const rowsByNoteHandle = new Map(); // note handle -> row keys drawing it
+function rowNoteRequest(row) {
+  if (rowNoteRequests.has(row)) return rowNoteRequests.get(row);
+  let request = null;
+  if (row.importance === 'high' && (row.ticker || row.entityId)) {
+    const dev = developmentOfRow(row);
+    request = dev ? noteRequestFor(dev, { fallback: plainHeadline(dev.lead) }) : null;
+  }
+  rowNoteRequests.set(row, request);
+  return request;
+}
+/** The row's question, registered so a landing note redraws this row. */
+function drawnNoteRequest(row) {
+  const request = rowNoteRequest(row);
+  if (request) {
+    const keys = rowsByNoteHandle.get(request.handle) || new Set();
+    keys.add(String(row.id));
+    rowsByNoteHandle.set(request.handle, keys);
+  }
+  return request;
+}
+
+let noteTimer = 0;
+function requestMountedNotes() {
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => {
+    noteTimer = 0;
+    const root = ctxRef?.root;
+    // Rows shown before their first fold landed are about to change; nobody is asked about them.
+    if (!root || horizon !== HORIZON.THROUGH || !tableRows?.length || showingProvisional) return;
+    const byKey = rowIndex(tableRows);
+    const requests = [];
+    for (const tr of root.querySelectorAll('tr[data-row-key]')) {
+      const row = byKey.get(tr.dataset.rowKey);
+      const request = row ? drawnNoteRequest(row) : null;
+      if (request) requests.push(request);
+      if (requests.length >= 16) break;
+    }
+    requestNotes(requests);
+  }, 350);
+}
+
+const rowIndexes = new WeakMap();
+function rowIndex(rows) {
+  let index = rowIndexes.get(rows);
+  if (!index) { index = new Map(rows.map((row) => [String(row.id), row])); rowIndexes.set(rows, index); }
+  return index;
+}
+
 const horizonPartitions = new WeakMap();
 const EMPTY_EVENTS = [];
 let lastVisible = null;
@@ -468,7 +591,31 @@ function paint(ctx) {
     const selected = picked ? period.filter(event => picked.has(event.feed)) : period;
     lastVisible = { events, selection, rows: horizon === HORIZON.UPCOMING ? collapseUpcoming(selected) : selected };
   }
-  const visible = lastVisible.rows;
+  // Till Today reads one row per development; a large stream still folding keeps the rows on screen
+  // (or the table's placeholders) and says it is loading, never an empty result.
+  const through = horizon !== HORIZON.UPCOMING;
+  const folded = through ? foldedStream(lastVisible.rows) : lastVisible.rows;
+  const folding = !folded;
+  // ONE VIEW AT A TIME, IN THREE CASES.
+  // - A BACKGROUND update over a view whose folded rows are on screen is held: the page keeps its
+  //   rows AND the source chips and counts above them until the fold lands, then paints the new view
+  //   whole. Painting the chips first announced a settled read over rows that did not yet hold what
+  //   it read (a newly arrived filing, measured, reached the table after the reader had looked).
+  // - A change the READER made is never held: the control shows their choice at once and the table
+  //   its loading rows until the fold lands, because a control that ignores a click reads as broken.
+  // - A view's FIRST rows are never held by its fold. Until one fold of the view has landed, rows
+  //   show as they arrive and fold in place when it does: a company's complete history is re-
+  //   published as each source settles, each publication restarted a cold fold, and the rows a
+  //   "See all" link opens reached the screen 6.3 seconds after they had arrived.
+  const readerView = JSON.stringify([selection, ctx.scope, tableViews[HORIZON.THROUGH]?.filters?.[2] || 'today']);
+  const sameView = !!tableInstance && !!tableRows && renderedHorizon === horizon && renderedDay === day &&
+    renderedScope === ctx.scope && renderedView === readerView;
+  if (folding && sameView && settledView === readerView) return;
+  const provisional = folding && renderedView === readerView;
+  renderedView = readerView;
+  if (!folding && through && folded.length) settledView = readerView;
+  showingProvisional = provisional;
+  const visible = folded || (provisional ? lastVisible.rows : EMPTY_EVENTS);
   const displayFeeds = shown.map(feed => {
     const parts = partitionEvents(feed.events, day);
     return { ...feed, count: horizon === HORIZON.UPCOMING ? parts.upcoming.length : parts.through.length,
@@ -525,9 +672,10 @@ function paint(ctx) {
       if (cov) cov.scrollTop = sourceScrollTop;
     }
     
-    const status = { loading: !report || report.pending > 0 };
+    const status = { loading: !report || report.pending > 0 || folding };
     if (tableRows === visible) tableInstance.updateStatus(status);
     else { tableInstance.updateData(visible, undefined, status); tableRows = visible; }
+    requestMountedNotes();
     return;
   }
 
@@ -538,7 +686,7 @@ function paint(ctx) {
   workspaceDispose?.();
   workspaceDispose = null;
   
-  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition, report?.pending === 0);
+  const table = eventsTable(ctx, visible, day, horizon, tableViews[horizon], tablePosition, report?.pending === 0, folding);
   tableViews[horizon] = table.view;
 
   ctx.root.innerHTML = `
@@ -588,6 +736,7 @@ function paint(ctx) {
   renderedDay = day;
   renderedScope = ctx.scope;
   restoreFocus(ctx.root, focus);
+  requestMountedNotes();
 }
 
 /**
@@ -1097,7 +1246,30 @@ export function collapseUpcoming(events) {
   return [...merged.values()];
 }
 
-function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, warmSearch = false) {
+// What a row IS, in the desk's words: the company's own filing is a Corporate announcement, with
+// the exchanges that carry it; anything else keeps the label its feed has always had.
+function kindLine(e, dev) {
+  if (dev?.kind !== 'filing') return '';
+  const source = developmentSource(dev);
+  return `<div data-alert-kind="filing" class="truncate text-xs font-semibold text-indigo-700" title="The company's own statement to the exchange${source ? ` (${escapeHtml(source)})` : ''}. The row opens the filing.">${escapeHtml(KIND_LABEL.filing)}${source ? ` · ${escapeHtml(source)}` : ''}</div>`;
+}
+
+// Everything the row's development folded, counted on the row and listed in its title.
+function foldedLine(dev) {
+  const summary = dev ? foldedSummary(dev) : '';
+  if (!summary) return '';
+  return `<div data-alert-folded class="truncate text-xs text-slate-500" title="${escapeHtml(`Folded into this row — the same development, counted once:\n${foldedList(dev, { limit: 40 })}`)}"><span class="text-slate-400">Also ·</span> ${escapeHtml(summary)}</div>`;
+}
+
+// Search reads every member of a development, so a word from any report still finds its row.
+function rowSearchText(e) {
+  const base = alerts.eventSearchText(e);
+  const dev = e.development;
+  if (!dev) return base;
+  return `${base} ${KIND_LABEL[dev.kind] || ''} ${developmentLine(dev)} ${developmentSearchText(dev)}`;
+}
+
+function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, warmSearch = false, folding = false) {
   const matchesDate = dateRangeMatcher(day);
   const dateColumn = {
     label: 'Date / time',
@@ -1111,14 +1283,27 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
   };
   const eventColumn = {
     label: mode === HORIZON.UPCOMING ? 'What is scheduled' : 'What happened',
-    get: (e) => `
+    get: (e) => {
+      // Till Today rows are developments: the kind, the shortest line of the lead's own statement
+      // (its untouched wording in the title), what folded under it, and the AI "So what?" once it
+      // has landed. Upcoming rows are schedules and read exactly as they always did.
+      const dev = mode === HORIZON.UPCOMING ? null : developmentOfRow(e);
+      // A filing reads as its own statement — the shortest of the company's and the exchange's
+      // texts that still says what happened ("Launch of phase 6 of the existing project Provident
+      // Equinox" where NSE's subject is "Product launch"), the company name kept because this
+      // table is not headed with it. Any other row reads as the source's own headline. The
+      // untouched subject is the title, and the export carries both.
+      const line = dev?.kind === 'filing' ? developmentLine(dev, { keepCompany: true }) || e.headline : e.headline;
+      return `
       <div class="max-w-[560px]">
+        ${kindLine(e, dev)}
         ${e.feed === 'news' ? `<div data-news-attribution="${escapeHtml(e.attribution?.status || 'uncertain')}" class="text-xs font-semibold text-slate-600" title="${escapeHtml(e.attribution?.reason || 'Company relationship unverified')}">${escapeHtml(attributionLabel(e))}</div>` : ''}
-        <div class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${escapeHtml(e.headline)}</div>
+        <div class="truncate font-medium text-slate-800" data-alert-line title="${escapeHtml(e.headline)}">${escapeHtml(line)}</div>
         <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
-        ${mode === HORIZON.UPCOMING ? '' : `<div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
+        ${mode === HORIZON.UPCOMING ? '' : `${foldedLine(dev)}${noteRowHtml(drawnNoteRequest(e))}<div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
         <div class="truncate text-[11px] ${e.importance === 'high' ? 'font-semibold text-violet-700' : 'text-slate-400'}" title="${escapeHtml(e.importanceReason || '')}"><span class="text-slate-400">Priority ·</span> ${escapeHtml(e.importanceReason || '')}</div>`}
-      </div>`,
+      </div>`;
+    },
     html: true,
     sortValue: (e) => String(e.headline || '').toLowerCase(),
   };
@@ -1138,7 +1323,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
   const filters = buildTableFilters(events, day, mode, matchesDate);
   return scoreTable({
     rows: events,
-    loading: !report || report.pending > 0,
+    loading: !report || report.pending > 0 || folding,
     key: (e) => e.id,
     watchKey: (e) => e.ticker || null,
     watchName: (e) => e.company,
@@ -1162,7 +1347,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     fillMode: 'windowed',
     virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 120,
     preindexSearch: warmSearch,
-    onScrollActivity: noteTableScroll,
+    onScrollActivity: () => { noteTableScroll(); requestMountedNotes(); },
     onVisibleRowsChange: mode === HORIZON.THROUGH ? rows => arrivalsUI.setRows(rows) : null,
     onFilterChange: mode === HORIZON.THROUGH ? (_view, index) => {
       if (index === 2 && ctxRef && alertWindowKey(report?.queryWindow) !== alertWindowKey(currentContext().queryWindow)) render(ctxRef);
@@ -1199,7 +1384,7 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     },
     // Query identity remains searchable as a possible match, not publisher evidence. The explicit
     // relationship filter can separate those leads without silently deleting retained coverage.
-    searchable: alerts.eventSearchText,
+    searchable: rowSearchText,
     filters,
     initialSort: { key: 'Date / time', dir: mode === HORIZON.UPCOMING ? 'asc' : 'desc' },
     initialView,
@@ -1233,7 +1418,10 @@ function buildTableFilters(events, day, mode, matchesDate) {
       ],
       match: (e, v) => e.direction === v,
     },
-    { label: 'Date range', value: 'today', options: dateRangeOptions(events, day, mode), match: (e, v) => matchesDate(e.day, v) },
+    // A folded row is in a period when its lead is, or when anything folded under it is: a filing
+    // from yesterday with today's reports of it is still something that reached the desk today.
+    { label: 'Date range', value: 'today', options: dateRangeOptions(events, day, mode),
+      match: (e, v) => matchesDate(e.day, v) || !!e.development?.others.some((m) => m.day !== e.day && matchesDate(m.day, v)) },
     {
       label: 'Company relationship',
       options: [
@@ -1243,7 +1431,7 @@ function buildTableFilters(events, day, mode, matchesDate) {
         { value: 'uncertain', label: 'Possible news matches' },
         { value: 'unrelated', label: 'Reviewed unrelated news' },
       ],
-      match: matchesCompanyRelationship,
+      match: (e, v) => matchesCompanyRelationship(e, v) || !!e.development?.others.some((m) => matchesCompanyRelationship(m, v)),
     },
   ];
 }
@@ -1330,7 +1518,7 @@ function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
   const upcoming = mode === HORIZON.UPCOMING;
   const modeNote = upcoming
     ? 'Every row is scheduled evidence, not confirmation that an event occurred; no directional inference is shown in this view. '
-    : `Includes captured records, explicitly labelled snapshots and undated records. Direction (positive/negative/neutral) and Importance (high/low) are independent; every row carries both reasons. High thresholds: price ±${alerts.MOVE_PCT}%; insider ${alerts.INSIDER_HIGH_PCT}% or ₹${alerts.INSIDER_HIGH_VALUE / 10_000_000} crore; investor presence change or ${alerts.INVESTOR_HIGH_PP}pp; chatter ${alerts.CHATTER_HIGH_MENTIONS} mentions or ${alerts.CHATTER_HIGH_CHANGE_PCT}% mention change. Announcement direction is rule-derived and unmatched filings stay neutral; news stays neutral. `;
+    : `Includes captured records, explicitly labelled snapshots and undated records. ONE ROW PER DEVELOPMENT: exchange copies of one filing and publishers' reports of it are folded into the row of their lead (the company's own filing where there is one), and every folded item is listed with its source, date and link in "Also reported". The "So what? (AI)" column is written by an AI model from the row's own source statement only — a possibility, not a forecast, a price call or a recommendation; it may be wrong — and is blank where no note was requested. Direction (positive/negative/neutral) and Importance (high/low) are independent; every row carries both reasons. High thresholds: price ±${alerts.MOVE_PCT}%; insider ${alerts.INSIDER_HIGH_PCT}% or ₹${alerts.INSIDER_HIGH_VALUE / 10_000_000} crore; investor presence change or ${alerts.INVESTOR_HIGH_PP}pp; chatter ${alerts.CHATTER_HIGH_MENTIONS} mentions or ${alerts.CHATTER_HIGH_CHANGE_PCT}% mention change. Announcement direction is rule-derived and unmatched filings stay neutral; news stays neutral. `;
   const banner = {
     __banner: true,
     line:
@@ -1359,6 +1547,13 @@ function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
       { header: 'Searched company (not attribution)', key: 'queryCompany', width: 32, get: cell((r) => r.attribution?.queryCompany || '') },
       { header: 'News attribution evidence', key: 'newsEvidence', width: 60, get: cell((r) => r.attribution ? JSON.stringify(r.attribution) : '') },
       { header: upcoming ? 'What is scheduled' : 'What happened', key: 'headline', width: 60, get: cell((r) => r.headline) },
+      ...(!upcoming ? [
+        { header: 'Kind', key: 'developmentKind', width: 22, get: cell((r) => KIND_LABEL[developmentOfRow(r)?.kind] || r.feedLabel || '') },
+        { header: 'Development (short line)', key: 'developmentLine', width: 60, get: cell((r) => { const dev = developmentOfRow(r); return dev?.kind ? developmentLine(dev) : ''; }) },
+        { header: 'So what? (AI — not a forecast or advice)', key: 'soWhat', width: 60, get: cell((r) => noteExportText(rowNoteRequest(r))) },
+        { header: 'Also reported (count)', key: 'foldedCount', width: 14, get: cell((r) => developmentOfRow(r)?.others.length || 0) },
+        { header: 'Also reported (source · date — headline — link)', key: 'folded', width: 80, get: cell((r) => { const dev = developmentOfRow(r); return dev?.others.length ? foldedList(dev, { limit: 500, withLinks: true }) : ''; }) },
+      ] : []),
       { header: 'Detail', key: 'detail', width: 50, get: cell((r) => r.detail || '') },
       { header: 'Record type', key: 'kind', width: 16, get: cell((r) => r.kind || 'event') },
       { header: 'Source record (JSON)', key: 'sourceRecord', width: 60, get: cell((r) => JSON.stringify(r.sourceRecord || {})) },

@@ -35,10 +35,19 @@ export function latestSignal(events = []) {
 }
 
 /** Only a noteworthy source event advances an alert's default reading order.
- * Routine observations and a refreshed capture timestamp cannot make old news new. */
+ * Routine observations and a refreshed capture timestamp cannot make old news new — and neither can
+ * a fresh write-up of a development already on the card: a card that carries its developments is
+ * dated by each development's lead (the company's own filing where there is one), so the fortieth
+ * report of last week's order win does not move the card to the top as if it were today's news. */
 function alertSignals(card) {
+  const noteworthy = event => event.importance === 'high' && (event.aiEligible !== false || isRelatedNewsContext(event));
+  const developments = card?.developments;
+  if (developments?.length) {
+    const material = developments.filter(dev => dev.importance === 'high' && dev.members.some(event => event.aiEligible !== false || isRelatedNewsContext(event)));
+    return (material.length ? material : developments).map(dev => dev.lead);
+  }
   const events = card?.events || [];
-  const material = events.filter(event => event.importance === 'high' && (event.aiEligible !== false || isRelatedNewsContext(event)));
+  const material = events.filter(noteworthy);
   return material.length ? material : events;
 }
 

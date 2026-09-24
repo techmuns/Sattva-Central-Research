@@ -14,6 +14,7 @@ import { handleMutualFunds } from './mutual-funds.mjs';
 //   GET  /api/super-investors/{slug}           ->  one investor's book, quarter by quarter
 //   GET  /api/watchlist                        ->  the one shared watchlist + contributor roster
 //   POST /api/watchlist                        ->  apply add/remove edits, attributed by name
+//   POST /api/alert-notes                      ->  the alerts' AI "So what?" notes, stored per development
 //   GET  /api/newsletter                       ->  the team brief's list, schedule, timer and log
 //   POST /api/newsletter                       ->  subscribe / unsubscribe / edition edits
 //   POST /api/newsletter/send                  ->  build an edition now and send it
@@ -75,6 +76,7 @@ import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
 import { handleWatchlist } from './watchlist.mjs';
 import { handleNewsletter } from './newsletter.mjs';
+import { handleAlertNotes } from './alert-notes.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
 import { readScreenerConcallCollector, readScreenerConcallCollection } from './screener-concalls-collector.mjs';
 import { enrichConcallScans, SCREENER_CONCALL_FRESH_MS, SCREENER_CONCALL_WORKFLOW } from '../public/js/data/screener-concalls-shared.js';
@@ -157,6 +159,7 @@ export default {
     if (['/api/breakouts', '/api/breakouts/collector', '/api/breakouts/history', '/api/breakouts/health', '/api/breakouts/fallback'].includes(url.pathname)) return handleBreakouts(request, env);
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
+    if (url.pathname === '/api/alert-notes') return handleAlertNotes(request, env);
     if (url.pathname === '/api/newsletter' || url.pathname.startsWith('/api/newsletter/')) return handleNewsletter(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
       return handleConcallSummaries(request, env);

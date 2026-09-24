@@ -25,6 +25,9 @@ import { canonicalArticleUrl } from './filings-shared.js';
 import { getHostContext } from '../core/host-context.js';
 import { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 import { runSteps, runStepsInSlices } from '../core/slices.js';
+import { CLAIM_MAX, clip, isTypeOnly, sourceStatement, filingClaim } from './alert-claims.js';
+import { foldDevelopments, developmentLine, storyKindOf } from './alert-developments.js';
+export { CLAIM_MAX, sourceStatement, filingClaim } from './alert-claims.js';
 export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
 export const MIN_SCORE = 64;
@@ -121,11 +124,27 @@ function dedupe(events) {
 
 // Stable content identities for read/dismiss state. A new material item must resurface a company
 // even when an older, higher-scoring item remains on top. Routine observations do not wake it.
-export function materialEvidence(events = []) {
-  const material = events.filter((event) => event.importance === 'high');
-  return [...new Set((material.length ? material : events).map((event) => JSON.stringify([
-    feedFamily(event), event.id || null, event.day, event.headline, event.direction, event.importance,
-  ])))].sort();
+//
+// ONE IDENTITY PER DEVELOPMENT, NOT PER ROW. Puravankara's Goregaon win reached the desk as a BSE
+// filing, two NSE rows and a stream of publisher write-ups over the following days; keyed per row,
+// every new write-up of a development the reader had already archived was "new material evidence"
+// and brought the card back. So the identity is the development's first row of the kind that leads
+// it (see data/alert-developments.js): a further report of the same development, or the second
+// exchange's copy of the same filing, leaves it unchanged, while a new development, a source's
+// corrected headline or the company's own filing arriving after the news of it is new. A row that
+// folds with nothing is its own development and keeps exactly the identity it always had.
+// Kept on the development, which is one object for as long as its members are unchanged.
+function evidenceIdentity(dev) {
+  if (dev.evidenceIdentity === undefined) {
+    const anchor = dev.members.length === 1 ? dev.lead : dev.members.find((event) => storyKindOf(event) === dev.kind) || dev.lead;
+    dev.evidenceIdentity = JSON.stringify([feedFamily(anchor), anchor.id || null, anchor.day, anchor.headline, anchor.direction, dev.importance]);
+  }
+  return dev.evidenceIdentity;
+}
+
+export function materialEvidence(events = [], developments = foldDevelopments(events)) {
+  const material = developments.filter((dev) => dev.importance === 'high');
+  return [...new Set((material.length ? material : developments).map(evidenceIdentity))].sort();
 }
 
 function eventScore(event, day, feedState) {
@@ -428,139 +447,7 @@ export const FEED_TAG = {
   'market-news': 'NEWS',
 };
 
-/** The longest claim a card's sentence or a row carries before it is clipped on a word boundary. */
-export const CLAIM_MAX = 150;
 const CRORE = 10_000_000;
-
-/** A claim too long for the line, cut where a word ends. The untouched text stays in the tooltip. */
-function clip(text, max = CLAIM_MAX) {
-  const value = String(text || '').replace(/\s+/g, ' ').trim();
-  if (value.length <= max) return value;
-  const cut = value.slice(0, max);
-  const space = cut.lastIndexOf(' ');
-  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.–—-]+$/, '')}…`;
-}
-
-/**
- * A filing subject that names the filing TYPE rather than the event.
- *
- * This is the whole reason a card could announce "Press Release" over a ten-year supply contract.
- * Measured on the retained NSE window: 1,995 of 15,506 rows carry one of these as their subject —
- * 1,025 "General Updates", 707 "Updates", 251 "Press Release" — and 1,911 of those 1,995 carry a
- * description that says what the filing actually is. BSE's side of it is the pointer subjects:
- * "PFA", "Please refer the enclosed file.", "As per attachment".
- *
- * It is deliberately an EXACT-MATCH list of type words, not a length or a keyword heuristic.
- * "Investor Presentation", "Record Date" and "Resignation of Director/KMP/SMP" are short and are
- * real answers; the test is whether the subject names an event, and a pattern loose enough to
- * catch a bad subject by its shape would discard those too.
- */
-const TYPE_ONLY_SUBJECT = new RegExp(
-  '^(?:'
-  + 'updates?|general\\s+updates?|company\\s+updates?|press\\s+releases?|announcements?|'
-  + 'corporate\\s+announcements?|disclosures?|disclosure\\s+attached|intimations?|intimation\\s+of\\s+disclosure|'
-  + 'others?|news|filing|nse\\s+filing|pfa|na|n\\.?a\\.?|nil|none|attached|enclosed|media\\s+releases?|'
-  // THE POINTER PHRASES ARE BOUNDED TO POINTER WORDS, not left open with `.*`. Written greedily
-  // they swallowed a subject that says something: "Please find enclosed herewith the disclosure
-  // pertaining to incorporation of two Wholly-Owned Subsidiaries" is the whole event, and the card
-  // replaced it with BSE's one-word sub-category, "Acquisition". A pointer subject is a pointer
-  // and nothing else, so every word after "please find" has to be one of these to qualify.
-  + '(?:please|kindly)\\s+(?:refer|find|see)'
-  + '(?:\\s+(?:to|the|our|enclosed|attached|attachment|enclosure|annexure|file|document|herewith|below|copy))*|'
-  + 'as\\s+per\\s+(?:the\\s+)?attachments?|refer\\s+(?:the\\s+)?attach\\w*|-{1,2}|\\.'
-  + ')[\\s.]*$',
-  'i'
-);
-
-/**
- * EVERY SEGMENT HAS TO BE A TYPE WORD, because the exchanges publish these as alternatives.
- * "Press Release / Media Release" is BSE's sub-category for a press release and says no more than
- * either half of it does, and an exact-match list of single words let it through — one card led
- * with it while the filing beneath said what the release was. A subject with one real segment
- * ("Record Date / Book Closure") still names an event and is kept.
- */
-const isTypeOnly = (text) => {
-  const value = String(text || '').trim();
-  if (!value) return true;
-  return value.split(/\s*[/|]\s*/).filter(Boolean).every((part) => TYPE_ONLY_SUBJECT.test(part));
-};
-
-/**
- * A clause the prefix strip exposed, opened as a sentence.
- *
- * "…has informed the exchange about the approval of Board of Directors for withdrawal of
- * application of reclassification" is one sentence whose subject is the company, so removing that
- * subject leaves the rest starting "the" — a line that reads as a rendering bug. Capitalising a
- * letter is typography and not a change of claim.
- *
- * IT LEAVES A WORD THAT CAPITALISES ITSELF ALONE. The test is that the first word has no capital
- * of its own, so "the approval…" opens and "iPhone launch" or "eSIM rollout" are untouched — a
- * brand recapitalised would be this dashboard editing somebody's name, which the clip and the
- * prefix strip both exist to avoid.
- */
-const openingCase = (text) => {
-  const value = String(text || '');
-  const first = value.match(/^([a-z])([^\s]*)/);
-  if (!first || /[A-Z]/.test(first[2])) return value;
-  return value[0].toUpperCase() + value.slice(1);
-};
-
-const unquote = (text) => {
-  const value = String(text || '').trim().replace(/[.\s]+$/, '').trim();
-  const wrapped = value.match(/^["'‘“]([\s\S]+)["'’”]$/);
-  return (wrapped ? wrapped[1] : value).trim();
-};
-
-/**
- * What a filing says, in the source's own words.
- *
- * Two mechanical removals and one selection, and none of them is a paraphrase:
- *
- *  * `|SUBJECT: …` is the feed's own duplicate of the subject, appended to every NSE description.
- *  * `<Company> has informed the Exchange about/regarding` is an exchange-generated lead-in —
- *    9,622 of 15,506 retained rows carry it — and what follows it is the filing's own text.
- *  * Where they quote the company's own title for the filing ("…titled \"X\""), that quotation is
- *    the claim. Choosing which of their sentences to print is not writing one.
- */
-export function sourceStatement(text) {
-  const raw = String(text || '').replace(/\s*\|\s*SUBJECT\s*:[\s\S]*$/i, '').replace(/\s+/g, ' ').trim();
-  if (!raw) return '';
-  const titled = raw.match(/\btitled\s*["'‘“]([^"'’”]{12,})["'’”]/i);
-  if (titled) return titled[1].trim();
-  const body = raw
-    .replace(/^.{0,90}?\bhas\s+informed\s+the\s+Exchanges?\b[\s,]*(?:about|regarding|that)?\s*/i, '')
-    // BSE's own lead-in on a disclosure it received, the mirror of the one above.
-    .replace(/^the\s+Exchanges?\s+(?:has|have)\s+received\s*/i, '')
-    .trim();
-  return openingCase(unquote(body || raw));
-}
-
-/**
- * A filing's claim: its own subject where that names an event, the source's own description where
- * the subject only names a type, and the exchange's own sub-category as the floor.
- *
- * The order is what makes it honest. A subject that says something is never replaced — it is the
- * shortest true answer and it is theirs. A description is used only where it says something the
- * subject does not, because NSE repeats the subject as the description on some rows and sends
- * `''.` on others, and "General Updates: General Updates" is not an improvement on either.
- */
-export function filingClaim(event) {
-  const subject = String(event?.filingSubject || event?.headline || '').trim();
-  // THE SAME MECHANICAL LEAD-IN TURNS UP IN SUBJECTS, and there it costs the reader the answer.
-  // BSE carries no description, so the whole statement arrives as the subject: "Star Health and
-  // Allied Insurance Company Limited has informed the exchange about the approval of Board of
-  // Directors for withdrawal of application of…" spent 71 of 150 characters on a company name the
-  // card prints as its own heading, and clipped away the withdrawal. Removing a prefix the
-  // exchange generated is the same removal `sourceStatement` justifies, not a rewording of what
-  // follows it — and where the subject carries none, it comes back unchanged.
-  if (!isTypeOnly(subject)) return clip(sourceStatement(subject) || subject);
-  const stated = sourceStatement(event?.filingDescription);
-  if (stated.length >= 12 && stated.toLowerCase() !== subject.toLowerCase()) return clip(stated);
-  // BSE's own sub-category is their answer to "what kind of filing is this?" — "Award of Order /
-  // Receipt of Order", "Resignation of Director", "Credit Rating" — so it is a real claim where
-  // the subject was not. NSE publishes none, which is why this is a floor and not the first look.
-  return clip(event?.filingSubCategory || subject || 'Filing');
-}
 
 /**
  * The measurable size of an insider or block-deal disclosure, from the fields the collector wrote.
@@ -650,11 +537,23 @@ function resultFigures(event) {
  */
 export const MAX_PER_SOURCE = 3;
 
-export function topEvidence(card, limit = 3, { maxPerSource = MAX_PER_SOURCE } = {}) {
+export function topEvidence(card, limit = 3, { maxPerSource = MAX_PER_SOURCE, first = null } = {}) {
+  // ONE ROW PER DEVELOPMENT. A card ranked here carries its developments (see
+  // data/alert-developments.js), and each is offered once, by its lead: the company's own filing
+  // rather than a publisher's account of it. Thirty write-ups of one order win are one row with a
+  // count, never three rows of a card's four. A card built without them (a fixture, a saved
+  // snapshot) is read row by row as before.
+  let rows = card?.developments?.length ? card.developments.map((dev) => dev.lead) : card?.events || [];
+  // `first` pins a row to the top of its source's queue — the tab's newest signal — by its
+  // development's lead, so the event that advanced the card cannot reappear as a second row.
+  if (first) {
+    const pinned = developmentOfEvent(card, first)?.lead || first;
+    rows = [pinned, ...rows.filter((event) => event !== pinned)];
+  }
   // Grouped by FAMILY, in the order each family's strongest event appears — so the rounds below
   // hand out slots by independent source, in score order within each one.
   const bySource = new Map();
-  for (const event of card?.events || []) {
+  for (const event of rows) {
     const family = feedFamily(event);
     const found = bySource.get(family);
     if (found) found.push(event);
@@ -736,11 +635,65 @@ export function plainHeadline(event) {
  * Nothing is reordered either — a lower-scoring event leading the sentence does not promote it.
  */
 export function leadEvent(card) {
+  const dev = leadDevelopment(card);
+  if (dev) return dev.lead;
   const events = card?.events || [];
   return events.find((event) => !isTypeOnly(plainHeadline(event)))
     || events.find((event) => plainHeadline(event).trim())
     || card?.topEvent
     || null;
+}
+
+/** The development `event` belongs to on this card — every member answers, not only its lead. */
+export function developmentOfEvent(card, event) {
+  if (!event) return null;
+  return (card?.developments || []).find((dev) => dev.lead === event || dev.members.includes(event)) || null;
+}
+
+/**
+ * LINE 1 of a development — see `developmentLine`. A measurement (a price move, a book change, an
+ * insider disclosure, a filed result) has no statement of its own to shorten, so it keeps the line
+ * `plainHeadline` writes for it.
+ */
+const developmentClaims = new WeakMap();
+export function developmentClaim(dev) {
+  if (!dev?.lead) return '';
+  // A development is one object for as long as its members are unchanged, and its line depends on
+  // nothing else — so a ranking that asks about every card's developments asks once.
+  let claim = developmentClaims.get(dev);
+  if (claim === undefined) {
+    claim = developmentLine(dev, { fallback: plainHeadline(dev.lead) });
+    developmentClaims.set(dev, claim);
+  }
+  return claim;
+}
+
+/**
+ * The development a card leads with: the strongest one that names something that happened.
+ *
+ * Developments are in score order — the fold keeps each where its strongest member stands — so
+ * this is the ranking's own answer, lifted from the event to the development: when a publisher's
+ * write-up scored highest and the company's own filing of the same event sits beside it, the card
+ * leads with the filing (Puravankara's ₹2,600 crore Goregaon project read as a news story because
+ * it did not). A development whose line is still only a filing TYPE is skipped exactly as
+ * `leadEvent` always skipped one, and keeps its row.
+ */
+export function leadDevelopment(card) {
+  const developments = card?.developments;
+  if (!developments?.length) return null;
+  return developments.find((dev) => !isTypeOnly(developmentClaim(dev)))
+    || developments.find((dev) => developmentClaim(dev).trim())
+    || developments[0];
+}
+
+/**
+ * THE FIRST BULLET — what happened, in the fewest words that still say it: "₹2,600 Cr
+ * redevelopment project in Goregaon". The lead development's own statement, never a rewording (see
+ * `developmentLine`); a card with no developments states its lead event as it always did.
+ */
+export function whatHappened(card) {
+  const dev = leadDevelopment(card);
+  return dev ? developmentClaim(dev) : plainHeadline(leadEvent(card));
 }
 
 const asSentence = (text) => {
@@ -764,7 +717,7 @@ const asSentence = (text) => {
  */
 export function plainInsight(card) {
   if (isRelatedNewsContext(card.topEvent)) return `Related-entity report: ${plainHeadline(card.topEvent)}. ${card.topEvent.attribution.reason}`;
-  const claim = asSentence(plainHeadline(leadEvent(card)));
+  const claim = asSentence(whatHappened(card));
   const conflict = card.mixed ? ' Sources disagree — check both directions below.' : '';
   // A card with no statable event cannot be summarised, and inventing a summary for one is the
   // one thing that would be worse than saying so. In practice every surfaced card has at least
@@ -821,7 +774,20 @@ function positionSnapshotIndex({ holdings, sizes }) {
  */
 const rankCache = [];
 const sameRows = (left, right) => left.length === right.length && left.every((row, i) => row === right[i]);
-export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = null; }
+export function clearRankingCache() { rankCache.length = 0; lastPositionIndex = null; cardFolds.clear(); }
+
+// A company's developments, kept between rankings while its evidence is the same rows in the same
+// order: a partial publication that changed one company re-folds that company and no other.
+const cardFolds = new Map();
+function cardDevelopments(key, events, names) {
+  const signature = names.join('\u0001');
+  const hit = cardFolds.get(key);
+  if (hit && hit.names === signature && sameRows(hit.events, events)) return hit.value;
+  const value = foldDevelopments(events, { companyNames: names });
+  if (cardFolds.size > 8192) cardFolds.clear();
+  cardFolds.set(key, { events, names: signature, value });
+  return value;
+}
 
 // ONE IMPLEMENTATION, TWO DRIVERS. `rankReport` is the synchronous reference the contract tests
 // assert; `rankReportAsync` walks the same generator and yields to input between cards, so a
@@ -884,13 +850,20 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       .map((event) => ({ event, score: eventScore(event, day, feedById.get(event.feed)) }))
       .sort((a, b) => b.score.points - a.score.points || String(b.event.day).localeCompare(String(a.event.day)) || String(b.event.time || '').localeCompare(String(a.event.time || '')));
     const top = scoredEvents[0];
+    const holding = holdingByTicker.get(ticker) || holdingByEntity.get(entityId) || null;
+    // ONE DEVELOPMENT IS ONE PIECE OF EVIDENCE. The exchange copies of a filing and the publishers'
+    // write-ups of it fold into one development (data/alert-developments.js), in score order, so
+    // the counts below read developments: thirty reports of one order win are one high-importance
+    // event and one direction, not thirty. Corroboration is still counted by independent FEED, and
+    // the confluence patterns still read every event, because both are about which sources agree.
+    const developments = cardDevelopments(key, scoredEvents.map((entry) => entry.event), [holding?.name].filter(Boolean));
+    const directDevelopments = developments.filter((dev) => newsCanSupportAI(dev.lead));
     const directEvents = events.filter(newsCanSupportAI);
-    const directions = directionSummary(directEvents);
+    const directions = directionSummary(directDevelopments);
     const feeds = [...new Set(events.map(feedFamily))];
     const feedLabels = [...new Set(events.map((event) => event.feedLabel || event.feed))];
-    const highCount = events.filter((event) => event.importance === 'high').length;
+    const highCount = developments.filter((dev) => dev.importance === 'high').length;
     const hasMaterialNegative = events.some((event) => event.importance === 'high' && event.direction === 'negative');
-    const holding = holdingByTicker.get(ticker) || holdingByEntity.get(entityId) || null;
     const materialPortfolioEvent = !!holding && events.some((event) => event.importance === 'high' &&
       !!event.url && (materialFiling(event) || (feedFamily(event) === 'news' && event.namesCompany === true) || isRelatedNewsContext(event)));
     const mixed = directions.positive > 0 && directions.negative > 0;
@@ -912,7 +885,7 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
     // draft gave another feed twelve points and promoted nearly every well-covered company; six
     // keeps the independent confirmation valuable without rewarding mere data availability.
     const independentFeeds = new Set(directEvents.map(feedFamily)).size;
-    const directHighCount = directEvents.filter(e => e.importance === 'high').length;
+    const directHighCount = directDevelopments.filter((dev) => dev.importance === 'high').length;
     if (independentFeeds > 1) scoreBreakdown.push({ label: `${independentFeeds} independent feeds`, points: Math.min(12, (independentFeeds - 1) * 6) });
     if (directHighCount > 1) scoreBreakdown.push({ label: `${directHighCount} high-importance events`, points: Math.min(6, (directHighCount - 1) * 3) });
     if (mixed) scoreBreakdown.push({ label: 'Conflicting directional evidence needs review', points: 6 });
@@ -929,12 +902,13 @@ function* rankSteps(report, { holdings = coverage.holdings(), positionSizes = nu
       holdingWeightPct: weights.get(key) ?? weights.get(entityId) ?? null,
       // Cards show the strongest evidence first. General Alerts remains the chronological record.
       events: scoredEvents.map((entry) => entry.event),
+      developments,
       topEvent: top?.event || events[0],
       directions,
       mixed,
       highCount,
       materialPortfolioEvent,
-      evidenceKey: JSON.stringify(materialEvidence(events)),
+      evidenceKey: JSON.stringify(materialEvidence(events, developments)),
       hasMaterialNegative,
       feedCount: feeds.length,
       feeds,

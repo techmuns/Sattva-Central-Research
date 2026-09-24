@@ -21,7 +21,11 @@
       // The team brief: the subscriber list, the two send times and the delivery log, on one fixed
       // object (team-brief:v1) whose alarm is what sends the morning and evening emails. Same
       // provisioned class, its own storage; see worker/newsletter-schedule.mjs.
-      { "name": "NEWSLETTER", "class_name": "CaptureRegistry" }
+      { "name": "NEWSLETTER", "class_name": "CaptureRegistry" },
+      // The alerts' AI "So what?" notes: one fixed object (alert-notes:v1) keeps every note written,
+      // keyed by the text it was written from, and the day's allowance of new ones. Same provisioned
+      // class, its own storage; see worker/alert-notes-store.mjs.
+      { "name": "ALERT_NOTES", "class_name": "CaptureRegistry" }
     ]
   },
   "migrations": [{ "tag": "capture-registry-v1", "new_sqlite_classes": ["CaptureRegistry"] }],
@@ -95,6 +99,14 @@
       "name": "NEWSLETTER_LIMITER",
       "namespace_id": "1704",
       "simple": { "limit": 12, "period": 60 }
+    },
+    {
+      // The alerts' AI notes. A page asks once per screen of cards, and a stored note costs nothing
+      // to serve, so this is set for a reader paging and scrolling, well below a script; the object's
+      // daily allowance of NEW notes is what bounds the spend behind it.
+      "name": "ALERT_NOTES_LIMITER",
+      "namespace_id": "1705",
+      "simple": { "limit": 30, "period": 60 }
     }
   ]
 
