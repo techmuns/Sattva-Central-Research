@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import worker from '../worker/index.js';
 import { fetchDomesticFilings } from '../worker/muns.mjs';
-import { normaliseDomesticFilings, documentUrl, domesticFilingsHref } from '../public/js/data/domestic-filings-shared.js';
+import { normaliseDomesticFilings, documentUrl, domesticFilingsHref, earningsReportDocument, earningsAnnouncementDocument, earningsDocumentUrl } from '../public/js/data/domestic-filings-shared.js';
 import { loadDomesticFilings } from '../public/js/data/domestic-filings.js';
 import { clearAll } from '../public/js/core/store.js';
 import * as legacyEarnings from '../public/js/data/earnings.js';
@@ -34,6 +34,39 @@ assert.equal(partial.skipped, 2);
 assert.equal(documentUrl('javascript:alert(1)'), null);
 assert.equal(documentUrl('https://user:password@example.com/report.pdf'), null);
 assert(domesticFilingsHref('M&M', { scope: 'portfolio', form: 'concalls' }).includes('company=M%26M'));
+
+const reportRows = [
+  { ticker: 'TEST', form: 'earnings_report', date: 'Mar 2026', url: 'https://example.com/march.pdf' },
+  { ticker: 'OTHER', form: 'earnings_report', date: 'Jun 2026', url: 'https://example.com/other.pdf' },
+  { ticker: 'TEST', form: 'annual_report', date: 'Jun 2026', url: 'https://example.com/annual.pdf' },
+  { ticker: 'TEST', form: 'earnings_report', date: 'June 2026', url: 'https://example.com/june.pdf' },
+  { ticker: 'TEST', form: 'earnings_report', date: 'Jun 2026', url: 'javascript:alert(1)' },
+];
+assert.equal(earningsReportDocument(reportRows, 'TEST', 'Jun 26')?.url, 'https://example.com/june.pdf');
+assert.equal(earningsReportDocument(reportRows, 'TEST', '2026-06-30')?.url, 'https://example.com/june.pdf');
+assert.equal(earningsReportDocument(reportRows, 'TEST', 'Sep 26'), null, 'no fallback to the wrong quarter');
+assert.equal(earningsReportDocument(reportRows, 'TEST', 'Current'), null, 'unknown period is never guessed');
+assert.equal(earningsReportDocument(reportRows, 'MISSING', 'Jun 26'), null, 'company identity is exact');
+
+const announcement = { ticker: 'TEST', date: '2026-09-11', category: 'Result',
+  title: 'Standalone and consolidated unaudited financial results for the quarter ended June 30, 2026',
+  url: 'https://example.com/exchange.pdf' };
+for (const title of [announcement.title, 'Financial results for the quarter ended 30th June 2026']) {
+  assert.equal(earningsAnnouncementDocument([{ ...announcement, title }], 'TEST', 'Jun 26', '2026-09-11')?.url, announcement.url);
+}
+for (const row of [
+  { ...announcement, ticker: 'OTHER' }, { ...announcement, date: '2026-09-10' },
+  { ...announcement, title: announcement.title.replace('June', 'March') },
+  { ...announcement, subject: 'Board Meeting Intimation' },
+  { ...announcement, subject: 'Newspaper publication' },
+  { ...announcement, subject: 'Investor presentation' },
+  { ...announcement, url: 'javascript:alert(1)' },
+]) assert.equal(earningsAnnouncementDocument([row], 'TEST', 'Jun 26', '2026-09-11'), null);
+assert.equal(earningsAnnouncementDocument([{ ...announcement, category: 'Board Meeting', url: 'https://example.com/board.pdf' }, announcement], 'TEST', 'Jun 26', '2026-09-11')?.url, announcement.url);
+
+assert.equal(earningsDocumentUrl('https://www.bseindia.com/xml-data/corpfiling/AttachLive/76fb0f4d-93ff-40ec-bd7e-6038c074b258.pdf'), 'https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=76fb0f4d-93ff-40ec-bd7e-6038c074b258.pdf');
+assert.equal(earningsDocumentUrl('https://example.com/report.pdf'), 'https://example.com/report.pdf');
+assert.equal(earningsDocumentUrl('javascript:alert(1)'), null);
 
 const realFetch = globalThis.fetch;
 const realCaches = globalThis.caches;

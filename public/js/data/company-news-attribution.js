@@ -1,10 +1,21 @@
 // Company identity is not the search query and a missing name is not a negative fact.
 // Pure, shared by snapshot/live readers, search, exports, research and AI ranking.
 import { reviewedNewsIdentity } from './company-news-reviewed.js';
+import { createMemoryCache } from '../core/memory-cache.js';
 export const ATTRIBUTION_VERSION = 2;
-export const normalizeNewsText = (value) => String(value || '').normalize('NFKD')
-  .replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ')
-  .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+// Head/archive copies and separate period readers have different row objects but repeatedly
+// normalize the same company names and story text. Key this pure calculation by its exact
+// input, with a fixed byte budget; changed text always gets a fresh reading.
+const normalizedText = createMemoryCache(2 * 1024 * 1024);
+export function normalizeNewsText(value) {
+  const text = String(value || '');
+  const hit = normalizedText.get(text);
+  if (hit !== undefined) return hit;
+  const result = text.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+  if (text.length <= 4096) normalizedText.set(text, result, 96 + 2 * (text.length + result.length));
+  return result;
+}
 const phrase = (text, name) => !!name && ` ${text} `.includes(` ${name} `);
 const withoutLegalSuffix = (name) => normalizeNewsText(name)
   .replace(/(?:\s+(?:limited|ltd|private|pvt|plc))+$/, '');

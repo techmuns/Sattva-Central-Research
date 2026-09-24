@@ -5375,6 +5375,17 @@ every read it cannot answer keeps the path it always took.
 | `GET /api/alert-pool/<artifact>/days/<YYYY-MM-DD>.json.gz` | one pooled day, every pooled feed, full `sourceRecord`; immutable, cached for days |
 | `GET /api/alert-pool/<artifact>/ai/<span>.json.gz` | one AI span (a month before the pool's days, then each pool day), compact events |
 
+Optional per-feed delivery (24 September 2026) adds `.<feed>.json.gz` variants to those same
+day/AI member names, restricted to the five public pooled feeds. Each day/AI index entry may
+include `feedMembers`, mapping every pooled feed to its usual member descriptor or `null` when
+both events and companions are empty. A variant retains the complete member's metadata and
+exactly one original feed group, including its order and companions. The builder verifies exact
+equality before publishing. Existing complete members and contract/version remain unchanged.
+Readers use variants only when some feeds fail the existing eligibility checks; all-feed reads,
+already-held complete members and legacy/incomplete indexes retain complete-member delivery.
+A requested variant must contain exactly its named feed; failure returns to source collection,
+never an empty success. Full source evidence remains available through the complete day member.
+
 Members are gzip files stored uncompressed inside the artifact ZIP (`compression-level: 0`); the
 Worker reads the ZIP's central directory from the archive's tail, then the member's own bytes, and
 hands them to the browser unchanged with `content-encoding: gzip`. A storage that answers a range

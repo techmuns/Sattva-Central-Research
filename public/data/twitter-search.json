@@ -1604,11 +1604,11 @@
       "error": "search-unavailable"
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-09-19T22:15:13+00:00",
+      "lastAttemptAt": "2026-09-24T09:54:26+00:00",
       "error": "search-unavailable"
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-09-19T22:34:57+00:00",
+      "lastAttemptAt": "2026-09-24T10:26:11+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
@@ -1764,6 +1764,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 226,
-    "checkedAt": "2026-09-24T09:17:49.336945+00:00"
+    "checkedAt": "2026-09-24T10:26:11.619380+00:00"
   }
 }

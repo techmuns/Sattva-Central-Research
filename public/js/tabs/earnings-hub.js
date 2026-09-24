@@ -16,7 +16,7 @@
 //   near enough to feed that model. Rather than run a real model on fake numbers next to a live
 //   table of real ones, the scoring sub-views are gone. `js/scoring/earnings-scoring.js` and the
 //   legacy scoring code remain available, but the synthetic set is no longer loaded. Analyst
-//   estimates are unavailable; Company Filings provides original documents, not estimated metrics.
+//   estimates are unavailable; Reports opens the original document for the displayed quarter.
 //
 // THE PERCENTAGE THAT ISN'T ONE
 //   13% of companies have a sign flip between the two periods. "+199%" on a loss-to-profit
@@ -50,7 +50,7 @@ import * as calendar from '../data/earnings-calendar.js';
 import * as coverage from '../data/coverage.js';
 import { filterByScope, scopePossessive } from '../data/scope.js';
 import { renderCompanyFilings } from './company-filings.js';
-import { domesticFilingsHref } from '../data/domestic-filings-shared.js';
+import { wireEarningsReports } from '../ui/earnings-report.js';
 import { safeDocumentUrl } from '../data/screener-concalls-shared.js';
 
 export const meta = {
@@ -61,11 +61,10 @@ export const meta = {
   subviews: [],
 };
 
-// Filed results, scheduled results, and original company documents.
+// Filed results and scheduled results. Old document links remain readable.
 const VIEWS = [
   { value: 'reported', label: 'Earnings Reported', help: 'Companies that have already filed this quarter' },
   { value: 'calendar', label: 'Earnings Calendar', help: 'Scheduled results and upcoming con-calls, by date' },
-  { value: 'filings', label: 'Company Filings', help: 'Annual reports, earnings reports and concall transcripts' },
 ];
 
 let disposers = [];
@@ -116,6 +115,7 @@ function renderFeed(ctx) {
     disposers.push(renderCompanyFilings(ctx, { controls: viewToggle('filings'), wireControls: wireViewToggle }));
     return;
   }
+  disposers.push(wireEarningsReports(ctx.root));
   // The schedule has its own route and recovery policy. An unavailable or slow filed-results
   // feed must not delay this view or prevent its automatic retries from starting.
   if (viewOf(ctx) === 'calendar') {
@@ -470,7 +470,7 @@ function renderLatest(ctx) {
 
       { label: 'Market Cap', get: (r) => (r.marketCap == null ? '<span class="text-slate-300">—</span>' : escapeHtml(formatCroreCompact(r.marketCap))), html: true, align: 'right', sortValue: (r) => r.marketCap ?? -1 },
       { label: 'Basis', get: (r) => basisPill(r.basis), html: true, align: 'right', sortValue: (r) => r.basis || '' },
-      { label: 'Filings', get: (r) => r.ticker ? `<a data-norow class="font-semibold text-indigo-600" href="${escapeHtml(domesticFilingsHref(r.ticker, { form: 'earnings_report', scope: ctx.scope }))}">Reports</a>` : '—', html: true, sortable: false },
+      { label: 'Filings', get: (r) => r.ticker ? `<button type="button" data-norow data-earnings-report="${escapeHtml(r.ticker)}" data-report-period="${escapeHtml(m?.currentPeriod || '')}" data-report-date="${escapeHtml(r.resultDate || '')}" class="font-semibold text-indigo-600" aria-label="Open ${escapeHtml(r.company)} ${escapeHtml(m?.currentPeriod || '')} filing">Reports</button>` : '—', html: true, sortable: false },
     ],
     // Two dropdowns, not one: "PAT grew" and "Consolidated only" are different questions and a
     // reader should be able to ask both at once.

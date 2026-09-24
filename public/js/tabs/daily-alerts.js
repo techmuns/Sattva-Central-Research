@@ -331,8 +331,9 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
   const token = ++loadToken;
   const context = currentContext();
   const contextKey = alerts.alertContextKey(context.scope, context.holdings, context.day);
-  const current = () => token === loadToken && ctxRef && contextKey === alerts.alertContextKey(ctxRef.scope) &&
+  const viewCurrent = () => ctxRef && contextKey === alerts.alertContextKey(ctxRef.scope) &&
     alertWindowKey(context.queryWindow) === alertWindowKey(currentContext().queryWindow);
+  const current = () => token === loadToken && viewCurrent();
   collecting++;
   if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
@@ -344,6 +345,8 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       includeHistory: true,
       refresh: forceRefresh,
       load,
+      // A newer partial paint in this same view must not abandon its shared pool read.
+      isCurrent: viewCurrent,
       // A selected period may be answered from the precomputed pool; All history and the
       // Upcoming horizon keep reading the sources themselves.
       pool: context.queryWindow ? 'window' : null,

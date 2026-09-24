@@ -4,6 +4,7 @@ import {boundedJson} from '../public/js/data/family-book-contract.js';
 import {loadActivePortfolio} from './lib/active-portfolio.mjs';
 import {atomicJson} from './lib/mutual-funds-files.mjs';
 import {collectShareCounts} from './lib/mutual-funds-denominators.mjs';
+import {freshShareCount} from '../public/js/data/mutual-funds-ownership.js';
 import {MF_ORIGIN,validIsin} from '../worker/mutual-funds-model.mjs';
 const book=await loadActivePortfolio('public/data/portfolio-companies.json');
 const read=(file,fallback)=>fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):fallback;
@@ -23,4 +24,6 @@ fs.mkdirSync('artifacts',{recursive:true});
 const result=await collectShareCounts({companies:[...companies.values()],portfolioIsins:book.holdings.map(h=>h.isin),previous,checks,estimates,
   map:read('public/data/mc-ticker-map.json',{}).map||{},identities:Object.entries(read('public/data/exchange-deals.json',{}).securityMap||{}).map(([bseCode,r])=>({...r,bseCode})),
   save:({denominators,checks})=>{atomicJson('artifacts/mutual-funds-denominators.json',denominators);atomicJson('artifacts/mutual-funds-share-count-checks.json',checks);}});
-console.log(`Company share counts: ${result.attempted} checked; ${result.deferred} resume on the next automatic run.`);
+// Counts only: a portfolio line that keeps missing a direct count is visible in every run's log.
+const lines=book.holdings.filter(h=>validIsin(h.isin)),missing=lines.filter(h=>{const d=result.denominators[h.isin];return !(d&&d.kind!=='estimate'&&freshShareCount(d));}).length;
+console.log(`Company share counts: ${result.attempted} checked; ${result.discovered} codes found by ISIN; ${result.deferred} resume on the next automatic run. Portfolio lines without a fresh direct count: ${missing} of ${lines.length}.`);

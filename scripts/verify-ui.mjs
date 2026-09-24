@@ -782,8 +782,8 @@ if (!hasLiveRoute) {
 console.log('\n— earnings calendar —');
 await go('/#/research/earnings-hub?scope=universe', 800);
 await waitForPanel();
-ok('the tab offers Reported / Calendar / Company Filings',
-  JSON.stringify(await page.locator('[data-view]').evaluateAll(nodes => nodes.map(node => node.dataset.view).sort())) === JSON.stringify(['calendar', 'filings', 'reported']));
+ok('the tab offers only Reported / Calendar',
+  JSON.stringify(await page.locator('[data-view]').evaluateAll(nodes => nodes.map(node => node.dataset.view).sort())) === JSON.stringify(['calendar', 'reported']));
 
 await page.locator('[data-view="calendar"]').click();
 // THE CALENDAR OPENS ON TODAY. Today can legitimately have no scheduled rows, so this waits for

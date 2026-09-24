@@ -41,6 +41,27 @@ export function moneycontrolCode(company,map,identities=[]) {
   // The map is discovery only: the live response must still match the exact ISIN.
   return matches.length===1?matches[0][0]:null;
 }
+const MC_HEADERS={accept:'application/json','user-agent':'SattvaCentralResearch/1.0'};
+const MC_CODE=/^[A-Za-z0-9]{1,16}$/;
+const MC_PRICE=/^https:\/\/priceapi\.moneycontrol\.com\/pricefeed\/(?:nse|bse)\/equitycash\/([A-Za-z0-9]{1,16})$/;
+// A portfolio company still without a fresh direct count is asked again after six hours rather
+// than a day, so a refusal is not repeated at the same hour every day and a new holding fills in.
+const GAP_RETRY=6*3600000;
+// A code an earlier run already proved against this exact ISIN. Remembering it means a later
+// search refusal cannot take away a count that was working.
+export function provenMoneycontrolCode(denominator) {
+  if(denominator?.sourceName!=='Moneycontrol'||denominator.kind!=='reported')return null;
+  return MC_PRICE.exec(String(denominator.source||''))?.[1]||null;
+}
+// Moneycontrol's own search, asked by ISIN, finds companies the results map never saw (new
+// listings, SME, demerged and symbol-less holdings). Discovery only: exactly one code must name
+// this ISIN, and the price response is still checked against the ISIN before a count is used.
+export function moneycontrolSearchCode(body,isin) {
+  if(!Array.isArray(body)||!/^[A-Z0-9]{12}$/.test(isin||''))return null;
+  const named=new RegExp(`(?:^|[^A-Z0-9])${isin}(?:[^A-Z0-9]|$)`);
+  const codes=new Set(body.filter(r=>named.test(String(r?.pdt_dis_nm||''))&&MC_CODE.test(String(r?.sc_id||''))).map(r=>String(r.sc_id)));
+  return codes.size===1?[...codes][0]:null;
+}
 export async function collectShareCounts({companies,portfolioIsins=[],previous={},checks={},estimates={},map={},identities=[],fetcher=fetch,now=Date.now,pause=ms=>new Promise(done=>setTimeout(done,ms)),save=()=>{},maxCompanies=200,maxDurationMs=240000}={}) {
   const started=now(),denominators={...previous},sourceChecks={...checks},blocked=new Set();
   for(const [isin,e] of Object.entries(estimates)) {
@@ -48,30 +69,48 @@ export async function collectShareCounts({companies,portfolioIsins=[],previous={
     denominators[isin]=selectShareCount(denominators[isin],estimate,now());
   }
   const wanted=new Set(portfolioIsins),last=c=>Date.parse(sourceChecks[c.isin]?.lastAttemptAt)||0;
-  const due=companies.filter(c=>!last(c)||now()-last(c)>=DAY||last(c)>now()+60000)
+  const direct=c=>freshShareCount(denominators[c.isin],now())&&denominators[c.isin].kind!=='estimate';
+  const interval=c=>wanted.has(c.isin)&&!direct(c)?GAP_RETRY:DAY;
+  const due=companies.filter(c=>!last(c)||now()-last(c)>=interval(c)||last(c)>now()+60000)
     .sort((a,b)=>Number(wanted.has(b.isin))-Number(wanted.has(a.isin)) || last(a)-last(b) || a.isin.localeCompare(b.isin));
   const checkpoint=()=>save({denominators,checks:sourceChecks});
-  checkpoint();let attempted=0;
+  checkpoint();let attempted=0,discovered=0;
   for(const c of due) {
     if(attempted>=maxCompanies || now()-started>=maxDurationMs)break;
-    const checkedAt=new Date(now()).toISOString(),sources=[];let direct=null;
-    const code=moneycontrolCode(c,map,identities);
-    const routes=[...(c.ticker?[{name:'NSE',url:`https://www.nseindia.com/api/quote-equity?symbol=${encodeURIComponent(c.ticker)}`,parse:nseShareCount,headers:HEADERS}]:[]),
-      ...(code?[{name:'Moneycontrol',url:`https://priceapi.moneycontrol.com/pricefeed/${c.ticker?'nse':'bse'}/equitycash/${encodeURIComponent(code)}`,parse:moneycontrolShareCount,headers:{accept:'application/json','user-agent':'SattvaCentralResearch/1.0'}}]:[])];
-    for(const route of routes) {
-      if(blocked.has(route.name)){sources.push({source:route.name,state:'source-unavailable'});continue;}
+    const checkedAt=new Date(now()).toISOString(),sources=[],tried=new Set();let count=null;
+    const read=async route=>{
+      if(blocked.has(route.name)){sources.push({source:route.name,state:'source-unavailable'});return null;}
       try {
         const r=await fetcher(route.url,{headers:route.headers,redirect:'error',signal:AbortSignal.timeout(8000)});
-        if([401,403,429].includes(r.status)){await r.body?.cancel();blocked.add(route.name);sources.push({source:route.name,state:`http-${r.status}`});continue;}
-        direct=route.parse(await boundedJson(r,1024*1024),c,checkedAt,route.url);
-        sources.push({source:route.name,state:direct?'ok':'invalid-or-stale'});
-        if(direct)break;
-      }catch{sources.push({source:route.name,state:'unavailable'});}
+        if([401,403,429].includes(r.status)){await r.body?.cancel();blocked.add(route.name);sources.push({source:route.name,state:`http-${r.status}`});return null;}
+        const value=route.parse(await boundedJson(r,1024*1024),c,checkedAt,route.url);
+        sources.push({source:route.name,state:value?'ok':route.miss||'invalid-or-stale'});
+        return value;
+      }catch{sources.push({source:route.name,state:'unavailable'});return null;}
+    };
+    // The listing exchange is asked first; the other answers a symbol-less NSE-only listing or a
+    // stale first quote. Only an answered-but-unusable reply earns the second request.
+    const quote=async code=>{
+      tried.add(code);
+      for(const exchange of c.ticker?['nse','bse']:['bse','nse']) {
+        const value=await read({name:'Moneycontrol',url:`https://priceapi.moneycontrol.com/pricefeed/${exchange}/equitycash/${encodeURIComponent(code)}`,parse:moneycontrolShareCount,headers:MC_HEADERS});
+        if(value||sources.at(-1).state!=='invalid-or-stale')return value;
+      }
+      return null;
+    };
+    if(c.ticker)count=await read({name:'NSE',url:`https://www.nseindia.com/api/quote-equity?symbol=${encodeURIComponent(c.ticker)}`,parse:nseShareCount,headers:HEADERS});
+    for(const code of [moneycontrolCode(c,map,identities),provenMoneycontrolCode(previous[c.isin])])
+      if(!count&&code&&!tried.has(code))count=await quote(code);
+    // Search only when the price host answered (or was never asked): an outage is not a reason
+    // to spend another request, and the next attempt asks again.
+    if(!count&&!blocked.has('Moneycontrol')&&!sources.some(s=>s.source==='Moneycontrol'&&s.state==='unavailable')) {
+      const code=await read({name:'Moneycontrol search',url:`https://www.moneycontrol.com/mccode/common/autosuggestion_solr.php?${new URLSearchParams({classic:'true',query:c.isin,type:'1',format:'json'})}`,parse:body=>moneycontrolSearchCode(body,c.isin),headers:MC_HEADERS,miss:'no-exact-match'});
+      if(code&&!tried.has(code)&&(count=await quote(code)))discovered++;
     }
-    if(direct)denominators[c.isin]=selectShareCount(denominators[c.isin],direct,now());
+    if(count)denominators[c.isin]=selectShareCount(denominators[c.isin],count,now());
     // Attempts never freshen a retained value or the source quote timestamp.
-    sourceChecks[c.isin]={lastAttemptAt:checkedAt,state:direct?'ok':'unavailable',sources};
+    sourceChecks[c.isin]={lastAttemptAt:checkedAt,state:count?'ok':'unavailable',sources};
     attempted++;checkpoint();await pause(150);
   }
-  return {denominators,checks:sourceChecks,attempted,deferred:due.length-attempted};
+  return {denominators,checks:sourceChecks,attempted,discovered,deferred:due.length-attempted};
 }

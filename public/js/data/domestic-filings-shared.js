@@ -91,3 +91,54 @@ export function domesticFilingsHref(ticker, { form = 'all', scope = 'universe' }
   const params = new URLSearchParams({ scope, view: 'filings', form, company: ticker });
   return `#/research/earnings-hub?${params}`;
 }
+
+// Compare the reported period, never the publication day or array order. A missing
+// quarter cannot silently send a reader to an older report or an annual document.
+function reportPeriod(value) {
+  const text = String(value || '').trim();
+  const named = /^(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{4}|\d{2})$/i.exec(text);
+  if (named) {
+    const month = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(named[1].slice(0, 3).toLowerCase()) + 1;
+    const year = named[2].length === 2 ? `20${named[2]}` : named[2];
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
+  return /^(\d{4})-(0[1-9]|1[0-2])(?:-\d{2})?$/.exec(text)?.slice(1, 3).join('-') || null;
+}
+
+export function earningsReportDocument(documents, ticker, period) {
+  const wanted = reportPeriod(period);
+  if (!wanted) return null;
+  return [...(documents || [])].reverse().find(row =>
+    row.ticker === ticker && row.form === 'earnings_report' &&
+    reportPeriod(row.date) === wanted && documentUrl(row.url)) || null;
+}
+
+/** Prefer the exchange's actual result attachment over a publisher's redirect/index link. */
+export function earningsAnnouncementDocument(rows, ticker, period, resultDate) {
+  const wanted = reportPeriod(period);
+  if (!wanted || !/^\d{4}-\d{2}-\d{2}$/.test(resultDate || '')) return null;
+  const [year, month] = wanted.split('-');
+  const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(month) - 1];
+  const namedPeriod = new RegExp(`\\b${monthName}[a-z]*\\s+(?:[0-3]?\\d(?:st|nd|rd|th)?[,\\s]+)?${year}\\b`, 'i');
+  const candidates = (rows || []).filter(row => {
+    if (row.ticker !== ticker || row.date !== resultDate || !documentUrl(row.url) || !/\.pdf(?:[?#]|$)/i.test(row.url)) return false;
+    const text = [row.title, row.subject, row.headline, row.summary, row.description].filter(Boolean).join(' ');
+    if (!/financial\s+results/i.test(text)) return false;
+    if (/board meeting intimation|trading window|newspaper|press release|presentation|earnings call|transcript|audio|video/i.test(text)) return false;
+    return namedPeriod.test(text) || text.includes(`${year}-${month}-`);
+  });
+  // Dedicated result disclosures outrank a board outcome containing the same figures.
+  candidates.sort((a, b) => Number(b.category === 'Result') - Number(a.category === 'Result'));
+  return candidates[0] || null;
+}
+
+// BSE moves attachments between live and historical directories. Its stable
+// PDF reader resolves the same captured filename without changing document identity.
+export function earningsDocumentUrl(value) {
+  const safe = documentUrl(value);
+  if (!safe) return null;
+  const url = new URL(safe);
+  const attachment = /^\/xml-data\/corpfiling\/Attach(?:Live|His)\/([a-f0-9-]{36}\.pdf)$/i.exec(url.pathname);
+  return /^(?:www\.)?bseindia\.com$/i.test(url.hostname) && attachment
+    ? `https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=${attachment[1]}` : safe;
+}

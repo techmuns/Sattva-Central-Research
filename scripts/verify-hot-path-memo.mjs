@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { pickField } from '../public/js/data/filings-shared.js';
 import { insiderTradeIdentity, mergeInsiderTrades, withTradeCategory, INSIDER_TRADE_CATEGORY } from '../public/js/data/insider-history.js';
 import { newsDay, newsPublicationDay, newsPeriodBounds, matchesNewsPeriod } from '../public/js/data/news-window.js';
-import { attributionFor, companyNewsAttribution, attributeNewsRow } from '../public/js/data/company-news-attribution.js';
+import { attributionFor, companyNewsAttribution, attributeNewsRow, normalizeNewsText } from '../public/js/data/company-news-attribution.js';
 import { classifyStory } from '../public/js/data/news-keywords.js';
 import { newsEventTopics } from '../public/js/data/portfolio-news-matching.js';
 import { createAlertWindowCache, utf8Length } from '../public/js/data/alert-window-cache.js';
@@ -14,6 +14,20 @@ import { articleUrlKey, canonicalArticleUrl, dedupeArticles } from '../public/js
 import { announcementEvent, insiderEvent, warmRows, mapPortfolioDiscoveryEvents } from '../public/js/data/daily-alerts.js';
 import { nseRecord } from '../public/js/data/alert-sources.js';
 import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
+
+const normalizeReference = value => String(value || '').normalize('NFKD')
+  .replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+for (const text of [null, undefined, 0, false, '', 'A & B Limited', 'Énergie—भारत １２３',
+  '  Headline\n\twith punctuation?!  ', 'Long article. '.repeat(1000)]) {
+  assert.equal(normalizeNewsText(text), normalizeReference(text));
+  assert.equal(normalizeNewsText(text), normalizeReference(text), 'reuse preserves exact Unicode normalization');
+}
+let changingText = 'Original company';
+const editable = { toString: () => changingText };
+assert.equal(normalizeNewsText(editable), normalizeReference(changingText));
+changingText = 'Corrected company';
+assert.equal(normalizeNewsText(editable), normalizeReference(changingText), 'inputs are converted before the cache lookup');
 
 // --- pickField: the object's shape is cached, its values are read live -------------------------
 const cells = { 'Trade Shares': '1,20,000', Exchange: 'NSE', trade_shares: '5', Mode: '-', Price: '' };

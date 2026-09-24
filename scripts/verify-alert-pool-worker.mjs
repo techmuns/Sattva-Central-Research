@@ -39,7 +39,8 @@ const day = '2026-09-18';
 const index = { version: 1, contract: ALERT_POOL_CONTRACT, day, builtAt: `${day}T06:00:00Z`, captures: {}, feeds: {}, days: [{ day, member: `days/${day}.json.gz` }], ai: [{ span: day, member: `ai/${day}.json.gz` }] };
 const shard = { version: 1, contract: ALERT_POOL_CONTRACT, day, feeds: { technicals: { events: [{ id: 'tech:X', feed: 'technicals', headline: 'x', day }], order: [0], companions: { events: [], order: [] } } } };
 const padding = Buffer.alloc(300 * 1024, 'p'); // pushes the directory past the tail read of a small archive
-const archive = zip([['index.json', Buffer.from(JSON.stringify(index))], ['padding.bin', padding], [`days/${day}.json.gz`, gzipSync(JSON.stringify(shard))], ['ai/oops.txt', Buffer.from('not json')], [`ai/${day}.json.gz`, Buffer.from('plain, not gzip')]]);
+const archive = zip([['index.json', Buffer.from(JSON.stringify(index))], ['padding.bin', padding], [`days/${day}.json.gz`, gzipSync(JSON.stringify(shard))],
+  [`days/${day}.technicals.json.gz`, gzipSync(JSON.stringify(shard))], ['ai/oops.txt', Buffer.from('not json')], [`ai/${day}.json.gz`, Buffer.from('plain, not gzip')]]);
 
 const bundle = await build({ stdin: { contents: `import {handleAlertPool} from './worker/alert-pool.mjs'; export default { fetch: (request, env, ctx) => handleAlertPool(request, env, ctx) };`,
   resolveDir: fileURLToPath(new URL('../', import.meta.url)) }, bundle: true, write: false, format: 'esm', platform: 'browser' });
@@ -99,6 +100,11 @@ try {
   assert.equal(calls, before, 'a cached member costs no upstream request');
   const conditional = await fetch(new URL(`/api/alert-pool/99/days/${day}.json.gz`, base), { headers: { 'if-none-match': member.headers.get('etag') } });
   assert.equal(conditional.status, 304);
+  const separate = await fetch(new URL(`/api/alert-pool/99/days/${day}.technicals.json.gz`, base));
+  assert.equal(separate.status, 200);
+  assert.deepEqual(await separate.json(), shard, 'a per-feed member uses the same bounded range and gzip delivery');
+  assert.equal((await fetch(new URL(`/api/alert-pool/99/days/${day}.private.json.gz`, base))).status, 404,
+    'only explicitly public pool feeds can be addressed');
 
   assert.equal((await fetch(new URL('/api/alert-pool/99/ai/oops.txt', base))).status, 404, 'a name outside the contract is refused');
   assert.equal((await fetch(new URL('/api/alert-pool/99/days/2026-01-01.json.gz', base))).status, 404, 'a member the archive lacks is missing, not empty');

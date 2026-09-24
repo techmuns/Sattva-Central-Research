@@ -3,6 +3,7 @@
 // they locate selected dates and EVERY companion URL before existing canonicalization runs.
 import { conditionalJson, readEntry, writeEntry } from '../core/store.js';
 import { shardSpec, shardPath, readVerifiedShard } from '../core/json-shards.js';
+import { createMemoryCache, estimateMemoryBytes } from '../core/memory-cache.js';
 import { newsQueryIdentities as identities, newsQueryIndexRow as summary, validNewsQueryIndex, NEWS_QUERY_INDEX_VERSION } from './news-query-index.js';
 
 const encoder = new TextEncoder();
@@ -24,6 +25,7 @@ function unwrap(item, descriptor) {
 
 export function createNewsWorkingSet({ window: readingWindow, extraRows = () => [], read = conditionalJson,
   diskRead = readEntry, diskWrite = writeEntry, fetcher = fetchPart } = {}) {
+  const projectionBudget = 32 * 1024 * 1024, projections = createMemoryCache(projectionBudget);
   let pending = null, descriptors = new Map(), urls = new Set(), preparedWindow = null, lastPrepared = 0, epoch = 0, selectionRevision = 0;
   // THE GENERATION CHECKS BELOW CAN ONLY REFUSE THE NEXT READ. `read` awaits the device store
   // before it reaches the network, so a release landing in that gap still lets the request go
@@ -60,15 +62,38 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
     const controller = new AbortController();
     aborter = controller;
     pending = (async () => {
-      const next = new Map(), selectedUrls = new Set(), edges = new Map();
+      const next = new Map(), selectedUrls = new Set();
+      // Union the compact identities once, then keep one selection byte per source row.
+      // Previously projection read every index again after large source parts had evicted it,
+      // repeating downloads/decodes for each head, archive and date-picker operation.
+      // Groups 0/1 represent unselected/selected rows without an identity.
+      const groups = new Map(), parents = [0, 1], ranks = [0, 0], picked = [false, true];
+      const root = group => {
+        while (parents[group] !== group) { parents[group] = parents[parents[group]]; group = parents[group]; }
+        return group;
+      };
+      const groupFor = id => {
+        if (!groups.has(id)) {
+          const group = parents.length;
+          groups.set(id, group); parents.push(group); ranks.push(0); picked.push(false);
+        }
+        return groups.get(id);
+      };
       const indexRow = item => {
-        if (selected(item, window)) for (const id of item[2]) selectedUrls.add(id);
         // The same TradingView story can change URLs. Close over both identities, including
         // cross-route URL companions, before any of the existing deduplicators run.
-        if (item[2].length > 1) for (const id of item[2]) {
-          if (!edges.has(id)) edges.set(id, new Set());
-          for (const other of item[2]) edges.get(id).add(other);
+        const inWindow = selected(item, window);
+        if (!item[2].length) return inWindow ? 1 : 0;
+        let group = root(groupFor(item[2][0]));
+        for (const id of item[2].slice(1)) {
+          let other = root(groupFor(id));
+          if (group === other) continue;
+          if (ranks[group] < ranks[other]) [group, other] = [other, group];
+          parents[other] = group; picked[group] ||= picked[other];
+          if (ranks[group] === ranks[other]) ranks[group]++;
         }
+        picked[group] ||= inWindow;
+        return group;
       };
       const load = async path => {
         if (next.has(path)) return next.get(path);
@@ -126,22 +151,23 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
       // the complete text and full index need no additional module-lifetime owner.
       for (const descriptor of next.values()) {
         if (descriptor.spec) {
+          descriptor.selections = [];
           for (const part of descriptor.spec.parts) {
             if (generation !== epoch) throw Error('Obsolete news view');
             let index;
             try { index = await partIndex(descriptor, part); }
             catch { next.delete(descriptor.path); break; }
-            for (const item of index) indexRow(item);
+            descriptor.selections.push(Uint32Array.from(index, indexRow));
           }
         } else {
           const value = descriptor.entry.value;
           const rows = value.articles || Object.values(value.byTicker || {}).flat();
-          for (const row of rows) indexRow(summary(row));
+          const rowGroups = Uint32Array.from(rows, row => indexRow(summary(row)));
           if (Array.isArray(value.articles) || value.byTicker) {
             descriptor.inlineField = value.byTicker ? 'byTicker' : 'articles';
             descriptor.inlineDigest = await hash(JSON.stringify(value[descriptor.inlineField]));
             descriptor.inlineCount = rows.length;
-            descriptor.inlineIndex = rows.map(summary);
+            descriptor.inlineGroups = rowGroups;
             // The raw inline body stays on disk / HTTP cache, not in the working-set owner.
             const metadata = { ...value };
             if (value.byTicker) metadata.byTicker = Object.fromEntries(Object.keys(value.byTicker).map(key => [key, []]));
@@ -151,18 +177,31 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
         }
         await yieldInput();
       }
-      const queue = [...selectedUrls];
-      for (let i = 0; i < queue.length; i++) for (const id of edges.get(queue[i]) || []) if (!selectedUrls.has(id)) {
-        selectedUrls.add(id); queue.push(id);
-      }
+      for (const [id, group] of groups) if (picked[root(group)]) selectedUrls.add(id);
       // All families and date-correction companions have been considered before exposing a view.
       if (generation !== epoch) throw Error('Obsolete news view');
-      for (const descriptor of next.values()) if (descriptor.inlineIndex) {
-        descriptor.inlineNeeded = descriptor.inlineIndex.some(item => selected(item, window) || item[2].some(id => selectedUrls.has(id)));
-        delete descriptor.inlineIndex;
+      for (const descriptor of next.values()) {
+        if (descriptor.selections) descriptor.selections = descriptor.selections.map(rows =>
+          Uint8Array.from(rows, group => Number(picked[root(group)])));
+        if (descriptor.inlineGroups) {
+          descriptor.inlineNeeded = descriptor.inlineGroups.some(group => picked[root(group)]);
+          delete descriptor.inlineGroups;
+        }
       }
       if (JSON.stringify(preparedWindow) !== JSON.stringify(window) || urls.size !== selectedUrls.size ||
           [...selectedUrls].some(url => !urls.has(url))) selectionRevision++;
+      for (const descriptor of next.values()) {
+        // A refresh still checks every manifest and recomputes companion membership. If both
+        // are unchanged, reuse the complete verified projection; do not parse the same large
+        // source parts again just to discover that the selected records have not changed.
+        descriptor.dataKey = descriptor.spec ? await hash(JSON.stringify([
+          descriptor.spec, Object.keys(descriptor.entry.value.byTicker || {}),
+        ])) : descriptor.inlineDigest;
+        descriptor.projectionKey = JSON.stringify([descriptor.path, descriptor.dataKey, selectionRevision]);
+      }
+      if (generation !== epoch) throw Error('Obsolete news view');
+      const keep = new Set([...next.values()].map(descriptor => descriptor.projectionKey));
+      for (const key of projections.keys()) if (!keep.has(key)) projections.delete(key);
       descriptors = next; urls = selectedUrls; preparedWindow = window; lastPrepared = Date.now();
     })().finally(() => { if (generation === epoch) pending = null; });
     return pending;
@@ -176,6 +215,7 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
     const generation = epoch;
     const live = () => { if (generation !== epoch) throw Error('Obsolete news view'); };
     const window = preparedWindow, selectedUrls = urls, queryRevision = selectionRevision;
+    const projectedRows = projections.get(descriptor.projectionKey);
     let value = descriptor.entry.value;
     if (!descriptor.spec && !value.byTicker && !Array.isArray(value.articles)) return { ...descriptor.entry, queryRevision };
     const field = descriptor.spec?.field || (value.byTicker ? 'byTicker' : 'articles');
@@ -183,7 +223,7 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
     out.queryWindow = window; out.queryRevision = queryRevision;
     out[field] = field === 'byTicker' ? Object.fromEntries(Object.keys(value.byTicker).map(key => [key, []])) : [];
     const matches = item => selected(item, window) || item[2].some(id => selectedUrls.has(id));
-    if (descriptor.inlineDigest && descriptor.inlineNeeded) {
+    if (!projectedRows && descriptor.inlineDigest && descriptor.inlineNeeded) {
       live();
       const entry = await raw(descriptor.path, aborter?.signal);
       if (await hash(JSON.stringify(entry.value?.[descriptor.inlineField])) !== descriptor.inlineDigest) throw Error('News capture changed during this query');
@@ -194,16 +234,17 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
       if (!matches(summary(row))) return;
       if (field === 'byTicker') out.byTicker[item[0]].push(row); else out.articles.push(row);
     };
-    if (descriptor.spec) {
+    if (projectedRows) out[field] = projectedRows;
+    else if (descriptor.spec) {
       const selectedItems = [];
       let offset = 0;
-      for (const part of descriptor.spec.parts) {
+      for (const [partNumber, part] of descriptor.spec.parts.entries()) {
       live();
-      const index = await partIndex(descriptor, part);
-      if (index.some(matches)) {
+      const selection = descriptor.selections[partNumber];
+      if (selection.some(Boolean)) {
         live();
         const items = await readVerifiedShard(shardPath(descriptor.path, part.file), part, { fetcher });
-        items.forEach((item, i) => { if (matches(index[i])) selectedItems.push({ item, order: part.order?.[i] ?? offset+i }); });
+        items.forEach((item, i) => { if (selection[i]) selectedItems.push({ item, order: part.order?.[i] ?? offset+i }); });
       }
       offset += part.rows;
       await yieldInput();
@@ -211,6 +252,11 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
       selectedItems.sort((a,b)=>a.order-b.order).forEach(({item})=>add(item));
     } else if (field === 'articles') value.articles.forEach(add);
     else for (const [key, rows] of Object.entries(value.byTicker)) for (const row of rows) add([key, row]);
+    live();
+    if (!projectedRows) {
+      const bytes = estimateMemoryBytes(out[field], projectionBudget);
+      if (bytes <= projectionBudget) projections.set(descriptor.projectionKey, out[field], bytes);
+    }
     if (field === 'byTicker') {
       // A checked company whose saved articles fall outside this period is not an unchecked
       // company. Keep source failures separate, and do not rewrite the source's own empty list.
@@ -226,8 +272,9 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
     includes: row => selected(summary(row), readingWindow()) || identities(row).some(id => urls.has(id)),
     async read(path, options) {
       if (!path.startsWith('data/')) return read(path, options);
-      if (!lastPrepared || JSON.stringify(preparedWindow) !== JSON.stringify(readingWindow()) ||
-          ['data/news.json', 'data/tradingview-news/latest.json'].includes(path) && Date.now() - lastPrepared > 1000) await prepare();
+      // createQueryNews prepares every load/refresh, including its visible-page poller. Keep
+      // that checked revision throughout one operation: a slow projection is not a new check.
+      if (!lastPrepared || JSON.stringify(preparedWindow) !== JSON.stringify(readingWindow())) await prepare();
       // A period selected while an earlier preparation was in flight gets its own complete
       // projection. A pending old query cannot certify the new period.
       while (JSON.stringify(preparedWindow) !== JSON.stringify(readingWindow())) await prepare();
@@ -235,6 +282,6 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
       if (!descriptor) throw Error('News capture unavailable');
       return project(descriptor);
     },
-    release() { epoch++; aborter?.abort(); aborter = null; pending = null; descriptors.clear(); urls.clear(); lastPrepared = 0; preparedWindow = null; },
+    release() { epoch++; aborter?.abort(); aborter = null; pending = null; descriptors.clear(); projections.clear(); urls.clear(); lastPrepared = 0; preparedWindow = null; },
   };
 }

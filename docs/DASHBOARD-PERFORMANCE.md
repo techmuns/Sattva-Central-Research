@@ -1,5 +1,49 @@
 # Dashboard-wide performance, 6 September 2026
 
+## Date-filter loading follow-up, 24 September 2026
+
+This release changes loading and computation only; dashboard markup, controls, wording and
+styles are unchanged. The shared News/All Alerts/AI Alerts raw-news reader now computes the
+transitive story-companion selection once per checked revision. It retains one selection byte
+per source row instead of rereading all compact indexes during each projection. Every original
+record, source order and cross-date correction still reaches the existing deduplicators.
+
+The precomputed pool additionally publishes optional per-feed members beside the original
+complete day/AI members. When current capture checks decline a feed, the browser downloads only
+the other usable feeds. All-feed reads keep their single complete member; old artifacts remain
+usable and original records remain available to bookmarks. Every new member is compared with its
+complete counterpart, including source records, order and correction companions. An explicit null
+descriptor means a verified empty feed/day; missing descriptors fall back to the complete member,
+and invalid member content fails into the original source-reading path. Private feeds are outside
+the route allowlist. Scheduled collection, history retention and revision checks are unchanged.
+
+On the saved 11–24 September pool, the 14-day download is 27.33 MB gzip / 265.69 MB decoded.
+When news needs the original source reader, delivering only usable pooled feeds reduces that
+portion to 4.99 MB / 48.69 MB (82% less gzip data). When insider also needs the source reader,
+it is 4.74 MB / 44.50 MB. Those source readers still load their complete eligible records; these
+figures measure the avoided duplicate pool transfer, not total page bytes or elapsed load time.
+
+Each reader has a 32 MiB budget for reusable verified projections. Manifest checks and companion
+selection still run on refresh; changed source hashes, original order, dates or companion sets
+invalidate reuse. Coverage/failure metadata is rebuilt from the latest check even when rows can
+be reused. Oversized projections remain readable without acquiring another cache owner, and
+releasing a reader drops its selections and projections. Exact text normalization uses a separate
+2 MiB cache shared by the news consumers. All Alerts now supplies its existing current-view guard
+to skip obsolete progress assembly; shared collection, final assembly and storage still finish.
+
+Content-addressed public `.parts/<sha256>.json` files no longer trigger redundant service-worker
+background revalidations. Mutable manifests retain their existing checks and changed data gets a
+new part address. Explicit reloads still reach the server; hash/size verification is unchanged.
+API, authorized and private response exclusions are unchanged.
+
+The local full-history oracle compared all eligible IDs and fields for 1, 3, 14 and 30 days
+(9,748 / 33,606 / 112,753 / 171,979 events on the frozen 23 September fixture day). Adversarial
+tests cover cache eviction, corrected records, new failures, optional-index corruption, midnight,
+rapid selection changes and retained manual arrivals. The real service-worker regression checks
+one download per unchanged part, continued manifest checks and an existing session receiving the
+new query module. These are local checks, not certification of complete upstream coverage or
+a promise that every cold full-history read is instantaneous.
+
 ## Cold Universe follow-up, 15 September 2026
 
 The first complete Universe normalization now avoids four repeated costs: scanning every
