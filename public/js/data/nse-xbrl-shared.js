@@ -51,9 +51,9 @@ export function isXbrlFilingUrl(url) {
   return /\.xml$/i.test(path);
 }
 
-/** Navigation uses the readable page; stored source identities stay at NSE. */
+/** Version the rendered view to bypass older day-cached HTML; source identities stay at NSE. */
 export const readableFilingUrl = (url) => isXbrlFilingUrl(url)
-  ? `/filing?src=${encodeURIComponent(url)}` : url;
+  ? `/filing?src=${encodeURIComponent(url)}&view=2` : url;
 
 const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 

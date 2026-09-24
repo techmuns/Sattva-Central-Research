@@ -30,7 +30,11 @@ const server = createServer((req, res) => {
   try {
     if (url.pathname === '/' || url.pathname === '/index.html') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (url.pathname === '/api/nse-filing') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ ...filing, url: src })); return; }
-    if (url.pathname === '/filing') { res.setHeader('content-type', 'text/html'); res.end(renderFilingPage({ filing, url: src })); return; }
+    if (url.pathname === '/filing') {
+      res.setHeader('content-type', 'text/html');
+      res.setHeader('cache-control', upgraded ? 'public, max-age=0' : 'public, max-age=86400');
+      res.end(upgraded ? renderFilingPage({ filing, url: src }) : '<!doctype html><body>Older cached filing page: Open the original file on NSE</body>'); return;
+    }
     if (url.pathname === '/sdk-fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end('/* isolated SDK */'); return; }
     const file = resolve(root, '.' + url.pathname); if (!file.startsWith(root + sep)) throw Error();
     let body = readFileSync(file);
@@ -49,20 +53,27 @@ const browser = await chromium.launch();
 try {
   const context = await browser.newContext(), page = await context.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
+  // Do not route/intercept requests: Playwright routing disables the HTTP cache this check needs.
+  // The harness, module graph and SDK substitute are all served by this local server.
+  context.on('request', request => assert.equal(new URL(request.url()).origin, origin));
   await page.goto(origin); await page.waitForFunction(() => window.ready && navigator.serviceWorker.controller);
   await page.reload(); await page.waitForFunction(() => window.ready);
   await page.locator('#open').click();
   assert.equal(await page.locator('[data-old-original]').getAttribute('href'), src);
   assert.ok((await page.evaluate(() => caches.keys())).some(key => key.includes('previous-nse-release')));
+  const previousPage = await page.evaluate(async src => (await fetch('/filing?src=' + encodeURIComponent(src))).text(), src);
+  assert.match(previousPage, /Older cached filing page/);
   upgraded = true;
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.waitForFunction(() => window.ready && document.querySelector('#source').pathname === '/filing');
+  const stillCached = await page.evaluate(async src => (await fetch('/filing?src=' + encodeURIComponent(src))).text(), src);
+  assert.match(stillCached, /Older cached filing page/, 'the prior HTML really is in the browser HTTP cache');
   await page.locator('#open').click(); await page.locator('[data-xbrl-page]').waitFor();
   assert.match(await page.locator('[data-xbrl-panel]').innerText(), /25 fields as filed/);
   const [opened] = await Promise.all([page.waitForEvent('popup'), page.locator('[data-xbrl-page]').click()]);
   await opened.waitForLoadState('domcontentloaded');
   assert.equal(new URL(opened.url()).pathname, '/filing');
+  assert.equal(new URL(opened.url()).searchParams.get('view'), '2', 'the new link bypasses the older HTTP-cached document');
   assert.match(await opened.locator('body').innerText(), /Sell side Analyst Call/);
   assert.equal(await opened.getByRole('link', { name: /raw XML/ }).isVisible(), false);
   assert.ok(!(await page.evaluate(() => caches.keys())).some(key => key.includes('previous-nse-release')));

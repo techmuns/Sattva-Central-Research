@@ -3266,7 +3266,8 @@ boundary with a visible `…`. Everything it drops is counted; nothing it prints
 **Source identity stays at NSE; navigation is readable in every scope.** `row.url` is unchanged,
 so retained history, exports and provenance keep the exchange's address. The shared reader in
 `public/js/ui/xbrl-filing.js`, installed once from `app.js`, turns every matching rendered anchor's
-href into `/filing?src=…`. It observes new subtrees and changed hrefs so later refreshes, cards,
+href into `/filing?src=…&view=2`. The view revision bypasses older day-cached HTML; rendered
+pages now revalidate while parsed source facts retain their one-day edge cache. It observes new subtrees and changed hrefs so later refreshes, cards,
 drilldowns and all three scopes follow the same rule. Ordinary clicks open the panel; keyboard,
 modified/middle clicks, copied links and the browser's Open in new tab menu retain readable
 navigation. All Alerts and Company Filings row actions use `openFilingSource()` for the same policy.

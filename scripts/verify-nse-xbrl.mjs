@@ -38,6 +38,7 @@ check('navigation is readable for every company and form, while source identitie
     const url = `https://nsearchives.nseindia.com/corporate/xbrl/${form}_company.xml?version=1&source=NSE`;
     const link = new URL(readableFilingUrl(url), 'https://dashboard.test');
     assert.equal(link.pathname, '/filing');
+    assert.equal(link.searchParams.get('view'), '2', 'older HTML cache entries are bypassed');
     assert.equal(link.searchParams.get('src'), url);
     assert.equal(readableFilingUrl(link.href), link.href, 'already readable links stay stable');
   }
@@ -268,7 +269,7 @@ check('a filing that could not be read names the failure and keeps the document 
   const html = renderFilingFailure({ url, reason: 'unreachable', error: 'NSE HTTP 403' });
   assert.ok(html.includes('NSE could not be read for this filing just now'));
   assert.ok(html.includes('Please try again shortly'));
-  assert.ok(html.includes(`href="${readableFilingUrl(url)}"`), 'retry opens the readable page');
+  assert.ok(html.includes(`href="${readableFilingUrl(url).replace(/&/g, '&amp;')}"`), 'retry opens the readable page');
   assert.ok(html.includes('View raw XML on NSE (technical file)'));
   assert.ok(!html.includes('Open the original file on NSE'));
   assert.ok(html.includes(`href="${url}"`));

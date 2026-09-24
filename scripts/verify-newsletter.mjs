@@ -372,8 +372,8 @@ await test('a headline that names the filer does not put the company into the ev
 await test('a filing link lands on the filing, not on a page of XML', () => {
   const html = renderBriefHtml(morning, { dashboardUrl: 'https://example.test' });
   const story = acquisitionStory();
-  const reader = `https://example.test/filing?src=${encodeURIComponent(story.url)}`;
-  assert.ok(html.includes(`href="${reader}"`), 'the XBRL filing opens through the dashboard\'s readable copy');
+  const reader = `https://example.test/filing?src=${encodeURIComponent(story.url)}&view=2`;
+  assert.ok(html.includes(`href="${reader.replace(/&/g, '&amp;')}"`), 'the XBRL filing opens through the dashboard\'s readable copy');
   assert.ok(!html.includes(`href="${story.url}"`), 'the raw .xml is no longer what a reader clicks');
   assert.ok(html.includes('Read the filing →'));
   assert.ok(html.includes('Name of the target entity:') && html.includes('Meridian Analytics Private Limited'));

@@ -62,7 +62,7 @@ import { matchKeywords } from '../public/js/data/news-keywords.js';
 import { announcementSignal } from '../public/js/data/filing-signals.js';
 import { attributeNewsRow } from '../public/js/data/company-news-attribution.js';
 import { articleUrlKey } from '../public/js/data/filings-shared.js';
-import { factStatement, filingParticulars, isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
+import { factStatement, filingParticulars, isXbrlFilingUrl, readableFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 import { EDITIONS, editionWindow, istDay, istDateLong, istInstant, istLabel, istTime, previousWeekday } from '../public/js/data/newsletter-shared.js';
 
 export const PRODUCTION_ORIGIN = 'https://sattva-central-research.tech-441.workers.dev';
@@ -963,7 +963,7 @@ const link = (url, inner, style) => (url ? `<a href="${esc(url)}" ${NEW_TAB} sty
  * Every other link in the brief still goes straight to the publisher or the exchange.
  */
 export const readableUrl = (url, dashboardUrl) => (isXbrlFilingUrl(url) && dashboardUrl
-  ? `${dashboardUrl}/filing?src=${encodeURIComponent(url)}` : url);
+  ? `${dashboardUrl}${readableFilingUrl(url)}` : url);
 
 /** The filing's own particulars, as filed — the label muted, the company's value in full. */
 const detailHtml = (s) => (Array.isArray(s.detail) && s.detail.length ? `

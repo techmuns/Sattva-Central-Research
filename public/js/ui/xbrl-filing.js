@@ -188,7 +188,10 @@ export function installFilingReader(root = document) {
     let url;
     try { url = new URL(anchor.href); } catch { return null; }
     const src = url.searchParams.get('src');
-    return url.origin === location.origin && url.pathname === '/filing' && isXbrlFilingUrl(src) ? src : null;
+    if (url.origin !== location.origin || url.pathname !== '/filing' || !isXbrlFilingUrl(src)) return null;
+    const href = new URL(readableFilingUrl(src), location.origin).href;
+    if (anchor.href !== href) anchor.href = href;
+    return src;
   };
   const scan = (node) => {
     if (node.matches?.('a[href]')) prepare(node);
