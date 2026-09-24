@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import {collectShareCounts,moneycontrolShareCount,nseShareCount,moneycontrolCode} from './lib/mutual-funds-denominators.mjs';
+import {collectShareCounts,moneycontrolShareCount,nseShareCount,moneycontrolCode,moneycontrolSearchCode,provenMoneycontrolCode} from './lib/mutual-funds-denominators.mjs';
 import {freshShareCount,selectShareCount,readableOwnership} from '../public/js/data/mutual-funds-ownership.js';
 import {mergeCompany,projectCompany} from '../worker/mutual-funds-model.mjs';
-const now=Date.parse('2026-09-21T06:00:00Z'),checkedAt=new Date(now).toISOString(),isin='INE01IU01018';
+const now=Date.parse('2026-09-21T06:00:00Z'),checkedAt=new Date(now).toISOString(),isin='INE01IU01018',DAY_MS=86400000;
 const c={isin,ticker:'SKYGOLD',name:'Sky Gold'},other={isin:'INE530B01024',ticker:'IIFL',name:'IIFL'};
 const body=(id=isin,shares='154873884',epoch=now/1000)=>({code:'200',data:{isinid:id,SHRS:shares,lastupd_epoch:String(epoch)}});
 const d=moneycontrolShareCount(body(),c,checkedAt,'https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/SG14');
@@ -40,4 +40,53 @@ assert.equal((await collectShareCounts({...opts,previous:second.denominators,che
 nse=0;mc=0;await collectShareCounts({...opts,maxCompanies:2});assert.equal(nse,1,'An exchange refusal stops that source for the remaining companies');assert.equal(mc,2);
 const failed=await collectShareCounts({...opts,previous:{[isin]:d},fetcher:async()=>new Response('',{status:503})});
 assert.equal(failed.denominators[isin].checkedAt,checkedAt);assert.equal(failed.checks[isin].state,'unavailable','A failed attempt is recorded separately from the retained success');
-console.log('PASS company ownership: exact ISIN/source clocks, direct counts before estimates, BSE identities, calculation, denials, daily cadence, resumable universe and retained failed checks');
+// Companies the results map never saw (new listings, SME, demerged, symbol-less) are found by exact ISIN.
+const hit=(sc_id,id)=>({sc_id,pdt_dis_nm:`Company&nbsp;<span>${id}, SYM, 500001</span>`});
+const enrin={isin:'INE1NPP01017',ticker:'ENRIN',name:'Siemens Energy India'},finbud={isin:'INE0EDU01014',ticker:null,name:'Finbud Financial Services'};
+assert.equal(moneycontrolSearchCode([hit('SEI11',enrin.isin)],enrin.isin),'SEI11');
+assert.equal(moneycontrolSearchCode([hit('SEI11','INE1NPP01018')],enrin.isin),null,'A different ISIN is never accepted');
+assert.equal(moneycontrolSearchCode([hit('SEI11','XINE1NPP01017')],enrin.isin),null,'Only a whole ISIN token matches');
+assert.equal(moneycontrolSearchCode([hit('A1',enrin.isin),hit('B2',enrin.isin)],enrin.isin),null,'Two codes for one ISIN are ambiguous');
+assert.equal(moneycontrolSearchCode([hit('A1',enrin.isin),hit('A1',enrin.isin)],enrin.isin),'A1');
+for(const invalid of [[hit('bad/code',enrin.isin)],{},null])assert.equal(moneycontrolSearchCode(invalid,enrin.isin),null);
+assert.equal(provenMoneycontrolCode(d),'SG14','A code proven by an accepted count is remembered');
+for(const other of [{...d,kind:'estimate'},{...d,sourceName:'NSE'},{...d,source:'https://example.com/pricefeed/nse/equitycash/SG14'}])assert.equal(provenMoneycontrolCode(other),null);
+const quoteBody={SEI11:{nse:body(enrin.isin),bse:body(enrin.isin)},FFS05:{nse:body(finbud.isin),bse:{code:'201',data:{}}}};
+const discovery=({search=true,refuseSearch=false,priceDown=false}={})=>{
+  const calls=[];
+  return {calls,fetcher:async url=>{
+    calls.push(url);
+    if(url.includes('nseindia'))return new Response('',{status:403});
+    if(url.includes('autosuggestion')){
+      if(refuseSearch)return new Response('',{status:403});
+      const id=new URL(url).searchParams.get('query');
+      return Response.json(search?[{SEI11:hit('SEI11',enrin.isin),FFS05:hit('FFS05',finbud.isin)}[id===enrin.isin?'SEI11':'FFS05']]:[]);
+    }
+    if(priceDown)throw new TypeError('fetch failed');
+    const [,exchange,code]=/pricefeed\/(nse|bse)\/equitycash\/(\w+)$/.exec(url);
+    return Response.json(quoteBody[code]?.[exchange]||{code:'201',data:{}});
+  }};
+};
+const find=discovery(),found=await collectShareCounts({companies:[enrin,finbud],portfolioIsins:[enrin.isin,finbud.isin],fetcher:find.fetcher,now:()=>now,pause:async()=>{}});
+assert.equal(found.discovered,2);assert.equal(found.denominators[enrin.isin].shares,154873884);
+assert.equal(found.denominators[enrin.isin].source,'https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/SEI11');
+assert.deepEqual(found.checks[enrin.isin].sources.map(s=>`${s.source}:${s.state}`),['NSE:http-403','Moneycontrol search:ok','Moneycontrol:ok']);
+assert.equal(found.denominators[finbud.isin].source,'https://priceapi.moneycontrol.com/pricefeed/nse/equitycash/FFS05','A symbol-less NSE-only listing is read from the other exchange');
+assert.deepEqual(found.checks[finbud.isin].sources.map(s=>`${s.source}:${s.state}`),['Moneycontrol search:ok','Moneycontrol:invalid-or-stale','Moneycontrol:ok']);
+const later=now+DAY_MS,remember=discovery({refuseSearch:true});
+const kept=await collectShareCounts({companies:[enrin],portfolioIsins:[enrin.isin],previous:found.denominators,checks:found.checks,fetcher:remember.fetcher,now:()=>later,pause:async()=>{}});
+assert.equal(kept.checks[enrin.isin].state,'ok');assert(!remember.calls.some(u=>u.includes('autosuggestion')),'A proven code needs no search, so a search refusal changes nothing');
+const refused=discovery({refuseSearch:true}),none=await collectShareCounts({companies:[enrin,finbud],fetcher:refused.fetcher,now:()=>now,pause:async()=>{}});
+assert.equal(refused.calls.filter(u=>u.includes('autosuggestion')).length,1,'A search refusal stops searching for the rest of the run');
+assert.equal(none.checks[finbud.isin].state,'unavailable');assert.equal(none.discovered,0);
+const miss=await collectShareCounts({companies:[enrin],fetcher:discovery({search:false}).fetcher,now:()=>now,pause:async()=>{}});
+assert.equal(miss.checks[enrin.isin].sources.at(-1).state,'no-exact-match');
+const down=discovery({priceDown:true});await collectShareCounts({companies:[{...c}],map,fetcher:down.fetcher,now:()=>now,pause:async()=>{}});
+assert(!down.calls.some(u=>u.includes('autosuggestion'))&&down.calls.filter(u=>u.includes('priceapi')).length===1,'An unreachable price host is not asked twice or searched around');
+// A portfolio line still missing a direct count is asked again after six hours; everything else daily.
+const gap={[finbud.isin]:{lastAttemptAt:checkedAt,state:'unavailable'},[enrin.isin]:{lastAttemptAt:checkedAt,state:'ok'},[other.isin]:{lastAttemptAt:checkedAt,state:'unavailable'}};
+const cadence=at=>collectShareCounts({companies:[enrin,finbud,other],portfolioIsins:[enrin.isin,finbud.isin],previous:{[enrin.isin]:found.denominators[enrin.isin]},checks:gap,fetcher:discovery().fetcher,now:()=>at,pause:async()=>{}});
+assert.equal((await cadence(now+5*3600000)).attempted,0);
+const sixHours=await cadence(now+6*3600000);assert.equal(sixHours.attempted,1);assert.equal(sixHours.checks[finbud.isin].state,'ok');
+assert.equal((await cadence(now+DAY_MS)).attempted,3);
+console.log('PASS company ownership: exact ISIN/source clocks, direct counts before estimates, BSE identities, ISIN discovery with remembered codes, both exchanges, refusals, calculation, denials, daily and six-hour gap cadence, resumable universe and retained failed checks');

@@ -35,7 +35,11 @@ NSE issued shares are preferred, then Moneycontrol's directly supplied `SHRS` fi
 require an exact live ISIN match, a positive safe integer and a source quote no older than seven
 days. A refusal stops further reads to that source for the run. The Moneycontrol map discovers
 codes (including BSE-only identities); its stored counts and file timestamp are never used as a
-fresh denominator. AmfiBeas's market-cap/price estimates are the last resort, labelled `≈`.
+fresh denominator. A code already proven by an accepted count is reused, and a company the map
+never saw (new listing, SME, demerger, no NSE symbol) is found by Moneycontrol's own search on
+the exact ISIN — one unambiguous code or none. When one exchange's quote answers without a usable
+count, the other exchange is asked. Discovery never bypasses the live ISIN match; an unreachable
+price host is not searched around. AmfiBeas's market-cap/price estimates are the last resort, labelled `≈`.
 A newer estimate cannot displace a fresh directly supplied count. Missing/invalid quantities,
 share counts or source dates, counts older than seven days and ratios over 100% withhold the
 percentage. Saved browser rows also expire during outages.
@@ -50,7 +54,10 @@ The existing automatic collector checks share counts daily, prioritizing the liv
 (including new holdings) and continuing across every captured Universe company. Each pass is
 bounded to 200 companies/four minutes. Persisted per-company attempt checkpoints resume the
 oldest unchecked company on later runs; failures preserve the last good value and its date.
-Unavailable identities remain explicit. No manual refresh or new browser collection is needed.
+A portfolio company still without a fresh direct count is retried every six hours rather than
+daily, so a refused hour is not repeated at the same time each day; every run logs how many
+portfolio lines lack one (counts only). Unavailable identities remain explicit. No manual refresh
+or new browser collection is needed.
 Fund AUM % is the AMC-disclosed position weight. The screenshot-compatible AUM (Cr) column means
 **the stock position's market value**, not the fund's total assets; its tooltip states this.
 
