@@ -99,7 +99,13 @@ the seed is not the collection clock. All current companies, including future ho
 against the complete captured stock universe on each collection.
 
 The visible tab revalidates on opening, every minute while visible, on return after inactivity,
-and on reconnection. It retains rows and filters during failures, restoring persisted last-good summaries and detail
+and on reconnection. Public summaries restore from the device cache before network revalidation;
+the table updates as soon as primary summaries arrive, without waiting for the private supplement.
+A changed primary row invalidates its older supplemental overlay. Source timestamps do not
+advance on a cache read. “No disclosure” means no matched report in captured sources, not zero
+ownership; “Comparison unavailable” identifies missing adjacent-month quantities. Neither is a
+running calculation. Comparisons are already computed and saved during collection.
+It retains rows and filters during failures, restoring persisted last-good summaries and detail
 even after a reload. The shared table kit windows
 summary rows; detail pages show 50 schemes at a time while searching all schemes. Actual source
 check timestamps stay separate from the displayed month. Private portfolio weights never enter

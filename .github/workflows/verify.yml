@@ -254,7 +254,7 @@ jobs:
       - name: Verify Mutual Fund portfolio table and grouped detail
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-mutual-funds-ui.mjs && node scripts/verify-mutual-funds-upgrade-ui.mjs
+        run: node scripts/verify-mutual-funds-ui.mjs && node scripts/verify-mutual-funds-cache-ui.mjs && node scripts/verify-mutual-funds-upgrade-ui.mjs
       - name: Verify instant repeat visits and interaction cache boundaries
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

@@ -1,15 +1,16 @@
 import {escapeHtml as esc} from '../core/dom.js';
 import {scoreTable,openModal,closeModal} from '../ui/screener.js';
 import * as feed from '../data/mutual-funds.js';
+import {comparisonStatus} from '../data/mutual-funds-status.js';
 import {supplementStatus} from '../data/mutual-funds-supplement.js';
 import * as coverage from '../data/coverage.js';
 import {cachedPositionSizes,readPositionSizes,onPortfolioReady,onPortfolioInvalidation,portfolioConnectionState,unlockPortfolio} from '../research/portfolio-bridge.js';
 export const meta={id:'mutual-funds',title:'Mutual Funds',subtitle:'Monthly mutual-fund ownership across your portfolio.',subviews:[]};
-let ctx=null,disposeTable=null,table=null,offReady=null,offInvalid=null,offSession=null,timer=null,sequence=0,dialog=0,sort='holdings',busy=false,lastRead=0;
+let ctx=null,disposeTable=null,table=null,offReady=null,offInvalid=null,offSession=null,offUpdate=null,timer=null,sequence=0,dialog=0,sort='holdings',busy=false,lastRead=0;
 const num=n=>Number.isFinite(n)?n.toLocaleString('en-IN',{maximumFractionDigits:0}):'—';
 const pct=n=>Number.isFinite(n)?`${n.toLocaleString('en-IN',{maximumFractionDigits:2})}%`:'—';
 const signed=n=>Number.isFinite(n)?`${n>0?'+':n<0?'−':''}${num(Math.abs(n))}`:'—';
-const monthLabel=m=>m?new Date(`${m}-01T00:00:00Z`).toLocaleDateString('en-IN',{month:'short',year:'numeric',timeZone:'UTC'}):'Pending';
+const monthLabel=m=>m?new Date(`${m}-01T00:00:00Z`).toLocaleDateString('en-IN',{month:'short',year:'numeric',timeZone:'UTC'}):'—';
 const tone=n=>n>0?'text-emerald-700':n<0?'text-rose-700':'text-slate-500';
 const span=n=>`<span class="${tone(n)} tabular-nums">${signed(n)}</span>`;
 const ownershipValue=r=>`${r.denominator?.kind==='estimate'&&Number.isFinite(r.companyPct)?'≈':''}${pct(r.companyPct)}`;
@@ -35,6 +36,7 @@ export function render(context) {
   ctx.root.querySelector('[data-mf-sort]').onchange=e=>{sort=e.target.value;if(table)table.view.sort=null;paint();};
   ctx.root.querySelector('[data-mf-coverage]').onclick=showCoverage;
   offReady=onPortfolioReady(()=>paint());offInvalid=onPortfolioInvalidation(()=>paint());
+  offUpdate=feed.onUpdate(()=>paint());
   offSession=feed.onSessionChange(()=>{sequence++;dialog++;activeCompany=null;detailData=null;closeModal();paint();refresh();});
   window.addEventListener('focus',resume);window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);
   timer=setInterval(()=>{if(!document.hidden)refresh();},60000);
@@ -50,20 +52,20 @@ function orderedRows() {
   const snapshot=cachedPositionSizes(),weights=new Map(snapshot?.sizes?.complete?snapshot.holdings.map(h=>[h.isin,h.weightPct]):[]);
   return feed.scopedRows(ctx.scope).map(r=>({...r,weight:weights.get(r.isin)??null})).sort((a,b)=>(sort==='holdings'&&ctx.scope==='portfolio'?(b.weight??-1)-(a.weight??-1):0)||String(b.month||'').localeCompare(String(a.month||''))||String(b.disclosureCheckedAt||'').localeCompare(String(a.disclosureCheckedAt||''))||a.name.localeCompare(b.name));
 }
-function paint(loading=false) {
+function paint(loading=busy) {
   if(!ctx)return;
   const rows=orderedRows(),view=table?.view;
   if(table){table.updateData(rows,undefined,{loading:loading&&!feed.all().length});paintStatus();return;}
   table=scoreTable({rows,key:r=>r.isin||r.ticker||r.name,watchKey:r=>r.ticker,name:r=>r.name,sub:r=>r.ticker||r.isin||'',nameLabel:'Company',showAvatar:false,showRank:false,showWatchFilter:false,link:null,
     nameMaxPx:230,dense:true,wrapHeads:true,fillMode:'windowed',stickyHead:'max(320px, calc(100vh - 310px))',loading:loading&&!feed.all().length,
-    initialView:view?{...view,sort:null}:null,countLabel:list=>`${list.length} companies`,searchable:r=>`${r.name} ${r.ticker||''} ${r.insight||''}`,onRowClick:r=>openCompany(r),
+    initialView:view?{...view,sort:null}:null,countLabel:list=>`${list.length} companies`,searchable:r=>`${r.name} ${r.ticker||''} ${comparisonStatus(r).label} ${comparisonStatus(r).insight||''}`,onRowClick:r=>openCompany(r),
     columns:[
-      {label:'Month',sortValue:r=>r.month||'',html:true,get:r=>esc(monthLabel(r.month))},
+      {label:'Month',sortValue:r=>r.month||'',html:true,get:r=>esc(monthLabel(comparisonStatus(r).reported?r.month:null))},
       {label:'MF shares held',align:'right',sortValue:r=>r.totalShares??-1,html:true,get:r=>num(r.totalShares)},
       {label:'MF ownership',align:'right',sortValue:r=>r.companyPct??-1,html:true,get:r=>`<span title="${esc(ownershipNote(r))}">${ownershipValue(r)}</span>`},
-      {label:'Added / reduced',html:true,get:r=>`<span class="${tone(r.netChange)}">${esc(r.direction||'Pending')}</span><div class="text-xs text-slate-500">${r.comparableFunds?`${r.addedFunds} added · ${r.reducedFunds} reduced`:'Awaiting comparison'}</div>`},
+      {label:'Added / reduced',html:true,get:r=>`<span class="${tone(r.netChange)}">${esc(comparisonStatus(r).label)}</span><div class="text-xs text-slate-500">${esc(comparisonStatus(r).detail)}</div>`},
       {label:'Net monthly shares',align:'right',sortValue:r=>r.netChange??-Infinity,html:true,get:r=>span(r.netChange)},
-      {label:'Insight summary',html:true,get:r=>`<div class="mf-insight">${esc(r.insight||'No matched mutual-fund disclosure yet.')}${r.pendingFunds?` <span class="text-slate-500">${r.pendingFunds} funds awaiting comparable reports.</span>`:''}</div>`}
+      {label:'Insight summary',html:true,get:r=>`<div class="mf-insight">${esc(comparisonStatus(r).insight)}${r.comparableFunds&&r.pendingFunds?` <span class="text-slate-500">${r.pendingFunds} funds lack comparable reports.</span>`:''}</div>`}
     ]});
   const host=ctx.root.querySelector('[data-mf-table]');host.innerHTML=table.html;disposeTable=table.wire(host);
   paintStatus();
@@ -71,7 +73,7 @@ function paint(loading=false) {
 function paintStatus() {
   if(!ctx)return;
   const m=feed.meta();
-  ctx.root.querySelector('[data-mf-coverage]').title=[`${feed.health()} · Checked ${checked(m)}`,supplementStatus(m)].filter(Boolean).join(' · ');
+  ctx.root.querySelector('[data-mf-coverage]').title=[m.revalidating?'Showing saved disclosures · Checking for updates':'',`${feed.health()} · Checked ${checked(m)}`,supplementStatus(m)].filter(Boolean).join(' · ');
   const sizeNode=ctx.root.querySelector('[data-mf-sizes]'),sizes=cachedPositionSizes();
   sizeNode.innerHTML=sort==='holdings'&&ctx.scope==='portfolio'&&!sizes?.sizes?.complete
     ? portfolioConnectionState()==='locked'?'<button data-mf-unlock class="text-indigo-600">Unlock portfolio for Largest holdings</button> · Newest shown while sizes are unavailable.' : 'Portfolio sizes unavailable · Newest shown.' : '';
@@ -138,6 +140,6 @@ function paintDetail() {
   };});
   holder.querySelector('[data-mf-action]').value=oldAction;holder.querySelector('[data-mf-fund-search]').oninput=()=>{page=0;fill();};holder.querySelector('[data-mf-action]').onchange=()=>{page=0;fill();};holder.querySelector('[data-mf-prev]').onclick=()=>{page--;fill();};holder.querySelector('[data-mf-next]').onclick=()=>{page++;fill();};fill();holder.querySelector('.mf-detail-scroll').scrollLeft=oldScroll;
 }
-function showCoverage(){const m=feed.meta();openModal(`<div class="p-6"><button data-modal-close class="float-right text-2xl" aria-label="Close">×</button><h2 class="text-xl font-bold">Mutual Fund coverage</h2><p class="mt-3 text-sm">${esc(feed.health())}. Checked ${esc(checked(m))}. Source disclosures are checked automatically with a 15-minute target; collection duration and source availability can delay delivery.</p>${m.supplement?`<p class="mt-2 text-sm">${esc(supplementStatus(m))}. Supplemental pages can still have unpublished or unmatched funds; this does not establish full AMC coverage. </p>`:''}<p class="mt-2 text-sm">MF ownership = captured MF shares ÷ company shares outstanding × 100. Share counts are checked daily, starting with the live portfolio, then the captured universe. NSE and Moneycontrol directly supplied counts take priority; ≈ marks a market-cap/price estimate. Values older than seven days are withheld. Hover a percentage or open the company for its source, dates and any failed check. Historical months use the latest share count, not a historical capital structure.</p><p class="mt-2 text-sm">All captured months are retained. Initial history varies by AMC; this is not an exhaustive industry archive. Changes use funds reporting both adjacent calendar months. Missing reports are never treated as sales.</p><p class="mt-2 text-sm">${esc(m.warnings?`${m.warnings} source validation findings; ambiguous observations are withheld and previously saved history is retained.`:'')}</p><div class="mf-detail-scroll mt-4"><table data-column-layout="mutual-funds:2" class="mf-detail-table"><thead><tr><th class="mf-identity">AMC</th><th>Latest month</th><th>State</th><th>Last checked</th></tr></thead><tbody>${(m.amcs||[]).map(a=>`<tr><td class="mf-identity">${esc(a.name||a.slug)}</td><td>${esc(monthLabel(a.month))}</td><td>${esc(a.status)}</td><td>${esc(a.checkedAt||'Not checked')}</td></tr>`).join('')}</tbody></table></div></div>`,{size:'wide'});}
-function cleanup(){disposeTable?.();disposeTable=null;table=null;offReady?.();offInvalid?.();offSession?.();clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);}
+function showCoverage(){const m=feed.meta();openModal(`<div class="p-6"><button data-modal-close class="float-right text-2xl" aria-label="Close">×</button><h2 class="text-xl font-bold">Mutual Fund coverage</h2><p class="mt-3 text-sm">${esc(feed.health())}. Checked ${esc(checked(m))}. Source disclosures are checked automatically with a 15-minute target; collection duration and source availability can delay delivery.</p>${m.supplement?`<p class="mt-2 text-sm">${esc(supplementStatus(m))}. Supplemental pages can still have unpublished or unmatched funds; this does not establish full AMC coverage. </p>`:''}<p class="mt-2 text-sm">MF ownership = captured MF shares ÷ company shares outstanding × 100. Share counts are checked daily, starting with the live portfolio, then the captured universe. NSE and Moneycontrol directly supplied counts take priority; ≈ marks a market-cap/price estimate. Values older than seven days are withheld. Hover a percentage or open the company for its source, dates and any failed check. Historical months use the latest share count, not a historical capital structure.</p><p class="mt-2 text-sm">Comparisons are calculated and saved when disclosures arrive. Saved results appear immediately while updates are checked automatically. “No disclosure” means no matched report in captured sources; “Comparison unavailable” means the required monthly quantities are missing. Neither means a calculation is still running.</p><p class="mt-2 text-sm">All captured months are retained. Initial history varies by AMC; this is not an exhaustive industry archive. Changes use funds reporting both adjacent calendar months. Missing reports are never treated as sales.</p><p class="mt-2 text-sm">${esc(m.warnings?`${m.warnings} source validation findings; ambiguous observations are withheld and previously saved history is retained.`:'')}</p><div class="mf-detail-scroll mt-4"><table data-column-layout="mutual-funds:2" class="mf-detail-table"><thead><tr><th class="mf-identity">AMC</th><th>Latest month</th><th>State</th><th>Last checked</th></tr></thead><tbody>${(m.amcs||[]).map(a=>`<tr><td class="mf-identity">${esc(a.name||a.slug)}</td><td>${esc(monthLabel(a.month))}</td><td>${esc(a.status)}</td><td>${esc(a.checkedAt||'Not checked')}</td></tr>`).join('')}</tbody></table></div></div>`,{size:'wide'});}
+function cleanup(){disposeTable?.();disposeTable=null;table=null;offReady?.();offInvalid?.();offSession?.();offUpdate?.();clearInterval(timer);window.removeEventListener('focus',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);}
 export function destroy(){cleanup();sequence++;dialog++;ctx=null;activeCompany=null;}
