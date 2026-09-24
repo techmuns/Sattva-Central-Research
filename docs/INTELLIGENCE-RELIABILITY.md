@@ -106,8 +106,10 @@ unavailable or cleared, the first visit must read the sources again.
 The device-only alert cache uses approximately 512 KiB integrity-checked parts and an atomic
 IndexedDB manifest replacement; there is no 100,000-event rejection threshold. A single larger
 event stays whole. Missing or corrupt parts cannot be treated as a complete window. A failed
-transaction retains the previous disk revision and the complete incoming session copy, with an
-explicit offline-cache notice. Superseded cache parts are pruned, not captured source history.
+transaction retains the previous disk revision and the complete incoming session copy; the cache
+status records the failure. AI Alerts omits the search, workbook and offline-cache footnotes at the
+user's request. Workbook provenance remains on holding-size tooltips. Superseded cache parts are
+pruned, not captured source history.
 Browser quota and memory remain finite: this is not an unlimited offline archive or a guarantee
 against device eviction. No per-alert Cloudflare files are created by this cache.
 

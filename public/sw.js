@@ -126,9 +126,12 @@ async function cacheModuleGraph(cache, entry) {
   }
 }
 
+// This UI revision composes with the shared release without competing for its version line.
+const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1`;
+
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_KEY);
+    const cache = await caches.open(RELEASE_CACHE_KEY);
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -143,7 +146,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_KEY).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== RELEASE_CACHE_KEY).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -212,7 +215,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_KEY);
+    const cache = await caches.open(RELEASE_CACHE_KEY);
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
