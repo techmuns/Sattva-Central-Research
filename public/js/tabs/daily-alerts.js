@@ -321,6 +321,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
       includeHistory: true,
       refresh: forceRefresh,
       load,
+      isCurrent: current,
       // A selected period may be answered from the precomputed pool; All history and the
       // Upcoming horizon keep reading the sources themselves.
       pool: context.queryWindow ? 'window' : null,

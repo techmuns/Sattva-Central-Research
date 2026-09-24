@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 if (!process.env.PLAYWRIGHT_ROOT) throw new Error('Set PLAYWRIGHT_ROOT to an installed Playwright directory.');
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
@@ -17,10 +18,17 @@ const POPUP_INTERACTION_LIMIT_MS = 600;
 let offline = false;
 let previousRelease = true;
 const requests = [];
+const partBody = '{"items":[{"title":"Original retained story"}]}';
+const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
+const mutablePath = '/data/performance-fixture.json';
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
   if (offline) { res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return; }
+  if ([immutablePath, mutablePath].includes(url.pathname)) {
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=0, must-revalidate' });
+    res.end(partBody); return;
+  }
   if (['/api/private-fixture', '/data/authorized-fixture.json', '/data/no-store-fixture.json'].includes(url.pathname)) {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     res.end('{"private":true}');
@@ -47,6 +55,8 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__alertPoolRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
+    } else if (pathname === '/js/data/news-working-set.js') {
+      res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__newsQueryRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/css/tailwind.css') {
       res.end(`${readFileSync(path, 'utf8')}\n:root { --table-scroll-release: ${previousRelease ? 'previous' : 'current'}; }`);
     } else res.end(readFileSync(path));
@@ -88,6 +98,27 @@ try {
   assert(!cacheState.urls.some((url) => new URL(url).pathname.startsWith('/api/')), 'authenticated/API replies are never persisted');
   assert(!cacheState.urls.some((url) => /authorized-fixture|no-store-fixture/.test(url)),
     'Authorization and explicit no-store reads are never persisted');
+
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  // Playwright routing disables the HTTP cache and rewrites request.cache to "reload".
+  // Restore ordinary browser semantics while checking immutable vs. mutable data reads.
+  const cacheSession = await context.newCDPSession(page);
+  await cacheSession.send('Network.enable');
+  await cacheSession.send('Network.setBlockedURLs', { urls: ['https://*'] });
+  await page.unroute('**/*');
+  await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: false });
+  for (const path of [immutablePath, mutablePath]) {
+    await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
+    await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
+  }
+  // Allow any background revalidation to reach the local server before counting it.
+  await new Promise(resolve => setTimeout(resolve, 250));
+  assert.equal(requests.filter(path => path === immutablePath).length, 1, 'unchanged content-addressed parts are downloaded only once');
+  assert.equal(requests.filter(path => path === mutablePath).length, 2, 'mutable manifests still revalidate on repeat reads');
+  await page.evaluate(async path => { await (await fetch(path, { cache: 'reload' })).text(); }, immutablePath);
+  assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
+  await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
+  await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
 
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
@@ -159,6 +190,8 @@ try {
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--table-scroll-release').trim()), 'previous', 'returning session has the older scrollbar stylesheet cached');
   await page.evaluate(() => import('/js/data/alert-pool-format.js'));
   assert.equal(await page.evaluate(() => globalThis.__alertPoolRelease), 'previous', 'the retained session has the older alert-pool module');
+  await page.evaluate(() => import('/js/data/news-working-set.js'));
+  assert.equal(await page.evaluate(() => globalThis.__newsQueryRelease), 'previous', 'returning reader starts with the older news query module');
   offline = false;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
@@ -171,6 +204,8 @@ try {
   assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--table-scroll-release').trim()), 'current', 'existing session receives the scrollbar stylesheet fix');
   await page.evaluate(() => import('/js/data/alert-pool-format.js'));
   assert.equal(await page.evaluate(() => globalThis.__alertPoolRelease), 'current', 'the same returning session receives the context retention fix');
+  await page.evaluate(() => import('/js/data/news-working-set.js'));
+  assert.equal(await page.evaluate(() => globalThis.__newsQueryRelease), 'current', 'the same returning session receives the news query performance fix');
   const upgradedCaches = await page.evaluate(() => caches.keys());
   assert(!upgradedCaches.some(name => name.includes('previous-fixture')), 'activation removes the superseded app cache');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'automatic upgrade retains reader preferences');

@@ -74,6 +74,14 @@ try {
   writeFileSync(path, JSON.stringify(manifest));
   const before = calls.length; await working.read('data/news.json');
   assert.equal(calls.length, before, 'unchanged verified parts are reused');
+  const laterCapture = '2026-09-16T17:30:00Z';
+  writeFileSync(path, JSON.stringify({ ...manifest, capturedAt: laterCapture, failed: { CHECKED: { reason: 'new-failure' } } }));
+  await working.prepare();
+  const checkedAgain = (await working.read('data/news.json')).value;
+  assert.equal(checkedAgain.byTicker, projected.byTicker, 'a rechecked unchanged selection reuses its complete original rows');
+  assert.equal(checkedAgain.capturedAt, laterCapture, 'reusing rows must still report the newly checked capture');
+  assert.deepEqual(checkedAgain.failed, { CHECKED: { reason: 'new-failure' } }, 'a new source failure cannot be concealed by projection reuse');
+  writeFileSync(path, JSON.stringify(manifest));
   working.release();
   writeFileSync(path, JSON.stringify({...manifest,archive:{index:'../invalid-index.json'}}));
   const partial = make();
@@ -227,6 +235,54 @@ try {
   await reopened.load(['ALPHA']);
   assert(reopened.rows().some(row=>row.url==='https://example.test/manual'), 'releasing a reading window cannot lose an uncheckpointed manual arrival');
   reopened.release(); live.dispose();
+  // Force the verified-part RAM cache to evict earlier parts. A small fixture would hide the
+  // old double-index walk and repeated projection downloads behind that cache.
+  const largePath = join(dir, 'large.json');
+  const large = { articles: Array.from({ length: 12 }, (_, i) => ({ title: `Retained original ${i}`,
+    date: '2026-09-17', url: `https://example.test/large/${i}`, description: 'Original detail. '.repeat(65536) })) };
+  writeNewsJson(largePath, large, { maxBytes: 1.5 * 1024 * 1024 });
+  let largeManifest = JSON.parse(readFileSync(largePath));
+  const largeCalls = [];
+  const largeRead = createNewsWorkingSet({ window: () => emptyPeriod,
+    read: async input => {
+      if (input === 'data/news.json') return { value: largeManifest };
+      throw Error('Optional independent family unavailable');
+    },
+    fetcher: async input => {
+      largeCalls.push(input);
+      // This fixture serves a news head from the standalone large.parts directory.
+      return new Response(readFileSync(join(dir, String(input).replace(/^data\/news.parts\//, 'large.parts/'))));
+    }, diskRead: async () => null, diskWrite: async () => {} });
+  // References must remain beside the owning manifest, including under the fixture route.
+  largeManifest._jsonShards.parts.forEach(part => {
+    part.file = part.file.replace('large.parts/', 'news.parts/');
+    part.queryIndex.file = part.queryIndex.file.replace('large.parts/', 'news.parts/');
+  });
+  await largeRead.prepare();
+  const largeProjection = (await largeRead.read('data/news.json')).value;
+  assert.deepEqual(largeProjection.articles, large.articles, 'every large original record survives the selection plan');
+  for (const part of largeManifest._jsonShards.parts)
+    assert.equal(largeCalls.filter(path => path.endsWith(part.queryIndex.file)).length, 1,
+      'projection never rereads an index evicted by a large source part');
+  const readsBeforeReuse = largeCalls.length;
+  assert.equal((await largeRead.read('data/news.json')).value.articles, largeProjection.articles);
+  assert.equal(largeCalls.length, readsBeforeReuse, 'a completed projection does not redownload evicted source parts');
+  const originals = new Set(largeManifest._jsonShards.parts.map(part => `data/${part.file}`));
+  await largeRead.prepare();
+  assert.equal((await largeRead.read('data/news.json')).value.articles, largeProjection.articles);
+  assert.equal(largeCalls.slice(readsBeforeReuse).filter(path => originals.has(path)).length, 0,
+    'rechecking unchanged manifests reuses the complete selection after RAM eviction');
+  large.articles[0].title = 'Corrected retained original';
+  writeNewsJson(largePath, large, { maxBytes: 1.5 * 1024 * 1024 });
+  largeManifest = JSON.parse(readFileSync(largePath));
+  largeManifest._jsonShards.parts.forEach(part => {
+    part.file = part.file.replace('large.parts/', 'news.parts/');
+    part.queryIndex.file = part.queryIndex.file.replace('large.parts/', 'news.parts/');
+  });
+  await largeRead.prepare();
+  assert.deepEqual((await largeRead.read('data/news.json')).value.articles, large.articles,
+    'a corrected source invalidates the saved projection without losing any originals');
+  largeRead.release();
   console.log('PASS date-part skipping, source order, correction companions, optional-index recovery, rapid switching, midnight and manual-arrival retention.');
 } finally {
   Date.now = originalNow; globalThis.fetch = originalFetch; globalThis.document = originalDocument; globalThis.setTimeout = originalTimeout;

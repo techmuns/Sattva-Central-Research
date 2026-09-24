@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-24-nse-readable-links-v2`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-24-news-query-performance-v1`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -169,8 +169,12 @@ function revalidateInBackground(request, url) {
   // Rechecking a hundred immutable modules on every navigation creates the very
   // network/CPU burst this cache is meant to remove. Public data and the HTML
   // shell are mutable, so those still refresh quietly behind the retained view.
+  // A news part's address IS its SHA-256. Its manifest is rechecked normally and names a new
+  // address for every correction; re-downloading this unchanged body on each filter only
+  // competes with the selected period. The reader still verifies every part's hash and size.
+  const immutablePart = /^\/data\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.parts\/[a-f0-9]{64}\.json$/.test(url.pathname);
   return request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html' ||
-    url.pathname.startsWith('/data/');
+    url.pathname.startsWith('/data/') && !immutablePart;
 }
 
 async function fetchAndCache(cache, request, key) {
