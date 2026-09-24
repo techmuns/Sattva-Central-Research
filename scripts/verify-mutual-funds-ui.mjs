@@ -20,6 +20,14 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try{
  const page=await browser.newPage({viewport:{width:1500,height:1000}});page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
  const fixtureSeed=JSON.parse(readFileSync(root+'/data/mutual-funds/index.json'));
+ const coverageNow=Date.now(),coverageTarget=new Date(coverageNow);coverageTarget.setUTCDate(1);coverageTarget.setUTCMonth(coverageTarget.getUTCMonth()-1);
+ const coverageMonth=coverageTarget.toISOString().slice(0,7),coverageCheck=new Date(coverageNow).toISOString();
+ fixtureSeed.meta={...fixtureSeed.meta,state:'complete',amcs:[
+   {slug:'current',name:'Current AMC',month:coverageMonth,status:'ok',checkedAt:coverageCheck},
+   {slug:'overdue',name:'Overdue AMC',month:coverageMonth,status:'ok',checkedAt:new Date(coverageNow-3600000).toISOString()},
+   {slug:'partial',name:'Partial AMC',month:coverageMonth,status:'partial',lastAttemptAt:coverageCheck,lastCompleteCheckedAt:new Date(coverageNow-86400000).toISOString()},
+   {slug:'missing',name:'Unavailable AMC',status:'unavailable',lastAttemptAt:coverageCheck}
+ ]};
  const fixtureBook=JSON.parse(readFileSync(root+'/data/portfolio-companies.json')).holdings;
  const ownershipFixtures=fixtureSeed.rows.filter(r=>r.totalShares>0&&fixtureBook.some(h=>h.isin===r.isin)).slice(0,3);
  ownershipFixtures.forEach((r,i)=>Object.assign(r,{companyPct:i===1?5:10,denominator:{shares:r.totalShares*(i===1?20:10),checkedAt:new Date(Date.now()-(i===2?8:0)*86400000).toISOString(),sourceName:'Moneycontrol',source:'https://example.com/shares',kind:i===1?'estimate':'reported'}}));
@@ -60,6 +68,17 @@ try{
  await page.keyboard.press('Escape');await page.waitForTimeout(150);assert(await page.locator('#modal-overlay').evaluate(e=>e.classList.contains('hidden')));
  await page.screenshot({path:'artifacts/mutual-funds-ui/table.png'});
  await page.getByRole('button',{name:'Coverage',exact:true}).click();await page.waitForSelector('#modal-content .mf-detail-table');
+ assert.equal(await page.locator('#modal-content p').count(),0,'Coverage opens directly to the table');
+ assert.equal(await page.locator('#modal-content tbody tr').count(),4,'Unavailable sources remain visible');
+ assert.equal(await page.locator('#modal-content [data-tone="positive"]').count(),1,'Only fresh, complete current reports are green');
+ assert.equal(await page.locator('#modal-content tbody tr').first().locator('td').first().textContent(),'Current AMC','Successful sources appear first');
+ assert.match(await page.locator('#modal-content tbody').textContent(),/Check overdue/);
+ assert.match(await page.locator('#modal-content tbody').textContent(),/IST/);
+ assert(!(await page.locator('#modal-content tbody').textContent()).includes(coverageCheck),'Dates are readable, not raw ISO timestamps');
+ await page.screenshot({path:'artifacts/mutual-funds-ui/coverage.png'});
+ await page.evaluate(()=>document.documentElement.dataset.theme='dark');await page.setViewportSize({width:420,height:850});
+ await page.screenshot({path:'artifacts/mutual-funds-ui/coverage-mobile-dark.png'});
+ await page.setViewportSize({width:1500,height:1000});await page.evaluate(()=>document.documentElement.dataset.theme='light');
  assert.equal(await page.locator('#modal-content th').first().evaluate(e=>getComputedStyle(e).textAlign),'left');
  await page.locator('#modal-content th').first().focus();await page.keyboard.press('Alt+ArrowRight');
  assert.equal(await page.locator('#modal-content th.mf-identity').evaluate(e=>getComputedStyle(e).textAlign),'left','coverage identity styling follows its column');

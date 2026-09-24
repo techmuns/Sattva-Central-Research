@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {MutualFundsSchedule,MF_TIMER} from '../worker/mutual-funds-schedule.mjs';
 const epoch=Date.parse('2026-09-20T20:00:00Z');
-function fixture({source=[],consumer=[],scanner=[run(9000,0)],denySource=false,denyScanner=false,loseSourcePost=false,loseConsumerPost=false,loseScannerPost=false}={}) {
+function fixture({source=[],consumer=[],scanner=[run(9000,0)],denySource=false,denyScanner=false,loseSourcePost=false,loseConsumerPost=false,loseScannerPost=false,postRefusal={},readRefusal={}}={}) {
   let clock=epoch,alarm=null;const data=new Map(),posts=[];
   const storage={get:async k=>structuredClone(data.get(k)),put:async(k,v)=>data.set(k,structuredClone(v)),getAlarm:async()=>alarm,setAlarm:async v=>{alarm=v;}};storage.transaction=async fn=>fn(storage);
   const fetcher=async(url,opt={})=>{
@@ -12,9 +12,13 @@ function fixture({source=[],consumer=[],scanner=[run(9000,0)],denySource=false,d
     if(opt.method==='POST'){
       assert(alarm>clock,'A fallback alarm must exist before any dispatch');
       posts.push({upstream,scanner:isScanner,body:JSON.parse(opt.body)});
+      const refusal=postRefusal[upstream?'source':isScanner?'scanner':'consumer'];
+      if(refusal)return new Response('',{status:refusal});
       if((upstream&&loseSourcePost)||(!upstream&&!isScanner&&loseConsumerPost)||(isScanner&&loseScannerPost))throw Error('Response lost');
       return new Response(null,{status:204});
     }
+    const refusedRead=readRefusal[upstream?'source':isScanner?'scanner':'consumer'];
+    if(refusedRead)return new Response('',{status:refusedRead});
     const runs=isScanner?scanner:upstream?source:consumer;
     const active=new URL(url).searchParams.get('status');
     return Response.json({total_count:runs.length,workflow_runs:active?runs.filter(r=>r.status===active):runs});
@@ -106,3 +110,31 @@ assert.equal(f.posts.filter(p=>p.scanner).length,1);assert.equal(f.posts.filter(
 f.advance(60000);await f.make().wake();assert.equal(f.posts.filter(p=>p.scanner).length,1,'Lost backup dispatch acknowledgement is not blindly retried');
 f=fixture({scanner:[],denyScanner:true});await f.make().wake();assert.equal((await f.make().status()).scanner.reason,'access-unavailable');assert.equal(f.posts.length,2,'Backup permissions cannot stop primary collection');
 console.log('PASS independent MF Scanner workflow cadence, source/import isolation and persisted dispatch uncertainty');
+
+// Read access can succeed while workflow dispatch is refused. Preserve that
+// distinction across eviction and short wakes needed by the other collectors.
+for(const target of ['source','scanner','consumer']) {
+  const postRefusal={[target]:403};
+  f=fixture({scanner:[],postRefusal});await f.make().wake();
+  const selected=p=>target==='source'?p.upstream:target==='scanner'?p.scanner:!p.upstream&&!p.scanner;
+  const reason=state=>target==='consumer'?state.reason:state[target].reason;
+  assert.equal(reason(await f.make().status()),'access-unavailable');
+  assert.equal(f.posts.filter(selected).length,1);
+  f.advance(60000);await f.make().wake();
+  assert.equal(reason(await f.make().status()),'access-unavailable','A refused POST cannot turn into awaiting-run');
+  assert.equal(f.posts.filter(selected).length,1,'Other collectors waking cannot hammer refused dispatches');
+  postRefusal[target]=null;f.advance(15*60000);await f.make().wake();
+  assert.equal(f.posts.filter(selected).length,2,'Dispatch automatically recovers after access is restored');
+  assert.equal(reason(await f.make().status()),'dispatched');
+}
+f=fixture({scanner:[justCompleted]});await f.make().wake();
+assert.equal(f.posts.filter(p=>p.scanner).length,0,'Scanner cadence is measured from completion, including long runs');
+console.log('PASS definitive dispatch refusal, durable backoff, automatic recovery and scanner completion cadence');
+
+const interruptedReads={},acceptedImports=[];
+f=fixture({source:[run(10,3)],consumer:acceptedImports,loseConsumerPost:true,readRefusal:interruptedReads});await f.make().wake();
+interruptedReads.consumer=403;f.advance(60000);await f.make().wake();
+assert.equal(f.data.get(MF_TIMER).importPendingSourceRun,10,'A failed run-list read cannot erase an earlier uncertain dispatch');
+interruptedReads.consumer=null;acceptedImports.unshift(run(20,-15.5));f.advance(15*60000);await f.make().wake();
+assert.equal(f.posts.filter(p=>!p.upstream&&!p.scanner).length,1,'The accepted import reconciles after read access recovers');
+assert.equal(f.data.get(MF_TIMER).importSourceRun,10);

@@ -4491,6 +4491,14 @@ Targets and workflow inputs are fixed server-side; no reader can redirect them.
 Persisted dispatch attempts and the run-list guard avoid immediate duplicate
 dispatch after a lost response or object eviction. Neither task's failure cancels
 an active upstream run. Verification: `node scripts/verify-mutual-funds-schedule.mjs`.
+Definitive dispatch refusals retain their failure state and retry after the normal
+15-minute interval across object eviction and intervening collector wakes. Only
+accepted or uncertain dispatches use the short awaiting-run window. Scanner
+cadence is measured from completion, matching primary collection and imports.
+Coverage opens directly to its source table. Green requires a complete current
+month and a source check within 45 minutes; failed reads, partial checks and old
+reports stay amber. Successful checks and latest attempts have separate IST dates.
+
 
 
 The alert pool's v2 contract preserves raw market-news records across the existing

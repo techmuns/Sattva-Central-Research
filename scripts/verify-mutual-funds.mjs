@@ -97,3 +97,17 @@ assert.equal(store.detail(other,'2001-06').company.funds.find(f=>f.id==='long:fu
 assert.equal(store.detail(other).company.months.length,3);assert(store.detail(other).company.availableMonths.length>300);
 assert(db.prepare('SELECT MAX(LENGTH(payload)) AS n FROM mf_observations').get().n<12000,'Stored rows do not grow with historical depth');
 console.log('PASS complete-report corrections, immutable observation history, multi-part restart and history beyond the former upload ceiling');
+
+const {coverageRows,coverageTime}=await import('../public/js/data/mutual-funds-coverage.js');
+const coverageMeta={state:'complete',amcs:[{name:'AMC',status:'ok',month:'2026-08',checkedAt:new Date(now).toISOString()}]};
+assert.equal(coverageRows(coverageMeta,now)[0].tone,'positive');
+for(const meta of [{...coverageMeta,readFailed:true},{...coverageMeta,state:'interrupted'}, {...coverageMeta,amcs:[{...coverageMeta.amcs[0],month:'2026-07'}]}])assert.notEqual(coverageRows(meta,now)[0].tone,'positive');
+assert.equal(coverageRows(coverageMeta,now+46*60000)[0].status,'Check overdue');
+assert.notEqual(coverageRows(coverageMeta,now-120000)[0].tone,'positive','Future dates cannot establish freshness');
+assert.equal(coverageRows(coverageMeta,Date.parse('2026-10-01'))[0].status,'Older report','The calendar determines the required month');
+const scannerCoverage={supplement:{expectedCompanies:1,catalogue:{state:'ok'},companies:[{state:'ok',month:'2026-08',checkedAt:new Date(now).toISOString()}]}};
+assert.equal(coverageRows(scannerCoverage,now)[0].tone,'positive');
+assert.equal(coverageRows(scannerCoverage,now+46*60000)[0].status,'0/1 checked','Persisted scanner counts cannot remain current forever');
+assert.notEqual(coverageRows({...scannerCoverage,supplementReadFailed:true},now)[0].tone,'positive');
+assert.equal(coverageTime('invalid'),'—');assert.match(coverageTime(new Date(now).toISOString()),/IST$/);
+console.log('PASS coverage status freshness, calendar rollover, failed reads and supplemental completeness');
