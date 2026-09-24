@@ -307,10 +307,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-nse-history-ui.mjs && node scripts/verify-combined-filings-ui.mjs
-      - name: Verify an NSE XBRL filing opens readable, with the original still one click away
+      - name: Verify readable NSE filings in every scope and returning-session upgrades
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-nse-xbrl-ui.mjs
+        run: node scripts/verify-nse-xbrl-ui.mjs && node scripts/verify-nse-xbrl-upgrade-ui.mjs
       - name: Verify Telegram dates, restricted posts, search and retained refresh
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

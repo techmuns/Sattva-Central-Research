@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-09-23-nse-original-link-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-09-24-nse-readable-links-v2`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -157,6 +157,9 @@ function cacheable(request, url) {
   if (request.method !== 'GET' || request.headers.has('authorization') || request.cache === 'no-store') return false;
   if (url.href === MUNSHOT_SDK) return true;
   if (url.origin !== self.location.origin || url.pathname === '/sw.js' || url.pathname.startsWith('/api/')) return false;
+  // A filing is server-rendered and keyed by its source, not the dashboard shell. Treating its
+  // navigation as /index.html both hid the document and could overwrite the cached dashboard.
+  if (url.pathname === '/filing' || url.pathname.startsWith('/filing/')) return false;
   return request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html' ||
     url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') || url.pathname.startsWith('/data/') || url.pathname.startsWith('/assets/brand/');
 }

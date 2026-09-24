@@ -9,7 +9,7 @@
 // acquire)" rows the desk could not read, whose real documents this sandbox cannot reach.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { blockKey, factStatement, filingFacts, filingParticulars, filingParticularsLine, humanLabel, isHeaderBlock, isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
+import { blockKey, factStatement, filingFacts, filingParticulars, filingParticularsLine, humanLabel, isHeaderBlock, isXbrlFilingUrl, readableFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
 import { renderFilingFailure, renderFilingPage } from '../worker/filing-page.mjs';
 
 let checks = 0;
@@ -31,6 +31,28 @@ check('the reader accepts an NSE XBRL announcement and refuses everything else',
   assert.equal(isXbrlFilingUrl('https://nsearchives.nseindia.com/corporate/ixbrl/INTEGRATED_FILING_iXBRL_WEB.html'), false);
   assert.equal(isXbrlFilingUrl(''), false);
   assert.equal(isXbrlFilingUrl(null), false);
+});
+
+check('navigation is readable for every company and form, while source identities stay intact', () => {
+  for (const form of ['SAIIM', 'REG30_PARA_B', 'ChangeInManagement', 'FUTURE_FORM']) {
+    const url = `https://nsearchives.nseindia.com/corporate/xbrl/${form}_company.xml?version=1&source=NSE`;
+    const link = new URL(readableFilingUrl(url), 'https://dashboard.test');
+    assert.equal(link.pathname, '/filing');
+    assert.equal(link.searchParams.get('src'), url);
+    assert.equal(readableFilingUrl(link.href), link.href, 'already readable links stay stable');
+  }
+  for (const url of ['https://nsearchives.nseindia.com/corporate/letter.pdf', 'https://example.test/file.xml']) {
+    assert.equal(readableFilingUrl(url), url);
+  }
+});
+
+check('the reported PB Fintech analyst meeting preserves all 25 filed facts', () => {
+  const filing = parseXbrlFiling(fixture('analyst-meet-pbfintech'));
+  assert.equal(filing.company, 'PB Fintech Limited');
+  assert.equal(filing.symbol, 'POLICYBZR');
+  assert.equal(filing.factCount, 25);
+  const values = filingFacts(filing).map(fact => fact.value);
+  for (const value of ['2026-09-24', '15:30:00', 'Sell side Analyst Call', 'Virtual meeting']) assert.ok(values.includes(value));
 });
 
 check('a tag becomes its own words, and SEBI’s acronyms survive it', () => {
@@ -245,7 +267,10 @@ check('a filing that could not be read names the failure and keeps the document 
   const url = 'https://nsearchives.nseindia.com/corporate/xbrl/a.xml';
   const html = renderFilingFailure({ url, reason: 'unreachable', error: 'NSE HTTP 403' });
   assert.ok(html.includes('NSE could not be read for this filing just now'));
-  assert.ok(html.includes('The filing itself is fine'), 'the filing is not reported as gone');
+  assert.ok(html.includes('Please try again shortly'));
+  assert.ok(html.includes(`href="${readableFilingUrl(url)}"`), 'retry opens the readable page');
+  assert.ok(html.includes('View raw XML on NSE (technical file)'));
+  assert.ok(!html.includes('Open the original file on NSE'));
   assert.ok(html.includes(`href="${url}"`));
   // An address that is not one of these filings is a different statement, and offers no NSE link.
   const other = renderFilingFailure({ url: 'https://evil.test/x', reason: 'unsupported' });

@@ -14,10 +14,10 @@
 //
 // IT REPRODUCES AND ADDS NOTHING. Every label is the exchange's own tag spaced into words and
 // every value is the company's own, unchanged — `parseXbrlFiling`'s output, rendered. Nothing is
-// summed, scored, re-banded or re-worded, and the original file is linked from the head and the
-// foot of the page, so this is never the only copy a reader can reach.
+// summed, scored, re-banded or re-worded. The raw source is available under Source file details
+// with an explicit XML label.
 
-import { isXbrlFilingUrl } from '../public/js/data/nse-xbrl-shared.js';
+import { isXbrlFilingUrl, readableFilingUrl } from '../public/js/data/nse-xbrl-shared.js';
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -42,6 +42,12 @@ const page = (title, inner) => `<!doctype html>
 </body></html>`;
 
 const sourceLink = (url, label) => `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" style="color:${ACCENT};font-family:${SANS};font-size:13px;font-weight:bold;text-decoration:none;">${esc(label)} &#8599;</a>`;
+
+const sourceDetails = (url) => isXbrlFilingUrl(url) ? `<details style="margin-top:18px;font-family:${SANS};font-size:12px;line-height:1.6;color:${META};">
+  <summary style="cursor:pointer;">Source file details</summary>
+  <p>NSE published this filing as an XML data file. The readable view reproduces its fields without changing their values.</p>
+  ${sourceLink(url, 'View raw XML on NSE (technical file)')}
+</details>` : '';
 
 const masthead = (brand) => `<div style="font-family:${SANS};font-size:10px;letter-spacing:3px;text-transform:uppercase;color:${META};">${esc(brand)}</div>`;
 
@@ -80,9 +86,10 @@ export function renderFilingPage({ filing, url, context = {}, brand = 'Sattva Ve
     </div>
     ${(filing?.blocks || []).map(blockHtml).join('')}
     <div style="margin-top:26px;padding-top:12px;border-top:2px solid ${INK};font-family:${SANS};font-size:12px;color:${META};">
-      ${filing?.factCount || 0} field${filing?.factCount === 1 ? '' : 's'} as filed &middot; ${sourceLink(url, 'Open the original file on NSE')}
+      ${filing?.factCount || 0} field${filing?.factCount === 1 ? '' : 's'} as filed
       ${dashboardUrl ? ` &middot; <a href="${esc(dashboardUrl)}" target="_blank" rel="noopener noreferrer" style="color:${ACCENT};font-weight:bold;text-decoration:none;">Research Central</a>` : ''}
-    </div>`);
+    </div>
+    ${sourceDetails(url)}`);
 }
 
 /**
@@ -97,7 +104,7 @@ export function renderFilingPage({ filing, url, context = {}, brand = 'Sattva Ve
 export function renderFilingFailure({ url, reason, error, context = {}, brand = 'Sattva Ventures' }) {
   const words = reason === 'unsupported'
     ? 'This address is not one of NSE’s XBRL announcement files, so there is nothing here to lay out.'
-    : 'NSE could not be read for this filing just now. The filing itself is fine — it is published by the exchange and the link below opens it.';
+    : 'NSE could not be read for this filing just now. Please try again shortly.';
   const title = context.company || context.ticker || 'NSE filing';
   return page(title, `
     ${masthead(brand)}
@@ -105,9 +112,6 @@ export function renderFilingFailure({ url, reason, error, context = {}, brand = 
     <div style="margin-top:4px;font-family:${SANS};font-size:12px;line-height:1.6;color:${META};">Filed to NSE as an XBRL data file</div>
     <p style="margin-top:16px;font-family:${SANS};font-size:14px;line-height:1.6;color:${BODY};">${esc(words)}</p>
     ${error ? `<p style="margin-top:4px;font-family:${SANS};font-size:11px;line-height:1.6;color:${META};">${esc(error)}</p>` : ''}
-    ${/* THE PAGE NEVER LINKS AN ADDRESS IT REFUSED. `unsupported` means this is not one of NSE's
-          filings, and an anchor reading "Open the original file on NSE" beside somebody else's
-          address — on our own origin — would be this dashboard vouching for it. The allow-list
-          decides what may be linked here exactly as it decides what may be fetched. */''}
-    ${isXbrlFilingUrl(url) ? `<p style="margin-top:18px;">${sourceLink(url, 'Open the original file on NSE')}</p>` : ''}`);
+    ${isXbrlFilingUrl(url) ? `<p style="margin-top:18px;">${sourceLink(readableFilingUrl(url), 'Try readable filing again')}</p>` : ''}
+    ${sourceDetails(url)}`);
 }

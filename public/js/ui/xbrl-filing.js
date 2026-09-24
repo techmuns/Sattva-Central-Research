@@ -1,27 +1,10 @@
-// ui/xbrl-filing.js — an NSE XBRL announcement, opened as a filing rather than as XML.
-//
-// THE PROBLEM THIS CLOSES. Nine per cent of NSE's announcement feed links to a raw XBRL file
-// instead of a PDF (measured: 150 of 1,693 items on one live pull), and every one of those rows —
-// on NSE Filings, on All Alerts, on an AI Alerts card — sent the reader to a browser page reading
-// "This XML file does not appear to have any style information associated with it" above a tree of
-// SEBI namespaces. The filing was there the whole time; nothing was rendering it. NSE publish no
-// readable twin and no CORS header, so the Worker route `/api/nse-filing` reads the file and the
-// shared parser turns it into the exchange's own facts, in the exchange's own order.
-//
-// ONE INTERCEPTOR, NOT A CHECK IN EVERY TAB. Every surface that offers one of these filings does it
-// the same way — an `<a href>` at the URL — so this installs a single delegated listener and asks
-// one question of the href. Spreading `isXbrlFilingUrl` through five tabs is how a rule ends up
-// with five spellings that disagree; the row-click path in All Alerts opens the URL with
-// `window.open` rather than an anchor, so that one calls `openFilingReader` directly.
-//
-// AND IT IS NEVER WORSE THAN THE LINK IT REPLACED. On a static origin there is no Worker, so there
-// is no `/api/nse-filing`: the panel says so in those words and offers the original document, which
-// is exactly where the click used to land. A failure here costs the reader one extra click; it can
-// never cost them the filing.
+// One document reader for every scope, tab, card and dynamically inserted source link.
+// Source records retain NSE's URL. Navigation uses the readable page, including copied links,
+// keyboard activation, middle clicks and the browser's Open in new tab menu.
 
 import { escapeHtml } from '../core/dom.js';
 import { openModal, closeModal } from './screener.js';
-import { isXbrlFilingUrl } from '../data/nse-xbrl-shared.js';
+import { isXbrlFilingUrl, readableFilingUrl } from '../data/nse-xbrl-shared.js';
 
 export { isXbrlFilingUrl };
 
@@ -47,9 +30,17 @@ function head({ title, sub, meta }) {
     </div>`;
 }
 
-const sourceLink = (url, label) => `
-  <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" data-xbrl-original
-     class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">${escapeHtml(label)} &#8599;</a>`;
+const readableLink = (url) => isXbrlFilingUrl(url) ? `
+  <a href="${escapeHtml(readableFilingUrl(url))}" target="_blank" rel="noopener noreferrer" data-xbrl-page
+     class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">Open full readable filing &#8599;</a>` : '';
+
+const sourceDetails = (url) => isXbrlFilingUrl(url) ? `
+  <details class="mt-4 text-xs text-slate-500">
+    <summary class="cursor-pointer">Source file details</summary>
+    <p class="mt-2">NSE published this filing as an XML data file. The readable view reproduces its fields without changing their values.</p>
+    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" data-xbrl-original
+       class="mt-2 inline-flex text-xs font-semibold text-indigo-600 hover:text-indigo-800">View raw XML on NSE (technical file) &#8599;</a>
+  </details>` : '';
 
 /**
  * One fact. The label is the exchange's own tag, spaced into words; the value is the company's own,
@@ -82,7 +73,7 @@ const blockHtml = (block) => `
  */
 function failureHtml({ url, title, sub, reason, detail }) {
   const words = reason === 'no-worker'
-    ? 'This copy of the dashboard is served without its Worker, so it has no route that can read NSE. The filing itself is fine.'
+    ? 'The readable filing is unavailable on this copy of the dashboard.'
     : reason === 'unsupported'
       ? 'This document is not one of NSE’s XBRL announcement files, so there is nothing here to lay out.'
       : 'NSE could not be read for this filing just now.';
@@ -90,8 +81,8 @@ function failureHtml({ url, title, sub, reason, detail }) {
     ${head({ title, sub, meta: 'Filed to NSE as an XBRL data file' })}
     <p class="text-sm text-slate-600">${escapeHtml(words)}</p>
     ${detail ? `<p class="mt-1 text-xs text-slate-400">${escapeHtml(detail)}</p>` : ''}
-    <p class="mt-4 text-xs text-slate-500">The original is published by the exchange and opens in a new tab. It is XBRL, so a browser shows it as data rather than as a page.</p>
-    <div class="mt-3">${sourceLink(url, 'Open the original file on NSE')}</div>`);
+    ${isXbrlFilingUrl(url) ? '<button data-filing-retry class="mt-3 text-xs font-semibold text-indigo-600">Try again</button>' : ''}
+    ${sourceDetails(url)}`);
 }
 
 function filingHtml(filing, { url, title, sub, meta }) {
@@ -104,8 +95,9 @@ function filingHtml(filing, { url, title, sub, meta }) {
     ${filing.blocks.map(blockHtml).join('')}
     <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
       <span class="text-xs text-slate-400">${filing.factCount} field${filing.factCount === 1 ? '' : 's'} as filed</span>
-      ${sourceLink(url, 'Open the original file on NSE')}
-    </div>`);
+      ${readableLink(url)}
+    </div>
+    ${sourceDetails(url)}`);
 }
 
 /** The identification line under the title: the row's own subject and time, then the filing's ids. */
@@ -175,34 +167,66 @@ export async function openFilingReader(url, context = {}) {
     ? filingHtml(payload, { url, title, sub, meta: metaLine(payload, context) })
     : failureHtml({ url, title, sub, reason, detail });
   content.querySelectorAll('[data-modal-close]').forEach((btn) => btn.addEventListener('click', closeModal));
+  content.querySelector('[data-filing-retry]')?.addEventListener('click', () => {
+    closeModal();
+    void openFilingReader(url, context);
+  });
 }
 
-/**
- * Install the one delegated listener, once, for the whole app.
- *
- * CAPTURE PHASE AND A NARROW PREDICATE. It runs before the tables' own delegated handlers so the
- * anchor never opens its tab, and it acts only on a left click, unmodified, on an `<a>` whose href
- * passes the strict URL guard — so a middle click, a ctrl-click and "open in new tab" all still do
- * exactly what the reader asked, which is to have the raw document.
- */
+/** Row actions share the same rule as anchors. PDFs and other readable sources stay native. */
+export function openFilingSource(url, context = {}) {
+  if (isXbrlFilingUrl(url)) return openFilingReader(url, context);
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/** Install once for all scopes, including links inserted by later refreshes and drilldowns. */
 export function installFilingReader(root = document) {
   if (root.__xbrlFilingReader) return () => {};
+  const prepare = (anchor) => {
+    if (!anchor?.matches('a[href]') || anchor.hasAttribute('data-xbrl-original')) return null;
+    if (isXbrlFilingUrl(anchor.href)) anchor.href = readableFilingUrl(anchor.href);
+    let url;
+    try { url = new URL(anchor.href); } catch { return null; }
+    const src = url.searchParams.get('src');
+    return url.origin === location.origin && url.pathname === '/filing' && isXbrlFilingUrl(src) ? src : null;
+  };
+  const scan = (node) => {
+    if (node.matches?.('a[href]')) prepare(node);
+    node.querySelectorAll?.('a[href]').forEach(prepare);
+  };
+  // Observe only added subtrees and changed hrefs, never rescan the full dashboard per update.
+  // Writing real hrefs makes the browser menu and copied links readable without a click handler.
+  scan(root);
+  const observer = new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.type === 'attributes') prepare(record.target);
+      else record.addedNodes.forEach(scan);
+    }
+  });
+  observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
+  const prepareEvent = (e) => prepare(e.target.closest?.('a[href]'));
   const onClick = (e) => {
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const anchor = e.target.closest?.('a[href]');
-    if (!anchor || !isXbrlFilingUrl(anchor.href)) return;
-    // The reader's explicit source link must leave the dashboard, not reopen this panel.
-    if (anchor.hasAttribute('data-xbrl-original')) return;
+    const src = prepare(anchor);
+    if (!src || anchor.hasAttribute('data-xbrl-page')) return;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     e.stopPropagation();
     const row = anchor.closest('[data-row-key]');
-    void openFilingReader(anchor.href, {
+    void openFilingReader(src, {
       company: anchor.dataset.filingCompany || row?.querySelector('[data-watch]')?.dataset.watchName || null,
       ticker: anchor.dataset.filingTicker || row?.querySelector('[data-watch]')?.dataset.watch || null,
       subject: anchor.dataset.filingSubject || null,
     });
   };
   root.addEventListener('click', onClick, true);
+  // Also cover an anchor inserted/changed synchronously just before activation.
+  for (const event of ['pointerdown', 'contextmenu', 'auxclick']) root.addEventListener(event, prepareEvent, true);
   root.__xbrlFilingReader = true;
-  return () => { root.removeEventListener('click', onClick, true); root.__xbrlFilingReader = false; };
+  return () => {
+    observer.disconnect();
+    root.removeEventListener('click', onClick, true);
+    for (const event of ['pointerdown', 'contextmenu', 'auxclick']) root.removeEventListener(event, prepareEvent, true);
+    root.__xbrlFilingReader = false;
+  };
 }

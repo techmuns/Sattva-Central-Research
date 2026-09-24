@@ -51,6 +51,10 @@ export function isXbrlFilingUrl(url) {
   return /\.xml$/i.test(path);
 }
 
+/** Navigation uses the readable page; stored source identities stay at NSE. */
+export const readableFilingUrl = (url) => isXbrlFilingUrl(url)
+  ? `/filing?src=${encodeURIComponent(url)}` : url;
+
 const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
 // Kept here rather than imported from worker/nse-ann.mjs: this module may not depend on the Worker

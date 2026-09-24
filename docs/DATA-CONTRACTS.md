@@ -3245,7 +3245,7 @@ The panel above is where somebody already on the dashboard meets one of these fi
 brief reaches people who are not: an email lands on a phone, and a link at the exchange's own
 address opens the XML tree. This route renders the same parsed filing server-side
 (`worker/filing-page.mjs`) — no script, no stylesheet, no font, no request of its own, so it arrives
-finished — with the original document linked from its head and its foot. It shares the allow-list,
+finished — with raw XML available under an explicitly labelled Source file details disclosure. It shares the allow-list,
 the fetch and the edge entry with `/api/nse-filing` (`readNseFiling`), so the two can never disagree
 about a document. **Nothing on the page comes from its query string but `src`**: a reflected
 `?company=` or `?subject=` would read as this dashboard's own words on our own origin, so the page
@@ -3263,20 +3263,27 @@ A fact too long for the budget is skipped rather than ending the line, one state
 across a form's repeated blocks is printed once, and a value over 180 characters is cut at a word
 boundary with a visible `…`. Everything it drops is counted; nothing it prints is re-worded.
 
-**The row still carries NSE's own URL, everywhere.** `row.url` is unchanged, so the export, the
-provenance surfaces and every other consumer keep the exchange's address; only the *click* is
-intercepted, by one delegated listener in `public/js/ui/xbrl-filing.js` installed once from
-`app.js` — a check in five tabs is how one rule ends up with five spellings that disagree. A
-ctrl-click, a middle-click and "open in new tab" are untouched, because that is how somebody asks
-for the file itself. **On a static origin there is no Worker and so no route**: the panel says that
-in those words and offers the original document, which is exactly where the click used to land, so
-a failure costs one extra click and never the filing.
+**Source identity stays at NSE; navigation is readable in every scope.** `row.url` is unchanged,
+so retained history, exports and provenance keep the exchange's address. The shared reader in
+`public/js/ui/xbrl-filing.js`, installed once from `app.js`, turns every matching rendered anchor's
+href into `/filing?src=…`. It observes new subtrees and changed hrefs so later refreshes, cards,
+drilldowns and all three scopes follow the same rule. Ordinary clicks open the panel; keyboard,
+modified/middle clicks, copied links and the browser's Open in new tab menu retain readable
+navigation. All Alerts and Company Filings row actions use `openFilingSource()` for the same policy.
+The service worker leaves `/filing` network-only, so its pages cannot be replaced by (or overwrite)
+the cached dashboard shell. The popup's primary action is **Open full readable filing**. Raw XML is reachable only under
+**Source file details**, explicitly labelled **View raw XML on NSE (technical file)**. PDF and
+already-readable iXBRL links stay unchanged. Failures offer a readable retry and disclose source
+access separately; no error silently redirects to XML or claims a source is healthy without proof.
 
-Regression checks: `node scripts/verify-nse-xbrl.mjs` (offline, over two real filings committed under
-`scripts/fixtures/nse-xbrl/` plus one constructed acquisition instance that says so in its own first
-lines, and covering the bounded reading and the page as well as the parser) and `PLAYWRIGHT_ROOT=… node scripts/verify-nse-xbrl-ui.mjs`, which
-drives the real tab against a stub route and asserts the panel carries the filing's fields, no
-`in-capmkt:` markup, the original link, and the honest no-Worker wording.
+Regression checks: `node scripts/verify-nse-xbrl.mjs`, `PLAYWRIGHT_ROOT=… node
+scripts/verify-nse-xbrl-ui.mjs`, and `PLAYWRIGHT_ROOT=… node scripts/verify-nse-xbrl-upgrade-ui.mjs`.
+Fixtures cover orders, repeated management changes, a constructed acquisition and the reported
+PB Fintech analyst meeting (captured verbatim on 24 September 2026 from
+`SAIIM_19824_WebXMLFile_20260924_130926074.xml`). Browser checks cover every scope, all facts,
+keyboard and new-tab activation, dynamic/recycled anchors, failure recovery and a warm service-worker
+upgrade. Advance the release marker for every reader change; a fresh asset response is insufficient.
+
 
 
 ### Keeping captures fresh — scheduled first, demand-driven recovery second
