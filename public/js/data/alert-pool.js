@@ -221,6 +221,9 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
   let decoded;
   try { decoded = await readShards(index, members, isCurrent); }
   catch (error) {
+    // Moving to another period is not an outage. Do not disable the fast path for the next
+    // selection (or another tab) for a minute because this view no longer needs its result.
+    if (!isCurrent()) return null;
     // Shards that do not read are the pool failing, not the captures: hold off briefly rather
     // than asking on every partial, and let every feed take its live path this time.
     disabledUntil = Date.now() + 60_000;

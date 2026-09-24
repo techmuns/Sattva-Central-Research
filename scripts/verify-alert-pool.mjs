@@ -273,6 +273,24 @@ served.index = index;
 assert.deepEqual(await declineReasons(), {}, 'and the current pool is adopted again');
 console.log('PASS every reason the pool stands aside is checked on the read, per feed, and leaves that feed to the live path');
 
+// A rapid date change abandons only its view, never the fast path for the next selection.
+{
+  alertPool.resetForTest();
+  const servedFetch = globalThis.fetch;
+  let current = true;
+  globalThis.fetch = async (input, init) => {
+    if (/^api\/alert-pool\/\d+\//.test(String(input))) current = false;
+    return servedFetch(input, init);
+  };
+  const options = { mode: 'window', day, queryWindow: week, book: coverage.holdings() };
+  try {
+    assert.equal(await alertPool.read({ ...options, isCurrent: () => current }), null,
+      'a superseded period cannot publish its pool result');
+  } finally { globalThis.fetch = servedFetch; }
+  const next = await alertPool.read(options);
+  assert.equal(next?.feeds.size, POOL_FEEDS.length, 'the next selection immediately retains the healthy pool without a cooldown');
+}
+
 // 5. A SHARD THAT DOES NOT READ IS THE POOL FAILING, NOT A FEED'S ANSWER. The index names a build
 // whose members the route no longer answers for — an artifact expired between the two reads —
 // so every feed takes the live path this time and the period is still exact.
