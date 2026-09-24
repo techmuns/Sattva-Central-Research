@@ -817,12 +817,12 @@ already runs on:
 1. **"Direct ones" means `portfolio-companies.json`**, the Portfolio scope's own file, and nothing
    wider. A line with no NSE symbol is still a holding and is still the denominator — the brief
    counts companies reported against the book's **listed** lines, exactly as `scopeSummary` does.
-2. **Every figure carries its own state and time.** Quotes are read from Yahoo's chart endpoint at
-   send time and Yahoo's own session bounds decide `Close · Wed 16:00 EDT` versus `Live · Thu 07:58
-   JST`. **A symbol Yahoo refuses prints `unavailable` and never a number** — this dashboard keeps
-   no macro series store, so there is no second reading to fall back to, and a stale close dressed
-   as this morning's is the one thing the row may not become. A source that cannot be read says so
-   in the email — `NSE feed could not be read (blocked)` — rather than going quiet.
+2. **Every figure carries its own state, full date and provider.** Market quotes use validated
+   NSE/BSE observations, exact Upstox cash-index identities and Yahoo daily bars. Daily changes
+   compare the immediately preceding trading session, never the chart-range reference close.
+   Missing/conflicting figures are withheld; stale and delayed observations retain their labels
+   and stay out of the headline glance. No provider's level is mixed with another's close. This
+   dashboard has no macro-series fallback. See *Newsletter market comparisons* below.
 3. **Source headlines and particulars stay verbatim.** Optional AI summary and potential-impact
    notes, adapted from Glow on 21 September 2026, are labelled separately and use only supplied
    headlines/summaries. They never change the topic, mood, source rows or sent-story ledger.
@@ -4108,7 +4108,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change Corporate Announcements | Keep the exchange-wide base in `worker/bse-ann.mjs` + `scripts/scrape-bse-announcements.mjs`. Additional user-requested company/date lookups use `worker/muns.mjs` + `js/data/announcements-extra.js`; they merge with the table and never replace the base capture or claim universe coverage. |
 | Change the NSE live announcements feed | `worker/nse-ann.mjs` (pure parser + name->symbol resolver, shared) + `handleNseAnnouncements` in `worker/index.js` (live route, edge-cached) + `js/data/nse-filings.js` (browser) + `js/tabs/nse-filings.js` (the scoped table). The browser CANNOT read NSE (CORS null), so it must proxy through the Worker; a full desktop user-agent is required or Akamai 430s it. Resolve by NAME — the filename prefix is only 31% reliable |
 | Refresh the NSE snapshot fallback | `node scripts/scrape-nse-announcements.mjs` — reads NSE directly (no token), resolves, commits `public/data/nse-announcements.json`. The live route is the primary read; this is the floor beneath it |
-| Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser, the bounded `filingParticulars()` reading and the `src` allow-list, imported by the Worker too) + `readNseFiling` / `handleNseFiling` / `handleFilingPage` in `worker/index.js` (`GET /api/nse-filing` for the panel, `GET /filing` for the page an email links to) + `worker/filing-page.mjs` (that page) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and a modified click still gets the raw file. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
+| Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser, the bounded `filingParticulars()` reading and the `src` allow-list, imported by the Worker too) + `readNseFiling` / `handleNseFiling` / `handleFilingPage` in `worker/index.js` (`GET /api/nse-filing` for the panel, `GET /filing` for the page an email links to) + `worker/filing-page.mjs` (that page) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and all navigation including modified clicks opens a readable filing. Raw XML is an explicitly labelled technical source under Source file details. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
 | Change how many days of announcements are kept | `ANN_KEEP_DAYS` in `scripts/scrape-bse-announcements.mjs` — a bytes ceiling, ~900 filings a weekday |
 | Change the tracked news keywords, or what a Topic filter offers | `public/js/data/news-keywords.js` — the whole vocabulary is one array; read *Thirty words that make a search feed usable* first. A keyword is a topic and must never become a direction, and `namesCompany` marks a row rather than dropping one |
 | Speed up a per-row helper on a hot path | memoise it on the row object in a `WeakMap`, validated on the fields it reads — read *A per-row cache is keyed on the row object* first; `scripts/verify-hot-path-memo.mjs` is the test |
@@ -4499,3 +4499,13 @@ applied, so raw unattributed records cannot be discarded at the seven-day rankin
 boundary. Older v1 pools are rejected, and changes to the pool builder/format
 trigger a new shared build. The module cache revision advances with this change;
 verification covers an existing session receiving the replacement module.
+
+## Newsletter market comparisons (24 September 2026)
+
+`worker/newsletter-markets.mjs` validates exact NSE/BSE/Upstox/Yahoo index identities, actual
+quote timestamps and immediately preceding daily closes. Never use chartPreviousClose from a
+multi-day range, combine one provider’s level with another’s close, or turn an intraday/stale
+observation into a fresh close. Keep conflicts/missing comparisons explicit in HTML, text, PDF
+and delivery summaries. Sattva has no macro-series fallback. See
+`docs/NEWSLETTER-MARKET-ACCURACY.md`; run `scripts/verify-newsletter-markets.mjs` with the newsletter
+regressions. Historical sent editions and PDFs remain unchanged.

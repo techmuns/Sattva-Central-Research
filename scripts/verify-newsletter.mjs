@@ -119,7 +119,20 @@ function makeFetcher({ yahoo = 'ok', nse = 'ok', xbrl = 'ok', email = 'ok', log 
       log.push({ kind: 'yahoo', symbol });
       if (yahoo === 'down') return new Response('nope', { status: 503 });
       const file = CHARTS[symbol] || 'yahoo-sp500.json';
-      return new Response(fixture(file), { headers: { 'content-type': 'application/json' } });
+      const body = JSON.parse(fixture(file));
+      const meta = body.chart.result[0].meta;
+      // Synthetic routing must identify the requested instrument and use a non-future quote.
+      // The market contract suite separately keeps original provider responses untouched.
+      meta.symbol = symbol;
+      meta.regularMarketTime = Math.min(meta.regularMarketTime, MORNING / 1000);
+      if (MARKET_ROWS.find(r => r.symbol === symbol)?.group === 'india') {
+        const r = body.chart.result[0];
+        const day = new Date(meta.regularMarketTime * 1000).toISOString().slice(0, 10);
+        meta.exchangeTimezoneName = 'Asia/Kolkata'; meta.currency = 'INR';
+        meta.regularMarketTime = Date.parse(`${day}T15:31:00+05:30`) / 1000;
+        r.timestamp = r.timestamp.map(t => Date.parse(`${new Date(t * 1000).toISOString().slice(0, 10)}T09:15:00+05:30`) / 1000);
+      }
+      return Response.json(body);
     }
     // The archive, before the feed: an XBRL filing is a document at its own address on the same
     // host, and the brief reads the ones it is about to print.
@@ -273,16 +286,15 @@ await test('a Yahoo chart becomes a quote with its own session state and time', 
   assert.equal(sp.state, 'close', 'the US session is over at 08:00 IST');
   assert.ok(sp.last > 0 && sp.prev > 0 && Number.isFinite(sp.changePct));
   assert.equal(sp.timezone, 'America/New_York');
-  const nikkei = quoteFromChart(JSON.parse(fixture('yahoo-nikkei.json')), MARKET_ROWS[3], MORNING);
-  assert.equal(nikkei.state, 'live', 'Tokyo is trading at 08:00 IST');
+  const nikkei = quoteFromChart(JSON.parse(fixture('yahoo-nikkei.json')), MARKET_ROWS[3], Date.parse('2026-09-17T06:00:00Z'));
+  assert.equal(nikkei.state, 'live', "Tokyo is trading at the fixture observation time");
   assert.throws(() => quoteFromChart({ chart: { result: [{ meta: {} }] } }, MARKET_ROWS[0], MORNING), /shape/);
 });
 
 // Glow Central Research, which this brief is ported from, keeps a macro series store and fills a
-// refused symbol from it. This dashboard has no such file, so there is no second reading and the
-// row must stay refused — which is the property worth asserting, because the failure it guards
-// against is a stale close printed as this morning's.
-await test('this dashboard carries no series fallback, so no scan row may claim a second source', async () => {
+// refused symbol from it. Sattva has no such file; only explicitly validated quote providers
+// may supply an alternative. It must never claim an invented stored-series fallback.
+await test('this dashboard carries no macro-series fallback, and no row claims a stored series', async () => {
   const briefModule = await import('../worker/newsletter-brief.mjs');
   assert.equal('quoteFromSeries' in briefModule, false, 'the fallback reader is not present');
   assert.equal('SERIES_INDEX_PATH' in briefModule, false, 'nor the path it would have read');
@@ -372,8 +384,8 @@ await test('a headline that names the filer does not put the company into the ev
 await test('a filing link lands on the filing, not on a page of XML', () => {
   const html = renderBriefHtml(morning, { dashboardUrl: 'https://example.test' });
   const story = acquisitionStory();
-  const reader = `https://example.test/filing?src=${encodeURIComponent(story.url)}`;
-  assert.ok(html.includes(`href="${reader}"`), 'the XBRL filing opens through the dashboard\'s readable copy');
+  const reader = `https://example.test/filing?src=${encodeURIComponent(story.url)}&view=2`;
+  assert.ok(html.includes(`href="${reader.replace(/&/g, '&amp;')}"`), 'the XBRL filing opens through the dashboard\'s readable copy');
   assert.ok(!html.includes(`href="${story.url}"`), 'the raw .xml is no longer what a reader clicks');
   assert.ok(html.includes('Read the filing →'));
   assert.ok(html.includes('Name of the target entity:') && html.includes('Meridian Analytics Private Limited'));
@@ -434,8 +446,8 @@ await test('the broadsheet carries the Sattva Ventures masthead, escapes the exc
   assert.ok(html.includes('S&amp;P 500'));
   assert.ok(!html.includes('<script>'), 'exchange text is escaped');
   assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
-  assert.ok(/Close · \w{3} \d{2}:\d{2} \w+/.test(html), 'a closed market prints its close time');
-  assert.ok(/Live · \w{3} \d{2}:\d{2} \w+/.test(html), 'a trading market prints its last print');
+  assert.ok(/Close · \w{3} \d{2} \w{3,4} \d{4} \d{2}:\d{2} \w+/.test(html), 'a closed market prints its close time');
+  assert.ok(/Live · \w{3} \d{2} \w{3,4} \d{4} \d{2}:\d{2} \w+/.test(html), 'a trading market prints its last print');
   assert.match(html, /<strong style="[^"]*color:#3b82f6;[^"]*">ORDERS<\/strong>/, 'the Orders topic keeps its bold label and colour');
   assert.ok(/\b1 watch-out\b/.test(html), 'the downgrade filing is counted as a watch-out on the stats line');
   assert.ok(html.includes('#f43f5e'), 'the watch-out colour appears');

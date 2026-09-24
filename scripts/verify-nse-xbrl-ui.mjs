@@ -5,7 +5,7 @@
 //
 // WHAT IT IS PROVING. The reported failure was that a filing link opened SEBI's raw XBRL — the row
 // worked, the URL was right, and what arrived was unreadable. So these checks compare what a reader
-// SEES against what the filing says, and assert the raw document stays one click away in every
+// SEES against what the filing says, and assert the raw document remains explicitly available in every
 // state, including the states where nothing here can render it.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { filingFacts, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
-import { renderFilingPage } from '../worker/filing-page.mjs';
+import { renderFilingPage, renderFilingFailure } from '../worker/filing-page.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../public');
@@ -25,17 +25,30 @@ const XBRL_URL = 'https://nsearchives.nseindia.com/corporate/xbrl/REG30_PARA_B_8
 const PDF_URL = 'https://nsearchives.nseindia.com/corporate/MANINDS_10092026135546_order.pdf';
 const xml = readFileSync(resolve(here, 'fixtures/nse-xbrl/reg30-para-b-orders.xml'), 'utf8');
 
+const PB_URL = 'https://nsearchives.nseindia.com/corporate/xbrl/SAIIM_19824_WebXMLFile_20260924_130926074.xml';
+const RAIL_URL = 'https://nsearchives.nseindia.com/corporate/xbrl/ChangeInManagement_railtel.xml';
+const fixtures = new Map([
+  [XBRL_URL, xml],
+  [PB_URL, readFileSync(resolve(here, 'fixtures/nse-xbrl/analyst-meet-pbfintech.xml'), 'utf8')],
+  [RAIL_URL, readFileSync(resolve(here, 'fixtures/nse-xbrl/change-in-management.xml'), 'utf8')],
+]);
 const rows = [
-  { company: 'Man Industries (India) Limited', ticker: 'MANINDS', publishedAt: '2026-09-10T12:36:16Z',
+  { company: 'Man Industries (India) Limited', ticker: 'MANINDS', publishedAt: '2026-09-24T12:36:16Z',
     subject: 'Bagging/Receiving of orders/contracts  (Sub-para 4-Para B)', description: 'Man Industries has informed the Exchange', url: XBRL_URL },
-  { company: 'Man Industries (India) Limited', ticker: 'MANINDS', publishedAt: '2026-09-10T08:25:54Z',
+  { company: 'Man Industries (India) Limited', ticker: 'MANINDS', publishedAt: '2026-09-24T08:25:54Z',
     subject: 'Bagging/Receiving of orders/contracts', description: 'The same event, filed as a PDF', url: PDF_URL },
 ];
+
+rows.push(
+  { company: 'PB Fintech Limited', ticker: 'POLICYBZR', publishedAt: '2026-09-24T07:39:26Z', subject: 'Analyst/Investor Meet Para A-XBRL', url: PB_URL },
+  { company: 'RailTel Corporation of India Limited', ticker: 'RAILTEL', publishedAt: '2026-09-24T07:00:00Z', subject: 'Change in Management', url: RAIL_URL },
+);
 
 // `workerDown` is the static-origin case: `python3 -m http.server` and the sandbox both answer a
 // route that does not exist, and the panel must say THAT rather than blaming the exchange.
 let workerDown = false;
 let filingReads = 0;
+let sourceDown = false;
 
 const html = `<!doctype html><html><head><link rel="stylesheet" href="/css/tailwind.css"></head>
 <body class="bg-slate-50 p-6">
@@ -49,11 +62,11 @@ const html = `<!doctype html><html><head><link rel="stylesheet" href="/css/tailw
 <script type="module">
 import * as tab from '/js/tabs/nse-filings.js';
 import * as coverage from '/js/data/coverage.js';
-import { installFilingReader } from '/js/ui/xbrl-filing.js';
+import { installFilingReader, openFilingSource } from '/js/ui/xbrl-filing.js';
 coverage.prime({ holdings: [{ ticker: 'MANINDS', name: 'Man Industries (India) Limited' }] });
 installFilingReader();
 const live = { register() {}, start() {}, stop() {} };
-window.testXbrl = { show: (scope) => tab.render({ root: document.querySelector('#root'), scope, live }) };
+window.testXbrl = { openFilingSource, show: (scope) => tab.render({ root: document.querySelector('#root'), scope, live }) };
 window.testXbrl.show('universe');
 </script></body></html>`;
 
@@ -68,9 +81,10 @@ const server = createServer((req, res) => {
     const src = url.searchParams.get('src') || '';
     // The stub reproduces the route's own allow-list, so a test that stopped refusing a foreign URL
     // would fail here rather than passing quietly against a permissive stand-in.
-    if (src !== XBRL_URL) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: false, reason: 'unsupported', url: src })); return; }
+    if (!fixtures.has(src)) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: false, reason: 'unsupported', url: src })); return; }
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ ok: true, url: src, fetchedAt: new Date().toISOString(), ...parseXbrlFiling(xml) }));
+    if (sourceDown) { res.end(JSON.stringify({ ok: false, reason: 'unreachable' })); return; }
+    res.end(JSON.stringify({ ok: true, url: src, fetchedAt: new Date().toISOString(), ...parseXbrlFiling(fixtures.get(src)) }));
     return;
   }
 
@@ -80,7 +94,9 @@ const server = createServer((req, res) => {
   if (url.pathname === '/filing') {
     const src = url.searchParams.get('src') || '';
     res.setHeader('content-type', 'text/html; charset=utf-8');
-    res.end(renderFilingPage({ filing: parseXbrlFiling(xml), url: src, dashboardUrl: 'https://example.test' }));
+    res.end(sourceDown || !fixtures.has(src)
+      ? renderFilingFailure({ url: src, reason: 'unreachable' })
+      : renderFilingPage({ filing: parseXbrlFiling(fixtures.get(src)), url: src, dashboardUrl: 'https://example.test' }));
     return;
   }
 
@@ -105,12 +121,16 @@ const context = await browser.newContext();
 // Nothing here may reach the internet. A check that quietly fetched NSE would be testing the
 // exchange's availability rather than this code.
 await context.route('**', (route) => {
-  if (route.request().url() === XBRL_URL) return route.fulfill({ contentType: 'text/plain', body: xml });
+  if (fixtures.has(route.request().url())) return route.fulfill({ contentType: 'text/plain', body: fixtures.get(route.request().url()) });
   return route.request().url().startsWith(base) ? route.continue() : route.abort();
+});
+await context.addInitScript(() => {
+  localStorage.setItem('sattva:watchlist', JSON.stringify([{ ticker: 'POLICYBZR', name: 'PB Fintech Limited' }]));
+  localStorage.setItem('sattva:watchlist:shape', '3');
 });
 const page = await context.newPage();
 // Keep the dated filing fixture inside the view's default recent-date window.
-await page.clock.setFixedTime(new Date('2026-09-10T14:00:00Z'));
+await page.clock.setFixedTime(new Date('2026-09-24T14:00:00Z'));
 
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -121,7 +141,9 @@ const check = async (label, fn) => { await fn(); checks += 1; console.log(`PASS 
 const panel = () => page.locator('[data-xbrl-panel]');
 const closePanel = () => page.keyboard.press('Escape');
 const openOriginal = async ({ keyboard = false } = {}) => {
-  const original = panel().locator(`a[href="${XBRL_URL}"]`);
+  await panel().locator('summary').click();
+  const original = panel().locator('[data-xbrl-original]');
+  assert.match(await original.innerText(), /View raw XML on NSE \(technical file\)/);
   const textBefore = await panel().innerText();
   const readsBefore = filingReads;
   const sourcePage = page.url();
@@ -144,7 +166,7 @@ await page.waitForSelector('[data-table-scroll] tbody tr');
 
 await check('the XBRL row offers a filing to read, and the PDF row still opens as a link', async () => {
   const labels = await page.locator('td a[data-filing-company]').allInnerTexts();
-  assert.equal(labels.length, 2);
+  assert.equal(labels.length, 4);
   // The arrow means "leaves the page", so only the row that still does keeps it.
   assert.ok(labels.some((t) => t.trim() === 'Read filing'), `expected a Read filing control, got ${JSON.stringify(labels)}`);
   assert.ok(labels.some((t) => t.includes('Open filing')), `expected the PDF row to keep its link, got ${JSON.stringify(labels)}`);
@@ -152,7 +174,7 @@ await check('the XBRL row offers a filing to read, and the PDF row still opens a
 
 await check('clicking it opens the filing here, as the filing’s own fields', async () => {
   const before = context.pages().length;
-  await page.locator('td a', { hasText: 'Read filing' }).click();
+  await page.locator('td a', { hasText: 'Read filing' }).first().click();
   await panel().waitFor({ state: 'visible' });
   await page.waitForFunction(() => !/Reading the filing/.test(document.querySelector('[data-xbrl-panel]')?.textContent || ''));
   const text = await panel().innerText();
@@ -178,7 +200,7 @@ await check('clicking it opens the filing here, as the filing’s own fields', a
   assert.equal(context.pages().length, before);
 });
 
-await check('the original document stays one click away', async () => {
+await check('raw XML is an explicit technical source choice, never the main filing action', async () => {
   const original = panel().locator(`a[href="${XBRL_URL}"]`);
   assert.equal(await original.count(), 1);
   assert.equal(await original.getAttribute('target'), '_blank');
@@ -205,13 +227,16 @@ await check('a filing link anywhere in the app is read the same way, and a PDF l
   for (const extra of context.pages().slice(1)) await extra.close();
 });
 
-await check('a modified click still gets the reader the raw document', async () => {
-  // Ctrl-click, middle-click and "open in new tab" are how somebody asks for the file itself.
-  // Intercepting those would take away the one thing that used to work.
-  await page.locator('#loose-link').click({ modifiers: ['ControlOrMeta'] });
-  await page.waitForTimeout(300);
-  assert.equal(await panel().count(), 0, 'a ctrl-click must not be intercepted');
-  for (const extra of context.pages().slice(1)) await extra.close();
+await check('a modified click opens the complete readable page', async () => {
+  for (const options of [{ modifiers: ['ControlOrMeta'] }, { button: 'middle' }]) {
+    const [opened] = await Promise.all([context.waitForEvent('page'), page.locator('#loose-link').click(options)]);
+    await opened.waitForLoadState('domcontentloaded');
+    assert.equal(new URL(opened.url()).pathname, '/filing');
+    assert.equal(new URL(opened.url()).searchParams.get('src'), XBRL_URL);
+    assert.match(await opened.locator('body').innerText(), /Domestic and International Customers/);
+    assert.equal(await panel().count(), 0);
+    await opened.close();
+  }
 });
 
 await check('with no Worker the panel says so and still hands over the document', async () => {
@@ -221,8 +246,8 @@ await check('with no Worker the panel says so and still hands over the document'
   await page.waitForFunction(() => !/Reading the filing/.test(document.querySelector('[data-xbrl-panel]')?.textContent || ''));
   const text = await panel().innerText();
   // A STATIC ORIGIN IS NOT A BROKEN EXCHANGE, and the words have to separate those two.
-  assert.match(text, /without its Worker/i);
-  assert.match(text, /The filing itself is fine/i);
+  assert.match(text, /readable filing is unavailable on this copy/i);
+  assert.equal(await panel().locator('[data-filing-retry]').count(), 1);
   assert.doesNotMatch(text, /unreachable/i);
   assert.equal(await panel().locator(`a[href="${XBRL_URL}"]`).count(), 1);
   await openOriginal({ keyboard: true });
@@ -231,7 +256,7 @@ await check('with no Worker the panel says so and still hands over the document'
   workerDown = false;
 });
 
-await check('the filing page opens as a filing, not as XML, with the original one click away', async () => {
+await check('the filing page preserves every filed fact and keeps technical XML separately labelled', async () => {
   // This is the email's destination: no dashboard, no script, no stylesheet — just the document.
   const filing = parseXbrlFiling(xml);
   const reader = await context.newPage();
@@ -251,6 +276,88 @@ await check('the filing page opens as a filing, not as XML, with the original on
   await reader.setViewportSize({ width: 390, height: 800 });
   assert.equal(await reader.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true, 'no sideways scroll at 390px');
   await reader.close();
+});
+
+await check('Portfolio, Watchlist and Universe use the same reader for every eligible filing', async () => {
+  const expected = { portfolio: [XBRL_URL], watchlist: [PB_URL], universe: [XBRL_URL, PB_URL, RAIL_URL] };
+  for (const [scope, urls] of Object.entries(expected)) {
+    await page.evaluate(scope => window.testXbrl.show(scope), scope);
+    await page.waitForFunction(count => document.querySelectorAll('td a[data-filing-company][href*="/filing?"]').length === count, urls.length);
+    const links = page.locator('td a[data-filing-company][href*="/filing?"]');
+    assert.deepEqual((await links.evaluateAll(nodes => nodes.map(a => new URL(a.href).searchParams.get('src')))).sort(), [...urls].sort());
+    for (let i = 0; i < urls.length; i++) {
+      const link = links.nth(i), href = await link.getAttribute('href');
+      const src = new URL(href, base).searchParams.get('src');
+      const filing = parseXbrlFiling(fixtures.get(src));
+      await link.press('Enter');
+      await page.waitForFunction(() => !!document.querySelector('[data-xbrl-panel] [data-xbrl-page]'));
+      const text = await panel().innerText();
+      for (const fact of filingFacts(filing)) assert.ok(text.includes(fact.value), `${scope}: missing ${fact.value}`);
+      assert.doesNotMatch(text, /Open the original file on NSE|contextRef|xbrli:/);
+      assert.equal(await panel().locator('[data-xbrl-original]').isVisible(), false);
+      const [opened] = await Promise.all([page.waitForEvent('popup'), panel().locator('[data-xbrl-page]').click()]);
+      await opened.waitForLoadState('domcontentloaded');
+      assert.equal(new URL(opened.url()).searchParams.get('src'), src);
+      const full = await opened.locator('body').innerText();
+      for (const fact of filingFacts(filing)) assert.ok(full.includes(fact.value), `${scope} full page: missing ${fact.value}`);
+      assert.equal(await opened.evaluate(() => window.opener), null);
+      await opened.close();
+      await closePanel();
+      await panel().waitFor({ state: 'detached' });
+    }
+  }
+});
+
+await check('new and recycled source anchors keep native new-tab and copy destinations readable', async () => {
+  await page.evaluate(src => {
+    const a = document.createElement('a'); a.id = 'dynamic-filing'; a.href = src;
+    a.textContent = 'New source'; document.body.append(a);
+  }, PB_URL);
+  const link = page.locator('#dynamic-filing');
+  await page.waitForFunction(() => document.querySelector('#dynamic-filing').pathname === '/filing');
+  assert.equal(new URL(await link.getAttribute('href'), base).searchParams.get('src'), PB_URL);
+  await link.click({ button: 'right' });
+  assert.equal(new URL(await link.getAttribute('href'), base).pathname, '/filing');
+  await page.keyboard.press('Escape');
+  await link.evaluate((a, src) => { a.href = src; }, RAIL_URL);
+  await page.waitForFunction(src => new URL(document.querySelector('#dynamic-filing').href).searchParams.get('src') === src, RAIL_URL);
+  await link.click();
+  await page.waitForFunction(() => /RAILTEL CORPORATION/.test(document.querySelector('[data-xbrl-panel]')?.textContent || ''));
+  await closePanel();
+  await panel().waitFor({ state: 'detached' });
+  await link.evaluate((a, src) => { a.href = src; }, PDF_URL);
+  assert.equal(await link.getAttribute('href'), PDF_URL, 'a recycled PDF never reopens its former XBRL');
+});
+
+await check('row actions in All Alerts and Company Filings share the readable policy', async () => {
+  await page.evaluate(src => window.testXbrl.openFilingSource(src), PB_URL);
+  await page.waitForFunction(() => /25 fields as filed/.test(document.querySelector('[data-xbrl-panel]')?.textContent || ''));
+  assert.match(await panel().innerText(), /Sell side Analyst Call/);
+  await closePanel();
+  await panel().waitFor({ state: 'detached' });
+});
+
+await check('an unavailable source offers a readable retry and recovers without opening XML', async () => {
+  sourceDown = true;
+  await page.locator('#loose-link').click();
+  await page.locator('[data-filing-retry]').waitFor();
+  assert.equal(await panel().locator('[data-xbrl-original]').isVisible(), false);
+  sourceDown = false;
+  await page.locator('[data-filing-retry]').click();
+  await page.waitForFunction(() => !!document.querySelector('[data-xbrl-page]'));
+  assert.match(await panel().innerText(), /Domestic and International Customers/);
+  await closePanel();
+  await panel().waitFor({ state: 'detached' });
+  sourceDown = true;
+  const failed = await context.newPage();
+  await failed.goto(`${base}filing?src=${encodeURIComponent(PB_URL)}`);
+  assert.match(await failed.locator('body').innerText(), /Please try again shortly/);
+  assert.equal(await failed.locator(`a[href="${PB_URL}"]`).isVisible(), false);
+  sourceDown = false;
+  const [retried] = await Promise.all([failed.waitForEvent('popup'), failed.getByRole('link', { name: 'Try readable filing again' }).click()]);
+  await retried.waitForLoadState('domcontentloaded');
+  assert.match(await retried.locator('body').innerText(), /Sell side Analyst Call/);
+  await retried.close(); await failed.close();
 });
 
 await check('the whole run produced no console errors', () => {

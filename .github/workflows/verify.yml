@@ -103,7 +103,7 @@ jobs:
       - name: Verify the shared watchlist contract, attribution and conflicting edits
         run: node scripts/verify-shared-watchlist.mjs
       - name: Verify the team brief — contract, store, fixture-built editions and the sending alarm
-        run: node scripts/verify-newsletter.mjs && node scripts/verify-newsletter-reading.mjs && node scripts/verify-newsletter-email.mjs && node scripts/verify-newsletter-events.mjs
+        run: node scripts/verify-newsletter-markets.mjs && node scripts/verify-newsletter.mjs && node scripts/verify-newsletter-reading.mjs && node scripts/verify-newsletter-email.mjs && node scripts/verify-newsletter-events.mjs
       - name: Verify story grouping, material updates, history and durable review budget
         run: node scripts/verify-alert-stories.mjs
       - name: Verify story grouping in the local Worker runtime
@@ -307,10 +307,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-nse-history-ui.mjs && node scripts/verify-combined-filings-ui.mjs
-      - name: Verify an NSE XBRL filing opens readable, with the original still one click away
+      - name: Verify readable NSE filings in every scope and returning-session upgrades
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-nse-xbrl-ui.mjs
+        run: node scripts/verify-nse-xbrl-ui.mjs && node scripts/verify-nse-xbrl-upgrade-ui.mjs
       - name: Verify Telegram dates, restricted posts, search and retained refresh
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

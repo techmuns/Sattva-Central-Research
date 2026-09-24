@@ -152,13 +152,14 @@ export function renderBriefPdf(brief, { dashboardUrl = PRODUCTION_ORIGIN, produc
     if (!rows.length) continue;
     pdf.ensure(65); pdf.paragraph(g.label.toUpperCase(), { font: 'F2', size: 9, color: ACCENT, gap: 9 });
     for (const r of rows) {
-      pdf.ensure(39);
+      const provenance = `${asOfLabel(r)}${r.change != null ? ` / change ${formatChange(r)}` : ''}`;
+      pdf.ensure(27 + paragraphHeight(provenance, 8, 'F1', 4));
       pdf.text(`${r.label}${r.unit ? ` (${r.unit})` : ''}`, MARGIN, pdf.y, { font: 'F2', size: 10 });
       pdf.text(formatLast(r) ?? 'Unavailable', MARGIN + 270, pdf.y, { size: 10 });
       pdf.text(formatPct(r) ?? '-', MARGIN + 390, pdf.y, { font: 'F2', size: 10 });
       pdf.y += 15;
-      pdf.text(`${asOfLabel(r)}${r.change != null ? ` / change ${formatChange(r)}` : ''}`, MARGIN, pdf.y, { size: 8, color: MUTED });
-      pdf.y += 16; pdf.rule(); pdf.y += 8;
+      pdf.paragraph(provenance, { size: 8, color: MUTED, gap: 4 });
+      pdf.rule(); pdf.y += 8;
     }
     pdf.y += 6;
   }
