@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gzipSync, gunzipSync } from 'node:zlib';
-import { captureRevision, captureStamp, POOL_CAPTURES, POOL_FEEDS, ALERT_POOL_CONTRACT, ALERT_POOL_INDEX_MEMBER, dayMember } from '../../public/js/data/alert-pool-shared.js';
+import { captureRevision, captureStamp, POOL_CAPTURES, POOL_FEEDS, ALERT_POOL_CONTRACT, ALERT_POOL_INDEX_MEMBER, dayMember, feedMember } from '../../public/js/data/alert-pool-shared.js';
 import { buildDayShards, buildAiShards, validateShard, compactAiEvent } from '../../public/js/data/alert-pool-format.js';
 import { newsStateInputs, bookSignature } from '../../public/js/data/alert-pool.js';
 
@@ -83,8 +83,20 @@ export function writePoolMembers({ outDir, sourceFeeds, day, now, book, newsMeta
     const count = Object.values(shard.feeds).reduce((n, group) => n + group.events.length, 0);
     return { member, count, bytes: gz.length, rawBytes: Buffer.byteLength(json), hash: createHash('sha256').update(gz).digest('hex') };
   };
-  const days = [...buildDayShards(sourceFeeds, day).values()].map((shard) => ({ day: shard.day, ...write(dayMember(shard.day), shard) }));
-  const ai = [...buildAiShards(sourceFeeds, day).entries()].map(([member, shard]) => ({ span: shard.span, from: shard.from, to: shard.to, ...write(member, shard) }));
+  const writeVariants = (member, shard) => {
+    // Keep the original complete member for old clients and full-record bookmarks. New clients
+    // can avoid downloading a declined feed while retaining exactly the same event/order data.
+    const entry = write(member, shard), feedMembers = {};
+    for (const id of POOL_FEEDS) {
+      const group = shard.feeds[id];
+      assert(group, `${member}: missing ${id}`);
+      feedMembers[id] = group.events.length || group.companions?.events.length
+        ? write(feedMember(member, id), { ...shard, feeds: { [id]: group } }) : null;
+    }
+    return { ...entry, feedMembers };
+  };
+  const days = [...buildDayShards(sourceFeeds, day).values()].map((shard) => ({ day: shard.day, ...writeVariants(dayMember(shard.day), shard) }));
+  const ai = [...buildAiShards(sourceFeeds, day).entries()].map(([member, shard]) => ({ span: shard.span, from: shard.from, to: shard.to, ...writeVariants(member, shard) }));
   const index = {
     version: 1, contract: ALERT_POOL_CONTRACT, builtAt: new Date(now).toISOString(), day,
     bookSignature: bookSignature(book), pooledFeeds: POOL_FEEDS, captures, feeds, days, ai,
@@ -108,9 +120,21 @@ export const jsonForm = (value) => JSON.parse(JSON.stringify(value));
  */
 export function verifyPoolMembers({ outDir, sourceFeeds, index }) {
   const pooled = sourceFeeds.filter((feed) => POOL_FEEDS.includes(feed.id));
+  const verifyVariants = (entry, shard) => {
+    for (const id of POOL_FEEDS) {
+      const group = shard.feeds[id], part = entry.feedMembers[id];
+      if (!group.events.length && !group.companions?.events.length) {
+        assert.equal(part, null, `${entry.member}: ${id} is explicitly empty`); continue;
+      }
+      assert.equal(part.member, feedMember(entry.member, id));
+      const separate = validateShard(readMember(outDir, part.member), { day: shard.day, span: shard.span, feedId: id });
+      assert.deepEqual(separate, { ...shard, feeds: { [id]: group } }, `${part.member}: every original field, order and companion survives`);
+    }
+  };
   const seenOrders = new Map(pooled.map((feed) => [feed.id, new Set()]));
   for (const entry of index.days) {
     const shard = validateShard(readMember(outDir, entry.member), { day: entry.day });
+    verifyVariants(entry, shard);
     for (const feed of pooled) {
       const group = shard.feeds[feed.id];
       assert(group, `${entry.member}: ${feed.id} is present`);
@@ -132,6 +156,7 @@ export function verifyPoolMembers({ outDir, sourceFeeds, index }) {
   }
   for (const entry of index.ai) {
     const shard = validateShard(readMember(outDir, entry.member), { span: entry.span });
+    verifyVariants(entry, shard);
     for (const feed of pooled) {
       const group = shard.feeds[feed.id];
       assert(group, `${entry.member}: ${feed.id} is present`);

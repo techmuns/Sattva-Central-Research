@@ -74,12 +74,16 @@ export function captureRevision(body) {
 }
 
 export const dayMember = (day) => `days/${day}.json.gz`;
-// The AI pool is cut the way it changes: one shard per day for the pool's thirty-one days, which
-// is where every build adds events, and one per calendar month before them, which a build leaves
-// byte-identical — so a returning reader re-downloads a day, never six months.
+// The AI pool uses one shard per day for the pool's thirty-one days, then one per older month.
+// Members are reusable within an artifact; a new artifact gives even unchanged spans new URLs.
 export const aiMember = (span) => `ai/${span}.json.gz`;
-export const MEMBER_PATTERN = /^(days\/\d{4}-\d{2}-\d{2}|ai\/\d{4}-\d{2}(?:-\d{2})?)\.json\.gz$/;
+export const MEMBER_PATTERN = /^(days\/\d{4}-\d{2}-\d{2}|ai\/\d{4}-\d{2}(?:-\d{2})?)(?:\.(technicals|announcements|insider|news|market-news))?\.json\.gz$/;
 export const isPoolMember = (name) => MEMBER_PATTERN.test(String(name || ''));
+export function feedMember(member, feedId) {
+  if (!POOL_FEEDS.includes(feedId) || !isPoolMember(member) || MEMBER_PATTERN.exec(member)[2])
+    throw Error('Invalid alert pool feed member');
+  return member.replace(/\.json\.gz$/, `.${feedId}.json.gz`);
+}
 
 export const shiftDay = (day, amount) => {
   const date = new Date(`${day}T00:00:00Z`);

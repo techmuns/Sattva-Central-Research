@@ -143,7 +143,7 @@ jobs:
       - name: Verify complete General Alerts pool and scope isolation
         run: node scripts/verify-general-alerts.mjs && node scripts/verify-all-alerts-restore.mjs
       - name: Verify the precomputed alert pool is exact and stands aside honestly
-        run: node --max-old-space-size=4096 scripts/verify-alert-pool.mjs
+        run: node scripts/verify-alert-pool-delivery.mjs && node --max-old-space-size=4096 scripts/verify-alert-pool.mjs
       - name: Verify AI alert search, calendar dates and the KPIs in play
         run: node scripts/verify-ai-alerts.mjs && node scripts/verify-alert-capacity.mjs && node scripts/verify-kpi-impact.mjs
       - name: Verify material alert lifecycle and optional social coverage

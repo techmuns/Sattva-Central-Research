@@ -8,6 +8,21 @@ transitive story-companion selection once per checked revision. It retains one s
 per source row instead of rereading all compact indexes during each projection. Every original
 record, source order and cross-date correction still reaches the existing deduplicators.
 
+The precomputed pool additionally publishes optional per-feed members beside the original
+complete day/AI members. When current capture checks decline a feed, the browser downloads only
+the other usable feeds. All-feed reads keep their single complete member; old artifacts remain
+usable and original records remain available to bookmarks. Every new member is compared with its
+complete counterpart, including source records, order and correction companions. An explicit null
+descriptor means a verified empty feed/day; missing descriptors fall back to the complete member,
+and invalid member content fails into the original source-reading path. Private feeds are outside
+the route allowlist. Scheduled collection, history retention and revision checks are unchanged.
+
+On the saved 11–24 September pool, the 14-day download is 27.33 MB gzip / 265.69 MB decoded.
+When news needs the original source reader, delivering only usable pooled feeds reduces that
+portion to 4.99 MB / 48.69 MB (82% less gzip data). When insider also needs the source reader,
+it is 4.74 MB / 44.50 MB. Those source readers still load their complete eligible records; these
+figures measure the avoided duplicate pool transfer, not total page bytes or elapsed load time.
+
 Each reader has a 32 MiB budget for reusable verified projections. Manifest checks and companion
 selection still run on refresh; changed source hashes, original order, dates or companion sets
 invalidate reuse. Coverage/failure metadata is rebuilt from the latest check even when rows can

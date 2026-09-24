@@ -147,10 +147,12 @@ const validColumns = (group) => !!group && Array.isArray(group.events) && Array.
   group.events.length === group.order.length && group.order.every((n) => Number.isSafeInteger(n) && n >= 0);
 
 /** A shard that does not have the contract's shape, so a caller never reads a partial one. */
-export function validateShard(shard, { day = null, span = null } = {}) {
+export function validateShard(shard, { day = null, span = null, feedId: expectedFeed = null } = {}) {
   if (!validShard(shard)) throw new Error('Alert pool shard has an unfamiliar shape');
   if (day && shard.day !== day) throw new Error(`Alert pool shard is for ${shard.day}, not ${day}`);
   if (span && shard.span !== span) throw new Error(`Alert pool shard is for ${shard.span}, not ${span}`);
+  if (expectedFeed && (Object.keys(shard.feeds).length !== 1 || !Object.hasOwn(shard.feeds, expectedFeed)))
+    throw new Error(`Alert pool shard does not contain exactly ${expectedFeed}`);
   for (const [feedId, group] of Object.entries(shard.feeds)) {
     if (!POOL_FEEDS.includes(feedId) || !validColumns(group) || (group.companions && !validColumns(group.companions)))
       throw new Error(`Alert pool shard carries an invalid ${feedId} group`);

@@ -18,7 +18,8 @@
 //
 // The index is short-lived at the edge (a build lands every few minutes) and every member is
 // addressed by its artifact id, so a member URL is immutable and cached for days — by the edge and
-// by the browser, which therefore re-downloads exactly the shards a new build changed.
+// by the browser within that build. Optional per-feed members let a reader skip declined feeds;
+// a new artifact still has new member addresses. Source revision checks remain in the reader.
 import { readLimited } from './exchange-artifact.mjs';
 import { ALERT_POOL_ARTIFACT, ALERT_POOL_WORKFLOW, ALERT_POOL_INDEX_MEMBER, ALERT_POOL_CONTRACT, isPoolMember } from '../public/js/data/alert-pool-shared.js';
 import { CORS, contentTag, revalidate } from './http.mjs';

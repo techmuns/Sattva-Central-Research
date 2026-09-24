@@ -19,12 +19,13 @@
 //     read recomputes it on every pass.
 //
 // Members are addressed by artifact id, so a shard URL is immutable and the browser's HTTP cache
-// answers it without a request; only the index is revalidated, and only the shards a new build
-// changed are downloaded again. Decoded shards are kept in memory for the current artifact only.
+// answers it without a request within that build. A new artifact has new URLs. Optional per-feed
+// members avoid downloading feeds whose revisions cannot be used. Decoded shards are kept in
+// memory for the current artifact only.
 import { authHeaders } from '../core/host-context.js';
 import { readEntry, KEYS } from '../core/store.js';
 import { validateShard, assembleFeedEvents } from './alert-pool-format.js';
-import { ALERT_POOL_CONTRACT, POOL_FEEDS, POOL_FEED_CAPTURES, isDay, windowDays, dayMember } from './alert-pool-shared.js';
+import { ALERT_POOL_CONTRACT, POOL_FEEDS, POOL_FEED_CAPTURES, isDay, windowDays, dayMember, feedMember } from './alert-pool-shared.js';
 
 export const INDEX_ROUTE = 'api/alert-pool/index';
 export const STATUS_ROUTE = 'api/capture-status';
@@ -180,15 +181,25 @@ async function readShards(index, members, isCurrent) {
   return out;
 }
 
-function membersFor(mode, index, queryWindow) {
+function membersFor(mode, index, queryWindow, wanted = POOL_FEEDS) {
+  const select = (entry, expected) => {
+    const full = [{ member: entry.member, expected }];
+    // Older artifacts remain usable. All-feed reads still use the single complete member;
+    // a complete member already held in this session costs no extra request either.
+    if (wanted.length === POOL_FEEDS.length || shards.has(memberUrl(index, entry.member)) ||
+        !entry.feedMembers || !POOL_FEEDS.every(id => Object.hasOwn(entry.feedMembers, id) &&
+          (entry.feedMembers[id] === null || entry.feedMembers[id]?.member === feedMember(entry.member, id)))) return full;
+    return wanted.flatMap(id => entry.feedMembers[id] === null ? [] :
+      [{ member: entry.feedMembers[id].member, expected: { ...expected, feedId: id } }]);
+  };
   if (mode === 'window') {
     const days = windowDays(queryWindow, index.day);
     if (!days) return null;
-    const known = new Map(index.days.map((entry) => [entry.day, entry.member]));
+    const known = new Map(index.days.map((entry) => [entry.day, entry]));
     if (!days.every((day) => known.has(day))) return null;
-    return days.map((day) => ({ member: known.get(day), expected: { day } }));
+    return days.flatMap((day) => select(known.get(day), { day }));
   }
-  if (mode === 'ai') return index.ai.map((entry) => ({ member: entry.member, expected: { span: entry.span } }));
+  if (mode === 'ai') return index.ai.flatMap((entry) => select(entry, { span: entry.span }));
   return null;
 }
 
@@ -205,8 +216,8 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
   const index = await readIndex(refresh);
   if (!index || !isCurrent()) return null;
   if (index.day !== day) return null;
-  const members = membersFor(mode, index, queryWindow);
-  if (!members) return null;
+  const fullMembers = membersFor(mode, index, queryWindow);
+  if (!fullMembers) return null;
   const [status, extras] = await Promise.all([readStatus(refresh), deviceExtras(sessionRows)]);
   if (!status || !isCurrent()) return null;
   const declined = new Map();
@@ -218,6 +229,7 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
     if (reason) declined.set(feedId, reason); else wanted.push(feedId);
   }
   if (!wanted.length) return { feeds: new Map(), declined, index, mode, day, queryWindow };
+  const members = wanted.length === POOL_FEEDS.length ? fullMembers : membersFor(mode, index, queryWindow, wanted);
   let decoded;
   try { decoded = await readShards(index, members, isCurrent); }
   catch (error) {

@@ -63,7 +63,8 @@ const report = await alerts.collect({ scope: 'universe', day, includeHistory: tr
 const sourceFeeds = report.sourceFeeds.filter(publicAlertFeed);
 const index = writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(),
   captures: captureIdentities({ root, exchange }) });
-const totalBytes = [...index.days, ...index.ai].reduce((n, entry) => n + entry.bytes, 0);
+const allMembers = [...index.days, ...index.ai].flatMap(entry => [entry, ...Object.values(entry.feedMembers || {}).filter(Boolean)]);
+const totalBytes = allMembers.reduce((n, entry) => n + entry.bytes, 0);
 console.log(`[alert-pool] wrote ${index.days.length} day shards and ${index.ai.length} AI shards, ${Math.round(totalBytes / 1024)} KB gzipped, in ${Math.round((performance.now() - started) / 1000)}s`);
 for (const entry of index.days.slice(-3)) console.log(`  ${entry.member}: ${entry.count} events, ${Math.round(entry.bytes / 1024)} KB gz`);
 for (const entry of index.ai.slice(-3)) console.log(`  ${entry.member}: ${entry.count} events, ${Math.round(entry.bytes / 1024)} KB gz`);
