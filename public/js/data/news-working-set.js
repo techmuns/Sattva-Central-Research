@@ -253,7 +253,10 @@ export function createNewsWorkingSet({ window: readingWindow, extraRows = () => 
     } else if (field === 'articles') value.articles.forEach(add);
     else for (const [key, rows] of Object.entries(value.byTicker)) for (const row of rows) add([key, row]);
     live();
-    if (!projectedRows) projections.set(descriptor.projectionKey, out[field], estimateMemoryBytes(out[field], projectionBudget));
+    if (!projectedRows) {
+      const bytes = estimateMemoryBytes(out[field], projectionBudget);
+      if (bytes <= projectionBudget) projections.set(descriptor.projectionKey, out[field], bytes);
+    }
     if (field === 'byTicker') {
       // A checked company whose saved articles fall outside this period is not an unchecked
       // company. Keep source failures separate, and do not rewrite the source's own empty list.

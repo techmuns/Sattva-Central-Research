@@ -21,11 +21,12 @@ const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
 const mutablePath = '/data/performance-fixture.json';
+const corruptPath = `/data/performance-fixture.parts/${'a'.repeat(64)}.json`;
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
   if (offline) { res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return; }
-  if ([immutablePath, mutablePath].includes(url.pathname)) {
+  if ([immutablePath, mutablePath, corruptPath].includes(url.pathname)) {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=0, must-revalidate' });
     res.end(partBody); return;
   }
@@ -107,7 +108,7 @@ try {
   await cacheSession.send('Network.setBlockedURLs', { urls: ['https://*'] });
   await page.unroute('**/*');
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: false });
-  for (const path of [immutablePath, mutablePath]) {
+  for (const path of [immutablePath, mutablePath, corruptPath]) {
     await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
     await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
   }
@@ -115,6 +116,7 @@ try {
   await new Promise(resolve => setTimeout(resolve, 250));
   assert.equal(requests.filter(path => path === immutablePath).length, 1, 'unchanged content-addressed parts are downloaded only once');
   assert.equal(requests.filter(path => path === mutablePath).length, 2, 'mutable manifests still revalidate on repeat reads');
+  assert.equal(requests.filter(path => path === corruptPath).length, 2, 'corrupt success responses never enter the immutable cache');
   await page.evaluate(async path => { await (await fetch(path, { cache: 'reload' })).text(); }, immutablePath);
   assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });

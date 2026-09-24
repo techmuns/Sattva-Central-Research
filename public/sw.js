@@ -164,6 +164,8 @@ function cacheable(request, url) {
     url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') || url.pathname.startsWith('/data/') || url.pathname.startsWith('/assets/brand/');
 }
 
+const newsPartHash = url => /^\/data\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.parts\/([a-f0-9]{64})\.json$/.exec(url.pathname)?.[1];
+
 function revalidateInBackground(request, url) {
   // The service-worker file and cache name are the version boundary for code.
   // Rechecking a hundred immutable modules on every navigation creates the very
@@ -172,9 +174,22 @@ function revalidateInBackground(request, url) {
   // A news part's address IS its SHA-256. Its manifest is rechecked normally and names a new
   // address for every correction; re-downloading this unchanged body on each filter only
   // competes with the selected period. The reader still verifies every part's hash and size.
-  const immutablePart = /^\/data\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.parts\/[a-f0-9]{64}\.json$/.test(url.pathname);
   return request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html' ||
-    url.pathname.startsWith('/data/') && !immutablePart;
+    url.pathname.startsWith('/data/') && !newsPartHash(url);
+}
+
+async function validImmutablePart(response, request) {
+  const expected = newsPartHash(new URL(request.url));
+  if (!expected) return true;
+  // A corrupt success response must not become permanent. Only correctly addressed public
+  // part bytes enter this immutable tier; the caller also verifies its manifest's size/shape.
+  try {
+    const bytes = await response.clone().arrayBuffer();
+    if (!bytes.byteLength || bytes.byteLength > 4 * 1024 * 1024) return false;
+    const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+      .map(byte => byte.toString(16).padStart(2, '0')).join('');
+    return digest === expected;
+  } catch { return false; }
 }
 
 async function fetchAndCache(cache, request, key) {
@@ -185,7 +200,7 @@ async function fetchAndCache(cache, request, key) {
     return null;
   }
   const control = response.headers.get('cache-control') || '';
-  if (response.ok && !/\b(?:private|no-store)\b/i.test(control)) {
+  if (response.ok && !/\b(?:private|no-store)\b/i.test(control) && await validImmutablePart(response, request)) {
     try { await cache.put(key, response.clone()); } catch { /* A storage failure must not fail the network read. */ }
   }
   return response;
