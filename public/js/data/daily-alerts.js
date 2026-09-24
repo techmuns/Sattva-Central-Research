@@ -1,3 +1,5 @@
+import { insiderSignal, INSIDER_HIGH_PCT, INSIDER_HIGH_VALUE } from './insider-signal.js';
+export { insiderSignal, INSIDER_HIGH_PCT, INSIDER_HIGH_VALUE } from './insider-signal.js';
 // data/daily-alerts.js — A NEWEST-FIRST TIMELINE ACROSS THIS DASHBOARD'S RESEARCH FEEDS.
 //
 //   const day = today();                     // the IST trading date
@@ -238,8 +240,6 @@ function istDay(value) {
 // A material day move. This is an importance threshold, no longer a collection threshold:
 // below-threshold measurements remain in the pool and do not change the existing AI policy.
 export const MOVE_PCT = 5;
-export const INSIDER_HIGH_PCT = 1;
-export const INSIDER_HIGH_VALUE = 100_000_000; // ₹10 crore
 export const INVESTOR_HIGH_PP = 1;
 export const CHATTER_HIGH_MENTIONS = 10;
 export const CHATTER_HIGH_CHANGE_PCT = 100;
@@ -387,67 +387,6 @@ const numeric = (value) => {
   if (/\b(?:lakh|lac|lacs)\b/i.test(text)) return n * 100_000;
   return n;
 };
-
-/** Transaction direction plus comparable, stated thresholds; unknown transaction words stay neutral. */
-export function insiderSignal(cells = {}) {
-  const transaction = String(cells.Transaction ?? cells['Acq/Disp'] ?? '').trim();
-  const mode = String(cells.Mode ?? '').trim();
-  const transactionWords = transaction.toLowerCase();
-  const modeWords = mode.toLowerCase();
-  let direction = DIRECTION.NEUTRAL;
-  let basis = 'No recognised directional transaction word was carried; shown as neutral.';
-  // Transaction is the authoritative action. Mode describes how it happened and is consulted
-  // only for a generic/pledge transaction; otherwise "Disposal · Market Purchase" becomes a buy.
-  if (/\b(?:revoke|revocation|release)\w*\b/.test(transactionWords)) {
-    direction = DIRECTION.POSITIVE;
-    basis = 'Pledge release/revocation in the upstream transaction wording.';
-  } else if (/\binvoke\w*\b/.test(transactionWords)) {
-    direction = DIRECTION.NEGATIVE;
-    basis = 'Pledge creation/invocation in the upstream transaction wording.';
-  } else if (/\b(?:disposal|dispose\w*|sell|sold|sale)\b/.test(transactionWords)) {
-    direction = DIRECTION.NEGATIVE;
-    basis = 'Disposal/sale in the upstream transaction wording.';
-  } else if (/\b(?:acquisition|acquire\w*|buy|bought|purchase)\b/.test(transactionWords)) {
-    direction = DIRECTION.POSITIVE;
-    basis = 'Acquisition/purchase in the upstream transaction wording.';
-  } else if (/\bpledge\b/.test(transactionWords)) {
-    if (/\b(?:revoke|revocation|release)\w*\b/.test(modeWords)) {
-      direction = DIRECTION.POSITIVE;
-      basis = 'Pledge release/revocation in the upstream mode wording.';
-    } else {
-      direction = DIRECTION.NEGATIVE;
-      basis = 'Pledge creation/invocation in the upstream transaction wording.';
-    }
-  } else if (/\b(?:revoke|revocation|release)\w*\b.*\bpledge\b|\bpledge\b.*\b(?:revoke|revocation|release)\w*\b/.test(modeWords)) {
-    direction = DIRECTION.POSITIVE;
-    basis = 'Pledge release/revocation in the upstream mode wording.';
-  } else if (/\b(?:invoke\w*|creat\w*)\b.*\bpledge\b|\bpledge\b/.test(modeWords)) {
-    direction = DIRECTION.NEGATIVE;
-    basis = 'Pledge creation/invocation in the upstream mode wording.';
-  } else if (/\b(?:disposal|dispose\w*|sell|sold|sale)\b/.test(modeWords)) {
-    direction = DIRECTION.NEGATIVE;
-    basis = 'Disposal/sale in the upstream mode wording.';
-  } else if (/\b(?:acquisition|acquire\w*|buy|bought|purchase)\b/.test(modeWords)) {
-    direction = DIRECTION.POSITIVE;
-    basis = 'Acquisition/purchase in the upstream mode wording.';
-  }
-
-  const pct = numeric(cells['Trade %']);
-  const value = numeric(cells['Trade Value']);
-  const highPct = pct != null && Math.abs(pct) >= INSIDER_HIGH_PCT;
-  const highValue = value != null && Math.abs(value) >= INSIDER_HIGH_VALUE;
-  const importance = highPct || highValue ? IMPORTANCE.HIGH : IMPORTANCE.LOW;
-  const why = [
-    highPct ? `${Math.abs(pct).toFixed(2)}% is at least ${INSIDER_HIGH_PCT}%` : null,
-    highValue ? `₹${(Math.abs(value) / 10_000_000).toFixed(1)} crore is at least ₹${INSIDER_HIGH_VALUE / 10_000_000} crore` : null,
-  ].filter(Boolean);
-  return signal(
-    direction,
-    importance,
-    basis,
-    why.length ? `High: ${why.join(' and ')}.` : `Low: below ${INSIDER_HIGH_PCT}% and ₹${INSIDER_HIGH_VALUE / 10_000_000} crore, or those values were not carried.`
-  );
-}
 
 // ---------------------------------------------------------------------------------------
 // Feed registry — id, label, which tab owns it, and what it can contribute

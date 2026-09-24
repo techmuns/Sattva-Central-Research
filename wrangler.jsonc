@@ -65,7 +65,9 @@
     "DASHBOARD_ORIGIN": "https://sattva-central-research.tech-441.workers.dev",
     // The dashboard name on the brief's tagline and caption; the masthead and subject are the
     // family office's own, "Sattva Ventures". Read by NewsletterSchedule.renderOptions().
-    "NEWSLETTER_PRODUCT_NAME": "Research Central"
+    "NEWSLETTER_PRODUCT_NAME": "Research Central",
+    // News fails closed if its existing OpenAI secret becomes unavailable.
+    "NEWSLETTER_NEWS_AI_PROVIDER": "openai"
   },
 
   // The dashboard has no account system to key this on today, so the route uses the authenticated

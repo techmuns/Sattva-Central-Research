@@ -1612,7 +1612,7 @@
       "error": "search-unavailable"
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-09-19T23:14:39+00:00",
+      "lastAttemptAt": "2026-09-24T10:57:50+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1CDF01017|VAML": {
@@ -1764,6 +1764,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 226,
-    "checkedAt": "2026-09-24T10:26:11.619380+00:00"
+    "checkedAt": "2026-09-24T10:57:50.552326+00:00"
   }
 }

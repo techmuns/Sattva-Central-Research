@@ -1,0 +1,37 @@
+{
+  "_fixture": "Synthetic public company scope for the newsletter integration tests; not Sattva holdings. No quantities or private book.",
+  "asOf": "2026-09-17",
+  "count": 7,
+  "holdings": [
+    {
+      "ticker": "AARTIDRUGS",
+      "name": "Aarti Drugs Ltd",
+      "isin": "INE767A01016"
+    },
+    {
+      "ticker": "PURVA",
+      "name": "Puravankara Limited"
+    },
+    {
+      "ticker": "SBIN",
+      "name": "State Bank of India"
+    },
+    {
+      "ticker": "ABCAPITAL",
+      "name": "Aditya Birla Capital",
+      "isin": "INE674K01013"
+    },
+    {
+      "ticker": "ALANKIT",
+      "name": "Alankit Limited"
+    },
+    {
+      "ticker": "ADANIENT",
+      "name": "Adani Enterprises"
+    },
+    {
+      "ticker": "CEAT",
+      "name": "CEAT Limited"
+    }
+  ]
+}

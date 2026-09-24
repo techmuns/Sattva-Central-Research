@@ -817,144 +817,46 @@ match would quietly fail the day they reword it.
 
 ### The team brief — two editions a weekday, built at the edge
 
-The **Newsletter** button beside the header bell subscribes the desk to two Sattva Ventures-branded
-briefs a weekday, each leading with the portfolio companies (one block per company, every link
-opening in a new tab) and following with the market scan: the **morning brief** at 08:00 IST (what
-happened overnight — the US close, Asia this morning, Brent, gold, silver, the dollar index and
-USD/JPY, plus every filing and story about a DIRECT holding since the previous evening) and the
-**evening brief** at 16:00 IST (the trading day). `docs/DATA-CONTRACTS.md` → *The team brief* has the
-routes, the shapes and the window rule. Twelve rules, and every one of them is a rule this file
-already runs on:
+The Newsletter button manages Sattva Ventures' direct-portfolio briefs at 08:00 and 16:00 IST
+on weekdays. The authoritative reading, budget, migration and email contracts are in
+[Newsletter source evidence](docs/NEWSLETTER-SOURCE-EVIDENCE.md); market comparison rules are
+in [Newsletter markets](docs/NEWSLETTER-MARKET-ACCURACY.md). The route/store contract remains in
+`docs/DATA-CONTRACTS.md` → *The team brief*.
 
-1. **"Direct ones" means `portfolio-companies.json`**, the Portfolio scope's own file, and nothing
-   wider. A line with no NSE symbol is still a holding and is still the denominator — the brief
-   counts companies reported against the book's **listed** lines, exactly as `scopeSummary` does.
-2. **Every figure carries its own state, full date and provider.** Market quotes use validated
-   NSE/BSE observations, exact Upstox cash-index identities and Yahoo daily bars. Daily changes
-   compare the immediately preceding trading session, never the chart-range reference close.
-   Missing/conflicting figures are withheld; stale and delayed observations retain their labels
-   and stay out of the headline glance. No provider's level is mixed with another's close. This
-   dashboard has no macro-series fallback. See *Newsletter market comparisons* below.
-3. **Source headlines and particulars stay verbatim.** Optional AI summary and potential-impact
-   notes, adapted from Glow on 21 September 2026, are labelled separately and use only supplied
-   headlines/summaries. They never change the topic, mood, source rows or sent-story ledger.
-   Missing/partial AI responses retain source text and disclose coverage. Topic is the desk's
-   thirty keywords folded onto seven
-   topics; mood is `announcementSignal()` over a filing's own subject, and a published headline is
-   Neutral because nothing on this dashboard reads sentiment off one. The footer says so.
-4. **The alarm is the scheduler, and a claim precedes every send.** No cron slot exists on the
-   account and GitHub's schedule does not fire, so the object's alarm sends. `wake()` moves its
-   clock forward in a transaction before reading a quote and `deliver()` claims `<day>:<edition>`
-   before the first email, so a replayed alarm sends nothing and one morning brief a day is a
-   property of the store. An edition reached three hours late is recorded `missed`, not sent at lunch.
-5. **The credential is `MUNS_TOKEN` on the Worker, and its absence is a named state.** Sends go to
-   `POST https://devde.muns.io/email/send/raw` with exactly one of `html`/`text`; without a token
-   the delivery is recorded `no-token` per recipient and the panel names the secret in one line. A
-   reader's own session token may stand in for a send through `/api/newsletter/send`, passed as a
-   value and never stored.
-6. **The panel stays minimal**: your address with Subscribe / Unsubscribe, the list with × and one
-   add field, Preview Morning · Evening. No name field, no edition ticks, no send times, no send
-   buttons, no log — the simplest control that does the job, and those stay on the routes.
-7. **Nothing is fetched on page load.** The panel reads `/api/newsletter` when opened; a static
-   origin is told it has no newsletter, never shown an error.
-8. **It reads every capture the dashboard already keeps for the book, not the one that happens to
-   be live.** The live NSE RSS is the exchange's last ~40 items (measured: 40 spanning 39 minutes),
-   so for a while it was the brief's whole NSE coverage of a sixteen-hour window. The retained
-   history under `data/nse-filings/<day>.json` and BSE's capture are the announcements; the
-   publishers' head **and** `data/tradingview-news/latest.json` (headlines tagged to each holding,
-   every fifteen minutes) are the news — admitted only where `attributeNewsRow` confirms the story
-   names the company, the same gate the News tab and the AI ranking apply; and a holding that moved
-   `MOVE_PCT` or more on its last completed session is a story too, from the closes General Alerts
-   reads, dated by the session and marked whether the close was exchange-verified. Measured on the
-   18 September morning window: 15 updates across 11 companies went out; the same window against
-   the same captures builds 47 across 28.
-9. **One filing is one story, and two filings are two — never fold on a headline prefix.** The
-   sixty-character prefix key dropped 6 of 61 book filings in one three-day capture ("Please refer
-   the enclosed file." twice is two filings; two Regulation 30 intimations minutes apart are two
-   events). `foldAnnouncements()` never folds two rows from the same exchange; it folds an NSE XBRL
-   twin into its readable copy and NSE's copy of a BSE filing into the BSE row (identical text, or
-   the same `familyOf()` subject family minutes apart), which then names both venues.
-10. **A late capture is not a missed filing.** Every window is fixed and every source lands on its
-    own cadence, so a filing captured after its edition went out used to be sent by no edition at
-    all. Each brief now reads from `window.since` — the start of the previous edition's window —
-    and carries what it finds there that no earlier brief sent, marked *not in the previous
-    brief* on the row, on the summary line and in the sources line. `sent` is the story-key ledger
-    the last six sent deliveries recorded (`stories` in the delivery log; keys, never rows; a test
-    copy records none). A missed or failed edition records nothing, so its window travels with the
-    next brief. Rows inside an edition's own window are never suppressed.
-11. **Coverage that stops short says so.** The publishers' head is a bounded file; when its oldest
-    story is later than `since` the sources line says *reaching back only to HH:MM*, and a session
-    whose closes have not been captured yet is named as *not yet captured*, never implied quiet.
-12. **A category is not an event, and a filing is not its markup.** NSE writes many descriptions as
-    *"<company> has informed the Exchange regarding <category>"* and publishes about one
-    announcement in eleven as a raw XBRL file, so a story read *"Acquisition (including agreement
-    to acquire)"* and its link opened a tree of SEBI namespaces. Where stripping the preamble would
-    leave the exchange's own subject and nothing more, the WHOLE sentence stands — it names the
-    filer; the keyword and direction readings still come from the stripped event, so a company's
-    name can never reach a vocabulary written for events. The particulars come from the DOCUMENT
-    (`filingParticulars()` over `parseXbrlFiling()`, the dashboard's own filing parser), bounded per
-    send and spent first on the rows whose description says least, printed as the exchange's label
-    and the company's value with what did not fit counted. A filing that could not be read keeps its
-    headline unchanged, and the sources line states how many were read. The link lands on
-    `/filing?src=…` — the same document, rendered — and only for an XBRL file; every other link
-    still goes straight to the publisher or the exchange.
-
-The reading layer retains every source link, summary and delivery identity. `newsletter-events.mjs`
-checks reworded news about the same company before the separate AI-notes request: one bounded
-30-second Bedrock call per built send, at most 80 reports / 96,000 UTF-8 bytes, with at most 24,000 bytes of HTML-escaped source rows per company to keep a merged update small enough for email. Whole companies
-that exceed the budget remain unchecked; source text is never truncated for the decision. Accept
-only a complete, disjoint partition of known IDs, with all-pairs company, attribution, 24-hour,
-figure and stage guards. The model must keep materially new or conflicting developments separate.
-Persist the resulting `eventId` on the brief's news rows so rendering, email parts, AI notes and
-PDFs use identical membership. Public previews call neither AI pass. Failure retains separate
-reports except exact syndicated headlines; the sources line and delivery summary disclose scope
-and failure. This is within-edition grouping, not semantic suppression of future news: every
-original key still reaches the existing sent-story ledger, and a later development remains eligible.
-The public Engineers India fixture and `verify-newsletter-events.mjs` exercise grouping and lossless
-rendering with stubbed model replies; they do not establish live model accuracy. Distinct filings
-remain distinct after the existing exchange-twin fold.
-`newsletter-email.mjs` measures the final UTF-8 HTML, including escaped text, URLs, AI notes and
-recipient footers. Editions up to 90,000 bytes stay in one email; larger editions use numbered
-parts with distinct subjects, usually two. Keep companies together unless one company alone is
-too large, then split between complete updates with a continued heading. Keep all source rows,
-AI notes and identities; use additional parts on exceptionally busy days rather than omit content.
-The market scan is in the final part and the complete-edition PDF is linked from every part.
-Repeated inline formatting and duplicate heading links are reduced without removing the Read or
-dashboard links. The transport rejects any final body above the byte budget. A pathological update
-that cannot fit alone fails the plan as `email-too-large` before any PDF is saved or email sent.
-Delivery progress is saved after each part: `sent` counts recipients who received every part,
-`partial-send` is a failure state, and only confirmed delivered story keys enter read history,
-including after an interrupted run. The once-per-edition claim still prevents replay duplicates;
-unknown sends are not automatically retried. Preview `part=1|2|…` shows the same boundaries with
-links to the other preview parts; PDF/text previews remain complete. Offline and browser tests in
-`scripts/verify-newsletter-email.mjs` cover size boundaries, Unicode, source conservation and failure.
-The fluid email sheet and downloadable A4 PDF carry **Automated by Munshot** in their footers.
-Sent editions save one immutable PDF before sending, under an unguessable UUID link in
-`newsletter_documents`; those PDFs survive delivery-log pruning and contain no recipient data.
-`GET /api/newsletter/pdf/<uuid>` downloads the saved bytes without fetching sources or AI again.
-Preview `format=pdf` builds a current source-only preview; it does not call AI, send, or save an
-edition. Confirmed rejected sends delete their provisional PDF. Unknown delivery outcomes (timeouts,
-connection loss, 5xx or malformed responses) keep the link, with an independently retained delivery
-key/state so they remain identifiable after delivery-log pruning. Manual sends have a desk-wide
-limit of four attempts per rolling 24 hours, reserved durably before AI/PDF/email work; scheduled
-editions keep their existing independent once-per-edition claim. Links grant
-access to that edition to anyone holding them. PDF base fonts render rupees as INR, normalize
-punctuation/Latin accents, and display unsupported glyphs as Unicode code points rather than omit
-source text. The PDF exporter is dependency-free; `scripts/verify-newsletter-reading.mjs` tests the
-reading layer, source preservation, AI failures, saved bytes and download routes. Its
-`NEWSLETTER_LAYOUT=1` mode verifies mobile widths and the browser download.
-
-**The brief is asserted against FIXTURES, not against today's capture.** `scripts/fixtures/newsletter/`
-carries a small book, two small filing captures, an NSE history day, a TradingView snapshot and a
-closes file, because `corp-announcements.json` and `market-news.json` are rewritten by their own
-workflows and the book by
-`family-book-sync.yml` — a test naming a company against those files asserts whatever a workflow
-committed that day (27 rows for 19 book companies sat inside the morning window when this was
-written, and which of them led the sheet was a property of the capture rather than of the rule).
-One test still builds against the **shipped** files, because a brief only ever built against a
-fixture has not been shown to build against the data it will be sent from; it asserts structure and
-honesty — every company is a book ticker, every story is inside its window, a published headline
-carries no direction — and never a name or a count.
+- Scope follows `portfolio-companies.json`, including the listed denominator when a source is
+  missing. Never copy Glow's private-book quantities or public book endpoint. Session prices and
+  an unweighted median are not portfolio P&L.
+- Source headlines, particulars, dates and links survive AI failure. Facts come from complete
+  bounded documents/articles, with labelled partial/pending/unreadable states. Generic filing
+  categories and nearby timestamps do not prove two documents describe one event. News retains
+  Sattva's conservative company attribution and its original source rows.
+- Source reading has a durable, independently scheduled queue: initial seven-day capture,
+  overlapping discovery, held-back watermarks on required-source failures, bounded claims,
+  leases and retries. Saved jobs outlive email sends. A successful deployment or browser check
+  does not establish complete upstream history.
+- OpenAI news uses a durable USD 1/day and USD 25/month ledger for news reading/review/grouping,
+  with reservations before I/O, quote/issuer/product checks and policy-versioned caches. This is
+  not a cap on filing/PDF, other AI notes or Ask Research. Missing news credentials fail closed.
+- Public previews do no paid reading, enqueue/process no jobs, send no email and save no PDF.
+  An actual send uses saved source facts and a bounded additional read batch. AI coverage counts
+  all eligible updates, including those outside its batch; headlines alone never become notes.
+- The alarm advances its clock and pre-arms before I/O. Durable edition claims prevent replay;
+  over-three-hour late editions are marked missed. `MUNS_TOKEN` is the send credential and a
+  missing token is explicit. No unknown send is automatically retried.
+- The ten-day reported-item ledger migrates retained acknowledged legacy keys in place and
+  records confirmed parts atomically. Preview/test sends mark nothing. Preserve subscribers,
+  claims, settings, PDFs and the four-attempt rolling daily manual-send budget.
+- Every part stays within 90,000 final UTF-8 HTML bytes. Split at company, complete-update or
+  supplementary-row boundaries; preserve all sources and notes. A single unfit item fails
+  before PDF creation or delivery. Parts share a complete immutable PDF; confirmed rejected
+  sends delete their provisional PDF while uncertain outcomes retain it. Saved PDFs survive
+  delivery-log pruning and contain no recipient information.
+- Keep the panel simple: subscribe/unsubscribe, addresses (multi-address paste), previews.
+  No subscriber reads on page load, manual-send buttons or operational detail in ordinary flow.
+  Email/PDF footers say **Automated by Munshot**, and XBRL links retain `/filing?src=…`.
+- Fixture tests cover behavior; a source-only shipped-data smoke test asserts structure rather
+  than changing counts. Test mobile email, multipart acknowledgements, migration/restarts and
+  returning-session module upgrades. Stub all model and delivery calls during tests.
 
 ### Two disclosures that look identical — the Institutions rule
 
@@ -3023,7 +2925,8 @@ these; a real Universe history (263k events) folds in ~1.3s warm, a day in ~30ms
 
 The second bullet: one line, at most 220 characters, on the likely earnings or valuation implication
 — *"Unlikely to move FY27 revenue at once; mainly adds to the development pipeline."* Written by
-Claude on Bedrock through the Worker's `CLAUDE_KEY` (the credential Ask Research and the brief's notes use), and held to the
+Claude on Bedrock through the Worker's `CLAUDE_KEY` (the credential Ask Research and the brief's
+filing notes use; the brief's news notes are OpenAI's and do not share this path), and held to the
 brief's rules, enforced in code on both sides of the wire (`acceptNote`), not only in the prompt:
 
 1. **The model sees what the card shows and nothing else** — the lead's statement, headline and

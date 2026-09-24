@@ -180,6 +180,43 @@ try {
   await page.waitForFunction(() => ![...document.querySelectorAll('.brief-row')].some((r) => r.textContent.includes('meera@muns.io')));
   ok('...and × removes them', store.snapshot().count === 1);
 
+  console.log('\n— the whole team at once —');
+  // The desk copies a column of addresses out of a table, so the paste arrives with NEWLINES — which
+  // a single-line field strips rather than separates on, merging six addresses into one that never
+  // existed. Driven as a real paste event, because `fill()` sets the value and would not exercise it.
+  const team = ['bharat@example.test', 'gaurav@example.test', 'prateek@example.test', 'ashwini@example.test', 'ankita@example.test', 'yamini@example.test'];
+  await page.evaluate((text) => {
+    const field = document.querySelector('form[data-brief-form="add"] input[name="email"]');
+    const data = new DataTransfer();
+    data.setData('text/plain', text);
+    field.focus();
+    field.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+  }, team.join('\n'));
+  const pasted = await page.locator('[data-brief-form="add"] input[name="email"]').inputValue();
+  ok('a column of addresses pasted with newlines stays six addresses, not one merged string', pasted === team.join(', '), pasted);
+  await page.locator('[data-brief-form="add"] button[type="submit"]').click();
+  await page.waitForFunction((n) => document.querySelectorAll('.brief-row').length === n, team.length);
+  const held = store.snapshot().subscribers;
+  ok('...and one Add puts every one of them on the list, in one edit, each attributed to the reader',
+    team.every((e) => held.some((s) => s.email === e)) && held.length === team.length + 1 && held.every((s) => s.addedBy === 'pratik@muns.io'), held.map((s) => s.email).join(','));
+  ok('...with the note counting what the SERVER did, not what was sent', /\b6 added\b/.test(await page.locator('.brief-note').innerText()));
+  // A batch is one request, so a duplicate inside it is the store's answer rather than a refusal.
+  await page.locator('[data-brief-form="add"] input[name="email"]').fill(`${team[0]}, kiran@example.test`);
+  await page.locator('[data-brief-form="add"] button[type="submit"]').click();
+  await page.waitForFunction(() => /already on the list/.test(document.querySelector('.brief-note')?.textContent || ''));
+  ok('...and re-adding someone already there says so beside the one that was new', store.snapshot().count === team.length + 2 && /added/.test(await page.locator('.brief-note').innerText()));
+  await page.locator('[data-brief-action="remove"][data-email="kiran@example.test"]').click();
+  await page.waitForFunction(() => ![...document.querySelectorAll('.brief-row')].some((r) => r.textContent.includes('kiran@')));
+  const before = store.snapshot().count;
+  await page.locator('[data-brief-form="add"] input[name="email"]').fill('ravi@example.test, nope, sana@example.test');
+  await page.locator('[data-brief-form="add"] button[type="submit"]').click();
+  await page.locator('.brief-note[data-tone="error"]').waitFor();
+  ok('a token that is not an address refuses the WHOLE paste, names it, and keeps the text to correct',
+    store.snapshot().count === before
+    && (await page.locator('.brief-note').innerText()).includes('"nope"')
+    && (await page.locator('[data-brief-form="add"] input[name="email"]').inputValue()).includes('ravi@example.test'));
+  await page.locator('[data-brief-form="add"] input[name="email"]').fill('');
+
   console.log('\n— preview —');
   const [preview] = await Promise.all([context.waitForEvent('page'), page.locator('[data-brief-action="preview"][data-edition="evening"]').click()]);
   await preview.waitForLoadState();
@@ -196,7 +233,7 @@ try {
   tokenConfigured = true;
   await page.locator('[data-brief-action="unsubscribe-me"]').click();
   await page.locator('[data-brief-form="me"]').waitFor();
-  ok('Unsubscribe returns the reader to the form and clears the dot', !(await page.locator('[data-brief-dot]').isVisible()) && store.snapshot().count === 0);
+  ok('Unsubscribe removes only the reader and clears the dot', !(await page.locator('[data-brief-dot]').isVisible()) && store.snapshot().count === team.length && !store.snapshot().subscribers.some(row => row.email === 'pratik@muns.io'));
   await page.keyboard.press('Escape');
   offline = true;
   await button().click();

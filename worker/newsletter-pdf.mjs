@@ -1,10 +1,11 @@
 // Dependency-free PDF export for Workers. The PDF standard's built-in fonts need no
 // network font service, browser, or deployment build. All dimensions are PDF points.
-import { BRAND, TAGLINES, briefStats, detailLine, readableUrl, sourcesNote, formatLast, formatPct, formatChange, asOfLabel, MARKET_GROUPS, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { BRAND, TAGLINES, readableUrl, briefStats, briefSupplementLines, contentStatusText, storyWhen, sourcesNote, formatLast, formatPct, formatChange, asOfLabel, MARKET_GROUPS, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { priceReasonText } from './newsletter-price-reasons.mjs';
 import { istDateLong, istLabel } from '../public/js/data/newsletter-shared.js';
 
-const INK = '0.059 0.09 0.165', MUTED = '0.31 0.37 0.46', ACCENT = '0.31 0.275 0.898';
-const RULE = '0.87 0.89 0.93', TINT = '0.933 0.949 1';
+const INK = '0.06 0.09 0.16', MUTED = '0.31 0.37 0.46', ACCENT = '0.31 0.27 0.90';
+const RULE = '0.87 0.89 0.93', TINT = '0.93 0.95 1.00';
 const WIDTH = 595.28, HEIGHT = 841.89, MARGIN = 46, CONTENT = WIDTH - MARGIN * 2, BOTTOM = 778;
 // PDF base-font metrics, in thousandths of an em, for ASCII 32..126 (Adobe AFM).
 const METRICS = {
@@ -100,8 +101,9 @@ const noteHeight = text => 32 + wrap(text, CONTENT - 28, 'F1', 10).length * 14.5
 const updateHeight = (k, note) => {
   const s = k.main;
   return paragraphHeight(s.headline, 13, 'F3', 7) + (s.dek ? paragraphHeight(s.dek, 10) : 0)
-    + (note ? noteHeight(note.summary) + noteHeight(note.impact) : 0)
-    + (detailLine(s) ? paragraphHeight(detailLine(s), 10) : 0)
+    + (note ? noteHeight(note.summary) + noteHeight(note.impact) + (note.unknowns ? noteHeight(note.unknowns) : 0) : 0)
+    + (contentStatusText(k) ? paragraphHeight(contentStatusText(k), 9) : 0)
+    + (s.kind === 'move' ? paragraphHeight(`Why it moved: ${priceReasonText(s.why)}`, 10) + (s.why?.source ? 40 : 0) : 0)
     + 60 + k.others.reduce((n, r) => n + paragraphHeight(`Related: ${r.headline}`, 10) + 35 + (r.dek ? paragraphHeight(r.dek, 10) : 0), 0);
 };
 
@@ -127,27 +129,35 @@ export function renderBriefPdf(brief, { dashboardUrl = PRODUCTION_ORIGIN, produc
       const s = k.main, note = brief.ai?.items?.[k.id];
       const needed = updateHeight(k, note);
       const startPage = pdf.pages.length;
-      pdf.ensure(Math.min(650, needed) + 23);
+      if (k !== c.clusters[0]) pdf.ensure(Math.min(650, needed) + 23);
       if (pdf.pages.length !== startPage) pdf.paragraph(`${c.company} / continued`, { font: 'F2', size: 9, color: ACCENT });
       pdf.paragraph(s.headline, { font: 'F3', size: 13, url: readableUrl(s.url, dashboardUrl), gap: 7 });
       if (s.dek) pdf.paragraph(s.dek, { size: 10, color: MUTED });
-      if (note) { pdf.ensure(noteHeight(note.summary) + noteHeight(note.impact)); pdf.note('AI SUMMARY', note.summary); pdf.note('POTENTIAL IMPACT / AI', note.impact); }
-      const details = detailLine(s);
-      if (details) pdf.paragraph(details, { size: 10 });
-      pdf.paragraph(`${s.topic.label} / ${s.mood.label} / ${s.source} / ${istLabel(s.at)}${s.related ? ' / related entity' : ''}${s.late ? ' / not in the previous brief' : ''}`, { size: 8, color: MUTED });
+      if (note) { pdf.ensure(noteHeight(note.summary) + noteHeight(note.impact)); pdf.note('AI SUMMARY', note.summary); if (note.impact) pdf.note('POTENTIAL IMPACT / AI', note.impact); if (note.unknowns) pdf.note('STILL UNKNOWN', note.unknowns); }
+      if (contentStatusText(k)) pdf.paragraph(contentStatusText(k), { size: 9, color: MUTED });
+      if (s.kind === 'move') {
+        pdf.paragraph(`Why it moved: ${priceReasonText(s.why)}`, { size: 10 });
+        if (s.why?.source) pdf.paragraph(`Source: ${s.why.source.publisher} / ${storyWhen(s.why.source)}`, { size: 9, color: ACCENT, url: s.why.source.url });
+      }
+      pdf.paragraph(`${s.topic.label} / ${s.mood.label} / ${s.source} / ${storyWhen(s)}${s.related ? ' / related entity' : ''}${s.late ? ' / not in the previous brief' : ''}`, { size: 8, color: MUTED });
       if (s.url) pdf.paragraph('Read original source ->', { font: 'F2', size: 9, color: ACCENT, url: readableUrl(s.url, dashboardUrl) });
       for (const r of k.others) {
         pdf.paragraph(`Related: ${r.headline}`, { size: 10, url: readableUrl(r.url, dashboardUrl) });
-        pdf.paragraph(`${r.source} / ${istLabel(r.at)}${r.related ? ' / related entity' : ''}${r.late ? ' / not in the previous brief' : ''}`, { size: 8, color: MUTED });
+        pdf.paragraph(`${r.source} / ${storyWhen(r)}${r.related ? ' / related entity' : ''}${r.late ? ' / not in the previous brief' : ''}`, { size: 8, color: MUTED });
         if (r.dek) pdf.paragraph(r.dek, { size: 10, color: MUTED });
       }
       pdf.y += 4; pdf.rule(); pdf.y += 12;
     }
   }
-  const more = brief.announcements.more + brief.news.more + (brief.moves?.more || 0);
+  const more = brief.announcements.more + brief.news.more + (brief.trades?.more || 0) + (brief.moves?.more || 0);
   if (more) pdf.paragraph(`${more} more items in this window on the dashboard.`, { color: ACCENT, url: `${dashboardUrl}/#/research/daily-alerts?scope=portfolio` });
-  pdf.section('Global market scan');
-  for (const g of MARKET_GROUPS) {
+  for (const line of briefSupplementLines(brief)) {
+    if (!line) continue;
+    if (/^(ON THE CALENDAR|CORPORATE ACTIONS|PORTFOLIO)/.test(line)) pdf.section(line);
+    else pdf.paragraph(line.trim(), { size: 10, gap: 7 });
+  }
+  pdf.section('Indian and global markets');
+  for (const g of [...MARKET_GROUPS.filter(g => g.id === 'india'), ...MARKET_GROUPS.filter(g => g.id !== 'india')]) {
     const rows = brief.markets.rows.filter(r => r.group === g.id);
     if (!rows.length) continue;
     pdf.ensure(65); pdf.paragraph(g.label.toUpperCase(), { font: 'F2', size: 9, color: ACCENT, gap: 9 });
@@ -168,7 +178,7 @@ export function renderBriefPdf(brief, { dashboardUrl = PRODUCTION_ORIGIN, produc
   // Each source begins a readable paragraph instead of one dense block of fine print.
   for (const part of coverage.split(' · ')) pdf.paragraph(part, { size: 9, color: MUTED, gap: 5 });
   pdf.y += 8;
-  pdf.paragraph('AI notes use supplied headlines and summaries, not full documents. Possible impacts are not established facts. Mood follows stated filing and price-move rules; publisher reports remain neutral. This brief is informational, not investment advice.', { size: 9, color: MUTED });
+  pdf.paragraph('AI summaries use extracted source-document or article facts. Each update states whether its sources were read or remain pending. Possible impacts are interpretations, not established outcomes. Mood follows stated filing, trade and price-move rules; publisher reports remain neutral. This brief is informational, not investment advice.', { size: 9, color: MUTED });
   pdf.paragraph(`Built ${istLabel(brief.builtAt, { year: true })}. Automated by Munshot.`, { font: 'F2', size: 9, color: ACCENT });
   return pdf.bytes(`${BRAND} / ${edition} / ${brief.day}`);
 }

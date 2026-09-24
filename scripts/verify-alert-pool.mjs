@@ -257,7 +257,7 @@ if (phase !== 'fallbacks') process.exit(0);
 // THE NARROWED WEEK is the reference for the fallbacks below — the full history assembled to the
 // period, the same code path a period takes over settled sources. It is built here, after the
 // ranking, so that it is not held beside two rankings and the AI pool.
-const narrowedWeek = alerts.assemble({ day, scope: 'universe', holdings: coverage.holdings(), includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
+let narrowedWeek = alerts.assemble({ day, scope: 'universe', holdings: coverage.holdings(), includeHistory: true, queryWindow: week, settledFeeds: new Map(full.sourceFeeds.map((feed) => [feed.id, feed])) });
 full = null; sourceFeeds = null;
 
 // 4. EVERY REASON THE POOL STANDS ASIDE. Each one is checked on the read itself, and each leaves
@@ -371,6 +371,10 @@ assert.deepEqual(served.requests.filter((path) => path.startsWith('api/alert-poo
 console.log('PASS a reassembly without loading reuses the pool read in memory');
 
 // 7. Full bookmark evidence was checked alongside the actual AI collection in section 3.
+
+narrowedWeek = null;
+alertPool.resetForTest();
+clearRankingCache();
 
 // 8. ROWS THIS SESSION HOLDS BEYOND THE CAPTURE DO DECLINE — through the feed modules themselves,
 // last because they cannot be taken back. A device copy that a tab loads for a company (a

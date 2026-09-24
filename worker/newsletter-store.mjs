@@ -1,5 +1,5 @@
 import {
-  EDITION_IDS, NEWSLETTER_SUBSCRIBER_LIMIT, DEFAULT_SETTINGS,
+  EDITION_IDS, NEWSLETTER_SUBSCRIBER_LIMIT, DEFAULT_SETTINGS, REPORTED_RETENTION_MS,
   newsletterIntents, newsletterSettings, normaliseEditions, subscriberEntry,
 } from '../public/js/data/newsletter-shared.js';
 
@@ -23,21 +23,17 @@ import {
 // inside stays in the log with no `finishedAt`, and the panel shows it as interrupted rather than
 // quietly sending again.
 //
-// A DELIVERY ALSO RECORDS WHAT IT CARRIED. `stories` is the list of keys every story in a sent
-// brief travelled under (a filing's URL on each exchange, a headline, a session move), and
-// `sentStoryKeys()` is the union over the last few sent deliveries. The brief builder reaches back
-// over the previous edition's window for captures that landed after that edition went out, and
-// this is how it knows which of those rows the desk has already read. Keys, never rows: the log
-// holds nothing the exchanges or publishers wrote. A test copy records nothing, because it went to
-// one person and not to the desk.
+// WHAT THE DESK HAS BEEN SENT IS A RECORD TOO — `newsletter_reported`, one row per item (a filing,
+// a story, a trade, a price move) that a brief sent to the list actually carried, keyed by the item's
+// own identity rather than by anything the capture might restamp. It is what lets the next brief
+// carry a filing captured after the previous one went out, and what stops it carrying the same
+// filing twice. Only a send that REACHED somebody writes it: a test copy, a preview, and a delivery
+// whose every send failed leave it alone, because "reported" has to mean the desk saw it.
 
 export const NEWSLETTER_OBJECT = 'team-brief:v1';
 export const DELIVERY_HISTORY = 12;
 export const MANUAL_SEND_LIMIT = 4;
 export const MANUAL_SEND_WINDOW_MS = 24 * 3600 * 1000;
-// Three weekdays of editions: a story that fell out of two consecutive windows is old news, and a
-// capture that lands later than that is an outage the sources line already reports.
-export const SENT_HISTORY = 6;
 
 const iso = (at) => new Date(at).toISOString();
 const parseJson = (text, fallback) => { try { return JSON.parse(text); } catch { return fallback; } };
@@ -60,10 +56,15 @@ export class NewsletterStore {
       started_at TEXT NOT NULL, finished_at TEXT, source TEXT NOT NULL,
       recipients INTEGER NOT NULL, sent INTEGER, failed INTEGER, reason TEXT,
       subject TEXT, outcomes TEXT, summary TEXT)`);
-    this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_manual_attempts (id TEXT PRIMARY KEY, at INTEGER NOT NULL)');
-    this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_documents (id TEXT PRIMARY KEY, filename TEXT NOT NULL, body BLOB NOT NULL, created_at TEXT NOT NULL)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_state ON newsletter_subscribers(state, seq)');
     this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_delivery_time ON newsletter_deliveries(started_at)');
+    this.storage.sql.exec(`CREATE TABLE IF NOT EXISTS newsletter_reported (
+      item TEXT PRIMARY KEY, published_at TEXT, delivery TEXT NOT NULL, reported_at TEXT NOT NULL)`);
+    this.storage.sql.exec('CREATE INDEX IF NOT EXISTS newsletter_reported_time ON newsletter_reported(reported_at)');
+    this.storage.sql.exec('CREATE TABLE IF NOT EXISTS newsletter_manual_attempts (id TEXT PRIMARY KEY, at INTEGER NOT NULL)');
+    this.storage.sql.exec(`CREATE TABLE IF NOT EXISTS newsletter_documents (
+      id TEXT PRIMARY KEY, filename TEXT NOT NULL, body BLOB NOT NULL, created_at TEXT NOT NULL,
+      delivery_key TEXT, delivery_state TEXT NOT NULL DEFAULT 'pending')`);
     // Added after the table shipped: a deployment whose log predates it gains the column in place.
     const columns = this.storage.sql.exec('PRAGMA table_info(newsletter_deliveries)').toArray();
     if (!columns.some((c) => c.name === 'stories')) this.storage.sql.exec('ALTER TABLE newsletter_deliveries ADD COLUMN stories TEXT');
@@ -71,6 +72,18 @@ export class NewsletterStore {
     if (!documentColumns.some(c => c.name === 'delivery_key')) this.storage.sql.exec('ALTER TABLE newsletter_documents ADD COLUMN delivery_key TEXT');
     if (!documentColumns.some(c => c.name === 'delivery_state')) this.storage.sql.exec("ALTER TABLE newsletter_documents ADD COLUMN delivery_state TEXT NOT NULL DEFAULT 'pending'");
     this.initialised = true;
+    // Migrate acknowledged Sattva story identities in place, once. Preserve subscribers,
+    // delivery claims and documents, including interrupted/partially acknowledged editions.
+    const meta = this.meta();
+    if (!meta.reportedMigrated) this.storage.transactionSync(() => {
+      const cutoff = iso(this.now() - REPORTED_RETENTION_MS);
+      const deliveries = this.rows("SELECT key,started_at,stories FROM newsletter_deliveries WHERE stories IS NOT NULL AND source != 'test' AND started_at >= ? ORDER BY started_at", cutoff);
+      for (const d of deliveries) for (const key of parseJson(d.stories, [])) {
+        if (typeof key !== 'string' || key.length > 512) continue;
+        this.rows('INSERT OR IGNORE INTO newsletter_reported(item,published_at,delivery,reported_at) VALUES (?,NULL,?,?)', key, d.key, d.started_at);
+      }
+      this.putMeta({ ...meta, reportedMigrated: true, ...(deliveries.length && !meta.reportedSince ? { reportedSince: iso(Date.parse(deliveries[0].started_at) - 26*3600000) } : {}) });
+    });
   }
 
   rows(sql, ...args) {
@@ -134,6 +147,7 @@ export class NewsletterStore {
 
   apply(input) {
     const intents = newsletterIntents(input);
+    this.init();
     return this.storage.transactionSync(() => {
       const meta = this.meta();
       let seq = meta.seq || 0;
@@ -195,6 +209,7 @@ export class NewsletterStore {
    * scheduled edition's key is `<day>:<edition>` and is claimed once, ever.
    */
   beginDelivery({ key, edition, day, scheduledAt = null, source, recipients }) {
+    this.init();
     return this.storage.transactionSync(() => {
       const existing = this.rows('SELECT key FROM newsletter_deliveries WHERE key = ?', key)[0];
       if (existing) return false;
@@ -206,34 +221,28 @@ export class NewsletterStore {
     });
   }
 
-  finishDelivery(key, { sent = 0, failed = 0, reason = null, outcomes = [], subject = null, summary = null, stories = null } = {}) {
-    this.recordDeliveryProgress(key, { sent, failed, reason, outcomes, subject, summary, stories }, true);
+  finishDelivery(key, values = {}) {
+    this.recordDeliveryProgress(key, values, true);
     this.pruneDeliveries();
   }
 
-  // Persist each accepted part before the next external send. A restart leaves the edition
-  // unfinished with its actual part outcomes; only confirmed story keys become read history.
-  recordDeliveryProgress(key, { sent = 0, failed = 0, reason = null, outcomes = [], subject = null, summary = null, stories = null } = {}, finished = false) {
-    const keys = Array.isArray(stories) ? stories.filter((k) => typeof k === 'string' && k.length <= 512).slice(0, 2000) : null;
-    this.rows(
-      'UPDATE newsletter_deliveries SET finished_at = ?, sent = ?, failed = ?, reason = ?, subject = ?, outcomes = ?, summary = ?, stories = ? WHERE key = ?',
-      finished ? iso(this.now()) : null, sent, failed, reason, subject, JSON.stringify(outcomes || []), summary ? JSON.stringify(summary) : null, keys ? JSON.stringify(keys) : null, key,
-    );
-  }
-
-  /** The keys of every story the last few SENT deliveries carried — what the next brief may treat as read. */
-  sentStoryKeys(limit = SENT_HISTORY) {
-    const out = new Set();
-    for (const row of this.rows('SELECT stories FROM newsletter_deliveries WHERE stories IS NOT NULL ORDER BY started_at DESC LIMIT ?', limit)) {
-      for (const key of parseJson(row.stories, [])) if (typeof key === 'string') out.add(key);
-    }
-    return out;
+  recordDeliveryProgress(key, { sent = 0, failed = 0, reason = null, outcomes = [], subject = null, summary = null, reported = [], windowFrom = null } = {}, finished = false) {
+    this.init();
+    this.storage.transactionSync(() => {
+      this.rows(
+        'UPDATE newsletter_deliveries SET finished_at = ?, sent = ?, failed = ?, reason = ?, subject = ?, outcomes = ?, summary = ? WHERE key = ?',
+        finished ? iso(this.now()) : null, sent, failed, reason, subject, JSON.stringify(outcomes), summary ? JSON.stringify(summary) : null, key,
+      );
+      // Write acknowledged identities in the same transaction as their part outcomes.
+      if (reported.length) this.markReportedRows(reported, key, { windowFrom });
+    });
   }
 
   // Reserve a manual attempt before any model, PDF, or email work. This desk-wide rolling
   // budget survives object restarts and cannot be bypassed with another address or client IP.
   // Scheduled editions use their existing once-per-edition claims and do not spend this budget.
   claimManualDelivery(now = this.now()) {
+    this.init();
     return this.storage.transactionSync(() => {
       this.rows('DELETE FROM newsletter_manual_attempts WHERE at <= ?', now - MANUAL_SEND_WINDOW_MS);
       const budget = this.rows('SELECT COUNT(*) AS count, MIN(at) AS first FROM newsletter_manual_attempts')[0];
@@ -284,6 +293,59 @@ export class NewsletterStore {
 
   deliveries(limit = DELIVERY_HISTORY) {
     return this.rows('SELECT * FROM newsletter_deliveries ORDER BY started_at DESC LIMIT ?', limit).map(deliveryRow);
+  }
+
+  /**
+   * What the desk has already been sent, as one read: `has(key)` answers for any item key, and
+   * `empty` says the ledger holds nothing at all — which the brief treats as "unknown" and reads no
+   * late arrivals against, so the first send after this ledger exists is an ordinary window rather
+   * than three days of everything the desk had seen without it.
+   */
+  reportedLookup() {
+    const keys = new Set(this.rows('SELECT item FROM newsletter_reported').map((row) => row.item));
+    const since = this.meta().reportedSince;
+    return {
+      empty: keys.size === 0,
+      size: keys.size,
+      // The window start of the first delivery this ledger recorded. Nothing published before it can
+      // be judged "not sent": briefs before the ledger existed carried it, and the ledger cannot know.
+      since: Number.isFinite(Date.parse(since || '')) ? Date.parse(since) : null,
+      has: (key) => keys.has(String(key)),
+    };
+  }
+
+  /**
+   * Record every item a delivery carried. Idempotent: a key already held keeps its first delivery.
+   * `windowFrom` is the delivery's own window start; the first one recorded is where the ledger's
+   * knowledge begins, and `reportedLookup().since` reports it.
+   */
+  markReported(items, delivery, { windowFrom = null } = {}) {
+    this.init();
+    return this.storage.transactionSync(() => this.markReportedRows(items, delivery, { windowFrom }));
+  }
+
+  markReportedRows(items, delivery, { windowFrom = null } = {}) {
+    const at = iso(this.now());
+    const meta = this.meta();
+    if (!meta.reportedSince && Number.isFinite(windowFrom)) this.putMeta({ ...meta, reportedSince: iso(windowFrom) });
+    let added = 0;
+    for (const item of items || []) {
+      const key = String(item?.key || '');
+      if (!key) continue;
+      const publishedAt = Number.isFinite(item.publishedAt) ? iso(item.publishedAt) : null;
+      this.rows('INSERT OR IGNORE INTO newsletter_reported (item, published_at, delivery, reported_at) VALUES (?, ?, ?, ?)', key, publishedAt, String(delivery || ''), at);
+      added += this.rows('SELECT changes() AS n')[0].n;
+    }
+    this.rows('DELETE FROM newsletter_reported WHERE reported_at < ?', iso(this.now() - REPORTED_RETENTION_MS));
+    return { added };
+  }
+
+  sentStoryKeys() {
+    return new Set(this.rows('SELECT item FROM newsletter_reported').map(row => row.item));
+  }
+
+  reportedCount() {
+    return this.rows('SELECT COUNT(*) AS count FROM newsletter_reported')[0].count;
   }
 }
 

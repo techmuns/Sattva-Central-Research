@@ -19,7 +19,7 @@ import { getHostContext, authHeaders } from '../core/host-context.js';
 import * as people from '../core/watchlist-people.js';
 import * as router from '../core/router.js';
 import { saveLastRoute } from '../core/state.js';
-import { EDITIONS, EDITION_IDS, normaliseEmail } from '../data/newsletter-shared.js';
+import { EDITIONS, EDITION_IDS, NEWSLETTER_INTENT_BATCH, normaliseEmail, normaliseEmailList } from '../data/newsletter-shared.js';
 
 const ROUTE = '/api/newsletter';
 const ME_KEY = 'sattva:newsletter:me';
@@ -112,12 +112,31 @@ function contributor(fallback) {
   return people.me() || mine()?.name || myEmail() || fallback || null;
 }
 
+/**
+ * THE WHOLE TEAM IN ONE EDIT. The contract has always carried a batch — `newsletterIntents` takes
+ * up to NEWSLETTER_INTENT_BATCH — and only the panel was single-address, so adding six people meant
+ * six rounds of type-and-click. Still INTENTS and never a whole list, so a panel opened an hour ago
+ * cannot delete whoever was added since, and every row of one batch carries one attribution
+ * because one person made one addition.
+ */
+export async function subscribeMany(emails, editions = EDITION_IDS) {
+  const list = [];
+  for (const entry of emails) {
+    const address = normaliseEmail(entry);
+    if (address && !list.includes(address)) list.push(address);
+  }
+  if (!list.length) throw Object.assign(new Error(REASONS['invalid-email']), { reason: 'invalid-email' });
+  if (list.length > NEWSLETTER_INTENT_BATCH) throw Object.assign(new Error(`Add up to ${NEWSLETTER_INTENT_BATCH} addresses at a time.`), { reason: 'too-many' });
+  const by = contributor(list[0]);
+  const body = await post(ROUTE, { intents: list.map((email) => ({ op: 'subscribe', email, editions, name: null, by })) });
+  adopt(body);
+  return (body.outcomes || []).filter((o) => list.includes(o.email));
+}
+
 export async function subscribe(email, editions = EDITION_IDS) {
   const address = normaliseEmail(email);
   if (!address) throw Object.assign(new Error(REASONS['invalid-email']), { reason: 'invalid-email' });
-  const body = await post(ROUTE, { intents: [{ op: 'subscribe', email: address, editions, name: null, by: contributor(address) }] });
-  adopt(body);
-  const outcome = body.outcomes?.find((o) => o.email === address)?.outcome;
+  const outcome = (await subscribeMany([address], editions))[0]?.outcome;
   if (outcome === 'full') throw Object.assign(new Error('The list is full.'), { reason: 'full' });
   return outcome;
 }
@@ -137,6 +156,7 @@ export function mount() {
   document.body.appendChild(root);
   root.addEventListener('click', onClick);
   root.addEventListener('submit', onSubmit);
+  root.addEventListener('paste', onPaste);
   document.addEventListener('pointerdown', (event) => { if (!root.hidden && !root.contains(event.target) && !button?.contains(event.target)) close(false); });
   document.addEventListener('focusin', (event) => { if (!root.hidden && !root.contains(event.target) && !button?.contains(event.target)) close(false); });
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !root.hidden) { event.preventDefault(); close(true); } });
@@ -166,11 +186,6 @@ function openFromLink() {
     const route = router.parseHash();
     if (route.params) delete route.params.newsletter;
     router.replaceRoute(route);
-    // `saveLastRoute` lives in core/state.js, NOT on the router. Reaching for `router.saveLastRoute`
-    // throws a TypeError straight into this catch, which reads as the flag being scrubbed while the
-    // SAVED route keeps `?newsletter=manage` — so the next visit, restored from that saved hash,
-    // reopens the panel over whatever the reader actually wanted. The URL and the saved copy have
-    // to be corrected together or neither is corrected.
     saveLastRoute(router.buildHash(route));
   } catch { /* the flag is a convenience; the panel still opens */ }
   setTimeout(open, 0);
@@ -229,6 +244,37 @@ function onClick(event) {
   }
 }
 
+// A LIST COPIED OUT OF A TABLE ARRIVES WITH NEWLINES, AND A SINGLE-LINE <input> STRIPS THEM RATHER
+// THAN SEPARATING ON THEM: "a@x.in\nb@x.in" is sanitised to "a@x.inb@x.in" — one address that never
+// existed, out of two that did, with nothing on screen saying so. So a multi-line paste is rewritten
+// to a comma-separated one as it lands. A paste with no newline in it is left entirely alone.
+function onPaste(event) {
+  const field = event.target?.closest?.('form[data-brief-form="add"] input[name="email"]');
+  if (!field) return;
+  const text = event.clipboardData?.getData('text') || '';
+  if (!/[\r\n]/.test(text)) return;
+  event.preventDefault();
+  const start = field.selectionStart ?? field.value.length;
+  const end = field.selectionEnd ?? field.value.length;
+  const before = field.value.slice(0, start);
+  const prefix = before.trim() && !/[\s,;]$/.test(before) ? ', ' : '';
+  const joined = text.split(/[\r\n]+/).map((line) => line.trim()).filter(Boolean).join(', ');
+  field.setRangeText(prefix + joined, start, end, 'end');
+}
+
+/** What a batch actually did, counted from the SERVER's outcomes — never from what was sent. */
+function addedNote(outcomes) {
+  const of = (...wanted) => outcomes.filter((o) => wanted.includes(o.outcome)).map((o) => o.email);
+  const added = of('subscribed');
+  const already = of('unchanged', 'updated');
+  const refused = of('full');
+  const parts = [];
+  if (added.length) parts.push(added.length === 1 ? `${added[0]} added` : `${added.length} added`);
+  if (already.length) parts.push(already.length === 1 ? `${already[0]} is already on the list` : `${already.length} already on the list`);
+  if (refused.length) parts.push(`${refused.length} refused — the list is full`);
+  return { tone: refused.length ? 'error' : 'ok', text: parts.length ? `${parts.join(' · ')}.` : 'Nothing changed.' };
+}
+
 function onSubmit(event) {
   const form = event.target.closest('form[data-brief-form]');
   if (!form) return;
@@ -242,11 +288,21 @@ function onSubmit(event) {
       note = { tone: 'ok', text: outcome === 'unchanged' ? 'Already subscribed.' : 'Subscribed.' };
     });
   } else if (kind === 'add') {
+    // One address or the whole team, pasted out of a table or a mail client. A token that cannot be
+    // read as an address refuses the WHOLE paste and is named: a half-applied list leaves the reader
+    // reconciling six addresses against the rows below, and the text they pasted stays in the field
+    // to be corrected rather than being cleared along with the ones that worked.
+    const { emails, invalid } = normaliseEmailList(email);
     act('add', async () => {
-      const outcome = await subscribe(email);
+      if (invalid.length) {
+        const named = invalid.slice(0, 2).map((v) => `"${v}"`).join(', ');
+        const rest = invalid.length > 2 ? ` and ${invalid.length - 2} more` : '';
+        throw Object.assign(new Error(`Couldn't read ${named}${rest} as an email address. Nothing was added.`), { reason: 'invalid-email' });
+      }
+      const outcomes = await subscribeMany(emails);
       // The form was repainted while the request ran; clear the one on screen, not the detached copy.
       root.querySelector('form[data-brief-form="add"]')?.reset();
-      note = { tone: 'ok', text: outcome === 'unchanged' ? `${normaliseEmail(email)} is already on the list.` : `${normaliseEmail(email)} added.` };
+      note = addedNote(outcomes);
     });
   }
 }
@@ -327,7 +383,7 @@ function readyBody() {
       <p class="brief-label">${others.length ? `Also receiving <span class="brief-soft">${others.length}</span>` : 'Add your team'}</p>
       ${rows ? `<ul class="brief-list">${rows}</ul>` : ''}
       <form data-brief-form="add" class="brief-inline">
-        <input class="brief-input" type="email" name="email" placeholder="Add a teammate's email" autocomplete="off" required inputmode="email" aria-label="Teammate's email">
+        <input class="brief-input" type="text" name="email" placeholder="Add one or more emails" autocomplete="off" required inputmode="email" aria-label="Teammates' email addresses">
         <button type="submit" class="brief-button-secondary" ${disabled}>${busy === 'add' ? 'Adding…' : 'Add'}</button>
       </form>
     </div>`;

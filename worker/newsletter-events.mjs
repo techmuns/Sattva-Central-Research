@@ -1,4 +1,5 @@
 // A reading-only partition of published news. Never remove a source row or a delivery key.
+import { newsAiEnabled, newsModelCall, objectSchema } from './newsletter-openai.mjs';
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { bedrockConfig, bedrockConfigured, claudeCredential } from './research-claude.mjs';
 
@@ -77,7 +78,7 @@ export function parseEventGroups(text, reports) {
 }
 
 /** One bounded request per built send, before summary generation. Public previews never call it. */
-export async function reviewNewsEvents({ news, env, fetcher = fetch, enabled = true }) {
+export async function reviewNewsEvents({ news, env, fetcher = fetch, enabled = true, budget = null, now = Date.now() }) {
   // Never reuse stale annotations if the same input object is rebuilt or a check fails.
   for (const group of news.groups || []) for (const item of group.items) delete item.eventId;
   const { reports, rows, eligible } = eventCandidates(news);
@@ -85,6 +86,23 @@ export async function reviewNewsEvents({ news, env, fetcher = fetch, enabled = t
   if (!enabled) return { ...base, ok: false, reason: 'preview' };
   if (!eligible) return { ...base, ok: true, reason: 'nothing-to-check' };
   if (!reports.length) return { ...base, ok: false, reason: 'limit' };
+  if (newsAiEnabled(env)) {
+    try {
+      const input = JSON.stringify(reports);
+      const id = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`events-v1:${input}`)))].map(b => b.toString(16).padStart(2,'0')).join('');
+      let groups = budget?.cached(id)?.groups;
+      if (!groups) {
+        const reply = await newsModelCall({ env, fetcher, budget, job: id, now,
+          instructions: EVENT_INSTRUCTIONS.replace('Return a JSON array of arrays', 'Return a JSON object with groups: an array of arrays'),
+          input: { REPORTS: reports }, schema: objectSchema({ groups: { type: 'array', items: { type: 'array', items: { type: 'string' } } } }), maxOutput: 1800 });
+        groups = parseEventGroups(JSON.stringify(reply.data.groups), reports);
+        if (!groups) return { ...base, ok: false, reason: 'unreadable' };
+        budget.save(id, { groups });
+      }
+      groups.forEach((group, index) => group.forEach(id => { rows.get(id).eventId = `event:${index}`; }));
+      return { ...base, ok: true, reviewed: reports.length, combined: reports.length - groups.length, partial: reports.length < eligible };
+    } catch (error) { return { ...base, ok: false, reason: error.reason || 'unreadable' }; }
+  }
   if (!bedrockConfigured(env)) return { ...base, ok: false, reason: 'not-configured' };
   try {
     const config = bedrockConfig(env);

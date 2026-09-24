@@ -58,17 +58,18 @@ const fetcher = async (url, init = {}) => {
     if (input.REPORTS) {
       const groups = new Map();
       for (const r of input.REPORTS) { const key = `${r.ticker}:${r.headline}`; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(r.id); }
-      return Response.json({ content: [{ type: 'text', text: JSON.stringify([...groups.values()]) }] });
+      return Response.json({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify([...groups.values()]) }] });
     }
     assert.ok(items.length <= AI_ITEM_LIMIT);
     assert.ok(!init.body.includes('fixture-token'));
-    return Response.json({ content: [{ type: 'text', text: JSON.stringify(items.map(i => ({ id: i.id, summary: i.headline, impact: 'The business impact cannot be assessed from the headline alone; the source provides the details.' }))) }] });
+    return Response.json({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(items.map(i => ({ id: i.id, summary: i.headline, impact: 'The business impact cannot be assessed from the headline alone; the source provides the details.' }))) }] });
   }
   if (url === EMAIL_SEND_URL) { emails.push(JSON.parse(init.body)); return Response.json({ success: true }); }
   if (String(url).includes('query1.finance.yahoo.com')) return new Response(fixture('yahoo-sp500.json'));
   return new Response('', { status: 503 });
 };
-const brief = await buildBrief({ edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS, env, fetcher, now: at });
+const contentService = { enqueue() {}, async process() {}, get() { return { state:'ready', facts:[{field:'event',value:'Fixture source details',quote:'Fixture source details',location:'paragraph 1'}] }; } };
+const brief = await buildBrief({ edition: 'morning', day: '2026-09-17', settings: DEFAULT_SETTINGS, env, fetcher, now: at, contentService });
 assert.equal(aiCalls, 2, 'one repeated-news check, then one notes request');
 assert.ok(brief.ai.answered > 0);
 const beforeKeys = briefStoryKeys(brief);
@@ -90,6 +91,16 @@ const hostile = renderBriefHtml(brief);
 assert.ok(hostile.includes('&lt;script&gt;'));
 assert.ok(!hostile.includes('<script>'));
 brief.ai.items[id] = cleanNote;
+// Exercise the new supplemental sections with deliberately wide public fixture text.
+brief.calendar = { from:'2026-09-17',to:'2026-09-24',more:0,screener:{ok:true},moneycontrol:{ok:true},rows:[{
+ ticker:'LONGTICKER',company:'International Infrastructure Development Company Limited',date:'2026-09-18',
+ label:'Analyst and institutional investor meeting',time:'15:30',sources:['Screener','Moneycontrol'],url:'https://example.test/calendar'}] };
+brief.actions = { from:'2026-09-17',to:'2026-09-24',more:0,source:{ok:true},rows:[{
+ ticker:'LONGTICKER',company:'International Infrastructure Development Company Limited',
+ dates:[{label:'Ex-date',date:'2026-09-18'},{label:'Record date',date:'2026-09-19'},{label:'Book closure',date:'2026-09-20'}],
+ purpose:'Final dividend and annual general meeting with shareholder approval pending',source:'NSE',url:'https://example.test/action'}] };
+brief.performance = {state:'capture',session:'2026-09-16',quoted:1,listed:2,unquoted:1,
+ summary:{up:1,down:0,flat:0,median:5},rows:[{ticker:'LONGTICKER',company:'International Infrastructure Development Company Limited',last:123456.78,pct:5}]};
 const html = renderBriefHtml(brief, { pdfUrl: 'https://example.test/api/newsletter/pdf/test-document' });
 assert.ok(html.includes('Download PDF ↓') && html.indexOf('Download PDF ↓') < html.indexOf('SATTVA VENTURES</div>'));
 assert.ok(html.includes('AI SUMMARY') && html.includes('POTENTIAL IMPACT · AI'));
@@ -98,15 +109,15 @@ assert.ok(html.includes('Automated by Munshot') && renderBriefText(brief).includ
 assert.ok(renderBriefText(brief).includes('Related:'));
 
 const companies = stats.companies;
-for (const [response, expected] of [[new Response('', { status: 429 }), 'rate-limited'], [Response.json({ content: [] }), 'unreadable'], [new Response('x'.repeat(AI_RESPONSE_BYTES+1)), 'unreadable']]) {
+for (const [response, expected] of [[new Response('', { status: 429 }), 'rate-limited'], [Response.json({ stop_reason:'end_turn', content: [] }), 'unreadable'], [new Response('x'.repeat(AI_RESPONSE_BYTES+1)), 'unreadable']]) {
   const notes = await readAiNotes({ env, companies, fetcher: async () => response });
   assert.equal(notes.ok, false); assert.equal(notes.reason, expected);
 }
 const timeout = await readAiNotes({ env, companies, fetcher: async () => { throw new DOMException('deadline', 'TimeoutError'); } });
 assert.equal(timeout.reason, 'timeout');
 const noKey = await readAiNotes({ env: {}, companies, fetcher: async () => { throw new Error('must not call'); } });
-assert.equal(noKey.reason, 'not-configured');
-const partial = await readAiNotes({ env, companies, fetcher: async () => Response.json({ content: [{ type: 'text', text: JSON.stringify([{ id: companies[0].clusters.find(k => k.kind === 'story').id, summary: 'Reported in the source.', impact: 'Details require reading the source.' }]) }] }) });
+assert.equal(noKey.reason, 'no-key');
+const partial = await readAiNotes({ env, companies, fetcher: async () => Response.json({ stop_reason:'end_turn', content: [{ type: 'text', text: JSON.stringify([{ id: companies[0].clusters.find(k => k.kind === 'story').id, summary: 'Reported in the source.', impact: 'Details require reading the source.' }]) }] }) });
 assert.equal(partial.partial, true);
 
 const pdf = renderBriefPdf(brief);

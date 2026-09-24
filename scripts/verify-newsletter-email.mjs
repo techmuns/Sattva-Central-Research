@@ -99,7 +99,7 @@ assert.equal((await sendEmail({ html: 'x'.repeat(EMAIL_HTML_BYTES + 1), fetcher:
 const busyPayloads = structuredClone(payloads);
 busyPayloads['/data/market-news.json'].articles = busyPayloads['/data/portfolio-companies.json'].holdings.filter(h => h.ticker).flatMap(h => Array.from({ length: 8 }, (_, i) => ({
   id: `${h.ticker}-${i}`, title: `${h.name} announces fixture business update ${i}`,
-  summary: `${h.name} supplied details ${i}. ` + 'Full fixture source details. '.repeat(120),
+  summary: `${h.name} supplied details ${i}. ` + 'Full fixture source details. '.repeat(95),
   url: `https://example.test/${h.ticker}/${i}`, publisher: 'Fixture publisher', publishedAt: new Date(at - 60000 * (i + 1)).toISOString(),
 })));
 const busyEnv = { ...env, ASSETS: assets(busyPayloads) };

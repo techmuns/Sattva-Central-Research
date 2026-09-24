@@ -1,6 +1,10 @@
 import { renderBriefPdf, pdfFilename } from './newsletter-pdf.mjs';
-import { buildBrief, briefSubject, briefSummary, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
 import { EMAIL_HTML_BYTES, emailBytes, renderBriefEmails, acceptedStoryKeys } from './newsletter-email.mjs';
+import { buildBrief, briefSubject, briefSummary, readContentSources, renderBriefHtml, renderBriefText, PRODUCTION_ORIGIN } from './newsletter-brief.mjs';
+import { contentIdentity, contentItems } from './newsletter-content.mjs';
+import { NewsletterContentStore, CONTENT_SCAN_MS } from './newsletter-content-store.mjs';
+import { openaiConfigured } from './newsletter-openai.mjs';
+import { bedrockConfigured } from './research-claude.mjs';
 import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledEditions } from '../public/js/data/newsletter-shared.js';
 
 // THE TIMER THAT SENDS THE BRIEF, AND THE ONE PLACE AN EMAIL LEAVES THIS DASHBOARD.
@@ -23,6 +27,11 @@ import { EDITIONS, editionKey, istDay, nextScheduled, normaliseEmail, scheduledE
 // exactly as `withCallerToken` lets it elsewhere. Without either, the delivery is recorded as
 // `no-token` against every recipient and the panel says which secret an operator installs.
 // Nothing here ever logs, stores or returns upstream error text or a token.
+//
+// A SEND THAT REACHED SOMEBODY IS WRITTEN TO THE LEDGER. Every item the brief carried is recorded
+// under its own identity once at least one recipient got it, for the timer's sends and a send to
+// everyone alike — and never for a test copy or a preview, which nobody on the list received. That
+// ledger is what the next brief reads late arrivals against (see newsletter-shared.js).
 
 export const NEWSLETTER_TIMER_KEY = 'newsletter-timer';
 export const EMAIL_SEND_URL = 'https://devde.muns.io/email/send/raw';
@@ -81,6 +90,48 @@ export class NewsletterSchedule {
     this.store = store;
     this.fetcher = fetcher;
     this.now = now;
+    this.content = new NewsletterContentStore(storage);
+  }
+
+  contentEnabled() {
+    const settings = this.store.settings();
+    return (bedrockConfigured(this.env) || openaiConfigured(this.env)) && this.store.subscriberRows().length > 0 && Object.values(settings).some(s => s?.enabled);
+  }
+
+  /** Independent of browser visits and email acknowledgements. Existing source collectors own
+   * upstream history; this reader walks their retained captures and keeps every pending job. */
+  async collectContent(now) {
+    if (!this.contentEnabled()) return;
+    const meta = this.content.meta();
+    if (!meta.nextScanAt || meta.nextScanAt <= now) {
+      const start = meta.captureStartedAt || now - 7 * 86400000;
+      const from = Math.max(start, (meta.scannedTo || start) - 2 * 86400000);
+      const to = Math.min(now, from + 7 * 86400000);
+      // Persist the lease before reading. Interrupted discovery is replayed from the last
+      // completed interval, while unfinished extraction has its own shorter durable lease.
+      this.content.setMeta({ ...meta, captureStartedAt: start, lastDiscoveryAt: now, nextScanAt: now + CONTENT_SCAN_MS, reason: 'checking' });
+      try {
+        const windows = [{ from, to }];
+        if (to < now) windows.push({ from: Math.max(to, now - 2 * 86400000), to: now });
+        let complete = true;
+        const sourceChecks = [];
+        for (const window of windows) {
+          const sources = await readContentSources({ env: this.env, fetcher: this.fetcher, now, ...window });
+          const jobs = await Promise.all(contentItems(sources).map(async ({ row, ...item }) => ({ ...item, id: await contentIdentity(item) })));
+          this.content.enqueue(jobs, now);
+          const a = sources.announcements, n = sources.news;
+          const ok = a.nseHistory.ok && a.bse.ok && n.source.ok && n.tradingview.ok;
+          complete &&= ok;
+          sourceChecks.push({ ...window, nse: a.nse, nseHistory: a.nseHistory, bse: a.bse, news: n.source, tradingview: n.tradingview });
+        }
+        this.content.setMeta({ ...this.content.meta(), scannedTo: complete ? to : meta.scannedTo || start,
+          sources: sourceChecks, reason: complete ? 'captured-sources-read' : 'partial-source-read',
+          nextScanAt: now + (complete && to < now ? 60000 : CONTENT_SCAN_MS) });
+      } catch {
+        this.content.setMeta({ ...this.content.meta(), reason: 'discovery-failed' });
+      }
+    }
+    await this.content.process({ env: this.env, fetcher: this.fetcher, now });
   }
 
   dashboardUrl() {
@@ -88,13 +139,6 @@ export class NewsletterSchedule {
     return /^https:\/\/[a-z0-9.-]+$/i.test(origin) ? origin : PRODUCTION_ORIGIN;
   }
 
-  /**
-   * What every render of the sheet needs besides the brief itself. Two of these are here because
-   * leaving them out is invisible: `productName` is a declared Worker var, so a deployment that
-   * sets it and never sees it change would read as a var that does not work; and `settings` is
-   * what the footer's "every weekday at 8:00 AM IST" is built from, so without it a desk that
-   * moved its send time is told the old one by the very email that arrived at the new one.
-   */
   renderOptions(recipient = null) {
     const productName = String(this.env?.NEWSLETTER_PRODUCT_NAME || '').trim();
     return {
@@ -117,12 +161,16 @@ export class NewsletterSchedule {
       lastWakeAt: iso(state.lastWakeAt),
       lastResult: state.lastResult || 'not-started',
       reason: state.reason || null,
+      reported: this.store.reportedCount(),
+      content: { enabled: this.contentEnabled(), ...this.content.status() },
+      newsAi: { configured: openaiConfigured(this.env), ...this.content.newsBudget.status(this.now()) },
     };
   }
 
   /** Point the alarm at the next enabled weekday send; drop it when both editions are off. */
   async arm() {
     const next = nextScheduled(this.store.settings(), this.now());
+    const contentAt = this.contentEnabled() ? this.content.nextAt(this.now()) : Infinity;
     await this.storage.transaction(async (tx) => {
       const state = (await tx.get(NEWSLETTER_TIMER_KEY)) || {};
       const alarm = await tx.getAlarm();
@@ -132,7 +180,8 @@ export class NewsletterSchedule {
         return;
       }
       await tx.put(NEWSLETTER_TIMER_KEY, { ...state, nextAt: next.at, nextKey: next.key, lastCheckedAt: state.lastCheckedAt ?? this.now() });
-      if (alarm !== next.at) await tx.setAlarm(next.at);
+      const nextAlarm = Math.min(next.at, contentAt);
+      if (alarm !== nextAlarm) await tx.setAlarm(nextAlarm);
     });
   }
 
@@ -141,6 +190,8 @@ export class NewsletterSchedule {
     const now = this.now();
     let since;
     try {
+      // Re-arm before I/O so eviction during document/model work cannot strand the queue.
+      await this.arm();
       since = await this.storage.transaction(async (tx) => {
         const state = (await tx.get(NEWSLETTER_TIMER_KEY)) || {};
         const from = Number.isFinite(state.lastCheckedAt) ? state.lastCheckedAt : now - 60000;
@@ -162,6 +213,7 @@ export class NewsletterSchedule {
       }
       const last = results.at(-1);
       await this.record({ lastResult: !due.length ? 'nothing-due' : last?.reason ? last.reason : 'sent', reason: last?.reason || null });
+      await this.collectContent(now);
     } catch {
       await this.record({ lastResult: 'failed', reason: 'wake-failed' });
     }
@@ -194,9 +246,7 @@ export class NewsletterSchedule {
 
     let brief;
     try {
-      // What earlier briefs already carried, so a capture that landed after the previous edition
-      // went out is sent once — in this edition — and never twice.
-      brief = await buildBrief({ edition, day, settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to, sent: this.store.sentStoryKeys() });
+      brief = await buildBrief({ edition, day, settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to, reported: this.store.reportedLookup(), contentService: this.content });
     } catch (error) {
       const reason = error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed';
       return finish({ sent: 0, failed: list.length, reason, outcomes: list.map((r) => ({ email: r.email, ok: false, reason })) });
@@ -223,7 +273,7 @@ export class NewsletterSchedule {
     } catch {
       return finish({ sent: 0, failed: list.length, reason: 'pdf-failed', outcomes: list.map(r => ({ email: r.email, ok: false, reason: 'pdf-failed' })) });
     }
-    const subject = briefSubject(brief);
+    const subject = briefSubject(brief, this.renderOptions());
     const summary = { ...briefSummary(brief), emailParts: messages.length, htmlBytes: messages.map(m => m.bytes) };
     const acceptedParts = new Set();
     const deliveredStories = () => {
@@ -232,9 +282,10 @@ export class NewsletterSchedule {
     };
     const outcomes = list.map(recipient => ({ email: recipient.email, ok: false, status: null, reason: 'not-attempted',
       parts: messages.map((message, i) => ({ part: i + 1, total: messages.length, bytes: message.bytes, ok: false, status: null, reason: 'not-attempted' })) }));
+    const published = new Map(brief.reported.map(item => [item.key, item.publishedAt]));
     const progress = () => this.store.recordDeliveryProgress(key, { outcomes, subject, summary,
       sent: outcomes.filter(o => o.ok).length, reason: 'sending',
-      stories: deliveredStories() });
+      reported: (deliveredStories() || []).map(key => ({ key, publishedAt: published.get(key) })), windowFrom: brief.window.from });
     progress();
     await pooled(list.map((recipient, i) => ({ recipient, outcome: outcomes[i] })), SEND_POOL, async ({ recipient, outcome }) => {
       // Sequence parts for each reader; a failed part does not discard later updates. The
@@ -259,9 +310,8 @@ export class NewsletterSchedule {
     const failed = outcomes.length - sent;
     const partOutcomes = outcomes.flatMap(o => o.parts);
     this.store.finishDocument(documentId, partOutcomes);
-    const stories = deliveredStories();
     const reason = !failed ? null : partOutcomes.some(p => p.ok) ? 'partial-send' : outcomes[0]?.reason || 'failed';
-    return finish({ sent, failed, reason, outcomes, subject, summary, stories });
+    return finish({ sent, failed, reason, outcomes, subject, summary });
   }
 
   /** A send somebody pressed: a test copy to one address, or the edition to everyone, built now. */
@@ -293,7 +343,7 @@ export class NewsletterSchedule {
     const now = this.now();
     let brief;
     try {
-      brief = await buildBrief({ edition, day: istDay(now), settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to: now, sent: this.store.sentStoryKeys(), includeAi: false });
+      brief = await buildBrief({ edition, day: istDay(now), settings: this.store.settings(), env: this.env, fetcher: this.fetcher, now, to: now, reported: this.store.reportedLookup(), includeAi: false, contentService: this.content });
     } catch (error) {
       return { ok: false, reason: error?.code === 'book-unavailable' ? 'book-unavailable' : 'build-failed' };
     }

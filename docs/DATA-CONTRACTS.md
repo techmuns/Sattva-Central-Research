@@ -4537,58 +4537,30 @@ the subset a feed happens to cover.
 
 ### What is in it, and where each figure comes from
 
-| Section | Source | Read when |
-| --- | --- | --- |
-| Global market scan — S&P 500, Nasdaq, Dow; Nikkei, Taiwan TAIEX, Shanghai, Hang Seng, Kospi; Nifty 50, Sensex; Brent, gold, silver; DXY, USD/JPY, USD/INR; US 10-year | Yahoo's public chart endpoint, one symbol per request, with Yahoo's own session bounds deciding `Close` versus `Live` | at send time |
-| Corporate announcements · direct holdings | NSE's live announcements RSS (as `/api/nse-announcements`), resolved by name against the book; the retained NSE history `nse-filings/<day>.json` (every successful hourly read, rows already resolved) for the days the window touches; and BSE's date-indexed capture `corp-announcements.json` | NSE RSS at send time; the two captures as captured, each dated on the page |
-| News · direct holdings | `market-news.json` — the publishers' feeds — joined to the book with `matchPortfolioNews`, the same identity match the News tab uses; plus `tradingview-news/latest.json`, the headlines TradingView tags to each holding's symbol, admitted only where `attributeNewsRow` reads the story as `confirmed` or reviewed-`related` | as captured, dated on the page |
-| Price moves · direct holdings | `technicals.json` — a holding whose last completed session (`bar_date`, closing 15:30 IST) moved `MOVE_PCT` (5%) or more, with `move_check` saying whether the close was verified against the exchange | as captured; the session date is on the row |
+The current reading, AI budget, migration, source coverage and expanded-section contracts are in
+[Newsletter source evidence](NEWSLETTER-SOURCE-EVIDENCE.md). Market correctness is specified in
+[Newsletter market accuracy](NEWSLETTER-MARKET-ACCURACY.md).
 
-**The live NSE RSS is the exchange's last ~40 items** — measured, 40 items spanning 39 minutes — so
-at 08:00 it holds the previous night's tail and at 16:00 the last half hour of the session. It was
-the brief's only NSE source, and NSE-only filings from the rest of a sixteen-hour window were
-missed. The retained history is what covers the window; the RSS is the live top-up.
+| Section | Source and limits |
+| --- | --- |
+| Indian and global markets | Validated NSE/BSE observations, exact Upstox index identities and Yahoo daily bars. Every figure retains provider, full date and state; daily changes use the preceding dated session. Conflicting/missing figures are withheld. No macro-series fallback exists here. |
+| Corporate announcements | Retained NSE day files, BSE captures and live NSE RSS top-up. Latest-window RSS is not a complete archive. Document identity or source facts establish exchange twins; a generic category and nearby time do not. |
+| Company news | Captured publisher feeds and TradingView, through Sattva's company-attribution gate. A symbol tag alone does not prove attribution. |
+| Trades | Captured insider, bulk, block and SAST disclosures and their retained archive. Publication date/time and transaction date remain distinct; date-only records are labelled. |
+| Price moves and session prices | Captured session quotes and completed daily bars. Missing holdings are counted, not treated as flat. Prices, company returns and an unweighted median use no private quantities or portfolio P&L. |
+| Calendar and actions | Next seven days of results, calls/meetings and corporate actions, with source status, dates and omitted-row counts. Missing capture is not an empty schedule. |
 
-**One filing is one story, and two filings are two.** Rows are folded per filing: an NSE XBRL twin
-folds into its readable copy (same company, same subject family, within 30 minutes), and NSE's copy
-of a BSE filing folds into the BSE row — identical text within twelve hours, or the same subject
-family within 45 minutes — which then names both venues (`exchanges: ['BSE', 'NSE']`). Two rows from
-the same exchange **never** fold: the sixty-character headline-prefix key that used to decide it
-dropped 6 of 61 book filings in one three-day capture ("Please refer the enclosed file." twice is two
-filings). `familyOf()` maps both exchanges' subject vocabularies onto one small set; a subject with
-no family folds only on identical text.
+Sources retain their actual publication/check dates, bounded heads and failed/partial states.
+The book must load to build a brief. Saved article/document facts supply separately labelled AI
+notes; blocked or incomplete reading leaves original source text available. Public previews use
+saved facts only and call no model. Routine filing categories omitted from the short email are
+counted and remain available on the dashboard.
 
-**A capture that lands after a brief is sent is carried by the next one.** Every source above is a
-capture on its own cadence — BSE two-hourly, NSE hourly, the publishers hourly, the closes the next
-morning — so a filing lodged at 15:50 and captured at 16:15 belongs to the evening window and only
-reaches the file after that brief went out. Each edition therefore reads from `window.since`, the
-start of the **previous** edition's window (Monday's morning brief reaches back to Friday 08:00),
-and a row from before its own `from` is a **late arrival**: included, marked `late`, printed with
-*arrived after the previous brief*, counted on the summary line and in the sources line — unless an
-earlier brief already sent it. `sent` is the union of the story keys the last `SENT_HISTORY` (6)
-sent deliveries recorded (`stories` in the delivery log: a filing's URL on each exchange, a headline,
-a session move — keys, never rows; a test copy records none). A missed or failed edition records no
-keys, so its whole window travels with the next brief. Rows inside an edition's own window are never
-suppressed by `sent`: a scheduled brief is self-contained for its window.
-
-The summary line reads `47 updates across 28 of 107 portfolio companies · 2 good · 0 watch-outs ·
-21 arrived after the previous brief`; the sources line names every capture with its time, says
-`reaching back only to HH:MM` when the bounded publisher head stops short of `since`, and dates the
-session whose closes it carries (`closes for the 2026-09-17 session captured …`, or `not yet
-captured` when the morning capture has not landed). A move is a story under its company — `Rose
-7.2% at the 17 Sept close · ₹242.05` — with `Good` / `Watch-out` by sign, the dashboard's own
-price-move rule, and the footer says mood follows the filing **and price-move** rules.
-
-**A symbol Yahoo refuses prints `unavailable`, never a number.** Glow Central Research, which this
-brief is ported from, keeps a macro series store under `public/data/series/` and fills a refused row
-from it. **This dashboard has no such file**, so `quoteFromSeries` and `SERIES_INDEX_PATH` are
-deliberately absent rather than present and unreachable — an unreachable fallback reads as
-documentation of a working one. The row keeps its `reason` (`timeout`, `rate-limited`, `upstream`,
-`shape`) so the sheet states the refusal instead of going quiet.
-
-A source that could not be read says so **in the email** (`NSE feed could not be read (blocked)`).
-If the **book** cannot be read the brief is not built at all — an email about portfolio companies
-with no book behind it is about nothing — and the delivery is recorded `book-unavailable`.
+The durable reported-item ledger covers ten days, independently of delivery-log pruning. A brief
+looks back across two previous edition windows, limited by the ledger's known start, to include
+late captures not previously acknowledged. Preview/test copies mark nothing; a confirmed email
+part records its items even if a later part fails. Legacy delivery keys are migrated in place and
+remain identity aliases. This is not indefinite suppression or proof of complete source capture.
 
 ### The email is a Sattva Ventures broadsheet, and it leads with the portfolio companies
 
@@ -4626,55 +4598,22 @@ dashboard already makes and no new one:
   on this dashboard, so a news story's dot is Neutral — never a guess dressed as a judgement. The
   footer disclaimer says exactly this.
 
-Headlines, standfirsts and filing subjects are reproduced as written; nothing is summarised.
+Headlines, standfirsts and filing subjects are reproduced as written. Optional source-grounded
+summaries, potential impacts and price explanations are labelled separately. Full supporting
+links and caveats remain available in HTML, text and PDF. Generic NSE categories keep the
+company-naming sentence where stripping it would leave no event details.
 
-### A filing whose description is its own category — the particulars come from the document
-
-**The desk's report, in their words: a story that reads "Acquisition (including agreement to
-acquire)" does not tell them anything, and clicking it opened a page of XML.** Both halves are
-properties of the same kind of row. NSE writes many descriptions as `<company> has informed the
-Exchange regarding <category>`, and publishes about one announcement in eleven as a raw XBRL data
-file with no readable twin — so the description carried the form's name and the link carried
-`nsearchives.nseindia.com/corporate/xbrl/…WebXMLFile….xml`, which a browser shows as *"This XML file
-does not appear to have any style information associated with it"* above a tree of SEBI namespaces.
-
-Three changes, and none of them writes a word of ours:
-
-1. **The preamble is dropped only where what remains still says something.** `headlineOfNse()`
-   normally strips the filer's name and the boilerplate, because the block heading already names the
-   company. Where the stripped remainder is the exchange's own subject and nothing more
-   (`categoryOnlyNse()`), the **whole** sentence stands instead — it names the filer, which a
-   one-word category does not, and it is still NSE's own text. The keyword and direction readings
-   are taken from `event` (the stripped description), never from the displayed headline, so a
-   company's own name can never reach a vocabulary written for events.
-2. **The particulars come from the filing.** After grouping, the brief reads the XBRL documents it
-   is about to print — through `parseXbrlFiling()`, the same parser the dashboard's filing panel
-   uses — and prints `filingParticulars()`: the first figure the company declared, then the
-   filing's own facts in the document's own order, each as *the exchange's label: the company's
-   value*, with the unit the document declared. Nothing is summed, ranked, re-worded or rounded,
-   and what does not fit is **counted** (`and 9 more fields in the filing`). Bounded at
-   `XBRL_DETAIL_LIMIT` (12) reads per send, `XBRL_DETAIL_POOL` (4) at a time, `XBRL_TIMEOUT_MS`
-   (8s) each — a send is one Worker invocation with a subrequest budget it shares with the quotes,
-   the RSS and the captures. Reads go first to the rows whose description says least.
-3. **The link lands on the filing.** `readableUrl()` points a story at `<dashboard>/filing?src=<the
-   exchange's own address>` **only** for an NSE XBRL file; every other link still goes straight to
-   the publisher or the exchange, unchanged. The page it opens links the original document twice.
-
-**A filing that could not be read keeps its headline exactly as before** — nothing is guessed — and
-the sources line states the coverage: `1 of 3 XBRL filings read for the particulars they carry,
-2 not read here and reachable in full through their own links`. A 200 that is not the filing (an
-interstitial) is a failure, not a filing with nothing in it.
-
-The dek is the venue and the exchange's category — `NSE filing · Credit Rating` — and drops the
-category where the headline already carries it, so one thing is not said twice on two adjacent
-lines. The subject is reproduced as the exchange writes it, `-XBRL` suffix and all; only the
-comparison ignores that suffix.
+XBRL facts come from the shared filing parser; PDFs and identified article bodies use the durable
+source-reading queue described in [Newsletter source evidence](NEWSLETTER-SOURCE-EVIDENCE.md).
+An unreadable or partial source keeps its link and reading state. NSE XBRL links use
+`/filing?src=…`; other source links retain their original addresses.
 
 ### The list — one Durable Object, `team-brief:v1`
 
 `worker/newsletter-store.mjs` on the provisioned `CaptureRegistry` class, under the `NEWSLETTER`
-binding. Three tables: subscribers (an unsubscribe is a `removed` row, never a deletion), the
-desk-wide settings, and a delivery log. `public/js/data/newsletter-shared.js` owns the rules —
+binding. It stores subscribers (an unsubscribe is a `removed` row, never a deletion), desk-wide
+settings, delivery claims/progress, immutable PDFs, reported identities, source jobs and news
+budget reservations. The new tables and legacy-key migration are additive. `public/js/data/newsletter-shared.js` owns the rules —
 what an address is, what an edition is, when it sends, what window it covers — and is imported by
 the browser and the Worker alike.
 
@@ -4713,8 +4652,8 @@ Outcomes: `subscribed` · `updated` · `unchanged` · `unsubscribed` · `not-sub
 
 Cloudflare's cron cannot drive this (the account's five slots are spent — see `wrangler.jsonc`) and
 GitHub's scheduler measurably drops most of a dense schedule. The object's **alarm** is neither: it
-is armed for the next enabled weekday send whenever the list or the schedule changes and on every
-GET of the panel, and re-armed at the end of every wake. `worker/newsletter-schedule.mjs`:
+is armed for the next enabled send or source-reader wake. It is pre-armed before external I/O
+and re-armed after each wake; list and schedule changes also update it. `worker/newsletter-schedule.mjs`:
 
 1. **Durable claims precede external I/O.** `wake()` moves `lastCheckedAt` forward in a transaction
    before it reads a quote; `deliver()` claims the edition's key — `<day>:<edition>` — in SQLite
@@ -4762,13 +4701,13 @@ editions. No source text or AI annotation is cut to meet the budget. Only the fi
 the global market scan. Each part includes the same complete-edition PDF, source coverage,
 unsubscribe link and Munshot footer. The send adapter independently refuses an oversized body.
 A single unfit update or a plan above 99 parts returns `email-too-large` before any send or PDF
-write, retaining unsent story eligibility. Existing source selection limits and disclosed coverage
-remain unchanged. Parts are submitted sequentially for each recipient, with three recipients in
+write, retaining unsent story eligibility. Supplementary sections split between complete rows; source selection limits and omitted-row
+counts remain explicit. Parts are submitted sequentially for each recipient, with three recipients in
 parallel; the sender cannot guarantee the receiving provider's inbox arrival order. Durable edition
 claims prevent replaying uncertain sends; no automatic resend is added.
 
 **The panel is deliberately minimal.** It offers your own address with Subscribe / Unsubscribe, the
-other addresses on the list with × and one field to add a teammate, and Preview Morning · Evening.
+other addresses on the list with × and one field to paste one or several teammate addresses, and Preview Morning · Evening.
 Every address added from it gets both editions, and no name is asked for — the addition is
 attributed to this device's known contributor, else the signed-in address, else the address itself.
 Send times, manual sends and the delivery log remain on these routes and are not controls in the
@@ -4785,8 +4724,8 @@ reader actually wanted.
 `node scripts/verify-newsletter.mjs` — the contract, the store, editions built against fixtures
 under `scripts/fixtures/newsletter/`, the renderer's fixed elements and escaping, and the alarm:
 one send per key, replay-safe, `no-token`, refused, missed, test copy, cooldown, preview. It also
-asserts the retained NSE history joins and folds (one filing on both exchanges is one story, an
-XBRL twin folds, two same-prefix filings stay two), the TradingView headlines join only where
+asserts the retained NSE history joins and folds (one filing on both exchanges is one story, a
+document-identity twin folds, two same-prefix filings stay two), the TradingView headlines join only where
 attribution confirms the company, a 5% session move is on the sheet with its verification state and
 `MOVE_PCT` equals `daily-alerts.js`'s, and late arrivals: carried once, marked, suppressed once sent,
 and a missed morning's window reaching the evening brief.

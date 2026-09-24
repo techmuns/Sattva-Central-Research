@@ -21,6 +21,18 @@
 // A SEND ON A WEEKEND IS NOT OFFERED. Markets are shut, filings are rare, and Monday's morning brief
 // already covers from Friday's close — its window is "since the previous WEEKDAY's evening send",
 // so nothing that happened over the weekend falls between two briefs.
+//
+// NOTHING FALLS BETWEEN TWO BRIEFS, AND THE WINDOW ALONE COULD NOT PROMISE THAT. Every source behind
+// the brief is a capture with a lag — BSE's date feed every hour or two on a best-effort scheduler,
+// NSE's history hourly, the publishers every thirty minutes — and NSE's live RSS holds the last few
+// minutes only. So a filing published at 15:50 and captured at 17:15 was in neither the 16:00 brief
+// (not yet captured) nor the next morning's (published before its window opened): it was never
+// emailed, and nothing said so. The same hole swallowed a whole window whenever an edition was
+// recorded `missed`. So the Worker keeps a ledger of every item a scheduled brief has carried, and
+// each brief also reads back over the two windows before its own for anything the ledger does not
+// hold — `lateArrivalsFrom()` below — printing those as "not in the previous brief" with their own
+// publication time. The ledger is the identity rule from everywhere else here: compare identities,
+// never counts or clocks.
 
 import { personName } from './watchlist-shared.js';
 
@@ -29,6 +41,14 @@ export const EDITIONS = Object.freeze({
   evening: Object.freeze({ id: 'evening', label: 'Evening brief', short: 'Evening', defaultTime: '16:00', covers: 'the trading day, since the morning brief' }),
 });
 export const EDITION_IDS = Object.freeze(['morning', 'evening']);
+
+// A DAY-DATED RECORD IS FILED AT THAT DAY'S CLOSE. Insider, bulk, block and SAST disclosures carry a
+// broadcast day and no clock, so the brief has to decide which edition a day belongs to: the evening
+// brief of that day, with the label "day only" on the row rather than an invented clock. One captured
+// after that brief went out reaches the next as "not in the previous brief" through the ledger.
+export const DAY_ONLY_TIME = '15:30';
+// Items a scheduled brief carried are remembered this long, which is longer than any lookback below.
+export const REPORTED_RETENTION_MS = 10 * 86400000;
 
 export const NEWSLETTER_SUBSCRIBER_LIMIT = 100;
 export const NEWSLETTER_INTENT_BATCH = 20;
@@ -48,6 +68,36 @@ const EMAIL_RE = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0
 export function normaliseEmail(value) {
   const email = String(value ?? '').trim().toLowerCase();
   return email && email.length <= NEWSLETTER_EMAIL_MAX && EMAIL_RE.test(email) ? email : null;
+}
+
+/**
+ * SEVERAL ADDRESSES AS A READER PASTES THEM — one per line out of a table, comma- or
+ * semicolon-separated out of a mail client, or one typed. Returns `{ emails, invalid }`: the valid
+ * addresses, normalised and deduplicated in the order given, and every token that is not one, kept
+ * VERBATIM so the caller can name it.
+ *
+ * NOTHING IS DROPPED SILENTLY. A mistyped address that simply vanished from a paste of six would
+ * leave the reader believing five was all they pasted — the same class of error as rendering a
+ * missing value as zero. A caller decides what to do with `invalid`; it may not ignore it.
+ *
+ * A mail client's `Name <a@b.in>` pair is reduced to the address, the display NAME consumed with
+ * the brackets rather than left behind as chaff that would then be refused as a bad address. The
+ * panel asks for no name, so there is nothing here for one to be kept in.
+ */
+export function normaliseEmailList(value) {
+  const text = String(value ?? '').replace(/[^,;<>\r\n]*<\s*([^<>\s,;]+@[^<>\s,;]+)\s*>/g, ' $1 ');
+  const emails = [];
+  const invalid = [];
+  const seen = new Set();
+  for (const token of text.split(/[\s,;]+/)) {
+    if (!token) continue;
+    const email = normaliseEmail(token);
+    if (!email) { if (!invalid.includes(token)) invalid.push(token); continue; }
+    if (seen.has(email)) continue;
+    seen.add(email);
+    emails.push(email);
+  }
+  return { emails, invalid };
 }
 
 export const isTime = (value) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value ?? ''));
@@ -174,6 +224,28 @@ export function editionWindow(edition, day, settings, { to = null } = {}) {
     ? editionInstant('evening', previousWeekday(day), settings)
     : editionInstant('morning', day, settings);
   return { from, to: to ?? at, at };
+}
+
+/** The instant a day-dated record is filed at: the close of its own day. */
+export const dayOnlyInstant = (day) => istInstant(day, DAY_ONLY_TIME);
+
+/** The edition sent before this one on the calendar, weekends stepped over. */
+export function previousEdition(edition, day) {
+  return edition === 'morning' ? { edition: 'evening', day: previousWeekday(day) } : { edition: 'morning', day };
+}
+
+/**
+ * The earliest publication instant a LATE ARRIVAL may carry: the start of the window two sends
+ * back, so a brief reads over the two windows before its own. Monday morning's reaches back to
+ * Thursday 16:00, Tuesday evening's to Monday 08:00. Two, not one, because a capture stalled for
+ * most of a day — GitHub's scheduler measurably does that — would otherwise still lose a filing.
+ * The ledger, not this instant, decides what is actually shown: an item the desk was already sent
+ * is never sent again.
+ */
+export function lateArrivalsFrom(edition, day, settings) {
+  const previous = previousEdition(edition, day);
+  const before = previousEdition(previous.edition, previous.day);
+  return editionWindow(before.edition, before.day, settings).from;
 }
 
 /** Every enabled weekday send whose instant lies in (after, until], earliest first. */
