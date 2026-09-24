@@ -33,7 +33,7 @@ const WARM_CONCURRENCY = 8;
 // Keep content revisions separate from the shared marker: concurrent dashboard
 // releases can update that marker without conflicting with these fixes. Every
 // install, read and eviction uses the same combined key, retaining atomic upgrades.
-const CACHE_KEY = `${CACHE_NAME}-news-story-companions-v1-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v1-all-alerts-restore-v2-ai-card-updates-v1-story-updates-v1-performance-ownership-v1-sattva-newsletter-v2-bounded-history-memory-v5-hot-path-caches-v1-sliced-rankings-v1-alert-pool-v2-scrollbar-grab-v1-filing-particulars-v1-table-drag-v2-mutual-funds-v11-upstox-minute-v2-muns-price-label-v2-kpi-impact-v2-ai-alerts-clean-search-v1`;
+const CACHE_KEY = `${CACHE_NAME}-news-story-companions-v1-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v1-all-alerts-restore-v2-ai-card-updates-v1-story-updates-v1-performance-ownership-v1-sattva-newsletter-v2-bounded-history-memory-v5-hot-path-caches-v1-sliced-rankings-v1-alert-pool-v2-scrollbar-grab-v1-filing-particulars-v1-table-drag-v2-mutual-funds-v12-upstox-minute-v2-muns-price-label-v2-kpi-impact-v2`;
 
 function moduleSpecifiers(source) {
   const found = new Set();
@@ -126,9 +126,12 @@ async function cacheModuleGraph(cache, entry) {
   }
 }
 
+// This UI revision composes with the shared release without competing for its version line.
+const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1`;
+
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_KEY);
+    const cache = await caches.open(RELEASE_CACHE_KEY);
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -143,7 +146,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_KEY).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== RELEASE_CACHE_KEY).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -193,7 +196,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_KEY);
+    const cache = await caches.open(RELEASE_CACHE_KEY);
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
