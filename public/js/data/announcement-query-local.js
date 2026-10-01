@@ -60,11 +60,29 @@ function loadProfiles() {
   return profilesPending;
 }
 
-/** Load the stream as the tab always did; resolves once the first rows can be answered. */
-function ensureLoaded() {
-  if (feed.isLoaded?.() && feed.rows().length) return Promise.resolve();
-  if (!loadPending) loadPending = Promise.all([feed.load([]), loadProfiles()]).finally(() => { loadPending = null; });
-  return loadPending;
+/**
+ * Load the stream as the tab always did, but only for a table the reader stays on. The stream's load
+ * goes on to walk every company's captured history — hundreds of files, three at a time — and that
+ * walk outlives the tab, so a tab passed through on the way to another must not start it. The old
+ * tab got that from a slow first preparation; here the table has to stay on screen for
+ * LOAD_DWELL_MS (`prepareWhile`). One completed load is enough: later questions re-read what it
+ * brought, and the 90-second poller (`refresh`) brings what is new.
+ * Resolves true once the first rows can be answered, false when the table went away first.
+ */
+const LOAD_DWELL_MS = 600;
+let loadedOnce = false;
+async function ensureLoaded(prepareWhile = () => true) {
+  if (loadedOnce || (feed.isLoaded?.() && feed.rows().length)) return true;
+  if (!loadPending) {
+    await feed.prepareRows?.();
+    await new Promise((done) => setTimeout(done, LOAD_DWELL_MS));
+    if (!prepareWhile()) return false;
+    loadPending ||= Promise.all([feed.load([]), loadProfiles()])
+      .then(() => { loadedOnce = true; })
+      .finally(() => { loadPending = null; });
+  }
+  await loadPending;
+  return true;
 }
 
 const rowDay = (row) => (DAY_RE.test(row.date || '') ? row.date : UNDATED);
@@ -135,7 +153,7 @@ const selections = new Map();
  */
 export async function query(input, { model = null, now = Date.now(), keepGoing = () => true, prepareWhile = () => true } = {}) {
   const q = normaliseQuery(input);
-  await ensureLoaded();
+  if (!(await ensureLoaded(prepareWhile))) return null;
   // The prepared period is shared by every question about it, so one superseded question never
   // abandons it — only the table going away does (`prepareWhile`); this question's own selection
   // stops as soon as nobody is waiting for it.

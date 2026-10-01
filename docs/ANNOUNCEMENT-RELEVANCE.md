@@ -73,7 +73,10 @@ undated last** under a plain descending comparison.
   A sort makes at most 120 ms of new readings per synchronous run; the rest are made in slices behind
   the paint and `onRelevanceChange` fires once when they settle, so the table re-sorts in place. A
   retained history of a few hundred thousand events is therefore never read inside one task. Exports
-  make every reading in slices before they write the Categories column.
+  make every reading in slices before they write the Categories column. Company size and sector come
+  from `GET /api/announcement-index/profiles`; where that cannot be read, from the two small reference
+  files (`mc-ticker-map.json`, `sector-kpis.json`) only — never a pooled capture such as
+  `technicals.json`, so All Alerts on Today still downloads no capture.
 
 ## 4. Event stitching — "N related filings"
 
@@ -120,7 +123,9 @@ Failures are named (`index-unavailable`, `rate-limited`, `invalid-request`), nev
 **Fallback.** Where the index cannot be read (a static copy, a first build not yet run), the tab
 answers the same question in the browser with the same code (`announcement-query-local.js`: the
 runner's build in slices over the period on screen, the index's own selection one day per slice).
-Related filings are then linked within the selected period only, and the provenance says so.
+Related filings are then linked within the selected period only, and the provenance says so. The
+fallback starts the stream's load (which goes on to walk every company's captured history) only once
+the table has stayed open for 600 ms, so a tab passed through on the way to another starts nothing.
 
 ## 6. Shared feedback — one preference for the whole desk
 

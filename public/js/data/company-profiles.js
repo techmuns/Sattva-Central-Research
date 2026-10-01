@@ -4,8 +4,11 @@
 // of its inputs. The announcement index already holds both for every company it knows, so the
 // browser asks it for one compact table (GET /api/announcement-index/profiles, ~100 KB) instead of
 // downloading the captures that produced it. Where that cannot be read — a static copy, or no index
-// built yet — the same figures are derived here from the committed files (company-profile.js), the
-// way the index derives them.
+// built yet — the figures are derived here (company-profile.js) from the two small reference files
+// only: the Moneycontrol map's own market cap and the sector file. NOT technicals.json: it is a
+// 2.8 MB pooled capture, and All Alerts on Today reads the alert pool precisely so that no capture
+// is downloaded (verify-alert-pool-ui.mjs asserts it). A band from the map's figure can differ from
+// the index's Screener figure near a band edge; that is a fallback's precision, never a missing row.
 //
 // A COMPANY THIS CANNOT PLACE IS SIZE "UNKNOWN", never small and never zero. Its items stay in the
 // list; the ranking reads it exactly as the index does.
@@ -43,13 +46,12 @@ function fromTable(body) {
 }
 
 async function fromCommittedFiles() {
-  const [tickerMap, sectorKpis, technicals] = await Promise.all([
+  const [tickerMap, sectorKpis] = await Promise.all([
     revalidatedJson('data/mc-ticker-map.json', { optional: true }).catch(() => null),
     revalidatedJson('data/sector-kpis.json', { optional: true }).catch(() => null),
-    revalidatedJson('data/technicals.json', { optional: true }).catch(() => null),
   ]);
-  const built = buildCompanyProfiles({ tickerMap, sectorKpis, technicals });
-  return { source: 'captures', builtAt: built.meta.technicalsAsOf || built.meta.tickerMapAsOf || null,
+  const built = buildCompanyProfiles({ tickerMap, sectorKpis });
+  return { source: 'reference-files', builtAt: built.meta.tickerMapAsOf || null,
     profileOf: (c = {}) => { const p = built.profileOf(c); return { mcapCr: p.mcapCr, band: p.band, group: p.group }; } };
 }
 
