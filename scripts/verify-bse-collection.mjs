@@ -182,6 +182,74 @@ for (const collect of [
   await assert.rejects(() => collect({ ...opts, attempts: 4 }), /1–3 attempts/);
 }
 
+// After an outage the backlog is read in short closed windows, oldest first. A run that spends its
+// time budget stops between walks, names what it left unread and moves the watermark only past the
+// windows it completed, so the next run resumes there and no backlog can stall collection for good.
+assert.deepEqual(bseCollectionWindows({ from: '2026-09-21', to: '2026-10-02' }, '2026-10-02', { maxDays: 3 }), [
+  { from: '2026-09-21', to: '2026-09-23' }, { from: '2026-09-24', to: '2026-09-26' }, { from: '2026-09-27', to: '2026-09-29' },
+  { from: '2026-09-30', to: '2026-10-01' }, { from: '2026-10-02', to: '2026-10-02' }]);
+assert.deepEqual(bseCollectionWindows({ from: '2026-09-01', to: '2026-09-05', scripCode: '522287' }, '2026-09-10', { maxDays: 2 }), [
+  { from: '2026-09-01', to: '2026-09-02', scripCode: '522287' }, { from: '2026-09-03', to: '2026-09-04', scripCode: '522287' },
+  { from: '2026-09-05', to: '2026-09-05', scripCode: '522287' }], 'a closed backlog is split too, keeping every other range field');
+assert.deepEqual(bseCollectionWindows(range, '2026-09-01', { maxDays: 3 }), [range], 'today alone is never split');
+assert.deepEqual(bseCollectionWindows({ from: '2026-09-21', to: '2026-10-02' }, '2026-10-02', { maxDays: 3, lastCompleteTo: '2026-09-23' }), [
+  { from: '2026-09-21', to: '2026-09-24' }, { from: '2026-09-25', to: '2026-09-27' }, { from: '2026-09-28', to: '2026-09-30' },
+  { from: '2026-10-01', to: '2026-10-01' }, { from: '2026-10-02', to: '2026-10-02' }],
+'the window re-reading up to the previous watermark also reads the next day, so completing it makes progress');
+assert.deepEqual(bseCollectionWindows({ from: '2026-09-01', to: '2026-09-09' }, '2026-09-20', { maxDays: 3, lastCompleteTo: '2026-09-06' }), [
+  { from: '2026-09-01', to: '2026-09-03' }, { from: '2026-09-04', to: '2026-09-07' }, { from: '2026-09-08', to: '2026-09-09' }]);
+for (const lastCompleteTo of [null, '2026-08-20', '2026-09-30', 'not a date']) {
+  assert.deepEqual(bseCollectionWindows({ from: '2026-09-01', to: '2026-09-05' }, '2026-09-20', { maxDays: 3, lastCompleteTo }),
+    [{ from: '2026-09-01', to: '2026-09-03' }, { from: '2026-09-04', to: '2026-09-05' }], 'a watermark outside the backlog changes nothing');
+}
+for (const maxDays of [0, -1, 1.5, '3', null]) {
+  assert.throws(() => bseCollectionWindows(range, '2026-09-02', { maxDays }), /whole number of days/);
+}
+
+let clock = 0;
+const budgetCalls = [];
+const budgetFetch = async url => {
+  const params = new URL(url).searchParams, to = params.get('strToDate'), category = params.get('strCat');
+  budgetCalls.push([params.get('strPrevDate'), to, category]);
+  clock += 60_000; // every walk here costs a minute
+  return page([{ ...row(`${category === 'Others' ? 'o' : 'c'}${to}`, category), DissemDT: `${to.slice(0, 4)}-${to.slice(4, 6)}-${to.slice(6)}T10:00:00` }]);
+};
+const backlog = { from: '2026-09-21', to: '2026-10-02', categories: ['Company Update', 'Others'] };
+const stoppedRun = await collectBseAnnouncements(backlog, {
+  ...opts, today: '2026-10-02', allowPartial: true, maxDays: 3, now: () => clock, deadline: 4 * 60_000 + 1, fetchImpl: budgetFetch,
+});
+assert.equal(budgetCalls.length, 5, 'a walk that starts before the deadline finishes; none starts after it');
+assert.equal(stoppedRun.completeTo, '2026-09-26', 'only complete windows move the watermark');
+assert.equal(stoppedRun.rows.length, 5, 'rows from the interrupted window are still kept');
+assert.deepEqual(stoppedRun.failedWindows.map(failure => [failure.category, failure.from, failure.reason]), [
+  ['Others', '2026-09-27', 'budget'], ['Company Update', '2026-09-30', 'budget'], ['Others', '2026-09-30', 'budget'],
+  ['Company Update', '2026-10-02', 'budget'], ['Others', '2026-10-02', 'budget']], 'every unread window is named');
+assert.equal(stoppedRun.byCategory['Company Update'].declared, null, 'an unread window leaves no complete declared count');
+const stoppedCoverage = bseCaptureCoverage(stoppedRun, { lastCompleteTo: '2026-09-23' });
+assert.equal(stoppedCoverage.lastCompleteTo, '2026-09-26');
+assert.equal(stoppedCoverage.coversUniverse, false, 'an unfinished backlog is reported, not hidden');
+assert(stoppedCoverage.failed['BSE collection']);
+clock = 0; budgetCalls.length = 0;
+const resumedRun = await collectBseAnnouncements({ ...backlog, from: '2026-09-24' }, {
+  ...opts, today: '2026-10-02', allowPartial: true, maxDays: 3, now: () => clock, deadline: 60 * 60_000, fetchImpl: budgetFetch,
+});
+assert.equal(budgetCalls[0][0], '20260924', 'the next run resumes from the recovered watermark');
+assert.equal(resumedRun.completeTo, '2026-10-02');
+assert.equal(resumedRun.failedWindows.length, 0);
+assert.equal(bseCaptureCoverage(resumedRun, stoppedCoverage).coversUniverse, true, 'the caught-up run clears the failure');
+clock = 0; budgetCalls.length = 0;
+const slowResume = await collectBseAnnouncements({ ...backlog, from: '2026-09-24' }, {
+  ...opts, today: '2026-10-02', allowPartial: true, maxDays: 3, lastCompleteTo: '2026-09-26',
+  now: () => clock, deadline: 2 * 60_000, fetchImpl: budgetFetch,
+});
+assert.equal(slowResume.completeTo, '2026-09-27', 'even a run with time for one window moves the watermark past the re-read days');
+assert.deepEqual(budgetCalls.map(([from, to]) => [from, to]), [['20260924', '20260927'], ['20260924', '20260927']]);
+budgetCalls.length = 0;
+await assert.rejects(() => collectBseAnnouncements(backlog, {
+  ...opts, today: '2026-10-02', maxDays: 3, now: () => 1, deadline: 0, fetchImpl: budgetFetch,
+}), error => error.reason === 'budget', 'a caller that wants all or nothing gets an error, never a silent partial result');
+assert.equal(budgetCalls.length, 0);
+
 const master = Array.from({ length: 1000 }, (_, i) => ({ SCRIP_CD: 522287 + i,
   Status: ['Active', 'Suspended', 'Delisted'][i % 3], ISIN_NUMBER: 'INE220B01022', Scrip_Name: `Issuer ${i}` }));
 const probeCalls = [];
