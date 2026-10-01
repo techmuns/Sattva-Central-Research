@@ -478,22 +478,34 @@ const tab = makeFilingsTab({
         reader pays nothing. The list never shows a generated headline or summary; subjects are the exchange's own.</p>
       <p><strong>BSE:</strong> exchange-wide announcements are captured every two hours, with retained monthly history.
         Latest capture: ${escapeHtml(m.capturedAt || 'unavailable')}.</p>
-      <p><strong>Backup announcements:</strong> Screener’s All announcements index is checked every two hours, across companies.
-        Original exchange documents join this table; generated summaries are not imported.
-        Last page checked: ${escapeHtml(m.recovery?.lastPageAt || 'unavailable')}. ${escapeHtml(m.recovery?.error || '')}
+      <p><strong>Backup announcements:</strong> Screener’s All announcements index is checked every two hours,
+        across companies. Original exchange documents join this table; generated summaries are not imported.
+        Last page checked: ${escapeHtml(m.recovery?.lastPageAt || 'unavailable')}.
+        ${escapeHtml(m.recovery?.error || '')}
         ${m.recovery?.pendingCount ? `${escapeHtml(m.recovery.pendingCount)} date interval(s) still being recovered.` : ''}
         Saved coverage starts ${escapeHtml(m.recovery?.captureStart || 'when the first capture completes')}.
-        This backup does not certify complete exchange coverage.</p>
+        ${m.recovery?.unavailableDocuments ? `${escapeHtml(m.recovery.unavailableDocuments)} backup notices have no document link; their source reference page is shown instead.` : ''}
+        Interrupted reads resume from their saved page. Daily checks revisit the past seven days for late additions;
+        older notices omitted by the publisher may remain unavailable. This backup does not certify complete exchange coverage.</p>
+      ${m.sourceCheck?.error || m.sourceCheck?.identityError ? `<p>${escapeHtml(m.sourceCheck.error?.message || m.sourceCheck.identityError?.message)}</p>` : ''}
       <p><strong>NSE:</strong> the live exchange feed and up to 90 days of retained captures join this table.
         Latest NSE read: ${escapeHtml(m.nse?.capturedAt || 'unavailable')}. ${escapeHtml(m.nse?.error || m.nse?.degraded || '')}</p>
-      <p><strong>Company history:</strong> scheduled direct BSE company captures, Muns BSE/NSE/DRHP captures and earlier saved lookups
-        join the same stream. One source failing does not erase rows or advance the other source's coverage.</p>
-      <p>Time filters use source publication dates in IST. All time includes every retained filing, including undated records.
-        Filtering never deletes history. BSE and NSE rows merge only when the captured documents match; separate or unreadable documents
-        remain separate rows. Every retained exchange document link is included in the export.</p>
-      <p>Portfolio matching uses exchange ISINs and BSE scrip codes as well as ticker aliases.
+      <p><strong>Company history:</strong> scheduled direct BSE company captures, Muns BSE/NSE/DRHP captures and earlier
+        saved lookups join the same stream. Each source keeps its own successful date coverage; one source failing does not
+        erase rows or advance the other source's coverage.</p>
+      <p>The table checks for updates every 90 seconds while visible, pauses when hidden and checks again on return.
+        Retained history is included automatically. Source publication and scheduled captures can lag; this is not a complete exchange archive.</p>
+      <p>Time filters use source publication dates in IST. Last 3 and 7 days include today; This month runs from the first
+        day through today. All time includes every retained filing, including undated records. Filtering never deletes history.</p>
+      <p>The Source column preserves every exchange label. BSE and NSE rows merge only when the captured PDFs have the same
+        SHA-256 content hash for that company and date; separate or unreadable documents remain separate rows. Every retained
+        exchange document link is included in the export.</p>
+      <p>Portfolio matching uses exchange ISINs and BSE scrip codes as well as ticker aliases, including renamed and newly listed holdings.
+        The table count describes companies with loaded filings, not the number checked or complete portfolio coverage.
         Exchange identities checked: ${escapeHtml(m.identity?.capturedAt || 'unavailable')}. ${escapeHtml(m.identity?.error || '')}</p>
+      <p>No PDF is summarized or scored in the list. Missing fields remain blank.</p>
       ${m.archive?.error ? `<p>${escapeHtml(m.archive.error)}</p>` : ''}
+      ${m.nse?.historyUnavailable || m.nse?.allMissingDays?.length ? '<p>Some retained NSE history could not be loaded; existing records remain visible.</p>' : ''}
       ${captureCoverageHtml('announcements')}
       ${qm.mode === 'local' ? coverageBlock({ ...m, rowCount: qm.total ?? 0, covered: qm.companies ?? 0 }) : ''}
     </div>
@@ -565,6 +577,8 @@ export function render(ctx) {
 export function destroy() {
   clearTimeout(searchTimer);
   closePopover();
+  // Nobody is reading this table any more: stop any preparation in this browser now.
+  query.suspend();
   if (liveRef) liveRef.stop(POLL_ID);
   liveRef = null;
   currentCtx = null;

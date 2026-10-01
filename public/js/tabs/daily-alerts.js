@@ -48,7 +48,7 @@ import { openFilingSource } from '../ui/xbrl-filing.js';
 import { createAlertArrivals } from '../core/alert-arrivals.js';
 import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
 import { alertWindowKey } from '../data/all-alerts-cache.js';
-import { surfaceReading, feedbackItemFor, rankFor, relevanceRevision, onRelevanceChange, primeRelevance } from '../data/surface-relevance.js';
+import { surfaceReading, feedbackItemFor, rankedKey, relevanceRevision, onRelevanceChange, primeRelevance, warmReadings } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
 import { promptAfterOpen } from '../ui/relevance-feedback-ui.js';
@@ -627,6 +627,7 @@ function paint(ctx) {
   tableDispose = table.wire(ctx.root);
   tableInstance = table;
   tableRows = visible;
+  relevanceSeen = relevanceRevision();
   arrivalsUI.attach(ctx.root);
   // Wire the shared controls first, then move their existing nodes beside the view controls.
   // Search and the three filters now get a full row even on a narrower laptop. The kit still
@@ -1169,11 +1170,12 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
       <span class="block text-xs ${e.time ? 'text-slate-500' : 'text-slate-400'}">${e.kind === 'scheduled' ? 'Scheduled · ' : ''}${e.time ? `${escapeHtml(e.time)} IST` : e.day ? 'Day only' : 'Undated'}</span>
     </time>`,
     html: true,
-    // History: newest day first, then the most relevant item, then the latest time. The forward
-    // calendar keeps its plain date-and-time order.
+    // History: newest day first; within each of the last seven days the most relevant item first,
+    // then the latest time (surface-relevance.js reads the order in slices, never in one long task).
+    // The forward calendar keeps its plain date-and-time order.
     sortValue: mode === HORIZON.UPCOMING
       ? (e) => `${e.day || '0000-00-00'}T${e.time || '99:99'}`
-      : (e) => rankFor(e.day || null, alertRelevance(e), e.time || ''),
+      : (e) => rankedKey(e, { day: e.day || null, time: e.time || '', surface: 'alerts', read: alertRelevance }),
   };
   const eventColumn = {
     label: mode === HORIZON.UPCOMING ? 'What is scheduled' : 'What happened',
@@ -1408,7 +1410,10 @@ export function matchesCompanyRelationship(event, value) {
 // colours has to travel inside the file.
 // ---------------------------------------------------------------------------------------
 
-function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
+async function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
+  // The Categories column reads every exported row's tags; make them in slices first, so a long
+  // history exports without freezing the page.
+  if (mode !== HORIZON.UPCOMING) await warmReadings(visible, alertRelevance);
   const feeds = report?.feeds || [];
   const behind = feeds.filter((f) => f.reachesToday !== true || f.status !== 'ok').map((f) => f.label);
   const upcoming = mode === HORIZON.UPCOMING;

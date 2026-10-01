@@ -14,7 +14,7 @@
 // (core/slices.js) without one long task; the runner drives the same generator synchronously.
 import { categoriesOf } from './announcement-categories.js';
 import { relevanceReading, REPEAT_STEP, REPEAT_CAP } from './relevance.js';
-import { stitchEvents, eventHash } from './event-stitching.js';
+import { stitchEventsSteps, eventHash } from './event-stitching.js';
 import { sourceStatement, clip } from './alert-claims.js';
 import { announcementDocumentIdentity } from './announcements-shared.js';
 import { UNDATED, ROW, encodeRow, emptyDict } from './announcement-index-shared.js';
@@ -79,7 +79,7 @@ export function* buildIndexSteps({ rows, feed, profiles }) {
   yield { phase: 'linking', done: rows.length, total: rows.length };
   // 2. Events.
   const recordById = new Map(records.map((r) => [r.id, r]));
-  const { byRow, events } = stitchEvents(records, {
+  const { byRow, events } = yield* stitchEventsSteps(records, {
     companyOf: (r) => (r.idx >= 0 ? companies[r.idx].k : null), idOf: (r) => r.id, timeOf: (r) => r.at, tagsOf: (r) => r.tags.ids,
     sourcesOf: (r) => r.row.sources || [r.row.source], rowOf: (r) => r.row,
   });
@@ -88,12 +88,14 @@ export function* buildIndexSteps({ rows, feed, profiles }) {
   // 3. Repetition within an event on one day: the strongest filing keeps its score, each further one
   //    is damped (relevance.js REPEAT_STEP) — an exchange's second copy, a re-filing, a string of notices.
   const groups = new Map();
+  let grouped = 0;
   for (const r of records) {
     const ev = byRow.get(r.id);
     const key = `${ev?.size > 1 ? ev.eventId : r.id}|${r.day}`;
     let list = groups.get(key);
     if (!list) groups.set(key, (list = []));
     list.push(r);
+    if (++grouped % STEP_ROWS === 0) yield { phase: 'linking', done: rows.length, total: rows.length };
   }
   for (const list of groups.values()) {
     if (list.length < 2) continue;
@@ -133,6 +135,7 @@ export function* buildIndexSteps({ rows, feed, profiles }) {
   }
   for (const list of byDay.values()) {
     list.sort((a, b) => b[ROW.BASE] - a[ROW.BASE] || (a[ROW.TIME] < b[ROW.TIME] ? 1 : a[ROW.TIME] > b[ROW.TIME] ? -1 : 0) || (a[ROW.ID] < b[ROW.ID] ? -1 : 1));
+    yield { phase: 'ordering', done: encodedCount, total: records.length };
   }
   for (const [idx, names] of companyNames) companies[idx].n = [...names.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
   const multiEvents = [...events.values()].filter((e) => e.members.length > 1).length;

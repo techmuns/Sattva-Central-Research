@@ -43,7 +43,7 @@ import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, grou
 import { filterByScope as filterTickerRows } from '../data/scope.js';
 import { attributionFor, attributionLabel, newsSearchText } from '../data/company-news-attribution.js';
 import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
-import { surfaceReading, feedbackItemFor, rankFor, istClock, relevanceRevision, onRelevanceChange, primeRelevance } from '../data/surface-relevance.js';
+import { surfaceReading, feedbackItemFor, rankedKey, istClock, relevanceRevision, onRelevanceChange, primeRelevance, warmReadings } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel as categoryLabelOf } from '../data/announcement-categories.js';
 import { feedbackMenuButton, installFeedbackMenus } from '../ui/relevance-feedback-ui.js';
@@ -157,9 +157,9 @@ const tab = makeFilingsTab({
       label: 'Date',
       get: (r) => (newsPublicationDay(r) ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(newsPublicationDay(r)))}</span>` : dash('the article carried no readable date')),
       html: true,
-      // Newest day first; within a day, the most relevant story first, then the latest. A row with no
-      // date sorts last rather than first. An unreadable date is not "today".
-      sortValue: (r) => rankFor(newsPublicationDay(r), newsRelevance(r), istClock(r.publishedAt)),
+      // Newest day first; within each of the last seven days the most relevant story first, then the
+      // latest. A row with no date sorts last rather than first. An unreadable date is not "today".
+      sortValue: (r) => rankedKey(r, { day: newsPublicationDay(r), time: istClock(r.publishedAt), surface: 'news', read: newsRelevance }),
     },
     {
       // THE TOPIC COLUMN TOOK THE OUTLET COLUMN'S PLACE RATHER THAN BEING ADDED BESIDE IT. The
@@ -325,6 +325,8 @@ const tab = makeFilingsTab({
       </div>
     </div>`,
   onExport: async (visible, m) => {
+    // The Categories column reads every exported row's tags; make them in slices first.
+    await warmReadings(visible, newsRelevance);
     await exportRows({
       filename: 'sattva-news',
       sheetName: 'News',

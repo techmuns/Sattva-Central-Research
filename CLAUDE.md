@@ -4011,6 +4011,12 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change the chatter feed | `js/data/chatter-live.js` + `js/data/sentiment-shared.js` — the browser calls it DIRECTLY and must; read *There is no `/api/chatter`* in `docs/DATA-CONTRACTS.md` before adding a proxy. `changePct` there is mention volume, not price |
 | Change News or Insider | `worker/muns.mjs` + `js/data/filings-shared.js`, then the routes in `worker/index.js` — read *Three feeds whose SHAPE is not ours to pin* first |
 | Change Corporate Announcements | Keep the exchange-wide base in `worker/bse-ann.mjs` + `scripts/scrape-bse-announcements.mjs`. Additional user-requested company/date lookups use `worker/muns.mjs` + `js/data/announcements-extra.js`; they merge with the table and never replace the base capture or claim universe coverage. |
+| Change a category, its rules or the master list | `ANNOUNCEMENT_CATEGORY_LIST` in `public/js/data/announcement-categories.js`, then bump `CATEGORY_VERSION` so the next index build re-tags — read `docs/ANNOUNCEMENT-RELEVANCE.md` first; tags are topics, never directions |
+| Change how relevance orders an item within its day | `relevanceReading()` / `rankKey()` in `public/js/data/relevance.js` (bump `RELEVANCE_VERSION`), and `rankedKey()` / `RECENT_RELEVANCE_DAYS` in `public/js/data/surface-relevance.js` for News and All Alerts — never read a large list inside one sort |
+| Change the Corporate Announcements index, its query or its routes | `public/js/data/announcement-index-shared.js` (format + query, imported by runner, Worker and browser), `announcement-index-build.js`, `scripts/build-announcement-index.mjs`, `worker/announcement-index-store.mjs` / `announcement-index.mjs`, `.github/workflows/announcement-index-refresh.yml`; the browser fallback is `announcement-query-local.js` |
+| Change "N related filings" | `stitchEvents()` in `public/js/data/event-stitching.js` (bump `STITCH_VERSION`) |
+| Change the Important / Not important feedback or the shared model | `public/js/data/relevance-feedback-shared.js` (votes, keys, model), `relevance-feedback.js` (browser + outbox), `ui/relevance-feedback-ui.js`, `worker/relevance-feedback-store.mjs` / `relevance-feedback.mjs` |
+| Change the AI Read popup | `public/js/data/announcement-read-shared.js` (prompt, sections, limits), `worker/announcement-read-store.mjs` / `announcement-read.mjs`, `public/js/ui/announcement-read.js` — on request only, exchange documents only, never in the list |
 | Change the NSE live announcements feed | `worker/nse-ann.mjs` (pure parser + name->symbol resolver, shared) + `handleNseAnnouncements` in `worker/index.js` (live route, edge-cached) + `js/data/nse-filings.js` (browser) + `js/tabs/nse-filings.js` (the scoped table). The browser CANNOT read NSE (CORS null), so it must proxy through the Worker; a full desktop user-agent is required or Akamai 430s it. Resolve by NAME — the filename prefix is only 31% reliable |
 | Refresh the NSE snapshot fallback | `node scripts/scrape-nse-announcements.mjs` — reads NSE directly (no token), resolves, commits `public/data/nse-announcements.json`. The live route is the primary read; this is the floor beneath it |
 | Change how an NSE XBRL filing is READ, or which URLs may be fetched for one | `public/js/data/nse-xbrl-shared.js` (the pure parser, the bounded `filingParticulars()` reading and the `src` allow-list, imported by the Worker too) + `readNseFiling` / `handleNseFiling` / `handleFilingPage` in `worker/index.js` (`GET /api/nse-filing` for the panel, `GET /filing` for the page an email links to) + `worker/filing-page.mjs` (that page) + `public/js/ui/xbrl-filing.js` (the panel and the one delegated click listener, installed from `app.js`). About one NSE announcement in eleven is a raw XBRL file with no readable twin — read *An XBRL filing is a document* in `docs/DATA-CONTRACTS.md` first. A fact is an element with a `contextRef`, a repeated section is a context, values travel verbatim, `row.url` keeps NSE's own address, and all navigation including modified clicks opens a readable filing. Raw XML is an explicitly labelled technical source under Source file details. `node scripts/verify-nse-xbrl.mjs` and `scripts/verify-nse-xbrl-ui.mjs` are the tests |
@@ -4493,6 +4499,27 @@ summaries; only the visible card headline can carry its optional factual summary
 AI Alerts is the default first tab; Ask Research keeps its existing route and availability.
 Mutual Funds preserves Company Holdings as its default, with All Schemes and Category Performance
 from the same dated public AmfiBeas snapshot. Portfolio sizes never enter that public cache.
+
+### Investor relevance across Corporate Announcements, News and All Alerts (October 2026)
+
+`docs/ANNOUNCEMENT-RELEVANCE.md` is the contract. Everything stays visible: newest day first, and
+within a day the item an analyst would read first comes first (`relevance.js`: category from the one
+editable master list in `announcement-categories.js`, company size, any stated amount against market
+cap, the sector KPI ontology, direction and source reliability, plus the desk's shared feedback). No
+High/Medium/Low label is printed and nothing is hidden or deleted by its rank; routine filings rank
+lower. Corporate Announcements is served one ranked page at a time by the `announcement-index:v1`
+object over the `announcement-index` Actions artifact (built from the committed captures by
+`scripts/build-announcement-index.mjs`), keeps the exchange's subject exactly as filed, shows
+Categories, Market cap and "N related filings" (`event-stitching.js`), filters by category and market
+cap, and opens the on-request **AI Read** popup (`announcement-read:v1`, exchange documents only,
+stored per document, daily budget) when a filing is clicked. Where the index cannot be read, the same
+question is answered in the browser by the same code, in slices. News and All Alerts order only the
+last seven IST days by relevance, read within a 120 ms budget per sort and the rest in slices
+(`surface-relevance.js`): a large retained history must never be read inside one task. Important /
+Not important (+ optional Why?) on all three surfaces trains ONE shared `relevance-feedback:v1`
+preference; News keeps its click-to-article behaviour and puts the vote behind a separate ⋯. Do not
+add per-example rules: a new case is a category rule or a reading weight. Verify with
+`verify-relevance.mjs`, `verify-announcements-ui.mjs` and `verify-announcements-runtime.mjs`.
 
 ### Private price levels shared with Sattva Family
 

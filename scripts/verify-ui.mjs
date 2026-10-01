@@ -7918,21 +7918,22 @@ await page.waitForTimeout(600);
 const mcTracked = /(\d[\d,]*) of/.exec(await mcCountText())?.[1] || '0';
 ok('...and it narrows the market feed', Number(mcTracked.replace(/,/g, '')) > 0 && Number(mcTracked.replace(/,/g, '')) < Number(mcAll.replace(/,/g, '')), `${mcTracked} of ${mcAll}`);
 
-// --- Corp Announcements keeps topic labels within a clean, scoped stream ---
+// --- Corp Announcements: categories and market cap beside the exchange's own subject ---
 await go('/#/research/corp-announcements?scope=universe', 2000);
 await waitForPanel();
 await settleTables();
 const annHeads = await page.locator('#content-host table thead th').allInnerTexts();
-ok('Corp Announcements carries a Topic column', annHeads.some((h) => /Topic/i.test(h)), annHeads.join(' | '));
+ok('Corp Announcements carries Categories and Market cap columns', annHeads.some((h) => /Categories/i.test(h)) && annHeads.some((h) => /Market cap/i.test(h)), annHeads.join(' | '));
 // Same trade as News/Outlet: `rowSub` already prints the sub-category under every subject.
-ok('...in place of the Sub-category column, which was already in the sub-line', !annHeads.some((h) => /Sub-category/i.test(h)));
+ok('...and no Sub-category column, which is already in the sub-line', !annHeads.some((h) => /Sub-category/i.test(h)));
 const annSelects = page.locator('#content-host select');
-ok('...and the feed removes secondary filters and manual capture controls',
-  (await annSelects.count()) === 0 && (await page.locator('#content-host [data-watch-toggle], #content-host [data-announcement-lookup], #content-host [data-load-filing-history], #content-host [data-capture-coverage]').count()) === 0);
-ok('...and retains search, export and incremental scrolling',
+ok('...one period dropdown beside the Category and Market cap filters, and no manual capture controls',
+  (await annSelects.count()) === 1 &&
+  (await page.locator('#content-host [data-ca-open="categories"], #content-host [data-ca-open="mcap"]').count()) === 2 &&
+  (await page.locator('#content-host [data-watch-toggle], #content-host [data-announcement-lookup], #content-host [data-load-filing-history], #content-host [data-capture-coverage]').count()) === 0);
+ok('...and retains search and export',
   (await page.locator('#content-host [data-table-search]').count()) === 1 &&
-  (await page.locator('#content-host [data-export]').count()) === 1 &&
-  (await page.locator('#content-host [data-scroll-paged]').count()) === 1);
+  (await page.locator('#content-host [data-export]').count()) === 1);
 const annWidth = await page.evaluate(() => {
   const el = document.querySelector('#content-host [data-table-scroll]');
   return el ? { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth } : null;

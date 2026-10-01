@@ -32,6 +32,16 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
   let refreshing = false;
   let error = null;
   let generation = 0;
+  // False once the table that asked has gone (suspend()): preparation in this browser stops then,
+  // rather than competing with whatever the reader opened next. The next question resumes it.
+  let active = true;
+  // A vote or new filings while the table was away: re-ask once, quietly, when it comes back.
+  let missed = false;
+  const resume = () => {
+    if (active) return;
+    active = true;
+    if (missed && state !== 'idle') { missed = false; queueMicrotask(() => { void run({ append: false, quiet: true }); }); }
+  };
   let checkedAt = null;
   let modelSeen = modelRevision();
   const listeners = new Set();
@@ -40,6 +50,7 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
   // A vote anywhere re-orders this list: re-run the first page when the shared model moves.
   onModelChange(() => {
     if (modelRevision() === modelSeen || state === 'idle') return;
+    if (!active) { missed = true; return; }
     modelSeen = modelRevision();
     void run({ append: false, quiet: true });
   });
@@ -49,12 +60,13 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
   let stale = false;
   engine.onChange?.(() => {
     if (mode !== 'local' || state === 'idle') return;
+    if (!active) { missed = true; return; }
     if (state === 'ready' && !refreshing) void run({ append: false, quiet: true });
     else stale = true;
   });
   engine.onProgress?.(() => { if (mode === 'local' && state === 'loading') emit(); });
 
-  async function ask(q) {
+  async function ask(q, keepGoing = () => true) {
     if (mode !== 'local' || Date.now() >= serverRetryAt) {
       try {
         const response = await fetchImpl('api/announcement-index/query', {
@@ -74,7 +86,8 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
       mode = 'local';
       serverRetryAt = Date.now() + SERVER_RETRY_MS;
     }
-    const answer = await engine.query(q, { model: currentModel(), keepGoing: () => true });
+    const answer = await engine.query(q, { model: currentModel(), keepGoing: () => active && keepGoing(), prepareWhile: () => active });
+    if (!answer && !keepGoing()) throw Object.assign(new Error('Superseded by a newer question'), { reason: 'superseded' });
     if (!answer) throw Object.assign(new Error('The announcements could not be prepared'), { reason: 'local-failed' });
     return answer;
   }
@@ -89,7 +102,7 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
     if (!quiet) emit();
     try {
       void loadModel();
-      const answer = await ask(q);
+      const answer = await ask(q, () => mine === generation);
       if (mine !== generation) return;
       // A re-ask that changed nothing keeps the very same rows, so the table (and the reader's
       // focused search field, scroll position and open lists) is left exactly as it was.
@@ -117,6 +130,7 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     /** Replace the question. Returns true when it changed, and the caller should show loading. */
     setQuery(next) {
+      resume();
       const q = normaliseQuery({ ...next, offset: 0, limit: pageSize });
       if (sameQuery(q, query) && state !== 'idle') return false;
       query = q;
@@ -125,7 +139,9 @@ export function createAnnouncementQuery({ pageSize = 200, fetchImpl = (...a) => 
       return true;
     },
     query: () => query,
-    load: () => run({ append: false }),
+    load: () => { resume(); return run({ append: false }); },
+    /** The table has gone: stop preparing in this browser (a question asked later resumes it). */
+    suspend() { active = false; generation++; },
     /** Re-ask the current question in place (a poll, a refresh): the reader's rows stay until the answer lands. */
     refresh: () => run({ append: false, quiet: true }),
     loadMore() {

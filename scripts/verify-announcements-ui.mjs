@@ -183,6 +183,13 @@ try {
   // ---- News: the row still opens the article; the ⋯ is a separate control ---------------------
   await page.goto(`${srv.url}#/research/news?scope=universe`);
   await page.waitForSelector('[data-news-key] [data-feedback-menu]', { timeout: 60000 });
+  // The order within a day can still be settling (readings past the first budget are made in
+  // slices); act on the list once it has, as a reader would after the first second.
+  await page.evaluate(async () => {
+    const { relevanceSettled } = await import('/js/data/surface-relevance.js');
+    await relevanceSettled();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
   const card = page.locator('[data-news-key]').filter({ has: page.locator('a[href^="http"]') }).first();
   const articleHref = await card.locator('a[href^="http"]').first().getAttribute('href');
   assert(/^https?:/.test(articleHref), 'the card is still a link to the article');

@@ -28,6 +28,9 @@
 // and gives it a new id, which is the honest result — it is a different, longer event.
 
 import { categoryInput } from './announcement-categories.js';
+import { runSteps } from '../core/slices.js';
+
+const STITCH_STEP = 400;
 
 export const STITCH_VERSION = '2026-10-01-v1';
 const DAY = 86_400_000;
@@ -122,7 +125,15 @@ function overlap(a, b) {
  * @param {(row) => object} [accessors.rowOf]           the filing whose words are read, when `rows` wraps it
  * @returns {{ byRow: Map<string, {eventId, size, position}>, events: Map<string, {id, company, family, members: string[]}> }}
  */
-export function stitchEvents(rows, { companyOf, idOf, timeOf, tagsOf, sourcesOf = () => [], rowOf = (row) => row }) {
+export function stitchEvents(rows, accessors) {
+  return runSteps(stitchEventsSteps(rows, accessors));
+}
+
+/**
+ * The same stitching as a generator that yields every STITCH_STEP filings, so a browser linking a long
+ * history does it in slices (core/slices.js). Driven synchronously it is exactly `stitchEvents`.
+ */
+export function* stitchEventsSteps(rows, { companyOf, idOf, timeOf, tagsOf, sourcesOf = () => [], rowOf = (row) => row }) {
   const byCompany = new Map();
   for (const row of rows) {
     const company = companyOf(row);
@@ -134,6 +145,7 @@ export function stitchEvents(rows, { companyOf, idOf, timeOf, tagsOf, sourcesOf 
   }
   const byRow = new Map();
   const events = new Map();
+  let linked = 0;
   for (const [company, list] of byCompany) {
     list.sort((a, b) => timeOf(a) - timeOf(b) || String(idOf(a)).localeCompare(String(idOf(b))));
     const open = [];
@@ -177,6 +189,7 @@ export function stitchEvents(rows, { companyOf, idOf, timeOf, tagsOf, sourcesOf 
         const e = open[i];
         if (at - e.last > Math.max(FAMILIES[e.family].gap, DAY) * 2 || at - e.first > FAMILIES[e.family].span * 2) open.splice(i, 1);
       }
+      if (++linked % STITCH_STEP === 0) yield { phase: 'linking', done: linked, total: rows.length };
     }
   }
   const out = new Map();

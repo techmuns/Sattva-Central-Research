@@ -115,6 +115,36 @@ const ok = (label) => { checks++; console.log(`  PASS  ${label}`); };
   assert.deepEqual(sorted, [keys[4], keys[1], keys[0], keys[2], keys[3]]);
   ok('rank keys order by day, then relevance, then time; undated last');
 
+  // News and All Alerts order only the recent days by relevance, read within one short budget per
+  // run, and finish the rest in slices — a large history must never be read inside one sort.
+  {
+    const sr = await import('../public/js/data/surface-relevance.js');
+    const istDay = (offsetDays) => new Date(Date.now() + 19_800_000 - offsetDays * 86_400_000).toISOString().slice(0, 10);
+    const today = istDay(0), lastRecent = istDay(sr.RECENT_RELEVANCE_DAYS - 1), older = istDay(sr.RECENT_RELEVANCE_DAYS);
+    assert(sr.isRecentDay(today) && sr.isRecentDay(lastRecent) && !sr.isRecentDay(older) && !sr.isRecentDay(null), 'the last seven IST days, today included');
+    let reads = 0;
+    const read = (row) => { reads++; return sr.surfaceReading(row, { surface: 'alerts', kind: 'alert', categoryKind: 'filing' }); };
+    const oldRow = { title: 'Company bags Rs 900 crore order', date: older };
+    assert.equal(sr.rankedKey(oldRow, { day: older, time: '10:00:00', surface: 'alerts', read }), rel.rankKey(older, 0, '10:00:00'));
+    assert.equal(reads, 0, 'an older day keeps its time order and is never read');
+    const rows = Array.from({ length: 400 }, (_, i) => ({ title: i % 2 ? `Company bags Rs ${100 + i} crore order from NHAI` : `Newspaper publication of notice ${i}`, date: today }));
+    let announced = 0;
+    const off = sr.onRelevanceChange(() => { announced++; });
+    // Make one reading cost a millisecond, so a single run must stop at its budget.
+    const slow = (row) => { const t = performance.now(); while (performance.now() - t < 1) { /* spin */ } return read(row); };
+    rows.forEach((row) => sr.rankedKey(row, { day: today, time: '09:00:00', surface: 'alerts', read: slow }));
+    assert(reads > 0 && reads < rows.length, `a single run stops reading at its budget (${reads} of ${rows.length})`);
+    await sr.relevanceSettled();
+    assert.equal(reads, rows.length, 'every deferred reading is made, in slices');
+    assert.equal(announced, 1, 'the surface is told once, when the order has settled');
+    const settled = new Map(rows.map((row) => [row, sr.rankedKey(row, { day: today, time: '09:00:00', surface: 'alerts', read: () => { throw new Error('read twice'); } })]));
+    const ordered = [...rows].sort((a, b) => rel.compareRanked(settled.get(a), settled.get(b)));
+    assert(ordered.slice(0, 200).every((r) => /order/.test(r.title)), 'within the day, the material orders lead the routine notices');
+    assert.equal(ordered.length, rows.length, 'nothing is dropped by its rank');
+    off();
+  }
+  ok('relevance orders the last seven days only; a sort reads within its budget and the rest settle in slices');
+
   // The sector table is the ontology's, recomputed.
   const derived = affinity.affinityFromTriggers(TRIGGERS);
   for (const [cat, entry] of Object.entries(affinity.SECTOR_AFFINITY)) {

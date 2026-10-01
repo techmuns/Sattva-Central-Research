@@ -26,15 +26,19 @@ import * as watchlist from '../core/watchlist.js';
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 let profiles = null, profilesPending = null;
-let built = null; // { key, byDay, companies, byKey, dict, days, rows }
+let built = null; // { key, byDay, companies, byKey, dict, days, rows, meta }
 let building = null;
+let buildGeneration = 0;
 let loadPending = null;
 let progress = null;
 const listeners = new Set();
 const emit = () => listeners.forEach((fn) => { try { fn(); } catch { /* listener's own failure */ } });
 
-/** New or changed filings arrived in the captures: the period has to be prepared again. */
-export const onChange = (fn) => feed.onChange(() => { built = null; fn(); });
+/**
+ * The captures changed: the question is asked again. A preparation is reused when the stream's rows
+ * are the very same array (a status-only change), and made again when they are not.
+ */
+export const onChange = (fn) => feed.onChange(fn);
 /** Preparation progress, for the tab's progress line. Never a data change. */
 export const onProgress = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 export const buildProgress = () => progress;
@@ -67,14 +71,23 @@ const rowDay = (row) => (DAY_RE.test(row.date || '') ? row.date : UNDATED);
 
 /** Tag, score and stitch the scoped rows of one period — once per (rows, period, scope). */
 async function buildFor(q, now, keepGoing) {
+  // A stream that can prepare its merge in slices does so first, so the read below finds it ready
+  // rather than merging a retained history in one task.
+  await feed.prepareRows?.();
   const range = periodRange(q.period, now);
   const scopeCompanies = q.scope === 'portfolio' ? coverage.holdings() : q.scope === 'watchlist' ? watchlist.all() : null;
   const all = feed.rows();
+  // The stream's status is read right after its rows, while that read is free — read later, a
+  // capture that arrived in between would make the status merge the whole stream in one task.
+  const meta = feed.meta();
   // The period's own bounds are in the key, so a midnight rollover prepares the new day's rows.
   const scopeKey = scopeCompanies ? scopeCompanies.map((c) => c.ticker || c.isin || c.bseCode || c.name || '').join(',') : '';
-  const key = `${q.period}|${range.from}|${range.to}|${q.scope}|${scopeKey}|${all.length}|${feed.meta().identity?.revision || 0}`;
-  if (built?.key === key && built.rows === all) return built;
+  const key = `${q.period}|${range.from}|${range.to}|${q.scope}|${scopeKey}|${all.length}|${meta.identity?.revision || 0}`;
+  if (built?.key === key && built.rows === all) { built.meta = meta; return built; }
   if (building?.key === key) return building.promise;
+  // A newer preparation supersedes an older one still in its slices: two would only compete.
+  const mine = ++buildGeneration;
+  const stillWanted = () => keepGoing() && mine === buildGeneration;
   const inPeriod = all.filter((row) => {
     const day = rowDay(row);
     return day === UNDATED ? range.undated : range.dated && day >= range.from && day <= range.to;
@@ -97,14 +110,14 @@ async function buildFor(q, now, keepGoing) {
         yield;
       }
     })();
-    const result = await runStepsInSlices(counted, { keepGoing });
-    if (!result) return null;
+    const result = await runStepsInSlices(counted, { keepGoing: stillWanted });
+    if (!result) { if (mine === buildGeneration) { progress = null; emit(); } return null; }
     const next = {
       key, rows: all, byDay: result.byDay, companies: result.companies,
       byKey: new Map(result.companies.map((c, i) => [c.k, i])),
       dict: { sources: result.dict.sources.list, providers: result.dict.providers.list },
       days: [...result.byDay.keys()].sort((a, b) => (a === UNDATED ? 1 : b === UNDATED ? -1 : b.localeCompare(a))),
-      counts: result.counts,
+      counts: result.counts, meta,
     };
     built = next;
     progress = null;
@@ -120,10 +133,13 @@ const selections = new Map();
  * One page of the query, in exactly the server's response shape. `model` is the shared relevance
  * model (relevance-feedback.js), so a vote re-orders this engine's answer as it does the server's.
  */
-export async function query(input, { model = null, now = Date.now(), keepGoing = () => true } = {}) {
+export async function query(input, { model = null, now = Date.now(), keepGoing = () => true, prepareWhile = () => true } = {}) {
   const q = normaliseQuery(input);
   await ensureLoaded();
-  const index = await buildFor(q, now, keepGoing);
+  // The prepared period is shared by every question about it, so one superseded question never
+  // abandons it — only the table going away does (`prepareWhile`); this question's own selection
+  // stops as soon as nobody is waiting for it.
+  const index = await buildFor(q, now, prepareWhile);
   if (!index) return null;
   const companyAt = (idx) => index.companies[idx];
   let companyFilter = null;
@@ -134,15 +150,20 @@ export async function query(input, { model = null, now = Date.now(), keepGoing =
   const selectionKey = `${index.key}|${model?.revision || ''}|${queryKey(q)}|${companyFilter ? [...companyFilter].join(',') : ''}`;
   let selection = selections.get(selectionKey);
   if (!selection) {
+    // One day per step, in slices: "All time" is the whole retained history.
     const acc = createSelection(q, { companyAt, companyFilter, model });
-    for (const day of index.days) acc.add({ day, rows: index.byDay.get(day) });
+    const finished = await runStepsInSlices((function* () {
+      for (const day of index.days) { acc.add({ day, rows: index.byDay.get(day) }); yield; }
+      return true;
+    })(), { keepGoing });
+    if (!finished) return null;
     selection = acc.result();
     selections.clear();
     selections.set(selectionKey, selection);
   }
   const page = selection.selected.slice(q.offset, q.offset + q.limit).map(([day, i, score]) =>
     displayRow(index.byDay.get(day)[i], day, { companies: index.companies, dict: index.dict, score: Math.round(score * 100) / 100 }));
-  const m = feed.meta();
+  const m = index.meta || feed.meta();
   return {
     ok: true, rows: page, total: selection.total, companies: selection.companies, facets: selection.facets,
     offset: q.offset, limit: q.limit, nextOffset: q.offset + page.length < selection.total ? q.offset + page.length : null, unmatched: [],

@@ -131,9 +131,19 @@ function openMenu(button, item) {
   menu.style.top = `${below > 220 ? r.bottom + 6 : Math.max(8, r.top - menu.offsetHeight - 6)}px`;
   const release = wireFeedback(menu, item);
   menu.querySelector('[data-vote]')?.focus();
-  const onKey = (event) => { if (event.key === 'Escape') { closeMenu(); button.focus(); } };
-  const onDown = (event) => { if (menu && !menu.contains(event.target) && event.target !== button) closeMenu(); };
-  const onScroll = (event) => { if (menu && !menu.contains(event.target)) closeMenu(); };
+  // The list under the menu can repaint while it is open (new stories, the order settling), which
+  // replaces the ⋯ it was opened from with an identical one. So the anchor is found by its item, and
+  // the menu closes when that row moves or leaves — the reader scrolling — not on every scroll event
+  // a repaint restoring its position fires.
+  const anchor = () => (button.isConnected ? button : document.querySelector(`[data-feedback-menu="${CSS.escape(item.itemKey)}"]`));
+  const at = button.getBoundingClientRect().top;
+  const onKey = (event) => { if (event.key === 'Escape') { closeMenu(); anchor()?.focus(); } };
+  const onDown = (event) => { if (menu && !menu.contains(event.target) && !event.target.closest?.(`[data-feedback-menu="${CSS.escape(item.itemKey)}"]`)) closeMenu(); };
+  const onScroll = (event) => {
+    if (!menu || menu.contains(event.target)) return;
+    const current = anchor();
+    if (!current || Math.abs(current.getBoundingClientRect().top - at) > 4) closeMenu();
+  };
   document.addEventListener('keydown', onKey);
   document.addEventListener('pointerdown', onDown, true);
   window.addEventListener('scroll', onScroll, true);
@@ -144,8 +154,9 @@ function openMenu(button, item) {
     window.removeEventListener('scroll', onScroll, true);
     // A vote changes the button's own mark; the list does not have to repaint for it.
     const current = myVote(item.itemKey);
-    button.classList.toggle('is-important', current?.vote === 'important');
-    button.classList.toggle('is-not-important', current?.vote === 'not-important');
+    const target = anchor();
+    target?.classList.toggle('is-important', current?.vote === 'important');
+    target?.classList.toggle('is-not-important', current?.vote === 'not-important');
   };
 }
 

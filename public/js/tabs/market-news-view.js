@@ -46,7 +46,7 @@ import * as twitterHandles from '../core/twitter-handles.js';
 import { openTwitterSources } from '../ui/twitter-sources.js';
 import { classifyStory, topicFilterOptions, matchesTopic, topicLabel } from '../data/news-keywords.js';
 import { newsPublicationDay } from '../data/news-window.js';
-import { surfaceReading, feedbackItemFor, relevanceRevision } from '../data/surface-relevance.js';
+import { surfaceReading, feedbackItemFor, relevanceRevision, rankedKey } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
 import { feedbackMenuButton } from '../ui/relevance-feedback-ui.js';
@@ -240,18 +240,16 @@ function orderedFeed(window, sources, postSource) {
 }
 
 /**
- * Newest publication day first; within a day, the shared relevance reading; then the order the rows
- * already had (time, or the publisher's own). Undated stories stay last, in their own order.
+ * Newest publication day first; within each of the last seven days, the shared relevance reading;
+ * then the order the rows already had (time, or the publisher's own). Undated stories stay last, in
+ * their own order. The readings are made within one short budget and the rest in slices
+ * (surface-relevance.js), so a long period never freezes the list while it is ordered.
  */
 function rankWithinDay(rows, within) {
-  const days = new Map(rows.map((r) => [r, newsPublicationDay(r)]));
+  const keys = new Map(rows.map((r) => [r, rankedKey(r, { day: newsPublicationDay(r), surface: 'news', read: relevanceOf })]));
   return rows.sort((a, b) => {
-    const da = days.get(a), db = days.get(b);
-    if (da !== db) return !da ? 1 : !db ? -1 : da < db ? 1 : -1;
-    if (da) {
-      const sa = relevanceOf(a).score, sb = relevanceOf(b).score;
-      if (sa !== sb) return sb - sa;
-    }
+    const ka = keys.get(a), kb = keys.get(b);
+    if (ka !== kb) return ka < kb ? 1 : -1;
     return within(a, b);
   });
 }
