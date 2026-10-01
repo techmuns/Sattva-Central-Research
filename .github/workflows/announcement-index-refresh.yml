@@ -1,0 +1,80 @@
+name: Announcement index refresh
+
+# THE SERVER-SIDE CORPORATE ANNOUNCEMENTS INDEX — the merge the Corporate Announcements tab used to
+# perform in every reader's browser (about 190,000 filings across BSE, NSE, the monthly archives and
+# the per-company captures), performed once here over the committed captures, with every filing
+# tagged into the category master list, given its base relevance and market cap, and stitched to
+# the other filings of the same underlying event. Published as one Actions artifact, read by the
+# Worker's index object by byte range (worker/announcement-index-store.mjs) — the same arrangement
+# as the alert pool, and for the same reason: derived data that changes with every capture does not
+# belong in git history.
+#
+# WHEN IT RUNS. After every capture that changes the stream's inputs (workflow_run), on a
+# best-effort schedule in case one of those triggers is missed, and on demand. Between builds the
+# Worker reads NSE's live feed itself, so the tab is never a build behind the exchange.
+#
+# NOTHING HERE READS AN UPSTREAM: every route the feed asks for is answered from the committed files.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/js/data/announcement-*.js'
+      - 'public/js/data/announcements-shared.js'
+      - 'public/js/data/corporate-announcements.js'
+      - 'public/js/data/relevance*.js'
+      - 'public/js/data/event-stitching.js'
+      - 'public/js/data/company-profile.js'
+      - 'public/js/data/sector-affinity.js'
+      - 'scripts/lib/announcement-index-build.mjs'
+      - 'scripts/build-announcement-index.mjs'
+      - '.github/workflows/announcement-index-refresh.yml'
+  workflow_run:
+    workflows:
+      - Corporate announcements refresh
+      - NSE announcements refresh
+      - Filings and four-category trades refresh
+      - Data refresh
+      - Sector KPIs refresh
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "20,50 * * * *"
+  workflow_dispatch:
+
+run-name: Announcement index refresh (${{ github.event_name == 'workflow_run' && github.event.workflow_run.name || github.event_name }})
+
+concurrency:
+  group: announcement-index
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # A capture that failed changed nothing; the index it would have moved is still current.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Build the index from the committed captures
+        env:
+          ANNOUNCEMENT_INDEX_VERIFY: "1"
+        run: node --max-old-space-size=6144 scripts/build-announcement-index.mjs "$RUNNER_TEMP/announcement-index"
+      # `compression-level: 0` keeps every member stored as-is: the day segments are gzip already, and
+      # the Worker reads each one by byte range out of the archive.
+      - name: Publish the index
+        uses: actions/upload-artifact@v7
+        with:
+          name: announcement-index
+          path: ${{ runner.temp }}/announcement-index
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 3

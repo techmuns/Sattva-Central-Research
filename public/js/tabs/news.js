@@ -21,10 +21,14 @@
 // reproduced, the article is linked, and nothing is summarised into our own words. See the header
 // of tabs/filings-tab.js for the machinery all three of these tabs share.
 //
-// NO SENTIMENT COLUMN AND NO RANKING. The upstream returns articles in its own relevance order and
-// this preserves it as the tie-break; scoring a headline as positive or negative would be a
-// judgement of ours presented beside somebody else's reporting. Public Chatter already carries
-// sentiment, and it is StockScans' — computed, attributed, and about forum volume rather than news.
+// NO SENTIMENT COLUMN, AND RELEVANCE ONLY WITHIN A DAY. Stories stay newest day first; within a day
+// the one a buy-side analyst would read first comes first — the same reading Corporate Announcements
+// and All Alerts use (data/relevance.js: what the story is about, the company's size and sector, any
+// amount it states against that size, whether it names the company, and the desk's shared Important
+// / Not important votes). No label is printed and no story is hidden by its rank. Scoring a headline
+// as positive or negative would still be a judgement of ours beside somebody else's reporting, and
+// this tab still does not do it. The row keeps opening the article; the small ⋯ beside it is a
+// separate control for the vote.
 
 import { escapeHtml } from '../core/dom.js';
 import { formatDate, formatNumber } from '../core/format.js';
@@ -39,6 +43,10 @@ import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, grou
 import { filterByScope as filterTickerRows } from '../data/scope.js';
 import { attributionFor, attributionLabel, newsSearchText } from '../data/company-news-attribution.js';
 import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
+import { surfaceReading, feedbackItemFor, rankFor, istClock, relevanceRevision, onRelevanceChange, primeRelevance } from '../data/surface-relevance.js';
+import { categoryChips } from '../ui/category-chips.js';
+import { categoryLabel as categoryLabelOf } from '../data/announcement-categories.js';
+import { feedbackMenuButton, installFeedbackMenus } from '../ui/relevance-feedback-ui.js';
 
 const dash = (why) => `<span class="text-slate-300" title="${escapeHtml(why)}">—</span>`;
 
@@ -67,6 +75,16 @@ function readingFor(row) {
     readings.set(row, reading);
   }
   return reading;
+}
+
+// The relevance reading of a company-news row: its topic categories, its company's size and sector,
+// and whether the story names the company (company-news-attribution.js).
+const newsRelevance = (r) => surfaceReading(r, { surface: 'news', kind: 'news', context: { match: attributionFor(r).status } });
+
+// Under the headline: the category tags, and the ⋯ that asks Important / Not important. The row's
+// own link still opens the article; the ⋯ never does.
+export function newsRowExtras(entry, r) {
+  return `<div class="news-row-extras">${categoryChips(entry.categories, { weak: entry.weak, max: 3 })}${feedbackMenuButton(feedbackItemFor(entry, r))}</div>`;
 }
 
 function deliveryDetails(meta) {
@@ -126,6 +144,9 @@ const tab = makeFilingsTab({
   nameMaxPx: 780,
   rowName: (r) => r.title || '(untitled)',
   rowSub: (r) => [attributionLabel(r), r.company || r.ticker, r.company && r.ticker, canonicalPublisherName(r.source)].filter(Boolean).join(' · '),
+  afterSub: (r) => newsRowExtras(newsRelevance(r), r),
+  // The order depends on the shared model and the company profiles, so either moving repaints it.
+  renderRevision: () => relevanceRevision(),
   searchable: newsSearchText,
   // News is name-searched and can therefore scope private/BSE-only companies by stable entity id.
   // Watchlist remains symbol-based because a saved watch item is a ticker by construction.
@@ -136,8 +157,9 @@ const tab = makeFilingsTab({
       label: 'Date',
       get: (r) => (newsPublicationDay(r) ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(newsPublicationDay(r)))}</span>` : dash('the article carried no readable date')),
       html: true,
-      // A row with no date sorts last rather than first. An unreadable date is not "today".
-      sortValue: (r) => newsPublicationDay(r) || '',
+      // Newest day first; within a day, the most relevant story first, then the latest. A row with no
+      // date sorts last rather than first. An unreadable date is not "today".
+      sortValue: (r) => rankFor(newsPublicationDay(r), newsRelevance(r), istClock(r.publishedAt)),
     },
     {
       // THE TOPIC COLUMN TOOK THE OUTLET COLUMN'S PLACE RATHER THAN BEING ADDED BESIDE IT. The
@@ -284,8 +306,14 @@ const tab = makeFilingsTab({
           <li><strong>Headline, outlet and date</strong> — the upstream's, unchanged.</li>
           <li><strong>The article itself</strong> — not here. Every row links to the publisher, and nothing is summarised
               into our words.</li>
-          <li><strong>No sentiment or investment ranking of ours.</strong> Stories are merged newest source date/time first;
-              undated articles remain undated, never borrowing their capture time. A topic identifies the subject, not a trade recommendation.</li>
+          <li><strong>No sentiment of ours, and relevance only within a day.</strong> Stories are ordered newest source day first; within a day
+              the stories an analyst would read first come first (what the story is about, the company's size and sector, any amount it
+              states against that size, whether it names the company, and the desk's shared Important / Not important votes). Nothing is
+              hidden by its rank and no rank label is printed. Undated articles remain undated, never borrowing their capture time.
+              A topic identifies the subject, not a trade recommendation.</li>
+          <li><strong>Categories</strong> under each headline come from the same master list Corporate Announcements uses. The ⋯ beside
+              a row records Important / Not important (with an optional why) into one shared preference for the desk; opening the
+              row still opens the article.</li>
           <li><strong>Company matching</strong> is ours. A search query alone is only a possible match. Company-matched rows
               have name or reviewed-alias evidence in the headline or bounded article body; this identifies the company, not the truth of the reported claim.</li>
         </ul>
@@ -328,6 +356,7 @@ const tab = makeFilingsTab({
         // own column and the banner says what they are and are not. A reader who merges two exports
         // in Excel has nothing else to go on.
         { header: 'Tracked topics', key: 'k', width: 30, get: (r) => (r.__banner ? '' : readingFor(r).labels.join(', ')) },
+        { header: 'Categories (dashboard)', key: 'cat', width: 34, get: (r) => (r.__banner ? '' : newsRelevance(r).categories.map(categoryLabelOf).join('; ')) },
         {
           header: 'Names the company',
           key: 'n',
@@ -372,8 +401,15 @@ export const meta = tab.meta;
 // ---------------------------------------------------------------------------------------
 
 let mounted = null; // 'universe' | 'companies'
+let lastCtx = null;
+let offRelevance = null;
 
 export function render(ctx) {
+  lastCtx = ctx;
+  installFeedbackMenus();
+  primeRelevance();
+  // A vote anywhere, or company sizes arriving, re-orders the day; repaint whichever half is mounted.
+  offRelevance ||= onRelevanceChange(() => { if (lastCtx && mounted) render(lastCtx); });
   // MARKET-WIDE NEWS CARRIES NO COMPANY, so it cannot be narrowed to a book or a watchlist — see
   // the chatter rule in CLAUDE.md: filtering rows that have no ticker BY ticker would report "your
   // companies are not in the news" when the truth is that nothing on those rows says whose they
@@ -392,4 +428,7 @@ export function destroy() {
   if (mounted === 'universe') marketNews.destroy();
   else if (mounted === 'companies') tab.destroy();
   mounted = null;
+  lastCtx = null;
+  offRelevance?.();
+  offRelevance = null;
 }

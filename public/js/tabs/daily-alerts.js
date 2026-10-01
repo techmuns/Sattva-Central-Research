@@ -48,6 +48,31 @@ import { openFilingSource } from '../ui/xbrl-filing.js';
 import { createAlertArrivals } from '../core/alert-arrivals.js';
 import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
 import { alertWindowKey } from '../data/all-alerts-cache.js';
+import { surfaceReading, feedbackItemFor, rankFor, relevanceRevision, onRelevanceChange, primeRelevance } from '../data/surface-relevance.js';
+import { categoryChips } from '../ui/category-chips.js';
+import { categoryLabel } from '../data/announcement-categories.js';
+import { promptAfterOpen } from '../ui/relevance-feedback-ui.js';
+
+// RELEVANCE WITHIN A DAY, NO LABEL. The stream stays newest day first; within a day the shared
+// relevance reading (data/relevance.js — the same one Corporate Announcements and News use, with the
+// desk's Important / Not important votes) puts what an analyst would read first at the top. The
+// existing High/Low priority badge is the feed's own stated threshold and is unchanged; the relevance
+// order prints nothing. Category tags come from the same master list, read from the item's own words
+// where it has them and from what the feed is where it does not.
+const TEXT_NEWS_FEEDS = new Set(['news', 'market-news', 'twitter']);
+const FEED_TAGS = {
+  earnings: { ids: ['results'], weak: [] }, concalls: { ids: ['investor-communication'], weak: [] },
+  insider: { ids: ['shareholding-changes'], weak: [] }, investors: { ids: ['shareholding-changes'], weak: [] },
+};
+function alertRelevance(e) {
+  return surfaceReading(e, {
+    surface: 'alerts', kind: 'alert', categoryKind: TEXT_NEWS_FEEDS.has(e.feed) ? 'news' : 'filing', tags: FEED_TAGS[e.feed] || null,
+    context: { direction: e.direction || null, importance: e.importance || null, feed: e.feed || null, match: e.feed === 'news' ? e.attribution?.status || 'uncertain' : null },
+    itemKey: `alerts:${e.id}`,
+  });
+}
+const alertFeedback = (e) => feedbackItemFor(alertRelevance(e), e, { label: e.headline, company: e.company || e.ticker || null });
+let relevanceSeen = null;
 
 export const meta = {
   id: 'daily-alerts',
@@ -183,6 +208,19 @@ export function render(ctx) {
   if (cachedReadKey !== readKey) { cachedRead = null; cachedReadKey = readKey; }
 
   if (!unsubs.length) {
+    primeRelevance();
+    unsubs.push(onRelevanceChange(() => { if (ctxRef) paint(ctxRef); }));
+    // The ↗ link opens the source without the row's click; it earns the same after-open prompt.
+    const onLinkOpen = (event) => {
+      const anchor = event.target.closest?.('tr[data-row-key] a[href]');
+      if (!anchor || horizon === HORIZON.UPCOMING || !ctxRef?.root.contains(anchor)) return;
+      const key = anchor.closest('tr[data-row-key]').dataset.rowKey;
+      const row = (tableRows || []).find((e) => String(e.id) === key);
+      if (row) promptAfterOpen(alertFeedback(row));
+    };
+    ctx.root.addEventListener('click', onLinkOpen, true);
+    const root = ctx.root;
+    unsubs.push(() => root.removeEventListener('click', onLinkOpen, true));
     void storyGrouping.load();
     unsubs.push(storyGrouping.onChange(()=>{ if(ctxRef) paint(ctxRef); }));
     unsubs.push(watchAlertReadings(ctx.root,{onVisible:rows=>{
@@ -542,8 +580,9 @@ function paint(ctx) {
     }
     
     const status = { loading: !report || report.pending > 0 };
-    if (tableRows === visible) tableInstance.updateStatus(status);
-    else { tableInstance.updateData(visible, undefined, status); tableRows = visible; }
+    // A changed relevance model (a vote, company sizes arriving) re-sorts the same rows in place.
+    if (tableRows === visible && relevanceSeen === relevanceRevision()) tableInstance.updateStatus(status);
+    else { tableInstance.updateData(visible, undefined, status); tableRows = visible; relevanceSeen = relevanceRevision(); }
     return;
   }
 
@@ -1130,7 +1169,11 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
       <span class="block text-xs ${e.time ? 'text-slate-500' : 'text-slate-400'}">${e.kind === 'scheduled' ? 'Scheduled · ' : ''}${e.time ? `${escapeHtml(e.time)} IST` : e.day ? 'Day only' : 'Undated'}</span>
     </time>`,
     html: true,
-    sortValue: (e) => `${e.day || '0000-00-00'}T${e.time || (mode === HORIZON.UPCOMING ? '99:99' : '')}`,
+    // History: newest day first, then the most relevant item, then the latest time. The forward
+    // calendar keeps its plain date-and-time order.
+    sortValue: mode === HORIZON.UPCOMING
+      ? (e) => `${e.day || '0000-00-00'}T${e.time || '99:99'}`
+      : (e) => rankFor(e.day || null, alertRelevance(e), e.time || ''),
   };
   const eventColumn = {
     label: mode === HORIZON.UPCOMING ? 'What is scheduled' : 'What happened',
@@ -1156,7 +1199,16 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
           sortValue: (e) => (e.importance === 'high' ? 1 : 0),
         },
         eventColumn,
-        { label: 'Feed', get: (e) => e.feedLabel },
+        {
+          label: 'Feed',
+          get: (e) => `<div class="max-w-[220px] whitespace-normal">${escapeHtml(e.feedLabel || '')}${(() => {
+            const entry = alertRelevance(e);
+            const chips = categoryChips(entry.categories, { weak: entry.weak, max: 2 });
+            return chips ? `<div class="mt-1">${chips}</div>` : '';
+          })()}</div>`,
+          html: true,
+          sortValue: (e) => e.feedLabel || '',
+        },
       ];
   const filters = buildTableFilters(events, day, mode, matchesDate);
   return scoreTable({
@@ -1209,6 +1261,9 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     // does nothing is worse than one that goes somewhere useful; nothing here reproduces the
     // article, which is the rule that actually matters (see the con-call link rule in CLAUDE.md).
     onRowClick: (e) => {
+      // After the reader opens an item, ask once whether it mattered — the vote trains the one shared
+      // relevance preference all three surfaces read. The open itself is unchanged.
+      if (mode !== HORIZON.UPCOMING) promptAfterOpen(alertFeedback(e));
       if (e.url) {
         void openFilingSource(e.url, { company: e.company, ticker: e.ticker, subject: e.headline });
         return;
@@ -1382,6 +1437,7 @@ function exportStream(visible, day, scope, mode = HORIZON.THROUGH) {
         { header: 'Importance', key: 'importance', width: 12, get: cell((r) => r.importance || 'low') },
       ] : []),
       { header: 'Feed', key: 'feed', width: 18, get: cell((r) => r.feedLabel) },
+      { header: 'Categories (dashboard)', key: 'categories', width: 34, get: cell((r) => alertRelevance(r).categories.map(categoryLabel).join('; ')) },
       { header: 'Ticker', key: 'ticker', width: 14, get: cell((r) => r.ticker || '') },
       { header: 'Company', key: 'company', width: 32, get: cell((r) => r.company) },
       { header: 'News relationship', key: 'newsRelationship', width: 26, get: cell((r) => r.feed === 'news' ? attributionLabel(r) : '') },

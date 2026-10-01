@@ -52,7 +52,7 @@ import {corporateAnnouncements as feed} from '/js/data/corporate-announcements.j
 import {startWatchlistCapture,watchlistCapture} from '/js/data/watchlist-capture.js';
 coverage.prime({holdings:[{ticker:'TCS',name:'TCS Test Company'}, {isin:'INE564S01019',ticker:null,name:'Vikram Kamats Hospitality'}, {isin:'INE094B01013',ticker:null,name:'Ashika Credit Capital'}]}); watchlist.add('INFY','INFY Test Company');
 window.renderScope=(scope)=>{const root=document.querySelector('#root');root.innerHTML='';tab.render({root,scope,live,data:{universe:[{ticker:'TCS'},{ticker:'INFY'}]},params:{}});};
-window.stream=feed;window.destroyStream=()=>tab.destroy();window.renderScope('portfolio');
+window.stream=feed;window.caQuery=tab.announcementQuery;window.destroyStream=()=>tab.destroy();window.renderScope('portfolio');
 window.addFutureHolding=()=>coverage.prime({holdings:[...coverage.holdings(),{isin:'INE000Z01019',ticker:null,name:'Future SME'}]});
 window.addWatch=watchlist.add;window.enrollment=watchlistCapture;startWatchlistCapture();
 </script></body></html>`;
@@ -107,36 +107,53 @@ try {
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
   await page.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 200, body: '{}' }));
   const errors = []; page.on('pageerror', (error) => errors.push(error.message));
+  // The table is answered a page at a time by the announcement query (in this static fixture, by the
+  // browser's own engine over the captures), so every search, filter, scope or refresh is awaited
+  // until the query on screen has been answered.
+  const settle = () => page.waitForFunction(() => window.caQuery?.meta().state === 'ready' && !window.caQuery.meta().refreshing);
+  const fillSearch = async (text) => {
+    await search.fill(text);
+    await page.waitForFunction((q) => window.caQuery.query().q === q && window.caQuery.meta().state === 'ready' && !window.caQuery.meta().refreshing, text.trim().toLowerCase());
+  };
+  const rescope = async (scope) => { await page.evaluate((value) => window.renderScope(value), scope); await settle(); };
+  const refreshStream = async () => { await page.evaluate(() => window.stream.refresh()); await settle(); };
+  const selectPeriod = async (value) => {
+    await period.selectOption(value);
+    await page.waitForFunction((v) => window.caQuery.query().period === v && window.caQuery.meta().state === 'ready', value);
+  };
+  const companySettled = (selected) => page.waitForFunction((want) => !!window.caQuery.query().company === want && window.caQuery.meta().state === 'ready', selected);
+  let search, period;
   await page.clock.install({ time: new Date(at) });
   await page.goto(origin);
   await page.waitForFunction(() => window.stream?.meta().archive?.loaded && window.stream.rows().some(r => r.title === 'Historical NSE filing'));
   await page.waitForFunction(() => window.enrollment.status().remaining.length === 0);
   assert.deepEqual(enrollments, [{ tickers: ['INFY'] }], 'existing watchlist enrolls automatically without sending its names or membership metadata');
   assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-watch-toggle], [data-document-tabs]').count(), 0);
-  const period = page.getByRole('combobox', { name: 'Announcement period (IST)' });
+  period = page.getByRole('combobox', { name: 'Announcement period (IST)' });
+  search = page.locator('[data-table-search]');
   assert.equal(await period.inputValue(), 'all');
   assert.deepEqual(await period.locator('option').allTextContents(), ['Today', 'Last 3 days', 'Last 7 days', 'This month', 'All time']);
+  await page.waitForFunction(() => /^146 announcements/.test(document.querySelector('[data-row-count]')?.textContent || ''));
   assert.match(await page.locator('[data-row-count]').innerText(), /^146 announcements · 3 companies with filings$/);
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
-  const search = page.locator('[data-table-search]');
-  await search.fill('cross-exchange');
+  await fillSearch('cross-exchange');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'byte-identical BSE/NSE rows render once');
   assert.match(await page.locator('tbody tr[data-row-key]').innerText(), /BSE \/ NSE/);
   assert.deepEqual(await page.evaluate(() => window.stream.rows().find(r => r.documentHash)?.sourceUrls), [
     { source: 'BSE', url: 'https://example.test/TCS/cross-exchange.pdf' },
     { source: 'NSE', url: 'https://nsearchives.nseindia.com/corporate/cross-exchange.pdf' },
   ]);
-  await search.fill('');
+  await fillSearch('');
   assert(await page.locator('tbody tr[data-row-key]').count() <= 160, 'table DOM stays bounded');
   console.log('PASS clean portfolio stream, source deduplication and automatic BSE/company/NSE history');
-  await search.fill('KAMATS');
+  await fillSearch('KAMATS');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'BSE-only holding matches by ISIN');
-  await search.fill('ASHIKAG');
+  await fillSearch('ASHIKAG');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'renamed company matches the old book name through ISIN');
-  await search.fill('older-company');
+  await fillSearch('older-company');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1);
   await search.evaluate(el => { window.activeSearch = el; });
-  await page.evaluate(() => window.stream.refresh());
+  await refreshStream();
   assert.equal(await search.inputValue(), 'older-company');
   assert(await search.evaluate(el => el === document.activeElement));
   assert(await search.evaluate(el => el === window.activeSearch), 'status-only updates preserve the mounted search field');
@@ -145,14 +162,14 @@ try {
   bodies['/data/corp-announcements.json'].lastError = { message: 'Latest BSE request failed.' };
   bodies['/data/corp-announcements.json'].lastAttemptAt = '2026-09-04T13:01:00Z';
   bodies['/data/corp-announcements.json'].coversUniverse = false;
-  await page.evaluate(() => window.stream.refresh());
+  await refreshStream();
   assert.equal(await page.evaluate(() => window.stream.meta().sourceCheck.error.message), 'Latest BSE request failed.', 'a newer failed attempt is adopted even when the last successful capture time did not move');
   assert.match(await page.locator('[data-filings-info]').innerText(), /Some announcements may be missing/);
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'outage notices preserve matching retained history');
   bodies['/data/corp-announcements.json'].lastError = null;
   bodies['/data/corp-announcements.json'].coversUniverse = true;
   console.log('PASS history is searchable, polling skips unchanged archives, and search focus survives updates');
-  await search.fill('');
+  await fillSearch('');
   await page.locator('[data-table-scroll]').evaluate(el => { el.scrollTop = 600; });
   await page.waitForTimeout(50);
   const anchor = await page.locator('[data-table-scroll]').evaluate(el => {
@@ -167,16 +184,16 @@ try {
     return row?.getBoundingClientRect().top - el.getBoundingClientRect().top;
   }, anchor.key);
   assert(Math.abs(after - anchor.offset) < 3, `reader position moved by ${after - anchor.offset}`);
-  await search.fill('Just arrived'); assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1);
+  await fillSearch('Just arrived'); assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1);
   console.log('PASS automatic arrivals preserve the reading position and join search immediately');
-  await search.fill('');
-  await page.evaluate(() => window.renderScope('watchlist'));
+  await fillSearch('');
+  await rescope('watchlist');
   assert.match(await page.locator('[data-row-count]').innerText(), /^1 announcement · 1 company with filings$/);
-  await page.evaluate(() => window.renderScope('universe'));
+  await rescope('universe');
   assert(await page.evaluate(() => window.stream.rows().some(r => r.company === 'Unresolved Company')));
-  await search.fill('Unresolved Company'); assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1);
-  await page.evaluate(() => window.renderScope('portfolio'));
-  await search.fill('Unresolved Company'); assert.equal(await page.locator('tbody tr[data-row-key]').count(), 0);
+  await fillSearch('Unresolved Company'); assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1);
+  await rescope('portfolio');
+  await fillSearch('Unresolved Company'); assert.equal(await page.locator('tbody tr[data-row-key]').count(), 0);
   console.log('PASS portfolio/watchlist/universe isolation, including unresolved exchange identities');
   await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
   const hiddenReads = hits.get('/api/nse-announcements');
@@ -184,7 +201,7 @@ try {
   assert.equal(hits.get('/api/nse-announcements'), hiddenReads);
   await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => false }); document.dispatchEvent(new Event('visibilitychange')); });
   await page.waitForFunction(() => !window.stream.meta().archive.pending);
-  await page.evaluate(() => window.stream.refresh());
+  await refreshStream();
   assert(hits.get('/api/nse-announcements') > hiddenReads);
   console.log('PASS polling pauses while hidden and refreshes on return');
   await page.evaluate(() => window.stream.loadArchive());
@@ -213,26 +230,28 @@ try {
   bodies['/data/filing-capture/nse-identities.json'].directories.sme.entries.push({ isin: 'INE000Z01019', ticker: 'FUTURE', aliases: ['FUTURE-SM'], name: 'Future SME' });
   bodies['/data/filing-capture/announcements-recent.json'].rows.push({ ...filing('FUTURE-SM', 'new-holding'), source: 'NSE' });
   await page.evaluate(() => { window.addFutureHolding(); window.renderScope('portfolio'); });
-  await page.evaluate(() => window.stream.refresh());
-  await search.fill('new-holding');
+  await settle();
+  await refreshStream();
+  await fillSearch('new-holding');
   await page.waitForFunction(() => document.querySelectorAll('tbody tr[data-row-key]').length === 1);
   assert.match(await page.locator('tbody').innerText(), /FUTURE/);
-  await page.evaluate(() => window.renderScope('watchlist'));
-  await search.fill('new-holding');
+  await rescope('watchlist');
+  await fillSearch('new-holding');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 0);
   await page.evaluate(() => window.addWatch('FUTURE'));
   await page.waitForFunction(() => window.enrollment.status().remaining.length === 0);
   assert(enrollments.some(batch => batch.tickers.includes('FUTURE')), 'a watchlist addition enrolls without reloading the page');
   await page.evaluate(() => { window.addWatch('539659'); window.renderScope('watchlist'); });
-  await search.fill('KAMATS');
+  await settle();
+  await fillSearch('KAMATS');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'a watched BSE code shows the issuer’s filings');
-  await search.fill('new-holding');
-  await page.evaluate(() => window.renderScope('portfolio'));
+  await fillSearch('new-holding');
+  await rescope('portfolio');
   console.log('PASS a new portfolio holding and newly published NSE identity join the live feed without a page reload');
-  fail = true; await page.evaluate(() => window.stream.refresh());
+  fail = true; await refreshStream();
   assert(await page.evaluate(() => window.stream.rows().some(r => r.title === 'Just arrived')));
   assert(await page.evaluate(() => !!window.stream.meta().nse.degraded));
-  await search.fill('');
+  await fillSearch('');
   await page.locator('[data-filings-method]').click();
   assert(await page.locator('#modal-content [data-capture-coverage]').isVisible());
   assert.match(await page.locator('#modal-content').innerText(), /live exchange feed|live NSE/i);
@@ -255,11 +274,11 @@ try {
   ].map(([id, publishedAt]) => ({ ...nseRow, subject: `Period case ${id}`, publishedAt, url: `https://example.test/period-${id}.pdf` })));
   bodies['/data/corp-announcements.json'].byTicker.INFY.push(filing('INFY', 'Period case watched', '2026-09-04'));
   bodies['/data/corp-announcements.json'].capturedAt = await page.evaluate(() => new Date().toISOString());
-  await page.evaluate(() => window.stream.refresh());
-  await search.fill('Period case');
+  await refreshStream();
+  await fillSearch('Period case');
   const shownCases = () => page.locator('tbody tr[data-row-key]').evaluateAll(rows => rows.map(row => row.textContent.match(/Period case (\w+)/)?.[1]).sort());
   const expectCases = async (value, expected) => {
-    await period.selectOption(value);
+    await selectPeriod(value);
     assert.deepEqual(await shownCases(), [...expected].sort(), `inclusive IST period ${value}`);
   };
   await expectCases('today', ['today', 'atMidnight']);
@@ -279,13 +298,13 @@ try {
   await page.locator('[data-export]').click();
   await page.waitForFunction(() => Array.isArray(window.exportedRows));
   assert.deepEqual(await page.evaluate(() => exportedRows.slice(1).map(row => row.h.match(/Period case (\w+)/)?.[1]).sort()), ['atMidnight', 'today'], 'export uses the selected period and search');
-  await page.evaluate(() => window.renderScope('watchlist'));
+  await rescope('watchlist');
   assert.equal(await period.inputValue(), 'today');
   assert.deepEqual(await shownCases(), ['watched']);
-  await page.evaluate(() => window.renderScope('universe'));
+  await rescope('universe');
   assert.deepEqual(await shownCases(), ['atMidnight', 'today', 'watched']);
-  await page.evaluate(() => window.renderScope('portfolio'));
-  fail = true; await page.evaluate(() => window.stream.refresh());
+  await rescope('portfolio');
+  fail = true; await refreshStream();
   assert.equal(await period.inputValue(), 'today');
   assert.deepEqual(await shownCases(), ['atMidnight', 'today'], 'failed refresh preserves the selected period and retained rows');
   fail = false;
@@ -297,7 +316,7 @@ try {
   assert.deepEqual(await shownCases(), ['future'], 'Today rolls over on the existing automatic poll');
   assert.equal(await search.inputValue(), 'period case');
   await expectCases('all', [...Object.keys(periodDates), 'beforeMidnight', 'atMidnight']);
-  await search.fill('older-company');
+  await fillSearch('older-company');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'All time still reaches older captured history');
   console.log('PASS IST time presets, inclusive boundaries, unknown dates, filtered exports, all scopes, failure retention and automatic midnight rollover');
 
@@ -315,6 +334,7 @@ try {
     coverage.prime({ holdings: [...coverage.holdings(), { isin: 'INE365Y01019', ticker: 'BPLPHARMA', name: 'Bharat Parenteral' }] });
     window.renderScope('portfolio'); await window.stream.refresh();
   });
+  await settle();
   assert.equal(await page.evaluate(() => window.stream.companyIdentity({ ticker: 'BPLPHARMA' }).name), bharat.name, 'the updated exchange directory is loaded before company selection');
   await period.selectOption('all');
   await search.fill('Bharat');
@@ -326,36 +346,38 @@ try {
   assert.equal(await menu.getByRole('option', { name: /Foreign listing|Not a listed symbol/ }).count(), 0);
   assert(await menu.getByRole('option', { name: /Infosys/ }).isDisabled(), 'outside-scope results explain the scope without bypassing it');
   await search.press('ArrowDown'); await search.press('Enter');
+  await companySettled(true);
   assert.equal(await search.inputValue(), '');
   assert.match(await page.locator('[data-announcement-company-chip]').innerText(), /Bharat Parenterals.*BPLPHARMA/s);
   assert.match(await page.locator('[data-row-count]').innerText(), /^2 announcements · 1 company with filings$/);
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 2, 'selection shows only the issuer');
   assert.doesNotMatch(await page.locator('tbody').innerText(), /mentioned by another/);
-  await search.fill('older');
+  await fillSearch('older');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'free text narrows the selected company');
   await page.locator('[data-export]').click();
   await page.waitForFunction(() => exportedRows?.[1]?.h?.includes('older history'));
   assert.deepEqual(await page.evaluate(() => exportedRows.slice(1).map(r => r.t)), ['BPLPHARMA']);
-  await search.fill(''); await period.selectOption('today');
+  await fillSearch(''); await selectPeriod('today');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'date filter remains effective after selecting a company');
-  await period.selectOption('all');
+  await selectPeriod('all');
   const recovered = { ...bharatFiling('recovered arrival', '2026-09-05'), providers: ['Screener announcements'] };
   Object.assign(bodies['/data/screener-announcements.json'], { rows: [recovered], rowCount: 1, pending: [{ from: at, to: '2026-09-05T08:01:00Z' }], lastPageAt: '2026-09-05T08:01:00Z' });
-  await page.evaluate(() => window.stream.refresh());
+  await refreshStream();
   await page.waitForFunction(() => document.querySelector('[data-row-count]')?.textContent.startsWith('3 announcements'));
   assert.match(await page.locator('[data-announcement-company-chip]').innerText(), /Bharat Parenterals/);
   assert(await page.evaluate(() => window.stream.rows().some(r => r.ticker === 'BPLPHARMA' && r.providers.includes('Screener announcements'))), 'recovery joins exact issuer search while BSE capture time stays unchanged');
   failRecovery = true;
-  await page.evaluate(() => window.stream.refresh());
+  await refreshStream();
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 3, 'a failed backup refresh preserves the recovered filing');
   assert(await page.evaluate(() => !!window.stream.meta().recovery.error));
   failRecovery = false;
-  await page.evaluate(() => window.renderScope('watchlist'));
+  await rescope('watchlist');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 0);
   assert.match(await page.locator('[data-announcement-search-hint]').innerText(), /outside Watchlist/);
-  await page.evaluate(() => window.renderScope('portfolio'));
+  await rescope('portfolio');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 3);
   await page.getByRole('button', { name: 'Clear selected company' }).click();
+  await companySettled(false);
   assert.equal(await page.locator('[data-announcement-company-chip]').innerText(), '');
   assert(await page.locator('tbody tr[data-row-key]').count() > 3);
   failSearch = true;
@@ -363,9 +385,10 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-search-status]')?.textContent.includes('unavailable'));
   assert(await menu.getByRole('option', { name: /Bharat Parenterals/ }).isEnabled(), 'saved companies remain selectable during search failures');
   await menu.getByRole('option', { name: /Bharat Parenterals/ }).click();
+  await companySettled(true);
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 3);
   await page.getByRole('button', { name: 'Clear selected company' }).click();
-  await search.fill('Bharat');
+  await fillSearch('Bharat');
   assert.equal(await menu.count(), 1);
   assert(await page.evaluate(() => {
     const r = document.querySelector('[data-announcement-search-menu]').getBoundingClientRect();
@@ -381,7 +404,7 @@ try {
         await menu.getByRole('option', { name: /Bharat Parenterals/ }).click();
         await page.screenshot({ path: `${process.env.ANNOUNCEMENT_SEARCH_SCREENSHOT}-${width}-${theme}-selected.png` });
         await page.getByRole('button', { name: 'Clear selected company' }).click();
-        await search.fill('Bharat');
+        await fillSearch('Bharat');
       }
     }
   }
@@ -394,8 +417,8 @@ try {
   bodies['/data/screener-announcements.json'].rows.push(referenceOnly);
   bodies['/data/screener-announcements.json'].rowCount++;
   bodies['/data/screener-announcements.json'].lastPageAt = '2026-09-05T08:02:00Z';
-  await page.evaluate(() => window.stream.refresh());
-  await search.fill('Missing attachment');
+  await refreshStream();
+  await fillSearch('Missing attachment');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1);
   assert.match(await page.locator('tbody tr[data-row-key]').innerText(), /Source supplied no document link/);
   assert.equal(await page.locator('tbody tr[data-row-key] a[href="https://www.screener.in/company/id/123456/"]').count(), 1);
