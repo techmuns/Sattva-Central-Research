@@ -253,7 +253,7 @@ const tab = makeFilingsTab({
            Publisher names are shown consistently in the filter; the original source name, headline and URL remain in the capture and export.</p>
         ${deliveryDetails(m)}
 
-        <p class="mt-2 text-xs"><strong>Incremental and permanent.</strong> Portfolio identities are searched every 2 hours from 10:11 to 18:11 IST on weekdays and at 06:11 IST every day,
+        <p class="mt-2 text-xs"><strong>Incremental and permanent.</strong> Portfolio identities are searched every 2 hours, around the clock,
            with a 48-hour overlap. Every returned article is written to a permanent monthly archive before this fast 30-day
            head is derived. This view loads only the recent period and undated stories; it opens on Today in IST.
            Last 30 days includes today; This month starts on the first calendar day (up to 31 days). Older news remains available in

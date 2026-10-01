@@ -107,9 +107,9 @@ try {
   tvFailure = false; await page.evaluate(() => window.news.refreshSnapshot());
   await page.clock.runFor(15001);
   check('source recovery restores the verified indicator', await details.locator('summary').evaluate(el => el.classList.contains('is-live')));
-  // Paid company-news discovery runs once a day at the weekend, so its rows stay current for 26 hours;
+  // Company-news discovery runs every 2 hours, so its rows stay current for two walks (4 hours);
   // past that, every portfolio-news row has aged out.
-  await page.clock.setSystemTime(new Date(Date.parse(at) + 27 * 3600000));
+  await page.clock.setSystemTime(new Date(Date.parse(at) + 5 * 3600000));
   await page.clock.runFor(15001);
   check('aging out naturally removes verified news indicators without a network response', await page.locator('[data-beacon-group="portfolio-news"] .beacon-row.is-live').count() === 0);
   await page.keyboard.press('Escape');

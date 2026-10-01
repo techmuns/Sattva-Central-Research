@@ -189,11 +189,11 @@ assert.equal(assessFilingsHealth(auth, { now, sources: ['announcements'] }).ok, 
 for (const [label, mutate, code] of [
   ['missing alias', b => { delete b.news.queries['isin:PRIVATE'].AlphaBrand; }, 'company-never-checked'],
   ['blocked alias', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.error = { reason: 'unauthorised', message: 'secret' }; }, 'authentication-failed'],
-  ['stale alias in a fresh index', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.lastSuccessAt = new Date(now - 27 * 3600000).toISOString(); }, 'company-check-overdue'],
+  ['stale alias in a fresh index', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.lastSuccessAt = new Date(now - 5 * 3600000).toISOString(); }, 'company-check-overdue'],
   ['unfinished alias', b => { b.news.queries['isin:PRIVATE'].AlphaBrand.lastAttemptAt = new Date(now).toISOString(); }, 'company-reads-incomplete'],
   ['no identity registry', b => { b.news.entities = []; }, 'invalid-capture'],
   ['null identity', b => { b.news.entities.push(null); }, 'invalid-capture'],
-  ['overdue job', b => { b.news.updatedAt = new Date(now - 27 * 3600000).toISOString(); }, 'capture-overdue'],
+  ['overdue job', b => { b.news.updatedAt = new Date(now - 5 * 3600000).toISOString(); }, 'capture-overdue'],
 ]) {
   const fixture = structuredClone(healthy); mutate(fixture);
   const result = assess(fixture);

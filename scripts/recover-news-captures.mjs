@@ -13,10 +13,9 @@ export const NEWS_RECOVERY_TARGETS = [
   { file: 'market-news-refresh.yml', path: 'market-news.json', interval: 30, sources: ['moneycontrol'], group: 'market-news' },
   { file: 'rss-news-refresh.yml', path: 'market-news.json', interval: 60,
     sources: ['business-standard', 'mint', 'economic-times', 'investing'], group: 'market-news' },
-  // Paid Brave searches: every 2 hours from 10:11 to 18:11 IST on weekdays and at 06:11 IST every
-  // day. Recover only after the 24-hour weekend gap plus a late start (26 hours); the workflow's
-  // gate also keeps walks 2 hours apart.
-  { file: 'company-news-refresh.yml', path: 'news.json', interval: 1560, inputs: { scope: 'book' } },
+  // Free searches every 2 hours, around the clock. Recover after two walks' time (4 hours), so one
+  // missed or late schedule is not chased; the workflow's gate also keeps walks 2 hours apart.
+  { file: 'company-news-refresh.yml', path: 'news.json', interval: 240, inputs: { scope: 'book' } },
   { file: 'twitter-refresh.yml', path: 'twitter-posts.json', interval: 30 },
   { file: 'telegram-refresh.yml', path: 'telegram-posts.json', interval: 30 },
 ];

@@ -13,26 +13,25 @@ env:
 # Central Research dashboard and the two together made roughly 200,000 paid searches. It now
 # searches Google News (free, no key; NEWS_PROVIDER=google) and reads the Upstox News API (free with
 # the owner's account; UPSTOX_ANALYTICS_TOKEN). Measured on 30 holdings over a week, Google found
-# about as many headlines that name the company as Brave did. The owner's schedule: the portfolio
-# every 2 hours through market and post-market hours on weekdays (10:11 to 18:11 IST) plus one
-# pre-market walk at 06:11 IST every day, and the complete universe on Sundays. Google's feed is
-# unofficial, so requests are paced and a 429 stops the walk. The `gate` job holds every other
-# trigger (news-recovery.yml, an open dashboard, a Refresh click) to the same schedule: walks at
-# least 2 hours apart and at most 8 in any 24 hours. Do not switch back to the paid provider or
-# loosen the gate without the owner's agreement; see the standing budget requirement in AGENTS.md.
+# about as many headlines that name the company as Brave did. The owner's schedule, now that the
+# searches are free: the portfolio every 2 hours, around the clock, every day (06:11, 08:11 ...
+# 04:11 IST), and the complete universe in the Sunday 06:11 IST slot. Google's feed is unofficial,
+# so requests are paced, a refusal pauses the walk for a minute and a second refusal stops it until
+# the next walk. The `gate` job holds every other trigger (news-recovery.yml, an open dashboard, a
+# Refresh click) to the same schedule: walks at least 2 hours apart and at most 14 in any 24 hours.
+# Do not switch back to the paid provider or loosen the gate without the owner's agreement; see the
+# standing budget requirement in AGENTS.md.
 
 on:
   schedule:
-    # Every 2 hours through market and post-market hours on weekdays, and one pre-market walk every
-    # day. Nothing runs between 18:11 and 06:11 IST; the 06:11 walk picks up the evening's and the
-    # night's stories, which are in the search index by then, well before the 09:15 open. Every
-    # identity query overlaps its last 48 hours, so a story the index shows late is still caught.
+    # Every 2 hours, around the clock, every day: 12 walks a day. Every identity query overlaps its
+    # last 48 hours, so a story the search index shows late is still caught.
     # 06:11 IST Monday to Saturday: holdings.
     - cron: "41 0 * * 1-6"
     # 06:11 IST Sunday: the complete universe, holdings first.
     - cron: "41 0 * * 0"
-    # 10:11, 12:11, 14:11, 16:11 and 18:11 IST Monday to Friday: holdings.
-    - cron: "41 4,6,8,10,12 * * 1-5"
+    # 08:11, 10:11 ... 04:11 IST every day: holdings.
+    - cron: "41 2-22/2 * * *"
   workflow_dispatch:
     inputs:
       source:
@@ -46,7 +45,7 @@ on:
         required: false
         default: "book"
       force:
-        description: "Walk even if the 2-hour gap or the 8-walks-a-day limit would skip this run (paid searches)"
+        description: "Walk even if the 2-hour gap or the 14-walks-a-day limit would skip this run"
         type: boolean
         required: false
         default: false
@@ -59,7 +58,7 @@ concurrency:
 
 jobs:
   gate:
-    # Checkout-free and quick: decides whether this run may spend paid searches at all.
+    # Checkout-free and quick: decides whether this run may walk at all.
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -67,7 +66,7 @@ jobs:
     outputs:
       go: ${{ steps.decide.outputs.go }}
     steps:
-      - name: Keep paid search walks 2 hours apart and at most 8 a day
+      - name: Keep search walks 2 hours apart and at most 14 a day
         id: decide
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,15 +75,15 @@ jobs:
           # that just ran. A dispatched run (open dashboard, Refresh click, news-recovery.yml) can
           # only fill in for a walk the schedule missed.
           MIN_GAP_MINUTES: ${{ github.event_name == 'schedule' && '45' || '120' }}
-          MAX_WALKS: "8"
+          MAX_WALKS: "14"
         # A run counts only when its "Capture company news" step actually started. Runs this gate
-        # skipped, or that never left the queue, made no paid searches. Any API failure fails the
+        # skipped, or that never left the queue, made no searches. Any API failure fails the
         # job, which skips the walk: an unknown budget is never spent.
         run: |
           set -euo pipefail
           if [ "$FORCE" = true ]; then
             echo "go=true" >> "$GITHUB_OUTPUT"
-            echo "Forced manual run: walking regardless of the paid-search limits." >> "$GITHUB_STEP_SUMMARY"
+            echo "Forced manual run: walking regardless of the walk limits." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           now=$(date -u +%s)
@@ -106,10 +105,10 @@ jobs:
           gap=$(( (now - latest) / 60 ))
           if [ "$latest" -gt 0 ] && [ "$gap" -lt "$MIN_GAP_MINUTES" ]; then
             echo "go=false" >> "$GITHUB_OUTPUT"
-            echo "Skipped: a company-news search walk started ${gap} minutes ago (minimum gap ${MIN_GAP_MINUTES} minutes), so this run makes no paid searches." >> "$GITHUB_STEP_SUMMARY"
+            echo "Skipped: a company-news search walk started ${gap} minutes ago (minimum gap ${MIN_GAP_MINUTES} minutes), so this run makes no searches." >> "$GITHUB_STEP_SUMMARY"
           elif [ "$walks" -ge "$MAX_WALKS" ]; then
             echo "go=false" >> "$GITHUB_OUTPUT"
-            echo "Skipped: ${walks} company-news search walks already ran in the last 24 hours (limit ${MAX_WALKS}), so this run makes no paid searches." >> "$GITHUB_STEP_SUMMARY"
+            echo "Skipped: ${walks} company-news search walks already ran in the last 24 hours (limit ${MAX_WALKS}), so this run makes no searches." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "go=true" >> "$GITHUB_OUTPUT"
             echo "${walks} company-news search walks in the last 24 hours: walking now." >> "$GITHUB_STEP_SUMMARY"
@@ -163,8 +162,9 @@ jobs:
           NEWS_PROVIDER: google
           UPSTOX_ANALYTICS_TOKEN: ${{ secrets.UPSTOX_ANALYTICS_TOKEN }}
           # Global queries per walk, stalest first; each is up to five reads within the step's
-          # six-minute budget. Official IR pages and the retained publisher feeds are read in full.
-          NEWS_DISCOVERY_MAX_QUERIES: "40"
+          # six-minute budget. Twelve walks a day at 20 queries keep Google's daily load where six
+          # walks at 40 had it. Official IR pages and the retained publisher feeds are read in full.
+          NEWS_DISCOVERY_MAX_QUERIES: "20"
         run: node scripts/enrich-company-news.mjs
 
       - name: Compact identical observations without removing source history

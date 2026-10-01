@@ -41,17 +41,18 @@ normal month. The owner's requirements:
   The Worker's `/api/news` uses Google too (`NEWS_PROVIDER` in wrangler.jsonc). Do not route company
   news back to the paid Muns/Brave search without the owner's agreement.
 
-- Portfolio companies are searched every 2 hours from 10:11 to 18:11 IST on weekdays, and once at
-  06:11 IST every day before the pre-market. Nothing runs between 18:11 and 06:11. The complete
-  universe is searched on Sundays at 06:11 IST.
-- The global (international) search takes at most 40 queries per walk, stalest first.
-- Walks are at least 2 hours apart and at most 8 in any 24 hours, whatever starts the run: the
+- Because the sources are free, portfolio companies are searched every 2 hours, around the clock,
+  every day (06:11, 08:11 ... 04:11 IST). The complete universe is searched in the Sunday 06:11 IST
+  slot.
+- The global (international) search takes at most 20 queries per walk, stalest first.
+- Walks are at least 2 hours apart and at most 14 in any 24 hours, whatever starts the run: the
   schedule, `news-recovery.yml`, the browser capture watchdog or a Refresh click. The workflow's
   `gate` job enforces it; only a manual run with the `force` input overrides it.
-- Google News is an unofficial feed: keep requests paced (2 seconds apart) and stop a walk on a
-  429. Headlines between walks come from the other free feeds (TradingView, Moneycontrol, RSS,
-  exchange filings, Telegram, X). Do not shorten the company-news windows (26-hour recovery,
-  health and click limits) or add schedules unless the owner agrees.
+- Google News is an unofficial feed: keep requests paced (2 seconds apart). A refusal holds the
+  walk for a minute and asks once more; a second refusal stops it until the next walk. Recovery,
+  health and the Sources page call company news overdue after 4 hours (two walks); a Refresh click
+  starts a walk only when the capture is over 2 hours old. Do not add schedules or loosen the gate
+  unless the owner agrees.
 
 ## Repository workflow
 

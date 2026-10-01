@@ -8,9 +8,8 @@ export const FILINGS_HEALTH_FILES = {
   news: 'company-news/index.json',
   twitter: 'twitter-posts.json',
 };
-// Company news is walked with paid searches every 2 hours from 10:11 to 18:11 IST on weekdays and at
-// 06:11 IST every day. The 24-hour weekend gap plus a late start makes 26 hours its overdue line.
-export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 3, newsHours: 26, twitterHours: 2 };
+// Company news is walked every 2 hours, around the clock, so two walks' time is its overdue line.
+export const FILINGS_HEALTH_LIMITS = { runHours: 4, companyHours: 48, initialHours: 24, insiderHours: 3, newsHours: 4, twitterHours: 2 };
 const object = (value) => value && typeof value === 'object' && !Array.isArray(value);
 const stamp = (value) => typeof value === 'string' ? Date.parse(value) : NaN;
 const count = (value) => Number.isSafeInteger(value) && value >= 0;

@@ -1,10 +1,8 @@
 // Reader-side completeness is independent of the newest file timestamp. The shared reader owns
 // source checks; this maps its measured state into a compact label without hiding retained rows.
-// Discovery runs with each paid company-news walk, and at the weekend that is once a day (06:11 IST).
-// 26 hours covers a late GitHub start without calling the last check failed; a missed day still shows.
 function enrichmentCheckCurrent(coverage, now = Date.now()) {
   const checked = Date.parse(coverage?.capturedAt || '');
-  return Number.isFinite(checked) && checked <= now + 10 * 60_000 && now - checked <= 26 * 3600_000;
+  return Number.isFinite(checked) && checked <= now + 10 * 60_000 && now - checked <= 24 * 3600_000;
 }
 
 export function enrichmentCoverageIncomplete(coverage, now = Date.now()) {

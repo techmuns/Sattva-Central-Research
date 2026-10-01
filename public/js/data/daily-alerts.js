@@ -1958,7 +1958,7 @@ function fromCompanyNews({ day, wanted, includeHistory, queryWindow, newsReader 
 export function companyNewsState(day, m = news.meta(), now = Date.now()) {
   const capturedDay = istDay(m.capturedAt);
   const enrichmentAt = Date.parse(m.enrichmentCoverage?.capturedAt || '');
-  const enrichmentStale = !Number.isFinite(enrichmentAt) || enrichmentAt > now + 10 * 60_000 || now - enrichmentAt > 26 * 3600000; // weekend walks are daily (06:11 IST), plus a late start
+  const enrichmentStale = !Number.isFinite(enrichmentAt) || enrichmentAt > now + 10 * 60_000 || now - enrichmentAt > 24 * 3600000;
   const delivery = m.newsDelivery;
   const sourceStates = ['core', 'publishers', 'tradingView'].map(key => delivery?.[key]).filter(Boolean);
   const failed = sourceStates.some(source => ['partial', 'unavailable'].includes(source.status) || source.error || source.historyError) ||

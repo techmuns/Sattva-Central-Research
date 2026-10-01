@@ -91,15 +91,22 @@ const NEWS_PROVIDER = String(process.env.NEWS_PROVIDER || '').toLowerCase() === 
 // enforce a shared upstream budget.
 const CONCURRENCY = 4;
 const GAP_MS = NEWS_PROVIDER === 'google' ? 2000 : 2500;
+// The first Google refusal in a walk holds every request for a minute and puts the refused query back
+// in the queue; a refusal after that stops the walk until the next one, two hours later.
+const REFUSAL_PAUSE_MS = 60_000;
 let requestGate = Promise.resolve();
 let nextRequestAt = 0;
 function paceRequest() {
   const turn = requestGate.then(async () => {
-    await new Promise((resolve) => setTimeout(resolve, Math.max(0, nextRequestAt - Date.now())));
+    // A refusal can move the next start later while this turn waits, so wait until it holds.
+    while (Date.now() < nextRequestAt) await new Promise((resolve) => setTimeout(resolve, nextRequestAt - Date.now()));
     nextRequestAt = Date.now() + GAP_MS;
   });
   requestGate = turn;
   return turn;
+}
+function holdRequests(ms) {
+  nextRequestAt = Math.max(nextRequestAt, Date.now() + ms);
 }
 
 const env = { MUNS_TOKEN: process.env.MUNS_TOKEN, MUNS_NEWS_TOKEN: process.env.MUNS_NEWS_TOKEN, MUNS_BASE: process.env.MUNS_BASE, MUNS_NEWS_BASE: process.env.MUNS_NEWS_BASE };
@@ -252,6 +259,7 @@ async function runNews(list, portfolio, book) {
 
   let done = 0;
   let stop = false;
+  let pausedAt = 0;
   const queue = [...jobs];
   const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
     for (;;) {
@@ -270,6 +278,7 @@ async function runNews(list, portfolio, book) {
         let response;
         if (NEWS_PROVIDER === 'google') {
           await paceRequest();
+          job.askedAt = Date.now();
           response = await fetchGoogleNews({ query, country: 'IN', fromDate: range.from, toDate: range.to });
         } else {
           if (!VIA_WORKER) await paceRequest();
@@ -285,6 +294,18 @@ async function runNews(list, portfolio, book) {
         checkpoint.error = null;
       } catch (error) {
         const failure = error instanceof MunsError ? error : new MunsError('upstream', String(error?.message || error));
+        // The walk's first Google refusal, or a request already in flight when it came: hold every
+        // request for a minute and ask this query again. Any later refusal stops the walk below.
+        if (NEWS_PROVIDER === 'google' && failure.reason === 'rate-limited' && !stop && (!pausedAt || job.askedAt < pausedAt)) {
+          if (!pausedAt) {
+            pausedAt = Date.now();
+            holdRequests(REFUSAL_PAUSE_MS);
+            console.warn(`  news: Google refused a search; holding every request for ${REFUSAL_PAUSE_MS / 1000}s before asking again.`);
+          }
+          outcome.attempted--;
+          queue.unshift(job);
+          continue;
+        }
         outcome.failed++;
         outcome.error = { reason: failure.reason, message: failure.message };
         checkpoint.error = { reason: failure.reason, message: failure.message, at: checkpoint.lastAttemptAt };
