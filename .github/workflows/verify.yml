@@ -51,7 +51,9 @@ jobs:
       - name: Verify recent News calendar windows and lossless archive separation
         run: node scripts/verify-news-window.mjs
       - name: Verify bounded memory, lossless saves and exact news reading windows
-        run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node scripts/verify-news-working-set.mjs
+        # The working-set oracle replays the complete retained news history in one process: about
+        # 6 GB on 1 October 2026, past Node's default 4 GB heap on the 16 GB runner.
+        run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node --max-old-space-size=8192 scripts/verify-news-working-set.mjs
       - name: Verify Mutual Fund calculations and resumable capture
         run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-denominators.mjs && node scripts/verify-mutual-funds-sources.mjs && node scripts/verify-mutual-funds-schedule.mjs && node scripts/verify-mutual-funds-scanner.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)

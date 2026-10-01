@@ -13,9 +13,11 @@ export const NEWS_RECOVERY_TARGETS = [
   { file: 'market-news-refresh.yml', path: 'market-news.json', interval: 30, sources: ['moneycontrol'], group: 'market-news' },
   { file: 'rss-news-refresh.yml', path: 'market-news.json', interval: 60,
     sources: ['business-standard', 'mint', 'economic-times', 'investing'], group: 'market-news' },
-  // Free searches every 2 hours, around the clock. Recover after two walks' time (4 hours), so one
-  // missed or late schedule is not chased; the workflow's gate also keeps walks 2 hours apart.
-  { file: 'company-news-refresh.yml', path: 'news.json', interval: 240, inputs: { scope: 'book' } },
+  // Free searches every 2 hours, around the clock. GitHub drops many of this repository's scheduled
+  // runs, so recovery keeps the cadence: it starts a walk once the capture is 2 hours 10 minutes
+  // old. The workflow's gate keeps walks at least 2 hours apart, so an on-time schedule is never
+  // doubled.
+  { file: 'company-news-refresh.yml', path: 'news.json', interval: 130, inputs: { scope: 'book' } },
   { file: 'twitter-refresh.yml', path: 'twitter-posts.json', interval: 30 },
   { file: 'telegram-refresh.yml', path: 'telegram-posts.json', interval: 30 },
 ];

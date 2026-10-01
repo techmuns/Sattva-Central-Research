@@ -62,7 +62,9 @@ export async function enrichCompanyNews({ dataDir = DATA, baseUrl = BASE, fetche
   }
   for (const row of pool.values()) for (const matched of matchPortfolioNews(row, entities)) {
     const entity = entities.find(e => e.entityId === matched.entityId);
-    incoming.push(...observedCompanyArticles([{ ...row, source: row.publisher || row.source,
+    // A feed row may name no outlet at all (older Moneycontrol rows carry neither field). null, not
+    // undefined: the archive writer rejects any record that does not survive its JSON round trip.
+    incoming.push(...observedCompanyArticles([{ ...row, source: row.publisher || row.source || null,
       date: row.publishedAt?.slice(0, 10) || null, discoverySource: 'publisher-feed' }], entity, 'publisher-feed', at));
   }
 

@@ -2,16 +2,41 @@ import { BseAnnError, CATEGORIES, annUrl, compact, fetchAnnouncements, fetchComp
 
 export const bseIndiaDay = (now = Date.now()) => new Date(Number(now) + 330 * 60000).toISOString().slice(0, 10);
 
+const isoDay = (value) => { const day = compact(value); return `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6)}`; };
+const addDays = (day, days) => new Date(Date.parse(`${day}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+
 // A multi-day backlog must not keep restarting because today's total changes. Validate the
 // original interval first, then keep closed history and the live day in disjoint windows.
-export function bseCollectionWindows(range, today = bseIndiaDay()) {
+// `maxDays` also bounds each closed window, oldest first. After a long outage one walk of the
+// whole backlog can outlast the job running it, and a stopped run writes nothing, so every later
+// run would start the same walk again. Short windows complete one at a time and move the watermark.
+export function bseCollectionWindows(range, today = bseIndiaDay(), { maxDays = Infinity, lastCompleteTo = null } = {}) {
   annUrl({ ...range, category: CATEGORIES[0] });
   annUrl({ from: today, to: today, category: CATEGORIES[0] });
+  if (maxDays !== Infinity && !(Number.isSafeInteger(maxDays) && maxDays >= 1)) {
+    throw new TypeError('BSE collection windows need a whole number of days, at least one.');
+  }
   const current = compact(today);
-  if (compact(range.from) >= current || compact(range.to) < current) return [range];
-  const day = `${current.slice(0, 4)}-${current.slice(4, 6)}-${current.slice(6)}`;
-  const yesterday = new Date(Date.parse(`${day}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
-  return [{ ...range, to: yesterday }, { ...range, from: day }];
+  if (compact(range.from) >= current) return [range];
+  const day = isoDay(current);
+  const live = compact(range.to) >= current;
+  const closed = live ? { ...range, to: addDays(day, -1) } : range;
+  return [...splitWindow(closed, maxDays, lastCompleteTo), ...(live ? [{ ...range, from: day }] : [])];
+}
+
+function splitWindow(range, maxDays, lastCompleteTo) {
+  if (maxDays === Infinity) return [range];
+  const last = isoDay(range.to), mark = compact(lastCompleteTo) ? isoDay(lastCompleteTo) : null, windows = [];
+  for (let from = isoDay(range.from); from <= last;) {
+    let to = addDays(from, maxDays - 1);
+    // A resumed run re-reads a few days up to the previous watermark. A window ending exactly on
+    // it would move nothing, so it takes the next day as well: every completed window makes progress.
+    if (to === mark && mark < last) to = addDays(to, 1);
+    if (to > last) to = last;
+    windows.push({ ...range, from, to });
+    from = addDays(to, 1);
+  }
+  return windows;
 }
 
 function appendWindow(rows, observed, captured, context) {
@@ -69,20 +94,34 @@ async function stableWalk(read, { fetchImpl = fetch, attempts = 3, retryDelayMs 
   }
 }
 
-export async function collectBseAnnouncements({ categories = CATEGORIES, ...range }, { today, allowPartial = false, ...options } = {}) {
+export async function collectBseAnnouncements({ categories = CATEGORIES, ...range }, {
+  today, allowPartial = false, maxDays = Infinity, lastCompleteTo = null, deadline = Infinity, now = Date.now, ...options
+} = {}) {
   if (!Array.isArray(categories) || !categories.length) {
     throw new TypeError('BSE collection requires at least one named category.');
   }
-  const windows = bseCollectionWindows(range, today);
+  const windows = bseCollectionWindows(range, today, { maxDays, lastCompleteTo });
   const result = { rows: [], byCategory: {}, unknownCategories: {}, requests: 0, shortfall: [], failedWindows: [], completeTo: null };
   const observed = new Map(categories.map(category => [category, new Set()]));
-  let contiguous = true;
+  let contiguous = true, stopped = null;
   // Finish every historical category before touching the live day. A live failure cannot undo
   // a closed, fully checked interval, and a historical gap cannot be skipped by a later success.
   for (const window of windows) {
     let complete = true;
     for (const category of categories) {
       const counts = result.byCategory[category] ||= { declared: 0, collected: 0, pages: 0 };
+      // A run that has spent its time stops between walks, never inside one, and names every
+      // window it left unread. Only completed windows move the watermark the next run resumes from.
+      if (!stopped && now() >= deadline) {
+        stopped = new BseAnnError('budget', 'This run reached its time budget before reading this window; the next run resumes from the last complete window.');
+        if (!allowPartial) throw stopped;
+      }
+      if (stopped) {
+        complete = false;
+        counts.declared = null;
+        result.failedWindows.push({ category, from: window.from, to: window.to, reason: stopped.reason, message: stopped.message });
+        continue;
+      }
       const partial = new Map();
       let requests = 0, validatedPages = 0, captured;
       try {

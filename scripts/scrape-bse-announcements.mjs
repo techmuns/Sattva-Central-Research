@@ -59,6 +59,13 @@ const recoveryFrom = lastCompleteTo ? iso(Date.parse(lastCompleteTo) - 2 * 86400
 const FROM = process.env.ANN_FROM || (recoveryFrom < defaultFrom ? recoveryFrom : defaultFrom);
 const TO = process.env.ANN_TO || daysAgo(0);
 const MERGE = process.env.ANN_MERGE !== '0';
+// A backlog after an outage is read in short windows, oldest first, and the run stops starting new
+// walks once its budget is spent, so it always writes what it completed before the workflow step's
+// 12-minute limit stops it. The next run resumes from the last complete window; a single walk of
+// a twelve-day backlog took longer than the step allows, so every run restarted the same walk.
+const RUN_STARTED = Date.now();
+const CHUNK_DAYS = Number(process.env.ANN_CHUNK_DAYS || 3);
+const BUDGET_MS = Number(process.env.ANN_BUDGET_MS || 8 * 60_000);
 
 const num = (n) => Number(n).toLocaleString('en-IN');
 
@@ -133,6 +140,9 @@ async function main() {
     { from: FROM, to: TO },
     {
       allowPartial: true,
+      maxDays: CHUNK_DAYS,
+      lastCompleteTo,
+      deadline: RUN_STARTED + BUDGET_MS,
       onRetry: ({ nextAttempt, error }) => console.warn(`\n  ${error.message} Restarting this date window (attempt ${nextAttempt}/3).`),
       onProgress: ({ category, page, got, declared }) => {
         process.stdout.write(`\r  ${category.padEnd(20)} page ${String(page).padStart(3)}  ${String(got).padStart(5)}/${declared ?? '?'}   `);
@@ -142,8 +152,12 @@ async function main() {
   const { rows, byCategory, unknownCategories, requests, shortfall, failedWindows } = capture;
   process.stdout.write('\n');
 
+  const unread = failedWindows.filter((failure) => failure.reason === 'budget');
   for (const failure of failedWindows) {
-    console.error(`  !! Incomplete ${failure.category} (${failure.from} to ${failure.to}): ${failure.message}`);
+    if (failure.reason !== 'budget') console.error(`  !! Incomplete ${failure.category} (${failure.from} to ${failure.to}): ${failure.message}`);
+  }
+  if (unread.length) {
+    console.error(`  !! Time budget reached: ${unread[0].from} to ${unread.at(-1).to} is left for the next run (${unread.length} category windows unread; complete to ${capture.completeTo || 'no new window'}).`);
   }
 
   for (const c of CATEGORIES) {

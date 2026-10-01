@@ -12,6 +12,20 @@ contiguous sequence of complete windows advances `lastCompleteTo`. Successful,
 validated zero counts represent a quiet interval. Failures retain saved rows and
 successful timestamps and record the failed attempt. Monthly archives never expire.
 
+A long outage leaves a backlog that one walk cannot finish inside the collection
+step's 12-minute limit, and a stopped run writes nothing. On 1 October 2026 the
+first Sattva run after the header fix read every page it asked for, but its
+twelve-day backlog (21 September to 2 October) outlasted the step, so every later
+run would have restarted the same walk. The collector now reads closed history in
+windows of `ANN_CHUNK_DAYS` days (default 3), oldest first, and starts no new walk
+once `ANN_BUDGET_MS` (default 8 minutes) is spent. It writes what it completed,
+names each unread window as a `budget` failure (so the capture stays visibly
+partial and the run stays red), and moves the watermark only past complete
+windows. A window that would end exactly on the previous watermark also reads the
+next day, so the days each run re-reads for late filings never use up a window
+without progress. The next run resumes there, so any backlog shrinks on every run.
+`verify-bse-collection.mjs` covers the split, the stop, the watermark and the resume.
+
 Sattva's existing company-directory validation remains authoritative. A refused or
 incomplete directory retains its verified timestamp, explicitly reports partial
 identity coverage and keeps unknown issuers under their BSE code. It never prevents

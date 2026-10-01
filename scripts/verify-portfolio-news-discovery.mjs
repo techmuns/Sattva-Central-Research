@@ -119,7 +119,9 @@ try {
   commitCompanyNewsArchive({ dir, entities: [entity], articles: [{ entityId: entity.entityId, ticker: entity.ticker,
     title: 'Old archive', date: '2026-06-01', url: 'https://example.test/old' }] });
   writeJson(join(scratch, 'news.json'), { byTicker: {}, capturedAt: `${day}T00:00:00Z`, empty: [entity.key] });
-  writeJson(join(scratch, 'market-news.json'), { articles: [{ title: 'Jayaswal Neco Industries clarification', publisher: 'Fixture publisher', url: 'https://example.test/publisher', publishedAt: `${day}T01:00:00Z` }] });
+  writeJson(join(scratch, 'market-news.json'), { articles: [{ title: 'Jayaswal Neco Industries clarification', publisher: 'Fixture publisher', url: 'https://example.test/publisher', publishedAt: `${day}T01:00:00Z` },
+    // Older Moneycontrol rows name no outlet at all; one used to fail the whole archive write.
+    { id: '14025861', title: 'Jayaswal Neco Industries shares rise', url: 'https://example.test/sourceless', publishedAt: `${day}T02:00:00Z` }] });
   let fail = false;
   const requestedRanges = [];
   const fetcher = async input => {
@@ -139,7 +141,8 @@ try {
   const first = await enrichCompanyNews(options);
   assert.equal(first.completedQueries, 1);
   const rows = companyNewsArchiveRows(dir);
-  assert.equal(rows.length, 5);
+  assert.equal(rows.length, 6);
+  assert.equal(rows.find(r => r.url.endsWith('/sourceless')).source, null, 'a feed row without an outlet is archived with a null source');
   assert(rows.some(r => r.url.endsWith('/old')));
   assert(rows.some(r => r.url.endsWith('/uncertain')));
   assert(rows.find(r => r.url.endsWith('/statement.pdf')).articleBody.provenance === 'publisher-article-body');
@@ -148,7 +151,7 @@ try {
   fail = true;
   const failed = await enrichCompanyNews({ ...options, now: now + 3600000 });
   assert.equal(failed.staleOrIncompleteQueries, 1, 'a recent prior success cannot hide a failed newest attempt');
-  assert.equal(companyNewsArchiveRows(dir).length, 5, 'empty/error reads cannot retract retained articles');
+  assert.equal(companyNewsArchiveRows(dir).length, 6, 'empty/error reads cannot retract retained articles');
   assert.equal(readJson(join(dir, 'discovery.json')).queries[`${entity.entityId}|ALL|Datasel`].lastSuccessAt, checkpoint);
   fail = false;
   const later = now + 5 * 86400000;

@@ -1166,7 +1166,7 @@
       "pending": []
     },
     "isin:INE417T01026|PB Fintech": {
-      "lastAttemptAt": "2026-09-27T12:23:53+00:00",
+      "lastAttemptAt": "2026-10-01T22:38:18+00:00",
       "lastResultCount": 89,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
@@ -1174,7 +1174,7 @@
       "pending": []
     },
     "isin:INE417T01026|POLICYBZR": {
-      "lastAttemptAt": "2026-09-27T12:57:03+00:00",
+      "lastAttemptAt": "2026-10-01T23:14:16+00:00",
       "lastResultCount": 32,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-08T19:20:14+00:00",
@@ -1182,7 +1182,7 @@
       "pending": []
     },
     "isin:INE15B701018|Pine Labs": {
-      "lastAttemptAt": "2026-09-27T13:11:19+00:00",
+      "lastAttemptAt": "2026-10-01T23:17:44+00:00",
       "lastResultCount": 106,
       "error": "search-unavailable",
       "targetThrough": "2026-09-08T19:20:14+00:00",
@@ -1198,7 +1198,7 @@
       ]
     },
     "isin:INE15B701018|PINELABS": {
-      "lastAttemptAt": "2026-09-27T14:02:57+00:00",
+      "lastAttemptAt": "2026-10-01T23:57:43+00:00",
       "error": "search-unavailable"
     },
     "isin:INE572E01012|PNB Housing Fin": {
@@ -1917,6 +1917,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 220,
-    "checkedAt": "2026-10-01T21:59:33.599734+00:00"
+    "checkedAt": "2026-10-01T23:57:43.716358+00:00"
   }
 }

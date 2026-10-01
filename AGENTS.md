@@ -49,9 +49,10 @@ normal month. The owner's requirements:
   schedule, `news-recovery.yml`, the browser capture watchdog or a Refresh click. The workflow's
   `gate` job enforces it; only a manual run with the `force` input overrides it.
 - Google News is an unofficial feed: keep requests paced (2 seconds apart). A refusal holds the
-  walk for a minute and asks once more; a second refusal stops it until the next walk. Recovery,
-  health and the Sources page call company news overdue after 4 hours (two walks); a Refresh click
-  starts a walk only when the capture is over 2 hours old. Do not add schedules or loosen the gate
+  walk for a minute and asks once more; a second refusal stops it until the next walk. GitHub drops
+  many scheduled runs here, so `news-recovery.yml` starts a walk once the capture is 2 hours 10
+  minutes old. Health, the browser watchdog and the Sources page call company news overdue after 4
+  hours (two walks); a Refresh click starts a walk only when the capture is over 2 hours old. Do not add schedules or loosen the gate
   unless the owner agrees.
 
 ## Repository workflow
