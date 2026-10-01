@@ -93,7 +93,7 @@ jobs:
       - name: Verify additive corporate-announcement lookups
         run: node scripts/verify-announcement-lookups.mjs && node scripts/verify-announcement-document-hashes.mjs
       - name: Verify continuous corporate announcement sources and retention
-        run: node scripts/verify-corporate-stream.mjs && node scripts/verify-bse-collection.mjs && node scripts/verify-announcement-recovery.mjs
+        run: node scripts/verify-corporate-stream.mjs && node scripts/verify-bse-collection.mjs && node scripts/verify-bse-request-profile.mjs && node scripts/verify-announcement-recovery.mjs
       - name: Verify domestic filings and earnings provenance
         run: node scripts/verify-domestic-filings.mjs
       - name: Verify automatic filing capture and archives

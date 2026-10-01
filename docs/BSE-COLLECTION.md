@@ -4,7 +4,7 @@ BSE collection separates closed historical dates from the live Indian calendar d
 Only an affected category/date or company/date walk restarts when the source changes
 its declared page total. Each walk permits at most three attempts, one second apart;
 access denials and malformed records are failures, not reasons for repeated requests.
-The shared request headers follow BSE's website context (origin, referer, same-site).
+Every BSE read shares one request profile, `bseRequestHeaders()`; see below.
 
 The exchange collector preserves fully validated pages and successful categories
 when another window fails. `failedWindows` names incomplete intervals; only a
@@ -17,6 +17,68 @@ incomplete directory retains its verified timestamp, explicitly reports partial
 identity coverage and keeps unknown issuers under their BSE code. It never prevents
 source filings from being retained. Company-history reads still require a complete
 walk and use their existing retry schedule and durable coverage ranges.
+
+## What BSE refuses (measured 1 October 2026)
+
+`api.bseindia.com` sits behind an Akamai bot filter that answers with an HTML
+"Access Denied" 403. It tightened twice in a week: on 23 September 2026, when a public
+BSE client restored access with a current browser User-Agent and `Sec-Fetch-Site:
+same-site`, and again during 29 September, when Glow's identical collector, which had
+read every category from a GitHub runner that morning, was refused that evening. This
+repository's read-only access check has been refused on every run since. Announcements,
+the company directory, bulk/block deals and the shareholding index all failed.
+
+The 1 October investigation changed one header at a time, from a cloud host, with
+both `curl` and Node's `fetch` (the collectors' client):
+
+| Request change | curl | Node `fetch` |
+|---|---|---|
+| Full current-browser profile (`bseRequestHeaders()`) | accepted | accepted |
+| Referer `https://www.bseindia.com/corporates/ann.html` | **refused** | **refused** |
+| No Referer | redirected (301) | redirected (301) |
+| No Accept-Language | refused | accepted (Node sends `*`) |
+| No `sec-ch-ua` client hints | refused | accepted |
+| Chrome 138 or older | refused | accepted |
+
+The rule that broke collection is the Referer. `/corporates/ann.html` is the page BSE
+retired when it rebuilt its site (it now redirects to `/corporates/ann`), so only
+scripts still send it. Under the site's referrer policy a browser on any BSE page sends
+just the origin, `https://www.bseindia.com/`, to the API host, so that is the value now
+sent: the faithful one, and the one a site rebuild cannot retire. The other rows show
+the filter also scores how browser-like a request is, so the profile is what a current
+desktop Chrome sends from BSE's own page, with Accept-Language, client hints and fetch
+metadata. Its Chrome version is **derived from the date** (one release behind Chrome's
+four-week schedule), so it cannot age into the "old browser" range. GitHub's network
+was never shown to be banned: the refusals follow the request, not the host.
+
+One profile serves every BSE read: `bseRequestHeaders()` in `worker/bse-ann.mjs`, used
+by the directory, the exchange-wide and company-history announcement walks, bulk/block
+deals and the shareholding index (`exchangeRequestHeaders()` in
+`scripts/lib/exchange-deals.mjs`). Filing documents on `www.bseindia.com` were accepted
+with either the old or the new headers. Offline coverage:
+`node scripts/verify-bse-request-profile.mjs`.
+
+## When BSE refuses again
+
+No request profile is permanent: BSE can add a rule on any day, and did twice in one week.
+
+1. Run the **BSE read-only access check** workflow (manual dispatch), or locally
+   `node scripts/check-bse-request-profile.mjs`. Its first output is a diagnosis: the
+   current profile, then the same profile with each header and each header group
+   removed, the retired Referer and a Chrome a year old, one request each, with
+   `required` naming what a refusal turns on. A redirect is never followed and a 200
+   challenge page is never read as access.
+2. If one header or value explains it, change `bseRequestHeaders()` to what a current
+   Chrome sends from BSE's own page, and let the check and the scheduled jobs confirm it.
+3. If the current profile is refused and no single header explains it (`required:
+   null`), the cause is outside the headers: cookies, network or a new policy. Do not
+   rotate disguises to get past a deliberate block. Rely on the independent recovery
+   below and decide on licensed access.
+
+A public website's bot filter is BSE's to change, so direct collection is kept faithful
+to a real browser, self-updating and quick to diagnose, never guaranteed. A contractual
+guarantee needs licensed access to BSE's announcement data, directly or through a data
+vendor; that is a cost decision for the owners, not a code change.
 
 ## Independent publisher index
 

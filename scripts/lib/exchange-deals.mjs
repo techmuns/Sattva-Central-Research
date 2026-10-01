@@ -1,4 +1,16 @@
 import { EXCHANGE_SOURCES, exchangeDealKey, validDay, validateExchangeSnapshot } from '../../public/js/data/exchange-deals-shared.js';
+import { bseRequestHeaders } from '../../worker/bse-ann.mjs';
+
+/**
+ * Headers for one public exchange read. BSE's API refuses anything short of a current browser's
+ * profile (see worker/bse-ann.mjs), so every BSE read shares that one profile; NSE's archives accept
+ * the plain set and keep it.
+ */
+export function exchangeRequestHeaders(url, now = Date.now()) {
+  return /(^|\.)bseindia\.com$/i.test(new URL(url).hostname)
+    ? bseRequestHeaders(now)
+    : { 'user-agent': 'Mozilla/5.0', accept: '*/*', referer: 'https://www.nseindia.com/' };
+}
 
 export function csvRows(text) {
   const rows = []; let row = [], field = '', quoted = false;

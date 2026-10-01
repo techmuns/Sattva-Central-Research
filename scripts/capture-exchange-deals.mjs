@@ -4,7 +4,7 @@ import { gzipSync } from 'node:zlib';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { EXCHANGE_SOURCES, validateExchangeSnapshot } from '../public/js/data/exchange-deals-shared.js';
 import { newsDay as indiaDay } from '../public/js/data/news-window.js';
-import { parseExchange, exchangeUrl, shiftDay, applyExchangeSlice, SECURITY_URLS, securityMap } from './lib/exchange-deals.mjs';
+import { parseExchange, exchangeUrl, shiftDay, applyExchangeSlice, SECURITY_URLS, securityMap, exchangeRequestHeaders } from './lib/exchange-deals.mjs';
 import { latestExchangeArtifact, readLimited, MAX_CAPTURE_BYTES } from '../worker/exchange-artifact.mjs';
 import { captureMunsInsiders, insiderCaptureCompanies } from './lib/muns-insider-capture.mjs';
 import { captureCompanies } from './lib/company-capture.mjs';
@@ -14,7 +14,7 @@ export async function captureExchanges(previous, { now = new Date(), fetchText, 
   let snapshot = structuredClone(validateExchangeSnapshot(previous));
   const checkedAt = now.toISOString(), today = indiaDay(now.getTime());
   fetchText ||= async (url) => new TextDecoder().decode(await readLimited(await fetch(url, {
-    headers: { 'user-agent': 'Mozilla/5.0', accept: '*/*', referer: url.includes('bseindia') ? 'https://www.bseindia.com/' : 'https://www.nseindia.com/' }, signal: AbortSignal.timeout(30000),
+    headers: exchangeRequestHeaders(url), signal: AbortSignal.timeout(30000),
   })));
   // Matching by ISIN avoids collisions between BSE security IDs and unrelated NSE symbols.
   try {

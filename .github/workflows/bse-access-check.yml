@@ -13,6 +13,7 @@ on:
       - 'scripts/check-bse-access.mjs'
       - 'scripts/check-bse-request-profile.mjs'
       - 'scripts/lib/bse-collection.mjs'
+      - 'scripts/lib/exchange-deals.mjs'
       - 'scripts/lib/announcement-identities.mjs'
 
 permissions:
@@ -30,7 +31,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Compare request profiles and validate complete public BSE reads
+      # First names which header BSE's filter turns on today, then validates complete reads.
+      - name: Diagnose and compare request profiles, then validate complete public BSE reads
         env:
           BSE_PROBE_TO: ${{ inputs.completed_day || '' }}
         run: node scripts/check-bse-request-profile.mjs

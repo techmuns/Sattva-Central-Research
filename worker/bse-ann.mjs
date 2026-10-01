@@ -49,19 +49,77 @@ export const CATEGORIES = [
 
 const BASE = 'https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w';
 const PAGE_SIZE = 50; // observed: 50 rows a page, and the page after the last is empty rather than 404
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36';
 export const BSE_PAGE_JSON_LIMIT = 2 * 1024 * 1024;
 export const BSE_PAGE_TIMEOUT_MS = 20_000;
+export const BSE_SITE = 'https://www.bseindia.com';
 
-export const HEADERS = {
-  'user-agent': UA,
-  // Match the browser and site context used by BSE's public announcements page.
-  // Keep this shared by directory, exchange-wide and company-history reads.
-  origin: 'https://www.bseindia.com',
-  referer: 'https://www.bseindia.com/corporates/ann.html',
-  'sec-fetch-site': 'same-site',
-  accept: 'application/json, text/plain, */*',
-};
+// THE REQUEST PROFILE IS WHAT A CURRENT CHROME SENDS FROM BSE'S OWN PAGE, AND NOTHING IN IT EXPIRES.
+//   api.bseindia.com answers anything its bot filter dislikes with Akamai's "Access Denied" 403, and
+//   that filter tightened twice in a week: on 23 September 2026, and again during 29 September, when
+//   the profile that had read every category from a GitHub runner that morning was refused that
+//   evening. Measured on 1 October 2026, changing one thing at a time:
+//     • a Referer naming /corporates/ann.html was refused by every client in every combination — the
+//       rule that broke collection on 29 September. BSE retired that page when it rebuilt its site
+//       (it now redirects to /corporates/ann), so only scripts still name it. Under the site's
+//       referrer policy a browser on ANY BSE page sends only the origin to the API host, so the site
+//       root is both the faithful value and the one value a site rebuild cannot retire;
+//     • no Accept-Language, no `sec-ch-ua` client hints, or a Chrome major of 138 or older were each
+//       refused from curl and accepted from Node's fetch (which fills in `accept-language: *` by
+//       itself): the filter also scores how browser-like a request is, and each of these counts
+//       against it. So nothing here is left for it to count.
+//   A typed browser version is a fix with an expiry date, so the version is derived from the date.
+//   None of this is a guarantee — BSE can add a rule on any day — and
+//   scripts/check-bse-request-profile.mjs names the header a new refusal turns on.
+
+// Chrome has shipped a major version every four weeks: 141 on 30 September 2025, 154 on
+// 29 September 2026. Claim the release before the scheduled current one: most browsers lag the newest
+// by days, and a profile must never name a version that does not exist yet.
+const CHROME_ANCHOR = { major: 141, at: Date.UTC(2025, 8, 30) };
+const CHROME_CYCLE_MS = 28 * 86_400_000;
+
+export function chromeMajor(now = Date.now()) {
+  const cycles = Math.floor((Number(now) - CHROME_ANCHOR.at) / CHROME_CYCLE_MS);
+  return CHROME_ANCHOR.major + Math.max(0, Number.isFinite(cycles) ? cycles : 0) - 1;
+}
+
+// Chromium's own GREASE brand list for a major version (GenerateBrandVersionList in
+// components/embedder_support/user_agent_utils.cc), so the client hint is the exact string that
+// version of Chrome sends rather than a plausible-looking one.
+const GREASE_CHARS = [' ', '(', ':', '-', '.', '/', ')', ';', '=', '?', '_'];
+const GREASE_VERSIONS = ['8', '99', '24'];
+const BRAND_ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+
+export function chromeBrands(major) {
+  const brands = [
+    [`Not${GREASE_CHARS[major % 11]}A${GREASE_CHARS[(major + 1) % 11]}Brand`, GREASE_VERSIONS[major % 3]],
+    ['Chromium', String(major)],
+    ['Google Chrome', String(major)],
+  ];
+  const order = BRAND_ORDERS[major % 6], placed = [];
+  brands.forEach((brand, i) => { placed[order[i]] = brand; });
+  return placed.map(([name, version]) => `"${name}";v="${version}"`).join(', ');
+}
+
+/** Every BSE read — directory, exchange-wide, company history, deals, shareholdings — sends this. */
+export function bseRequestHeaders(now = Date.now()) {
+  const major = chromeMajor(now);
+  return {
+    accept: 'application/json, text/plain, */*',
+    'accept-language': 'en-US,en;q=0.9',
+    origin: BSE_SITE,
+    referer: `${BSE_SITE}/`,
+    'sec-ch-ua': chromeBrands(major),
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-site',
+    'user-agent': `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`,
+  };
+}
+
+/** The profile when this module loaded — a run lasts minutes, and a Chrome cycle four weeks. */
+export const HEADERS = bseRequestHeaders();
 
 /** `YYYY-MM-DD` or a Date in, `YYYYMMDD` out — this endpoint wants the compact form. */
 export const compact = (d) => {

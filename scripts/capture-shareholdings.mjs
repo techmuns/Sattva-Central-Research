@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { parseIndex, parseFiling, mergeFilings } from './lib/shareholding-filings.mjs';
-import { csvRows, SECURITY_URLS } from './lib/exchange-deals.mjs';
+import { csvRows, SECURITY_URLS, exchangeRequestHeaders } from './lib/exchange-deals.mjs';
 
 export function publicRequestUrl(value) {
   const url = new URL(value);
@@ -16,7 +16,7 @@ export function publicRequestUrl(value) {
 async function fetchOnce(input, maxBytes) {
   let url = publicRequestUrl(input), response;
   for (let redirects = 0; redirects <= 3; redirects++) {
-    response = await fetch(url, { redirect: 'manual', headers: { 'user-agent': 'Mozilla/5.0', accept: '*/*', referer: url.includes('bseindia') ? 'https://www.bseindia.com/' : 'https://www.nseindia.com/' }, signal: AbortSignal.timeout(60000) });
+    response = await fetch(url, { redirect: 'manual', headers: exchangeRequestHeaders(url), signal: AbortSignal.timeout(60000) });
     if (![301, 302, 303, 307, 308].includes(response.status)) break;
     const location = response.headers.get('location'); await response.body?.cancel();
     if (!location || redirects === 3) throw new Error('Invalid public source redirect');
