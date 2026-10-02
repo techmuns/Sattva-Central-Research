@@ -33,6 +33,17 @@ assert.throws(() => validateBook({ ...raw, stale: true }, raw.slug));
 assert.throws(() => validateBook({ ...raw, holdings: [] }, raw.slug, raw));
 assert.throws(() => validateBook({ ...raw, slug: 'someone-else' }, raw.slug));
 assert.throws(() => validateBook({ ...raw, fetchedAt: '2026-01-01' }, raw.slug, raw));
+// A book the source publishes nothing for is read as that answer — unless something says otherwise.
+const emptyRetained = { ...raw, quarters: [], holdings: [], totalStocks: null };
+const emptyAgain = { ...emptyRetained, fetchedAt: '2026-09-10T00:00:00Z' };
+assert.equal(validateBook(emptyAgain, raw.slug, emptyRetained), emptyAgain, 'a book empty on every read may be read empty again');
+assert.equal(validateBook(emptyAgain, raw.slug), emptyAgain, 'a book never captured may be read as publishing nothing');
+assert.throws(() => validateBook(emptyAgain, raw.slug, raw), /portfolio shape/, 'a populated book read empty is still refused');
+assert.throws(() => validateBook({ ...emptyAgain, totalStocks: 3 }, raw.slug, emptyRetained), 'a source that counts stocks overrides an empty table');
+assert.throws(() => validateBook({ ...emptyAgain, holdings: raw.holdings }, raw.slug, emptyRetained), 'holdings without periods are still refused');
+assert.throws(() => validateBook({ ...emptyAgain, fetchedAt: '2026-09-08T00:00:00Z' }, raw.slug, emptyRetained), 'an older empty answer is still older');
+assert.deepEqual(assembleSnapshot({ list: { investors: [{ slug: raw.slug, name: 'Example' }] }, books: { [raw.slug]: emptyAgain }, failed: {},
+  previous: { books: { [raw.slug]: emptyRetained } }, capturedAt: '2026-09-10T00:00:00Z' }).books[raw.slug].holdings, [], 'an empty book stays empty in the snapshot');
 
 const list = { investors: [{ slug: 'example', name: 'Example investor' }, { slug: 'unavailable', name: 'Unavailable investor' }] };
 const previous = { books: { example: raw } }, failed = { example: { message: 'outage' }, unavailable: { message: 'outage' } };

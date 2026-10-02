@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { normalisePortfolio, classifyHolding, deriveMoves, filedPair, isFiledQuarter, quarterOrder, canonicalQuarter } from '../public/js/data/finology-shared.js';
 import { summariseQuarter } from '../public/js/data/investor-quarterly.js';
-import { fetchInvestorPortfolio } from '../worker/finology.mjs';
+import { fetchInvestorPortfolio, call, REQ_TIMEOUT_MS, PATIENT_TIMEOUT_MS, PATIENT_DEADLINE_MS } from '../worker/finology.mjs';
 import { withTag } from '../worker/http.mjs';
 
 const now = Date.now;
@@ -65,6 +65,22 @@ try {
   const recheckedBook = await fetchInvestorPortfolio(async () => Response.json(body), 'local-fixture', 'one', 'https://fixture.invalid');
   assert.notEqual(withTag(workerBook).tag, withTag(recheckedBook).tag, 'successful unchanged source checks update the cache validator');
   assert.equal(normalisePortfolio(recheckedBook, 'one').sourceCheckedAt, recheckedBook.sourceCheckedAt);
+  // THE CAPTURE'S PATIENT RETRY gets one long attempt; a reader keeps the thirteen-second deadline.
+  {
+    let clock = 0;
+    const flaky = () => { let n = 0; return async () => { clock += 20000; if (++n === 1) throw new TypeError('fetch failed'); return Response.json(body); }; };
+    await assert.rejects(call(flaky(), 'local-fixture', '/super-investors/one', 'https://fixture.invalid', { now: () => clock }), { code: 'unreachable' },
+      "a reader's deadline is spent after one slow failure");
+    clock = 0;
+    assert.ok(await call(flaky(), 'local-fixture', '/super-investors/one', 'https://fixture.invalid', { now: () => clock, timeoutMs: PATIENT_TIMEOUT_MS, deadlineMs: PATIENT_DEADLINE_MS }),
+      'the patient budget leaves room to try again');
+    const slow = (ms) => (url, { signal }) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => resolve(Response.json(body)), ms);
+      signal.addEventListener('abort', () => { clearTimeout(timer); reject(signal.reason); });
+    });
+    const patientBook = await fetchInvestorPortfolio(slow(REQ_TIMEOUT_MS + 500), 'local-fixture', 'one', 'https://fixture.invalid', { patient: true });
+    assert.equal(patientBook.holdings.length, 1, "a book slower than a reader's six seconds is read by the patient retry");
+  }
   Date.now = () => firstCheck;
   let cached = workerBook;
   for (let i = 0; i < 4; i++) cached = normalisePortfolio(JSON.parse(JSON.stringify(cached)), 'one');

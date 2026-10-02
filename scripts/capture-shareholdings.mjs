@@ -38,6 +38,20 @@ export async function fetchPublic(url, maxBytes = 25000000) {
     }
   }
 }
+// THE TRUNCATION GUARD COMPARES LIKE WITH LIKE. It compared this read's row count with the last
+// successful read's, and the window starts a quarter later every January, April, July and October.
+// Most NSE SME issuers file half-yearly, so on 1 October 2026 the 549 March filings left the SME
+// window and its count fell from 825 to about sixty: a correct index refused as "sharply truncated",
+// holding every run red until the September filings arrived. So when the window has moved, only rows
+// dated where the two windows overlap are counted, against what the archive holds for those dates.
+const indexKey = (e) => `${e.bseCode || e.isin || e.ticker}|${e.indexAsOf}`;
+export function truncatedIndex(all, prior, previousFilings, sourceId, from) {
+  if (!(prior?.indexed > 100)) return false;
+  if (prior.from === from || !prior.from) return all.length < prior.indexed * 0.5;
+  const overlap = (e) => e.indexAsOf >= from && (!prior.to || e.indexAsOf <= prior.to);
+  const before = new Set((previousFilings || []).filter((f) => f.sourceId === sourceId && overlap(f)).map(indexKey));
+  return before.size > 100 && new Set(all.filter(overlap).map(indexKey)).size < before.size * 0.5;
+}
 export function captureWindow(now) {
   const date = new Date(now), quarter = Math.floor(date.getUTCMonth() / 3) * 3;
   // Two completed quarters plus later event-driven disclosures, across all listed companies.
@@ -66,7 +80,7 @@ export async function captureShareholdings(previous = {}, { now = new Date().toI
     const prior = previous.sources?.find((s) => s.id === source.id);
     try {
       const all = parseIndex(JSON.parse(await fetchText(source.url)), source.id);
-      if (!all.length || prior?.indexed > 100 && all.length < prior.indexed * 0.5) throw new Error('Unexpected empty or sharply truncated exchange index');
+      if (!all.length || truncatedIndex(all, prior, previous.filings, source.id, from)) throw new Error('Unexpected empty or sharply truncated exchange index');
       // A revised filing supersedes the prior filing for this venue, security and index date.
       // Previously captured versions remain in the archive for history and comparisons.
       const latest = new Map();
