@@ -180,7 +180,10 @@ try {
   console.log('PASS workerd: a vote crosses RPC, publishes in the shared model and re-ranks the index immediately');
 
   // 5. AI Read across RPC: one model read, then the stored reading.
-  const target = all.rows.find((r) => /bseindia|nseindia/.test(r.url || ''));
+  // A PDF filing: the stand-in exchange serves a PDF, and which filing leads the newest page moves with
+  // the data (an NSE XBRL file there would be read as XBRL and correctly refused as unreadable).
+  const target = all.rows.find((r) => /bseindia|nseindia/.test(r.url || '') && /\.pdf(?:$|[?#])/i.test(r.url || ''));
+  assert(target, 'the index holds an exchange PDF filing to read');
   const ask = () => post('/api/announcement-read', { id: target.id, url: target.url, title: target.title, company: target.company, ticker: target.ticker, date: target.date });
   const read = await (await ask()).json();
   assert.equal(read.state, 'ready', JSON.stringify(read));
