@@ -87,8 +87,28 @@ export function normaliseList(body) {
  */
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 
-/** "Jun 2025" / "Jun 25" / "2025-06" -> 202506, or null when the label is not a date at all. */
+/**
+ * A period label as the source printed it, minus a trailing percent marker.
+ *
+ * On 30 September 2026 the book headings changed from "Sep 2026" to "Sep 2026%": the same period,
+ * now labelled with the unit of the column beneath it. Every comparison here keys on the period, so
+ * the unread labels made every quarter unparseable — no filed quarter, no move, and the scheduled
+ * capture rejected 86 of 90 books as malformed. The unit is not part of the period, so it is
+ * removed here, once, before a label is ordered, compared or used as a key. A label that is still
+ * not a date afterwards is returned exactly as printed.
+ */
+export function canonicalQuarter(label) {
+  const s = String(label ?? '').trim();
+  const bare = s.replace(/\s*(?:\(\s*%\s*\)|%)$/, '').trim();
+  return bare !== s && periodOrder(bare) != null ? bare : s;
+}
+
+/** "Jun 2025" / "Jun 25" / "2025-06" (with or without a trailing "%") -> 202506, or null. */
 export function quarterOrder(label) {
+  return periodOrder(canonicalQuarter(label));
+}
+
+function periodOrder(label) {
   const s = String(label || '').trim();
   const iso = /^(\d{4})-(\d{1,2})$/.exec(s);
   if (iso) return Number(iso[2]) >= 1 && Number(iso[2]) <= 12 ? Number(iso[1]) * 100 + Number(iso[2]) : null;
@@ -140,22 +160,30 @@ export const isPortfolioPayload = (body, slug = null) => body?.ok !== false
 
 export function normalisePortfolio(body, slug) {
   const raw = Array.isArray(body?.quarters) ? body.quarters.filter((q) => typeof q === 'string' && q.trim()) : [];
-  const quarters = orderedQuarters([...new Set(raw.map((q) => q.trim()))]);
+  // Each period under its canonical label, remembering the label the source printed so its cells
+  // are still found. A payload already normalised carries canonical keys and reads them directly.
+  const printed = new Map();
+  for (const label of raw.map((q) => q.trim())) {
+    const q = canonicalQuarter(label);
+    if (!printed.has(q) || label === q) printed.set(q, label);
+  }
+  const quarters = orderedQuarters([...printed.keys()]);
   const rows = (Array.isArray(body?.holdings) ? body.holdings : [])
     .map((h) => {
       const byQuarter = {};
       const notes = {};
       const quarterlyStatus = {};
       for (const q of quarters) {
-        quarterlyStatus[q] = disclosureStatus(h, q);
-        const raw = h?.quarterlyHoldings?.[q];
+        const k = Object.hasOwn(h?.quarterlyHoldings || {}, q) ? q : printed.get(q);
+        quarterlyStatus[q] = disclosureStatus(h, k);
+        const raw = h?.quarterlyHoldings?.[k];
         const n = num(raw);
         byQuarter[q] = n != null && n >= 0 && n <= 100 ? n : null;
         // Normalisation runs at the Worker, snapshot, device cache and browser boundaries.
         // Preserve notes through every pass; a missing key is not an explicit disclosure dash.
-        const note = cellNote(raw) || str(h?.quarterlyNotes?.[q]);
+        const note = cellNote(raw) || str(h?.quarterlyNotes?.[k]);
         if (note) notes[q] = note;
-        else if (!Object.hasOwn(h?.quarterlyHoldings || {}, q)) notes[q] = 'Not available';
+        else if (!Object.hasOwn(h?.quarterlyHoldings || {}, k)) notes[q] = 'Not available';
         else if (raw != null && !(typeof raw === 'string' && (!raw.trim() || raw.trim() === '-')) && byQuarter[q] == null) notes[q] = 'Invalid percentage';
       }
       return {

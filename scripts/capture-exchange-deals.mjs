@@ -6,7 +6,7 @@ import { EXCHANGE_SOURCES, validateExchangeSnapshot } from '../public/js/data/ex
 import { newsDay as indiaDay } from '../public/js/data/news-window.js';
 import { parseExchange, exchangeUrl, shiftDay, applyExchangeSlice, SECURITY_URLS, securityMap, exchangeRequestHeaders } from './lib/exchange-deals.mjs';
 import { latestExchangeArtifact, readLimited, MAX_CAPTURE_BYTES } from '../worker/exchange-artifact.mjs';
-import { captureMunsInsiders, insiderCaptureCompanies } from './lib/muns-insider-capture.mjs';
+import { captureMunsInsiders, insiderCaptureCompanies, insiderAlternates, insiderCaptureHealth } from './lib/muns-insider-capture.mjs';
 import { captureCompanies } from './lib/company-capture.mjs';
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
 
@@ -71,6 +71,7 @@ async function main() {
     });
     const retained = JSON.parse(readFileSync(new URL('../public/data/insider-trades.json', import.meta.url), 'utf8'));
     snapshot.insiders = await captureMunsInsiders(snapshot.insiders, insiderCaptureCompanies(companies, retained, snapshot), {
+      alternates: insiderAlternates(snapshot.securityMap),
       request: async (ticker, from, to) => {
         const response = await fetch(`https://sattva-central-research.tech-441.workers.dev/api/insider-trades/${encodeURIComponent(ticker)}?from=${from}&to=${to}`, {
           headers: { accept: 'application/json' }, signal: AbortSignal.timeout(45000),
@@ -85,6 +86,11 @@ async function main() {
   snapshot.updatedAt = new Date().toISOString();
   save(snapshot);
   if (snapshot.sources.some((s) => !s.ok)) process.exitCode = 1;
-  if (snapshot.insiders?.error || Object.values(snapshot.insiders?.byTicker || {}).some(c => c.error)) process.exitCode = 1;
+  // A company the source refuses on every identifier is named, not a failed run; an outage, a
+  // refused credential or a failure that retries have not cleared still fails it.
+  const insiders = insiderCaptureHealth(snapshot.insiders);
+  for (const note of insiders.notes) console.log(`insiders: ${note}`);
+  for (const problem of insiders.problems) console.error(`insiders: ${problem}`);
+  if (!insiders.ok) process.exitCode = 1;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

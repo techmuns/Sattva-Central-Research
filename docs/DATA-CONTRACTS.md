@@ -4050,6 +4050,17 @@ not rendered. Reporting the count keeps `count` and what is on screen from disag
 totalStocks, quarters[], holdings[] }`, each holding `{ company, companySlug, quarterlyHoldings,
 valueCr }`. `quarters` is the ordered column set, newest first, and keys `quarterlyHoldings`.
 
+**A period label is the period, not its unit (2 October 2026).** From 30 September the source
+printed its headings with a trailing percent sign (`Sep 2026%`). Nothing here read that as a date,
+so the 2 October 05:04 UTC capture rejected 52 of 90 books as malformed (36 more were served stale
+and 2 timed out), and the retained snapshot carried labels no comparison could order.
+`canonicalQuarter()` in `public/js/data/finology-shared.js` removes a trailing `%` or `(%)` from a
+label that is otherwise a period, before any label is ordered, compared or used as a key; a label
+that is still not a date is kept exactly as printed. `normalisePortfolio()` reads each cell under
+the label the source printed and files it under the canonical one, so retained history and new
+reads share one column per quarter (the undecorated cell wins where both appear).
+`verify-super-investors.mjs` and `verify-holdings-integrity.mjs` cover the decorated labels.
+
 Slugs are `[a-z0-9-]` only — anything else is a 400 here rather than a 400 upstream. An unknown
 investor is a 404.
 
@@ -5596,6 +5607,27 @@ marked `≈`, while other source values retain their units.
 
 Offline checks: `verify-exchange-deals.mjs`, `verify-muns-insider-capture.mjs`,
 `verify-exchange-worker-runtime.mjs` and `verify-sattva-deals-ui.mjs`.
+
+**The Muns insider supplement separates a source gap from an outage (2 October 2026).** Measured
+that day, the source answered HTTP 500 for some companies under one identifier and not another
+(HEG by NSE symbol; its BSE code 509631 returned 19 disclosures), and for a few under every
+identifier (IndiGrid, Mindspace, JB Chemicals), while it answered the rest. The capture
+(`scripts/lib/muns-insider-capture.mjs`) therefore:
+
+- asks a refused company again under its other identifier (BSE scrip code for an NSE symbol and
+  the reverse, from the run's verified security map), files rows under the dashboard's ticker, and
+  records `via` so that identifier is asked first next time;
+- puts companies whose last check failed at the front of the next run, after due holdings and
+  capped at `RETRY_LANE`, instead of waiting a full rotation of the universe;
+- names a company refused on every identifier three times over at least a day `unsupported`,
+  keeps its retained disclosures, rechecks it weekly and counts it as *not served by the source*,
+  never as an unchecked or a passing company. Timeouts and network failures are never classified
+  this way.
+
+`insiderCaptureHealth()` decides the run's colour. It fails on a capture error or refused
+credential, on more than a quarter of previously healthy companies failing in one run (an outage),
+and on any transient failure that has survived every retry for 48 hours. Named source gaps and
+failures still awaiting their retry are printed in the run log and do not fail it.
 
 ## Mutual Fund ownership
 

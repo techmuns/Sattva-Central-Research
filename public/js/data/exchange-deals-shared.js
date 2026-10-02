@@ -74,12 +74,16 @@ export function insiderSummary(snapshot, tickers, now = Date.now()) {
   const checks = wanted.map(t => source.byTicker[t]);
   const good = checks.filter(c => c?.lastSuccessAt);
   const latest = good.flatMap(c => c.trades).reduce((d, r) => r.date > d ? r.date : d, '');
-  const missing = checks.filter(c => !c?.lastSuccessAt).length;
-  const failed = checks.filter(c => c?.error).length;
+  // A company the source refuses on every identifier is a named gap in the source, rechecked weekly,
+  // and is counted as such rather than as a pending check or a passing outage.
+  const unsupported = checks.filter(c => c?.unsupported).length;
+  const missing = checks.filter(c => !c?.lastSuccessAt && !c?.unsupported).length;
+  const failed = checks.filter(c => c?.error && !c?.unsupported).length;
   const delayed = good.filter(c => now - Date.parse(c.lastSuccessAt) > 4 * 3600000).length;
   const oldest = good.map(c => c.lastSuccessAt).sort()[0];
   const checked = oldest ? ` · oldest successful check ${new Date(oldest).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} IST` : '';
   return `Muns insider disclosures · ${good.length}/${wanted.length} companies checked · latest disclosure ${latest || 'none reported'}${checked}.` +
     (missing ? ` ${missing} unchecked.` : '') + (failed ? ` ${failed} failed checks; retained disclosures shown.` : '') +
+    (unsupported ? ` ${unsupported} not served by the source; rechecked weekly.` : '') +
     (delayed ? ` ${delayed} company checks are delayed.` : '') + (source.error ? ` ${source.error}` : '');
 }
