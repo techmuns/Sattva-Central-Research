@@ -20,7 +20,9 @@ export function withAnnouncementLookups(base) {
         const { value, stale } = await capturedJson('data/screener-announcements.json');
         if (value?.version !== 1 || !Array.isArray(value.rows) || value.rowCount !== value.rows.length || !Array.isArray(value.pending)) throw Error('Announcement recovery capture is unavailable.');
         const revision = `${value.updatedAt}:${value.lastPageAt}:${value.lastAttemptAt}:${value.rowCount}`;
-        if (revision !== recoveryRevision) { recovery = mergeAnnouncements(recovery, value.rows); recoveryRevision = revision; }
+        // In slices: the recovery capture is thousands of filings, and merging it in one task was
+        // half a second at 4x CPU throttle on every first read of the announcements feed.
+        if (revision !== recoveryRevision) { recovery = await runStepsInSlices(mergeAnnouncementSteps(recovery, value.rows)); recoveryRevision = revision; }
         recoveryMeta = { available: value.bootstrap !== true, lastAttemptAt: value.lastAttemptAt, lastPageAt: value.lastPageAt,
           lastSuccessAt: value.lastSuccessAt, captureStart: value.captureStart, pendingCount: value.pending.length,
           unavailableDocuments: value.rows.filter(r => r.documentUnavailable).length,
@@ -169,7 +171,14 @@ export function withAnnouncementLookups(base) {
     },
     async seed() { await Promise.all([base.seed(), restore(), loadShared(), loadRecovery()]); await warm(); emit(); },
     async load(...args) { await Promise.all([base.load(...args), restore(), loadShared(), loadRecovery()]); await warm(); emit(); },
-    async refreshSnapshot() { await Promise.all([base.refreshSnapshot(), loadShared(), loadRecovery()]); await warm(); emit(); },
+    // The capture's own answer travels back. Resolving to nothing made every refreshing All Alerts
+    // collection read `.available` off undefined and report the BSE feed as failed — and a feed
+    // read after a failed load is classified in one task, not warmed in slices first.
+    async refreshSnapshot() {
+      const [result] = await Promise.all([base.refreshSnapshot(), loadShared(), loadRecovery()]);
+      await warm(); emit();
+      return result;
+    },
     async loadArchive({ onlyChanged = false } = {}) {
       if (sharedPending) return;
       sharedPending = true; sharedError = null; emit();

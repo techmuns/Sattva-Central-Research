@@ -29,18 +29,43 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
   let identityStamp = null, identities = [];
   const emit = () => listeners.forEach(fn => fn());
   const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
+  // ONE MATCH LIST PER (PUBLISHER STORY, IDENTITY LIST). `matchPortfolioNews` keeps the story's text
+  // and each attribution, but still splits the headline and article body and sorts its matches on
+  // every call, and every publisher announcement walks every retained story twice (the warm-up and
+  // the rebuild) in every reader holding this join. Rows are replaced, never edited, and the
+  // identity list is one array while the book is unchanged, so the pair decides the answer; the two
+  // fields the match text reads are checked as well. Read-only: callers iterate the list.
+  const matched = new WeakMap();
+  const matchesFor = (row, entities) => {
+    const hit = matched.get(row);
+    if (hit && hit.entities === entities && hit.title === row.title && hit.articleBody === row.articleBody) return hit.value;
+    const value = matchPortfolioNews(row, entities);
+    matched.set(row, { entities, title: row.title, articleBody: row.articleBody, value });
+    return value;
+  };
   async function warmPublished(yieldForInput = yieldToInput) {
     const published = publishers.rows(), entities = companyIdentities(), window = readingWindow();
     let started = performance.now();
     for (const row of published) {
-      if (inNewsWindow(row, window) && include(row)) matchPortfolioNews(row, entities);
+      if (inNewsWindow(row, window) && include(row)) matchesFor(row, entities);
       if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
     }
   }
   // A publisher change is announced after its stories' matches are warm, in slices, so the first
   // `rows()` a listener makes pays for the join rather than for every new story's match. Rows are
   // always current when read; only the announcement waits for the warm-up.
-  const announcePublishers = () => { warmPublished().then(() => prepareRows()).catch(() => {}).then(emit); };
+  // ONE WARM-UP AT A TIME. Every retained month landing is an announcement, and each one started
+  // its own walk over every story while the last was still running, so a cold archive read ran
+  // several at once for one reader. Changes arriving during a warm-up are folded into one more.
+  let announcing = false, announceAgain = false;
+  const announcePublishers = () => {
+    if (announcing) { announceAgain = true; return; }
+    announcing = true;
+    warmPublished().then(() => prepareRows()).catch(() => {}).then(() => {
+      announcing = false;
+      if (announceAgain) { announceAgain = false; announcePublishers(); } else emit();
+    });
+  };
   // A source announcement moves this counter; a sliced rebuild in flight checks it between slices
   // instead of asking the readers beneath for their rows, which can itself be a cold rebuild.
   let sourceRevision = 0;
@@ -95,7 +120,7 @@ export function withPortfolioPublisherNews(base, { publishers = marketNews, book
     // the same company URL; dedupe never crosses companies or publisher domains.
     let counted = 0;
     for (const row of published) {
-      if (inNewsWindow(row, window) && include(row)) for (const match of matchPortfolioNews(row, entities)) add(projection(match, row));
+      if (inNewsWindow(row, window) && include(row)) for (const match of matchesFor(row, entities)) add(projection(match, row));
       if (++counted % 512 === 0) yield;
     }
     source.filter(row => inNewsWindow(row, window)).forEach(add);

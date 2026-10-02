@@ -211,4 +211,58 @@ try {
   assert.equal(actual.meta().newsDelivery.core.status, 'partial');
   assert.equal(actual.rows().length, 1, 'failed core refresh preserves last-good evidence');
 } finally { globalThis.fetch = originalFetch; marketNews.invalidate(); }
+
+// THE WHOLE ARCHIVE IN ONE READ, FOR THE READERS THAT WALK ALL OF IT. `loadRemaining` must leave the
+// reader exactly where the month-by-month walk leaves it — the same stories, the same order, the same
+// winner when a story sits in two months, the same months pending after one fails — while announcing
+// once rather than twice per month: every announcement makes every news reader rebuild its join.
+{
+  const story = (id, title, at) => ({ id, title, url: `https://example.test/${id}`, publisher: 'Example Wire', source: 'Example Wire', publishedAt: at });
+  const months = [
+    { month: '2026-09', file: 'market-news/2026-09.json', count: 2, inHead: 0, articles: [story('a', 'September A', '2026-09-03T05:00:00Z'), story('b', 'September B', '2026-09-02T05:00:00Z')] },
+    // `b` again, as an older month carries it: the later-applied month's copy wins, both ways.
+    { month: '2026-08', file: 'market-news/2026-08.json', count: 2, inHead: 0, articles: [story('b', 'August copy of B', '2026-09-02T05:00:00Z'), story('c', 'August C', '2026-08-20T05:00:00Z')] },
+    { month: '2026-07', file: 'market-news/2026-07.json', count: 1, inHead: 0, articles: [story('d', 'July D', '2026-07-20T05:00:00Z')] },
+    { month: '2026-06', file: 'market-news/2026-06.json', count: 1, inHead: 0, articles: [story('e', 'June E', '2026-06-20T05:00:00Z')] },
+  ];
+  let broken = null;
+  globalThis.fetch = async url => {
+    if (String(url) === 'data/market-news.json') return Response.json({ capturedAt: '2026-09-03T06:00:00Z', sources: [source],
+      articles: [story('h', 'Head story', '2026-09-03T06:00:00Z')], archive: months.map(({ articles, ...month }) => month), archivedCount: 6 });
+    const month = months.find(m => String(url) === `data/${m.file}`);
+    if (!month) throw Error(`Unexpected network request: ${url}`);
+    return Response.json({ articles: month.month === broken ? month.articles.slice(1) : month.articles });
+  };
+  const read = async (walk) => {
+    marketNews.invalidate();
+    await marketNews.load();
+    let announcements = 0;
+    const off = marketNews.onChange(() => { announcements++; });
+    const outcome = await walk();
+    off();
+    return { rows: marketNews.rows().map(row => [row.id, row.title]), remaining: marketNews.archiveMeta().remaining, announcements, outcome };
+  };
+  const monthByMonth = () => read(async () => {
+    let result;
+    while (marketNews.archiveMeta().remaining) {
+      const before = marketNews.archiveMeta().remaining;
+      result = await marketNews.loadMore();
+      if (result.failed || marketNews.archiveMeta().remaining >= before) break;
+    }
+    return result;
+  });
+  try {
+    const walked = await monthByMonth(), together = await read(() => marketNews.loadRemaining());
+    assert.deepEqual(together.rows, walked.rows, 'one read leaves the same stories in the same order, with the same copy of a repeated story');
+    assert.equal(together.remaining, 0);
+    assert.equal(together.outcome.failed, 0);
+    assert(together.announcements < walked.announcements && together.announcements === 2, `one read announces once (${together.announcements}, the walk ${walked.announcements})`);
+    broken = '2026-07';
+    const walkedFailure = await monthByMonth(), togetherFailure = await read(() => marketNews.loadRemaining());
+    assert.equal(togetherFailure.outcome.failed, 1, 'a month that cannot be read is reported, never read as the end of the archive');
+    assert.deepEqual(togetherFailure.rows, walkedFailure.rows, 'a failed month stops the read where the walk stops');
+    assert.equal(togetherFailure.remaining, walkedFailure.remaining, 'the failed month and every month after it stay pending');
+    assert.equal(togetherFailure.remaining, 2);
+  } finally { globalThis.fetch = originalFetch; marketNews.invalidate(); }
+}
 console.log('PASS publisher delivery: independent ET head, exact shared attribution, raw retention, company URL dedupe, portfolio changes, concurrent archives, corrections, empty/failing refreshes and truthful status.');

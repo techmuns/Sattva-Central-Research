@@ -83,7 +83,11 @@ async function openPage() {
 const settledAlerts = (page) => page.waitForFunction(() => {
   const rows = document.querySelectorAll('tbody tr[data-row-key]').length;
   const chips = [...document.querySelectorAll('[data-feed]')];
-  return rows > 0 && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…')) && !document.querySelector('[data-table-loading]');
+  // Today is empty after IST midnight until something dated today is captured: settled then means
+  // the table's own empty state over a zero count, never the placeholders of a read still running.
+  const empty = /^No loaded event\b/.test(document.querySelector('tbody')?.textContent.trim() || '')
+    && /^0\b/.test(document.querySelector('[data-row-count]')?.textContent.trim() || '');
+  return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…')) && !document.querySelector('[data-table-loading]');
 }, null, { timeout: 120000 });
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
@@ -158,6 +162,25 @@ try {
   }
   if (skipped.length) console.log(`SKIP source chips the live read could not settle in this environment: ${skipped.join(', ')}`);
   console.log('PASS the live collection paints the same rows, totals and source chips');
+
+  // Today can legitimately be empty after IST midnight. Keep that exact comparison above,
+  // and also require a populated period so an empty rendering regression cannot pass it.
+  served.pool = true;
+  await pooled.page.getByRole('combobox', { name: 'Date range', exact: true }).selectOption('7d');
+  await settledAlerts(pooled.page);
+  await pooled.page.waitForTimeout(1500);
+  const recentKeys = await rowKeys(pooled.page), recentCount = await rowCount(pooled.page);
+  assert(recentKeys.length > 0, 'the retained seven-day fixture must paint actual events');
+  served.pool = false;
+  await live.page.getByRole('combobox', { name: 'Date range', exact: true }).selectOption('7d');
+  await settledAlerts(live.page);
+  await live.page.waitForTimeout(1500);
+  assert.deepEqual(await rowKeys(live.page), recentKeys, 'a populated period also paints identical rows in order');
+  assert.equal(await rowCount(live.page), recentCount, 'the populated period has identical complete counts');
+  served.pool = true;
+  await pooled.page.getByRole('combobox', { name: 'Date range', exact: true }).selectOption('today');
+  await settledAlerts(pooled.page);
+  console.log('PASS empty Today and populated seven-day windows both preserve exact pool/live results');
   await live.context.close();
   served.pool = true;
 

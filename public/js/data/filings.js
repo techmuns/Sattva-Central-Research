@@ -1042,7 +1042,7 @@ export function createQueryNews(window, { extraRows = () => marketNews.rows(), a
       if (refreshPublishers && marketNews.isLoaded()) await marketNews.refresh();
       else await marketNews.load();
       while (marketNews.archiveMeta().remaining) {
-        const before = marketNews.archiveMeta().remaining, result = await marketNews.loadMore();
+        const before = marketNews.archiveMeta().remaining, result = await marketNews.loadRemaining();
         if (result.failed || marketNews.archiveMeta().remaining >= before) break;
       }
     } catch { /* Company captures can still paint while publisher health reports failure. */ }

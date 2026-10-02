@@ -436,6 +436,69 @@ async function loadArchiveBatch(window) {
   return { added, failed, reason, exhausted: pendingShards(window).length === 0, busy: false };
 }
 
+/**
+ * Every month the window still needs, read together and announced once.
+ *
+ * For the readers that walk the whole retained archive regardless — the alert collection, and a
+ * bounded news query's companion index. `loadMore` stops at the first month that adds a story, so
+ * those walks took one month per call, and each call rebuilt this list and announced it, which made
+ * every news reader rebuild its publisher join: nine announcements for nine months, most of them
+ * months holding one story, spread over seconds of a busy page. Here the months are fetched a few at
+ * a time, then applied in the manifest's order and merged once. A month that cannot be read stops
+ * the application there, as it stopped the one-month walk: it and every month after it stay pending.
+ */
+export function loadRemaining(window = null) {
+  if (loadingArchive) return loadingArchive.then(result => result.failed || !pendingShards(window).length ? result : loadRemaining(window));
+  loadingArchive = loadArchiveRemaining(window).finally(() => { loadingArchive = null; });
+  return loadingArchive;
+}
+
+async function loadArchiveRemaining(window) {
+  const queue = pendingShards(window);
+  if (!queue.length) return { added: 0, failed: 0, reason: null, exhausted: true, busy: false };
+  state.loadingMore = true;
+  emit();
+  let added = 0;
+  let failed = 0;
+  let reason = null;
+  try {
+    const results = new Array(queue.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: Math.min(4, queue.length) }, async () => {
+      while (next < queue.length) {
+        const i = next++, shard = queue[i];
+        try {
+          if (!/^market-news\/(?:\d{4}-\d{2}|undated)\.json$/.test(shard.file)) throw Error('Invalid publisher archive path');
+          const res = await conditionalJson(`data/${shard.file}`, { key: KEYS.marketNewsMonth(shard.month), optional: true });
+          const list = Array.isArray(res?.value?.articles) ? res.value.articles : null;
+          results[i] = !list || (Number.isInteger(shard.count) && list.length !== shard.count)
+            ? { reason: res?.status ? `HTTP ${res.status}` : 'unreachable' } : { list };
+        } catch (err) {
+          results[i] = { reason: String(err?.message || err) };
+        }
+      }
+    }));
+    for (const [i, shard] of queue.entries()) {
+      const { list, reason: error } = results[i];
+      if (!list) { failed += 1; reason = error; break; }
+      state.loadedShards.add(shard.file);
+      for (const a of list) {
+        const k = keyOf(a);
+        // The head's copy of a story is the newer read of it, so it is never overwritten here.
+        if (k && !state.head.has(k)) {
+          if (!state.older.has(k)) added += 1;
+          state.older.set(k, a);
+        }
+      }
+    }
+    remerge();
+  } finally {
+    state.loadingMore = false;
+  }
+  emit();
+  return { added, failed, reason, exhausted: pendingShards(window).length === 0, busy: false };
+}
+
 export const isLoaded = () => state.loaded;
 export const rows = () => state.articles;
 export const byId = (id) => state.byId.get(String(id)) || null;

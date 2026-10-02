@@ -2266,6 +2266,27 @@ keyed on the source record and validated on the book's signature) and the identi
 themselves (`discoveryEntities`) are all kept while their inputs are unchanged, and
 `verify-hot-path-memo.mjs` asserts the read returns the objects the warm-up built.
 
+### AN EMPTY DAY WAITS FOR EVERY SOURCE — the live collection after IST midnight
+
+`docs/ALL-ALERTS-EMPTY-DAY-2026-10-02.md` has the measurements. Just after IST midnight nothing is
+dated Today, so All Alerts holds its placeholders until the last source answers, and production
+takes the live path until a pool is built for the new day. Every cost in the live collection is then
+the reader's wait. Five rules keep it bounded:
+
+1. **The news companion index is built once per set of inputs.** `news-working-set.js` keys it on the
+   window, each capture's content digest and the publisher rows' readings, and shares it between
+   operations and readers of the same day. Never rebuild it per operation.
+2. **A feed read after a failed load is warmed first**, exactly as a successful one is; a cold read
+   classifies the whole retained history in one task.
+3. **A reader wrapper returns its base's refresh result.** `refreshFilings` reads `.available`;
+   `undefined` reported the BSE feed failed on every refreshing collection.
+4. **Readers that walk the whole market-news archive use `loadRemaining()`**, which announces once,
+   not `loadMore()`, which announces per month and makes every news join rebuild each time.
+5. **`verify-tab-performance-ui.mjs` pins the page clock after IST midnight** and measures the whole
+   collection, not the first paint, and `verify-alert-pool-ui.mjs` accepts an empty Today while still
+   comparing a populated seven-day window. Real-clock checks met this case only between 18:30 UTC and
+   the first capture of the new day.
+
 ### THE COLLECTION IS DONE ONCE, ON THE RUNNER — the precomputed alert pool
 
 `docs/DATA-CONTRACTS.md` → *The precomputed alert pool* has the contract. What it is: the alert

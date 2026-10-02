@@ -103,3 +103,87 @@ const after = requested.slice(duringWalk);
 assert.deepEqual(after, [], `a released reader starts no further reads (started: ${after.join(', ') || 'none'})`);
 assert(duringWalk < Object.keys(captures).length, 'the fixture must leave unread months for the walk to skip');
 console.log(`PASS released news reader stops after ${duringWalk} reads instead of walking all ${Object.keys(captures).length} captures.`);
+
+// THE COMPANION INDEX IS BUILT ONCE PER SET OF CAPTURES AND SHARED — AND STAYS EXACT. One All Alerts
+// open used to walk every retained month three or four times (seed, the refresh after it, a second
+// collection, the News tab's reader of the same day). A sharded head and a date-corrected story (one
+// URL on two days) are enough to show the reuse is invisible: projections equal an independently
+// built index, a refresh or a second reader of the day builds nothing, and a different day, a changed
+// capture or an index nobody holds any more is built afresh. The parts carry no published query
+// index here, so every build looks each part's index up on the device exactly once — a count no
+// memory cache beneath can hide.
+{
+  const { mkdtempSync, writeFileSync, mkdirSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { writeNewsJson } = await import('./lib/news-json-storage.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'news-index-'));
+  try {
+    mkdirSync(join(dir, 'data'), { recursive: true });
+    const story = (ticker, n, date, url = `https://example.test/${ticker}/${n}`) =>
+      ({ ticker, title: `${ticker} story ${n}`, source: 'Example Wire', url, date, publishedAt: `${date}T06:00:00Z` });
+    const head = { capturedAt: '2026-09-03T12:00:00Z', byTicker: {
+      AAA: [story('AAA', 1, '2026-09-02'), story('AAA', 2, '2026-09-01'), story('AAA', 3, '2026-08-30')],
+      // The same article captured on two days: the later reading corrected its date.
+      BBB: [story('BBB', 1, '2026-09-02', 'https://example.test/corrected'), story('BBB', 2, '2026-08-31', 'https://example.test/corrected'), story('BBB', 3, '2026-08-29')],
+      CCC: Array.from({ length: 12 }, (_, i) => story('CCC', i, `2026-08-${String(10 + i).padStart(2, '0')}`)),
+    } };
+    const publish = () => {
+      const path = join(dir, 'data/news.json');
+      writeNewsJson(path, head, { maxBytes: 1400 });
+      const manifest = JSON.parse(readFileSync(path, 'utf8'));
+      for (const part of manifest._jsonShards.parts) delete part.queryIndex;
+      writeFileSync(path, JSON.stringify(manifest));
+      return manifest._jsonShards.parts.length;
+    };
+    const partCount = publish();
+    assert(partCount > 2, 'the fixture is sharded');
+    let lookups = 0;
+    const shared = { fetcher: async path => new Response(readFileSync(join(dir, path))),
+      diskRead: async () => { lookups++; return null; }, diskWrite: async () => {} };
+    const independent = () => ({ fetcher: async path => new Response(readFileSync(join(dir, path))), diskRead: async () => null, diskWrite: async () => {} });
+    const fixtureRead = async path => ({ value: JSON.parse(readFileSync(join(dir, path), 'utf8')) });
+    const reader = (window, io = shared) => createNewsWorkingSet({ window: () => window, read: fixtureRead, ...io });
+    const projected = async set => Object.values((await set.read('data/news.json')).value.byTicker).flat().map(row => row.url).sort();
+    const day = { from: '2026-09-02', to: '2026-09-02', includeUndated: false };
+
+    const first = reader(day);
+    await first.prepare();
+    assert.equal(lookups, partCount, 'the first preparation builds the index over every part once');
+    const expected = await projected(reader(day, independent()));
+    assert.deepEqual(await projected(first), expected, 'a shared index projects exactly what an independent one does');
+    assert.equal(expected.filter(url => url === 'https://example.test/corrected').length, 2, 'the corrected story brings its companion');
+    assert(first.includes(story('BBB', 2, '2026-08-31', 'https://example.test/corrected')) && !first.includes(story('CCC', 0, '2026-08-10')),
+      'companion membership comes from the index, not the day alone');
+    await first.prepare();
+    assert.equal(lookups, partCount, 'an unchanged refresh adopts the finished index');
+    const second = reader(day);
+    await second.prepare();
+    assert.equal(lookups, partCount, 'a second reader of the same day shares it');
+    assert.deepEqual(await projected(second), expected);
+    first.release();
+    await second.prepare();
+    assert.equal(lookups, partCount, 'one reader\'s release leaves the index to the reader still holding it');
+    assert.deepEqual(await projected(second), expected);
+
+    const august31 = { from: '2026-08-31', to: '2026-08-31', includeUndated: false };
+    const otherDay = reader(august31);
+    await otherDay.prepare();
+    assert.equal(lookups, 2 * partCount, 'another day builds its own index');
+    assert.deepEqual(await projected(otherDay), await projected(reader(august31, independent())));
+
+    // A changed capture is a changed key: the new story is found without a reload.
+    head.byTicker.AAA.push(story('AAA', 9, '2026-09-02'));
+    const changedParts = publish();
+    const beforeChange = lookups;
+    await second.prepare();
+    assert.equal(lookups, beforeChange + changedParts, 'a changed capture rebuilds the index');
+    assert((await projected(second)).includes('https://example.test/AAA/9'), 'the changed capture\'s new story is selected');
+
+    second.release(); otherDay.release();
+    const released = lookups;
+    await reader(day).prepare();
+    assert.equal(lookups, released + changedParts, 'an index no reader holds is not kept');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  console.log('PASS the companion index is built once per set of captures, shared by readers of the same day, and exact.');
+}

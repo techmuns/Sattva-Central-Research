@@ -30,8 +30,10 @@ const server = createServer((req, res) => {
     </script>`); return;
   }
   if (url.pathname === '/embed') {
+    // The route the dashboard opens on; a fixed allow-list shape, never markup from the query.
+    const route = /^[a-z/-]+\?scope=[a-z]+$/.test(url.searchParams.get('route') || '') ? url.searchParams.get('route') : 'news?scope=portfolio';
     res.setHeader('content-type', 'text/html');
-    res.end('<!doctype html><body style="margin:0;overflow:hidden"><main style="position:fixed;inset:16px 16px 16px 64px;display:flex;flex-direction:column"><header style="height:48px;flex:none">Local performance fixture</header><iframe title="Research dashboard" src="/#/research/news?scope=portfolio" style="flex:1;min-height:0;width:100%;border:0"></iframe></main>'); return;
+    res.end(`<!doctype html><body style="margin:0;overflow:hidden"><main style="position:fixed;inset:16px 16px 16px 64px;display:flex;flex-direction:column"><header style="height:48px;flex:none">Local performance fixture</header><iframe title="Research dashboard" src="/#/research/${route}" style="flex:1;min-height:0;width:100%;border:0"></iframe></main>`); return;
   }
   const api = { '/api/earnings': 'earnings-live.json', '/api/concalls': 'concall-scans.json',
     '/api/nse-announcements': 'nse-announcements.json', '/api/ipo-filings': 'ipo-filings.json' }[url.pathname];
@@ -48,14 +50,19 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 const audit = process.env.TAB_PERF_AUDIT === '1';
 const results = [];
-try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+// Local captures only; every other origin answers 503. Long tasks are recorded in every frame.
+async function fixtureContext(options = {}) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block', ...options });
   await context.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
   await context.addInitScript(origin => {
     localStorage.setItem('sattva:chatter-base', `${origin}/fixture/chatter`);
     window.__longTasks = [];
     new PerformanceObserver(list => window.__longTasks.push(...list.getEntries().map(e => ({ at: e.startTime, ms: e.duration })))).observe({ type: 'longtask', buffered: true });
   }, origin);
+  return context;
+}
+try {
+  const context = await fixtureContext();
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -241,4 +248,61 @@ try {
   assert(await frame.locator('tr[data-row-key]').count() <= 100, 'repeated mount/dispose remains bounded');
   assert.deepEqual(errors, []);
   console.log('PASS: native iframe wheel, deep/end scrolling, variable heights, watch position, full/filtered export, off-screen search, live updates, resize and disposal.');
+  await context.close();
+
+  // ALL ALERTS OPENED ON AN EMPTY NEW DAY. Just after IST midnight nothing captured is dated Today,
+  // so the table holds its placeholders until every source has been read: the reader waits for the
+  // whole live collection, and every long task in it lands while they wait. The sweep above runs on
+  // the real clock and measures until the first paint, so it met this case only when CI ran between
+  // 18:30 UTC and the first capture of the new day: browser jobs in that window failed at 4.8–5.9
+  // seconds while the same code had passed earlier the same day. Pin the page clock ten
+  // minutes past the next IST midnight (after every committed capture, in UTC as the runners are)
+  // and measure through the last source, not the first paint.
+  if (process.env.TAB_PERF_MIDNIGHT !== '0') {
+    const IST_MS = 5.5 * 3600000, DAY_MS = 86400000;
+    const pinnedAt = (Math.floor((Date.now() + IST_MS) / DAY_MS) + 1) * DAY_MS - IST_MS + 10 * 60000;
+    const midnight = await fixtureContext({ timezoneId: 'UTC' });
+    await midnight.clock.install({ time: pinnedAt });
+    await midnight.clock.resume();
+    const midnightPage = await midnight.newPage();
+    const midnightErrors = [], partReads = new Map();
+    midnightPage.on('pageerror', error => midnightErrors.push(error.message));
+    // Every retained news part this open reads, and how often. The companion index is built once per
+    // set of captures and shared by every read of the same day; one open used to walk it three or
+    // four times (seed, the refresh after it, the second collection a book update starts).
+    midnightPage.on('request', request => {
+      const path = new URL(request.url()).pathname;
+      if (/^\/data\/(?:news|company-news\/[^/]+|tradingview-news\/[^/]+)\.parts\//.test(path)) partReads.set(path, (partReads.get(path) || 0) + 1);
+    });
+    await midnightPage.goto(`${origin}/embed?route=${encodeURIComponent('daily-alerts?scope=universe')}`);
+    const allAlerts = await (await midnightPage.locator('iframe').elementHandle()).contentFrame();
+    await allAlerts.locator('[data-tab-id="daily-alerts"][aria-selected="true"]').waitFor();
+    const istClock = await allAlerts.evaluate(() => new Intl.DateTimeFormat('en-GB',
+      { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(Date.now()));
+    assert.match(istClock, /^00:[1-5]\d$/, `the page clock reads just after IST midnight (${istClock})`);
+    await allAlerts.waitForFunction(() => {
+      const panel = document.querySelector('#content-host');
+      return panel?.textContent.trim() && !panel.inert && !panel.querySelector('.skeleton-shimmer');
+    }, null, { timeout: 120000 });
+    const readyMs = Math.round(await allAlerts.evaluate(() => performance.now()));
+    // Settled: the Sources label no longer reads "Loading sources" and no source is still being read.
+    await allAlerts.waitForFunction(() => {
+      const coverage = document.querySelector('[data-alerts-coverage-state]');
+      return coverage && coverage.dataset.alertsCoverageState !== 'loading' && !/still being read/.test(coverage.title);
+    }, null, { timeout: 120000 });
+    const settled = await allAlerts.evaluate(() => ({ settledMs: Math.round(performance.now()),
+      maxTaskMs: Math.max(0, ...window.__longTasks.map(t => t.ms)), longTasks: window.__longTasks.filter(t => t.ms >= 200).length,
+      text: document.querySelector('#content-host')?.textContent.trim().replace(/\s+/g, ' ').slice(0, 160) }));
+    const repeatedParts = [...partReads].filter(([, count]) => count > 1);
+    console.log(JSON.stringify({ route: 'daily-alerts?scope=universe', pinnedAt: new Date(pinnedAt).toISOString(), istClock, readyMs, ...settled,
+      newsParts: partReads.size, repeatedParts: repeatedParts.length }));
+    assert.match(settled.text, /^All Alerts\b/, 'the measured page is All Alerts');
+    assert(partReads.size > 0, 'the open read the retained company-news index');
+    assert.deepEqual(repeatedParts, [], 'each retained news part is read once per open: the companion index is built once and shared');
+    // The same budget as the sweep above, now over the whole collection rather than its first paint.
+    if (!audit) assert(settled.maxTaskMs < 1800, `daily-alerts on a new IST day: longest main-thread task ${settled.maxTaskMs}ms stays under 1800ms`);
+    assert.deepEqual(midnightErrors, [], 'zero application exceptions on an empty new day');
+    console.log(`PASS: All Alerts opened at ${istClock} IST settles every source with no task over 1800ms.`);
+    await midnight.close();
+  }
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

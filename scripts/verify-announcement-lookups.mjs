@@ -300,14 +300,17 @@ try {
 
   await clearAll();
   let baseRows=[baseRow];
-  const base={rows:()=>baseRows,meta:()=>({kind:'announcements',rowCount:baseRows.length,covered:baseRows.length,coversUniverse:true,windowDays:3}),seed:async()=>{},load:async()=>{},onChange:()=>()=>{},invalidate:()=>{},refresh:async()=>{},refreshSnapshot:async()=>{baseRows=[]}};
+  const base={rows:()=>baseRows,meta:()=>({kind:'announcements',rowCount:baseRows.length,covered:baseRows.length,coversUniverse:true,windowDays:3}),seed:async()=>{},load:async()=>{},onChange:()=>()=>{},invalidate:()=>{},refresh:async()=>{},refreshSnapshot:async()=>{baseRows=[];return {available:true,changed:true,capturedAt:'2026-09-04T07:30:00Z'}}};
   const feed=withAnnouncementLookups(base);
   globalThis.fetch=async()=>{throw new Error('No per-company calls allowed during seed')};
   await feed.seed(); assert.equal(feed.rows().length,1);
   globalThis.fetch=async()=>Response.json({...body,fetchedAt:'2026-09-04T07:00:00Z'});
   const query={ticker:'RELIANCE',fromDate:'20250101',toDate:'20260715'};
   await feed.lookup(query); assert.equal(feed.rows().length,3);
-  await feed.refreshSnapshot(); assert.equal(feed.rows().length,3,'BSE snapshot replacement cannot erase supplementary history');
+  const refreshed=await feed.refreshSnapshot(); assert.equal(feed.rows().length,3,'BSE snapshot replacement cannot erase supplementary history');
+  // All Alerts reads `.available` off this. Resolving to nothing reported BSE announcements as a
+  // failed feed on every refreshing collection, and a failed feed was then read in one long task.
+  assert.deepEqual(refreshed,{available:true,changed:true,capturedAt:'2026-09-04T07:30:00Z'},'the capture\'s own refresh result reaches the caller');
   globalThis.fetch=async()=>Response.json({ok:true,announcements:[],fetchedAt:'2026-09-04T08:00:00Z'});
   await feed.lookup(query); assert.equal(feed.rows().length,3,'empty answers cannot retract filings');
   globalThis.fetch=async()=>Response.json({ok:false,message:'Session expired'});
