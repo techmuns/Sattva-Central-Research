@@ -301,6 +301,8 @@ try {
   await settled();
   assert.equal(await period.inputValue(), 'all', 'company See all link explicitly restores complete history');
   await page.locator('[data-table-search]').fill('Date window fixture 10');
+  // A large table applies a search on the next frame; count once it has, as the checks below do.
+  await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, '60-day evidence remains reachable through See all');
   await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); window.show('portfolio'); });
   await settled();
@@ -353,9 +355,12 @@ try {
   version++;
   await page.locator('#refresh').click();
   await settled();
+  // A real row, not the table's text: the empty state repeats the search words, so a text match
+  // passed before the record arrived and left its 20-second highlight to a fixed 30-second wait.
   await page.waitForFunction(async () => {
     const refreshState = await import('/js/core/refresh.js');
-    return !refreshState.isRunning('daily-alerts') && document.querySelector('tbody')?.textContent.includes('Newly arrived NSE record');
+    return !refreshState.isRunning('daily-alerts') && [...document.querySelectorAll('tbody tr[data-row-key]')]
+      .some((row) => row.textContent.includes('Newly arrived NSE record'));
   }, null, { timeout: 60000 });
   assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), 'newly arrived nse record');
   await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key] [data-arrival-badge]'));

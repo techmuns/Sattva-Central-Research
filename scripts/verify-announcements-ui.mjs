@@ -140,7 +140,10 @@ try {
   ok(`"${expected} related filing(s)" expands inline`);
 
   // AI Read: one click, one read, the same five sections, the original filing one click away.
-  const target = (await caRows()).find((r) => r.url && /bseindia|nseindia/.test(r.url));
+  // An exchange PDF: the stand-in answers with a PDF, and which filing leads the page moves with the
+  // data (an NSE XBRL file there is read as XBRL and correctly refused as unreadable).
+  const target = (await caRows()).find((r) => /bseindia|nseindia/.test(r.url || '') && /\.pdf(?:$|[?#])/i.test(r.url || ''));
+  assert(target, 'the newest page holds an exchange PDF filing to read');
   const targetRow = page.locator(`tbody tr[data-row-key="${target.id}"]`);
   await targetRow.locator('td').nth(1).click();
   const popup = page.locator('#modal-content [data-ann-read]');
