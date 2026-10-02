@@ -72,7 +72,10 @@ undated last** under a plain descending comparison.
   `RECENT_RELEVANCE_DAYS` (7) IST days, today included; an older day keeps its plain time order.
   A sort makes at most 120 ms of new readings per synchronous run; the rest are made in slices behind
   the paint and `onRelevanceChange` fires once when they settle, so the table re-sorts in place. A
-  retained history of a few hundred thousand events is therefore never read inside one task. Exports
+  retained history of a few hundred thousand events is therefore never read inside one task. A
+  reading is kept per row object and also per row identity (`surface|itemKey`) with a fingerprint of
+  every field it reads, so a collection that rebuilds unchanged rows as new objects reuses their
+  readings instead of re-reading the window and briefly re-sorting rows that just arrived. Exports
   make every reading in slices before they write the Categories column. Company size and sector come
   from `GET /api/announcement-index/profiles`; where that cannot be read, from the two small reference
   files (`mc-ticker-map.json`, `sector-kpis.json`) only — never a pooled capture such as

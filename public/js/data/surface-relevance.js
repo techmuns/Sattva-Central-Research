@@ -17,6 +17,31 @@ import { runStepsInSlices, yieldToInput } from '../core/slices.js';
 
 const memo = new WeakMap();
 
+// A READING IS ALSO KEPT BY THE ROW'S IDENTITY, because a collection rebuilds row objects. When one
+// feed's payload changes, every row of that feed arrives as a new object, so a cache keyed only on the
+// object misses for all of them: the next sort re-reads the whole recent window, runs past its budget,
+// and rows that missed the budget sort by time until the slices catch up — a visible jump, and on All
+// Alerts it broke the entrance of rows that had just arrived. So a reading is also kept under
+// `surface|itemKey` with a fingerprint of every field the reading and the category tags read; a new
+// object with the same identity and the same words reuses it. Bounded, oldest first out.
+const byIdentity = new Map(); // `${surface}|${itemKey}` -> { sig, entry }
+const IDENTITY_MAX = 60_000;
+const TEXT_FIELDS = ['title', 'headline', 'subject', 'filingSubject', 'summary', 'description', 'filingDescription', 'standfirst',
+  'detail', 'category', 'subCategory', 'filingSubCategory', 'kind', 'feed', 'publisher', 'outlet', 'ticker', 'scripCode', 'bseCode', 'isin'];
+function fingerprint(row, categoryKind, context, given) {
+  let text = `${categoryKind}\u0001${JSON.stringify(context)}\u0001${given ? `${given.ids || ''}/${given.weak || ''}` : ''}`;
+  for (const field of TEXT_FIELDS) {
+    const value = row[field];
+    text += `\u0001${typeof value === 'string' || typeof value === 'number' ? value : ''}`;
+  }
+  return eventHash(text);
+}
+function rememberIdentity(key, sig, entry) {
+  byIdentity.delete(key);
+  byIdentity.set(key, { sig, entry });
+  if (byIdentity.size > IDENTITY_MAX) byIdentity.delete(byIdentity.keys().next().value);
+}
+
 // RELEVANCE ORDERS THE RECENT DAYS, AND IT IS NEVER READ IN ONE LONG TASK.
 //
 // The desk asked for relevance "within recent items", newest day first. One reading costs tens of
@@ -117,11 +142,18 @@ export function surfaceReading(row, { surface, kind, categoryKind = kind === 'ne
   const profiles = profilesRevision(), model = modelRevision();
   let entry = memo.get(row);
   if (!entry || entry.surface !== surface || entry.profiles !== profiles) {
-    const profile = profileOf({ ticker: row.ticker, scripCode: row.scripCode || row.bseCode, isin: row.isin });
-    const tags = given || categoriesOf(row, categoryKind);
-    const reading = relevanceReading(row, { kind, profile, categories: tags.ids, weakCategories: tags.weak, ...context });
-    entry = { surface, profiles, model: null, reading, itemKey: itemKey || itemKeyFor(surface, row), score: reading.base,
-      categories: tags.ids, weak: tags.weak || [], features: reading.keys };
+    const key = itemKey || itemKeyFor(surface, row), identity = `${surface}|${key}`;
+    const sig = fingerprint(row, categoryKind, context, given);
+    const kept = byIdentity.get(identity);
+    if (kept && kept.sig === sig && kept.entry.profiles === profiles) entry = kept.entry;
+    else {
+      const profile = profileOf({ ticker: row.ticker, scripCode: row.scripCode || row.bseCode, isin: row.isin });
+      const tags = given || categoriesOf(row, categoryKind);
+      const reading = relevanceReading(row, { kind, profile, categories: tags.ids, weakCategories: tags.weak, ...context });
+      entry = { surface, profiles, model: null, reading, itemKey: key, score: reading.base,
+        categories: tags.ids, weak: tags.weak || [], features: reading.keys };
+      rememberIdentity(identity, sig, entry);
+    }
     memo.set(row, entry);
   }
   if (entry.model !== model) {

@@ -142,8 +142,30 @@ const ok = (label) => { checks++; console.log(`  PASS  ${label}`); };
     assert(ordered.slice(0, 200).every((r) => /order/.test(r.title)), 'within the day, the material orders lead the routine notices');
     assert.equal(ordered.length, rows.length, 'nothing is dropped by its rank');
     off();
+
+    // A collection rebuilds row objects when a feed's payload changes. The same identity with the same
+    // words reuses its reading, so the next sort is not a re-read of the whole window (which would run
+    // past the budget and briefly move rows), while changed words are read again.
+    const opts = (e) => ({ surface: 'alerts', kind: 'alert', categoryKind: 'filing', context: { direction: e.direction || null, feed: e.feed || null }, itemKey: `alerts:${e.id}` });
+    const batch = Array.from({ length: 3000 }, (_, i) => ({ id: `nse:${i}`, feed: 'nse-filings', direction: 'neutral', title: `Company bags Rs ${200 + i} crore order`, date: today }));
+    let fresh = 0;
+    const readBatch = (e) => { fresh++; return sr.surfaceReading(e, opts(e)); };
+    const before = new Map(batch.map((e) => [e.id, sr.surfaceReading(e, opts(e))]));
+    await sr.relevanceSettled();
+    const rebuilt = batch.map((e) => ({ ...e }));
+    const keysBefore = batch.map((e) => sr.rankedKey(e, { day: today, time: '09:00:00', surface: 'alerts', read: readBatch }));
+    fresh = 0;
+    const keysAfter = rebuilt.map((e) => sr.rankedKey(e, { day: today, time: '09:00:00', surface: 'alerts', read: readBatch }));
+    assert.equal(fresh, rebuilt.length, 'a rebuilt row is read through the identity cache');
+    assert.deepEqual(keysAfter, keysBefore, 'a rebuilt batch sorts in one run, exactly as before, with nothing deferred');
+    assert(rebuilt.every((e) => sr.surfaceReading(e, opts(e)) === before.get(e.id)), 'the same identity and words reuse the same reading');
+    const edited = { ...batch[0], title: 'Newspaper publication of notice' };
+    assert.notEqual(sr.surfaceReading(edited, opts(edited)), before.get(batch[0].id), 'changed words are read again');
+    const otherFeed = { ...batch[1], direction: 'negative' };
+    assert.notEqual(sr.surfaceReading(otherFeed, opts(otherFeed)), before.get(batch[1].id), 'changed reading inputs are read again');
+    await sr.relevanceSettled();
   }
-  ok('relevance orders the last seven days only; a sort reads within its budget and the rest settle in slices');
+  ok('relevance orders the last seven days only; a sort reads within its budget and the rest settle in slices; rebuilt rows reuse their readings');
 
   // The sector table is the ontology's, recomputed.
   const derived = affinity.affinityFromTriggers(TRIGGERS);
