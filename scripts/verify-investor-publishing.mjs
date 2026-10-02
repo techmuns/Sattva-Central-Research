@@ -38,6 +38,8 @@ try {
     if (args[0] === 'pr' && args[1] === 'list') return '[{"number":12}]';
     if (args[0] === 'pr' && args[1] === 'view') return JSON.stringify(pr);
     assert(args.includes(`repos/${REPOSITORY}/contents/${CAPTURE_FILE}?ref=${pr.headRefOid}`));
+    assert(args.includes('Accept: application/vnd.github.raw') && !args.some((a) => /raw\+json/.test(a)),
+      "the gzip archive is read raw, never through gh's JSON output sanitizer");
     return gzipSync(JSON.stringify(later));
   };
   assert.equal(prepareInvestorDisclosures({ repository: REPOSITORY, file, run }).restored, 2);

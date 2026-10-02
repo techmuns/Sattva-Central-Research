@@ -59,7 +59,10 @@ export function prepareInvestorDisclosures({ repository, file = CAPTURE_FILE, ru
   if (pulls.length > 1) throw Error('Capture PR selection is ambiguous');
   if (pulls.length) {
     const pr = validateCapturePr(json(['pr', 'view', String(pulls[0].number), '--repo', repository, '--json', 'state,headRefOid,headRefName,headRepository,isCrossRepository,baseRefName,files']));
-    if (pr.files.some((f) => f.path === CAPTURE_FILE)) archive = mergeArchives(archive, decodeArchive(run(['api', `repos/${repository}/contents/${CAPTURE_FILE}?ref=${pr.headRefOid}`, '--header', 'Accept: application/vnd.github.raw+json'])));
+    // `raw`, never `raw+json`: gh treats a response it believes is JSON as text and rewrites its
+    // control characters, so the gzip archive arrived as two bytes and "transform: short source
+    // buffer", and every run from 25 September failed here while capture PR #289 stayed open.
+    if (pr.files.some((f) => f.path === CAPTURE_FILE)) archive = mergeArchives(archive, decodeArchive(run(['api', `repos/${repository}/contents/${CAPTURE_FILE}?ref=${pr.headRefOid}`, '--header', 'Accept: application/vnd.github.raw'])));
   }
   if (archive) {
     const bytes = gzipSync(JSON.stringify(archive)); decodeArchive(bytes); writeFileSync(file, bytes);

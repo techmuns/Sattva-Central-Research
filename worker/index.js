@@ -1523,7 +1523,11 @@ function handleInvestorPortfolio(request, env, ctx, slug) {
     request,
     ctx,
     `super-investors/${slug}`,
-    () => fetchInvestorPortfolio(fetch, env.MUNS_TOKEN, slug, env.MUNS_BASE),
+    // `?patient=1` is the scheduled capture's retry of a book its walk could not read: one long
+    // attempt instead of a reader's thirteen seconds. The cache key is unchanged, so it can only
+    // ever fill the same entry a reader's request would.
+    () => fetchInvestorPortfolio(fetch, env.MUNS_TOKEN, slug, env.MUNS_BASE,
+      { patient: new URL(request.url).searchParams.get('patient') === '1' }),
     { slug, quarters: [], holdings: [] },
     async () => {
       const book = (await loadInvestorSnapshot(env, request))?.books?.[slug];
