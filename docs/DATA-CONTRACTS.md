@@ -4008,7 +4008,11 @@ Three rules, and they are the filings snapshot's rules:
   snapshot that is mostly missing gets painted and its gaps read as the whole book.
 - **A last-good copy is never captured.** `stale: true` from the Worker means it served its own
   fallback during an outage; freezing that into a committed file would preserve somebody else's
-  outage for a week.
+  outage for a week. It is asked once more after the walk, one book at a time and only once the
+  Worker's 30-second stale entry has expired, and captured only if that answer is live: the Worker
+  serves stale when its own live read timed out, and on 2 October 2026 fifteen of the seventeen books
+  that failed the walk answered live on that retry. Five failures in a row on the retry are an outage
+  and stop it, and any book still unread keeps the run red (`verify-super-investor-capture.mjs`).
 - **The device's copy always wins over the file**, because those bytes were confirmed later. The
   snapshot only ever fills gaps, and `meta().origin` reads `snapshot` for anything nobody has
   confirmed in this session. That value remains available to stale handling, exports and tests;

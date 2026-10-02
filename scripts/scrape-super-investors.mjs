@@ -42,6 +42,13 @@ const LIMIT = Number(process.env.SI_LIMIT || 0);
 if (LIMIT && !process.env.SI_OUT) throw new Error('A limited smoke run requires SI_OUT; it must not overwrite the complete snapshot');
 const TIMEOUT_MS = 60_000;
 const ATTEMPTS = 3;
+// The Worker keeps a stale answer for INVESTOR_STALE_TTL_S (30s); a retry sooner than this would
+// be handed the same stale copy instead of reaching a live read. Settable so a test need not wait.
+const STALE_RETRY_AFTER_MS = Number(process.env.SI_STALE_RETRY_AFTER_MS || 35_000);
+// Failures in a row on the retry pass that mean the relay is down rather than slow for one book.
+const OUTAGE_STREAK = 5;
+// What `validateBook` throws for a response that answered but is not a book.
+const SHAPE_ERROR = /portfolio shape|Invalid holding|Unexpected empty|older than|regressed/;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -103,6 +110,7 @@ console.log(`${investors.length} investors from ${listError ? 'the retained snap
 
 const books = {};
 const failed = {};
+const staleAt = {};
 let done = 0;
 
 const queue = investors.map((i) => i.slug).filter(Boolean);
@@ -119,6 +127,7 @@ await Promise.all(
           // A last-good copy the Worker served during an outage. Real filed data of a known age —
           // but capturing it would freeze somebody else's outage into a committed file for a week.
           failed[slug] = { reason: 'stale', message: 'The Worker served its last-good copy; not captured.' };
+          staleAt[slug] = Date.now();
         } else {
           books[slug] = validateBook(body, slug, previous.books?.[slug]);
         }
@@ -126,7 +135,7 @@ await Promise.all(
         // `validateBook` refuses a response that answered but is not a book — a wrong slug, no
         // quarters, regressed periods. That is a SHAPE failure and used to be filed as
         // `unreachable`, which sent the reader after a network that had answered perfectly well.
-        failed[slug] = { reason: /portfolio shape|Invalid holding|Unexpected empty|older than|regressed/.test(String(err?.message)) ? 'shape' : 'unreachable', message: String(err?.message || err) };
+        failed[slug] = { reason: SHAPE_ERROR.test(String(err?.message)) ? 'shape' : 'unreachable', message: String(err?.message || err) };
       }
       done++;
       if (done % 10 === 0) process.stdout.write(`\r  ${done}/${investors.length} …`);
@@ -139,23 +148,39 @@ await Promise.all(
 // upstream, which is what times out. By the time the walk has finished, the entry it timed out
 // filling is usually warm — measured, all four of one run's failures answered in ~1.4s on the
 // retry. Retrying once here is the difference between a snapshot of 86 books and one of 90.
-const retryable = Object.entries(failed).filter(([, f]) => f.reason !== 'stale').map(([slug]) => slug);
+//
+// A STALE ANSWER IS RETRIED TOO, because it is the same timeout seen from the Worker's side: its own
+// live read of the book failed during the walk, so it served the last-good copy. Excluding them left
+// those books unrefreshed run after run — measured on 2 October 2026, 2 to 42 stale books in every
+// one of nine runs, and all eight re-read minutes later answered live. A retry waits until the
+// Worker's stale entry has expired, and a retry that is stale again is still refused: only a live
+// answer is ever captured. Failures in a row mean the relay is down, not slow for one book, so the
+// pass stops there rather than spending a full deadline on every remaining book; the run stays red.
+const retryable = Object.keys(failed);
 if (retryable.length) {
   process.stdout.write(`  retrying ${retryable.length} …`);
   let recovered = 0;
+  let streak = 0;
   for (const slug of retryable) {
+    if (streak >= OUTAGE_STREAK) break;
+    const wait = (staleAt[slug] ?? -Infinity) + STALE_RETRY_AFTER_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    let outcome = 'failed';
     try {
       const body = await getJson(`/api/super-investors/${encodeURIComponent(slug)}`);
       if (body && body.ok !== false && body.stale !== true) {
         books[slug] = validateBook(body, slug, previous.books?.[slug]);
         delete failed[slug];
         recovered++;
+        outcome = 'recovered';
       }
-    } catch {
-      /* keep the original failure */
+    } catch (err) {
+      // A book that answered but is not a book says nothing about whether the relay is up.
+      if (SHAPE_ERROR.test(String(err?.message))) outcome = 'shape';
     }
+    streak = outcome === 'failed' ? streak + 1 : 0;
   }
-  process.stdout.write(` ${recovered} recovered\n`);
+  process.stdout.write(` ${recovered} recovered${streak >= OUTAGE_STREAK ? ` (stopped after ${OUTAGE_STREAK} failures in a row)` : ''}\n`);
 }
 
 const covered = Object.keys(books).length;
