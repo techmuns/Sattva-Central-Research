@@ -1564,7 +1564,7 @@
       "pending": []
     },
     "isin:INE109A01011|Shipping Corporation of India": {
-      "lastAttemptAt": "2026-09-28T06:40:42+00:00",
+      "lastAttemptAt": "2026-10-02T09:20:41+00:00",
       "error": "search-unavailable"
     },
     "isin:INE526E01018|SPR Auto Technologies": {
@@ -1947,6 +1947,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 211,
-    "checkedAt": "2026-10-02T08:44:44.939209+00:00"
+    "checkedAt": "2026-10-02T09:20:41.100141+00:00"
   }
 }
