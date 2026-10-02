@@ -124,6 +124,11 @@ and APIs blocked. For each packet it checks:
   retains its label and cannot become confirmed company evidence.
 - The packet fits the Worker's real validation budget; browser code throws no errors.
 
+CI runs the sweep as four parallel company shards (`RESEARCH_SHARD=k/n`), because one
+browser session for every packet outgrew a CI step. Each shard asserts that the shards
+together cover every packet exactly once, and the `portfolio-research` job passes only
+when every shard passes.
+
 The sweep exposed and drove fixes for shared-word matches (Aditya Birla Capital
 versus Birla Corporation), symbols embedded in names (PNB Housing versus PNB),
 duplicate/old feed identities, tickerless holdings, and uncertain search results
@@ -180,6 +185,7 @@ node scripts/verify-research-retrieval.mjs
 node scripts/verify-research-evaluation.mjs
 node scripts/verify-portfolio-bridge.mjs
 PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-research-portfolio.mjs
+RESEARCH_SHARD=2/4 PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-research-portfolio.mjs
 PLAYWRIGHT_ROOT=/path/to/playwright node scripts/verify-research-stream-ui.mjs
 
 # Existing local provider credentials only; never put credentials in a command.

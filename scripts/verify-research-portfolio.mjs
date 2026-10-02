@@ -9,7 +9,20 @@ import { matchesCapturedNews } from './lib/research-news-oracle.mjs';
 import { validateResearchBody } from '../worker/research.mjs';
 import { researchPreview } from '../public/js/research/preview.js';
 const book = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));
-const cases = researchQuestionBank(book.holdings).filter(c => ['latest', 'earnings', 'filings'].includes(c.category));
+const portfolio = researchQuestionBank(book.holdings).filter(c => ['latest', 'earnings', 'filings'].includes(c.category));
+// The suite outgrew one browser session per CI step: 510 packets at 4–7 seconds each took 34–62
+// minutes on shared runners (1–2 October 2026). CI runs RESEARCH_SHARD=k/n (1-based) as n parallel
+// jobs. Companies are dealt round-robin in bank order, so each company's questions share a session,
+// and every shard asserts the n slices are the whole bank, each packet exactly once. Unset: all packets.
+const shardSpec = process.env.RESEARCH_SHARD || '1/1';
+const [, shard, shards] = (/^(\d+)\/(\d+)$/.exec(shardSpec) || []).map(Number);
+assert(shard >= 1 && shard <= shards, `RESEARCH_SHARD must be k/n with 1 <= k <= n, not "${shardSpec}"`);
+const companyOrder = new Map([...new Set(portfolio.map(c => c.id.split(':')[0]))].map((isin, index) => [isin, index]));
+const slices = Array.from({ length: shards }, (_, k) => portfolio.filter(c => companyOrder.get(c.id.split(':')[0]) % shards === k));
+assert.deepEqual(slices.flat().map(c => c.id).sort(), portfolio.map(c => c.id).sort(), 'the shards together check every portfolio packet exactly once');
+const cases = slices[shard - 1];
+assert(cases.length, `shard ${shardSpec} has no portfolio packets`);
+console.log(`Shard ${shardSpec}: ${cases.length} of ${portfolio.length} portfolio packets, ${new Set(cases.map(c => c.id.split(':')[0])).size} of ${companyOrder.size} companies`);
 const { page, close } = await researchLocalBrowser();
 const results = [], errors = [];
 page.on('pageerror', e => errors.push(e.message));
@@ -59,7 +72,7 @@ try {
   }
   const failed = results.filter(r => r.failures.length);
   const times = results.map(r => r.elapsedMs).sort((a, b) => a - b);
-  const report = { kind: 'local-snapshot-retrieval', generatedAt: new Date().toISOString(), companies: book.holdings.length, scenarios: results.length, packetP95Ms: times[Math.ceil(times.length * .95) - 1],
+  const report = { kind: 'local-snapshot-retrieval', generatedAt: new Date().toISOString(), companies: book.holdings.length, shard: shardSpec, portfolioScenarios: portfolio.length, scenarios: results.length, packetP95Ms: times[Math.ceil(times.length * .95) - 1],
     passed: failed.length === 0 && !errors.length, failures: failed.length, browserErrors: errors, results };
   if (process.env.RESEARCH_REPORT_PATH) writeFileSync(process.env.RESEARCH_REPORT_PATH, JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ ...report, results: failed.slice(0, 30) }, null, 2));
