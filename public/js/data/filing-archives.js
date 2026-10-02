@@ -77,7 +77,7 @@ export function withFilingArchive(base, kind) {
       } catch (err) { error = err.message; }
       finally { pending = false; emit(); }
     },
-    onChange(fn) { listeners.add(fn); const off = base.onChange(fn); return () => { listeners.delete(fn); off(); }; },
+    onChange(fn, options) { listeners.add(fn); const off = base.onChange(fn, options); return () => { listeners.delete(fn); off(); }; },
     invalidate() { base.invalidate(); rows = []; error = null; loaded = false; revisions.clear(); },
   };
 }

@@ -993,9 +993,9 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       loading = null;
       seeding = null;
     },
-    onChange(fn) {
+    onChange(fn, options) {
       subscribers.add(fn);
-      const stop = kind === 'insider' ? exchangeDeals.onChange(fn) : null;
+      const stop = kind === 'insider' ? exchangeDeals.onChange(fn, options) : null;
       return () => { subscribers.delete(fn); stop?.(); };
     },
   };
