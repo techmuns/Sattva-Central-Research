@@ -97,7 +97,7 @@ const server = createServer((req, res) => {
       ...(version > 2 ? [
         { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:26:00Z`, subject: 'Stream batch first arrival', url: 'https://example.test/stream-first.pdf' },
         { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:27:00Z`, subject: 'Stream batch second arrival', url: 'https://example.test/stream-second.pdf' },
-        { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:28:00Z`, subject: 'Automatic arrival at the top', url: 'https://example.test/automatic.pdf' }] : []),
+        { company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:28:00Z`, subject: 'Stream batch automatic arrival at the top', url: 'https://example.test/automatic.pdf' }] : []),
       ...(version > 3 ? [{ company: 'Sterlite Technologies', ticker: 'STLTECH', publishedAt: `${IST_DAY.format(new Date())}T18:29:00Z`, subject: 'Arrival while reading older rows', url: 'https://example.test/reading.pdf' }] : []),
     ] }); return; }
     if (url.pathname === '/api/ipo-monitor') {
@@ -372,9 +372,13 @@ try {
   assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'remounting an old row does not restart the highlight');
   await page.locator('[data-table-search]').fill('');
   await selectPeriod('today');
+  // Today is ordered by relevance, then time, so a real filing captured today can rank above these
+  // fixtures. The search keeps the check to its own three rows: among them the newest leads.
+  await page.locator('[data-table-search]').fill('Stream batch');
+  await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
   await page.evaluate(() => {
     window.streamSeen = [];
-    const titles = ['Stream batch first arrival', 'Stream batch second arrival', 'Automatic arrival at the top'];
+    const titles = ['Stream batch first arrival', 'Stream batch second arrival', 'Stream batch automatic arrival at the top'];
     window.streamObserver = new MutationObserver(() => {
       for (const title of titles) {
         if (!window.streamSeen.some(item => item.title === title) && document.querySelector('tbody')?.textContent.includes(title))
@@ -385,9 +389,9 @@ try {
   });
   version = 3;
   await page.clock.fastForward(91_000);
-  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key]')?.textContent.includes('Automatic arrival at the top'), null, { timeout: 60000 });
+  await page.waitForFunction(() => document.querySelector('tbody tr[data-row-key]')?.textContent.includes('Stream batch automatic arrival at the top'), null, { timeout: 60000 });
   const streamed = await page.evaluate(() => { window.streamObserver.disconnect(); return window.streamSeen; });
-  assert.deepEqual(streamed.map(item => item.title), ['Stream batch first arrival', 'Stream batch second arrival', 'Automatic arrival at the top']);
+  assert.deepEqual(streamed.map(item => item.title), ['Stream batch first arrival', 'Stream batch second arrival', 'Stream batch automatic arrival at the top']);
   assert(streamed[1].at - streamed[0].at >= 80 && streamed[2].at - streamed[1].at >= 80,
     `one source batch enters as three separate rows: ${JSON.stringify(streamed)}`);
   assert(streamed[2].at - streamed[0].at < 1500, 'the visible stream completes quickly');
@@ -403,6 +407,7 @@ try {
     return cell?.isConnected && getComputedStyle(cell).animationName === 'none';
   }, null, { timeout: 10000 });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.locator('[data-table-search]').fill('');
   if (process.env.GENERAL_ALERTS_DARK_SCREENSHOT) {
     await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; document.body.style.background = '#0f172a'; });
     await page.screenshot({ path: process.env.GENERAL_ALERTS_DARK_SCREENSHOT });
