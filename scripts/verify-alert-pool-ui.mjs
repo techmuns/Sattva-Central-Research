@@ -98,15 +98,18 @@ const settledAlerts = async (page) => {
       && /^0\b/.test(document.querySelector('[data-row-count]')?.textContent.trim() || '');
     return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…')) && !document.querySelector('[data-table-loading]');
   }, null, { timeout: 120000 });
-  // Story grouping can hand the table new row objects after the first paint, and those are read in
-  // slices too, so settled means the readings are done and two reads a moment apart agree.
+  // Story grouping folds exact duplicate reports after the first paint and hands the table new row
+  // objects, which are read in slices too; a refresh repaints the unfolded rows until the fold runs
+  // again. So settled means the readings are done and two reads a moment apart agree on the painted
+  // rows AND on the complete count, which counts rows that are not painted.
   let previous = null;
   for (let attempt = 0; attempt < 40; attempt++) {
     await page.evaluate(async () => { await (await import('/js/data/surface-relevance.js')).relevanceSettled(); });
-    const keys = JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey)));
-    if (keys === previous) return;
-    previous = keys;
-    await page.waitForTimeout(750);
+    const state = JSON.stringify(await page.evaluate(() => [document.querySelector('[data-row-count]')?.textContent.trim() || '',
+      ...[...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey)]));
+    if (state === previous) return;
+    previous = state;
+    await page.waitForTimeout(1500);
   }
 };
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
