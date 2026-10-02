@@ -3,7 +3,10 @@
 // same answers as a fresh computation, live reads of an edited value where the cache promises
 // one, and shared results that stay correct. Pure Node, no egress, no browser.
 import assert from 'node:assert/strict';
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { pickField } from '../public/js/data/filings-shared.js';
+import { createFeed } from '../public/js/data/filings.js';
 import { insiderTradeIdentity, mergeInsiderTrades, withTradeCategory, INSIDER_TRADE_CATEGORY } from '../public/js/data/insider-history.js';
 import { newsDay, newsPublicationDay, newsPeriodBounds, matchesNewsPeriod } from '../public/js/data/news-window.js';
 import { attributionFor, companyNewsAttribution, attributeNewsRow, normalizeNewsText } from '../public/js/data/company-news-attribution.js';
@@ -118,6 +121,45 @@ assert.equal(attributeNewsRow(shared, alpha), underAlpha, 'the first identity st
 assert.equal(attributeNewsRow(shared, beta), underBeta);
 assert.equal(attributeNewsRow(shared, shared), attributeNewsRow(shared, shared), 'the row-as-identity fallback is stable too');
 assert.notEqual(attributeNewsRow(shared, { ...alpha }), underAlpha, 'a different identity object is a different reading');
+
+// --- ...and a decoration lives no longer than its identity. A re-read capture parses equal
+// identities into new objects while the row lives on; a strong inner map kept every earlier
+// decoration of every retained row (~60MB per re-read of the company-news head, measured).
+v8.setFlagsFromString('--expose-gc');
+const collectGarbage = vm.runInNewContext('gc');
+assert.equal(typeof collectGarbage, 'function', 'this check needs a real collection');
+const earlierReads = [];
+for (let read = 0; read < 3; read++) {
+  let reparsed = { ticker: 'ALPHA', name: 'Alpha Ltd' };
+  earlierReads.push(new WeakRef(attributeNewsRow(shared, reparsed)));
+  reparsed = null;
+}
+await new Promise(resolve => setImmediate(resolve)); // a WeakRef holds its target until the job ends
+collectGarbage(); collectGarbage();
+assert.equal(earlierReads.filter(ref => ref.deref() !== undefined).length, 0,
+  'a decoration read under an identity nobody holds any more is released, while its row lives on');
+assert.equal(attributeNewsRow(shared, alpha), underAlpha, 'an identity still held keeps its reading');
+
+// --- a re-read of an UNCHANGED news capture keeps its identity objects, so every row keeps its
+// reading. The shared poller re-reads the head every two minutes, and a re-read can be a fresh
+// parse with nothing changed (an evicted memory copy, an origin with no ETag): each one used to
+// re-attribute all 80,762 portfolio head rows and miss every cache keyed on them downstream.
+let headCapture = JSON.stringify({ capturedAt: '2026-09-10T08:00:00Z',
+  entities: [{ key: 'ALPHA', ticker: 'ALPHA', name: 'Alpha Ltd', brands: ['AlphaPay'] }],
+  byTicker: { ALPHA: [{ title: 'AlphaPay launches a new product', query: 'Alpha Ltd', date: '2026-09-10', url: 'https://example.com/alphapay' }] } });
+const headReads = [];
+const head = createFeed('news', { read: async path => { headReads.push(path); return { value: JSON.parse(headCapture), checkedAt: Date.now() }; } });
+await head.seed();
+const headRows = head.rows();
+assert.equal(headRows[0].attribution.status, 'confirmed', 'the head row is read under its reviewed brand');
+await head.refreshSnapshot();
+assert.equal(headReads.length, 2, 'the re-read really parsed the capture again');
+assert.equal(head.rows(), headRows, 'an unchanged capture re-read as a fresh parse keeps every decorated row');
+headCapture = headCapture.replace('"brands":["AlphaPay"]', '"brands":["AlphaPay"],"aliases":["Alpha Payments"]');
+await head.refreshSnapshot();
+assert.notEqual(head.rows()[0], headRows[0], 'a changed identity in the same capture is still adopted');
+assert.equal(head.rows()[0].attribution.status, 'confirmed');
+assert.equal(head.rows()[0].title, headRows[0].title, 'and it re-reads the same captured row');
 
 // --- a row's canonical address: remembered on the row, read live if the url is edited ----------
 const article = { url: 'https://www.example.com/story/amp/', title: 'One', source: 'Pub', date: '2026-09-10' };

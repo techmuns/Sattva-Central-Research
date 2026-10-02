@@ -788,7 +788,13 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       for (const entity of Array.isArray(body.entities) ? body.entities : []) {
         const key = String(entity?.key || entity?.ticker || entity?.entityId || '').toUpperCase();
         if (!key) continue;
-        state.identities.set(key, entity);
+        // AN UNCHANGED IDENTITY KEEPS ITS OBJECT, as the picker's merge in `setWanted` does. The
+        // shared poller re-reads this capture every two minutes, and a re-read can parse a fresh
+        // body without anything changing (an evicted memory copy, an origin with no ETag). `rows()`
+        // then re-attributed every head row of all 116 portfolio identities — 80,762 rows on the
+        // 2 October capture — and every cache keyed on those rows downstream missed at once.
+        const held = state.identities.get(key);
+        if (held !== entity && JSON.stringify(held) !== JSON.stringify(entity)) state.identities.set(key, entity);
         if (entity.name) state.names.set(key, entity.name);
       }
     }

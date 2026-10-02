@@ -122,14 +122,30 @@ export function attributionFor(row = {}) {
 // holding only the LAST identity per row was overwritten on every rebuild. Each rebuild then
 // produced a fresh decorated object, and every cache keyed on that object downstream (story
 // reading, canonical address, publication day) missed at once: profiled, one switch from AI
-// Alerts to All Alerts re-read the whole history for 4.5 seconds with every cache in place. The
-// inner map is keyed by the identity object and holds a handful of entries per row at most.
+// Alerts to All Alerts re-read the whole history for 4.5 seconds with every cache in place.
+//
+// THE INNER MAP IS WEAK IN THE IDENTITY, because "a handful of entries per row" holds only while
+// identity objects live as long as the rows. They do not: a re-read capture or archive index
+// parses equal identities into new objects, and the row outlives them. A strong inner map then kept
+// every earlier decoration of every retained row — and everything keyed on those decorations
+// downstream — reachable through an identity nobody could pass again: measured at ~60MB per
+// re-read of an unchanged company-news capture, every two minutes, in an open alerts or research
+// page. An entry now lives exactly as long as its row and its identity, which is every lookup that
+// can still hit it.
 const decorated = new WeakMap();
+const NO_IDENTITY = Object.freeze({});
 export function attributeNewsRow(row, identity = null) {
+  const key = identity ?? NO_IDENTITY;
+  if (typeof key !== 'object' && typeof key !== 'function') return decorate(row, identity);
   let byIdentity = decorated.get(row);
-  if (!byIdentity) { byIdentity = new Map(); decorated.set(row, byIdentity); }
-  const old = byIdentity.get(identity);
+  if (!byIdentity) { byIdentity = new WeakMap(); decorated.set(row, byIdentity); }
+  const old = byIdentity.get(key);
   if (old) return old;
+  const value = decorate(row, identity);
+  byIdentity.set(key, value);
+  return value;
+}
+function decorate(row, identity) {
   const attribution = companyNewsAttribution(row, identity || {});
   const value = { ...row, ticker: attribution.queryTicker, company: attribution.queryCompany,
     entityId: attribution.queryEntityId, attribution, queryTicker: attribution.queryTicker,
@@ -137,7 +153,6 @@ export function attributeNewsRow(row, identity = null) {
   if (attribution.status === 'unrelated') {
     value.ticker = null; value.entityId = null; value.company = null;
   }
-  byIdentity.set(identity, value);
   return value;
 }
 
