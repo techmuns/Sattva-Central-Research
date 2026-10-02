@@ -5,10 +5,6 @@ let lastDispatch = 0, apiTag = null;
 let byTicker = new Map(), insidersByTicker = new Map();
 let snapshot = null, rows = [], pending = null, loaded = false, lastCheck = 0, timer = null, deliveryError = null;
 const listeners = new Set();
-// Only active readers keep the 60-second check running. A cache observer (All Alerts' source
-// watcher stays subscribed for the page's lifetime) passes `poll: false`, so leaving the last
-// reader stops the background reads instead of polling for ever.
-const pollers = new Set();
 // A repaint may replace a subscription; deliver each revision to the original listeners once.
 const emit = () => [...listeners].forEach((fn) => fn());
 export const meta = () => snapshot ? { ...snapshot, records: undefined, insiders: undefined, securityMap: undefined, deliveryError, summary: exchangeSummary(snapshot, deliveryError), rowCount: rows.length } : null;
@@ -57,12 +53,11 @@ export async function refresh() {
   return pending;
 }
 function poll() { if (loaded && typeof document !== 'undefined' && !(document.hidden || innerWidth === 0)) void refresh(); }
-export function onChange(fn, { poll: keepFresh = true } = {}) {
+export function onChange(fn) {
   listeners.add(fn);
-  if (keepFresh) pollers.add(fn);
-  if (keepFresh && !timer && typeof document !== 'undefined') { timer = setInterval(poll, 60000); document.addEventListener('visibilitychange', poll); window.addEventListener('focus', poll); window.addEventListener('online', poll); if (loaded) void refresh(); }
+  if (!timer && typeof document !== 'undefined') { timer = setInterval(poll, 60000); document.addEventListener('visibilitychange', poll); window.addEventListener('focus', poll); window.addEventListener('online', poll); if (loaded) void refresh(); }
   return () => {
-    listeners.delete(fn); pollers.delete(fn);
-    if (!pollers.size && timer) { clearInterval(timer); timer = null; if (typeof document !== 'undefined') { document.removeEventListener('visibilitychange', poll); window.removeEventListener('focus', poll); window.removeEventListener('online', poll); } }
+    listeners.delete(fn);
+    if (!listeners.size) { clearInterval(timer); timer = null; if (typeof document !== 'undefined') { document.removeEventListener('visibilitychange', poll); window.removeEventListener('focus', poll); window.removeEventListener('online', poll); } }
   };
 }

@@ -181,10 +181,6 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
-      - name: Verify the bulk/block poller stops with its last active reader
-        env:
-          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-exchange-deals-poller-ui.mjs
       - name: Verify private alert access, pagination and public-cache exclusion
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

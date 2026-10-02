@@ -426,8 +426,6 @@ function observeSources() {
     [announcements, ['announcements']], [insider, ['insider']], [news, ['news']],
     [marketNews, ['market-news']], [records, []], ...additionalSourceDependencies,
   ];
-  // This observer only invalidates cached readings and stays for the page's lifetime, so it must
-  // not keep the insider feed's bulk/block poller running after every tab that reads it has left.
   for (const [source, ids] of dependencies) source.onChange?.(() => {
     for (const id of ids) normalizedFeeds.delete(id);
     if (ids.includes('news') || ids.includes('market-news')) {
@@ -439,7 +437,7 @@ function observeSources() {
       if (normalizedFeeds.get(other)?.windowKey !== 'null') normalizedFeeds.delete(other);
     }
     listeners.forEach((fn) => fn());
-  }, source === insider ? { poll: false } : undefined);
+  });
   // Some collectors resolve issuer names against the current in-memory portfolio.
   coverage.onChange(({ changed }) => { if (changed) normalizedFeeds.clear(); });
 }
