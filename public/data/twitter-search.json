@@ -1816,11 +1816,11 @@
       "error": "search-unavailable"
     },
     "isin:INE976I01016|TATACAP": {
-      "lastAttemptAt": "2026-09-28T23:34:05+00:00",
+      "lastAttemptAt": "2026-10-02T14:34:27+00:00",
       "error": "search-unavailable"
     },
     "isin:INE142M01025|Tata Technologies": {
-      "lastAttemptAt": "2026-09-29T00:07:12+00:00",
+      "lastAttemptAt": "2026-10-02T15:06:11+00:00",
       "error": "search-unavailable",
       "lastResultCount": 59,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
@@ -2079,6 +2079,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 196,
-    "checkedAt": "2026-10-02T13:54:20.782149+00:00"
+    "checkedAt": "2026-10-02T15:06:11.290098+00:00"
   }
 }
