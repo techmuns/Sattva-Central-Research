@@ -49,6 +49,17 @@ assert.equal(assembleSnapshot({ list, books: {}, failed, previous: attempted, ca
 const historical = retainHistory({ ...raw, quarters: ['Sep 2026', 'Jun 2026'], holdings: [raw.holdings[0]] }, raw);
 assert(historical.quarters.includes('Mar 2026'));
 assert.equal(historical.holdings[0].quarterlyHoldings['Mar 2026'], 3);
+// From 30 September 2026 the source prints "Jun 2026%". It is the same period: the capture accepts
+// the book and folds it into the retained history without a second column for any quarter.
+const percent = (label) => `${label}%`;
+const decoratedRaw = { ...raw, fetchedAt: '2026-09-10T00:00:00Z', quarters: ['Sep 2026', 'Jun 2026'].map(percent), holdings: [
+  { ...raw.holdings[0], quarterlyHoldings: { 'Sep 2026%': 'Filing Due', 'Jun 2026%': 5 } }] };
+assert.equal(validateBook(decoratedRaw, raw.slug, raw), decoratedRaw, 'percent-labelled periods are valid periods');
+const decoratedHistory = retainHistory(decoratedRaw, raw);
+assert.deepEqual(decoratedHistory.quarters, ['Sep 2026', 'Aug 2026', 'Jun 2026', 'Mar 2026']);
+assert.equal(decoratedHistory.holdings[0].quarterlyHoldings['Jun 2026'], 5, 'the newer read replaces the same period');
+assert.equal(decoratedHistory.holdings[0].quarterlyHoldings['Mar 2026'], 3, 'older periods are retained under their canonical labels');
+assert.equal(decoratedHistory.holdings[0].quarterlyStatus['Sep 2026'], 'filing_due');
 
 const report = assessCoverage({ snapshot: { ...retained, capturedAt: '2026-10-01' }, now: '2026-10-01T00:00:00Z',
   managers: { syncedAt: '2026-10-01', managers: [{ id: 'pms', name: 'PMS', kind: 'pms', asOf: '2026-07-31', statements: [{}] },

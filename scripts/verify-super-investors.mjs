@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { normalisePortfolio, classifyHolding, deriveMoves, filedPair, isFiledQuarter, quarterOrder } from '../public/js/data/finology-shared.js';
+import { normalisePortfolio, classifyHolding, deriveMoves, filedPair, isFiledQuarter, quarterOrder, canonicalQuarter } from '../public/js/data/finology-shared.js';
 import { summariseQuarter } from '../public/js/data/investor-quarterly.js';
 import { fetchInvestorPortfolio } from '../worker/finology.mjs';
 import { withTag } from '../worker/http.mjs';
@@ -14,6 +14,27 @@ const book = (slug, holdings, qs = quarters) => normalisePortfolio({ slug, name:
 const action = (holding) => classifyHolding(book('one', [holding]).holdings[0], ...quarters)?.action;
 try {
   assert.equal(quarterOrder('2026-13'), null);
+  // The source's period headings gained a trailing "%" on 30 September 2026 ("Sep 2026%"). The unit
+  // is not part of the period: the same quarters, the same cells, the same comparisons.
+  for (const [label, canonical] of [['Sep 2026%', 'Sep 2026'], ['Jun 2026 %', 'Jun 2026'], ['Mar 26 (%)', 'Mar 26'], ['Holding %', 'Holding %'], ['%', '%']]) {
+    assert.equal(canonicalQuarter(label), canonical, label);
+  }
+  assert.equal(quarterOrder('Jun 2026%'), 202606);
+  assert.equal(isFiledQuarter('Jun 2026%'), true);
+  const decorated = normalisePortfolio({ slug: 'pct', name: 'pct', quarters: ['Mar 2026%', 'Jun 2026%'], holdings: [
+    { company: 'Example Ltd.', companySlug: 'EXAMPLE', quarterlyHoldings: { 'Jun 2026%': 2, 'Mar 2026%': '1' }, valueCr: 10 },
+    { company: 'Due Ltd.', companySlug: 'DUE', quarterlyHoldings: { 'Jun 2026%': 'Filing Due', 'Mar 2026%': 1.5 }, valueCr: 5 },
+  ] }, 'pct');
+  assert.deepEqual(decorated.quarters, ['Jun 2026', 'Mar 2026'], 'percent-labelled headings are read as the same periods');
+  assert.deepEqual(decorated.filedQuarters, ['Jun 2026', 'Mar 2026']);
+  assert.deepEqual(decorated.holdings[0].quarterlyHoldings, { 'Jun 2026': 2, 'Mar 2026': 1 }, 'cells under a decorated heading are kept');
+  assert.equal(decorated.holdings[1].quarterlyStatus['Jun 2026'], 'filing_due', "the source's own note under a decorated heading is kept");
+  assert.equal(classifyHolding(decorated.holdings[0], ...filedPair(decorated.quarters)).action, 'added');
+  assert.deepEqual(normalisePortfolio(JSON.parse(JSON.stringify(decorated)), 'pct'), decorated, 'a normalised decorated book is stable');
+  const mixed = normalisePortfolio({ slug: 'mix', quarters: ['Jun 2026', 'Jun 2026%'], holdings: [
+    { company: 'Both', quarterlyHoldings: { 'Jun 2026': 3, 'Jun 2026%': 9 } }] }, 'mix');
+  assert.deepEqual(mixed.quarters, ['Jun 2026'], 'one period printed both ways is one column');
+  assert.equal(mixed.holdings[0].quarterlyHoldings['Jun 2026'], 3, 'the undecorated cell wins where both exist');
   for (const q of ['Sep 2026', 'Dec 2026', 'Jun 2027', 'Aug 2026', 'unknown', '2026-00']) assert.equal(isFiledQuarter(q), false, q);
   assert.equal(isFiledQuarter('Jun 2026'), true);
   assert.equal(isFiledQuarter('Jun 2026', Date.parse('2026-06-30T12:00:00Z')), false);

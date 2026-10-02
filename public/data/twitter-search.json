@@ -1286,7 +1286,7 @@
       "pending": []
     },
     "isin:INE004A01022|Protean eGov Technologies": {
-      "lastAttemptAt": "2026-09-27T19:50:41+00:00",
+      "lastAttemptAt": "2026-10-02T05:19:42+00:00",
       "error": "search-unavailable",
       "lastResultCount": 3,
       "lastSuccessAt": "2026-09-18T06:26:21+00:00",
@@ -1294,71 +1294,89 @@
       "pending": []
     },
     "isin:INE004A01022|PROTEAN": {
-      "lastAttemptAt": "2026-09-27T20:23:40+00:00",
-      "error": "search-unavailable"
-    },
-    "isin:INE0SII01026|Quality Power Electrical Equipments": {
-      "lastAttemptAt": "2026-09-27T20:37:05+00:00",
-      "error": "search-unavailable"
-    },
-    "isin:INE0SII01026|QPOWER": {
-      "lastAttemptAt": "2026-09-27T21:29:17+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 102,
-      "targetThrough": "2026-09-13T23:47:09+00:00",
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 103,
+      "targetThrough": "2026-10-02T05:50:51+00:00",
       "pending": [
         {
-          "from": "2026-09-04T23:47:09.668058+00:00",
-          "to": "2026-09-09T11:47:09.334029+00:00"
+          "from": "2026-09-23T05:50:51.629330+00:00",
+          "to": "2026-09-27T17:50:51.314665+00:00"
         },
+        {
+          "from": "2026-09-27T17:50:51.314665+00:00",
+          "to": "2026-10-02T05:50:51+00:00"
+        }
+      ]
+    },
+    "isin:INE0SII01026|Quality Power Electrical Equipments": {
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": null,
+      "lastResultCount": 21,
+      "lastSuccessAt": "2026-10-02T05:50:51+00:00",
+      "targetThrough": null,
+      "pending": []
+    },
+    "isin:INE0SII01026|QPOWER": {
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": null,
+      "lastResultCount": 32,
+      "targetThrough": "2026-09-13T23:47:09+00:00",
+      "pending": [
         {
           "from": "2026-09-09T11:47:09.334029+00:00",
           "to": "2026-09-13T23:47:09+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-02T05:50:51+00:00"
     },
     "isin:INE855B01025|Rain Industries": {
-      "lastAttemptAt": "2026-09-27T21:59:50+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 36,
-      "lastSuccessAt": "2026-09-13T23:47:09+00:00",
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": null,
+      "lastResultCount": 52,
+      "lastSuccessAt": "2026-10-02T05:50:51+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE855B01025|RAIN": {
-      "lastAttemptAt": "2026-09-27T22:32:16+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 107,
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 110,
       "targetThrough": "2026-09-13T23:47:09+00:00",
       "pending": [
         {
-          "from": "2026-09-04T23:47:09.668058+00:00",
-          "to": "2026-09-09T11:47:09.334029+00:00"
-        },
-        {
           "from": "2026-09-09T11:47:09.334029+00:00",
           "to": "2026-09-13T23:47:09+00:00"
+        },
+        {
+          "from": "2026-09-04T23:47:09.668058+00:00",
+          "to": "2026-09-07T05:47:09.501044+00:00"
+        },
+        {
+          "from": "2026-09-07T05:47:09.501044+00:00",
+          "to": "2026-09-09T11:47:09.334029+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-02T05:50:51+00:00"
     },
     "isin:INE399G01023|Ramkrishna Forgings": {
-      "lastAttemptAt": "2026-09-27T23:05:27+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 30,
-      "lastSuccessAt": "2026-09-13T23:47:09+00:00",
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": null,
+      "lastResultCount": 67,
+      "lastSuccessAt": "2026-10-02T05:50:51+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE399G01023|RKFORGE": {
-      "lastAttemptAt": "2026-09-27T23:30:05+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 26,
-      "lastSuccessAt": "2026-09-13T23:47:09+00:00",
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
+      "error": null,
+      "lastResultCount": 37,
+      "lastSuccessAt": "2026-10-02T05:50:51+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE027A01015|Rashtriya Chemicals": {
-      "lastAttemptAt": "2026-09-28T00:01:42+00:00",
+      "lastAttemptAt": "2026-10-02T05:50:51+00:00",
       "error": "search-unavailable",
       "lastResultCount": 14,
       "lastSuccessAt": "2026-09-13T23:47:09+00:00",
@@ -1915,8 +1933,8 @@
   },
   "coverage": {
     "planned": 232,
-    "attempted": 1,
-    "incomplete": 226,
-    "checkedAt": "2026-10-02T04:43:53.914228+00:00"
+    "attempted": 8,
+    "incomplete": 222,
+    "checkedAt": "2026-10-02T05:50:51.629330+00:00"
   }
 }
