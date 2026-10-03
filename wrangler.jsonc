@@ -111,6 +111,27 @@
       "name": "NEWSLETTER_LIMITER",
       "namespace_id": "1704",
       "simple": { "limit": 12, "period": 60 }
+    },
+    {
+      // Important / Not important votes. One vote per browser per item is stored; this bounds a
+      // burst of unauthenticated writes to the shared relevance preference.
+      "name": "RELEVANCE_FEEDBACK_LIMITER",
+      "namespace_id": "1706",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      // AI Read of one Corporate Announcement on a reader's click. The object also enforces a
+      // durable daily allowance and per-document attempts; a stored reading costs nothing.
+      "name": "ANNOUNCEMENT_READ_LIMITER",
+      "namespace_id": "1707",
+      "simple": { "limit": 12, "period": 60 }
+    },
+    {
+      // Corporate Announcements pages, events and profiles. A reader scrolling and filtering makes
+      // bursts of reads; this bounds a script, not a person.
+      "name": "ANNOUNCEMENT_INDEX_LIMITER",
+      "namespace_id": "1708",
+      "simple": { "limit": 240, "period": 60 }
     }
   ]
 

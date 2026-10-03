@@ -196,3 +196,17 @@ export function* mergeAnnouncementSteps(...lists) {
   }
   return yield* sortSteps(out, (a, b) => `${b.date || ''} ${b.time || ''}`.localeCompare(`${a.date || ''} ${a.time || ''}`));
 }
+
+/**
+ * One row of NSE's live announcements feed in the Corporate Announcements shape: the subject is the
+ * exchange's label, the description its statement, and the publication instant becomes an IST date and
+ * time — never a guessed one. Shared by the browser's stream and the Worker's announcement index, so a
+ * live filing reads the same on both paths.
+ */
+export function nseAnnouncement(row) {
+  const time = Date.parse(row.publishedAt || '');
+  const ist = Number.isFinite(time) ? new Date(time + 19800000).toISOString() : null;
+  return { ...row, title: row.subject || row.description || null, summary: row.description || null,
+    date: ist?.slice(0, 10) || null, time: ist?.slice(11, 19) || null,
+    url: announcementUrl(row.url), source: 'NSE', sources: ['NSE'], providers: ['NSE announcements RSS'] };
+}

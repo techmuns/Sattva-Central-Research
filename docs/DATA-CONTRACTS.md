@@ -5519,12 +5519,19 @@ company history load automatically, with bounded concurrency and revision checks
 re-downloading unchanged archive files. NSE contributes up to 90 days of retained history without
 changing the history range selected in the separate NSE Filings tab. Failed reads retain rows.
 
-The page contains its heading and one searchable, newest-first table with export. It has no
-company/date lookup form, archive-load button, capture diagnostics, extra dropdown filters or
-second Watchlist filter. The global scope control chooses the companies. Older rows render as
-the reader scrolls; counts, search and export include all loaded records. Background arrivals
-preserve the reader's search, focus and scroll position. Source coverage, capture errors and
-unresolved company details remain available through the information link below the table.
+The page contains its heading and one searchable table with export: newest day first and, within
+a day, the filings an investor would read first (October 2026 — see
+[Investor relevance](ANNOUNCEMENT-RELEVANCE.md)). It is served one ranked page at a time by the
+`announcement-index` artifact and its Worker object, with the browser answering the same question
+from the captures where the index cannot be read. Beside the period it offers a Category
+multi-select and a Market cap band / custom-range filter; it has no company/date lookup form,
+archive-load button, capture diagnostics or second Watchlist filter. The global scope control
+chooses the companies. Subjects are the exchange's own, exactly as filed; Categories, Market cap and
+"N related filings" sit beside them, and clicking a filing opens the on-request AI Read popup. The
+next page loads as the reader scrolls; counts, facets and export cover the whole matching set (an
+export holds the first 25,000 in order and says so when more match). Background arrivals preserve
+the reader's search, focus and scroll position. Source coverage, capture errors and unresolved
+company details remain available through the information link below the table.
 
 ### Ask Research comparable activities and optional price history
 

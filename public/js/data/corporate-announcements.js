@@ -1,7 +1,7 @@
 // One read-only stream over the existing BSE/company captures and live NSE feed.
 import { announcements } from './filings.js';
 import * as nseFilings from './nse-filings.js';
-import { announcementUrl, mergeAnnouncements } from './announcements-shared.js';
+import { mergeAnnouncements, nseAnnouncement } from './announcements-shared.js';
 import { createAnnouncementIdentity, filingTicker, mergeExchangeIdentities } from './announcement-identity.js';
 import { capturedJson } from './company-captures.js';
 import { filterByScope } from './scope.js';
@@ -10,13 +10,7 @@ import * as watchlist from '../core/watchlist.js';
 export const LIVE_ID = 'corporate-announcements';
 export const POLL_MS = 90_000;
 
-export function nseAnnouncement(row) {
-  const time = Date.parse(row.publishedAt || '');
-  const ist = Number.isFinite(time) ? new Date(time + 19800000).toISOString() : null;
-  return { ...row, title: row.subject || row.description || null, summary: row.description || null,
-    date: ist?.slice(0, 10) || null, time: ist?.slice(11, 19) || null,
-    url: announcementUrl(row.url), source: 'NSE', sources: ['NSE'], providers: ['NSE announcements RSS'] };
-}
+export { nseAnnouncement };
 
 export function createCorporateAnnouncementsFeed({ base = announcements, nse = nseFilings,
   readIdentities = () => capturedJson('data/announcement-identities.json'),

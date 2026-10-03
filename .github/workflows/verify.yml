@@ -17,7 +17,7 @@ jobs:
           curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz -o "$RUNNER_TEMP/actionlint.tar.gz"
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
-          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/bse-access-check.yml
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= .github/workflows/mutual-funds-refresh.yml .github/workflows/investor-disclosures-refresh.yml .github/workflows/verify.yml .github/workflows/announcements-refresh.yml .github/workflows/bse-access-check.yml .github/workflows/announcement-index-refresh.yml
   contracts:
     runs-on: ubuntu-latest
     # Full-history alert checks exceeded the former ten-minute job budget while
@@ -98,6 +98,10 @@ jobs:
         run: node scripts/verify-announcement-lookups.mjs && node scripts/verify-announcement-document-hashes.mjs
       - name: Verify continuous corporate announcement sources and retention
         run: node scripts/verify-corporate-stream.mjs && node scripts/verify-bse-collection.mjs && node scripts/verify-bse-request-profile.mjs && node scripts/verify-announcement-recovery.mjs
+      - name: Verify investor relevance, categories, event stitching, shared feedback, the announcement index and AI Read
+        run: node scripts/verify-relevance.mjs
+      - name: Verify the announcement index, shared feedback and AI Read across real Durable Object RPC in the local Worker runtime
+        run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-announcements-runtime.mjs'
       - name: Verify domestic filings and earnings provenance
         run: node scripts/verify-domestic-filings.mjs
       - name: Verify automatic filing capture and archives
@@ -309,6 +313,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-corporate-stream-ui.mjs
+      - name: Verify ranked announcement pages, categories, market cap, related filings, AI Read and shared feedback
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-announcements-ui.mjs
       - name: Verify corporate actions scopes, retention and responsive table
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

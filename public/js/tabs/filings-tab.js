@@ -336,8 +336,13 @@ export function makeFilingsTab(cfg) {
       searchable: cfg.searchable,
       searchControl,
       link: cfg.link === false ? null : cfg.link || ((r) => r.url || null),
-      initialSort: cfg.initialSort || { key: 'Date', dir: 'desc' },
+      initialSort: cfg.initialSort === null ? null : cfg.initialSort || { key: 'Date', dir: 'desc' },
       initialView: view,
+      onRowClick: cfg.onRowClick ? (row) => cfg.onRowClick(row, ctx) : null,
+      afterSub: cfg.afterSub || null,
+      allowSort: cfg.allowSort !== false,
+      toolbarControls: cfg.toolbarControls?.(ctx, m) || null,
+      loading: cfg.loading?.(m) || false,
       onFilterChange(next, index) {
         if (cfg.prepareReading?.(next, index)) { view = next; render(ctx); }
       },
@@ -392,6 +397,7 @@ export function makeFilingsTab(cfg) {
       <div data-filings-busy>${busyStrip(m)}</div>
       ${cfg.aboveTable?.(ctx, m) || ''}
       ${table.html}
+      ${cfg.belowTable?.(ctx, m) || ''}
       ${methodFooter(cfg)}`;
 
     const nextScroller = ctx.root.querySelector('[data-table-scroll]');
@@ -413,6 +419,7 @@ export function makeFilingsTab(cfg) {
       search.setSelectionRange(selection.start, selection.end);
     }
     disposers.push(cfg.wireAboveTable?.(ctx.root, ctx));
+    disposers.push(cfg.wireBelowTable?.(ctx.root, ctx));
     wireMethod(ctx.root, m, cov, ctx.scope, rows);
     // THE ACCOUNT MOVED BEHIND THE PILL, IT DID NOT GO. A permanent grey paragraph under the
     // heading — how old the capture is, how many companies were searched, what they answered —
