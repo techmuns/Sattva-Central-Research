@@ -39,7 +39,7 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
   const wanted = tickers ? [...new Set(tickers)] : (captureIndex?.companies || []).map((c) => c.ticker);
   const companies = new Map((captureIndex?.companies || []).map((company) => [company.ticker, company]));
   const authenticatedOutage = kind === 'announcements' && captureIndex?.sourceOutages?.authenticatedAnnouncements;
-  const gaps = [], tally = { checked: 0, failed: 0, never: 0, stale: 0, backfill: 0, unregistered: 0, unavailableLinks: 0 };
+  const gaps = [], tally = { checked: 0, failed: 0, partial: 0, never: 0, stale: 0, backfill: 0, unregistered: 0, unavailableLinks: 0 };
   const bse = { checked: 0, failed: 0, never: 0, stale: 0, backfill: 0, total: 0, unavailableLinks: 0, gaps: [] };
   for (const ticker of wanted) {
     const entry = entries[ticker];
@@ -48,6 +48,10 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
     else {
       tally.unavailableLinks += entry.unavailableLinks || 0;
       if (authenticatedOutage) { tally.failed++; reason = 'Authenticated announcement source is unavailable'; }
+      else if (entry.error?.reason === 'limited-coverage' && Number.isFinite(Date.parse(entry.recovery?.checkedAt))
+        && Date.parse(entry.recovery.checkedAt) <= now + 600000 && now - Date.parse(entry.recovery.checkedAt) <= 4 * 3600000) {
+        tally.partial++; reason = 'Recent notices recovered from Screener; complete announcement history remains unavailable';
+      }
       else if (entry.error) { tally.failed++; reason = entry.error.message || 'Source read failed'; }
       else if (!entry.lastSuccessAt) { tally.never++; reason = 'Not checked yet'; }
       else {
@@ -107,6 +111,7 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
     available: !!captureIndex, error,
     from: captureIndex?.requestedFrom, to: captureIndex?.requestedTo, updatedAt: captureIndex?.updatedAt,
     unresolved: captureIndex?.unresolved || [], portfolio: captureIndex?.portfolio || null,
+    nonExchange: captureIndex?.nonExchange || [],
     registration: captureIndex?.registration || null, identitySources: captureIndex?.identitySources || {},
     sourceOutages: captureIndex?.sourceOutages || {}, entries };
 }

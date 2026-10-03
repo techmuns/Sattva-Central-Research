@@ -54,6 +54,13 @@ export async function loadDomesticFilings(ticker, form = 'all', { signal } = {})
     return result;
   } catch (err) {
     if (signal?.aborted || err.name === 'AbortError') throw err;
+    // A provider without this issuer must not hide documents the scheduled public fallback
+    // actually checked. Its source timestamp and stale/error state remain authoritative.
+    try {
+      const captured = await loadCapturedDomesticFilings(t, form);
+      if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+      if (!captured.stale) return captured;
+    } catch (captureError) { if (signal?.aborted || captureError.name === 'AbortError') throw captureError; }
     const fallback = loaded.get(key) || previous?.value;
     if (fallback) {
       const result = { ...fallback, stale: true, error: err.message };

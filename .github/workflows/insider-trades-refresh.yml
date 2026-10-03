@@ -100,8 +100,13 @@ jobs:
           for attempt in 1 2 3 4; do
             if git push origin HEAD:main; then exit 0; fi
             echo "Push rejected (attempt $attempt) — rebasing onto fresh main..."
-            git fetch origin main
-            git rebase origin/main || { git rebase --abort; exit 1; }
+            # Reapply only this run's capture. Following a merged PR's parents from a shallow
+            # checkout can otherwise download the repository's entire older data history.
+            capture_parent=$(git rev-parse HEAD^)
+            git fetch --depth=1 origin main
+            git rebase --onto origin/main "$capture_parent" || { git rebase --abort; exit 1; }
+            # Another publisher may already have saved exactly these records.
+            if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then exit 0; fi
             sleep $((attempt * 2))
           done
           exit 1

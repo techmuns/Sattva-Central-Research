@@ -153,7 +153,10 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
           if (!object(entry)) { group('company-unregistered', 'critical', ticker); continue; }
           unavailableLinks += Number(entry.unavailableLinks) || 0;
           if (kind === 'announcements' && authenticatedAnnouncementOutage) continue;
-          if (entry.error) group(['no-token', 'unauthorised'].includes(entry.error.reason) ? 'authentication-failed' : 'source-read-failed', 'critical', ticker);
+          if (entry.error?.reason === 'limited-coverage' && Number.isFinite(stamp(entry.recovery?.checkedAt))
+            && stamp(entry.recovery.checkedAt) <= now + 600000 && now - stamp(entry.recovery.checkedAt) <= 4 * 3600000)
+            group('partial-source-response', 'warning', ticker);
+          else if (entry.error) group(['no-token', 'unauthorised'].includes(entry.error.reason) ? 'authentication-failed' : 'source-read-failed', 'critical', ticker);
           else if (entry.skipped) group('partial-source-response', 'critical', ticker);
           else if (!entry.lastSuccessAt) {
             const registered = stamp(entry.registeredAt || body.createdAt);
@@ -226,6 +229,7 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
       }
       if (body.stoppedForAuth && !findings.some((f) => f.code === 'authentication-failed')) add(source, 'authentication-failed', 'critical');
       if (Array.isArray(body.unresolved) && body.unresolved.length) add(source, 'company-identities-unresolved', 'warning', body.unresolved);
+      if (Array.isArray(body.nonExchange) && body.nonExchange.length) add(source, 'private-issuer-filings-unavailable', 'warning', body.nonExchange.map(c => `${c.name} (${c.isin})`));
     } else {
       if (!object(body.byTicker)) { add(source, 'invalid-capture', 'critical'); continue; }
       const lists = Object.values(body.byTicker);

@@ -5,6 +5,7 @@ import worker from '../worker/index.js';
 import { fetchDomesticFilings } from '../worker/muns.mjs';
 import { normaliseDomesticFilings, documentUrl, domesticFilingsHref, earningsReportDocument, earningsAnnouncementDocument, earningsDocumentUrl } from '../public/js/data/domestic-filings-shared.js';
 import { loadDomesticFilings } from '../public/js/data/domestic-filings.js';
+import { loadCompanyCaptureIndex } from '../public/js/data/company-captures.js';
 import { clearAll } from '../public/js/core/store.js';
 import * as legacyEarnings from '../public/js/data/earnings.js';
 
@@ -129,6 +130,21 @@ try {
   assert.equal(fallback.documents.length, 3);
   assert.equal(fallback.stale, true);
   assert.match(fallback.error, /Expired/);
+
+  const checkedAt = new Date().toISOString();
+  globalThis.fetch = async path => {
+    if (path === 'api/domestic-filings/HEG?form=all') return Response.json({ ok: false, reason: 'not-found', message: 'Primary provider has no company' });
+    if (path === 'data/filing-capture/index.json') return Response.json({ version: 1, companies: [{ ticker: 'HEG' }], sources: {
+      domestic: { HEG: { lastSuccessAt: checkedAt, lastResponseAt: checkedAt, provider: 'Screener company page' } } } });
+    if (path === 'data/filing-capture/domestic/HEG.json') return Response.json({ rows: [{ ...parsed.documents[0], ticker: 'HEG' }] });
+    throw Error(`Unexpected fixture path: ${path}`);
+  };
+  await loadCompanyCaptureIndex({ force: true });
+  const recovered = await loadDomesticFilings('HEG');
+  assert.equal(recovered.documents.length, 1);
+  assert.equal(recovered.stale, false, 'a failed live provider cannot hide a freshly checked scheduled fallback');
+  assert.equal(recovered.fetchedAt, checkedAt, 'opening a company cannot manufacture a newer source check');
+  assert.equal(recovered.origin, 'snapshot');
 
   const mock = JSON.parse(await readFile(new URL('./fixtures/mock-earnings.json', import.meta.url)));
   legacyEarnings.prime(mock);

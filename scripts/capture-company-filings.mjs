@@ -8,6 +8,7 @@ import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { loadCaptureRegistrations } from './lib/capture-registrations.mjs';
 import { collectBseCompanyAnnouncements } from './lib/bse-collection.mjs';
 import { enrichCrossExchangeDocumentHashes, expandCrossExchangeObservations } from './lib/announcement-document-hashes.mjs';
+import { createScreenerCompanyFallback, companySourceTicker } from './lib/screener-company-filings.mjs';
 
 const dataDir = fileURLToPath(new URL('../public/data/', import.meta.url));
 const base = (process.env.FILINGS_BASE || 'https://sattva-central-research.tech-441.workers.dev').replace(/\/+$/, '');
@@ -28,11 +29,12 @@ const failed = (error) => ({
 });
 let proxyAuthFailure = null;
 const announcementHashCache = new Map();
+const screenerCompany = createScreenerCompanyFallback();
 async function proxyRequest(kind, ticker, range, company) {
   if (proxyAuthFailure) throw Object.assign(new Error(proxyAuthFailure.message), proxyAuthFailure);
   const query = kind === 'domestic' ? 'form=all' : `fromDate=${range.from.replaceAll('-', '')}&toDate=${range.to.replaceAll('-', '')}`;
   const path = kind === 'domestic' ? 'domestic-filings' : 'announcements';
-  const sourceTicker = kind === 'announcements' ? company?.announcementTicker || ticker : ticker;
+  const sourceTicker = companySourceTicker(company || { ticker });
   const response = await fetch(`${base}/api/${path}/${encodeURIComponent(sourceTicker)}?${query}`, {
     headers: { accept: 'application/json' }, signal: AbortSignal.timeout(25000),
   });
@@ -48,6 +50,21 @@ async function proxyRequest(kind, ticker, range, company) {
   const result = await boundedJson(response, 8 * 1024 * 1024);
   if (result?.ok === false && ['no-token', 'unauthorised'].includes(result.reason)) proxyAuthFailure = failed(result);
   return result;
+}
+async function companyRequest(kind, ticker, range, company) {
+  const primary = await proxyRequest(kind, ticker, range, company);
+  if (primary?.ok !== false || primary.reason !== 'not-found') return primary;
+  try {
+    const page = await screenerCompany(company);
+    const metadata = { fetchedAt: page.fetchedAt, provider: 'Screener company page', sourceUrl: page.sourceUrl,
+      primaryError: { reason: primary.reason, message: String(primary.message || 'Primary provider has no company feed').slice(0, 300) } };
+    if (kind === 'domestic') return { ok: true, documents: page.documents, skipped: page.skipped,
+      unavailableLinks: page.unavailableLinks, ...metadata };
+    if (!page.announcementReadable || page.announcementSkipped) throw Error('Recent notices could not be fully parsed.');
+    return { ok: true, announcements: page.announcements, limited: true, skipped: 0, ...metadata };
+  } catch (error) {
+    return { ...primary, reason: 'company-fallback', message: `${primary.message || 'Primary provider has no company feed'}; fallback: ${error.message}`.slice(0, 300) };
+  }
 }
 async function bseRequest(bseCode, range) {
   const result = await collectBseCompanyAnnouncements(
@@ -70,11 +87,11 @@ const result = await captureCompanySources({
   }),
   expandAnnouncements: expandCrossExchangeObservations,
   request: async (kind, ticker, range, company, { bseRange, bseCode } = {}) => {
-    if (kind === 'domestic') return proxyRequest(kind, ticker, range, company);
+    if (kind === 'domestic') return companyRequest(kind, ticker, range, company);
     // Both reads settle before the company checkpoint is handled. A failed authenticated proxy
     // cannot discard a successful official BSE read, and a BSE outage cannot freeze NSE/Muns rows.
     const [legacy, bse] = await Promise.allSettled([
-      range ? proxyRequest(kind, ticker, range, company) : null,
+      range ? companyRequest(kind, ticker, range, company) : null,
       bseRange && bseCode ? bseRequest(bseCode, bseRange) : null,
     ]);
     return {

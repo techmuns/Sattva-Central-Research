@@ -1,0 +1,23 @@
+name: Company feed access check
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/company-feed-access-check.yml'
+      - 'scripts/check-company-feed-access.mjs'
+      - 'scripts/lib/screener-company-filings.mjs'
+permissions:
+  contents: read
+jobs:
+  access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Verify free company-page access without publishing
+        run: node scripts/check-company-feed-access.mjs

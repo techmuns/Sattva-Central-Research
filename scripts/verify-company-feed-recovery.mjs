@@ -1,0 +1,136 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { parseScreenerCompanyFilings, createScreenerCompanyFallback } from './lib/screener-company-filings.mjs';
+import { captureCompanies, captureCompanySources, readJson, writeJson } from './lib/company-capture.mjs';
+import { createAnnouncementIdentity, announcementIssuerIsin } from '../public/js/data/announcement-identity.js';
+import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
+import { companyCaptureStatusFromIndex } from '../public/js/data/company-captures.js';
+
+const at = Date.parse('2026-10-01T16:00:00Z');
+const fixture = `<html><div data-company-id="42"></div>
+<section id="top"><a href="https://www.nseindia.com/get-quotes/equity?symbol=HEGAM">NSE</a></section>
+<section id="quarters"><a aria-label="Raw PDF" href="/company/source/quarter/42/6/2026/">PDF</a></section>
+<section id="documents">
+<div id="company-announcements-tab"><ul><li><a href="https://www.bseindia.com/notice.pdf">Order &amp; update
+<div><time datetime="2026-10-01T13:40:34+05:30">Today</time> AI-generated summary must not enter filings</div></a></li></ul></div>
+<div class="documents annual-reports"><div><ul><li><a href="https://issuer.example/2026.pdf">Annual Report 2026</a></li>
+<li><a href="https://issuer.example/2025.pdf">Annual Report 2025</a></li></ul></div></div>
+<div class="documents concalls"><div><ul><li><div>Jul 2026</div><a title="Raw Transcript" href="https://issuer.example/transcript.pdf">Transcript</a>
+<button data-url="/ai-summary">AI Summary</button><a href="https://issuer.example/presentation.pdf">PPT</a></li>
+<li><div>Apr 2026</div><div>Transcript</div></li></ul></div></div></section></html>`;
+const company = { ticker: 'HEG', announcementTicker: 'HEGAM', isin: 'INE545A01024' };
+const parsed = parseScreenerCompanyFilings(fixture, company, at);
+assert.equal(parsed.documents.length, 4);
+assert.equal(parsed.skipped, 0);
+assert.equal(parsed.unavailableLinks, 1);
+assert.deepEqual(parsed.documents.filter(d => d.form === 'earnings_report').map(d => d.date), ['2026-06']);
+assert.equal(parsed.announcements[0].title, 'Order & update');
+assert(!JSON.stringify(parsed).includes('AI-generated'));
+const emptyRecent = fixture.replace(/<div id="company-announcements-tab">[\s\S]*?<\/ul><\/div>/,
+  '<div id="company-announcements-tab"><p class="sub">No data available.</p></div>');
+const emptyParsed = parseScreenerCompanyFilings(emptyRecent, company, at);
+assert.equal(emptyParsed.announcements.length, 0);
+assert.equal(emptyParsed.announcementReadable, true, 'FSC explicitly reports no recent notices; this is not a parser failure');
+assert.equal(parseScreenerCompanyFilings(emptyRecent.replace('No data available.', ''), company, at).announcementReadable, false,
+  'an unexplained empty recent section cannot count as a successful source check');
+assert.equal(parseScreenerCompanyFilings(emptyRecent.replace('company-announcements-tab', 'missing-announcements'), company, at).announcementReadable, false,
+  'a missing recent section cannot be inferred from other empty document sections');
+assert.throws(() => parseScreenerCompanyFilings(fixture, { ticker: 'UNRELATED' }, at), /identity not verified/);
+assert.throws(() => parseScreenerCompanyFilings(fixture.slice(0, -7), company, at), /incomplete/);
+assert.throws(() => parseScreenerCompanyFilings(fixture.replace('annual-reports', 'unknown-reports'), company, at), /section missing/);
+assert.equal(parseScreenerCompanyFilings(fixture.replace('https://issuer.example/2026.pdf', 'javascript:alert(1)'), company, at).skipped, 1);
+assert.equal(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/'), company, at).skipped, 1);
+const noAnnual = fixture.replace(/<div class="documents annual-reports">[\s\S]*?<div class="documents concalls">/,
+  '<div class="documents annual-reports"><p>No data available.</p><a href="https://www.sebi.gov.in/filing">DRHP</a></div><div class="documents concalls">');
+assert.equal(parseScreenerCompanyFilings(noAnnual, company, at).skipped, 0);
+let requests = 0;
+const page = createScreenerCompanyFallback({ now: () => at, fetcher: async url => {
+  requests++; assert(url.endsWith('/HEGAM/consolidated/')); return new Response(fixture);
+} });
+await Promise.all([page(company), page(company)]);
+assert.equal(requests, 1, 'announcement and document fallback share a bounded page read');
+let attempts = 0;
+const retry = createScreenerCompanyFallback({ now: () => at, sleep: async () => {}, fetcher: async () => {
+  if (++attempts === 1) throw new TypeError('fetch failed');
+  return new Response(fixture);
+} });
+assert.equal((await retry(company)).documents.length, 4);
+assert.equal(attempts, 2, 'one transport retry can recover the first connection without dropping this company');
+attempts = 0;
+const denied = createScreenerCompanyFallback({ sleep: async () => assert.fail('HTTP refusals are not retried'), fetcher: async () => {
+  attempts++; return new Response('Denied', { status: 403 });
+} });
+await assert.rejects(denied(company), /HTTP 403/);
+assert.equal(attempts, 1);
+attempts = 0;
+const offline = createScreenerCompanyFallback({ sleep: async () => {}, fetcher: async () => { attempts++; throw new TypeError('offline'); } });
+await assert.rejects(offline(company), /offline/);
+assert.equal(attempts, 2, 'persistent transport failure is bounded and never becomes an empty success');
+
+const dir = mkdtempSync(join(tmpdir(), 'sattva-company-recovery-'));
+try {
+  writeJson(join(dir, 'universe.json'), [{ Company: 'Dhoot', 'Screener URL': 'https://www.screener.in/company/id/1286088/consolidated/' }]);
+  writeJson(join(dir, 'announcement-identities.json'), { entries: [{ ticker: 'BORORENEW', isin: 'INE666D01022', bseCode: '502219' }] });
+  const holdings = [
+    { name: 'Borosil Renewables Limited - Warrants 13ag26', isin: 'INE666D13019', ticker: null },
+    { name: 'Everest Fleet', isin: 'INE0LTR01029', ticker: null },
+    { name: 'Efpl Pref 18042043', isin: 'INE0LTR03090', ticker: null },
+  ];
+  const scope = captureCompanies(dir, { announcements: true, holdings });
+  assert.deepEqual(scope.companies.map(c => c.ticker), ['BORORENEW', 'DHOOTTRANS']);
+  assert.deepEqual(scope.unresolved, []);
+  assert.equal(scope.nonExchange.length, 2);
+  assert(scope.nonExchange.every(c => c.exchangeFilings === 'unavailable'));
+  assert.equal(announcementIssuerIsin('INE666D13019'), 'INE666D01022');
+  const identity = createAnnouncementIdentity([{ ticker: 'BORORENEW', isin: 'INE666D01022' }]);
+  assert.equal(identity.find(holdings[0]).ticker, 'BORORENEW');
+  assert.equal(identity.find({ isin: ' ine666d13019 ' }).ticker, 'BORORENEW', 'issuer relationships preserve existing ISIN normalization');
+  const entities = portfolioNewsEntities(holdings);
+  for (const isin of ['INE0LTR01029', 'INE0LTR03090']) {
+    const entity = entities.find(e => e.portfolioIsins.includes(isin));
+    assert.equal(entity.entityId, `isin:${isin}`, 'reviewed issuer names cannot strand old news history');
+    assert.equal(entity.legalName, 'Everest Fleet Private Limited');
+    assert.equal(entity.ticker, null);
+    assert(entity.queries.includes('Everest Fleet Private Limited'));
+  }
+  assert(entities.find(e => e.portfolioIsins.includes('INE666D13019')).queries.includes('Borosil Renewables Limited'));
+
+  const capture = join(dir, 'capture');
+  const oldDocument = { ticker: 'HEG', form: 'annual_report', title: 'Retained report', url: 'https://issuer.example/2020.pdf' };
+  writeJson(join(capture, 'domestic/HEG.json'), { rows: [oldDocument] });
+  writeJson(join(capture, 'index.json'), { version: 1, sources: { domestic: { HEG: { queryTicker: 'HEG', rowCount: 1,
+    lastSuccessAt: '2026-09-01T00:00:00Z', nextRetryAt: '2026-10-02T00:00:00Z', error: { reason: 'not-found' } } } } });
+  const opts = { dir: capture, companies: [company], now: () => at, spacingMs: 0, concurrency: 1,
+    request: async kind => kind === 'domestic' ? { ok: true, ...parsed, fetchedAt: new Date(at).toISOString(), provider: 'Screener company page' }
+      : { ok: true, announcements: parsed.announcements, limited: true, fetchedAt: new Date(at).toISOString(),
+        sourceUrl: 'https://www.screener.in/company/HEGAM/consolidated/', primaryError: { reason: 'not-found' } } };
+  let index = await captureCompanySources(opts);
+  assert.equal(index.sources.domestic.HEG.queryTicker, 'HEGAM');
+  assert.equal(index.sources.domestic.HEG.error, null);
+  assert(readJson(join(capture, 'domestic/HEG.json')).rows.some(d => d.url === oldDocument.url));
+  const recovered = index.sources.announcements.HEG;
+  assert.equal(readJson(join(capture, 'announcements/HEG.json')).rows.length, 1);
+  assert.equal(recovered.error.reason, 'limited-coverage');
+  assert.equal(recovered.primaryError.reason, 'not-found');
+  assert.equal(recovered.ranges.length, 0, 'a few latest notices cannot certify the requested year');
+  assert(!recovered.lastSuccessAt);
+  assert.equal(Date.parse(recovered.nextRetryAt) - at, 2 * 3600000);
+  const status = companyCaptureStatusFromIndex(index, 'announcements', null, at);
+  assert.equal(status.partial, 1); assert.equal(status.checked, 0); assert.equal(status.failed, 0);
+  assert.equal(companyCaptureStatusFromIndex(index, 'announcements', null, at + 5 * 3600000).failed, 1);
+  index = await captureCompanySources({ ...opts, now: () => at + 2 * 3600000,
+    request: async () => ({ ok: true, announcements: emptyParsed.announcements, limited: true,
+      fetchedAt: new Date(at + 2 * 3600000).toISOString(), sourceUrl: 'https://www.screener.in/company/HEGAM/consolidated/' }) });
+  assert.equal(readJson(join(capture, 'announcements/HEG.json')).rows.length, 1, 'an explicitly empty recent page retains captured notices');
+  assert.equal(index.sources.announcements.HEG.recovery.rowCount, 0);
+  assert.equal(index.sources.announcements.HEG.error.reason, 'limited-coverage');
+  assert.equal(index.sources.announcements.HEG.ranges.length, 0, 'an explicitly empty recent page cannot close historical gaps');
+  index = await captureCompanySources({ ...opts, now: () => at + 4 * 3600000,
+    request: async () => ({ ok: false, reason: 'upstream', message: 'Fallback failed' }) });
+  assert.equal(readJson(join(capture, 'announcements/HEG.json')).rows.length, 1, 'a later outage cannot delete recovered notices');
+  assert.equal(index.sources.announcements.HEG.error.reason, 'upstream');
+  assert.equal(companyCaptureStatusFromIndex(index, 'announcements', null, at + 4 * 3600000).failed, 1);
+} finally { rmSync(dir, { recursive: true, force: true }); }
+console.log('PASS company source aliases, exact security identities, free document fallback, retained history and explicit partial coverage');

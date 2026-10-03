@@ -3,6 +3,8 @@ import { dirname, join } from 'node:path';
 import { announcementSourceUrls, announcementSources, mergeAnnouncements } from '../../public/js/data/announcements-shared.js';
 import { documentUrl } from '../../public/js/data/domestic-filings-shared.js';
 import { createAnnouncementIdentity, filingTicker, mergeExchangeIdentities } from '../../public/js/data/announcement-identity.js';
+import { marketTicker } from '../../public/js/data/market-identity.js';
+import { companySecurityIdentity } from '../../public/js/data/company-security-identities.js';
 
 export const day = (time) => new Date(time).toISOString().slice(0, 10);
 const shift = (date, days) => day(Date.parse(date) + days * 86400000);
@@ -122,8 +124,11 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
   const seen = new Map();
   const storageTickers = new Map();
   const unresolved = [];
+  const nonExchange = [];
   for (const c of known) {
-    const ticker = String(c.ticker || /\/company\/([^/]+)/.exec(c['Screener URL'] || '')?.[1] || '').trim().toUpperCase();
+    const ticker = String(marketTicker(c) || '').trim().toUpperCase();
+    const security = companySecurityIdentity(c.isin);
+    if (!ticker && security) { nonExchange.push({ isin: c.isin, name: c.name, ...security }); continue; }
     if (!/^[A-Z0-9&._-]{1,80}$/.test(ticker)) { unresolved.push(c.name || c.Company || ticker || 'Unnamed company'); continue; }
     const identity = announcements ? identityIndex.find({ ...c, ticker }) : null;
     const sourceTicker = c.announcementTicker || (identity && filingTicker(identity.ticker || identity.bseSymbol));
@@ -146,11 +151,12 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
       ...(/^\d{6}$/.test(bseCode) ? { bseCode } : {}), priority: !!c.priority });
     storageTickers.set(ticker, { key, company: seen.get(key) });
   }
-  return { companies: [...seen.values()], unresolved: [...new Set(unresolved)] };
+  return { companies: [...seen.values()], unresolved: [...new Set(unresolved)],
+    nonExchange: [...new Map(nonExchange.map(c => [c.isin, c])).values()] };
 }
 
 /** Bounded, restartable capture. Dependencies are injectable for offline failure/recovery tests. */
-export async function captureCompanySources({ dir, companies, unresolved = [], portfolio = null, registration = null, identitySources = null, request, now = Date.now,
+export async function captureCompanySources({ dir, companies, unresolved = [], nonExchange = [], portfolio = null, registration = null, identitySources = null, request, now = Date.now,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), budgetMs = 20 * 60000,
   spacingMs = 2500, concurrency = 3, backfillDays = 365, maxRequests = Infinity,
   prepareAnnouncements = null, expandAnnouncements = null, onProgress = () => {} }) {
@@ -165,7 +171,9 @@ export async function captureCompanySources({ dir, companies, unresolved = [], p
   const wanted = new Set(companies.map((c) => c.ticker));
   index.companies = companies;
   index.unresolved = unresolved;
-  if (portfolio) index.portfolio = portfolio;
+  index.nonExchange = nonExchange;
+  if (portfolio) index.portfolio = { ...portfolio,
+    unresolvedHoldings: (portfolio.unresolvedHoldings || []).filter(c => unresolved.includes(c.name)) };
   if (registration) index.registration = registration;
   if (identitySources) index.identitySources = identitySources;
   index.requestedFrom = from;
@@ -180,12 +188,19 @@ export async function captureCompanySources({ dir, companies, unresolved = [], p
       if (!entries[ticker]) entries[ticker] = { rowCount: 0, ranges: [], registeredAt: new Date(start).toISOString() };
       else entries[ticker].registeredAt ||= index.createdAt;
       entries[ticker].priority = !!priority;
-      const queryTicker = kind === 'announcements' ? announcementTicker || ticker : ticker;
+      if (!entries[ticker].companyFallbackVersion) {
+        // A newly available source should get one normal scheduled attempt even when the old
+        // provider's repeated 404s had reached their day-long backoff. No check is fabricated.
+        if (entries[ticker].error?.reason === 'not-found') entries[ticker].nextRetryAt = null;
+        entries[ticker].companyFallbackVersion = 1;
+      }
+      const queryTicker = announcementTicker || ticker;
       if (entries[ticker].queryTicker && entries[ticker].queryTicker !== queryTicker) {
         // Coverage belongs to the exact upstream identity. Retain the evidence already captured,
         // but remove that provider's attribution and make the corrected symbol prove every
         // historical window again. Independently captured direct-BSE evidence survives.
-        const purged = purgeProviderEvidence(dir, ticker, 'Muns corporate announcements', source => source === 'BSE');
+        const purged = kind === 'announcements'
+          ? purgeProviderEvidence(dir, ticker, 'Muns corporate announcements', source => source === 'BSE') : { changed: false };
         if (purged.changed) {
           const saved = readJson(join(dir, companyPath('announcements', ticker)), { rows: [] });
           entries[ticker].rowCount = saved.rows.length;
@@ -265,13 +280,25 @@ export async function captureCompanySources({ dir, companies, unresolved = [], p
     // Never persist request headers or raw errors which could contain credentials.
     entry.error = { reason: error.reason || 'upstream', message: error.message || 'Source could not be read', at: attemptedAt };
     entry.failureCount = Math.min(10, (Number(entry.failureCount) || 0) + 1);
-    const delay = Math.min(24 * 3600000, Math.max(2 * 3600000 * 2 ** (entry.failureCount - 1), Number(error.retryAfterMs) || 0));
+    const delay = Math.min(24 * 3600000, Math.max(2 * 3600000 * 2 ** (error.reason === 'company-fallback' ? 0 : entry.failureCount - 1), Number(error.retryAfterMs) || 0));
     entry.nextRetryAt = new Date(now() + delay).toISOString();
   };
   const completeSource = (entry, result, range, attemptedAt) => {
     entry.skipped = result.skipped || 0;
     entry.unavailableLinks = result.unavailableLinks || 0;
     entry.lastResponseAt = result.fetchedAt || attemptedAt;
+    entry.provider = result.provider || (entry.bseCode ? 'BSE company index' : 'Muns');
+    entry.primaryError = result.primaryError || null;
+    if (result.limited === true) {
+      // The company page exposes only its latest notices. Retain them, keep every full-window
+      // gap open, and poll the fallback again on the normal two-hour collection cadence.
+      entry.recovery = { checkedAt: result.fetchedAt || attemptedAt, rowCount: result.announcements.length,
+        sourceUrl: result.sourceUrl, scope: 'Recent company notices only; full history remains unverified.' };
+      failSource(entry, Object.assign(Error(entry.recovery.scope), { reason: 'limited-coverage' }), attemptedAt);
+      entry.nextRetryAt = new Date(now() + 2 * 3600000).toISOString();
+      return false;
+    }
+    entry.recovery = null;
     for (const field of ['declared', 'collected', 'pages', 'requests']) {
       if (Number.isFinite(result[field]) && result[field] >= 0) entry[field] = result[field];
     }
