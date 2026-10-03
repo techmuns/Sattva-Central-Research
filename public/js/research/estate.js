@@ -1353,6 +1353,20 @@ export function prepareResearchSources({ onProgress = null } = {}) {
   return preparing;
 }
 
+/**
+ * Every loader awaited to completion, with no deadline — for a check that has to read ONE settled
+ * dashboard on every retrieval. `prepareResearchSources()` gives each loader `LOADER_TIMEOUT_MS`,
+ * and a loader that misses it keeps loading and lands in a later read. That is right for a reader
+ * and wrong for a comparison between two reads: on a slow runner the second retrieval of a question
+ * read a source the first had not, its peer ranking differed, and a suite asserting the fitted
+ * candidates against the wider retrieval's order failed on a dashboard nothing had changed. The page
+ * never calls this; the browser harness does, once, before its first question.
+ */
+export async function settleResearchSources() {
+  const loads = BUILDERS.filter((builder) => builder.load).map((builder) => Promise.resolve().then(() => builder.load()));
+  await Promise.allSettled([alerts.prepareSources({}), ...loads]);
+}
+
 export async function buildResearchEvidence({ question, scope = 'portfolio', portfolio = undefined, portfolioPositions = undefined, history = [], prepared = null, signal, onProgress = null, charBudget = undefined } = {}) {
   const { deferred, loadErrors } = await withResearchDeadline(prepared || prepareResearchSources({ onProgress }), 'Dashboard sources', { signal, timeoutMs: LOADER_TIMEOUT_MS + 1000 });
   if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');

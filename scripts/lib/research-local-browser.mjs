@@ -42,6 +42,14 @@ export async function researchLocalBrowser({ intercept = null } = {}) {
       (await import('/js/core/state.js')).setData({ universe });
       window.research = await import('/js/research/estate.js');
       window.prepared = await research.prepareResearchSources();
+      // A loader that missed prepare()'s deadline keeps loading and lands in a later read, so two
+      // retrievals of one question could read different dashboards on a slow runner - measured on
+      // CI as a peer ranking that differed between the fitted packet and the wider retrieval it was
+      // asserted against. Settle every load once, so every question reads the same saved dashboard.
+      // Bounded, and named when the bound is what ended the wait, so a hang is a message and not a
+      // silent return to the race.
+      const settled = await Promise.race([research.settleResearchSources().then(() => true), new Promise(done => setTimeout(() => done(false), 120_000))]);
+      if (!settled) console.warn('[harness] research sources did not settle within 120s; retrievals may read different dashboards');
     });
     return { page, close: async () => { await browser.close(); await new Promise(done => server.close(done)); } };
   } catch (error) {
