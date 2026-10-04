@@ -107,23 +107,32 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
     const quarters = block(html, 'section', tag => attr(tag, 'id') === 'quarters');
     if (quarters === null) throw bad('quarterly reports section missing');
     const quarterLinks = links(quarters).filter(a => attr(a.attrs, 'aria-label') === 'Raw PDF');
-    if (!quarterLinks.length && !/No data available/i.test(quarters)) {
-      // JAYBEE explicitly renders a result table with no period columns and an empty Raw PDF row.
-      // A populated table whose link markup changed must not be treated as that empty state.
-      const table = block(quarters, 'table', tag => attr(tag, 'class').split(/\s+/).includes('data-table')) || '';
-      const headings = [...(block(table, 'thead', () => true) || '').matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)];
-      const pdfCells = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
-        .map(row => [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)])
-        .find(cells => text(cells[0]?.[1]) === 'Raw PDF') || [];
-      if (!(headings.length === 1 && !text(headings[0][1]) && pdfCells.length === 1)) {
-        throw bad('unverified empty quarterly reports');
-      }
-    }
     for (const a of quarterLinks) {
       const match = /^\/company\/source\/quarter\/(\d+)\/(\d{1,2})\/(\d{4})\/$/.exec(a.href);
       if (!match || match[1] !== companyId || +match[2] < 1 || +match[2] > 12) { skipped++; continue; }
       const period = `${match[3]}-${match[2].padStart(2, '0')}`;
       add(a.href, 'earnings_report', `Quarterly results ${period}`, period);
+    }
+    if (!quarterLinks.length && /No data available/i.test(quarters)) return;
+    const table = block(quarters, 'table', tag => attr(tag, 'class').split(/\s+/).includes('data-table')) || '';
+    const headings = [...(block(table, 'thead', () => true) || '').matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)];
+    const pdfCells = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
+      .map(row => [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)])
+      .find(cells => text(cells[0]?.[1]) === 'Raw PDF') || [];
+    // A populated period/PDF row must account for every slot, even if some anchors still parse.
+    // JAYBEE's one blank header plus one Raw PDF label explicitly declares zero period slots.
+    if (!headings.length || text(headings[0][1]) || pdfCells.length !== headings.length ||
+        quarterLinks.length !== headings.length - 1) {
+      throw bad(quarterLinks.length ? 'incomplete quarterly report links' : 'unverified empty quarterly reports');
+    }
+    for (let i = 1; i < headings.length; i++) {
+      const header = /^([A-Z][a-z]{2}) (\d{4})$/.exec(text(headings[i][1]));
+      const month = header && ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(header[1]) + 1;
+      const cellLinks = links(pdfCells[i][1]);
+      if (!month || cellLinks.length !== 1 || attr(cellLinks[0].attrs, 'aria-label') !== 'Raw PDF' ||
+          cellLinks[0].href !== `/company/source/quarter/${companyId}/${month}/${header[2]}/`) {
+        throw bad('incomplete quarterly report period');
+      }
     }
   });
   let recent = null, announcementError = null;

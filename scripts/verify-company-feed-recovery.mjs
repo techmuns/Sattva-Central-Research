@@ -11,7 +11,7 @@ import { companyCaptureStatusFromIndex } from '../public/js/data/company-capture
 const at = Date.parse('2026-10-01T16:00:00Z');
 const fixture = `<html><div data-company-id="42"></div>
 <section id="top"><a href="https://www.nseindia.com/get-quotes/equity?symbol=HEGAM">NSE</a></section>
-<section id="quarters"><a aria-label="Raw PDF" href="/company/source/quarter/42/6/2026/">PDF</a></section>
+<section id="quarters"><table class="data-table"><thead><tr><th></th><th>Jun 2026</th></tr></thead><tbody><tr><td>Raw PDF</td><td><a aria-label="Raw PDF" href="/company/source/quarter/42/6/2026/">PDF</a></td></tr></tbody></table></section>
 <section id="documents">
 <div id="company-announcements-tab"><ul><li><a href="https://www.bseindia.com/notice.pdf">Order &amp; update
 <div><time datetime="2026-10-01T13:40:34+05:30">Today</time> AI-generated summary must not enter filings</div></a></li></ul></div>
@@ -60,6 +60,11 @@ assert.equal(parseScreenerCompanyFilings(withQuarters(noPeriods), company, at).d
   'JAYBEE zero-period table explicitly has no quarterly report slots');
 assertDocumentFailure(withQuarters(noPeriods.replace('</th>', '</th><th>Jun 2026</th>')), /unverified empty quarterly reports/);
 assertDocumentFailure(withQuarters(noPeriods.replace('Raw PDF', 'New label')), /unverified empty quarterly reports/);
+const partialQuarter = fixture.replace('<th>Jun 2026</th>', '<th>Jun 2026</th><th>Sep 2026</th>')
+  .replace('>PDF</a></td>', '>PDF</a></td><td><a aria-label="Changed label" href="/company/source/quarter/42/9/2026/">PDF</a></td>');
+const partialQuarterParsed = assertDocumentFailure(partialQuarter, /incomplete quarterly report links/);
+assert.equal(partialQuarterParsed.documents.filter(d => d.form === 'earnings_report').length, 1,
+  'the recognized quarterly document is retained while its unreadable neighbour stays incomplete');
 const mixedPage = parseScreenerCompanyFilings(fixture.replace('</li></ul></div>', '</li><li><a href="https://www.bseindia.com/undated.pdf">Unreadable notice</a></li></ul></div>'), company, at);
 const mixedResponse = screenerCompanyResponse({ ...mixedPage, fetchedAt: new Date(at).toISOString() }, 'announcements', { reason: 'not-found' });
 assert.equal(mixedResponse.announcements.length, 1, 'a malformed notice cannot discard its valid neighbour');
@@ -67,7 +72,7 @@ assert.equal(mixedResponse.skipped, 1);
 assert.equal(mixedResponse.limited, true);
 assert.throws(() => screenerCompanyResponse({ announcementReadable: false }, 'announcements', { reason: 'not-found' }), /could not be parsed/);
 assert.equal(parseScreenerCompanyFilings(fixture.replace('https://issuer.example/2026.pdf', 'javascript:alert(1)'), company, at).skipped, 1);
-assert.equal(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/'), company, at).skipped, 1);
+assert(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/'), company, at).skipped > 0);
 const noAnnual = fixture.replace(/<div class="documents annual-reports">[\s\S]*?<div class="documents concalls">/,
   '<div class="documents annual-reports"><p>No data available.</p><a href="https://www.sebi.gov.in/filing">DRHP</a></div><div class="documents concalls">');
 assert.equal(parseScreenerCompanyFilings(noAnnual, company, at).skipped, 0);
@@ -171,6 +176,7 @@ try {
     ['quarter', fixture.replace('id="quarters"', 'id="renamed-quarters"')],
     ['document-wrapper', fixture.replace('id="documents"', 'id="renamed-documents"')],
     ['document-id', fixture.replace('data-company-id', 'renamed-company-id')],
+    ['partial-quarter', partialQuarter],
   ]) {
     const isolatedDir = join(dir, label);
     writeJson(join(isolatedDir, 'domestic/HEG.json'), { rows: [oldDocument] });

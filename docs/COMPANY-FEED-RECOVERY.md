@@ -27,7 +27,11 @@ On a primary-provider `not-found` result, scheduled capture reads that company's
 public Screener page. Exact NSE-symbol or BSE-code links must verify its identity.
 Both source kinds share one bounded page request. Parsing failures cannot become
 successful empty collections. Historical documents and notices are merged into
-their existing durable files. A symbol correction does not purge domestic history.
+their existing durable files. A symbol correction does not purge domestic history. On 4 October, all 72 retained
+HEG document URLs were still present on the public HEGAM page, whose exact exchange
+identity matches ISIN INE545A01024. The other three corrected document aliases had
+no retained rows. These repairs do not change the issuer; deleting the verified
+HEG history merely because its query symbol changed would be incorrect.
 Primary authentication failures remain failures; the fallback does not conceal them.
 An immediate browser check may use fresh scheduled documents after an explicit
 `not-found`; authentication, server, network and malformed-response failures remain
@@ -36,7 +40,8 @@ Missing or unexplained empty document categories record a partial parsing failur
 than certifying no documents. Independently valid categories and notices are still retained;
 a document-category failure cannot discard announcements from the same shared page read.
 The document success timestamp does not advance until every category validates. JAYBEE's verified quarterly layout has no period columns and an empty Raw PDF row;
-it is accepted as an explicit empty result. A populated table with changed link markup fails.
+it is accepted as an explicit empty result. Every populated quarterly header/PDF slot must match its recognized link and period;
+even one changed anchor leaves document coverage incomplete while valid links survive.
 Malformed recent-notice entries leave validated neighbours retained with a skipped count
 and limited coverage. A corrected upstream company identity removes primary/fallback-only
 notice attribution and resets its coverage while independently captured BSE evidence survives.
