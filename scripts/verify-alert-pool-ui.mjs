@@ -71,7 +71,9 @@ const captureReads = (since = 0) => served.requests.slice(since).filter((path) =
 const poolReads = (since = 0) => served.requests.slice(since).filter((path) => path.startsWith('/api/alert-pool/'));
 
 async function openPage() {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+  // Compare the completed data presentation, not two independent entrance-animation clocks.
+  // Normal-motion queue timing and complete-model export are covered by verify-general-alerts-ui.
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce' });
   await context.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
   await context.addInitScript((base) => { localStorage.setItem('sattva:chatter-base', `${base}/fixture/chatter`); }, origin);
   const page = await context.newPage();
@@ -87,7 +89,11 @@ const settledAlerts = (page) => page.waitForFunction(() => {
   // the table's own empty state over a zero count, never the placeholders of a read still running.
   const empty = /^No loaded event\b/.test(document.querySelector('tbody')?.textContent.trim() || '')
     && /^0\b/.test(document.querySelector('[data-row-count]')?.textContent.trim() || '');
-  return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…')) && !document.querySelector('[data-table-loading]');
+  // The feeds may be ready while sliced story grouping still shows the original reports.
+  // Compare completed line items, never a fixed-delay sample of an intermediate count.
+  return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…'))
+    && document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
+    && !document.querySelector('[data-table-loading]');
 }, null, { timeout: 120000 });
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live

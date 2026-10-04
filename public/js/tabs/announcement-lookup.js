@@ -3,15 +3,17 @@ import { escapeHtml } from '../core/dom.js';
 import * as coverage from '../data/coverage.js';
 import { filterByScope } from '../data/scope.js';
 import { announcementRange } from '../data/announcements-shared.js';
+import { companyCaptureHoldings } from '../data/company-captures.js';
 
 export function announcementLookupControls(feed) {
   const day = (date) => date.toISOString().slice(0, 10);
   let draft = null, validation = '';
   function companies(ctx) {
-    const list = [...coverage.holdings(), ...(ctx.data?.universe || []), ...feed.rows().map((r) => ({ ticker: r.ticker, name: r.company }))];
+    const holdings = companyCaptureHoldings(coverage.holdings());
+    const list = [...holdings, ...(ctx.data?.universe || []), ...feed.rows().map((r) => ({ ticker: r.ticker, name: r.company }))];
     const unique = new Map();
     for (const row of list) if (row.ticker && !unique.has(row.ticker)) unique.set(row.ticker, row);
-    return filterByScope([...unique.values()], ctx.scope, coverage.holdings());
+    return filterByScope([...unique.values()], ctx.scope, holdings);
   }
   function html(ctx, meta) {
     const extra = meta.supplement;
@@ -20,7 +22,7 @@ export function announcementLookupControls(feed) {
     const status = validation || (extra.pending ? 'Reading additional announcements…' : last
       ? `${last.ticker} · ${last.from} to ${last.to}: ` + (last.error ? `Refresh failed: ${last.error} Saved announcements remain in the table.` : `${last.count} returned${last.fetchedAt ? ` · checked ${new Date(last.fetchedAt).toLocaleString()}` : ''}.`) + (last.skipped ? ` ${last.skipped} entries could not be read; coverage is incomplete.` : '')
       : 'Scheduled captures add company announcements automatically. Use this form for an immediate source check.');
-    return `${captureCoverageHtml('announcements', ctx.scope === 'universe' ? null : companies(ctx).map((c) => c.ticker))}<div class="mb-4 rounded-xl bg-white p-4 ring-1 ring-slate-200">
+    return `${captureCoverageHtml('announcements', ctx.scope === 'universe' ? null : companies(ctx).map((c) => c.ticker), { scope: ctx.scope })}<div class="mb-4 rounded-xl bg-white p-4 ring-1 ring-slate-200">
       <form data-announcement-lookup class="flex flex-wrap items-end gap-3">
         <label class="text-xs font-semibold text-slate-600">Additional sources — company
           <input name="ticker" list="announcement-companies" required maxlength="80" value="${escapeHtml(draft.ticker)}" placeholder="e.g. RELIANCE" class="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm">

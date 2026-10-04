@@ -224,9 +224,15 @@ try {
   assert(correctedRows.some(row => row.url === nseRow.url), 'unrelated retained rows survive a BSE code correction');
 
   const correctedTickerDir = join(scratch, 'corrected-query-ticker');
-  writeJson(join(correctedTickerDir, 'announcements/KISSHT.json'), { ticker: 'KISSHT', kind: 'announcements', rows: [pairedNse, bseRow] });
+  const wrongFallback = { ...pairedNse, url: 'https://www.bseindia.com/wrong-fallback.pdf', providers: ['Screener company recent notices'] };
+  const bothWrongProviders = { ...pairedNse, url: 'https://www.bseindia.com/both-wrong.pdf',
+    providers: ['Muns corporate announcements', 'Screener company recent notices'] };
+  const independentFallback = { ...bseRow, providers: ['BSE company index', 'Screener company recent notices'] };
+  writeJson(join(correctedTickerDir, 'announcements/KISSHT.json'), { ticker: 'KISSHT', kind: 'announcements',
+    rows: [pairedNse, wrongFallback, bothWrongProviders, independentFallback] });
   writeJson(join(correctedTickerDir, 'index.json'), { version: 1, sources: { announcements: { KISSHT: {
-    queryTicker: 'OLDKISSHT', rowCount: 2, ranges: [{ from: '2025-09-01', to: dayForTest(clock) }],
+    queryTicker: 'OLDKISSHT', rowCount: 4, ranges: [{ from: '2025-09-01', to: dayForTest(clock) }],
+    recovery: { checkedAt: recent, rowCount: 2 }, provider: 'Screener company page', primaryError: { reason: 'not-found' },
     lastSuccessAt: recent, recentCheckedAt: recent, bse: { bseCode: '544754', rowCount: 1, ranges: [] },
   } }, domestic: {} } });
   const correctedTicker = await captureCompanySources({ ...options, dir: correctedTickerDir, companies: [kissht], maxRequests: 0 });
@@ -234,6 +240,8 @@ try {
     'a corrected authenticated-provider symbol reopens all historical windows');
   assert.deepEqual(readJson(join(correctedTickerDir, 'announcements/KISSHT.json')).rows.map(row => row.url), [bseRow.url],
     'a corrected authenticated-provider symbol removes its rows while independent BSE evidence survives');
+  assert.deepEqual(readJson(join(correctedTickerDir, 'announcements/KISSHT.json')).rows[0].providers, ['BSE company index']);
+  assert.equal(correctedTicker.sources.announcements.KISSHT.recovery, null, 'the old identity cannot keep a recovered-source status');
 
   const invalidBseDir = join(scratch, 'invalid-bse-metadata');
   const invalidBse = await captureCompanySources({ ...options, dir: invalidBseDir, companies: [kissht], maxRequests: 1,

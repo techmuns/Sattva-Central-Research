@@ -6,7 +6,7 @@ import { escapeHtml } from '../core/dom.js';
 import { whenDeferredData } from '../core/state.js';
 import * as coverage from '../data/coverage.js';
 import { filterByScope } from '../data/scope.js';
-import { loadCompanyCaptureIndex } from '../data/company-captures.js';
+import { loadCompanyCaptureIndex, companyCaptureHoldings } from '../data/company-captures.js';
 import { captureCoverageHtml } from '../ui/capture-coverage.js';
 import { loadDomesticFilings, loadCapturedDomesticFilings } from '../data/domestic-filings.js';
 import { DOMESTIC_FORMS } from '../data/domestic-filings-shared.js';
@@ -88,7 +88,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
         columns: [
           { label: 'Type', get: (r) => DOMESTIC_FORMS[r.form] || 'Not specified' },
           { label: 'Date / period', get: (r) => r.date || '—' },
-          { label: 'Source', get: () => 'Screener.in via Muns' },
+          { label: 'Source', get: (r) => r.provider || r.source || 'Screener.in via Muns' },
         ],
         emptyMessage: `The source returned no ${DOMESTIC_FORMS[type].toLowerCase()} for ${ticker}.`,
         exportName: `sattva-filings-${ticker}`,
@@ -97,7 +97,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
           { header: 'Document', key: 'title', width: 45, get: (r) => r.title },
           { header: 'Type', key: 'form', width: 25, get: (r) => DOMESTIC_FORMS[r.form] || 'Not specified' },
           { header: 'Date / period', key: 'date', get: (r) => r.date || '' },
-          { header: 'Source', key: 'source', width: 25, get: () => 'Screener.in via Muns' },
+          { header: 'Source', key: 'source', width: 25, get: (r) => r.provider || r.source || 'Screener.in via Muns' },
           { header: 'Document URL', key: 'url', width: 70, get: (r) => r.url },
         ] }),
       });
@@ -121,10 +121,11 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
   form.querySelector('[data-refresh-documents]').addEventListener('click', () => { if (form.reportValidity()) void fetchDocuments({ live: true }); });
   void Promise.all([whenDeferredData(), loadCompanyCaptureIndex()]).then(() => {
     if (disposed) return;
-    const unique = new Map([...coverage.holdings(), ...(ctx.data?.universe || [])].filter((c) => c.ticker).map((c) => [c.ticker.toUpperCase(), { ...c, ticker: c.ticker.toUpperCase() }]));
-    companies = filterByScope([...unique.values()], ctx.scope, coverage.holdings());
+    const holdings = companyCaptureHoldings(coverage.holdings());
+    const unique = new Map([...holdings, ...(ctx.data?.universe || [])].filter((c) => c.ticker).map((c) => [c.ticker.toUpperCase(), { ...c, ticker: c.ticker.toUpperCase() }]));
+    companies = filterByScope([...unique.values()], ctx.scope, holdings);
     form.querySelector('datalist').innerHTML = companies.map((c) => `<option value="${escapeHtml(c.ticker)}">${escapeHtml(c.name || c.ticker)}</option>`).join('');
-    ctx.root.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('domestic', companies.map((c) => c.ticker));
+    ctx.root.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('domestic', companies.map((c) => c.ticker), { scope: ctx.scope });
     if (ctx.params?.company) void fetchDocuments();
   });
   return () => { offRefresh(); disposed = true; controller?.abort(); tableDispose?.(); };

@@ -1,4 +1,5 @@
 import { conditionalJson, readEntry } from '../core/store.js';
+import { announcementIssuerIsin } from './announcement-identity.js';
 
 let index = null, indexError = null, pending = null, checkedAt = 0;
 const capturedInFlight = new Map();
@@ -39,7 +40,7 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
   const wanted = tickers ? [...new Set(tickers)] : (captureIndex?.companies || []).map((c) => c.ticker);
   const companies = new Map((captureIndex?.companies || []).map((company) => [company.ticker, company]));
   const authenticatedOutage = kind === 'announcements' && captureIndex?.sourceOutages?.authenticatedAnnouncements;
-  const gaps = [], tally = { checked: 0, failed: 0, never: 0, stale: 0, backfill: 0, unregistered: 0, unavailableLinks: 0 };
+  const gaps = [], tally = { checked: 0, failed: 0, partial: 0, never: 0, stale: 0, backfill: 0, unregistered: 0, unavailableLinks: 0 };
   const bse = { checked: 0, failed: 0, never: 0, stale: 0, backfill: 0, total: 0, unavailableLinks: 0, gaps: [] };
   for (const ticker of wanted) {
     const entry = entries[ticker];
@@ -48,6 +49,16 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
     else {
       tally.unavailableLinks += entry.unavailableLinks || 0;
       if (authenticatedOutage) { tally.failed++; reason = 'Authenticated announcement source is unavailable'; }
+      else if (entry.skipped) {
+        tally.failed++;
+        const parseFailure = `${entry.skipped} source entries could not be parsed; valid records retained. ${entry.recovery?.scope || 'Coverage remains incomplete.'}`;
+        reason = entry.error && !['shape', 'limited-coverage'].includes(entry.error.reason)
+          ? `${entry.error.message || 'Source read failed'}. Previous response: ${parseFailure}` : parseFailure;
+      }
+      else if (entry.error?.reason === 'limited-coverage' && Number.isFinite(Date.parse(entry.recovery?.checkedAt))
+        && Date.parse(entry.recovery.checkedAt) <= now + 600000 && now - Date.parse(entry.recovery.checkedAt) <= 4 * 3600000) {
+        tally.partial++; reason = 'Recent-notice page checked on Screener; complete announcement history remains unavailable';
+      }
       else if (entry.error) { tally.failed++; reason = entry.error.message || 'Source read failed'; }
       else if (!entry.lastSuccessAt) { tally.never++; reason = 'Not checked yet'; }
       else {
@@ -107,11 +118,28 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
     available: !!captureIndex, error,
     from: captureIndex?.requestedFrom, to: captureIndex?.requestedTo, updatedAt: captureIndex?.updatedAt,
     unresolved: captureIndex?.unresolved || [], portfolio: captureIndex?.portfolio || null,
+    nonExchange: captureIndex?.nonExchange || [],
     registration: captureIndex?.registration || null, identitySources: captureIndex?.identitySources || {},
     sourceOutages: captureIndex?.sourceOutages || {}, entries };
 }
 export function companyCaptureStatus(kind, tickers = null, now = Date.now()) {
   return companyCaptureStatusFromIndex(index, kind, tickers, now, indexError);
+}
+// The capture resolves listed holdings by exact ISIN even when the book has no ticker.
+// Use its registered storage ticker, including reviewed warrant-to-issuer relationships.
+export function companyCaptureTickersForIsins(tickers, isins, captureIndex = index) {
+  const wanted = new Set(tickers || []);
+  const held = new Set(isins.map(announcementIssuerIsin).filter(Boolean));
+  for (const company of captureIndex?.companies || []) {
+    if (company.ticker && held.has(announcementIssuerIsin(company.isin))) wanted.add(company.ticker);
+  }
+  return [...wanted];
+}
+// Lookup controls must accept the same exact-ISIN issuers their coverage report counts.
+// Keep the original holdings and their symbols; add only registered issuer aliases.
+export function companyCaptureHoldings(holdings, captureIndex = index) {
+  const resolved = new Set(companyCaptureTickersForIsins([], holdings.map(c => c.isin), captureIndex));
+  return [...holdings, ...(captureIndex?.companies || []).filter(c => resolved.has(c.ticker))];
 }
 export async function capturedCompany(kind, ticker) {
   if (!/^[A-Z0-9&._-]{1,80}$/.test(ticker)) throw new Error('Choose a valid company ticker.');

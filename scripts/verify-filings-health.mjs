@@ -27,6 +27,16 @@ const healthy = {
 const assess = (value) => assessFilingsHealth(value, { now });
 assert.equal(assess(healthy).status, 'healthy');
 const original = structuredClone(healthy);
+const limitedNotices = structuredClone(healthy);
+limitedNotices.company.sources.announcements.A = { error: { reason: 'limited-coverage', message: 'Recent notices only' },
+  recovery: { checkedAt: recent, scope: 'Recent company notices only; full history remains unverified.' }, skipped: 0 };
+assert(assess(limitedNotices).findings.some(f => f.source === 'company/announcements' && f.code === 'partial-source-response' && f.severity === 'warning'));
+limitedNotices.company.sources.announcements.A.skipped = 1;
+assert(assess(limitedNotices).findings.some(f => f.source === 'company/announcements' && f.code === 'source-read-failed' && f.severity === 'critical'),
+  'a saved limited state cannot mask malformed rows on the recent page');
+const malformedStatus = companyCaptureStatusFromIndex(limitedNotices.company, 'announcements', null, now);
+assert.equal(malformedStatus.failed, 1); assert.equal(malformedStatus.partial, 0);
+assert.match(malformedStatus.gaps[0].reason, /1 source entries could not be parsed/);
 const categoryInventory = structuredClone(healthy);
 categoryInventory.announcements.categoryInventoryVerified = false;
 assert(assess(categoryInventory).findings.some((finding) => finding.source === 'announcements' &&

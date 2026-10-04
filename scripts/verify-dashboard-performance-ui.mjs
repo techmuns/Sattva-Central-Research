@@ -75,6 +75,30 @@ const errors = [];
 try {
   const context = await browser.newContext();
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.__performanceInteractionTiming = {};
+    for (const name of ['pointerdown', 'click']) document.addEventListener(name, event => {
+      const control = event.target.closest('[data-tab-id], [data-sources-open]');
+      if (!control) return;
+      const target = control.dataset.tabId || 'sources';
+      if (name === 'pointerdown') window.__performanceInteractionTiming = { target };
+      window.__performanceInteractionTiming[name] = { at: event.timeStamp, handledAt: performance.now() };
+    }, true);
+  });
+  // Locator.click() first waits for stability and may scroll a footer or tab into view. That
+  // automation setup is not input latency (a local trace spent >1s there before a 120ms tab
+  // response). Start at the actual pointer event timestamp, which includes queued input delay,
+  // then include processing and a painted frame. Keep the original 1s/600ms response budgets.
+  const afterInteractionPaint = async target => {
+    const timing = await page.evaluate(async () => {
+      await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      const events = window.__performanceInteractionTiming;
+      return { target: events.target, events, elapsedMs: performance.now() - events.pointerdown?.at };
+    });
+    assert.equal(timing.target, target, 'the measured input belongs to this control');
+    assert(Number.isFinite(timing.elapsedMs) && timing.elapsedMs >= 0, 'a real pointer input starts the response measurement');
+    return timing;
+  };
   page.on('pageerror', (error) => errors.push(error.message));
   await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
   await page.goto(origin);
@@ -129,9 +153,13 @@ try {
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
   const reloadedAt = Date.now();
-  await page.reload();
+  // Measure when the cached navigation is visible, not the later load event: load also waits
+  // for unrelated resources even after the app shell has painted. Keep the same 1.5s budget.
+  await page.reload({ waitUntil: 'commit' });
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 });
-  assert(Date.now() - reloadedAt < 1500, 'repeat visit paints from the app cache without waiting for the network');
+  const repeatPaintMs = Date.now() - reloadedAt;
+  assert(repeatPaintMs < 1500,
+    `repeat visit paints from the app cache without waiting for the network (${repeatPaintMs}ms)`);
   await page.locator('[data-brand-mark] img').evaluate(image => image.decode());
   await page.waitForSelector('#content-host[data-active-tab="ai-alerts"]', { timeout: 1500 });
   // Ask Research's illustration remains cached, but AI Alerts is now the landing tab.
@@ -155,10 +183,17 @@ try {
   const tabIds = ['ask-research', 'ai-alerts', 'daily-alerts', 'earnings-hub', 'concall', 'public-chatter',
     'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements', 'nse-filings', 'insider-trades', 'mutual-funds'];
   for (const id of tabIds) {
+    // Begin the next measurement from a painted view. data-active-tab is set before render(),
+    // so observing that attribute alone can start the next timer inside the previous paint.
+    await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
     const started = Date.now();
     await page.locator(`[data-tab-id="${id}"]`).click();
     await page.waitForSelector(`#content-host[data-active-tab="${id}"]`, { timeout: TAB_INTERACTION_LIMIT_MS });
-    const tabMs = Date.now() - started;
+    const timing = await afterInteractionPaint(id);
+    const tabMs = timing.elapsedMs;
+    if (tabMs >= TAB_INTERACTION_LIMIT_MS) console.error('Tab timing diagnostic', id, {
+      automationAndResponseMs: Date.now() - started, ...timing,
+    });
     assert(tabMs < TAB_INTERACTION_LIMIT_MS,
       `${id} opens immediately while revalidation is unavailable (${tabMs}ms)`);
   }
@@ -172,7 +207,11 @@ try {
   const started = Date.now();
   await page.locator('[data-sources-open]').click();
   await page.waitForSelector('#modal-overlay:not(.hidden)', { timeout: POPUP_INTERACTION_LIMIT_MS });
-  const popupMs = Date.now() - started;
+  const popupTiming = await afterInteractionPaint('sources');
+  const popupMs = popupTiming.elapsedMs;
+  if (popupMs >= POPUP_INTERACTION_LIMIT_MS) console.error('Popup timing diagnostic', {
+    automationAndResponseMs: Date.now() - started, ...popupTiming,
+  });
   assert(popupMs != null && popupMs < POPUP_INTERACTION_LIMIT_MS,
     `shared popups open without a network dependency (${popupMs ?? 'not ready'}ms)`);
   await page.locator('[data-modal-close]').first().click();

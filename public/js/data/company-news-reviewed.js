@@ -1,6 +1,14 @@
 // Reviewed search identities, shared by collectors and readers. A relationship widens discovery;
 // it NEVER turns the affiliate into an alias of the listed company or proves financial exposure.
 export const reviewedNewsIdentities = [
+  ...['INE0LTR01029', 'INE0LTR03090'].map(isin => ({
+    match: { isin }, legalName: 'Everest Fleet Private Limited', aliases: ['Everest Fleet'],
+    officialDomains: ['everestfleet.com'], officialPages: ['https://everestfleet.com/newsroom/'],
+    evidenceUrls: ['https://zenodo.org/records/15121981', 'https://everestfleet.com/newsroom/'],
+  })),
+  { match: { isin: 'INE666D13019' }, legalName: 'Borosil Renewables Limited',
+    aliases: ['Borosil Renewables'], officialDomains: ['borosilrenewables.com'],
+    evidenceUrls: ['https://zenodo.org/records/15121981'] },
   // Existing curated ISIN overrides, moved unchanged into the shared registry so publisher/X
   // matching sees the same identities as scheduled company search.
   {

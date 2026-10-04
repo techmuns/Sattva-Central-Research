@@ -101,7 +101,7 @@ jobs:
       - name: Verify domestic filings and earnings provenance
         run: node scripts/verify-domestic-filings.mjs
       - name: Verify automatic filing capture and archives
-        run: node scripts/verify-company-capture.mjs && node scripts/verify-company-capture-due.mjs
+        run: node scripts/verify-company-capture.mjs && node scripts/verify-company-capture-due.mjs && node scripts/verify-company-feed-recovery.mjs && node scripts/verify-company-capture-publish.mjs
       - name: Verify live portfolio capture onboarding and source recovery
         run: node scripts/verify-capture-onboarding.mjs
       - name: Verify watchlist capture registration and retries
@@ -334,7 +334,7 @@ jobs:
       - name: Verify source inventory, connection states, offline pulse and mobile layout
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-source-connections-ui.mjs
+        run: node scripts/verify-source-connections-ui.mjs && node scripts/verify-company-feed-upgrade-ui.mjs && node scripts/verify-company-documents-ui.mjs
       # Two browser contexts against one server: separate storage, one shared list. That pairing
       # is the only arrangement in which "everyone sees the same watchlist" is a claim about
       # anything, so the check runs the real store class behind an in-process route.

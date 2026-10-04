@@ -34,7 +34,7 @@ export async function readCachedAllAlerts(options) {
 }
 export async function collect(options) {
   const make=(groups={},states={})=>adoptAllAlertsReport(window.make(groups,states),null,options);
-  options.onPartial?.(make());
+  if (!window.skipSeed) options.onPartial?.(make());
   return new Promise(resolve=>window.calls.push({options,
     partial:(groups,states)=>options.onPartial?.(make(groups,states)),
     complete:(groups,states)=>resolve(make(groups,states))}));
@@ -50,6 +50,13 @@ const server = createServer((req, res) => {
     if (path === '/js/data/daily-alerts.js') body = body.toString()
       .replace('export async function readCachedAllAlerts(', 'async function realReadCachedAllAlerts(')
       .replace('export async function collect(', 'async function realCollect(') + wrappers;
+    if (path === '/js/data/alert-developments.js') body = body.toString()
+      .replace('export async function foldAlertRowsAsync(', 'async function realFoldAlertRowsAsync(') + `
+export async function foldAlertRowsAsync(events, options) {
+  const rows = await realFoldAlertRowsAsync(events, options);
+  if (window.holdGrouping) await new Promise(release => (window.groupings ||= []).push({events, release}));
+  return options?.isCurrent?.() === false ? null : rows;
+}`;
     res.setHeader('content-type', { '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' }[extname(file)] || 'application/octet-stream');
     res.end(body);
   } catch { res.writeHead(404); res.end('{}'); }
@@ -141,5 +148,64 @@ try {
   await page.evaluate(() => window.calls.at(-1).complete({},Object.fromEntries(window.alerts.FEEDS.map(f=>[f.id,'ok']))));
   await page.waitForFunction(() => !document.querySelector('#root tbody')?.textContent.includes('Corrected live result'));
   console.log('PASS late disk cannot replace a live correction; confirmed empty sources clear old rows.');
+
+  // Completed source reads are not completed presentation: grouping can yield for input long
+  // after every source chip has settled. An obsolete projection must not clear the current one.
+  await page.reload(); await page.waitForFunction(() => window.ready);
+  await page.evaluate(() => { window.holdGrouping = true; window.show(); });
+  await page.waitForFunction(() => window.calls.length === 1 && window.releaseCache);
+  await page.evaluate(() => {
+    window.copies = ['one', 'two'].map(id => window.event(id, {feed:'nse-filings', headline:'Alpha wins a new contract',
+      url:'https://example.test/filing', detail:'Contract awarded today'}));
+    window.okStates = Object.fromEntries(window.alerts.FEEDS.map(f => [f.id, 'ok']));
+    window.calls[0].complete({'nse-filings':window.copies}, window.okStates);
+  });
+  await contains('Alpha wins a new contract');
+  await page.waitForFunction(() => window.groupings?.some(job => job.events.length === 2));
+  assert.equal(await page.locator('[data-alerts-workspace]').getAttribute('aria-busy'), 'true');
+  assert.equal(await page.locator('#root tbody tr[data-row-key]').count(), 2, 'source reports stay usable while grouping');
+  await page.evaluate(() => {
+    window.show();
+    window.calls.at(-1).complete({'nse-filings':[...window.copies, window.event('A separate development', {
+      feed:'nse-filings', url:'https://example.test/separate'})]}, window.okStates);
+  });
+  await contains('A separate development');
+  await page.waitForFunction(() => window.groupings?.some(job => job.events.length === 3));
+  await page.evaluate(async () => {
+    for (const job of window.groupings.filter(job => job.events.length !== 3)) job.release();
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  });
+  assert.equal(await page.locator('[data-alerts-workspace]').getAttribute('aria-busy'), 'true', 'obsolete completion cannot mark a new projection ready');
+  await page.evaluate(() => { window.holdGrouping = false; for (const job of window.groupings) job.release(); });
+  await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
+    && document.querySelectorAll('#root tbody tr[data-row-key]').length === 2);
+  await contains('A separate development');
+  assert.match(await page.locator('[data-alerts-reading-count]').innerText(), /^2 items · 3 source reports/,
+    'the table callback updates the grouped summary during incremental repaint');
+  console.log('PASS grouping readiness follows the current projection; copies fold after completion and distinct developments remain.');
+
+  await page.evaluate(() => {
+    window.holdGrouping = true; window.show();
+    window.calls.at(-1).complete({'nse-filings':[...window.copies,
+      window.event('A separate development', {feed:'nse-filings',url:'https://example.test/separate'}),
+      window.event('Latest development', {feed:'nse-filings',url:'https://example.test/latest'})]}, window.okStates);
+  });
+  await contains('Latest development');
+  await page.waitForFunction(() => window.groupings.some(job => job.events.length === 4));
+  await page.evaluate(async () => {
+    window.tab.destroy();
+    for (const job of window.groupings) job.release();
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    window.previousGroupings = window.groupings.length;
+    window.skipSeed = true;
+    window.show();
+  });
+  await page.waitForFunction(() => window.groupings.length > window.previousGroupings);
+  assert.equal(await page.locator('[data-alerts-workspace]').getAttribute('aria-busy'), 'true');
+  await page.evaluate(() => { window.holdGrouping = false; for (const job of window.groupings) job.release(); });
+  await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
+    && document.querySelectorAll('#root tbody tr[data-row-key]').length === 3);
+  assert.match(await page.locator('[data-alerts-reading-count]').innerText(), /^3 items · 4 source reports/);
+  console.log('PASS returning to an unchanged retained report restarts cancelled grouping and settles the complete counts.');
   assert.deepEqual(errors, []);
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
