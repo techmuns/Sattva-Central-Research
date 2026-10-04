@@ -785,104 +785,104 @@
       "pending": []
     },
     "isin:INE168A01041|J&KBANK": {
-      "lastAttemptAt": "2026-10-01T02:44:22+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0SMY01017|Jay Bee Laminations": {
-      "lastAttemptAt": "2026-10-01T03:17:16+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0SMY01017|JAYBEE-SM": {
-      "lastAttemptAt": "2026-10-01T03:50:21+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|Jayaswal Neco Industries": {
-      "lastAttemptAt": "2026-10-01T04:23:21+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 4,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 13,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|Jayaswal Neco": {
-      "lastAttemptAt": "2026-10-01T04:56:22+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 20,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|Neco Defence Munitions": {
-      "lastAttemptAt": "2026-10-01T05:28:56+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 6,
-      "lastSuccessAt": "2026-09-21T14:54:36+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|Datasel": {
-      "lastAttemptAt": "2026-10-01T06:01:05+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 20,
-      "lastSuccessAt": "2026-09-17T09:01:32+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 7,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|Datasel S.R.L.": {
-      "lastAttemptAt": "2026-10-01T06:14:49+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-17T09:01:32+00:00",
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE854B01010|JAYNECOIND": {
-      "lastAttemptAt": "2026-10-01T06:17:25+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 3,
-      "lastSuccessAt": "2026-09-17T09:01:32+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 10,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE700A01033|Jubilant Pharmova LT": {
-      "lastAttemptAt": "2026-10-01T07:06:37+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-17T09:01:32+00:00",
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE700A01033|JUBLPHARMA": {
-      "lastAttemptAt": "2026-10-01T07:38:28+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 9,
-      "lastSuccessAt": "2026-09-17T09:01:32+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": null,
+      "lastResultCount": 7,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE303R01014|Kalyan Jewellers India": {
-      "lastAttemptAt": "2026-10-01T08:11:22+00:00",
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
       "error": null,
-      "lastResultCount": 16,
-      "lastSuccessAt": "2026-10-01T08:11:22+00:00",
+      "lastResultCount": 10,
+      "lastSuccessAt": "2026-10-04T19:16:43+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE303R01014|KALYANKJIL": {
-      "lastAttemptAt": "2026-10-01T08:11:22+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-04T19:16:43+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 78,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
       "targetThrough": null,
@@ -2166,8 +2166,8 @@
   },
   "coverage": {
     "planned": 232,
-    "attempted": 1,
-    "incomplete": 221,
-    "checkedAt": "2026-10-04T18:42:57.674910+00:00"
+    "attempted": 13,
+    "incomplete": 209,
+    "checkedAt": "2026-10-04T19:16:43.480947+00:00"
   }
 }

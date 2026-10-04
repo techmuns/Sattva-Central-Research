@@ -1,10 +1,46 @@
 {
   "note": "Posts captured from the handles in twitter-handles.json, written by scripts/scrape-twitter.py. Empty until a run has read at least one account. A handle that could not be read is listed under failed with a reason — never as an account with no posts.",
-  "capturedAt": "2026-10-04T00:15:18+00:00",
+  "capturedAt": "2026-10-04T19:17:08+00:00",
   "handles": [
     "moneycontrolcom"
   ],
   "posts": [
+    {
+      "tweet_id": "2106629206486692307",
+      "handle": "Stockbeastx",
+      "display_name": "Stock Beast",
+      "text": "🔥 LAST 1 WEEK: OUR TRADE PERFORMANCE!\n\nWhat a powerful week of trading from clean 2X moves to impressive 7X returns! 🚀\n\n- #KALYANKJIL 510 PE: ₹1️⃣6️⃣K+ PROFIT\n- #SUNPHARMA 820 PE: ₹1️⃣1️⃣K+ PROFIT\n- #BANKINDIA 130 PE: ₹2️⃣1️⃣K+ PROFIT\n- #SENSEX 72,200 PE: 7️⃣X | ₹6️⃣0️⃣K+ PROFIT 🔥\n- #EICHERMOTOR 690 PE: ₹1️⃣6️⃣K+ PROFIT\n- #PAYTM 1800 CE: ₹1️⃣2️⃣K+ PROFIT\n- #MAXHEALTH 1000 PE: ₹2️⃣8️⃣K+ PROFIT\n- #CIPLA 1400 PE: ₹1️⃣2️⃣K+ PROFIT\n- #UNITEDSPIRITS 1360 PE: ₹1️⃣6️⃣K+ PROFIT\n- #NIFTY 22600 PE: Clean 4X | ₹2️⃣3️⃣K+ PROFIT\n- #HYUNDAI 2100 CE: ₹1️⃣3️⃣K+ PROFIT\n- #SWIGGY 280 CE: ₹2️⃣6️⃣K+ PROFIT\n- #CANARABANK 125 CE: ₹1️⃣2️⃣K+ PROFIT\n\nALL PROFITS ARE ON 2 LOTS!\n\nThese are only the major highlights. We have not even included several smaller profitable trades.\n\nTHE BEST PART? ALL THESE TRADES WERE SHARED HERE FOR FREE!\n\nFOLLOW #STOCKBEAST 🦁\n\nThe next big move could be just around the corner!\n\n#StockMarket #OptionsTrading #Nifty #Sensex #TradingPerformance #IndianStockMarket",
+      "created_at": "2026-10-04T06:15:16+00:00",
+      "url": "https://x.com/Stockbeastx/status/2106629206486692307",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2106616026846961943",
+      "handle": "RudraPaliwal999",
+      "display_name": "Rudra",
+      "text": "1/5\n#CaseStudy | KALYANKJIL — Kalyan Jewellers India\nQ1 FY27 revenue up 45% YoY to ₹10,589 crore. PAT up 32% YoY to ₹349 crore.\n524 showrooms. Candere revenue up 112%. India's fastest growing jewellery retailer. https://t.co/hr3F28N4z0",
+      "created_at": "2026-10-04T05:22:54+00:00",
+      "url": "https://x.com/RudraPaliwal999/status/2106616026846961943",
+      "image": "https://pbs.twimg.com/media/HTw0G2Ra0AERhcS.jpg",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"Kalyan Jewellers India\""
+        },
+        {
+          "entityId": "isin:INE303R01014",
+          "query": "\"KALYANKJIL\""
+        }
+      ]
+    },
     {
       "tweet_id": "2106538442318401650",
       "handle": "lifeeternalnet1",
@@ -5357,6 +5393,22 @@
       "matchedQueries": []
     },
     {
+      "tweet_id": "2106334087665561607",
+      "handle": "Paranth74290348",
+      "display_name": "Padmavathi S Market Insights",
+      "text": "J&KBANK | Q2 FY27 BUSINESS UPDATE 🏦\n\n• Total Business: ₹3.10L Cr | +19.4% YoY | +2.1% QoQ\n• Deposits: ₹1.77L Cr | +16.3% YoY | +1.9% QoQ\n• CASA: ₹74,277 Cr | +6.5% YoY | +1.8% QoQ\n• CASA Ratio: 42.01% | -388 bps YoY\n• Gross Advances: ₹1.34L Cr | +23.7% YoY | +2.3% QoQ\n• Gross Investments: ₹46,052 Cr | +2.3% YoY | +5.4% QoQ\n\n#J&KBANK: Strong advances and business growth, though CASA ratio remains a key monitorable.\n\nVerdict: Positive",
+      "created_at": "2026-10-03T10:42:34+00:00",
+      "url": "https://x.com/Paranth74290348/status/2106334087665561607",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE168A01041",
+          "query": "\"J&KBANK\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2106331466640806044",
       "handle": "PramestiHilya",
       "display_name": "Perangkat Desa Konoha",
@@ -7601,6 +7653,22 @@
       ]
     },
     {
+      "tweet_id": "2106187157660721659",
+      "handle": "eduinvestingin",
+      "display_name": "Eduinvesting.in",
+      "text": "The Jammu &amp; Kashmir Bank Limited\nhttps://t.co/6XW5GHrBOx https://t.co/wlYmxsSfKc",
+      "created_at": "2026-10-03T00:58:44+00:00",
+      "url": "https://x.com/eduinvestingin/status/2106187157660721659",
+      "image": "https://pbs.twimg.com/media/HTquDbhbYAA28eG.png",
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE168A01041",
+          "query": "\"J&KBANK\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2106183614077780253",
       "handle": "eduinvestingin",
       "display_name": "Eduinvesting.in",
@@ -8683,6 +8751,26 @@
       ]
     },
     {
+      "tweet_id": "2106052693378945137",
+      "handle": "equitybulls",
+      "display_name": "EquityBulls.com",
+      "text": "Jayaswal Neco Industries Achieves Financial Closure for Rs 720 Crore Pellet Plant Expansion\n\n#JayaswalNecoIndustries #PelletPlant #ExpansionProject #FinancialClosure \n\nhttps://t.co/1WTCqBe2Wl",
+      "created_at": "2026-10-02T16:04:25+00:00",
+      "url": "https://x.com/equitybulls/status/2106052693378945137",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco Industries\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
+        }
+      ]
+    },
+    {
       "tweet_id": "2106051984965214643",
       "handle": "equitybulls",
       "display_name": "EquityBulls.com",
@@ -8722,6 +8810,26 @@
         {
           "entityId": "isin:INE522F01014",
           "query": "\"Coal India\""
+        }
+      ]
+    },
+    {
+      "tweet_id": "2106048826712945124",
+      "handle": "equitybulls",
+      "display_name": "EquityBulls.com",
+      "text": "Jayaswal Neco Industries Allots 2.24 Crore Subscription Warrants Worth Rs 200 Crore to Vibrant Enterprises\n\n#JayaswalNecoIndustries #PreferentialIssue #ConvertibleWarrants #VibrantEnterprises \n\nhttps://t.co/ckJmJj62xY",
+      "created_at": "2026-10-02T15:49:03+00:00",
+      "url": "https://x.com/equitybulls/status/2106048826712945124",
+      "image": null,
+      "source_url": "https://x.com/unknown",
+      "matchedQueries": [
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco Industries\""
+        },
+        {
+          "entityId": "isin:INE854B01010",
+          "query": "\"Jayaswal Neco\""
         }
       ]
     },
@@ -9358,105 +9466,19 @@
           "query": "\"Coal India\""
         }
       ]
-    },
-    {
-      "tweet_id": "2106018990590156818",
-      "handle": "Its_Monallisha",
-      "display_name": "Mona ♡",
-      "text": "For Dharavi residents, one of the biggest questions about redevelopment is simple: what will life actually look like afterwards?\n\nThe Dharavi Experience Centre attempts to answer that visually.\n\nCM Devendra Fadnavis inaugurated the centre in the presence of Pranav Adani of Adani Enterprises.\n\nA sample flat shows the proposed housing, while the immersive masterplan presents workplaces, schools, colleges, hospitals and gardens.\n\nThe future Dharavi is being put on display.\n\nhttps://t.co/xJzbXH2gxT",
-      "created_at": "2026-10-02T13:50:29+00:00",
-      "url": "https://x.com/Its_Monallisha/status/2106018990590156818",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2106018546740543865",
-      "handle": "RCBTweets",
-      "display_name": "Royal Challengers Bengaluru",
-      "text": "Rapid Fire ft. ನಮ್ಮVenky Iyer 🔥\n\nPart 1️⃣: don't miss it. ❤️\n\nThis is Emmvee presents RCB Shorts.\n\n#PlayBold #ನಮ್ಮRCB https://t.co/sBe0Rf8b58",
-      "created_at": "2026-10-02T13:48:44+00:00",
-      "url": "https://x.com/RCBTweets/status/2106018546740543865",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE1C6T01020",
-          "query": "\"EMMVEE\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2106018140941423013",
-      "handle": "_Mishraa",
-      "display_name": "Pooja 🇮🇳",
-      "text": "Dharavi’s story cannot be told only through its buildings.\n\nIts leather industry, pottery, food processing, plastic recycling and countless businesses form a major economic ecosystem.\n\nThe Dharavi Experience Centre puts this reality at the centre of the redevelopment story.\n\nCM Devendra Fadnavis inaugurated the centre, with Pranav Adani, Director of Adani Enterprises, present.\n\nThe proposed transformation is being presented alongside the economic identity that Dharavi has built over generations.\n\nhttps://t.co/q4FTM3U0Tg",
-      "created_at": "2026-10-02T13:47:07+00:00",
-      "url": "https://x.com/_Mishraa/status/2106018140941423013",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE423A01024",
-          "query": "\"Adani Enterprises\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2106017039924249026",
-      "handle": "moneycontrolcom",
-      "display_name": "Moneycontrol",
-      "text": "🚨RBI appoints Sudhakar Malli as Executive Director\n\nAs Executive Director, Malli will look after the Department of Supervision (Supervisory Assessment), the RBI said.\n\nRead more details here: \nhttps://t.co/1wuGco3sMx",
-      "created_at": "2026-10-02T13:42:44+00:00",
-      "url": "https://x.com/moneycontrolcom/status/2106017039924249026",
-      "image": null,
-      "source_url": "https://x.com/moneycontrolcom",
-      "matchedQueries": []
-    },
-    {
-      "tweet_id": "2106014299454152975",
-      "handle": "goldenjk7_",
-      "display_name": "Kookie⁷🥢",
-      "text": "Tadi nyoba nonton kontennya Nana sama T.O.P karena mau liat interaksinya. Terus sepanjang video tuh Nana cuma goyang dikit, gerak dikit, nyanyi dikit si T.O.P selalu ketawa terus. Gini ya ternyata kalau orang lagi jatuh cinta 🤣 https://t.co/Nz56Oe5qc8",
-      "created_at": "2026-10-02T13:31:51+00:00",
-      "url": "https://x.com/goldenjk7_/status/2106014299454152975",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE532F01054",
-          "query": "\"EAAA\""
-        }
-      ]
-    },
-    {
-      "tweet_id": "2106012914855588178",
-      "handle": "HirenpariGosai",
-      "display_name": "Mr. Hiren Gosai",
-      "text": "🧐 10 BLOCKBUSTER QUARTER RESULTS 🔥\n\nIndia’s Q1 FY27 earnings delivered some BIG profit growth! 📊\n\nDon't miss 📌 Save it for later 🔖 \n\nA Mega Thread 🧵 \n\n▶️ Join Telegram Free: https://t.co/1n1mq6zKwx \n\n1️⃣ #OILINDIA 🚀\n💰 PAT: +253%\n📈 Revenue: +59%\n\n2️⃣ #NEULANDLAB 🔥\n💰 PAT: +962%\n📈 Revenue: +119%\n\n3️⃣ #JIOFIN ⚡\n💰 PAT: +190%\n📈 Revenue: +227%\n\n4️⃣ #HINDZINC 🚀\n💰 PAT: +145%\n📈 Revenue: +77%\n\n5️⃣ #HINDALCO 🔥\n💰 PAT: +75%\n📈 Revenue: +32%\n\n6️⃣ #NETWEB ⚡\n💰 PAT: +180%\n📈 Revenue: +172%\n\n7️⃣ #SYRMA 🚀\n💰 PAT: +101%\n📈 Revenue: +68%\n\n8️⃣ #RRKABEL 🔥\n💰 PAT: +129%\n📈 Revenue: +54%\n\n9️⃣ #TITAN 📈\n💰 PAT: +63%\n📈 Total Income: +29%\n\n🔟 #EMMVEE ⚡\n💰 PAT: +103%\n📈 Revenue: +51%\n\n🔥 Profit growth.  \n🔥 Revenue growth.  \n🔥 Multiple sectors showing strong earnings momentum.\n\n👀 Which company can continue this growth in the coming quarters?\n\n🔖 Bookmark this post for your research.",
-      "created_at": "2026-10-02T13:26:21+00:00",
-      "url": "https://x.com/HirenpariGosai/status/2106012914855588178",
-      "image": null,
-      "source_url": "https://x.com/unknown",
-      "matchedQueries": [
-        {
-          "entityId": "isin:INE1C6T01020",
-          "query": "\"EMMVEE\""
-        }
-      ]
     }
   ],
-  "failed": [],
+  "failed": [
+    {
+      "handle": "moneycontrolcom",
+      "reason": "could not be read"
+    }
+  ],
   "searchCoverage": {
     "planned": 232,
-    "attempted": 8,
-    "incomplete": 191,
-    "checkedAt": "2026-10-04T00:14:44.445357+00:00"
+    "attempted": 13,
+    "incomplete": 209,
+    "checkedAt": "2026-10-04T19:16:43.480947+00:00"
   },
   "archive": [
     {
@@ -9567,9 +9589,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "unavailable",
-    "reason": "source-read-failed",
-    "lastAttemptAt": "2026-10-04T18:43:13.035Z",
+    "status": "partial",
+    "reason": "partial-read",
+    "lastAttemptAt": "2026-10-04T19:17:08.575Z",
     "lastSuccessAt": null
   }
 }
