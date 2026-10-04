@@ -165,7 +165,7 @@ const tab = makeFilingsTab({
       },
     },
   ],
-  provenance: (m) => `<div class="px-7 py-6">
+  provenance: (m, { scope } = {}) => `<div class="px-7 py-6">
     <div class="mb-3 flex items-start justify-between gap-4">
       <h2 class="font-display text-xl font-bold text-slate-900">Corporate announcements</h2>
       <button data-modal-close class="text-2xl text-slate-400">&times;</button>
@@ -204,7 +204,7 @@ const tab = makeFilingsTab({
         No PDF is summarized or scored. Missing fields remain blank.</p>
       ${m.archive?.error ? `<p>${escapeHtml(m.archive.error)}</p>` : ''}
       ${m.nse?.historyUnavailable || m.nse?.allMissingDays?.length ? '<p>Some retained NSE history could not be loaded; existing records remain visible.</p>' : ''}
-      ${captureCoverageHtml('announcements')}
+      ${captureCoverageHtml('announcements', null, { scope })}
       ${coverageBlock(m)}
     </div>
   </div>`,

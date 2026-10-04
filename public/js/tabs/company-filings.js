@@ -124,7 +124,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
     const unique = new Map([...coverage.holdings(), ...(ctx.data?.universe || [])].filter((c) => c.ticker).map((c) => [c.ticker.toUpperCase(), { ...c, ticker: c.ticker.toUpperCase() }]));
     companies = filterByScope([...unique.values()], ctx.scope, coverage.holdings());
     form.querySelector('datalist').innerHTML = companies.map((c) => `<option value="${escapeHtml(c.ticker)}">${escapeHtml(c.name || c.ticker)}</option>`).join('');
-    ctx.root.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('domestic', companies.map((c) => c.ticker));
+    ctx.root.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('domestic', companies.map((c) => c.ticker), { scope: ctx.scope });
     if (ctx.params?.company) void fetchDocuments();
   });
   return () => { offRefresh(); disposed = true; controller?.abort(); tableDispose?.(); };

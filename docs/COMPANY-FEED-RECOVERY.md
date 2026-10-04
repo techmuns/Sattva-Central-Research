@@ -70,7 +70,9 @@ identity evidence, not proof of current listing or security status. Everest's
 [shareholder notices](https://everestfleet.com/newsroom/) identify the private
 issuer. The two Everest securities therefore receive reviewed issuer-name news
 searches and official-page links, with explicit unavailable listed-equity filing
-coverage. No exchange ticker is invented. Existing news entity IDs and archives
+coverage. Company Filings and Corporate Announcements coverage panels count these
+securities separately and warn in the relevant scope, matching exact portfolio ISINs;
+unrelated watchlists do not inherit portfolio warnings. No exchange ticker is invented. Existing news entity IDs and archives
 are retained. These mappings do not claim access to nonpublic shareholder notices.
 
 ## Validation and operation

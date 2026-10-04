@@ -20,7 +20,7 @@ export function announcementLookupControls(feed) {
     const status = validation || (extra.pending ? 'Reading additional announcements…' : last
       ? `${last.ticker} · ${last.from} to ${last.to}: ` + (last.error ? `Refresh failed: ${last.error} Saved announcements remain in the table.` : `${last.count} returned${last.fetchedAt ? ` · checked ${new Date(last.fetchedAt).toLocaleString()}` : ''}.`) + (last.skipped ? ` ${last.skipped} entries could not be read; coverage is incomplete.` : '')
       : 'Scheduled captures add company announcements automatically. Use this form for an immediate source check.');
-    return `${captureCoverageHtml('announcements', ctx.scope === 'universe' ? null : companies(ctx).map((c) => c.ticker))}<div class="mb-4 rounded-xl bg-white p-4 ring-1 ring-slate-200">
+    return `${captureCoverageHtml('announcements', ctx.scope === 'universe' ? null : companies(ctx).map((c) => c.ticker), { scope: ctx.scope })}<div class="mb-4 rounded-xl bg-white p-4 ring-1 ring-slate-200">
       <form data-announcement-lookup class="flex flex-wrap items-end gap-3">
         <label class="text-xs font-semibold text-slate-600">Additional sources — company
           <input name="ticker" list="announcement-companies" required maxlength="80" value="${escapeHtml(draft.ticker)}" placeholder="e.g. RELIANCE" class="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm">

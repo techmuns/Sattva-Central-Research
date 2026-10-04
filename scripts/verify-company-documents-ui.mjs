@@ -5,6 +5,10 @@ import { readFileSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public'), at = new Date().toISOString();
+const nonExchange = [
+  { isin: 'INE0LTR01029', name: 'Everest Fleet equity', reason: 'Private issuer: listed-equity filings unavailable.' },
+  { isin: 'INE0LTR03090', name: 'Everest Fleet preference', reason: 'Private issuer: listed-equity filings unavailable.' },
+];
 const rows = [
   { title: 'Recovered annual report', provider: 'Screener company documents' },
   { title: 'Primary transcript', source: 'Screener.in via Muns' },
@@ -13,16 +17,22 @@ const rows = [
 const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><main></main><script type="module">
 import { renderCompanyFilings } from '/js/tabs/company-filings.js';
 import * as refresh from '/js/core/refresh.js';
+import * as coverage from '/js/data/coverage.js';
+import { captureCoverageHtml } from '/js/ui/capture-coverage.js';
+coverage.prime({ holdings: [{ ticker: 'HEG', name: 'HEG' }, { ticker: null, isin: 'INE0LTR01029', name: 'Everest Fleet equity' }] });
 window.refresh = refresh;
-renderCompanyFilings({ root: document.querySelector('main'), scope: 'universe', params: { company: 'HEG' }, data: {} });
+window.showCoverage = scope => { document.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('announcements', null, { scope }); };
+renderCompanyFilings({ root: document.querySelector('main'), scope: 'portfolio', params: { company: 'HEG' }, data: {} });
 </script>`;
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   const send = (type, body) => { res.setHeader('content-type', type); res.end(body); };
   const json = body => send('application/json', JSON.stringify(body));
   if (path === '/') return send('text/html', html);
-  if (path === '/data/filing-capture/index.json') return json({ version: 1, companies: [{ ticker: 'HEG' }],
-    sources: { domestic: { HEG: { lastSuccessAt: at, lastResponseAt: at } } } });
+  if (path === '/data/filing-capture/index.json') return json({ version: 1, companies: [{ ticker: 'HEG' }], nonExchange,
+    requestedFrom: at.slice(0, 10), requestedTo: at.slice(0, 10),
+    sources: { domestic: { HEG: { lastSuccessAt: at, lastResponseAt: at } },
+      announcements: { HEG: { lastSuccessAt: at, ranges: [{ from: at.slice(0, 10), to: at.slice(0, 10) }] } } } });
   if (path === '/data/filing-capture/domestic/HEG.json') return json({ rows, fetchedAt: at });
   if (path === '/api/domestic-filings/HEG') {
     res.statusCode = 401;
@@ -47,6 +57,11 @@ try {
     ? route.continue() : route.fulfill({ status: 200, body: '' }));
   await page.goto(origin);
   await page.waitForFunction(() => document.querySelectorAll('tbody tr[data-row-key]').length === 3);
+  const panel = page.locator('[data-capture-coverage]');
+  assert.match(await panel.getAttribute('class'), /bg-amber-50/, 'a private portfolio line prevents green document coverage');
+  assert.match(await panel.locator('summary').innerText(), /1 private securities without listed-equity filing coverage/);
+  assert.match(await panel.textContent(), /INE0LTR01029/);
+  assert.doesNotMatch(await panel.textContent(), /INE0LTR03090/, 'another private security is not in this portfolio');
   const sources = await page.locator('tbody tr[data-row-key]').evaluateAll(rows => {
     const index = [...document.querySelectorAll('thead th')].findIndex(th => th.textContent.trim() === 'Source');
     return rows.map(r => r.children[index].textContent.trim());
@@ -59,6 +74,13 @@ try {
   assert.equal(await page.evaluate(() => refresh.lastRefreshAt('domestic-documents')), null);
   assert.match(await page.locator('[data-document-status]').innerText(), /Refresh failed: Fixture session expired/);
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 3, 'the failed check retains all documents');
+  for (const [scope, count] of [['portfolio', 1], ['universe', 2], ['watchlist', 0]]) {
+    await page.evaluate(scope => showCoverage(scope), scope);
+    assert.match(await panel.getAttribute('class'), count ? /bg-amber-50/ : /bg-emerald-50/);
+    const summary = await panel.locator('summary').innerText();
+    if (count) assert(summary.includes(`${count} private securities without listed-equity filing coverage`));
+    else assert(!summary.includes('private securities'), 'unrelated portfolio securities cannot warn on an empty watchlist');
+  }
   assert.deepEqual(errors, []);
   console.log('PASS document table/export preserve each provider and live failures remain visible with retained documents.');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
