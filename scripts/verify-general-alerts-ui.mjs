@@ -20,10 +20,11 @@ const UPCOMING_DAY = IST_DAY.format(new Date(Date.now() + 5 * 86400000));
 const UPCOMING_FAR_DAY = IST_DAY.format(new Date(Date.now() + 40 * 86400000));
 const newsCases = JSON.parse(readFileSync(new URL('./fixtures/company-news-attribution.json', import.meta.url))).cases
   .filter(test => ['accent', 'ticker-brand', 'no-keyword', 'snippet-only', 'reported-mismatch'].includes(test.id));
-const newsFixture = { capturedAt: '2026-09-04T08:00:00Z', entities: newsCases.map(test => ({ ...test.identity, key: test.identity.ticker })),
-  byTicker: Object.groupBy(newsCases.map(test => ({ date: '2026-09-04', company: test.identity.name,
+// Attribution examples must stay inside News' 30-day reader window as the test runs over time.
+const newsFixture = { capturedAt: new Date().toISOString(), entities: newsCases.map(test => ({ ...test.identity, key: test.identity.ticker })),
+  byTicker: Object.groupBy(newsCases.map(test => ({ company: test.identity.name,
     ticker: test.identity.ticker, query: test.identity.name, source: 'Synthetic test publisher',
-    url: `https://example.test/${test.id}`, ...test.row })), row => row.ticker) };
+    url: `https://example.test/${test.id}`, ...test.row, date: IST_DAY.format(new Date()) })), row => row.ticker) };
 let version = 1;
 const calls = [];
 const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body style="padding:16px;background:#f6f7fb"><button id="refresh">Refresh</button><main id="root"></main>
@@ -212,6 +213,11 @@ try {
     await period.selectOption(value);
     await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
   };
+  const search = async value => {
+    await page.locator('[data-table-search]').fill(value);
+    // Large histories defer filtering until after the loading cover paints.
+    await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+  };
   for (const label of ['Today', 'Last 3 days', 'Last 7 days', 'Last 14 days', 'Last 30 days', 'This month', 'Date not supplied', 'All history through today']) {
     assert((await period.locator('option').allTextContents()).includes(label), `All Alerts offers ${label}`);
   }
@@ -300,8 +306,9 @@ try {
   await page.evaluate(() => window.show('portfolio', { company: 'STLTECH' }));
   await settled();
   assert.equal(await period.inputValue(), 'all', 'company See all link explicitly restores complete history');
-  await page.locator('[data-table-search]').fill('Date window fixture 10');
+  await search('Date window fixture 10');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, '60-day evidence remains reachable through See all');
+  assert.equal(await page.locator('tbody a[href="https://example.test/date-window-10"]').count(), 1, 'the result is the retained 60-day record');
   await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); window.show('portfolio'); });
   await settled();
   console.log('Verified exact All Alerts periods, retained user choice and complete-history company links');
@@ -362,13 +369,12 @@ try {
   assert.equal(await page.locator('[data-arrival-badge]').count(), 1, 'newly received filing is highlighted in the existing table');
   assert((await page.locator('tbody [data-event-day]').innerText()).includes('4 Sept 2026'), 'old source dates never become published-now claims');
   if (process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_ARRIVAL_SCREENSHOT });
-  await page.locator('[data-table-search]').fill('no matching arrival');
-  await page.waitForFunction(() => !document.querySelector('[data-table-loading]'));
+  await search('no matching arrival');
   assert.equal(await page.locator('[data-arrivals-announcement]').textContent(), '', 'receipt announcements respect search filters');
-  await page.locator('[data-table-search]').fill('Newly arrived NSE record');
+  await search('Newly arrived NSE record');
   await page.waitForFunction(() => document.querySelectorAll('[data-arrival-badge]').length === 0, null, { timeout: 25000 });
-  await page.locator('[data-table-search]').fill('');
-  await page.locator('[data-table-search]').fill('Newly arrived NSE record');
+  await search('');
+  await search('Newly arrived NSE record');
   assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'remounting an old row does not restart the highlight');
   await page.locator('[data-table-search]').fill('');
   await selectPeriod('today');
