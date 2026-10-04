@@ -91,7 +91,20 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
   }
   const quarters = block(html, 'section', tag => attr(tag, 'id') === 'quarters');
   if (quarters === null) throw bad('quarterly reports section missing');
-  for (const a of links(quarters).filter(a => attr(a.attrs, 'aria-label') === 'Raw PDF')) {
+  const quarterLinks = links(quarters).filter(a => attr(a.attrs, 'aria-label') === 'Raw PDF');
+  if (!quarterLinks.length && !/No data available/i.test(quarters)) {
+    // JAYBEE explicitly renders a result table with no period columns and an empty Raw PDF row.
+    // A populated table whose link markup changed must not be treated as that empty state.
+    const table = block(quarters, 'table', tag => attr(tag, 'class').split(/\s+/).includes('data-table')) || '';
+    const headings = [...(block(table, 'thead', () => true) || '').matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)];
+    const pdfCells = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
+      .map(row => [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)])
+      .find(cells => text(cells[0]?.[1]) === 'Raw PDF') || [];
+    if (!(headings.length === 1 && !text(headings[0][1]) && pdfCells.length === 1)) {
+      throw bad('unverified empty quarterly reports');
+    }
+  }
+  for (const a of quarterLinks) {
     const match = /^\/company\/source\/quarter\/(\d+)\/(\d{1,2})\/(\d{4})\/$/.exec(a.href);
     if (!match || match[1] !== companyId || +match[2] < 1 || +match[2] > 12) { skipped++; continue; }
     const period = `${match[3]}-${match[2].padStart(2, '0')}`;
@@ -116,6 +129,15 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
   return { documents, skipped, unavailableLinks, announcements, announcementSkipped,
     // An explicitly empty recent list is readable, but still cannot certify a full history.
     announcementReadable: recent !== null && (announcements.length > 0 || /No (?:announcements|data available)/i.test(recent)) };
+}
+
+export function screenerCompanyResponse(page, kind, primary) {
+  const metadata = { fetchedAt: page.fetchedAt, provider: 'Screener company page', sourceUrl: page.sourceUrl,
+    primaryError: { reason: primary.reason, message: String(primary.message || 'Primary provider has no company feed').slice(0, 300) } };
+  if (kind === 'domestic') return { ok: true, documents: page.documents, skipped: page.skipped,
+    unavailableLinks: page.unavailableLinks, ...metadata };
+  if (!page.announcementReadable) throw Error('Recent notices could not be parsed.');
+  return { ok: true, announcements: page.announcements, limited: true, skipped: page.announcementSkipped, ...metadata };
 }
 
 export function createScreenerCompanyFallback({ fetcher = fetch, now = Date.now,

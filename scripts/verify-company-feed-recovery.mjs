@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseScreenerCompanyFilings, createScreenerCompanyFallback } from './lib/screener-company-filings.mjs';
+import { parseScreenerCompanyFilings, createScreenerCompanyFallback, screenerCompanyResponse } from './lib/screener-company-filings.mjs';
 import { captureCompanies, captureCompanySources, readJson, writeJson } from './lib/company-capture.mjs';
 import { createAnnouncementIdentity, announcementIssuerIsin } from '../public/js/data/announcement-identity.js';
 import { portfolioNewsEntities } from '../public/js/data/company-news-identity.js';
@@ -45,6 +45,20 @@ const noConcalls = fixture.replace(/<div class="documents concalls">[\s\S]*?<\/s
   '<div class="documents concalls"><p>No data available.</p></div></section>');
 assert.equal(parseScreenerCompanyFilings(noConcalls, company, at).documents.filter(d => d.form === 'concalls').length, 0);
 assert.throws(() => parseScreenerCompanyFilings(noConcalls.replace('No data available.', ''), company, at), /unverified empty concalls/);
+assert.throws(() => parseScreenerCompanyFilings(fixture.replace('aria-label="Raw PDF"', 'aria-label="Changed label"'), company, at), /unverified empty quarterly reports/);
+const withQuarters = section => fixture.replace(/<section id="quarters">[\s\S]*?<\/section>/, `<section id="quarters">${section}</section>`);
+assert.equal(parseScreenerCompanyFilings(withQuarters('<p>No data available.</p>'), company, at).documents.length, 3);
+const noPeriods = '<table class="data-table"><thead><tr><th class="text"></th></tr></thead><tbody><tr><td>Raw PDF</td></tr></tbody></table>';
+assert.equal(parseScreenerCompanyFilings(withQuarters(noPeriods), company, at).documents.length, 3,
+  'JAYBEE zero-period table explicitly has no quarterly report slots');
+assert.throws(() => parseScreenerCompanyFilings(withQuarters(noPeriods.replace('</th>', '</th><th>Jun 2026</th>')), company, at), /unverified empty quarterly reports/);
+assert.throws(() => parseScreenerCompanyFilings(withQuarters(noPeriods.replace('Raw PDF', 'New label')), company, at), /unverified empty quarterly reports/);
+const mixedPage = parseScreenerCompanyFilings(fixture.replace('</li></ul></div>', '</li><li><a href="https://www.bseindia.com/undated.pdf">Unreadable notice</a></li></ul></div>'), company, at);
+const mixedResponse = screenerCompanyResponse({ ...mixedPage, fetchedAt: new Date(at).toISOString() }, 'announcements', { reason: 'not-found' });
+assert.equal(mixedResponse.announcements.length, 1, 'a malformed notice cannot discard its valid neighbour');
+assert.equal(mixedResponse.skipped, 1);
+assert.equal(mixedResponse.limited, true);
+assert.throws(() => screenerCompanyResponse({ announcementReadable: false }, 'announcements', { reason: 'not-found' }), /could not be parsed/);
 assert.equal(parseScreenerCompanyFilings(fixture.replace('https://issuer.example/2026.pdf', 'javascript:alert(1)'), company, at).skipped, 1);
 assert.equal(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/'), company, at).skipped, 1);
 const noAnnual = fixture.replace(/<div class="documents annual-reports">[\s\S]*?<div class="documents concalls">/,
@@ -137,5 +151,12 @@ try {
   assert.equal(readJson(join(capture, 'announcements/HEG.json')).rows.length, 1, 'a later outage cannot delete recovered notices');
   assert.equal(index.sources.announcements.HEG.error.reason, 'upstream');
   assert.equal(companyCaptureStatusFromIndex(index, 'announcements', null, at + 4 * 3600000).failed, 1);
+  const mixedDir = join(dir, 'mixed-notices');
+  const mixedIndex = await captureCompanySources({ ...opts, dir: mixedDir, maxRequests: 1, request: async () => mixedResponse });
+  assert.equal(readJson(join(mixedDir, 'announcements/HEG.json')).rows.length, 1, 'valid partial notices reach durable storage');
+  assert.equal(mixedIndex.sources.announcements.HEG.skipped, 1);
+  assert.equal(mixedIndex.sources.announcements.HEG.error.reason, 'limited-coverage');
+  assert.equal(mixedIndex.sources.announcements.HEG.lastSuccessAt, undefined);
+  assert.deepEqual(mixedIndex.sources.announcements.HEG.ranges, []);
 } finally { rmSync(dir, { recursive: true, force: true }); }
 console.log('PASS company source aliases, exact security identities, free document fallback, retained history and explicit partial coverage');

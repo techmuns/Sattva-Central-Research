@@ -8,7 +8,7 @@ import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { loadCaptureRegistrations } from './lib/capture-registrations.mjs';
 import { collectBseCompanyAnnouncements } from './lib/bse-collection.mjs';
 import { enrichCrossExchangeDocumentHashes, expandCrossExchangeObservations } from './lib/announcement-document-hashes.mjs';
-import { createScreenerCompanyFallback, companySourceTicker } from './lib/screener-company-filings.mjs';
+import { createScreenerCompanyFallback, companySourceTicker, screenerCompanyResponse } from './lib/screener-company-filings.mjs';
 
 const dataDir = fileURLToPath(new URL('../public/data/', import.meta.url));
 const base = (process.env.FILINGS_BASE || 'https://sattva-central-research.tech-441.workers.dev').replace(/\/+$/, '');
@@ -56,12 +56,7 @@ async function companyRequest(kind, ticker, range, company) {
   if (primary?.ok !== false || primary.reason !== 'not-found') return primary;
   try {
     const page = await screenerCompany(company);
-    const metadata = { fetchedAt: page.fetchedAt, provider: 'Screener company page', sourceUrl: page.sourceUrl,
-      primaryError: { reason: primary.reason, message: String(primary.message || 'Primary provider has no company feed').slice(0, 300) } };
-    if (kind === 'domestic') return { ok: true, documents: page.documents, skipped: page.skipped,
-      unavailableLinks: page.unavailableLinks, ...metadata };
-    if (!page.announcementReadable || page.announcementSkipped) throw Error('Recent notices could not be fully parsed.');
-    return { ok: true, announcements: page.announcements, limited: true, skipped: 0, ...metadata };
+    return screenerCompanyResponse(page, kind, primary);
   } catch (error) {
     return { ...primary, reason: 'company-fallback', message: `${primary.message || 'Primary provider has no company feed'}; fallback: ${error.message}`.slice(0, 300) };
   }
