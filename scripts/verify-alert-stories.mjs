@@ -94,6 +94,28 @@ const beforeChecked = materialEvidence([hundred[0]]);
 mute.hide('ALPHA', JSON.stringify(beforeChecked));
 assert(mute.isHidden('ALPHA', JSON.stringify(materialEvidence(reader.project(hundred)))), 'finishing review does not resurface previously read facts');
 const outage = createStoryGrouping({ read: async () => null, write: async () => {}, fetcher: async () => Response.json({ ok: false }, { status: 503 }) });
+// A publisher copy mapped to a company keeps attribution prose in its display detail. That
+// prose must not make an otherwise identical Company news copy a second development (the
+// Canara Bank 1 October article reached these two routes in the shipped pool/live fixtures).
+const publisherSummary = 'Alpha Bank reports advances of 12.63 trillion and deposits of 15.48 trillion.';
+const publisherCopy = event('publisher-copy', 'Alpha Bank advances grow 16.83%', {
+  feed: 'market-news', detail: `${publisherSummary} · Company identity matched in the article headline.`,
+  sourceRecord: { publisher: 'Example publisher', summary: publisherSummary },
+});
+const companyCopy = event('company-copy', publisherCopy.headline, { storyText: publisherSummary });
+assert.equal(storyRecord(publisherCopy).text, publisherSummary, 'only the original publisher text enters story matching');
+assert.equal(storyRecord({ ...publisherCopy, storyText: 'A corrected retained article body.' }).text,
+  'A corrected retained article body.', 'an explicit retained story body keeps precedence over a source summary');
+const publisherCopies = outage.project([publisherCopy, companyCopy]);
+assert.equal(publisherCopies.length, 1, 'an exact article copy groups identically across cached and live discovery routes');
+assert.deepEqual(new Set(publisherCopies[0].storyReports.map(row => row.url)), new Set([publisherCopy.url, companyCopy.url]),
+  'both original source links survive grouping');
+assert.equal(publisherCopies[0].storyReports.find(row => row.id === publisherCopy.id).detail, publisherCopy.detail,
+  'company attribution provenance remains available');
+assert.equal(outage.project([companyCopy, { ...publisherCopy, sourceRecord: { ...publisherCopy.sourceRecord,
+  summary: 'Correction: advances were 12.73 trillion.' } }]).length, 2, 'a publisher body correction remains a separate development');
+assert.equal(storyRecord({ ...publisherCopy, sourceRecord: { summary: '' } }).text, '',
+  'an explicitly empty publisher summary cannot become an app-authored matching explanation');
 // A source row without a document cannot be grouped, but must keep its place among
 // the same-minute filings that can. Grouping finishing after paint must not reorder ties.
 const tiedRows = [event('filing-first', 'Quarterly financial results', { feed: 'announcements' }),

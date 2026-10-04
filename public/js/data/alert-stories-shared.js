@@ -30,6 +30,12 @@ export const storyDigest = async value => [...new Uint8Array(await crypto.subtle
 export function storyRecord(event) {
   if (!STORY_FEEDS.has(event.feed) || event.private || event.portfolioOnly || event.aiEligible === false && event.attribution?.status !== 'related' ||
       !validDay(event.day) || !event.headline || !/^https?:\/\//i.test(event.url || '') || !(event.ticker || event.entityId)) return null;
+  // Publisher discovery appends our company-matching explanation to detail. It is provenance,
+  // not article text: including it made the same report group differently through the pool and
+  // Company news. The publisher record survives both pool formats, including older cached rows.
+  const text = event.filingDescription || event.storyText || (event.feed === 'market-news' && typeof event.sourceRecord?.summary === 'string'
+    ? event.sourceRecord.summary
+    : (/^Published by |^Publisher not carried/.test(event.detail || '') ? '' : event.detail) || '');
   const record = {
     company: String(event.ticker || event.entityId).toUpperCase(), name: String(event.company || event.ticker || event.entityId),
     relation: event.attribution?.status === 'related' ? JSON.stringify(event.attribution.relationships || ['related']) : 'direct',
@@ -37,7 +43,7 @@ export function storyRecord(event) {
       (event.feed === 'nse-filings' ? 'NSE' : event.feed === 'announcements' ? 'BSE / company filing' : '')),
     url: event.url, day: event.day, time: event.time || '', headline: event.headline,
     // These fields survive the compact alert pool; no inference is recovered from source prose.
-    text: String(event.filingDescription || event.storyText || (/^Published by |^Publisher not carried/.test(event.detail || '') ? '' : event.detail) || ''),
+    text: String(text),
     direction: event.direction || 'neutral', importance: event.importance || 'low',
   };
   return Object.values(record).some(value => typeof value !== 'string' || value.length > 16000) ? null : record;

@@ -100,6 +100,14 @@ introduced. At its next normal run, capture gives existing 404 failures one atte
 with the newly available fallback instead of waiting out the obsolete backoff.
 That attempt records real source results; deployment alone never certifies recovery.
 
+The complete browser checks also exposed an existing grouping difference in the
+4 October snapshot: the 1 October Canara Bank advances report appeared through
+company search and the publisher feed. Publisher discovery appended the app's
+identity-matching explanation to the display detail, which story matching treated
+as article text. Story matching now uses the retained publisher summary when no
+explicit story body exists. Exact copies group consistently across cached and
+live views; original links, attribution details and actual body corrections survive.
+
 ## Publication after concurrent changes
 
 The scheduled capture uploads its recoverable artifact before publishing. If another
