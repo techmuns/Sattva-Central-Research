@@ -582,7 +582,7 @@
       "error": "search-unavailable"
     },
     "isin:INE036B01030|GAEL": {
-      "lastAttemptAt": "2026-09-30T16:44:42+00:00",
+      "lastAttemptAt": "2026-10-04T09:04:53+00:00",
       "lastResultCount": 108,
       "error": "search-unavailable",
       "targetThrough": "2026-09-07T15:18:18+00:00",
@@ -2168,6 +2168,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 206,
-    "checkedAt": "2026-10-04T08:31:06.483995+00:00"
+    "checkedAt": "2026-10-04T09:04:53.994751+00:00"
   }
 }
