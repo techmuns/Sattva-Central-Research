@@ -173,9 +173,13 @@ try {
   books.one.holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Jun 2026'] = 1.8;
   await page.clock.setSystemTime(new Date(Date.parse(at) + 7 * 3600000));
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
-  await page.waitForFunction(() => testSI.feed.book('one').holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Jun 2026'] === 1.8);
+  await page.waitForFunction(() => !testSI.feed.meta().confirming &&
+    testSI.feed.book('one').holdings.find(h => h.companySlug === 'ONLY').quarterlyHoldings['Jun 2026'] === 1.8);
+  await page.waitForSelector('[data-changes-ready="true"]');
   await page.locator('[data-changes-period]').selectOption('6m');
   await page.locator('[data-changes-holdings]').evaluate(el => el.open = true);
+  // The source event may schedule a replacement table after the corrected book is in memory.
+  await page.waitForFunction(() => document.querySelector('[data-changes-observations]')?.textContent.includes('0.80 pp'));
   assert.match(await page.locator('[data-changes-observations]').innerText(), /0.80 pp/, 'resume automatically picks up late corrections');
   await page.evaluate(() => {
     const b = testSI.feed.book('one');
