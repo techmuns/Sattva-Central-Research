@@ -33,8 +33,8 @@ export function storyRecord(event) {
   // Publisher discovery appends our company-matching explanation to detail. It is provenance,
   // not article text: including it made the same report group differently through the pool and
   // Company news. The publisher record survives both pool formats, including older cached rows.
-  const text = event.filingDescription || event.storyText || (event.feed === 'market-news' && typeof event.sourceRecord?.summary === 'string'
-    ? event.sourceRecord.summary
+  const text = event.filingDescription || event.storyText || (event.feed === 'market-news'
+    ? (typeof event.sourceRecord?.summary === 'string' ? event.sourceRecord.summary : '')
     : (/^Published by |^Publisher not carried/.test(event.detail || '') ? '' : event.detail) || '');
   const record = {
     company: String(event.ticker || event.entityId).toUpperCase(), name: String(event.company || event.ticker || event.entityId),

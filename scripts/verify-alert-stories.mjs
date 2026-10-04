@@ -116,6 +116,12 @@ assert.equal(outage.project([companyCopy, { ...publisherCopy, sourceRecord: { ..
   summary: 'Correction: advances were 12.73 trillion.' } }]).length, 2, 'a publisher body correction remains a separate development');
 assert.equal(storyRecord({ ...publisherCopy, sourceRecord: { summary: '' } }).text, '',
   'an explicitly empty publisher summary cannot become an app-authored matching explanation');
+for (const sourceRecord of [{ summary: null }, {}, undefined]) {
+  const headlineOnly = { ...publisherCopy, sourceRecord, detail: 'Company identity matched in the article headline.' };
+  assert.equal(storyRecord(headlineOnly).text, '', 'null or missing publisher summaries stay empty');
+  assert.equal(outage.project([headlineOnly, { ...companyCopy, storyText: '' }]).length, 1,
+    'headline-only publisher and Company news copies group identically');
+}
 // A source row without a document cannot be grouped, but must keep its place among
 // the same-minute filings that can. Grouping finishing after paint must not reorder ties.
 const tiedRows = [event('filing-first', 'Quarterly financial results', { feed: 'announcements' }),
