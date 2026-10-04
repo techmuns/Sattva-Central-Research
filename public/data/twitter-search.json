@@ -957,7 +957,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0O6601022|KROSS": {
-      "lastAttemptAt": "2026-10-01T08:44:25+00:00",
+      "lastAttemptAt": "2026-10-04T23:21:38+00:00",
       "error": "search-unavailable"
     },
     "isin:INE818H01020|LT Foods": {
@@ -2168,6 +2168,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 209,
-    "checkedAt": "2026-10-04T23:14:24.263771+00:00"
+    "checkedAt": "2026-10-04T23:21:38.037698+00:00"
   }
 }
