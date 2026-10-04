@@ -296,7 +296,10 @@ export async function captureCompanySources({ dir, companies, unresolved = [], n
       // gap open, and poll the fallback again on the normal two-hour collection cadence.
       entry.recovery = { checkedAt: result.fetchedAt || attemptedAt, rowCount: result.announcements.length,
         sourceUrl: result.sourceUrl, scope: 'Recent company notices only; full history remains unverified.' };
-      failSource(entry, Object.assign(Error(entry.recovery.scope), { reason: 'limited-coverage' }), attemptedAt);
+      const message = entry.skipped
+        ? `${entry.skipped} recent-notice entries could not be parsed; valid notices retained. ${entry.recovery.scope}`
+        : entry.recovery.scope;
+      failSource(entry, Object.assign(Error(message), { reason: entry.skipped ? 'shape' : 'limited-coverage' }), attemptedAt);
       entry.nextRetryAt = new Date(now() + 2 * 3600000).toISOString();
       return false;
     }

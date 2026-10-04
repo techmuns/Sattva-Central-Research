@@ -1,12 +1,14 @@
 import { escapeHtml } from '../core/dom.js';
-import { companyCaptureStatus } from '../data/company-captures.js';
+import { companyCaptureStatus, companyCaptureTickersForIsins } from '../data/company-captures.js';
 import { watchlistCapture } from '../data/watchlist-capture.js';
 import * as coverage from '../data/coverage.js';
 import { scopeTickers } from '../data/scope.js';
 
 export function captureCoverageHtml(kind, tickers = null, { scope = 'universe' } = {}) {
-  const status = companyCaptureStatus(kind, tickers ?? scopeTickers(scope));
   const heldIsins = new Set(coverage.holdings().map(c => String(c.isin || '').toUpperCase()));
+  const scopedTickers = tickers ?? scopeTickers(scope);
+  const status = companyCaptureStatus(kind, scope === 'portfolio'
+    ? companyCaptureTickersForIsins(scopedTickers, [...heldIsins]) : scopedTickers);
   // Watchlists currently accept exchange tickers only; private portfolio lines are not members.
   const nonExchange = (status.nonExchange || []).filter(c => scope === 'universe' ||
     scope === 'portfolio' && heldIsins.has(String(c.isin || '').toUpperCase()));

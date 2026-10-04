@@ -1,4 +1,5 @@
 import { conditionalJson, readEntry } from '../core/store.js';
+import { announcementIssuerIsin } from './announcement-identity.js';
 
 let index = null, indexError = null, pending = null, checkedAt = 0;
 const capturedInFlight = new Map();
@@ -48,6 +49,10 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
     else {
       tally.unavailableLinks += entry.unavailableLinks || 0;
       if (authenticatedOutage) { tally.failed++; reason = 'Authenticated announcement source is unavailable'; }
+      else if (entry.skipped) {
+        tally.failed++;
+        reason = `${entry.skipped} source entries could not be parsed; valid records retained. ${entry.recovery?.scope || 'Coverage remains incomplete.'}`;
+      }
       else if (entry.error?.reason === 'limited-coverage' && Number.isFinite(Date.parse(entry.recovery?.checkedAt))
         && Date.parse(entry.recovery.checkedAt) <= now + 600000 && now - Date.parse(entry.recovery.checkedAt) <= 4 * 3600000) {
         tally.partial++; reason = 'Recent-notice page checked on Screener; complete announcement history remains unavailable';
@@ -117,6 +122,16 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
 }
 export function companyCaptureStatus(kind, tickers = null, now = Date.now()) {
   return companyCaptureStatusFromIndex(index, kind, tickers, now, indexError);
+}
+// The capture resolves listed holdings by exact ISIN even when the book has no ticker.
+// Use its registered storage ticker, including reviewed warrant-to-issuer relationships.
+export function companyCaptureTickersForIsins(tickers, isins, captureIndex = index) {
+  const wanted = new Set(tickers || []);
+  const held = new Set(isins.map(announcementIssuerIsin).filter(Boolean));
+  for (const company of captureIndex?.companies || []) {
+    if (company.ticker && held.has(announcementIssuerIsin(company.isin))) wanted.add(company.ticker);
+  }
+  return [...wanted];
 }
 export async function capturedCompany(kind, ticker) {
   if (!/^[A-Z0-9&._-]{1,80}$/.test(ticker)) throw new Error('Choose a valid company ticker.');

@@ -19,7 +19,9 @@ import { renderCompanyFilings } from '/js/tabs/company-filings.js';
 import * as refresh from '/js/core/refresh.js';
 import * as coverage from '/js/data/coverage.js';
 import { captureCoverageHtml } from '/js/ui/capture-coverage.js';
-coverage.prime({ holdings: [{ ticker: 'HEG', name: 'HEG' }, { ticker: null, isin: 'INE0LTR01029', name: 'Everest Fleet equity' }] });
+coverage.prime({ holdings: [{ ticker: 'HEG', name: 'HEG' }, { ticker: null, isin: 'INE0LTR01029', name: 'Everest Fleet equity' },
+  { ticker: null, isin: 'INE935Q01015', name: 'Future Supply Chain' },
+  { ticker: null, isin: 'INE666D13019', name: 'Borosil Renewables warrants' }] });
 window.refresh = refresh;
 window.showCoverage = scope => { document.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('announcements', null, { scope }); };
 renderCompanyFilings({ root: document.querySelector('main'), scope: 'portfolio', params: { company: 'HEG' }, data: {} });
@@ -29,7 +31,9 @@ const server = createServer((req, res) => {
   const send = (type, body) => { res.setHeader('content-type', type); res.end(body); };
   const json = body => send('application/json', JSON.stringify(body));
   if (path === '/') return send('text/html', html);
-  if (path === '/data/filing-capture/index.json') return json({ version: 1, companies: [{ ticker: 'HEG' }], nonExchange,
+  if (path === '/data/filing-capture/index.json') return json({ version: 1, companies: [{ ticker: 'HEG' },
+    { ticker: 'FSC', isin: 'INE935Q01015' }, { ticker: 'BORORENEW', isin: 'INE666D01022' },
+    { ticker: 'UNHELD', isin: 'INE000000001' }], nonExchange,
     requestedFrom: at.slice(0, 10), requestedTo: at.slice(0, 10),
     sources: { domestic: { HEG: { lastSuccessAt: at, lastResponseAt: at } },
       announcements: { HEG: { lastSuccessAt: at, ranges: [{ from: at.slice(0, 10), to: at.slice(0, 10) }] } } } });
@@ -62,6 +66,11 @@ try {
   assert.match(await panel.locator('summary').innerText(), /1 private securities without listed-equity filing coverage/);
   assert.match(await panel.textContent(), /INE0LTR01029/);
   assert.doesNotMatch(await panel.textContent(), /INE0LTR03090/, 'another private security is not in this portfolio');
+  assert.match(await panel.locator('summary').innerText(), /1 of 3 companies recently checked/,
+    'explicit ticker lists also include this portfolio\'s ISIN-resolved listed holdings');
+  assert.match(await panel.textContent(), /FSC: Not registered for automatic capture/);
+  assert.match(await panel.textContent(), /BORORENEW: Not registered for automatic capture/);
+  assert.doesNotMatch(await panel.textContent(), /UNHELD/);
   const sources = await page.locator('tbody tr[data-row-key]').evaluateAll(rows => {
     const index = [...document.querySelectorAll('thead th')].findIndex(th => th.textContent.trim() === 'Source');
     return rows.map(r => r.children[index].textContent.trim());
@@ -78,6 +87,7 @@ try {
     await page.evaluate(scope => showCoverage(scope), scope);
     assert.match(await panel.getAttribute('class'), count ? /bg-amber-50/ : /bg-emerald-50/);
     const summary = await panel.locator('summary').innerText();
+    assert.match(summary, scope === 'portfolio' ? /1 of 3 companies/ : scope === 'universe' ? /1 of 4 companies/ : /0 of 0 companies/);
     if (count) assert(summary.includes(`${count} private securities without listed-equity filing coverage`));
     else assert(!summary.includes('private securities'), 'unrelated portfolio securities cannot warn on an empty watchlist');
   }

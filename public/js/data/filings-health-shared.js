@@ -153,7 +153,7 @@ export function assessFilingsHealth(captures, { now = Date.now(), sources = Obje
           if (!object(entry)) { group('company-unregistered', 'critical', ticker); continue; }
           unavailableLinks += Number(entry.unavailableLinks) || 0;
           if (kind === 'announcements' && authenticatedAnnouncementOutage) continue;
-          if (entry.error?.reason === 'limited-coverage' && Number.isFinite(stamp(entry.recovery?.checkedAt))
+          if (entry.error?.reason === 'limited-coverage' && !entry.skipped && Number.isFinite(stamp(entry.recovery?.checkedAt))
             && stamp(entry.recovery.checkedAt) <= now + 600000 && now - stamp(entry.recovery.checkedAt) <= 4 * 3600000)
             group('partial-source-response', 'warning', ticker);
           else if (entry.error) group(['no-token', 'unauthorised'].includes(entry.error.reason) ? 'authentication-failed' : 'source-read-failed', 'critical', ticker);

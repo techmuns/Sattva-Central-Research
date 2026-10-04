@@ -72,6 +72,15 @@ assert.equal(mixedResponse.skipped, 1);
 assert.equal(mixedResponse.limited, true);
 assert.throws(() => screenerCompanyResponse({ announcementReadable: false }, 'announcements', { reason: 'not-found' }), /could not be parsed/);
 assert.equal(parseScreenerCompanyFilings(fixture.replace('https://issuer.example/2026.pdf', 'javascript:alert(1)'), company, at).skipped, 1);
+for (const link of ['https://issuer.example/2026.pdf', 'https://issuer.example/transcript.pdf']) {
+  for (const href of ['', ' ', '#', '#download']) {
+    const result = parseScreenerCompanyFilings(fixture.replace(`href="${link}"`, `href="${href}"`), company, at);
+    assert.equal(result.skipped, 1, 'an empty or fragment-only href cannot certify a document');
+    assert.equal(result.documents.length, 3, 'valid neighbouring documents survive');
+    assert(!result.documents.some(d => d.url === 'https://www.screener.in/'));
+  }
+  assert.equal(parseScreenerCompanyFilings(fixture.replace(`href="${link}"`, ''), company, at).skipped, 1);
+}
 assert(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/'), company, at).skipped > 0);
 const noAnnual = fixture.replace(/<div class="documents annual-reports">[\s\S]*?<div class="documents concalls">/,
   '<div class="documents annual-reports"><p>No data available.</p><a href="https://www.sebi.gov.in/filing">DRHP</a></div><div class="documents concalls">');
@@ -172,7 +181,12 @@ try {
   const mixedIndex = await captureCompanySources({ ...opts, dir: mixedDir, maxRequests: 1, request: async () => mixedResponse });
   assert.equal(readJson(join(mixedDir, 'announcements/HEG.json')).rows.length, 1, 'valid partial notices reach durable storage');
   assert.equal(mixedIndex.sources.announcements.HEG.skipped, 1);
-  assert.equal(mixedIndex.sources.announcements.HEG.error.reason, 'limited-coverage');
+  assert.equal(mixedIndex.sources.announcements.HEG.error.reason, 'shape');
+  assert.match(mixedIndex.sources.announcements.HEG.error.message, /1 recent-notice entries could not be parsed/);
+  const mixedStatus = companyCaptureStatusFromIndex(mixedIndex, 'announcements', null, at);
+  assert.equal(mixedStatus.failed, 1, 'a malformed recent notice is a failed read, beyond incomplete history');
+  assert.equal(mixedStatus.partial, 0);
+  assert.match(mixedStatus.gaps[0].reason, /could not be parsed/);
   assert.equal(mixedIndex.sources.announcements.HEG.lastSuccessAt, undefined);
   assert.deepEqual(mixedIndex.sources.announcements.HEG.ranges, []);
   for (const [label, html] of [

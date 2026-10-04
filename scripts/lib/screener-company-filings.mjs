@@ -74,6 +74,7 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
     try { read(); } catch (error) { skipped++; documentErrors.push(error.message); }
   };
   const add = (href, form, title, date) => {
+    if (!String(href || '').trim() || String(href).trim().startsWith('#')) { skipped++; return; }
     let url; try { url = documentUrl(new URL(href, origin).href); } catch {}
     if (!url || !date) { skipped++; return; }
     documents.push({ ticker: company.ticker, form, title, date, url, provider: 'Screener company documents' });
