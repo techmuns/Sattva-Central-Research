@@ -71,7 +71,9 @@ const captureReads = (since = 0) => served.requests.slice(since).filter((path) =
 const poolReads = (since = 0) => served.requests.slice(since).filter((path) => path.startsWith('/api/alert-pool/'));
 
 async function openPage() {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+  // Compare the completed data presentation, not two independent entrance-animation clocks.
+  // Normal-motion queue timing and complete-model export are covered by verify-general-alerts-ui.
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block', reducedMotion: 'reduce' });
   await context.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
   await context.addInitScript((base) => { localStorage.setItem('sattva:chatter-base', `${base}/fixture/chatter`); }, origin);
   const page = await context.newPage();
