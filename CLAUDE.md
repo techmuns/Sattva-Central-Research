@@ -2216,6 +2216,15 @@ Three things to take from it:
    Trades, five filter dropdowns asking ~48,000 rows five times each.
 4. **Do not measure bytes with `TextEncoder.encode` per record.** `utf8Length` counts without the
    allocation; the per-part figure the integrity check reads is still the encoder's own.
+5. **A cache keyed on a second object holds that object weakly, and a re-read keeps an unchanged
+   object.** `attributeNewsRow` keeps one decoration per (row, identity), and its inner map was
+   strong: every re-read of the company-news head parsed its 116 identities into new objects, so
+   `rows()` re-attributed all 80,762 portfolio head rows and the old identities pinned every earlier
+   decoration — and everything keyed on those downstream — for the life of the page. The shared
+   poller re-reads every two minutes, so an open page gained ~60MB per poll (2 October 2026); on
+   Glow, whose 510-packet portfolio-research job runs longer, the heap neared its limit and the
+   blocks went from 4.4 to 8.8 minutes. The inner map is now a `WeakMap`, and `seedFromSnapshot`
+   keeps a held identity whose content is unchanged, as the picker's merge in `setWanted` already did.
 
 `scripts/verify-hot-path-memo.mjs` asserts every cache is invisible — same answers as a fresh
 computation, live reads where promised, exact byte counts — and runs in the contracts job.
