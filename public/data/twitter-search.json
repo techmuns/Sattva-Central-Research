@@ -889,8 +889,8 @@
       "pending": []
     },
     "isin:INE415I01015|Kiri Industries": {
-      "lastAttemptAt": "2026-10-01T08:11:22+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-04T19:49:53+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 20,
       "lastSuccessAt": "2026-10-01T08:11:22+00:00",
       "targetThrough": null,
@@ -2166,8 +2166,8 @@
   },
   "coverage": {
     "planned": 232,
-    "attempted": 13,
+    "attempted": 1,
     "incomplete": 209,
-    "checkedAt": "2026-10-04T19:16:43.480947+00:00"
+    "checkedAt": "2026-10-04T19:49:53.321682+00:00"
   }
 }
