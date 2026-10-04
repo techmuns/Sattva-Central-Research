@@ -937,8 +937,8 @@
       ]
     },
     "isin:INE237A01036|KOTAKBANK": {
-      "lastAttemptAt": "2026-10-01T08:11:22+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-04T22:39:25+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 115,
       "targetThrough": "2026-10-01T08:11:22+00:00",
       "pending": [
@@ -2168,6 +2168,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 209,
-    "checkedAt": "2026-10-04T22:06:17.800012+00:00"
+    "checkedAt": "2026-10-04T22:39:25.660150+00:00"
   }
 }
