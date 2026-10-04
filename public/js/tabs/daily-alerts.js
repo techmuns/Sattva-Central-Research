@@ -276,6 +276,9 @@ export function destroy() {
   arrivalsUI.detach();
   arrivals.reset();
   ctxRef = null;
+  // Leaving cancels sliced projection. Retain completed views, but rebuild an unfinished
+  // one on return even when the parked source report and story revision are unchanged.
+  if (lastVisible?.grouping) lastVisible = null;
   loadToken++;
   cacheToken++;
   clearTimeout(sourceTimer); sourceTimer = null; sourceDirty = false;
