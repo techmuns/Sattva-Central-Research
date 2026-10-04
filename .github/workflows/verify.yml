@@ -346,11 +346,18 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-shared-watchlist-ui.mjs
-  portfolio-research:
+  portfolio-research-shard:
+    # Every saved portfolio packet, split by company across four browser sessions. A packet takes
+    # 4–7 seconds on a shared runner, so one session for the whole portfolio ran 35–62 minutes
+    # (354 and 510 packets, 1–2 October 2026) against 45- and 60-minute steps. The shard count is
+    # the matrix's own size, so resizing the matrix cannot leave a slice of the portfolio unchecked.
+    name: portfolio-research (${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
-    # Check every saved holding. The complete 354-case run takes about 36 minutes
-    # on GitHub runners; allow 45 minutes plus bounded browser setup headroom.
-    timeout-minutes: 65
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -361,8 +368,23 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/research-browser" --no-save --package-lock=false playwright@1.62.1
           node "$RUNNER_TEMP/research-browser/node_modules/playwright/cli.js" install --with-deps chromium
-      - name: Verify evidence and previews across the complete saved portfolio
-        timeout-minutes: 45
+      - name: Verify evidence and previews across this shard of the saved portfolio
+        timeout-minutes: 30
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/research-browser/node_modules/playwright
+          RESEARCH_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
         run: node scripts/verify-research-portfolio.mjs
+  portfolio-research:
+    # The one result for the complete portfolio. A failed, timed-out or skipped shard left its
+    # packets unchecked, so this runs whatever the shards did and passes only when every one passed.
+    needs: portfolio-research-shard
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every portfolio shard to pass
+        env:
+          SHARDS: ${{ needs.portfolio-research-shard.result }}
+        run: |
+          echo "Portfolio research shards: $SHARDS"
+          test "$SHARDS" = success

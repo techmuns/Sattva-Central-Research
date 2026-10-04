@@ -45,6 +45,14 @@ export const ATTEMPTS = 2;
 export const DEADLINE_MS = 13000;
 const BACKOFF_MS = [400];
 
+// A CAPTURE MAY WAIT; A READER MAY NOT. The six-hourly capture retries the books its walk could not
+// read, and two of them (rafiyudeen-narudeen-saeyd, sunil-talwar) have timed out on every run since
+// mid-September: inside a reader's thirteen seconds nobody can tell whether the relay is slow on
+// them or will never answer. `patient` gives that one retry a single long attempt. Nothing a reader
+// requests asks for it, and an answer it gets is cached exactly as any other.
+export const PATIENT_TIMEOUT_MS = 40000;
+export const PATIENT_DEADLINE_MS = 45000;
+
 function fail(message, code) {
   const err = new Error(message);
   err.code = code;
@@ -68,19 +76,19 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * that verified this integration against the real service would be scraping somebody else's
  * production on every push, and would need a live credential to do it.
  */
-export async function call(fetchImpl, token, path, base = BASE, { missing = 'not-found', now = Date.now } = {}) {
+export async function call(fetchImpl, token, path, base = BASE, { missing = 'not-found', now = Date.now, timeoutMs = REQ_TIMEOUT_MS, deadlineMs = DEADLINE_MS } = {}) {
   if (!token) throw fail('No API token is configured for the super-investor feed.', 'no-token');
 
   // The deadline is absolute and is the promise this function makes to its caller. Each attempt
   // gets whatever is left of it, so a slow first attempt shortens the second rather than being
   // added to it — which is how the old arithmetic reached forty-seven seconds.
   const startedAt = now();
-  const left = () => DEADLINE_MS - (now() - startedAt);
+  const left = () => deadlineMs - (now() - startedAt);
 
   let last;
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-    const budget = Math.min(REQ_TIMEOUT_MS, left());
-    if (budget <= 0) throw last || fail(`${base}${path} did not answer within ${DEADLINE_MS}ms.`, 'timeout');
+    const budget = Math.min(timeoutMs, left());
+    if (budget <= 0) throw last || fail(`${base}${path} did not answer within ${deadlineMs}ms.`, 'timeout');
     try {
       return await attemptCall(fetchImpl, token, path, base, missing, budget);
     } catch (e) {
@@ -144,9 +152,10 @@ export async function fetchInvestorList(fetchImpl, token, base) {
 }
 
 /** GET /super-investors/{slug} -> one investor's book, quarter by quarter. */
-export async function fetchInvestorPortfolio(fetchImpl, token, slug, base) {
+export async function fetchInvestorPortfolio(fetchImpl, token, slug, base, { patient = false } = {}) {
   if (!isSlug(slug)) throw fail(`"${slug}" is not a valid investor slug.`, 'bad-slug');
-  const body = await call(fetchImpl, token, `/super-investors/${encodeURIComponent(slug)}`, base);
+  const body = await call(fetchImpl, token, `/super-investors/${encodeURIComponent(slug)}`, base,
+    patient ? { timeoutMs: PATIENT_TIMEOUT_MS, deadlineMs: PATIENT_DEADLINE_MS } : {});
   if (!isPortfolioPayload(body, slug)) throw fail('The source returned an incomplete portfolio payload.', 'shape');
   // Unlike delivery fetchedAt, this successful source check belongs in the ETag.
   // Otherwise unchanged holdings can retain an old source timestamp indefinitely.

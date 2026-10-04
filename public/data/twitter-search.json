@@ -1,27 +1,36 @@
 {
   "queries": {
     "isin:INE423A01024|Adani Enterprises": {
-      "lastAttemptAt": "2026-09-29T14:53:51+00:00",
-      "error": "search-unavailable"
-    },
-    "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-09-29T15:14:28+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": "result-cap-incomplete",
       "lastResultCount": 105,
-      "targetThrough": "2026-09-15T20:36:48+00:00",
+      "targetThrough": "2026-10-03T05:24:56+00:00",
       "pending": [
         {
-          "from": "2026-09-06T20:36:48.830627+00:00",
-          "to": "2026-09-11T08:36:48.415313+00:00"
+          "from": "2026-09-24T05:24:56.457367+00:00",
+          "to": "2026-09-28T17:24:56.228683+00:00"
         },
+        {
+          "from": "2026-09-28T17:24:56.228683+00:00",
+          "to": "2026-10-03T05:24:56+00:00"
+        }
+      ]
+    },
+    "isin:INE423A01024|ADANIENT": {
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": null,
+      "lastResultCount": 64,
+      "targetThrough": "2026-09-15T20:36:48+00:00",
+      "pending": [
         {
           "from": "2026-09-11T08:36:48.415313+00:00",
           "to": "2026-09-15T20:36:48+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-03T05:24:56+00:00"
     },
     "isin:INE674K01013|Aditya Birla Capital": {
-      "lastAttemptAt": "2026-09-29T15:16:09+00:00",
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-09-15T20:36:48+00:00",
@@ -37,8 +46,8 @@
       ]
     },
     "isin:INE674K01013|ABCAPITAL": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T06:17:45+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 27,
       "targetThrough": "2026-09-15T20:36:48+00:00",
       "pending": [
@@ -50,24 +59,24 @@
       "lastDiscoveryAt": "2026-09-29T15:58:33+00:00"
     },
     "isin:INE679V01027|Aditya Vision": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T06:48:56+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 48,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0ALI01010|Advait Energy Transitions": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T07:23:54+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 31,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0ALI01010|ADVAIT": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-03T07:57:03+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 119,
       "targetThrough": "2026-09-15T20:36:48+00:00",
       "pending": [
@@ -87,31 +96,31 @@
       "lastDiscoveryAt": "2026-09-29T15:58:33+00:00"
     },
     "isin:INE914E01040|Alankit": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T08:30:03+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 20,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE914E01040|ALANKIT": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T08:47:11+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 20,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1YPB01014|Allcargo Global": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T09:36:10+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 16,
       "lastSuccessAt": "2026-09-29T15:58:33+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0R4701017|Alpex Solar": {
-      "lastAttemptAt": "2026-09-29T15:58:33+00:00",
+      "lastAttemptAt": "2026-10-03T10:09:01+00:00",
       "error": "search-unavailable",
       "lastResultCount": 35,
       "lastSuccessAt": "2026-09-15T20:36:48+00:00",
@@ -119,154 +128,150 @@
       "pending": []
     },
     "isin:INE0R4701017|ALPEXSOLAR-SM": {
-      "lastAttemptAt": "2026-09-29T16:32:00+00:00",
+      "lastAttemptAt": "2026-10-03T10:42:01+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Global Securities": {
-      "lastAttemptAt": "2026-09-29T17:03:50+00:00",
+      "lastAttemptAt": "2026-10-03T11:15:14+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|Ashika Credit Capital": {
-      "lastAttemptAt": "2026-09-29T17:38:22+00:00",
+      "lastAttemptAt": "2026-10-03T11:45:52+00:00",
       "error": "search-unavailable"
     },
     "isin:INE094B01013|ASHIKA": {
-      "lastAttemptAt": "2026-09-29T18:09:48+00:00",
+      "lastAttemptAt": "2026-10-03T12:42:39+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|Atlanta Electricals": {
-      "lastAttemptAt": "2026-09-29T18:43:58+00:00",
+      "lastAttemptAt": "2026-10-03T13:16:01+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0Z4F01028|ATLANTAELE": {
-      "lastAttemptAt": "2026-09-29T19:19:36+00:00",
+      "lastAttemptAt": "2026-10-03T13:48:04+00:00",
       "error": "search-unavailable"
     },
     "isin:INE555B01013|Axiscades Technologies": {
-      "lastAttemptAt": "2026-09-29T19:53:18+00:00",
+      "lastAttemptAt": "2026-10-03T14:04:57+00:00",
       "error": "search-unavailable"
     },
     "isin:INE555B01013|AXISCADES": {
-      "lastAttemptAt": "2026-09-29T20:05:17+00:00",
+      "lastAttemptAt": "2026-10-03T14:51:20+00:00",
       "error": "search-unavailable"
     },
     "isin:INE083K01017|Bengal and Assam Company": {
-      "lastAttemptAt": "2026-09-29T20:45:02+00:00",
+      "lastAttemptAt": "2026-10-03T15:34:26+00:00",
       "error": "search-unavailable"
     },
     "isin:INE083K01017|BENGALASM": {
-      "lastAttemptAt": "2026-09-29T21:17:41+00:00",
+      "lastAttemptAt": "2026-10-03T16:18:40+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0HOQ01053|Billionbrains Garage Ventures": {
-      "lastAttemptAt": "2026-09-29T21:50:57+00:00",
+      "lastAttemptAt": "2026-10-03T16:51:13+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0HOQ01053|GROWW": {
-      "lastAttemptAt": "2026-09-29T22:23:35+00:00",
+      "lastAttemptAt": "2026-10-03T17:24:44+00:00",
       "error": "search-unavailable"
     },
     "isin:INE376G01013|Biocon": {
-      "lastAttemptAt": "2026-09-29T22:56:31+00:00",
+      "lastAttemptAt": "2026-10-03T17:57:39+00:00",
       "error": "search-unavailable"
     },
     "isin:INE376G01013|BIOCON": {
-      "lastAttemptAt": "2026-09-29T23:33:21+00:00",
+      "lastAttemptAt": "2026-10-03T18:04:58+00:00",
       "error": "search-unavailable"
     },
     "isin:INE476A01022|Canara Bank": {
-      "lastAttemptAt": "2026-09-29T23:50:21+00:00",
+      "lastAttemptAt": "2026-10-03T18:37:04+00:00",
       "error": "search-unavailable"
     },
     "isin:INE476A01022|CANBK": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T19:22:38+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 29,
       "lastSuccessAt": "2026-09-30T00:48:50+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE482D01024|Carysil": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-03T19:55:42+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 28,
       "lastSuccessAt": "2026-09-30T00:48:50+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE482D01024|CARYSIL": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
+      "lastAttemptAt": "2026-10-03T20:28:30+00:00",
       "lastResultCount": 39,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-09-30T00:48:50+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE736A01011|Central Depository Services": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
-      "lastResultCount": 30,
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
+      "lastResultCount": 10,
       "error": null,
-      "lastSuccessAt": "2026-09-30T00:48:50+00:00",
+      "lastSuccessAt": "2026-10-03T21:01:00+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE736A01011|CDSL": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
-      "lastResultCount": 89,
-      "error": null,
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
+      "lastResultCount": 100,
+      "error": "result-cap-incomplete",
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
         {
           "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-04T16:10:33.116823+00:00"
+        },
+        {
+          "from": "2026-09-04T16:10:33.116823+00:00",
           "to": "2026-09-06T22:10:33+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-30T00:48:50+00:00"
+      "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE067A01029|Cg Power and Ind Sol": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
       "lastResultCount": 0,
       "error": null,
-      "lastSuccessAt": "2026-09-30T00:48:50+00:00",
+      "lastSuccessAt": "2026-10-03T21:01:00+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE067A01029|CG Power & Ind": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
       "lastResultCount": 0,
       "error": null,
-      "lastSuccessAt": "2026-09-30T00:48:50+00:00",
+      "lastSuccessAt": "2026-10-03T21:01:00+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE067A01029|CGPOWER": {
-      "lastAttemptAt": "2026-09-30T00:48:50+00:00",
-      "lastResultCount": 104,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
+      "lastResultCount": 57,
+      "error": null,
       "lastSuccessAt": "2026-09-06T22:10:33+00:00",
       "targetThrough": "2026-09-20T20:53:41+00:00",
       "pending": [
-        {
-          "from": "2026-09-04T22:10:33+00:00",
-          "to": "2026-09-12T21:32:07+00:00"
-        },
         {
           "from": "2026-09-12T21:32:07+00:00",
           "to": "2026-09-20T20:53:41+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-30T00:48:50+00:00"
+      "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE522F01014|Coal India": {
-      "lastAttemptAt": "2026-09-30T01:25:00+00:00",
-      "lastResultCount": 105,
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
+      "lastResultCount": 104,
+      "error": "result-cap-incomplete",
       "targetThrough": "2026-09-06T22:10:33+00:00",
       "pending": [
-        {
-          "from": "2026-09-02T10:10:33.233647+00:00",
-          "to": "2026-09-06T22:10:33+00:00"
-        },
         {
           "from": "2026-08-28T22:10:33.467294+00:00",
           "to": "2026-08-31T04:10:33.350470+00:00"
@@ -274,12 +279,20 @@
         {
           "from": "2026-08-31T04:10:33.350470+00:00",
           "to": "2026-09-02T10:10:33.233647+00:00"
+        },
+        {
+          "from": "2026-09-02T10:10:33.233647+00:00",
+          "to": "2026-09-04T16:10:33.116823+00:00"
+        },
+        {
+          "from": "2026-09-04T16:10:33.116823+00:00",
+          "to": "2026-09-06T22:10:33+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-20T20:53:41+00:00"
+      "lastDiscoveryAt": "2026-10-03T21:01:00+00:00"
     },
     "isin:INE522F01014|COALINDIA": {
-      "lastAttemptAt": "2026-09-30T01:58:05+00:00",
+      "lastAttemptAt": "2026-10-03T21:01:00+00:00",
       "lastResultCount": 108,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -300,7 +313,7 @@
       "lastDiscoveryAt": "2026-09-20T20:53:41+00:00"
     },
     "isin:INE591G01025|Coforge": {
-      "lastAttemptAt": "2026-09-30T02:34:24+00:00",
+      "lastAttemptAt": "2026-10-03T21:34:37+00:00",
       "lastResultCount": 109,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -321,7 +334,7 @@
       "lastDiscoveryAt": "2026-09-20T20:53:41+00:00"
     },
     "isin:INE591G01025|COFORGE": {
-      "lastAttemptAt": "2026-09-30T03:02:15+00:00",
+      "lastAttemptAt": "2026-10-03T22:05:39+00:00",
       "lastResultCount": 106,
       "error": "search-unavailable",
       "targetThrough": "2026-09-06T22:10:33+00:00",
@@ -337,47 +350,63 @@
       ]
     },
     "isin:INE338H01029|Concord Biotech": {
-      "lastAttemptAt": "2026-09-30T04:02:41+00:00",
+      "lastAttemptAt": "2026-10-03T22:40:04+00:00",
       "error": "search-unavailable"
     },
     "isin:INE338H01029|CONCORDBIO": {
-      "lastAttemptAt": "2026-09-30T04:35:31+00:00",
+      "lastAttemptAt": "2026-10-03T23:11:48+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0N0J01014|Concord Control Systems": {
-      "lastAttemptAt": "2026-09-30T05:08:50+00:00",
+      "lastAttemptAt": "2026-10-03T23:46:46+00:00",
       "error": "search-unavailable"
     },
     "isin:INE532F01054|Edelweiss Financial Services": {
-      "lastAttemptAt": "2026-09-30T05:41:43+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": null,
+      "lastResultCount": 29,
+      "lastSuccessAt": "2026-10-04T00:14:44+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE532F01054|EAAA India Alternatives": {
-      "lastAttemptAt": "2026-09-30T06:14:09+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": null,
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-10-04T00:14:44+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE532F01054|EAAA": {
-      "lastAttemptAt": "2026-09-30T06:48:35+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 111,
+      "targetThrough": "2026-10-04T00:14:44+00:00",
+      "pending": [
+        {
+          "from": "2026-09-25T00:14:44.445357+00:00",
+          "to": "2026-09-29T12:14:44.222679+00:00"
+        },
+        {
+          "from": "2026-09-29T12:14:44.222679+00:00",
+          "to": "2026-10-04T00:14:44+00:00"
+        }
+      ]
     },
     "isin:INE532F01054|Edelweiss Alternative Asset Advisors": {
-      "lastAttemptAt": "2026-09-30T07:18:46+00:00",
-      "error": "search-unavailable",
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": null,
       "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-21T00:21:30+00:00",
+      "lastSuccessAt": "2026-10-04T00:14:44+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE532F01054|EDELWEISS": {
-      "lastAttemptAt": "2026-09-30T07:51:56+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 109,
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 111,
       "targetThrough": "2026-09-12T07:47:49+00:00",
       "pending": [
-        {
-          "from": "2026-09-07T19:47:49.111375+00:00",
-          "to": "2026-09-12T07:47:49+00:00"
-        },
         {
           "from": "2026-09-03T07:47:49.222749+00:00",
           "to": "2026-09-05T13:47:49.167062+00:00"
@@ -385,33 +414,45 @@
         {
           "from": "2026-09-05T13:47:49.167062+00:00",
           "to": "2026-09-07T19:47:49.111375+00:00"
+        },
+        {
+          "from": "2026-09-07T19:47:49.111375+00:00",
+          "to": "2026-09-10T01:47:49.055687+00:00"
+        },
+        {
+          "from": "2026-09-10T01:47:49.055687+00:00",
+          "to": "2026-09-12T07:47:49+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-21T00:21:30+00:00"
+      "lastDiscoveryAt": "2026-10-04T00:14:44+00:00"
     },
     "isin:INE1C6T01020|Emmvee Photovoltaic Power": {
-      "lastAttemptAt": "2026-09-30T08:23:39+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 11,
-      "lastSuccessAt": "2026-09-21T00:21:30+00:00",
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": null,
+      "lastResultCount": 17,
+      "lastSuccessAt": "2026-10-04T00:14:44+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE1C6T01020|EMMVEE": {
-      "lastAttemptAt": "2026-09-30T08:57:31+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 21,
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 101,
       "targetThrough": "2026-09-12T07:47:49+00:00",
       "pending": [
         {
           "from": "2026-09-07T19:47:49.111375+00:00",
+          "to": "2026-09-10T01:47:49.055687+00:00"
+        },
+        {
+          "from": "2026-09-10T01:47:49.055687+00:00",
           "to": "2026-09-12T07:47:49+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-21T00:21:30+00:00"
+      "lastDiscoveryAt": "2026-10-04T00:14:44+00:00"
     },
     "isin:INE758T01015|Eternal": {
-      "lastAttemptAt": "2026-09-30T09:33:38+00:00",
+      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
       "error": "search-unavailable",
       "lastResultCount": 113,
       "targetThrough": "2026-09-12T07:47:49+00:00",
@@ -433,10 +474,10 @@
           "to": "2026-09-12T07:47:49+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-09-21T00:21:30+00:00"
+      "lastDiscoveryAt": "2026-10-04T00:14:44+00:00"
     },
     "isin:INE758T01015|ETERNAL": {
-      "lastAttemptAt": "2026-09-30T09:52:38+00:00",
+      "lastAttemptAt": "2026-10-04T01:10:28+00:00",
       "error": "search-unavailable",
       "lastResultCount": 113,
       "targetThrough": "2026-09-12T07:47:49+00:00",
@@ -461,7 +502,7 @@
       "lastDiscoveryAt": "2026-09-21T00:21:30+00:00"
     },
     "isin:INE0EDU01014|Finbud Financial Services": {
-      "lastAttemptAt": "2026-09-30T09:54:34+00:00",
+      "lastAttemptAt": "2026-10-04T01:43:24+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-09-21T00:21:30+00:00",
@@ -469,7 +510,7 @@
       "pending": []
     },
     "isin:INE220J01025|Future Consumer": {
-      "lastAttemptAt": "2026-09-30T10:30:03+00:00",
+      "lastAttemptAt": "2026-10-04T02:16:24+00:00",
       "error": "search-unavailable",
       "lastResultCount": 19,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -477,7 +518,7 @@
       "pending": []
     },
     "isin:INE220J01025|FCONSUMER": {
-      "lastAttemptAt": "2026-09-30T11:12:18+00:00",
+      "lastAttemptAt": "2026-10-04T02:47:25+00:00",
       "error": "search-unavailable",
       "lastResultCount": 1,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -485,7 +526,7 @@
       "pending": []
     },
     "isin:INE935Q01015|Future Supply Chain Solutions": {
-      "lastAttemptAt": "2026-09-30T11:46:04+00:00",
+      "lastAttemptAt": "2026-10-04T03:22:29+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -493,7 +534,7 @@
       "pending": []
     },
     "isin:INE18UN01038|Gaja Alternative Asset Management": {
-      "lastAttemptAt": "2026-09-30T12:21:16+00:00",
+      "lastAttemptAt": "2026-10-04T03:54:15+00:00",
       "error": "search-unavailable",
       "lastResultCount": 37,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -501,7 +542,7 @@
       "pending": []
     },
     "isin:INE291A01017|Garware Hi-Tech Film": {
-      "lastAttemptAt": "2026-09-30T12:52:40+00:00",
+      "lastAttemptAt": "2026-10-04T04:27:23+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -509,7 +550,7 @@
       "pending": []
     },
     "isin:INE291A01017|GRWRHITECH": {
-      "lastAttemptAt": "2026-09-30T13:26:52+00:00",
+      "lastAttemptAt": "2026-10-04T05:00:25+00:00",
       "error": "search-unavailable",
       "lastResultCount": 3,
       "lastSuccessAt": "2026-09-16T18:13:23+00:00",
@@ -517,31 +558,31 @@
       "pending": []
     },
     "isin:INE741B01027|Glittke Granites": {
-      "lastAttemptAt": "2026-09-30T13:58:37+00:00",
+      "lastAttemptAt": "2026-10-04T05:33:28+00:00",
       "error": "search-unavailable"
     },
     "isin:INE077F01035|GOCL Corporation": {
-      "lastAttemptAt": "2026-09-30T14:33:03+00:00",
+      "lastAttemptAt": "2026-10-04T06:06:04+00:00",
       "error": "search-unavailable"
     },
     "isin:INE077F01035|GOCLCORP": {
-      "lastAttemptAt": "2026-09-30T15:09:20+00:00",
+      "lastAttemptAt": "2026-10-04T06:37:05+00:00",
       "error": "search-unavailable"
     },
     "isin:INE850D01014|Godrej Agrovet": {
-      "lastAttemptAt": "2026-09-30T15:43:20+00:00",
+      "lastAttemptAt": "2026-10-04T07:26:08+00:00",
       "error": "search-unavailable"
     },
     "isin:INE850D01014|GODREJAGRO": {
-      "lastAttemptAt": "2026-09-30T16:01:28+00:00",
+      "lastAttemptAt": "2026-10-04T07:59:21+00:00",
       "error": "search-unavailable"
     },
     "isin:INE036B01030|Gujarat Ambuja Exports": {
-      "lastAttemptAt": "2026-09-30T16:10:53+00:00",
+      "lastAttemptAt": "2026-10-04T08:31:06+00:00",
       "error": "search-unavailable"
     },
     "isin:INE036B01030|GAEL": {
-      "lastAttemptAt": "2026-09-30T16:44:42+00:00",
+      "lastAttemptAt": "2026-10-04T09:04:53+00:00",
       "lastResultCount": 108,
       "error": "search-unavailable",
       "targetThrough": "2026-09-07T15:18:18+00:00",
@@ -557,7 +598,7 @@
       ]
     },
     "isin:INE330T01021|Happy Forgings": {
-      "lastAttemptAt": "2026-09-30T17:31:43+00:00",
+      "lastAttemptAt": "2026-10-04T09:38:09+00:00",
       "lastResultCount": 41,
       "error": "search-unavailable",
       "lastSuccessAt": "2026-09-07T15:18:18+00:00",
@@ -1568,127 +1609,259 @@
       "error": "search-unavailable"
     },
     "isin:INE526E01018|SPR Auto Technologies": {
-      "lastAttemptAt": "2026-09-28T07:12:42+00:00",
+      "lastAttemptAt": "2026-10-02T10:09:16+00:00",
       "error": "search-unavailable"
     },
     "isin:INE526E01018|Shriram Pistons & Rings": {
-      "lastAttemptAt": "2026-09-28T07:58:56+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": null,
+      "lastResultCount": 4,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE526E01018|SHRIPISTON": {
-      "lastAttemptAt": "2026-09-28T08:37:33+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": null,
+      "lastResultCount": 22,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE1NPP01017|Siemens Energy India": {
-      "lastAttemptAt": "2026-09-28T09:08:59+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": null,
+      "lastResultCount": 37,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE1NPP01017|ENRIN": {
-      "lastAttemptAt": "2026-09-28T09:44:38+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
+      "targetThrough": "2026-10-02T10:43:50+00:00",
+      "pending": [
+        {
+          "from": "2026-09-23T10:43:50.428892+00:00",
+          "to": "2026-09-27T22:43:50.214446+00:00"
+        },
+        {
+          "from": "2026-09-27T22:43:50.214446+00:00",
+          "to": "2026-10-02T10:43:50+00:00"
+        }
+      ]
     },
     "isin:INE01IU01018|Sky Gold": {
-      "lastAttemptAt": "2026-09-28T10:21:07+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 104,
+      "targetThrough": "2026-10-02T10:43:50+00:00",
+      "pending": [
+        {
+          "from": "2026-09-23T10:43:50.428892+00:00",
+          "to": "2026-09-27T22:43:50.214446+00:00"
+        },
+        {
+          "from": "2026-09-27T22:43:50.214446+00:00",
+          "to": "2026-10-02T10:43:50+00:00"
+        }
+      ]
     },
     "isin:INE01IU01018|SKYGOLD": {
-      "lastAttemptAt": "2026-09-28T10:28:46+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 110,
+      "targetThrough": "2026-10-02T10:43:50+00:00",
+      "pending": [
+        {
+          "from": "2026-09-23T10:43:50.428892+00:00",
+          "to": "2026-09-27T22:43:50.214446+00:00"
+        },
+        {
+          "from": "2026-09-27T22:43:50.214446+00:00",
+          "to": "2026-10-02T10:43:50+00:00"
+        }
+      ]
     },
     "isin:INE728Z01015|Softtech Engineers": {
-      "lastAttemptAt": "2026-09-28T11:01:38+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": null,
+      "lastResultCount": 13,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE728Z01015|SOFTTECH": {
-      "lastAttemptAt": "2026-09-28T11:34:57+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": null,
+      "lastResultCount": 72,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE073K01018|Sona Blw Precision Forgings": {
-      "lastAttemptAt": "2026-09-28T12:08:00+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": null,
+      "lastResultCount": 19,
+      "lastSuccessAt": "2026-10-02T10:43:50+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE073K01018|SONACOMS": {
-      "lastAttemptAt": "2026-09-28T12:41:10+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 108,
+      "targetThrough": "2026-10-02T10:43:50+00:00",
+      "pending": [
+        {
+          "from": "2026-09-23T10:43:50.428892+00:00",
+          "to": "2026-09-27T22:43:50.214446+00:00"
+        },
+        {
+          "from": "2026-09-27T22:43:50.214446+00:00",
+          "to": "2026-10-02T10:43:50+00:00"
+        }
+      ]
     },
     "isin:INE12Z301012|Sotefin Bharat": {
-      "lastAttemptAt": "2026-09-28T13:12:44+00:00",
+      "lastAttemptAt": "2026-10-02T10:43:50+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0M4D01010|Standard Engineering Technology": {
-      "lastAttemptAt": "2026-09-28T13:45:10+00:00",
+      "lastAttemptAt": "2026-10-02T11:16:33+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0M4D01010|SETL": {
-      "lastAttemptAt": "2026-09-28T14:16:58+00:00",
+      "lastAttemptAt": "2026-10-02T11:49:42+00:00",
       "error": "search-unavailable"
     },
     "isin:INE089C01029|Sterlite Technologies": {
-      "lastAttemptAt": "2026-09-28T14:45:53+00:00",
+      "lastAttemptAt": "2026-10-02T12:22:41+00:00",
       "error": "search-unavailable"
     },
     "isin:INE089C01029|SterliteTech": {
-      "lastAttemptAt": "2026-09-28T15:21:05+00:00",
+      "lastAttemptAt": "2026-10-02T12:55:49+00:00",
       "error": "search-unavailable"
     },
     "isin:INE089C01029|Sterlite analyst day": {
-      "lastAttemptAt": "2026-09-28T15:59:27+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE089C01029|STL analyst day": {
-      "lastAttemptAt": "2026-09-28T16:29:19+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE089C01029|STLTECH": {
-      "lastAttemptAt": "2026-09-28T17:04:31+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 116,
+      "targetThrough": "2026-10-02T12:58:36+00:00",
+      "pending": [
+        {
+          "from": "2026-09-23T12:58:36.150794+00:00",
+          "to": "2026-09-28T00:58:36.075397+00:00"
+        },
+        {
+          "from": "2026-09-28T00:58:36.075397+00:00",
+          "to": "2026-10-02T12:58:36+00:00"
+        }
+      ]
     },
     "isin:INE958L01034|String Metaverse": {
-      "lastAttemptAt": "2026-09-28T17:40:29+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 10,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE239C01020|Stylam Industries": {
-      "lastAttemptAt": "2026-09-28T18:13:25+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 9,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE239C01020|STYLAMIND": {
-      "lastAttemptAt": "2026-09-28T18:49:13+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 2,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE659A01023|Sudarshan Chemical Industries": {
-      "lastAttemptAt": "2026-09-28T19:23:18+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 32,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE659A01023|SUDARSCHEM": {
-      "lastAttemptAt": "2026-09-28T19:56:12+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 13,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE07RO01027|Supriya Lifescience": {
-      "lastAttemptAt": "2026-09-28T20:30:29+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 19,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE07RO01027|SUPRIYA": {
-      "lastAttemptAt": "2026-09-28T21:03:36+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
+      "targetThrough": "2026-10-02T12:58:36+00:00",
+      "pending": [
+        {
+          "from": "2026-09-23T12:58:36.150794+00:00",
+          "to": "2026-09-28T00:58:36.075397+00:00"
+        },
+        {
+          "from": "2026-09-28T00:58:36.075397+00:00",
+          "to": "2026-10-02T12:58:36+00:00"
+        }
+      ]
     },
     "isin:INE665A01038|Swan Corp": {
-      "lastAttemptAt": "2026-09-28T21:36:44+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
+      "error": null,
+      "lastResultCount": 8,
+      "lastSuccessAt": "2026-10-02T12:58:36+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE665A01038|SWANCORP": {
-      "lastAttemptAt": "2026-09-28T22:13:48+00:00",
+      "lastAttemptAt": "2026-10-02T12:58:36+00:00",
       "error": "search-unavailable"
     },
     "isin:INE976I01016|Tata Capital": {
-      "lastAttemptAt": "2026-09-28T23:01:05+00:00",
+      "lastAttemptAt": "2026-10-02T13:54:20+00:00",
       "error": "search-unavailable"
     },
     "isin:INE976I01016|TATACAP": {
-      "lastAttemptAt": "2026-09-28T23:34:05+00:00",
+      "lastAttemptAt": "2026-10-02T14:34:27+00:00",
       "error": "search-unavailable"
     },
     "isin:INE142M01025|Tata Technologies": {
-      "lastAttemptAt": "2026-09-29T00:07:12+00:00",
+      "lastAttemptAt": "2026-10-02T15:06:11+00:00",
       "error": "search-unavailable",
       "lastResultCount": 59,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
@@ -1696,7 +1869,7 @@
       "pending": []
     },
     "isin:INE142M01025|TATATECH": {
-      "lastAttemptAt": "2026-09-29T00:40:28+00:00",
+      "lastAttemptAt": "2026-10-02T15:12:09+00:00",
       "error": "search-unavailable",
       "lastResultCount": 38,
       "lastSuccessAt": "2026-09-24T08:08:20+00:00",
@@ -1704,32 +1877,32 @@
       "pending": []
     },
     "isin:INE508G01029|Time Technoplast": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-02T15:43:15+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 31,
       "lastSuccessAt": "2026-09-29T01:13:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE508G01029|TIMETECHNO": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-02T16:20:50+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 8,
       "lastSuccessAt": "2026-09-29T01:13:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE615H01020|Titagarh Rail Systems": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-02T16:52:28+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 28,
       "lastSuccessAt": "2026-09-29T01:13:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE615H01020|TITAGARH": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-02T17:24:45+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 88,
       "targetThrough": "2026-09-24T08:08:20+00:00",
       "pending": [
@@ -1741,16 +1914,16 @@
       "lastDiscoveryAt": "2026-09-29T01:13:29+00:00"
     },
     "isin:INE0OC301013|Turtlemint Fintech Solutions": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-02T17:59:50+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 22,
       "lastSuccessAt": "2026-09-29T01:13:29+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE0OC301013|TURTLEMINT": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-02T18:30:47+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 12,
       "targetThrough": "2026-09-24T08:08:20+00:00",
       "pending": [
@@ -1762,7 +1935,7 @@
       "lastDiscoveryAt": "2026-09-29T01:13:29+00:00"
     },
     "isin:INE0CAZ01013|Urban Company": {
-      "lastAttemptAt": "2026-09-29T01:13:29+00:00",
+      "lastAttemptAt": "2026-10-02T19:05:59+00:00",
       "error": "search-unavailable",
       "lastResultCount": 106,
       "targetThrough": "2026-09-24T08:08:20+00:00",
@@ -1779,31 +1952,31 @@
       "lastDiscoveryAt": "2026-09-29T01:13:29+00:00"
     },
     "isin:INE0CAZ01013|URBANCO": {
-      "lastAttemptAt": "2026-09-29T01:48:58+00:00",
+      "lastAttemptAt": "2026-10-02T19:39:26+00:00",
       "error": "search-unavailable"
     },
     "isin:INE879I01012|Valor Estate": {
-      "lastAttemptAt": "2026-09-29T02:39:30+00:00",
+      "lastAttemptAt": "2026-10-02T20:39:55+00:00",
       "error": "search-unavailable"
     },
     "isin:INE879I01012|DB Realty": {
-      "lastAttemptAt": "2026-09-29T03:27:47+00:00",
+      "lastAttemptAt": "2026-10-02T21:14:45+00:00",
       "error": "search-unavailable"
     },
     "isin:INE879I01012|DBREALTY": {
-      "lastAttemptAt": "2026-09-29T04:02:10+00:00",
+      "lastAttemptAt": "2026-10-02T21:49:53+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1CDF01017|Vedanta Aluminium Metal": {
-      "lastAttemptAt": "2026-09-29T04:34:58+00:00",
+      "lastAttemptAt": "2026-10-02T22:25:06+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1CDF01017|VAML": {
-      "lastAttemptAt": "2026-09-29T05:08:08+00:00",
+      "lastAttemptAt": "2026-10-02T23:26:45+00:00",
       "error": "search-unavailable"
     },
     "isin:INE1CLE01013|Vedanta Iron and Steel": {
-      "lastAttemptAt": "2026-09-29T06:14:08+00:00",
+      "lastAttemptAt": "2026-10-03T00:47:13+00:00",
       "error": "search-unavailable",
       "lastResultCount": 21,
       "lastSuccessAt": "2026-09-20T00:19:51+00:00",
@@ -1811,7 +1984,7 @@
       "pending": []
     },
     "isin:INE1CLE01013|VISL": {
-      "lastAttemptAt": "2026-09-29T06:47:17+00:00",
+      "lastAttemptAt": "2026-10-03T01:34:36+00:00",
       "error": "search-unavailable",
       "lastResultCount": 53,
       "lastSuccessAt": "2026-09-20T00:19:51+00:00",
@@ -1819,7 +1992,7 @@
       "pending": []
     },
     "isin:INE205A01025|Vedanta": {
-      "lastAttemptAt": "2026-09-29T07:40:12+00:00",
+      "lastAttemptAt": "2026-10-03T02:08:39+00:00",
       "error": "search-unavailable",
       "lastResultCount": 112,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -1835,7 +2008,7 @@
       ]
     },
     "isin:INE205A01025|VEDL": {
-      "lastAttemptAt": "2026-09-29T08:24:07+00:00",
+      "lastAttemptAt": "2026-10-03T02:39:30+00:00",
       "error": "search-unavailable",
       "lastResultCount": 103,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -1851,7 +2024,7 @@
       ]
     },
     "isin:INE704J01044|Vedanta Oil and Gas": {
-      "lastAttemptAt": "2026-09-29T08:48:10+00:00",
+      "lastAttemptAt": "2026-10-03T02:56:57+00:00",
       "error": "search-unavailable",
       "lastResultCount": 8,
       "lastSuccessAt": "2026-09-20T00:19:51+00:00",
@@ -1859,7 +2032,7 @@
       "pending": []
     },
     "isin:INE704J01044|VOGL": {
-      "lastAttemptAt": "2026-09-29T09:19:59+00:00",
+      "lastAttemptAt": "2026-10-03T03:47:30+00:00",
       "error": "search-unavailable",
       "lastResultCount": 104,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -1875,7 +2048,7 @@
       ]
     },
     "isin:INE694L01019|Vedanta Power": {
-      "lastAttemptAt": "2026-09-29T09:42:25+00:00",
+      "lastAttemptAt": "2026-10-03T04:20:32+00:00",
       "error": "search-unavailable",
       "lastResultCount": 29,
       "lastSuccessAt": "2026-09-20T00:19:51+00:00",
@@ -1883,7 +2056,7 @@
       "pending": []
     },
     "isin:INE694L01019|VEDPOWER": {
-      "lastAttemptAt": "2026-09-29T10:15:37+00:00",
+      "lastAttemptAt": "2026-10-03T04:53:35+00:00",
       "error": "search-unavailable",
       "lastResultCount": 11,
       "lastSuccessAt": "2026-09-20T00:19:51+00:00",
@@ -1891,15 +2064,15 @@
       "pending": []
     },
     "isin:INE564S01019|Vikram Kamats Hospitality": {
-      "lastAttemptAt": "2026-09-29T10:48:26+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 0,
-      "lastSuccessAt": "2026-09-20T00:19:51+00:00",
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": null,
+      "lastResultCount": 1,
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE18UN01038|GAJA": {
-      "lastAttemptAt": "2026-09-29T05:41:06+00:00",
+      "lastAttemptAt": "2026-10-02T23:54:12+00:00",
       "error": "search-unavailable",
       "lastResultCount": 105,
       "targetThrough": "2026-09-20T00:19:51+00:00",
@@ -1915,38 +2088,86 @@
       ]
     },
     "isin:INE540H01012|Voltamp Transformers": {
-      "lastAttemptAt": "2026-09-29T11:21:31+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": null,
+      "lastResultCount": 21,
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE540H01012|VOLTAMP": {
-      "lastAttemptAt": "2026-09-29T11:54:28+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 100,
+      "targetThrough": "2026-10-03T05:24:56+00:00",
+      "pending": [
+        {
+          "from": "2026-09-24T05:24:56.457367+00:00",
+          "to": "2026-09-28T17:24:56.228683+00:00"
+        },
+        {
+          "from": "2026-09-28T17:24:56.228683+00:00",
+          "to": "2026-10-03T05:24:56+00:00"
+        }
+      ]
     },
     "isin:INE377N01017|Waaree Energies": {
-      "lastAttemptAt": "2026-09-29T12:28:13+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
+      "targetThrough": "2026-10-03T05:24:56+00:00",
+      "pending": [
+        {
+          "from": "2026-09-24T05:24:56.457367+00:00",
+          "to": "2026-09-28T17:24:56.228683+00:00"
+        },
+        {
+          "from": "2026-09-28T17:24:56.228683+00:00",
+          "to": "2026-10-03T05:24:56+00:00"
+        }
+      ]
     },
     "isin:INE377N01017|WAAREEENER": {
-      "lastAttemptAt": "2026-09-29T13:00:41+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": null,
+      "lastResultCount": 26,
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE049B01025|Wockhardt": {
-      "lastAttemptAt": "2026-09-29T13:33:08+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 107,
+      "targetThrough": "2026-10-03T05:24:56+00:00",
+      "pending": [
+        {
+          "from": "2026-09-24T05:24:56.457367+00:00",
+          "to": "2026-09-28T17:24:56.228683+00:00"
+        },
+        {
+          "from": "2026-09-28T17:24:56.228683+00:00",
+          "to": "2026-10-03T05:24:56+00:00"
+        }
+      ]
     },
     "isin:INE049B01025|WOCKPHARMA": {
-      "lastAttemptAt": "2026-09-29T14:04:30+00:00",
-      "error": "search-unavailable"
+      "lastAttemptAt": "2026-10-03T05:24:56+00:00",
+      "error": null,
+      "lastResultCount": 40,
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
+      "targetThrough": null,
+      "pending": []
     },
     "isin:INE685T01010|HORIZONIND": {
-      "lastAttemptAt": "2026-09-29T02:07:56+00:00",
+      "lastAttemptAt": "2026-10-02T20:01:55+00:00",
       "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 232,
     "attempted": 1,
-    "incomplete": 211,
-    "checkedAt": "2026-10-02T09:20:41.100141+00:00"
+    "incomplete": 206,
+    "checkedAt": "2026-10-04T09:38:09.392226+00:00"
   }
 }

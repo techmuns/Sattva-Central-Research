@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { parseFiling, parseIndex, mergeFilings, sourceUrl, day } from './lib/shareholding-filings.mjs';
-import { captureShareholdings, captureWindow } from './capture-shareholdings.mjs';
+import { captureShareholdings, captureWindow, truncatedIndex } from './capture-shareholdings.mjs';
 import { reconcilePublicHoldings, entityRegistry } from '../public/js/data/public-holdings-shared.js';
 import { matchedDeals } from '../public/js/data/investor-changes.js';
 import { withVerifiedEntities } from '../public/js/data/holdings-integrity.js';
@@ -112,6 +112,40 @@ const captured = await captureShareholdings({}, { now, concurrency: 1, fetchText
 assert.equal(captured.filings[0].status, 'parsed');
 assert.equal(captured.sources.filter((s) => !s.ok).length, 2);
 assert.equal(captured.operationalFailure, true);
+
+// A QUARTER ROLLOVER IS NOT A TRUNCATED INDEX (2 October 2026). The window starts a quarter later,
+// and most SME issuers file half-yearly, so the March filings leave the SME index and its count
+// falls sharply while every row it still covers is present. Only rows dated where both windows
+// overlap may be compared; a real loss inside that overlap is still refused.
+{
+  const sme = (n, asOf, from = 0, sourceId = 'nse-sme') => Array.from({ length: n }, (_, i) => ({ id: `${sourceId}-${from + i}-${asOf}`, sourceId,
+    company: `SME ${from + i}`, ticker: `SME${from + i}`, isin: `INE${String(from + i).padStart(9, '0')}`, indexAsOf: asOf, filedAt: `${asOf}T10:00:00+05:30`, sourceUrl: null }));
+  const archive = [...sme(549, '2026-03-31'), ...sme(57, '2026-06-30', 1000)];
+  const prior = { id: 'nse-sme', from: '2026-03-31', to: '2026-09-30', indexed: 825, ok: true };
+  const rolled = [...sme(57, '2026-06-30', 1000), ...sme(3, '2026-10-01', 2000)];
+  assert.equal(truncatedIndex(rolled, prior, archive, 'nse-sme', '2026-06-30'), false, 'the half-yearly March filings leaving the window is not a truncation');
+  const busy = [...archive, ...sme(300, '2026-06-30', 3000)];
+  assert.equal(truncatedIndex(rolled, prior, busy, 'nse-sme', '2026-06-30'), true, 'losing most of the rows both windows cover is still refused');
+  assert.equal(truncatedIndex(rolled, prior, busy.map((f) => ({ ...f, sourceId: 'nse-equities' })), 'nse-sme', '2026-06-30'), false, "another source's rows are not this source's baseline");
+  const same = { ...prior, from: '2026-06-30', to: '2026-10-01', indexed: 400 };
+  assert.equal(truncatedIndex(sme(150, '2026-06-30'), same, busy, 'nse-sme', '2026-06-30'), true, 'inside one window the row count comparison is unchanged');
+  assert.equal(truncatedIndex(sme(250, '2026-06-30'), same, busy, 'nse-sme', '2026-06-30'), false);
+  assert.equal(truncatedIndex(sme(1, '2026-06-30'), { ...prior, indexed: 90 }, busy, 'nse-sme', '2026-06-30'), false, 'a small source is not guarded, as before');
+  // Wired through the capture with the archive it actually reads.
+  const nseRow = (f) => ({ name: f.company, symbol: f.ticker, isin: f.isin, date: f.indexAsOf, broadcastDate: `${f.indexAsOf} 10:00:00` });
+  const rolledCapture = await captureShareholdings({ sources: [prior], filings: archive }, { now: '2026-10-02T08:00:00Z', maxFiles: 0, fetchText: async (url) => {
+    if (url.includes('index=sme')) return JSON.stringify(rolled.map(nseRow));
+    throw new Error('not needed here');
+  } });
+  const smeSource = rolledCapture.sources.find((s) => s.id === 'nse-sme');
+  assert.equal(smeSource.ok, true, `the rolled SME index is read (${smeSource.error})`);
+  assert.deepEqual([smeSource.from, smeSource.indexed], ['2026-06-30', 60]);
+  const truncatedCapture = await captureShareholdings({ sources: [prior], filings: busy }, { now: '2026-10-02T08:00:00Z', maxFiles: 0, fetchText: async (url) => {
+    if (url.includes('index=sme')) return JSON.stringify(rolled.map(nseRow));
+    throw new Error('not needed here');
+  } });
+  assert.match(truncatedCapture.sources.find((s) => s.id === 'nse-sme').error, /sharply truncated/);
+}
 // A pending filing does not vanish from collection when its quarter leaves the index window.
 const oldPending = { ...entry, id: 'old-pending', indexAsOf: '2025-12-31', sourceUrl: 'https://www.bseindia.com/old-pending.xml', status: 'failed', lastAttemptAt: '2026-09-01T00:00:00Z' };
 let oldReads = 0, checkpoints = 0;

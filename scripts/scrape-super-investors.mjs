@@ -156,6 +156,8 @@ await Promise.all(
 // Worker's stale entry has expired, and a retry that is stale again is still refused: only a live
 // answer is ever captured. Failures in a row mean the relay is down, not slow for one book, so the
 // pass stops there rather than spending a full deadline on every remaining book; the run stays red.
+// The retry asks the Worker to be PATIENT (`?patient=1`): one long attempt rather than a reader's
+// thirteen seconds, because a book that misses that budget on every run can never be read inside it.
 const retryable = Object.keys(failed);
 if (retryable.length) {
   process.stdout.write(`  retrying ${retryable.length} …`);
@@ -167,7 +169,7 @@ if (retryable.length) {
     if (wait > 0) await sleep(wait);
     let outcome = 'failed';
     try {
-      const body = await getJson(`/api/super-investors/${encodeURIComponent(slug)}`);
+      const body = await getJson(`/api/super-investors/${encodeURIComponent(slug)}?patient=1`);
       if (body && body.ok !== false && body.stale !== true) {
         books[slug] = validateBook(body, slug, previous.books?.[slug]);
         delete failed[slug];
