@@ -87,7 +87,11 @@ const settledAlerts = (page) => page.waitForFunction(() => {
   // the table's own empty state over a zero count, never the placeholders of a read still running.
   const empty = /^No loaded event\b/.test(document.querySelector('tbody')?.textContent.trim() || '')
     && /^0\b/.test(document.querySelector('[data-row-count]')?.textContent.trim() || '');
-  return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…')) && !document.querySelector('[data-table-loading]');
+  // The feeds may be ready while sliced story grouping still shows the original reports.
+  // Compare completed line items, never a fixed-delay sample of an intermediate count.
+  return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…'))
+    && document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
+    && !document.querySelector('[data-table-loading]');
 }, null, { timeout: 120000 });
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live

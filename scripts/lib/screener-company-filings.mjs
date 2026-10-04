@@ -81,12 +81,14 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
   readCategory(() => {
     const annual = block(documentsSection(), 'div', tag => attr(tag, 'class').split(/\s+/).includes('annual-reports'));
     if (annual === null) throw bad('annual report section missing');
-    for (const a of links(annual)) {
+    const annualLinks = links(annual);
+    for (const a of annualLinks) {
       const year = /^Annual Report (\d{4})$/.exec(a.label)?.[1];
       if (year) add(a.href, 'annual_report', a.label, year);
       else if (!['DRHP', 'RHP'].includes(a.label)) skipped++;
     }
-    if (!links(annual).length && !/No data available/i.test(annual)) throw bad('unverified empty annual reports');
+    if (!annualLinks.some(a => /^Annual Report \d{4}$/.test(a.label)) && !/No data available/i.test(annual))
+      throw bad('unverified empty annual reports');
   });
   readCategory(() => {
     const concalls = block(documentsSection(), 'div', tag => attr(tag, 'class').split(/\s+/).includes('concalls'));

@@ -76,6 +76,11 @@ assert(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/')
 const noAnnual = fixture.replace(/<div class="documents annual-reports">[\s\S]*?<div class="documents concalls">/,
   '<div class="documents annual-reports"><p>No data available.</p><a href="https://www.sebi.gov.in/filing">DRHP</a></div><div class="documents concalls">');
 assert.equal(parseScreenerCompanyFilings(noAnnual, company, at).skipped, 0);
+const prospectusOnly = noAnnual.replace('No data available.', '');
+for (const label of ['DRHP', 'RHP']) {
+  const partial = assertDocumentFailure(prospectusOnly.replace('>DRHP<', `>${label}<`), /unverified empty annual reports/);
+  assert.equal(partial.documents.length, 2, 'prospectuses do not certify annual-report coverage; transcripts and quarterly reports survive');
+}
 let requests = 0;
 const page = createScreenerCompanyFallback({ now: () => at, fetcher: async url => {
   requests++; assert(url.endsWith('/HEGAM/consolidated/')); return new Response(fixture);
@@ -177,6 +182,7 @@ try {
     ['document-wrapper', fixture.replace('id="documents"', 'id="renamed-documents"')],
     ['document-id', fixture.replace('data-company-id', 'renamed-company-id')],
     ['partial-quarter', partialQuarter],
+    ['prospectus-only', prospectusOnly],
   ]) {
     const isolatedDir = join(dir, label);
     writeJson(join(isolatedDir, 'domestic/HEG.json'), { rows: [oldDocument] });
