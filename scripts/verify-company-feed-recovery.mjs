@@ -40,6 +40,11 @@ assert.equal(parseScreenerCompanyFilings(emptyRecent.replace('company-announceme
 assert.throws(() => parseScreenerCompanyFilings(fixture, { ticker: 'UNRELATED' }, at), /identity not verified/);
 assert.throws(() => parseScreenerCompanyFilings(fixture.slice(0, -7), company, at), /incomplete/);
 assert.throws(() => parseScreenerCompanyFilings(fixture.replace('annual-reports', 'unknown-reports'), company, at), /section missing/);
+assert.throws(() => parseScreenerCompanyFilings(fixture.replace('documents concalls', 'documents renamed-concalls'), company, at), /concall section missing/);
+const noConcalls = fixture.replace(/<div class="documents concalls">[\s\S]*?<\/section>/,
+  '<div class="documents concalls"><p>No data available.</p></div></section>');
+assert.equal(parseScreenerCompanyFilings(noConcalls, company, at).documents.filter(d => d.form === 'concalls').length, 0);
+assert.throws(() => parseScreenerCompanyFilings(noConcalls.replace('No data available.', ''), company, at), /unverified empty concalls/);
 assert.equal(parseScreenerCompanyFilings(fixture.replace('https://issuer.example/2026.pdf', 'javascript:alert(1)'), company, at).skipped, 1);
 assert.equal(parseScreenerCompanyFilings(fixture.replace('quarter/42/', 'quarter/99/'), company, at).skipped, 1);
 const noAnnual = fixture.replace(/<div class="documents annual-reports">[\s\S]*?<div class="documents concalls">/,

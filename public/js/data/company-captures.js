@@ -50,7 +50,7 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
       if (authenticatedOutage) { tally.failed++; reason = 'Authenticated announcement source is unavailable'; }
       else if (entry.error?.reason === 'limited-coverage' && Number.isFinite(Date.parse(entry.recovery?.checkedAt))
         && Date.parse(entry.recovery.checkedAt) <= now + 600000 && now - Date.parse(entry.recovery.checkedAt) <= 4 * 3600000) {
-        tally.partial++; reason = 'Recent notices recovered from Screener; complete announcement history remains unavailable';
+        tally.partial++; reason = 'Recent-notice page checked on Screener; complete announcement history remains unavailable';
       }
       else if (entry.error) { tally.failed++; reason = entry.error.message || 'Source read failed'; }
       else if (!entry.lastSuccessAt) { tally.never++; reason = 'Not checked yet'; }

@@ -40,7 +40,7 @@ export async function loadDomesticFilings(ticker, form = 'all', { signal } = {})
     const res = await fetch(path, { headers: { accept: 'application/json', ...authHeaders(path) }, cache: 'no-cache', signal });
     let body;
     try { body = await res.json(); } catch { throw new Error('The document feed is unavailable at this origin.'); }
-    if (!res.ok || body?.ok !== true) throw new Error(body?.message || 'The document feed could not be read.');
+    if (!res.ok || body?.ok !== true) throw Object.assign(new Error(body?.message || 'The document feed could not be read.'), { reason: body?.reason });
     if (!Array.isArray(body.documents)) throw new Error('The document feed returned an unfamiliar response.');
     const documents = new Map();
     for (const row of [...(loaded.get(key)?.documents || []), ...(previous?.value?.documents || []), ...body.documents]) {
@@ -59,7 +59,7 @@ export async function loadDomesticFilings(ticker, form = 'all', { signal } = {})
     try {
       const captured = await loadCapturedDomesticFilings(t, form);
       if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
-      if (!captured.stale) return captured;
+      if (err.reason === 'not-found' && !captured.stale) return captured;
     } catch (captureError) { if (signal?.aborted || captureError.name === 'AbortError') throw captureError; }
     const fallback = loaded.get(key) || previous?.value;
     if (fallback) {

@@ -78,6 +78,8 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
   }
   if (!links(annual).length && !/No data available/i.test(annual)) throw bad('unverified empty annual reports');
   const concalls = block(documentsSection, 'div', tag => attr(tag, 'class').split(/\s+/).includes('concalls'));
+  if (concalls === null) throw bad('concall section missing');
+  if (!items(concalls).length && !/No data available/i.test(concalls)) throw bad('unverified empty concalls');
   for (const item of items(concalls)) {
     const period = text(block(item, 'div', () => true));
     if (!/^[A-Z][a-z]{2} \d{4}$/.test(period)) { skipped++; continue; }

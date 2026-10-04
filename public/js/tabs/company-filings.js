@@ -88,7 +88,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
         columns: [
           { label: 'Type', get: (r) => DOMESTIC_FORMS[r.form] || 'Not specified' },
           { label: 'Date / period', get: (r) => r.date || '—' },
-          { label: 'Source', get: () => 'Screener.in via Muns' },
+          { label: 'Source', get: (r) => r.provider || r.source || 'Screener.in via Muns' },
         ],
         emptyMessage: `The source returned no ${DOMESTIC_FORMS[type].toLowerCase()} for ${ticker}.`,
         exportName: `sattva-filings-${ticker}`,
@@ -97,7 +97,7 @@ export function renderCompanyFilings(ctx, { controls = '', wireControls = () => 
           { header: 'Document', key: 'title', width: 45, get: (r) => r.title },
           { header: 'Type', key: 'form', width: 25, get: (r) => DOMESTIC_FORMS[r.form] || 'Not specified' },
           { header: 'Date / period', key: 'date', get: (r) => r.date || '' },
-          { header: 'Source', key: 'source', width: 25, get: () => 'Screener.in via Muns' },
+          { header: 'Source', key: 'source', width: 25, get: (r) => r.provider || r.source || 'Screener.in via Muns' },
           { header: 'Document URL', key: 'url', width: 70, get: (r) => r.url },
         ] }),
       });

@@ -132,8 +132,9 @@ try {
   assert.match(fallback.error, /Expired/);
 
   const checkedAt = new Date().toISOString();
+  let liveResponse = () => Response.json({ ok: false, reason: 'not-found', message: 'Primary provider has no company' });
   globalThis.fetch = async path => {
-    if (path === 'api/domestic-filings/HEG?form=all') return Response.json({ ok: false, reason: 'not-found', message: 'Primary provider has no company' });
+    if (path === 'api/domestic-filings/HEG?form=all') return liveResponse();
     if (path === 'data/filing-capture/index.json') return Response.json({ version: 1, companies: [{ ticker: 'HEG' }], sources: {
       domestic: { HEG: { lastSuccessAt: checkedAt, lastResponseAt: checkedAt, provider: 'Screener company page' } } } });
     if (path === 'data/filing-capture/domestic/HEG.json') return Response.json({ rows: [{ ...parsed.documents[0], ticker: 'HEG' }] });
@@ -145,6 +146,20 @@ try {
   assert.equal(recovered.stale, false, 'a failed live provider cannot hide a freshly checked scheduled fallback');
   assert.equal(recovered.fetchedAt, checkedAt, 'opening a company cannot manufacture a newer source check');
   assert.equal(recovered.origin, 'snapshot');
+  for (const response of [
+    () => Response.json({ ok: false, reason: 'unauthorised', message: 'Expired session' }, { status: 401 }),
+    () => Response.json({ ok: false, reason: 'upstream', message: 'Unavailable' }, { status: 500 }),
+    () => new Response('<html>Proxy error</html>'),
+    () => Response.json({ ok: true, documents: {} }),
+    () => { throw new TypeError('Network failed'); },
+  ]) {
+    liveResponse = response;
+    const failed = await loadDomesticFilings('HEG');
+    assert.equal(failed.documents.length, 1, 'retain the usable scheduled documents after a live failure');
+    assert.equal(failed.stale, true, 'a fresh snapshot must not conceal an immediate source-check failure');
+    assert(failed.error);
+    assert.equal(failed.fetchedAt, checkedAt, 'a failed live check cannot advance the scheduled source time');
+  }
 
   const mock = JSON.parse(await readFile(new URL('./fixtures/mock-earnings.json', import.meta.url)));
   legacyEarnings.prime(mock);

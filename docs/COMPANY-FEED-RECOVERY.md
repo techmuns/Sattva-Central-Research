@@ -29,6 +29,10 @@ Both source kinds share one bounded page request. Parsing failures cannot become
 successful empty collections. Historical documents and notices are merged into
 their existing durable files. A symbol correction does not purge domestic history.
 Primary authentication failures remain failures; the fallback does not conceal them.
+An immediate browser check may use fresh scheduled documents after an explicit
+`not-found`; authentication, server, network and malformed-response failures remain
+visible with the retained rows. Document tables and exports use each row's provider.
+Missing or unexplained empty concall sections fail instead of certifying no transcripts.
 
 The page's recent announcements are **not a complete date-window response**.
 They are saved with independent provider attribution, primary-provider error and
