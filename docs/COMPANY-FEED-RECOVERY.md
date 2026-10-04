@@ -32,8 +32,10 @@ Primary authentication failures remain failures; the fallback does not conceal t
 An immediate browser check may use fresh scheduled documents after an explicit
 `not-found`; authentication, server, network and malformed-response failures remain
 visible with the retained rows. Document tables and exports use each row's provider.
-Missing or unexplained empty concall and quarterly sections fail instead of certifying no
-documents. JAYBEE's verified quarterly layout has no period columns and an empty Raw PDF row;
+Missing or unexplained empty document categories record a partial parsing failure rather
+than certifying no documents. Independently valid categories and notices are still retained;
+a document-category failure cannot discard announcements from the same shared page read.
+The document success timestamp does not advance until every category validates. JAYBEE's verified quarterly layout has no period columns and an empty Raw PDF row;
 it is accepted as an explicit empty result. A populated table with changed link markup fails.
 Malformed recent-notice entries leave validated neighbours retained with a skipped count
 and limited coverage. A corrected upstream company identity removes primary/fallback-only

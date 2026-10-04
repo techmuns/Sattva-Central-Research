@@ -60,57 +60,75 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
       && /^\d{6}$/.test(String(company.bseCode || ticker)) && url.pathname.split('/').includes(String(company.bseCode || ticker)));
   if (!identity) throw bad('exchange identity not verified');
   const companyId = /\bdata-company-id=["'](\d+)["']/.exec(html)?.[1];
-  const documentsSection = block(html, 'section', tag => attr(tag, 'id') === 'documents');
-  if (!companyId || !documentsSection) throw bad('documents section missing');
+  const documentsSection = () => {
+    const section = block(html, 'section', tag => attr(tag, 'id') === 'documents');
+    if (section === null) throw bad('documents section missing');
+    return section;
+  };
   const documents = [];
   let skipped = 0, unavailableLinks = 0;
+  const documentErrors = [];
+  // A category failure keeps other validated documents and cannot suppress recent notices.
+  // The skipped count prevents the collector from advancing domestic success/coverage.
+  const readCategory = read => {
+    try { read(); } catch (error) { skipped++; documentErrors.push(error.message); }
+  };
   const add = (href, form, title, date) => {
     let url; try { url = documentUrl(new URL(href, origin).href); } catch {}
     if (!url || !date) { skipped++; return; }
     documents.push({ ticker: company.ticker, form, title, date, url, provider: 'Screener company documents' });
   };
-  const annual = block(documentsSection, 'div', tag => attr(tag, 'class').split(/\s+/).includes('annual-reports'));
-  if (annual === null) throw bad('annual report section missing');
-  for (const a of links(annual)) {
-    const year = /^Annual Report (\d{4})$/.exec(a.label)?.[1];
-    if (year) add(a.href, 'annual_report', a.label, year);
-    else if (!['DRHP', 'RHP'].includes(a.label)) skipped++;
-  }
-  if (!links(annual).length && !/No data available/i.test(annual)) throw bad('unverified empty annual reports');
-  const concalls = block(documentsSection, 'div', tag => attr(tag, 'class').split(/\s+/).includes('concalls'));
-  if (concalls === null) throw bad('concall section missing');
-  if (!items(concalls).length && !/No data available/i.test(concalls)) throw bad('unverified empty concalls');
-  for (const item of items(concalls)) {
-    const period = text(block(item, 'div', () => true));
-    if (!/^[A-Z][a-z]{2} \d{4}$/.test(period)) { skipped++; continue; }
-    for (const a of links(item)) {
-      if (a.label === 'Transcript') add(a.href, 'concalls', `Concall transcript ${period}`, period);
-      // Presentations and recordings are not earnings result reports or transcripts.
+  readCategory(() => {
+    const annual = block(documentsSection(), 'div', tag => attr(tag, 'class').split(/\s+/).includes('annual-reports'));
+    if (annual === null) throw bad('annual report section missing');
+    for (const a of links(annual)) {
+      const year = /^Annual Report (\d{4})$/.exec(a.label)?.[1];
+      if (year) add(a.href, 'annual_report', a.label, year);
+      else if (!['DRHP', 'RHP'].includes(a.label)) skipped++;
     }
-    if (!links(item).some(a => a.label === 'Transcript')) unavailableLinks++;
-  }
-  const quarters = block(html, 'section', tag => attr(tag, 'id') === 'quarters');
-  if (quarters === null) throw bad('quarterly reports section missing');
-  const quarterLinks = links(quarters).filter(a => attr(a.attrs, 'aria-label') === 'Raw PDF');
-  if (!quarterLinks.length && !/No data available/i.test(quarters)) {
-    // JAYBEE explicitly renders a result table with no period columns and an empty Raw PDF row.
-    // A populated table whose link markup changed must not be treated as that empty state.
-    const table = block(quarters, 'table', tag => attr(tag, 'class').split(/\s+/).includes('data-table')) || '';
-    const headings = [...(block(table, 'thead', () => true) || '').matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)];
-    const pdfCells = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
-      .map(row => [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)])
-      .find(cells => text(cells[0]?.[1]) === 'Raw PDF') || [];
-    if (!(headings.length === 1 && !text(headings[0][1]) && pdfCells.length === 1)) {
-      throw bad('unverified empty quarterly reports');
+    if (!links(annual).length && !/No data available/i.test(annual)) throw bad('unverified empty annual reports');
+  });
+  readCategory(() => {
+    const concalls = block(documentsSection(), 'div', tag => attr(tag, 'class').split(/\s+/).includes('concalls'));
+    if (concalls === null) throw bad('concall section missing');
+    if (!items(concalls).length && !/No data available/i.test(concalls)) throw bad('unverified empty concalls');
+    for (const item of items(concalls)) {
+      const period = text(block(item, 'div', () => true));
+      if (!/^[A-Z][a-z]{2} \d{4}$/.test(period)) { skipped++; continue; }
+      for (const a of links(item)) {
+        if (a.label === 'Transcript') add(a.href, 'concalls', `Concall transcript ${period}`, period);
+        // Presentations and recordings are not earnings result reports or transcripts.
+      }
+      if (!links(item).some(a => a.label === 'Transcript')) unavailableLinks++;
     }
-  }
-  for (const a of quarterLinks) {
-    const match = /^\/company\/source\/quarter\/(\d+)\/(\d{1,2})\/(\d{4})\/$/.exec(a.href);
-    if (!match || match[1] !== companyId || +match[2] < 1 || +match[2] > 12) { skipped++; continue; }
-    const period = `${match[3]}-${match[2].padStart(2, '0')}`;
-    add(a.href, 'earnings_report', `Quarterly results ${period}`, period);
-  }
-  const recent = block(documentsSection, 'div', tag => attr(tag, 'id') === 'company-announcements-tab');
+  });
+  readCategory(() => {
+    if (!companyId) throw bad('document company identity missing');
+    const quarters = block(html, 'section', tag => attr(tag, 'id') === 'quarters');
+    if (quarters === null) throw bad('quarterly reports section missing');
+    const quarterLinks = links(quarters).filter(a => attr(a.attrs, 'aria-label') === 'Raw PDF');
+    if (!quarterLinks.length && !/No data available/i.test(quarters)) {
+      // JAYBEE explicitly renders a result table with no period columns and an empty Raw PDF row.
+      // A populated table whose link markup changed must not be treated as that empty state.
+      const table = block(quarters, 'table', tag => attr(tag, 'class').split(/\s+/).includes('data-table')) || '';
+      const headings = [...(block(table, 'thead', () => true) || '').matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/gi)];
+      const pdfCells = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
+        .map(row => [...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)])
+        .find(cells => text(cells[0]?.[1]) === 'Raw PDF') || [];
+      if (!(headings.length === 1 && !text(headings[0][1]) && pdfCells.length === 1)) {
+        throw bad('unverified empty quarterly reports');
+      }
+    }
+    for (const a of quarterLinks) {
+      const match = /^\/company\/source\/quarter\/(\d+)\/(\d{1,2})\/(\d{4})\/$/.exec(a.href);
+      if (!match || match[1] !== companyId || +match[2] < 1 || +match[2] > 12) { skipped++; continue; }
+      const period = `${match[3]}-${match[2].padStart(2, '0')}`;
+      add(a.href, 'earnings_report', `Quarterly results ${period}`, period);
+    }
+  });
+  let recent = null, announcementError = null;
+  try { recent = block(html, 'div', tag => attr(tag, 'id') === 'company-announcements-tab'); }
+  catch (error) { announcementError = error.message; }
   const announcements = [];
   let announcementSkipped = 0;
   for (const item of items(recent)) {
@@ -126,7 +144,7 @@ export function parseScreenerCompanyFilings(html, company, now = Date.now()) {
       date: publishedAt.slice(0, 10), publishedAt: new Date(at).toISOString(), source, sources: [source],
       providers: ['Screener company recent notices'], ...(company.isin ? { isin: company.isin } : {}) });
   }
-  return { documents, skipped, unavailableLinks, announcements, announcementSkipped,
+  return { documents, skipped, unavailableLinks, documentErrors, announcements, announcementSkipped, announcementError,
     // An explicitly empty recent list is readable, but still cannot certify a full history.
     announcementReadable: recent !== null && (announcements.length > 0 || /No (?:announcements|data available)/i.test(recent)) };
 }
@@ -135,8 +153,8 @@ export function screenerCompanyResponse(page, kind, primary) {
   const metadata = { fetchedAt: page.fetchedAt, provider: 'Screener company page', sourceUrl: page.sourceUrl,
     primaryError: { reason: primary.reason, message: String(primary.message || 'Primary provider has no company feed').slice(0, 300) } };
   if (kind === 'domestic') return { ok: true, documents: page.documents, skipped: page.skipped,
-    unavailableLinks: page.unavailableLinks, ...metadata };
-  if (!page.announcementReadable) throw Error('Recent notices could not be parsed.');
+    unavailableLinks: page.unavailableLinks, parseError: page.documentErrors?.join(' ').slice(0, 300) || null, ...metadata };
+  if (!page.announcementReadable) throw Error(page.announcementError || 'Recent notices could not be parsed.');
   return { ok: true, announcements: page.announcements, limited: true, skipped: page.announcementSkipped, ...metadata };
 }
 

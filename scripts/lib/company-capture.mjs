@@ -305,7 +305,8 @@ export async function captureCompanySources({ dir, companies, unresolved = [], n
       if (Number.isFinite(result[field]) && result[field] >= 0) entry[field] = result[field];
     }
     if (entry.skipped) {
-      failSource(entry, new Error(`${entry.skipped} source entries could not be parsed; captured rows retained, window remains incomplete.`), attemptedAt);
+      failSource(entry, Object.assign(new Error(result.parseError || `${entry.skipped} source entries could not be parsed; captured rows retained, window remains incomplete.`),
+        result.parseError ? { reason: 'shape' } : {}), attemptedAt);
       return false;
     }
     entry.lastSuccessAt = attemptedAt;

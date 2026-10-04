@@ -39,20 +39,27 @@ assert.equal(parseScreenerCompanyFilings(emptyRecent.replace('company-announceme
   'a missing recent section cannot be inferred from other empty document sections');
 assert.throws(() => parseScreenerCompanyFilings(fixture, { ticker: 'UNRELATED' }, at), /identity not verified/);
 assert.throws(() => parseScreenerCompanyFilings(fixture.slice(0, -7), company, at), /incomplete/);
-assert.throws(() => parseScreenerCompanyFilings(fixture.replace('annual-reports', 'unknown-reports'), company, at), /section missing/);
-assert.throws(() => parseScreenerCompanyFilings(fixture.replace('documents concalls', 'documents renamed-concalls'), company, at), /concall section missing/);
+const assertDocumentFailure = (html, pattern) => {
+  const parsed = parseScreenerCompanyFilings(html, company, at);
+  assert(parsed.skipped > 0, 'document-category failures cannot count as complete checks');
+  assert.match(parsed.documentErrors.join(' '), pattern);
+  assert.equal(parsed.announcements.length, 1, 'document failures cannot suppress independently valid notices');
+  return parsed;
+};
+assertDocumentFailure(fixture.replace('annual-reports', 'unknown-reports'), /section missing/);
+assertDocumentFailure(fixture.replace('documents concalls', 'documents renamed-concalls'), /concall section missing/);
 const noConcalls = fixture.replace(/<div class="documents concalls">[\s\S]*?<\/section>/,
   '<div class="documents concalls"><p>No data available.</p></div></section>');
 assert.equal(parseScreenerCompanyFilings(noConcalls, company, at).documents.filter(d => d.form === 'concalls').length, 0);
-assert.throws(() => parseScreenerCompanyFilings(noConcalls.replace('No data available.', ''), company, at), /unverified empty concalls/);
-assert.throws(() => parseScreenerCompanyFilings(fixture.replace('aria-label="Raw PDF"', 'aria-label="Changed label"'), company, at), /unverified empty quarterly reports/);
+assertDocumentFailure(noConcalls.replace('No data available.', ''), /unverified empty concalls/);
+assertDocumentFailure(fixture.replace('aria-label="Raw PDF"', 'aria-label="Changed label"'), /unverified empty quarterly reports/);
 const withQuarters = section => fixture.replace(/<section id="quarters">[\s\S]*?<\/section>/, `<section id="quarters">${section}</section>`);
 assert.equal(parseScreenerCompanyFilings(withQuarters('<p>No data available.</p>'), company, at).documents.length, 3);
 const noPeriods = '<table class="data-table"><thead><tr><th class="text"></th></tr></thead><tbody><tr><td>Raw PDF</td></tr></tbody></table>';
 assert.equal(parseScreenerCompanyFilings(withQuarters(noPeriods), company, at).documents.length, 3,
   'JAYBEE zero-period table explicitly has no quarterly report slots');
-assert.throws(() => parseScreenerCompanyFilings(withQuarters(noPeriods.replace('</th>', '</th><th>Jun 2026</th>')), company, at), /unverified empty quarterly reports/);
-assert.throws(() => parseScreenerCompanyFilings(withQuarters(noPeriods.replace('Raw PDF', 'New label')), company, at), /unverified empty quarterly reports/);
+assertDocumentFailure(withQuarters(noPeriods.replace('</th>', '</th><th>Jun 2026</th>')), /unverified empty quarterly reports/);
+assertDocumentFailure(withQuarters(noPeriods.replace('Raw PDF', 'New label')), /unverified empty quarterly reports/);
 const mixedPage = parseScreenerCompanyFilings(fixture.replace('</li></ul></div>', '</li><li><a href="https://www.bseindia.com/undated.pdf">Unreadable notice</a></li></ul></div>'), company, at);
 const mixedResponse = screenerCompanyResponse({ ...mixedPage, fetchedAt: new Date(at).toISOString() }, 'announcements', { reason: 'not-found' });
 assert.equal(mixedResponse.announcements.length, 1, 'a malformed notice cannot discard its valid neighbour');
@@ -158,5 +165,33 @@ try {
   assert.equal(mixedIndex.sources.announcements.HEG.error.reason, 'limited-coverage');
   assert.equal(mixedIndex.sources.announcements.HEG.lastSuccessAt, undefined);
   assert.deepEqual(mixedIndex.sources.announcements.HEG.ranges, []);
+  for (const [label, html] of [
+    ['concall', fixture.replace('documents concalls', 'documents renamed-concalls')],
+    ['annual', fixture.replace('annual-reports', 'renamed-reports')],
+    ['quarter', fixture.replace('id="quarters"', 'id="renamed-quarters"')],
+    ['document-wrapper', fixture.replace('id="documents"', 'id="renamed-documents"')],
+    ['document-id', fixture.replace('data-company-id', 'renamed-company-id')],
+  ]) {
+    const isolatedDir = join(dir, label);
+    writeJson(join(isolatedDir, 'domestic/HEG.json'), { rows: [oldDocument] });
+    let reads = 0;
+    const sharedRead = createScreenerCompanyFallback({ now: () => at, fetcher: async () => { reads++; return new Response(html); } });
+    const isolated = await captureCompanySources({ ...opts, dir: isolatedDir, request: async kind =>
+      screenerCompanyResponse(await sharedRead(company), kind, { reason: 'not-found' }) });
+    assert.equal(reads, 1, 'independent parsing still shares a single bounded request');
+    assert.equal(readJson(join(isolatedDir, 'announcements/HEG.json')).rows.length, 1, `${label} cannot discard valid notices`);
+    assert.equal(isolated.sources.announcements.HEG.error.reason, 'limited-coverage');
+    assert.equal(isolated.sources.domestic.HEG.error.reason, 'shape');
+    assert(!isolated.sources.domestic.HEG.lastSuccessAt, 'a failed category cannot advance document success');
+    assert(isolated.sources.domestic.HEG.skipped > 0);
+    const saved = readJson(join(isolatedDir, 'domestic/HEG.json')).rows;
+    assert(saved.some(row => row.url === oldDocument.url), 'old documents survive a category failure');
+    assert(saved.length > 1, 'independently valid new document categories are retained too');
+  }
+  const missingNotices = parseScreenerCompanyFilings(fixture.replace('company-announcements-tab', 'renamed-notices'), company, at);
+  assert.equal(missingNotices.skipped, 0);
+  assert.equal(screenerCompanyResponse(missingNotices, 'domestic', { reason: 'not-found' }).documents.length, 4,
+    'announcement failure likewise cannot discard valid documents');
+  assert.throws(() => screenerCompanyResponse(missingNotices, 'announcements', { reason: 'not-found' }), /could not be parsed/);
 } finally { rmSync(dir, { recursive: true, force: true }); }
 console.log('PASS company source aliases, exact security identities, free document fallback, retained history and explicit partial coverage');
