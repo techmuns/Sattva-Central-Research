@@ -51,7 +51,9 @@ export function companyCaptureStatusFromIndex(captureIndex, kind, tickers = null
       if (authenticatedOutage) { tally.failed++; reason = 'Authenticated announcement source is unavailable'; }
       else if (entry.skipped) {
         tally.failed++;
-        reason = `${entry.skipped} source entries could not be parsed; valid records retained. ${entry.recovery?.scope || 'Coverage remains incomplete.'}`;
+        const parseFailure = `${entry.skipped} source entries could not be parsed; valid records retained. ${entry.recovery?.scope || 'Coverage remains incomplete.'}`;
+        reason = entry.error && !['shape', 'limited-coverage'].includes(entry.error.reason)
+          ? `${entry.error.message || 'Source read failed'}. Previous response: ${parseFailure}` : parseFailure;
       }
       else if (entry.error?.reason === 'limited-coverage' && Number.isFinite(Date.parse(entry.recovery?.checkedAt))
         && Date.parse(entry.recovery.checkedAt) <= now + 600000 && now - Date.parse(entry.recovery.checkedAt) <= 4 * 3600000) {
@@ -132,6 +134,12 @@ export function companyCaptureTickersForIsins(tickers, isins, captureIndex = ind
     if (company.ticker && held.has(announcementIssuerIsin(company.isin))) wanted.add(company.ticker);
   }
   return [...wanted];
+}
+// Lookup controls must accept the same exact-ISIN issuers their coverage report counts.
+// Keep the original holdings and their symbols; add only registered issuer aliases.
+export function companyCaptureHoldings(holdings, captureIndex = index) {
+  const resolved = new Set(companyCaptureTickersForIsins([], holdings.map(c => c.isin), captureIndex));
+  return [...holdings, ...(captureIndex?.companies || []).filter(c => resolved.has(c.ticker))];
 }
 export async function capturedCompany(kind, ticker) {
   if (!/^[A-Z0-9&._-]{1,80}$/.test(ticker)) throw new Error('Choose a valid company ticker.');

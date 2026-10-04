@@ -189,6 +189,15 @@ try {
   assert.match(mixedStatus.gaps[0].reason, /could not be parsed/);
   assert.equal(mixedIndex.sources.announcements.HEG.lastSuccessAt, undefined);
   assert.deepEqual(mixedIndex.sources.announcements.HEG.ranges, []);
+  const outageAt = at + 2 * 3600000;
+  const afterMixedOutage = await captureCompanySources({ ...opts, dir: mixedDir, maxRequests: 2,
+    now: () => outageAt, request: async () => ({ ok: false, reason: 'upstream', message: 'Latest request timed out' }) });
+  assert.equal(afterMixedOutage.sources.announcements.HEG.skipped, 1, 'retain the incomplete saved-response evidence');
+  const outageStatus = companyCaptureStatusFromIndex(afterMixedOutage, 'announcements', null, outageAt);
+  assert.equal(outageStatus.failed, 1);
+  assert.match(outageStatus.gaps[0].reason, /^Latest request timed out/);
+  assert.match(outageStatus.gaps[0].reason, /Previous response: 1 source entries could not be parsed/);
+  assert.equal(readJson(join(mixedDir, 'announcements/HEG.json')).rows.length, 1);
   for (const [label, html] of [
     ['concall', fixture.replace('documents concalls', 'documents renamed-concalls')],
     ['annual', fixture.replace('annual-reports', 'renamed-reports')],

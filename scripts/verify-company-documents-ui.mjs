@@ -14,8 +14,9 @@ const rows = [
   { title: 'Primary transcript', source: 'Screener.in via Muns' },
   { title: 'Legacy document' },
 ].map((row, i) => ({ ...row, ticker: 'HEG', form: 'annual_report', date: '2026', url: `https://example.test/${i}.pdf` }));
-const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><main></main><script type="module">
+const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><main></main><aside></aside><script type="module">
 import { renderCompanyFilings } from '/js/tabs/company-filings.js';
+import { announcementLookupControls } from '/js/tabs/announcement-lookup.js';
 import * as refresh from '/js/core/refresh.js';
 import * as coverage from '/js/data/coverage.js';
 import { captureCoverageHtml } from '/js/ui/capture-coverage.js';
@@ -24,6 +25,13 @@ coverage.prime({ holdings: [{ ticker: 'HEG', name: 'HEG' }, { ticker: null, isin
   { ticker: null, isin: 'INE666D13019', name: 'Borosil Renewables warrants' }] });
 window.refresh = refresh;
 window.showCoverage = scope => { document.querySelector('[data-document-coverage]').innerHTML = captureCoverageHtml('announcements', null, { scope }); };
+window.lookups = [];
+window.showAnnouncementLookup = scope => {
+  const control = announcementLookupControls({ rows: () => [{ ticker: 'UNHELD', company: 'Unheld company' }],
+    lookup: async request => window.lookups.push(request) });
+  const root = document.querySelector('aside'), ctx = { scope, data: {} };
+  root.innerHTML = control.html(ctx, { supplement: {} }); control.wire(root, ctx);
+};
 renderCompanyFilings({ root: document.querySelector('main'), scope: 'portfolio', params: { company: 'HEG' }, data: {} });
 </script>`;
 const server = createServer((req, res) => {
@@ -38,6 +46,10 @@ const server = createServer((req, res) => {
     sources: { domestic: { HEG: { lastSuccessAt: at, lastResponseAt: at } },
       announcements: { HEG: { lastSuccessAt: at, ranges: [{ from: at.slice(0, 10), to: at.slice(0, 10) }] } } } });
   if (path === '/data/filing-capture/domestic/HEG.json') return json({ rows, fetchedAt: at });
+  if (/^\/data\/filing-capture\/domestic\/(FSC|BORORENEW)\.json$/.test(path)) {
+    const ticker = path.split('/').at(-1).replace('.json', '');
+    return json({ rows: [{ ...rows[0], ticker, title: ticker + ' retained annual report' }], fetchedAt: at });
+  }
   if (path === '/api/domestic-filings/HEG') {
     res.statusCode = 401;
     return json({ ok: false, reason: 'unauthorised', message: 'Fixture session expired' });
@@ -83,6 +95,17 @@ try {
   assert.equal(await page.evaluate(() => refresh.lastRefreshAt('domestic-documents')), null);
   assert.match(await page.locator('[data-document-status]').innerText(), /Refresh failed: Fixture session expired/);
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 3, 'the failed check retains all documents');
+  assert.deepEqual(await page.locator('#filing-companies option').evaluateAll(options => options.map(o => o.value).sort()),
+    ['BORORENEW', 'FSC', 'HEG'], 'lookup offers every exact-ISIN listed holding, without private or unheld issuers');
+  for (const ticker of ['FSC', 'BORORENEW']) {
+    await page.locator('[data-document-search] input[name=ticker]').fill(ticker);
+    await page.getByRole('button', { name: 'Show captured filings', exact: true }).click();
+    await page.waitForFunction(ticker => document.querySelector('[data-document-status]').textContent.startsWith('1 retained documents for ' + ticker), ticker);
+    assert.match(await page.locator('tbody').innerText(), new RegExp(ticker + ' retained annual report'));
+  }
+  await page.locator('[data-document-search] input[name=ticker]').fill('UNHELD');
+  await page.getByRole('button', { name: 'Show captured filings', exact: true }).click();
+  assert.match(await page.locator('[data-document-status]').innerText(), /Choose a company in this scope/);
   for (const [scope, count] of [['portfolio', 1], ['universe', 2], ['watchlist', 0]]) {
     await page.evaluate(scope => showCoverage(scope), scope);
     assert.match(await panel.getAttribute('class'), count ? /bg-amber-50/ : /bg-emerald-50/);
@@ -91,6 +114,17 @@ try {
     if (count) assert(summary.includes(`${count} private securities without listed-equity filing coverage`));
     else assert(!summary.includes('private securities'), 'unrelated portfolio securities cannot warn on an empty watchlist');
   }
+  await page.evaluate(() => showAnnouncementLookup('portfolio'));
+  assert.deepEqual(await page.locator('#announcement-companies option').evaluateAll(options => options.map(o => o.value).sort()),
+    ['BORORENEW', 'FSC', 'HEG']);
+  for (const ticker of ['FSC', 'BORORENEW', 'UNHELD']) {
+    await page.locator('[data-announcement-lookup] input[name=ticker]').fill(ticker);
+    await page.getByRole('button', { name: 'Fetch additional announcements', exact: true }).click();
+  }
+  assert.deepEqual(await page.evaluate(() => lookups.map(r => r.ticker)), ['FSC', 'BORORENEW']);
+  assert.match(await page.locator('[data-announcement-lookup-status]').innerText(), /Choose a company in this scope/);
+  await page.evaluate(() => showAnnouncementLookup('watchlist'));
+  assert.equal(await page.locator('#announcement-companies option').count(), 0, 'portfolio identities cannot expand an empty watchlist');
   assert.deepEqual(errors, []);
   console.log('PASS document table/export preserve each provider and live failures remain visible with retained documents.');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

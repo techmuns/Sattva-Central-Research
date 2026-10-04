@@ -3,15 +3,17 @@ import { escapeHtml } from '../core/dom.js';
 import * as coverage from '../data/coverage.js';
 import { filterByScope } from '../data/scope.js';
 import { announcementRange } from '../data/announcements-shared.js';
+import { companyCaptureHoldings } from '../data/company-captures.js';
 
 export function announcementLookupControls(feed) {
   const day = (date) => date.toISOString().slice(0, 10);
   let draft = null, validation = '';
   function companies(ctx) {
-    const list = [...coverage.holdings(), ...(ctx.data?.universe || []), ...feed.rows().map((r) => ({ ticker: r.ticker, name: r.company }))];
+    const holdings = companyCaptureHoldings(coverage.holdings());
+    const list = [...holdings, ...(ctx.data?.universe || []), ...feed.rows().map((r) => ({ ticker: r.ticker, name: r.company }))];
     const unique = new Map();
     for (const row of list) if (row.ticker && !unique.has(row.ticker)) unique.set(row.ticker, row);
-    return filterByScope([...unique.values()], ctx.scope, coverage.holdings());
+    return filterByScope([...unique.values()], ctx.scope, holdings);
   }
   function html(ctx, meta) {
     const extra = meta.supplement;
