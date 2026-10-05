@@ -1,11 +1,26 @@
 {
-  "capturedAt": "2026-10-02T07:14:08.657Z",
-  "from": "2026-09-29",
-  "to": "2026-10-23",
+  "capturedAt": "2026-10-05T02:39:06.655Z",
+  "from": "2026-10-02",
+  "to": "2026-10-26",
   "pageSize": 20,
   "source": "Moneycontrol — Earnings Calendar (all-exchange counts plus every earnings-widget pagination page)",
   "note": "The per-date counts and company lists both cover All exchanges. Every published pagination page is captured; counts are re-fetched live by the Worker and these lists are as of capturedAt.",
   "days": [
+    {
+      "date": "2026-10-26",
+      "displayDate": "26 Oct",
+      "count": 2
+    },
+    {
+      "date": "2026-10-25",
+      "displayDate": "25 Oct",
+      "count": 0
+    },
+    {
+      "date": "2026-10-24",
+      "displayDate": "24 Oct",
+      "count": 2
+    },
     {
       "date": "2026-10-23",
       "displayDate": "23 Oct",
@@ -115,24 +130,103 @@
       "date": "2026-10-02",
       "displayDate": "02 Oct",
       "count": 0
-    },
-    {
-      "date": "2026-10-01",
-      "displayDate": "01 Oct",
-      "count": 2
-    },
-    {
-      "date": "2026-09-30",
-      "displayDate": "30 Sep",
-      "count": 2
-    },
-    {
-      "date": "2026-09-29",
-      "displayDate": "29 Sep",
-      "count": 3
     }
   ],
   "byDate": {
+    "2026-10-26": {
+      "rows": [
+        {
+          "scId": "KT06",
+          "name": "KFin Technologies",
+          "shortName": null,
+          "resultDate": "2026-10-26",
+          "displayDate": "26 Oct",
+          "quarter": "Q2-2026",
+          "time": null,
+          "ltp": 832,
+          "changePct": -0.95,
+          "marketCap": 14382.96,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/finance-others/kfintechnologies/KT07",
+          "ticker": "KFINTECH",
+          "fullName": "KFin Tech",
+          "industry": "Finance - Others",
+          "shares": 172846295,
+          "mktCapAtBuild": 16104.95
+        },
+        {
+          "scId": "WIML",
+          "name": "WeWork India Management",
+          "shortName": null,
+          "resultDate": "2026-10-26",
+          "displayDate": "26 Oct",
+          "quarter": "Q2-2026",
+          "time": null,
+          "ltp": 659.6,
+          "changePct": -0.13,
+          "marketCap": 9159.88,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/real-estate-rental-development-operations/weworkindiamanagement/WIML",
+          "ticker": "WEWORK",
+          "fullName": "WeWork India",
+          "industry": "Real Estate Rental, Development & Operations",
+          "shares": 138590252,
+          "mktCapAtBuild": 10050.57
+        }
+      ],
+      "scheduledCount": 2,
+      "pageSize": 20,
+      "pagesFetched": 1,
+      "complete": true,
+      "asOnDate": "05/10/2026"
+    },
+    "2026-10-24": {
+      "rows": [
+        {
+          "scId": "IDF01",
+          "name": "IDFC First Bank",
+          "shortName": null,
+          "resultDate": "2026-10-24",
+          "displayDate": "24 Oct",
+          "quarter": "Q2-2026",
+          "time": null,
+          "ltp": 80.39,
+          "changePct": -1.29,
+          "marketCap": 69318.89,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/banks-private-sector/idfcfirstbank/IDF01",
+          "ticker": "IDFCFIRSTB",
+          "fullName": "IDFC First Bank",
+          "industry": "Bank - Private",
+          "shares": 8621219589,
+          "mktCapAtBuild": 72849.31
+        },
+        {
+          "scId": "SF35",
+          "name": "SBFC Finance",
+          "shortName": null,
+          "resultDate": "2026-10-24",
+          "displayDate": "24 Oct",
+          "quarter": "Q2-2026",
+          "time": null,
+          "ltp": 84.19,
+          "changePct": -1.51,
+          "marketCap": 9336.86,
+          "exchange": "N",
+          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/finance-others/sbfcfinance/SF33",
+          "ticker": "SBFC",
+          "fullName": "SBFC Finance",
+          "industry": "Finance - Others",
+          "shares": 1108206715,
+          "mktCapAtBuild": 10325.16
+        }
+      ],
+      "scheduledCount": 2,
+      "pageSize": 20,
+      "pagesFetched": 1,
+      "complete": true,
+      "asOnDate": "05/10/2026"
+    },
     "2026-10-23": {
       "rows": [
         {
@@ -349,7 +443,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-22": {
       "rows": [
@@ -415,7 +509,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-21": {
       "rows": [
@@ -462,7 +556,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-19": {
       "rows": [
@@ -547,7 +641,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-17": {
       "rows": [
@@ -632,7 +726,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-16": {
       "rows": [
@@ -660,7 +754,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-15": {
       "rows": [
@@ -783,7 +877,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-14": {
       "rows": [
@@ -909,9 +1003,9 @@
           "displayDate": "14 Oct",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 8.87,
+          "ltp": 8.61,
           "changePct": -3.48,
-          "marketCap": 39.98,
+          "marketCap": 38.81,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/steel-tubes-pipes/rajtubemanufacturingcompany/RTM"
         }
@@ -920,7 +1014,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-13": {
       "rows": [
@@ -986,7 +1080,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-12": {
       "rows": [
@@ -1033,7 +1127,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-09": {
       "rows": [
@@ -1118,7 +1212,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-08": {
       "rows": [
@@ -1165,7 +1259,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-07": {
       "rows": [
@@ -1188,7 +1282,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-06": {
       "rows": [
@@ -1273,7 +1367,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-05": {
       "rows": [
@@ -1323,9 +1417,9 @@
           "displayDate": "5 Oct",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 19,
+          "ltp": 19.05,
           "changePct": -3.26,
-          "marketCap": 11.4,
+          "marketCap": 11.43,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/miscellaneous/globecommercials/GC22"
         }
@@ -1334,7 +1428,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     },
     "2026-10-03": {
       "rows": [
@@ -1360,9 +1454,9 @@
           "displayDate": "3 Oct",
           "quarter": "Q2-2026",
           "time": null,
-          "ltp": 81.6,
+          "ltp": 83.45,
           "changePct": 0.1,
-          "marketCap": 28.78,
+          "marketCap": 29.43,
           "exchange": "B",
           "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/engineering/hawaengineers/HE02"
         }
@@ -1371,157 +1465,7 @@
       "pageSize": 20,
       "pagesFetched": 1,
       "complete": true,
-      "asOnDate": "02/10/2026"
-    },
-    "2026-10-01": {
-      "rows": [
-        {
-          "scId": "MPISL",
-          "name": "Manipal Payment and Identity Solutions",
-          "shortName": null,
-          "resultDate": "2026-10-01",
-          "displayDate": "1 Oct",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 401.4,
-          "changePct": -1.89,
-          "marketCap": 9304.63,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/printing-publishing/manipalpaymentidentitysolutions/MPISL",
-          "ticker": "MPIMANIPAL",
-          "fullName": "Manipal Payment",
-          "industry": "Printing & Publishing",
-          "shares": 231804528,
-          "mktCapAtBuild": 9304.63
-        },
-        {
-          "scId": "PCL02",
-          "name": "Pranav Constructions",
-          "shortName": null,
-          "resultDate": "2026-10-01",
-          "displayDate": "1 Oct",
-          "quarter": "Q2-2026",
-          "time": null,
-          "ltp": 97.21,
-          "changePct": -2.89,
-          "marketCap": 1094.81,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/construction-residential-commercial-complexes/pranavconstructions/PCL02",
-          "ticker": "PRANAV",
-          "fullName": "Pranav Construc",
-          "industry": "Construction - Residential & Commercial Complexes",
-          "shares": 112622782,
-          "mktCapAtBuild": 1094.81
-        }
-      ],
-      "scheduledCount": 2,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "02/10/2026"
-    },
-    "2026-09-30": {
-      "rows": [
-        {
-          "scId": "BFU",
-          "name": "BF Utilities",
-          "shortName": null,
-          "resultDate": "2026-09-30",
-          "displayDate": "30 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 504.75,
-          "changePct": -0.59,
-          "marketCap": 1901.27,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/power-generation-distribution/bfutilities/BFU",
-          "ticker": "BFUTILITIE",
-          "fullName": "BF Utilities",
-          "industry": "Power Generation/Distribution",
-          "shares": 37667628,
-          "mktCapAtBuild": 2009.94
-        },
-        {
-          "scId": "GC21",
-          "name": "Globe Commercials",
-          "shortName": null,
-          "resultDate": "2026-09-30",
-          "displayDate": "30 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 19,
-          "changePct": -3.26,
-          "marketCap": 11.4,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/miscellaneous/globecommercials/GC22"
-        }
-      ],
-      "scheduledCount": 2,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "02/10/2026"
-    },
-    "2026-09-29": {
-      "rows": [
-        {
-          "scId": "AF08",
-          "name": "Vipul",
-          "shortName": null,
-          "resultDate": "2026-09-29",
-          "displayDate": "29 Sep",
-          "quarter": "Q4-2026",
-          "time": null,
-          "ltp": 10.59,
-          "changePct": -3.73,
-          "marketCap": 149.28,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/construction-contracting-real-estate/vipul/V04",
-          "ticker": "VIPULLTD",
-          "fullName": "Vipul",
-          "industry": "Construction - Residential & Commercial Complexes",
-          "shares": 140959480,
-          "mktCapAtBuild": 149.28
-        },
-        {
-          "scId": "PCM",
-          "name": "Panyam Cements and Mineral Inds.",
-          "shortName": null,
-          "resultDate": "2026-09-29",
-          "displayDate": "29 Sep",
-          "quarter": "NA",
-          "time": null,
-          "ltp": 109.25,
-          "changePct": -5,
-          "marketCap": 87.63,
-          "exchange": "B",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/cement-major/panyamcementsmineralinds/PCM"
-        },
-        {
-          "scId": "API02",
-          "name": "Ansal Properties & Infrastructure",
-          "shortName": null,
-          "resultDate": "2026-09-29",
-          "displayDate": "29 Sep",
-          "quarter": "Q4-2026",
-          "time": null,
-          "ltp": 4.08,
-          "changePct": -1.92,
-          "marketCap": 64.22,
-          "exchange": "N",
-          "mcUrl": "https://www.moneycontrol.com/india/stockpricequote/construction-contracting-housing/ansalpropertiesinfrastructure/API07",
-          "ticker": "ANSALAPI",
-          "fullName": "Ansal Propertie",
-          "industry": "Construction - Residential & Commercial Complexes",
-          "shares": 157404876,
-          "mktCapAtBuild": 64.22
-        }
-      ],
-      "scheduledCount": 3,
-      "pageSize": 20,
-      "pagesFetched": 1,
-      "complete": true,
-      "asOnDate": "02/10/2026"
+      "asOnDate": "05/10/2026"
     }
   }
 }
