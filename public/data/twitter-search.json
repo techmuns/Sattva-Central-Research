@@ -977,7 +977,7 @@
       "pending": []
     },
     "isin:INE774D01024|Mahindra & Mahindra Financial Services": {
-      "lastAttemptAt": "2026-10-01T11:43:12+00:00",
+      "lastAttemptAt": "2026-10-05T01:43:24+00:00",
       "error": "search-unavailable",
       "lastResultCount": 12,
       "lastSuccessAt": "2026-09-27T08:32:05+00:00",
@@ -2168,6 +2168,6 @@
     "planned": 232,
     "attempted": 1,
     "incomplete": 209,
-    "checkedAt": "2026-10-05T01:16:29.953351+00:00"
+    "checkedAt": "2026-10-05T01:43:24.704557+00:00"
   }
 }
