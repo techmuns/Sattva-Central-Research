@@ -42,7 +42,14 @@ async function ready(page, route = 'ask-research') {
   params.set('test_stream', '1');
   await page.goto(`${origin}/#/research/${path}?${params.toString()}`);
   await page.locator('[data-theme-toggle]').waitFor();
+  await panelReady(page, path.split('/')[0]);
 }
+// Navigation chrome responds before a deferred renderer is ready. Sampling the
+// old table while it is being replaced returns styles from a detached element.
+const panelReady = (page, tab) => page.waitForFunction(tab => {
+  const panel = document.querySelector('#content-host');
+  return panel?.dataset.activeTab === tab && !panel.inert;
+}, tab);
 const theme = page => page.locator('html').getAttribute('data-theme');
 const toggle = page => page.getByRole('button', { name: 'Dark mode', exact: true });
 async function shot(page, name) {
@@ -128,6 +135,7 @@ try {
   for (const tab of ['daily-alerts', 'ai-alerts', 'earnings-hub', 'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements', 'corporate-actions', 'nse-filings', 'insider-trades']) {
     await page.evaluate(tab => { location.hash = `#/research/${tab}?scope=universe`; }, tab);
     await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, tab);
+    await panelReady(page, tab);
     assert.equal(await theme(page), 'dark', tab);
     assert(contrast((await surface(page, '[data-app-header] h1')).color, 'rgb(11,18,32)') >= 7);
     if (tab === 'ipos') {
