@@ -34,6 +34,7 @@ import { yahooSymbol } from '../worker/upstox-market.mjs';
 
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { fetchBars, dayMove } from './lib/yahoo.mjs';
+import { completedPeriods, wilderRsiState } from './lib/momentum.mjs';
 import { verifyMoves, loadChecks, saveChecks, CHECKS_PATH } from './lib/muns-market-data.mjs';
 import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
 import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
@@ -48,7 +49,18 @@ const COMPANIES_PATH = resolve(__dirname, "../public/data/universe.json");
 const BOOK_PATH = resolve(__dirname, "../public/data/portfolio-companies.json");
 const ATR_HISTORY_PATH = resolve(__dirname, "../public/data/atr-history.json");
 
-const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days
+const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days — the RECENT window every
+                                   // existing daily indicator is computed over, unchanged.
+// MOMENTUM_HISTORY_DAYS — the Momentum Scanner's weekly and monthly RSI(14) must be WARMED UP, not
+// re-seeded from a short window, so they are resampled from a long daily history. ~11 calendar
+// years gives ~132 monthly bars; measured, monthly RSI then converges to within <0.05 point of the
+// full available series (90-vs-132-month delta ≤0.02), comfortably inside the ±1-point target.
+// This is ONE Yahoo request per stock — the long series serves both the long resample and, sliced
+// back to HISTORY_DAYS, the existing daily indicators. Extending the fetch does not move any
+// existing field: EMA/Wilder figures converge (Δ≈0 at the stored rounding) and every other field
+// reads a tail no longer than 252 bars. Only `bars` below is sliced to the recent window, so
+// `bars_count` and all existing values stay exactly as a 400-day run produced them.
+const MOMENTUM_HISTORY_DAYS = 4050;
 const INDEX_SYMBOL = "^CRSLDX";    // Nifty 500 on Yahoo Finance
 const FETCH_DELAY_MS = 200;        // be polite — ~5 req/sec
 const TECH_LIMIT = Number(process.env.TECH_LIMIT || 0) || 0;   // 0 = all companies
@@ -137,6 +149,7 @@ async function run() {
 
   const end = new Date();
   const start = new Date(end.getTime() - HISTORY_DAYS * 86400000);
+  const momentumStart = new Date(end.getTime() - MOMENTUM_HISTORY_DAYS * 86400000);
 
   // Fetch the index first — needed for relative strength and beta.
   console.log(`\nFetching ${INDEX_SYMBOL} (Nifty 500)...`);
@@ -171,7 +184,9 @@ async function run() {
     const primarySym = yahooSymbol({ticker});
     process.stdout.write(`[${i + 1}/${companies.length}] ${c.Company.padEnd(28).slice(0, 28)} ${primarySym.padEnd(16)} `);
     try {
-      let bars = await fetchBars(primarySym, start, end);
+      // ONE long fetch per stock (see MOMENTUM_HISTORY_DAYS): `longBars` warms the weekly/monthly
+      // resample, `bars` is it sliced back to the recent window the existing daily indicators use.
+      let longBars = await fetchBars(primarySym, momentumStart, end);
       let usedSym = primarySym;
       // Yahoo sometimes returns a stub (1-2 bars) for live NSE tickers
       // whose history was migrated under a different symbol — fall back
@@ -183,21 +198,22 @@ async function run() {
       // Left alone that returns a one-bar stub, which reads exactly like a delisting — the ticker
       // is right, the exchange is right, and the company simply appears to have no history. Both
       // of these have 270 bars under the bare symbol.
-      if (!tickerIsNumeric && bars.length < 60) {
+      if (!tickerIsNumeric && longBars.length < 60) {
         const alts = [`${ticker}.BO`];
         if (/-SM$/.test(ticker)) alts.unshift(`${ticker.replace(/-SM$/, "")}.NS`, `${ticker.replace(/-SM$/, "")}.BO`);
         for (const altSym of alts) {
-          const alt = await fetchBars(altSym, start, end).catch(() => []);
-          if (alt.length > bars.length) {
+          const alt = await fetchBars(altSym, momentumStart, end).catch(() => []);
+          if (alt.length > longBars.length) {
             process.stdout.write(`(fallback ${altSym}) `);
-            bars = alt;
+            longBars = alt;
             usedSym = altSym;
           }
-          if (bars.length >= 60) break;
+          if (longBars.length >= 60) break;
         }
       }
+      const bars = recentWindow(longBars, start);
       if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
-      const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose);
+      const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose, longBars);
       const delivery = deliveryTrends[ticker] || null;
       results.push({
         ticker, name: c.Company, screenerUrl: c["Screener URL"],
@@ -419,8 +435,18 @@ function spreadFromMeta(meta) {
   return Math.round(pct * 1000) / 1000; // 3 decimal places
 }
 
+// The last HISTORY_DAYS of the long series — exactly the bars a 400-day fetch returns, so every
+// existing daily indicator computed over it is unchanged. `.meta` (Yahoo's snapshot fields, read
+// by spreadFromMeta) is carried across, as `completedBars` already carries it.
+function recentWindow(longBars, start) {
+  const cutoff = start.getTime();
+  const out = longBars.filter((b) => Date.parse(`${b.date}T00:00:00Z`) >= cutoff);
+  out.meta = longBars.meta;
+  return out;
+}
+
 // ---------- indicators ----------
-function computeIndicators(bars, indexBars, indexReturns, indexClose) {
+function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars) {
   const close = bars.map((b) => b.close);
   const high  = bars.map((b) => b.high);
   const low   = bars.map((b) => b.low);
@@ -431,8 +457,16 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
   const ema50 = ema(close, 50).at(-1);
   const sma50 = sma(close, 50).at(-1);
   const sma200 = n >= 200 ? sma(close, 200).at(-1) : null;
+  // ----- Momentum Scanner: daily simple MAs (SMA20/SMA100 join the existing SMA50/SMA200) -----
+  const sma20 = n >= 20 ? sma(close, 20).at(-1) : null;
+  const sma100 = n >= 100 ? sma(close, 100).at(-1) : null;
   const rsi14 = rsi(close, 14).at(-1);
   const macdSeries = macd(close, 12, 26, 9);
+  // The raw EMAs behind the MACD line at the last completed bar, so the browser can advance each
+  // one step with the live price and recompute the line, signal and crossover LIVE. The macd()
+  // above uses this same local ema(), so `line === ema12 - ema26` by construction.
+  const ema12 = ema(close, 12).at(-1);
+  const ema26 = ema(close, 26).at(-1);
   const macdLine = macdSeries.line.at(-1);
   const macdSig = macdSeries.signal.at(-1);
   const macdLinePrev = macdSeries.line.at(-2);
@@ -451,6 +485,11 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
   // 20-day avg volume vs latest
   const avg20Vol = avg(vol.slice(-21, -1));        // prior 20 days, excluding today
   const volRatio = avg20Vol > 0 ? vol.at(-1) / avg20Vol : null;
+  // 10-day avg volume vs latest — mirrors the 20-day pair above (prior 10 sessions, excluding the
+  // latest completed bar; ratio = latest ÷ that), so the Momentum Scanner's two volume ratios are
+  // measured the same way and a spike reads consistently across both.
+  const avg10Vol = vol.length >= 11 ? avg(vol.slice(-11, -1)) : null;
+  const volRatio10 = avg10Vol > 0 ? vol.at(-1) / avg10Vol : null;
 
   // 6M return + Relative Strength
   const sixMReturn = n >= 126 ? close.at(-1) / close.at(-126) - 1 : null;
@@ -470,6 +509,23 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
   // close from two sessions back. Feeds the Advances/Declines breadth and the ±5% price alert.
   const move = dayMove(bars);
 
+  // ----- Momentum Scanner: multi-timeframe Wilder RSI(14), with running state for live recompute -----
+  // Weekly and monthly closes are resampled from the LONG series so the RSI is fully warmed up, not
+  // re-seeded from the recent window. Each timeframe stores the value AND the Wilder state at its
+  // last COMPLETED bar (avgGain / avgLoss / lastClose), so the browser can advance it one step with
+  // the live price to get the provisional RSI on the in-progress candle.
+  const dailyRsiState = wilderRsiState(close, 14);
+  const weeklyRsiState = wilderRsiState(completedPeriods(longBars, 'week').map((p) => p.close), 14);
+  const monthlyRsiState = wilderRsiState(completedPeriods(longBars, 'month').map((p) => p.close), 14);
+  // avgGain/avgLoss rounded to 6 dp (ample for a one-step advance); lastClose kept raw like `cmp`.
+  // `value` carries the completed-bar RSI; the daily value is pinned to `rsi14` so they cannot drift.
+  const rsiFrame = (st, valueOverride) => st == null ? null : {
+    value: valueOverride != null ? valueOverride : round(st.value, 1),
+    avgGain: round(st.avgGain, 6),
+    avgLoss: round(st.avgLoss, 6),
+    lastClose: st.lastClose,
+  };
+
   return {
     cmp,
     // The date of the close `cmp` IS, and the date of the close it is compared with. A close
@@ -482,16 +538,35 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
     ema50: round(ema50),
     sma50: round(sma50),
     sma200: sma200 == null ? null : round(sma200),
+    // Momentum Scanner (additive): SMA20/SMA100 beside the existing SMA50/SMA200.
+    sma20: sma20 == null ? null : round(sma20),
+    sma100: sma100 == null ? null : round(sma100),
     above_50ema: cmp > ema50,
     above_200dma: sma200 != null ? cmp > sma200 : null,
+    // Momentum Scanner (additive): SMA-based above-DMA flags. `above_50dma` is the SMA(50) flag the
+    // screener uses; the EMA-based `above_50ema` above is unchanged. null where the SMA is null.
+    above_20dma: sma20 != null ? cmp > sma20 : null,
+    above_50dma: sma50 != null ? cmp > sma50 : null,
+    above_100dma: sma100 != null ? cmp > sma100 : null,
     golden_cross: (sma50 != null && sma200 != null) ? sma50 > sma200 : null,
     death_cross:  (sma50 != null && sma200 != null) ? sma50 < sma200 : null,
     rsi14: round(rsi14, 1),
+    // Momentum Scanner (additive): daily/weekly/monthly Wilder RSI(14) + the running state each
+    // needs for exact live recompute. `rsi_multi.daily.value` equals `rsi14` by construction.
+    rsi_multi: {
+      daily: rsiFrame(dailyRsiState, round(rsi14, 1)),
+      weekly: rsiFrame(weeklyRsiState),
+      monthly: rsiFrame(monthlyRsiState),
+    },
     macd: {
       line: round(macdLine, 2),
       signal: round(macdSig, 2),
       above_zero: macdLine > 0,
       positive_crossover: positiveCrossover,
+      // Momentum Scanner (additive): the raw EMAs behind the line, for live MACD recompute.
+      // `line === round(ema12 - ema26, 2)`.
+      ema12: ema12 == null ? null : round(ema12, 4),
+      ema26: ema26 == null ? null : round(ema26, 4),
     },
     adx14: round(adx14, 1),
     atr14_pct: round(atrPct, 2),
@@ -500,6 +575,9 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
     high_proximity_pct: round(highProximityPct, 4),   // 0.93 = within 7%
     avg_volume_20d: Math.round(avg20Vol),
     volume_ratio_today: volRatio == null ? null : round(volRatio, 2),
+    // Momentum Scanner (additive): 10-day average volume and ratio — see avg10Vol above.
+    avg_volume_10d: avg10Vol == null ? null : Math.round(avg10Vol),
+    volume_ratio_10d: volRatio10 == null ? null : round(volRatio10, 2),
     return_6m: sixMReturn == null ? null : round(sixMReturn, 4),
     return_6m_index: indexSixM == null ? null : round(indexSixM, 4),
     relative_strength_6m: relStrength6m == null ? null : round(relStrength6m, 4),

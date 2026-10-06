@@ -317,18 +317,24 @@ substitutes a guess.
 | `ema50` | number | ₹ | 50-day exponential moving average. |
 | `sma50` | number | ₹ | 50-day simple moving average. |
 | `sma200` | number \| null | ₹ | 200-day SMA. Null below 200 bars of history. |
-| `above_50ema` | boolean | — | `cmp > ema50`. |
+| `sma20` | number \| null | ₹ | **Momentum Scanner.** 20-day simple moving average. Null below 20 bars. |
+| `sma100` | number \| null | ₹ | **Momentum Scanner.** 100-day SMA. Null below 100 bars. |
+| `above_50ema` | boolean | — | `cmp > ema50` (EMA-based). Unchanged. |
 | `above_200dma` | boolean \| null | — | `cmp > sma200`. **`false` is the model's only hard fail.** |
+| `above_20dma` | boolean \| null | — | **Momentum Scanner.** `cmp > sma20`. Null when `sma20` is null. |
+| `above_50dma` | boolean \| null | — | **Momentum Scanner.** `cmp > sma50` — the **SMA(50)** flag the screener filters on. Distinct from `above_50ema`, which stays EMA-based. |
+| `above_100dma` | boolean \| null | — | **Momentum Scanner.** `cmp > sma100`. Null when `sma100` is null. |
 | `golden_cross` | boolean \| null | — | `sma50 > sma200`. |
 | `death_cross` | boolean \| null | — | `sma50 < sma200`. |
-| `bars_count` | number | count | Trading bars fetched. Under 60 the company is recorded as an error instead. |
+| `bars_count` | number | count | Trading bars in the recent window the daily indicators are computed over (~280). Under 60 the company is recorded as an error instead. The scrape fetches ~11 years in one request to warm the weekly/monthly RSI below, then slices back to this window for every existing field, so this count — and every value above — is unchanged by the longer fetch. |
 
 **Momentum**
 
 | Field | Type | Unit | Meaning |
 | --- | --- | --- | --- |
-| `rsi14` | number \| null | 0–100 | Wilder RSI over 14 closes. |
-| `macd` | object \| null | — | `{ line, signal, above_zero, positive_crossover }`. `line` = EMA(12) − EMA(26); `signal` = EMA(9) of the line; `positive_crossover` is true only on the day the line crossed above. |
+| `rsi14` | number \| null | 0–100 | Wilder RSI over 14 daily closes. Unchanged; equals `rsi_multi.daily.value`. |
+| `rsi_multi` | object | — | **Momentum Scanner.** `{ daily, weekly, monthly }`, each `{ value, avgGain, avgLoss, lastClose }` or `null` when the timeframe lacks 15 completed bars. Wilder RSI(14) per timeframe, stored **with running state** so the browser can advance one Wilder step with the live price to get the provisional RSI on the in-progress candle. See the running-state note below. |
+| `macd` | object \| null | — | `{ line, signal, above_zero, positive_crossover, ema12, ema26 }`. `line` = EMA(12) − EMA(26); `signal` = EMA(9) of the line; `positive_crossover` is true only on the day the line crossed above. **`ema12` / `ema26`** (**Momentum Scanner**, ₹, rounded 4 dp) are the raw EMAs at the last completed bar, carried **so the browser can advance each one step with the live price** and recompute the line, signal and crossover live. `line === round(ema12 − ema26, 2)` by construction. |
 | `adx14` | number \| null | 0–100 | Wilder ADX(14). |
 | `return_6m` | number \| null | **fraction** | Stock return over ~126 trading days. |
 | `return_6m_index` | number \| null | **fraction** | Nifty 500 over the same window. |
@@ -338,8 +344,10 @@ substitutes a guess.
 
 | Field | Type | Unit | Meaning |
 | --- | --- | --- | --- |
-| `avg_volume_20d` | number | shares | Average of the prior 20 sessions, excluding today. |
-| `volume_ratio_today` | number \| null | multiple | Today ÷ 20-day average. `1.5` = 1.5×. |
+| `avg_volume_20d` | number | shares | Average of the prior 20 sessions, excluding the latest. |
+| `volume_ratio_today` | number \| null | multiple | Latest ÷ 20-day average. `1.5` = 1.5×. |
+| `avg_volume_10d` | number \| null | shares | **Momentum Scanner.** Average of the prior 10 sessions, **excluding the latest** — mirrors `avg_volume_20d` so the two volume ratios are measured the same way. Null below 11 bars. |
+| `volume_ratio_10d` | number \| null | multiple | **Momentum Scanner.** Latest ÷ `avg_volume_10d`. |
 | `high_52w`, `low_52w` | number | ₹ | Extremes of the last 250 closes. |
 | `high_proximity_pct` | number \| null | **ratio 0–1** | `cmp ÷ high_52w`. `0.93` means 7% below the high. Distance % = `(1 − value) × 100`. |
 | `atr14_pct` | number \| null | percent of price | Wilder ATR(14) ÷ close × 100. |
@@ -352,6 +360,32 @@ substitutes a guess.
 | `higher_highs_lows` | `{ higher_high, higher_low, pattern_present, recent_high, recent_low, prior_high, prior_low, timeframe, window_weeks }` | Daily bars aggregated to weekly, recent 13 weeks vs prior 13. `pattern_present` requires both a higher high and a higher low. |
 | `consolidation_breakout` | `{ base_range_pct, tight_base, breaks_out, volume_confirm, today_close, base_max, today_volume_ratio, quality }` | Base = prior 30 sessions excluding today. `quality` is `strong` \| `weak_base` \| `low_volume` \| `no_breakout` and drives the Strong Breakouts sub-view. |
 | `base_formation` | `{ drawdown_pct, tightness_pct, healthy_base }` | Over the last 60 closes. Healthy = drawdown < 15% **and** closing-range SD < 4% of mean. |
+
+### Momentum Scanner: running state for LIVE recompute (`rsi_multi`, `macd.ema12/ema26`)
+
+A later step recomputes RSI and MACD **live in the browser** by joining the live Upstox price to this
+daily capture and advancing the stored indicator ONE step — as if today's (and this week's / this
+month's) candle closed at the current price. For that to be exact, the capture stores not just each
+indicator's latest value but the **running state at the last COMPLETED bar of each timeframe**:
+
+- **`rsi_multi.{daily,weekly,monthly}`** — each `{ value, avgGain, avgLoss, lastClose }`. `value` is
+  Wilder RSI(14) at that bar (`daily.value` equals `rsi14`); `avgGain`/`avgLoss` are the Wilder
+  averages (6 dp) through it; `lastClose` is that timeframe's last completed close. The browser
+  computes the provisional RSI as one Wilder step: with `g = max(0, live − lastClose)`,
+  `l = max(0, lastClose − live)`, `avgGain' = (avgGain·13 + g)/14`, `avgLoss' = (avgLoss·13 + l)/14`,
+  `RSI = 100 − 100/(1 + avgGain'/avgLoss')`.
+- **`macd.ema12` / `macd.ema26`** — the raw EMAs at the last completed daily bar. The browser advances
+  each with `ema' = live·k + ema·(1−k)` (`k = 2/(span+1)`), takes `line' = ema12' − ema26'`, and
+  `signal' = line'·k₉ + signal·(1−k₉)` from the stored `macd.signal`, to recompute the bullish
+  crossover live rather than being stuck on yesterday's value.
+
+**Weekly and monthly bars are resampled in-code from one long (~11-year) daily history** — one ISO
+week / calendar month per bar, close = that period's last trading day, COMPLETED periods only (the
+in-progress period is the one the live step advances). The long fetch is a single Yahoo request per
+stock and warms the monthly RSI fully (~132 monthly bars; measured convergence < 0.05 point vs the
+full series). It does not change any existing field: the recent-window indicators are sliced back
+out of the same series. Verified by `scripts/verify-momentum-indicators.mjs` (independent recompute
+against `scripts/lib/indicators.mjs`, and the one-step-advance contract).
 
 ### `companies[]` — a company that failed
 
