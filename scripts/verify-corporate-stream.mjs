@@ -150,4 +150,20 @@ assert.deepEqual(sliced.rows(), expected, 'an arrival and correction between sli
 bulkBase = []; bulkNse = [];
 await sliced.prepareRows(async () => {}, { sliceMs: 0 });
 assert.deepEqual(sliced.rows(), expected, 'empty sources preserve complete retained history');
+for (const syncRead of [false, true]) {
+  let arriving = Array.from({ length: 300 }, (_, i) => ({ ticker: `TRANSIENT${i}`, title: `Observed ${i}`,
+    date: '2026-09-03', source: 'BSE', url: `https://example.test/transient-${i}.pdf` }));
+  const observed = arriving;
+  const rollover = createCorporateAnnouncementsFeed({ base: { ...base, rows: () => arriving },
+    nse: { ...live, retainedRows: () => [] } });
+  let rolled = false;
+  await rollover.prepareRows(async () => {
+    if (rolled) return;
+    rolled = true;
+    arriving = [{ ticker: 'NEWEST', title: 'Next snapshot', date: '2026-09-04', source: 'BSE', url: 'https://example.test/newest.pdf' }];
+    if (syncRead) rollover.rows();
+  }, { sliceMs: 0 });
+  assert.deepEqual(rollover.rows(), mergeAnnouncements(observed.map(emptyIdentity.row), arriving.map(emptyIdentity.row)),
+    `a source rollover cannot drop a previously observed record, including a competing synchronous read (${syncRead})`);
+}
 console.log('PASS corporate stream: IST dates, safe links, deduplication, automatic history, live arrivals, retention, coalescing and poll lifecycle');

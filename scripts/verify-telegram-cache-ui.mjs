@@ -33,19 +33,22 @@ const server = createServer(async (req, res) => {
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 try {
   const context = await browser.newContext();
   await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   const page = await context.newPage();
   async function verifyCachedFunds(cacheName) {
-    const modules = await page.evaluate(async name => {
+    const paths = ['/js/tabs/mutual-funds.js', '/js/tabs/mutual-fund-holdings.js', '/js/tabs/catalog.js'];
+    const modules = await page.evaluate(async ({ name, paths }) => {
       const cache = await caches.open(name);
-      return Promise.all(['/js/tabs/mutual-funds.js', '/js/tabs/mutual-fund-holdings.js'].map(async path =>
+      return Promise.all(paths.map(async path =>
         (await cache.match(path))?.text() || ''));
-    }, cacheName);
-    assert(modules[0].includes('All Schemes') && modules[0].includes('Category Performance'), 'the cached fund tab includes the new subviews');
-    assert(modules[1].includes('MF shares held'), 'the separate Company Holdings module is warmed with the fund tab');
+    }, { name: cacheName, paths });
+    // Subview labels live in the shared catalogue now. Verify the actual released
+    // bytes of every dependency, rather than requiring labels inline in a renderer.
+    for (const [i, path] of paths.entries()) assert.equal(modules[i], readFileSync(resolve(root, `.${path}`), 'utf8'),
+      `the current fund interface, holdings and navigation dependencies are warm: ${path}`);
   }
   await page.goto(`${origin}/cache-fixture`);
   await page.evaluate(async () => {

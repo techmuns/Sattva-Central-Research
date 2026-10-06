@@ -76,10 +76,14 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
     return { input, output, identity: currentIdentity };
   }
   function* buildRows(input) {
+    // A synchronous reader can advance held while an earlier rebuild yields.
+    // Keep that earlier observation ahead of the newer snapshot in the merge.
+    const prior = input.prior
+      ? (yield* mappedRows(input.prior, { input: null }, input.identity.row, input.identity)).output : [];
     const fromBase = yield* mappedRows(input.base, cachedBase, input.identity.row, input.identity);
     const fromNse = yield* mappedRows(input.nse, cachedNse, row => input.identity.row(nseAnnouncement(row)), input.identity);
     const fromHeld = yield* mappedRows(input.held, cachedHeld, input.identity.row, input.identity);
-    const next = yield* mergeAnnouncementSteps(fromHeld.output, fromBase.output, fromNse.output);
+    const next = yield* mergeAnnouncementSteps(prior, fromHeld.output, fromBase.output, fromNse.output);
     // Compare identical bytes one row at a time. A whole-history stringify itself blocks
     // input and duplicates the complete payload; per-row checks can yield between batches.
     const text = [];
@@ -94,7 +98,7 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
   function adopt(input, result) {
     cachedBase = result.fromBase; cachedNse = result.fromNse; cachedHeld = result.fromHeld;
     if (result.changed) { held = result.next; heldText = result.text; }
-    rowInputs = input;
+    rowInputs = { base: input.base, nse: input.nse, identity: input.identity };
     return held;
   }
   const rows = () => {
@@ -107,13 +111,22 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
     await base.warm?.(yieldForInput);
     if (preparingRows) return preparingRows;
     preparingRows = (async () => {
+      let prior = null;
       for (;;) {
-        const input = inputs();
-        if (sameInputs(rowInputs, input)) return held;
+        const input = { ...inputs(), prior };
+        if (!prior && sameInputs(rowInputs, input)) return held;
         const result = await runStepsInSlices(buildRows(input), { yieldForInput, sliceMs });
-        // Arrivals and identity corrections during a yield must be included before publication.
-        // A synchronous consumer may also have advanced held; never replace its newer result.
-        if (held === input.held && sameInputs(input, inputs())) return adopt(input, result);
+        // Retain every fully observed snapshot, even if the source rolled over during a yield.
+        // Notify readers only after the latest inputs (including identity corrections) are ready.
+        if (held === input.held) {
+          adopt(input, result);
+          prior = null;
+          if (sameInputs(input, inputs())) return held;
+        } else {
+          // Merge this older observation with the synchronous reader's newer answer next;
+          // neither may overwrite the other or disappear because a snapshot was replaced.
+          prior = result.next;
+        }
       }
     })().finally(() => { preparingRows = null; });
     return preparingRows;
