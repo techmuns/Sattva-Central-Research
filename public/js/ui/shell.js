@@ -1,4 +1,4 @@
-import * as mutualFunds from '../tabs/mutual-funds.js';
+import { researchTabs, bookmarks } from '../tabs/registry.js';
 // ui/shell.js — the generic app chrome: header, workspace dropdown, top tabs, left rail,
 // and the content host that every tab/portfolio module mounts into. This file owns the
 // workspace/tab registry; individual tab modules stay ignorant of navigation entirely.
@@ -27,22 +27,6 @@ import * as sourceBeacon from './source-beacon.js';
 import * as notifications from './notifications.js';
 import * as newsletter from './newsletter.js';
 
-import * as aiAlerts from '../tabs/ai-alerts.js';
-import * as askResearch from '../tabs/ask-research.js';
-import * as dailyAlerts from '../tabs/daily-alerts.js';
-import * as earningsHub from '../tabs/earnings-hub.js';
-import * as concall from '../tabs/concall.js';
-import * as publicChatter from '../tabs/public-chatter.js';
-import * as breakouts from '../tabs/breakouts.js';
-import * as superInvestors from '../tabs/super-investors.js';
-import * as news from '../tabs/news.js';
-import * as corpAnnouncements from '../tabs/corp-announcements.js';
-import * as corporateActions from '../tabs/corporate-actions.js';
-import * as nseFilings from '../tabs/nse-filings.js';
-import * as insiderTrades from '../tabs/insider-trades.js';
-import * as ipos from '../tabs/ipos.js';
-import * as bookmarks from '../tabs/bookmarks.js';
-
 // The nav model in one place: each workspace an ordered list of tab modules. Every module's
 // `meta.subviews` supplies the rail/rail-dropdown items — nothing here is duplicated per module.
 //
@@ -67,7 +51,7 @@ import * as bookmarks from '../tabs/bookmarks.js';
 // an unknown or absent tab, so the order of this array IS the default landing page — there is no
 // second place recording it that could disagree.
 const WORKSPACES = [
-  { id: 'research', label: 'Research Central', tabs: [aiAlerts, askResearch, dailyAlerts, bookmarks, earningsHub, concall, publicChatter, breakouts, superInvestors, news, ipos, corpAnnouncements, corporateActions, nseFilings, insiderTrades, mutualFunds] },
+  { id: 'research', label: 'Research Central', tabs: researchTabs },
 ];
 
 let contentHost = null;
@@ -530,14 +514,20 @@ function mountTab(root, tabModule, resolved) {
     setTimeout(runRender, 16);
   }
 
-  function runRender() {
+  async function runRender() {
     if (shellRenderRequest !== reqId) return; // Reader clicked away before this frame
-    releaseRouteLoading?.(); releaseRouteLoading = null;
-    root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
-    contentHost.setAttribute('data-active-tab', tabModule.meta.id);
     try {
+      // Load only the requested interface. The cover remains until it is ready;
+      // shared collectors and retained data continue independently of navigation.
+      if (tabModule.load) await tabModule.load();
+      if (ctx.isCancelled) return;
+      releaseRouteLoading?.(); releaseRouteLoading = null;
+      root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
+      contentHost.setAttribute('data-active-tab', tabModule.meta.id);
       tabModule.render(ctx);
     } catch (err) {
+      if (ctx.isCancelled) return;
+      releaseRouteLoading?.(); releaseRouteLoading = null;
       console.error(`[shell] render() failed for "${tabModule.meta?.id}"`, err);
       contentHost.innerHTML = emptyState({ title: 'This panel hit a snag', message: String(err?.message || err), icon: '⚠️' });
     }

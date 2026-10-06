@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // tabs/nse-filings.js — NSE Filings: the live exchange announcements feed, narrowed to your scope.
 //
 // THE FEED THAT ANSWERS "WHAT DID MY COMPANIES JUST FILE". Every other news surface here is either
@@ -20,12 +21,7 @@ import * as coverage from '../data/coverage.js';
 import * as feed from '../data/nse-filings.js';
 import { isXbrlFilingUrl } from '../data/nse-xbrl-shared.js';
 
-export const meta = {
-  id: 'nse-filings',
-  title: 'NSE Filings',
-  subtitle: 'Search captured NSE filing history by company or ticker, with live updates.',
-  subviews: [],
-};
+export const meta = TAB_META['nse-filings'];
 
 let renderToken = 0;
 let unsubscribe = null;

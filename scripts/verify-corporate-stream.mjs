@@ -118,4 +118,36 @@ const engine = { register: (id, config) => calls.push([id, config.intervalMs]), 
 feed.startLive(engine); feed.stopLive(engine);
 assert.deepEqual(calls, [[LIVE_ID, POLL_MS], ['start', LIVE_ID], ['stop', LIVE_ID]]);
 off(); assert.equal(subscribers.size, 0);
+
+// The sliced browser rebuild agrees field-for-field with the original synchronous
+// merge, including a correction and a late arrival while input is being yielded.
+let bulkBase = Array.from({ length: 1500 }, (_, i) => ({ ticker: `FIXTURE${i}`, title: `Filing ${i}`,
+  date: '2026-09-03', time: '10:00:00', revision: 1, source: 'BSE', url: `https://example.test/${i}.pdf` }));
+let bulkNse = [{ ...nseRow, ticker: 'FIXTURE0', url: 'https://example.test/0.pdf', publishedAt: '2026-09-03T04:30:00Z' }];
+const sliced = createCorporateAnnouncementsFeed({ base: { ...base, rows: () => bulkBase },
+  nse: { ...live, retainedRows: () => bulkNse } });
+const emptyIdentity = createAnnouncementIdentity();
+const oracle = previous => mergeAnnouncements(previous.map(emptyIdentity.row), bulkBase.map(emptyIdentity.row),
+  bulkNse.map(nseAnnouncement).map(emptyIdentity.row));
+let expected = oracle([]), yields = 0;
+await sliced.prepareRows(async () => { yields++; }, { sliceMs: 0 });
+assert(yields > 10, 'large source normalization, merge, sorting and comparisons yield to input');
+assert.deepEqual(sliced.rows(), expected, 'same eligible record identities, fields and ordering');
+const unchanged = sliced.rows();
+bulkBase = bulkBase.map(row => ({ ...row }));
+await sliced.prepareRows(async () => {}, { sliceMs: 0 });
+assert.equal(sliced.rows(), unchanged, 'unchanged responses preserve the mounted reader snapshot');
+bulkBase = [...bulkBase, { ticker: 'LATE', title: 'Late filing', date: '2025-01-01', url: 'https://example.test/late.pdf', source: 'BSE' }];
+let changedDuringYield = false;
+await sliced.prepareRows(async () => {
+  if (changedDuringYield) return;
+  changedDuringYield = true;
+  bulkBase = bulkBase.map((row, i) => i ? row : { ...row, revision: 2, time: '10:01:00' });
+  bulkNse = [...bulkNse, { ...nseRow, ticker: 'ARRIVAL', url: 'https://example.test/arrival.pdf' }];
+}, { sliceMs: 0 });
+expected = oracle(expected);
+assert.deepEqual(sliced.rows(), expected, 'an arrival and correction between slices cannot be lost or overwritten');
+bulkBase = []; bulkNse = [];
+await sliced.prepareRows(async () => {}, { sliceMs: 0 });
+assert.deepEqual(sliced.rows(), expected, 'empty sources preserve complete retained history');
 console.log('PASS corporate stream: IST dates, safe links, deduplication, automatic history, live arrivals, retention, coalescing and poll lifecycle');

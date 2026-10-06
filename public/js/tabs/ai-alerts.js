@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 import * as generalAlerts from '../data/daily-alerts.js';
 import { createTimelineHistory, timelineKey } from '../data/alert-timeline.js';
 import { mountAlertTimeline } from '../ui/alert-timeline.js';
@@ -34,12 +35,7 @@ import { currentDay, relativeAge, formatDay as fmtDay, latestAlertSignal, latest
 import { privatePortfolioContext, readPositionSizes, cachedPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
-export const meta = {
-  id: 'ai-alerts',
-  title: 'AI Alerts',
-  subtitle: `Important portfolio events from the last ${alerts.WINDOW_DAYS} days.`,
-  subviews: [],
-};
+export const meta = TAB_META['ai-alerts'];
 
 const REFRESH_ID = 'ai-alerts';
 const PAGE_SIZE = 8;

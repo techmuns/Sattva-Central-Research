@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // tabs/concall.js — the Con-call tab.
 //
 // ONE VIEW, TWO EXPLICITLY SEPARATED PROVENANCES.
@@ -29,14 +30,7 @@ import * as feed from '../data/concall-scans.js';
 import * as summaries from '../data/concall-summaries.js';
 import { stopSummary, summaryStatusHtml, updateSummaryButtons } from '../concall/summary.js';
 
-export const meta = {
-  id: 'concall',
-  title: 'Con-call',
-  subtitle: 'The complete Screener concall document index, enriched with current-quarter third-party analysis.',
-  // No sub-views: the shell hides the rail entirely when this is empty and the table spans the
-  // full width. The schedule is an overlay, not a second page.
-  subviews: [],
-};
+export const meta = TAB_META['concall'];
 
 let renderToken = 0;
 // Two lifetimes, kept apart on purpose. The panel's listeners die and are rebuilt on every

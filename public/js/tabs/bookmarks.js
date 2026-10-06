@@ -1,10 +1,11 @@
+import { TAB_META } from './catalog.js';
 import { escapeHtml as esc } from '../core/dom.js';
 import * as notebook from '../core/bookmarks.js';
 import { companyKey, filterBookmarks } from '../core/bookmark-record.js';
 import { sectionHead, openModal } from '../ui/screener.js';
 import { BOOKMARK_ICON, bookmarkButton, wireBookmarks, showBookmarkMessage } from '../ui/bookmark-button.js';
 
-export const meta = { id: 'bookmarks', title: 'Bookmarks', subtitle: 'Your saved research, kept together.', subviews: [], allowEmptyScope: true, scopeIndependent: true };
+export const meta = TAB_META['bookmarks'];
 let ctxRef, off, offButtons, limit = 30;
 let view = { company: '', query: '', kind: '', sort: 'saved', notesOnly: false };
 let companySearch = '';

@@ -1,6 +1,6 @@
 // data/institution-holdings.js — REAL institutional holdings, from TWO different disclosures.
 //
-//   prime(payload)            // seeded from app.js at bootstrap
+//   prime(payload)            // optional seed for a complete validated capture
 //   all()                     // every fund, both kinds
 //   byId(investorId)
 //   meta()                    // source, when it was read
@@ -51,7 +51,7 @@ export async function refresh() {
   return cache;
 }
 
-/** Seed from the bootstrap payload so the module never refetches what app.js already has. */
+/** Optional complete-capture seed; ordinary readers use the shared on-demand load(). */
 export function prime(payload) {
   if (payload && !cache) ingest(payload);
   return cache;

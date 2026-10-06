@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // A continuous, scoped stream of source announcements. BSE date captures, live NSE
 // filings and retained Muns company documents share one table and keep their source labels.
 // Captured history loads automatically; publication and capture gaps remain in provenance.
@@ -67,10 +68,7 @@ const categoryBadge = (c) => {
 const searchableAnnouncement = r => `${cleanFilingText(r.title)} ${cleanFilingText(r.headline)} ${cleanFilingText(r.subject)} ${r.company || ''} ${r.ticker || ''} ${r.scripCode || ''} ${r.category || ''} ${r.subCategory || ''}`;
 
 const tab = makeFilingsTab({
-  id: 'corp-announcements',
-  title: 'Corp Announcements',
-  subtitle:
-    'The latest company announcements from BSE, NSE and captured filings, newest first.',
+  ...TAB_META['corp-announcements'],
   feed,
   filterByScope: feed.filterByScope,
   countLabel: (rows) => {

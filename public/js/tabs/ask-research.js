@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 import * as refreshRegistry from '../core/refresh.js';
 import { pauseFamilySession } from '../data/family-session.js';
 // tabs/ask-research.js — a dashboard-wide conversational research workspace.
@@ -21,13 +22,7 @@ import { researchPreview } from '../research/preview.js';
 import { researchHistory } from '../research/history.js';
 import { connectPortfolio, portfolioConnected, privatePortfolioContext, readResearchPortfolio, onPortfolioInvalidation, portfolioConnectionState, onPortfolioConnection, unlockPortfolio, FAMILY_ORIGIN } from '../research/portfolio-bridge.js';
 
-export const meta = {
-  id: 'ask-research',
-  title: 'Ask Research',
-  subtitle: 'Ask across every dashboard tab.',
-  subviews: [],
-  allowEmptyScope: true,
-};
+export const meta = TAB_META['ask-research'];
 
 export function isComingSoon() {
   if (typeof window !== 'undefined') {

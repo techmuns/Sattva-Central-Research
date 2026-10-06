@@ -77,13 +77,15 @@ try {
     'super-investors/superstar-investors?scope=universe', 'super-investors/institutions?scope=universe',
     'ipos?scope=universe', 'ipos?scope=universe|directory', 'corp-announcements?scope=universe', 'corporate-actions?scope=universe',
     'nse-filings?scope=universe', 'insider-trades?scope=universe', 'news?scope=universe',
-    'ai-alerts?scope=universe', 'daily-alerts?scope=universe', 'ask-research?scope=universe', 'news?scope=portfolio'];
+    'ai-alerts?scope=universe', 'daily-alerts?scope=universe', 'ask-research?scope=universe',
+    'bookmarks?scope=universe', 'mutual-funds/company-holdings?scope=universe',
+    'mutual-funds/all-schemes?scope=universe', 'mutual-funds/category-performance?scope=universe', 'news?scope=portfolio'];
   for (const route of routes) {
     const [path, section] = route.split('|');
     const profiler = process.env.TAB_PERF_PROFILE ? await context.newCDPSession(page) : null;
     if (profiler) { await profiler.send('Profiler.enable'); await profiler.send('Profiler.start'); }
     const started = await frame.evaluate(route => { window.__longTasks = []; location.hash = `#/research/${route}`; return performance.now(); }, path);
-    await frame.waitForFunction(id => document.querySelector(`[data-tab-id="${id}"]`)?.getAttribute('aria-selected') === 'true', route.split(/[/?]/)[0]);
+    await frame.waitForFunction(id => document.querySelector('#content-host')?.dataset.activeTab === id, route.split(/[/?]/)[0]);
     await frame.waitForFunction(() => {
       const panel = document.querySelector('#content-host');
       return panel?.textContent.trim() && !panel.inert && !panel.querySelector('.skeleton-shimmer');

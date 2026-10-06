@@ -269,6 +269,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-dashboard-performance-ui.mjs
+      - name: Verify deferred tab interfaces and delayed navigation without user data
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-lazy-tabs-ui.mjs
       - name: Verify full-data dashboard tabs and bounded iframe interactions
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

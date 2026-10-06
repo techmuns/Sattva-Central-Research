@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 import { reconcileMarkup } from '../ui/reconcile-markup.js';
 import { readableFilingUrl } from '../data/nse-xbrl-shared.js';
 import { storyGrouping } from '../data/alert-stories.js';
@@ -49,15 +50,7 @@ import { createAlertArrivals } from '../core/alert-arrivals.js';
 import { arrivalsHtml, createArrivalsUI } from '../ui/alert-arrivals.js';
 import { alertWindowKey } from '../data/all-alerts-cache.js';
 
-export const meta = {
-  id: 'daily-alerts',
-  title: 'All Alerts',
-  layout: 'table',
-  subtitle: 'Opens on Today (IST); older retained alerts and upcoming schedules remain available.',
-  // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
-  // collapse — the feed filter in the toolbar does that job without costing a navigation.
-  subviews: [],
-};
+export const meta = TAB_META['daily-alerts'];
 
 const REFRESH_ID = 'daily-alerts';
 const RECHECK_MS = 90_000;

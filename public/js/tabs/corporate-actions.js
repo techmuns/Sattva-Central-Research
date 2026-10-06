@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // Exchange-wide corporate actions from NSE and Screener, scoped at paint time to the current portfolio,
 // watchlist or full captured universe.
 
@@ -73,9 +74,7 @@ function filters(rows) {
 }
 
 const tab = makeFilingsTab({
-  id: 'corporate-actions',
-  title: 'Corporate Actions',
-  subtitle: 'One deduplicated feed of NSE actions, enriched with Screener ratios, terms, prices and additional records.',
+  ...TAB_META['corporate-actions'],
   feed,
   filterByScope: feed.filterByScope,
   noun: 'actions',

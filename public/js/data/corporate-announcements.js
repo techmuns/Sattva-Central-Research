@@ -1,11 +1,12 @@
 // One read-only stream over the existing BSE/company captures and live NSE feed.
 import { announcements } from './filings.js';
 import * as nseFilings from './nse-filings.js';
-import { announcementUrl, mergeAnnouncements } from './announcements-shared.js';
+import { announcementUrl, mergeAnnouncementSteps } from './announcements-shared.js';
 import { createAnnouncementIdentity, filingTicker, mergeExchangeIdentities } from './announcement-identity.js';
 import { capturedJson } from './company-captures.js';
 import { filterByScope } from './scope.js';
 import * as watchlist from '../core/watchlist.js';
+import { runSteps, runStepsInSlices, yieldToInput } from '../core/slices.js';
 
 export const LIVE_ID = 'corporate-announcements';
 export const POLL_MS = 90_000;
@@ -24,7 +25,8 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
   let pending = null, historyPending = null, held = [], nseError = null;
   let identity = createAnnouncementIdentity(), identityError = null, identityRevision = null;
   let bseIdentities = [], nseIdentityError = null;
-  let identityKey = '', rowInputs = null, heldText = '';
+  let identityKey = '', rowInputs = null, heldText = [];
+  let preparingRows = null;
   let identityGeneration = 0;
   const nseDirectories = { sme: [], equity: [] };
   async function loadBseIdentities() {
@@ -61,63 +63,83 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
   let cachedNse = { input: null, output: null, identity: null };
   let cachedHeld = { input: null, output: null, identity: null };
 
-  const rows = () => {
-    const baseRows = base.rows(), nseRows = nse.retainedRows();
-    if (rowInputs?.identity === identity && rowInputs.base === baseRows && rowInputs.nse === nseRows) return held;
-
-    if (cachedBase.input !== baseRows || cachedBase.identity !== identity) {
-      cachedBase.input = baseRows;
-      cachedBase.identity = identity;
-      cachedBase.output = baseRows.map(identity.row);
+  const inputs = () => ({ base: base.rows(), nse: nse.retainedRows(), identity, held });
+  const sameArray = (a, b) => a === b || !!a && a.length === b.length && a.every((row, i) => row === b[i]);
+  const sameInputs = (a, b) => !!a && a.identity === b.identity && sameArray(a.base, b.base) && sameArray(a.nse, b.nse);
+  function* mappedRows(input, cached, map, currentIdentity) {
+    if (sameArray(cached.input, input) && cached.identity === currentIdentity) return cached;
+    const output = [];
+    for (const row of input) {
+      output.push(map(row));
+      if (output.length % 128 === 0) yield;
     }
-    if (cachedNse.input !== nseRows || cachedNse.identity !== identity) {
-      cachedNse.input = nseRows;
-      cachedNse.identity = identity;
-      cachedNse.output = nseRows.map(nseAnnouncement).map(identity.row);
+    return { input, output, identity: currentIdentity };
+  }
+  function* buildRows(input) {
+    const fromBase = yield* mappedRows(input.base, cachedBase, input.identity.row, input.identity);
+    const fromNse = yield* mappedRows(input.nse, cachedNse, row => input.identity.row(nseAnnouncement(row)), input.identity);
+    const fromHeld = yield* mappedRows(input.held, cachedHeld, input.identity.row, input.identity);
+    const next = yield* mergeAnnouncementSteps(fromHeld.output, fromBase.output, fromNse.output);
+    // Compare identical bytes one row at a time. A whole-history stringify itself blocks
+    // input and duplicates the complete payload; per-row checks can yield between batches.
+    const text = [];
+    let changed = next.length !== input.held.length;
+    for (let i = 0; i < next.length; i++) {
+      text.push(JSON.stringify(next[i]));
+      if (text[i] !== heldText[i]) changed = true;
+      if ((i + 1) % 128 === 0) yield;
     }
-
-    // In a partial-feed loop, a newly-built nseRows array can contain the same objects as before.
-    // If neither base nor NSE changed their actual object references, the merge is identical.
-    if (rowInputs?.base && rowInputs?.base.length === baseRows.length && rowInputs?.base.every((r, i) => r === baseRows[i]) &&
-        rowInputs?.nse && rowInputs?.nse.length === nseRows.length && rowInputs?.nse.every((r, i) => r === nseRows[i]) &&
-        rowInputs?.identity === identity) {
-      rowInputs = { base: baseRows, nse: nseRows, identity };
-      return held;
-    }
-
-    if (cachedHeld.input !== held || cachedHeld.identity !== identity) {
-      cachedHeld.input = held;
-      cachedHeld.identity = identity;
-      cachedHeld.output = held.map(identity.row);
-    }
-    const next = mergeAnnouncements(cachedHeld.output, cachedBase.output, cachedNse.output);
-    // A successful response can replace objects without changing any filing.
-    // Compare once per source arrival; ordinary rows/meta reads keep the fast
-    // reference path above and unchanged responses keep the reader's controls.
-    const nextText = JSON.stringify(next);
-    if (nextText !== heldText) { held = next; heldText = nextText; }
-    rowInputs = { base: baseRows, nse: nseRows, identity };
+    return { next, text, changed, fromBase, fromNse, fromHeld };
+  }
+  function adopt(input, result) {
+    cachedBase = result.fromBase; cachedNse = result.fromNse; cachedHeld = result.fromHeld;
+    if (result.changed) { held = result.next; heldText = result.text; }
+    rowInputs = input;
     return held;
+  }
+  const rows = () => {
+    const input = inputs();
+    if (sameInputs(rowInputs, input)) return held;
+    return adopt(input, runSteps(buildRows(input)));
   };
+  async function prepareRows(yieldForInput = yieldToInput, { sliceMs } = {}) {
+    // The underlying retained BSE stream has its own sliced merge; warm that first.
+    await base.warm?.(yieldForInput);
+    if (preparingRows) return preparingRows;
+    preparingRows = (async () => {
+      for (;;) {
+        const input = inputs();
+        if (sameInputs(rowInputs, input)) return held;
+        const result = await runStepsInSlices(buildRows(input), { yieldForInput, sliceMs });
+        // Arrivals and identity corrections during a yield must be included before publication.
+        // A synchronous consumer may also have advanced held; never replace its newer result.
+        if (held === input.held && sameInputs(input, inputs())) return adopt(input, result);
+      }
+    })().finally(() => { preparingRows = null; });
+    return preparingRows;
+  }
   const emit = () => listeners.forEach((fn) => fn());
   function loadHistory() {
     if (historyPending) return historyPending;
     historyPending = Promise.allSettled([
       base.loadArchive({ onlyChanged: true }),
       nse.loadHistory(90, { updateWindow: false }),
-    ]).finally(() => { historyPending = null; emit(); });
+    ]).finally(async () => {
+      try { await prepareRows(); } finally { historyPending = null; emit(); }
+    });
     return historyPending;
   }
   function read(initial, items) {
     if (pending) return pending;
     pending = (async () => {
-      const before = rows().length;
+      const before = (await prepareRows()).length;
       const results = await Promise.allSettled([
         initial ? base.load(items) : base.refreshSnapshot(),
         initial ? nse.load() : nse.refresh(),
         loadIdentities(),
       ]);
       nseError = results[1].status === 'rejected' ? results[1].reason.message : null;
+      await prepareRows();
       emit(); // Latest announcements appear before older files finish loading.
       // A slow historical download must never hold up the next live-source check.
       void loadHistory();
@@ -126,7 +148,7 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
     return pending;
   }
   return {
-    ...base, rows,
+    ...base, rows, prepareRows,
     companyKey: company => identity.key(company),
     companyIdentity: company => ({ ...company, ...identity.find(company) }),
     forTicker: (ticker) => {
@@ -150,8 +172,11 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
     refresh: () => read(false),
     onChange(fn) {
       listeners.add(fn);
-      const offBase = base.onChange(fn), offNse = nse.onChange(fn);
-      return () => { listeners.delete(fn); offBase(); offNse(); };
+      let active = true;
+      const notify = () => { if (active) fn(); };
+      const prepared = () => { void prepareRows().then(notify, notify); };
+      const offBase = base.onChange(prepared), offNse = nse.onChange(prepared);
+      return () => { active = false; listeners.delete(fn); offBase(); offNse(); };
     },
     startLive(live) {
       live.register(LIVE_ID, { intervalMs: POLL_MS, fetcher: () => read(false) });

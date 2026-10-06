@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // tabs/insider-trades.js — market-wide Bulk, Block, SAST and Insider disclosures.
 //
 // Muns insider rows arrive as markdown while Screener's four market-wide lists arrive as HTML.
@@ -136,9 +137,7 @@ function tradeFilters(rows) {
 }
 
 const tab = makeFilingsTab({
-  id: 'insider-trades',
-  title: 'Bulk/Block Deal',
-  subtitle: '',
+  ...TAB_META['insider-trades'],
   feed,
   noun: 'trades',
   nameLabel: 'Insider',

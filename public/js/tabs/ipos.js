@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 import * as refreshRegistry from '../core/refresh.js';
 import { escapeHtml as e } from '../core/dom.js';
 import { scoreTable, sectionHead } from '../ui/screener.js';
@@ -7,7 +8,7 @@ import * as feed from '../data/ipo-filings.js';
 import { ipoKey, ipoDisplayDay } from '../data/ipo-filings-shared.js';
 import { directoryTable } from './ipo-directory.js';
 
-export const meta = { id: 'ipos', title: 'IPOs', subtitle: 'Official public-issue filings, including unlisted issuers. Newest filings first.', allowEmptyScope: true, subviews: [] };
+export const meta = TAB_META['ipos'];
 let dispose = null;
 const when = (day) => day ? new Date(`${day}T00:00:00+05:30`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : 'Date not supplied';
 const stamp = (at) => at ? new Date(at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) + ' IST' : 'not yet checked';

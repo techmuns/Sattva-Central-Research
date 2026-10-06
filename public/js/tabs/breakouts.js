@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 import * as live from '../data/breakout-live.js';
 import { filterByScope, scopeTickers } from '../data/scope.js';
 import { topCards, scoreTable, sectionHead, openModal } from '../ui/screener.js';
@@ -14,16 +15,7 @@ import * as coverage from '../data/coverage.js';
 import * as scopeLists from '../core/scope-lists.js';
 import { TECHNICAL_FILTERS, TECHNICAL_DEFAULTS, chipCounts } from './technical-filters.js';
 
-export const meta = {
-  id: 'breakouts',
-  title: 'Breakouts / Technical',
-  subtitle: 'Daily technical scoring and captured prices across the NSE 500 and every listed holding — 16 rules, 24 points.',
-  subviews: [
-    { id: 'strong-breakouts', label: 'Strong Breakouts' },
-    { id: 'technical-scanner', label: 'Technical Scanner' },
-    { id: 'fii-accumulation', label: 'FII Accumulation' },
-  ],
-};
+export const meta = TAB_META['breakouts'];
 
 // Bumped on every render so a slow load that resolves after the user navigated away is
 // discarded instead of painting over whatever is now on screen.

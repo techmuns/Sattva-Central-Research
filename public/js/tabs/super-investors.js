@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // tabs/super-investors.js — who owns what, from two live sources and nothing else.
 //
 //   Superstar Investors  every tracked investor's book, live off Ticker Finology  → investors/live.js
@@ -27,15 +28,7 @@ import * as liveInvestors from '../data/super-investors.js';
 import * as refreshRegistry from '../core/refresh.js';
 import * as filed from '../data/institution-holdings.js';
 
-export const meta = {
-  id: 'super-investors',
-  title: 'Super Investors',
-  subtitle: 'Superstar-investor and institutional holdings, quarter on quarter and month on month.',
-  subviews: [
-    { id: 'superstar-investors', label: 'Superstar Investors' },
-    { id: 'institutions', label: 'Institutions' },
-  ],
-};
+export const meta = TAB_META['super-investors'];
 
 let renderToken = 0;
 let ctxRef = null;
@@ -243,7 +236,7 @@ function paintInstitutions(ctx) {
       <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
         <h3 class="font-display text-base font-bold text-slate-900">No holdings file loaded</h3>
         <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
-          <code class="rounded bg-slate-100 px-1">public/data/institution-holdings.json</code> did not load at bootstrap.
+          <code class="rounded bg-slate-100 px-1">public/data/institution-holdings.json</code> could not be loaded.
           It is written by <code class="rounded bg-slate-100 px-1">scripts/scrape-institution-holdings.mjs</code> and
           <code class="rounded bg-slate-100 px-1">scripts/import-amc-portfolio.mjs</code>.
         </p>

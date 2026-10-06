@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 import * as holdings from './mutual-fund-holdings.js';
 import * as feed from '../data/fund-returns.js';
 import {publishedCohorts} from '../data/fund-cohorts.js';
@@ -5,9 +6,7 @@ import {renderFundReturns} from '../investors/fund-returns.js';
 import {scoreTable,sectionHead} from '../ui/screener.js';
 import {exportSheets,todayStamp} from '../ui/export.js';
 import {escapeHtml as esc} from '../core/dom.js';
-export const meta={id:'mutual-funds',title:'Mutual Funds',subtitle:'Fund returns, category comparisons and company ownership.',subviews:[
-  {id:'company-holdings',label:'Company Holdings'}, {id:'all-schemes',label:'All Schemes'}, {id:'category-performance',label:'Category Performance'}
-]};
+export const meta = TAB_META['mutual-funds'];
 let ctx=null,off=null,timer=null,disposers=[],view=null,categoryView=null,management='all',period='1Y',measure='return';
 function clearTable(){for(const off of disposers)off?.();disposers=[];}
 const pct=n=>Number.isFinite(n)?`${n.toLocaleString('en-IN',{maximumFractionDigits:2})}%`:'—';

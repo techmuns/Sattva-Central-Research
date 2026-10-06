@@ -1,3 +1,4 @@
+import { TAB_META } from './catalog.js';
 // tabs/news.js — recent news for the companies in scope.
 //
 // IT LOADS ON ITS OWN, AND IT DID NOT USED TO. This tab once opened on a company picker: the news
@@ -97,11 +98,7 @@ function deliveryDetails(meta) {
 }
 
 const tab = makeFilingsTab({
-  id: 'news',
-  title: 'News',
-  subtitle:
-    'Company news, updated automatically. Opens on Today (IST); choose another period up to 30 days or This month. ' +
-    'Undated stories have their own filter; older news stays saved in All Alerts.',
+  ...TAB_META['news'],
   feed,
   prepareReading: view => feed.setWindow?.(() => newsPeriodBounds(view?.filters?.[3] || 'today')) || false,
   preserveReadingPosition: true,
