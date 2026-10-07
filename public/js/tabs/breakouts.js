@@ -792,8 +792,8 @@ function dma20Pill(v) {
 
 function momentumControls(gate, thresholds) {
   const gates = [
-    { id: 'strong-momentum', label: 'Filter 1 · Strong Momentum' },
-    { id: 'volume-momentum', label: 'Filter 2 · Volume + Momentum' },
+    { id: 'strong-momentum', label: momentum.MOMENTUM_FILTERS['strong-momentum'].label },
+    { id: 'volume-momentum', label: momentum.MOMENTUM_FILTERS['volume-momentum'].label },
     { id: 'both', label: 'Both' },
   ];
   const gateBtns = gates
@@ -802,8 +802,8 @@ function momentumControls(gate, thresholds) {
     }">${escapeHtml(g.label)}</button>`)
     .join('');
   const inputs = momentum.THRESHOLD_FIELDS
-    .map((f) => `<label class="inline-flex items-center gap-1.5 text-xs text-slate-600" title="${escapeHtml(momentum.MOMENTUM_FILTERS[f.filter].short)}">
-        <span class="font-semibold text-slate-500">${escapeHtml(momentum.MOMENTUM_FILTERS[f.filter].short)} · ${escapeHtml(f.label)}</span>
+    .map((f) => `<label class="inline-flex items-center gap-1.5 text-xs text-slate-600" title="${escapeHtml(momentum.MOMENTUM_FILTERS[f.filter].label)}">
+        <span class="font-semibold text-slate-500">${escapeHtml(momentum.MOMENTUM_FILTERS[f.filter].label)} · ${escapeHtml(f.label)}</span>
         <input type="number" data-mthreshold="${f.key}" value="${thresholds[f.key]}" min="${f.min}" max="${f.max}" step="${f.step}" inputmode="decimal"
           class="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-right text-sm tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
       </label>`)
@@ -863,12 +863,12 @@ function momentumStatStrip(rows, vf, evaluable, pending) {
         title: 'How the Momentum Scanner reads',
         body: `<p>Every figure here is recomputed <strong>live</strong> on the in-progress candle from the current price — the same Wilder (RSI) and EMA (MACD) steps the daily data pipeline uses — so the counts move with the quote feed and with the thresholds you set above. Nothing is estimated and nothing is mock.</p>
           <p class="mt-2"><strong>Scanned</strong> is the number of stocks that carry the Step-1 indicator fields and can therefore be evaluated. <strong>Pending</strong> stocks are awaiting the next daily data refresh and are left out of every count until it lands.</p>
-          <p class="mt-2">“Pass Filter 1”, “Pass Filter 2” and “Pass Both” count the evaluated stocks that clear each filter at the current thresholds, independent of which view the toggle shows.</p>`,
+          <p class="mt-2">Each card counts the evaluated stocks that clear that filter at the current thresholds, independent of which view the toggle shows.</p>`,
       },
     },
-    { label: 'Pass Filter 1', value: formatNumber(f1), note: momentum.MOMENTUM_FILTERS['strong-momentum'].label },
-    { label: 'Pass Filter 2', value: formatNumber(f2), note: momentum.MOMENTUM_FILTERS['volume-momentum'].label },
-    { hero: true, label: 'Pass Both', value: formatNumber(both), note: 'Filter 1 and Filter 2' },
+    { label: momentum.MOMENTUM_FILTERS['strong-momentum'].label, value: formatNumber(f1), note: 'stocks pass' },
+    { label: momentum.MOMENTUM_FILTERS['volume-momentum'].label, value: formatNumber(f2), note: 'stocks pass' },
+    { hero: true, label: 'Pass Both', value: formatNumber(both), note: 'Strong + Volume' },
   ]);
 }
 
@@ -960,8 +960,8 @@ function renderMomentumScanner(ctx, rows) {
         : 'No stocks currently meet these conditions — try relaxing a threshold above.',
     columns: [
       { label: 'Price', get: (s) => cmpCell(s.company), html: true, align: 'right', sortValue: (s) => live.priceInfo(s.company).price ?? -1 },
-      col('Filter 1', (v) => filterPill(v.f1), (v) => (v.f1.pass ? 1 : 0)),
-      col('Filter 2', (v) => filterPill(v.f2), (v) => (v.f2.pass ? 1 : 0)),
+      col('Strong Momentum', (v) => filterPill(v.f1), (v) => (v.f1.pass ? 1 : 0)),
+      col('Volume + Momentum', (v) => filterPill(v.f2), (v) => (v.f2.pass ? 1 : 0)),
       col('Volume vs 10D Avg', (v) => momentumVolCell(v, thresholds.volMult), (v) => v.volRatio10d ?? -1, 'right'),
       col('RSI Daily', (v) => rsiLiveCell(v, 'rsiDaily'), (v) => v.rsiDaily ?? -1, 'right'),
       col('RSI Weekly', (v) => rsiLiveCell(v, 'rsiWeekly'), (v) => v.rsiWeekly ?? -1, 'right'),
@@ -969,6 +969,9 @@ function renderMomentumScanner(ctx, rows) {
       col('MACD', (v) => macdPill(v), (v) => (v.freshCross ? 2 : v.macdBullish ? 1 : 0)),
       col('20-DMA Status', (v) => dma20Pill(v), (v) => (v.above20dma ? 1 : 0)),
     ],
+    // The two filter columns carry their full names now, so let headings wrap to two lines
+    // instead of forcing those columns as wide as "Volume + Momentum".
+    wrapHeads: true,
     initialSort: { key: 'RSI Daily', dir: 'desc' },
     exportName: `sattva-momentum-${todayStamp()}`,
     onExport: (visible, filename) => runMomentumExport(visible, filename, thresholds),
@@ -983,7 +986,7 @@ function renderMomentumScanner(ctx, rows) {
     ${sectionHead({
       title: meta.title,
       description:
-        'A live, universe-wide momentum screener. Filter 1 and Filter 2 are recomputed on the in-progress candle from the current price; adjust the thresholds and the list re-filters instantly.',
+        'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() })}</div>`,
     })}
     ${momentumControls(gate, thresholds)}
@@ -993,17 +996,6 @@ function renderMomentumScanner(ctx, rows) {
       pending ? ` <span data-momentum-pending="${pending}">${formatNumber(pending)} ${pending === 1 ? 'stock is' : 'stocks are'} pending the momentum data refresh and cannot be evaluated yet.</span>` : ''
     }${scopeHint}</div>
     ${table.html}
-    <section class="mt-6 rounded-2xl bg-white/60 p-4 ring-1 ring-slate-100">
-      <div class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">How to read this</div>
-      <div class="flex flex-wrap gap-4 text-xs text-slate-600">
-        <div class="flex items-center gap-1.5"><span class="${mPillBase} ${M_PASS}">✓ Pass</span> all of a filter's conditions hold</div>
-        <div class="flex items-center gap-1.5"><span class="${mPillBase} ${M_FAIL}">✕ Fail</span> at least one condition is not met</div>
-        <div class="flex items-center gap-1.5"><span class="${mPillBase} ${M_NA}">Pending</span> Step-1 data not in the daily file yet</div>
-      </div>
-      <div class="mt-2 text-[11px] leading-relaxed text-slate-400">
-        RSI (daily/weekly/monthly), MACD and the DMA checks are recomputed live from the current price — the same Wilder and EMA math the data pipeline uses — as if today's candle closed there. Volume is today's cumulative total so far, against the 10-day average, so it reads low early in the session. Hover any value for the rule and the live figure behind it.
-      </div>
-    </section>
   `;
 
   pill.wire(ctx.root);

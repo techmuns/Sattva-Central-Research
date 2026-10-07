@@ -104,10 +104,11 @@ In order down the page:
 1. **Section head** — title, description, the live pill and the scope summary.
 2. **Controls** (`momentumControls`) — the Show gate toggle and the threshold number inputs, which
    wrap cleanly on a phone. Committed on change (blur / Enter), not per keystroke.
-3. **Stat strip** (`momentumStatStrip`, the kit's `statStrip`) — Scanned · Pass Filter 1 · Pass
-   Filter 2 · Pass Both. The counts read straight off the pre-evaluated filter results, so they
-   move with the quote and the thresholds; they describe **both** filters at once, which the
-   gate-specific count line cannot. Card 4 is the gradient hero per the kit.
+3. **Stat strip** (`momentumStatStrip`, the kit's `statStrip`) — Scanned · Strong Momentum ·
+   Volume + Momentum · Pass Both. The counts read straight off the pre-evaluated filter results, so
+   they move with the quote and the thresholds; they describe **both** filters at once, which the
+   gate-specific count line cannot. Card 4 is the gradient hero per the kit. The filters are named
+   on every surface (gate toggle, thresholds, strip, table) rather than "Filter 1 / Filter 2".
 4. **Sector mini-bar** (`momentumSectorBar`) — a hand-built inline-SVG stacked bar of the current
    gate's passers by sector, with a legend and per-segment tooltips. **No chart library.** Segment
    colours walk the brand ramp (constant in both themes, like the hero gradient); the "Other"
@@ -115,10 +116,10 @@ In order down the page:
    reorders the table, and it is absent when nothing passes.
 5. **Count line** — "N of M evaluable stocks pass <gate>", plus the pending count and, off the
    universe scope, a hint to switch to Universe.
-6. **The ranked table** (`scoreTable`) — the hero. Columns: Stock · Price · Filter 1 · Filter 2 ·
-   Volume vs 10D Avg · RSI Daily · RSI Weekly · RSI Monthly · MACD · 20-DMA Status. Every condition
-   pill carries the rule and the live figure in its tooltip. Sorting is on what the cell shows.
-7. **How to read this** — the pill legend and a note that the figures are recomputed live.
+6. **The ranked table** (`scoreTable`) — the hero. Columns: Stock · Price · Strong Momentum ·
+   Volume + Momentum · Volume vs 10D Avg · RSI Daily · RSI Weekly · RSI Monthly · MACD · 20-DMA
+   Status. Every condition pill carries the rule and the live figure in its tooltip (so the pill
+   legend needs no block of its own); sorting is on what the cell shows.
 
 The whole view re-paints on every live tick through the subscription `render()` already holds
 (`liveOff = live.watch(() => paint(ctxRef))`), so the strip, the bar and the table never go stale
@@ -243,10 +244,11 @@ Add it to the export in `runMomentumExport` (an F3 pass/fail column, and `rsiD3`
 line). The sector bar and the count line need no change — they read the gate's `passers`, which
 `passesGate` now covers.
 
-A note on the **stat strip**: `statStrip` is a 4-up row (Scanned · Filter 1 · Filter 2 · Pass
-Both). A third filter means deciding what the four cards show — e.g. Scanned · F1 · F2 · F3 with F3
-as the hero, or keeping Pass Both and surfacing F3's count only in its column and the gate. Pick the
-four that answer the reader's first question; do not grow the strip past four without rethinking it.
+A note on the **stat strip**: `statStrip` is a 4-up row (Scanned · Strong Momentum · Volume +
+Momentum · Pass Both). A third filter means deciding what the four cards show — e.g. Scanned plus
+the three filter names with the third as the hero, or keeping Pass Both and surfacing the third
+filter's count only in its column and the gate. Pick the four that answer the reader's first
+question; do not grow the strip past four without rethinking it.
 
 **3. Test it — `scripts/verify-momentum-scanner.mjs`.**
 

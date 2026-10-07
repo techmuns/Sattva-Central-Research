@@ -162,13 +162,13 @@ try {
     const v = await page.evaluate(readView);
 
     ok('stat strip renders four cards', v.statCards.length === 4, `${v.statCards.length} cards`);
-    ok('stat strip reads Scanned · Pass Filter 1 · Pass Filter 2 · Pass Both',
-      /Scanned/.test(v.statCards[0]?.text) && /Pass Filter 1/.test(v.statCards[1]?.text) && /Pass Filter 2/.test(v.statCards[2]?.text) && /Pass Both/.test(v.statCards[3]?.text),
+    ok('stat strip reads Scanned · Strong Momentum · Volume + Momentum · Pass Both',
+      /Scanned/.test(v.statCards[0]?.text) && /Strong Momentum/.test(v.statCards[1]?.text) && /Volume \+ Momentum/.test(v.statCards[2]?.text) && /Pass Both/.test(v.statCards[3]?.text),
       v.statCards.map((c) => c.text).join(' | '));
     ok('the fourth stat card is the gradient hero', v.statCards[3]?.gradient === true);
-    ok('stat-strip counts reflect the fixture (Scanned 4, Pass Filter 1 = 3, Pass Both = 0)',
+    ok('stat-strip counts reflect the fixture (Scanned 4, Strong Momentum = 3, Pass Both = 0)',
       // The "?" help glyph can sit between a card's label and its value, so skip non-digits to the count.
-      /Scanned\D*4\b/.test(v.statCards[0]?.text) && /Pass Filter 1\D*3\b/.test(v.statCards[1]?.text) && /Pass Both\D*0\b/.test(v.statCards[3]?.text),
+      /Scanned\D*4\b/.test(v.statCards[0]?.text) && /Strong Momentum\D*3\b/.test(v.statCards[1]?.text) && /Pass Both\D*0\b/.test(v.statCards[3]?.text),
       v.statCards.map((c) => c.text).join(' | '));
     ok('a pending stock is counted apart, never as passing', /1 pending/i.test(v.statCards[0]?.text || '') && /pending/i.test(v.pendingNote || ''));
 
@@ -177,7 +177,7 @@ try {
     ok('sector mini-bar has three segments (three passer sectors)', v.sector?.rects === 3, v.sector && `${v.sector.rects}`);
     ok('sector segment widths sum to ~100%', v.sector && Math.abs(v.sector.widthSum - 100) < 0.5, v.sector && v.sector.widthSum.toFixed(2));
 
-    const expectedCols = ['Stock', 'Price', 'Filter 1', 'Filter 2', 'Volume vs 10D Avg', 'RSI Daily', 'RSI Weekly', 'RSI Monthly', 'MACD', '20-DMA Status'];
+    const expectedCols = ['Stock', 'Price', 'Strong Momentum', 'Volume + Momentum', 'Volume vs 10D Avg', 'RSI Daily', 'RSI Weekly', 'RSI Monthly', 'MACD', '20-DMA Status'];
     ok('ranked table carries every momentum column', expectedCols.every((c) => v.ths.some((th) => th === c || th.startsWith(c))), v.ths.join(' · '));
 
     ok('the gate toggle offers three options', v.gateButtons === 3, `${v.gateButtons}`);
