@@ -65,6 +65,7 @@ export const TAB_META = Object.freeze({
     subviews: [
       { id: 'strong-breakouts', label: 'Strong Breakouts' },
       { id: 'technical-scanner', label: 'Technical Scanner' },
+      { id: 'momentum-scanner', label: 'Momentum Scanner' },
       { id: 'fii-accumulation', label: 'FII Accumulation' },
     ],
   },

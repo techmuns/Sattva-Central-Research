@@ -88,6 +88,8 @@ jobs:
         run: node scripts/verify-research-business.mjs && node scripts/verify-research-reasoning.mjs && node scripts/verify-bars.mjs
       - name: Verify Momentum Scanner indicators by independent recompute
         run: node scripts/verify-momentum-indicators.mjs
+      - name: Verify Momentum Scanner live engine and filter evaluation
+        run: node scripts/verify-momentum-scanner.mjs
       - name: Verify exchange reports, supplementary insiders and artifact delivery
         run: node scripts/verify-exchange-deals.mjs && node scripts/verify-muns-insider-capture.mjs
       - name: Verify exchange gzip delivery in the local Worker runtime
