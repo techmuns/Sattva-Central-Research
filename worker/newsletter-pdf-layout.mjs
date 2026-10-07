@@ -170,7 +170,7 @@ export class BriefPdf {
     this.context = '';
     this.sectionTitle = label;
     if (fresh && this.y > 110) this.page(false);
-    else this.ensure(105);
+    else this.ensure(175);
     const y = this.y;
     this.bookmarks.push({ label, page: this.pages.length - 1, y });
     this.paragraph(`${String(this.bookmarks.length).padStart(2, '0')} / ${label.toUpperCase()}`, {

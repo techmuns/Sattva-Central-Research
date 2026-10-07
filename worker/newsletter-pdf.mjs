@@ -268,7 +268,7 @@ export function renderBriefPdf(brief, { dashboardUrl = PRODUCTION_ORIGIN, produc
     );
   for (const c of stats.companies) {
     pdf.context = '';
-    pdf.ensure(Math.min(650, 85 + updateHeight(c.clusters[0], brief.ai?.items?.[c.clusters[0].id])));
+    pdf.ensure(Math.min(500, 85 + updateHeight(c.clusters[0], brief.ai?.items?.[c.clusters[0].id])));
     pdf.context = c.company;
     pdf.paragraph(c.company, { font: 'F3', size: 19, gap: 3 });
     pdf.paragraph(
