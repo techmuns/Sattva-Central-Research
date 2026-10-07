@@ -60,8 +60,9 @@ window.SATTVA_CHATTER_URL=location.origin+'/chatter';
 import * as tab from '/js/tabs/daily-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
-import { recordDocuments } from '/js/data/alert-records.js';
+import { recordDocuments, clearPrivateRecords } from '/js/data/alert-records.js';
 window.testRecordDocuments = recordDocuments;
+window.testClearPrivateRecords = clearPrivateRecords;
 coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'},{ticker:'NESTLEIND',name:'Nestle India'},{ticker:'DMART',name:'Avenue Supermarts'}]});
 window.show=(scope='universe',params={})=>tab.render({root:document.querySelector('#root'),params,scope,data:{}});
 window.dispose=()=>tab.destroy();
@@ -309,7 +310,7 @@ try {
   await search('Date window fixture 10');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, '60-day evidence remains reachable through See all');
   assert.equal(await page.locator('tbody a[href="https://example.test/date-window-10"]').count(), 1, 'the result is the retained 60-day record');
-  await page.evaluate(async () => { (await import('/js/data/alert-records.js')).clearPrivateRecords(); window.show('portfolio'); });
+  await page.evaluate(() => { window.testClearPrivateRecords(); window.show('portfolio'); });
   await settled();
   console.log('Verified exact All Alerts periods, retained user choice and complete-history company links');
   assert.equal(await page.locator('[data-feed="screener-portfolio-upcoming"]').count(), 1);
@@ -512,9 +513,16 @@ try {
   assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
   assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
   // The export button moved out of the table toolbar, but must still use the full filtered
-  // model. A local workbook stand-in counts rows without a CDN or a large artifact on disk.
+  // model. Capture its count at the export click, rather than an earlier snapshot that
+  // asynchronous feed repaints can change. A local workbook stand-in counts full rows.
   await page.evaluate(() => {
     window.exportedRows = 0;
+    window.expectedExportRows = null;
+    document.addEventListener('click', (event) => {
+      if (event.target.closest('[data-alerts-table-actions] [data-export]')) {
+        window.expectedExportRows = Number(document.querySelector('[data-score-table]').dataset.virtualTotal) + 1;
+      }
+    }, { capture: true, once: true });
     window.ExcelJS = { Workbook: class {
       constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array() }; }
       addWorksheet() { return { addRow: () => { window.exportedRows++; }, getRow: () => ({}) }; }
@@ -522,7 +530,9 @@ try {
   });
   await page.locator('[data-alerts-table-actions] [data-export]').click();
   await page.waitForFunction(() => window.exportedRows > 0);
-  assert.equal(await page.evaluate(() => window.exportedRows), await page.evaluate(()=>Number(document.querySelector('[data-alerts-source-count]').dataset.alertsSourceCount))+1,
+  const exported = await page.evaluate(() => ({ actual: window.exportedRows, expected: window.expectedExportRows }));
+  assert.ok(exported.expected > virtualContract.mounted, 'the export model includes unmounted records');
+  assert.equal(exported.actual, exported.expected,
     'relocated export includes every matching record plus provenance, not just mounted rows');
 
   await page.locator('[data-table-scroll]').evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
