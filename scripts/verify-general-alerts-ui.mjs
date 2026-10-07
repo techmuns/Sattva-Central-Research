@@ -517,19 +517,21 @@ try {
   // asynchronous feed repaints can change. A local workbook stand-in counts full rows.
   await page.evaluate(() => {
     window.exportedRows = 0;
+    window.exportFinished = false;
     window.expectedExportRows = null;
     document.addEventListener('click', (event) => {
       if (event.target.closest('[data-alerts-table-actions] [data-export]')) {
-        window.expectedExportRows = Number(document.querySelector('[data-score-table]').dataset.virtualTotal) + 1;
+        // Grouped items can contain several originals; the export retains every source report.
+        window.expectedExportRows = Number(document.querySelector('[data-alerts-source-count]').dataset.alertsSourceCount) + 1;
       }
     }, { capture: true, once: true });
     window.ExcelJS = { Workbook: class {
-      constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array() }; }
+      constructor() { this.xlsx = { writeBuffer: async () => { window.exportFinished = true; return new Uint8Array(); } }; }
       addWorksheet() { return { addRow: () => { window.exportedRows++; }, getRow: () => ({}) }; }
     } };
   });
   await page.locator('[data-alerts-table-actions] [data-export]').click();
-  await page.waitForFunction(() => window.exportedRows > 0);
+  await page.waitForFunction(() => window.exportFinished);
   const exported = await page.evaluate(() => ({ actual: window.exportedRows, expected: window.expectedExportRows }));
   assert.ok(exported.expected > virtualContract.mounted, 'the export model includes unmounted records');
   assert.equal(exported.actual, exported.expected,
