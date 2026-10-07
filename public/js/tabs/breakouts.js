@@ -1,7 +1,7 @@
 import { TAB_META } from './catalog.js';
 import * as live from '../data/breakout-live.js';
 import { filterByScope, scopeTickers } from '../data/scope.js';
-import { topCards, scoreTable, sectionHead, openModal } from '../ui/screener.js';
+import { topCards, scoreTable, sectionHead, openModal, statStrip } from '../ui/screener.js';
 import { legendStrip } from '../ui/visual.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
@@ -846,6 +846,88 @@ function wireMomentumControls(root, ctx) {
   });
 }
 
+// The compact summary that sits above the ranked table. `statStrip` is the kit's 4-up KPI row;
+// the counts are read straight off the pre-evaluated filter results so they move with the live
+// quote and the thresholds exactly as the table does, and they describe BOTH filters at once,
+// which the gate-specific count line beneath cannot. Card 4 is the gradient hero per the kit.
+function momentumStatStrip(rows, vf, evaluable, pending) {
+  const f1 = rows.reduce((n, s) => n + (vf(s).f1.pass ? 1 : 0), 0);
+  const f2 = rows.reduce((n, s) => n + (vf(s).f2.pass ? 1 : 0), 0);
+  const both = rows.reduce((n, s) => { const v = vf(s); return n + (v.f1.pass && v.f2.pass ? 1 : 0); }, 0);
+  return statStrip([
+    {
+      label: 'Scanned',
+      value: formatNumber(evaluable.length),
+      note: pending ? `${formatNumber(pending)} pending data refresh` : `of ${formatNumber(rows.length)} in scope`,
+      help: {
+        title: 'How the Momentum Scanner reads',
+        body: `<p>Every figure here is recomputed <strong>live</strong> on the in-progress candle from the current price — the same Wilder (RSI) and EMA (MACD) steps the daily data pipeline uses — so the counts move with the quote feed and with the thresholds you set above. Nothing is estimated and nothing is mock.</p>
+          <p class="mt-2"><strong>Scanned</strong> is the number of stocks that carry the Step-1 indicator fields and can therefore be evaluated. <strong>Pending</strong> stocks are awaiting the next daily data refresh and are left out of every count until it lands.</p>
+          <p class="mt-2">“Pass Filter 1”, “Pass Filter 2” and “Pass Both” count the evaluated stocks that clear each filter at the current thresholds, independent of which view the toggle shows.</p>`,
+      },
+    },
+    { label: 'Pass Filter 1', value: formatNumber(f1), note: momentum.MOMENTUM_FILTERS['strong-momentum'].label },
+    { label: 'Pass Filter 2', value: formatNumber(f2), note: momentum.MOMENTUM_FILTERS['volume-momentum'].label },
+    { hero: true, label: 'Pass Both', value: formatNumber(both), note: 'Filter 1 and Filter 2' },
+  ]);
+}
+
+// A compact, hand-built stacked bar of the current passers by sector — no chart library. It
+// summarises the result set already on screen; it never replaces or reorders the table. Segment
+// colours walk the brand ramp (indigo → purple → pink), which is constant in both themes exactly
+// like the hero gradient; the "Other" bucket uses the neutral token, which does flip. Every
+// segment and legend chip carries the rule and the live figure in its own tooltip.
+const MSECTOR_RAMP = ['#4f46e5', '#6366f1', '#818cf8', '#a855f7', '#c084fc', '#d946ef', '#ec4899', '#f472b6'];
+function momentumSectorBar(passers) {
+  if (!passers.length) return '';
+  const counts = new Map();
+  for (const s of passers) {
+    const sector = (s.company.sector || '').trim() || 'Unclassified';
+    counts.set(sector, (counts.get(sector) || 0) + 1);
+  }
+  // Busiest sector first; alphabetical as a stable tie-break so the paint is deterministic.
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const TOP = 7;
+  const segs = sorted.length > TOP + 1
+    ? [...sorted.slice(0, TOP), ['Other', sorted.slice(TOP).reduce((n, [, c]) => n + c, 0)]]
+    : sorted;
+  const total = passers.length;
+  const colourFor = (name, i) => (name === 'Other' ? 'var(--neutral)' : MSECTOR_RAMP[i % MSECTOR_RAMP.length]);
+  const pctText = (pct) => (pct < 10 ? pct.toFixed(1) : Math.round(pct).toString());
+
+  let cum = 0;
+  const rects = segs
+    .map(([name, count], i) => {
+      const pct = (count / total) * 100;
+      const x = cum;
+      cum += pct;
+      const title = `${name}: ${count} of ${total} (${pctText(pct)}%)`;
+      return `<rect x="${x.toFixed(3)}" y="0" width="${pct.toFixed(3)}" height="10" style="fill:${colourFor(name, i)}"><title>${escapeHtml(title)}</title></rect>`;
+    })
+    .join('');
+
+  const legend = segs
+    .map(([name, count], i) => `
+      <span class="inline-flex items-center gap-2 text-[11px] text-slate-600" title="${escapeHtml(`${name}: ${count} of ${total} passing`)}">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:3px;flex:0 0 auto;background:${colourFor(name, i)}"></span>
+        <span class="truncate" style="max-width:11rem">${escapeHtml(name)}</span>
+        <span class="font-semibold tabular-nums text-slate-800">${formatNumber(count)}</span>
+      </span>`)
+    .join('');
+
+  return `
+    <section class="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100" aria-label="Passing stocks by sector">
+      <div class="mb-2 flex items-baseline justify-between gap-2">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Passers by sector</div>
+        <div class="text-[11px] text-slate-400">${formatNumber(total)} ${total === 1 ? 'stock' : 'stocks'} · ${segs.length} ${segs.length === 1 ? 'sector' : 'sectors'}</div>
+      </div>
+      <div class="overflow-hidden rounded-lg ring-1 ring-slate-100">
+        <svg viewBox="0 0 100 10" preserveAspectRatio="none" role="img" aria-label="Sector distribution of passing stocks" style="display:block;width:100%;height:26px">${rects}</svg>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">${legend}</div>
+    </section>`;
+}
+
 function renderMomentumScanner(ctx, rows) {
   const gate = readMomentumGate(ctx.params || {});
   const thresholds = readMomentumThresholds(ctx.params || {});
@@ -859,6 +941,12 @@ function renderMomentumScanner(ctx, rows) {
   const pending = rows.length - evaluable.length;
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
 
+  // Compact summary above the hero table: a 4-up KPI strip (both filters at once) and a sector
+  // mini-bar of the current gate's passers. Both are rebuilt on every paint, so they track the
+  // live quote and the thresholds with the table rather than going stale beside it.
+  const strip = momentumStatStrip(rows, vf, evaluable, pending);
+  const sectorBar = momentumSectorBar(passers);
+
   const pill = livePill();
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
@@ -869,7 +957,7 @@ function renderMomentumScanner(ctx, rows) {
     emptyMessage:
       pending === rows.length && rows.length
         ? 'No momentum data yet — the daily file has not been refreshed with the Step-1 fields (SMA/RSI state/MACD EMAs). Run the "Data refresh" workflow or wait for the next scheduled run; rows appear automatically once it lands.'
-        : `No stock passes ${gateLabel} at these thresholds.`,
+        : 'No stocks currently meet these conditions — try relaxing a threshold above.',
     columns: [
       { label: 'Price', get: (s) => cmpCell(s.company), html: true, align: 'right', sortValue: (s) => live.priceInfo(s.company).price ?? -1 },
       col('Filter 1', (v) => filterPill(v.f1), (v) => (v.f1.pass ? 1 : 0)),
@@ -899,6 +987,8 @@ function renderMomentumScanner(ctx, rows) {
       meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() })}</div>`,
     })}
     ${momentumControls(gate, thresholds)}
+    ${strip.html}
+    ${sectorBar}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> evaluable ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${
       pending ? ` <span data-momentum-pending="${pending}">${formatNumber(pending)} ${pending === 1 ? 'stock is' : 'stocks are'} pending the momentum data refresh and cannot be evaluated yet.</span>` : ''
     }${scopeHint}</div>
@@ -917,6 +1007,7 @@ function renderMomentumScanner(ctx, rows) {
   `;
 
   pill.wire(ctx.root);
+  strip.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);
   wireMomentumControls(ctx.root, ctx);

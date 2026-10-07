@@ -213,6 +213,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-windowed-list-ui.mjs && node scripts/verify-technical-filters-ui.mjs && node scripts/verify-breakouts-ui.mjs
+      - name: Verify Momentum Scanner summary, sector mini-bar and responsive layout
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-momentum-scanner-ui.mjs
       - name: Verify inline private summary reader and source parser offline
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
