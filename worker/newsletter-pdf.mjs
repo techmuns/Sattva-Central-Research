@@ -15,7 +15,6 @@ import {
   asOfLabel,
   MARKET_GROUPS,
   PRODUCTION_ORIGIN,
-  fmtInrCompact,
   calendarDayLabel,
 } from './newsletter-brief.mjs';
 import { priceReasonText } from './newsletter-price-reasons.mjs';
@@ -47,7 +46,7 @@ const updateHeight = (k, note) => {
 };
 const cell = (text, options = {}) => ({ text, ...options });
 
-function calendar(pdf, brief) {
+function calendar(pdf, brief, dashboardUrl) {
   const c = brief.calendar;
   if (!c) return;
   pdf.section('On the calendar', { fresh: true, subtitle: `The week ahead / ${range(c)}` });
@@ -71,14 +70,14 @@ function calendar(pdf, brief) {
           [cell(r.company, { font: 'F2' }), cell(r.ticker, { size: 8, color: MUTED })],
           [
             cell(`${r.label}${r.time ? ` / ${r.time} IST` : ''}`),
-            cell(r.sources.join(' / '), { size: 8, color: ACCENT, url: r.url }),
+            cell(r.sources.join(' / '), { size: 8, color: ACCENT, url: readableUrl(r.url, dashboardUrl) }),
           ],
         ],
       })),
     );
   if (c.more > 0) pdf.paragraph(`${c.more} more on the dashboard's Earnings Calendar.`, { size: 9, color: MUTED });
 }
-function actions(pdf, brief) {
+function actions(pdf, brief, dashboardUrl) {
   const x = brief.actions;
   if (!x) return;
   pdf.section('Corporate actions', { subtitle: `Ex-dates, record dates and book closures / ${range(x)}` });
@@ -101,8 +100,8 @@ function actions(pdf, brief) {
           r.dates.map((d) =>
             cell(`${d.label} ${istLabel(istInstant(d.date), { time: false })}`, { size: 9, color: ACCENT }),
           ),
-          [cell(r.company, { font: 'F2', url: r.url }), cell(r.ticker, { size: 8, color: MUTED })],
-          [cell(r.purpose), cell(r.source, { size: 8, color: ACCENT, url: r.url })],
+          [cell(r.company, { font: 'F2', url: readableUrl(r.url, dashboardUrl) }), cell(r.ticker, { size: 8, color: MUTED })],
+          [cell(r.purpose), cell(r.source, { size: 8, color: ACCENT, url: readableUrl(r.url, dashboardUrl) })],
         ],
       })),
     );
@@ -128,62 +127,22 @@ function performance(pdf, brief) {
     );
     return;
   }
-  const s = p.summary,
-    priced = p.book?.ok && s.change != null;
+  const s = p.summary;
   pdf.metrics([
     { value: `${p.quoted} / ${p.listed}`, label: 'LISTED HOLDINGS QUOTED', size: 18 },
     { value: String(s.up), label: 'UP', color: tone(1) },
     { value: String(s.down), label: 'DOWN', color: tone(-1) },
     { value: signed(s.median), label: `MEDIAN / ${s.flat} FLAT`, color: tone(s.median), size: 18 },
   ]);
-  if (priced) {
-    pdf.paragraph('DAY CHANGE ON STATEMENT QUANTITIES', { font: 'F2', size: 9, color: MUTED, gap: 4 });
-    pdf.paragraph(`${fmtInrCompact(s.change)} (${signed(s.changePct)})`, {
-      font: 'F2',
-      size: 22,
-      color: tone(s.change),
-      gap: 7,
-    });
-    pdf.paragraph(
-      `Derived across ${p.book.priced} holdings priced. Statements dated ${p.book.statementFrom || 'unknown'} to ${p.book.statementTo || 'unknown'}; statement quantities times session close changes, not a statement figure. ${p.book.unpriced || 0} quoted holdings have no statement quantity.`,
-      { size: 9, color: MUTED, gap: 14 },
-    );
-  } else
-    pdf.note(
-      'STATEMENT QUANTITIES',
-      p.book?.ok
-        ? 'No quoted holding carries a statement quantity in the family book, so no rupee day change is derived.'
-        : 'The family book could not be read, so no rupee day change is derived.',
-    );
-  const columns = priced
-    ? [
-        { label: 'HOLDING', width: 195 },
-        { label: 'SYMBOL', width: 49 },
-        { label: 'CLOSE / INR', width: 84, align: 'right' },
-        { label: 'DAY / %', width: 61, align: 'right' },
-        { label: 'CHANGE / DERIVED', width: CONTENT - 389, align: 'right' },
-      ]
-    : [
-        { label: 'HOLDING', width: CONTENT - 250 },
-        { label: 'SYMBOL', width: 55 },
-        { label: 'CLOSE / INR', width: 110, align: 'right' },
-        { label: 'DAY / %', width: 85, align: 'right' },
-      ];
-  pdf.table(
-    columns,
-    p.rows.map((r) => ({
-      cells: [
-        cell(r.company, { font: 'F2' }),
-        cell(r.ticker, { size: 8, color: MUTED }),
-        cell(number(r.last)),
-        cell(signed(r.pct), { font: 'F2', color: tone(r.pct) }),
-        ...(priced
-          ? [cell(r.change == null ? 'No quantity' : fmtInrCompact(r.change), { color: tone(r.change) })]
-          : []),
-      ],
-    })),
-    { lineHeight: 12, padding: 8 },
-  );
+  pdf.paragraph('Price performance of listed holdings / median is unweighted, not portfolio P&L.', { size: 9, color: MUTED, gap: 14 });
+  const columns = [
+    { label: 'HOLDING', width: CONTENT - 250 }, { label: 'SYMBOL', width: 55 },
+    { label: 'CLOSE / INR', width: 110, align: 'right' }, { label: 'DAY / %', width: 85, align: 'right' },
+  ];
+  pdf.table(columns, p.rows.map(r => ({ cells: [
+    cell(r.company, { font: 'F2' }), cell(r.ticker, { size: 8, color: MUTED }),
+    cell(number(r.last)), cell(signed(r.pct), { font: 'F2', color: tone(r.pct) }),
+  ] })), { lineHeight: 12, padding: 8 });
   if (p.unquoted)
     pdf.paragraph(`${p.unquoted} listed holdings had no quote for this session and are not listed - not flat.`, {
       size: 9,
@@ -336,8 +295,8 @@ export function renderBriefPdf(brief, { dashboardUrl = PRODUCTION_ORIGIN, produc
   // Preserve the existing routine-notice disclosure; structured supplements are laid out below.
   const routine = briefSupplementLines(brief).find((line) => /routine filing/.test(line));
   if (routine) pdf.paragraph(routine, { size: 9, color: MUTED });
-  calendar(pdf, brief);
-  actions(pdf, brief);
+  calendar(pdf, brief, dashboardUrl);
+  actions(pdf, brief, dashboardUrl);
   performance(pdf, brief);
   markets(pdf, brief);
   pdf.section('Sources & reading notes', {
@@ -354,7 +313,7 @@ export function renderBriefPdf(brief, { dashboardUrl = PRODUCTION_ORIGIN, produc
     });
   pdf.note(
     'HOW TO READ THE ANALYSIS',
-    'AI summaries use extracted source-document or article facts. Each update states whether its sources were read or remain pending. Possible impacts are interpretations, not established outcomes. Mood follows stated filing, trade and price-move rules; publisher reports remain neutral. Rupee day changes are derived from statement quantities and session closes, not statement figures. This brief is informational, not investment advice.',
+    'AI summaries use extracted source-document or article facts. Each update states whether its sources were read or remain pending. Possible impacts are interpretations, not established outcomes. Mood follows stated filing, trade and price-move rules; publisher reports remain neutral. Listed-holding price moves and their unweighted median do not represent portfolio P&L. This brief is informational, not investment advice.',
   );
   pdf.paragraph(`Built ${istLabel(brief.builtAt, { year: true })}. Automated by Munshot.`, {
     font: 'F2',
