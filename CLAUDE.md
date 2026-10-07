@@ -4524,6 +4524,15 @@ links, bookmarks, scroll anchors and partial public history when a source fails.
 Clear private history on access changes. Timeline scrolling must not request AI
 summaries; only the visible card headline can carry its optional factual summary.
 
+Cards are `content-visibility: auto`, so a card's `contain-intrinsic-size` must track its rendered
+height (600px against about 550-670px with the timeline); re-measure when a card gains or loses a
+section. The 320px estimate that predated the timeline grew the page by about 300px as each card
+first rendered, and left anchor corrections that far short. The page-level reading anchor applies
+only once the top of the card list is above the viewport, and corrects with `behavior: 'instant'`
+because `index.html` scrolls smoothly; at the top, an arrival takes the top slot. Anchoring there
+scrolled the heading and tab bar away under the pointer (336px, animated) while partials arrived.
+`verify-ai-alerts-ui.mjs` covers both.
+
 AI Alerts is the default first tab; Ask Research keeps its existing route and availability.
 Mutual Funds preserves Company Holdings as its default, with All Schemes and Category Performance
 from the same dated public AmfiBeas snapshot. Portfolio sizes never enter that public cache.

@@ -401,6 +401,57 @@ try {
   await settled();
   console.log('PASS: newest-first default, explicit persistent size/priority sorting and smooth live arrivals.');
 
+  // A HIGHER-RANKED ARRIVAL NEVER MOVES THE PAGE UNDER THE READER. index.html makes page scrolls
+  // smooth, so the fixture does too. At the top of the page the arrival simply takes the top slot:
+  // anchoring there on the first visible card scrolled the heading and tab bar away by a grid row,
+  // and kept a tab click waiting for its target to stop moving (verify-dashboard-performance-ui).
+  // A reader scrolled into the cards keeps the card they are reading exactly in place, at once.
+  const arriveAboveTheReader = async () => {
+    await page.evaluate(() => {
+      window.fixtureEvents = [...window.savedFixture, { ...window.savedFixture.find(e => e.ticker === 'A09'),
+        id: 'anchor-arrival', time: '18:00', headline: 'A09 arrival above the reader', url: 'https://example.test/arrival.pdf' }];
+      window.releaseRead = null; window.holdRead = true;
+      void window.refreshAlerts();
+    });
+    await waitFor(page, () => !!window.releaseRead && document.querySelector('[data-ai-card]')?.dataset.ticker === 'A09');
+  };
+  const sampleForAWhile = async (read) => {
+    const samples = [];
+    for (let i = 0; i < 8; i++) { samples.push(await page.evaluate(read)); await new Promise(done => setTimeout(done, 40)); }
+    return samples;
+  };
+  const finishArrival = async () => {
+    await page.evaluate(() => { window.holdRead = false; window.releaseRead(); });
+    await settled();
+    await page.evaluate(async () => { window.fixtureEvents = window.savedFixture; await window.refreshAlerts(); });
+    await settled();
+  };
+  // One column, so the arrival moves every card below it.
+  await page.setViewportSize({ width: 390, height: 1100 });
+  await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'smooth'; scrollTo({ top: 0, behavior: 'instant' }); });
+  await arriveAboveTheReader();
+  assert.deepEqual(await sampleForAWhile(() => scrollY), Array(8).fill(0),
+    'a higher-ranked arrival takes the top slot without scrolling a reader who is at the top of the page');
+  await finishArrival();
+  // Chromium anchors this insertion itself once the page is scrolled. Turn that off so the tab's own
+  // correction, which serves the arrivals Chromium does not anchor, is the one measured.
+  await page.evaluate(() => { document.documentElement.style.overflowAnchor = 'none'; });
+  await page.evaluate(() => document.querySelector('[data-ai-card][data-ticker="A02"]').scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await new Promise(done => setTimeout(done, 200));
+  const readingTop = await page.evaluate(() => document.querySelector('[data-ai-card][data-ticker="A02"]').getBoundingClientRect().top);
+  assert(await page.evaluate(() => scrollY > 0), 'the reader has scrolled into the cards');
+  await arriveAboveTheReader();
+  const readingTops = await sampleForAWhile(() => document.querySelector('[data-ai-card][data-ticker="A02"]').getBoundingClientRect().top);
+  const seen = `${Math.round(readingTop)} -> ${readingTops.map(Math.round).join(', ')}`;
+  assert(Math.max(...readingTops) - Math.min(...readingTops) <= 2, `the correction is applied at once, not animated (${seen})`);
+  // The arrival's card is measured unrendered (content-visibility), so the correction is only as good
+  // as contain-intrinsic-size. A 320px estimate for a ~610px card left the reader 294px off.
+  assert(Math.abs(readingTops[0] - readingTop) <= 64, `the card being read stays where it was (${seen})`);
+  await finishArrival();
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.evaluate(() => { document.documentElement.style.scrollBehavior = document.documentElement.style.overflowAnchor = ''; scrollTo({ top: 0, behavior: 'instant' }); });
+  console.log('PASS: arrivals above the reader neither scroll the top of the page nor animate the reading anchor.');
+
   await page.evaluate(() => {
     window.originalCard = document.querySelector('[data-ai-card]');
     window.holdRead = true; window.partialEvents = [];

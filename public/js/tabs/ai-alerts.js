@@ -373,9 +373,16 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
 
 function paint(ctx) {
   if (!ctx || ctx !== ctxRef) return;
-  const anchor = [...ctx.root.querySelectorAll('[data-ai-card]')].find(node => {
+  // THE READING ANCHOR IS FOR A READER WHO HAS SCROLLED INTO THE CARDS. While the top of the list is
+  // on screen, a higher-ranked arrival belongs above the cards already shown, as in any document;
+  // Chromium's own scroll anchoring makes no adjustment at the top of a page either. Anchoring on
+  // the first visible card there scrolled the page by a whole grid row (336px) whenever a partial
+  // inserted cards above it, so the heading and tab bar slid away under the pointer and the newest
+  // card was left above the viewport.
+  const list = ctx.root.querySelector('[data-ai-cards]');
+  const anchor = list && list.getBoundingClientRect().top < 0 ? [...list.querySelectorAll('[data-ai-card]')].find(node => {
     const rect = node.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight;
-  });
+  }) : null;
   const anchorTop = anchor?.getBoundingClientRect().top;
   const candidates = query.trim() || eventFilters.selected.length ? report?.allCards || [] : report?.cards || [];
   const matches = candidates.map(eventView).filter(card => card && matchesSearch(card, query));
@@ -410,7 +417,9 @@ function paint(ctx) {
   wire(ctx, cards.length);
   if (anchor?.isConnected && anchorTop != null) {
     const delta = anchor.getBoundingClientRect().top - anchorTop;
-    if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+    // Instant, not the page's smooth scroll-behavior: the correction exists to be invisible, and a
+    // paint landing mid-animation would measure an anchor that is still moving.
+    if (Math.abs(delta) > 1) window.scrollBy({ top: delta, behavior: 'instant' });
   }
 }
 
@@ -811,10 +820,14 @@ function cardMarkup(card, scope, day, archived = false) {
   // sometimes clipped on a word boundary — so the untouched wording, and which feed it came from,
   // stay one hover away. See `plainHeadline` / `filingClaim`.
   const lead = alerts.leadEvent(card);
+  // An unrendered card (content-visibility) takes its contain-intrinsic-size. With the retained
+  // timeline a card renders at about 550-670px (median ~610px at 390-1440px wide, 7 October 2026).
+  // The 320px estimate predated the timeline: every first render grew the page by ~300px, moving
+  // whatever sat below, and an anchor correction measured against it fell 294px short.
   return `
     <article data-ai-card data-ai-key="${escapeHtml(card.key || card.ticker || card.entityId)}" data-ticker="${escapeHtml(card.ticker || '')}" data-entity-id="${escapeHtml(card.entityId || '')}" data-priority="${escapeHtml(card.priority)}" data-score="${card.score}"${archived ? ' data-ai-archived' : ''}
       class="flex h-full flex-col overflow-hidden rounded-2xl border-l-4 ${archived ? 'border-l-slate-200' : tone.edge} bg-white shadow-sm ring-1 ring-slate-100"
-      style="content-visibility: auto; contain-intrinsic-size: auto none auto 320px;">
+      style="content-visibility: auto; contain-intrinsic-size: auto none auto 600px;">
       <div class="flex-1 p-5">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
