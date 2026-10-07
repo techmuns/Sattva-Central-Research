@@ -2176,12 +2176,20 @@
     "isin:INE0UIZ01018|BlackBuck": {
       "lastAttemptAt": "2026-10-07T14:05:07+00:00",
       "error": "search-unavailable"
+    },
+    "isin:INE0UIZ01018|BLACKBUCK": {
+      "lastAttemptAt": "2026-10-07T14:34:26+00:00",
+      "error": "search-unavailable"
+    },
+    "isin:INE120A01034|Carborundum Universal": {
+      "lastAttemptAt": "2026-10-07T14:43:52+00:00",
+      "error": "search-unavailable"
     }
   },
   "coverage": {
     "planned": 254,
     "attempted": 1,
     "incomplete": 245,
-    "checkedAt": "2026-10-07T14:05:07.016509+00:00"
+    "checkedAt": "2026-10-07T14:43:52.316585+00:00"
   }
 }

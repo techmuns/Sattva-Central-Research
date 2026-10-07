@@ -118,8 +118,10 @@ await page.route('**/*', route => route.request().url() === `${familyOrigin}/res
   : route.request().url().startsWith(origin) ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
 // Browser clocks are paused for midnight tests; poll postMessage completion with
 // the test runner's real clock rather than a frozen requestAnimationFrame loop.
-const waitFor = async (target, condition) => {
-  const deadline = Date.now() + 10000;
+// Most waits settle in well under a second; the three that recompute the 100,005-event window take
+// about ten seconds on a shared runner, so they pass their own longer limit rather than racing this one.
+const waitFor = async (target, condition, ms = 10000) => {
+  const deadline = Date.now() + ms;
   while (!await target.evaluate(condition)) {
     if (Date.now() >= deadline) {
       const state = await target.evaluate(() => ({ status: document.querySelector('[data-ai-feed-status]')?.textContent, cards: document.querySelectorAll('[data-ai-card]').length }));
@@ -692,7 +694,7 @@ try {
     }));
     window.show('universe');
   });
-  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', 30000);
   assert.equal(await capacityPage.locator('[data-ai-card]').count(), 8, 'large evidence windows keep the initial DOM bounded');
   await capacityPage.locator('[data-ai-more]').click();
   assert.equal(await capacityPage.locator('[data-ai-card]').count(), 16);
@@ -701,13 +703,13 @@ try {
     'search evaluates the 100,005th event, not only paginated cards or the evidence preview');
   const beforeVisible = await capacityPage.evaluate(() => window.reads);
   await capacityPage.clock.fastForward(90_001);
-  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', 30000);
   assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 1, 'visible AI Alerts revalidates published sources after 90 seconds');
   await capacityPage.evaluate(() => Object.defineProperty(document, 'hidden', { configurable: true, value: true }));
   await capacityPage.clock.fastForward(90_001);
   assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 1, 'hidden views do not poll');
   await capacityPage.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: false }); window.dispatchEvent(new Event('focus')); });
-  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete');
+  await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', 30000);
   assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 2, 'returning from inactivity checks immediately');
   await capacityPage.evaluate(() => window.dispatchEvent(new Event('online')));
   assert.equal(await capacityPage.evaluate(() => window.reads), beforeVisible + 2, 'nearby wake signals do not duplicate checks');

@@ -91,7 +91,7 @@ export const TAB_META = Object.freeze({
     id: 'corp-announcements',
     title: 'Corp Announcements',
     subtitle:
-      'The latest company announcements from BSE, NSE and captured filings, newest first.',
+      'Company announcements from BSE, NSE and captured filings — newest day first, the most relevant first within each day.',
     subviews: [],
   },
   'corporate-actions': {

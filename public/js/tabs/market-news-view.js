@@ -21,8 +21,12 @@ import * as refreshRegistry from '../core/refresh.js';
 //   A twenty-minute-old capture confirmed one second ago is fresh in one sense and not the other,
 //   and one combined "updated just now" would let the second stand in for the first.
 //
-// NO SCORE, NO SENTIMENT, NO RANKING. The order is the publisher's own, by their article id.
-// Headlines and standfirsts are theirs, reproduced; the article stays on their site.
+// NO SCORE ON SCREEN, NO SENTIMENT, AND RELEVANCE ONLY WITHIN A DAY. Stories stay newest day first;
+// within a day the shared relevance reading (data/relevance.js, the same one Corporate Announcements
+// and All Alerts use, with the desk's Important / Not important votes) puts the story an analyst would
+// read first at the top, then time. Nothing is hidden by its rank and no rank label is printed.
+// Headlines and standfirsts are theirs, reproduced; the whole card still opens the article on their
+// site — the ⋯ beside it is a separate control for the vote.
 
 import { sectionHead, openModal } from '../ui/screener.js';
 import { mountWindowedList } from '../ui/windowed-list.js';
@@ -41,6 +45,15 @@ import * as twitterNews from '../data/twitter-news.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import { openTwitterSources } from '../ui/twitter-sources.js';
 import { classifyStory, topicFilterOptions, matchesTopic, topicLabel } from '../data/news-keywords.js';
+import { newsPublicationDay } from '../data/news-window.js';
+import { surfaceReading, feedbackItemFor, relevanceRevision, rankedKey } from '../data/surface-relevance.js';
+import { categoryChips } from '../ui/category-chips.js';
+import { categoryLabel } from '../data/announcement-categories.js';
+import { feedbackMenuButton } from '../ui/relevance-feedback-ui.js';
+
+// The shared relevance reading of a market-wide story or post. These carry no company, so size and
+// sector read as unknown for every one of them alike; what orders a day is what each story is about.
+const relevanceOf = (r) => surfaceReading(r, { surface: 'news', kind: 'news', context: r.kind === twitterNews.KIND ? { feed: 'twitter' } : { feed: 'market-news' } });
 
 // The same thirty keywords the company half of this tab filters by, over the same reading. Cached
 // per story object for the same reason: the reader types, and every keystroke re-filters 600 rows.
@@ -188,11 +201,25 @@ const FIRST_PAINT = 24;
 // ---------------------------------------------------------------------------------------
 
 /** Every story in the list: the publisher feed plus the posts from monitored handles. */
+// One ordering per change of its inputs, so every caller in a paint reads the same array.
+let feedMemo = null;
 function feedRows() {
   const window = recentNewsWindow();
-  const publisher = marketNews.rows().filter(row => inNewsWindow(row, window));
-  const posts = twitterNews.rows().filter(row => inNewsWindow(row, window));
-  if (!posts.length) return publisher;
+  const sources = marketNews.rows(), postSource = twitterNews.rows();
+  const key = `${window?.from}|${window?.to}|${window?.includeUndated}|${relevanceRevision()}`;
+  if (feedMemo && feedMemo.sources === sources && feedMemo.posts === postSource && feedMemo.key === key) return feedMemo.rows;
+  const rows = orderedFeed(window, sources, postSource);
+  feedMemo = { sources, posts: postSource, key, rows };
+  return rows;
+}
+
+function orderedFeed(window, sources, postSource) {
+  const publisher = sources.filter(row => inNewsWindow(row, window));
+  const posts = postSource.filter(row => inNewsWindow(row, window));
+  if (!posts.length) {
+    const order = new Map(publisher.map((r, i) => [r, i]));
+    return rankWithinDay([...publisher], (a, b) => order.get(a) - order.get(b));
+  }
 
   // Publisher stories keep their own order and their index becomes the tie-break, so a story with
   // no readable time still sits where the publisher put it rather than falling to the bottom.
@@ -201,7 +228,7 @@ function feedRows() {
     const t = Date.parse(r.publishedAt || '');
     return Number.isFinite(t) ? t : null;
   };
-  return [...publisher, ...posts].sort((a, b) => {
+  return rankWithinDay([...publisher, ...posts], (a, b) => {
     const ta = timeOf(a);
     const tb = timeOf(b);
     if (ta !== null && tb !== null) return tb - ta;
@@ -209,6 +236,21 @@ function feedRows() {
     if (ta !== null) return -1;
     if (tb !== null) return 1;
     return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
+  });
+}
+
+/**
+ * Newest publication day first; within each of the last seven days, the shared relevance reading;
+ * then the order the rows already had (time, or the publisher's own). Undated stories stay last, in
+ * their own order. The readings are made within one short budget and the rest in slices
+ * (surface-relevance.js), so a long period never freezes the list while it is ordered.
+ */
+function rankWithinDay(rows, within) {
+  const keys = new Map(rows.map((r) => [r, rankedKey(r, { day: newsPublicationDay(r), surface: 'news', read: relevanceOf })]));
+  return rows.sort((a, b) => {
+    const ka = keys.get(a), kb = keys.get(b);
+    if (ka !== kb) return ka < kb ? 1 : -1;
+    return within(a, b);
   });
 }
 
@@ -378,6 +420,7 @@ function cardHtml(r) {
       : `<span class="text-slate-300" title="This publisher’s feed carried no time for the story, and its own page was not read for one. It is not the time we saw it.">time not published</span>`,
     section ? `<span>${escapeHtml(section)}</span>` : '',
     r.premium ? '<span class="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 ring-1 ring-amber-200">premium</span>' : '',
+    categoryChips(relevanceOf(r).categories, { weak: relevanceOf(r).weak, max: 3 }),
   ]
     .filter(Boolean)
     .join('<span class="text-slate-300">·</span>');
@@ -405,11 +448,12 @@ function cardHtml(r) {
       <span class="self-start rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500" title="The capture carried no usable http(s) address for this story.">no link</span>
     </div>`;
   }
+  // The ⋯ sits beside the bookmark, OUTSIDE the anchor: the card's own click still opens the article.
   return `
     <article data-news-key="${key}" class="flex items-start gap-1 pr-3 hover:bg-slate-50">
       <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer"
          class="${shell} min-w-0 flex-1 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">${body}</a>
-      <span class="mt-4">${bookmarkButton(snapshotForRow(r, { section: 'news' }))}</span>
+      <span class="mt-4 flex items-center gap-0.5">${bookmarkButton(snapshotForRow(r, { section: 'news' }))}${feedbackMenuButton(feedbackItemFor(relevanceOf(r), r))}</span>
     </article>`;
 }
 

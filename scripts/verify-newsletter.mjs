@@ -17,6 +17,7 @@ import {
 } from '../public/js/data/newsletter-shared.js';
 import { renderBriefEmails, emailBytes, EMAIL_HTML_BYTES, acceptedStoryKeys } from '../worker/newsletter-email.mjs';
 import { renderBriefPdf, pdfFilename } from '../worker/newsletter-pdf.mjs';
+import { verifyNewsletterPdf } from './verify-newsletter-pdf.mjs';
 import { handleNewsletter } from '../worker/newsletter.mjs';
 import { NewsletterStore } from '../worker/newsletter-store.mjs';
 import {
@@ -1119,6 +1120,8 @@ await test('sendEmail uses the verified Muns reply fields and validates returned
   }
   await assert.rejects(send({}, 'invalid'), /valid reply Message-ID/);
 });
+
+await test('PDF layout preserves rows, evidence, navigation and pagination', verifyNewsletterPdf);
 
 await test('busy editions preserve every source, AI note and supplemental row within the UTF-8 email budget', () => {
   const busy = structuredClone(morning);

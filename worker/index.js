@@ -23,6 +23,11 @@ import { handleMutualFunds } from './mutual-funds.mjs';
 //   GET  /api/research                          ->  whether Ask Research is configured
 //   POST /api/research                          ->  streamed dashboard-grounded research answer
 //   GET  /api/nse-filing?src=                  ->  one NSE XBRL announcement, as the exchange's own facts
+//   POST /api/announcement-index/query         ->  one ranked, filtered page of Corporate Announcements
+//   GET  /api/announcement-index/event?id=     ->  every filing stitched into one event
+//   POST /api/announcement-read                ->  AI Read of one filing, on request, cached
+//   GET  /api/relevance/model                  ->  the desk's one shared relevance preference
+//   POST /api/relevance/feedback               ->  Important / Not important, with an optional why
 //   GET  /filing?src=                          ->  the same filing as a PAGE — where a team-brief link lands
 //
 // Data reads are read-through overlays on committed data. The POST-only refresh routes dispatch
@@ -78,6 +83,9 @@ import { handleIpoFilings } from './ipo-filings.mjs';
 import { handleCaptureRegistration } from './capture-registration.mjs';
 import { handleAlertNotes } from './alert-notes.mjs';
 import { handleAlertStories } from './alert-stories.mjs';
+import { handleAnnouncementIndex } from './announcement-index.mjs';
+import { handleAnnouncementRead } from './announcement-read.mjs';
+import { handleRelevanceFeedback } from './relevance-feedback.mjs';
 import { handleWatchlist } from './watchlist.mjs';
 import { handleNewsletter } from './newsletter.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
@@ -164,6 +172,9 @@ export default {
     if (['/api/technicals','/api/technicals/atr-history','/api/technicals/source'].includes(url.pathname)) return handleTechnicals(request, env);
     if (url.pathname === '/api/alert-notes') return handleAlertNotes(request, env);
     if (url.pathname === '/api/alert-stories') return handleAlertStories(request, env);
+    if (url.pathname.startsWith('/api/announcement-index/')) return handleAnnouncementIndex(request, env);
+    if (url.pathname === '/api/announcement-read' || url.pathname === '/api/announcement-read/status') return handleAnnouncementRead(request, env);
+    if (url.pathname.startsWith('/api/relevance/')) return handleRelevanceFeedback(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
     if (url.pathname === '/api/newsletter' || url.pathname.startsWith('/api/newsletter/')) return handleNewsletter(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
