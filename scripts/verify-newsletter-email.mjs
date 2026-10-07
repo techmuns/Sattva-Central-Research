@@ -34,7 +34,7 @@ function checkParts(b, messages) {
   const keys = messages.flatMap(m => m.keys);
   assert.deepEqual([...new Set(keys)].sort(), briefStoryKeys(b).sort(), 'every source identity is preserved');
   assert.equal(keys.length, new Set(keys).size, 'no source is duplicated between parts');
-  assert.equal(new Set(messages.map(m => m.subject)).size, messages.length, 'distinct subjects prevent part threading');
+  assert.equal(new Set(messages.map(m => m.subject)).size, 1, 'all parts share one dated edition subject');
   const content = messages.map(m => m.html).join('\n');
   for (const story of briefStories(b)) {
     assert.ok(content.includes(escape(story.headline)), `headline retained: ${story.headline}`);
@@ -46,7 +46,7 @@ function checkParts(b, messages) {
     assert.ok(m.html.includes(pdfUrl) && m.html.includes('Automated by Munshot') && m.html.includes('Unsubscribe'));
     if (messages.length > 1) {
       assert.ok(m.html.includes(`Part ${i + 1} of ${messages.length}`));
-      assert.ok(m.subject.endsWith(`Part ${i + 1} of ${messages.length}`));
+      assert.equal(m.subject, messages[0].subject);
       assert.equal(m.html.includes('Global market scan'), i === messages.length - 1);
     }
   }
@@ -113,7 +113,7 @@ for (const [i, message] of busyMessages.entries()) for (const c of message.part.
   assert.ok(!companyParts.has(c.ticker), 'small company is not split'); companyParts.set(c.ticker, i);
 }
 
-function harness(response = () => Response.json({ success: true })) {
+function harness(response = (_email, index) => Response.json({ success: true, data: { messageId: `<email-${index}@muns.io>` } })) {
   const db = new DatabaseSync(':memory:');
   const storage = { sql: { exec: (query, ...args) => { const rows = db.prepare(query).all(...args); return { toArray: () => rows }; } },
     transactionSync: fn => { db.exec('BEGIN'); try { const out = fn(); db.exec('COMMIT'); return out; } catch (e) { db.exec('ROLLBACK'); throw e; } } };
@@ -134,14 +134,18 @@ assert.equal(delivered.sent, 2); assert.equal(delivered.failed, 0); assert.equal
 assert.equal(good.emails.length, 4);
 for (const address of ['reader@example.test', 'second@example.test']) {
   const emails = good.emails.filter(e => e.email === address);
-  assert.ok(emails[0].subject.endsWith('Part 1 of 2') && emails[1].subject.endsWith('Part 2 of 2'));
+  assert.equal(emails[0].subject, emails[1].subject);
+  assert.equal(emails[0].inReplyTo, undefined);
+  assert.equal(emails[0].references, undefined);
+  const root = delivered.outcomes.find(o => o.email === address).threadMessageId;
+  assert.equal(emails[1].inReplyTo, root); assert.deepEqual(emails[1].references, [root]);
   for (const email of emails) assert.ok(Buffer.byteLength(email.html) <= EMAIL_HTML_BYTES);
 }
 assert.deepEqual([...good.store.sentStoryKeys()].sort(), briefStoryKeys(busy).sort());
 assert.equal(new Set(good.emails.map(e => e.html.match(/\/api\/newsletter\/pdf\/([a-f0-9-]+)/)[1])).size, 1, 'all parts use the same immutable complete PDF');
 assert.equal((await good.schedule.deliver(args)).reason, 'already-sent'); assert.equal(good.emails.length, 4);
 
-const partial = harness((_email, index) => index === 2 ? new Response('', { status: 403 }) : Response.json({ success: true }));
+const partial = harness((_email, index) => index === 2 ? new Response('', { status: 403 }) : Response.json({ success: true, data: { messageId: '<partial@muns.io>' } }));
 const partDelivery = await partial.schedule.deliver(args);
 assert.equal(partDelivery.ok, false); assert.equal(partDelivery.reason, 'partial-send');
 assert.equal(partDelivery.sent, 0); assert.equal(partDelivery.failed, 1);
@@ -176,9 +180,11 @@ assert.equal(unknown.store.sentStoryKeys().size, 0);
 assert.equal(unknown.store.rows('SELECT delivery_state FROM newsletter_documents')[0].delivery_state, 'delivery-uncertain');
 const partlyUnknown = harness((_email, index) => { if (index === 1) throw new DOMException('timeout', 'TimeoutError'); return Response.json({ success: true }); });
 const partlyUnknownDelivery = await partlyUnknown.schedule.deliver(args);
-assert.equal(partlyUnknownDelivery.reason, 'partial-send');
-assert.equal(partlyUnknownDelivery.outcomes[0].status, null, 'a later successful part cannot overwrite an earlier timeout status');
-assert.deepEqual([...partlyUnknown.store.sentStoryKeys()].sort(), busyMessages[1].keys.sort());
+assert.equal(partlyUnknownDelivery.reason, 'timeout');
+assert.equal(partlyUnknown.emails.length, 1, 'a missing root prevents later unthreaded sends');
+assert.equal(partlyUnknownDelivery.outcomes[0].parts[1].reason, 'thread-unavailable');
+assert.equal(partlyUnknownDelivery.outcomes[0].status, null, 'a skipped reply cannot overwrite an earlier timeout status');
+assert.equal(partlyUnknown.store.sentStoryKeys().size, 0);
 
 const previewHarness = harness();
 const apiEnv = { NEWSLETTER_LIMITER: { limit: async () => ({ success: true }) }, NEWSLETTER: { getByName: () => ({ newsletterPreview: input => previewHarness.schedule.preview(input) }) } };
