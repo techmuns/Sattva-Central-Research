@@ -233,8 +233,8 @@ function performance(pdf, brief) {
     { size: 9, color: MUTED, gap: 14 },
   );
   const columns = [
-    { label: "HOLDING", width: CONTENT - 275 },
-    { label: "SYMBOL", width: 80 },
+    { label: "HOLDING", width: CONTENT - 285 },
+    { label: "SYMBOL", width: 90 },
     { label: "CLOSE / INR", width: 110, align: "right" },
     { label: "DAY / %", width: 85, align: "right" },
   ];
