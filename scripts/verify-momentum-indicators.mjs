@@ -176,11 +176,19 @@ console.log('\n== Section 2: intra-record invariants on public/data/technicals.j
       assert.equal(r.rsi_multi.daily.value, r.rsi14, `${r.ticker}: rsi_multi.daily.value === rsi14`);
       near(r.rsi_multi.daily.lastClose, r.cmp, 1e-6, `${r.ticker}: daily.lastClose === cmp`);
       if (r.macd && r.macd.ema12 != null && r.macd.ema26 != null) {
-        near(Math.round((r.macd.ema12 - r.macd.ema26) * 100) / 100, r.macd.line, 0.01, `${r.ticker}: line === ema12 − ema26`);
+        // ema12/ema26 are stored at 4 dp and `line` at 2 dp, each rounded from the raw EMAs
+        // independently — so recomputing the 2-dp line from the 4-dp EMAs can land one 0.01 step
+        // away at a rounding boundary. Allow that single step (a real mismatch is far larger).
+        near(Math.round((r.macd.ema12 - r.macd.ema26) * 100) / 100, r.macd.line, 0.011, `${r.ticker}: line === ema12 − ema26`);
       }
-      if (r.sma20 != null) assert.equal(r.above_20dma, r.cmp > r.sma20, `${r.ticker}: above_20dma`);
-      if (r.sma50 != null) assert.equal(r.above_50dma, r.cmp > r.sma50, `${r.ticker}: above_50dma`);
-      if (r.sma100 != null) assert.equal(r.above_100dma, r.cmp > r.sma100, `${r.ticker}: above_100dma`);
+      // The above-DMA flags are computed from the FULL-PRECISION moving average, while smaN is
+      // stored rounded to the rupee — so within 0.5 of the line the stored value cannot decide the
+      // comparison (e.g. cmp 433.80 vs raw SMA ~433.7 is above, but rounds to 434). Only assert
+      // where the rounding cannot flip it; the near-the-line band is indeterminate from stored data.
+      const dmaConsistent = (flag, sma) => sma == null || Math.abs(r.cmp - sma) <= 0.5 || flag === r.cmp > sma;
+      assert.ok(dmaConsistent(r.above_20dma, r.sma20), `${r.ticker}: above_20dma (cmp ${r.cmp} vs sma20 ${r.sma20})`);
+      assert.ok(dmaConsistent(r.above_50dma, r.sma50), `${r.ticker}: above_50dma (cmp ${r.cmp} vs sma50 ${r.sma50})`);
+      assert.ok(dmaConsistent(r.above_100dma, r.sma100), `${r.ticker}: above_100dma (cmp ${r.cmp} vs sma100 ${r.sma100})`);
       for (const tf of ['daily', 'weekly', 'monthly']) {
         const s = r.rsi_multi[tf];
         if (s == null) continue;
