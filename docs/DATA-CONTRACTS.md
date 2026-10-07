@@ -4850,6 +4850,25 @@ every PDF page say **Automated by Munshot**. PDF pages preserve source links, XB
 quoted source details, market timestamps and coverage notes. PDF base fonts render INR for the
 rupee sign and normalize punctuation; unsupported glyphs are displayed as Unicode code points.
 
+## Newsletter PDF layout (7 October 2026)
+
+The complete edition uses a Worker-safe A4 vector layout in `worker/newsletter-pdf-layout.mjs`.
+A contents page and PDF bookmarks link to company updates, the calendar, corporate actions,
+portfolio performance, markets and source notes. Each section has a clear heading; continuation
+pages retain section/company context and page numbers.
+
+Calendar, action, holding and market records use measured columns with repeated table headings.
+Portfolio performance shows the actual session, quote coverage, up/down/flat counts and median;
+derived statement-quantity changes retain the priced denominator, statement dates and missing
+quantities. Numeric columns align on the right, with signed figures plus colour for direction.
+Long company names, source details and AI notes wrap or continue without removing source text.
+Market timestamps, verification gaps, unavailable states and original hyperlinks remain visible.
+
+This changes rendering only. Saved emailed PDFs remain immutable snapshots. New sends and unsaved
+PDF previews use this layout; no subscriber, delivery, story-ledger, quantity or schedule changes
+are made. `verify-newsletter-pdf.mjs`, imported by the existing newsletter CI suite, checks all
+holdings, links, source states, repeated headings, bookmarks and unusually long content.
+
 ## AI Alerts priority — DERIVED, no file and no route of its own
 
 `js/data/ai-alerts.js` consumes the retained report below and writes nothing. It takes company events

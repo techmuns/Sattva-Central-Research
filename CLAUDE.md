@@ -838,6 +838,10 @@ in [Newsletter markets](docs/NEWSLETTER-MARKET-ACCURACY.md). The route/store con
   recipient starts a fresh root; subsequent parts send Muns `inReplyTo` and `references` using
   the returned `data.messageId`. Keep body part labels. Without an acknowledged valid root,
   stop later parts as `thread-unavailable` and retain unsent identities for future editions.
+- PDF layout uses `newsletter-pdf-layout.mjs`: measured tables, repeated headings, a contents
+  page, section bookmarks and safe continuation of long text. Preserve every holding, source
+  date, unavailable state and readable XBRL link. Saved PDFs remain immutable; new sends and
+  unsaved previews use the updated design. `verify-newsletter-pdf.mjs` runs in newsletter CI.
 - Every part stays within 90,000 final UTF-8 HTML bytes. Split at company, complete-update or
   supplementary-row boundaries; preserve all sources and notes. A single unfit item fails
   before PDF creation or delivery. Parts share a complete immutable PDF; confirmed rejected
