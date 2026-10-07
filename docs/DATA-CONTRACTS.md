@@ -4858,9 +4858,9 @@ portfolio performance, markets and source notes. Each section has a clear headin
 pages retain section/company context and page numbers.
 
 Calendar, action, holding and market records use measured columns with repeated table headings.
-Portfolio performance shows the actual session, quote coverage, up/down/flat counts and median;
-derived statement-quantity changes retain the priced denominator, statement dates and missing
-quantities. Numeric columns align on the right, with signed figures plus colour for direction.
+Portfolio performance shows the actual session, quote coverage, up/down/flat counts and an
+unweighted median. Sattva reports listed-holding price performance, never Glow quantities or
+book-wide portfolio P&L. Numeric columns align on the right, with signed figures plus colour for direction.
 Long company names, source details and AI notes wrap or continue without removing source text.
 Market timestamps, verification gaps, unavailable states and original hyperlinks remain visible.
 
