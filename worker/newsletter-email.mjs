@@ -85,13 +85,13 @@ export function renderBriefEmails(brief, options = {}, { maxBytes = EMAIL_HTML_B
   }
   flush();
   if (pages.length > MAX_PARTS || !pages.length) throw tooLarge();
-  // Gmail can clip a combined same-subject conversation even when each body fits.
-  // Keep numbered subjects, as Sattva does; the PDF remains the single complete document.
+  // Part labels stay in the body; one edition subject and transport reply headers form a thread.
+  // The complete PDF remains available if a mail client clips the conversation.
   return pages.map((page, i) => {
     const part = { ...page, index: i + 1, total: pages.length };
     const html = renderBriefHtml(brief, { ...options, part });
     const bytes = emailBytes(html);
     if (bytes > maxBytes) throw tooLarge();
-    return { html, bytes, subject: briefSubject(brief, { ...options, part }), keys: keysFor(page.companies), part };
+    return { html, bytes, subject: briefSubject(brief, options), keys: keysFor(page.companies), part };
   });
 }

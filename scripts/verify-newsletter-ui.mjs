@@ -49,7 +49,7 @@ const fetcher = async (input, init = {}) => {
   if (url === EMAIL_SEND_URL) {
     const body = JSON.parse(init.body);
     emails.push({ to: body.email, subject: body.subject, html: body.html, hasText: body.text !== undefined, auth: init.headers.authorization });
-    return Response.json({ data: { message: 'Email sent successfully!' }, message: '', success: true });
+    return Response.json({ data: { message: 'Email sent successfully!', messageId: `<ui-${emails.length}@muns.io>` }, message: '', success: true });
   }
   throw new Error(`unexpected upstream ${url}`);
 };

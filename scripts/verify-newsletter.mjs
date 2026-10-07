@@ -151,7 +151,7 @@ function makeFetcher({ yahoo = 'ok', nse = 'ok', email = 'ok', log = [] } = {}) 
       if (email === 'unauthorised') return Response.json({ success: false, message: 'private upstream text' }, { status: 401 });
       if (email === 'down') return new Response('gateway', { status: 502 });
       if (email === 'hang') throw Object.assign(new Error('aborted'), { name: 'TimeoutError' });
-      return Response.json({ data: { message: 'Email sent successfully!' }, message: '', success: true });
+      return Response.json({ data: { message: 'Email sent successfully!', messageId: '<fixture@muns.io>' }, message: '', success: true });
     }
     throw new Error(`Unexpected request in test: ${url}`);
   };
@@ -1097,12 +1097,28 @@ await test('sendEmail sends exactly one body and names every failure without the
   const log = [];
   await assert.rejects(() => sendEmail({ fetcher: makeFetcher({ log }), token: 't', email: 'a@muns.io', subject: 's', html: '<p>x</p>', text: 'x' }), /exactly one/);
   await assert.rejects(() => sendEmail({ fetcher: makeFetcher({ log }), token: 't', email: 'a@muns.io', subject: 's' }), /exactly one/);
-  assert.deepEqual(await sendEmail({ fetcher: makeFetcher({ log }), token: 't', email: 'a@muns.io', subject: 's', text: 'plain' }), { ok: true, status: 200, reason: null });
+  assert.deepEqual(await sendEmail({ fetcher: makeFetcher({ log }), token: 't', email: 'a@muns.io', subject: 's', text: 'plain' }), { ok: true, status: 200, reason: null, messageId: '<fixture@muns.io>' });
   assert.equal(log.at(-1).text, 'plain'); assert.equal(log.at(-1).html, undefined);
   assert.equal((await sendEmail({ fetcher: makeFetcher({ email: 'down' }), token: 't', email: 'a@muns.io', subject: 's', html: 'x' })).reason, 'upstream');
   assert.equal((await sendEmail({ fetcher: makeFetcher({ email: 'hang' }), token: 't', email: 'a@muns.io', subject: 's', html: 'x' })).reason, 'timeout');
 });
 
+
+
+await test('sendEmail uses the verified Muns reply fields and validates returned message IDs', async () => {
+  let body;
+  const send = (data, inReplyTo = null) => sendEmail({ token: 'fixture-token', email: 'reader@example.test', subject: 'Edition', html: '<p>Part</p>', inReplyTo,
+    fetcher: async (_url, init) => { body = JSON.parse(init.body); return Response.json({ success: true, data }, { status: 201 }); } });
+  assert.equal((await send({ messageId: '<accepted@muns.io>' }, '<root@muns.io>')).messageId, '<accepted@muns.io>');
+  assert.deepEqual(body, { email: 'reader@example.test', subject: 'Edition', html: '<p>Part</p>', inReplyTo: '<root@muns.io>', references: ['<root@muns.io>'] });
+  for (const id of [undefined, '', 'not-a-message-id', '<id@muns.io>\r\nInjected: yes', 42, '<' + 'x'.repeat(1000) + '@muns.io>']) {
+    const result = await send({ messageId: id });
+    assert.equal(result.ok, true, 'an acknowledged email is still acknowledged');
+    assert.equal(result.messageId, null, 'invalid IDs cannot become a thread root');
+    assert.equal(body.inReplyTo, undefined); assert.equal(body.references, undefined);
+  }
+  await assert.rejects(send({}, 'invalid'), /valid reply Message-ID/);
+});
 
 await test('busy editions preserve every source, AI note and supplemental row within the UTF-8 email budget', () => {
   const busy = structuredClone(morning);
@@ -1119,7 +1135,7 @@ await test('busy editions preserve every source, AI note and supplemental row wi
   const options = { pdfUrl: 'https://example.test/api/newsletter/pdf/00000000-0000-0000-0000-000000000000' };
   const parts = renderBriefEmails(busy, options);
   assert.ok(parts.length > 3);
-  assert.equal(new Set(parts.map(p => p.subject)).size, parts.length, 'numbered subjects prevent conversation-level clipping');
+  assert.equal(new Set(parts.map(p => p.subject)).size, 1, 'one dated subject per edition');
   assert.notEqual(parts[0].subject, briefSubject({ ...busy, edition: 'evening' }));
   assert.notEqual(parts[0].subject, briefSubject({ ...busy, day: '2027-09-17' }));
   assert.deepEqual(parts.flatMap(p => p.keys).sort(), briefStories(busy).flatMap(s => s.keys).sort());
@@ -1132,7 +1148,7 @@ await test('busy editions preserve every source, AI note and supplemental row wi
   for (const row of busy.performance.rows) assert.equal(parts.filter(p => p.html.includes(row.company)).length, 1);
   for (const [i, p] of parts.entries()) {
     assert.ok(p.bytes <= EMAIL_HTML_BYTES); assert.equal(p.bytes, Buffer.byteLength(p.html));
-    assert.ok(p.subject.endsWith(`Part ${i + 1} of ${parts.length}`));
+    assert.equal(p.subject, briefSubject(busy));
     assert.ok(p.html.includes(`Part ${i + 1} of ${parts.length}`) && p.html.includes(options.pdfUrl));
   }
   assert.equal(emailBytes('₹漢😀'), Buffer.byteLength('₹漢😀'));
@@ -1173,7 +1189,7 @@ await test('split-company sentiment counts updates rather than related exchange 
   }
 });
 
-function multipartHarness(response = () => Response.json({ success: true })) {
+function multipartHarness(response = (_body, n) => Response.json({ success: true, data: { messageId: `<part-${n}@muns.io>` } })) {
   const holdings = [{ name: 'Aarti Drugs Ltd', ticker: 'AARTIDRUGS', isin: 'INE767A01016', listed: true },
     { name: 'Capri Global Capital Ltd', ticker: 'CGCL', isin: 'INE180C01042', listed: true }];
   const articles = holdings.flatMap(h => Array.from({ length: 12 }, (_, i) => ({
@@ -1198,7 +1214,15 @@ await test('saved PDFs and confirmed part outcomes survive failures, interruptio
   assert.equal(good.emails.length, result.summary.emailParts);
   const pdfIds = good.emails.map(e => e.html.match(/\/api\/newsletter\/pdf\/([a-f0-9-]+)/)[1]);
   assert.equal(new Set(pdfIds).size, 1, 'one complete PDF for every part');
-  assert.equal(new Set(good.emails.map(e => e.subject)).size, good.emails.length);
+  assert.equal(new Set(good.emails.map(e => e.subject)).size, 1);
+  assert.equal(good.emails[0].inReplyTo, undefined);
+  assert.equal(good.emails[0].references, undefined);
+  for (const mail of good.emails.slice(1)) {
+    assert.equal(mail.inReplyTo, '<part-1@muns.io>');
+    assert.deepEqual(mail.references, ['<part-1@muns.io>']);
+  }
+  assert.equal(good.store.delivery(deliveryArgs.key).outcomes[0].threadMessageId, '<part-1@muns.io>');
+  assert.deepEqual(result.outcomes[0].parts.map(p => p.messageId), good.emails.map((_e, i) => `<part-${i + 1}@muns.io>`));
   const saved = good.store.document(pdfIds[0]);
   assert.equal(new TextDecoder().decode(saved.body.slice(0, 8)), '%PDF-1.4');
   assert.equal(saved.filename, 'sattva-2026-09-17-morning-brief.pdf');
@@ -1207,7 +1231,7 @@ await test('saved PDFs and confirmed part outcomes survive failures, interruptio
   const firstKeys = good.emails[0].html;
   assert.ok(firstKeys.includes('business development'));
 
-  const partial = multipartHarness((_body, n) => n === 1 ? Response.json({ success: true }) : new Response('', { status: 403 }));
+  const partial = multipartHarness((_body, n) => n === 1 ? Response.json({ success: true, data: { messageId: '<partial-root@muns.io>' } }) : new Response('', { status: 403 }));
   const failed = await partial.schedule.deliver(deliveryArgs);
   assert.equal(failed.reason, 'partial-send'); assert.equal(failed.sent, 0); assert.equal(failed.failed, 1);
   assert.ok(partial.store.reportedCount() > 0 && partial.store.reportedCount() < good.store.reportedCount());
@@ -1243,6 +1267,60 @@ await test('saved PDFs and confirmed part outcomes survive failures, interruptio
   for (let i = 0; i < 210; i++) { good.store.beginDelivery({ ...deliveryArgs, key: `old:${i}`, recipients: 0 }); good.store.finishDelivery(`old:${i}`); }
   assert.deepEqual(good.store.document(pdfIds[0]).body, saved.body, 'emailed PDFs survive delivery log pruning');
   assert.equal(good.store.document('invalid'), null);
+});
+
+
+await test('multipart roots are isolated by recipient, edition and day', async () => {
+  const h = multipartHarness();
+  h.store.apply([{ op: 'subscribe', email: 'second@example.test', by: 'Fixture' }]);
+  const settings = h.store.settings();
+  const subscribers = h.store.subscriberRows();
+  const roots = new Set();
+  for (const [edition, day, offset] of [['morning', '2026-09-17', 0], ['evening', '2026-09-17', 8 * 3600_000], ['morning', '2026-09-18', 24 * 3600_000]]) {
+    const start = h.emails.length;
+    const result = await h.schedule.deliver({ ...deliveryArgs, edition, day, at: MORNING + offset, now: MORNING + offset, key: `${day}:${edition}`, source: 'test' });
+    assert.equal(result.ok, true);
+    const editionEmails = h.emails.slice(start);
+    for (const outcome of result.outcomes) {
+      assert.ok(!roots.has(outcome.threadMessageId)); roots.add(outcome.threadMessageId);
+      const mails = editionEmails.filter(mail => mail.email === outcome.email);
+      assert.equal(mails.length, result.summary.emailParts);
+      assert.equal(mails[0].inReplyTo, undefined); assert.equal(mails[0].references, undefined);
+      for (const mail of mails.slice(1)) {
+        assert.equal(mail.subject, mails[0].subject);
+        assert.equal(mail.inReplyTo, outcome.threadMessageId);
+        assert.deepEqual(mail.references, [outcome.threadMessageId]);
+      }
+    }
+  }
+  assert.equal(roots.size, 6);
+  assert.deepEqual(h.store.settings(), settings); assert.deepEqual(h.store.subscriberRows(), subscribers);
+  assert.equal(h.store.reportedCount(), 0, 'test copies never advance the story ledger');
+});
+
+await test('missing or failed thread roots stop unlinked parts without losing unsent identities', async () => {
+  for (const [response, expected] of [
+    [() => Response.json({ success: true }), 'partial-send'],
+    [() => Response.json({ success: true, data: { messageId: 'invalid' } }), 'partial-send'],
+    [() => new Response('', { status: 403 }), 'unauthorised'],
+    [() => { throw new DOMException('timeout', 'TimeoutError'); }, 'timeout'],
+  ]) {
+    const h = multipartHarness(response);
+    const result = await h.schedule.deliver(deliveryArgs);
+    assert.equal(result.reason, expected); assert.equal(result.sent, 0); assert.equal(h.emails.length, 1);
+    assert.equal(result.outcomes[0].threadMessageId, null);
+    assert.ok(result.outcomes[0].parts.slice(1).every(p => !p.ok && p.reason === 'thread-unavailable'));
+    const fullBrief = await buildBrief({ edition: 'morning', day: deliveryArgs.day, now: MORNING, settings: DEFAULT_SETTINGS, env: h.schedule.env, fetcher: h.schedule.fetcher });
+    const plan = renderBriefEmails(fullBrief, { pdfUrl: `${h.schedule.dashboardUrl()}/api/newsletter/pdf/00000000-0000-0000-0000-000000000000`, recipient: h.store.recipients('morning')[0] });
+    const expectedKeys = expected === 'partial-send' ? acceptedStoryKeys(plan, new Set([0])).sort() : [];
+    assert.deepEqual(h.store.rows('SELECT item FROM newsletter_reported').map(r => r.item).sort(), expectedKeys);
+    assert.equal((await h.schedule.deliver(deliveryArgs)).reason, 'already-sent');
+    assert.equal(h.emails.length, 1, 'uncertain or incomplete editions are never replayed');
+  }
+  const h = multipartHarness((_body, n) => n === 2 ? new Response('', { status: 403 }) : Response.json({ success: true, data: { messageId: `<reply-${n}@muns.io>` } }));
+  const result = await h.schedule.deliver(deliveryArgs);
+  assert.ok(h.emails.length > 2); assert.equal(result.reason, 'partial-send');
+  for (const mail of h.emails.slice(1)) assert.equal(mail.inReplyTo, '<reply-1@muns.io>', 'later parts stay threaded after an intermediate failure');
 });
 
 await test('PDF download routes, preview limits and manual budgets are explicit and read-only', async () => {

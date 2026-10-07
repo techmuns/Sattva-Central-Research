@@ -53,14 +53,18 @@ async function pooled(items, size, fn) {
   }));
 }
 
+const validMessageId = value => typeof value === 'string' && value.length <= 998 && /^<[^<>\s@]+@[^<>\s@]+>$/.test(value) ? value : null;
+
 /**
  * One email through the Muns raw-send endpoint. Exactly one of `text` / `html` is sent, as the
  * endpoint requires. The answer is a small named outcome and never the upstream's own words.
  */
-export async function sendEmail({ fetcher = fetch, token, email, subject, html = null, text = null, signal, base = EMAIL_SEND_URL }) {
+export async function sendEmail({ fetcher = fetch, token, email, subject, html = null, text = null, inReplyTo = null, signal, base = EMAIL_SEND_URL }) {
   if ((html == null) === (text == null)) throw new Error('sendEmail takes exactly one of html or text');
+  if (inReplyTo != null && !validMessageId(inReplyTo)) throw new Error('sendEmail takes a valid reply Message-ID');
   if (emailBytes(html ?? text) > EMAIL_HTML_BYTES) return { ok: false, status: null, reason: 'email-too-large' };
   const body = html != null ? { email, subject, html } : { email, subject, text };
+  if (inReplyTo) Object.assign(body, { inReplyTo, references: [inReplyTo] });
   let res;
   try {
     res = await fetcher(base, {
@@ -80,7 +84,7 @@ export async function sendEmail({ fetcher = fetch, token, email, subject, html =
   if (res.status >= 500) return { ok: false, status: res.status, reason: 'upstream' };
   if (!res.ok) return { ok: false, status: res.status, reason: 'refused' };
   if (parsed?.success !== true) return { ok: false, status: res.status, reason: 'invalid-response' };
-  return { ok: true, status: res.status, reason: null };
+  return { ok: true, status: res.status, reason: null, messageId: validMessageId(parsed.data?.messageId) };
 }
 
 export class NewsletterSchedule {
@@ -288,28 +292,36 @@ export class NewsletterSchedule {
       reported: (deliveredStories() || []).map(key => ({ key, publishedAt: published.get(key) })), windowFrom: brief.window.from });
     progress();
     await pooled(list.map((recipient, i) => ({ recipient, outcome: outcomes[i] })), SEND_POOL, async ({ recipient, outcome }) => {
-      // Sequence parts for each reader; a failed part does not discard later updates. The
-      // edition claim prevents duplicate sends, including after uncertain upstream timeouts.
+      // Each recipient/edition starts its own root. Later parts reply to that root even when
+      // an intermediate reply fails. Without a confirmed root ID, stop rather than sending
+      // unthreaded parts. Edition claims still prevent retries of uncertain sends.
       for (let i = 0; i < messages.length; i++) {
         const message = messages[i], part = outcome.parts[i];
         const html = renderBriefHtml(brief, { ...this.renderOptions(recipient), pdfUrl, part: message.part });
         part.reason = 'sending';
         part.bytes = emailBytes(html);
         progress();
-        const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject: message.subject, html, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
+        const result = await sendEmail({ fetcher: this.fetcher, token: credential, email: recipient.email, subject: message.subject, html,
+          inReplyTo: outcome.threadMessageId, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
         Object.assign(part, result);
         if (result.ok) acceptedParts.add(i);
+        if (i === 0) {
+          outcome.threadMessageId = result.ok ? result.messageId : null;
+          if (!outcome.threadMessageId) for (const pending of outcome.parts.slice(1)) pending.reason = 'thread-unavailable';
+        }
         outcome.ok = outcome.parts.every(p => p.ok);
         const unfinished = outcome.parts.find(p => !p.ok);
         outcome.status = unfinished ? unfinished.status : result.status;
         outcome.reason = outcome.ok ? null : outcome.parts.some(p => p.ok) ? 'partial-send' : outcome.parts.find(p => !p.ok)?.reason;
         progress();
+        if (!outcome.threadMessageId) break;
       }
     });
     const sent = outcomes.filter((o) => o.ok).length;
     const failed = outcomes.length - sent;
     const partOutcomes = outcomes.flatMap(o => o.parts);
-    this.store.finishDocument(documentId, partOutcomes);
+    // Skipped replies were never submitted; only attempted sends can leave a PDF link uncertain.
+    this.store.finishDocument(documentId, partOutcomes.filter(p => p.reason !== 'thread-unavailable'));
     const reason = !failed ? null : partOutcomes.some(p => p.ok) ? 'partial-send' : outcomes[0]?.reason || 'failed';
     return finish({ sent, failed, reason, outcomes, subject, summary });
   }

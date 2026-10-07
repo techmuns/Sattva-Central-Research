@@ -834,6 +834,10 @@ in [Newsletter markets](docs/NEWSLETTER-MARKET-ACCURACY.md). The route/store con
 - The ten-day reported-item ledger migrates retained acknowledged legacy keys in place and
   records confirmed parts atomically. Preview/test sends mark nothing. Preserve subscribers,
   claims, settings, PDFs and the four-attempt rolling daily manual-send budget.
+- **Threading updated 7 October 2026:** one dated subject per morning/evening edition. Each
+  recipient starts a fresh root; subsequent parts send Muns `inReplyTo` and `references` using
+  the returned `data.messageId`. Keep body part labels. Without an acknowledged valid root,
+  stop later parts as `thread-unavailable` and retain unsent identities for future editions.
 - Every part stays within 90,000 final UTF-8 HTML bytes. Split at company, complete-update or
   supplementary-row boundaries; preserve all sources and notes. A single unfit item fails
   before PDF creation or delivery. Parts share a complete immutable PDF; confirmed rejected

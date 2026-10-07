@@ -1356,10 +1356,10 @@ export const storyDate = (ms) => { const d = new Date(ms + 5.5 * 3600 * 1000); r
 /** "8:00 AM IST" from "08:00". */
 const clockLabel = (time) => { const [h, m] = String(time).split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'} IST`; };
 
-/** Numbered subjects keep Gmail from combining large parts and clipping the conversation. */
-export function briefSubject(brief, { brand = BRAND, part = null } = {}) {
+/** All parts share a dated edition subject; transport reply headers link each recipient's parts. */
+export function briefSubject(brief, { brand = BRAND } = {}) {
   const n = briefStats(brief).updates;
-  return `${brand} · ${n} update${n === 1 ? '' : 's'} on your ${EDITION_NAME.toLowerCase()} — ${shortDate(brief.at)} ${brief.day.slice(0, 4)} · ${brief.edition === 'morning' ? 'Morning' : 'Evening'}${part?.total > 1 ? ` · Part ${part.index} of ${part.total}` : ''}`;
+  return `${brand} · ${n} update${n === 1 ? '' : 's'} on your ${EDITION_NAME.toLowerCase()} — ${shortDate(brief.at)} ${brief.day.slice(0, 4)} · ${brief.edition === 'morning' ? 'Morning' : 'Evening'}`;
 }
 
 const windowLine = (brief) => `${istLabel(brief.window.from)} → ${istLabel(brief.window.to)}`;

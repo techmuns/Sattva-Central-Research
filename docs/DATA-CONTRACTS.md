@@ -4753,7 +4753,7 @@ approximately 102 KB Gmail clipping threshold documented in
 [Mailchimp's clipping guidance](https://mailchimp.com/help/gmail-is-clipping-my-email/). Count final
 escaped content, URLs, inline styles, AI notes and recipient attribution, not JavaScript string
 length or just visible text. Short editions remain a single email. Larger editions split at company
-boundaries, or between complete updates if a single company exceeds the budget. Subjects, mastheads
+boundaries, or between complete updates if a single company exceeds the budget. Mastheads
 and closing notices identify Part 1 of 2 etc.; additional numbered parts preserve unusually busy
 editions. No source text or AI annotation is cut to meet the budget. Only the final part contains
 the global market scan. Each part includes the same complete-edition PDF, source coverage,
@@ -4763,6 +4763,19 @@ write, retaining unsent story eligibility. Supplementary sections split between 
 counts remain explicit. Parts are submitted sequentially for each recipient, with three recipients in
 parallel; the sender cannot guarantee the receiving provider's inbox arrival order. Durable edition
 claims prevent replaying uncertain sends; no automatic resend is added.
+
+- **Threaded editions (7 October 2026):** all parts share one dated morning/evening subject;
+  part numbers remain in the body. The verified Muns success response returns `data.messageId`.
+  Each recipient's first part starts a new root; later parts send `inReplyTo: rootMessageId`
+  and `references: [rootMessageId]`. Root IDs are local to that recipient and delivery, never
+  shared across recipients, editions or dates. Delivery outcomes retain `threadMessageId` and
+  each acknowledged part's `messageId`. The API still receives exactly one of `html`/`text`.
+  A missing/invalid root ID or failed first send stops later parts with `thread-unavailable`;
+  acknowledged first-part identities alone may enter the ledger, and unsent identities remain
+  eligible. A failed intermediate reply does not unlink subsequent parts. Unknown sends are
+  never retried. Individual bodies retain the 90,000-byte cap; clients may still clip a combined
+  conversation, so every part links to the complete immutable PDF. Gmail delivery was verified
+  with two test messages to `ceekay@muns.io`, including received reply headers and one thread ID.
 
 **The panel is deliberately minimal.** It offers your own address with Subscribe / Unsubscribe, the
 other addresses on the list with × and one field to paste one or several teammate addresses, and Preview Morning · Evening.
