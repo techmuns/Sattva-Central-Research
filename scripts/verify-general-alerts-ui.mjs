@@ -560,6 +560,17 @@ try {
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : 0 };
   });
   assert(beforeRefresh.key && (await page.locator('[data-table-scroll]').evaluate((el) => el.scrollTop)) > 0);
+  // Observe receipt before waiting for every provider: its live notice can legitimately
+  // expire while slower source reads finish, but the reading anchor must still survive.
+  await page.evaluate(() => {
+    window.observedReadingArrival = false;
+    const observer = new MutationObserver(() => {
+      if (document.querySelector('[data-arrivals-announcement]')?.textContent.includes('Arrival while reading older rows')) {
+        window.observedReadingArrival = true; observer.disconnect();
+      }
+    });
+    observer.observe(document.querySelector('#root'), { childList: true, subtree: true, characterData: true });
+  });
   version = 4;
   await page.evaluate(async () => (await import('/js/core/refresh.js')).refreshAll());
   await settled();
@@ -571,7 +582,7 @@ try {
   }, beforeRefresh.key);
   assert.equal(afterRefresh.key, beforeRefresh.key);
   assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
-  assert((await page.locator('[data-arrivals-announcement]').textContent()).includes('Arrival while reading older rows'), 'new row arrived above the preserved reading position');
+  assert(await page.evaluate(() => window.observedReadingArrival), 'new row arrived above the preserved reading position');
 
   await page.locator('[data-alerts-focus]').click();
   assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'true');
