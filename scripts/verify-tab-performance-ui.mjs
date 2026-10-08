@@ -83,7 +83,7 @@ try {
   for (const route of routes) {
     const [path, section] = route.split('|');
     const profiler = process.env.TAB_PERF_PROFILE ? await context.newCDPSession(page) : null;
-    if (profiler) { await profiler.send('Profiler.enable'); await profiler.send('Profiler.start'); }
+    if (profiler) { await profiler.send('Profiler.enable'); await profiler.send('Performance.enable'); await profiler.send('Profiler.start'); }
     const started = await frame.evaluate(route => { window.__longTasks = []; location.hash = `#/research/${route}`; return performance.now(); }, path);
     await frame.waitForFunction(id => document.querySelector('#content-host')?.dataset.activeTab === id, route.split(/[/?]/)[0]);
     await frame.waitForFunction(() => {
@@ -103,6 +103,7 @@ try {
       cards: document.querySelectorAll('[data-news-key]').length,
       text: document.querySelector('#content-host')?.textContent.trim().replace(/\s+/g, ' ').slice(0, 220),
       maxTaskMs: Math.max(0, ...window.__longTasks.map(t => t.ms)),
+      longestTask: window.__longTasks.reduce((longest, task) => !longest || task.ms > longest.ms ? task : longest, null),
     }));
     // Live tabs may replace their search input while a source update is painting. Resolve both the
     // probe and its cleanup inside the page, where each current node can be used synchronously;
@@ -139,9 +140,34 @@ try {
     console.log(JSON.stringify(results.at(-1)));
     if (profiler) {
       const { profile } = await profiler.send('Profiler.stop');
+      const metrics = await profiler.send('Performance.getMetrics');
+      const frameNow = await frame.evaluate(() => performance.now());
       const samples = new Map();
       profile.samples?.forEach((id, i) => samples.set(id, (samples.get(id) || 0) + profile.timeDeltas[i]));
       console.log(JSON.stringify(profile.nodes.map(n => ({ fn: n.callFrame.functionName, file: n.callFrame.url.split('/').at(-1), line: n.callFrame.lineNumber + 1, ms: Math.round((samples.get(n.id) || 0) / 1000) })).sort((a,b) => b.ms-a.ms).slice(0,20)));
+      if (result.longestTask?.ms > 300) {
+        const stamp = metrics.metrics.find(metric => metric.name === 'Timestamp')?.value;
+        const offset = stamp * 1000 - frameNow;
+        const start = (result.longestTask.at + offset) * 1000, end = start + result.longestTask.ms * 1000;
+        const taskSamples = new Map(), parents = new Map(), nodes = new Map(profile.nodes.map(node => [node.id, node]));
+        for (const node of profile.nodes) for (const child of node.children || []) parents.set(child, node.id);
+        let sampleTime = profile.startTime;
+        profile.samples?.forEach((id, i) => {
+          sampleTime += profile.timeDeltas[i];
+          if (sampleTime >= start && sampleTime <= end) taskSamples.set(id, (taskSamples.get(id) || 0) + profile.timeDeltas[i]);
+        });
+        const stack = id => {
+          const names = [];
+          for (let at = id; at && names.length < 12; at = parents.get(at)) {
+            const call = nodes.get(at)?.callFrame;
+            if (call) names.push(`${call.functionName || '(anonymous)'} ${call.url.split('/').at(-1)}:${call.lineNumber + 1}`);
+          }
+          return names;
+        };
+        console.log(JSON.stringify({ route, longestTask: result.longestTask,
+          heapBytes: metrics.metrics.find(metric => metric.name === 'JSHeapUsedSize')?.value,
+          taskStacks: [...taskSamples].sort((a,b) => b[1]-a[1]).slice(0,8).map(([id, us]) => ({ ms: Math.round(us / 1000), stack: stack(id) })) }));
+      }
       await profiler.detach();
     }
     if (!audit) {
