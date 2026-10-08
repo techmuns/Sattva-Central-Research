@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { spawnSync } from 'node:child_process';
+import { readNewsJson } from './lib/news-json-storage.mjs';
 
 // Each phase uses the full captured dataset and the same frozen clock/artifact. Isolating
 // browser-lifetime caches between independent scenarios keeps this oracle inside the CI heap
@@ -117,7 +118,8 @@ let full = await alerts.collect({ scope: 'universe', day, includeHistory: true }
 let sourceFeeds = full.sourceFeeds.filter(publicAlertFeed);
 assert(full.feeds.find((feed) => feed.id === 'news').count > 0, 'the oracle must actually load retained news');
 const index = phase === 'periods'
-  ? writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(), captures: captureIdentities({ root, exchange }) })
+  ? writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(), captures: captureIdentities({ root, exchange }),
+    recoveryRows: readNewsJson(resolve(root, 'data/screener-announcements.json')).rows })
   : JSON.parse(readFileSync(join(outDir, 'index.json'), 'utf8'));
 assert.equal(index.day, day);
 assert.deepEqual(index.captures, captureIdentities({ root, exchange }), 'all phases use the same captured inputs');
