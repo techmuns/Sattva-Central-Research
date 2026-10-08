@@ -4,7 +4,8 @@ import { verifyAnnouncementDelivery } from './lib/announcement-delivery.mjs';
 import { mergeAnnouncements, mergeAnnouncementsAsync } from '../public/js/data/announcements-shared.js';
 import { createFeed } from '../public/js/data/filings.js';
 import { withFilingArchive } from '../public/js/data/filing-archives.js';
-import { warmRows } from '../public/js/data/daily-alerts.js';
+import { warmRows, toFeedRowSteps } from '../public/js/data/daily-alerts.js';
+import { runSteps, runStepsInSlices } from '../public/js/core/slices.js';
 
 const dated = { ticker: 'TEST', date: '2026-10-01', title: 'Original filing',
   url: 'https://www.bseindia.com/fixture/original.pdf', source: 'BSE' };
@@ -47,4 +48,26 @@ assert(abandoned > 0 && abandoned < many.length, 'abandoned per-view readings st
 const replacement = [];
 await warmRows(many, row => replacement.push(row), async () => {}, () => true);
 assert.deepEqual(replacement, many, 'cancelling computation cannot discard captured history');
+
+// Duplicate source IDs are not permission to erase distinct original records. A sliced
+// normalization must retain those collisions, date counts and provenance just like a direct read.
+const originals = many.map((sourceRecord, i) => ({ id: `filing-${i}`, day: '2026-10-01', sourceRecord }));
+const collision = { ...originals[0], sourceRecord: { ...originals[0].sourceRecord, title: 'Corrected original' } };
+const input = { events: [...originals, { ...originals[0] }, collision,
+  { id: 'undated', day: null }, { id: 'later', day: '2026-10-02' }], status: 'failed', note: 'Retained during outage' };
+const descriptor = { id: 'announcements', label: 'Announcements', tab: 'corp-announcements' };
+yields = 0;
+const normalized = await runStepsInSlices(toFeedRowSteps(descriptor, input, '2026-10-02'), {
+  sliceMs: 0, yieldForInput: async () => { yields++; },
+});
+assert(yields > 10, 'record normalization must offer input opportunities before completing');
+assert.deepEqual(normalized, runSteps(toFeedRowSteps(descriptor, input, '2026-10-02')));
+assert.equal(normalized.count, many.length + 3, 'only an exact source duplicate is removed');
+assert.equal(normalized.events.filter(row => row.id === 'filing-0').length, 2, 'distinct originals survive an ID collision');
+assert.equal(normalized.events[0].sourceRecord, originals[0].sourceRecord, 'normalization retains the original evidence object');
+assert.equal(normalized.todayCount, 1);
+assert.equal(normalized.oldestDay, '2026-10-01');
+assert.equal(normalized.newestDay, '2026-10-02');
+assert.equal(normalized.status, 'failed', 'scheduling never certifies a failed source');
+assert.equal(normalized.note, 'Retained during outage');
 console.log('PASS recovery delivery: original links, merged provenance, attachment-free notices, full sliced history and stable scope projections');

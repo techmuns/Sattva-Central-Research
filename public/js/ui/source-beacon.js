@@ -45,6 +45,8 @@ import * as twitterHandles from '../core/twitter-handles.js';
 import * as ipoFilings from '../data/ipo-filings.js';
 import { ipoSourceGroup } from './ipo-sources.js';
 import { sourceConnection, sourceSummary } from './source-connections.js';
+import { news, recentNews, announcements } from '../data/filings.js';
+import { yieldToInput } from '../core/slices.js';
 
 const ROOT_ID = 'source-beacon-root';
 const PANEL_ID = 'source-beacon-panel';
@@ -378,7 +380,20 @@ function refreshPortfolioStatus() {
 }
 
 // Update connection state in place, without resetting expanded details, focus, scroll or motion.
+let preparingConnections = null;
 function refreshConnections() {
+  if (!rootEl) return;
+  if (preparingConnections) return preparingConnections;
+  const host = rootEl;
+  // A timer can land while public readers are still joining arriving sources. Prepare
+  // those existing records in slices before their metadata asks for a synchronous union.
+  // These methods start no source requests; concurrent status updates share the work.
+  preparingConnections = Promise.allSettled([
+    news.prepareRows?.(yieldToInput), recentNews.prepareRows?.(yieldToInput), announcements.warm?.(yieldToInput),
+  ]).then(() => { if (rootEl === host) paintConnections(); }).finally(() => { preparingConnections = null; });
+  return preparingConnections;
+}
+function paintConnections() {
   if (!rootEl) return;
   const estate = readEstate();
   rootEl.classList.toggle('has-connection', estate.connected > 0 && navigator.onLine !== false);
