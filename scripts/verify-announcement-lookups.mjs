@@ -347,5 +347,44 @@ try {
   await loadCompanyCaptureIndex({ force: true });
   await archived.loadArchive({ onlyChanged: true });
   assert.equal(companyReads, 3, 'newly parsed partial rows refresh even when a full-success timestamp has not advanced');
+
+  // Drive the actual shared-company archive path, including a recent capture that
+  // arrives while its merge is sliced. Every original and no-link occurrence survives.
+  await clearAll();
+  const histories = Object.fromEntries(['A', 'B'].map(ticker => [ticker,
+    Array.from({ length: 8000 }, (_, i) => ({ ticker: i === 7999 ? 'SAME' : ticker,
+      date: '2020-01-01', title: i === 7999 ? 'Repeated no-link filing' : `${ticker} retained ${i}`,
+      source: 'BSE', url: i === 7999 ? null : `https://example.test/${ticker}/${i}.pdf` }))]));
+  const recent = { ticker: 'A', date: '2026-10-01', title: 'Recent arrival', source: 'NSE', url: 'https://example.test/new.pdf' };
+  const archiveIndex = { version: 1, companies: [{ ticker: 'A' }, { ticker: 'B' }], sources: { announcements:
+    Object.fromEntries(['A', 'B'].map(ticker => [ticker, { rowCount: 8000, fileRevision: 1 }])) } };
+  globalThis.fetch = async url => {
+    const path = String(url);
+    if (path.endsWith('/index.json')) return Response.json(archiveIndex);
+    if (path.endsWith('/announcements-recent.json')) return Response.json({ updatedAt: '2026-10-01T10:00:00Z', rows: [recent] });
+    const ticker = /\/([AB])\.json$/.exec(path)?.[1];
+    return ticker ? Response.json({ rows: histories[ticker] }) : Response.json({}, { status: 404 });
+  };
+  await loadCompanyCaptureIndex({ force: true });
+  const emptyBase = { ...base, rows: () => [], loadArchive: async () => {} };
+  const sliced = withAnnouncementLookups(emptyBase);
+  let archiveTurns = 0, arrival;
+  await sliced.loadArchive({ sliceMs: 0, yieldForInput: async () => {
+    if (++archiveTurns === 1) arrival = sliced.seed();
+  } });
+  await arrival;
+  assert(archiveTurns > 100, 'the real shared archive merge offers input turns throughout the history');
+  assert.deepEqual(sliced.rows(), mergeAnnouncements([], [...histories.A, ...histories.B], [recent]),
+    'overlapping recent and archive arrivals retain exact fields, sources, stable order and multiplicity');
+  assert.equal(sliced.rows().filter(row => row.title === 'Repeated no-link filing').length, 2);
+  assert.equal(sliced.meta().archive.pending, false, 'sliced publication settles the archive');
+  const cancelled = withAnnouncementLookups(emptyBase);
+  let cancelledTurns = 0;
+  await cancelled.loadArchive({ sliceMs: 0, yieldForInput: async () => {
+    if (++cancelledTurns === 1) cancelled.invalidate();
+  } });
+  assert.equal(cancelledTurns, 1, 'an invalidated merge stops at its next input opportunity');
+  assert.deepEqual(cancelled.rows(), [], 'an obsolete shared archive cannot repopulate a released generation');
+  assert.equal(cancelled.meta().archive.pending, false);
 } finally {globalThis.fetch=originalFetch;globalThis.caches=originalCaches;await clearAll()}
 console.log('PASS grouped announcements, scope identity, date contract, auth/cache and additive device retention');

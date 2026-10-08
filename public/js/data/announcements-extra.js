@@ -1,7 +1,7 @@
 import { readEntry, writeEntry, KEYS } from '../core/store.js';
 import { authHeaders } from '../core/host-context.js';
 import { capturedJson, capturedCompany, loadCompanyCaptureIndex, companyCaptureStatus } from './company-captures.js';
-import { announcementRange, announcementUrl, mergeAnnouncements, mergeAnnouncementSteps } from './announcements-shared.js';
+import { announcementRange, announcementUrl, mergeAnnouncements, mergeAnnouncementsAsync, mergeAnnouncementSteps } from './announcements-shared.js';
 import { runSteps, runStepsInSlices, yieldToInput } from '../core/slices.js';
 
 /** Additional company lookups share the table, never the exchange-wide snapshot's coverage claim. */
@@ -12,6 +12,19 @@ export function withAnnouncementLookups(base) {
   const emit = () => subscribers.forEach((fn) => fn());
   let lastQuery = null;
   let shared = [], sharedError = null, sharedPending = false, sharedLoaded = false;
+  let sharedGeneration = 0, sharedMerges = Promise.resolve();
+  function appendShared(lists, options = {}, generation = sharedGeneration) {
+    const addition = sharedMerges.then(async () => {
+      if (generation !== sharedGeneration) return;
+      const next = await mergeAnnouncementsAsync([shared, ...lists], { ...options,
+        keepGoing: () => generation === sharedGeneration });
+      if (next && generation === sharedGeneration) shared = next;
+    });
+    // Recent and retained captures can finish together. Serialize their additions
+    // so a sliced merge cannot overwrite the other arrival's complete history.
+    sharedMerges = addition.catch(() => {});
+    return addition;
+  }
   let recovery = [], recoveryMeta = null, recoveryRevision = null, recoveryPromise = null;
   async function loadRecovery() {
     if (recoveryPromise) return recoveryPromise;
@@ -38,10 +51,13 @@ export function withAnnouncementLookups(base) {
   let sharedPromise = null;
   async function loadShared() {
     if (sharedPromise) return sharedPromise;
+    const generation = sharedGeneration;
     sharedPromise = (async () => {
       await loadCompanyCaptureIndex();
+      if (generation !== sharedGeneration) return;
       try {
         const result = await capturedJson('data/filing-capture/announcements-recent.json');
+        if (generation !== sharedGeneration) return;
         if (!Array.isArray(result.value?.rows)) throw new Error('Additional shared announcements have an unfamiliar format.');
         // RE-MERGING AN UNCHANGED CAPTURE IS NOT FREE, AND ITS REAL COST IS PAID BY EVERY LAYER ABOVE.
         //
@@ -61,12 +77,13 @@ export function withAnnouncementLookups(base) {
         const sharedRevision = typeof result.value.updatedAt === 'string' && result.value.updatedAt
           ? `recent:${result.value.updatedAt}|${result.value.rows.length}` : null;
         if (!sharedRevision || !shared.length || sharedRevisions.get(SHARED_RECENT_KEY) !== sharedRevision) {
-          shared = mergeAnnouncements(shared, result.value.rows);
+          await appendShared([result.value.rows], {}, generation);
+          if (generation !== sharedGeneration) return;
           if (sharedRevision) sharedRevisions.set(SHARED_RECENT_KEY, sharedRevision);
         }
         sharedError = result.stale ? 'Showing saved additional announcements; shared capture could not be checked.' : null;
-      } catch (error) { sharedError = error.message; }
-      finally { sharedPromise = null; }
+      } catch (error) { if (generation === sharedGeneration) sharedError = error.message; }
+      finally { if (generation === sharedGeneration) sharedPromise = null; }
     })();
     return sharedPromise;
   }
@@ -186,16 +203,19 @@ export function withAnnouncementLookups(base) {
       await warm(); emit();
       return result;
     },
-    async loadArchive({ onlyChanged = false } = {}) {
+    async loadArchive({ onlyChanged = false, yieldForInput = yieldToInput, sliceMs } = {}) {
       if (sharedPending) return;
+      const generation = sharedGeneration;
       sharedPending = true; sharedError = null; emit();
       try {
         await loadCompanyCaptureIndex();
+        if (generation !== sharedGeneration) return;
         const status = companyCaptureStatus('announcements');
         const queue = Object.keys(status.entries), failed = [], incoming = [];
         // Merge once per batch, instead of re-sorting all prior history for every company.
         const results = await Promise.allSettled([Promise.resolve().then(() => base.loadArchive?.({ onlyChanged })), ...Array.from({ length: 3 }, async () => {
           while (queue.length) {
+            if (generation !== sharedGeneration) return;
             const ticker = queue.shift(), entry = status.entries[ticker];
             if (!entry.rowCount) continue;
             // Either source can change the shared company file independently. In particular, an
@@ -210,19 +230,23 @@ export function withAnnouncementLookups(base) {
             if (onlyChanged && !status.error && sharedRevisions.get(ticker) === revision) continue;
             try {
               const result = await capturedCompany('announcements', ticker);
+              if (generation !== sharedGeneration) return;
               incoming.push(result.value.rows);
               if (result.stale) failed.push(ticker);
               else sharedRevisions.set(ticker, revision);
             } catch { failed.push(ticker); }
           }
         })]);
-        shared = mergeAnnouncements(shared, incoming.flat());
+        await appendShared([incoming.flat()], { yieldForInput, sliceMs }, generation);
+        if (generation !== sharedGeneration) return;
+        await warm(yieldForInput, { sliceMs });
+        if (generation !== sharedGeneration) return;
         sharedLoaded = status.available && !failed.length && results.every(result => result.status === 'fulfilled');
         sharedError = failed.length ? `Additional company history could not be checked for: ${failed.join(', ')}.` :
           results.some(result => result.status === 'rejected') ? 'Some captured history could not be checked; saved announcements are retained.' :
           !sharedLoaded ? 'Additional company history has not been published yet.' : null;
-      } catch { sharedError = 'Captured company history could not be checked; saved announcements are retained.'; sharedLoaded = false; }
-      finally { sharedPending = false; emit(); }
+      } catch { if (generation === sharedGeneration) { sharedError = 'Captured company history could not be checked; saved announcements are retained.'; sharedLoaded = false; } }
+      finally { if (generation === sharedGeneration) { sharedPending = false; emit(); } }
     },
     lookup, lookupMeta,
     // The normal Refresh remains the inexpensive BSE refresh. The company form repeats additional
@@ -232,6 +256,6 @@ export function withAnnouncementLookups(base) {
       const off = base.onChange(fn);
       return () => { subscribers.delete(fn); off(); };
     },
-    invalidate() { base.invalidate(); restored = null; history = []; shared = []; recovery = []; recoveryMeta = null; recoveryRevision = null; sharedLoaded = false; sharedRevisions.clear(); queries.clear(); lastQuery = null; },
+    invalidate() { base.invalidate(); restored = null; history = []; shared = []; sharedGeneration++; sharedMerges = Promise.resolve(); sharedPending = false; sharedPromise = null; recovery = []; recoveryMeta = null; recoveryRevision = null; sharedLoaded = false; sharedRevisions.clear(); queries.clear(); lastQuery = null; },
   };
 }
