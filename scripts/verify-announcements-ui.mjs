@@ -18,7 +18,7 @@ globalThis.localStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (k,
 const here = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(here, '../public');
 const { startAnnouncementServer } = await import('./lib/announcement-test-server.mjs');
-const { buildFixtureIndex } = await import('./lib/announcement-index-fixture.mjs');
+const { buildFixtureIndex, feedbackPair } = await import('./lib/announcement-index-fixture.mjs');
 const PW_ROOT = process.env.PLAYWRIGHT_ROOT || '/opt/node22/lib/node_modules/playwright';
 const { chromium } = await import(`${PW_ROOT}/index.mjs`);
 
@@ -142,8 +142,8 @@ try {
   // AI Read: one click, one read, the same five sections, the original filing one click away.
   // An exchange PDF: the stand-in answers with a PDF, and which filing leads the page moves with the
   // data (an NSE XBRL file there is read as XBRL and correctly refused as unreadable).
-  const target = (await caRows()).find((r) => /bseindia|nseindia/.test(r.url || '') && /\.pdf(?:$|[?#])/i.test(r.url || ''));
-  assert(target, 'the newest page holds an exchange PDF filing to read');
+  const target = feedbackPair(await caRows(), { pdf: true })?.row;
+  assert(target, 'the page holds an exchange PDF with a comparable same-day peer for the read and feedback checks');
   const targetRow = page.locator(`tbody tr[data-row-key="${target.id}"]`);
   await targetRow.locator('td').nth(1).click();
   const popup = page.locator('#modal-content [data-ann-read]');
@@ -163,6 +163,7 @@ try {
 
   // Important / Not important inside the popup trains the shared model and re-orders the list.
   const beforeRows = await caRows();
+  const beforeTotal = (await caMeta()).total;
   const sameDay = beforeRows.filter((r) => r.date === target.date);
   const beforeAt = sameDay.findIndex((r) => r.id === target.id);
   await popup.locator('[data-vote="not-important"]').click();
@@ -175,12 +176,21 @@ try {
   await page.waitForFunction(() => /shared ranking learns/.test(document.querySelector('#modal-content [data-feedback-status]')?.textContent || ''));
   assert(srv.feedback.model().recent.some((v) => v.why === 'routine for a company this size'), 'the why travels with the vote');
   await page.locator('#modal-content [data-modal-close]').first().click();
-  await page.waitForFunction(([id, at]) => {
+  await page.waitForFunction(([id, score]) => {
     const q = window.__ca;
-    const rows = q.rows(); const day = rows.find((r) => r.id === id)?.date;
-    return q.meta().state === 'ready' && rows.filter((r) => r.date === day).findIndex((r) => r.id === id) > at;
-  }, [target.id, beforeAt], { timeout: 30000 });
-  assert((await caRows()).some((r) => r.id === target.id), 'the filing is still listed');
+    const row = q.rows().find(r => r.id === id);
+    return q.meta().state === 'ready' && !q.meta().refreshing && (!row || row.relevance < score);
+  }, [target.id, target.relevance], { timeout: 30000 });
+  // A bounded first page is not the whole ranked day. A valid vote can move the
+  // filing beyond it; follow the real pagination before asserting retention/order.
+  while (!(await caRows()).some(row => row.id === target.id) && (await caMeta()).nextOffset !== null) {
+    await page.evaluate(() => window.__ca.loadMore());
+    await settle();
+  }
+  const afterRows = await caRows();
+  assert(afterRows.some(row => row.id === target.id), 'the filing is still listed');
+  assert(afterRows.filter(row => row.date === target.date).findIndex(row => row.id === target.id) > beforeAt, 'the vote reorders the actual day');
+  assert.equal((await caMeta()).total, beforeTotal, 'a vote never removes captured filings');
   ok('Important / Not important + Why? in the popup re-orders the day and hides nothing');
 
   // ---- News: the row still opens the article; the ⋯ is a separate control ---------------------

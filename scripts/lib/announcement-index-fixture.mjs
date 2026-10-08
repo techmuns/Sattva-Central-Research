@@ -14,6 +14,21 @@ import { profilesFrom, writeIndexMembers, captureIdentities } from './announceme
 
 const read = (root, path) => JSON.parse(readFileSync(resolve(root, path), 'utf8'));
 
+// A bounded vote cannot move a lone newest filing, or bridge an arbitrary score gap.
+// Pick a real filing with a later equally scored/featured same-day peer. Distinct
+// events isolate the direct filing adjustment from the shared event adjustment.
+export function feedbackPair(rows, { pdf = false } = {}) {
+  const features = rows.map(row => JSON.stringify(row.keys));
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (pdf && !(/bseindia|nseindia/.test(row.url || '') && /\.pdf(?:$|[?#])/i.test(row.url || ''))) continue;
+    const peer = rows.find((next, j) => j > i && next.date === row.date && next.relevance === row.relevance && features[j] === features[i] &&
+      (!row.event?.id || row.event.id !== next.event?.id));
+    if (peer) return { row, peer };
+  }
+  return null;
+}
+
 export function fixtureStream(root) {
   const bse = read(root, 'data/corp-announcements.json');
   const nse = read(root, 'data/nse-announcements.json');

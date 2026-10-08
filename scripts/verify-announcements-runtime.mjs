@@ -27,7 +27,7 @@ const storage = new Map();
 globalThis.localStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, String(v)), removeItem: (k) => storage.delete(k) };
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const publicDir = resolve(repo, 'public');
-const { buildFixtureIndex } = await import('./lib/announcement-index-fixture.mjs');
+const { buildFixtureIndex, feedbackPair } = await import('./lib/announcement-index-fixture.mjs');
 
 // A stored-member ZIP exactly as upload-artifact writes one at compression-level 0.
 function zip(members) {
@@ -165,7 +165,9 @@ try {
   console.log('PASS workerd: stitched events (with 304), company profiles, status, same-origin queries');
 
   // 4. Shared feedback: a vote crosses RPC, the model publishes it, and the index re-ranks on it.
-  const top = all.rows[0];
+  const top = feedbackPair(all.rows)?.row;
+  assert(top, 'the real capture has comparable same-day peers for the feedback check');
+  const beforePosition = all.rows.filter(row => row.date === top.date).findIndex(row => row.id === top.id);
   const voted = await post('/api/relevance/feedback', { surface: 'announcements', vote: 'not-important', itemKey: top.id, eventKey: top.event?.id || null,
     device: 'device-runtime-1', features: top.keys, why: 'routine', label: top.title, company: top.company, categories: top.categories });
   assert.equal(voted.status, 200, await voted.clone().text());
@@ -175,7 +177,7 @@ try {
   assert.equal(mine.votes[top.id].vote, 'not-important');
   const reranked = await (await post('/api/announcement-index/query', { period: 'all', limit: 500, modelRevision: model.model.revision })).json();
   const day = reranked.rows.filter((r) => r.date === top.date);
-  assert(day.findIndex((r) => r.id === top.id) > 0, 'the vote moves the filing down its day at once');
+  assert(day.findIndex((r) => r.id === top.id) > beforePosition, 'the vote moves the filing down its day at once');
   assert.equal(reranked.total, all.total, 'and hides nothing');
   console.log('PASS workerd: a vote crosses RPC, publishes in the shared model and re-ranks the index immediately');
 

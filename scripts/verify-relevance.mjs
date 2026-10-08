@@ -32,7 +32,7 @@ const { handleRelevanceFeedback } = await import('../worker/relevance-feedback.m
 const { handleAnnouncementIndex } = await import('../worker/announcement-index.mjs');
 const { handleAnnouncementRead } = await import('../worker/announcement-read.mjs');
 const { sqliteStorage, directorySource } = await import('./lib/announcement-test-server.mjs');
-const { buildFixtureIndex } = await import('./lib/announcement-index-fixture.mjs');
+const { buildFixtureIndex, feedbackPair } = await import('./lib/announcement-index-fixture.mjs');
 
 let checks = 0;
 const ok = (label) => { checks++; console.log(`  PASS  ${label}`); };
@@ -344,11 +344,7 @@ try {
   // A new capture can begin with one filing on the newest day, or a leader whose
   // score is too far above its peers for one bounded vote to overtake it. Exercise
   // the ordering contract on two equally scored, equally featured peers instead.
-  const top = beforeVote.rows.find((row, i) => {
-    const peer = beforeVote.rows[i + 1];
-    return peer && row.date === peer.date && row.relevance > 0 && row.relevance === peer.relevance &&
-      JSON.stringify(row.keys) === JSON.stringify(peer.keys);
-  });
+  const top = feedbackPair(beforeVote.rows)?.row;
   assert(top, 'the real capture contains equally scored same-day peers for the feedback check');
   const beforePosition = beforeVote.rows.filter(row => row.date === top.date).findIndex(row => row.id === top.id);
   model = fb.aggregateModel([{ surface: 'announcements', vote: 'not-important', itemKey: top.id, features: top.keys, at: Date.now() }]);
