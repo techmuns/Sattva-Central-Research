@@ -520,7 +520,9 @@ function newsQueryRows(reader, queryWindow, companyReader = news) {
   if (newsCandidates?.companyRows !== companyRows || newsCandidates.marketRows !== marketRows || newsCandidates.key !== key) {
     const selected = row => inAlertQuery({ at: row.publishedAt || row.date }, queryWindow);
     const urls = new Set([...companyRows, ...marketRows].filter(selected).filter(row => row.url).map(rowUrlKey));
-    const matches = row => selected(row) || row.url && urls.has(rowUrlKey(row));
+    // An empty period has no publisher companions. Avoid parsing every older
+    // article's address just to test membership in an empty set.
+    const matches = row => selected(row) || urls.size > 0 && row.url && urls.has(rowUrlKey(row));
     newsCandidates = { companyRows, marketRows, key, company: companyRows.filter(matches), market: marketRows.filter(matches) };
   }
   return reader === companyReader ? newsCandidates.company : newsCandidates.market;

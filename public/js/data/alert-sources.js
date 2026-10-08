@@ -74,10 +74,12 @@ export function ipoRecord(r) {
 // and the assembly then hit is exactly what was touched here. A row that throws is left to the
 // synchronous read, which reports it in its own way.
 async function warmRecords(rows, build, feedId, yieldForInput, reading) {
+  const current = () => reading?.keepGoing?.() !== false;
+  if (!current()) return;
   let started = performance.now();
   for (const row of rows) {
     try { const event = build(row); reading?.touch?.(event, feedId); } catch { /* reported by the synchronous read */ }
-    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); if (!current()) return; }
   }
 }
 const warmNse = (yieldForInput, reading) => warmRecords(nse.retainedRows(), nseRecord, 'nse-filings', yieldForInput, reading);
