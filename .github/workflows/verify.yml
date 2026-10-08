@@ -292,6 +292,7 @@ jobs:
       - name: Verify full-data dashboard tabs and bounded iframe interactions
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+          TAB_PERF_PROFILE: '1'
         run: node scripts/verify-tab-performance-ui.mjs
       - name: Verify bounded Earnings ownership and unchanged scrolling work
         env:

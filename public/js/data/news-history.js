@@ -79,12 +79,13 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
     if (!preparing) preparing = prepareOnce(yieldForInput).finally(() => { preparing = null; });
     return preparing;
   }
-  // A build the source churn abandoned is tried again against the newer state, a few times: a
-  // preparation that gives up during a cold load leaves the next synchronous read to rebuild
-  // the history in one task, which is exactly what it exists to prevent.
+  // Retry source churn until the current generation is ready. Returning an obsolete
+  // build leaves the next metadata read to rebuild the complete history in one task.
   async function prepareOnce(yieldForInput) {
-    for (let attempt = 0; attempt < 4; attempt++) {
+    const initialEpoch = epoch;
+    for (;;) {
       await base.prepareRows?.(yieldForInput);
+      if (epoch !== initialEpoch) return;
       const source = base.rows();
       const window = readingWindow(), windowKey = JSON.stringify(window), at = revision, generation = epoch;
       const ready = () => combined?.source === source && combined.revision === at && combined.windowKey === windowKey;
@@ -93,8 +94,14 @@ export function withNewsHistory(base, { read = conditionalJson, window: readingW
       // its rows can itself be a cold rebuild. The base is compared once, at install.
       const current = () => revision === at && epoch === generation && JSON.stringify(readingWindow()) === windowKey;
       const value = await runStepsInSlices(buildRows(source, window), { yieldForInput, keepGoing: current });
-      if (value && current() && base.rows() === source && !ready()) combined = { source, revision: at, windowKey, rows: value };
-      if (value || epoch !== generation) return;
+      // The base can itself need a sliced rebuild after a source arrival. Warm
+      // it before asking rows() whether the inputs still match.
+      await base.prepareRows?.(yieldForInput);
+      if (epoch !== generation) return;
+      if (value && current() && base.rows() === source) {
+        if (!ready()) combined = { source, revision: at, windowKey, rows: value };
+        return;
+      }
     }
   }
   function loadArchive() {

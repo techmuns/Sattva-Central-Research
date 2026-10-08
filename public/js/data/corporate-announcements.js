@@ -107,9 +107,13 @@ export function createCorporateAnnouncementsFeed({ base = announcements, nse = n
     preparingRows = (async () => {
       let prior = null;
       for (;;) {
+        await base.warm?.(yieldForInput);
         const input = { ...inputs(), prior };
         if (!prior && sameInputs(rowInputs, input)) return held;
         const result = await runStepsInSlices(buildRows(input), { yieldForInput, sliceMs });
+        // Validate against a prepared latest source, rather than rebuilding a
+        // source that changed during our slices on this synchronous check.
+        await base.warm?.(yieldForInput);
         // Retain every fully observed snapshot, even if the source rolled over during a yield.
         // Notify readers only after the latest inputs (including identity corrections) are ready.
         if (held === input.held) {

@@ -210,3 +210,5 @@ The minute-clock Sources beacon also prepares existing news and announcement uni
 before reading metadata. This starts no source requests, preserves actual coverage status and
 coalesces simultaneous status refreshes. The populated Today view and empty post-midnight view
 are both checked against the existing 1,800 ms longest-task budget.
+
+Post-slice source checks also prepare their underlying reader again before comparing rows. A capture arriving while the higher reader yielded previously let that comparison trigger a cold synchronous history rebuild. Announcement lookup, combined exchange filings and retained news now keep the retry sliced, and the news reader waits for the current source revision rather than returning an obsolete preparation. A native regression injects an arrival into each reader, rejects cold synchronous reads and verifies all 20,001 records survive. CI profiles its full-data sweep while keeping the 1,800 ms alert budget.

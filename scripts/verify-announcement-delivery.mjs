@@ -4,6 +4,9 @@ import { verifyAnnouncementDelivery } from './lib/announcement-delivery.mjs';
 import { mergeAnnouncements, mergeAnnouncementsAsync } from '../public/js/data/announcements-shared.js';
 import { createFeed } from '../public/js/data/filings.js';
 import { withFilingArchive } from '../public/js/data/filing-archives.js';
+import { withAnnouncementLookups } from '../public/js/data/announcements-extra.js';
+import { createCorporateAnnouncementsFeed } from '../public/js/data/corporate-announcements.js';
+import { withNewsHistory } from '../public/js/data/news-history.js';
 import { warmRows, toFeedRowSteps } from '../public/js/data/daily-alerts.js';
 import { runSteps, runStepsInSlices } from '../public/js/core/slices.js';
 
@@ -36,6 +39,30 @@ assert.equal(base.rows(), first, 'scope labels cannot invalidate unchanged filin
 const feed = withFilingArchive(base, 'announcements');
 await feed.prepareRows();
 assert.deepEqual(feed.rows(), first, 'archive warm-up preserves the complete source data');
+
+// An underlying reader may become cold when a capture arrives between our slices.
+// A synchronous input comparison must not force its entire history to rebuild.
+const retained = Array.from({ length: 20000 }, (_, i) => ({ ticker: 'TEST', title: `Record ${i}`,
+  date: '2026-10-01', url: `https://example.test/churn/${i}` }));
+const arrived = { ticker: 'TEST', title: 'New arrival', date: '2026-10-02', url: 'https://example.test/churn/new' };
+for (const kind of ['lookup', 'corporate', 'news']) {
+  let input = retained, cold = false, turns = 0;
+  const source = { rows: () => {
+    assert(!cold, `${kind}: a changed source is prepared before the post-slice comparison`);
+    return input;
+  }, warm: async () => { cold = false; }, prepareRows: async () => { cold = false; } };
+  const reader = kind === 'lookup' ? withAnnouncementLookups(source) : kind === 'corporate'
+    ? createCorporateAnnouncementsFeed({ base: source, nse: { retainedRows: () => [] } }) : withNewsHistory(source);
+  const yieldForInput = async () => {
+    if (++turns === 1) { input = [...retained, arrived]; cold = true; }
+  };
+  if (kind === 'lookup') await reader.warm(yieldForInput, { sliceMs: 0 });
+  else await reader.prepareRows(yieldForInput, { sliceMs: 0 });
+  assert(turns > 0, `${kind}: the arrival occurs during a real input opportunity`);
+  assert.equal(reader.rows().length, retained.length + 1, `${kind}: source churn loses no history`);
+  assert.deepEqual(new Set(reader.rows().map(row => row.url)), new Set([...retained, arrived].map(row => row.url)));
+  assert.equal(reader.rows().find(row => row.url === arrived.url).title, arrived.title);
+}
 // A view that leaves during a source reading stops its unused classifications.
 // The replacement still has every original record available to read.
 let active = true, abandoned = 0;

@@ -106,9 +106,15 @@ export function withAnnouncementLookups(base) {
     if (preparingRows) return preparingRows;
     preparingRows = (async () => {
       for (;;) {
+        await base.warm?.(yieldForInput);
+        await base.prepareRows?.();
         const input = inputs();
         if (sameInputs(rowSnapshot, input)) return;
         const value = await runStepsInSlices(buildRows(input), { yieldForInput, sliceMs });
+        // A new archive can arrive between slices. Prepare its own union before
+        // comparing inputs; rows() would otherwise perform that cold merge now.
+        await base.warm?.(yieldForInput);
+        await base.prepareRows?.();
         // A source can publish or be invalidated between slices. Retry the current inputs;
         // neither a partial merge nor an obsolete source revision may become the ready snapshot.
         if (value && sameInputs(input, inputs())) { rowSnapshot = { ...input, rows: value }; return; }
