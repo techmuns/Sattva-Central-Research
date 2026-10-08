@@ -103,8 +103,14 @@ try {
     assert.equal(await page.locator('[data-ai-card]').count(), 8, 'only the first screen is mounted');
     const last = saved.at(-1);
     await page.locator('[data-ai-search]').fill(last.ticker);
-    await page.locator(`[data-ai-card][data-ticker="${last.ticker}"]`).waitFor();
-    assert.match(await page.locator(`[data-ai-card][data-ticker="${last.ticker}"]`).innerText(), /evidence 29/, 'offscreen evidence is searchable');
+    const resultCard = page.locator(`[data-ai-card][data-ticker="${last.ticker}"]`);
+    await resultCard.waitFor();
+    // Cards use content-visibility:auto. Attachment/visibility can precede its
+    // viewport paint, when innerText is still empty despite complete cached markup.
+    await resultCard.scrollIntoViewIfNeeded();
+    await page.waitForFunction(({ ticker, headline }) => [...document.querySelectorAll('[data-ai-card]')]
+      .some(card => card.dataset.ticker === ticker && card.innerText.includes(headline)), { ticker: last.ticker, headline: last.headline });
+    assert.match(await resultCard.innerText(), /evidence 29/, 'offscreen evidence is searchable and painted');
     releaseSources();
     gateTab = true;
     await page.locator('[data-tab-id="ask-research"]').click();
