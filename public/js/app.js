@@ -1,4 +1,7 @@
 import { installColumnOrder } from './ui/column-order.js';
+// The default interface must be ready before source downloads occupy browser connections.
+// Secondary interfaces retain their shared lazy loaders and navigation ownership checks.
+import './tabs/ai-alerts.js';
 // app.js — bootstrap: load the JSON data set once, then mount the shell (which starts the
 // router and renders the first tab). Every tab reads its slice off `state.data` via ctx.data,
 // so there is exactly one fetch pass at startup and pollers handle everything after that.
@@ -6,6 +9,7 @@ import { installColumnOrder } from './ui/column-order.js';
 import { $ } from './core/dom.js';
 import { setData, setDataError, setDeferredData } from './core/state.js';
 import { revalidatedJson } from './core/store.js';
+import { startupJson } from './core/startup-data.js';
 import { watchAppUpdates, watchWorkerChanges } from './core/app-updates.js';
 import { mount } from './ui/shell.js';
 import { adaptUniverse } from './data/universe.js';
@@ -65,7 +69,8 @@ async function fetchAll(sources, options = {}) {
 async function loadCritical() {
   // Bootstrap can restore saved company identities immediately, including offline.
   // The names-only Family poller rechecks them after mount; Refresh is network-first.
-  const data = await fetchAll(CRITICAL_SOURCES, { allowCached: true });
+  const data = Object.fromEntries(await Promise.all(Object.entries(CRITICAL_SOURCES)
+    .map(async ([key, path]) => [key, await startupJson(path, { allowCached: true })])));
   primeCoverage(data.portfolioCompanies);
   await restoreLastGood();
   return data;

@@ -72,7 +72,7 @@ try {
     assert.equal(await page.locator('html').getAttribute('data-theme'), colorScheme);
     const scripts = reads.filter(row => row.path.startsWith('/js/'));
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
-      ['/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
+      ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
     assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 16, 'every tab remains navigable before its code loads');
 

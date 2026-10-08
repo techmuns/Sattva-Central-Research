@@ -118,6 +118,7 @@ let horizon = HORIZON.THROUGH;
 let renderedHorizon = HORIZON.THROUGH;
 let renderedDay = null;
 let renderedScope = null;
+let renderedContextKey = null;
 let tableViews = { [HORIZON.THROUGH]: null, [HORIZON.UPCOMING]: null }; // one view per time horizon
 let routeCompany = null; // a company deep-link supplied by an AI Alert card
 // WHICH FEEDS ARE TICKED. `null` means All — deliberately not "a Set holding every id", because
@@ -156,7 +157,7 @@ function currentContext() {
 }
 
 function membershipChanged() {
-  if (ctxRef && report?.contextKey !== alerts.alertContextKey(ctxRef.scope)) render(ctxRef);
+  if (ctxRef && renderedContextKey !== alerts.alertContextKey(ctxRef.scope)) render(ctxRef);
 }
 
 export function render(ctx) {
@@ -196,6 +197,8 @@ export function render(ctx) {
   // onto the current scope and day, and the recheck still runs.
   if (!report) report = unpark();
   const context = currentContext();
+  // Remember the requested matching context before the first asynchronous report exists.
+  renderedContextKey = alerts.alertContextKey(context.scope, context.holdings, context.day);
   const queryChanged = !!report && alertWindowKey(report.queryWindow) !== alertWindowKey(context.queryWindow);
   const readKey = alertWindowKey(context.queryWindow);
   if (cachedReadKey !== readKey) { cachedRead = null; cachedReadKey = readKey; }
@@ -220,7 +223,7 @@ export function render(ctx) {
       if(ctxRef&&horizon===HORIZON.THROUGH) void storyGrouping.review(rows.flatMap(membersOf),{isCurrent:()=>!!ctxRef});
     }}));
     unsubs.push(alerts.onChange(sourceChanged));
-    unsubs.push(coverage.onChange(({ changed }) => { if (changed) membershipChanged(); }));
+    unsubs.push(coverage.onChange(membershipChanged));
     unsubs.push(watchlist.onChange(membershipChanged));
     unsubs.push(scopeLists.onChange(membershipChanged));
     unsubs.push(records.onChange(() => {
@@ -307,6 +310,7 @@ export function destroy() {
   arrivalsUI.detach();
   arrivals.reset();
   ctxRef = null;
+  renderedContextKey = null;
   // Leaving cancels sliced projection. Retain completed views, but rebuild an unfinished
   // one on return even when the parked source report and story revision are unchanged.
   if (lastVisible?.grouping) lastVisible = null;

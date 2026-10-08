@@ -27,6 +27,7 @@ on:
     paths:
       - 'public/js/data/alert-pool-*.js'
       - 'scripts/lib/alert-pool-build.mjs'
+      - 'scripts/lib/announcement-delivery.mjs'
       - 'scripts/build-alert-pool.mjs'
       - '.github/workflows/alert-pool-refresh.yml'
   workflow_run:

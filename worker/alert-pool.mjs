@@ -32,7 +32,7 @@ export const MAX_INDEX_BYTES = 4 * 1024 * 1024;
 const MAX_DIRECTORY_BYTES = 1024 * 1024;
 const TAIL_BYTES = 65_557 + 256 * 1024;
 
-const cacheKey = (path) => new Request(`https://cache.invalid/alert-pool/${path}`, { method: 'GET' });
+const cacheKey = (path) => new Request(`https://cache.invalid/alert-pool/${ALERT_POOL_CONTRACT}/bounded-range-v1/${path}`, { method: 'GET' });
 
 function github({ repo, token }) {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo || '')) throw new Error('Alert pool delivery is not configured');
@@ -74,25 +74,39 @@ async function archiveLocation(artifactId, { repo, token, fetchImpl = fetch, sig
 async function readRange(location, start, end, { fetchImpl = fetch, signal, limit = MAX_MEMBER_BYTES } = {}) {
   const wanted = end - start + 1;
   if (wanted > limit) throw new Error('Alert pool member exceeds size limit');
-  const response = await fetchImpl(location, { headers: { range: `bytes=${start}-${end}` }, redirect: 'manual', signal });
+  // The fetch cache can fill the whole ZIP before slicing a valid 206 response.
+  // Read ranges directly from storage; the directory/member Cache API remains in use.
+  const response = await fetchImpl(location, { headers: { range: `bytes=${start}-${end}` }, cache: 'no-store', redirect: 'manual', signal });
   if (response.status !== 206) {
     await response.body?.cancel();
     throw new Error(`Alert pool storage did not answer the byte range (HTTP ${response.status})`);
+  }
+  const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range') || '');
+  if (!range || Number(range[1]) !== start || Number(range[2]) !== end || Number(range[3]) <= end) {
+    await response.body?.cancel();
+    throw new Error('Alert pool storage returned an unexpected byte range');
   }
   const bytes = await readLimited(response, wanted);
   if (bytes.length !== wanted) throw new Error('Alert pool storage returned a short range');
   return bytes;
 }
-/** `bytes=-n`: the last n bytes, and the archive's total size from Content-Range. */
+/** Read the last n bytes using absolute ranges supported by GitHub's Azure blob storage. */
 async function readTail(location, n, { fetchImpl = fetch, signal } = {}) {
-  const response = await fetchImpl(location, { headers: { range: `bytes=-${n}` }, redirect: 'manual', signal });
+  // Azure ignores suffix ranges (bytes=-n) and returns the entire archive with 200.
+  // A one-byte probe discovers the real ZIP length without downloading the archive.
+  const response = await fetchImpl(location, { headers: { range: 'bytes=0-0' }, cache: 'no-store', redirect: 'manual', signal });
   if (response.status !== 206) {
     await response.body?.cancel();
     throw new Error(`Alert pool storage did not answer the byte range (HTTP ${response.status})`);
   }
-  const total = Number((response.headers.get('content-range') || '').split('/')[1]);
-  const bytes = await readLimited(response, n);
-  if (!Number.isSafeInteger(total) || total <= 0) throw new Error('Alert pool storage did not state the archive size');
+  const range = /^bytes 0-0\/(\d+)$/.exec(response.headers.get('content-range') || '');
+  const total = Number(range?.[1]);
+  if (!Number.isSafeInteger(total) || total < 22) {
+    await response.body?.cancel();
+    throw new Error('Alert pool storage did not state the archive size');
+  }
+  if ((await readLimited(response, 1)).length !== 1) throw new Error('Alert pool storage returned a short size probe');
+  const bytes = await readRange(location, Math.max(0, total - n), total - 1, { fetchImpl, signal, limit: n });
   return { bytes, total };
 }
 
@@ -151,11 +165,24 @@ async function memberBytes(artifactId, name, cfg, cache, ctx, { limit = MAX_MEMB
   if (entry.method !== 0) throw new Error('Alert pool member is not stored uncompressed');
   if (entry.size > limit || entry.expanded !== entry.size) throw new Error('Alert pool member exceeds size limit');
   const location = directory.location || await archiveLocation(artifactId, cfg);
-  const header = await readRange(location, entry.local, entry.local + 29, cfg);
-  const hv = new DataView(header.buffer, header.byteOffset, header.byteLength);
-  if (hv.getUint32(0, true) !== 0x04034b50) throw new Error('Invalid alert pool member header');
-  const start = entry.local + 30 + hv.getUint16(26, true) + hv.getUint16(28, true);
+  // Fetch the header and payload together. GitHub's stored ZIP members normally
+  // have a tiny local extra field; 256 spare bytes avoid a separate header trip.
+  // An unusually large extra field still takes the exact validated payload path.
+  const nameBytes = new TextEncoder().encode(name);
+  const allowance = 30 + nameBytes.length + 256;
+  if (entry.local + 30 > directory.total) throw new Error('Truncated alert pool member header');
+  const end = Math.min(directory.total - 1, entry.local + allowance + entry.size - 1);
+  const first = await readRange(location, entry.local, end, { ...cfg, limit: limit + allowance });
+  const hv = new DataView(first.buffer, first.byteOffset, first.byteLength);
+  if (hv.getUint32(0, true) !== 0x04034b50 || hv.getUint16(8, true) !== 0 || hv.getUint16(6, true) & 1)
+    throw new Error('Invalid alert pool member header');
+  const nameLength = hv.getUint16(26, true);
+  if (nameLength !== nameBytes.length || nameBytes.some((byte, i) => first[30 + i] !== byte))
+    throw new Error('Alert pool member name does not match its directory');
+  const offset = 30 + nameLength + hv.getUint16(28, true);
+  const start = entry.local + offset;
   if (start + entry.size > directory.total) throw new Error('Truncated alert pool archive');
+  if (offset + entry.size <= first.length) return first.slice(offset, offset + entry.size);
   return entry.size ? readRange(location, start, start + entry.size - 1, { ...cfg, limit }) : new Uint8Array(0);
 }
 

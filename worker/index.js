@@ -2312,7 +2312,7 @@ async function handleCaptureStatus(request, env, ctx) {
   if (request.method !== 'GET') return json({ ok: false, reason: 'method', message: 'GET only.' }, 405);
 
   const cache = caches.default;
-  const key = edgeKey('capture-status-v4');
+  const key = edgeKey('capture-status-v5');
   const held = await cache.match(key);
   if (held) {
     return new Response(held.body, {

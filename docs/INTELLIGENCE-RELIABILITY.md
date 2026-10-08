@@ -179,6 +179,25 @@ corroboration, and duplicate links/subjects are counted once.
 
 ## Operational checks
 
+### Prepared alert delivery and reader lifecycle (8 October 2026)
+
+Prepared announcements must match the captured recovery head as well as the exchange and company
+captures. New failed attempts and unfinished recovery progress invalidate an old prepared reading
+even when its last successful timestamp is unchanged. The runner verifies that every captured
+recovery notice reaches the alert feed, including merged original links and notices without an
+attachment. This verifies delivery of captured evidence, not exhaustive source coverage.
+
+Company legal/statement-name changes replace an in-flight matching context even if ticker and
+display name are unchanged. Abandoned pool reads cannot trigger a full-history fallback or save
+an incomplete alert window. Active readers retain their existing revalidation cadence; passive
+cache observers alone do not keep bulk/block polling alive after readers close. Shared collectors
+and stored history continue independently of view navigation.
+
+Small public opening reads may overlap interface loading, but cached alerts must remain readable
+while source downloads are delayed. Every retained field and offscreen search result must survive.
+Archive merges yield between batches, serialize concurrent arrivals and retain failed-month gaps;
+an unchanged NSE window reuses rows while IST rollover still advances its cutoff.
+
 ### Telegram delivery resilience (7 September 2026)
 
 Recent public posts are published before historical collection finishes. Atomic checkpoints

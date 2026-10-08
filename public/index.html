@@ -10,6 +10,9 @@
     <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg" />
     <link rel="preload" as="image" href="/assets/brand/sattva-ventures-wordmark.png" />
 
+    <link rel="modulepreload" href="/js/app.js" />
+    <link rel="modulepreload" href="/js/ui/shell.js" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -34,6 +37,11 @@
          scripts/verify-ui.mjs drives it) there is no host, js/core/sdk.js falls back to its no-op
          client, and the dashboard paints from its committed snapshots exactly as before. -->
     <script src="https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js"></script>
+
+    <script type="module">
+      import { warmStartupData } from "/js/core/startup-data.js";
+      warmStartupData();
+    </script>
 
     <script>
       // The Concall Deep Dive dashboard — a SEPARATE deployment that runs its own LLM pipeline

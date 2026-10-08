@@ -102,6 +102,7 @@ export function withAnnouncementLookups(base) {
   };
   async function warm(yieldForInput = yieldToInput, { sliceMs } = {}) {
     await base.warm?.(yieldForInput);
+    await base.prepareRows?.();
     if (preparingRows) return preparingRows;
     preparingRows = (async () => {
       for (;;) {

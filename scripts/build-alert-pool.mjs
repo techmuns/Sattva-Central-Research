@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { readNewsJson } from './lib/news-json-storage.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../public');
@@ -62,7 +63,7 @@ console.log(`[alert-pool] collecting the full Universe history for ${day}`);
 const report = await alerts.collect({ scope: 'universe', day, includeHistory: true });
 const sourceFeeds = report.sourceFeeds.filter(publicAlertFeed);
 const index = writePoolMembers({ outDir, sourceFeeds, day, now, book: coverage.holdings(), newsMeta: news.meta(),
-  captures: captureIdentities({ root, exchange }) });
+  captures: captureIdentities({ root, exchange }), recoveryRows: readNewsJson(resolve(root, 'data/screener-announcements.json')).rows });
 const allMembers = [...index.days, ...index.ai].flatMap(entry => [entry, ...Object.values(entry.feedMembers || {}).filter(Boolean)]);
 const totalBytes = allMembers.reduce((n, entry) => n + entry.bytes, 0);
 console.log(`[alert-pool] wrote ${index.days.length} day shards and ${index.ai.length} AI shards, ${Math.round(totalBytes / 1024)} KB gzipped, in ${Math.round((performance.now() - started) / 1000)}s`);

@@ -11,6 +11,7 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import { captureRevision, captureStamp, POOL_CAPTURES, POOL_FEEDS, ALERT_POOL_CONTRACT, ALERT_POOL_POLICY, ALERT_POOL_INDEX_MEMBER, dayMember, feedMember } from '../../public/js/data/alert-pool-shared.js';
 import { buildDayShards, buildAiShards, validateShard, compactAiEvent } from '../../public/js/data/alert-pool-format.js';
 import { newsStateInputs, bookSignature } from '../../public/js/data/alert-pool.js';
+import { verifyAnnouncementDelivery } from './announcement-delivery.mjs';
 
 const LIVE_ROUTES = { 'api/earnings': 'data/earnings-live.json', 'api/concalls': 'data/concall-scans.json',
   'api/nse-announcements': 'data/nse-announcements.json', 'api/ipo-filings': 'data/ipo-filings.json' };
@@ -59,9 +60,10 @@ export function captureStatusFor({ root, exchange = null, servedAt = new Date().
 }
 
 /** Write index.json and every shard under `outDir`; returns the index the runner uploads. */
-export function writePoolMembers({ outDir, sourceFeeds, day, now, book, newsMeta, captures }) {
+export function writePoolMembers({ outDir, sourceFeeds, day, now, book, newsMeta, captures, recoveryRows = [] }) {
   const pooled = sourceFeeds.filter((feed) => POOL_FEEDS.includes(feed.id));
   assert.equal(pooled.length, POOL_FEEDS.length, 'every pooled feed must be present in the collection');
+  verifyAnnouncementDelivery(recoveryRows, pooled.find(feed => feed.id === 'announcements').events);
   const feeds = {};
   for (const feed of pooled) {
     const { events, ...row } = feed;

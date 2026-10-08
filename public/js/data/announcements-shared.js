@@ -1,5 +1,5 @@
 import { normaliseAnnouncement, pickField } from './filings-shared.js';
-import { runSteps, sortSteps } from '../core/slices.js';
+import { runSteps, runStepsInSlices, sortSteps } from '../core/slices.js';
 
 export function announcementRange(fromDate, toDate) {
   const day = (value) => {
@@ -164,6 +164,10 @@ function mergeAnnouncement(previous, row, sources, sourceUrls) {
 /** Append new disclosures; only proven same-document/date/company overlap collapses. */
 export function mergeAnnouncements(...lists) {
   return runSteps(mergeAnnouncementSteps(...lists));
+}
+
+export function mergeAnnouncementsAsync(lists, options) {
+  return runStepsInSlices(mergeAnnouncementSteps(...lists), options);
 }
 
 // The synchronous collector and the browser warm-up share the exact same merge. Yield within

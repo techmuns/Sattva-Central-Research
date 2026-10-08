@@ -2306,6 +2306,22 @@ the reader's wait. Five rules keep it bounded:
 
 ### THE COLLECTION IS DONE ONCE, ON THE RUNNER — the precomputed alert pool
 
+Approved Glow parity (8 October 2026): keep Sattva's v3 contract and policy. Artifact storage
+reads use validated absolute ranges with the outgoing fetch cache bypassed; the separate
+directory/member caches remain enabled. Header and payload share one bounded read when possible.
+The recovery head and failed-attempt/progress fields participate in every source revision check.
+The builder independently verifies recovered notices, including original links behind merged
+filings and attachment-free notices. An abandoned pool view starts no full-history fallback and
+cannot replace the saved alert window. All Alerts compares its own matching context on every
+portfolio notification, including a legal-name-only change before its first report.
+
+The default AI Alerts interface loads with bootstrap so delayed source downloads cannot block
+its module graph; secondary interfaces remain lazy. Public company/KPI opening reads start early,
+are consumed once within 30 seconds, and then use their ordinary revalidation paths. Passive
+insider cache observers receive updates without keeping the minute bulk/block reader poll alive.
+Collection schedules, retained history, search/export completeness and private boundaries stay
+unchanged. Verify with the startup, pool, announcement-delivery and exchange-poller suites.
+
 `docs/DATA-CONTRACTS.md` → *The precomputed alert pool* has the contract. What it is: the alert
 collection every reader performed in the browser (a month of captures downloaded and classified
 for a period view; the retained history for the AI ranking), performed once per capture by

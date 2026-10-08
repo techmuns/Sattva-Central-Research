@@ -175,3 +175,16 @@ await check('the seeded archive contains the customer-reported Sterlite analyst 
 });
 
 console.log(`\n${checks} NSE history checks passed.`);
+
+await check('unchanged windows reuse rows and quiet IST midnight still advances the cutoff', async () => {
+  let now = clock();
+  const feed = createNseFeed({ ...defaults, now: () => now });
+  await feed.load();
+  const first = feed.rows(), retained = feed.retainedRows();
+  assert.equal(feed.rows(), first);
+  assert.equal(feed.retainedRows(), retained);
+  now += 86400000;
+  assert.notEqual(feed.rows(), first, 'calendar rollover invalidates the window even without a new capture');
+  assert.notEqual(feed.retainedRows(), retained);
+  assert.deepEqual(feed.retainedRows(), retained, 'still-eligible source records retain every field');
+});

@@ -437,7 +437,7 @@ function observeSources() {
       if (normalizedFeeds.get(other)?.windowKey !== 'null') normalizedFeeds.delete(other);
     }
     listeners.forEach((fn) => fn());
-  });
+  }, source === insider ? { poll: false } : undefined);
   // Some collectors resolve issuer names against the current in-memory portfolio.
   coverage.onChange(({ changed }) => { if (changed) normalizedFeeds.clear(); });
 }
@@ -772,6 +772,9 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           schedulePartial();
           return;
         }
+        // An obsolete view abandoned its pool read; it did not discover an outage.
+        // Let its replacement own any fallback instead of downloading unused history.
+        if (load && poolMode && !isCurrent()) return;
       }
       const warm = async () => {
         if (feed.id === 'news' || feed.id === 'market-news') await warmNewsReadings(feed.id, newsReader, queryWindow, yieldForInput, warmReading);
@@ -809,6 +812,8 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   closed = true;
   if (partialTimer !== null) clearTimeout(partialTimer);
   if (partialBuild) await partialBuild;
+  // Unfinished abandoned feeds cannot replace the retained device window.
+  if (load && poolMode && !isCurrent()) return null;
   const completed = await build();
   if (load && !queryWindow) {
     // Materialize from the already-settled source records; this starts no second

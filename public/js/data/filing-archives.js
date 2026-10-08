@@ -1,10 +1,10 @@
 import * as exchangeDeals from './exchange-deals.js';
 import { capturedJson } from './company-captures.js';
-import { mergeAnnouncements } from './announcements-shared.js';
+import { mergeAnnouncements, mergeAnnouncementsAsync } from './announcements-shared.js';
 import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
 
 export function withFilingArchive(base, kind) {
-  let rows = [], error = null, pending = false, loaded = false;
+  let rows = [], error = null, pending = false, loaded = false, generation = 0;
   const revisions = new Map();
   const listeners = new Set();
   const emit = () => [...listeners].forEach((fn) => fn());
@@ -39,8 +39,28 @@ export function withFilingArchive(base, kind) {
     memo = { base: base_, rows, value };
     return value;
   };
+  let preparing = null;
+  function prepareRows() {
+    if (preparing) return preparing;
+    preparing = (async () => {
+      for (;;) {
+        await base.warm?.();
+        await base.prepareRows?.();
+        const source = base.rows(), archive = rows;
+        if (memo?.base === source && memo.rows === archive) return;
+        const joined = !archive.length ? source : kind === 'announcements'
+          ? await mergeAnnouncementsAsync([source, archive]) : merge(source, archive);
+        if (source !== base.rows() || archive !== rows) continue;
+        const value = kind === 'insider' && archive.length
+          ? exchangeDeals.combined(joined.filter(r => !/^(nse|bse)-(bulk|block)$/.test(r.sourceId || ''))) : joined;
+        memo = { base: source, rows: archive, value };
+        return;
+      }
+    })().finally(() => { preparing = null; });
+    return preparing;
+  }
   return {
-    ...base, rows: combined,
+    ...base, rows: combined, ...(kind === 'announcements' ? { prepareRows } : {}),
     forTicker: (ticker) => combined().filter((row) => row.ticker === String(ticker).toUpperCase()),
     meta() {
       const meta = base.meta();
@@ -50,13 +70,16 @@ export function withFilingArchive(base, kind) {
     },
     async loadArchive({ onlyChanged = false } = {}) {
       if (pending) return;
+      const currentGeneration = generation;
       pending = true; error = null; emit();
       try {
         const result = await capturedJson(`data/${kind}-archive/index.json`);
+        if (currentGeneration !== generation) return;
         if (!result.value?.months || typeof result.value.months !== 'object') throw new Error('Archive index is unavailable.');
         let stale = result.stale;
         const queue = Object.keys(result.value.months).sort().reverse();
         const failures = [];
+        let additions = Promise.resolve();
         await Promise.all(Array.from({ length: 3 }, async () => {
           while (queue.length) {
             const month = queue.shift();
@@ -65,19 +88,32 @@ export function withFilingArchive(base, kind) {
             if (onlyChanged && !result.stale && revisions.get(month) === revision) continue;
             try {
               const part = await capturedJson(`data/${kind}-archive/${month}.json`);
+              if (currentGeneration !== generation) return;
               if (!Array.isArray(part.value?.rows)) throw new Error('Unrecognized archive');
-              rows = merge(rows, part.value.rows); stale ||= part.stale;
+              // Keep arrival order and serialize publication while allowing input
+              // between announcement merge batches. Concurrent downloads cannot
+              // overwrite one another's retained rows.
+              const addition = additions.then(async () => {
+                if (currentGeneration !== generation) return;
+                const next = kind === 'announcements' ? await mergeAnnouncementsAsync([rows, part.value.rows]) : merge(rows, part.value.rows);
+                if (currentGeneration === generation) rows = next;
+              });
+              additions = addition.catch(() => {});
+              await addition;
+              if (currentGeneration !== generation) return;
+              stale ||= part.stale;
               if (!part.stale) revisions.set(month, revision);
             } catch { failures.push(month); }
           }
         }));
+        if (currentGeneration !== generation) return;
         loaded = !failures.length && !stale;
         if (failures.length) error = `History is incomplete: ${failures.join(', ')} could not be loaded. Existing rows remain.`;
         else if (stale) error = 'Showing saved history; archive freshness could not be checked.';
       } catch (err) { error = err.message; }
       finally { pending = false; emit(); }
     },
-    onChange(fn) { listeners.add(fn); const off = base.onChange(fn); return () => { listeners.delete(fn); off(); }; },
-    invalidate() { base.invalidate(); rows = []; error = null; loaded = false; revisions.clear(); },
+    onChange(fn, options) { listeners.add(fn); const off = base.onChange(fn, options); return () => { listeners.delete(fn); off(); }; },
+    invalidate() { base.invalidate(); generation++; rows = []; error = null; loaded = false; revisions.clear(); },
   };
 }

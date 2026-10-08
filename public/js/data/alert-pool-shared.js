@@ -37,6 +37,7 @@ export const POOL_FEEDS = ['technicals', 'announcements', 'insider', 'news', 'ma
 export const POOL_CAPTURES = {
   technicals: { path: '/data/technicals.json' },
   announcements: { path: '/data/corp-announcements.json' },
+  announcementRecovery: { path: '/data/screener-announcements.json' },
   announcementsArchive: { path: '/data/announcements-archive/index.json' },
   announcementsRecent: { path: '/data/filing-capture/announcements-recent.json' },
   companyFilings: { path: '/data/filing-capture/index.json' },
@@ -52,7 +53,7 @@ export const POOL_CAPTURES = {
 };
 export const POOL_FEED_CAPTURES = {
   technicals: ['technicals'],
-  announcements: ['announcements', 'announcementsArchive', 'announcementsRecent', 'companyFilings'],
+  announcements: ['announcements', 'announcementRecovery', 'announcementsArchive', 'announcementsRecent', 'companyFilings'],
   insider: ['insider', 'insiderArchive', 'exchangeDeals'],
   news: ['companyNews', 'companyNewsIndex', 'tradingviewNews', 'tradingviewIndex', 'marketNews'],
   'market-news': ['marketNews'],
@@ -65,7 +66,8 @@ export const POOL_FEED_CAPTURES = {
 // present field can only send a feed down the live path a little more often, which is the safe
 // direction. `captureStamp` stays the single timestamp the capture watchdog has always read.
 export const REVISION_FIELDS = ['capturedAt', 'generated_at', 'fetchedAt', 'lastRunFinishedAt', 'updatedAt',
-  'checkedAt', 'newsUpdatedAt', 'queryRevision', 'price_date', 'archivedCount', 'newestId', 'articleCount', 'rowCount'];
+  'checkedAt', 'lastAttemptAt', 'lastSuccessAt', 'lastPageAt', 'enqueuedThrough', 'pendingCount',
+  'newsUpdatedAt', 'queryRevision', 'price_date', 'archivedCount', 'newestId', 'articleCount', 'rowCount'];
 export function captureStamp(body) {
   return body?.capturedAt || body?.generated_at || body?.fetchedAt || body?.lastRunFinishedAt || null;
 }

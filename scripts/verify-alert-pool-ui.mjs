@@ -135,6 +135,8 @@ const settledRanking = async (page, timeout) => {
 const rowCount = (page) => page.evaluate(() => document.querySelector('[data-row-count]')?.textContent.trim() || '');
 const feedChips = (page) => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-feed]')].map((chip) => [chip.dataset.feed, chip.textContent.trim().replace(/\s+/g, ' ')])));
 
+const environment = (message) => /ExcelJS|fonts\.googleapis|exceljs|Failed to load resource|net::ERR|503/.test(message);
+
 try {
   // 1. ALL ALERTS ON TODAY, FROM THE POOL: the day shard is read and no capture is.
   const pooled = await openPage();
@@ -169,6 +171,44 @@ try {
   assert.deepEqual({ news: staleState.news, insider: staleState.insider }, { news: { pooled: true }, insider: { pooled: true } }, `news and insider stay pooled beside stale device entries (${JSON.stringify(staleState)})`);
   assert.deepEqual(await rowKeys(pooled.page), pooledKeys, 'and the rows are unchanged');
   console.log('PASS per-company device entries from an earlier visit leave every feed on the pool');
+
+  // A real statement-book handoff can keep every ticker/display name yet change the
+  // legal name used by news matching. The in-flight context must get a replacement
+  // reader; silently abandoning it otherwise leaves the five pooled feeds pending.
+  const handoff = await openPage();
+  let releaseIndex, sawIndex;
+  const indexWaiting = new Promise(resolve => { sawIndex = resolve; });
+  const indexGate = new Promise(resolve => { releaseIndex = resolve; });
+  await handoff.page.route('**/api/alert-pool/index', async route => {
+    sawIndex(); await indexGate; await route.continue();
+  });
+  const handoffFrom = served.requests.length;
+  await handoff.page.goto(`${origin}/#/research/daily-alerts?scope=universe`);
+  await indexWaiting;
+  await handoff.page.evaluate(async () => {
+    const coverage = await import('/js/data/coverage.js');
+    coverage.useFamilyBook(coverage.holdings().map(h => ({ ...h, bookName: `${h.name} statement name` })));
+  });
+  releaseIndex();
+  await handoff.page.waitForFunction(async () => {
+    const state = (await import('/js/data/alert-pool.js')).status();
+    return state.feeds.announcements?.pooled && state.feeds.news?.pooled;
+  }, null, { timeout: 10000 });
+  await settledAlerts(handoff.page);
+  assert.deepEqual(captureReads(handoffFrom), [], 'the replacement context still uses the pool instead of raw captures');
+  assert(poolReads(handoffFrom).some(path => path.endsWith(`/days/${index.day}.json.gz`)), 'the replacement reads the current-day shard');
+  await handoff.page.evaluate(async () => {
+    window.handoffSearch = document.querySelector('[data-table-search]');
+    const coverage = await import('/js/data/coverage.js');
+    coverage.useFamilyBook(coverage.holdings().map(h => ({ ...h, cmp: 123, holdingWeightPct: 2.5 })));
+    coverage.invalidateFamilyBook(); coverage.failFamilyBook();
+  });
+  await handoff.page.waitForTimeout(50);
+  assert(await handoff.page.evaluate(() => window.handoffSearch === document.querySelector('[data-table-search]')),
+    'quote and check-status updates keep the existing controls mounted');
+  assert.deepEqual(handoff.errors.filter(message => !environment(message)), []);
+  await handoff.context.close();
+  console.log('PASS a statement-name handoff during index loading replaces the abandoned context and settles all pooled feeds.');
 
   // 2. THE SAME VIEW WITHOUT A POOL: the live collection paints the same rows in the same order.
   const live = await openPage();
@@ -251,7 +291,6 @@ try {
   console.log(`PASS AI Alerts from the AI pool: ${pooledCards.length} cards, identical to the live ranking`);
   await liveAi.context.close();
 
-  const environment = (message) => /ExcelJS|fonts\.googleapis|exceljs|Failed to load resource|net::ERR|503/.test(message);
   const real = pooled.errors.filter((message) => !environment(message));
   assert.deepEqual(real, [], `zero console errors (${pooled.errors.length - real.length} environment failures dropped)`);
   await pooled.context.close();
