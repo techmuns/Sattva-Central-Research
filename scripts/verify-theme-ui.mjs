@@ -58,10 +58,17 @@ async function shot(page, name) {
   await page.screenshot({ path: `${process.env.THEME_SCREENSHOTS}/${name}.png`, fullPage: true });
 }
 async function surface(page, selector) {
-  return page.locator(selector).first().evaluate(el => {
+  // Source arrivals can replace a table between resolving its locator and
+  // reading its styles. Read a connected node in the same browser turn.
+  const sample = await page.waitForFunction(selector => {
+    const el = document.querySelector(selector);
+    if (!el?.isConnected) return false;
     const s = getComputedStyle(el);
     return { bg: s.backgroundColor, color: s.color };
-  });
+  }, selector);
+  const value = await sample.jsonValue();
+  await sample.dispose();
+  return value;
 }
 function rgb(color) { return color.match(/[\d.]+/g).slice(0, 3).map(Number); }
 function luma(color) {
