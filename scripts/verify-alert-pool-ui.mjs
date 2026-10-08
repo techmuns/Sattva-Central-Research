@@ -185,8 +185,17 @@ try {
   const handoffFrom = served.requests.length;
   await handoff.page.goto(`${origin}/#/research/daily-alerts?scope=universe`);
   await indexWaiting;
-  await handoff.page.evaluate(async () => {
-    const coverage = await import('/js/data/coverage.js');
+  // Keep the test's module promise rooted while the index is deliberately held.
+  // A bare async DevTools evaluation can lose its promise during a browser GC;
+  // apply the book change synchronously after the dependency is available.
+  await handoff.page.evaluate(() => {
+    window.handoffCoverageReady = import('/js/data/coverage.js').then(module => {
+      window.handoffCoverage = module;
+    });
+  });
+  await handoff.page.waitForFunction(() => !!window.handoffCoverage, null, { timeout: 10000 });
+  await handoff.page.evaluate(() => {
+    const coverage = window.handoffCoverage;
     coverage.useFamilyBook(coverage.holdings().map(h => ({ ...h, bookName: `${h.name} statement name` })));
   });
   releaseIndex();
@@ -197,9 +206,9 @@ try {
   await settledAlerts(handoff.page);
   assert.deepEqual(captureReads(handoffFrom), [], 'the replacement context still uses the pool instead of raw captures');
   assert(poolReads(handoffFrom).some(path => path.endsWith(`/days/${index.day}.json.gz`)), 'the replacement reads the current-day shard');
-  await handoff.page.evaluate(async () => {
+  await handoff.page.evaluate(() => {
     window.handoffSearch = document.querySelector('[data-table-search]');
-    const coverage = await import('/js/data/coverage.js');
+    const coverage = window.handoffCoverage;
     coverage.useFamilyBook(coverage.holdings().map(h => ({ ...h, cmp: 123, holdingWeightPct: 2.5 })));
     coverage.invalidateFamilyBook(); coverage.failFamilyBook();
   });
