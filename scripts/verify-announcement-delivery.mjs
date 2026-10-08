@@ -4,6 +4,7 @@ import { verifyAnnouncementDelivery } from './lib/announcement-delivery.mjs';
 import { mergeAnnouncements, mergeAnnouncementsAsync } from '../public/js/data/announcements-shared.js';
 import { createFeed } from '../public/js/data/filings.js';
 import { withFilingArchive } from '../public/js/data/filing-archives.js';
+import { warmRows } from '../public/js/data/daily-alerts.js';
 
 const dated = { ticker: 'TEST', date: '2026-10-01', title: 'Original filing',
   url: 'https://www.bseindia.com/fixture/original.pdf', source: 'BSE' };
@@ -34,4 +35,16 @@ assert.equal(base.rows(), first, 'scope labels cannot invalidate unchanged filin
 const feed = withFilingArchive(base, 'announcements');
 await feed.prepareRows();
 assert.deepEqual(feed.rows(), first, 'archive warm-up preserves the complete source data');
+// A view that leaves during a source reading stops its unused classifications.
+// The replacement still has every original record available to read.
+let active = true, abandoned = 0;
+await warmRows(many, () => {
+  abandoned++;
+  const end = performance.now() + 0.02;
+  while (performance.now() < end) { /* simulate a cold per-record reading */ }
+}, async () => { active = false; }, () => active);
+assert(abandoned > 0 && abandoned < many.length, 'abandoned per-view readings stop at an input opportunity');
+const replacement = [];
+await warmRows(many, row => replacement.push(row), async () => {}, () => true);
+assert.deepEqual(replacement, many, 'cancelling computation cannot discard captured history');
 console.log('PASS recovery delivery: original links, merged provenance, attachment-free notices, full sliced history and stable scope projections');

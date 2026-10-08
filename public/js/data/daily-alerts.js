@@ -606,7 +606,7 @@ export async function prepareSources({ refresh = false, feedIds = null } = {}) {
 // object, so touching them here in ~12ms slices with a yield between each turns that one task into
 // forty small ones. Nothing is skipped and nothing is decided here — the collector still reads
 // every row itself and reports its own failures; this only changes when the work happens.
-async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput, { day, includeHistory, touch = null } = {}) {
+async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput, { day, includeHistory, touch = null, keepGoing = () => true } = {}) {
   let rows;
   try {
     if (feedId === 'news') await reader.warm?.(yieldForInput);
@@ -616,8 +616,14 @@ async function warmNewsReadings(feedId, reader, queryWindow, yieldForInput, { da
     else if (queryWindow) await reader.prepareRows?.(yieldForInput);
     rows = feedId === 'news' ? newsQueryRows(reader, queryWindow, reader) : newsQueryRows(marketNews, queryWindow, reader);
   } catch { return; }
+  if (!keepGoing()) return;
   let started = performance.now();
   for (let i = 0; i < rows.length; i++) {
+    // Skipped historical rows still consume CPU on an empty new day.
+    if (performance.now() - started >= 12) {
+      await yieldForInput(); started = performance.now();
+      if (!keepGoing()) return;
+    }
     const row = rows[i];
     try {
       // Only what the collector will read: on a single day it reads that day's rows and nothing
@@ -646,6 +652,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // (js/data/alert-pool.js). A feed the pool declines — or a pool that cannot be read at all —
   // loads below exactly as it always has. A reassembly without loading reuses the last read.
   const poolMode = pool === 'window' || pool === 'ai' ? pool : null;
+  const readingCurrent = () => !load || !poolMode || isCurrent();
   // What the pool cannot carry is what the feed modules hold beyond the capture THIS SESSION — a
   // live walk, a live search, a device copy a tab loaded — and the modules answer that themselves.
   const sessionRows = (feedId) => {
@@ -675,18 +682,20 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
   // assembly of a full-history collection landed as one 2.3-second task under whichever tab the
   // reader had moved to, ~700ms of it matching every X post against the book for the first time.
   const discoveryIdentities = discoveryEntities(book, requestedCompanies);
-  const warmReading = { day, includeHistory, touch: (event, feedId) => {
+  const warmReading = { day, includeHistory, keepGoing: readingCurrent, touch: (event, feedId) => {
     sortDay(event);
     if (event.url && (feedId === 'news' || feedId === 'market-news')) eventUrlKey(event);
     if (DISCOVERY_FEEDS.has(feedId)) for (const matched of discoveryFor(event, feedId, discoveryIdentities)) newsSignal(matched);
   } };
   for (const feed of load ? FEEDS : []) {
+    if (!readingCurrent()) return null;
     try {
       // The in-memory records may be a warm module's or a returning session's cold rows: warm the
       // per-row readings in slices before the synchronous read, exactly as the loaded read does.
       if (feed.id === 'news' || feed.id === 'market-news') await warmNewsReadings(feed.id, newsReader, queryWindow, yieldForInput, warmReading);
       else if (WARMERS[feed.id]) await WARMERS[feed.id](yieldForInput, warmReading);
     } catch { /* The read below still answers. */ }
+    if (!readingCurrent()) return null;
     try {
       settledFeeds.set(feed.id, { ...readFeed(feed, { day, includeHistory, queryWindow, newsReader }), status: 'pending' });
     } catch { /* A source with no readable snapshot starts empty. */ }
@@ -788,17 +797,23 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           await refreshFilings(newsReader, refresh);
           loadedFeeds.add('news'); normalizedFeeds.delete('news');
         } else if (load) await loadFeed(feed.id, refresh);
+        // Shared source loading can finish after this view has left. Its replacement
+        // can use the records; this abandoned reading must not classify them again.
+        if (!readingCurrent()) return;
         await yieldForInput();
         await warm();
+        if (!readingCurrent()) return;
         out = readFeed(feed, args);
         if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
         else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
       } catch (err) {
+        if (!readingCurrent()) return;
         // A failed refresh must not erase a last-good capture or masquerade as an empty feed — and
         // the retained records it reads are warmed in slices exactly as a successful load's are.
         // Read cold, every retained filing was classified again in one task: 2.2 seconds at 4x CPU
         // throttle, the longest task of an All Alerts open whose Today was still empty.
         try { await warm(); } catch { /* The read below still answers. */ }
+        if (!readingCurrent()) return;
         try { out = readFeed(feed, args); } catch { out = toFeedRow(feed, { events: [] }, day); }
         out = { ...out, status: 'failed', reachesToday: false, note: `Read failed: ${String(err?.message || err)}. Retained records remain visible.` };
       }
@@ -905,11 +920,12 @@ export function onChange(fn) {
 // objects (above, and in the additional sources), so touching every row in ~12ms slices before
 // the read leaves the read paying for the array and the feed row, never for classifying every
 // filing in one task. A warm-up that fails changes nothing: the read still classifies on demand.
-export async function warmRows(rows, reading, yieldForInput = yieldForInputSlice) {
+export async function warmRows(rows, reading, yieldForInput = yieldForInputSlice, keepGoing = () => true) {
+  if (!keepGoing()) return;
   let started = performance.now();
   for (const row of rows) {
     try { reading(row); } catch { /* The synchronous read reports a bad row in its own way. */ }
-    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); }
+    if (performance.now() - started >= 12) { await yieldForInput(); started = performance.now(); if (!keepGoing()) return; }
   }
 }
 const WARMERS = {
@@ -922,12 +938,13 @@ const WARMERS = {
     for (let attempt = 0; attempt < 4; attempt++) {
       await announcements.warm(yieldForInput);
       const rows = announcements.rows();
-      await warmRows(rows, (row) => reading.touch(announcementEvent(row), 'announcements'), yieldForInput);
+      await warmRows(rows, (row) => reading.touch(announcementEvent(row), 'announcements'), yieldForInput, reading.keepGoing);
+      if (!reading.keepGoing()) return;
       await announcements.warm(yieldForInput);
       if (announcements.rows() === rows) return;
     }
   },
-  insider: (yieldForInput, reading) => warmRows(insider.rows(), (row) => reading.touch(insiderEvent(row), 'insider'), yieldForInput),
+  insider: (yieldForInput, reading) => warmRows(insider.rows(), (row) => reading.touch(insiderEvent(row), 'insider'), yieldForInput, reading.keepGoing),
   ...Object.fromEntries(ADDITIONAL_SOURCES.filter((s) => s.warm).map((s) => [s.id, s.warm])),
 };
 
