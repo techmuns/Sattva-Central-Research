@@ -37,10 +37,29 @@ const READING = { readable: true, issuerMatches: true, documentType: 'Exchange f
   keyDetails: [{ label: 'Filing', value: 'As stated in the document', quote: 'trailer', location: 'page 1' }],
   whyItMatters: 'It matters to an investor because it changes what is known about the company this period.',
   impact: { direction: 'unclear', horizon: 'unclear', text: 'Could matter if it changes earnings or plans; the document alone does not say.' } };
+let readGate = null, releaseRead;
 const readFetcher = async (url, init = {}) => {
   const href = String(url);
   if (/^https:\/\/(?:www\.)?bseindia\.com\/|^https:\/\/(?:nsearchives|archives)\.nseindia\.com\//.test(href)) { counts.documents++; return new Response(pdf, { headers: { 'content-type': 'application/pdf' } }); }
-  if (href.startsWith('https://bedrock-runtime.')) { counts.model++; void init; return Response.json({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(READING) }] }); }
+  if (href.startsWith('https://bedrock-runtime.')) {
+    counts.model++;
+    if (readGate) {
+      const gate = readGate, encoder = new TextEncoder(), text = JSON.stringify(READING), cut = text.indexOf('"keyDetails"');
+      assert.equal(JSON.parse(init.body).stream, true);
+      return new Response(new ReadableStream({ async start(c) {
+        const send = value => c.enqueue(encoder.encode(`data: ${JSON.stringify(value)}\n\n`));
+        send({ type: 'message_start' });
+        send({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
+        send({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: text.slice(0, cut) } });
+        await gate;
+        send({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: text.slice(cut) } });
+        send({ type: 'content_block_stop', index: 0 });
+        send({ type: 'message_delta', delta: { stop_reason: 'end_turn' } });
+        send({ type: 'message_stop' }); c.close();
+      } }), { headers: { 'content-type': 'text/event-stream' } });
+    }
+    return Response.json({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(READING) }] });
+  }
   return new Response('unexpected', { status: 500 });
 };
 const now = () => clock.getTime();
@@ -240,6 +259,54 @@ try {
   assert(Object.keys(model.model.weights).length, 'and every vote trained the shared weights');
   ok('one shared model: votes from all three surfaces');
 
+  // Real popup: neither a held event-history request nor the model's held tail blocks useful text.
+  const requestsBefore = srv.stats.reads, modelsBefore = counts.model;
+  readGate = new Promise(done => { releaseRead = done; });
+  await page.evaluate(async () => {
+    const { openAnnouncementRead } = await import('/js/ui/announcement-read.js');
+    window.latencyRow = { id: 'a:latency-ui', title: 'Latency fixture', company: 'Fixture Co', sources: ['BSE'],
+      url: 'https://www.bseindia.com/xml-data/corpfiling/AttachLive/latency-ui.pdf', event: { id: 'event-latency-ui', size: 2 } };
+    window.historyReleases = [];
+    window.openLatencyRead = () => openAnnouncementRead(window.latencyRow, {
+      loadEvent: () => new Promise(done => window.historyReleases.push(done)),
+      item: { surface: 'announcements', itemKey: window.latencyRow.id, features: [] },
+    });
+    window.openLatencyRead();
+  });
+  await popup.locator('[data-slot="what"]').filter({ hasText: 'read in full' }).waitFor();
+  assert.match(await popup.locator('[data-read-status]').innerText(), /in progress/);
+  assert.equal(await popup.locator('[data-slot="why"] .ann-read-loading').count(), 1, 'analysis waits for validation');
+  assert.equal(await popup.locator('[data-slot="history"] .ann-read-loading').count(), 1, 'held history did not delay the read');
+  assert.equal(srv.stats.reads, requestsBefore + 1);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.openLatencyRead());
+  await popup.locator('[data-slot="what"]').filter({ hasText: 'read in full' }).waitFor();
+  assert.equal(srv.stats.reads, requestsBefore + 1, 'close/reopen shares the pending browser request');
+  await page.evaluate(() => {
+    for (const done of window.historyReleases) done({ members: [window.latencyRow, { id: 'related-latency', title: 'Prior approval', sources: ['BSE'] }] });
+  });
+  await popup.locator('[data-slot="history"]').filter({ hasText: 'Prior approval' }).waitFor();
+  readGate = null;
+  await page.evaluate(async () => {
+    const { openAnnouncementRead } = await import('/js/ui/announcement-read.js');
+    openAnnouncementRead({ id: 'a:replacement', title: 'Replacement filing', url: 'https://evil.example/no.pdf' },
+      { item: { surface: 'announcements', itemKey: 'a:replacement', features: [] } });
+  });
+  await popup.locator('.ann-read-unavailable').waitFor();
+  releaseRead();
+  await page.evaluate(async () => {
+    const { requestAnnouncementRead } = await import('/js/data/announcement-read-client.js');
+    await requestAnnouncementRead(window.latencyRow);
+  });
+  assert.equal(await popup.locator('.ann-read-subject').innerText(), 'Replacement filing');
+  assert.equal(await popup.locator('.ann-read-unavailable').count(), 1, 'a late answer cannot overwrite another filing');
+  await page.evaluate(() => window.openLatencyRead());
+  await popup.locator('[data-slot="why"]').filter({ hasText: 'Investment impact' }).waitFor();
+  assert.equal(counts.model, modelsBefore + 1, 'the completed shared read is reused');
+  assert.equal(srv.stats.reads, requestsBefore + 2, 'only the original and the replacement requested the server');
+  await page.keyboard.press('Escape');
+  ok('streamed facts precede held history/model completion; pending and saved reopen share one request; late answers stay in their own popup');
+
   // Phone width and dark appearance.
   await page.goto(`${srv.url}#/research/corp-announcements?scope=universe`);
   await ready();
@@ -278,6 +345,7 @@ try {
   assert.deepEqual(errors, [], 'no page errors');
   ok('no page errors');
 } finally {
+  releaseRead?.();
   await browser.close();
   await srv.close();
   await fallback.close();

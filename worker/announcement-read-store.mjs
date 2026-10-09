@@ -19,9 +19,9 @@
 import { boundedJson } from '../public/js/data/family-book-contract.js';
 import { announcementDocumentIdentity } from '../public/js/data/announcements-shared.js';
 import { isXbrlFilingUrl, parseXbrlFiling } from '../public/js/data/nse-xbrl-shared.js';
-import { READ_VERSION, READ_INSTRUCTIONS, readRequest, readContext, parseRead } from '../public/js/data/announcement-read-shared.js';
+import { READ_VERSION, READ_INSTRUCTIONS, readRequest, readContext, parseRead, parseReadProgress } from '../public/js/data/announcement-read-shared.js';
 import { contentUrl, fetchContent, contentReason, articleText, CONTENT_TEXT_CHARS } from './newsletter-content.mjs';
-import { bedrockConfig, bedrockConfigured, claudeCredential } from './research-claude.mjs';
+import { bedrockConfig, bedrockConfigured, claudeCredential, consumeClaudeStream } from './research-claude.mjs';
 
 export const ANNOUNCEMENT_READ_OBJECT = 'announcement-read:v1';
 // Reads per IST day across every reader. A stored reading costs nothing and does not count.
@@ -80,14 +80,14 @@ export class AnnouncementReadStore {
   status() {
     const stored = this.rows('SELECT COUNT(*) AS count FROM announcement_reads')[0]?.count || 0;
     const { day, used } = this.budget();
-    return { ok: true, stored, day, used, limit: READ_DAILY_LIMIT, configured: bedrockConfigured(this.env), model: bedrockConfigured(this.env) ? bedrockConfig(this.env).model : null };
+    return { ok: true, stored, day, used, limit: READ_DAILY_LIMIT, transport: 'ndjson-v1', configured: bedrockConfigured(this.env), model: bedrockConfigured(this.env) ? bedrockConfig(this.env).model : null };
   }
 
   /**
    * One filing's reading: `{ ok, state: 'ready', reading, … }` when there is one, otherwise
    * `{ ok, state: 'failed' | 'pending', reason, retryAt }`. Never an empty reading.
    */
-  async read(raw) {
+  async read(raw, onProgress = null) {
     const item = readRequest(raw);
     const url = item.urls.map((u) => contentUrl(u, 'filing')).find(Boolean);
     if (!url) return { ok: true, state: 'failed', reason: item.urls.length ? 'unsupported-source' : 'no-document', retryAt: null };
@@ -101,13 +101,44 @@ export class AnnouncementReadStore {
       return { ok: true, state: 'failed', reason: exhausted ? 'retry-exhausted' : attempt.reason, retryAt: exhausted || FINAL.has(attempt.reason) ? null : attempt.retry_at };
     }
     if (!this.inflight.has(key)) {
-      const job = this.generate({ key, url, item }).finally(() => this.inflight.delete(key));
+      const job = { listeners: new Set(), progress: null };
+      const emit = (progress) => {
+        job.progress = progress;
+        for (const listener of job.listeners) listener(progress);
+      };
+      // Register before generation: even the first document-fetch stage can be shown immediately.
+      if (onProgress) job.listeners.add(onProgress);
+      job.promise = this.generate({ key, url, item, emit }).finally(() => this.inflight.delete(key));
       this.inflight.set(key, job);
     }
-    return this.inflight.get(key);
+    const job = this.inflight.get(key);
+    if (onProgress) {
+      job.listeners.add(onProgress);
+      if (job.progress) onProgress(job.progress);
+    }
+    try { return await job.promise; }
+    finally { if (onProgress) job.listeners.delete(onProgress); }
   }
 
-  async generate({ key, url, item }) {
+  /** A byte stream crosses real DO RPC. Cancelling one reader never cancels the shared paid read. */
+  stream(raw, keepAlive = (work) => { void work; }) {
+    let active = true;
+    const encoder = new TextEncoder();
+    const body = new ReadableStream({ type: 'bytes', start: (controller) => {
+      const send = (value) => {
+        if (!active) return;
+        try { controller.enqueue(encoder.encode(`${JSON.stringify(value)}\n`)); } catch { active = false; }
+      };
+      const work = this.read(raw, (progress) => send({ type: 'progress', ...progress }))
+        .then((result) => send({ type: 'result', ...result }))
+        .catch(() => send({ type: 'result', ok: false, state: 'failed', reason: 'read-unavailable' }))
+        .finally(() => { if (active) { active = false; controller.close(); } });
+      keepAlive(work);
+    }, cancel: () => { active = false; } });
+    return new Response(body, { headers: { 'content-type': 'application/x-ndjson', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
+  }
+
+  async generate({ key, url, item, emit = () => {} }) {
     if (!bedrockConfigured(this.env)) return { ok: true, state: 'failed', reason: 'no-key', retryAt: null };
     const { used } = this.budget();
     if (used >= READ_DAILY_LIMIT) return { ok: true, state: 'failed', reason: 'budget', retryAt: null };
@@ -130,26 +161,48 @@ export class AnnouncementReadStore {
       return { ok: true, state: 'failed', reason: exhausted ? 'retry-exhausted' : reason, retryAt };
     };
     try {
+      const started = this.now();
+      emit({ stage: 'document' });
       const source = await fetchContent({ url, kind: 'filing' }, this.fetcher);
       const content = this.documentContent(source, item);
       content.push({ type: 'text', text: readContext(item) });
       const config = bedrockConfig(this.env);
+      const documentMs = this.now() - started;
+      emit({ stage: 'reading', format: source.format });
       const response = await this.fetcher(config.url, {
         method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(READ_TIMEOUT_MS),
-        headers: { 'x-api-key': claudeCredential(this.env), 'anthropic-version': '2023-06-01', accept: 'application/json', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: config.model, max_tokens: READ_MAX_TOKENS, thinking: { type: 'disabled' },
+        headers: { 'x-api-key': claudeCredential(this.env), 'anthropic-version': '2023-06-01', accept: 'text/event-stream', 'content-type': 'application/json' },
+        body: JSON.stringify({ model: config.model, max_tokens: READ_MAX_TOKENS, stream: true, thinking: { type: 'disabled' },
           system: [{ type: 'text', text: READ_INSTRUCTIONS }], messages: [{ role: 'user', content }] }),
       });
       if (!response.ok) { await response.body?.cancel(); return failed(statusReason(response.status)); }
-      const reply = await boundedJson(response, 120_000).catch(() => null);
-      if (reply?.stop_reason !== 'end_turn') return failed('unreadable');
-      const parsed = parseRead((reply.content || []).filter((b) => b?.type === 'text').map((b) => b.text).join('\n'));
+      let text = '', firstSectionMs = null, lastProgress = '';
+      if (/text\/event-stream/i.test(response.headers.get('content-type') || '')) {
+        const completion = await consumeClaudeStream(response.body, (delta) => {
+          text += delta;
+          const reading = parseReadProgress(text);
+          const fingerprint = reading && JSON.stringify(reading);
+          if (fingerprint && fingerprint !== lastProgress) {
+            lastProgress = fingerprint;
+            firstSectionMs ??= this.now() - started;
+            emit({ stage: 'reading', reading, format: source.format });
+          }
+        }, { maxTextChars: 32_000 });
+        if (completion.providerStreamFailure) return failed('unreadable');
+      } else {
+        // Compatibility with gateways returning a complete Messages response.
+        const reply = await boundedJson(response, 120_000).catch(() => null);
+        if (reply?.stop_reason !== 'end_turn') return failed('unreadable');
+        text = (reply.content || []).filter((b) => b?.type === 'text').map((b) => b.text).join('\n');
+      }
+      const parsed = parseRead(text);
       if (!parsed.ok) return failed(parsed.reason === 'issuer-mismatch' ? 'issuer-mismatch' : parsed.reason === 'unreadable' ? 'unreadable' : parsed.reason);
       const readAt = new Date(this.now()).toISOString();
       this.rows(`INSERT INTO announcement_reads(key, reading, source_url, format, hash, model, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(key) DO NOTHING`, key, JSON.stringify(parsed.reading), source.url, source.format, source.hash, config.model, readAt);
       this.rows('DELETE FROM announcement_read_attempts WHERE key = ?', key);
-      return { ok: true, state: 'ready', reading: parsed.reading, sourceUrl: source.url, format: source.format, model: config.model, readAt, stored: false };
+      return { ok: true, state: 'ready', reading: parsed.reading, sourceUrl: source.url, format: source.format, model: config.model, readAt, stored: false,
+        timings: { documentMs, firstSectionMs, totalMs: this.now() - started } };
     } catch (error) {
       return failed(error?.reason || contentReason(error));
     }

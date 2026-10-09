@@ -65,7 +65,7 @@ export async function startAnnouncementServer({ indexDir = null, publicDir, read
   const registry = {
     getByName(name) {
       if (name === 'relevance-feedback:v1') return { feedbackApply: async (v) => feedback.apply(v), feedbackModel: async () => feedback.model(), feedbackMine: async (d) => feedback.mine(d) };
-      if (name === 'announcement-read:v1') return { announcementRead: (input) => settled(() => reads.read(input)), announcementReadStatus: () => settled(() => reads.status()) };
+      if (name === 'announcement-read:v1') return { announcementRead: (input) => settled(() => reads.read(input)), announcementReadStream: (input) => reads.stream(input), announcementReadStatus: () => settled(() => reads.status()) };
       if (name === 'announcement-index:v1') {
         if (!index) {
           const none = async () => ({ ok: false, reason: 'index-unavailable', message: 'No announcement index has been published yet.' });
@@ -99,7 +99,8 @@ export async function startAnnouncementServer({ indexDir = null, publicDir, read
       const request = new Request(url, { method: req.method, headers: req.headers, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks) });
       const response = await route(request, env);
       res.writeHead(response.status, Object.fromEntries(response.headers));
-      res.end(Buffer.from(await response.arrayBuffer()));
+      for await (const chunk of response.body) { if (!res.destroyed) res.write(chunk); }
+      res.end();
       return;
     }
     // Everything else exactly as a static origin answers it — including a 404 page for /api/*.
