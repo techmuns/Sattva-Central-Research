@@ -372,8 +372,8 @@
       "pending": []
     },
     "isin:INE532F01054|EAAA": {
-      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
-      "error": "result-cap-incomplete",
+      "lastAttemptAt": "2026-10-09T07:45:45+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 111,
       "targetThrough": "2026-10-04T00:14:44+00:00",
       "pending": [
@@ -388,8 +388,8 @@
       ]
     },
     "isin:INE532F01054|Edelweiss Alternative Asset Advisors": {
-      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-09T08:11:09+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-04T00:14:44+00:00",
       "targetThrough": null,
@@ -2398,6 +2398,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 249,
-    "checkedAt": "2026-10-09T07:11:30.331736+00:00"
+    "checkedAt": "2026-10-09T08:11:09.218169+00:00"
   }
 }

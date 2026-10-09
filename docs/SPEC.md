@@ -47,10 +47,12 @@ inactive slate with hover. Order is fixed:
 11. NSE Filings
 12. Insider Trades
 
-### (c) Sub-view — one dropdown, at every width
+### (c) Sub-view — horizontal scanner tabs
 
-A styled dropdown button (custom menu, not a bare `<select>`) above the content, kickered
-*View*, showing the current sub-view and a chevron. There is no left rail: the content column
+Breakouts / Technical shows four horizontal tabs above the content, with Momentum Scanner
+selected by default. Clicking a tab switches the results below. The strip scrolls on narrow
+screens and supports arrow-key focus with Enter/Space activation. It stays mounted across
+view and scope changes. Super Investors keeps its styled *View* dropdown. The content column
 spans the full 1400px on every tab.
 
 | Tab | Sub-views |
@@ -61,7 +63,7 @@ spans the full 1400px on every tab.
 | Earnings Hub | *(none — one table, so the picker is hidden)* |
 | Con-call | *(no sub-views)* — one scan table, with no schedule or feed-status chips above it |
 | Public Chatter | *(no shell sub-views)* — in-page **Coverage** and **Not in coverage** tabs, one table at a time |
-| Breakouts / Technical | Strong Breakouts *(default)* · Technical Scanner · FII Accumulation |
+| Breakouts / Technical | Momentum Scanner *(default)* · Strong Breakouts · Technical Scanner · FII Accumulation |
 | Super Investors | Superstar Investors · Institutions |
 | News · Corp Announcements · NSE Filings · Insider Trades | *(no sub-views)* — one table each, off the shared filings renderer |
 
@@ -79,12 +81,7 @@ display filter, and All time does not claim an exhaustive exchange archive.
 unknown or absent tab, so the order of the `WORKSPACES` array *is* the landing page — there is no
 second place recording it that could disagree with the array.
 
-The picker is the same control at every width. It used to be a 240px left rail above 1024px and
-a dropdown below it — the rail cost the content 240px of its 1400px, permanently, to show at most
-four short labels, while the tables beside it are the widest things in this dashboard and were
-scrolling inside their own containers to fit what was left. Measured on removal: Breakouts goes
-from a 248px inner scroll to **none**, Super Investors 380px → 116px, Portfolio Overview
-453px → 189px.
+Subview navigation sits above the full-width content at every screen size.
 
 A tab with `subviews: []` renders no picker at all.
 
@@ -430,10 +427,10 @@ became one small passive **Live** pill in the section head. The pill is green on
 schedule's worst case (72 hours — Friday's capture is still current on Monday); past that it is
 muted and prints the age.
 
-Sub-views: **Strong Breakouts** (6-week base breakouts, URL-reflected filter chips) — first in the
-picker and so the view the tab opens on — then **Technical Scanner** (the full scored universe),
-**FII Accumulation** (shareholding changes joined to the score). Earnings Surprise was removed
-because analyst consensus estimates are not connected; old links resolve to Strong Breakouts.
+Sub-views: **Momentum Scanner** (momentum and volume conditions) — first and default — then
+**Strong Breakouts** (6-week base breakouts, URL-reflected filter chips), **Technical Scanner**
+(the full scored universe) and **FII Accumulation** (shareholding changes joined to the score).
+Explicit view links are preserved; absent or unknown views resolve to Momentum Scanner.
 
 Every Strong Breakouts filter group leads with **All** and defaults to it, so the sub-view opens on
 the widest answer it can give. The trend filter used to ship on *Above 200 DMA only*, which meant a

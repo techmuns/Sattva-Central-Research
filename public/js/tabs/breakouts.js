@@ -100,7 +100,7 @@ function paint(ctx) {
     'technical-scanner': renderScanner,
     'momentum-scanner': renderMomentumScanner,
     'fii-accumulation': renderFiiAccumulation,
-  }[ctx.subview] || renderStrongBreakouts;
+  }[ctx.subview] || renderMomentumScanner;
 
   view(ctx, rows);
   if (scrollTop != null) ctx.root.closest('main').scrollTop = scrollTop;
