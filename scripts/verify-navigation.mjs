@@ -56,9 +56,11 @@ try {
 
   // The actual shell must preserve the element, its scroll position, and focus across routes.
   await page.evaluate((selector) => { window.navigationList = document.querySelector(selector); }, strip);
+  await page.evaluate(() => { location.hash = '#/research/corporate-actions?scope=watchlist'; });
+  await page.locator(`${strip} [data-tab-id="corporate-actions"][aria-selected="true"]`).waitFor();
   await page.locator(active).focus();
   await page.keyboard.press('ArrowRight');
-  assert.equal(await page.locator(active).getAttribute('data-tab-id'), 'news', 'Arrows must not load a new page');
+  assert.equal(await page.locator(active).getAttribute('data-tab-id'), 'corporate-actions', 'Arrows must not load a new page');
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => location.hash.includes('/ipos'));
   await page.locator(`${strip} [data-tab-id="ipos"][aria-selected="true"]`).waitFor();
@@ -72,13 +74,13 @@ try {
   pass('Keyboard activation preserves the mounted strip, focus, and horizontal position');
 
   await page.keyboard.press('End');
-  await visibleInStrip(`${strip} [data-tab-id="mutual-funds"]`);
-  assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'mutual-funds');
+  await visibleInStrip(`${strip} [data-tab-id="super-investors"]`);
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'super-investors');
   await page.keyboard.press('ArrowRight');
   await visibleInStrip(`${strip} [data-tab-id="ai-alerts"]`);
   assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'ai-alerts');
   await page.keyboard.press('ArrowLeft');
-  assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'mutual-funds');
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'super-investors');
   await page.keyboard.press('Home');
   await visibleInStrip(`${strip} [data-tab-id="ai-alerts"]`);
   await page.keyboard.press('Space');
@@ -114,7 +116,7 @@ try {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator(active).focus();
   await page.keyboard.press('End');
-  await visibleInStrip(`${strip} [data-tab-id="mutual-funds"]`);
+  await visibleInStrip(`${strip} [data-tab-id="super-investors"]`);
   assert((await page.locator(active).evaluate((button) => parseFloat(getComputedStyle(button).transitionDuration))) <= 0.00001);
   pass('Reduced motion removes the animation while keeping navigation functional');
 

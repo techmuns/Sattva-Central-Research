@@ -141,8 +141,12 @@ try {
   // Real route surfaces, including a sticky table and the source/semantic pills.
   for (const tab of ['daily-alerts', 'ai-alerts', 'earnings-hub', 'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements', 'corporate-actions', 'nse-filings', 'insider-trades']) {
     await page.evaluate(tab => { location.hash = `#/research/${tab}?scope=universe`; }, tab);
-    await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, tab);
     await panelReady(page, tab);
+    if (tab === 'nse-filings') {
+      assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'saved filing routes render without a navigation button');
+    } else {
+      await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, tab);
+    }
     assert.equal(await theme(page), 'dark', tab);
     assert(contrast((await surface(page, '[data-app-header] h1')).color, 'rgb(11,18,32)') >= 7);
     if (tab === 'ipos') {
