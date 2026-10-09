@@ -89,7 +89,7 @@ jobs:
       - name: Verify Momentum Scanner indicators by independent recompute
         run: node scripts/verify-momentum-indicators.mjs
       - name: Verify Momentum Scanner live engine and filter evaluation
-        run: node scripts/verify-momentum-scanner.mjs
+        run: node scripts/verify-momentum-scanner.mjs && node scripts/verify-momentum-reliability.mjs
       - name: Verify exchange reports, supplementary insiders and artifact delivery
         run: node scripts/verify-exchange-deals.mjs && node scripts/verify-muns-insider-capture.mjs
       - name: Verify exchange gzip delivery in the local Worker runtime
@@ -229,7 +229,7 @@ jobs:
       - name: Verify Momentum Scanner summary, sector mini-bar and responsive layout
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-momentum-scanner-ui.mjs
+        run: node scripts/verify-momentum-scanner-ui.mjs && node scripts/verify-momentum-upgrade-ui.mjs
       - name: Verify inline private summary reader and source parser offline
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

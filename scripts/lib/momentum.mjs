@@ -20,47 +20,7 @@
 //   price. Mirror of `completedBars` in lib/yahoo.mjs, one timeframe up: a bar is not a close until
 //   its period has ended.
 
-/** ISO-8601 week key, "YYYY-Www" (Mon–Sun, Thursday rule). Consecutive days of one week share it. */
-export function isoWeekKey(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00Z');
-  const dayNum = (d.getUTCDay() + 6) % 7;            // Mon=0 … Sun=6
-  const thursday = new Date(d);
-  thursday.setUTCDate(d.getUTCDate() - dayNum + 3);  // the Thursday of this ISO week
-  const isoYear = thursday.getUTCFullYear();
-  const yearStart = Date.UTC(isoYear, 0, 1);
-  const week = Math.ceil(((thursday.getTime() - yearStart) / 86400000 + 1) / 7);
-  return `${isoYear}-W${String(week).padStart(2, '0')}`;
-}
-
-/** Calendar-month key, "YYYY-MM". */
-export const monthKey = (dateStr) => String(dateStr).slice(0, 10).slice(0, 7);
-
-/**
- * Resample chronological daily bars to one `{ key, date, close }` per period, the period's close
- * being its last trading day. Insertion order is chronological, so the last entry per key wins the
- * close while the key keeps its first-seen (earliest) position.
- */
-export function resample(bars, keyFn) {
-  const byKey = new Map();
-  for (const b of bars || []) {
-    if (!b || !Number.isFinite(b.close) || !b.date) continue;
-    const key = keyFn(b.date);
-    byKey.set(key, { key, date: b.date, close: b.close });
-  }
-  return [...byKey.values()];
-}
-
-/**
- * Completed `week` or `month` periods from a chronological daily series: every period except the
- * one the latest daily bar is in (that period is still forming and is advanced live instead).
- */
-export function completedPeriods(bars, timeframe) {
-  if (!Array.isArray(bars) || !bars.length) return [];
-  const keyFn = timeframe === 'week' ? isoWeekKey : monthKey;
-  const series = resample(bars, keyFn);
-  const currentKey = keyFn(bars.at(-1).date);
-  return series.filter((p) => p.key !== currentKey);
-}
+export { isoWeekKey, monthKey, resample, completedPeriods } from '../../public/js/scoring/momentum-history.js';
 
 /**
  * Wilder's RSI(`period`) over `closes`, returning the value AND the running state at the LAST close:

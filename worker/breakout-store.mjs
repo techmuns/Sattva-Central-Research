@@ -27,6 +27,7 @@ export function mergePrimary(fallback, primary, now=Date.now()) {
     const goodFallback=f && !fallbackFailures.has(ticker) && quoteFresh(f,now);
     // Daily history may finish after the minute's quote, without changing its price/source time.
     if (p && !p.base && f?.base && f.sessionDate===p.sessionDate && f.exchange===p.exchange) p={...p,base:f.base};
+    if (p && !p.volumeBase && f?.volumeBase && f.sessionDate===p.sessionDate && f.exchange===p.exchange) p={...p,volumeBase:f.volumeBase};
     const row=goodPrimary?p:goodFallback?f:!p?f:!f?p:Date.parse(p.quoteAt)>=Date.parse(f.quoteAt)?p:f;
     if (row) rows.push(row);
     if (goodPrimary) primaryUsed++;

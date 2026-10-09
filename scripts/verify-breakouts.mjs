@@ -14,7 +14,7 @@ import { tickerFromScreenerUrl, marketTicker } from '../public/js/data/market-id
 const AT = Date.parse('2026-09-15T06:30:00Z'), iso = at => new Date(at).toISOString();
 const historyDates = count => {const dates=[];for(let at=AT-86400000;dates.length<count;at-=86400000)if(marketWindow(at).collect)dates.unshift(iso(at).slice(0,10));return dates;};
 const base = {high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'};
-const quote = (ticker='TEST', at=AT, extra={}) => validateQuote({ticker,price:105,volume:2000,prevClose:98,quoteAt:iso(at),checkedAt:iso(at),sessionDate:'2026-09-15',provider:'Yahoo Finance',base,...extra},at);
+const quote = (ticker='TEST', at=AT, extra={}) => validateQuote({ticker,price:105,volume:2000,prevClose:98,quoteAt:iso(at),checkedAt:iso(at),sessionDate:'2026-09-15',provider:'Yahoo Finance',base,volumeBase:{average:1000,from:'2026-08-20',to:expectedSession(Date.parse(`${extra.sessionDate || '2026-09-15'}T09:00:00+05:30`)),count:10,exchange:extra.exchange || 'NSE'},...extra},at);
 test('reviewed Screener IDs resolve consistently; unknown IDs never become a stock called ID',()=>{
  const url='https://www.screener.in/company/id/1286088/consolidated/';
  assert.equal(tickerFromScreenerUrl(url),'DHOOTTRANS');
@@ -265,7 +265,8 @@ test('Upstox isolates exchange-list outages and stops on rejected credentials',a
    if(unauthorized)return new Response(null,{status:401});
    return Response.json({status:'success',data:{nsdl:{instrument_token:instrument.instrument_key,symbol:'NSDL',last_price:105,net_change:7,volume:2000,last_trade_time:String(AT)}}});
   }});
-  assert.equal(calls.length,3);assert.equal(result.reason,unauthorized?'authentication':'instrument-list-unavailable');assert.equal(result.rows.length,unauthorized?0:1);
+  assert.equal(calls.length,unauthorized?3:4); // Successful quotes also request the missing ten-session volume history.
+  assert.equal(result.reason,unauthorized?'authentication':'instrument-list-unavailable');assert.equal(result.rows.length,unauthorized?0:1);
   assert.deepEqual(result.instrumentFailures,[{exchange:'NSE',reason:'unavailable'}]);
  }
 });

@@ -59,7 +59,7 @@ let child,logs='';
 async function call(body={}){const res=await fetch(origin,{method:'POST',body:JSON.stringify(body),signal:AbortSignal.timeout(5000)});assert(res.ok,await res.clone().text());return res.json();}
 async function start(){child=spawn('npx',['--yes','--offline','wrangler@4','dev','--local','--config',config,'--ip','127.0.0.1','--port',String(port),'--persist-to',join(scratch,'state')],{cwd:scratch,detached:true,env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});for(const stream of [child.stdout,child.stderr])stream.on('data',chunk=>{logs=(logs+chunk).slice(-12000);});const deadline=Date.now()+90000;while(Date.now()<deadline){if(child.exitCode!==null)throw Error(logs);try{await call();return;}catch{}await new Promise(done=>setTimeout(done,400));}throw Error(logs);}
 async function stop(){if(!child||child.exitCode!==null)return;const done=once(child,'exit'),timer=setTimeout(()=>{try{process.kill(-child.pid,'SIGKILL');}catch{}},5000);try{process.kill(-child.pid,'SIGTERM');await done;}finally{clearTimeout(timer);}}
-const at=Date.parse('2026-09-15T06:00Z'),row={ticker:'TEST',name:'Test',price:105,volume:2000,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'}};
+const at=Date.parse('2026-09-15T06:00Z'),row={ticker:'TEST',name:'Test',price:105,volume:2000,prevClose:98,quoteAt:new Date(at).toISOString(),checkedAt:new Date(at).toISOString(),sessionDate:'2026-09-15',provider:'Yahoo Finance',base:{high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'},volumeBase:{average:1000,from:'2026-08-28',to:'2026-09-11',count:10,exchange:'NSE'}};
 try{
  await start();assert.equal((await call()).schedule.alarmAt,null);
  const native=await call({action:'native-upstox'});assert.equal(native.instruments.length,1);assert.equal(native.result.rows[0].price,111);
@@ -77,6 +77,7 @@ try{
  await call({action:'checkpoint',run:'1:1',rows:[row]});
  await stop();await start();
  let state=await call();assert.equal(state.capture.state,'collecting');assert.equal(state.capture.rows[0].price,105);assert(state.schedule.alarmAt);
+ assert.deepEqual(state.capture.rows[0].volumeBase,row.volumeBase,'dated momentum volume history survives real SQLite RPC and restart');
  await call({action:'checkpoint',run:'1:1',rows:[],failures:[{ticker:'MISSING',reason:'unavailable'}]});await call({action:'finish',run:'1:1'});
  await call({action:'recovery',run:'1:1',ticker:'TEST',from:at-30*60000,to:at,rows:[{...row,kind:'recovered-candle'}]});
  await stop();await start();
@@ -91,7 +92,7 @@ try{
  assert((await call()).capture.primary);
  // Migrate both retained stores from NSE to BSE, whose last trade can be older.
  const handoverAt=at+4*60000;
- const bse={...row,exchange:'BSE',quoteAt:new Date(at-60000).toISOString(),checkedAt:new Date(handoverAt).toISOString(),price:104};
+ const bse={...row,exchange:'BSE',volumeBase:{...row.volumeBase,exchange:'BSE'},quoteAt:new Date(at-60000).toISOString(),checkedAt:new Date(handoverAt).toISOString(),price:104};
  await call({action:'begin',run:'2:1',targets:['TEST']});
  await call({action:'checkpoint',run:'2:1',rows:[bse]});await call({action:'finish',run:'2:1'});
  await call({action:'primary-save',input:{at:handoverAt,completedAt:handoverAt,targets:['TEST'],rows:[{...bse,provider:'Upstox',feedAt:bse.checkedAt}],failures:[]}});

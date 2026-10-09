@@ -739,10 +739,9 @@ function readMomentumThresholds(params) {
 // gate and the sort all read the same object rather than recomputing it.
 function momentumLiveFor(s, thresholds) {
   const c = s.company;
-  const info = live.priceInfo(c);
   const q = live.quote(c.ticker);
-  const v = momentum.liveIndicators(c, info.price, q?.volume ?? null, q?.prevClose ?? c.cmp ?? null);
-  v.isLiveQuote = !info.stale && !!q;
+  const v = momentum.scannerIndicators(c, q, {unavailable:live.unavailable() ||
+    !!live.snapshot()?.failures.some(row => row.ticker === c.ticker)});
   v.f1 = momentum.evaluateFilter('strong-momentum', v, thresholds);
   v.f2 = momentum.evaluateFilter('volume-momentum', v, thresholds);
   return v;
@@ -757,14 +756,13 @@ function conditionTitle(result) {
   return result.conditions.map((c) => `${c.ok ? '✓' : '✕'} ${c.label}${c.live && c.live !== '—' ? ` (${c.live})` : ''}`).join(' · ');
 }
 function filterPill(result) {
-  if (!result.evaluable) return `<span class="${mPillBase} ${M_NA}" title="Not enough usable price history.">Exception</span>`;
+  if (!result.evaluable) return `<span class="${mPillBase} ${M_NA}" title="${escapeHtml(result.reason)}">Exception</span>`;
   const cls = result.pass ? M_PASS : M_FAIL;
   const text = result.pass ? '✓ Pass' : '✕ Fail';
   return `<span class="${mPillBase} ${cls}" title="${escapeHtml(conditionTitle(result))}">${text}</span>`;
 }
-// A provisional figure is recomputed on the live price; otherwise it is advanced from the last
-// completed daily close. Said once in a tooltip so the number is never mistaken for a settled one.
-const provNote = (live) => (live ? 'Live / provisional — recomputed on the current price.' : 'Provisional — advanced from the last completed daily close.');
+// In-progress periods use the live price; saved completed readings retain their source basis.
+const provNote = (live) => (live ? 'Current source observation; in-progress periods remain provisional.' : 'Saved daily reading; current market data is unavailable.');
 function rsiLiveCell(v, tf) {
   const val = v[tf];
   if (val == null) return '<span class="text-slate-300">—</span>';
@@ -908,6 +906,9 @@ function momentumExceptionReason(company, values) {
       (Number.isFinite(company.bars_count) && company.bars_count < 200 && !Number.isFinite(company.sma200))) return 'Not enough price history';
   if (company.error) return 'Price history unavailable';
   if (!Number.isFinite(values.price)) return 'Price unavailable';
+  if (values.unavailableReason) return /different exchanges/.test(values.unavailableReason) ? 'Different price exchanges'
+    : /Daily price history/.test(values.unavailableReason) ? 'Price history outdated' : 'Current price unavailable';
+  if (!values.f2.evaluable && values.f1.evaluable) return values.prevClose == null ? 'Previous close unavailable' : 'Volume history incomplete';
   return 'Price history incomplete';
 }
 
@@ -1009,8 +1010,9 @@ function renderMomentumScanner(ctx, rows) {
   const liveMap = new Map(rows.map((s) => [s.company.ticker, momentumLiveFor(s, thresholds)]));
   const vf = (s) => liveMap.get(s.company.ticker);
 
-  const evaluable = rows.filter((s) => vf(s).evaluable);
-  const exceptions = rows.filter((s) => !vf(s).evaluable);
+  const evaluable = rows.filter((s) => gate === 'both' ? vf(s).f1.evaluable && vf(s).f2.evaluable
+    : gate === 'volume-momentum' ? vf(s).f2.evaluable : vf(s).f1.evaluable);
+  const exceptions = rows.filter((s) => !evaluable.includes(s));
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
 
   // Compact summary above the hero table: a 4-up KPI strip (both filters at once) and a sector
@@ -1019,7 +1021,6 @@ function renderMomentumScanner(ctx, rows) {
   const strip = momentumStatStrip(rows, vf, evaluable, exceptions);
   const sectorBar = momentumSectorBar(passers);
 
-  const pill = livePill();
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
   const table = scoreTable({
@@ -1059,7 +1060,6 @@ function renderMomentumScanner(ctx, rows) {
       title: meta.title,
       description:
         'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
-      meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() })}</div>`,
     })}
     ${momentumControls(gate, thresholds)}
     ${strip.html}
@@ -1068,7 +1068,6 @@ function renderMomentumScanner(ctx, rows) {
     ${table.html}
   `;
 
-  pill.wire(ctx.root);
   strip.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);

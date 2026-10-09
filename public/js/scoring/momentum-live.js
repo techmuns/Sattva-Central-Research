@@ -27,7 +27,27 @@
 // Live recompute
 // ---------------------------------------------------------------------------------------
 
+import { quoteFresh, expectedSession, istDate } from '../data/breakout-live-shared.js';
+import { isoWeekKey, monthKey } from './momentum-history.js';
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+
+function periodRsi(company, timeframe, price, sessionDate) {
+  const frame = company.rsi_multi?.[timeframe];
+  if (!frame) return null;
+  if (!sessionDate) return advanceWilderRsi(frame, price);
+  const key = timeframe === 'weekly' ? isoWeekKey : monthKey;
+  const dailyDate = company.price_date || company.bar_date;
+  if (frame.asOf) {
+    // A settled period is already present in the running state. Do not append it twice.
+    if (key(frame.asOf) === key(sessionDate)) return frame;
+    return advanceWilderRsi(frame, price);
+  }
+  // Legacy captures excluded the last historical bar's period, even when it had ended.
+  // Restore its completed close before stepping into a new week/month.
+  const state = dailyDate && key(dailyDate) < key(sessionDate)
+    ? advanceWilderRsi(frame, company.cmp) : frame;
+  return advanceWilderRsi(state, price);
+}
 
 /**
  * Advance a Wilder RSI(14) state ONE step with the live price — the exact step
@@ -72,30 +92,30 @@ export function advanceMacd(state, livePrice) {
  * `liveVolume` is today's CUMULATIVE traded volume so far. `prevClose` defaults to the stored last
  * completed close (`company.cmp`) — the natural previous close for the in-progress candle.
  */
-export function liveIndicators(company, livePrice, liveVolume, prevClose) {
+export function liveIndicators(company, livePrice, liveVolume, prevClose, options = {}) {
   const c = company || {};
   const prev = prevClose === undefined ? (isNum(c.cmp) ? c.cmp : null) : prevClose;
-  // A row is evaluable only if it carries the Step-1 field set. Any ONE of these being present is
-  // not enough; the daily refresh writes them together, so their joint absence is the "pending"
-  // signal. SMA100/above-100 may still be null for a young stock — that is a real null, handled
-  // per condition, not a pending row.
   const hasRsi = !!(c.rsi_multi && c.rsi_multi.daily && isNum(c.rsi_multi.daily.avgGain));
-  const hasMacd = !!(c.macd && isNum(c.macd.ema12) && isNum(c.macd.ema26));
-  const hasSma = isNum(c.sma20) && isNum(c.sma50) && isNum(c.sma200);
-  const evaluable = hasRsi && hasMacd && hasSma && isNum(livePrice);
+  const macdState = c.macd?.state || c.macd;
+  const hasMacd = !!(macdState && isNum(macdState.ema12) && isNum(macdState.ema26));
+  // Availability belongs to each filter. Volume + Momentum needs no 200-day history.
+  const evaluable = hasRsi && isNum(c.sma20) && isNum(livePrice);
 
   const aboveDma = (sma) => (isNum(sma) && isNum(livePrice) ? livePrice > sma : null);
-  const rsiD = hasRsi ? advanceWilderRsi(c.rsi_multi.daily, livePrice) : null;
-  const rsiW = c.rsi_multi && c.rsi_multi.weekly ? advanceWilderRsi(c.rsi_multi.weekly, livePrice) : null;
-  const rsiM = c.rsi_multi && c.rsi_multi.monthly ? advanceWilderRsi(c.rsi_multi.monthly, livePrice) : null;
-  const macd = hasMacd ? advanceMacd({ ema12: c.macd.ema12, ema26: c.macd.ema26, signal: c.macd.signal }, livePrice) : null;
+  const rsiD = hasRsi ? options.dailyCompleted ? c.rsi_multi.daily : advanceWilderRsi(c.rsi_multi.daily, livePrice) : null;
+  const rsiW = periodRsi(c, 'weekly', livePrice, options.sessionDate);
+  const rsiM = periodRsi(c, 'monthly', livePrice, options.sessionDate);
+  const storedLine = c.macd?.state ? macdState.ema12 - macdState.ema26 : c.macd?.line;
+  const macd = hasMacd ? options.dailyCompleted
+    ? {line:storedLine,signal:macdState.signal,above_zero:storedLine > 0,bullish:isNum(macdState.signal) ? storedLine > macdState.signal : null}
+    : advanceMacd(macdState, livePrice) : null;
+  const averageVolume = options.averageVolume === undefined ? c.avg_volume_10d : options.averageVolume;
 
-  // freshCross: not yet bullish at the last completed bar (stored line ≤ signal, or the stored
-  // positive_crossover flag), and bullish now. A new signal, not a standing one.
+  // Intraday crosses must begin below the signal; yesterday's crossover is not a new one today.
   let freshCross = null;
   if (macd && macd.bullish != null) {
-    const storedBelow = c.macd.positive_crossover === true || (isNum(c.macd.line) && isNum(c.macd.signal) && c.macd.line <= c.macd.signal);
-    freshCross = macd.bullish === true && storedBelow === true;
+    const storedBelow = isNum(storedLine) && isNum(macdState.signal) && storedLine <= macdState.signal;
+    freshCross = options.dailyCompleted ? c.macd.positive_crossover === true : macd.bullish === true && storedBelow;
   }
 
   return {
@@ -117,15 +137,47 @@ export function liveIndicators(company, livePrice, liveVolume, prevClose) {
     macdSignal: macd ? macd.signal : null,
     macdAboveZero: macd ? macd.above_zero : null,
     freshCross,
-    volRatio10d: isNum(liveVolume) && isNum(c.avg_volume_10d) && c.avg_volume_10d > 0 ? liveVolume / c.avg_volume_10d : null,
+    volRatio10d: isNum(liveVolume) && isNum(averageVolume) && averageVolume > 0 ? liveVolume / averageVolume : null,
     liveVolume: isNum(liveVolume) ? liveVolume : null,
-    avgVolume10d: isNum(c.avg_volume_10d) ? c.avg_volume_10d : null,
+    avgVolume10d: isNum(averageVolume) ? averageVolume : null,
     // Raw stored SMAs, for cell tooltips.
     sma20: isNum(c.sma20) ? c.sma20 : null,
     sma50: isNum(c.sma50) ? c.sma50 : null,
     sma100: isNum(c.sma100) ? c.sma100 : null,
     sma200: isNum(c.sma200) ? c.sma200 : null,
   };
+}
+
+/** Use one fresh session/exchange for price, previous close and cumulative volume. */
+export function scannerIndicators(company, quote, {now = Date.now(), unavailable = false} = {}) {
+  const dailyDate = company.price_date || company.bar_date;
+  const expectedPrevious = quote?.sessionDate
+    ? expectedSession(Date.parse(`${quote.sessionDate}T09:00:00+05:30`)) : null;
+  const symbol = company.closeHistory?.sourceSymbol;
+  const dailyExchange = company.momentum_volume_10d?.exchange ||
+    (symbol?.endsWith('.BO') ? 'BSE' : symbol?.endsWith('.NS') ? 'NSE' : null);
+  const fresh = !unavailable && quoteFresh(quote, now) && istDate(quote.quoteAt) === quote.sessionDate;
+  const sameExchange = !!quote && (!dailyExchange || dailyExchange === quote.exchange);
+  const aligned = !!dailyDate && (dailyDate === expectedPrevious || dailyDate === quote?.sessionDate);
+  const usable = fresh && sameExchange && aligned;
+  const sessionDate = usable ? quote.sessionDate : dailyDate;
+  const previous = usable ? quote.prevClose : null;
+  // The historical EOD ratio's avg_volume_10d excludes the last completed bar. Never
+  // reuse it intraday. Prefer the exact dated window carried by the shared quote capture.
+  const bases = [quote?.volumeBase, company.momentum_volume_10d];
+  const volumeBase = usable && bases.find(base => base?.count === 10 && base.to === expectedPrevious &&
+    base.exchange === quote.exchange && isNum(base.average) && base.average > 0);
+  const value = liveIndicators(company, usable ? quote.price : company.cmp, usable ? quote.volume : null, previous, {
+    dailyCompleted: !usable || dailyDate === quote.sessionDate,
+    sessionDate,
+    averageVolume: volumeBase ? volumeBase.average : null,
+  });
+  value.isLiveQuote = usable;
+  value.evaluable = value.evaluable && usable;
+  value.unavailableReason = !fresh ? 'Current market data unavailable or outdated.'
+    : !sameExchange ? 'Price and historical indicators use different exchanges.'
+      : !aligned ? 'Daily price history has not reached the previous trading session.' : null;
+  return value;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -158,6 +210,7 @@ export const MOMENTUM_FILTERS = Object.freeze({
     label: 'Strong Momentum',
     short: 'Filter 1',
     description: 'Price above every DMA, with daily, weekly and monthly RSI all strong.',
+    required: ['price', 'above20dma', 'above50dma', 'above100dma', 'above200dma', 'rsiDaily', 'rsiWeekly', 'rsiMonthly'],
     conditions: [
       { key: 'above20', label: () => 'Price > 20 DMA', test: (v) => v.above20dma === true, live: (v) => (v.sma20 == null ? '—' : `20DMA ${v.sma20.toFixed(0)}`) },
       { key: 'above50', label: () => 'Price > 50 DMA', test: (v) => v.above50dma === true, live: (v) => (v.sma50 == null ? '—' : `50DMA ${v.sma50.toFixed(0)}`) },
@@ -173,6 +226,7 @@ export const MOMENTUM_FILTERS = Object.freeze({
     label: 'Volume + Momentum',
     short: 'Filter 2',
     description: 'A volume surge on a rising price, holding its 20 DMA, with daily RSI firm and MACD bullish.',
+    required: ['price', 'prevClose', 'above20dma', 'rsiDaily', 'macdBullish', 'volRatio10d'],
     conditions: [
       { key: 'vol', label: (t) => `Volume ≥ ${Number(t.volMult).toFixed(1)}× 10-day avg`, test: (v, t) => v.volRatio10d != null && v.volRatio10d >= t.volMult, live: (v) => (v.volRatio10d == null ? '—' : `${v.volRatio10d.toFixed(2)}×`) },
       { key: 'rising', label: () => 'Price rising vs previous close', test: (v) => v.rising === true, live: (v) => (v.price == null || v.prevClose == null ? '—' : `${v.price.toFixed(2)} vs ${v.prevClose.toFixed(2)}`) },
@@ -187,14 +241,15 @@ export const MOMENTUM_FILTERS = Object.freeze({
 export function evaluateFilter(filterId, v, thresholds = THRESHOLD_DEFAULTS) {
   const filter = MOMENTUM_FILTERS[filterId];
   if (!filter) return { pass: false, evaluable: false, conditions: [] };
-  const evaluable = !!(v && v.evaluable);
+  const evaluable = !!(v?.evaluable && filter.required.every(key => isNum(v[key]) || typeof v[key] === 'boolean'));
   const conditions = filter.conditions.map((c) => ({
     key: c.key,
     label: c.label(thresholds),
     ok: evaluable ? c.test(v, thresholds) === true : false,
     live: v ? c.live(v) : '—',
   }));
-  return { pass: evaluable && conditions.every((c) => c.ok), evaluable, conditions };
+  return { pass: evaluable && conditions.every((c) => c.ok), evaluable, conditions,
+    reason: evaluable ? null : v?.unavailableReason || 'Required price history or current source data is unavailable.' };
 }
 
 /** Does a row pass the active gate? `gate` is a filter id or 'both'. Pending rows never pass. */

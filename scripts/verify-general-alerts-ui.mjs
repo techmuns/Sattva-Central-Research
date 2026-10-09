@@ -60,7 +60,9 @@ window.SATTVA_CHATTER_URL=location.origin+'/chatter';
 import * as tab from '/js/tabs/daily-alerts.js';
 import * as coverage from '/js/data/coverage.js';
 import * as refresh from '/js/core/refresh.js';
+import { today } from '/js/data/daily-alerts.js';
 import { recordDocuments, clearPrivateRecords } from '/js/data/alert-records.js';
+window.testToday = today;
 window.testRecordDocuments = recordDocuments;
 window.testClearPrivateRecords = clearPrivateRecords;
 coverage.prime({holdings:[{ticker:'STLTECH',name:'Sterlite Technologies'},{ticker:'RELIANCE',name:'Reliance Industries'},{ticker:'JAYNECOIND',name:'Jayaswal Neco Industries'},{ticker:'NESTLEIND',name:'Nestle India'},{ticker:'DMART',name:'Avenue Supermarts'}]});
@@ -267,13 +269,11 @@ try {
   assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
   await page.evaluate(() => window.show('portfolio'));
   await settled();
-  const dateFixture = await page.evaluate(async () => {
-    const { today } = await import('/js/data/daily-alerts.js');
-    const records = await import('/js/data/alert-records.js');
-    const day = today();
+  const dateFixture = await page.evaluate(() => {
+    const day = window.testToday();
     const dates = [0,1,2,3,6,7,13,14,29,30,60].map(offset =>
       new Date(Date.parse(day + 'T00:00:00Z') - offset * 86400000).toISOString().slice(0,10));
-    records.recordDocuments('company-documents', { rows: [...dates,null].map((date,i) => ({
+    window.testRecordDocuments('company-documents', { rows: [...dates,null].map((date,i) => ({
       key: 'date-window-fixture-' + i, ticker: 'STLTECH', title: 'Date window fixture ' + i,
       date, url: 'https://example.test/date-window-' + i,
     })) }, { ticker: 'STLTECH', name: 'Sterlite Technologies' });

@@ -1,6 +1,7 @@
 import { gunzipSync } from 'node:zlib';
 import { boundedJson } from '../../public/js/data/family-book-contract.js';
 import { istDate, validateQuote, expectedSession } from '../../public/js/data/breakout-live-shared.js';
+import { volumeWindow10d } from '../../public/js/scoring/momentum-history.js';
 
 import { yahooSymbol, upstoxIdentity, mapUpstoxTargets, upstoxRows } from '../../worker/upstox-market.mjs';
 export { yahooSymbol, mapUpstoxTargets, upstoxRows } from '../../worker/upstox-market.mjs';
@@ -22,9 +23,11 @@ export function parseYahooQuote(payload, target, now = Date.now()) {
     .filter(row => row.close > 0 && row.high > 0 && row.low > 0);
   const day = bars.findLast(row => row.date === sessionDate);
   const base = baseFromBars(bars, sessionDate);
+  const volumeBase = volumeWindow10d(bars, sessionDate, meta.symbol);
   const row = validateQuote({ ticker: target.ticker, name: target.name, price: meta.regularMarketPrice,
     volume: number(meta.regularMarketVolume) ?? day?.volume, quoteAt, sessionDate,
     checkedAt: new Date(now).toISOString(), provider: 'Yahoo Finance', exchange: yahooSymbol(target).endsWith('.BO') ? 'BSE' : 'NSE', base,
+    ...(volumeBase?.to === expectedSession(Date.parse(`${sessionDate}T09:00:00+05:30`)) ? {volumeBase} : {}),
     prevClose: bars.filter(row => row.date < sessionDate).at(-1)?.close }, now);
   return { ...row, historyBars: bars };
 }
@@ -70,7 +73,7 @@ export async function upstoxQuotes(targets, bases, { token, fetcher = fetch, now
   }
   // On a primary-feed outage, obtain the base from Upstox too. This only runs for
   // missing bases, and stops at its deadline or rate limit instead of hammering the source.
-  const missingBase = rows.filter(row => !row.base), deadline = now() + historyBudgetMs;
+  const missingBase = rows.filter(row => !row.base || !row.volumeBase), deadline = now() + historyBudgetMs;
   let historyStopped = false;
   for (let i=0; i<missingBase.length && !historyStopped && now()<deadline; i+=4) {
     await Promise.all(missingBase.slice(i,i+4).map(async row => {
@@ -86,6 +89,8 @@ export async function upstoxQuotes(targets, bases, { token, fetcher = fetch, now
           .filter(bar=>bar.high>0 && bar.low>0 && bar.close>0).sort((a,b)=>a.date.localeCompare(b.date));
         const base = baseFromBars(bars,row.sessionDate);
         if (base) { row.base=base; row.historyBars=bars; }
+        const volumeBase = volumeWindow10d(bars, row.sessionDate, yahooSymbol(target));
+        if (volumeBase?.to === expectedSession(Date.parse(`${row.sessionDate}T09:00:00+05:30`))) row.volumeBase = volumeBase;
       } catch { /* The quote remains usable; the missing base remains explicit. */ }
     }));
   }
