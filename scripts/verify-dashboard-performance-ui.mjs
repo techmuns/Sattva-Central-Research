@@ -176,7 +176,8 @@ try {
   await page.locator('[data-brand-mark] img').evaluate(image => image.decode());
   await page.waitForSelector('#content-host[data-active-tab="ai-alerts"]', { timeout: 1500 });
   // Ask Research's illustration remains cached, but AI Alerts is now the landing tab.
-  await page.evaluate(() => { location.hash = '#/research/ask-research?scope=universe'; });
+  // Keep the returning reader's portfolio scope when opening the hidden saved route.
+  await page.evaluate(() => { location.hash = '#/research/ask-research?scope=portfolio'; });
   await page.locator('.research-opening-brand').evaluate(image => image.decode());
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'cached app restores the saved theme');
   assert.equal(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(11, 18, 32)', 'cached dark styles are applied');
