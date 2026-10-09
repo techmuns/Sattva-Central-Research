@@ -964,7 +964,6 @@ function renderMomentumScanner(ctx, rows) {
   const strip = momentumStatStrip(rows, vf, evaluable, exceptions);
   const sectorBar = momentumSectorBar(passers);
 
-  const pill = livePill();
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
   const table = scoreTable({
@@ -1004,7 +1003,6 @@ function renderMomentumScanner(ctx, rows) {
       title: meta.title,
       description:
         'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
-      meta: `<div class="flex flex-wrap items-center justify-end gap-2">${pill.html}${scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() })}</div>`,
     })}
     ${momentumControls(gate, thresholds)}
     ${strip.html}
@@ -1013,7 +1011,6 @@ function renderMomentumScanner(ctx, rows) {
     ${table.html}
   `;
 
-  pill.wire(ctx.root);
   strip.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);

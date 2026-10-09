@@ -106,9 +106,10 @@ const server = createServer((req, res) => {
       if (previousRelease) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-momentum-release`;');
     }
     if (path === '/js/tabs/breakouts.js' && previousRelease) {
-      body = body.toString()
-        .replace("${formatNumber(exceptions.length)} ${exceptions.length === 1 ? 'Exception' : 'Exceptions'}", '${formatNumber(exceptions.length)} pending data refresh')
-        .replace('noteHelp: exceptions.length ? {', 'noteHelp: false ? {');
+      body = body.toString().replace(
+        "'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',",
+        "'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',\n      meta: livePill().html + scopeSummary({ scope: ctx.scope, count: passers.length, noun: 'passing', book: coverage.meta() }),",
+      );
     }
     res.setHeader('content-type', CT[extname(file)] || 'application/octet-stream');
     res.end(body);
@@ -161,6 +162,7 @@ const readView = () => ({
   emeraldPills: document.querySelectorAll('#content-host [data-score-table] tbody .bg-emerald-50.text-emerald-700').length,
   rosePills: document.querySelectorAll('#content-host [data-score-table] tbody .bg-rose-50.text-rose-700').length,
   pendingNote: /pending.*refresh/i.test(document.querySelector('#content-host')?.textContent || ''),
+  headerHasBadges: !!document.querySelector('#content-host [data-section-head] [data-live-info]') || /passing/.test(document.querySelector('#content-host [data-section-head]')?.textContent || ''),
   docScrollW: document.documentElement.scrollWidth,
   bodyScrollW: document.body.scrollWidth,
   winW: window.innerWidth,
@@ -187,6 +189,7 @@ try {
       /Scanned\D*4\b/.test(v.statCards[0]?.text) && /Strong Momentum\D*3\b/.test(v.statCards[1]?.text) && /Pass Both\D*0\b/.test(v.statCards[3]?.text),
       v.statCards.map((c) => c.text).join(' | '));
     ok('exceptions are counted apart, never as passing, with no pending-refresh claim', /6 Exceptions/.test(v.statCards[0]?.text || '') && !v.pendingNote);
+    ok('the scanner header has no price-status or scope-count badges', !v.headerHasBadges);
     const exceptionButton = page.locator('#content-host [data-stat-help="note-0"]');
     await exceptionButton.focus();
     await page.keyboard.press('Enter');
@@ -269,13 +272,14 @@ try {
     await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => navigator.serviceWorker.controller);
     await page.reload();
-    await page.waitForFunction(() => /6 pending data refresh/.test(document.querySelector('#content-host')?.textContent || ''));
+    await page.waitForSelector('#content-host [data-section-head] [data-live-info]');
+    ok('the cached previous scanner displays both old header badges', /3 passing/.test(await page.locator('#content-host [data-section-head]').textContent()));
     const oldCaches = await page.evaluate(() => caches.keys());
     ok('returning-session fixture genuinely uses the old module cache', oldCaches.some(key => key.includes('previous-momentum-release')));
     previousRelease = false;
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-    await page.waitForSelector('#content-host [data-stat-help="note-0"]', { timeout: 60000 });
-    ok('the already-open scanner upgrades automatically to Exceptions', !/pending.*refresh/i.test(await page.locator('#content-host').textContent()));
+    await page.waitForFunction(() => document.querySelector('#content-host [data-score-table]') && !document.querySelector('#content-host [data-section-head] [data-live-info]'), null, { timeout: 60000 });
+    ok('the already-open scanner automatically removes both header badges', !(await page.evaluate(readView)).headerHasBadges);
     await page.click('#content-host [data-stat-help="note-0"]');
     ok('the upgraded reader can open the complete exception list', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);
     const newCaches = await page.evaluate(() => caches.keys());
