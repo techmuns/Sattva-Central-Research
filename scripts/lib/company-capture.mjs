@@ -260,9 +260,11 @@ export async function captureCompanySources({ dir, companies, unresolved = [], n
         : [job.entry];
       const rank = job => pendingStates(job).some(entry => !entry.lastAttemptAt) ? 0 : pendingStates(job).some(entry => entry.error) ? 1 :
         job.kind === 'announcements' && job.entry.priority ? 2 : job.kind === 'announcements' ? 3 : 4;
-      const priority = job => job.kind === 'announcements' && job.entry.priority ? 0 : 1;
+      const priority = job => job.entry.priority ? 0 : 1;
       const oldest = job => pendingStates(job).map(entry => entry.lastAttemptAt || '').sort()[0] || '';
-      return rank(a) - rank(b) || priority(a) - priority(b) || oldest(a).localeCompare(oldest(b));
+      // Thousands of newly enrolled universe companies must not postpone established portfolio
+      // checks. The source rotation below still gives domestic documents their own fair turns.
+      return priority(a) - priority(b) || rank(a) - rank(b) || oldest(a).localeCompare(oldest(b));
     });
   // Reserve two of every three starts for announcements, one for domestic reports. A large
   // announcement universe must not starve reports (or let reports consume the backfill budget).
@@ -272,7 +274,7 @@ export async function captureCompanySources({ dir, companies, unresolved = [], n
   const takeJob = () => {
     const prefer = lane++ % 3 === 2 ? domestic : announcements;
     const other = prefer === domestic ? announcements : domestic;
-    if (prefer[0]?.entry.lastAttemptAt && other[0] && !other[0].entry.lastAttemptAt) return other.shift();
+    if (!prefer[0]?.entry.priority && prefer[0]?.entry.lastAttemptAt && other[0] && !other[0].entry.lastAttemptAt) return other.shift();
     return prefer.shift() || other.shift();
   };
   let count = 0, stop = false, authFailedThisRun = false, legacySucceededThisRun = false;

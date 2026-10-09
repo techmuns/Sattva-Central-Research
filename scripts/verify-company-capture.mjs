@@ -129,6 +129,12 @@ try {
   assert(priorityCalls[0].range.to < dayForTest(clock), 'fresh portfolio companies progress through older history');
   assert.equal(priorityCalls[2].kind, 'domestic', 'announcement priority cannot starve the other source');
 
+  const enrollmentCalls = [];
+  await captureCompanySources({ ...options, dir: priorityDir,
+    companies: [...prioritised, ...Array.from({ length: 6000 }, (_, i) => ({ ticker: `NEW${i}` }))], maxRequests: 1,
+    request: async (kind, ticker) => { enrollmentCalls.push(ticker); return { ok: true, announcements: [], documents: [] }; } });
+  assert.deepEqual(enrollmentCalls, ['BOOK'], 'new exchange enrollments cannot starve an established portfolio company');
+
   const firstRunPriorityCalls = [];
   await captureCompanySources({ ...options, dir: join(scratch, 'first-run-priority'),
     companies: [{ ticker: 'BACKGROUND' }, { ticker: 'NEWBOOK', priority: true }], maxRequests: 1,

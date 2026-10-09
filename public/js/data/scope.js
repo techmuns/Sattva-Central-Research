@@ -76,11 +76,15 @@ export function scopeMatcher(scope, holdings = null) {
     removed.get(t).add(entry.isin || null);
   }
   const removedIsins = new Set(exclusions.map(entry => entry.isin).filter(Boolean));
+  const removedCodes = new Set(exclusions.flatMap(entry => [entry.bseCode, ...(entry.matchTickers || [])]
+    .filter(code => /^\d{6}$/.test(String(code || ''))).map(String)));
   return { has: (ticker, company = null) => {
     const t = filingTicker(ticker);
     if (wanted) return !!t && wanted.has(t);
     if (company?.isin) return !removedIsins.has(company.isin) &&
       !removed.get(t)?.has(null) && !removed.get(t)?.has(company.isin);
+    const code = String(company?.scripCode || company?.bseCode || '');
+    if (/^\d{6}$/.test(code)) return !removedCodes.has(code) && !removed.get(t)?.has(null);
     return !!t && !removed.has(t);
   } };
 }

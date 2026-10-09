@@ -31,6 +31,8 @@ lists.remove('universe', bseFocus, built.companies);
 assert.deepEqual(filterByScope([{ ...bseFocus, ticker: 'FOCUS' }, nseFocus], 'universe').map(c => c.isin), [nseFocus.isin]);
 lists.reset('universe'); lists.remove('universe', nseFocus, built.companies);
 assert.deepEqual(filterByScope([{ ...bseFocus, ticker: 'FOCUS' }, nseFocus], 'universe').map(c => c.isin), [bseFocus.isin]);
+assert.equal(filterByScope([{ ticker: 'FOCUS', scripCode: bseFocus.bseCode }], 'universe').length, 1,
+  'an explicit BSE code distinguishes the other issuer even before ISIN enrichment');
 lists.reset('universe'); lists.remove('universe', dp, built.companies);
 assert.equal(lists.removed('universe')[0].isin, dp.isin, 'saved exclusions retain security identity');
 assert.equal(filterByScope([{ ticker: dp.bseCode }, dp], 'universe').length, 0, 'BSE-code and NSE rows follow the same company exclusion');
