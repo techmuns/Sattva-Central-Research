@@ -206,6 +206,7 @@ try {
     ok('Escape closes the exception list and returns focus to the info button', await page.locator('#modal-overlay').evaluate(el => el.classList.contains('hidden')) && await exceptionButton.evaluate(el => el === document.activeElement));
 
     await page.click('#content-host [data-mgate="volume-momentum"]');
+    await page.waitForFunction(() => /Scanned\D*5\b.*5 Exceptions/s.test(document.querySelector('#content-host .stat-card')?.textContent || ''));
     const volumeView = await page.evaluate(readView);
     ok('Volume + Momentum scans the newer listing without 200-day history', /Scanned\D*5\b/.test(volumeView.statCards[0]?.text) && /5 Exceptions/.test(volumeView.statCards[0]?.text));
     await page.click('#content-host [data-stat-help="note-0"]');

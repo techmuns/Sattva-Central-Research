@@ -402,7 +402,8 @@ ratios or manually start production collection to fill them.
 
 Weekly/monthly RSI uses the actual screened session to decide which periods have completed.
 Retain the completed previous week on Mondays and previous month on the first session of a month.
-Date running states, retain their precision and never append an already included completed period.
+Date RSI/MACD running states, retain their precision separately from rounded display values and never
+append an already included completed period.
 Legacy undated states require restoring the last completed period before a rollover live step.
 
 Availability is filter-specific. Strong Momentum requires all four moving averages and all three

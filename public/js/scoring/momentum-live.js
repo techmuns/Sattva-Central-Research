@@ -96,7 +96,8 @@ export function liveIndicators(company, livePrice, liveVolume, prevClose, option
   const c = company || {};
   const prev = prevClose === undefined ? (isNum(c.cmp) ? c.cmp : null) : prevClose;
   const hasRsi = !!(c.rsi_multi && c.rsi_multi.daily && isNum(c.rsi_multi.daily.avgGain));
-  const hasMacd = !!(c.macd && isNum(c.macd.ema12) && isNum(c.macd.ema26));
+  const macdState = c.macd?.state || c.macd;
+  const hasMacd = !!(macdState && isNum(macdState.ema12) && isNum(macdState.ema26));
   // Availability belongs to each filter. Volume + Momentum needs no 200-day history.
   const evaluable = hasRsi && isNum(c.sma20) && isNum(livePrice);
 
@@ -104,15 +105,16 @@ export function liveIndicators(company, livePrice, liveVolume, prevClose, option
   const rsiD = hasRsi ? options.dailyCompleted ? c.rsi_multi.daily : advanceWilderRsi(c.rsi_multi.daily, livePrice) : null;
   const rsiW = periodRsi(c, 'weekly', livePrice, options.sessionDate);
   const rsiM = periodRsi(c, 'monthly', livePrice, options.sessionDate);
+  const storedLine = c.macd?.state ? macdState.ema12 - macdState.ema26 : c.macd?.line;
   const macd = hasMacd ? options.dailyCompleted
-    ? {line:c.macd.line,signal:c.macd.signal,above_zero:c.macd.line > 0,bullish:isNum(c.macd.signal) ? c.macd.line > c.macd.signal : null}
-    : advanceMacd({ ema12: c.macd.ema12, ema26: c.macd.ema26, signal: c.macd.signal }, livePrice) : null;
+    ? {line:storedLine,signal:macdState.signal,above_zero:storedLine > 0,bullish:isNum(macdState.signal) ? storedLine > macdState.signal : null}
+    : advanceMacd(macdState, livePrice) : null;
   const averageVolume = options.averageVolume === undefined ? c.avg_volume_10d : options.averageVolume;
 
   // Intraday crosses must begin below the signal; yesterday's crossover is not a new one today.
   let freshCross = null;
   if (macd && macd.bullish != null) {
-    const storedBelow = isNum(c.macd.line) && isNum(c.macd.signal) && c.macd.line <= c.macd.signal;
+    const storedBelow = isNum(storedLine) && isNum(macdState.signal) && storedLine <= macdState.signal;
     freshCross = options.dailyCompleted ? c.macd.positive_crossover === true : macd.bullish === true && storedBelow;
   }
 

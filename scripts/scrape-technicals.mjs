@@ -566,6 +566,8 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars =
     macd: {
       line: round(macdLine, 2),
       signal: round(macdSig, 2),
+      // Display rounding must not become tomorrow's running calculation state.
+      state: {ema12, ema26, signal:macdSig, asOf:bars.at(-1).date},
       above_zero: macdLine > 0,
       positive_crossover: positiveCrossover,
       // Momentum Scanner (additive): the raw EMAs behind the line, for live MACD recompute.

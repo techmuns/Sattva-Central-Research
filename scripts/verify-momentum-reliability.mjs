@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { scannerIndicators, evaluateFilter } from '../public/js/scoring/momentum-live.js';
+import { scannerIndicators, evaluateFilter, advanceMacd } from '../public/js/scoring/momentum-live.js';
 import { completedPeriods, volumeWindow10d } from '../public/js/scoring/momentum-history.js';
 import { wilderRsiState } from './lib/momentum.mjs';
 import { rsi } from './lib/indicators.mjs';
@@ -112,6 +112,18 @@ test('a saved MACD crossover is not repeated as a new intraday crossover', () =>
   const v=scannerIndicators(c,quote(),{now:AT});
   assert.equal(v.macdBullish,true);
   assert.equal(v.freshCross,false);
+});
+
+test('small MACD readings use unrounded running state rather than display figures', () => {
+  const state={ema12:0.01234567,ema26:0.01211111,signal:0.00022,asOf:'2026-10-08'};
+  const c=company({cmp:0.0123,macd:{ema12:0.0123,ema26:0.0121,line:0,signal:0,state}});
+  const q=quote({price:0.0123});
+  const v=scannerIndicators(c,q,{now:AT}),expected=advanceMacd(state,q.price);
+  near(v.macdLine,expected.line);near(v.macdSignal,expected.signal);
+  assert.equal(v.freshCross,false); // It was already bullish before display rounded it to zero.
+  const completed=scannerIndicators({...c,bar_date:q.sessionDate},q,{now:AT});
+  near(completed.macdLine,state.ema12-state.ema26);near(completed.macdSignal,state.signal);
+  assert.equal(completed.macdBullish,true);
 });
 
 test('shared capture carries the volume window into minute quotes only for the same venue/session', () => {
