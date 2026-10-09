@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
+import { createHash } from 'node:crypto';
 import { buildExchangeUniverse } from '../public/js/data/exchange-universe.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 let upgraded = false, failed = false;
+let directoryReads = 0;
 const bse = JSON.parse(readFileSync(resolve(root, 'data/announcement-identities.json')));
 const nse = JSON.parse(readFileSync(resolve(root, 'data/filing-capture/nse-identities.json')));
 const expected = buildExchangeUniverse(bse, nse).companies;
@@ -28,8 +30,13 @@ const server = createServer((req, res) => {
     if (path === '/' || path === '/index.html') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (path === '/sdk-fixture.js') { res.end('/* isolated SDK */'); return; }
     if (path === '/data/announcement-identities.json' || path === '/data/filing-capture/nse-identities.json') {
+      directoryReads++;
       if (failed) { res.writeHead(503).end(); return; }
-      res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(path.includes('nse-identities') ? nse : bse)); return;
+      const body = JSON.stringify(path.includes('nse-identities') ? nse : bse);
+      const tag = `"${createHash('sha256').update(body).digest('hex')}"`;
+      res.setHeader('etag', tag);
+      if (req.headers['if-none-match'] === tag) { res.writeHead(304).end(); return; }
+      res.setHeader('content-type', 'application/json'); res.end(body); return;
     }
     if (path.startsWith('/api/')) throw Error('fixture has no API');
     const file = resolve(root, '.' + path);
@@ -62,6 +69,27 @@ try {
   assert.equal(await page.evaluate(() => localStorage.getItem('sattva:universe-upgrade-proof')), 'retained');
   assert(!(await page.evaluate(() => caches.keys())).some(k => k.includes('previous-600-company-universe')));
   assert(await page.locator('[data-scope-member]').count() <= 100, 'DOM stays bounded while every company remains reachable');
+  assert(await page.evaluate(async () => {
+    const listed = await import('/js/data/listed-companies.js'), before = listed.all();
+    await listed.load(); return listed.all() === before;
+  }), 'real conditional HTTP reads preserve unchanged company objects');
+  // A slower device must still accept keystrokes across the complete directory. Measure the
+  // handler and following painted frames inside the browser, excluding automation setup.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  for (const query of ['a', 'dp abhushan', 'INE266Y01019', '544161', 'zzzz-unmatched', '']) {
+    const timing = await page.evaluate(async query => {
+      const el = document.querySelector('[data-scope-search]'), start = performance.now();
+      el.value = query; el.dispatchEvent(new Event('input', { bubbles: true }));
+      const handlerMs = performance.now() - start;
+      await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+      return { handlerMs, paintMs: performance.now() - start };
+    }, query);
+    assert(timing.handlerMs < 150 && timing.paintMs < 250,
+      `complete-directory search stays responsive at 4x CPU slowdown (${JSON.stringify(timing)})`);
+  }
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  await cdp.detach();
   await page.locator('[data-scope-members]').evaluate(el => { el.scrollTop = el.scrollHeight; });
   await page.waitForFunction(key => [...document.querySelectorAll('[data-scope-member]')].some(el => el.dataset.scopeMember === key), `ticker:${expected.at(-1).ticker}`);
   const dp = expected.find(c => c.ticker === 'DPABHUSHAN');
@@ -98,6 +126,20 @@ try {
       await page.screenshot({ path: `${process.env.UNIVERSE_SCREENSHOTS}/universe-${width}-${theme}.png` });
     }
   }
+  await page.clock.install();
+  await page.evaluate(() => Object.defineProperty(document, 'hidden', { configurable: true, value: true }));
+  const hiddenReads = directoryReads;
+  await page.clock.fastForward(90_001);
+  assert.equal(directoryReads, hiddenReads, 'a hidden editor does not poll the exchange directories');
+  await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForFunction(() => !document.querySelector('[data-scope-members]').classList.contains('hidden'));
+  await page.evaluate(async () => { await (await import('/js/data/listed-companies.js')).load(); });
+  assert(directoryReads > hiddenReads, 'returning to the editor rechecks the sources');
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  const closedReads = directoryReads;
+  await page.clock.fastForward(180_001);
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  assert.equal(directoryReads, closedReads, 'closing the editor removes its poller and return listener');
   // A fresh reader has no saved directory when both initial reads fail. Returning to the
   // still-open editor must recover automatically, including revealing the previously hidden list.
   failed = true;

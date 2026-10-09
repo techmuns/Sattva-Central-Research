@@ -1,4 +1,5 @@
 // Announcement identities are independent of quote-provider symbols and book-date listing labels.
+import { runSteps } from '../core/slices.js';
 // These three Yahoo SME aliases are verified against NSE filings (see DATA-CONTRACTS.md).
 const SME = { 'ALPEXSOLAR-SM': 'ALPEXSOLAR', 'JAYBEE-SM': 'JAYBEE', 'SAHANA-SM': 'SAHANA' };
 // Reviewed warrant-to-issuer relationships resolve against the current exchange directories.
@@ -9,11 +10,15 @@ const upper = value => String(value || '').trim().toUpperCase();
 export const filingTicker = value => SME[upper(value)] || upper(value);
 // Exchange ISINs join the directories. Keep old exchange/provider symbols as exact aliases.
 export function mergeExchangeIdentities(...lists) {
+  return runSteps(mergeExchangeIdentitySteps(...lists));
+}
+export function* mergeExchangeIdentitySteps(...lists) {
   const entries = new Map();
   for (const entry of lists.flat()) {
     const previous = entries.get(entry.isin);
     entries.set(entry.isin, { ...previous, ...entry,
       aliases: [...new Set([...(previous?.aliases || []), previous?.ticker, ...(entry.aliases || [])].filter(Boolean))] });
+    yield;
   }
   return [...entries.values()];
 }

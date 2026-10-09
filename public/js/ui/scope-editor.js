@@ -20,11 +20,8 @@ const SEARCH_DELAY_MS = 250;
 const clean = (v) => String(v ?? '').trim();
 const upper = (v) => clean(v).toUpperCase();
 
-const matchesCompany = (entry, query) => {
-  const text = [entry.ticker, entry.name, entry.isin, entry.bseCode,
+const companyText = entry => [entry.ticker, entry.name, entry.isin, entry.bseCode,
     ...(entry.aliases || []), entry.industry, entry.sector].join(' ').toLowerCase();
-  return query.split(/\s+/).every(word => text.includes(word));
-};
 
 function editorHtml(scope) {
   return `
@@ -151,6 +148,17 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   let searchAbort = null;
   let offWatchlist = null;
   let memberList = null, pollTimer = null, lastQuery = '';
+  // Exchange rows are immutable and replaced on a changed capture. Search text belongs to the
+  // row, not the keystroke; a WeakMap lets superseded directories disappear with their rows.
+  const searchText = new WeakMap();
+  const matchesCompany = (entry, words) => {
+    let text;
+    if (scope === 'universe') {
+      text = searchText.get(entry);
+      if (text === undefined) { text = companyText(entry); searchText.set(entry, text); }
+    } else text = companyText(entry);
+    return words.every(word => text.includes(word));
+  };
 
   openModal(editorHtml(scope), {
     size: 'wide',
@@ -205,8 +213,9 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   function paintMembers() {
     const query = clean(input.value).toLowerCase();
     const entries = current();
+    const words = query.split(/\s+/);
     const filtered = query
-      ? entries.filter((entry) => matchesCompany(entry, query))
+      ? entries.filter((entry) => matchesCompany(entry, words))
       : entries;
     root.querySelector('[data-scope-count]').textContent = formatNumber(entries.length);
     if (!memberList) memberList = mountWindowedList({ scroller: membersBox, content: membersBox,
@@ -217,24 +226,29 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
     lastQuery = query;
     root.querySelector('[data-scope-empty-filter]').classList.toggle('hidden', filtered.length > 0 || !query);
     membersBox.classList.toggle('hidden', filtered.length === 0 && !!query);
+    return entries;
   }
 
-  function paintSearch({ busy = false, error = '' } = {}) {
+  function paintSearch({ busy = false, error = '', entries = null } = {}) {
     if (scope === 'universe') {
       const query = clean(input.value).toLowerCase();
-      const memberKeys = new Set(current().map(scopeLists.keyFor));
-      searchResults = query.length >= 2 ? base.filter(entry => matchesCompany(entry, query) && !memberKeys.has(scopeLists.keyFor(entry))).slice(0, 20) : [];
+      searchResults = [];
+      if (query.length >= 2) {
+        entries ||= current();
+        const memberKeys = new Set(entries.map(scopeLists.keyFor)), words = query.split(/\s+/);
+        searchResults = base.filter(entry => matchesCompany(entry, words) && !memberKeys.has(scopeLists.keyFor(entry))).slice(0, 20);
+      }
     }
     const open = clean(input.value).length >= 2 && (scope !== 'universe' || searchResults.length > 0);
     resultBox.classList.toggle('hidden', !open);
-    if (open) resultBox.innerHTML = searchResultsHtml(searchResults, current(), busy, error);
+    if (open) resultBox.innerHTML = searchResultsHtml(searchResults, entries || current(), busy, error);
   }
 
   function markChanged() {
     changed = true;
-    paintMembers();
+    const entries = paintMembers();
     paintStatus();
-    paintSearch();
+    paintSearch({ entries });
   }
 
   async function add(entry) {
@@ -257,12 +271,12 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   }
 
   input.addEventListener('input', () => {
-    paintMembers();
+    const entries = paintMembers();
     clearTimeout(searchTimer);
     searchAbort?.abort();
     searchResults = [];
     const query = clean(input.value);
-    if (scope === 'universe') { paintSearch(); return; }
+    if (scope === 'universe') { paintSearch({ entries }); return; }
     if (query.length < 2) {
       paintSearch();
       return;
@@ -306,8 +320,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   root.querySelector('[data-scope-reset]')?.addEventListener('click', () => {
     scopeLists.reset(scope);
     changed = true;
-    paintMembers();
-    paintSearch();
+    paintSearch({ entries: paintMembers() });
   });
 
   if (scope === 'watchlist') {
@@ -327,7 +340,8 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
       base = listedCompanies.all();
       loading.classList.add('hidden');
       panel.classList.remove('hidden');
-      paintMembers(); paintStatus(); paintSearch();
+      const entries = paintMembers();
+      paintStatus(); paintSearch({ entries });
     } catch (err) {
       const status = root.querySelector('[data-universe-status]');
       if (status) status.textContent = `Could not recheck the company list: ${err.message}. Saved companies retained.`;

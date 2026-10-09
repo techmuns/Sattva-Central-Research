@@ -1,15 +1,16 @@
 import { capturedJson } from './company-captures.js';
-import { buildExchangeUniverse } from './exchange-universe.js';
+import { buildExchangeUniverseAsync } from './exchange-universe.js';
 export { buildExchangeUniverse } from './exchange-universe.js';
 
 let bse = null, nse = null, pending = null;
 let companies = [], status = { sources: [], errors: [] };
+let builtInputs = null, counts = {};
 export const all = () => companies;
 export const meta = () => status;
 
 // Revalidate on every editor opening and every visible poll. Failed sources retain their last
 // verified identities and original check times; a partial directory is never called complete.
-export function load({ read = capturedJson } = {}) {
+export function load({ read = capturedJson, build = buildExchangeUniverseAsync } = {}) {
   if (pending) return pending;
   pending = (async () => {
     const errors = [], sources = [];
@@ -18,7 +19,7 @@ export function load({ read = capturedJson } = {}) {
         try {
           const { value, stale } = await read('data/announcement-identities.json');
           if (value?.version !== 1 || !Array.isArray(value.entries) || value.entries.length < 1000 || value.entries.length < (bse?.entries.length || 0) * 0.8 || !Number.isFinite(Date.parse(value.capturedAt))) throw Error('Invalid BSE directory');
-          buildExchangeUniverse(value, {}); // Validate before replacing saved identities.
+          if (value !== bse) await build(value, {}); // Validate before replacing saved identities.
           bse = value;
           if (stale) errors.push('BSE directory could not be revalidated; saved identities retained.');
         } catch { errors.push('BSE directory unavailable; any saved identities are retained.'); }
@@ -35,7 +36,7 @@ export function load({ read = capturedJson } = {}) {
               errors.push(`NSE ${kind === 'sme' ? 'SME' : 'main board'} directory incomplete; saved identities retained.`);
               continue;
             }
-            buildExchangeUniverse({}, { directories: { [kind]: d } });
+            if (d !== directories[kind]) await build({}, { directories: { [kind]: d } });
             directories[kind] = d;
           }
           nse = { ...value, directories };
@@ -49,9 +50,16 @@ export function load({ read = capturedJson } = {}) {
       })(),
     ]);
     if (!bse && !nse) throw Error('The exchange company directories could not be read.');
-    const built = buildExchangeUniverse(bse || {}, nse || {});
-    companies = built.companies;
-    status = { ...built.counts, sources, errors };
+    // Conditional reads retain the verified object on a 304. Recheck both sources every time,
+    // but keep the derived rows (and consumers' row caches) while all three inputs are unchanged.
+    const inputs = { bse, equity: nse?.directories?.equity, sme: nse?.directories?.sme };
+    if (!builtInputs || Object.keys(inputs).some(key => inputs[key] !== builtInputs[key])) {
+      const built = await build(bse || {}, nse || {});
+      companies = built.companies;
+      counts = built.counts;
+      builtInputs = inputs;
+    }
+    status = { ...counts, sources, errors };
     return companies;
   })().finally(() => { pending = null; });
   return pending;

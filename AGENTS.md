@@ -64,6 +64,12 @@ companies and preserve captured delisted-company history. Company-directory memb
 per-feed freshness/completeness are separate claims. Preserve the existing company-news gate,
 Sunday universe slot, free providers, query ceiling and resumable history.
 
+Standing responsiveness requirement, confirmed on 9 October 2026: expanding Universe must
+preserve the experience of loading, navigating, filtering, searching and scrolling the dashboard.
+Keep the full directory off the startup critical path, reuse unchanged verified inputs, yield
+heavy browser preparation to input, and bound mounted rows while keeping all eligible data available.
+Do not trade collection coverage, history or freshness for faster rendering.
+
 Changes under `public/js/` must advance the release version in `public/sw.js`: returning
 dashboards serve those modules from an immutable cache. Verify an existing session upgrades;
 a fresh asset response alone does not prove that returning readers received the change.
