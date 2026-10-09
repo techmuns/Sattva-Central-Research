@@ -249,6 +249,9 @@ try {
   // ---- All Alerts: after opening an item, it asks --------------------------------------------
   await page.goto(`${srv.url}#/research/daily-alerts?scope=universe`);
   await page.waitForSelector('tbody tr[data-row-key]', { timeout: 90000 });
+  // The first partial can be replaced while the initial view is still covered. Vote only once
+  // the workspace permits interaction, as the reader does after the source handoff.
+  await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false', null, { timeout: 90000 });
   await page.locator('tbody tr[data-row-key]').first().locator('td').first().click();
   const prompt = page.locator('.relevance-prompt');
   await prompt.waitFor();
