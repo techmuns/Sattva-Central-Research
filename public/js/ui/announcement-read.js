@@ -20,11 +20,12 @@ import { feedbackBar, wireFeedback } from './relevance-feedback-ui.js';
 import { formatMarketCap, MCAP_BANDS } from '../data/company-profile.js';
 import { READ_SECTIONS, readReason } from '../data/announcement-read-shared.js';
 import { announcementSourceUrls } from '../data/announcements-shared.js';
+import { requestAnnouncementRead } from '../data/announcement-read-client.js';
 
 const SECTION = Object.fromEntries(READ_SECTIONS.map((s) => [s.id, s.title]));
 const DIRECTION_WORD = { positive: 'Positive', negative: 'Negative', mixed: 'Mixed', neutral: 'Neutral', unclear: 'Unclear' };
 const HORIZON_WORD = { 'near-term': 'near term', 'medium-term': 'medium term', 'long-term': 'long term', unclear: 'horizon unclear' };
-const cache = new Map(); // row id -> settled reading response, for this page session
+const eventCache = new Map(); // optional context already obtained by an earlier popup
 let openId = 0;
 
 const when = (row) => [row.date ? formatDate(row.date) : 'Date not supplied', row.time ? `${String(row.time).slice(0, 5)} IST` : null].filter(Boolean).join(' · ');
@@ -59,6 +60,7 @@ function shell(row, item) {
         ${links.slice(1).map((l) => `<a class="ann-read-alt" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.source || 'Copy')} copy ↗</a>`).join('')}
         ${!primary && row.referenceUrl ? `<a class="ann-read-alt" href="${escapeHtml(row.referenceUrl)}" target="_blank" rel="noopener noreferrer">Source reference page ↗</a>` : ''}
       </div>
+      <p class="ann-read-note" data-read-status role="status" aria-live="polite">Opening filing…</p>
     </header>
     <div class="ann-read-body">
       <section class="ann-read-section" data-section="what"><h3>${escapeHtml(SECTION.what)}</h3><div data-slot="what">${loadingBlock(2)}</div></section>
@@ -88,6 +90,8 @@ function sourceBlock(row, read) {
 function fillReading(root, row, read) {
   const slot = (id) => root.querySelector(`[data-slot="${id}"]`);
   if (!slot('what')) return;
+  const status = root.querySelector('[data-read-status]');
+  if (status) status.textContent = '';
   if (read?.state === 'ready' && read.reading) {
     const r = read.reading;
     slot('what').innerHTML = `${r.documentType ? `<p class="ann-read-kicker">${escapeHtml(r.documentType)}</p>` : ''}<p>${escapeHtml(r.whatHappened)}</p>`;
@@ -110,6 +114,17 @@ function fillReading(root, row, read) {
   slot('source').innerHTML = sourceBlock(row, read);
 }
 
+function fillProgress(root, progress) {
+  const status = root.querySelector('[data-read-status]');
+  if (status) status.textContent = progress.stage === 'document' ? 'Opening the exchange document…' : 'AI reading in progress — checking the complete filing…';
+  const r = progress.reading;
+  if (!r) return;
+  root.querySelector('[data-slot="what"]').innerHTML = `${r.documentType ? `<p class="ann-read-kicker">${escapeHtml(r.documentType)}</p>` : ''}<p>${escapeHtml(r.whatHappened)}</p>`;
+  if (r.keyDetails) root.querySelector('[data-slot="details"]').innerHTML = r.keyDetails.length
+    ? `<dl class="ann-read-details">${r.keyDetails.map((d) => `<div><dt>${escapeHtml(d.label)}</dt><dd>${escapeHtml(d.value)}<blockquote>“${escapeHtml(d.quote)}”${d.location ? ` <cite>${escapeHtml(d.location)}</cite>` : ''}</blockquote></dd></div>`).join('')}</dl>`
+    : '<p class="ann-read-muted">Checking the remaining details…</p>';
+}
+
 function fillHistory(root, row, event) {
   const slot = root.querySelector('[data-slot="history"]');
   if (!slot) return;
@@ -129,26 +144,6 @@ function fillHistory(root, row, event) {
     }).join('')}</ol>`;
 }
 
-async function requestRead(row, related) {
-  if (cache.has(row.id)) return cache.get(row.id);
-  let read;
-  try {
-    const response = await fetch('api/announcement-read', {
-      method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ id: row.id, url: row.url, sourceUrls: (row.sourceUrls || []).map((s) => s.url), title: row.title, company: row.company,
-        ticker: row.ticker, date: row.date, time: row.time, category: row.category, subCategory: row.subCategory, summary: row.summary,
-        categories: row.categories, mcapCr: row.mcapCr, sector: row.group,
-        related: related.filter((m) => m.id !== row.id).map((m) => ({ date: m.date, title: m.title, source: (m.sources || [])[0] || null })) }),
-    });
-    const isJson = /json/.test(response.headers.get('content-type') || '');
-    const body = isJson ? await response.json().catch(() => null) : null;
-    read = body?.ok ? body : { state: 'failed', reason: body?.reason || (isJson ? 'upstream' : 'read-unavailable') };
-  } catch { read = { state: 'failed', reason: 'read-unavailable' }; }
-  // A stored or final answer is kept for the session; a temporary failure is asked again next time.
-  if (read.state === 'ready' || (read.state === 'failed' && !read.retryAt && read.reason !== 'read-unavailable')) cache.set(row.id, read);
-  return read;
-}
-
 /**
  * Open the popup for one filing. `loadEvent(event)` resolves the stitched event's members (the server
  * index or the local engine); `item` is the feedback descriptor for this filing.
@@ -164,9 +159,14 @@ export function openAnnouncementRead(row, { loadEvent = null, item }) {
   const eventPromise = row.event && loadEvent
     ? loadEvent(row.event).catch(() => ({ failed: true }))
     : Promise.resolve(null);
-  // The reading waits briefly for the event, so the model can place the filing in its sequence;
-  // it never waits long — the event is context, not a prerequisite.
-  const related = Promise.race([eventPromise.then((e) => e?.members || []), new Promise((resolve) => setTimeout(() => resolve([]), 1500))]);
-  void eventPromise.then((event) => { if (mine === openId && root.isConnected) fillHistory(root, row, event); });
-  void related.then((members) => requestRead(row, members)).then((read) => { if (mine === openId && root.isConnected) fillReading(root, row, read); });
+  void eventPromise.then((event) => {
+    if (event?.members) {
+      eventCache.set(row.event.id, event.members);
+      if (eventCache.size > 32) eventCache.delete(eventCache.keys().next().value);
+    }
+    if (mine === openId && root.isConnected) fillHistory(root, row, event);
+  });
+  void requestAnnouncementRead(row, eventCache.get(row.event?.id) || [], (progress) => {
+    if (mine === openId && root.isConnected) fillProgress(root, progress);
+  }).then((read) => { if (mine === openId && root.isConnected) fillReading(root, row, read); });
 }

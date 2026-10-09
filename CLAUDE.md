@@ -288,6 +288,10 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
+Navigation update (9 October 2026): Ask Research is removed from the tab strip via
+`meta.hideFromNavigation`. Its route remains available for saved research and newsletter links.
+AI Alerts remains the first/default tab. Hidden navigation metadata does not remove route support.
+
 Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
 keeps saved companies accessible even after a portfolio exit or empty Watchlist. The notebook's

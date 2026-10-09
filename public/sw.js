@@ -33,8 +33,7 @@ const WARM_CONCURRENCY = 8;
 // Keep content revisions separate from the shared marker: concurrent dashboard
 // releases can update that marker without conflicting with these fixes. Every
 // install, read and eviction uses the same combined key, retaining atomic upgrades.
-const EXCHANGE_UNIVERSE_REVISION = '2026-10-09-full-exchange-universe-v1-directory-recovery-v1';
-const CACHE_KEY = `${CACHE_NAME}-${EXCHANGE_UNIVERSE_REVISION}-news-story-companions-v1-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v2-dated-grades-all-alerts-restore-v2-ai-card-updates-v1-story-updates-v2-shared-reading-performance-ownership-v1-sattva-newsletter-v3-source-evidence-bounded-history-memory-v5-news-query-performance-v1-hot-path-caches-v1-sliced-rankings-v1-alert-pool-v3-content-reuse-investor-evidence-v2-initial-state-source-reliability-v1-scrollbar-grab-v2-measured-anchor-filing-particulars-v1-table-drag-v2-mutual-funds-v13-upstox-minute-v2-muns-price-label-v2-kpi-impact-v2-alert-notes-luna-v1-announcement-company-search-v1-announcement-search-clarity-v1-source-picker-stability-v1-fund-navigation-v1-private-price-alerts-v2-ai-reading-v2-factual-summaries-v1-alert-timelines-v1-announcement-recovery-v1-sliced-announcement-history-v1-retained-failure-cache-v1-story-order-v1-company-feed-recovery-v9-momentum-calculations-v1`;
+const CACHE_KEY = `${CACHE_NAME}-news-story-companions-v1-telegram-content-v1-watchlist-reliability-v4-sme-scope-v1-alert-arrivals-v3-notification-inbox-v1-breakout-layout-v2-dated-grades-all-alerts-restore-v2-ai-card-updates-v1-story-updates-v2-shared-reading-performance-ownership-v1-sattva-newsletter-v3-source-evidence-bounded-history-memory-v5-news-query-performance-v1-hot-path-caches-v1-sliced-rankings-v1-alert-pool-v3-content-reuse-investor-evidence-v2-initial-state-source-reliability-v1-scrollbar-grab-v2-measured-anchor-filing-particulars-v1-table-drag-v2-mutual-funds-v13-upstox-minute-v2-muns-price-label-v2-kpi-impact-v2-alert-notes-luna-v1-announcement-company-search-v1-announcement-search-clarity-v1-source-picker-stability-v1-fund-navigation-v1-private-price-alerts-v2-ai-reading-v2-factual-summaries-v1-alert-timelines-v1-announcement-recovery-v1-sliced-announcement-history-v1-retained-failure-cache-v1-story-order-v1-company-feed-recovery-v9-momentum-calculations-v1-announcement-read-stream-v1`;
 
 function moduleSpecifiers(source) {
   const found = new Set();
@@ -42,6 +41,11 @@ function moduleSpecifiers(source) {
   let match;
   while ((match = pattern.exec(source))) found.add(match[1] || match[2]);
   return [...found];
+}
+
+// Compose with every other module revision without editing their shared version lines.
+function releaseCacheKey() {
+  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -128,11 +132,11 @@ async function cacheModuleGraph(cache, entry) {
 }
 
 // This UI revision composes with the shared release without competing for its version line.
-const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earnings-reports-v2-paid-news-market-hours-v1-free-company-news-v1-news-every-2-hours-v1-empty-day-alerts-v1-finology-period-labels-v1-insider-source-gaps-v1-research-settle-v1-news-identity-retention-v1-lazy-tab-interfaces-v2-momentum-scanner-v1-momentum-scanner-polish-v1-relevance-ranking-v1-momentum-scanner-names-v1-glow-alert-delivery-v1-recovery-revisions-v1-context-restart-v1-active-deal-poller-v1-startup-reads-v1-cancelled-alert-warmups-v1-empty-news-query-v1-sliced-feed-normalization-v1-source-churn-warmups-v1-shared-company-archives-v1`;
+const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earnings-reports-v2-paid-news-market-hours-v1-free-company-news-v1-news-every-2-hours-v1-empty-day-alerts-v1-finology-period-labels-v1-insider-source-gaps-v1-research-settle-v1-news-identity-retention-v1-lazy-tab-interfaces-v2-momentum-scanner-v1-momentum-scanner-polish-v1-relevance-ranking-v1-momentum-scanner-names-v1-glow-alert-delivery-v1-recovery-revisions-v1-context-restart-v1-active-deal-poller-v1-startup-reads-v1-cancelled-alert-warmups-v1-empty-news-query-v1-sliced-feed-normalization-v1-source-churn-warmups-v1-shared-company-archives-v1-remove-ask-research-tab-v1`;
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(RELEASE_CACHE_KEY);
+    const cache = await caches.open(releaseCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -147,7 +151,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== RELEASE_CACHE_KEY).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== releaseCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -216,7 +220,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(RELEASE_CACHE_KEY);
+    const cache = await caches.open(releaseCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture

@@ -75,6 +75,8 @@ const READING = { readable: true, issuerMatches: true, documentType: 'Exchange f
   keyDetails: [{ label: 'Filing', value: 'As stated', quote: 'EOF', location: 'page 1' }], whyItMatters: 'It changes what is known about the company this period.',
   impact: { direction: 'unclear', horizon: 'unclear', text: 'Could matter if it changes earnings.' } };
 const outbound = { ranges: 0, full: 0, documents: 0, model: 0 };
+let streamModel = false, releaseModel;
+const heldModel = new Promise(done => { releaseModel = done; });
 const TYPES = { '.json': 'application/json' };
 const mf = new Miniflare({
   modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-05-23',
@@ -118,6 +120,23 @@ const mf = new Miniflare({
     if (url === 'https://bedrock-runtime.ap-south-1.amazonaws.com/anthropic/v1/messages') {
       assert.equal(request.headers.get('x-api-key'), 'ABSKtest-key-not-real');
       outbound.model++;
+      if (streamModel) {
+        const body = await request.json();
+        assert.equal(body.stream, true);
+        const encoder = new TextEncoder(), text = JSON.stringify(READING), cut = text.indexOf('"keyDetails"');
+        return new Response(new ReadableStream({ async start(controller) {
+          const send = value => controller.enqueue(encoder.encode(`data: ${JSON.stringify(value)}\n\n`));
+          send({ type: 'message_start' });
+          send({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
+          send({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: text.slice(0, cut) } });
+          await heldModel;
+          send({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: text.slice(cut) } });
+          send({ type: 'content_block_stop', index: 0 });
+          send({ type: 'message_delta', delta: { stop_reason: 'end_turn' } });
+          send({ type: 'message_stop' });
+          controller.close();
+        } }), { headers: { 'content-type': 'text/event-stream' } });
+      }
       return Response.json({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(READING) }] });
     }
     return new Response(`unexpected ${url}`, { status: 500 });
@@ -198,7 +217,28 @@ try {
   const refused = await (await post('/api/announcement-read', { id: 'x', url: 'https://evil.example/doc.pdf' })).json();
   assert.equal(refused.reason, 'unsupported-source');
   console.log('PASS workerd: AI Read crosses RPC, is stored, and fetches exchange documents only');
+  streamModel = true;
+  const streamInput = { id: 'a:stream', url: 'https://www.bseindia.com/xml-data/corpfiling/AttachLive/stream.pdf', company: 'Fixture Co' };
+  const streamed = await fetch(new URL('/api/announcement-read', base), { method: 'POST', headers: { origin: base.origin, 'content-type': 'application/json', accept: 'application/x-ndjson' }, body: JSON.stringify(streamInput) });
+  assert.match(streamed.headers.get('content-type'), /application\/x-ndjson/);
+  const reader = streamed.body.getReader(), decoder = new TextDecoder();
+  let buffer = '', early;
+  while (!early?.reading) {
+    buffer += decoder.decode((await reader.read()).value, { stream: true });
+    early = buffer.trim().split('\n').map(JSON.parse).find(e => e.type === 'progress' && e.reading);
+  }
+  assert.equal(early.reading.whatHappened, READING.whatHappened, 'useful bytes cross RPC before the provider completes');
+  assert(!buffer.includes('"type":"result"'));
+  releaseModel();
+  while (true) { const chunk = await reader.read(); if (chunk.done) break; buffer += decoder.decode(chunk.value, { stream: true }); }
+  const final = buffer.trim().split('\n').map(JSON.parse).find(e => e.type === 'result');
+  assert.equal(final.state, 'ready', JSON.stringify(final));
+  assert.equal(final.reading.keyDetails[0].quote, READING.keyDetails[0].quote);
+  const saved = await (await post('/api/announcement-read', streamInput)).json();
+  assert.equal(saved.stored, true); assert.equal(outbound.model, 2);
+  console.log('PASS workerd: streaming Response crosses real DO RPC before completion, validates, and persists once');
 } finally {
+  releaseModel();
   await mf.dispose();
   rmSync(tmp, { recursive: true, force: true });
 }

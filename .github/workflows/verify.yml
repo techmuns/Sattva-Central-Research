@@ -105,7 +105,7 @@ jobs:
       - name: Verify continuous corporate announcement sources and retention
         run: node scripts/verify-corporate-stream.mjs && node scripts/verify-bse-collection.mjs && node scripts/verify-bse-request-profile.mjs && node scripts/verify-announcement-recovery.mjs
       - name: Verify investor relevance, categories, event stitching, shared feedback, the announcement index and AI Read
-        run: node scripts/verify-relevance.mjs
+        run: node scripts/verify-relevance.mjs && node scripts/verify-announcement-read-stream.mjs
       - name: Verify the announcement index, shared feedback and AI Read across real Durable Object RPC in the local Worker runtime
         run: npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-announcements-runtime.mjs'
       - name: Verify domestic filings and earnings provenance
@@ -339,7 +339,7 @@ jobs:
       - name: Verify ranked announcement pages, categories, market cap, related filings, AI Read and shared feedback
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-announcements-ui.mjs
+        run: node scripts/verify-announcements-ui.mjs && node scripts/verify-announcement-read-cache-ui.mjs
       - name: Verify corporate actions scopes, retention and responsive table
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

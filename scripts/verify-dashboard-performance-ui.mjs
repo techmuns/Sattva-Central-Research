@@ -52,6 +52,9 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__arrivalsRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/core/app-updates.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__performanceRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
+    } else if (pathname === '/js/tabs/catalog.js') {
+      const source = readFileSync(path, 'utf8');
+      res.end(previousRelease ? source.replace('hideFromNavigation: true,', '') : source);
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {
@@ -230,6 +233,7 @@ try {
   });
   assert.equal(restartHits, 1, 'tab re-entry resumes the cadence instead of duplicating a fresh request');
   assert.equal(await page.evaluate(() => globalThis.__performanceRelease), 'previous', 'the returning reader is running the older cached module graph');
+  assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 1, 'the returning reader still has the previous Ask Research navigation');
   assert.equal(await page.evaluate(() => globalThis.__watchlistRelease), 'previous', 'the cached watchlist module belongs to the older release');
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'previous', 'returning session has the older arrivals module cached');
@@ -265,6 +269,7 @@ try {
   const upgradedCaches = await page.evaluate(() => caches.keys());
   assert(!upgradedCaches.some(name => name.includes('previous-fixture')), 'activation removes the superseded app cache');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'automatic upgrade retains reader preferences');
+  assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'automatic upgrade removes Ask Research from the existing session');
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {

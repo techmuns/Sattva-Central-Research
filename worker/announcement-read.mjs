@@ -9,7 +9,7 @@
 // A FAILURE IS NEVER AN EMPTY READING. `state: 'failed'` carries a reason the popup states in words,
 // and the popup keeps the exchange's own subject, details and the Open Original Filing link either way.
 import { boundedJson } from '../public/js/data/family-book-contract.js';
-import { READ_REQUEST_BYTES } from '../public/js/data/announcement-read-shared.js';
+import { READ_REQUEST_BYTES, readRequest } from '../public/js/data/announcement-read-shared.js';
 import { ANNOUNCEMENT_READ_OBJECT } from './announcement-read-store.mjs';
 import { sameOrigin } from './relevance-feedback.mjs';
 
@@ -32,8 +32,12 @@ export async function handleAnnouncementRead(request, env) {
   let input;
   try { input = await boundedJson(new Response(request.body), READ_REQUEST_BYTES); } catch { return fail('invalid-request', 400); }
   if (!input || typeof input !== 'object' || Array.isArray(input)) return fail('invalid-request', 400);
+  try { readRequest(input); } catch { return fail('invalid-request', 400); }
   let result;
   try {
+    if (request.headers.get('accept')?.includes('application/x-ndjson')) {
+      return await env.CAPTURE_REGISTRY.getByName(ANNOUNCEMENT_READ_OBJECT).announcementReadStream(input);
+    }
     result = await env.CAPTURE_REGISTRY.getByName(ANNOUNCEMENT_READ_OBJECT).announcementRead(input);
   } catch (error) {
     console.error('[announcement-read] the read store failed:', error?.message || error);

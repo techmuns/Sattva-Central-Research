@@ -86,7 +86,7 @@ export async function streamClaudeChat(request, env, input, instructions, cancel
   }
 }
 
-export async function consumeClaudeStream(stream, emit) {
+export async function consumeClaudeStream(stream, emit, { maxTextChars = 8000 } = {}) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = '', data = [], eventSize = 0, textChars = 0, bytes = 0;
@@ -97,7 +97,7 @@ export async function consumeClaudeStream(stream, emit) {
   const write = text => {
     if (typeof text !== 'string') { malformed(); return; }
     textChars += text.length;
-    if (textChars > 8000) { providerStreamFailure = 'The answer reached its display limit. The partial answer and source readings are saved.'; return; }
+    if (textChars > maxTextChars) { providerStreamFailure = 'The answer reached its display limit. The partial answer and source readings are saved.'; return; }
     wroteText ||= !!text.trim();
     if (text) emit(text);
   };

@@ -160,3 +160,15 @@ sections — **What happened**, **Key details**, **Why it matters**, **Investmen
 event history** — then **Source** and **Open Original Filing**. Limits: 150 new readings a day
 across all readers, 3 attempts per document with backoff, no investment advice, figures only as the
 filing states them. A failure is named in words and the original filing link always remains.
+
+The popup starts the read immediately while related history loads independently. Already loaded
+event members remain optional model context. Browser and server share pending requests by exchange
+document identity, including a close/reopen or another row for the same document. Saved v1 readings
+remain reusable; this transport improvement does not invalidate paid history.
+With `Accept: application/x-ndjson`, the same POST streams progress and a terminal result across
+Durable Object RPC. Claude streams completed factual sections after its readable/issuer checks;
+these remain visibly in progress. Investment analysis and durable storage require a complete,
+normally finished, validated answer. Failure retracts provisional sections and keeps the original
+filing link. Closing a popup never cancels another reader's shared read. The full source and existing
+budgets, attempt receipts and cooldowns remain unchanged. Generation returns document, first useful
+section and total durations for diagnosis; these are not source freshness timestamps.

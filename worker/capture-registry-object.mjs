@@ -76,6 +76,7 @@ export class CaptureRegistry extends DurableObject {
   feedbackModel() { return this.relevanceFeedback.model(); }
   feedbackMine(device) { return this.relevanceFeedback.mine(device); }
   announcementRead(input) { return settled(() => this.announcementReads.read(input)); }
+  announcementReadStream(input) { return this.announcementReads.stream(input, (work) => this.ctx.waitUntil(work)); }
   announcementReadStatus() { return settled(() => this.announcementReads.status()); }
   priceLevelsSnapshot(cursor) { return this.priceLevelSchedule.snapshot(cursor); }
   async priceLevelsApply(intents) { const result=this.priceLevels.apply(intents);await this.priceLevelSchedule.arm();return {...result.snapshot,outcomes:result.outcomes,check:await this.priceLevelSchedule.status()}; }
