@@ -753,7 +753,7 @@ function conditionTitle(result) {
   return result.conditions.map((c) => `${c.ok ? '✓' : '✕'} ${c.label}${c.live && c.live !== '—' ? ` (${c.live})` : ''}`).join(' · ');
 }
 function filterPill(result) {
-  if (!result.evaluable) return `<span class="${mPillBase} ${M_NA}" title="No Step-1 momentum fields for this stock yet — pending the next data refresh.">Pending</span>`;
+  if (!result.evaluable) return `<span class="${mPillBase} ${M_NA}" title="Not enough usable price history.">Exception</span>`;
   const cls = result.pass ? M_PASS : M_FAIL;
   const text = result.pass ? '✓ Pass' : '✕ Fail';
   return `<span class="${mPillBase} ${cls}" title="${escapeHtml(conditionTitle(result))}">${text}</span>`;
@@ -850,7 +850,26 @@ function wireMomentumControls(root, ctx) {
 // the counts are read straight off the pre-evaluated filter results so they move with the live
 // quote and the thresholds exactly as the table does, and they describe BOTH filters at once,
 // which the gate-specific count line beneath cannot. Card 4 is the gradient hero per the kit.
-function momentumStatStrip(rows, vf, evaluable, pending) {
+function momentumExceptionReason(company, values) {
+  if (company.error === 'ticker not found') return 'Stock code not found';
+  if (/^only \d+ bars$/.test(company.error || '') ||
+      (Number.isFinite(company.bars_count) && company.bars_count < 200 && !Number.isFinite(company.sma200))) return 'Not enough price history';
+  if (company.error) return 'Price history unavailable';
+  if (!Number.isFinite(values.price)) return 'Price unavailable';
+  return 'Price history incomplete';
+}
+
+function momentumExceptionList(exceptions, vf) {
+  const ordered = [...exceptions].sort((a, b) => (a.company.name || a.company.ticker).localeCompare(b.company.name || b.company.ticker));
+  return `<div class="max-h-96 overflow-y-auto" data-momentum-exception-list>
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50"><tr><th class="p-3" scope="col">Stock</th><th class="p-3" scope="col">Reason</th></tr></thead>
+      <tbody>${ordered.map(s => `<tr class="border-b border-slate-100"><td class="p-3 font-semibold text-slate-900">${escapeHtml(s.company.name || s.company.ticker)}</td><td class="p-3">${escapeHtml(momentumExceptionReason(s.company, vf(s)))}</td></tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function momentumStatStrip(rows, vf, evaluable, exceptions) {
   const f1 = rows.reduce((n, s) => n + (vf(s).f1.pass ? 1 : 0), 0);
   const f2 = rows.reduce((n, s) => n + (vf(s).f2.pass ? 1 : 0), 0);
   const both = rows.reduce((n, s) => { const v = vf(s); return n + (v.f1.pass && v.f2.pass ? 1 : 0); }, 0);
@@ -858,13 +877,11 @@ function momentumStatStrip(rows, vf, evaluable, pending) {
     {
       label: 'Scanned',
       value: formatNumber(evaluable.length),
-      note: pending ? `${formatNumber(pending)} pending data refresh` : `of ${formatNumber(rows.length)} in scope`,
-      help: {
-        title: 'How the Momentum Scanner reads',
-        body: `<p>Every figure here is recomputed <strong>live</strong> on the in-progress candle from the current price — the same Wilder (RSI) and EMA (MACD) steps the daily data pipeline uses — so the counts move with the quote feed and with the thresholds you set above. Nothing is estimated and nothing is mock.</p>
-          <p class="mt-2"><strong>Scanned</strong> is the number of stocks that carry the Step-1 indicator fields and can therefore be evaluated. <strong>Pending</strong> stocks are awaiting the next daily data refresh and are left out of every count until it lands.</p>
-          <p class="mt-2">Each card counts the evaluated stocks that clear that filter at the current thresholds, independent of which view the toggle shows.</p>`,
-      },
+      note: exceptions.length ? `${formatNumber(exceptions.length)} ${exceptions.length === 1 ? 'Exception' : 'Exceptions'}` : `of ${formatNumber(rows.length)} in scope`,
+      noteHelp: exceptions.length ? {
+        title: `Exceptions (${formatNumber(exceptions.length)})`,
+        body: momentumExceptionList(exceptions, vf),
+      } : null,
     },
     { label: momentum.MOMENTUM_FILTERS['strong-momentum'].label, value: formatNumber(f1), note: 'stocks pass' },
     { label: momentum.MOMENTUM_FILTERS['volume-momentum'].label, value: formatNumber(f2), note: 'stocks pass' },
@@ -938,13 +955,13 @@ function renderMomentumScanner(ctx, rows) {
   const vf = (s) => liveMap.get(s.company.ticker);
 
   const evaluable = rows.filter((s) => vf(s).evaluable);
-  const pending = rows.length - evaluable.length;
+  const exceptions = rows.filter((s) => !vf(s).evaluable);
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
 
   // Compact summary above the hero table: a 4-up KPI strip (both filters at once) and a sector
   // mini-bar of the current gate's passers. Both are rebuilt on every paint, so they track the
   // live quote and the thresholds with the table rather than going stale beside it.
-  const strip = momentumStatStrip(rows, vf, evaluable, pending);
+  const strip = momentumStatStrip(rows, vf, evaluable, exceptions);
   const sectorBar = momentumSectorBar(passers);
 
   const pill = livePill();
@@ -955,8 +972,8 @@ function renderMomentumScanner(ctx, rows) {
     initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     nameLabel: 'Stock',
     emptyMessage:
-      pending === rows.length && rows.length
-        ? 'No momentum data yet — the daily file has not been refreshed with the Step-1 fields (SMA/RSI state/MACD EMAs). Run the "Data refresh" workflow or wait for the next scheduled run; rows appear automatically once it lands.'
+      exceptions.length === rows.length && rows.length
+        ? 'No stocks can be scanned. See Exceptions.'
         : 'No stocks currently meet these conditions — try relaxing a threshold above.',
     columns: [
       { label: 'Price', get: (s) => cmpCell(s.company), html: true, align: 'right', sortValue: (s) => live.priceInfo(s.company).price ?? -1 },
@@ -992,9 +1009,7 @@ function renderMomentumScanner(ctx, rows) {
     ${momentumControls(gate, thresholds)}
     ${strip.html}
     ${sectorBar}
-    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> evaluable ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${
-      pending ? ` <span data-momentum-pending="${pending}">${formatNumber(pending)} ${pending === 1 ? 'stock is' : 'stocks are'} pending the momentum data refresh and cannot be evaluated yet.</span>` : ''
-    }${scopeHint}</div>
+    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${scopeHint}</div>
     ${table.html}
   `;
 

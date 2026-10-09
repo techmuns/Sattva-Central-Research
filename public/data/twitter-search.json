@@ -364,8 +364,8 @@
       "pending": []
     },
     "isin:INE532F01054|EAAA India Alternatives": {
-      "lastAttemptAt": "2026-10-04T00:14:44+00:00",
-      "error": null,
+      "lastAttemptAt": "2026-10-09T07:11:30+00:00",
+      "error": "search-unavailable",
       "lastResultCount": 1,
       "lastSuccessAt": "2026-10-04T00:14:44+00:00",
       "targetThrough": null,
@@ -2398,6 +2398,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 249,
-    "checkedAt": "2026-10-09T06:39:52.706733+00:00"
+    "checkedAt": "2026-10-09T07:11:30.331736+00:00"
   }
 }

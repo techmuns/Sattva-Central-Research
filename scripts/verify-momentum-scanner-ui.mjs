@@ -51,7 +51,7 @@ const rsiState = (value, cmp) => ({ value, avgGain: 100 / (100 - value) - 1, avg
 function makeCompany({ ticker, name, sector, cmp = 100, d, w, m, belowDma = false, pending = false }) {
   const base = { ...seed, ticker, name, sector, cmp, bar_date: original.price_date || '2026-09-10', screenerUrl: `https://www.screener.in/company/${ticker}/` };
   if (pending) {
-    // Strip the Step-1 momentum fields so the row is evaluable:false (awaiting the data refresh).
+    // Incomplete history must stay outside the pass counts.
     delete base.rsi_multi; delete base.macd;
     base.sma20 = null; base.sma50 = null; base.sma100 = null; base.sma200 = null;
     base.avg_volume_10d = null;
@@ -68,7 +68,7 @@ function makeCompany({ ticker, name, sector, cmp = 100, d, w, m, belowDma = fals
   };
 }
 
-// 3 pass Filter 1 across 3 sectors, 1 fails Filter 1 (below its 20 DMA), 1 pending. With no live
+// 3 pass Filter 1 across 3 sectors, 1 fails Filter 1 (below its 20 DMA), 6 exceptions. With no live
 // quote feed the volume ratio is null, so Filter 2 fails for everyone — which gives the passer rows
 // an emerald Filter 1 pill AND a rose Filter 2 pill, the "colourful pills" the view is meant to show.
 const companies = [
@@ -76,9 +76,15 @@ const companies = [
   makeCompany({ ticker: 'MOMOB', name: 'Beta Systems', sector: 'Information Technology', d: 82, w: 78, m: 72 }),
   makeCompany({ ticker: 'MOMOC', name: 'Gamma Pharma', sector: 'Pharmaceuticals', d: 77, w: 76, m: 70 }),
   makeCompany({ ticker: 'MOMOD', name: 'Delta Holdings', sector: 'Capital Goods', d: 85, w: 85, m: 80, belowDma: true }),
-  makeCompany({ ticker: 'MOMOE', name: 'Epsilon Pending', sector: 'Textiles', pending: true }),
+  makeCompany({ ticker: 'MOMOE', name: 'Epsilon History', sector: 'Textiles', pending: true }),
+  { ...makeCompany({ ticker: 'MOMOF', name: 'Young Stock', d: 80, w: 80, m: 75 }), sma200: null, bars_count: 100 },
+  { ticker: 'MOMOG', name: 'Short History', error: 'only 56 bars' },
+  { ticker: 'MOMOH', name: 'Missing Code', error: 'ticker not found' },
+  { ticker: 'MOMOI', name: 'Source Failure', error: 'HTTP 503' },
+  makeCompany({ ticker: 'MOMOJ', name: 'Missing Price', cmp: null, d: 80, w: 80, m: 75 }),
 ];
 const fixture = { ...original, companies, company_count: companies.length, failures: 0 };
+let previousRelease = false;
 
 // ---- the server ------------------------------------------------------------------------------
 const CT = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
@@ -90,10 +96,20 @@ const server = createServer((req, res) => {
   // module falls back to it. Every other /api/* answers a benign 200 so no same-origin 404 is logged.
   if (path === '/data/technicals.json') return json(fixture);
   if (path.startsWith('/api/')) return json({ ok: false });
+  if (path === '/sdk-fixture.js') { res.setHeader('content-type', 'text/javascript'); res.end(''); return; }
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404).end(); return; }
   try {
-    const body = readFileSync(file);
+    let body = readFileSync(file);
+    if (path === '/sw.js') {
+      body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
+      if (previousRelease) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-momentum-release`;');
+    }
+    if (path === '/js/tabs/breakouts.js' && previousRelease) {
+      body = body.toString()
+        .replace("${formatNumber(exceptions.length)} ${exceptions.length === 1 ? 'Exception' : 'Exceptions'}", '${formatNumber(exceptions.length)} pending data refresh')
+        .replace('noteHelp: exceptions.length ? {', 'noteHelp: false ? {');
+    }
     res.setHeader('content-type', CT[extname(file)] || 'application/octet-stream');
     res.end(body);
   } catch {
@@ -114,8 +130,8 @@ const browser = await chromium.launch({ ...(process.env.CHROME_PATH ? { executab
 const ENV_ERROR = /exceljs|cdn\.jsdelivr|fonts\.g(oogleapis|static)|munshot|\.s3\.|net::ERR_/i;
 const isOurError = (e) => !ENV_ERROR.test(e);
 
-async function newPage(width, height) {
-  const context = await browser.newContext({ viewport: { width, height }, serviceWorkers: 'block' });
+async function newPage(width, height, serviceWorkers = 'block') {
+  const context = await browser.newContext({ viewport: { width, height }, serviceWorkers });
   // No egress: anything off our origin is fulfilled empty (the SDK then falls back to its no-op).
   await context.route('**/*', (route) => (route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 200, contentType: 'text/javascript', body: '' })));
   const page = await context.newPage();
@@ -144,7 +160,7 @@ const readView = () => ({
   thresholdInputs: document.querySelectorAll('#content-host [data-mthreshold]').length,
   emeraldPills: document.querySelectorAll('#content-host [data-score-table] tbody .bg-emerald-50.text-emerald-700').length,
   rosePills: document.querySelectorAll('#content-host [data-score-table] tbody .bg-rose-50.text-rose-700').length,
-  pendingNote: document.querySelector('#content-host [data-momentum-pending]')?.textContent.replace(/\s+/g, ' ').trim() || null,
+  pendingNote: /pending.*refresh/i.test(document.querySelector('#content-host')?.textContent || ''),
   docScrollW: document.documentElement.scrollWidth,
   bodyScrollW: document.body.scrollWidth,
   winW: window.innerWidth,
@@ -177,7 +193,18 @@ try {
       // The "?" help glyph can sit between a card's label and its value, so skip non-digits to the count.
       /Scanned\D*4\b/.test(v.statCards[0]?.text) && /Strong Momentum\D*3\b/.test(v.statCards[1]?.text) && /Pass Both\D*0\b/.test(v.statCards[3]?.text),
       v.statCards.map((c) => c.text).join(' | '));
-    ok('a pending stock is counted apart, never as passing', /1 pending/i.test(v.statCards[0]?.text || '') && /pending/i.test(v.pendingNote || ''));
+    ok('exceptions are counted apart, never as passing, with no pending-refresh claim', /6 Exceptions/.test(v.statCards[0]?.text || '') && !v.pendingNote);
+    const exceptionButton = page.locator('#content-host [data-stat-help="note-0"]');
+    await exceptionButton.focus();
+    await page.keyboard.press('Enter');
+    await page.locator('[data-momentum-exception-list]').waitFor();
+    const exceptionRows = await page.locator('[data-momentum-exception-list] tbody tr').evaluateAll(rows => rows.map(row => [...row.cells].map(cell => cell.textContent).join(' ')));
+    const expectedReasons = ['Epsilon History Price history incomplete', 'Missing Code Stock code not found', 'Missing Price Price unavailable',
+      'Short History Not enough price history', 'Source Failure Price history unavailable', 'Young Stock Not enough price history'];
+    ok('the info button lists every excluded stock with its actual short reason', JSON.stringify(exceptionRows.map(text => text.replace(/\s+/g, ' ').trim())) === JSON.stringify(expectedReasons), exceptionRows.join(' | '));
+    ok('source failures do not leak technical error text', !/HTTP|bars|Step-1|refresh/.test(await page.locator('#modal-content').textContent()));
+    await page.keyboard.press('Escape');
+    ok('Escape closes the exception list and returns focus to the info button', await page.locator('#modal-overlay').evaluate(el => el.classList.contains('hidden')) && await exceptionButton.evaluate(el => el === document.activeElement));
 
     ok('sector mini-bar renders', !!v.sector);
     ok('sector mini-bar has one SVG segment per legend chip', v.sector && v.sector.rects === v.sector.legend && v.sector.rects >= 1, v.sector && `${v.sector.rects} rects / ${v.sector.legend} chips`);
@@ -233,6 +260,9 @@ try {
     });
     ok('empty state reads the polished copy', /No stocks currently meet these conditions — try relaxing a threshold/.test(empty.text || ''), empty.text || 'no empty cell');
     ok('the sector mini-bar is absent when nothing passes', empty.sector === false);
+    await page.click('#content-host [data-stat-help="note-0"]');
+    ok('changing thresholds keeps all history exceptions available', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);
+    await page.locator('#modal-content [data-modal-close]').click();
 
     const own = [...new Set(errors)].filter(isOurError);
     ok('zero application console errors at 1440px', own.length === 0, own.slice(0, 3).join(' | ') || `${errors.length - own.length} environment error(s) filtered`);
@@ -251,6 +281,12 @@ try {
     ok('sector mini-bar still renders at 390px', !!v.sector && v.sector.rects === v.sector.legend);
     ok('gate toggle and thresholds still present at 390px', v.gateButtons === 3 && v.thresholdInputs === 5, `gates ${v.gateButtons}, inputs ${v.thresholdInputs}`);
     ok('no horizontal PAGE overflow at 390px', v.docScrollW <= v.winW + 1 && v.bodyScrollW <= v.winW + 1, `doc ${v.docScrollW} / body ${v.bodyScrollW} vs win ${v.winW}`);
+    await page.evaluate(() => document.documentElement.dataset.theme = 'dark');
+    await page.click('#content-host [data-stat-help="note-0"]');
+    ok('the dark mobile exception list includes every excluded stock', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);
+    const popup = await page.locator('[data-momentum-exception-list]').evaluate(el => ({ width: el.clientWidth, scrollWidth: el.scrollWidth }));
+    ok('exception names and reasons fit the mobile popup', popup.scrollWidth <= popup.width + 1, JSON.stringify(popup));
+    await page.locator('#modal-content [data-modal-close]').click();
 
     ok('mobile view tabs expose scroll controls', await page.locator('#subview-mount [data-tab-scroll-controls]').isVisible());
     await page.locator('#subview-mount [data-tab-id="momentum-scanner"]').focus();
@@ -263,6 +299,27 @@ try {
 
     const own = [...new Set(errors)].filter(isOurError);
     ok('zero application console errors at 390px', own.length === 0, own.slice(0, 3).join(' | ') || `${errors.length - own.length} environment error(s) filtered`);
+  }
+  // A returning reader must receive the replacement through the shipped immutable cache.
+  {
+    previousRelease = true;
+    const { context, page, errors } = await newPage(1440, 1000, 'allow');
+    await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => navigator.serviceWorker.controller);
+    await page.reload();
+    await page.waitForFunction(() => /6 pending data refresh/.test(document.querySelector('#content-host')?.textContent || ''));
+    const oldCaches = await page.evaluate(() => caches.keys());
+    ok('returning-session fixture genuinely uses the old module cache', oldCaches.some(key => key.includes('previous-momentum-release')));
+    previousRelease = false;
+    await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
+    await page.waitForSelector('#content-host [data-stat-help="note-0"]', { timeout: 60000 });
+    ok('the already-open scanner upgrades automatically to Exceptions', !/pending.*refresh/i.test(await page.locator('#content-host').textContent()));
+    await page.click('#content-host [data-stat-help="note-0"]');
+    ok('the upgraded reader can open the complete exception list', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);
+    const newCaches = await page.evaluate(() => caches.keys());
+    ok('upgrade removes the old immutable module cache', !newCaches.some(key => key.includes('previous-momentum-release')) && newCaches.some(key => !oldCaches.includes(key)));
+    ok('returning-session upgrade has zero application errors', errors.filter(isOurError).length === 0, errors.filter(isOurError).join(' | '));
+    await context.close();
   }
 } finally {
   await browser.close();

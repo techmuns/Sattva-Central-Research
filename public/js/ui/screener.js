@@ -116,13 +116,13 @@ export const watchlist = store;
 /**
  * statStrip(cards)
  * `cards` is up to 4 entries. Cards 1–3 are white surfaces:
- *   { label, value, note?, help?: { title, body } }
+ *   { label, value, note?, help?: { title, body }, noteHelp?: { title, body } }
  * Card 4 is ALWAYS the gradient freshness hero, declared as:
  *   { hero: true, label: 'Last Refresh', value: '5h ago', note: 'Yahoo Finance EOD' }
  * If the caller omits a hero card the strip renders 3 cards and leaves the slot empty rather
  * than inventing a freshness claim.
  *
- * A card's optional `help` adds a small ? button that opens a modal explaining that metric.
+ * `help` adds a ? button beside the label; `noteHelp` adds an ⓘ button beside the note.
  */
 export function statStrip(cards = []) {
   const helpRegistry = [];
@@ -144,6 +144,7 @@ export function statStrip(cards = []) {
               </div>`;
           }
           if (card.help) helpRegistry.push({ index: i, ...card.help });
+          if (card.noteHelp) helpRegistry.push({ index: `note-${i}`, ...card.noteHelp });
           return `
             <div class="stat-card relative rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
               <div class="flex items-start justify-between gap-2">
@@ -156,7 +157,10 @@ export function statStrip(cards = []) {
                 }
               </div>
               <div class="mt-1 text-2xl font-bold text-slate-900">${escapeHtml(card.value)}</div>
-              ${card.note ? `<div class="mt-0.5 text-xs text-slate-500">${escapeHtml(card.note)}</div>` : ''}
+              ${card.note ? `<div class="mt-0.5 text-xs text-slate-500${card.noteHelp ? ' flex items-center gap-1.5' : ''}">${escapeHtml(card.note)}${card.noteHelp
+                ? `<button type="button" data-stat-help="note-${i}" aria-label="${escapeHtml(card.noteHelp.title)}" aria-haspopup="dialog" title="${escapeHtml(card.noteHelp.title)}"
+                     class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-indigo-600 hover:bg-indigo-50">ⓘ</button>`
+                : ''}</div>` : ''}
             </div>`;
         })
         .join('')}
