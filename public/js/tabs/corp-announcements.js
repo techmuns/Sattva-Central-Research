@@ -39,7 +39,7 @@ import { categoryChips } from '../ui/category-chips.js';
 import { openAnnouncementRead } from '../ui/announcement-read.js';
 import { loadModel } from '../data/relevance-feedback.js';
 
-const DEFAULT_PERIOD = 'all';
+const DEFAULT_PERIOD = '3';
 // The periods this tab has always offered; the index answers any of ANNOUNCEMENT_PERIODS.
 const TAB_PERIODS = ['today', '3', '7', 'month', 'all'].map((value) => ANNOUNCEMENT_PERIODS.find((p) => p.value === value));
 const FILTERS_KEY = 'sattva:announcement-filters:v1';
