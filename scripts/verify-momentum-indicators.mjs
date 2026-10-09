@@ -33,7 +33,8 @@ const ok = (label, fn) => {
   catch (err) { failed += 1; console.log('FAIL  ' + label + '\n      ' + (err.message || err).split('\n')[0]); }
 };
 const skip = (label, why) => console.log('SKIP  ' + label + '  (' + why + ')');
-const near = (a, b, tol, msg) => assert.ok(a != null && b != null && Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tol ${tol})`);
+// Decimal boundary differences (0.8 - 0.7) can exceed 0.1 by one floating-point bit.
+const near = (a, b, tol, msg) => assert.ok(Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= tol + Number.EPSILON * Math.max(1, Math.abs(a), Math.abs(b)), `${msg}: ${a} vs ${b} (tol ${tol})`);
 
 // ---------------------------------------------------------------------------------------
 // A deterministic dated daily series: weekdays from a fixed start, seeded random walk. No RNG from
@@ -60,6 +61,12 @@ function syntheticBars(count, seed = 12345, startDate = '2016-01-01') {
 }
 
 console.log('\n== Section 1: algorithm core (deterministic) ==');
+
+ok('numeric comparisons accept the exact tolerance boundary and reject a larger difference', () => {
+  near(0.8, 0.7, 0.1, 'decimal boundary');
+  assert.throws(() => near(0.81, 0.7, 0.1, 'outside tolerance'));
+  for (const invalid of [null, NaN, Infinity]) assert.throws(() => near(invalid, 0.7, 0.1, 'invalid reading'));
+});
 
 const bars = syntheticBars(2200);           // ~8.4 years of weekdays
 const close = bars.map((b) => b.close);
