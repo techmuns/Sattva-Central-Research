@@ -117,9 +117,13 @@ test('feed update times survive compact history without creating one metadata re
 test('overnight inventory is published before skipping quotes; new targets require a closing seed',async()=>{
  const now=Date.parse('2026-09-15T14:00Z'),calls=[];
  const previous={...fallback([row('TEST',Date.parse('2026-09-15T10:00Z'))]),completedAt:iso(now)};
+ previous.rows[0].volumeBase={average:1000,from:'2026-08-25',to:'2026-09-11',count:10,exchange:'NSE'};
  const client=async input=>{calls.push(input);return{ok:true};};
  const same=await prepareBreakoutCapture({targets:[{ticker:'TEST'}],previous,client,now});
  assert.equal(calls[0].action,'inventory');assert.equal(same.skipCapture,true);assert.equal(same.primaryInventoryUpdated,true);
+ const withoutVolume={...previous,rows:previous.rows.map(({volumeBase,...row})=>row)};
+ assert.equal((await prepareBreakoutCapture({targets:[{ticker:'TEST'}],previous:withoutVolume,client:async()=>({ok:true}),now})).skipCapture,false,
+   'legacy closing seed must automatically collect the missing momentum volume window');
  const added=await prepareBreakoutCapture({targets:[{ticker:'TEST'},{ticker:'ADDED'}],previous,client,now});
  assert.equal(calls[1].targets[1].ticker,'ADDED');assert.equal(added.skipCapture,false);
  const failed=await prepareBreakoutCapture({targets:[{ticker:'TEST'},{ticker:'ADDED'}],previous,client:async()=>{throw Error('primary unavailable');},now});

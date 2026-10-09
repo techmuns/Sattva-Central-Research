@@ -194,7 +194,13 @@ console.log('\n== Section 2: intra-record invariants on public/data/technicals.j
         if (s == null) continue;
         assert.ok(s.value >= 0 && s.value <= 100, `${r.ticker}: ${tf} RSI in range`);
         assert.ok(s.avgGain >= 0 && s.avgLoss >= 0 && s.lastClose > 0, `${r.ticker}: ${tf} state sane`);
-        near(Math.round((s.avgLoss === 0 ? 100 : 100 - 100 / (1 + s.avgGain / s.avgLoss)) * 10) / 10, s.value, 0.1, `${r.ticker}: ${tf} state reproduces value`);
+        // Legacy state rounded gains/losses to six decimals. Account for its actual
+        // quantization interval, rather than assuming that costs <=0.1 RSI at tiny prices.
+        // New dated state retains full precision and needs only display rounding tolerance.
+        const quantization = s.asOf ? 0 : 0.0000005;
+        const lo = rsiFromAverages(Math.max(0, s.avgGain - quantization), s.avgLoss + quantization);
+        const hi = rsiFromAverages(s.avgGain + quantization, Math.max(0, s.avgLoss - quantization));
+        assert.ok(s.value >= lo - 0.051 && s.value <= hi + 0.051, `${r.ticker}: ${tf} state reproduces value within stored precision`);
       }
     }
   });

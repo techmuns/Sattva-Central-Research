@@ -17,7 +17,7 @@ export function captureTarget(company) {
 export function closingSeedComplete(capture, now = Date.now()) {
   if (capture?.state !== 'complete' || capture.discoveryFailed || capture.failures?.length || !capture.targets?.length) return false;
   const rows = new Map((capture.rows || []).map(row => [row.ticker, row]));
-  return capture.targets.every(ticker => quoteFresh(rows.get(ticker), now) && rows.get(ticker).base);
+  return capture.targets.every(ticker => quoteFresh(rows.get(ticker), now) && rows.get(ticker).base && rows.get(ticker).volumeBase);
 }
 export async function prepareBreakoutCapture({targets,previous,client,discoveryFailed=false,now=Date.now()}) {
   // Discovery must reach the minute collector even when closing quotes can be reused.
@@ -64,13 +64,14 @@ export async function collectBreakouts({ targets, previous = null, client, prima
       // their actual source/check times; they are not newly fetched prices.
       let prior = retained.get(target.ticker);
       if (closingRetry && quoteFresh(prior, now())) {
-        if (!prior.base && !token && !rateLimited && now() < captureDeadline) {
+        if ((!prior.base || !prior.volumeBase) && !token && !rateLimited && now() < captureDeadline) {
           try {
             const history = await primary(target, {now});
-            if (history.base && history.sessionDate === prior.sessionDate) prior = {...prior,base:history.base,historyBars:history.historyBars};
+            if (history.sessionDate === prior.sessionDate && history.exchange === prior.exchange)
+              prior = {...prior,base:history.base || prior.base,volumeBase:history.volumeBase || prior.volumeBase,historyBars:history.historyBars};
           } catch (error) { if (error.message === 'rate-limited') rateLimited = true; }
         }
-        if (token && !prior.base) { misses.push({target,reason:'missing-base',quote:prior}); return; }
+        if (token && (!prior.base || !prior.volumeBase)) { misses.push({target,reason:'missing-base',quote:prior}); return; }
         saved.push(prior); rows.push(prior); return;
       }
       if (now() >= captureDeadline) { misses.push({ target, reason:'unavailable' }); return; }
@@ -81,7 +82,7 @@ export async function collectBreakouts({ targets, previous = null, client, prima
         if (!quoteFresh(row, now())) { misses.push({ target, reason: 'stale' }); return; }
         // Delay this row's first checkpoint until its optional base lookup finishes,
         // so it is saved once without mutating an acknowledged observation.
-        if (token && !row.base) { misses.push({target,reason:'missing-base',quote:row}); return; }
+        if (token && (!row.base || !row.volumeBase)) { misses.push({target,reason:'missing-base',quote:row}); return; }
         saved.push(row); rows.push(row);
       } catch (error) {
         if (error.message === 'rate-limited') rateLimited = true;
@@ -104,7 +105,8 @@ export async function collectBreakouts({ targets, previous = null, client, prima
     const candidates = new Map(result.rows.map(row=>[row.ticker,row]));
     const saved = misses.flatMap(m => {
       const row = candidates.get(m.target.ticker);
-      if (m.quote) return [{...m.quote,...(row?.base && row.sessionDate===m.quote.sessionDate ? {base:row.base,historyBars:row.historyBars || m.quote.historyBars} : {})}];
+      if (m.quote) return [{...m.quote,...(row && row.sessionDate===m.quote.sessionDate && row.exchange===m.quote.exchange ?
+        {base:row.base || m.quote.base,volumeBase:row.volumeBase || m.quote.volumeBase,historyBars:row.historyBars || m.quote.historyBars} : {})}];
       return row && quoteFresh(row,now()) ? [row] : [];
     });
     for (let i = 0; i < saved.length; i += BREAKOUT_BATCH) await client({ action: 'checkpoint', rows: saved.slice(i, i + BREAKOUT_BATCH).map(row=>validateQuote(row,now())) });

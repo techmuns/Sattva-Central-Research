@@ -735,10 +735,9 @@ function readMomentumThresholds(params) {
 // gate and the sort all read the same object rather than recomputing it.
 function momentumLiveFor(s, thresholds) {
   const c = s.company;
-  const info = live.priceInfo(c);
   const q = live.quote(c.ticker);
-  const v = momentum.liveIndicators(c, info.price, q?.volume ?? null, q?.prevClose ?? c.cmp ?? null);
-  v.isLiveQuote = !info.stale && !!q;
+  const v = momentum.scannerIndicators(c, q, {unavailable:live.unavailable() ||
+    !!live.snapshot()?.failures.some(row => row.ticker === c.ticker)});
   v.f1 = momentum.evaluateFilter('strong-momentum', v, thresholds);
   v.f2 = momentum.evaluateFilter('volume-momentum', v, thresholds);
   return v;
@@ -753,14 +752,13 @@ function conditionTitle(result) {
   return result.conditions.map((c) => `${c.ok ? '✓' : '✕'} ${c.label}${c.live && c.live !== '—' ? ` (${c.live})` : ''}`).join(' · ');
 }
 function filterPill(result) {
-  if (!result.evaluable) return `<span class="${mPillBase} ${M_NA}" title="No Step-1 momentum fields for this stock yet — pending the next data refresh.">Pending</span>`;
+  if (!result.evaluable) return `<span class="${mPillBase} ${M_NA}" title="${escapeHtml(result.reason)}">Pending</span>`;
   const cls = result.pass ? M_PASS : M_FAIL;
   const text = result.pass ? '✓ Pass' : '✕ Fail';
   return `<span class="${mPillBase} ${cls}" title="${escapeHtml(conditionTitle(result))}">${text}</span>`;
 }
-// A provisional figure is recomputed on the live price; otherwise it is advanced from the last
-// completed daily close. Said once in a tooltip so the number is never mistaken for a settled one.
-const provNote = (live) => (live ? 'Live / provisional — recomputed on the current price.' : 'Provisional — advanced from the last completed daily close.');
+// In-progress periods use the live price; saved completed readings retain their source basis.
+const provNote = (live) => (live ? 'Current source observation; in-progress periods remain provisional.' : 'Saved daily reading; current market data is unavailable.');
 function rsiLiveCell(v, tf) {
   const val = v[tf];
   if (val == null) return '<span class="text-slate-300">—</span>';
@@ -858,11 +856,11 @@ function momentumStatStrip(rows, vf, evaluable, pending) {
     {
       label: 'Scanned',
       value: formatNumber(evaluable.length),
-      note: pending ? `${formatNumber(pending)} pending data refresh` : `of ${formatNumber(rows.length)} in scope`,
+      note: pending ? `${formatNumber(pending)} need history or current data` : `of ${formatNumber(rows.length)} in scope`,
       help: {
         title: 'How the Momentum Scanner reads',
-        body: `<p>Every figure here is recomputed <strong>live</strong> on the in-progress candle from the current price — the same Wilder (RSI) and EMA (MACD) steps the daily data pipeline uses — so the counts move with the quote feed and with the thresholds you set above. Nothing is estimated and nothing is mock.</p>
-          <p class="mt-2"><strong>Scanned</strong> is the number of stocks that carry the Step-1 indicator fields and can therefore be evaluated. <strong>Pending</strong> stocks are awaiting the next daily data refresh and are left out of every count until it lands.</p>
+        body: `<p>In-progress RSI and MACD readings use the current price and dated historical state. Completed periods retain their saved reading. Volume compares today's cumulative trading with the preceding 10 completed sessions on the same exchange.</p>
+          <p class="mt-2"><strong>Scanned</strong> counts stocks with the history and current source data required by the selected filter. Missing history, a delayed daily capture or unavailable current prices are kept separate from a failed condition. Volume + Momentum does not require 200 trading days of history.</p>
           <p class="mt-2">Each card counts the evaluated stocks that clear that filter at the current thresholds, independent of which view the toggle shows.</p>`,
       },
     },
@@ -937,7 +935,8 @@ function renderMomentumScanner(ctx, rows) {
   const liveMap = new Map(rows.map((s) => [s.company.ticker, momentumLiveFor(s, thresholds)]));
   const vf = (s) => liveMap.get(s.company.ticker);
 
-  const evaluable = rows.filter((s) => vf(s).evaluable);
+  const evaluable = rows.filter((s) => gate === 'both' ? vf(s).f1.evaluable && vf(s).f2.evaluable
+    : gate === 'volume-momentum' ? vf(s).f2.evaluable : vf(s).f1.evaluable);
   const pending = rows.length - evaluable.length;
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
 
@@ -956,7 +955,7 @@ function renderMomentumScanner(ctx, rows) {
     nameLabel: 'Stock',
     emptyMessage:
       pending === rows.length && rows.length
-        ? 'No momentum data yet — the daily file has not been refreshed with the Step-1 fields (SMA/RSI state/MACD EMAs). Run the "Data refresh" workflow or wait for the next scheduled run; rows appear automatically once it lands.'
+        ? 'The selected filter needs additional price history or current source data. Available readings are retained and checked automatically.'
         : 'No stocks currently meet these conditions — try relaxing a threshold above.',
     columns: [
       { label: 'Price', get: (s) => cmpCell(s.company), html: true, align: 'right', sortValue: (s) => live.priceInfo(s.company).price ?? -1 },
@@ -993,7 +992,7 @@ function renderMomentumScanner(ctx, rows) {
     ${strip.html}
     ${sectorBar}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> evaluable ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${
-      pending ? ` <span data-momentum-pending="${pending}">${formatNumber(pending)} ${pending === 1 ? 'stock is' : 'stocks are'} pending the momentum data refresh and cannot be evaluated yet.</span>` : ''
+      pending ? ` <span data-momentum-pending="${pending}">${formatNumber(pending)} ${pending === 1 ? 'stock lacks' : 'stocks lack'} the history or current data required by this filter.</span>` : ''
     }${scopeHint}</div>
     ${table.html}
   `;

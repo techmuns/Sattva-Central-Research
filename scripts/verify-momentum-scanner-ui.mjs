@@ -43,13 +43,14 @@ const ok = (label, cond, detail = '') => {
 // engine reads. A Wilder RSI state whose lastClose equals the live price advances with Δ = 0, so it
 // stays at exactly `value` — which lets us place a stock cleanly above or below a threshold.
 const root = resolve('public');
+const AT = Date.parse('2026-10-09T06:30:00Z');
 const original = JSON.parse(readFileSync(`${root}/data/technicals.json`));
 const seed = original.companies.find((r) => !r.error && r.rsi_multi && r.macd && r.sma20 != null);
 if (!seed) { console.error('No clean seed row in technicals.json'); process.exit(2); }
 
 const rsiState = (value, cmp) => ({ value, avgGain: 100 / (100 - value) - 1, avgLoss: 1, lastClose: cmp });
 function makeCompany({ ticker, name, sector, cmp = 100, d, w, m, belowDma = false, pending = false }) {
-  const base = { ...seed, ticker, name, sector, cmp, bar_date: original.price_date || '2026-09-10', screenerUrl: `https://www.screener.in/company/${ticker}/` };
+  const base = { ...seed, ticker, name, sector, cmp, bar_date: '2026-10-08', screenerUrl: `https://www.screener.in/company/${ticker}/` };
   if (pending) {
     // Strip the Step-1 momentum fields so the row is evaluable:false (awaiting the data refresh).
     delete base.rsi_multi; delete base.macd;
@@ -89,6 +90,10 @@ const server = createServer((req, res) => {
   // The fixture takes the place of the committed capture; the live route 304s nothing so the
   // module falls back to it. Every other /api/* answers a benign 200 so no same-origin 404 is logged.
   if (path === '/data/technicals.json') return json(fixture);
+  if (path === '/api/breakouts') return json({version:1,state:'complete',targets:companies.map(c=>c.ticker),failures:[],
+    completedAt:new Date(AT).toISOString(),rows:companies.map(c=>({ticker:c.ticker,price:c.cmp,volume:500,prevClose:c.cmp,
+      sessionDate:'2026-10-09',quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),provider:'Upstox',exchange:'NSE',
+      volumeBase:{average:1000,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}}))});
   if (path.startsWith('/api/')) return json({ ok: false });
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404).end(); return; }
@@ -119,6 +124,7 @@ async function newPage(width, height) {
   // No egress: anything off our origin is fulfilled empty (the SDK then falls back to its no-op).
   await context.route('**/*', (route) => (route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 200, contentType: 'text/javascript', body: '' })));
   const page = await context.newPage();
+  await page.clock.install({time:AT});
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') { const u = (() => { try { return m.location()?.url || ''; } catch { return ''; } })(); errors.push(`${m.text()} ${u}`); } });
   page.on('pageerror', (e) => errors.push(`PAGEERROR ${String(e.stack || e)}`));
@@ -170,7 +176,7 @@ try {
       // The "?" help glyph can sit between a card's label and its value, so skip non-digits to the count.
       /Scanned\D*4\b/.test(v.statCards[0]?.text) && /Strong Momentum\D*3\b/.test(v.statCards[1]?.text) && /Pass Both\D*0\b/.test(v.statCards[3]?.text),
       v.statCards.map((c) => c.text).join(' | '));
-    ok('a pending stock is counted apart, never as passing', /1 pending/i.test(v.statCards[0]?.text || '') && /pending/i.test(v.pendingNote || ''));
+    ok('a pending stock is counted apart, never as passing', /1 need history/i.test(v.statCards[0]?.text || '') && /history or current data/i.test(v.pendingNote || ''));
 
     ok('sector mini-bar renders', !!v.sector);
     ok('sector mini-bar has one SVG segment per legend chip', v.sector && v.sector.rects === v.sector.legend && v.sector.rects >= 1, v.sector && `${v.sector.rects} rects / ${v.sector.legend} chips`);

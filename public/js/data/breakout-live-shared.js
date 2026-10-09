@@ -42,10 +42,16 @@ export function validateQuote(row, now = Date.now()) {
   const base = row.base;
   if (base != null && (!positive(base.high) || !positive(base.low) || base.high < base.low || !positive(base.average) ||
       !positive(base.averageVolume) || base.count !== 30 || !/^\d{4}-\d{2}-\d{2}$/.test(base.to) || base.to >= row.sessionDate)) throw Error('Invalid breakout base');
+  const volumeBase = row.volumeBase;
+  if (volumeBase != null && (!positive(volumeBase.average) || volumeBase.count !== 10 ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(volumeBase.from) || !/^\d{4}-\d{2}-\d{2}$/.test(volumeBase.to) ||
+      volumeBase.from > volumeBase.to || volumeBase.to >= row.sessionDate ||
+      volumeBase.exchange !== (row.exchange === 'BSE' ? 'BSE' : 'NSE'))) throw Error('Invalid momentum volume base');
   return { ticker: row.ticker, name: String(row.name || row.ticker).slice(0, 180), price: row.price,
     volume: row.volume, prevClose: positive(row.prevClose) ? row.prevClose : null,
     quoteAt: new Date(row.quoteAt).toISOString(), checkedAt: new Date(row.checkedAt).toISOString(),
     ...(feedAt ? {feedAt:new Date(feedAt).toISOString()} : {}),
+    ...(volumeBase ? {volumeBase: {average:volumeBase.average,from:volumeBase.from,to:volumeBase.to,count:10,exchange:volumeBase.exchange}} : {}),
     sessionDate: row.sessionDate, provider: row.provider, exchange: row.exchange === 'BSE' ? 'BSE' : 'NSE', kind: row.kind === 'recovered-candle' ? 'recovered-candle' : 'quote',
     base: base ? { high: base.high, low: base.low, average: base.average, averageVolume: base.averageVolume, count: 30, to: base.to } : null };
 }

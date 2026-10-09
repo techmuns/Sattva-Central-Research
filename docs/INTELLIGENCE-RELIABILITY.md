@@ -385,7 +385,34 @@ health. Initial backfill is quota-limited; same-ID source corrections are not au
 See `CONCALL-SUMMARIES.md` for retention limits, activation gates and the unverified live source
 parser. Offline tests do not certify production capture or complete portfolio summary coverage.
 
+## Momentum Scanner session alignment
+
+Live screening must combine a fresh quote's price, previous close and cumulative volume from one
+exchange/session with daily history through that session's previous completed trading day. A stale
+quote cannot lend volume or previous close to a newer daily fallback. Retain saved readings during
+failure, but do not certify them as a current pass. Reject mixed exchange histories.
+
+The live volume denominator is the exact preceding ten completed sessions, including yesterday.
+Keep the existing completed-day volume ratio separate: its denominator excludes that completed day.
+The shared fallback capture carries a dated `volumeBase` derived from its already-fetched daily
+bars; minute quotes may inherit it only for the same session and exchange. Daily captures add
+`momentum_volume_10d` through their last completed bar. Missing legacy windows remain unavailable
+until ordinary automatic capture supplies the matching window; do not estimate them from rounded
+ratios or manually start production collection to fill them.
+
+Weekly/monthly RSI uses the actual screened session to decide which periods have completed.
+Retain the completed previous week on Mondays and previous month on the first session of a month.
+Date running states, retain their precision and never append an already included completed period.
+Legacy undated states require restoring the last completed period before a rollover live step.
+
+Availability is filter-specific. Strong Momentum requires all four moving averages and all three
+RSI timeframes; Volume + Momentum needs only its own daily RSI, MACD, 20-day average, current price
+and volume evidence. Insufficient history is distinct from an overdue refresh or failed source.
+Regression checks must cover the corrected volume shortlist, rollovers, saved-close fallback,
+outdated/mismatched quotes, newer listings, durable window retention and a warm service-worker upgrade.
+
 ## Performance vs. Data Integrity
+
 **DATA INTEGRITY IS A RELEASE-BLOCKING REQUIREMENT.**
 
 Performance improvements must preserve incoming data, historical records, and existing freshness guarantees.

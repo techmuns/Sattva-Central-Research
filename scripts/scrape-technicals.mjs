@@ -35,6 +35,7 @@ import { yahooSymbol } from '../worker/upstox-market.mjs';
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { fetchBars, dayMove } from './lib/yahoo.mjs';
 import { completedPeriods, wilderRsiState } from './lib/momentum.mjs';
+import { istDay, volumeWindow10d } from '../public/js/scoring/momentum-history.js';
 import { verifyMoves, loadChecks, saveChecks, CHECKS_PATH } from './lib/muns-market-data.mjs';
 import { marketBreadth, priceDateOf } from './lib/technicals-file.mjs';
 import { researchPriceHistory, retainedPriceHistory } from './lib/research-price-history.mjs';
@@ -213,7 +214,7 @@ async function run() {
       }
       const bars = recentWindow(longBars, start);
       if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
-      const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose, longBars);
+      const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose, longBars, istDay(end));
       const delivery = deliveryTrends[ticker] || null;
       results.push({
         ticker, name: c.Company, screenerUrl: c["Screener URL"],
@@ -252,6 +253,7 @@ async function run() {
         impact_cost_pct_est_5cr: amihudImpactPct(bars, 30, IMPACT_COST_ORDER_SIZE_RUPEES),
         liquidity_tier: liquidityTier(adtv20Cr(bars)),
         ...indicators,
+        momentum_volume_10d: volumeWindow10d(bars, null, usedSym),
         closeHistory: researchPriceHistory(bars, { sourceSymbol: usedSym }) || retainedPriceHistory(previousHistory.get(ticker)),
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
@@ -446,7 +448,7 @@ function recentWindow(longBars, start) {
 }
 
 // ---------- indicators ----------
-function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars) {
+function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars = bars, referenceDate = istDay(new Date())) {
   const close = bars.map((b) => b.close);
   const high  = bars.map((b) => b.high);
   const low   = bars.map((b) => b.low);
@@ -515,14 +517,17 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars =
   // last COMPLETED bar (avgGain / avgLoss / lastClose), so the browser can advance it one step with
   // the live price to get the provisional RSI on the in-progress candle.
   const dailyRsiState = wilderRsiState(close, 14);
-  const weeklyRsiState = wilderRsiState(completedPeriods(longBars, 'week').map((p) => p.close), 14);
-  const monthlyRsiState = wilderRsiState(completedPeriods(longBars, 'month').map((p) => p.close), 14);
-  // avgGain/avgLoss rounded to 6 dp (ample for a one-step advance); lastClose kept raw like `cmp`.
+  const weeklyPeriods = completedPeriods(longBars, 'week', referenceDate);
+  const monthlyPeriods = completedPeriods(longBars, 'month', referenceDate);
+  const weeklyRsiState = wilderRsiState(weeklyPeriods.map((p) => p.close), 14);
+  const monthlyRsiState = wilderRsiState(monthlyPeriods.map((p) => p.close), 14);
+  // Preserve full running-state precision, including for very low-priced shares.
   // `value` carries the completed-bar RSI; the daily value is pinned to `rsi14` so they cannot drift.
-  const rsiFrame = (st, valueOverride) => st == null ? null : {
+  const rsiFrame = (st, valueOverride, asOf) => st == null ? null : {
     value: valueOverride != null ? valueOverride : round(st.value, 1),
-    avgGain: round(st.avgGain, 6),
-    avgLoss: round(st.avgLoss, 6),
+    avgGain: st.avgGain,
+    avgLoss: st.avgLoss,
+    asOf,
     lastClose: st.lastClose,
   };
 
@@ -554,9 +559,9 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose, longBars =
     // Momentum Scanner (additive): daily/weekly/monthly Wilder RSI(14) + the running state each
     // needs for exact live recompute. `rsi_multi.daily.value` equals `rsi14` by construction.
     rsi_multi: {
-      daily: rsiFrame(dailyRsiState, round(rsi14, 1)),
-      weekly: rsiFrame(weeklyRsiState),
-      monthly: rsiFrame(monthlyRsiState),
+      daily: rsiFrame(dailyRsiState, round(rsi14, 1), bars.at(-1).date),
+      weekly: rsiFrame(weeklyRsiState, null, weeklyPeriods.at(-1)?.date),
+      monthly: rsiFrame(monthlyRsiState, null, monthlyPeriods.at(-1)?.date),
     },
     macd: {
       line: round(macdLine, 2),
