@@ -98,6 +98,19 @@ try {
       await page.screenshot({ path: `${process.env.UNIVERSE_SCREENSHOTS}/universe-${width}-${theme}.png` });
     }
   }
+  // A fresh reader has no saved directory when both initial reads fail. Returning to the
+  // still-open editor must recover automatically, including revealing the previously hidden list.
+  failed = true;
+  const recovery = await browser.newPage({ viewport: { width: 1440, height: 1100 } });
+  recovery.on('pageerror', e => errors.push(e.message));
+  await recovery.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 200, body: '' }));
+  await recovery.goto(origin);
+  await recovery.waitForFunction(() => /Could not read this list/.test(document.querySelector('[data-scope-loading]')?.textContent));
+  failed = false;
+  await recovery.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await recovery.waitForFunction(count => Number(document.querySelector('[data-scope-count]')?.textContent.replace(/,/g, '')) === count, expected.length + 1);
+  assert(await recovery.locator('[data-scope-list-panel]').isVisible(), 'initial outages recover without reopening or manual Refresh');
+  await recovery.close();
   assert.deepEqual(errors, []);
   console.log(`PASS returning 600-company session upgrades to ${expected.length} exchange listings; full-list scrolling/search, persisted exclusions, new-listing recovery, source failures and responsive themes.`);
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

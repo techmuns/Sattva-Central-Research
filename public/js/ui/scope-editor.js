@@ -325,6 +325,8 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
       await listedCompanies.load();
       if (!document.body.contains(root)) return;
       base = listedCompanies.all();
+      loading.classList.add('hidden');
+      panel.classList.remove('hidden');
       paintMembers(); paintStatus(); paintSearch();
     } catch (err) {
       const status = root.querySelector('[data-universe-status]');
@@ -332,6 +334,11 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
     }
   }
   function resumeDirectory() { if (!document.hidden && scope === 'universe') void refreshDirectory(); }
+
+  if (scope === 'universe') {
+    pollTimer = setInterval(resumeDirectory, 90_000);
+    document.addEventListener('visibilitychange', resumeDirectory);
+  }
 
   Promise.resolve(scope === 'universe' ? listedCompanies.load() : null)
     .then(() => {
@@ -341,10 +348,6 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
       panel.classList.remove('hidden');
       paintMembers();
       paintStatus();
-      if (scope === 'universe') {
-        pollTimer = setInterval(resumeDirectory, 90_000);
-        document.addEventListener('visibilitychange', resumeDirectory);
-      }
       input.focus();
     })
     .catch((err) => {
