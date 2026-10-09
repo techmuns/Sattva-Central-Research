@@ -393,7 +393,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   } else {
     topTabs?.dispose();
     // Saved events are reached from the header beside the appearance control.
-    const tabItems = ws.tabs.filter((t) => t !== bookmarks).map((t) => ({ id: t.meta.id, label: t.meta.title }));
+    const tabItems = ws.tabs.filter((t) => t !== bookmarks && !t.meta.hideFromNavigation)
+      .map((t) => ({ id: t.meta.id, label: t.meta.title }));
     const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab, label: 'Research sections' });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;

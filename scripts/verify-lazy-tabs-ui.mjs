@@ -74,7 +74,8 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 16, 'every tab remains navigable before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 15, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');
 
     // Hold one real renderer request while the reader moves to another interface.
     let release;
@@ -100,7 +101,7 @@ try {
     assert.equal(await page.locator('#content-host').evaluate(el => el.inert), false);
     await page.locator('[data-header-bookmarks]').click();
     await page.locator('[data-active-tab="bookmarks"]').waitFor();
-    await page.locator('[data-tab-id="ask-research"]').click();
+    await page.evaluate(() => { location.hash = '#/research/ask-research?scope=universe'; });
     await page.locator('[data-active-tab="ask-research"]').waitFor();
     assert.equal(requests.filter(path => path === '/js/tabs/ask-research.js').length, 1, 'repeat visits reuse the loaded interface');
     await page.route('**/js/tabs/ipos.js', route => route.fulfill({ status: 503, body: '' }));

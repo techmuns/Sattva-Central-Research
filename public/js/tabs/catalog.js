@@ -12,6 +12,8 @@ export const TAB_META = Object.freeze({
   'ask-research': {
     id: 'ask-research',
     title: 'Ask Research',
+    // Removed from the tab strip; saved research and newsletter links still resolve.
+    hideFromNavigation: true,
     subtitle: 'Ask across every dashboard tab.',
     subviews: [],
     allowEmptyScope: true,
