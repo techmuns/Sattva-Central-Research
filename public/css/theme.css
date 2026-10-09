@@ -1,4 +1,52 @@
 /* Shared appearance tokens. Tailwind's role palettes live in scripts/theme-palette.cjs. */
+/* Momentum criteria stay grouped and readable without repeating the screen name per field. */
+.momentum-controls { margin-bottom: 20px; padding: 18px 20px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 16px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-600); }
+.momentum-controls-toolbar, .momentum-mode-picker { display: flex; align-items: center; gap: 16px; }
+.momentum-controls-toolbar { justify-content: space-between; margin-bottom: 18px; }
+.momentum-controls-label { color: var(--ink-600); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.momentum-modes { display: flex; gap: 4px; padding: 4px; border: 1px solid rgb(var(--edge-slate-100, 241 245 249)); border-radius: 12px; background: rgb(var(--surface-slate-50, 248 250 252)); }
+.momentum-mode { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid transparent; border-radius: 8px; color: var(--ink-600); font-size: 12px; font-weight: 600; line-height: 1.4; }
+.momentum-mode svg { display: none; width: 14px; height: 14px; flex-shrink: 0; }
+.momentum-mode[aria-pressed="true"] { color: rgb(var(--text-indigo-700, 67 56 202)); background: rgb(var(--surface-white, 255 255 255)); border-color: rgb(var(--edge-indigo-200, 199 210 254)); box-shadow: 0 1px 3px rgb(15 23 42 / .06); }
+.momentum-mode[aria-pressed="true"] svg { display: block; }
+.momentum-mode:hover { color: var(--accent-600); }
+.momentum-reset { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 4px 8px; color: var(--ink-600); font-size: 12px; font-weight: 600; white-space: nowrap; border-radius: 8px; }
+.momentum-reset svg { width: 14px; height: 14px; }
+.momentum-reset:hover { color: var(--accent-600); background: rgb(var(--surface-indigo-50, 238 242 255)); }
+.momentum-rule-groups { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; }
+.momentum-rule-group { min-width: 0; margin: 0; padding: 14px 16px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 12px; background: rgb(var(--surface-slate-50, 248 250 252) / .5); }
+.momentum-rule-group[data-applied="true"] { border-color: rgb(var(--edge-indigo-200, 199 210 254)); background: rgb(var(--surface-indigo-50, 238 242 255) / .35); }
+.momentum-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--ink-900); font-size: 13px; font-weight: 700; }
+.momentum-applied { padding: 3px 7px; border-radius: 5px; color: var(--ink-600); background: rgb(var(--surface-slate-100, 241 245 249)); font-size: 10px; font-weight: 600; white-space: nowrap; }
+[data-applied="true"] > .momentum-group-heading .momentum-applied { color: rgb(var(--text-indigo-700, 67 56 202)); background: rgb(var(--surface-indigo-100, 224 231 255)); }
+.momentum-fields { display: flex; flex-wrap: wrap; gap: 12px; }
+.momentum-field { display: flex; flex: 1 1 90px; min-width: 0; flex-direction: column; gap: 6px; }
+.momentum-field-label { color: var(--ink-600); font-size: 11px; font-weight: 600; }
+.momentum-field-value { display: flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 10px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 8px; color: var(--ink-600); background: rgb(var(--surface-white, 255 255 255)); font-size: 13px; }
+.momentum-field-value:focus-within { border-color: var(--accent-600); outline: 2px solid rgb(var(--edge-indigo-200, 199 210 254)); outline-offset: 1px; }
+.momentum-field-value input { min-width: 0; width: 100%; padding: 8px 0; border: 0; outline: 0; color: var(--ink-900); background: transparent; font-size: 15px; font-weight: 600; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.momentum-fixed-rules { margin-top: 12px; color: var(--ink-600); font-size: 11px; line-height: 1.6; }
+.momentum-fixed-rules > span { margin-right: 5px; font-weight: 600; }
+.momentum-controls-note { margin-top: 10px; color: var(--ink-600); font-size: 11px; line-height: 1.5; }
+.momentum-controls button:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .momentum-controls-toolbar { flex-wrap: wrap; gap: 8px; }
+  .momentum-mode-picker { flex-wrap: wrap; gap: 8px; }
+  .momentum-rule-groups { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .momentum-controls { padding: 14px 12px 12px; }
+  .momentum-controls-toolbar { position: relative; margin-bottom: 12px; }
+  .momentum-mode-picker { width: 100%; padding-top: 2px; gap: 10px; }
+  .momentum-controls-label { min-height: 36px; display: flex; align-items: center; }
+  .momentum-modes { width: 100%; }
+  .momentum-mode { flex: 1; min-width: 0; min-height: 44px; padding: 6px; font-size: 11px; }
+  .momentum-reset { position: absolute; top: -2px; right: 0; min-height: 40px; }
+  .momentum-rule-group { padding: 12px; }
+  .momentum-fields { gap: 8px; }
+  .momentum-field { flex-basis: 70px; }
+  .momentum-field-value { min-height: 44px; padding-inline: 8px; }
+}
 /* Loading rows keep the result area steady while controls remain usable. */
 [data-score-table], [data-mcnews-list] { position: relative; }
 #dashboard-main:has(> [data-table-loading]) { position: relative; }

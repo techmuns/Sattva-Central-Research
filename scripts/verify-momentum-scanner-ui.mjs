@@ -84,6 +84,8 @@ const companies = [
   makeCompany({ ticker: 'MOMOJ', name: 'Missing Price', cmp: null, d: 80, w: 80, m: 75 }),
 ];
 const fixture = { ...original, companies, company_count: companies.length, failures: 0 };
+// The prior release's actual renderer proves a warm module cache receives the new criteria UI.
+const previousControls = readFileSync(resolve('scripts/fixtures/momentum-controls-previous.txt'), 'utf8');
 let previousRelease = false;
 
 // ---- the server ------------------------------------------------------------------------------
@@ -107,8 +109,12 @@ const server = createServer((req, res) => {
     }
     if (path === '/js/tabs/breakouts.js' && previousRelease) {
       body = body.toString()
+        .replace(/function momentumControls\([\s\S]*?(?=function momentumControlFocus\()/, () => previousControls)
         .replace("${formatNumber(exceptions.length)} ${exceptions.length === 1 ? 'Exception' : 'Exceptions'}", '${formatNumber(exceptions.length)} pending data refresh')
         .replace('noteHelp: exceptions.length ? {', 'noteHelp: false ? {');
+    }
+    if (path === '/css/theme.css' && previousRelease) {
+      body = body.toString().replace(/\/\* Momentum criteria[\s\S]*?(?=\/\* Loading rows)/, '');
     }
     res.setHeader('content-type', CT[extname(file)] || 'application/octet-stream');
     res.end(body);
@@ -216,6 +222,16 @@ try {
 
     ok('the gate toggle offers three options', v.gateButtons === 3, `${v.gateButtons}`);
     ok('five adjustable threshold inputs', v.thresholdInputs === 5, `${v.thresholdInputs}`);
+    const ruleGroups = page.locator('[data-momentum-group]');
+    ok('criteria are grouped with three RSI fields and two volume-momentum fields',
+      await ruleGroups.count() === 2 && await ruleGroups.first().locator('[data-mthreshold]').count() === 3 && await ruleGroups.last().locator('[data-mthreshold]').count() === 2);
+    ok('only Strong Momentum is applied by default, with an accessible selected mode',
+      await page.locator('[data-mgate="strong-momentum"]').getAttribute('aria-pressed') === 'true' &&
+      await ruleGroups.first().getAttribute('data-applied') === 'true' && await ruleGroups.last().getAttribute('data-applied') === 'false');
+    ok('thresholds have unique accessible names and the volume average is explicit',
+      await page.getByRole('spinbutton', { name: 'Strong Momentum · RSI daily >', exact: true }).count() === 1 &&
+      await page.getByRole('spinbutton', { name: 'Volume + Momentum · RSI daily >', exact: true }).count() === 1 &&
+      (await ruleGroups.last().innerText()).includes('Volume / 10D avg'));
 
     ok('condition pills are colourful — emerald pass and rose fail both present', v.emeraldPills >= 1 && v.rosePills >= 1, `emerald ${v.emeraldPills}, rose ${v.rosePills}`);
 
@@ -244,9 +260,47 @@ try {
     ok('the same tab node survives view changes', await page.evaluate(() => window.momentumViewTab === document.querySelector('#subview-mount [role="tab"]')));
 
     // The gate toggle writes the URL and re-filters without a fetch.
-    await page.click('#content-host [data-mgate="both"]');
+    await page.locator('#content-host [data-mgate="both"]').focus();
+    await page.keyboard.press('Space');
     await page.waitForFunction(() => /mgate=both/.test(location.hash), { timeout: 5000 }).catch(() => {});
     ok('clicking a gate updates the URL', /mgate=both/.test(await page.evaluate(() => location.hash)));
+    await page.waitForSelector('[data-mgate="both"][aria-pressed="true"]');
+    ok('Both signals applies both groups and explains that every condition must pass',
+      await page.locator('[data-momentum-group][data-applied="true"]').count() === 2 &&
+      (await page.locator('.momentum-controls-note').innerText()).includes('every condition in both groups'));
+    ok('keyboard screen selection retains focus through the results refresh', await page.locator('[data-mgate="both"]').evaluate(el => el === document.activeElement));
+
+    await page.goto(`${ROUTE}&vol=all&mrd1=99`, { waitUntil: 'domcontentloaded' });
+    const dailyInput = page.locator('[data-mthreshold="rsiD1"]');
+    await dailyInput.waitFor();
+    await dailyInput.fill('78');
+    ok('typing a threshold preserves the input until committed', /mrd1=99/.test(page.url()) && await dailyInput.inputValue() === '78');
+    await dailyInput.press('Tab');
+    await page.waitForFunction(() => location.hash.includes('mrd1=78') && document.querySelector('[data-mthreshold="rsiD1"]')?.value === '78');
+    await page.waitForFunction(() => document.querySelectorAll('#content-host [data-score-table] tbody [data-row-key]').length === 2);
+    ok('Tab continues to the next threshold after committing an edit', await page.locator('[data-mthreshold="rsiW"]').evaluate(el => el === document.activeElement));
+    ok('committing a threshold updates the URL and the matching stocks',
+      (await page.locator('#content-host [data-score-table] tbody [data-row-key]').allTextContents()).join('|').includes('Alpha Momentum') &&
+      (await page.locator('#content-host [data-score-table] tbody [data-row-key]').allTextContents()).join('|').includes('Beta Systems'));
+    // Changing the screen by click also blurs and commits an in-progress threshold edit.
+    await dailyInput.fill('79');
+    await page.locator('[data-mgate="volume-momentum"]').click();
+    await page.waitForSelector('[data-mgate="volume-momentum"][aria-pressed="true"]');
+    const volumeInput = page.locator('[data-mthreshold="volMult"]');
+    await volumeInput.fill('2.3');
+    await volumeInput.press('Tab');
+    await page.waitForFunction(() => location.hash.includes('mvm=2.3'));
+    ok('switching screens preserves each group\'s saved thresholds',
+      /mrd1=79/.test(page.url()) && await page.locator('[data-mthreshold="rsiD1"]').inputValue() === '79' && await volumeInput.inputValue() === '2.3');
+    await page.locator('[data-mreset]').click();
+    await page.waitForFunction(() => !/mgate=|mrd1=|mvm=/.test(location.hash) &&
+      document.querySelector('[data-mgate="strong-momentum"]')?.getAttribute('aria-pressed') === 'true' &&
+      document.querySelector('[data-mthreshold="rsiD1"]')?.value === '70');
+    ok('Reset defaults restores all five values and Strong Momentum while preserving scope and other filters',
+      /scope=universe/.test(page.url()) && /vol=all/.test(page.url()) &&
+      (await page.locator('[data-mthreshold]').evaluateAll(inputs => inputs.map(input => input.value))).join('|') === '70|70|65|50|1.5' &&
+      await page.locator('[data-mgate="strong-momentum"]').getAttribute('aria-pressed') === 'true');
+    ok('Reset retains keyboard focus', await page.locator('[data-mreset]').evaluate(el => el === document.activeElement));
 
     // Impossible thresholds → the polished empty state, and the sector bar stands down.
     await page.evaluate((o) => { location.hash = '#/research/breakouts/momentum-scanner?scope=universe&mrd1=99&mrw=99&mrm=99'; void o; }, origin);
@@ -281,6 +335,9 @@ try {
     ok('sector mini-bar still renders at 390px', !!v.sector && v.sector.rects === v.sector.legend);
     ok('gate toggle and thresholds still present at 390px', v.gateButtons === 3 && v.thresholdInputs === 5, `gates ${v.gateButtons}, inputs ${v.thresholdInputs}`);
     ok('no horizontal PAGE overflow at 390px', v.docScrollW <= v.winW + 1 && v.bodyScrollW <= v.winW + 1, `doc ${v.docScrollW} / body ${v.bodyScrollW} vs win ${v.winW}`);
+    const groupRects = await page.locator('[data-momentum-group]').evaluateAll(groups => groups.map(group => ({ x: group.getBoundingClientRect().x, y: group.getBoundingClientRect().y, bottom: group.getBoundingClientRect().bottom })));
+    ok('mobile stacks the groups with all fields inside their panel', groupRects[0].x === groupRects[1].x && groupRects[1].y > groupRects[0].bottom &&
+      await page.locator('[data-momentum-controls]').evaluate(panel => panel.scrollWidth <= panel.clientWidth + 1));
     await page.evaluate(() => document.documentElement.dataset.theme = 'dark');
     await page.click('#content-host [data-stat-help="note-0"]');
     ok('the dark mobile exception list includes every excluded stock', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);
@@ -295,6 +352,8 @@ try {
     await page.waitForSelector('#content-host [data-chip-group="side"]');
     ok('the last view is reachable by keyboard on mobile', /fii-accumulation/.test(page.url()) &&
       await page.locator('#subview-mount [data-tab-id="fii-accumulation"]').getAttribute('aria-selected') === 'true');
+    // The tab strip scrolls smoothly; wait for a frame rather than reading its initial offset.
+    await page.waitForFunction(() => document.querySelector('#subview-mount [data-tab-list]')?.scrollLeft > 0);
     ok('mobile tab navigation scrolls the strip', await page.locator('#subview-mount [data-tab-list]').evaluate(list => list.scrollLeft > 0));
 
     const own = [...new Set(errors)].filter(isOurError);
@@ -310,10 +369,14 @@ try {
     await page.waitForFunction(() => /6 pending data refresh/.test(document.querySelector('#content-host')?.textContent || ''));
     const oldCaches = await page.evaluate(() => caches.keys());
     ok('returning-session fixture genuinely uses the old module cache', oldCaches.some(key => key.includes('previous-momentum-release')));
+    ok('returning-session fixture starts on the previous flat criteria panel', await page.locator('[data-mthreshold]').count() === 5 && await page.locator('[data-momentum-group]').count() === 0);
     previousRelease = false;
     await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
     await page.waitForSelector('#content-host [data-stat-help="note-0"]', { timeout: 60000 });
     ok('the already-open scanner upgrades automatically to Exceptions', !/pending.*refresh/i.test(await page.locator('#content-host').textContent()));
+    await page.waitForSelector('[data-momentum-group]');
+    ok('the already-open scanner receives grouped criteria and their matching stylesheet', await page.locator('[data-momentum-group]').count() === 2 &&
+      await page.locator('.momentum-rule-groups').evaluate(el => getComputedStyle(el).display === 'grid'));
     await page.click('#content-host [data-stat-help="note-0"]');
     ok('the upgraded reader can open the complete exception list', await page.locator('[data-momentum-exception-list] tbody tr').count() === 6);
     const newCaches = await page.evaluate(() => caches.keys());
