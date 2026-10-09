@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-09T02:28:16.871Z",
-  "oldestDataAt": "2026-10-09T02:28:16.871Z",
+  "capturedAt": "2026-10-09T08:00:44.737Z",
+  "oldestDataAt": "2026-10-09T08:00:44.737Z",
   "from": "2025-10-09",
   "to": "2026-10-09",
   "windowDays": 365,
@@ -28,7 +28,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-09T02:28:16.871Z",
+      "capturedAt": "2026-10-09T08:00:44.737Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-09T02:28:16.871Z",
+      "capturedAt": "2026-10-09T08:00:44.737Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -49,12 +49,12 @@
       "label": "SAST",
       "url": "https://www.screener.in/trades/sast/?o=-2",
       "pagesRead": 2,
-      "latestDate": "2026-10-06",
+      "latestDate": "2026-10-08",
       "oldestDate": "2026-09-30",
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-09T02:28:16.871Z",
+      "capturedAt": "2026-10-09T08:00:44.737Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,15 +67,15 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-09T02:28:16.871Z",
+      "capturedAt": "2026-10-09T08:00:44.737Z",
       "coverageFrom": "2026-08-04"
     }
   ],
   "asked": 4,
   "covered": 4,
-  "withRows": 1896,
+  "withRows": 1897,
   "emptyCount": 0,
-  "rowCount": 20346,
+  "rowCount": 20361,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -253192,6 +253192,21 @@
     "SILGO": [
       {
         "ticker": "SILGO",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Silgo Retail",
+          "Insider": "Bela Agarwal",
+          "Transaction": "Sell",
+          "Trade Shares": "93750",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "SILGO",
         "date": "2026-09-25",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -304764,6 +304779,36 @@
     "DHTL": [
       {
         "ticker": "DHTL",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Docmode Health",
+          "Insider": "Ramesh kumar Jain HUF",
+          "Transaction": "Sell",
+          "Trade Shares": "120000",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "DHTL",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Docmode Health",
+          "Insider": "Ramesh Kumar Jain",
+          "Transaction": "Acquisition",
+          "Trade Shares": "80000",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "DHTL",
         "date": "2026-10-07",
         "url": "https://www.screener.in/trades/bulk/?o=-2&p=3",
         "sourceId": "bulk",
@@ -319618,6 +319663,36 @@
       }
     ],
     "MCL": [
+      {
+        "ticker": "MCL",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "Mr. Divya Arvindbhai Monpara",
+          "Transaction": "Sell",
+          "Trade Shares": "1000",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MCL",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "M Tek Copper",
+          "Insider": "Mr. Vishal Talsibhai Monpara",
+          "Transaction": "Sell",
+          "Trade Shares": "1000",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "MCL",
         "date": "2026-10-06",
@@ -366291,6 +366366,51 @@
     "KORE": [
       {
         "ticker": "KORE",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Jay Jalaram Tech",
+          "Insider": "Kamlesh Hariram Lalwani",
+          "Transaction": "Sell",
+          "Trade Shares": "10250",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KORE",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Jay Jalaram Tech",
+          "Insider": "Kamlesh Lalwani",
+          "Transaction": "Sell",
+          "Trade Shares": "10250",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KORE",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Jay Jalaram Tech",
+          "Insider": "Kamlesh Varjivandas Thakkar",
+          "Transaction": "Acquisition",
+          "Trade Shares": "10250",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "KORE",
         "date": "2026-09-22",
         "url": "https://www.screener.in/trades/sast/?o=-2",
         "sourceId": "sast",
@@ -384620,6 +384740,24 @@
         "cells": {
           "Trade Category": "Insider trade",
           "Company": "The Peria Karamalai Tea",
+          "Insider": "Kiran Vyapar Limited",
+          "Category": "Promoter Group",
+          "Security Type": "Equity",
+          "Transaction": "Bought",
+          "Trade Shares": "19606",
+          "Trade Value": "1.99 crore",
+          "Broadcast Date": "2026-10-05",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "PKTEA",
+        "date": "2026-10-05",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "The Peria Karamalai Tea",
           "Insider": "Promoter Group",
           "Security Type": "Equity",
           "Transaction": "Bought",
@@ -389577,6 +389715,39 @@
     "MAXVOLT": [
       {
         "ticker": "MAXVOLT",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Maxvolt Energy",
+          "Insider": "Satendra Shukla",
+          "Transaction": "Acquisition",
+          "Trade Shares": "448986",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAXVOLT",
+        "date": "2026-10-05",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Maxvolt Energy",
+          "Insider": "Bhudev Shukla",
+          "Category": "Employees Immediate Relative",
+          "Security Type": "Equity",
+          "Transaction": "Gift",
+          "Trade Shares": "448986",
+          "Trade Value": "19.31 crore",
+          "Broadcast Date": "2026-10-05",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "MAXVOLT",
         "date": "2026-10-05",
         "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
         "sourceId": "insiders",
@@ -389608,9 +389779,45 @@
           "Broadcast Date": "2026-10-05",
           "Source": "Screener.in"
         }
+      },
+      {
+        "ticker": "MAXVOLT",
+        "date": "2026-10-05",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Maxvolt Energy",
+          "Insider": "Satendra Shukla",
+          "Category": "Kmp",
+          "Security Type": "Equity",
+          "Transaction": "Gift",
+          "Trade Shares": "448986",
+          "Trade Value": "19.31 crore",
+          "Broadcast Date": "2026-10-05",
+          "Source": "Screener.in"
+        }
       }
     ],
     "HIGREEN": [
+      {
+        "ticker": "HIGREEN",
+        "date": "2026-10-05",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Hi-Green Carbon",
+          "Insider": "Amitkumar Hasmukhrai Bhalodi",
+          "Category": "Promoter",
+          "Security Type": "Equity",
+          "Transaction": "Bought",
+          "Trade Shares": "4800",
+          "Trade Value": "5.85 lacs",
+          "Broadcast Date": "2026-10-05",
+          "Source": "Screener.in"
+        }
+      },
       {
         "ticker": "HIGREEN",
         "date": "2026-10-05",
@@ -389641,6 +389848,24 @@
           "Transaction": "Bought",
           "Trade Shares": "4800",
           "Trade Value": "5.85 lacs",
+          "Broadcast Date": "2026-10-05",
+          "Source": "Screener.in"
+        }
+      },
+      {
+        "ticker": "HIGREEN",
+        "date": "2026-10-05",
+        "url": "https://www.screener.in/trades/insiders/?o=-2&p=2",
+        "sourceId": "insiders",
+        "cells": {
+          "Trade Category": "Insider trade",
+          "Company": "Hi-Green Carbon",
+          "Insider": "Radhe Associates Llp",
+          "Category": "Promoter Group",
+          "Security Type": "Equity",
+          "Transaction": "Bought",
+          "Trade Shares": "8000",
+          "Trade Value": "9.84 lacs",
           "Broadcast Date": "2026-10-05",
           "Source": "Screener.in"
         }
@@ -391143,6 +391368,23 @@
           "Trade Shares": "1921581",
           "Trade Value": "258 crore",
           "Price": "1343",
+          "Broadcast Date": "2026-10-08",
+          "Source": "Screener.in"
+        }
+      }
+    ],
+    "RAJINDLTD": [
+      {
+        "ticker": "RAJINDLTD",
+        "date": "2026-10-08",
+        "url": "https://www.screener.in/trades/sast/?o=-2",
+        "sourceId": "sast",
+        "cells": {
+          "Trade Category": "SAST",
+          "Company": "Rajputana Indu.",
+          "Insider": "Mahima Dixit Bokadia",
+          "Transaction": "Acquisition",
+          "Trade Shares": "145576",
           "Broadcast Date": "2026-10-08",
           "Source": "Screener.in"
         }
