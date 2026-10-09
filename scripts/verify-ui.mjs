@@ -2694,12 +2694,8 @@ await page.waitForTimeout(400);
 ok('ESC closes the drill', (await page.locator('#drill-panel.translate-x-full, #drill-panel:not(.translate-x-0)').count()) > 0);
 
 // ---------------------------------------------------------------------------------------
-// 4b2. Breakouts opens on Strong Breakouts, and no chip narrows the view on the reader's behalf
-//
-// The tab used to land on Technical Scanner — the whole scored universe — while the view that
-// answers "what is breaking out today" sat second in the list. Strong Breakouts is first now, and
-// the shell resolves an absent sub-view to `subviews[0]`, so the picker order and the landing
-// route are one fact rather than two that could drift; both are asserted off the same navigation.
+// 4b2. Breakouts opens on Momentum Scanner; horizontal tabs switch its views.
+// The first catalog subview is both the landing route and the first visible tab.
 //
 // The filters are the other half of it. Three of the four groups already defaulted to their widest
 // option, but that option sat LAST in its row, and the fourth — the trend filter — shipped on
@@ -2717,25 +2713,19 @@ console.log('\n— breakouts: default view and filters —');
 {
   await go('/#/research/breakouts?scope=universe', 2500);
   await waitForPanel();
-  ok('a bare /breakouts route lands on Strong Breakouts', /breakouts\/strong-breakouts/.test(page.url()), page.url());
-
-  // The menu markup is in the DOM whether or not it is open — only a `hidden` class moves — so
-  // this click is not what makes the items readable. It is here because the assertion below is
-  // about what the READER can see, and a menu clipped by its own card reads identically to a
-  // closed one from the DOM alone.
-  await page.locator('#subview-mount [data-dd-trigger]').click();
-  await page.waitForTimeout(300);
+  ok('a bare /breakouts route lands on Momentum Scanner', /breakouts\/momentum-scanner/.test(page.url()), page.url());
   const picker = await page.evaluate(() => {
-    const items = [...document.querySelectorAll('#subview-mount [data-dd-id]')];
+    const items = [...document.querySelectorAll('#subview-mount [role="tab"]')];
     return {
-      ids: items.map((b) => b.dataset.ddId),
-      checked: items.find((b) => b.className.includes('text-indigo-700'))?.dataset.ddId || null,
-      face: document.querySelector('#subview-mount [data-dd-trigger]')?.innerText.replace(/\s+/g, ' ').trim() || '',
+      ids: items.map((b) => b.dataset.tabId),
+      checked: items.find((b) => b.getAttribute('aria-selected') === 'true')?.dataset.tabId || null,
     };
   });
-  await page.keyboard.press('Escape');
-  ok('...which is the first item in the sub-view picker', picker.ids[0] === 'strong-breakouts', picker.ids.join(' · '));
-  ok('...and is the one the picker is set to', picker.checked === 'strong-breakouts' && /Strong Breakouts/.test(picker.face), `${picker.checked} — "${picker.face}"`);
+  ok('Momentum Scanner is the first horizontal view tab', picker.ids[0] === 'momentum-scanner', picker.ids.join(' · '));
+  ok('Momentum Scanner is selected', picker.checked === 'momentum-scanner');
+  await page.locator('#subview-mount [data-tab-id="strong-breakouts"]').click();
+  await waitForPanel();
+  await page.waitForSelector('#content-host [data-chip-group="strength"]');
 
   // Read the chip bar as it is drawn: the first chip of every group, and which chip is selected.
   // Asserted off the DOM rather than the module's config, because the config being right and the
@@ -7329,7 +7319,7 @@ console.log('\n— sub-view picker and the removed roadmap card —');
   // It is asserted as a CLASS contract rather than as geometry because class ownership is the
   // durable cause of this bug. The first version read the open menu's box and could pass even when
   // an ancestor clipped it; a check that cannot fail is not a check.
-  await go('/#/research/breakouts/strong-breakouts?scope=universe', 2600);
+  await go('/#/research/super-investors/superstar-investors?scope=universe', 2600);
   await waitForPanel();
   await page.locator('#subview-mount [data-dd-trigger]').click();
   await page.waitForTimeout(350);
@@ -7341,11 +7331,14 @@ console.log('\n— sub-view picker and the removed roadmap card —');
     }
     return { open: !el.classList.contains('hidden'), items: el.querySelectorAll('[data-dd-id]').length, clippers };
   });
-  ok('clicking the picker opens its menu', menu.open && menu.items === 4, JSON.stringify({ open: menu.open, items: menu.items }));
+  ok('clicking the picker opens its menu', menu.open && menu.items === 2, JSON.stringify({ open: menu.open, items: menu.items }));
   ok('...and nothing between the menu and its mount clips it', menu.clippers.length === 0, menu.clippers.join(' | ') || 'no overflow-hidden ancestor');
-  await page.locator('#subview-mount [data-dd-id="fii-accumulation"]').click();
+  await page.keyboard.press('Escape');
+  await go('/#/research/breakouts/strong-breakouts?scope=universe', 2600);
+  await waitForPanel();
+  await page.locator('#subview-mount [data-tab-id="fii-accumulation"]').click();
   await page.waitForTimeout(1800);
-  ok('...and picking a sub-view navigates to it', /breakouts\/fii-accumulation/.test(page.url()), page.url());
+  ok('clicking a scanner view tab navigates to it', /breakouts\/fii-accumulation/.test(page.url()), page.url());
   ok('...and the content follows', /Institutional holding changes/i.test(await hostText()));
 }
 

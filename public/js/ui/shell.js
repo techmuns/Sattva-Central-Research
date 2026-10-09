@@ -59,6 +59,7 @@ let currentTabModule = null;
 let chromeDisposers = [];
 let headerDisposer = null;
 let topTabs = null;
+let subviewTabs = null;
 let shellRenderRequest = 0;
 let releaseRouteLoading = null;
 
@@ -66,6 +67,8 @@ export function mount(root) {
   releaseRouteLoading?.(); releaseRouteLoading = null;
   topTabs?.dispose();
   topTabs = null;
+  subviewTabs?.dispose();
+  subviewTabs = null;
   root.innerHTML = shellTemplate();
   contentHost = $('#content-host', root);
 
@@ -345,37 +348,37 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   //
   // Portfolio Analytics itself is untouched and still routes; see WORKSPACES above.
 
-  // THE SUB-VIEW RAIL IS A DROPDOWN NOW, AT EVERY WIDTH.
-  //
-  // It used to be a 240px left column above 1024px and a dropdown below it. The column cost the
-  // content 240px of the 1400px it has, permanently, to show at most four short labels — and the
-  // tables it sat beside are the widest things here: Institutions carries thirteen numeric
-  // columns and the Earnings Hub ten, both tuned column by column (`dense`, `wrapHeads`,
-  // `nameMaxPx`) to fit inside what was left. Giving the content the full width is worth more
-  // than a permanently-visible list of four.
-  //
-  // The kicker reads "View" rather than the tab's own title: the section head immediately below
-  // prints that title as the page's heading, and the rail card's header was repeating it.
+  // Breakouts exposes its four views as horizontal tabs. Keep that strip mounted across
+  // subview and scope changes so keyboard focus and horizontal scroll survive navigation.
   const subviewItems = (tabModule.meta.subviews || []).map((s) => ({ id: s.id, label: s.label, badge: s.badge }));
-  const activeSubviewLabel = subviewItems.find((s) => s.id === resolved.subview)?.label || '';
-  const subviewPicker = dropdownMenu({
-    key: 'subview',
-    kicker: 'View',
-    valueLabel: activeSubviewLabel,
-    items: subviewItems,
-    activeId: resolved.subview,
-    onSelect: goSubview,
-    title: `Switch between ${tabModule.meta.title} views`,
-  });
-
   const hasSubviews = subviewItems.length > 0;
+  const useSubviewTabs = hasSubviews && tabModule.meta.subviewNavigation === 'tabs';
   const subviewMount = $('#subview-mount', root);
-  // A tab with `subviews: []` has nothing to pick, so the row goes entirely rather than
-  // rendering an empty control — same rule the rail followed.
+  if (!useSubviewTabs || subviewTabs?.tab !== resolved.tab) {
+    subviewTabs?.dispose();
+    subviewTabs = null;
+  }
   subviewMount.classList.toggle('hidden', !hasSubviews);
   if (!hasSubviews) {
     subviewMount.innerHTML = '';
+  } else if (useSubviewTabs) {
+    if (subviewTabs) {
+      subviewTabs.bar.update(resolved.subview);
+    } else {
+      const bar = tabBar({ tabs: subviewItems, activeId: resolved.subview, onSelect: goSubview, label: `${tabModule.meta.title} views` });
+      subviewMount.innerHTML = bar.html;
+      subviewTabs = { tab: resolved.tab, bar, dispose: bar.wire(subviewMount) };
+    }
   } else {
+    const subviewPicker = dropdownMenu({
+      key: 'subview',
+      kicker: 'View',
+      valueLabel: subviewItems.find((s) => s.id === resolved.subview)?.label || '',
+      items: subviewItems,
+      activeId: resolved.subview,
+      onSelect: goSubview,
+      title: `Switch between ${tabModule.meta.title} views`,
+    });
     subviewMount.innerHTML = `
       <div class="w-full max-w-[15rem] rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
         ${subviewPicker.html}

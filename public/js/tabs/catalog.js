@@ -62,10 +62,11 @@ export const TAB_META = Object.freeze({
     id: 'breakouts',
     title: 'Breakouts / Technical',
     subtitle: 'Daily technical scoring and captured prices across the NSE 500 and every listed holding — 16 rules, 24 points.',
+    subviewNavigation: 'tabs',
     subviews: [
+      { id: 'momentum-scanner', label: 'Momentum Scanner' },
       { id: 'strong-breakouts', label: 'Strong Breakouts' },
       { id: 'technical-scanner', label: 'Technical Scanner' },
-      { id: 'momentum-scanner', label: 'Momentum Scanner' },
       { id: 'fii-accumulation', label: 'FII Accumulation' },
     ],
   },
