@@ -97,6 +97,7 @@ const server = createServer((req, res) => {
     }
     if (path === '/js/data/announcements-extra.js' && legacy) body = body.toString().replaceAll(', loadRecovery()', '');
     if (path === '/js/tabs/filings-tab.js' && legacy) body = body.toString().replace('      searchControl,', '');
+    if (path === '/js/tabs/corp-announcements.js' && legacy) body = body.toString().replace("const DEFAULT_PERIOD = '3';", "const DEFAULT_PERIOD = 'all';");
     res.end(body);
   } catch { res.writeHead(404); res.end(); }
 });
@@ -131,8 +132,12 @@ try {
   assert.equal(await page.locator('[data-capture-coverage], [data-announcement-lookup], [data-load-filing-history], [data-watch-toggle], [data-document-tabs]').count(), 0);
   period = page.getByRole('combobox', { name: 'Announcement period (IST)' });
   search = page.locator('[data-table-search]');
-  assert.equal(await period.inputValue(), 'all');
+  assert.equal(await period.inputValue(), '3');
   assert.deepEqual(await period.locator('option').allTextContents(), ['Today', 'Last 3 days', 'Last 7 days', 'This month', 'All time']);
+  await settle();
+  assert.equal(await page.evaluate(() => window.caQuery.query().period), '3', 'the opening query uses Last 3 days');
+  assert(await page.evaluate(() => window.caQuery.rows().every(r => r.date >= '2026-09-02' && r.date <= '2026-09-04')), 'the default excludes older retained filings');
+  await selectPeriod('all');
   await page.waitForFunction(() => /^146 announcements/.test(document.querySelector('[data-row-count]')?.textContent || ''));
   assert.match(await page.locator('[data-row-count]').innerText(), /^146 announcements · 3 companies with filings$/);
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
@@ -444,6 +449,7 @@ try {
   await returning.evaluate(async () => { await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready; });
   await returning.waitForFunction(() => !!navigator.serviceWorker.controller);
   await returning.reload(); await returning.locator('[data-table-search]').waitFor();
+  assert.equal(await returning.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), 'all', 'the previous cached tab opens on All time');
   assert.equal(await returning.evaluate(() => window.stream.rows().some(r => r.title.includes('recovered arrival'))), false);
   assert.equal(await returning.locator('[data-announcement-search]').count(), 0, 'the previous immutable module still serves plain text search');
   await returning.evaluate(async () => {
@@ -453,6 +459,8 @@ try {
   legacy = false;
   await returning.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await returning.locator('[data-announcement-search]').waitFor();
+  assert.equal(await returning.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'the returning session adopts Last 3 days after upgrade');
+  assert.equal(await returning.evaluate(() => window.caQuery.query().period), '3', 'the upgraded query adopts Last 3 days');
   await returning.evaluate(() => window.renderScope('universe'));
   await returning.locator('[data-table-search]').fill('Bharat');
   await returning.getByRole('option', { name: /Bharat Parenterals/ }).click();
