@@ -34,6 +34,12 @@ const ok = (label, fn) => {
 };
 const skip = (label, why) => console.log('SKIP  ' + label + '  (' + why + ')');
 const near = (a, b, tol, msg) => assert.ok(a != null && b != null && Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tol ${tol})`);
+// Stored RSI and its recomputed reading are rounded to one decimal place. Compare
+// integer tenths so a permitted 0.8 vs 0.7 step cannot fail through binary subtraction.
+const nearRoundedRsi = (a, b, msg) => {
+  assert.ok(Number.isFinite(a) && Number.isFinite(b), `${msg}: expected finite RSI values`);
+  near(Math.round(a * 10), Math.round(b * 10), 1, msg);
+};
 
 // ---------------------------------------------------------------------------------------
 // A deterministic dated daily series: weekdays from a fixed start, seeded random walk. No RNG from
@@ -60,6 +66,13 @@ function syntheticBars(count, seed = 12345, startDate = '2016-01-01') {
 }
 
 console.log('\n== Section 1: algorithm core (deterministic) ==');
+
+ok('rounded RSI permits one decimal step and rejects larger mismatches', () => {
+  for (const [a, b] of [[0.8, 0.7], [70.2, 70.1], [70.1, 70.2]]) nearRoundedRsi(a, b, 'one stored step');
+  assert.throws(() => nearRoundedRsi(0.9, 0.7, 'two stored steps'));
+  assert.throws(() => nearRoundedRsi(70.3, 70.1, 'two stored steps'));
+  for (const invalid of [null, NaN, Infinity]) assert.throws(() => nearRoundedRsi(0, invalid, 'invalid stored RSI'));
+});
 
 const bars = syntheticBars(2200);           // ~8.4 years of weekdays
 const close = bars.map((b) => b.close);
@@ -194,7 +207,7 @@ console.log('\n== Section 2: intra-record invariants on public/data/technicals.j
         if (s == null) continue;
         assert.ok(s.value >= 0 && s.value <= 100, `${r.ticker}: ${tf} RSI in range`);
         assert.ok(s.avgGain >= 0 && s.avgLoss >= 0 && s.lastClose > 0, `${r.ticker}: ${tf} state sane`);
-        near(Math.round((s.avgLoss === 0 ? 100 : 100 - 100 / (1 + s.avgGain / s.avgLoss)) * 10) / 10, s.value, 0.1, `${r.ticker}: ${tf} state reproduces value`);
+        nearRoundedRsi(s.avgLoss === 0 ? 100 : 100 - 100 / (1 + s.avgGain / s.avgLoss), s.value, `${r.ticker}: ${tf} state reproduces value`);
       }
     }
   });
