@@ -284,7 +284,7 @@ try {
   assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'automatic upgrade removes NSE Filings from navigation');
   assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
     currentTabOrder, 'automatic upgrade applies the requested order in the returning session');
-  assert.equal(await page.locator('[data-tab-id="earnings-hub"]').textContent(), 'Earnings', 'the shortened Earnings label reaches the returning session');
+  assert.equal((await page.locator('[data-tab-id="earnings-hub"]').textContent()).trim(), 'Earnings', 'the shortened Earnings label reaches the returning session');
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {
