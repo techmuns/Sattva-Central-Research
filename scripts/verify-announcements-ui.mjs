@@ -89,11 +89,18 @@ try {
   await ready();
   await hold();
   assert.equal(await page.locator('[data-filings-info]').getAttribute('data-ca-mode'), 'server', 'the index answers');
+  const period = page.getByRole('combobox', { name: 'Announcement period (IST)' });
+  assert.equal(await period.inputValue(), '3', 'Last 3 days is selected on opening');
+  assert.equal(await page.evaluate(() => window.__ca.query().period), '3', 'the initial query uses Last 3 days');
+  assert.equal(srv.stats.queries, 1, 'one initial page request');
+  ok('Last 3 days is the default dropdown and server query');
+  await period.selectOption('all');
+  await page.waitForFunction(() => window.__ca.query().period === 'all' && window.__ca.meta().state === 'ready');
   const heads = await page.locator('thead th').allInnerTexts();
   for (const head of ['SUBJECT', 'DATE', 'CATEGORIES', 'MARKET CAP', 'SOURCE']) assert(heads.map((h) => h.trim().toUpperCase()).includes(head), `column ${head}`);
   const meta = await caMeta();
   assert.equal(meta.total, index.counts.rows, 'All time counts every filing');
-  assert.equal(srv.stats.queries, 1, 'one page request, not the history');
+  assert.equal(srv.stats.queries, 2, 'one page request per selected period, not the history');
   const rows = await caRows();
   const firstSubject = await page.locator('tbody tr[data-row-key]').first().locator('div.truncate.font-semibold').getAttribute('title');
   assert.equal(firstSubject, rows[0].title.replace(/\s+/g, ' ').trim(), 'the subject is the exchange’s own words');
@@ -334,6 +341,8 @@ try {
   await local.clock.install({ time: clock });
   await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`);
   await local.waitForFunction(() => document.querySelector('[data-filings-info]')?.dataset.caMode === 'local' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 180000 });
+  assert.equal(await local.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'fallback opens on Last 3 days');
+  assert.equal(await local.locator('[data-filings-info]').getAttribute('data-ca-period'), '3', 'fallback query uses Last 3 days');
   assert(await local.locator('tbody .category-chip').count() > 0, 'categories still show');
   await local.locator('tbody tr[data-row-key]').first().locator('td').nth(1).click();
   await local.locator('#modal-content [data-ann-read]').waitFor();
