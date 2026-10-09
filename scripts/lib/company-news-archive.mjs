@@ -143,7 +143,7 @@ export function companyNewsArchiveRows(dir) {
  * File every supplied observation, then rewrite only the shards it touched.
  * Existing shards absent from this run are retained and remain in the manifest.
  */
-export function commitCompanyNewsArchive({ dir, articles = [], entities = [], capturedAt = new Date().toISOString(), queries = null, overlapHours = DEFAULT_OVERLAP_HOURS, archivePrefix = 'company-news' }) {
+export function commitCompanyNewsArchive({ dir, articles = [], entities = [], universeEntities = null, capturedAt = new Date().toISOString(), queries = null, overlapHours = DEFAULT_OVERLAP_HOURS, archivePrefix = 'company-news' }) {
   const previous = readCompanyNewsIndex(dir);
   const buckets = new Map();
   for (const row of articles) {
@@ -190,6 +190,7 @@ export function commitCompanyNewsArchive({ dir, articles = [], entities = [], ca
     updatedAt: capturedAt,
     overlapHours,
     entities,
+    ...(universeEntities ? { universeEntities } : {}),
     queries: queries || previous.queries || {},
     archive,
     articleCount: archive.reduce((sum, item) => sum + item.count, 0),

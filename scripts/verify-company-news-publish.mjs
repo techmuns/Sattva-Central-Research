@@ -29,10 +29,10 @@ const digest = dir => {
   };
   walk(dir); return entries;
 };
-function capture(name, { entities, rows, archived = [], at, queries = {}, discovery = null, extraBuckets = {}, maxBytes } = {}) {
+function capture(name, { entities, universeEntities = [], rows, archived = [], at, queries = {}, discovery = null, extraBuckets = {}, maxBytes } = {}) {
   const dir = join(scratch, name); mkdirSync(dir, { recursive: true });
   const byTicker = Object.fromEntries([['A', rows], ...Object.entries(extraBuckets)]);
-  writeNewsJson(join(dir, 'news.json'), { capturedAt: at, newsUpdatedAt: at, from: '2026-08-08', entities,
+  writeNewsJson(join(dir, 'news.json'), { capturedAt: at, newsUpdatedAt: at, from: '2026-08-08', entities, universeEntities,
     byTicker, empty: [], queryCoverage: { planned: 2, succeeded: 2, failed: 0 }, archive: { index: 'company-news/index.json' } }, maxBytes ? { maxBytes } : {});
   const months = new Map();
   for (const item of archived) {
@@ -46,7 +46,7 @@ function capture(name, { entities, rows, archived = [], at, queries = {}, discov
     writeNewsJson(join(dir, file), { month, articles, capturedAt: oldAt, updatedAt: oldAt }, maxBytes ? { maxBytes } : {});
     archive.push({ month, file, count: articles.length });
   }
-  writeNewsJson(join(dir, 'company-news/index.json'), { createdAt: oldAt, updatedAt: at, entities, queries, archive,
+  writeNewsJson(join(dir, 'company-news/index.json'), { createdAt: oldAt, updatedAt: at, entities, universeEntities, queries, archive,
     articleCount: archived.length });
   if (discovery) writeNewsJson(join(dir, 'company-news/discovery.json'), discovery);
   return dir;
@@ -84,9 +84,11 @@ try {
   const historical = row('old-head', { date: '2026-07-10' });
   const document = row('document.pdf', { discoverySource: 'official-ir', date: null });
   const target = capture('target', { entities: [A, NEW], at: mainAt,
+    universeEntities: [entity('UNIVERSEMAIN', { portfolio: false })],
     rows: [row('main'), duplicateMain, historical], archived: [row('archive-main'), document],
     queries: { A: { A: good(mainAt) }, NEW: {} }, discovery: discovery(mainAt, current) });
   const source = capture('source', { entities: [entity('A', { aliases: ['Stale capture alias'] }), EXIT, LIVE], at: newAt,
+    universeEntities: [entity('UNIVERSESUNDAY', { portfolio: false })],
     rows: [row('capture'), duplicateCapture, row('same', { title: 'Corrected headline at identical URL' })],
     archived: [row('archive-source')], queries: { A: { A: good(newAt) }, EXIT: { EXIT: good(newAt) }, LIVE: { LIVE: good(newAt) } },
     extraBuckets: JSON.parse('{"__proto__":[]}'), discovery: discovery(newAt, incoming) });
@@ -95,6 +97,8 @@ try {
   const head = read(target, 'news.json'), index = read(target, 'company-news/index.json'), retained = allArchive(target);
   assert.equal(report.capturedAt, newAt); assert.equal(head.newsUpdatedAt, newAt);
   assert.deepEqual(index.entities.map(item => item.entityId), ['A', 'LIVE', 'NEW']);
+  assert.deepEqual(index.universeEntities.map(item => item.entityId).sort(), ['UNIVERSEMAIN', 'UNIVERSESUNDAY']);
+  assert.equal(read(target, 'news.json').portfolioEntities, 3, 'universe enrollment cannot change portfolio coverage counts');
   assert.deepEqual(index.entities.find(item => item.entityId === 'A').aliases, ['Reviewed main alias']);
   assert.ok(index.historicalEntities.some(item => item.entityId === 'EXIT'));
   assert.ok(Object.hasOwn(head.byTicker, '__proto__'), 'arbitrary bucket keys remain own JSON properties');

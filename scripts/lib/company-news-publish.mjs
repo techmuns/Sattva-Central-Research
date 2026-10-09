@@ -97,8 +97,13 @@ export function mergeCaptureData(sourceDir, targetDir, { baselineIndex = null, b
     !baselineIds.has(id) || reviewed.has(id) && captured.has(id))) : new Set(reviewed.keys());
   const entities = [...active].map(id => reconcileIdentity(reviewed.get(id), captured.get(id), baselineEntities.get(id)))
     .sort((a, b) => String(a.entityId).localeCompare(String(b.entityId)));
+  // Universe enrollment is permanent capture metadata, not membership in the active book.
+  // A later portfolio-only top-up must retain a concurrent Sunday walk's registry/progress.
+  const universeEntities = [...new Map([...(target.index.universeEntities || []), ...(source.index.universeEntities || [])]
+    .map(entity => [entity.entityId, entity])).values()].filter(entity => !active.has(entity.entityId));
+  const universeIds = new Set(universeEntities.map(entity => entity.entityId));
   const historical = new Map([...(source.index.historicalEntities || []), ...(target.index.historicalEntities || []),
-    ...source.index.entities, ...target.index.entities].map(entity => [entity.entityId, entity]));
+    ...source.index.entities, ...target.index.entities, ...universeEntities].map(entity => [entity.entityId, entity]));
   const identitiesByKey = new Map([...historical.values()].flatMap(entity => [entity.key, entity.ticker].filter(Boolean).map(key => [key, entity])));
   const queries = Object.fromEntries([...new Set([...Object.keys(target.index.queries), ...Object.keys(source.index.queries)])].sort()
     .map(key => [key, mergeCheckMap(target.index.queries[key], source.index.queries[key], baselineIndex?.queries?.[key])]));
@@ -135,7 +140,8 @@ export function mergeCaptureData(sourceDir, targetDir, { baselineIndex = null, b
   const articleCount = archive.reduce((count, part) => count + part.count, 0);
   const updatedAt = latest(target.index.updatedAt, source.index.updatedAt);
   const index = { ...target.index, createdAt: earliest(target.index.createdAt, source.index.createdAt), updatedAt,
-    entities, historicalEntities: [...historical.values()].filter(entity => !active.has(entity.entityId)), queries, archive, articleCount };
+    entities, universeEntities, historicalEntities: [...historical.values()].filter(entity => !active.has(entity.entityId)
+      && !universeIds.has(entity.entityId)), queries, archive, articleCount };
   let discovery = target.discovery || source.discovery;
   if (target.discovery && source.discovery) {
     const [older, newer] = ordered(target.discovery.coverage, source.discovery.coverage, 'capturedAt');
@@ -166,7 +172,8 @@ export function mergeCaptureData(sourceDir, targetDir, { baselineIndex = null, b
   }
   const rowCount = Object.values(byTicker).reduce((count, rows) => count + rows.length, 0);
   const empty = [...new Set([...(newerHead.empty || []), ...(olderHead.empty || [])])].filter(key => !byTicker[key]?.length).sort();
-  const capturedPlan = new Set((newerHead.entities || []).flatMap(entity => (entity.queries || []).map(query => `${entity.entityId}|${query}`)));
+  const capturedPlan = new Set([...(newerHead.entities || []), ...(newerHead.universeEntities || [])]
+    .flatMap(entity => (entity.queries || []).map(query => `${entity.entityId}|${query}`)));
   for (const key of newerHead.queryCoverage?.publicationUnverifiedQueryKeys || []) capturedPlan.delete(key);
   const unverifiedActiveQueryKeys = entities.flatMap(entity => (entity.queries || []).map(query => ({ entity, query })))
     .filter(({ entity, query }) => {
@@ -188,7 +195,7 @@ export function mergeCaptureData(sourceDir, targetDir, { baselineIndex = null, b
     queryCoverage.publicationUnverifiedQueries = unverifiedActiveQueries;
     queryCoverage.publicationUnverifiedQueryKeys = unverifiedActiveQueryKeys;
   }
-  const head = { ...olderHead, ...newerHead, byTicker, entities, empty, emptyCount: empty.length, queryCoverage,
+  const head = { ...olderHead, ...newerHead, byTicker, entities, universeEntities, empty, emptyCount: empty.length, queryCoverage,
     from, rowCount, withRows: Object.values(byTicker).filter(rows => rows.length).length,
     covered: Object.values(byTicker).filter(rows => rows.length).length + empty.length,
     portfolioEntities: entities.length, tickerlessPortfolioEntities: entities.filter(entity => !entity.ticker).length,

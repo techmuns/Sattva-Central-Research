@@ -26,6 +26,7 @@ export function keyFor(entry) {
   const name = nameKey(entry?.name);
   return name ? `name:${name}` : '';
 }
+const sameCompany = (a, b) => a?.isin && b?.isin ? upper(a.isin) === upper(b.isin) : keyFor(a) === keyFor(b);
 
 function normaliseEntry(entry) {
   if (!entry || typeof entry !== 'object') return null;
@@ -109,18 +110,22 @@ export function apply(scope, base = []) {
   if (!EDITABLE.has(scope)) return [...base];
   const state = read()[scope];
   const removed = new Set(state.removed.map(keyFor));
+  const removedIsins = new Set(state.removed.map(entry => entry.isin).filter(Boolean));
   const out = [];
   const seen = new Set();
+  const seenIsins = new Set();
   for (const raw of base) {
     const key = keyFor(raw);
-    if (!key || removed.has(key) || seen.has(key)) continue;
+    if (!key || removed.has(key) || seen.has(key) || raw.isin && (removedIsins.has(raw.isin) || seenIsins.has(raw.isin))) continue;
     seen.add(key);
+    if (raw.isin) seenIsins.add(raw.isin);
     out.push(raw);
   }
   for (const raw of state.added) {
     const key = keyFor(raw);
-    if (!key || removed.has(key) || seen.has(key)) continue;
+    if (!key || removed.has(key) || seen.has(key) || raw.isin && (removedIsins.has(raw.isin) || seenIsins.has(raw.isin))) continue;
     seen.add(key);
+    if (raw.isin) seenIsins.add(raw.isin);
     out.push(raw);
   }
   return out;
@@ -128,13 +133,13 @@ export function apply(scope, base = []) {
 
 export function contains(scope, entry, base = []) {
   const key = keyFor(entry);
-  return !!key && apply(scope, base).some((item) => keyFor(item) === key);
+  return !!key && apply(scope, base).some((item) => sameCompany(item, entry));
 }
 
 export function isRemoved(scope, entry) {
   if (!EDITABLE.has(scope)) return false;
   const key = keyFor(entry);
-  return !!key && read()[scope].removed.some((item) => keyFor(item) === key);
+  return !!key && read()[scope].removed.some((item) => sameCompany(item, entry));
 }
 
 export function removed(scope) {
@@ -155,12 +160,12 @@ export function add(scope, rawEntry, base = []) {
 
   const state = read();
   const list = state[scope];
-  list.removed = list.removed.filter((item) => keyFor(item) !== key);
-  const inBase = baseMap(base).has(key);
-  const existing = list.added.find((item) => keyFor(item) === key);
+  list.removed = list.removed.filter((item) => !sameCompany(item, entry));
+  const inBase = baseMap(base).has(key) || base.some(item => sameCompany(item, entry));
+  const existing = list.added.find((item) => sameCompany(item, entry));
   if (!inBase && !existing) {
     list.added.push({ ...entry, addedAt: new Date().toISOString(), source: entry.source || 'search' });
-  } else if (existing && entry.name && existing.name !== entry.name) {
+  } else if (existing && entry.name && (existing.name !== entry.name || existing.ticker !== entry.ticker)) {
     Object.assign(existing, entry, { addedAt: existing.addedAt });
   }
   write(state, scope);
@@ -175,9 +180,9 @@ export function remove(scope, rawEntry, base = []) {
 
   const state = read();
   const list = state[scope];
-  const inBase = baseMap(base).has(key);
-  list.added = list.added.filter((item) => keyFor(item) !== key);
-  if (inBase && !list.removed.some((item) => keyFor(item) === key)) list.removed.push(entry);
+  const inBase = baseMap(base).has(key) || base.some(item => sameCompany(item, entry));
+  list.added = list.added.filter((item) => !sameCompany(item, entry));
+  if (inBase && !list.removed.some((item) => sameCompany(item, entry))) list.removed.push(entry);
   write(state, scope);
   return true;
 }

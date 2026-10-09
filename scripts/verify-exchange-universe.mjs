@@ -36,6 +36,10 @@ assert.equal(filterByScope([{ ticker: 'FOCUS', scripCode: bseFocus.bseCode }], '
 lists.reset('universe'); lists.remove('universe', dp, built.companies);
 assert.equal(lists.removed('universe')[0].isin, dp.isin, 'saved exclusions retain security identity');
 assert.equal(filterByScope([{ ticker: dp.bseCode }, dp], 'universe').length, 0, 'BSE-code and NSE rows follow the same company exclusion');
+const renamed = { ...dp, ticker: 'RENAMEDDP' };
+assert.equal(lists.apply('universe', [renamed]).length, 0, 'an exchange rename cannot restore an excluded issuer');
+lists.add('universe', renamed, [renamed]);
+assert.equal(lists.apply('universe', [renamed]).length, 1, 'restoring a renamed company clears its original exclusion');
 lists.reset('universe');
 
 const fixtureRead = async path => ({ value: path.includes('nse-identities') ? nse : bse, stale: false });

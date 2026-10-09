@@ -137,9 +137,13 @@ try {
   const universeRows = capped.byTicker.UNIVERSEA;
   assert(universeRows.length);
   assert((await readJson(join(dataDir, 'company-news/index.json'))).queries['isin:INE000A01011']['Universe A Limited'].lastSuccessAt);
+  const universeIndex = await readJson(join(dataDir, 'company-news/index.json'));
+  assert.equal(universeIndex.entities.length, 2, 'portfolio health/enrichment retains the exact active book');
+  assert.equal(universeIndex.universeEntities.length, 3);
   mode = 'empty';
   await runCapture(); calls.splice(0);
   assert((await readJson(join(dataDir, 'company-news/index.json'))).queries['isin:INE000A01011'], 'portfolio top-ups retain universe progress');
+  assert.equal((await readJson(join(dataDir, 'company-news/index.json'))).universeEntities.length, 3);
   await runCapture({ scope: 'universe', maxQueries: '4' });
   assert.deepEqual(calls.splice(0).filter(call => call.query.startsWith('Universe')).map(call => call.query), ['Universe B Limited'], 'the next bounded walk resumes unreached companies');
   await runCapture({ scope: 'universe' }); calls.splice(0);

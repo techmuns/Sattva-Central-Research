@@ -73,7 +73,7 @@ function editorHtml(scope) {
         <div data-scope-loading class="py-12 text-center text-sm text-slate-400">Reading the ${escapeHtml(scopeLabel(scope).toLowerCase())} list…</div>
         <div data-scope-list-panel class="mt-5 hidden">
           <div class="mb-2 flex items-center justify-between gap-3">
-            <div class="text-xs font-bold uppercase tracking-wider text-slate-400"><span data-scope-count>0</span> ${scope === 'portfolio' ? 'holdings' : 'companies'}</div>
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400"><span data-scope-count>0</span> ${scope === 'portfolio' ? 'holdings' : scope === 'universe' ? 'equity listings' : 'companies'}</div>
             ${scope !== 'universe' ? '' : '<button type="button" data-scope-reset class="text-xs font-semibold text-slate-400 transition hover:text-rose-600">Restore default</button>'}
           </div>
           ${scope === 'portfolio' ? '<p data-portfolio-status role="status" class="mb-3 text-xs leading-relaxed text-slate-500"></p>' : ''}

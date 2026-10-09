@@ -318,13 +318,14 @@ async function runNews(list, portfolio, book) {
   await Promise.all(workers);
 
   const incoming = [...results.values()].flatMap(result => result.rows);
-  const archiveEntities = new Map((archiveBefore.entities || []).filter(entity => !entity.portfolio)
+  const universeEntities = new Map((archiveBefore.universeEntities || []).filter(entity => !portfolioIds.has(entity.entityId))
     .map(entity => [entity.entityId, entity]));
-  for (const entity of list) archiveEntities.set(entity.entityId, entity);
+  for (const entity of list.filter(entity => !entity.portfolio)) universeEntities.set(entity.entityId, entity);
   const archive = commitCompanyNewsArchive({
     dir: NEWS_ARCHIVE,
     articles: [...seed, ...incoming],
-    entities: [...archiveEntities.values()],
+    entities: portfolio,
+    universeEntities: [...universeEntities.values()],
     capturedAt: observedAt,
     queries: queryState,
     overlapHours,
@@ -460,7 +461,8 @@ async function runNews(list, portfolio, book) {
     byTicker,
     empty: [...empty].sort(),
     failed,
-    entities: [...archiveEntities.values()],
+    entities: portfolio,
+    universeEntities: [...universeEntities.values()],
     portfolioLines: (book.holdings || []).length,
     portfolioEntities: portfolio.length,
     tickerlessPortfolioLines: (book.holdings || []).filter((holding) => !holding.ticker).length,
