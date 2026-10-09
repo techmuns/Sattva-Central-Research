@@ -154,12 +154,19 @@ try {
   // ---- 1440px: the full layout -------------------------------------------------------------
   {
     const { page, errors } = await newPage(1440, 1000);
-    await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${origin}/#/research/breakouts?scope=universe`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#content-host [data-score-table]', { timeout: 20000 });
     await page.waitForSelector('section[aria-label="Passing stocks by sector"]', { timeout: 20000 }).catch(() => {});
     await page.waitForFunction(() => !document.querySelector('[data-rows-pending]'), { timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(300);
     const v = await page.evaluate(readView);
+
+    ok('Breakouts defaults to Momentum Scanner', /breakouts\/momentum-scanner\?scope=universe$/.test(page.url()), page.url());
+    const viewTabs = page.locator('#subview-mount [role="tab"]');
+    ok('all four views are horizontal tabs, Momentum first',
+      (await viewTabs.allTextContents()).map(text => text.trim()).join('|') === 'Momentum Scanner|Strong Breakouts|Technical Scanner|FII Accumulation');
+    ok('the view dropdown is replaced', await page.locator('#subview-mount [data-dd-trigger]').count() === 0);
+    ok('Momentum tab is selected', await viewTabs.first().getAttribute('aria-selected') === 'true');
 
     ok('stat strip renders four cards', v.statCards.length === 4, `${v.statCards.length} cards`);
     ok('stat strip reads Scanned · Strong Momentum · Volume + Momentum · Pass Both',
@@ -186,6 +193,28 @@ try {
     ok('condition pills are colourful — emerald pass and rose fail both present', v.emeraldPills >= 1 && v.rosePills >= 1, `emerald ${v.emeraldPills}, rose ${v.rosePills}`);
 
     ok('no horizontal PAGE overflow at 1440px', v.docScrollW <= v.winW + 1 && v.bodyScrollW <= v.winW + 1, `doc ${v.docScrollW} / body ${v.bodyScrollW} vs win ${v.winW}`);
+
+    // Tabs switch the real content, preserve scope, and remain mounted with focus intact.
+    await viewTabs.first().evaluate(button => { window.momentumViewTab = button; button.focus(); });
+    await page.keyboard.press('ArrowRight');
+    ok('arrow keys move focus without activating a view',
+      await page.evaluate(() => document.activeElement?.dataset.tabId === 'strong-breakouts' && location.hash.includes('momentum-scanner')));
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('#content-host [data-chip-group="strength"]');
+    ok('keyboard activation opens Strong Breakouts in the current scope', /strong-breakouts\?scope=universe$/.test(page.url()));
+    ok('focus stays on the selected view tab', await page.evaluate(() => document.activeElement?.dataset.tabId === 'strong-breakouts'));
+    await page.locator('#subview-mount [data-tab-id="technical-scanner"]').click();
+    await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).waitFor();
+    ok('Technical Scanner opens its scored table', (await page.locator('#content-host').innerText()).includes('Top 10 by Technicals Score'));
+    await page.locator('#subview-mount [data-tab-id="fii-accumulation"]').click();
+    await page.waitForSelector('#content-host [data-chip-group="side"]');
+    ok('FII Accumulation opens its holdings table', await page.locator('#content-host thead [data-sort="Chg FII"]').count() === 1);
+    await page.goBack();
+    await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).waitFor();
+    ok('Back restores the previous view and selected tab', await page.locator('#subview-mount [data-tab-id="technical-scanner"]').getAttribute('aria-selected') === 'true');
+    await viewTabs.first().click();
+    await page.waitForSelector('#content-host [data-mgate]');
+    ok('the same tab node survives view changes', await page.evaluate(() => window.momentumViewTab === document.querySelector('#subview-mount [role="tab"]')));
 
     // The gate toggle writes the URL and re-filters without a fetch.
     await page.click('#content-host [data-mgate="both"]');
@@ -222,6 +251,15 @@ try {
     ok('sector mini-bar still renders at 390px', !!v.sector && v.sector.rects === v.sector.legend);
     ok('gate toggle and thresholds still present at 390px', v.gateButtons === 3 && v.thresholdInputs === 5, `gates ${v.gateButtons}, inputs ${v.thresholdInputs}`);
     ok('no horizontal PAGE overflow at 390px', v.docScrollW <= v.winW + 1 && v.bodyScrollW <= v.winW + 1, `doc ${v.docScrollW} / body ${v.bodyScrollW} vs win ${v.winW}`);
+
+    ok('mobile view tabs expose scroll controls', await page.locator('#subview-mount [data-tab-scroll-controls]').isVisible());
+    await page.locator('#subview-mount [data-tab-id="momentum-scanner"]').focus();
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('#content-host [data-chip-group="side"]');
+    ok('the last view is reachable by keyboard on mobile', /fii-accumulation/.test(page.url()) &&
+      await page.locator('#subview-mount [data-tab-id="fii-accumulation"]').getAttribute('aria-selected') === 'true');
+    ok('mobile tab navigation scrolls the strip', await page.locator('#subview-mount [data-tab-list]').evaluate(list => list.scrollLeft > 0));
 
     const own = [...new Set(errors)].filter(isOurError);
     ok('zero application console errors at 390px', own.length === 0, own.slice(0, 3).join(' | ') || `${errors.length - own.length} environment error(s) filtered`);

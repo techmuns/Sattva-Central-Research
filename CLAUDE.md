@@ -391,19 +391,12 @@ Conventions:
 - Tables scroll horizontally **inside their own container**; the page body must never scroll
   sideways. `overflow-x: hidden` on `html` *and* `body` is a backstop, not the mechanism —
   it's on `html` because the parked drill panel is `position: fixed` and `body` can't clip it.
-- **Sub-views are one dropdown, at every width, and the content always spans the full column.**
-  There used to be a 240px left rail above 1024px and a dropdown below it. The rail cost the
-  content 240px of its 1400px, permanently, to show at most four short labels — while the tables
-  beside it are the widest things here and were scrolling inside their own containers to fit what
-  was left. Measured: removing it takes Breakouts from a 248px inner scroll to **none**, Super
-  Investors from 380px to 116px, Portfolio Overview from 453px to 189px. Two presentations of one
-  control was also two things to keep in step, and the narrow one was already doing the whole job
-  on the width that needed it most. A tab with `subviews: []` renders **no picker at all** — the
-  shell hides `#subview-mount` and skips wiring it. Its kicker reads *View*, not the tab's title,
-  because the section head immediately below prints that title as the page heading.
-  **The picker's menu is `position: absolute` below its card, so its wrapper must never carry
-  `overflow-hidden`** — that clips the menu into invisibility while every click handler goes on
-  working, which is a control that looks broken and tests as fine.
+- **Breakouts / Technical uses horizontal sub-view tabs, with Momentum Scanner first and default.**
+  Strong Breakouts, Technical Scanner and FII Accumulation follow. Reuse `tabBar` so the strip
+  supports touch scrolling, overflow controls and manual keyboard activation. Keep it mounted
+  across subview/scope changes to retain focus and scrolling. Explicit subview links stay valid.
+  Super Investors retains its *View* dropdown; its menu wrapper must not use `overflow-hidden`.
+  The content spans the full column. Tabs with `subviews: []` hide `#subview-mount` entirely.
 - Long-running lists get `.scrollbar-thin`; panels that mount fresh get `.fade-in`.
 
 ---
