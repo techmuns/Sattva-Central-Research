@@ -158,7 +158,7 @@ export function commitCompanyNewsArchive({ dir, articles = [], entities = [], ca
     const dates = merged.map((row) => row.publishedAt || row.date || row.firstSeenAt).filter(Boolean).sort();
     writeJson(shardPath(dir, month), {
       _provenance:
-        'Permanent portfolio-company news captured from reviewed company-name and alias searches. Headlines, standfirsts, outlets and dates are the publishers\' own. Rows are retained before topic, materiality or scope filters are applied. The article remains on the publisher site.',
+        'Permanent company news captured from company-name and reviewed alias searches. Headlines, standfirsts, outlets and dates are the publishers\' own. Rows are retained before topic, materiality or scope filters are applied. The article remains on the publisher site.',
       generator: 'scripts/lib/company-news-archive.mjs',
       month,
       articleCount: merged.length,
@@ -184,7 +184,7 @@ export function commitCompanyNewsArchive({ dir, articles = [], entities = [], ca
     ...previous,
     version: COMPANY_NEWS_ARCHIVE_VERSION,
     _provenance:
-      'Permanent portfolio-company news archive. The entity registry covers every active portfolio company, including companies without an NSE ticker. Query watermarks produce overlapping incremental reads; successful empty reads never delete an earlier article.',
+      'Permanent company-news archive. The entity registry covers the active portfolio, including companies without an NSE ticker, and companies enrolled by universe walks. Query watermarks produce overlapping incremental reads; successful empty reads never delete an earlier article. Enrollment does not prove every company or historical interval has been checked.',
     generator: 'scripts/lib/company-news-archive.mjs',
     createdAt: previous.createdAt || capturedAt,
     updatedAt: capturedAt,

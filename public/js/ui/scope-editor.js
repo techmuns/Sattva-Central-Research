@@ -6,7 +6,8 @@ import { openModal } from './screener.js';
 import { scopeLabel } from '../data/scope.js';
 import { searchCompanies } from '../data/stock-search.js';
 import * as coverage from '../data/coverage.js';
-import * as technicals from '../data/technicals.js';
+import * as listedCompanies from '../data/listed-companies.js';
+import { mountWindowedList } from './windowed-list.js';
 import * as watchlist from '../core/watchlist.js';
 import { askContributor } from './watchlist-attribution.js';
 import { attributionLabel } from '../data/watchlist-shared.js';
@@ -19,24 +20,11 @@ const SEARCH_DELAY_MS = 250;
 const clean = (v) => String(v ?? '').trim();
 const upper = (v) => clean(v).toUpperCase();
 
-function universeBase() {
-  const seen = new Set();
-  const out = [];
-  for (const row of technicals.all()) {
-    const c = row.company || {};
-    const ticker = upper(c.ticker);
-    if (!ticker || seen.has(ticker)) continue;
-    seen.add(ticker);
-    out.push({ ticker, name: c.name || ticker, sector: c.sector || c.industry || null, industry: c.industry || null, country: 'India' });
-  }
-  for (const h of coverage.holdings()) {
-    const ticker = upper(h.ticker);
-    if (!ticker || seen.has(ticker)) continue;
-    seen.add(ticker);
-    out.push({ ...h, ticker, country: h.country || 'India' });
-  }
-  return out;
-}
+const matchesCompany = (entry, query) => {
+  const text = [entry.ticker, entry.name, entry.isin, entry.bseCode,
+    ...(entry.aliases || []), entry.industry, entry.sector].join(' ').toLowerCase();
+  return query.split(/\s+/).every(word => text.includes(word));
+};
 
 function editorHtml(scope) {
   return `
@@ -50,7 +38,7 @@ function editorHtml(scope) {
               ? 'Your holdings from Sattva Family Office. Additions and exits update automatically.'
               : scope === 'watchlist'
                 ? 'One watchlist for everyone, on every device. Search by company name or ticker, then add or remove it — an addition is recorded with the name of whoever made it.'
-                : 'Search by company name or ticker, then add or remove it. Changes are kept on this device.'}
+                : 'All BSE and NSE listed companies, including SME and suspended listings. Search by company name, ticker, BSE code or ISIN. Exclusions are kept on this device.'}
           </p>
         </div>
         <button type="button" data-modal-close aria-label="Close scope editor" class="text-2xl leading-none text-slate-400 hover:text-slate-700">×</button>
@@ -90,6 +78,7 @@ function editorHtml(scope) {
           </div>
           ${scope === 'portfolio' ? '<p data-portfolio-status role="status" class="mb-3 text-xs leading-relaxed text-slate-500"></p>' : ''}
           ${scope === 'watchlist' ? '<p data-watchlist-status role="status" class="mb-3 text-xs leading-relaxed text-slate-500"></p>' : ''}
+          ${scope === 'universe' ? '<p data-universe-status role="status" class="mb-3 text-xs leading-relaxed text-slate-500"></p>' : ''}
           <div data-scope-members class="scrollbar-thin max-h-[44vh] divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/60 px-3"></div>
           <p data-scope-empty-filter class="hidden py-8 text-center text-sm text-slate-400">No current company matches this search.</p>
         </div>
@@ -98,7 +87,7 @@ function editorHtml(scope) {
       <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4">
         <p class="max-w-xl text-xs leading-relaxed text-slate-500">
           ${scope === 'universe'
-            ? 'Universe edits filter every ticker-based feed. A newly added company appears wherever that feed has data for it.'
+            ? 'The company list updates from exchange directories automatically. Each feed has its own coverage; inclusion here does not mean all sources or historical records have been checked. Delisted-company history is retained in the feeds.'
             : scope === 'portfolio'
               ? 'Manage holdings in Family Office. Keep companies you want to follow in Watchlist.'
               : 'This is the same list controlled by the ☆ beside company rows, and the same list everyone else sees.'}
@@ -116,11 +105,11 @@ function memberHtml(entry, readOnly = false, { showAttribution = false } = {}) {
   // like a rendering fault — the same rule as an em dash that has to say which absence it is.
   const credit = showAttribution ? attributionLabel(entry) : '';
   return `
-    <div class="flex items-center gap-3 py-2.5" data-scope-member="${escapeHtml(key)}">
+    <div class="flex items-center gap-3 py-2.5" data-row-key="${escapeHtml(key)}" data-scope-member="${escapeHtml(key)}">
       <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-[10px] font-extrabold text-indigo-600">${escapeHtml((ticker || entry.name || '?').slice(0, 2))}</div>
       <div class="min-w-0 flex-1">
         <div class="truncate text-sm font-semibold text-slate-800">${escapeHtml(entry.name || ticker || 'Unnamed company')}</div>
-        <div class="truncate text-[11px] text-slate-400">${escapeHtml([ticker || 'No NSE research symbol', entry.industry || entry.sector, credit].filter(Boolean).join(' · '))}</div>
+        <div class="truncate text-[11px] text-slate-400">${escapeHtml([ticker || 'No NSE research symbol', entry.exchanges?.join(' / '), entry.segment, entry.bseCode ? `BSE ${entry.bseCode}` : null, entry.isin, entry.status === 'Suspended' ? 'Suspended' : null, entry.industry || entry.sector, credit].filter(Boolean).join(' · '))}</div>
       </div>
       ${readOnly ? `<div class="shrink-0 text-right"><span class="text-xs font-semibold text-emerald-700">Owned</span>${Number.isFinite(entry.weightPct) ? `<div class="mt-1 text-[11px] text-slate-500">${entry.weightPct.toLocaleString('en-IN', { maximumFractionDigits: 2 })}% of listed portfolio</div>` : ''}</div>` : `<button type="button" data-scope-remove="${escapeHtml(key)}" aria-label="Remove ${escapeHtml(entry.name || ticker)}"
         class="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">Remove</button>`}
@@ -161,6 +150,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   let searchTimer = null;
   let searchAbort = null;
   let offWatchlist = null;
+  let memberList = null, pollTimer = null, lastQuery = '';
 
   openModal(editorHtml(scope), {
     size: 'wide',
@@ -168,6 +158,9 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
       clearTimeout(searchTimer);
       searchAbort?.abort();
       offWatchlist?.();
+      memberList?.destroy();
+      clearInterval(pollTimer);
+      document.removeEventListener('visibilitychange', resumeDirectory);
       if (changed) onChanged?.();
     },
   });
@@ -201,22 +194,38 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   function paintStatus() {
     const el = root.querySelector('[data-watchlist-status]');
     if (el) el.textContent = watchlistStatusText();
+    const universeStatus = root.querySelector('[data-universe-status]');
+    if (universeStatus) {
+      const m = listedCompanies.meta();
+      const times = m.sources.map(s => `${s.label}: ${s.checkedAt ? new Date(s.checkedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' IST' : 'not checked'}${s.checkedAt && Date.now() - Date.parse(s.checkedAt) > s.cadenceMs ? ' (overdue)' : ''}`);
+      universeStatus.textContent = [...times, ...m.errors].join(' · ');
+    }
   }
 
   function paintMembers() {
     const query = clean(input.value).toLowerCase();
     const entries = current();
     const filtered = query
-      ? entries.filter((entry) => `${entry.ticker || ''} ${entry.name || ''} ${entry.industry || entry.sector || ''}`.toLowerCase().includes(query))
+      ? entries.filter((entry) => matchesCompany(entry, query))
       : entries;
     root.querySelector('[data-scope-count]').textContent = formatNumber(entries.length);
-    membersBox.innerHTML = filtered.map((entry) => memberHtml(entry, false, { showAttribution: scope === 'watchlist' })).join('');
+    if (!memberList) memberList = mountWindowedList({ scroller: membersBox, content: membersBox,
+      items: filtered, key: scopeLists.keyFor, rowSelector: '[data-scope-member]', estimateHeight: 58,
+      renderRows: (rows, from, to) => rows.slice(from, to).map(entry => memberHtml(entry, false, { showAttribution: scope === 'watchlist' })).join(''),
+      spacerHtml: (height, position) => `<div data-window-spacer="${position}" style="height:${height}px" aria-hidden="true"></div>` });
+    else memberList.update(filtered, { resetScroll: query !== lastQuery });
+    lastQuery = query;
     root.querySelector('[data-scope-empty-filter]').classList.toggle('hidden', filtered.length > 0 || !query);
     membersBox.classList.toggle('hidden', filtered.length === 0 && !!query);
   }
 
   function paintSearch({ busy = false, error = '' } = {}) {
-    const open = clean(input.value).length >= 2;
+    if (scope === 'universe') {
+      const query = clean(input.value).toLowerCase();
+      const memberKeys = new Set(current().map(scopeLists.keyFor));
+      searchResults = query.length >= 2 ? base.filter(entry => matchesCompany(entry, query) && !memberKeys.has(scopeLists.keyFor(entry))).slice(0, 20) : [];
+    }
+    const open = clean(input.value).length >= 2 && (scope !== 'universe' || searchResults.length > 0);
     resultBox.classList.toggle('hidden', !open);
     if (open) resultBox.innerHTML = searchResultsHtml(searchResults, current(), busy, error);
   }
@@ -253,6 +262,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
     searchAbort?.abort();
     searchResults = [];
     const query = clean(input.value);
+    if (scope === 'universe') { paintSearch(); return; }
     if (query.length < 2) {
       paintSearch();
       return;
@@ -310,14 +320,31 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
     void watchlist.syncNow({ force: true });
   }
 
-  Promise.resolve(scope === 'universe' ? technicals.load() : null)
+  async function refreshDirectory() {
+    try {
+      await listedCompanies.load();
+      if (!document.body.contains(root)) return;
+      base = listedCompanies.all();
+      paintMembers(); paintStatus(); paintSearch();
+    } catch (err) {
+      const status = root.querySelector('[data-universe-status]');
+      if (status) status.textContent = `Could not recheck the company list: ${err.message}. Saved companies retained.`;
+    }
+  }
+  function resumeDirectory() { if (!document.hidden && scope === 'universe') void refreshDirectory(); }
+
+  Promise.resolve(scope === 'universe' ? listedCompanies.load() : null)
     .then(() => {
       if (!document.body.contains(root)) return;
-      if (scope === 'universe') base = universeBase();
+      if (scope === 'universe') base = listedCompanies.all();
       loading.classList.add('hidden');
       panel.classList.remove('hidden');
       paintMembers();
       paintStatus();
+      if (scope === 'universe') {
+        pollTimer = setInterval(resumeDirectory, 90_000);
+        document.addEventListener('visibilitychange', resumeDirectory);
+      }
       input.focus();
     })
     .catch((err) => {

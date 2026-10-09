@@ -57,6 +57,13 @@ normal month. The owner's requirements:
 
 ## Repository workflow
 
+Standing universe requirement, recorded on 9 October 2026: Universe covers all BSE and NSE
+listed companies, including main-board, SME and suspended equity listings, independently of
+the NSE-500/portfolio technicals subset. Resolve exchange overlaps by exact ISIN, retain BSE-only
+companies and preserve captured delisted-company history. Company-directory membership and
+per-feed freshness/completeness are separate claims. Preserve the existing company-news gate,
+Sunday universe slot, free providers, query ceiling and resumable history.
+
 Changes under `public/js/` must advance the release version in `public/sw.js`: returning
 dashboards serve those modules from an immutable cache. Verify an existing session upgrades;
 a fresh asset response alone does not prove that returning readers received the change.

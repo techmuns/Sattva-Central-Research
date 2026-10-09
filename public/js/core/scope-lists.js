@@ -41,6 +41,12 @@ function normaliseEntry(entry) {
     listed: entry.listed !== false,
     addedAt: entry.addedAt || null,
     source: entry.source || null,
+    isin: upper(entry.isin) || null,
+    bseCode: clean(entry.bseCode) || null,
+    aliases: Array.isArray(entry.aliases) ? entry.aliases.map(upper) : [],
+    matchTickers: Array.isArray(entry.matchTickers) ? entry.matchTickers.map(upper) : [],
+    exchanges: Array.isArray(entry.exchanges) ? entry.exchanges : [],
+    status: entry.status || null,
   };
 }
 

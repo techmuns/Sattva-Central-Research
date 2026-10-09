@@ -695,6 +695,33 @@ one 404s on the served site so a stale import cannot quietly bring the feature b
 
 **The only portfolio file left is `portfolio-companies.json`** — the book, above.
 
+## Exchange-wide company universe (9 October 2026)
+
+The Universe scope/editor uses `js/data/exchange-universe.js` over the existing BSE
+`announcement-identities.json` and NSE main-board/SME `filing-capture/nse-identities.json`
+directories. Exchange overlaps join by exact ISIN. Active and suspended company equity listings
+are included; delisted-only identities remain in the filing registry and captured history.
+NSDL's [ISIN structure](https://nsdl.co.in/downloadables/Core%20Services.pdf) distinguishes company
+equity (INE/IN9, security code 01) from mutual-fund units and rights entitlements; the latter are
+not counted as additional companies. Separate listed equity classes retain their exact identities.
+Conflicting BSE/NSE symbols use the BSE code for the BSE-only company, retaining both issuers.
+Search covers names, tickers, exact BSE codes, ISINs and verified aliases. Rendering is windowed;
+the complete list remains searchable and reachable by scrolling. Browser exclusions retain ISINs
+and unambiguous symbol/code aliases across reloads. Opening, returning and visible polling recheck
+the directory; each source displays its own actual check time and failed/overdue state.
+
+Background company collectors use the same directory union alongside the portfolio, prior
+universe and technicals identities, preserving portfolio priority and saved checkpoints. The
+existing Sunday news walk remains bounded to 900 queries/28 minutes, so reaching the entire wider
+universe takes multiple walks. All query watermarks and returned articles survive in the permanent
+archive; stalest/unreached queries resume next Sunday. Portfolio-only walks preserve these records
+and watermarks. Planned query coverage counts the entire list before the run ceiling applies.
+No schedules, provider choices, search gates or production runs change as part of this expansion.
+
+Directory membership does not establish feed coverage: technical scores still use their documented
+NSE-500-plus-book capture, and upstream/public history limits remain explicit. `universe.json`
+below remains the Screener metadata/technical-scoring input, not the complete listed-company list.
+
 ## `public/data/universe.json`
 
 The coverage universe: **535 companies, the real NSE-500 Screener export**. Root is an **array**,

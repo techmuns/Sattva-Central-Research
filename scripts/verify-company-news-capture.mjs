@@ -41,13 +41,14 @@ const server = createServer((request, response) => {
 });
 
 const readJson = async (path) => JSON.parse(await readFile(path, 'utf8'));
-const runCapture = async () => runFile(process.execPath, ['scripts/scrape-filings.mjs', 'news'], {
+const runCapture = async ({ scope = 'book', maxQueries = '' } = {}) => runFile(process.execPath, ['scripts/scrape-filings.mjs', 'news'], {
   cwd: scratch,
   env: {
     ...process.env,
     FAMILY_HOLDINGS_LIVE: 'false',
     FILINGS_BASE: `http://127.0.0.1:${server.address().port}`,
-    FILINGS_SCOPE: 'book',
+    FILINGS_SCOPE: scope,
+    NEWS_MAX_QUERIES: maxQueries,
     FILINGS_BUDGET_MS: '60000',
     FILINGS_TIMEOUT_MS: '5000',
     NEWS_OVERLAP_HOURS: '48',
@@ -122,6 +123,29 @@ try {
   assert.equal(afterFailure.fallbackCount, 2, 'failed company refreshes retain their last-good answer per identity');
   assert.equal(afterFailure.failedCount, 0, 'retained companies are not mislabeled as absent');
   assert.equal(afterFailure.queryCoverage.failed, 3);
+
+  await writeFile(join(dataDir, 'universe.json'), JSON.stringify(['A', 'B', 'C'].map(ticker => ({
+    ticker: `UNIVERSE${ticker}`, name: `Universe ${ticker} Limited`, isin: `INE000${ticker}01011`,
+  }))));
+  mode = 'articles'; calls.splice(0);
+  await runCapture({ scope: 'universe', maxQueries: '4' });
+  const firstUniverse = calls.splice(0).filter(call => call.query.startsWith('Universe'));
+  assert.deepEqual(firstUniverse.map(call => call.query), ['Universe A Limited']);
+  const capped = await readJson(join(dataDir, 'news.json'));
+  assert.equal(capped.queryCoverage.planned, 6, 'the ceiling cannot hide unattempted queries from coverage');
+  assert.equal(capped.queryCoverage.attempted, 4);
+  const universeRows = capped.byTicker.UNIVERSEA;
+  assert(universeRows.length);
+  assert((await readJson(join(dataDir, 'company-news/index.json'))).queries['isin:INE000A01011']['Universe A Limited'].lastSuccessAt);
+  mode = 'empty';
+  await runCapture(); calls.splice(0);
+  assert((await readJson(join(dataDir, 'company-news/index.json'))).queries['isin:INE000A01011'], 'portfolio top-ups retain universe progress');
+  await runCapture({ scope: 'universe', maxQueries: '4' });
+  assert.deepEqual(calls.splice(0).filter(call => call.query.startsWith('Universe')).map(call => call.query), ['Universe B Limited'], 'the next bounded walk resumes unreached companies');
+  await runCapture({ scope: 'universe' }); calls.splice(0);
+  const emptyUniverse = await readJson(join(dataDir, 'news.json'));
+  assert.deepEqual(emptyUniverse.byTicker.UNIVERSEA.map(row => row.url), universeRows.map(row => row.url), 'an empty universe response retains observed news');
+  assert((await readJson(join(dataDir, 'company-news/index.json'))).articleCount >= 4, 'universe news is retained permanently');
 
   console.log('PASS company-news capture: real scheduled script, primary/alias watermarks, tickerless ISIN rows, permanent empty-safe archive and last-good failure retention verified');
 } finally {

@@ -62,7 +62,8 @@ try {
   const scope = captureCompanies(dir, { announcements: true, holdings: active.holdings });
   assert.equal(scope.unresolved.length, 0);
   assert.equal(scope.companies.find(c => c.ticker === 'C1001').announcementTicker, 'C1001', 'new SME is resolved from its exchange ISIN');
-  assert(scope.companies.every(c => c.priority));
+  assert(scope.companies.filter(c => active.holdings.some(h => h.isin === c.isin)).every(c => c.priority));
+  assert(scope.companies.some(c => !c.priority), 'exchange directory companies are enrolled without portfolio priority');
   const identity = createAnnouncementIdentity(mergeExchangeIdentities([{ isin: isin(1001), ticker: 'OLDBSE', bseCode: '500001' }], directories.directories.sme.entries));
   assert.equal(identity.find({ ticker: 'C1001-SM' }).ticker, 'C1001');
   assert.equal(identity.find({ ticker: 'OLDBSE' }).ticker, 'C1001');

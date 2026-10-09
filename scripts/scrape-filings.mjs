@@ -58,6 +58,7 @@ import {
   commitCompanyNewsArchive,
   incrementalNewsRange,
   observedCompanyArticles,
+  mergeCompanyNewsArticles,
   readCompanyNewsIndex,
   recentArchivedCompanyNews,
   DEFAULT_OVERLAP_HOURS,
@@ -215,10 +216,8 @@ function readIfPresent(file) {
  */
 async function runNews(list, portfolio, book) {
   const startedAt = Date.now();
-  // A healthy full-universe walk is about 26½ minutes at the shared 2.5-second request gate now
-  // that portfolio aliases are separate searches. Twenty-four minutes would starve the same tail
-  // on every universe run because only portfolio watermarks are permanent. Leave enough room for
-  // the complete healthy walk; the workflow keeps a separate outer timeout for cleanup/commit.
+  // The exchange-wide universe exceeds a single bounded walk. Persist every query watermark
+  // and resume stalest/unreached companies next Sunday, within the existing gate and ceiling.
   const budgetMs = Number(process.env.FILINGS_BUDGET_MS || 28 * 60000);
   const previous = readIfPresent('news.json') || {};
   const archiveBefore = readCompanyNewsIndex(NEWS_ARCHIVE);
@@ -230,14 +229,14 @@ async function runNews(list, portfolio, book) {
 
   // The legacy head is already a real observation. Seed it into the permanent archive once rather
   // than waiting thirty days for those rows to fall off and discovering the migration was lossy.
-  const seed = articlesFromNewsSnapshot(previous, portfolio, previous.capturedAt || observedAt);
+  const seed = articlesFromNewsSnapshot(previous, list, previous.capturedAt || observedAt);
 
   const previousCovered = new Set([
     ...Object.keys(previous.byTicker || {}).map((value) => String(value).toUpperCase()),
     ...(previous.empty || []).map((value) => String(value).toUpperCase()),
   ]);
   const jobs = list.flatMap((entity) => entity.queries.map((query) => {
-    const state = queryState[entity.entityId]?.[query] || null;
+    const state = queryState[entity.entityId]?.[query] || queryState[`ticker:${entity.ticker}`]?.[query] || null;
     // Before the archive index exists, the current snapshot's capture time is the honest
     // watermark for its primary company-name query. Alias queries are new and backfill 30 days.
     const inherited = !state && query === entity.queries[0] && previousCovered.has(entity.key.toUpperCase())
@@ -247,11 +246,11 @@ async function runNews(list, portfolio, book) {
   })).sort((a, b) => Number(b.entity.portfolio) - Number(a.entity.portfolio)
     || String(a.state?.lastSuccessAt || '').localeCompare(String(b.state?.lastSuccessAt || '')));
 
-  // PAID SEARCH CEILING. Each job is one Brave search through /tools/news-search. The workflow
-  // passes a per-run ceiling so a registry that grows by accident cannot multiply the spend. Jobs
+  // The workflow keeps its established per-run query ceiling and free-source pacing. Jobs
   // are ordered portfolio first and stalest first, so a capped run drops the least urgent tail,
   // which the next run reaches first. Unset (local runs and tests) means no ceiling.
   const maxQueries = Number(process.env.NEWS_MAX_QUERIES || 0);
+  const plannedQueries = jobs.length;
   if (maxQueries > 0 && jobs.length > maxQueries) {
     console.warn(`  news: ${jobs.length} queries planned; NEWS_MAX_QUERIES=${maxQueries} caps this run and the rest wait for the next.`);
     jobs.length = maxQueries;
@@ -318,16 +317,16 @@ async function runNews(list, portfolio, book) {
   });
   await Promise.all(workers);
 
-  const incomingPortfolio = [...results.entries()]
-    .filter(([entityId]) => portfolioIds.has(entityId))
-    .flatMap(([, result]) => result.rows);
-  const portfolioQueries = Object.fromEntries(Object.entries(queryState).filter(([entityId]) => portfolioIds.has(entityId)));
+  const incoming = [...results.values()].flatMap(result => result.rows);
+  const archiveEntities = new Map((archiveBefore.entities || []).filter(entity => !entity.portfolio)
+    .map(entity => [entity.entityId, entity]));
+  for (const entity of list) archiveEntities.set(entity.entityId, entity);
   const archive = commitCompanyNewsArchive({
     dir: NEWS_ARCHIVE,
-    articles: [...seed, ...incomingPortfolio],
-    entities: portfolio,
+    articles: [...seed, ...incoming],
+    entities: [...archiveEntities.values()],
     capturedAt: observedAt,
-    queries: portfolioQueries,
+    queries: queryState,
     overlapHours,
   });
 
@@ -422,7 +421,8 @@ async function runNews(list, portfolio, book) {
       delete failed[entity.key];
       delete fallback[entity.key];
       empty.delete(entity.key);
-      const rows = outcome.rows;
+      const rows = mergeCompanyNewsArticles([...(previous.byTicker?.[entity.key] || []), ...outcome.rows])
+        .filter(row => !row.date || row.date >= from);
       if (rows.length) byTicker[entity.key] = rows;
       else {
         delete byTicker[entity.key];
@@ -435,7 +435,7 @@ async function runNews(list, portfolio, book) {
   const failedCount = Object.keys(failed).length;
   const payload = {
     _provenance:
-      `REAL DATA, NOT OURS. Recent company-news head from ${NEWS_PROVIDER === 'google' ? 'Google News' : 'Muns'} identity searches. Every returned portfolio article is written to the permanent monthly archive before this bounded 30-day view is derived. Topic, materiality and scope filters are applied only after capture. A successful empty incremental response never retracts an earlier article.`,
+      `REAL DATA, NOT OURS. Recent company-news head from ${NEWS_PROVIDER === 'google' ? 'Google News' : 'Muns'} identity searches. Every returned company article is written to the permanent monthly archive before this bounded 30-day view is derived. Topic, materiality and scope filters are applied only after capture. A successful empty incremental response never retracts an earlier article.`,
     kind: 'news',
     source: NEWS_PROVIDER === 'google' ? 'Google News search (free)' : VIA_WORKER ? 'Muns news API, read through this dashboard’s Worker' : 'Muns news API',
     generator: 'scripts/scrape-filings.mjs',
@@ -460,13 +460,13 @@ async function runNews(list, portfolio, book) {
     byTicker,
     empty: [...empty].sort(),
     failed,
-    entities: portfolio,
+    entities: [...archiveEntities.values()],
     portfolioLines: (book.holdings || []).length,
     portfolioEntities: portfolio.length,
     tickerlessPortfolioLines: (book.holdings || []).filter((holding) => !holding.ticker).length,
     tickerlessPortfolioEntities: portfolio.filter((entity) => !entity.ticker).length,
     queryCoverage: {
-      planned: jobs.length,
+      planned: plannedQueries,
       attempted: [...results.values()].reduce((sum, result) => sum + result.attempted, 0),
       succeeded: [...results.values()].reduce((sum, result) => sum + result.succeeded, 0),
       failed: [...results.values()].reduce((sum, result) => sum + result.failed, 0),

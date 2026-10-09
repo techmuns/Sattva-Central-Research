@@ -48,6 +48,8 @@ jobs:
         run: node scripts/verify-filings-snapshot.mjs
       - name: Verify permanent company-news identities and archive
         run: node scripts/verify-company-news-archive.mjs
+      - name: Verify complete BSE/NSE company universe and identity-safe enrollment
+        run: node scripts/verify-exchange-universe.mjs
       - name: Verify recent News calendar windows and lossless archive separation
         run: node scripts/verify-news-window.mjs
       - name: Verify bounded memory, lossless saves and exact news reading windows
@@ -194,6 +196,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-startup-ui.mjs && node scripts/verify-exchange-deals-poller-ui.mjs
+      - name: Verify exchange-wide Universe search, returning sessions and automatic directory updates
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-exchange-universe-ui.mjs
       - name: Verify All Alerts time horizons, source controls and portfolio calendar isolation
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

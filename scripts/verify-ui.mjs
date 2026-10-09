@@ -2601,14 +2601,11 @@ console.log('\n— editable scope lists —');
   await page.locator('[data-scope-edit]').click();
   await page.locator('[data-scope-list-panel]').waitFor({ state: 'visible', timeout: 10000 });
   const universeBefore = Number((await page.locator('[data-scope-count]').innerText()).replace(/,/g, ''));
-  await page.locator('[data-scope-search]').fill('ALPHA');
-  await page.locator('[data-scope-result="0"]').waitFor({ state: 'visible', timeout: 3000 });
-  await page.locator('[data-scope-result="0"]').click();
-  ok('Universe accepts a company not present in the committed technicals set',
-    Number((await page.locator('[data-scope-count]').innerText()).replace(/,/g, '')) === universeBefore + 1);
+  ok('Universe includes the exchange directories independently of technicals coverage', universeBefore > 5000);
+  await page.locator('[data-scope-search]').fill('DP Abhushan');
+  ok('Universe searches companies outside the scored technicals set', /DPABHUSHAN/.test(await page.locator('[data-scope-members]').innerText()));
   await page.locator('[data-scope-search]').fill('RELIAN');
-  await page.locator('[data-scope-result="0"]').waitFor({ state: 'visible', timeout: 3000 });
-  await page.locator('[data-scope-result="0"]').click();
+  await page.locator('[data-scope-remove="ticker:RELIANCE"]').click();
   ok('a base Universe company can be excluded from ticker-based feeds', await page.evaluate(async () => {
     const scope = await import('/js/data/scope.js');
     return !scope.scopeAllowsTicker('universe', 'RELIANCE');

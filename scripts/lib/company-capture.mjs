@@ -5,6 +5,7 @@ import { documentUrl } from '../../public/js/data/domestic-filings-shared.js';
 import { createAnnouncementIdentity, filingTicker, mergeExchangeIdentities } from '../../public/js/data/announcement-identity.js';
 import { marketTicker } from '../../public/js/data/market-identity.js';
 import { companySecurityIdentity } from '../../public/js/data/company-security-identities.js';
+import { buildExchangeUniverse } from '../../public/js/data/exchange-universe.js';
 
 export const day = (time) => new Date(time).toISOString().slice(0, 10);
 const shift = (date, days) => day(Date.parse(date) + days * 86400000);
@@ -110,9 +111,13 @@ export function mergeDocuments(previous, incoming) {
 
 export function captureCompanies(dataDir, { announcements = false, holdings = null, registrations = null } = {}) {
   const book = holdings ?? readJson(join(dataDir, 'portfolio-companies.json'), {}).holdings ?? [];
-  const identities = announcements ? readJson(join(dataDir, 'announcement-identities.json'), {}).entries || [] : [];
-  const nse = announcements ? readJson(join(dataDir, 'filing-capture/nse-identities.json'), {}).directories || {} : {};
+  const bseDirectory = readJson(join(dataDir, 'announcement-identities.json'), {});
+  const nseDirectory = readJson(join(dataDir, 'filing-capture/nse-identities.json'), {});
+  const identities = bseDirectory.entries || [];
+  const nse = nseDirectory.directories || {};
   const identityIndex = createAnnouncementIdentity(mergeExchangeIdentities(identities, nse.sme?.entries || [], nse.equity?.entries || []));
+  const listed = buildExchangeUniverse(bseDirectory, nseDirectory).companies;
+  const listedByTicker = new Map(listed.map(c => [c.ticker, c]));
   const universe = readJson(join(dataDir, 'universe.json'), []);
   const technicals = readJson(join(dataDir, 'technicals.json'), {}).companies || [];
   const announcementBook = book.map(c => {
@@ -122,7 +127,7 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
       ...(identity?.bseCode ? { bseCode: String(identity.bseCode) } : {}), priority: true };
   });
   const enrolled = announcements ? registrations ?? readJson(join(dataDir, 'filing-capture/registrations.json'), {}).companies ?? [] : [];
-  const known = [...(announcements ? announcementBook : book), ...enrolled.map(c => ({ ...c, priority: true })), ...(Array.isArray(universe) ? universe : universe.companies || []), ...technicals];
+  const known = [...(announcements ? announcementBook : book), ...enrolled.map(c => ({ ...c, priority: true })), ...(Array.isArray(universe) ? universe : universe.companies || []), ...technicals, ...listed];
   const seen = new Map();
   const storageTickers = new Map();
   const unresolved = [];
@@ -132,10 +137,11 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
     const security = companySecurityIdentity(c.isin);
     if (!ticker && security) { nonExchange.push({ isin: c.isin, name: c.name, ...security }); continue; }
     if (!/^[A-Z0-9&._-]{1,80}$/.test(ticker)) { unresolved.push(c.name || c.Company || ticker || 'Unnamed company'); continue; }
-    const identity = announcements ? identityIndex.find({ ...c, ticker }) : null;
+    const identity = identityIndex.find({ ...c, ticker }) ||
+      (!c.isin && !c.bseCode && !c.scripCode ? listedByTicker.get(ticker) : null);
     const sourceTicker = c.announcementTicker || (identity && filingTicker(identity.ticker || identity.bseSymbol));
     const bseCode = String(identity?.bseCode || c.bseCode || '');
-    const key = announcements ? identityIndex.key({ ...c, ticker }) || filingTicker(ticker) : ticker;
+    const key = identity?.isin ? `isin:${identity.isin}` : announcements ? identityIndex.key({ ...c, ticker }) || filingTicker(ticker) : ticker;
     // A portfolio alias may resolve by ISIN while the same universe ticker has no directory
     // match. Both write the same checkpoint/file: keep the verified portfolio identity instead
     // of letting the later, less-specific row reset its query symbol, history and priority.
@@ -149,7 +155,7 @@ export function captureCompanies(dataDir, { announcements = false, holdings = nu
     }
     if (!seen.has(key)) seen.set(key, { ticker, name: c.name || c.Company || ticker,
       ...(sourceTicker ? { announcementTicker: sourceTicker } : {}),
-      ...(identity ? { isin: identity.isin } : {}),
+      ...(identity?.isin || c.isin ? { isin: identity?.isin || c.isin } : {}),
       ...(/^\d{6}$/.test(bseCode) ? { bseCode } : {}), priority: !!c.priority });
     storageTickers.set(ticker, { key, company: seen.get(key) });
   }

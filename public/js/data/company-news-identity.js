@@ -145,17 +145,19 @@ export function portfolioNewsEntities(holdings = [], overrides = []) {
 export function withUniverseNewsEntities(portfolio, universe = []) {
   const out = [...portfolio];
   const tickers = new Set(out.map((entity) => upper(entity.ticker)).filter(Boolean));
+  const isins = new Set(out.flatMap(entity => entity.portfolioIsins || []));
   for (const company of universe || []) {
     const ticker = upper(company?.ticker);
-    if (!ticker || tickers.has(ticker)) continue;
+    if (!ticker || tickers.has(ticker) || company.isin && isins.has(company.isin)) continue;
     tickers.add(ticker);
     const name = clean(company.name || company.Company || ticker);
     out.push({
-      entityId: `ticker:${ticker}`,
+      entityId: defaultCompanyNewsEntityId(company),
       key: ticker,
       name,
       legalName: name,
       ticker,
+      ...(company.isin ? { isin: company.isin } : {}),
       portfolioIsins: [],
       formerNames: [],
       brands: [],
