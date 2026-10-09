@@ -240,11 +240,12 @@ async function runNews(list, portfolio, book) {
     // Before the archive index exists, the current snapshot's capture time is the honest
     // watermark for its primary company-name query. Alias queries are new and backfill 30 days.
     const inherited = !state && query === entity.queries[0] && previousCovered.has(entity.key.toUpperCase())
-      ? { lastSuccessAt: previous.capturedAt }
+      ? { lastSuccessAt: previous.fallback?.[entity.key]?.capturedAt || previous.capturedAt }
       : state;
     return { entity, query, state: inherited, range: incrementalNewsRange(inherited, Date.now(), { overlapHours }) };
   })).sort((a, b) => Number(b.entity.portfolio) - Number(a.entity.portfolio)
-    || String(a.state?.lastSuccessAt || '').localeCompare(String(b.state?.lastSuccessAt || '')));
+    || String(a.state?.lastSuccessAt || '').localeCompare(String(b.state?.lastSuccessAt || ''))
+    || String(a.state?.lastAttemptAt || '').localeCompare(String(b.state?.lastAttemptAt || '')));
 
   // The workflow keeps its established per-run query ceiling and free-source pacing. Jobs
   // are ordered portfolio first and stalest first, so a capped run drops the least urgent tail,

@@ -27,7 +27,7 @@ const server = createServer((request, response) => {
   calls.push({ mode, query: url.searchParams.get('q'), from: url.searchParams.get('from'), to: url.searchParams.get('to') });
   response.setHeader('content-type', 'application/json');
   const query = url.searchParams.get('q');
-  if (mode === 'failure' || (mode === 'partial' && query === 'BetaPay')) {
+  if (mode === 'failure' || (mode === 'partial' && query === 'BetaPay') || (mode === 'universe-failure' && query === 'Universe B Limited')) {
     response.writeHead(503);
     response.end('{"ok":false}');
     return;
@@ -144,9 +144,13 @@ try {
   await runCapture(); calls.splice(0);
   assert((await readJson(join(dataDir, 'company-news/index.json'))).queries['isin:INE000A01011'], 'portfolio top-ups retain universe progress');
   assert.equal((await readJson(join(dataDir, 'company-news/index.json'))).universeEntities.length, 3);
+  mode = 'universe-failure';
   await runCapture({ scope: 'universe', maxQueries: '4' });
-  assert.deepEqual(calls.splice(0).filter(call => call.query.startsWith('Universe')).map(call => call.query), ['Universe B Limited'], 'the next bounded walk resumes unreached companies');
-  await runCapture({ scope: 'universe' }); calls.splice(0);
+  assert.deepEqual([...new Set(calls.splice(0).filter(call => call.query.startsWith('Universe')).map(call => call.query))], ['Universe B Limited'], 'the next bounded walk resumes unreached companies');
+  mode = 'empty';
+  await runCapture({ scope: 'universe' });
+  assert.equal(calls.splice(0).filter(call => call.query.startsWith('Universe'))[0].query, 'Universe C Limited',
+    'a failed never-successful company cannot repeatedly displace the unreached tail');
   const emptyUniverse = await readJson(join(dataDir, 'news.json'));
   assert.deepEqual(emptyUniverse.byTicker.UNIVERSEA.map(row => row.url), universeRows.map(row => row.url), 'an empty universe response retains observed news');
   assert((await readJson(join(dataDir, 'company-news/index.json'))).articleCount >= 4, 'universe news is retained permanently');
