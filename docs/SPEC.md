@@ -432,6 +432,13 @@ Sub-views: **Momentum Scanner** (momentum and volume conditions) — first and d
 (the full scored universe) and **FII Accumulation** (shareholding changes joined to the score).
 Explicit view links are preserved; absent or unknown views resolve to Momentum Scanner.
 
+Momentum Scanner's criteria panel leads with a three-way screen selector. Strong Momentum and
+Volume + Momentum thresholds sit in separate labelled groups, with the applied group marked;
+Both signals requires every condition in both groups. Compact number fields retain the comparison
+operators and volume's 10-day-average unit. The fixed conditions appear below each group's fields.
+All five thresholds remain editable, including the other group's settings, and Reset defaults
+restores Strong Momentum and its default thresholds without changing scope or unrelated filters.
+
 Every Strong Breakouts filter group leads with **All** and defaults to it, so the sub-view opens on
 the widest answer it can give. The trend filter used to ship on *Above 200 DMA only*, which meant a
 breakout below the primary trend line was absent from a table that gave no sign it was withholding

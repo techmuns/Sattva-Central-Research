@@ -34,8 +34,11 @@ function checkDaily() {
 }
 let tableOff = null;
 const tableViews = new Map();
+let momentumFocusOnRender = null;
 
 export function render(ctx) {
+  const criteriaFocus = momentumControlFocus(ctx.root) || momentumFocusOnRender;
+  momentumFocusOnRender = null;
   tableOff?.(); tableOff = null;
   ctxRef = ctx;
 
@@ -58,6 +61,7 @@ export function render(ctx) {
       if (token !== renderToken) return; // stale — user moved on
       if (!dailyCheckedAt) dailyCheckedAt = Date.now();
       paint(ctx);
+      if (criteriaFocus && document.activeElement === document.body) ctx.root.querySelector(criteriaFocus)?.focus({ preventScroll: true });
     })
     .catch((err) => {
       if (token !== renderToken) return;
@@ -792,55 +796,103 @@ function momentumControls(gate, thresholds) {
   const gates = [
     { id: 'strong-momentum', label: momentum.MOMENTUM_FILTERS['strong-momentum'].label },
     { id: 'volume-momentum', label: momentum.MOMENTUM_FILTERS['volume-momentum'].label },
-    { id: 'both', label: 'Both' },
+    { id: 'both', label: 'Both signals' },
   ];
   const gateBtns = gates
-    .map((g) => `<button type="button" data-mgate="${g.id}" class="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-      gate === g.id ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-    }">${escapeHtml(g.label)}</button>`)
+    .map((g) => `<button type="button" data-mgate="${g.id}" aria-pressed="${gate === g.id}" class="momentum-mode">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.5 8 3 3 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ${escapeHtml(g.label)}</button>`)
     .join('');
-  const inputs = momentum.THRESHOLD_FIELDS
-    .map((f) => `<label class="inline-flex items-center gap-1.5 text-xs text-slate-600" title="${escapeHtml(momentum.MOMENTUM_FILTERS[f.filter].label)}">
-        <span class="font-semibold text-slate-500">${escapeHtml(momentum.MOMENTUM_FILTERS[f.filter].label)} · ${escapeHtml(f.label)}</span>
-        <input type="number" data-mthreshold="${f.key}" value="${thresholds[f.key]}" min="${f.min}" max="${f.max}" step="${f.step}" inputmode="decimal"
-          class="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-right text-sm tabular-nums focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-      </label>`)
-    .join('');
+  const fields = {
+    rsiD1: { label: 'Daily RSI', operator: '>', condition: 'rsiD' },
+    rsiW: { label: 'Weekly RSI', operator: '>', condition: 'rsiW' },
+    rsiM: { label: 'Monthly RSI', operator: '>', condition: 'rsiM' },
+    rsiD2: { label: 'Daily RSI', operator: '>', condition: 'rsiD' },
+    volMult: { label: 'Volume / 10D avg', operator: '≥', suffix: '×', condition: 'vol' },
+  };
+  const groups = gates.filter((g) => g.id !== 'both').map((g) => {
+    const applied = gate === g.id || gate === 'both';
+    const adjustable = momentum.THRESHOLD_FIELDS.filter((f) => f.filter === g.id);
+    const fixedRules = momentum.MOMENTUM_FILTERS[g.id].conditions
+      .filter((c) => !adjustable.some((f) => fields[f.key].condition === c.key))
+      .map((c) => escapeHtml(c.label(thresholds))).join(' · ');
+    const inputs = adjustable.map((f) => {
+      const display = fields[f.key];
+      return `<label class="momentum-field">
+        <span class="momentum-field-label">${escapeHtml(display.label)}</span>
+        <span class="momentum-field-value"><span aria-hidden="true">${display.operator}</span>
+          <input type="number" data-mthreshold="${f.key}" value="${thresholds[f.key]}" min="${f.min}" max="${f.max}" step="${f.step}" inputmode="decimal"
+            aria-label="${escapeHtml(`${g.label} · ${f.label}`)}" />
+          ${display.suffix ? `<span aria-hidden="true">${display.suffix}</span>` : ''}
+        </span>
+      </label>`;
+    }).join('');
+    return `<fieldset class="momentum-rule-group" data-momentum-group="${g.id}" data-applied="${applied}">
+      <legend class="sr-only">${escapeHtml(g.label)} conditions</legend>
+      <div class="momentum-group-heading"><span>${escapeHtml(g.label)}</span><span class="momentum-applied">${applied ? 'Applied' : 'Not applied'}</span></div>
+      <div class="momentum-fields">${inputs}</div>
+      <p class="momentum-fixed-rules"><span>Also required</span> ${fixedRules}</p>
+    </fieldset>`;
+  }).join('');
   return `
-    <div class="mb-5 space-y-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100" data-momentum-controls>
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="w-24 flex-shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">Show</span>
-        <div class="flex flex-wrap gap-2" data-mgate-bar>${gateBtns}</div>
+    <section class="momentum-controls" data-momentum-controls aria-label="Momentum scan criteria">
+      <div class="momentum-controls-toolbar">
+        <div class="momentum-mode-picker"><span class="momentum-controls-label" id="momentum-mode-label">Screen for</span>
+          <div class="momentum-modes" data-mgate-bar role="group" aria-labelledby="momentum-mode-label">${gateBtns}</div>
+        </div>
+        <button type="button" data-mreset class="momentum-reset">
+          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 6a6 6 0 1 1 .5 5M2 2v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Reset defaults</button>
       </div>
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span class="w-24 flex-shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">Thresholds</span>
-        ${inputs}
-        <button type="button" data-mreset class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Reset</button>
-      </div>
-    </div>`;
+      <div class="momentum-rule-groups">${groups}</div>
+      <p class="momentum-controls-note">${gate === 'both' ? 'Stocks must meet every condition in both groups.' : 'Stocks must meet every condition in the applied group.'}</p>
+    </section>`;
+}
+
+function momentumControlFocus(root) {
+  const focused = document.activeElement;
+  if (!root.querySelector('[data-momentum-controls]')?.contains(focused)) return null;
+  return focused.hasAttribute('data-mthreshold') ? `[data-mthreshold="${focused.dataset.mthreshold}"]`
+    : focused.hasAttribute('data-mgate') ? `[data-mgate="${focused.dataset.mgate}"]`
+    : focused.hasAttribute('data-mreset') ? '[data-mreset]' : null;
 }
 
 function wireMomentumControls(root, ctx) {
+  let pendingThresholdChanges = {};
+  const setParams = (next) => {
+    if (ctx.isCancelled) return;
+    // A click on a mode can follow an input blur in the same frame. Commit that edit together
+    // with the mode rather than dropping it when the old context becomes obsolete.
+    for (const [key, value] of Object.entries(pendingThresholdChanges)) {
+      if (value == null) delete next[key];
+      else next[key] = value;
+    }
+    pendingThresholdChanges = {};
+    // The shell's temporary loading cover makes the old controls inert before render runs.
+    momentumFocusOnRender = momentumControlFocus(root);
+    ctx.setParams(next);
+  };
   root.querySelector('[data-mgate-bar]')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-mgate]');
     if (!btn) return;
-    ctx.setParams({ ...(ctx.params || {}), [MGATE_PARAM]: btn.dataset.mgate });
+    setParams({ ...(ctx.params || {}), [MGATE_PARAM]: btn.dataset.mgate });
   });
   root.querySelectorAll('[data-mthreshold]').forEach((input) => {
     // Commit on change (blur / Enter), not per keystroke: a mid-type re-mount would take the caret.
     input.addEventListener('change', () => {
       const p = MTHRESH_PARAM[input.dataset.mthreshold];
-      const next = { ...(ctx.params || {}) };
-      if (input.value === '') delete next[p];
-      else next[p] = String(input.value);
-      ctx.setParams(next);
+      pendingThresholdChanges[p] = input.value === '' ? null : String(input.value);
+      // Let blur/Tab finish moving focus before the results remount; a captured next-field
+      // focus can then survive that remount. An obsolete panel must never restore its route.
+      requestAnimationFrame(() => setParams({ ...(ctx.params || {}) }));
     });
   });
   root.querySelector('[data-mreset]')?.addEventListener('click', () => {
+    pendingThresholdChanges = {};
     const next = { ...(ctx.params || {}) };
     delete next[MGATE_PARAM];
     for (const f of momentum.THRESHOLD_FIELDS) delete next[MTHRESH_PARAM[f.key]];
-    ctx.setParams(next);
+    setParams(next);
   });
 }
 
@@ -947,6 +999,9 @@ function momentumSectorBar(passers) {
 }
 
 function renderMomentumScanner(ctx, rows) {
+  // A criteria change rebuilds the results. Keep the next field (after Tab), selected mode or
+  // reset button focused so keyboard users can continue without starting at the page's top.
+  const focusSelector = momentumControlFocus(ctx.root);
   const gate = readMomentumGate(ctx.params || {});
   const thresholds = readMomentumThresholds(ctx.params || {});
   const gateLabel = { 'strong-momentum': 'Strong Momentum', 'volume-momentum': 'Volume + Momentum', both: 'both filters' }[gate];
@@ -1017,6 +1072,7 @@ function renderMomentumScanner(ctx, rows) {
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);
   wireMomentumControls(ctx.root, ctx);
+  if (focusSelector) ctx.root.querySelector(focusSelector)?.focus({ preventScroll: true });
 }
 
 function runMomentumExport(visibleRows, filename, thresholds) {
@@ -1099,6 +1155,7 @@ function runExport(visibleRows, filename) {
 }
 
 export function destroy() {
+  momentumFocusOnRender = null;
   tableOff?.(); tableOff = null;
   ctxRef = null;
   refreshOff?.(); refreshOff = null;
