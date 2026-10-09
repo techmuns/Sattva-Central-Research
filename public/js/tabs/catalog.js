@@ -31,6 +31,7 @@ export const TAB_META = Object.freeze({
   'earnings-hub': {
     id: 'earnings-hub',
     title: 'Earnings Hub',
+    navigationTitle: 'Earnings',
     subtitle: 'Live quarterly results across the listed universe, updated as companies report.',
     // No sub-views: this tab is one table. The shell hides the rail entirely when this is empty.
     subviews: [],
@@ -106,6 +107,8 @@ export const TAB_META = Object.freeze({
   'nse-filings': {
     id: 'nse-filings',
     title: 'NSE Filings',
+    // Retain saved filing routes and source history without a separate tab button.
+    hideFromNavigation: true,
     subtitle: 'Search captured NSE filing history by company or ticker, with live updates.',
     subviews: [],
   },

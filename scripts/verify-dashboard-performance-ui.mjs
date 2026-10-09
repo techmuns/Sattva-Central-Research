@@ -17,6 +17,11 @@ const TAB_INTERACTION_LIMIT_MS = 1000;
 const POPUP_INTERACTION_LIMIT_MS = 600;
 let offline = false;
 let previousRelease = true;
+const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmarks', 'earnings-hub',
+  'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
+  'corporate-actions', 'nse-filings', 'insider-trades', 'mutual-funds'];
+const currentTabOrder = ['ai-alerts', 'daily-alerts', 'corp-announcements', 'corporate-actions', 'ipos',
+  'earnings-hub', 'breakouts', 'insider-trades', 'mutual-funds', 'concall', 'news', 'public-chatter', 'super-investors'];
 const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
@@ -54,7 +59,12 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__performanceRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/tabs/catalog.js') {
       const source = readFileSync(path, 'utf8');
-      res.end(previousRelease ? source.replace('hideFromNavigation: true,', '') : source);
+      res.end(previousRelease ? source.replace("navigationTitle: 'Earnings',", '')
+        .replace(/(title: 'NSE Filings',\s*\/\/[^\n]*\s*)hideFromNavigation: true,/, '$1') : source);
+    } else if (pathname === '/js/tabs/registry.js') {
+      const source = readFileSync(path, 'utf8');
+      res.end(previousRelease ? `${source}\nconst previousTabOrder = ${JSON.stringify(previousTabOrder)};
+researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrder.indexOf(b.meta.id));` : source);
     } else if (pathname === '/js/ui/windowed-list.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__tableScrollRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/data/alert-pool-format.js') {
@@ -166,7 +176,7 @@ try {
   await page.locator('[data-brand-mark] img').evaluate(image => image.decode());
   await page.waitForSelector('#content-host[data-active-tab="ai-alerts"]', { timeout: 1500 });
   // Ask Research's illustration remains cached, but AI Alerts is now the landing tab.
-  await page.locator('[data-tab-id="ask-research"]').click();
+  await page.evaluate(() => { location.hash = '#/research/ask-research?scope=universe'; });
   await page.locator('.research-opening-brand').evaluate(image => image.decode());
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'cached app restores the saved theme');
   assert.equal(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(11, 18, 32)', 'cached dark styles are applied');
@@ -183,8 +193,7 @@ try {
   });
   assert(scrollMs != null && scrollMs < 500, 'tab-strip scroll button responds locally');
 
-  const tabIds = ['ask-research', 'ai-alerts', 'daily-alerts', 'earnings-hub', 'concall', 'public-chatter',
-    'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements', 'nse-filings', 'insider-trades', 'mutual-funds'];
+  const tabIds = previousTabOrder.filter(id => !['ask-research', 'bookmarks'].includes(id));
   for (const id of tabIds) {
     // Begin the next measurement from a painted view. data-active-tab is set before render(),
     // so observing that attribute alone can start the next timer inside the previous paint.
@@ -233,7 +242,9 @@ try {
   });
   assert.equal(restartHits, 1, 'tab re-entry resumes the cadence instead of duplicating a fresh request');
   assert.equal(await page.evaluate(() => globalThis.__performanceRelease), 'previous', 'the returning reader is running the older cached module graph');
-  assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 1, 'the returning reader still has the previous Ask Research navigation');
+  assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research stays hidden in the previous release');
+  assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+    tabIds, 'the returning reader has the previous tab order, including NSE Filings');
   assert.equal(await page.evaluate(() => globalThis.__watchlistRelease), 'previous', 'the cached watchlist module belongs to the older release');
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'previous', 'returning session has the older arrivals module cached');
@@ -269,7 +280,11 @@ try {
   const upgradedCaches = await page.evaluate(() => caches.keys());
   assert(!upgradedCaches.some(name => name.includes('previous-fixture')), 'activation removes the superseded app cache');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'automatic upgrade retains reader preferences');
-  assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'automatic upgrade removes Ask Research from the existing session');
+  assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'automatic upgrade keeps Ask Research hidden');
+  assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'automatic upgrade removes NSE Filings from navigation');
+  assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+    currentTabOrder, 'automatic upgrade applies the requested order in the returning session');
+  assert.equal(await page.locator('[data-tab-id="earnings-hub"]').textContent(), 'Earnings', 'the shortened Earnings label reaches the returning session');
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {

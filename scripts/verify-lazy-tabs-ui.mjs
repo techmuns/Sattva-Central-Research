@@ -74,8 +74,18 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 15, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 14, 'all retained navigation remains available before its code loads');
+    assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
+      ['ai-alerts', 'AI Alerts'], ['daily-alerts', 'All Alerts'], ['corp-announcements', 'Corp Announcements'],
+      ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs'], ['earnings-hub', 'Earnings'],
+      ['breakouts', 'Breakouts / Technical'], ['insider-trades', 'Bulk/Block Deal'], ['mutual-funds', 'Mutual Funds'],
+      ['concall', 'Con-call'], ['news', 'News'], ['public-chatter', 'Public Chatter'], ['super-investors', 'Super Investors'],
+    ], 'navigation matches the requested order and labels, with IPOs appearing once');
     assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');
+    assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'NSE Filings is absent from navigation');
+    await page.evaluate(() => { location.hash = '#/research/nse-filings?scope=universe'; });
+    await page.locator('[data-active-tab="nse-filings"]').waitFor();
+    await page.getByRole('heading', { name: 'NSE Filings', exact: true }).waitFor();
 
     // Hold one real renderer request while the reader moves to another interface.
     let release;

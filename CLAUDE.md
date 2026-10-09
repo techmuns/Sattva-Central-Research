@@ -288,8 +288,11 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
-Navigation update (9 October 2026): Ask Research is removed from the tab strip via
-`meta.hideFromNavigation`. Its route remains available for saved research and newsletter links.
+Navigation update (9 October 2026): the tab strip is ordered AI Alerts, All Alerts,
+Corp Announcements, Corporate Actions, IPOs, Earnings, Breakouts / Technical,
+Bulk/Block Deal, Mutual Funds, Con-call, News, Public Chatter, Super Investors.
+`meta.navigationTitle` optionally shortens the tab label without changing its page title or route.
+Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
 AI Alerts remains the first/default tab. Hidden navigation metadata does not remove route support.
 
 Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
