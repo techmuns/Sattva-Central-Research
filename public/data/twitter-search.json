@@ -1556,7 +1556,7 @@
       "pending": []
     },
     "isin:INE955I01044|SEJALLTD": {
-      "lastAttemptAt": "2026-10-06T05:12:13+00:00",
+      "lastAttemptAt": "2026-10-11T21:54:16+00:00",
       "error": "search-unavailable",
       "lastResultCount": 0,
       "lastSuccessAt": "2026-10-02T08:02:07+00:00",
@@ -2398,6 +2398,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 254,
-    "checkedAt": "2026-10-11T21:21:15.000495+00:00"
+    "checkedAt": "2026-10-11T21:54:16.867475+00:00"
   }
 }
