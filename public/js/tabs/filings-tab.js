@@ -182,7 +182,7 @@ export function makeFilingsTab(cfg) {
     if (!cfg.feed.isLoaded()) {
       // Keep the reading controls and overlapping last-good rows usable while a new period
       // loads. Replacing an already-painted table with a splash loses the user's next choice.
-      if (cfg.preserveReadingPosition && ctx.root.querySelector('[data-filings-info]')) paint(ctx);
+      if (cfg.preserveReadingPosition && ctx.root.querySelector('[data-score-table]')) paint(ctx);
       else {
         disposers.forEach(dispose => dispose && dispose()); disposers = [];
         ctx.root.innerHTML = `${sectionHead({ title: cfg.title, description: cfg.subtitle })}${loadingHtml()}`;

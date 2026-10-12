@@ -77,7 +77,7 @@ try {
   const page = await context.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.clock.install({ time: clock });
-  const ready = () => page.waitForFunction(() => document.querySelector('[data-filings-info]')?.dataset.caState === 'ready' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 60000 });
+  const ready = () => page.waitForFunction(() => window.__ca?.meta().state === 'ready' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 60000 });
   // waitForFunction predicates must be synchronous, so the query is held on window once it exists.
   const hold = (p = page) => p.evaluate(async () => { window.__ca = (await import('/js/tabs/corp-announcements.js')).announcementQuery; });
   const caMeta = () => page.evaluate(() => window.__ca.meta());
@@ -86,9 +86,10 @@ try {
 
   // ---- Corporate Announcements, served by the index -------------------------------------------
   await page.goto(`${srv.url}#/research/corp-announcements?scope=universe`);
-  await ready();
   await hold();
-  assert.equal(await page.locator('[data-filings-info]').getAttribute('data-ca-mode'), 'server', 'the index answers');
+  await ready();
+  assert.equal((await caMeta()).mode, 'server', 'the index answers');
+  assert.equal(await page.locator('[data-section-head] [data-filings-info]').count(), 0, 'no collection-status banner');
   const period = page.getByRole('combobox', { name: 'Announcement period (IST)' });
   assert.equal(await period.inputValue(), '3', 'Last 3 days is selected on opening');
   assert.equal(await page.evaluate(() => window.__ca.query().period), '3', 'the initial query uses Last 3 days');
@@ -343,9 +344,10 @@ try {
   local.on('pageerror', (e) => errors.push(String(e)));
   await local.clock.install({ time: clock });
   await local.goto(`${fallback.url}#/research/corp-announcements?scope=universe`);
-  await local.waitForFunction(() => document.querySelector('[data-filings-info]')?.dataset.caMode === 'local' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 180000 });
+  await hold(local);
+  await local.waitForFunction(() => window.__ca?.meta().mode === 'local' && document.querySelectorAll('tbody tr[data-row-key]').length > 0, null, { timeout: 180000 });
   assert.equal(await local.getByRole('combobox', { name: 'Announcement period (IST)' }).inputValue(), '3', 'fallback opens on Last 3 days');
-  assert.equal(await local.locator('[data-filings-info]').getAttribute('data-ca-period'), '3', 'fallback query uses Last 3 days');
+  assert.equal(await local.evaluate(() => window.__ca.query().period), '3', 'fallback query uses Last 3 days');
   assert(await local.locator('tbody .category-chip').count() > 0, 'categories still show');
   await local.locator('tbody tr[data-row-key]').first().locator('td').nth(1).click();
   await local.locator('#modal-content [data-ann-read]').waitFor();

@@ -53,7 +53,7 @@ export function render(ctx) {
   if (!liveOff) liveOff = live.watch(() => { if (ctxRef && technicals.isLoaded()) paint(ctxRef); });
   if (!dailyTimer) { dailyTimer = setInterval(checkDaily, 60000); document.addEventListener('visibilitychange', checkDaily); window.addEventListener('focus', checkDaily); window.addEventListener('online', checkDaily); if (technicals.isLoaded()) checkDaily(); }
   const token = ++renderToken;
-  ctx.root.innerHTML = loadingHtml();
+  ctx.root.innerHTML = loadingHtml(ctx.subview);
 
   technicals
     .load()
@@ -76,12 +76,12 @@ export function render(ctx) {
     });
 }
 
-function loadingHtml() {
+function loadingHtml(subview) {
   return `
     ${sectionHead({ title: meta.title, description: meta.subtitle })}
-    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+    ${subview === 'momentum-scanner' ? '' : `<div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
       ${Array.from({ length: 4 }).map(() => '<div class="skeleton-shimmer h-24 rounded-2xl bg-slate-100"></div>').join('')}
-    </div>
+    </div>`}
     <div class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"></div>`;
 }
 
@@ -896,10 +896,7 @@ function wireMomentumControls(root, ctx) {
   });
 }
 
-// The compact summary that sits above the ranked table. `statStrip` is the kit's 4-up KPI row;
-// the counts are read straight off the pre-evaluated filter results so they move with the live
-// quote and the thresholds exactly as the table does, and they describe BOTH filters at once,
-// which the gate-specific count line beneath cannot. Card 4 is the gradient hero per the kit.
+// Excluded-stock reasons remain available in the coverage panel below the table.
 function momentumExceptionReason(company, values) {
   if (company.error === 'ticker not found') return 'Stock code not found';
   if (/^only \d+ bars$/.test(company.error || '') ||
@@ -922,82 +919,6 @@ function momentumExceptionList(exceptions, vf) {
   </div>`;
 }
 
-function momentumStatStrip(rows, vf, evaluable, exceptions) {
-  const f1 = rows.reduce((n, s) => n + (vf(s).f1.pass ? 1 : 0), 0);
-  const f2 = rows.reduce((n, s) => n + (vf(s).f2.pass ? 1 : 0), 0);
-  const both = rows.reduce((n, s) => { const v = vf(s); return n + (v.f1.pass && v.f2.pass ? 1 : 0); }, 0);
-  return statStrip([
-    {
-      label: 'Scanned',
-      value: formatNumber(evaluable.length),
-      note: exceptions.length ? `${formatNumber(exceptions.length)} ${exceptions.length === 1 ? 'Exception' : 'Exceptions'}` : `of ${formatNumber(rows.length)} in scope`,
-      noteHelp: exceptions.length ? {
-        title: `Exceptions (${formatNumber(exceptions.length)})`,
-        body: momentumExceptionList(exceptions, vf),
-      } : null,
-    },
-    { label: momentum.MOMENTUM_FILTERS['strong-momentum'].label, value: formatNumber(f1), note: 'stocks pass' },
-    { label: momentum.MOMENTUM_FILTERS['volume-momentum'].label, value: formatNumber(f2), note: 'stocks pass' },
-    { hero: true, label: 'Pass Both', value: formatNumber(both), note: 'Strong + Volume' },
-  ]);
-}
-
-// A compact, hand-built stacked bar of the current passers by sector — no chart library. It
-// summarises the result set already on screen; it never replaces or reorders the table. Segment
-// colours walk the brand ramp (indigo → purple → pink), which is constant in both themes exactly
-// like the hero gradient; the "Other" bucket uses the neutral token, which does flip. Every
-// segment and legend chip carries the rule and the live figure in its own tooltip.
-const MSECTOR_RAMP = ['#4f46e5', '#6366f1', '#818cf8', '#a855f7', '#c084fc', '#d946ef', '#ec4899', '#f472b6'];
-function momentumSectorBar(passers) {
-  if (!passers.length) return '';
-  const counts = new Map();
-  for (const s of passers) {
-    const sector = (s.company.sector || '').trim() || 'Unclassified';
-    counts.set(sector, (counts.get(sector) || 0) + 1);
-  }
-  // Busiest sector first; alphabetical as a stable tie-break so the paint is deterministic.
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const TOP = 7;
-  const segs = sorted.length > TOP + 1
-    ? [...sorted.slice(0, TOP), ['Other', sorted.slice(TOP).reduce((n, [, c]) => n + c, 0)]]
-    : sorted;
-  const total = passers.length;
-  const colourFor = (name, i) => (name === 'Other' ? 'var(--neutral)' : MSECTOR_RAMP[i % MSECTOR_RAMP.length]);
-  const pctText = (pct) => (pct < 10 ? pct.toFixed(1) : Math.round(pct).toString());
-
-  let cum = 0;
-  const rects = segs
-    .map(([name, count], i) => {
-      const pct = (count / total) * 100;
-      const x = cum;
-      cum += pct;
-      const title = `${name}: ${count} of ${total} (${pctText(pct)}%)`;
-      return `<rect x="${x.toFixed(3)}" y="0" width="${pct.toFixed(3)}" height="10" style="fill:${colourFor(name, i)}"><title>${escapeHtml(title)}</title></rect>`;
-    })
-    .join('');
-
-  const legend = segs
-    .map(([name, count], i) => `
-      <span class="inline-flex items-center gap-2 text-[11px] text-slate-600" title="${escapeHtml(`${name}: ${count} of ${total} passing`)}">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:3px;flex:0 0 auto;background:${colourFor(name, i)}"></span>
-        <span class="truncate" style="max-width:11rem">${escapeHtml(name)}</span>
-        <span class="font-semibold tabular-nums text-slate-800">${formatNumber(count)}</span>
-      </span>`)
-    .join('');
-
-  return `
-    <section class="mb-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100" aria-label="Passing stocks by sector">
-      <div class="mb-2 flex items-baseline justify-between gap-2">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Passers by sector</div>
-        <div class="text-[11px] text-slate-400">${formatNumber(total)} ${total === 1 ? 'stock' : 'stocks'} · ${segs.length} ${segs.length === 1 ? 'sector' : 'sectors'}</div>
-      </div>
-      <div class="overflow-hidden rounded-lg ring-1 ring-slate-100">
-        <svg viewBox="0 0 100 10" preserveAspectRatio="none" role="img" aria-label="Sector distribution of passing stocks" style="display:block;width:100%;height:26px">${rects}</svg>
-      </div>
-      <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">${legend}</div>
-    </section>`;
-}
-
 function renderMomentumScanner(ctx, rows) {
   // A criteria change rebuilds the results. Keep the next field (after Tab), selected mode or
   // reset button focused so keyboard users can continue without starting at the page's top.
@@ -1015,12 +936,6 @@ function renderMomentumScanner(ctx, rows) {
   const exceptions = rows.filter((s) => !evaluable.includes(s));
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
 
-  // Compact summary above the hero table: a 4-up KPI strip (both filters at once) and a sector
-  // mini-bar of the current gate's passers. Both are rebuilt on every paint, so they track the
-  // live quote and the thresholds with the table rather than going stale beside it.
-  const strip = momentumStatStrip(rows, vf, evaluable, exceptions);
-  const sectorBar = momentumSectorBar(passers);
-
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
   const table = scoreTable({
@@ -1029,7 +944,7 @@ function renderMomentumScanner(ctx, rows) {
     nameLabel: 'Stock',
     emptyMessage:
       exceptions.length === rows.length && rows.length
-        ? 'No stocks can be scanned. See Exceptions.'
+        ? 'No stocks can be scanned. See scan coverage below.'
         : 'No stocks currently meet these conditions — try relaxing a threshold above.',
     columns: [
       { label: 'Price', get: (s) => cmpCell(s.company), html: true, align: 'right', sortValue: (s) => live.priceInfo(s.company).price ?? -1 },
@@ -1062,13 +977,24 @@ function renderMomentumScanner(ctx, rows) {
         'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
     })}
     ${momentumControls(gate, thresholds)}
-    ${strip.html}
-    ${sectorBar}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${scopeHint}</div>
     ${table.html}
+    <div class="mt-6 border-t border-slate-100 pt-4 text-center">
+      <button type="button" data-momentum-coverage
+        class="text-xs font-semibold text-slate-400 underline decoration-slate-200 underline-offset-4 transition-colors hover:text-indigo-600 hover:decoration-indigo-300">Scan coverage and excluded stocks</button>
+    </div>
   `;
 
-  strip.wire(ctx.root);
+  ctx.root.querySelector('[data-momentum-coverage]').addEventListener('click', () => openModal(`
+    <div class="px-7 py-6">
+      <div class="mb-3 flex items-start justify-between gap-4">
+        <h2 class="font-display text-xl font-bold text-slate-900">Scan coverage</h2>
+        <button data-modal-close class="text-2xl text-slate-400" aria-label="Close">&times;</button>
+      </div>
+      <p class="mb-3 text-sm text-slate-600">${formatNumber(evaluable.length)} of ${formatNumber(rows.length)} stocks in this scope can be scanned for ${escapeHtml(gateLabel)}.
+        ${formatNumber(exceptions.length)} ${exceptions.length === 1 ? 'stock is excluded' : 'stocks are excluded'} because the required data is unavailable.</p>
+      ${exceptions.length ? momentumExceptionList(exceptions, vf) : ''}
+    </div>`));
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);
   wireMomentumControls(ctx.root, ctx);

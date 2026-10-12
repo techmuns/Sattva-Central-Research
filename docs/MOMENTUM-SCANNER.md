@@ -101,38 +101,30 @@ the cached daily data — **nothing re-fetches**.
 
 In order down the page:
 
-1. **Section head** — title, description, the live pill and the scope summary.
+1. **Section head** — title and description.
 2. **Controls** (`momentumControls`) — the Show gate toggle and the threshold number inputs, which
    wrap cleanly on a phone. Committed on change (blur / Enter), not per keystroke.
-3. **Stat strip** (`momentumStatStrip`, the kit's `statStrip`) — Scanned · Strong Momentum ·
-   Volume + Momentum · Pass Both. The counts read straight off the pre-evaluated filter results, so
-   they move with the quote and the thresholds; they describe **both** filters at once, which the
-   gate-specific count line cannot. Card 4 is the gradient hero per the kit. The filters are named
-   on every surface (gate toggle, thresholds, strip, table) rather than "Filter 1 / Filter 2".
-4. **Sector mini-bar** (`momentumSectorBar`) — a hand-built inline-SVG stacked bar of the current
-   gate's passers by sector, with a legend and per-segment tooltips. **No chart library.** Segment
-   colours walk the brand ramp (constant in both themes, like the hero gradient); the "Other"
-   bucket uses the neutral token. It summarises the result set on screen; it never replaces or
-   reorders the table, and it is absent when nothing passes.
-5. **Count line** — "N of M evaluable stocks pass <gate>", plus the pending count and, off the
+3. **Count line** — "N of M evaluable stocks pass <gate>" and, off the
    universe scope, a hint to switch to Universe.
-6. **The ranked table** (`scoreTable`) — the hero. Columns: Stock · Price · Strong Momentum ·
+4. **The ranked table** (`scoreTable`) — the hero. Columns: Stock · Price · Strong Momentum ·
    Volume + Momentum · Volume vs 10D Avg · RSI Daily · RSI Weekly · RSI Monthly · MACD · 20-DMA
    Status. Every condition pill carries the rule and the live figure in its tooltip (so the pill
    legend needs no block of its own); sorting is on what the cell shows.
+5. **Scan coverage** — a muted link below the table opens the evaluable count and every excluded
+   stock with its reason. Missing price/history remains distinct from a failed condition.
+
+The four summary cards and sector chart were removed at the user's request on 12 October 2026.
 
 The whole view re-paints on every live tick through the subscription `render()` already holds
-(`liveOff = live.watch(() => paint(ctxRef))`), so the strip, the bar and the table never go stale
-beside each other. The strip and bar are rebuilt each paint rather than patched.
+(`liveOff = live.watch(() => paint(ctxRef))`). Counts, rows and coverage use the same evaluated data.
 
 ### Empty and pending states
 
 - **No passers at these thresholds** (data present): the table's own centred message reads
   "No stocks currently meet these conditions — try relaxing a threshold above." The controls, the
-  strip and the search stay on screen so the reader can do exactly that.
-- **All pending** (the daily file has no Step-1 fields): the table explains that the Data refresh
-  has not run, and the strip reads `Scanned 0 · N pending data refresh`. Rows appear automatically
-  once the refresh lands; nothing is invented in the meantime.
+  search stay on screen so the reader can do exactly that.
+- **All unavailable**: the table says no stocks can be scanned and points to scan coverage below.
+  Coverage lists the missing-data reasons. Rows appear automatically when the required data arrives.
 
 ### Export
 
@@ -151,8 +143,8 @@ Three checks, run in CI (`.github/workflows/verify.yml`):
 - `scripts/verify-momentum-scanner.mjs` (contracts job) — the **engine math**: `advanceWilderRsi`
   and `advanceMacd` match both the pipeline and a from-scratch EMA/MACD recompute to `1e-9`, and
   the filters pass/fail correctly on crafted rows, with null-field rows pending.
-- `scripts/verify-momentum-scanner-ui.mjs` (browser job) — the **UI layout**: the stat strip, the
-  sector mini-bar, the table columns, the gate toggle and threshold controls, the colourful pills,
+- `scripts/verify-momentum-scanner-ui.mjs` (browser job) — the **UI layout**: absence of the summary
+  cards and sector chart, coverage access, table columns, gate toggle, threshold controls, colourful pills,
   the empty state, and **no horizontal page overflow at 1440px and 390px**, with zero console
   errors.
 
@@ -241,14 +233,8 @@ col('Filter 3', (v) => filterPill(v.f3), (v) => (v.f3.pass ? 1 : 0)),
 ```
 
 Add it to the export in `runMomentumExport` (an F3 pass/fail column, and `rsiD3` in the thresholds
-line). The sector bar and the count line need no change — they read the gate's `passers`, which
+line). The count line needs no change — it reads the gate's `passers`, which
 `passesGate` now covers.
-
-A note on the **stat strip**: `statStrip` is a 4-up row (Scanned · Strong Momentum · Volume +
-Momentum · Pass Both). A third filter means deciding what the four cards show — e.g. Scanned plus
-the three filter names with the third as the hero, or keeping Pass Both and surfacing the third
-filter's count only in its column and the gate. Pick the four that answer the reader's first
-question; do not grow the strip past four without rethinking it.
 
 **3. Test it — `scripts/verify-momentum-scanner.mjs`.**
 

@@ -411,16 +411,8 @@ const tab = makeFilingsTab({
   toolbarControls,
   belowTable,
   wireBelowTable,
-  status: (m) => {
-    const status = announcementCoverage(m);
-    const qm = m.query || {};
-    const extra = [
-      qm.mode === 'local' ? 'Prepared in this browser from the captures: the server index could not be read.' : null,
-      qm.index?.stale ? `The latest index check failed (${qm.index.error}); the last good build is shown.` : null,
-    ].filter(Boolean).join(' ');
-    const asked = query.query();
-    return `<span data-filings-info data-ca-mode="${escapeHtml(qm.mode || 'unknown')}" data-ca-state="${escapeHtml(qm.state || '')}" data-ca-q="${escapeHtml(asked.q || '')}" data-ca-period="${escapeHtml(asked.period)}" class="text-xs font-semibold ${status.incomplete ? 'text-amber-700' : 'text-slate-500'}" title="${escapeHtml(`${status.detail}${extra ? ` ${extra}` : ''}`)}">${escapeHtml(status.label)}</span>`;
-  },
+  // Collection diagnostics belong in the information panel below the table.
+  status: () => '',
   emptyMessage: () => (query.meta().state === 'loading' ? 'Loading announcements…' : 'No announcements match this scope, period, category, market cap or search.'),
   stickyHead: 'max(320px, calc(100vh - 260px))',
   noun: 'announcements',
@@ -458,6 +450,8 @@ const tab = makeFilingsTab({
       <button data-modal-close class="text-2xl text-slate-400">&times;</button>
     </div>
     <div class="space-y-3 text-sm leading-relaxed text-slate-600">
+      <p><strong>Collection status:</strong> ${escapeHtml(announcementCoverage(m).detail)}</p>
+      ${index.stale ? `<p>The latest index check failed (${escapeHtml(index.error)}); the last good build is shown.</p>` : ''}
       <p><strong>How this list is served:</strong> ${qm.mode === 'server'
         ? `the server index (built ${escapeHtml(built)} from the committed captures, with NSE's live feed read again every two minutes) answers one ranked page at a time.`
         : 'the server index could not be read, so this browser prepared the list from the captures, as the tab always could. Related filings are linked within the selected period only on this copy.'}</p>
