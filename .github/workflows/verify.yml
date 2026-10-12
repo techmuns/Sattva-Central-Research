@@ -180,10 +180,16 @@ jobs:
         run: node scripts/verify-breakouts.mjs && node scripts/verify-breakout-primary.mjs && node scripts/verify-breakouts-runtime.mjs && node scripts/verify-mutual-funds-runtime.mjs
       - name: Verify private summary persistence in the local Worker runtime
         run: node scripts/verify-concall-summaries-runtime.mjs
-  browser:
+  browser-tests:
+    name: browser (${{ matrix.part }}/3)
     runs-on: ubuntu-latest
-    # Setup and the complete dashboard suite share this bounded job budget.
-    timeout-minutes: 30
+    # The complete suite now exceeds one runner's 30-minute budget. Keep every
+    # check, split the independent fixtures, and require all three parts below.
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -194,181 +200,225 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/family-browser" --no-save --package-lock=false playwright@1.62.1 exceljs@4.4.0
           node "$RUNNER_TEMP/family-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Verify full-data dashboard tabs and bounded iframe interactions
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
           TAB_PERF_PROFILE: '1'
         run: node scripts/verify-tab-performance-ui.mjs
       - name: Verify shared early startup reads and active-reader polling
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-startup-ui.mjs && node scripts/verify-exchange-deals-poller-ui.mjs
       - name: Verify exchange-wide Universe search, returning sessions and automatic directory updates
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-exchange-universe-ui.mjs
       - name: Verify All Alerts time horizons, source controls and portfolio calendar isolation
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-general-alerts-ui.mjs && node scripts/verify-all-alerts-restore-ui.mjs
       - name: Verify private alert access, pagination and public-cache exclusion
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-private-price-ui.mjs
       - name: Verify AI story updates, sources and returning-session upgrade
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-alert-stories-ui.mjs && node scripts/verify-alert-summaries-ui.mjs
       - name: Verify Sattva deals across scopes, automatic refresh and history
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-sattva-deals-ui.mjs
       - name: Verify quiet header notifications, read state and responsive inbox
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-notifications-ui.mjs
       - name: Verify the newsletter control beside the bell, its list, sends and states
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-newsletter-ui.mjs && NEWSLETTER_LAYOUT=1 node scripts/verify-newsletter-reading.mjs && NEWSLETTER_LAYOUT=1 node scripts/verify-newsletter-email.mjs
       - name: Verify light and dark appearance across dashboard surfaces
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-theme-ui.mjs
       - name: Verify technical and institutional filters across scopes and refreshes
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-windowed-list-ui.mjs && node scripts/verify-technical-filters-ui.mjs && node scripts/verify-breakouts-ui.mjs
       - name: Verify Momentum Scanner summary, sector mini-bar and responsive layout
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-momentum-scanner-ui.mjs && node scripts/verify-momentum-upgrade-ui.mjs
       - name: Verify inline private summary reader and source parser offline
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-concall-summaries-ui.mjs
       - name: Verify notebook persistence, notes, backup recovery and responsive layout
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-bookmarks-ui.mjs
       - name: Verify complete news publication in the Portfolio table
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-news-publication-ui.mjs
       - name: Verify investor scope, disclosure evidence and incomplete data
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-super-investors-ui.mjs
       - name: Verify portfolio reload, offline, resume and cache behaviour
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-family-sync-ui.mjs
       - name: Verify Screener Insights collector and last-good cache offline
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-screener-insights-ui.mjs
       - name: Verify one Family portfolio across the dashboard
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-portfolio-view-ui.mjs
       - name: Verify research conversation lifecycle and incremental answer streaming
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-stream-ui.mjs
       - name: Verify chatter freshness, cached reloads and complete history
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-chatter-reliability-ui.mjs && node scripts/verify-chatter-upgrade-ui.mjs
       - name: Verify Telegram and public chatter portfolio evidence
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-social.mjs
       - name: Verify Sterlite peer questions against the whole saved dashboard
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-research-business-ui.mjs && node scripts/verify-research-reasoning-ui.mjs
       - name: Verify stable alert refresh, portfolio failures and navigation
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-ai-alerts-ui.mjs && node scripts/verify-ai-alert-types-ui.mjs && node scripts/verify-ai-alert-timeline-ui.mjs && node scripts/verify-alert-capacity-ui.mjs && node scripts/verify-kpi-impact-ui.mjs
       - name: Verify explicit refresh through the service worker
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-refresh-ui.mjs
       - name: Verify Mutual Fund portfolio table and grouped detail
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-fund-returns-ui.mjs && node scripts/verify-mutual-funds-ui.mjs && node scripts/verify-mutual-funds-cache-ui.mjs && node scripts/verify-mutual-funds-upgrade-ui.mjs
       - name: Verify instant repeat visits and interaction cache boundaries
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-dashboard-performance-ui.mjs
       - name: Verify deferred tab interfaces and delayed navigation without user data
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-lazy-tabs-ui.mjs
       - name: Verify bounded Earnings ownership and unchanged scrolling work
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-performance-ownership-ui.mjs
       - name: Verify persistent column moves, complete data and returning-session upgrades
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-column-order-ui.mjs && node scripts/verify-column-order-upgrade-ui.mjs
       - name: Verify native table scrollbar dragging and reading position
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-table-drag-ui.mjs
       - name: Verify filter transitions, loading placeholders and latest selection
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-filter-loading-ui.mjs
       - name: Verify the precomputed alert pool paints the live rows and cards without the captures
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node --max-old-space-size=4096 scripts/verify-alert-pool-ui.mjs
       - name: Verify the portfolio calendar survives an unreadable S Screen capture
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-portfolio-calendar.mjs
       - name: Verify Earnings Calendar automatic recovery and saved schedules in both scopes
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-earnings-calendar-ui.mjs && node scripts/verify-earnings-reports-ui.mjs
       - name: Verify publisher filters, delayed news delivery and exact OnEMI regression
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-news-publisher-ui.mjs && node scripts/verify-onemi-news-delivery-ui.mjs && node scripts/verify-news-customer-delivery.mjs
       - name: Verify clean corporate stream, automatic history and live scope updates
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-corporate-stream-ui.mjs
       - name: Verify ranked announcement pages, categories, market cap, related filings, AI Read and shared feedback
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-announcements-ui.mjs && node scripts/verify-announcement-read-cache-ui.mjs
       - name: Verify corporate actions scopes, retention and responsive table
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-corporate-actions-ui.mjs
       - name: Verify direct NSE feed, retained history and document component isolation
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-nse-history-ui.mjs && node scripts/verify-combined-filings-ui.mjs
       - name: Verify readable NSE filings in every scope and returning-session upgrades
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-nse-xbrl-ui.mjs && node scripts/verify-nse-xbrl-upgrade-ui.mjs
       - name: Verify Telegram dates, restricted posts, search and retained refresh
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
           EXCELJS_ROOT: ${{ runner.temp }}/family-browser/node_modules/exceljs
         run: node scripts/verify-telegram-ui.mjs
       - name: Verify IPO table, live refresh, Excel export and mobile layout
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
           EXCELJS_ROOT: ${{ runner.temp }}/family-browser/node_modules/exceljs
         run: node scripts/verify-ipo-monitor-ui.mjs
       - name: Verify source inventory, connection states, offline pulse and mobile layout
+        if: ${{ matrix.part == 2 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-source-connections-ui.mjs && node scripts/verify-company-feed-upgrade-ui.mjs && node scripts/verify-company-documents-ui.mjs
@@ -376,13 +426,27 @@ jobs:
       # is the only arrangement in which "everyone sees the same watchlist" is a claim about
       # anything, so the check runs the real store class behind an in-process route.
       - name: Verify empty and populated Screener watchlist inventory without source requests
+        if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-screener-watchlist-ui.mjs
       - name: Verify one shared watchlist across two devices, with named contributors
+        if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-shared-watchlist-ui.mjs
+  browser:
+    needs: browser-tests
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Require the complete browser suite to pass
+        env:
+          PARTS: ${{ needs.browser-tests.result }}
+        run: |
+          echo "Browser suite parts: $PARTS"
+          test "$PARTS" = success
   portfolio-research-shard:
     # Every saved portfolio packet, split by company across four browser sessions. A packet takes
     # 4–7 seconds on a shared runner, so one session for the whole portfolio ran 35–62 minutes
