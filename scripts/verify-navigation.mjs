@@ -77,15 +77,15 @@ try {
   await visibleInStrip(`${strip} [data-tab-id="super-investors"]`);
   assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'super-investors');
   await page.keyboard.press('ArrowRight');
-  await visibleInStrip(`${strip} [data-tab-id="ai-alerts"]`);
-  assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'ai-alerts');
+  await visibleInStrip(`${strip} [data-tab-id="alerts"]`);
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'alerts');
   await page.keyboard.press('ArrowLeft');
   assert.equal(await page.evaluate(() => document.activeElement.dataset.tabId), 'super-investors');
   await page.keyboard.press('Home');
-  await visibleInStrip(`${strip} [data-tab-id="ai-alerts"]`);
+  await visibleInStrip(`${strip} [data-tab-id="alerts"]`);
   await page.keyboard.press('Space');
   await page.waitForFunction(() => location.hash.includes('/ai-alerts'));
-  await page.locator(`${strip} [data-tab-id="ai-alerts"][aria-selected="true"]`).waitFor();
+  await page.locator(`${strip} [data-tab-id="alerts"][aria-selected="true"]`).waitFor();
   pass('Home, End, wrapping arrow keys, Enter and Space work with manual activation');
 
   await page.waitForFunction(() => document.querySelector('#tabbar-mount [data-tab-scroll="-1"]').disabled);
