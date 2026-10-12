@@ -381,6 +381,8 @@ try {
     await frame.locator('[data-table-search]').fill('KISSHT');
     assert.equal(await frame.locator('[data-alerts-focus]').count(), 0, 'Focus table is removed at every viewport size');
     assert.equal(await frame.locator('[data-alerts-meta]').count(), 0, 'company and date-count badges are removed');
+    assert.equal(await frame.locator('[data-alerts-history-summary]').count(), 0, 'Till Today is removed at every viewport size');
+    assert.equal(await frame.locator('[data-alerts-reading-count]').count(), 0, 'the item/source-report summary is removed at every viewport size');
     assert.equal((await measure()).headerVisible, true, 'the app header remains visible');
     assert(await frame.locator('#subview-mount').isVisible(), 'Alerts subtabs remain available without table focus');
     // The shared table case-folds its saved query on a source repaint. Verify the search term,
