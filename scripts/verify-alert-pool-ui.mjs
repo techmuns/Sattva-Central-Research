@@ -26,7 +26,7 @@ if (!existsSync(join(poolDir, 'index.json'))) {
 }
 const index = JSON.parse(readFileSync(join(poolDir, 'index.json'), 'utf8'));
 const exchange = { text: readFileSync(resolve(root, 'data/exchange-deals.json'), 'utf8'), id: EXCHANGE_ID };
-const status = captureStatusFor({ root, exchange });
+const status = captureStatusFor({ root, exchange, servedAt: index.builtAt });
 const served = { status: JSON.parse(JSON.stringify(status)), artifact: 1, requests: [] };
 
 const server = createServer((req, res) => {
@@ -76,6 +76,9 @@ async function openPage() {
   await context.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
   await context.addInitScript((base) => { localStorage.setItem('sattva:chatter-base', `${base}/fixture/chatter`); }, origin);
   const page = await context.newPage();
+  // The builder freezes its clock. Compare both readers at that same instant,
+  // including across minute/date rollovers; timer and cadence tests live elsewhere.
+  await page.clock.setFixedTime(new Date(index.builtAt));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
