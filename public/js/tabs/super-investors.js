@@ -48,6 +48,7 @@ let liveRouteCompany = null;
 // leaving Super Investors resets it.
 let liveSection = 'quarterly-changes';
 let changesView = { audience: 'my-managers', period: 'quarter' };
+let managersView = { query: '', sourcesOpen: false };
 // Institutions mirrors that contract: the fund tables remain the default, while Quarterly Changes
 // is a cross-book destination whose selection survives a scope repaint but not leaving the view.
 let filedSection = 'institutions';
@@ -65,7 +66,7 @@ export function render(ctx) {
   liveView = seeded.view;
   // A sub-view change does not destroy this module. Reset here when the reader leaves Superstar
   // Investors so returning from Institutions opens on Changes.
-  if (ctxRef?.subview === 'superstar-investors' && ctx.subview !== 'superstar-investors') { liveSection = 'quarterly-changes'; changesView = { audience: 'my-managers', period: 'quarter' }; }
+  if (ctxRef?.subview === 'superstar-investors' && ctx.subview !== 'superstar-investors') { liveSection = 'quarterly-changes'; changesView = { audience: 'my-managers', period: 'quarter' }; managersView = { query: '', sourcesOpen: false }; }
   if (ctxRef?.subview === 'institutions' && ctx.subview !== 'institutions') filedSection = 'institutions';
   renderToken++;
   ctxRef = ctx;
@@ -101,6 +102,7 @@ export function destroy() {
   // half-applied filter. Only a repaint mid-load carries the view forward.
   liveView = null;
   changesView = { audience: 'my-managers', period: 'quarter' };
+  managersView = { query: '', sourcesOpen: false };
   liveSection = 'quarterly-changes';
   filedSection = 'institutions';
 }
@@ -130,15 +132,8 @@ function renderIndividuals(ctx) {
   disposers.forEach((d) => d && d());
   disposers = [];
 
-  if (!liveInvestors.isLoaded()) {
-    ctx.root.innerHTML = loadingHtml();
-    const token = renderToken;
-    liveInvestors.load().then(() => {
-      if (token === renderToken) renderIndividuals(ctx);
-    });
-    return;
-  }
-
+  // Private manager reads and navigation must remain usable even when the public
+  // directory is slow. Only the public holdings destinations show its loading state.
   paintIndividuals(ctx);
 
   // Repaint as each book lands. The subscription is a mount-lifetime thing, so it is released in
@@ -160,13 +155,17 @@ function renderIndividuals(ctx) {
       // there is no list. Rendering the panel then would put "the API returned an error" on screen
       // for something the reader just asked for and which has not failed. The skeleton is the
       // honest state: this is loading.
-      if (!liveInvestors.isLoaded()) {
-        ctxRef.root.innerHTML = loadingHtml();
-        return;
-      }
+      if (liveSection === 'my-managers' || liveSection === 'quarterly-changes' && changesView.audience === 'my-managers') return;
+      const root = ctxRef.root, searches = [...root.querySelectorAll('[data-table-search]')];
+      const index = searches.indexOf(document.activeElement), search = searches[index];
+      const selection = search ? [search.selectionStart, search.selectionEnd, search.selectionDirection] : null;
+      const scrolls = [...root.querySelectorAll('[data-table-scroll]')].map(el => [el.scrollLeft, el.scrollTop]);
       paintIndividuals(ctxRef);
+      root.querySelectorAll('[data-table-scroll]').forEach((el, i) => { if (scrolls[i]) [el.scrollLeft, el.scrollTop] = scrolls[i]; });
+      if (selection) { const input = root.querySelectorAll('[data-table-search]')[index]; input?.focus({ preventScroll: true }); input?.setSelectionRange(...selection); }
     });
   }
+  if (!liveInvestors.isLoaded()) liveInvestors.load().catch(() => {});
 }
 
 function paintIndividuals(ctx) {
@@ -177,6 +176,8 @@ function paintIndividuals(ctx) {
     section: liveSection,
     tableView: liveView,
     changesView,
+    managersView,
+    onManagersView: (view) => { managersView = view; },
     onChangesView: (view) => { changesView = view; },
     onView: (v) => (liveView = v),
     onSection: (section) => {
@@ -240,14 +241,12 @@ function paintInstitutions(ctx) {
     ctx.root.innerHTML = `
       ${sectionHead({ title: 'Institutions', description: 'Fund holdings, from shareholding filings and AMC portfolio disclosures.' })}
       <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-        <h3 class="font-display text-base font-bold text-slate-900">No holdings file loaded</h3>
+        <h3 class="font-display text-base font-bold text-slate-900">Institution holdings unavailable</h3>
         <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
-          <code class="rounded bg-slate-100 px-1">public/data/institution-holdings.json</code> could not be loaded.
-          It is written by <code class="rounded bg-slate-100 px-1">scripts/scrape-institution-holdings.mjs</code> and
-          <code class="rounded bg-slate-100 px-1">scripts/import-amc-portfolio.mjs</code>.
+          The captured institution holdings could not be read. Please check back.
         </p>
         <p class="mt-3 text-xs text-slate-500">
-          <strong>Nothing is shown.</strong> Not an empty book — there is simply no file to read.
+          Holdings have not been verified. This does not mean the institutions have no holdings.
         </p>
       </div>`;
     return;
