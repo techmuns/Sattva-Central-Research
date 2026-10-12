@@ -55,7 +55,7 @@ function trapFocus(el, { label } = {}) {
 
   const onKey = (e) => {
     if (e.key !== 'Tab') return;
-    const items = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.offsetParent !== null || n === document.activeElement);
+    const items = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.tabIndex >= 0 && (n.offsetParent !== null || n === document.activeElement));
     if (!items.length) {
       e.preventDefault();
       el.focus({ preventScroll: true });

@@ -286,6 +286,11 @@ try {
   assert.doesNotMatch(await page.locator('#workspace-content').innerText(), /Whole Family book, combined/);
   await page.locator('[data-ws-tab="performance"]').click();
   assert.match(await page.locator('#workspace-content').innerText(), /capital multiples/);
+  await page.locator('[data-ws-tab="performance"]').focus();
+  await page.keyboard.press('Tab');
+  assert(await page.locator('[data-ws-close]').evaluate(el => el === document.activeElement), 'Tab wraps inside a workspace with a static panel');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.wsTab), 'performance', 'reverse Tab skips inactive workspace tabs');
   const family = page.frames().find(f => f.url() === 'https://sattva-family.pages.dev/research-bridge');
   await family.evaluate(() => send({ type: 'auth-required' }));
   await page.waitForSelector('[data-manager-unlock]');
