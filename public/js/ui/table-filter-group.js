@@ -31,11 +31,18 @@ export function tableFilterGroup({ label, indices, summary }, renderSelect, view
     // Position against the current viewport on every open. Close when that viewport moves,
     // rather than leaving a floating panel detached from its toolbar in an embedded dashboard.
     const close = () => { if (panel.matches(':popover-open')) panel.hidePopover(); };
-    const closeOnScroll = event => { if (!panel.contains(event.target)) close(); };
+    let anchorBox = null;
+    const closeOnScroll = event => {
+      if (panel.contains(event.target) || !anchorBox) return;
+      const box = button.getBoundingClientRect();
+      // Filtering resets the table's own scroll position without moving this toolbar.
+      if (Math.abs(box.top - anchorBox.top) > 1 || Math.abs(box.left - anchorBox.left) > 1) close();
+    };
     const beforeToggle = event => {
       const opening = event.newState === 'open';
       if (opening) {
         const box = button.getBoundingClientRect();
+        anchorBox = box;
         const width = Math.min(300, innerWidth - 24);
         panel.style.width = `${width}px`;
         panel.style.left = `${Math.max(12, Math.min(box.left, innerWidth - width - 12))}px`;

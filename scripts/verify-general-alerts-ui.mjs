@@ -523,6 +523,17 @@ try {
   assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
   assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
   assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+  await page.locator('[data-filter-group-toggle]').click();
+  await page.locator('[data-table-scroll]').evaluate(node => { node.scrollTop = 120; });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert(await page.locator('[data-filter-group-panel]').isVisible(), 'table scrolling does not detach the toolbar or close its filter panel');
+  await page.getByRole('combobox', { name:'Priority',exact:true }).selectOption('low');
+  await page.waitForFunction(() => document.querySelector('[data-table-scroll]')?.scrollTop === 0);
+  assert(await page.locator('[data-filter-group-panel]').isVisible(), 'a filter resetting table scroll keeps the second choice available');
+  await page.getByRole('combobox', { name:'Direction',exact:true }).selectOption('neutral');
+  await page.getByRole('button', { name:'Clear signal & priority',exact:true }).click();
+  await page.getByRole('button', { name:'Done',exact:true }).click();
+  await stableReadingSurface();
   // The export button moved out of the table toolbar, but must still use the full filtered
   // model. Capture its count at the export click, rather than an earlier snapshot that
   // asynchronous feed repaints can change. A local workbook stand-in counts full rows.
