@@ -218,7 +218,8 @@ and This month are IST calendar filters; each
 rolling period includes today, and This month can include 31 days. Date not supplied is a separate
 choice: observation timestamps never make undated articles appear current. Portfolio, Watchlist
 and Universe use these same boundaries. All Alerts also retains All history through today,
-Older than 30 days and its unchanged Upcoming horizon. Explicit company "See all" links select
+Older than 30 days. The Upcoming switch was removed on 12 October 2026; schedule collection and
+retained source records are unchanged. Explicit company "See all" links select
 All history rather than silently applying the Today default. Capture cadence, permanent storage,
 AI Alerts and research history are unchanged; these are reading windows, not deletion policies.
 
