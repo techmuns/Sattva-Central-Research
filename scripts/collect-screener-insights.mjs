@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
+import { parseScreenerInsightsPage, insightAccessRefused } from './lib/screener-insights.mjs';
 import { parseWatchlistExport } from './lib/screener-watchlist.mjs';
 import { buildInsightInventory, insightInventoryDiagnostic } from './lib/screener-insights-inventory.mjs';
 import { runInsightCollection } from './lib/screener-insights-run.mjs';
@@ -135,6 +135,7 @@ export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 1
         // Observe the lazy request itself: a 429/403 must not be mislabeled a table timeout.
         const [quarterResponse] = await Promise.all([responsePromise, quarterly.click()]);
         checkResponse(quarterResponse);
+        if (insightAccessRefused(await quarterResponse.text())) throw insightError('access-denied');
       }
       // A lazy-tab timeout is a failed company read, never an empty quarterly series.
       await section.locator('#quarterly-insights table').waitFor({ state: 'attached', timeout: tabTimeout }).catch(() => { throw insightError('structure-changed'); });
@@ -143,7 +144,10 @@ export async function readInsightCompany(page, item, checkedAt, { tabTimeout = 1
   const html = await page.content();
   if (Buffer.byteLength(html) > MAX_PAGE_BYTES) throw insightError('oversized');
   let parsed;
-  try { parsed = parseScreenerInsightsPage(html); } catch { throw insightError('structure-changed'); }
+  try { parsed = parseScreenerInsightsPage(html); } catch (error) {
+    if (error.insightCode === 'access-denied') throw insightError('access-denied');
+    throw insightError('structure-changed');
+  }
   const rows = parsed.rows.map((row) => ({ ...row, id: screenerInsightKey({ companyKey: item.companyKey, ...row }) }));
   if (!rows.length && previousCompany?.rows?.length) throw insightError('structure-changed');
   const company = { ...item, checkedAt, readStatus: 'ok', rows };

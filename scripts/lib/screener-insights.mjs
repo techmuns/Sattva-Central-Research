@@ -10,6 +10,9 @@ const decode = (value) => String(value || '')
   .replace(/&(amp|quot|apos|lt|gt|nbsp|ndash|mdash);/gi, (_, key) => ({ amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp: ' ', ndash: '–', mdash: '—' })[key.toLowerCase()]);
 const text = (value) => decode(String(value || '').replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 const attr = (value, name) => decode(new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i').exec(value)?.[2] || '');
+// This exact source fragment is an access refusal, not a changed data table.
+// Marketing links elsewhere on a company page are not evidence of a refusal.
+export const insightAccessRefused = html => /^Requires Premium[.!]?$/.test(text(html));
 
 function elementById(html, tag, id) {
   const source = String(html || '');
@@ -83,6 +86,8 @@ export function parseScreenerInsightsPage(html) {
   const companyId = /\/insights\/company\/(\d+)\/(?:quarter|flag)\//i.exec(section)?.[1] || null;
   const yearly = elementById(section, 'div', 'yearly-insights');
   const quarterly = elementById(section, 'div', 'quarterly-insights');
+  if ([yearly, quarterly].some(container => container && insightAccessRefused(container)))
+    throw Object.assign(Error('Screener insight access refused'), { insightCode: 'access-denied' });
   if (!yearly && !quarterly) throw Error('Screener Insights tabs unavailable');
   const quarterlyExpected = /data-tab-id=["']quarterly-insights["']/i.test(section);
   if (quarterlyExpected && !quarterly) throw Error('Screener quarterly Insights unavailable');
