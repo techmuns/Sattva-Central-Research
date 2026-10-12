@@ -329,8 +329,8 @@ try {
   await page.locator('#subview-mount [data-tab-id="concall"]').click();
   await page.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="earnings"]').getAttribute('aria-selected'), 'true');
-  // Upgrade and interaction checks must run before any DevTools inspection:
-  // some Chromium versions retain a worker debugger attachment after detach.
+  // Exercise the ordinary browser upgrade and interactions before attaching
+  // DevTools so cache measurements cannot affect their worker lifecycle.
   // Keep the data/API outage, restoring only these synthetic cache fixtures.
   cacheMeasurements = true;
   // Playwright routing disables the HTTP cache and rewrites request.cache to "reload".
