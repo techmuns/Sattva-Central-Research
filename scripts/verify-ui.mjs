@@ -441,7 +441,7 @@ const latestRows = await rowCount();
 ok('Latest Results renders the full listed universe', latestRows > 1000, `${latestRows} companies`);
 
 const ehText = await hostText();
-ok('states which quarter and which two periods', /Q\d\s*FY/i.test(ehText) && /\b(?:vs|against)\b/i.test(ehText));
+ok('states the source quarter and both comparison periods', /Q\d\s*FY/i.test(ehText) && (ehText.match(/Revenue\s+[A-Z][a-z]{2}\s+\d{4}/g) || []).length === 2);
 ok('says whether it is live or a snapshot', /\bLive\b/i.test(ehText) || /snapshot/i.test(ehText));
 // This tab deliberately has no stat strip and no sub-view picker: one table, one passive Live label.
 ok('no stat-card furniture in front of the table', (await page.locator('#content-host .stat-card').count()) === 0);
@@ -502,7 +502,7 @@ ok('headers are full words, not trade shorthand', !ehHeads.some((h) => /\b(REV|P
 // would leave the reader guessing which quarter the number belongs to.
 for (const m of ['REVENUE', 'NET PROFIT']) {
   const cols = ehHeads.filter((h) => h.startsWith(`${m} `) && h !== `${m} GROWTH`);
-  ok(`${m.toLowerCase()}: both periods are columns, each period-labelled`, cols.length === 2 && cols.every((h) => /[A-Z]{3}\s*\d{2}$/.test(h)), cols.join(' + '));
+  ok(`${m.toLowerCase()}: both periods are columns, each period-labelled`, cols.length === 2 && cols.every((h) => /[A-Z]{3}\s*\d{4}$/.test(h)), cols.join(' + '));
 }
 ok('gross profit is not a column', !ehHeads.some((h) => h.includes('GROSS')));
 

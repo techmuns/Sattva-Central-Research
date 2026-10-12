@@ -2183,7 +2183,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
-      "lastAttemptAt": "2026-10-07T11:59:10+00:00",
+      "lastAttemptAt": "2026-10-12T23:08:33+00:00",
       "error": "search-unavailable"
     },
     "isin:INE852O01025|Aptus Value Housing Finance India": {
@@ -2417,8 +2417,8 @@
   },
   "coverage": {
     "planned": 254,
-    "attempted": 7,
+    "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-12T22:32:50.426810+00:00"
+    "checkedAt": "2026-10-12T23:08:33.047937+00:00"
   }
 }

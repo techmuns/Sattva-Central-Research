@@ -429,7 +429,7 @@ export function startLive(live) {
       }
 
       const held = structureTagFor(st);
-      if (held && out.value.structureTag === held) {
+      if (held && out.value.structureTag === held && !reportingPeriodChanged(out.value.meta, { partial: true })) {
         // Same rows, possibly moved prices. Refresh the cache but do NOT notify: repainting 1,300
         // rows because someone traded would rebuild the table and throw away whatever the reader
         // had sorted or searched, for no new information about any result.
@@ -484,7 +484,7 @@ export async function refresh() {
   }
 
   const held = structureTagFor(st);
-  if (held && out.value.structureTag === held) {
+  if (held && out.value.structureTag === held && !reportingPeriodChanged(out.value.meta, { partial: true })) {
     const healthChanged = markProjectionChecked(out.value, out.checkedAt);
     if (healthChanged) notify();
     applyPrices(out.value);
@@ -598,11 +598,17 @@ function applyPrices(pricePayload) {
  */
 function hasStructuralChange(payload) {
   if (!cache) return true;
+  if (reportingPeriodChanged(payload.meta)) return true;
   if ((payload.meta?.subType || subType) !== cache.meta.subType) return true;
   if ((payload.rows?.length ?? 0) !== cache.meta.count) return true;
   if ((payload.latestResultDate ?? null) !== (cache.meta.latestResultDate ?? null)) return true;
   if (!!payload.degraded !== !!cache.meta.degraded) return true;
   return fingerprint(payload.rows) !== fingerprint(cache.rows);
+}
+
+function reportingPeriodChanged(meta = {}, { partial = false } = {}) {
+  return ['quarter', 'currentPeriod', 'priorPeriod'].some(key =>
+    (!partial || Object.hasOwn(meta || {}, key)) && (meta?.[key] || null) !== (cache?.meta?.[key] || null));
 }
 
 /**
