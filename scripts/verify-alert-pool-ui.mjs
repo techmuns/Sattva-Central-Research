@@ -313,17 +313,20 @@ try {
   assert(pooledCards.length > 0, 'cards surface from the AI pool');
   const aiState = await pooled.page.evaluate(async () => (await import('/js/data/alert-pool.js')).status().feeds);
   assert(Object.values(aiState).every((state) => state.pooled), `every pooled feed came from the AI pool (${JSON.stringify(aiState)})`);
+  const real = pooled.errors.filter((message) => !environment(message));
+  assert.deepEqual(real, [], `zero console errors (${pooled.errors.length - real.length} environment failures dropped)`);
+  // The completed card identities are the comparison input. Release the first
+  // reader's retained history before loading the second full-history reader.
+  await pooled.context.close();
   const liveAi = await openPage();
   await withoutPool(liveAi.page);
   await liveAi.page.goto(`${origin}/#/research/ai-alerts?scope=universe`);
   const liveCards = await settledRanking(liveAi.page, 300000);
   assert.deepEqual(pooledCards, liveCards, 'the AI pool ranks the same companies in the same order as the full history');
+  assert.deepEqual(liveAi.errors.filter(message => !environment(message)), [], 'zero live ranking console errors');
   console.log(`PASS AI Alerts from the AI pool: ${pooledCards.length} cards, identical to the live ranking`);
   await liveAi.context.close();
 
-  const real = pooled.errors.filter((message) => !environment(message));
-  assert.deepEqual(real, [], `zero console errors (${pooled.errors.length - real.length} environment failures dropped)`);
-  await pooled.context.close();
   console.log('PASS alert pool in the browser: exact rows, exact cards, honest fallback, zero console errors.');
 } finally {
   await browser.close();
