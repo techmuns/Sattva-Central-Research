@@ -33,7 +33,7 @@ import { alertReadingHtml, watchAlertReadings } from '../ui/alert-reading.js';
 
 import { scoreTable, sectionHead } from '../ui/screener.js';
 import { escapeHtml } from '../core/dom.js';
-import { formatCompact, formatNumber } from '../core/format.js';
+import { formatNumber } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import * as refresh from '../core/refresh.js';
 import * as alerts from '../data/daily-alerts.js';
@@ -493,7 +493,7 @@ function paint(ctx) {
   const scopedFeeds = feeds.filter((f) => f.portfolioOnly ? ctx.scope === 'portfolio' : ctx.scope === 'universe' || f.scopable !== false);
   // Upcoming is a purpose-built calendar, so its source picker contains only sources that can
   // actually schedule something. A historical news or insider checkbox with no possible row is
-  // clutter, not transparency; the complete source account returns under Till Today.
+  // clutter, not transparency; the complete source account remains in the history view.
   const shown = horizon === HORIZON.UPCOMING
     ? scopedFeeds.filter((f) => ['earnings-calendar', 'scheduled-concalls', 'screener-portfolio-upcoming'].includes(f.id) || partitionEvents(f.events, day).upcoming.length)
     : scopedFeeds;
@@ -542,9 +542,6 @@ function paint(ctx) {
     // exposing that their final presentation/count is still being calculated.
     ctx.root.querySelector('[data-alerts-workspace]')?.setAttribute('aria-busy', String(lastVisible.grouping));
     ctx.root.querySelector('[data-alerts-workspace]')?.setAttribute('data-alerts-collecting', String(collecting > 0));
-    const horizonToggleContainer = ctx.root.querySelector('.alerts-horizon-control');
-    if (horizonToggleContainer) horizonToggleContainer.outerHTML = historySummary(allThrough.length, day, !!report);
-    
     const coveragePanelContainer = ctx.root.querySelector('.alerts-source-picker');
     if (coveragePanelContainer) {
       const tmp = document.createElement('div');
@@ -593,9 +590,7 @@ function paint(ctx) {
   ctx.root.innerHTML = `
     <div class="alerts-workspace" data-alerts-workspace data-alerts-collecting="${collecting > 0}" data-fullscreen-workspace aria-busy="${lastVisible.grouping}">
     ${sectionHead({ title: 'All Alerts' })}
-    ${horizon===HORIZON.THROUGH?`<p data-alerts-reading-count class="mb-1 text-xs text-slate-500" title="Checked equivalent reports share one item. Unchecked reports remain separate; every original is available in the item and export.">${formatNumber(visible.length)} items · ${formatNumber(visible.reduce((n,e)=>n+membersOf(e).length,0))} source reports · All originals remain available in each item and export.</p>`:''}
     <div class="alerts-controls" data-alerts-controls>
-      ${historySummary(allThrough.length, day, !!report)}
       <div class="alerts-view-controls">
         ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length, report, day)}
         <div data-alerts-table-actions></div>
@@ -701,7 +696,6 @@ function captureFocus(root) {
   if (!el || !root.contains(el)) return null;
   if (el.matches?.('[data-table-search]')) return { kind: 'search', start: el.selectionStart, end: el.selectionEnd };
   if (el.matches?.('[data-feed-toggle]')) return { kind: 'feed', value: el.dataset.feedToggle };
-  if (el.matches?.('[data-horizon-toggle]')) return { kind: 'horizon', value: el.dataset.horizonToggle };
   if (el.matches?.('[data-sources-summary]')) return { kind: 'sources' };
   if (el.matches?.('[data-sources-close]')) return { kind: 'sources-close' };
   return null;
@@ -713,8 +707,8 @@ function restoreFocus(root, focus) {
     ? root.querySelector('[data-table-search]')
     : focus.kind === 'sources' ? root.querySelector('[data-sources-summary]')
     : focus.kind === 'sources-close' ? root.querySelector('[data-sources-close]')
-    : [...root.querySelectorAll(focus.kind === 'feed' ? '[data-feed-toggle]' : '[data-horizon-toggle]')]
-        .find((node) => node.dataset[focus.kind === 'feed' ? 'feedToggle' : 'horizonToggle'] === focus.value);
+    : [...root.querySelectorAll('[data-feed-toggle]')]
+        .find((node) => node.dataset.feedToggle === focus.value);
   if (!el) return;
   el.focus({ preventScroll: true });
   if (focus.kind !== 'search') return;
@@ -757,20 +751,6 @@ function fmtDay(day) {
   if (Number.isNaN(d.getTime())) return day;
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
-function historySummary(throughCount, day, ready = true) {
-  return `<div class="alerts-horizon-control">
-    <div class="inline-flex rounded-2xl bg-slate-100 p-1 ring-1 ring-slate-200/80">
-      <span data-alerts-history-summary class="inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200">
-        Till Today
-        <span class="rounded-full px-1 py-0.5 text-[11px] font-bold tabular-nums bg-indigo-50 text-indigo-700"
-          title="${ready ? `${escapeHtml(formatNumber(throughCount))} alerts${report?.queryWindow ? ' in selected period' : ''}` : 'Reading sources'}">${ready ? escapeHtml(formatCompact(throughCount)) : '…'}</span>
-      </span>
-    </div>
-    <p class="alerts-horizon-caption text-xs text-slate-500">${report?.queryWindow ? 'Showing the selected period. Choose All history to read older alerts.'
-      : `Retained events through ${fmtDay(day)}, newest first.`}</p>
-  </div>`;
-}
-
 // ---------------------------------------------------------------------------------------
 // The coverage panel — one row per feed
 // ---------------------------------------------------------------------------------------
@@ -1153,8 +1133,6 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
       arrivalsUI.setRows(rows);
       const count=rows.reduce((n,e)=>n+membersOf(e).length,0);
       ctx.root.dataset.alertsSourceCount=String(count);
-      const label=ctx.root.querySelector('[data-alerts-reading-count]');
-      if(label) label.textContent=`${formatNumber(rows.length)} items · ${formatNumber(count)} source reports · All originals remain available in each item and export.`;
     } : null,
     onFilterChange: mode === HORIZON.THROUGH ? (_view, index) => {
       if (index === 2 && ctxRef && alertWindowKey(report?.queryWindow) !== alertWindowKey(currentContext().queryWindow)) render(ctxRef);

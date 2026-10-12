@@ -14,7 +14,7 @@ so a follow-up interaction cannot target controls that are about to be replaced.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
 All history / Older than 30 days; the Upcoming switch was removed on 12 October 2026. Company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
-All Alerts streams newly received rows directly inside Till Today, with no separate live banner.
+All Alerts streams newly received rows directly inside the history table, with no separate live banner.
 The first screen enters one row every 110ms (at most 12 staged rows); the complete filtered model
 is immediately available to counts, search and export. Reduced motion, changed filters and hidden
 pages bypass the entrance queue. Existing visible-page 90-second checks and source cadence remain
@@ -3373,7 +3373,9 @@ coverage or pending-feed badges beside the title. The timeline controls retain t
 source failures, pending reads, check times and empty-state explanations remain accurate.
 
 The 12 October 2026 cleanup also removes Focus table and the scope/company-count and
-history/calendar badges beside the All Alerts title. Keep the global scope picker, date filter,
+history/calendar badges beside the All Alerts title. The redundant Till Today label and the
+item/source-report summary above the table are also removed at the user's request.
+Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 
 It is computed differently depending on what the feed IS, and the distinction matters:
