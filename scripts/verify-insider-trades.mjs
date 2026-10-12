@@ -8,6 +8,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mergeInsiderTrades, insiderTradeIdentity } from '../public/js/data/insider-history.js';
 import { normaliseInsiderTrades } from '../public/js/data/filings-shared.js';
+import { insiderTransactionType } from '../public/js/data/insider-transaction.js';
+import { tradeFilters } from '../public/js/tabs/insider-trades.js';
 import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
 import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, indexPriorScreenerTradeIdentities, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
 import { fetchInsiderTrades } from '../worker/muns.mjs';
@@ -84,6 +86,52 @@ assert.deepEqual([screenerRows[0].cells['Trade Shares'], screenerRows[0].cells.P
 assert.deepEqual([screenerRows[1].cells.Transaction, screenerRows[2].cells.Transaction], ['Sell', 'Acquisition']);
 assert.deepEqual([screenerRows[2].cells['Trade %'], screenerRows[2].cells.Mode], ['17.17', 'Off Market']);
 assert.deepEqual([screenerRows[3].date, screenerRows[3].cells.Category], ['2026-09-04', 'Promoter And Director']);
+// Real legacy captures put an action-less security quantity in Transaction. Never make that
+// quantity a dropdown choice or infer a buy/sell direction from the omitted source wording.
+for (const quantity of ['1,00,000 Equity', '1,20,00,000 Any Other Instrument']) {
+  const row = normaliseScreenerTrade(source('insiders'), extracted('MISSING', 'Missing Ltd', ['Director'],
+    '04 Sep 2026', [quantity], ['7.14 lacs']), { capturedAt: captureAt });
+  assert(row, 'missing action must not discard the disclosure');
+  assert.equal(row.cells.Transaction, undefined);
+  assert.equal(row.cells['Trade Shares'], quantity.split(' ')[0].replaceAll(',', ''));
+  assert.equal(row.cells['Security Type'], quantity.split(' ').slice(1).join(' '));
+  const legacy = structuredClone(row);
+  legacy.cells.Transaction = quantity;
+  delete legacy.cells['Trade Shares']; delete legacy.cells['Security Type'];
+  assert.equal(insiderTradeIdentity(legacy), insiderTradeIdentity(row), 'corrected captures overlap their legacy event');
+  const corrected = mergeInsiderTrades([legacy], [row]);
+  assert.equal(corrected.length, 1, 'a corrected action-less capture must not double its retained disclosure');
+  assert.equal(mergeInsiderTrades(corrected, [row]).length, 1, 'corrected overlap remains idempotent');
+  assert.equal(corrected[0].cells.Transaction, quantity, 'retain the original source cell');
+  assert.equal(corrected[0].cells['Trade Shares'], row.cells['Trade Shares']);
+  assert.equal(mergeInsiderTrades([legacy], [{ ...row, cells: { ...row.cells, Transaction: 'Acquisition' } }]).length, 2,
+    'do not guess an absent direction when matching events');
+  assert.equal(mergeInsiderTrades([legacy], [{ ...row, cells: { ...row.cells, 'Trade Shares': '123' } }]).length, 2);
+}
+const splitQuantity = normaliseScreenerTrade(source('insiders'), extracted('SPLIT', 'Split Ltd', ['Director'],
+  '04 Sep 2026', ['Bought', '10,000', 'Equity'], ['7.14 lacs']), { capturedAt: captureAt });
+assert.deepEqual([splitQuantity.cells.Transaction, splitQuantity.cells['Trade Shares'], splitQuantity.cells['Security Type']],
+  ['Bought', '10000', 'Equity'], 'security detail can span source lines');
+const malformed = ['1,00,000 Equity', '1,20,00,000 Any Other Instrument', '1290773', '2026-09-04'];
+const legacyRows = malformed.map(Transaction => ({ cells: { Transaction } }));
+const alternate = { cells: { Transaction: '27,000 Equity', 'Acq/Disp': 'Disposal' } };
+assert.equal(insiderTransactionType(alternate), 'Disposal', 'a usable alternate heading survives');
+const sourceTypes = ['Acquisition', 'Disposal', 'Pledge', 'Revoke', 'Invoke', 'Gift', 'Off Market',
+  'Scheme of Amalgamation/Merger/Demerger/Arrangement', 'Unfamiliar source action'];
+const otherRows = sourceTypes.map(Transaction => ({ cells: { 'Transaction Type': Transaction } }));
+const filterRows = [...screenerRows, ...legacyRows, alternate, ...otherRows];
+const beforeFilter = structuredClone(filterRows);
+const transactionFilter = tradeFilters(filterRows).find(field => field.label === 'Transaction type');
+const offered = transactionFilter.options.slice(1).map(option => option.value);
+assert(malformed.every(value => !offered.includes(value)), 'share counts and dates are not transaction types');
+assert(sourceTypes.every(value => offered.includes(value)), 'preserve all supplied source action wording');
+for (const value of offered) {
+  const matched = filterRows.filter(row => transactionFilter.match(row, value));
+  assert(matched.length > 0);
+  assert(matched.every(row => insiderTransactionType(row) === value), 'selection matches its exact source action');
+}
+assert.equal(filterRows.filter(row => transactionFilter.match(row, 'Disposal')).length, 2);
+assert.deepEqual(filterRows, beforeFilter, 'filtering preserves malformed and offscreen disclosures unchanged');
 const priorBulkIdentities = new Set([insiderTradeIdentity(screenerRows[0])]);
 assert.equal(hasScreenerTradeOverlap(priorBulkIdentities, [{ ...screenerRows[0], cells: { ...screenerRows[0].cells, Insider: 'New same-day seller' } }]), false, 'a matching date is not enough to stop a high-volume incremental walk');
 assert.equal(hasScreenerTradeOverlap(priorBulkIdentities, [screenerRows[0]]), true, 'an exact prior event establishes safe pagination overlap');

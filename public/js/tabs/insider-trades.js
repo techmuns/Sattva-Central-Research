@@ -19,6 +19,7 @@ import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { insider as feed } from '../data/filings.js';
 import { insiderTradeSourceUrl, pickField } from '../data/filings-shared.js';
+import { insiderTransactionType } from '../data/insider-transaction.js';
 import { matchesNewsPeriod, NEWS_PERIODS, newsDay, inNewsWindow } from '../data/news-window.js';
 
 export { insiderTradeSourceUrl };
@@ -78,6 +79,7 @@ const FILTER_FIELDS = [
     label: 'Transaction type',
     allLabel: 'All transaction types',
     keys: ['transaction', 'transaction type', 'acq/disp', 'acquisition/disposal'],
+    read: insiderTransactionType,
     maxWidthPx: 200,
   },
   { label: 'Mode', allLabel: 'All modes', keys: ['mode', 'transaction mode', 'method'], maxWidthPx: 240 },
@@ -85,17 +87,17 @@ const FILTER_FIELDS = [
 
 const rowKeys = new WeakMap();
 // Read once per row and filter field: the dropdown options ask every row for every field, and the
-// active filters ask again per evaluation. Rows are immutable, and the keys lists are the module
-// constants above, so the (row, keys) pair is a stable key.
+// active filters ask again per evaluation. Rows are immutable, and field definitions are module
+// constants above, so the (row, field) pair is a stable key.
 const filterCells = new WeakMap();
-const filterCell = (row, keys) => {
+const filterCell = (row, field) => {
   if (row === null || typeof row !== 'object') return null;
   let cells = filterCells.get(row);
   if (!cells) { cells = new Map(); filterCells.set(row, cells); }
-  if (cells.has(keys)) return cells.get(keys);
-  const value = pickField(row.cells, keys);
+  if (cells.has(field)) return cells.get(field);
+  const value = field.read ? field.read(row) : pickField(row.cells, field.keys);
   const out = value == null ? null : String(value).trim() || null;
-  cells.set(keys, out);
+  cells.set(field, out);
   return out;
 };
 
@@ -105,22 +107,21 @@ const TRADE_PERIODS = [...NEWS_PERIODS,
   { value: '3m', label: 'Last 3 months' }, { value: '6m', label: 'Last 6 months' },
   { value: '1y', label: 'Last year' }, { value: 'all', label: 'All captured' }];
 
-function tradeFilters(rows) {
+export function tradeFilters(rows) {
   const today = newsDay();
   const longRanges = new Map([['3m', 91], ['6m', 182], ['1y', 365]].map(([id, days]) =>
     [id, { from: new Date(Date.parse(`${today}T00:00:00Z`) - (days - 1) * 86400000).toISOString().slice(0, 10), to: today }]));
   const fields = FILTER_FIELDS.map((field) => {
-    // A numeric/date-only value under Transaction or Mode is a ragged upstream markdown row, not
-    // a transaction choice. It remains visible under "All" but is not promoted into a misleading
-    // dropdown option. Every genuine value in this feed contains a word.
-    const values = [...new Set(rows.map((r) => filterCell(r, field.keys)).filter((v) => v && /[A-Za-z]/.test(v)))].sort((a, b) =>
+    // The transaction reader also rejects numeric security descriptions from legacy captures.
+    // All rows remain available, including disclosures with no supplied transaction action.
+    const values = [...new Set(rows.map((r) => filterCell(r, field)).filter((v) => v && /[A-Za-z]/.test(v)))].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }),
     );
     return {
       label: field.label,
       maxWidthPx: field.maxWidthPx,
       options: [{ value: 'all', label: field.allLabel }, ...values.map((value) => ({ value, label: value }))],
-      match: (row, value) => filterCell(row, field.keys) === value,
+      match: (row, value) => filterCell(row, field) === value,
     };
   });
   return [

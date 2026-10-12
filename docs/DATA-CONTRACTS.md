@@ -2683,6 +2683,14 @@ flexible row cells: value/quantity/price for Bulk and Block, percentage/quantity
 person role/security/quantity for Insider. `Trade Category` is the one dashboard-owned field; it is
 what makes the four-way Category filter exact. Source-specific wording remains unchanged.
 
+The Transaction type filter preserves the source's action wording. Numeric/date values and
+share-count/security descriptions (for example `1,00,000 Equity`) are not transaction choices;
+legacy disclosures carrying those cells remain available under All transaction types. A malformed
+preferred heading does not mask a usable `Acq/Disp` or other supported transaction heading.
+Action-less Screener rows retain their quantity and security without inventing a transaction.
+Their corrected captures match the exact legacy representation during additive history merges;
+conflicting quantities, security types and supplied directions remain separate.
+
 The first successful run follows pagination back 30 days for every list. Later runs reread at least
 two newest pages and continue until they encounter an exact event identity from the previous source
 snapshot, so a high-volume burst of same-day rows cannot be mistaken for overlap merely because its
