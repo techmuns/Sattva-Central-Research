@@ -65,6 +65,10 @@ try{
   assert.equal(await page.locator('[data-ai-sort]').inputValue(),'newest','sizes never change the chosen sort');
   await page.locator('[data-ai-sort]').selectOption('holdings');
   assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'),'A1');
+  book[0].weightPct=90;book[1].weightPct=10;
+  await page.evaluate(async()=> (await import('/js/data/holding-sizes.js')).readHoldingSizes(undefined,{force:true}));
+  await page.waitForFunction(()=>document.querySelector('[data-ai-card]')?.dataset.ticker==='A0');
+  assert.equal(await page.locator('[data-ai-sort]').inputValue(),'holdings','background weights retain the chosen sort');
   await page.evaluate(()=>window.refreshSizes());assert(checks>=2,'manual revalidation checks the source');
   failed=true;await page.evaluate(()=>window.refreshSizes());
   assert.equal(await page.locator('[data-ai-holding-size]').count(),0);
@@ -76,5 +80,5 @@ try{
   const after=await page.evaluate(()=>caches.keys());assert(after.some(k=>!before.includes(k)));assert(!after.some(k=>k.includes('previous-holding-sizes-release')));
   assert.equal(await page.evaluate(async()=>{for(const key of await caches.keys()){const c=await caches.open(key);if((await c.keys()).some(r=>r.url.includes('/api/holding-sizes')))return true;}return false;}),false);
   assert.deepEqual(errors,[]);
-  console.log('PASS returning session upgrades automatically; default sizes, chosen sort, failure/recovery and cache privacy');
+  console.log('PASS returning session upgrades automatically; default/background sizes, chosen sort, failure/recovery and cache privacy');
 }finally{await browser.close();await new Promise(done=>server.close(done));}

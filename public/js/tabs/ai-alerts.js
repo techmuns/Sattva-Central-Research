@@ -188,6 +188,11 @@ export function render(ctx) {
     }));
     unsubs.push(coverage.onChange(() => {
       if (coverage.meta().syncStatus === 'family-unavailable') portfolioUnavailable();
+      else if (!sizesLoading && report && cachedPositionSizes()?.sizes?.checkedAt !== report.meta?.positionSizes?.checkedAt) {
+        // Shared background reads have no Family-frame notification. Adopt their
+        // new weights/check time through the existing coalesced reassembly path.
+        if (cachedPositionSizes()) sourceChanged();
+      }
     }));
     unsubs.push(onPortfolioReady((version) => {
       if (ctxRef && awaitingBook !== null && version >= awaitingBook && !sizesLoading) {
