@@ -6,6 +6,12 @@ on:
   push:
     branches: [main]
 
+# Only the current revision of a development branch needs this full suite.
+# Main verification retains its runs; this does not cancel source collectors.
+concurrency:
+  group: verify-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   workflow-syntax:
     runs-on: ubuntu-latest
