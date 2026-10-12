@@ -87,6 +87,18 @@ async function openPage() {
 // pooled page read "no pool" too, went down the live path and failed the later pooled checks.
 const withoutPool = (page) => page.route('**/api/alert-pool/index', (route) =>
   route.fulfill({ status: 404, contentType: 'application/json', body: '{"ok":false,"reason":"no-pool"}' }));
+const alertSnapshot = page => page.evaluate(() => {
+  const keys = [...document.querySelectorAll('tbody tr[data-row-key]')].map(row => row.dataset.rowKey);
+  const count = document.querySelector('[data-row-count]')?.textContent.trim() || '';
+  const chips = Object.fromEntries([...document.querySelectorAll('[data-feed]')].map(chip =>
+    [chip.dataset.feed, chip.textContent.trim().replace(/\s+/g, ' ')]));
+  const empty = /^No loaded event\b/.test(document.querySelector('tbody')?.textContent.trim() || '') && /^0\b/.test(count);
+  const ready = (keys.length > 0 || empty) && Object.keys(chips).length > 0 &&
+    !Object.values(chips).some(label => label.includes('reading…')) &&
+    document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false' &&
+    !document.querySelector('[data-table-loading]');
+  return { keys, count, chips, ready };
+});
 // Settled also means the relevance order is final: within the recent days a large table reads
 // relevance in slices after its first paint (surface-relevance.js), and rows not yet read sort by
 // time until then. Comparing two pages mid-way would compare two partial orders.
@@ -111,12 +123,15 @@ const settledAlerts = async (page) => {
   let previous = null;
   for (let attempt = 0; attempt < 40; attempt++) {
     await page.evaluate(async () => { await (await import('/js/data/surface-relevance.js')).relevanceSettled(); });
-    const state = JSON.stringify(await page.evaluate(() => [document.querySelector('[data-row-count]')?.textContent.trim() || '',
-      ...[...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey)]));
-    if (state === previous) return;
-    previous = state;
+    // The normal 90-second refresh can start after the first readiness check,
+    // retaining rows while its chips read "reading". Recheck readiness and take
+    // rows, count and chips in one atomic DOM read; never compare separate clocks.
+    const snapshot = await alertSnapshot(page), state = JSON.stringify(snapshot);
+    if (snapshot.ready && state === previous) return snapshot;
+    previous = snapshot.ready ? state : null;
     await page.waitForTimeout(1500);
   }
+  throw Error('the alert rows, count and source chips did not settle');
 };
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
@@ -142,11 +157,8 @@ try {
   const pooled = await openPage();
   const from = served.requests.length;
   await pooled.page.goto(`${origin}/#/research/daily-alerts?scope=universe`);
-  await settledAlerts(pooled.page);
-  await pooled.page.waitForTimeout(1500);
-  const pooledKeys = await rowKeys(pooled.page);
-  const pooledCount = await rowCount(pooled.page);
-  const pooledChips = await feedChips(pooled.page);
+  const pooledReading = await settledAlerts(pooled.page);
+  const { keys: pooledKeys, count: pooledCount, chips: pooledChips } = pooledReading;
   assert(poolReads(from).some((path) => path.endsWith(`/days/${index.day}.json.gz`)), `today's shard is read (${poolReads(from).join(', ')})`);
   assert.deepEqual(captureReads(from), [], `no pooled capture is downloaded for Today (${captureReads(from).join(', ')})`);
   const poolState = await pooled.page.evaluate(async () => (await import('/js/data/alert-pool.js')).status());
@@ -224,12 +236,11 @@ try {
   await withoutPool(live.page);
   const liveFrom = served.requests.length;
   await live.page.goto(`${origin}/#/research/daily-alerts?scope=universe`);
-  await settledAlerts(live.page);
-  await live.page.waitForTimeout(1500);
+  const liveReading = await settledAlerts(live.page);
   assert(captureReads(liveFrom).length > 0, 'the live path downloads captures');
-  assert.deepEqual(pooledKeys, await rowKeys(live.page), 'the pool paints the rows the live collection paints, in the same order');
-  assert.equal(pooledCount, await rowCount(live.page), 'the same total');
-  const liveChips = await feedChips(live.page);
+  assert.deepEqual(pooledKeys, liveReading.keys, 'the pool paints the rows the live collection paints, in the same order');
+  assert.equal(pooledCount, liveReading.count, 'the same total');
+  const liveChips = liveReading.chips;
   // A source chip is compared where the live read succeeded here. A sandbox that times out an
   // archive read paints that feed partial on the live page; the runner read it whole, and the pool
   // says so — that is the environment failing the live path, not the pool disagreeing with it.
@@ -244,15 +255,13 @@ try {
   // Today can legitimately be empty after IST midnight. Keep that exact comparison above,
   // and also require a populated period so an empty rendering regression cannot pass it.
   await pooled.page.getByRole('combobox', { name: 'Date range', exact: true }).selectOption('7d');
-  await settledAlerts(pooled.page);
-  await pooled.page.waitForTimeout(1500);
-  const recentKeys = await rowKeys(pooled.page), recentCount = await rowCount(pooled.page);
+  const recentReading = await settledAlerts(pooled.page);
+  const { keys: recentKeys, count: recentCount } = recentReading;
   assert(recentKeys.length > 0, 'the retained seven-day fixture must paint actual events');
   await live.page.getByRole('combobox', { name: 'Date range', exact: true }).selectOption('7d');
-  await settledAlerts(live.page);
-  await live.page.waitForTimeout(1500);
-  assert.deepEqual(await rowKeys(live.page), recentKeys, 'a populated period also paints identical rows in order');
-  assert.equal(await rowCount(live.page), recentCount, 'the populated period has identical complete counts');
+  const recentLive = await settledAlerts(live.page);
+  assert.deepEqual(recentLive.keys, recentKeys, 'a populated period also paints identical rows in order');
+  assert.equal(recentLive.count, recentCount, 'the populated period has identical complete counts');
   await pooled.page.getByRole('combobox', { name: 'Date range', exact: true }).selectOption('today');
   await settledAlerts(pooled.page);
   console.log('PASS empty Today and populated seven-day windows both preserve exact pool/live results');
