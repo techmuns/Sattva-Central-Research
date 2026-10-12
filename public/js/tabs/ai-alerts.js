@@ -1,3 +1,4 @@
+import { readHoldingSizes as readPositionSizes, cachedHoldingSizes as cachedPositionSizes } from '../data/holding-sizes.js';
 import { TAB_META } from './catalog.js';
 import * as generalAlerts from '../data/daily-alerts.js';
 import { createTimelineHistory, timelineKey } from '../data/alert-timeline.js';
@@ -32,7 +33,7 @@ import { onCaptureLanded } from '../data/capture-watchdog.js';
 import * as coverage from '../data/coverage.js';
 import * as mute from '../core/ai-mute.js';
 import { currentDay, relativeAge, formatDay as fmtDay, latestAlertSignal, latestAlertEvent, sortAlertCards, matchesSearch } from '../ui/ai-alert-utils.js';
-import { privatePortfolioContext, readPositionSizes, cachedPositionSizes, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState, unlockPortfolio } from '../research/portfolio-bridge.js';
+import { privatePortfolioContext, onPortfolioInvalidation, onPortfolioReady, onPortfolioConnection, portfolioConnectionState } from '../research/portfolio-bridge.js';
 export { relativeAge } from '../ui/ai-alert-utils.js';
 
 export const meta = TAB_META['ai-alerts'];
@@ -155,7 +156,7 @@ onPortfolioInvalidation((version) => {
 });
 
 function portfolioUnavailable() {
-  if (!ctxRef || sizesLoading || (sizeError && awaitingBook === null)) return;
+  if (!ctxRef || sizesLoading || cachedPositionSizes() || (sizeError && awaitingBook === null)) return;
   // Background checks can fail without positions-ready, including repeated
   // failures while the connection is already unavailable.
   loadToken++;
@@ -171,6 +172,9 @@ function portfolioUnavailable() {
 }
 
 export function render(ctx) {
+  if (report && coverage.meta().syncStatus === 'family-unavailable' && !cachedPositionSizes()) {
+    report = alerts.withoutPositionSnapshot(report);
+  }
   if (ctxRef !== ctx) clearTimelines({ history: true });
   actionGeneration++;
   ctxRef = ctx;
@@ -187,6 +191,11 @@ export function render(ctx) {
     }));
     unsubs.push(coverage.onChange(() => {
       if (coverage.meta().syncStatus === 'family-unavailable') portfolioUnavailable();
+      else if (!sizesLoading && report && cachedPositionSizes()?.sizes?.checkedAt !== report.meta?.positionSizes?.checkedAt) {
+        // Shared background reads have no Family-frame notification. Adopt their
+        // new weights/check time through the existing coalesced reassembly path.
+        if (cachedPositionSizes()) sourceChanged();
+      }
     }));
     unsubs.push(onPortfolioReady((version) => {
       if (ctxRef && awaitingBook !== null && version >= awaitingBook && !sizesLoading) {
@@ -291,7 +300,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
   // refresh checks it again. Failure handling removes unverified sizes below.
   let checkedSnapshot = previousSnapshot;
   let positions = Promise.resolve(heldSizes);
-  if (privatePortfolioContext() && portfolioConnectionState() !== 'locked') {
+  if (privatePortfolioContext()) {
     if (!heldSizes) {
       const controller = new AbortController();
       sizeController = controller;
@@ -431,8 +440,7 @@ function positionStatus() {
   if ((sizesLoading || awaitingBook !== null) && !sizes) return sortOrder === 'holdings'
     ? `<p class="mb-4 text-xs text-slate-500" role="status">Loading portfolio sizes · Showing newest first until Largest holdings is ready.</p>` : '';
   if (sizes?.complete && !sizeError) return '';
-  return portfolioConnectionState() === 'locked' ? `<p class="mb-4 text-xs text-slate-500"><button type="button" data-ai-unlock class="font-semibold text-indigo-700 hover:underline">Unlock portfolio to include holding sizes</button></p>`
-    : sortOrder === 'holdings' || sizes?.complete === false ? `<p class="mb-4 text-xs text-slate-500" role="status">Portfolio sizes unavailable${sizes?.complete === false ? ' · Workbook values could not be fully reconciled' : ''} · ${effectiveSort() === 'priority' ? 'Showing highest priority' : 'Showing newest first'}.</p>` : '';
+  return sortOrder === 'holdings' || sizes?.complete === false ? `<p class="mb-4 text-xs text-slate-500" role="status">Portfolio sizes unavailable${sizes?.complete === false ? ' · Workbook values could not be fully reconciled' : ''} · ${effectiveSort() === 'priority' ? 'Showing highest priority' : 'Showing newest first'}.</p>` : '';
 }
 
 function searchMarkup() {
@@ -1076,7 +1084,6 @@ function wire(ctx, total) {
     changeEventFilters(ctxRef);
   });
   click('[data-ai-reset-events]', () => { eventFilters = { selected: [], hideRoutine: false }; changeEventFilters(ctxRef); });
-  click('[data-ai-unlock]', unlockPortfolio);
   click('[data-ai-empty-clear]', clearSearch);
   click('[data-ai-controls]', (event) => {
     const button = event.target.closest('[data-ai-filter]');

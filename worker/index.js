@@ -75,6 +75,7 @@ import {
 } from './github-actions.mjs';
 import { handleResearch } from './research.mjs';
 import { handleFamilyPortfolio } from './family-portfolio.mjs';
+import { handleHoldingSizes } from './holding-sizes.mjs';
 import { handleConcallSummaries } from './concall-summaries.mjs';
 import { handleCombinedFilings } from './combined-filings.mjs';
 import { handleDrhpFilings } from './drhp-filings.mjs';
@@ -201,6 +202,7 @@ export default {
     if (url.pathname === '/api/family-portfolio') {
       return handleFamilyPortfolio(request, env);
     }
+    if (url.pathname === '/api/holding-sizes') return handleHoldingSizes(request, env);
     if (url.pathname === '/api/live-prices') {
       return handleLivePrices(request, env, ctx);
     }
