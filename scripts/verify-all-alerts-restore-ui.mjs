@@ -181,8 +181,9 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
     && document.querySelectorAll('#root tbody tr[data-row-key]').length === 2);
   await contains('A separate development');
-  assert.match(await page.locator('[data-alerts-reading-count]').innerText(), /^2 items · 3 source reports/,
-    'the table callback updates the grouped summary during incremental repaint');
+  assert.equal(await page.locator('#root').getAttribute('data-alerts-source-count'), '3',
+    'the table callback retains the original source count during incremental repaint');
+  assert.equal(await page.locator('[data-alerts-reading-count]').count(), 0, 'grouping does not restore the removed summary');
   console.log('PASS grouping readiness follows the current projection; copies fold after completion and distinct developments remain.');
 
   await page.evaluate(() => {
@@ -206,7 +207,8 @@ try {
   await page.evaluate(() => { window.holdGrouping = false; for (const job of window.groupings) job.release(); });
   await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
     && document.querySelectorAll('#root tbody tr[data-row-key]').length === 3);
-  assert.match(await page.locator('[data-alerts-reading-count]').innerText(), /^3 items · 4 source reports/);
+  assert.equal(await page.locator('#root').getAttribute('data-alerts-source-count'), '4');
+  assert.equal(await page.locator('[data-alerts-history-summary]').count(), 0, 'returning does not restore Till Today');
   console.log('PASS returning to an unchanged retained report restarts cancelled grouping and settles the complete counts.');
   assert.deepEqual(errors, []);
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

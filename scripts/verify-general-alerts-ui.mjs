@@ -251,7 +251,8 @@ try {
   assert(await sourceSummary.evaluate(node => node === document.activeElement), 'Escape returns focus to the source control');
   assert.equal(await page.locator('[data-feed]').count(), 20, 'Universe includes private price status and hides the portfolio-only calendar');
   assert.equal(await page.locator('[data-horizon-toggle]').count(), 0, 'All Alerts has no horizon switch');
-  assert.match(await page.locator('[data-alerts-history-summary]').innerText(), /Till Today/);
+  assert.equal(await page.locator('[data-alerts-history-summary]').count(), 0, 'the redundant Till Today label is removed');
+  assert.equal(await page.locator('[data-alerts-reading-count]').count(), 0, 'the item/source-report summary is removed');
   assert.equal(await page.locator('[data-alerts-focus]').count(), 0, 'Focus table is removed');
   assert.equal(await page.locator('[data-alerts-meta]').count(), 0, 'company and date-count badges are removed');
   const sourceControl = await page.locator('[data-feed]').first().evaluate((node) => {
@@ -651,7 +652,7 @@ try {
   // four-row table can remain geometrically stable while that read is pending.
   await settled(wheelFrame);
   await wheelFrame.waitForFunction(() =>
-    document.querySelector('.alerts-horizon-caption')?.textContent.includes('Retained events through') &&
+    document.querySelector('[data-table-filter="2"]')?.value === 'all' &&
     Number(document.querySelector('[data-score-table]')?.dataset.virtualTotal) > 1000 &&
     !document.querySelector('[data-table-loading]'));
   await settled(wheelFrame);
