@@ -9483,9 +9483,9 @@
   "collection": {
     "version": 1,
     "optional": true,
-    "status": "partial",
-    "reason": "partial-read",
-    "lastAttemptAt": "2026-10-12T22:33:26.904Z",
+    "status": "unavailable",
+    "reason": "source-read-failed",
+    "lastAttemptAt": "2026-10-12T23:08:48.493Z",
     "lastSuccessAt": null
   }
 }
