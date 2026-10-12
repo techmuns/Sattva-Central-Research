@@ -20,7 +20,7 @@ let previousRelease = true;
 const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmarks', 'earnings-hub',
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
   'corporate-actions', 'nse-filings', 'insider-trades', 'mutual-funds'];
-const currentTabOrder = ['ai-alerts', 'daily-alerts', 'corp-announcements', 'corporate-actions', 'ipos',
+const currentTabOrder = ['alerts', 'corp-announcements', 'corporate-actions', 'ipos',
   'earnings-hub', 'breakouts', 'insider-trades', 'mutual-funds', 'concall', 'news', 'public-chatter', 'super-investors'];
 const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
@@ -59,7 +59,7 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__performanceRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/tabs/catalog.js') {
       const source = readFileSync(path, 'utf8');
-      res.end(previousRelease ? source.replace("navigationTitle: 'Earnings',", '')
+      res.end(previousRelease ? source.replace("navigationTitle: 'Earnings',", '').replaceAll("navigationGroup: 'alerts',", '')
         .replace(/(title: 'NSE Filings',\s*\/\/[^\n]*\s*)hideFromNavigation: true,/, '$1') : source);
     } else if (pathname === '/js/tabs/registry.js') {
       const source = readFileSync(path, 'utf8');
@@ -283,9 +283,15 @@ try {
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark', 'automatic upgrade retains reader preferences');
   assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'automatic upgrade keeps Ask Research hidden');
   assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'automatic upgrade removes NSE Filings from navigation');
-  assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+  assert.deepEqual(await page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
     currentTabOrder, 'automatic upgrade applies the requested order in the returning session');
   assert.equal((await page.locator('[data-tab-id="earnings-hub"]').textContent()).trim(), 'Earnings', 'the shortened Earnings label reaches the returning session');
+  assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+    ['ai-alerts', 'daily-alerts'], 'the returning session receives both alert subtabs');
+  assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
+  await page.locator('#subview-mount [data-tab-id="daily-alerts"]').click();
+  await page.locator('[data-active-tab="daily-alerts"]').waitFor();
+  assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {

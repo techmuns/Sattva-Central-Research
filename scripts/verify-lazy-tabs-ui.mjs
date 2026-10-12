@@ -74,9 +74,9 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 14, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 13, 'all retained navigation remains available before its code loads');
     assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
-      ['ai-alerts', 'AI Alerts'], ['daily-alerts', 'All Alerts'], ['corp-announcements', 'Corp Announcements'],
+      ['alerts', 'Alerts'], ['corp-announcements', 'Corp Announcements'],
       ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs'], ['earnings-hub', 'Earnings'],
       ['breakouts', 'Breakouts / Technical'], ['insider-trades', 'Bulk/Block Deal'], ['mutual-funds', 'Mutual Funds'],
       ['concall', 'Con-call'], ['news', 'News'], ['public-chatter', 'Public Chatter'], ['super-investors', 'Super Investors'],
@@ -86,6 +86,42 @@ try {
     await page.evaluate(() => { location.hash = '#/research/nse-filings?scope=universe'; });
     await page.locator('[data-active-tab="nse-filings"]').waitFor();
     await page.getByRole('heading', { name: 'NSE Filings', exact: true }).waitFor();
+
+    await page.locator('#tabbar-mount [data-tab-id="alerts"]').click();
+    await page.locator('[data-active-tab="ai-alerts"]').waitFor();
+    assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+      tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+      [['ai-alerts', 'AI Alerts'], ['daily-alerts', 'All Alerts']]);
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('#subview-mount').getAttribute('data-navigation'), 'group');
+    assert(await page.locator('#subview-mount [data-tab-scroll-controls]').isHidden(), 'both alert subtabs fit without overflow controls');
+    await page.evaluate(() => { window.alertSubtabs = document.querySelector('#subview-mount [data-tab-list]'); });
+    await page.locator('#subview-mount [data-tab-id="ai-alerts"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#content-host').getAttribute('data-active-tab'), 'ai-alerts', 'arrows only move focus');
+    await page.keyboard.press('Enter');
+    await page.locator('[data-active-tab="daily-alerts"]').waitFor();
+    assert(await page.evaluate(() => window.alertSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
+    assert(await page.locator('#subview-mount [data-tab-id="daily-alerts"]').evaluate(tab => document.activeElement === tab));
+    await page.evaluate(() => { location.hash = '#/research/daily-alerts?scope=watchlist&company=SYNTHETIC'; });
+    await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Watchlist');
+    await page.locator('#tabbar-mount [data-tab-id="alerts"]').click();
+    assert.match(page.url(), /daily-alerts\?scope=watchlist&company=SYNTHETIC/, 'active parent retains the reader and filters');
+    await page.evaluate(() => { location.hash = '#/research/daily-alerts?scope=universe&company=SYNTHETIC'; });
+    await page.locator('[data-active-tab="daily-alerts"]').waitFor();
+    assert.equal(await page.locator('#subview-mount [data-tab-id="daily-alerts"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
+    await page.goBack();
+    await page.waitForFunction(() => location.hash.includes('scope=watchlist'));
+    assert.equal(await page.locator('#subview-mount [data-tab-id="daily-alerts"]').getAttribute('aria-selected'), 'true');
+    await page.goBack();
+    await page.waitForFunction(() => location.hash.includes('/daily-alerts?scope=universe'));
+    await page.goBack();
+    await page.locator('[data-active-tab="ai-alerts"]').waitFor();
+    assert.equal(await page.locator('#subview-mount [data-tab-id="ai-alerts"]').getAttribute('aria-selected'), 'true');
+    await page.locator('#tabbar-mount [data-tab-id="corporate-actions"]').click();
+    await page.locator('[data-active-tab="corporate-actions"]').waitFor();
+    assert(await page.locator('#subview-mount').isHidden(), 'group subtabs leave with their parent');
 
     // Hold one real renderer request while the reader moves to another interface.
     let release;

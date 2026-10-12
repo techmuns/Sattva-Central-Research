@@ -1245,7 +1245,7 @@ console.log('\n— AI alerts —');
   await page.waitForTimeout(4500);
   await page.locator('[data-ai-search]').waitFor({ state: 'visible', timeout: 15000 });
   ok('the dashboard opens on AI Alerts', /ai-alerts/.test(page.url()), page.url().split('#')[1]);
-  ok('...and the tab bar puts it first', (await page.locator('[data-tab-id]').first().innerText()).trim() === 'AI Alerts');
+  ok('...and Alerts is the first parent tab', (await page.locator('#tabbar-mount [data-tab-id]').first().innerText()).trim() === 'Alerts');
   // The WHOLE url in the detail: `split('?')[1]` cuts at the query and hides the hash's own
   // `?scope=`, so a failure printed a string that looked identical to a pass.
   ok('...in the Portfolio scope by default', /scope=portfolio/.test(page.url()), page.url());

@@ -288,12 +288,14 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
-Navigation update (9 October 2026): the tab strip is ordered AI Alerts, All Alerts,
+Navigation update (12 October 2026): the tab strip is ordered Alerts,
 Corp Announcements, Corporate Actions, IPOs, Earnings, Breakouts / Technical,
 Bulk/Block Deal, Mutual Funds, Con-call, News, Public Chatter, Super Investors.
 `meta.navigationTitle` optionally shortens the tab label without changing its page title or route.
 Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
-AI Alerts remains the first/default tab. Hidden navigation metadata does not remove route support.
+Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
+`TAB_GROUPS` in the catalog. Both retain their existing routes and independent reader lifecycles.
+AI Alerts remains the first/default reader. Hidden navigation metadata does not remove route support.
 
 Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`

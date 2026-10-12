@@ -1,4 +1,5 @@
 import { researchTabs, bookmarks } from '../tabs/registry.js';
+import { TAB_GROUPS } from '../tabs/catalog.js';
 // ui/shell.js — the generic app chrome: header, workspace dropdown, top tabs, left rail,
 // and the content host that every tab/portfolio module mounts into. This file owns the
 // workspace/tab registry; individual tab modules stay ignorant of navigation entirely.
@@ -348,13 +349,20 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   //
   // Portfolio Analytics itself is untouched and still routes; see WORKSPACES above.
 
-  // Breakouts exposes its four views as horizontal tabs. Keep that strip mounted across
-  // subview and scope changes so keyboard focus and horizontal scroll survive navigation.
-  const subviewItems = (tabModule.meta.subviews || []).map((s) => ({ id: s.id, label: s.label, badge: s.badge }));
+  // Grouped readers use their existing tab routes as subtabs. Keep the strip mounted across
+  // reader, subview and scope changes so keyboard focus and horizontal scroll survive.
+  const group = TAB_GROUPS[tabModule.meta.navigationGroup];
+  const navigationId = group?.id || resolved.tab;
+  const subviewItems = group
+    ? ws.tabs.filter((t) => t.meta.navigationGroup === group.id && !t.meta.hideFromNavigation)
+      .map((t) => ({ id: t.meta.id, label: t.meta.navigationTitle || t.meta.title }))
+    : (tabModule.meta.subviews || []).map((s) => ({ id: s.id, label: s.label, badge: s.badge }));
+  const activeSubview = group ? resolved.tab : resolved.subview;
   const hasSubviews = subviewItems.length > 0;
-  const useSubviewTabs = hasSubviews && tabModule.meta.subviewNavigation === 'tabs';
+  const useSubviewTabs = hasSubviews && (group || tabModule.meta.subviewNavigation === 'tabs');
   const subviewMount = $('#subview-mount', root);
-  if (!useSubviewTabs || subviewTabs?.tab !== resolved.tab) {
+  subviewMount.dataset.navigation = group ? 'group' : 'views';
+  if (!useSubviewTabs || subviewTabs?.tab !== navigationId) {
     subviewTabs?.dispose();
     subviewTabs = null;
   }
@@ -363,11 +371,12 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
     subviewMount.innerHTML = '';
   } else if (useSubviewTabs) {
     if (subviewTabs) {
-      subviewTabs.bar.update(resolved.subview);
+      subviewTabs.bar.update(activeSubview);
     } else {
-      const bar = tabBar({ tabs: subviewItems, activeId: resolved.subview, onSelect: goSubview, label: `${tabModule.meta.title} views` });
+      const bar = tabBar({ tabs: subviewItems, activeId: activeSubview,
+        onSelect: group ? goTab : goSubview, label: `${group?.title || tabModule.meta.title} views` });
       subviewMount.innerHTML = bar.html;
-      subviewTabs = { tab: resolved.tab, bar, dispose: bar.wire(subviewMount) };
+      subviewTabs = { tab: navigationId, bar, dispose: bar.wire(subviewMount) };
     }
   } else {
     const subviewPicker = dropdownMenu({
@@ -389,13 +398,17 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   // Keep the strip mounted across routes: replacing it resets horizontal scroll and drops
   // keyboard focus on every selection, including changes to the scope or subview.
   if (topTabs?.workspace === ws.id) {
-    topTabs.bar.update(resolved.tab);
+    topTabs.bar.update(navigationId);
   } else {
     topTabs?.dispose();
     // Saved events are reached from the header beside the appearance control.
-    const tabItems = ws.tabs.filter((t) => t !== bookmarks && !t.meta.hideFromNavigation)
-      .map((t) => ({ id: t.meta.id, label: t.meta.navigationTitle || t.meta.title }));
-    const bar = tabBar({ tabs: tabItems, activeId: resolved.tab, onSelect: goTab, label: 'Research sections' });
+    const tabItems = [...new Map(ws.tabs.filter((t) => t !== bookmarks && !t.meta.hideFromNavigation)
+      .map((t) => {
+        const parent = TAB_GROUPS[t.meta.navigationGroup];
+        const id = parent?.id || t.meta.id;
+        return [id, { id, label: parent?.title || t.meta.navigationTitle || t.meta.title }];
+      })).values()];
+    const bar = tabBar({ tabs: tabItems, activeId: navigationId, onSelect: goTab, label: 'Research sections' });
     const tabBarMount = $('#tabbar-mount', root);
     tabBarMount.innerHTML = bar.html;
     topTabs = { workspace: ws.id, bar, dispose: bar.wire(tabBarMount) };
@@ -550,7 +563,11 @@ function mountTab(root, tabModule, resolved) {
 // eslint-disable-next-line no-unused-vars
 function goTab(tabId) {
   const ws = WORKSPACES.find((w) => w.id === state.workspace) || WORKSPACES[0];
-  const tabModule = ws.tabs.find((t) => t.meta.id === tabId) || ws.tabs[0];
+  // Clicking the active parent retains its selected reader and filters. Entering from another
+  // section opens the group's first reader; explicit subtab selections still change readers.
+  const activeModule = ws.tabs.find((t) => t.meta.id === state.tab);
+  if (TAB_GROUPS[tabId] && activeModule?.meta.navigationGroup === tabId) return;
+  const tabModule = ws.tabs.find((t) => t.meta.id === tabId || t.meta.navigationGroup === tabId) || ws.tabs[0];
   router.navigate({ workspace: ws.id, tab: tabModule.meta.id, subview: tabModule.meta.subviews?.[0]?.id ?? null, scope: state.scope });
 }
 

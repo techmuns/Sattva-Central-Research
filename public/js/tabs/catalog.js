@@ -2,10 +2,16 @@
 // Renderers use these same objects so labels, scopes and subviews cannot drift.
 import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 
+// Navigation groups share chrome while their readers retain their own routes and lifecycles.
+export const TAB_GROUPS = Object.freeze({
+  alerts: { id: 'alerts', title: 'Alerts' },
+});
+
 export const TAB_META = Object.freeze({
   'ai-alerts': {
     id: 'ai-alerts',
     title: 'AI Alerts',
+    navigationGroup: 'alerts',
     subtitle: `Important portfolio events from the last ${AI_ALERT_WINDOW_DAYS} days.`,
     subviews: [],
   },
@@ -21,6 +27,7 @@ export const TAB_META = Object.freeze({
   'daily-alerts': {
     id: 'daily-alerts',
     title: 'All Alerts',
+    navigationGroup: 'alerts',
     layout: 'table',
     subtitle: 'Opens on Today (IST); older retained alerts and upcoming schedules remain available.',
     // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
