@@ -255,6 +255,8 @@ try {
   await page.locator('[data-changes-activity] [data-row-key]').last().click();
   assert.match(await page.locator('#modal-content').innerText(), /not a verified execution date/);
   await family.evaluate(() => send({ type: 'invalidated', version: 2 }));
+  // postMessage queues work in the parent; child evaluate completion is not its acknowledgement.
+  await page.waitForFunction(async () => !(await import('/js/data/managers.js')).meta() && !document.querySelector('#modal-content')?.textContent.trim(), null, { timeout: 5000 });
   assert.equal(await page.locator('#modal-content').innerText(), '', 'archive change revokes private evidence');
   await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'All Investors' }).click();
   assert(await page.locator('[data-changes-activity] [data-row-key]').count() > 0, 'public history stays available after private revocation');
