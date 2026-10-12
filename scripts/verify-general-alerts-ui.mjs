@@ -541,10 +541,14 @@ try {
 
   // A source refresh can insert rows above the viewport. Preserve the visible event, not merely
   // its old pixel offset, so a reader never loses their place while the stream is live.
-  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
+  await page.locator('[data-table-scroll]').evaluate((scroller) => {
     scroller.style.scrollBehavior = 'auto';
     scroller.scrollTop = Math.min(900, scroller.scrollHeight - scroller.clientHeight);
     scroller.style.removeProperty('scroll-behavior');
+  });
+  // Capture the painted reading position after virtual rows have been measured.
+  await stableReadingSurface();
+  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
     const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
     const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((item) => item.getBoundingClientRect().bottom > boundary);
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : 0 };
