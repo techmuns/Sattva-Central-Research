@@ -268,6 +268,12 @@ export async function read({ mode, day, queryWindow = null, refresh = false, isC
     const events = assembleFeedEvents(decoded, feedId);
     const base = index.feeds[feedId].row;
     const row = feedId === 'news' ? { ...base, ...newsState(index.feeds.news.newsMeta || {}) } : { ...base };
+    // Re-age source coverage without replacing an actual failed-read receipt.
+    // The source reader keeps that failure beside retained evidence; pooling
+    // must describe the same read until a newer verified capture replaces it.
+    if (feedId === 'news' && base.status === 'failed' && /^(?:Read|Last read) failed:/.test(base.note || '')) {
+      Object.assign(row, { status: 'failed', reachesToday: false, note: base.note });
+    }
     // A period's row counts the events it carries — the selected period and its companions —
     // exactly as the bounded live read counts its own rows. The AI pool keeps the full read's
     // figures: its rows describe the sources the ranking was read from, not the subset it reads.

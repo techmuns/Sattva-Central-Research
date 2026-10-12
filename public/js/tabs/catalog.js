@@ -22,7 +22,7 @@ export const TAB_META = Object.freeze({
     id: 'daily-alerts',
     title: 'All Alerts',
     layout: 'table',
-    subtitle: 'Opens on Today (IST); older retained alerts and upcoming schedules remain available.',
+    subtitle: 'Opens on Today (IST); older retained alerts remain available through All history.',
     // No rail. This is one stream and splitting it by feed would rebuild the tabs it exists to
     // collapse — the feed filter in the toolbar does that job without costing a navigation.
     subviews: [],

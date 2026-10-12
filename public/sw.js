@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-10-09-announcements-three-days-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-12-portfolio-holding-sizes-v3`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -45,7 +45,7 @@ function moduleSpecifiers(source) {
 
 // Compose with every other module revision without editing their shared version lines.
 function releaseCacheKey() {
-  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-super-investor-managers-v1`;
+  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1-super-investor-managers-v1`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {

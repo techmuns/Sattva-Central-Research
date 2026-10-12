@@ -1,6 +1,7 @@
-// Start the authenticated Family reader for the whole dashboard, including a
+import { readHoldingSizes as readPositionSizes } from './holding-sizes.js';
+// Start the shared Family size reader for the whole dashboard, including a
 // deep link straight to News or filings. No private data is persisted.
-import { readPositionSizes, onPortfolioConnection, onPortfolioReady, portfolioReadBusy } from '../research/portfolio-bridge.js';
+import { onPortfolioConnection, onPortfolioReady, portfolioReadBusy } from '../research/portfolio-bridge.js';
 import * as coverage from './coverage.js';
 import * as live from '../core/live.js';
 let started = false;

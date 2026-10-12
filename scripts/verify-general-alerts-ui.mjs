@@ -250,8 +250,8 @@ try {
   assert.equal(await picker.getAttribute('open'), null);
   assert(await sourceSummary.evaluate(node => node === document.activeElement), 'Escape returns focus to the source control');
   assert.equal(await page.locator('[data-feed]').count(), 20, 'Universe includes private price status and hides the portfolio-only calendar');
-  assert.equal(await page.locator('[data-horizon-toggle]').count(), 2);
-  assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('[data-horizon-toggle]').count(), 0, 'All Alerts has no horizon switch');
+  assert.match(await page.locator('[data-alerts-history-summary]').innerText(), /Till Today/);
   const sourceControl = await page.locator('[data-feed]').first().evaluate((node) => {
     const checkbox = node.querySelector('span');
     return {
@@ -263,10 +263,6 @@ try {
     sourceControl.touchTarget && sourceControl.checkbox,
     'source controls ship comfortable touch targets and legible checkboxes',
   );
-  await page.locator('[data-horizon-toggle="through"]').press('ArrowRight');
-  assert.equal(await page.locator('[data-horizon-toggle="upcoming"]').getAttribute('aria-selected'), 'true', 'time horizon is keyboard operable');
-  await page.locator('[data-horizon-toggle="upcoming"]').press('ArrowLeft');
-  assert.equal(await page.locator('[data-horizon-toggle="through"]').getAttribute('aria-selected'), 'true');
   await page.evaluate(() => window.show('portfolio'));
   await settled();
   const dateFixture = await page.evaluate(() => {
@@ -314,28 +310,8 @@ try {
   await settled();
   console.log('Verified exact All Alerts periods, retained user choice and complete-history company links');
   assert.equal(await page.locator('[data-feed="screener-portfolio-upcoming"]').count(), 1);
-  await page.locator('[data-horizon-toggle="upcoming"]').click();
-  assert.equal(await page.locator('[data-alert-arrivals]').count(), 0, 'live arrivals stay in Till Today');
-  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('AGM scheduled'));
-  assert.equal(await page.locator('[data-horizon-toggle="upcoming"]').getAttribute('aria-selected'), 'true');
-  await page.locator('[data-sources-summary]').click();
-  assert((await page.locator('[data-alerts-coverage]').innerText()).includes('Portfolio calendar'));
-  assert(!(await page.locator('[data-alerts-coverage]').innerText()).includes('Price & volume'), 'Upcoming hides sources that cannot schedule events');
-  const upcomingHeaders = await page.locator('thead').innerText();
-  assert(upcomingHeaders.includes('WHAT IS SCHEDULED'));
-  assert(!upcomingHeaders.includes('DIRECTION') && !upcomingHeaders.includes('IMPORTANCE'));
-  await page.locator('[data-feed-toggle="screener-portfolio-upcoming"]').click();
-  await page.locator('[data-table-search]').fill('Sterlite');
-  for (const [value, count] of [['next7', 1], ['next30', 1], ['all', 2]]) {
-    await selectPeriod(value);
-    assert.equal(await page.locator('tbody tr[data-row-key]').count(), count, `upcoming search respects ${value}`);
-  }
-  await page.locator('[data-table-search]').fill('');
-  await page.locator('[data-feed-toggle="__all"]').click();
-  if (process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT) await page.screenshot({ path: process.env.GENERAL_ALERTS_UPCOMING_SCREENSHOT });
-  await page.locator('[data-sources-close]').click();
-  await page.locator('[data-horizon-toggle="through"]').click();
-  await page.waitForFunction(() => document.querySelector('[data-horizon-toggle="through"]')?.getAttribute('aria-selected') === 'true');
+  assert.equal(await page.getByRole('button', { name: /^Upcoming/ }).count(), 0, 'Upcoming remains absent after scope changes');
+  assert(!(await page.locator('tbody').innerText()).includes('AGM scheduled'), 'future schedules stay outside the history view');
   await page.evaluate(() => window.show('universe'));
   await settled();
   assert.equal(await page.locator('[data-alerts-meta] [data-alerts-info]').count(), 0,
