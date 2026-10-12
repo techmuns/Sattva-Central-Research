@@ -339,14 +339,27 @@ try {
     assert(await frame.locator('#subview-mount [data-tab-id="daily-alerts"]').isVisible(), 'All Alerts retains its selected subtab');
     assert.equal(await frame.locator('[data-alert-arrivals]').count(), 0, 'rows stream directly without a separate live banner');
     assert(normal.pageWidth <= normal.width + 2, `no horizontal page clipping at ${size.width}px`);
-    assert(normal.toolbar <= (size.width >= 1024 ? 66 : 165), `search and all filters retain a compact row budget: ${JSON.stringify(normal)}`);
+    assert(normal.toolbar <= (size.width >= 1024 ? 66 : 124), `grouped filters save a toolbar row on phones: ${JSON.stringify(normal)}`);
     assert((await frame.locator('[data-table-search]').boundingBox()).width >= 160, 'company search remains a usable text field, not a collapsed icon');
     const clipped = await frame.evaluate(() => [...document.querySelectorAll('[data-app-header] button, [data-header-bookmarks], [data-alerts-workspace] button, [data-sources-summary], [data-table-search], [data-table-filter]')]
       .filter(node => !node.closest('tbody') && node.getBoundingClientRect().width > 0)
       .filter(node => node.getBoundingClientRect().left < 0 || node.getBoundingClientRect().right > innerWidth + 1)
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
     assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
-    assert.equal(await frame.locator('[data-table-filter]').count(), 3, 'All Alerts retains importance, direction and date filters');
+    assert.equal(await frame.locator('[data-table-filter]').count(), 3, 'All Alerts retains both independent predicates and the date filter');
+    assert.equal(await frame.locator('[data-table-toolbar] select:visible').count(), 1, 'only Date occupies a separate selector in the closed toolbar');
+    const signalControl = frame.locator('[data-filter-group-toggle]');
+    assert((await signalControl.boundingBox()).width <= 210, 'the grouped control stays compact');
+    await signalControl.click();
+    const signalPanel = frame.locator('[data-filter-group-panel]');
+    const panelGeometry = await signalPanel.evaluate(panel => {
+      const box = panel.getBoundingClientRect();
+      return { left:box.left,right:box.right,bottom:box.bottom,width:innerWidth,height:innerHeight,
+        reachable:panel.contains(document.elementFromPoint(box.left + 20, box.top + 20)) };
+    });
+    assert(panelGeometry.left >= 0 && panelGeometry.right <= panelGeometry.width && panelGeometry.bottom <= panelGeometry.height && panelGeometry.reachable, `the panel stays reachable above the clipped table at ${size.width}px: ${JSON.stringify(panelGeometry)}`);
+    assert.equal(await signalPanel.locator('select:visible').count(), 2);
+    await signalPanel.press('Escape');
     assert.equal(await frame.locator('[data-watch-toggle]').count(), 0, 'the redundant Watchlist button is removed at every viewport size');
     assert.equal(await frame.getByRole('combobox', { name: 'Company relationship' }).count(), 0, 'the company relationship filter is removed at every viewport size');
     if (size.width >= 1024) {

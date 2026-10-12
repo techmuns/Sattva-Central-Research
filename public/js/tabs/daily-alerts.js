@@ -1115,6 +1115,14 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     showRank: false,
     // The global scope picker already offers Watchlist; avoid a second scope restriction here.
     showWatchFilter: false,
+    filterGroup: mode === HORIZON.THROUGH ? {
+      label: 'Signal & priority', indices: [0, 1],
+      summary: values => {
+        const priority = values[0] === 'high' ? 'High' : values[0] === 'low' ? 'Low' : '';
+        const direction = { positive: 'Positive', negative: 'Negative', neutral: 'Neutral' }[values[1]] || '';
+        return priority && direction ? `${priority} · ${direction}` : priority ? `${priority} priority` : direction;
+      },
+    } : null,
     // Date and time lead every row. Some feeds resolve only to a day; saying "Day only" is more
     // informative than an em dash and keeps older rows intelligibly ordered as the reader scrolls.
     // History adds the combined signal/priority marker before company identity. Upcoming has no
@@ -1190,7 +1198,7 @@ function buildTableFilters(events, day, mode, matchesDate) {
   }
   return [
     {
-      label: 'Importance',
+      label: 'Priority',
       options: [
         { value: 'all', label: 'All priorities' },
         { value: 'high', label: 'High priority only' },
