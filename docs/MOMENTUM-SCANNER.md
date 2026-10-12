@@ -19,7 +19,7 @@ cheap part runs live. Nothing below recomputes the history intraday.
 | --- | --- | --- |
 | **Data** | `scripts/scrape-technicals.mjs` → `public/data/technicals.json` | Once a weekday, compute and store the indicator **state** each stock needs (SMA20/50/100/200, the 10-day average volume, and the running Wilder/EMA state for RSI and MACD). |
 | **Engine** | `public/js/scoring/momentum-live.js` | Pure, dependency-free. Advance that stored state **one step** with the live price, and hold the filter definitions as data. |
-| **UI** | `renderMomentumScanner()` in `public/js/tabs/breakouts.js` | Draw the ranked table, the summary strip and sector bar, and the gate/threshold controls. Re-paints on every live tick. |
+| **UI** | `renderMomentumScanner()` in `public/js/tabs/breakouts.js` | Draw the ranked table, result count, gate/threshold controls and coverage link. Re-paints on every live tick. |
 
 The engine is imported by both the browser and `scripts/verify-momentum-scanner.mjs`, so the
 math the dashboard runs and the math the test checks are the same code.
