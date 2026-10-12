@@ -226,7 +226,13 @@ export function sourceGroups() {
   const reported = num(() => earningsLive.all().length);
   const calls = num(() => concalls.all().length);
   // Read from the module the view reads, like every other figure here — never typed.
-  const si = { count: num(() => superInvestors.meta().loadedBooks) };
+  const siMeta = superInvestors.meta();
+  const si = { count: num(() => siMeta.loadedBooks) };
+  const siRead = typeof siMeta.checkedAt === 'number' ? siMeta.checkedAt : Date.parse(siMeta.checkedAt || '');
+  const siReadState = sourceReadState({ at: siMeta.checkedAt, failed: !!siMeta.reason || (superInvestors.isLoaded() && !siMeta.ok),
+    partial: !!(siMeta.failedBooks || siMeta.uncheckedBooks || siMeta.stale || siMeta.pending), maxAgeMs: 6 * 3600000 });
+  const siCoverage = `${siMeta.loadedBooks} of ${siMeta.total} tracked books available · ${siMeta.failedBooks} unavailable · ${siMeta.uncheckedBooks} retained books could not be re-checked · ${siMeta.pending} pending. ` +
+    (Number.isFinite(siRead) ? `Oldest source check: ${new Date(siRead).toISOString()}.` : 'Source check time unavailable.');
   const chat = num(() => chatter.all().length);
   const chatResolved = num(() => chatter.companies().length);
   // Read from the module the Telegram section reads. `num()` returns null rather than 0, so a
@@ -671,8 +677,8 @@ export function sourceGroups() {
           url: 'https://ticker.finology.in/superstar-portfolios',
           feeds:
             '<strong>Real filings.</strong> The whole Superstar Investors view: every tracked investor Finology carry, and for each one the full book they publish — company by company, one column per quarter of disclosed holding percentage, with their net worth, active and total stock counts and any biography. <strong>Percentages are what the company filed with the exchanges; the ₹ value beside each holding is Finology\'s own derivation</strong> from that percentage and a market cap, reproduced unchanged rather than recomputed. A blank quarter means <strong>not disclosed</strong> — below the threshold a real holding is invisible — so it renders as a dash and is excluded from totals, never counted as zero. The one figure this dashboard computes is the quarter-over-quarter change, headed <em>Change (derived)</em>.',
-          cadence: 'Quarterly, as filings arrive · a committed snapshot covers the grid, live for what it misses',
-          status: 'live',
+          cadence: 'Weekday capture at 07:00 IST · automatic visible checks within the six-hour source cache. Exchange completeness is unverified. ' + siCoverage,
+          status: 'live', readState: siReadState,
           file: 'worker/index.js → /api/super-investors · worker/finology.mjs · public/js/data/finology-shared.js',
         },
         {
@@ -682,8 +688,8 @@ export function sourceGroups() {
             si.count,
             '<strong>Every book in one file.</strong> <code class="rounded bg-slate-100 px-1">public/data/super-investors.json</code>, written by <code class="rounded bg-slate-100 px-1">scripts/scrape-super-investors.mjs</code> reading this dashboard\'s own Worker, carries <n> investors\' books as the Worker itself served them.'
           ) +
-            ' It exists because that view is <strong>one request per investor</strong> — each book is a separate scrape upstream — so a first visit meant ninety-one round trips and most of a minute of the grid filling in. One conditional GET replaces them. <strong>A book the capture could not read is absent, never empty</strong>, and is fetched live instead; a book already on this device wins over the file, because those bytes were confirmed later. The pill says <em>Captured</em> rather than <em>Live</em> for anything nobody has confirmed in this session.',
-          cadence: 'Refreshed on a schedule · re-read on demand from the Live pill',
+            ' It exists because that view is <strong>one request per investor</strong> — each book is a separate scrape upstream — so a first visit meant ninety-one round trips and most of a minute of the grid filling in. One conditional GET replaces them. <strong>A book the capture could not read is absent, never empty</strong>, and is fetched live instead; a book already on this device wins over the file, because those bytes were confirmed later.',
+          cadence: 'Refreshed weekdays at 07:00 IST · revalidated automatically while the view is open',
           status: 'live',
           file: 'scripts/scrape-super-investors.mjs · public/data/super-investors.json · public/js/data/super-investors.js',
         },
