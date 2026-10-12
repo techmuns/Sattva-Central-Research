@@ -169,7 +169,7 @@ const tab = makeFilingsTab({
   }),
 });
 
-export const meta = tab.meta;
+export const meta = TAB_META['corporate-actions'];
 let liveRef = null;
 export function render(ctx) {
   tab.render(ctx);

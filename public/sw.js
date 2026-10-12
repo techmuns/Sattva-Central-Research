@@ -45,7 +45,7 @@ function moduleSpecifiers(source) {
 
 // Compose with every other module revision without editing their shared version lines.
 function releaseCacheKey() {
-  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1`;
+  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1-super-investor-managers-v1`;
 }
 
 // Compose this UI revision without editing another release's version marker.
@@ -137,11 +137,11 @@ async function cacheModuleGraph(cache, entry) {
 }
 
 // This UI revision composes with the shared release without competing for its version line.
-const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earnings-reports-v2-paid-news-market-hours-v1-free-company-news-v1-news-every-2-hours-v1-empty-day-alerts-v1-finology-period-labels-v1-insider-source-gaps-v1-research-settle-v1-news-identity-retention-v1-lazy-tab-interfaces-v2-momentum-scanner-v1-momentum-scanner-polish-v1-relevance-ranking-v1-momentum-scanner-names-v1-glow-alert-delivery-v1-recovery-revisions-v1-context-restart-v1-active-deal-poller-v1-startup-reads-v1-cancelled-alert-warmups-v1-empty-news-query-v1-sliced-feed-normalization-v1-source-churn-warmups-v1-shared-company-archives-v1-remove-ask-research-tab-v1-research-navigation-order-v1-alerts-subtabs-v1-alerts-table-spacing-v2`;
+const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earnings-reports-v2-paid-news-market-hours-v1-free-company-news-v1-news-every-2-hours-v1-empty-day-alerts-v1-finology-period-labels-v1-insider-source-gaps-v1-research-settle-v1-news-identity-retention-v1-lazy-tab-interfaces-v2-momentum-scanner-v1-momentum-scanner-polish-v1-relevance-ranking-v1-momentum-scanner-names-v1-glow-alert-delivery-v1-recovery-revisions-v1-context-restart-v1-active-deal-poller-v1-startup-reads-v1-cancelled-alert-warmups-v1-empty-news-query-v1-sliced-feed-normalization-v1-source-churn-warmups-v1-shared-company-archives-v1-remove-ask-research-tab-v1-research-navigation-order-v1-alerts-subtabs-v1-alerts-table-spacing-v2-announcements-subtabs-v1`;
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(appReleaseCacheKey());
+    const cache = await caches.open(currentCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -156,7 +156,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== appReleaseCacheKey()).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== currentCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -225,7 +225,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(appReleaseCacheKey());
+    const cache = await caches.open(currentCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
@@ -242,3 +242,8 @@ self.addEventListener('fetch', (event) => {
       (request.mode === 'navigate' ? cache.match('/index.html') : Response.error());
   })());
 });
+
+// Keep this UI revision separate from the shared dashboard release markers.
+function currentCacheKey() {
+  return `${appReleaseCacheKey()}-all-alerts-clean-header-v1`;
+}

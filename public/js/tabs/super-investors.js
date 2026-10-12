@@ -27,6 +27,7 @@ import { renderLive } from '../investors/live.js';
 import * as liveInvestors from '../data/super-investors.js';
 import * as refreshRegistry from '../core/refresh.js';
 import * as filed from '../data/institution-holdings.js';
+import * as managers from '../data/managers.js';
 
 export const meta = TAB_META['super-investors'];
 
@@ -42,11 +43,11 @@ let liveUnsub = null;
 let liveUnregister = null;
 let liveView = null;
 let liveRouteCompany = null;
-// The Superstar sub-view has three in-page destinations of its own. Keep the reader on the one they
+// The Superstar sub-view has four in-page destinations. Keep the reader on the one they
 // chose while scope changes and live-book arrivals repaint the tab; switching to Institutions or
 // leaving Super Investors resets it.
-let liveSection = 'investors';
-let changesView = { period: 'quarter' };
+let liveSection = 'quarterly-changes';
+let changesView = { audience: 'my-managers', period: 'quarter' };
 // Institutions mirrors that contract: the fund tables remain the default, while Quarterly Changes
 // is a cross-book destination whose selection survives a scope repaint but not leaving the view.
 let filedSection = 'institutions';
@@ -63,13 +64,18 @@ export function render(ctx) {
   liveRouteCompany = seeded.company;
   liveView = seeded.view;
   // A sub-view change does not destroy this module. Reset here when the reader leaves Superstar
-  // Investors so returning from Institutions opens on the documented All Investors default.
-  if (ctxRef?.subview === 'superstar-investors' && ctx.subview !== 'superstar-investors') { liveSection = 'investors'; changesView = { period: 'quarter' }; }
+  // Investors so returning from Institutions opens on Changes.
+  if (ctxRef?.subview === 'superstar-investors' && ctx.subview !== 'superstar-investors') { liveSection = 'quarterly-changes'; changesView = { audience: 'my-managers', period: 'quarter' }; }
   if (ctxRef?.subview === 'institutions' && ctx.subview !== 'institutions') filedSection = 'institutions';
   renderToken++;
   ctxRef = ctx;
   if (!liveUnregister) liveUnregister = refreshRegistry.register('superstar-investors', {
     label: 'Investors', refresh: async () => {
+      if (ctxRef?.subview === 'superstar-investors' && (liveSection === 'my-managers' || liveSection === 'quarterly-changes' && changesView.audience === 'my-managers')) {
+        const snapshot = await managers.load({ force: true });
+        if (!snapshot) throw Error(managers.failureInfo() || 'Manager coverage could not be checked.');
+        return { checked: snapshot.managers.length };
+      }
       if (ctxRef?.subview !== 'institutions') return liveInvestors.refresh();
       await filed.refresh();
       if (ctxRef?.subview === 'institutions') renderInstitutions(ctxRef);
@@ -94,8 +100,8 @@ export function destroy() {
   // Leaving is a deliberate exit; coming back should be a clean table rather than last visit's
   // half-applied filter. Only a repaint mid-load carries the view forward.
   liveView = null;
-  changesView = { period: 'quarter' };
-  liveSection = 'investors';
+  changesView = { audience: 'my-managers', period: 'quarter' };
+  liveSection = 'quarterly-changes';
   filedSection = 'institutions';
 }
 

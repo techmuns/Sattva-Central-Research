@@ -44,6 +44,7 @@ import { wireIntegrity, ensureHoldingsFresh, associatedEvidenceHtml } from './in
 import { loadEvidence } from '../data/holding-evidence.js';
 import * as publicHoldings from '../data/public-holdings.js';
 import { publicDisclosuresHtml, wirePublicDisclosures } from './public-disclosures.js';
+import { sectionsFor, renderManagers } from './my-managers.js';
 
 const SOURCE = 'Ticker Finology via this dashboard’s Worker; scheduled daily and checked automatically while visible. Exchange completeness is unverified.';
 const FINOLOGY_COMPANY = (slug) => `https://ticker.finology.in/company/${encodeURIComponent(slug)}`;
@@ -69,23 +70,24 @@ const SECTIONS = [
   { id: 'data-table', label: 'Data Table' },
 ];
 
-export function renderLive(ctx, { disposers = [], section = 'investors', tableView, onView, onSection, changesView, onChangesView } = {}) {
+export function renderLive(ctx, { disposers = [], section = 'quarterly-changes', tableView, onView, onSection, changesView, onChangesView } = {}) {
   const m = feed.meta();
 
   disposers.push(feed.watchFreshness(), publicHoldings.watchFreshness());
   const rows = scopedHoldings(ctx);
   const quarters = feed.quarterLabels();
   const investorList = feed.list();
-  const sections = SECTIONS;
+  const sections = sectionsFor(SECTIONS);
   const activeSection = sections.some((item) => item.id === section) ? section : sections[0].id;
   const sectionTabs = tabBar({ tabs: sections, activeId: activeSection, onSelect: onSection || (() => {}) });
 
   const summary = activeSection === 'quarterly-changes' ? renderChanges(ctx, { view: changesView, onView: onChangesView, openInvestor, includeHolding: scopeFilter(ctx) }) : null;
+  const mine = activeSection === 'my-managers' ? renderManagers(ctx) : null;
   const table = activeSection === 'data-table' ? holdingsTable(ctx, rows, quarters, tableView) : null;
   if (table) onView?.(table.view);
 
   const panel =
-    activeSection === 'quarterly-changes'
+    mine ? mine.html : activeSection === 'quarterly-changes'
       ? summary.html
       : !m.ok
       ? unavailableHtml(m)
@@ -101,7 +103,7 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
   ctx.root.innerHTML = `
     ${sectionHead({
       title: 'Superstar Investors',
-      description: 'Follow tracked investors through dated holdings disclosures and reported bulk/block deals.',
+      description: 'Follow your managers and tracked investors through holdings, ledger activity and reported bulk/block deals.',
     })}
     ${!m.ok && activeSection === 'quarterly-changes' ? unavailableHtml(m) : ''}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
@@ -117,6 +119,7 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
 
   disposers.push(sectionTabs.wire(ctx.root.querySelector('[data-live-section-tabs]')));
   summary?.wire(ctx.root, disposers);
+  mine?.wire(ctx.root, disposers);
   if (table) disposers.push(table.wire(ctx.root));
   if (activeSection === 'investors') wireCards(ctx.root);
 }
