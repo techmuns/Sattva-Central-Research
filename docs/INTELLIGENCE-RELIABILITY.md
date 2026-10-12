@@ -527,3 +527,7 @@ check removes the in-memory snapshot without dropping public alert evidence. Per
 the workbook period, mark date, source revision and actual check time, never a live-price claim.
 No sizes enter committed snapshots, service-worker caches, IndexedDB or localStorage. Detailed
 ledger analysis and private price alerts retain their existing Family authentication boundary.
+
+A pooled news reading retains an actual failed-read receipt alongside saved records when
+coverage is re-aged. Freshness recalculation cannot replace that failure with a different
+coverage note; a newer verified capture is required to replace the receipt.
