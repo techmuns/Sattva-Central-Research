@@ -21,6 +21,8 @@ export function quoteTargetIdentity({ nseEntries = [], bseEntries = [] } = {}) {
   return target => {
     if (!target) return target;
     const key = upper(target.ticker);
+    if (!target.isin && nse.symbols.has(key) && bse.symbols.has(key) &&
+        (!nse.symbols.get(key) || !bse.symbols.get(key) || nse.symbols.get(key).isin !== bse.symbols.get(key).isin)) return target;
     const hit = target.isin ? nse.isins.get(target.isin) || bse.isins.get(target.isin)
       : nse.symbols.has(key) ? nse.symbols.get(key) : bse.symbols.get(key);
     if (!hit) return target;

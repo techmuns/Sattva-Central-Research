@@ -27,6 +27,9 @@ test('current exact exchange identities repair renamed and BSE-only provider tar
  assert.equal(identify({ticker:'HEG',yahooTicker:'REVIEWED.BO'}).yahooTicker,'REVIEWED.BO');
  const ambiguous=quoteTargetIdentity({nseEntries:[{isin,ticker:'SHARED'},{isin:bseOnly,ticker:'SHARED'}]});
  assert.deepEqual(ambiguous({ticker:'SHARED'}),{ticker:'SHARED'});
+ const overlap=quoteTargetIdentity({nseEntries:[{isin,ticker:'REUSED'}],bseEntries:[{isin:bseOnly,ticker:'REUSED',bseSymbol:'REUSED',status:'Active'}]});
+ assert.deepEqual(overlap({ticker:'REUSED'}),{ticker:'REUSED'},'conflicting exchange identities cannot replace an old ticker with a different issuer');
+ assert.equal(overlap({ticker:'REUSED',isin}).yahooTicker,'REUSED.NS');
  assert.deepEqual(identify({ticker:'UNKNOWN',name:'HEG Advanced Materials'}),{ticker:'UNKNOWN',name:'HEG Advanced Materials'});
 });
 test('reviewed Screener IDs resolve consistently; unknown IDs never become a stock called ID',()=>{
