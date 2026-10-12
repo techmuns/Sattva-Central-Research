@@ -192,16 +192,36 @@ html[data-theme="dark"] body {
 .header-bookmarks[aria-current="page"] { border-color: var(--accent-600); }
 .header-bookmarks[aria-current="page"] svg { fill: currentColor; }
 .theme-toggle:focus-visible, .header-bookmarks:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; }
-@media (min-width: 960px) and (max-width: 1199px) {
-  /* Preserve All Alerts' reading area inside a short laptop host frame. */
+@media (min-width: 960px) {
+  /* Make room for the alert subtabs without shrinking the table's reading area. */
+  [data-reading-layout="table"] [data-app-header] { padding-top: 4px; padding-bottom: 0; }
   [data-reading-layout="table"] [data-app-header] > div { flex-wrap: nowrap; gap: 12px; }
   [data-reading-layout="table"] [data-app-header] > div > div:first-child { flex-shrink: 1; min-width: 180px; }
   [data-reading-layout="table"] [data-app-header] > div > div:last-child { gap: 6px; }
+  [data-reading-layout="table"] [data-app-content] { padding-top: 4px; }
+  [data-reading-layout="table"] [data-app-nav] .tab-bar { padding-block: 2px; }
+  [data-reading-layout="table"] [data-app-nav] .tab-btn { min-height: 36px; padding-block: 6px; }
+  [data-reading-layout="table"] [data-app-nav] .tab-scroll-btn { height: 36px; }
+  [data-reading-layout="table"] #subview-mount[data-navigation="group"] { margin-bottom: 0; }
+  [data-reading-layout="table"] #subview-mount[data-navigation="group"] .tab-btn { min-height: 32px; padding-block: 3px; }
+}
+html[data-alerts-focus-mode="true"] [data-reading-layout="table"] #subview-mount { display: none; }
+@media (max-width: 959px) {
+  [data-reading-layout="table"] [data-app-header] { padding-top: 4px; padding-bottom: 0; }
+  [data-reading-layout="table"] [data-app-header] > div { gap: 8px; }
+  [data-reading-layout="table"] [data-app-content] { padding-top: 0; }
+  [data-reading-layout="table"] [data-app-nav] .tab-bar { padding-block: 2px; }
+  [data-reading-layout="table"] #subview-mount[data-navigation="group"] { margin-bottom: 0; }
+}
+@media (min-width: 960px) and (max-width: 1199px) {
+  /* Preserve All Alerts' reading area inside a short laptop host frame. */
   [data-reading-layout="table"] [data-scope-label],
   [data-reading-layout="table"] .theme-toggle span { display: none; }
   [data-reading-layout="table"] .theme-toggle { width: 32px; min-height: 32px; padding: 0; }
+  [data-reading-layout="table"] .header-bookmarks { width: 32px; min-height: 32px; padding: 0; }
   [data-reading-layout="table"] [data-header-refresh] { width: 32px; height: 32px; padding: 0; justify-content: center; }
-  [data-reading-layout="table"] [data-header-refresh-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  [data-reading-layout="table"] [data-header-refresh-label],
+  [data-reading-layout="table"] .header-bookmarks span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 @media (max-width: 359px) {
   [data-app-header] { padding-left: 16px; padding-right: 16px; }
