@@ -1,43 +1,44 @@
 {
   "queries": {
     "isin:INE423A01024|Adani Enterprises": {
-      "lastAttemptAt": "2026-10-07T09:11:18+00:00",
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
       "error": null,
-      "lastResultCount": 82,
-      "targetThrough": "2026-10-03T05:24:56+00:00",
-      "pending": [
-        {
-          "from": "2026-09-28T17:24:56.228683+00:00",
-          "to": "2026-10-03T05:24:56+00:00"
-        }
-      ],
-      "lastDiscoveryAt": "2026-10-07T09:11:18+00:00"
-    },
-    "isin:INE423A01024|ADANIENT": {
-      "lastAttemptAt": "2026-10-07T09:11:18+00:00",
-      "error": null,
-      "lastResultCount": 16,
+      "lastResultCount": 98,
       "targetThrough": null,
       "pending": [],
+      "lastDiscoveryAt": "2026-10-12T22:32:50+00:00",
+      "lastSuccessAt": "2026-10-03T05:24:56+00:00"
+    },
+    "isin:INE423A01024|ADANIENT": {
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
+      "error": "result-cap-incomplete",
+      "lastResultCount": 113,
+      "targetThrough": "2026-10-12T22:32:50+00:00",
+      "pending": [
+        {
+          "from": "2026-09-13T20:36:48+00:00",
+          "to": "2026-09-28T09:34:49+00:00"
+        },
+        {
+          "from": "2026-09-28T09:34:49+00:00",
+          "to": "2026-10-12T22:32:50+00:00"
+        }
+      ],
       "lastDiscoveryAt": "2026-10-07T09:11:18+00:00",
       "lastSuccessAt": "2026-09-15T20:36:48+00:00"
     },
     "isin:INE674K01013|Aditya Birla Capital": {
-      "lastAttemptAt": "2026-10-07T09:11:18+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 103,
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
+      "error": null,
+      "lastResultCount": 13,
       "targetThrough": "2026-09-15T20:36:48+00:00",
       "pending": [
-        {
-          "from": "2026-09-06T20:36:48.830627+00:00",
-          "to": "2026-09-11T08:36:48.415313+00:00"
-        },
         {
           "from": "2026-09-11T08:36:48.415313+00:00",
           "to": "2026-09-15T20:36:48+00:00"
         }
       ],
-      "lastDiscoveryAt": "2026-10-07T09:11:18+00:00"
+      "lastDiscoveryAt": "2026-10-12T22:32:50+00:00"
     },
     "isin:INE674K01013|ABCAPITAL": {
       "lastAttemptAt": "2026-10-08T08:48:14+00:00",
@@ -2076,10 +2077,10 @@
       "pending": []
     },
     "isin:INE564S01019|Vikram Kamats Hospitality": {
-      "lastAttemptAt": "2026-10-07T09:32:55+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 1,
-      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
+      "error": null,
+      "lastResultCount": 0,
+      "lastSuccessAt": "2026-10-12T22:32:50+00:00",
       "targetThrough": null,
       "pending": []
     },
@@ -2105,28 +2106,25 @@
       "lastDiscoveryAt": "2026-10-12T21:45:53+00:00"
     },
     "isin:INE540H01012|Voltamp Transformers": {
-      "lastAttemptAt": "2026-10-07T10:17:01+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 21,
-      "lastSuccessAt": "2026-10-03T05:24:56+00:00",
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
+      "error": null,
+      "lastResultCount": 56,
+      "lastSuccessAt": "2026-10-12T22:32:50+00:00",
       "targetThrough": null,
       "pending": []
     },
     "isin:INE540H01012|VOLTAMP": {
-      "lastAttemptAt": "2026-10-07T10:51:20+00:00",
-      "error": "search-unavailable",
-      "lastResultCount": 100,
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
+      "error": null,
+      "lastResultCount": 16,
       "targetThrough": "2026-10-03T05:24:56+00:00",
       "pending": [
-        {
-          "from": "2026-09-24T05:24:56.457367+00:00",
-          "to": "2026-09-28T17:24:56.228683+00:00"
-        },
         {
           "from": "2026-09-28T17:24:56.228683+00:00",
           "to": "2026-10-03T05:24:56+00:00"
         }
-      ]
+      ],
+      "lastDiscoveryAt": "2026-10-12T22:32:50+00:00"
     },
     "isin:INE377N01017|Waaree Energies": {
       "lastAttemptAt": "2026-10-08T06:26:45+00:00",
@@ -2181,7 +2179,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|Aarti Pharmalabs": {
-      "lastAttemptAt": "2026-10-07T11:26:55+00:00",
+      "lastAttemptAt": "2026-10-12T22:32:50+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|AARTIPHARM": {
@@ -2420,7 +2418,7 @@
   "coverage": {
     "planned": 254,
     "attempted": 7,
-    "incomplete": 242,
-    "checkedAt": "2026-10-12T21:45:53.146872+00:00"
+    "incomplete": 240,
+    "checkedAt": "2026-10-12T22:32:50.426810+00:00"
   }
 }
