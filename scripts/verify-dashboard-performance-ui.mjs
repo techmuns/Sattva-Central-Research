@@ -298,6 +298,8 @@ try {
     throw error;
   }
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
+  assert.equal(await page.evaluate(async () => (await fetch('/api/private-fixture')).status), 503,
+    'the code upgrade completes while source availability remains independent');
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
