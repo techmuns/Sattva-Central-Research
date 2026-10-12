@@ -57,7 +57,8 @@ const concallRows = [
   concallRow({ ticker: 'OUTSIDE', name: 'Outside universe concall', type: 'Recording' }),
   concallRow({ ticker: null, name: 'Unresolved BSE concall' }),
 ];
-const todayIst = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+const fixtureNow = Date.now();
+const todayIst = new Date(fixtureNow + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
 const calendarRows = [
   { eventId: `result:${todayIst}:KISSHT`, eventType: 'Result', eventSource: 'Moneycontrol', scId: 'KISSHT', ticker: 'KISSHT', name: 'OnEMI scheduled result', resultDate: todayIst, quarter: 'Q2', time: null, exchange: 'N', noticeUrl: null },
   { eventId: 'concall:newco', eventType: 'Con-call', eventSource: 'Screener', scId: 'screener:newco', ticker: 'NEWCO', name: 'New holding scheduled call', resultDate: todayIst, quarter: null, time: '16:00:00', exchange: 'B', noticeUrl: 'https://www.bseindia.com/newco.pdf' },
@@ -85,7 +86,8 @@ addEventListener('message', event => {
 send({ id:'connector',type:'available' });
 </script>`;
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
-const context = await browser.newContext({ viewport: { width: 1365, height: 900 } });
+// This fixture owns every source response; service-worker fetches bypass its routed mocks.
+const context = await browser.newContext({ viewport: { width: 1365, height: 900 }, serviceWorkers: 'block' });
 const errors = [], questions = [];
 let searches = 0, calendarRequests = 0, calendarVersion = 0;
 await context.addInitScript(() => localStorage.setItem('sattva:scope-lists:v1', JSON.stringify({ portfolio: { added: [{ ticker:'MANUAL',name:'Manual research selection' }], removed:[{ ticker:'KISSHT',name:'OnEMI' }] } })));
@@ -159,6 +161,8 @@ await context.route('**/*', route => {
 let page;
 try {
   page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
+  // This single-day book/layout fixture may span IST midnight; rollover has dedicated suites.
+  await page.clock.setFixedTime(new Date(fixtureNow));
   await page.goto(`${origin}/#/research/news?scope=portfolio`);
   await page.waitForFunction(async () => (await import('/js/data/coverage.js')).meta().syncStatus === 'family-session');
   const peer = await (await page.locator('iframe[title="Private portfolio connection"]').elementHandle()).contentFrame(); assert.ok(peer);

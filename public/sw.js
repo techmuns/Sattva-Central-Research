@@ -140,8 +140,11 @@ async function cacheModuleGraph(cache, entry) {
 const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earnings-reports-v2-paid-news-market-hours-v1-free-company-news-v1-news-every-2-hours-v1-empty-day-alerts-v1-finology-period-labels-v1-insider-source-gaps-v1-research-settle-v1-news-identity-retention-v1-lazy-tab-interfaces-v2-momentum-scanner-v1-momentum-scanner-polish-v1-relevance-ranking-v1-momentum-scanner-names-v1-glow-alert-delivery-v1-recovery-revisions-v1-context-restart-v1-active-deal-poller-v1-startup-reads-v1-cancelled-alert-warmups-v1-empty-news-query-v1-sliced-feed-normalization-v1-source-churn-warmups-v1-shared-company-archives-v1-remove-ask-research-tab-v1-research-navigation-order-v1-alerts-subtabs-v1-alerts-table-spacing-v2-announcements-subtabs-v1-earnings-subtabs-v1-publisher-merge-evidence-v1`;
 
 self.addEventListener('install', (event) => {
+  // Set the activation intent before asynchronous warm-up. Installation still has to
+  // complete successfully before this version can replace the active worker.
+  event.waitUntil(self.skipWaiting());
   event.waitUntil((async () => {
-    const cache = await caches.open(currentCacheKey());
+    const cache = await caches.open(dashboardCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -149,14 +152,13 @@ self.addEventListener('install', (event) => {
     // The SDK is a small, versioned public script but its S3 response has no
     // Cache-Control header. Keep an opaque copy so it cannot block every return visit.
     await cacheOne(cache, MUNSHOT_SDK, { mode: 'no-cors' }, 4000);
-    await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== currentCacheKey()).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== dashboardCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -225,7 +227,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(currentCacheKey());
+    const cache = await caches.open(dashboardCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
@@ -246,4 +248,9 @@ self.addEventListener('fetch', (event) => {
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
   return `${appReleaseCacheKey()}-all-alerts-clean-header-v2`;
+}
+
+// Retain the shared releases and advance the returning reader for this UI cleanup.
+function dashboardCacheKey() {
+  return `${currentCacheKey()}-clean-announcements-momentum-v5`;
 }

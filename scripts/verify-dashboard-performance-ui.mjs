@@ -134,9 +134,9 @@ try {
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor();
   await page.evaluate(async () => navigator.serviceWorker.ready);
   await page.evaluate(async () => {
-    await fetch('/api/private-fixture');
-    await fetch('/data/authorized-fixture.json', { headers: { authorization: 'Bearer test-only' } });
-    await fetch('/data/no-store-fixture.json', { cache: 'no-store' });
+    await (await fetch('/api/private-fixture')).text();
+    await (await fetch('/data/authorized-fixture.json', { headers: { authorization: 'Bearer test-only' } })).text();
+    await (await fetch('/data/no-store-fixture.json', { cache: 'no-store' })).text();
   });
 
   const cacheState = await page.evaluate(async () => {
@@ -177,6 +177,7 @@ try {
   await page.evaluate(async path => { await (await fetch(path, { cache: 'reload' })).text(); }, immutablePath);
   assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
+  await cacheSession.detach();
   await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
 
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
@@ -285,7 +286,17 @@ try {
   upgradeAssetsOnly = true;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-  await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  try {
+    await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  } catch (error) {
+    console.error('Worker upgrade state', await page.evaluate(async () => {
+      const r = await navigator.serviceWorker.getRegistration();
+      return { active: r?.active?.state, waiting: r?.waiting?.state, installing: r?.installing?.state,
+        release: globalThis.__performanceRelease, caches: (await caches.keys()).map(name => ({
+          previous: name.includes('previous-fixture'), revision: name.slice(-130) })) };
+    }), errors);
+    throw error;
+  }
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');

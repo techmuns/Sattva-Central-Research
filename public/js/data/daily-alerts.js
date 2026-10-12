@@ -487,6 +487,7 @@ function queryEvents(events, queryWindow) {
 // Raw history remains the authority; only the expensive alert interpretation is narrowed.
 let newsCandidates = null;
 const queryNewsReaders = new Map();
+const queryNewsReadErrors = new WeakMap();
 let activeCollections = 0, releaseRequested = false, researchOwnsSources = false;
 function trimQueryReaders() {
   for (const [key, entry] of queryNewsReaders) {
@@ -825,8 +826,18 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           // The publisher route can correct dates at the same URL. Its complete original pool
           // supplies companions before the company working set is selected.
           try { await loadFeed('market-news', refresh); } catch { /* Company capture remains useful. */ }
-          await refreshFilings(newsReader, refresh);
-          loadedFeeds.add('news'); invalidateNormalizedFeed('news');
+          try {
+            await refreshFilings(newsReader, refresh);
+            queryNewsReadErrors.delete(newsReader);
+            loadedFeeds.add('news'); invalidateNormalizedFeed('news');
+          } catch (error) {
+            // The source failure belongs to this reading period even if a later redraw
+            // supersedes the collection that observed it. A cached read must keep it failed.
+            queryNewsReadErrors.set(newsReader, String(error?.message || error));
+            throw error;
+          } finally {
+            listeners.forEach(fn => fn());
+          }
         } else if (load) await loadFeed(feed.id, refresh);
         // Shared source loading can finish after this view has left. Its replacement
         // can use the records; this abandoned reading must not classify them again.
@@ -835,8 +846,9 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
         await warm();
         if (!readingCurrent()) return;
         out = await readFeed(feed, args, yieldForInput);
-        if (!load && loadErrors.has(feed.id)) {
-          if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
+        const readError = feed.id === 'news' && newsReader !== news ? queryNewsReadErrors.get(newsReader) : loadErrors.get(feed.id);
+        if (!load && readError) {
+          if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${readError}. Retained records remain visible.` };
         }
         else if (!load && (feed.id === 'news' && newsReader !== news
           ? !newsReader.isLoaded()
