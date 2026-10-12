@@ -1722,7 +1722,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0M4D01010|Standard Engineering Technology": {
-      "lastAttemptAt": "2026-10-06T10:38:25+00:00",
+      "lastAttemptAt": "2026-10-12T02:43:54+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0M4D01010|SETL": {
@@ -2394,6 +2394,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-12T02:10:35.339085+00:00"
+    "checkedAt": "2026-10-12T02:43:54.387758+00:00"
   }
 }
