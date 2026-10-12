@@ -180,7 +180,15 @@ try {
   await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
   // The temporary session only measures HTTP-cache semantics. Release it before
   // reloads can replace its target and before testing ordinary worker activation.
-  await cacheSession.detach();
+  try {
+    await cacheSession.detach();
+  } catch (error) {
+    // Chromium can close the inspection session before detach acknowledges it.
+    // A closed page/browser is still a failure; all subsequent upgrade checks run.
+    if (!String(error.message).includes('Target page, context or browser has been closed')) throw error;
+    assert(!page.isClosed() && browser.isConnected(), 'the returning page and browser remain open');
+    assert.equal(await page.evaluate(() => globalThis.__performanceRelease), 'previous', 'the same cached reader is still usable');
+  }
 
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
