@@ -3,8 +3,8 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-12T19:03:01.025Z",
-  "oldestDataAt": "2026-10-12T19:03:01.025Z",
+  "capturedAt": "2026-10-12T23:09:51.751Z",
+  "oldestDataAt": "2026-10-12T23:09:51.751Z",
   "from": "2025-10-13",
   "to": "2026-10-13",
   "windowDays": 365,
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 7,
+      "pagesRead": 2,
       "latestDate": "2026-10-12",
-      "oldestDate": "2026-10-09",
+      "oldestDate": "2026-10-12",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 175,
-      "capturedAt": "2026-10-12T19:03:01.025Z",
+      "rowCount": 50,
+      "capturedAt": "2026-10-12T23:09:51.751Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-12T19:03:01.025Z",
+      "capturedAt": "2026-10-12T23:09:51.751Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-12T19:03:01.025Z",
+      "capturedAt": "2026-10-12T23:09:51.751Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-12T19:03:01.025Z",
+      "capturedAt": "2026-10-12T23:09:51.751Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -70576,10 +70576,12 @@
           "Company": "AXISCADES Tech.",
           "Insider": "Jupiter Capital Private Limited",
           "Category": "Promoter",
-          "Transaction": "27,000 Equity",
+          "Security Type": "Equity",
+          "Trade Shares": "27000",
           "Trade Value": "6.18 crore",
           "Broadcast Date": "2026-10-08",
-          "Source": "Screener.in"
+          "Source": "Screener.in",
+          "Transaction": "27,000 Equity"
         }
       },
       {
@@ -202393,10 +202395,12 @@
           "Company": "Aequs",
           "Insider": "Melligeri Private Family Foundation Mellwood Trust...",
           "Category": "Promoter",
-          "Transaction": "10,05,13,070 Equity",
+          "Security Type": "Equity",
+          "Trade Shares": "100513070",
           "Trade Value": "2,317 crore",
           "Broadcast Date": "2026-10-09",
-          "Source": "Screener.in"
+          "Source": "Screener.in",
+          "Transaction": "10,05,13,070 Equity"
         }
       },
       {
