@@ -172,6 +172,7 @@ try {
   await refreshStream();
   assert.equal(await page.evaluate(() => window.stream.meta().sourceCheck.error.message), 'Latest BSE request failed.', 'a newer failed attempt is adopted even when the last successful capture time did not move');
   assert.equal(await page.locator('[data-section-head] [data-filings-info]').count(), 0, 'collection status does not occupy the table header');
+  assert.match(await page.locator('[data-filings-method]').innerText(), /Partial source coverage/, 'partial health stays visible below the table');
   await page.locator('[data-filings-method]').click();
   assert.match(await page.locator('#modal-content').innerText(), /latest BSE check is stale or incomplete/);
   assert.match(await page.locator('#modal-content').innerText(), /Latest BSE request failed/);
@@ -437,6 +438,32 @@ try {
   await page.waitForFunction(() => exportedRows?.[1]?.ref === 'https://www.screener.in/company/id/123456/');
   assert.equal(await page.evaluate(() => exportedRows[1].u), '', 'the issuer page is never exported as a document URL');
   console.log('PASS notices without attachments retain explicit source references and honest export fields');
+
+  const ownership = await page.evaluate(async () => {
+    const { makeFilingsTab } = await import('/js/tabs/filings-tab.js');
+    const root = document.createElement('div');
+    document.body.append(root);
+    root.innerHTML = '<input data-table-search value="another tab"><div data-score-table><div data-table-scroll style="height:60px;overflow:auto"><div style="height:1000px"></div></div></div>';
+    root.querySelector('[data-table-scroll]').scrollTop = 600;
+    root.querySelector('input').focus();
+    let loaded = false, finish;
+    const pending = new Promise(resolve => { finish = () => { loaded = true; resolve(); }; });
+    const feed = { isLoaded: () => loaded, load: () => pending, setWanted() {}, onChange: () => () => {},
+      rows: () => [{ ticker: 'TCS', title: 'Own filing', date: '2026-09-05' }],
+      meta: () => ({ kind: 'announcements', capturedAt: '2026-09-05T08:00:00Z' }),
+      wasAskedEmpty: () => false, failureFor: () => null };
+    const reader = makeFilingsTab({ id: 'ownership-test', title: 'Ownership test', feed,
+      preserveReadingPosition: true, noun: 'announcements', rowName: r => r.title, rowSub: () => '', columns: () => [] });
+    reader.render({ root, scope: 'portfolio', data: {} });
+    const replacedForeignTable = !root.querySelector('[data-score-table]');
+    finish(); await pending; await new Promise(resolve => setTimeout(resolve, 0));
+    const result = { replacedForeignTable, search: root.querySelector('[data-table-search]')?.value,
+      scroll: root.querySelector('[data-table-scroll]')?.scrollTop };
+    reader.destroy(); root.remove();
+    return result;
+  });
+  assert.deepEqual(ownership, { replacedForeignTable: true, search: '', scroll: 0 }, 'an unloaded reader cannot inherit another tab’s table, search or scroll');
+  console.log('PASS reading state belongs only to the mounted filings view');
 
   await page.evaluate(() => window.destroyStream());
   assert.equal(await page.locator('[data-announcement-search-menu]').count(), 0, 'navigation disposes the dropdown');

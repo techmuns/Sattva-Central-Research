@@ -413,6 +413,11 @@ const tab = makeFilingsTab({
   wireBelowTable,
   // Collection diagnostics belong in the information panel below the table.
   status: () => '',
+  methodLabel: (m) => {
+    const status = announcementCoverage(m);
+    const partial = status.incomplete || m.query?.mode === 'local' || m.query?.index?.stale || m.query?.state === 'failed';
+    return `Collection details · ${partial ? 'Partial source coverage' : status.label}`;
+  },
   emptyMessage: () => (query.meta().state === 'loading' ? 'Loading announcements…' : 'No announcements match this scope, period, category, market cap or search.'),
   stickyHead: 'max(320px, calc(100vh - 260px))',
   noun: 'announcements',
