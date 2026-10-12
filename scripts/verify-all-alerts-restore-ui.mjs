@@ -95,7 +95,8 @@ try {
   await page.evaluate(() => window.calls.at(-1).partial({'nse-filings':[window.event('Beta current alert',{ticker:'BBB',company:'Beta Ltd'})]}, {'nse-filings':'ok'}));
   await contains('Beta current alert');
   assert(!(await page.locator('#root tbody').innerText()).includes('Stale Alpha response'));
-  assert((await page.locator('[data-alerts-meta]').innerText()).includes('1 of 1'));
+  assert(!(await page.locator('#root tbody').innerText()).includes('Saved current-day alert'), 'the previous company membership stays excluded');
+  assert.equal(await page.locator('[data-alerts-meta]').count(), 0, 'restoring a report does not restore the removed header badges');
   console.log('PASS same-scope membership changes revoke old rows and reject late callbacks.');
 
   await page.evaluate(() => {
