@@ -114,7 +114,7 @@ let cachedRead = null;
 let cachedReadKey = null;
 let unsubs = [];
 const HORIZON = { THROUGH: 'through', UPCOMING: 'upcoming' };
-let horizon = HORIZON.THROUGH;
+const horizon = HORIZON.THROUGH;
 let renderedHorizon = HORIZON.THROUGH;
 let renderedDay = null;
 let renderedScope = null;
@@ -176,7 +176,6 @@ export function render(ctx) {
   // then show an empty subset. Subsequent feed repaints retain the new table's own state as usual.
   const requestedCompany = String(ctx.params?.company || '').trim();
   if (requestedCompany && requestedCompany !== routeCompany) {
-    horizon = HORIZON.THROUGH;
     picked = null;
     tableViews = { [HORIZON.THROUGH]: { q: requestedCompany, filters: ['all', 'all', 'all', 'all'] },
       [HORIZON.UPCOMING]: { q: requestedCompany } };
@@ -552,7 +551,7 @@ function paint(ctx) {
     })}${horizon === HORIZON.UPCOMING ? calendarPill(allUpcoming) : historyPill(m)}`;
     
     const horizonToggleContainer = ctx.root.querySelector('.alerts-horizon-control');
-    if (horizonToggleContainer) horizonToggleContainer.outerHTML = horizonToggle(allThrough.length, allUpcoming.length, day, !!report);
+    if (horizonToggleContainer) horizonToggleContainer.outerHTML = historySummary(allThrough.length, day, !!report);
     
     const coveragePanelContainer = ctx.root.querySelector('.alerts-source-picker');
     if (coveragePanelContainer) {
@@ -576,7 +575,6 @@ function paint(ctx) {
       if (grid && newGrid) reconcileMarkup(grid, newGrid.innerHTML);
     }
     
-    wireHorizon(ctx);
     wireFeedFilter(ctx, available);
     if (sourcesOpen) {
       const cov = ctx.root.querySelector('[data-alerts-coverage]');
@@ -613,7 +611,7 @@ function paint(ctx) {
     })}
     ${horizon===HORIZON.THROUGH?`<p data-alerts-reading-count class="mb-1 text-xs text-slate-500" title="Checked equivalent reports share one item. Unchecked reports remain separate; every original is available in the item and export.">${formatNumber(visible.length)} items · ${formatNumber(visible.reduce((n,e)=>n+membersOf(e).length,0))} source reports · All originals remain available in each item and export.</p>`:''}
     <div class="alerts-controls" data-alerts-controls>
-      ${horizonToggle(allThrough.length, allUpcoming.length, day, !!report)}
+      ${historySummary(allThrough.length, day, !!report)}
       <div class="alerts-view-controls">
         ${coveragePanel(displayFeeds, horizon === HORIZON.UPCOMING ? allUpcoming.length : allThrough.length, report, day)}
         <button type="button" class="alerts-layout-button" data-alerts-focus aria-pressed="${focusMode}"
@@ -637,7 +635,6 @@ function paint(ctx) {
   // Search and the three filters now get a full row even on a narrower laptop. The kit still
   // owns count updates and exports over its complete filtered model, never the mounted rows.
   ctx.root.querySelector('[data-alerts-table-actions]').append(ctx.root.querySelector('[data-table-actions]'));
-  wireHorizon(ctx);
   wireFeedFilter(ctx, available);
   workspaceDispose = wireWorkspace(ctx);
   // A long picker scrolls on phones. Selecting a checkbox must not snap that panel back to
@@ -804,27 +801,16 @@ function calendarPill(events) {
   });
 }
 
-function horizonToggle(throughCount, upcomingCount, day, ready = true) {
-  const tab = (value, label, count) => {
-    const active = horizon === value;
-    const known = ready && !(report?.queryWindow && value === HORIZON.UPCOMING);
-    return `<button type="button" role="tab" data-horizon-toggle="${value}" aria-selected="${active}" tabindex="${active ? '0' : '-1'}"
-      class="inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
-        active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
-      }">
-      ${escapeHtml(label)}
-      <span class="rounded-full px-1 py-0.5 text-[11px] font-bold tabular-nums ${active ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200/70 text-slate-500'}"
-        title="${known ? `${escapeHtml(formatNumber(count))} alerts${report?.queryWindow ? ' in selected period' : ''}` : 'Open to load'}">${known ? escapeHtml(formatCompact(count)) : '…'}</span>
-    </button>`;
-  };
+function historySummary(throughCount, day, ready = true) {
   return `<div class="alerts-horizon-control">
-    <div role="tablist" aria-label="Alert time horizon" class="inline-flex rounded-2xl bg-slate-100 p-1 ring-1 ring-slate-200/80" data-alerts-horizon>
-      ${tab(HORIZON.THROUGH, 'Till Today', throughCount)}
-      ${tab(HORIZON.UPCOMING, 'Upcoming', upcomingCount)}
+    <div class="inline-flex rounded-2xl bg-slate-100 p-1 ring-1 ring-slate-200/80">
+      <span data-alerts-history-summary class="inline-flex min-h-10 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200">
+        Till Today
+        <span class="rounded-full px-1 py-0.5 text-[11px] font-bold tabular-nums bg-indigo-50 text-indigo-700"
+          title="${ready ? `${escapeHtml(formatNumber(throughCount))} alerts${report?.queryWindow ? ' in selected period' : ''}` : 'Reading sources'}">${ready ? escapeHtml(formatCompact(throughCount)) : '…'}</span>
+      </span>
     </div>
-    <p class="alerts-horizon-caption text-xs text-slate-500">${horizon === HORIZON.UPCOMING
-      ? `Scheduled events from ${fmtDay(day)} onward, nearest first.`
-      : report?.queryWindow ? 'Showing the selected period. Choose All history to read older alerts.'
+    <p class="alerts-horizon-caption text-xs text-slate-500">${report?.queryWindow ? 'Showing the selected period. Choose All history to read older alerts.'
       : `Retained events through ${fmtDay(day)}, newest first.`}</p>
   </div>`;
 }
@@ -990,25 +976,6 @@ function fitStreamToViewport(root) {
 // edge and its shadow off the fold.
 const MIN_STREAM_PX = 320;
 const STREAM_BOTTOM_GAP_PX = 12;
-
-function wireHorizon(ctx) {
-  const root = ctx.root.querySelector('[data-alerts-horizon]');
-  if (!root) return;
-  const select = (value) => {
-    if (!Object.values(HORIZON).includes(value) || value === horizon) return;
-    horizon = value;
-    // A source selection is meaningful inside the horizon where it was made. Carrying an
-    // historical-only source into Upcoming would make the calendar look empty on arrival.
-    picked = null;
-    render(ctx);
-  };
-  root.addEventListener('click', (event) => select(event.target.closest('[data-horizon-toggle]')?.dataset.horizonToggle));
-  root.addEventListener('keydown', (event) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault();
-    select(event.key === 'ArrowLeft' || event.key === 'Home' ? HORIZON.THROUGH : HORIZON.UPCOMING);
-  });
-}
 
 /**
  * The tick boxes, which filter the stream by the feed a row came from.
