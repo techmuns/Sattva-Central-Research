@@ -14,7 +14,8 @@ import { alertReadingHtml, watchAlertReadings } from '../ui/alert-reading.js';
 // product rules are pure, testable and available to exports or notifications later.
 
 import { sectionHead } from '../ui/screener.js';
-import { scopeSummary, pill } from '../ui/components.js';
+import { pill } from '../ui/components.js';
+import { scopeBook, scopeLabel } from '../data/scope.js';
 import { canonicalPublisherName } from '../core/news-publishers.js';
 import { escapeHtml } from '../core/dom.js';
 import { normalizeBookmark, snapshotForRow } from '../core/bookmark-record.js';
@@ -512,41 +513,41 @@ function head(ctx) {
   // size read must never make partial, pending or stale evidence look complete.
   const health = feedStatus(report);
   const status = loadError ? report?.allCards.length
-    ? { label: 'Partial coverage · retained evidence shown', tone: 'neutral', state: 'partial' }
+    ? { label: 'Partial coverage', tone: 'neutral', state: 'partial' }
     : { label: 'Alert sources unavailable', tone: 'neutral', state: 'failed' }
     : health.state !== 'complete' || m.staleFeeds > 0 ? health
     : sizeError ? { label: 'Latest available', tone: 'neutral', state: 'complete' }
-    : report && (collecting || awaitingBook !== null) ? { label: 'Ready · checking quietly', tone: 'neutral', state: 'pending' } : health;
+    : report && (collecting || awaitingBook !== null) ? { label: 'Checking sources', tone: 'neutral', state: 'pending' } : health;
+  const grouping = !stories.total ? 'none' : stories.checking ? 'checking' : stories.partial ? 'partial' : 'grouped';
+  const label = status.label + (grouping === 'checking' ? ' · Grouping' : grouping === 'partial' ? ' · Ungrouped' : '');
+  const book = scopeBook(ctx.scope);
+  const details = [
+    status.state === 'partial' ? `Some alert sources could not be checked.${report?.allCards.length ? ' Captured evidence remains visible.' : ''}` : status.label,
+    report?.pending > 0 ? `${report.pending} source checks still pending.` : '',
+    `${scopeLabel(ctx.scope)}${report ? ` · ${formatNumber(m.activeCompanies || 0)}${book?.count ? ` of ${formatNumber(book.count)}` : ''} companies with recent events` : ''}.`,
+    `${alerts.WINDOW_DAYS}-day window: ${fmtDay(m.firstDay)} through ${fmtDay(report?.day)}.`,
+    stories.total ? `${grouping === 'checking' ? 'Checking repeated coverage.' : grouping === 'partial' ? 'Some reports remain ungrouped.' : 'Repeated coverage grouped.'} Grouping uses captured headlines and descriptions. Uncertain reports remain separate. Earlier story context is retained for up to 180 days; All Alerts holds the source history.` : '',
+  ].filter(Boolean).join(' ');
   return sectionHead({
     title: 'AI Alerts',
     description: `Important company signals from the last ${alerts.WINDOW_DAYS} days.`,
-    meta: `<div class="flex flex-wrap items-center justify-end gap-2">
-      ${stories.total ? `<span data-ai-story-status class="text-xs text-slate-500" title="Grouping uses captured headlines and descriptions. Uncertain reports remain separate. Earlier story context is retained for up to 180 days; All Alerts holds the source history.">${stories.checking ? 'Checking repeated coverage…' : stories.partial ? 'Some reports remain ungrouped' : 'Repeated coverage grouped'}</span>` : ''}
-      <span data-ai-feed-status data-state="${status.state}">${pill({ label: status.label, tone: status.tone })}</span>
-      ${report ? scopeSummary({
-        scope: ctx.scope,
-        count: m.activeCompanies || 0,
-        noun: 'companies with recent events',
-        book: coverage.meta(),
-      }) : pill({ label: { portfolio: 'Portfolio', watchlist: 'Watchlist', universe: 'Universe' }[ctx.scope], tone: 'neutral' })}
-      ${pill({ label: `${alerts.WINDOW_DAYS}-day window`, tone: 'brand', title: `${fmtDay(m.firstDay)} through ${fmtDay(report?.day)}` })}
-    </div>`,
+    meta: `<span data-ai-feed-status data-state="${status.state}" data-ai-story-status="${grouping}">${pill({ label, tone: grouping === 'partial' || grouping === 'checking' ? 'neutral' : status.tone, title: details })}</span>`,
   });
 }
 
 /** Keep collection state compact, explicit and independently testable. */
 export function feedStatus(rep) {
   const pending = rep ? Number(rep.pending || 0) : null;
-  if (pending === null) return { label: 'Reading feeds…', tone: 'neutral', state: 'pending' };
+  if (pending === null) return { label: 'Checking sources', tone: 'neutral', state: 'pending' };
   if (pending > 0) {
     return {
-      label: `Reading ${pending} more ${pending === 1 ? 'feed' : 'feeds'}…`,
+      label: 'Checking sources',
       tone: 'neutral',
       state: 'pending',
     };
   }
   if (rep.feeds?.some(feed => feed.status === 'failed')) {
-    return { label: 'Partial coverage · retained evidence shown', tone: 'neutral', state: 'partial' };
+    return { label: 'Partial coverage', tone: 'neutral', state: 'partial' };
   }
   const staleFeeds = Number(rep.meta?.staleFeeds || 0);
   if (staleFeeds > 0) {
