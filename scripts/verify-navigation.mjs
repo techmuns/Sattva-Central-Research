@@ -56,16 +56,12 @@ try {
 
   // The actual shell must preserve the element, its scroll position, and focus across routes.
   await page.evaluate((selector) => { window.navigationList = document.querySelector(selector); }, strip);
-  await page.evaluate(() => { location.hash = '#/research/corporate-actions?scope=watchlist'; });
-  await page.locator(`${strip} [data-tab-id="corporate-actions"][aria-selected="true"]`).waitFor();
   await page.locator(active).focus();
   await page.keyboard.press('ArrowRight');
-  assert.equal(await page.locator(active).getAttribute('data-tab-id'), 'corporate-actions', 'Arrows must not load a new page');
+  assert.equal(await page.locator(active).getAttribute('data-tab-id'), 'news', 'Arrows must not load a new page');
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => location.hash.includes('/ipos'));
-  await page.locator(`${strip} [data-tab-id="ipos"][aria-selected="true"]`).waitFor();
-  await page.locator('[data-ipo-filings] [data-score-table]').waitFor();
-  pass('The primary IPOs tab loads its capture even with an empty watchlist');
+  await page.waitForFunction(() => location.hash.includes('/public-chatter'));
+  await page.locator(`${strip} [data-tab-id="public-chatter"][aria-selected="true"]`).waitFor();
   await visibleInStrip(active);
   assert(await page.evaluate((selector) => window.navigationList === document.querySelector(selector), strip));
   assert(await page.locator(active).evaluate((button) => document.activeElement === button));
@@ -104,13 +100,37 @@ try {
 
   // Keep the off-screen active tab in view after browser history and viewport changes.
   await page.goBack();
-  await page.waitForFunction(() => location.hash.includes('/ipos'));
-  await page.locator(`${strip} [data-tab-id="ipos"][aria-selected="true"]`).waitFor();
+  await page.waitForFunction(() => location.hash.includes('/public-chatter'));
+  await page.locator(`${strip} [data-tab-id="public-chatter"][aria-selected="true"]`).waitFor();
+
+  await page.evaluate(() => { location.hash = '#/research/corporate-actions?scope=watchlist'; });
+  await page.locator(`${strip} [data-tab-id="announcements"][aria-selected="true"]`).waitFor();
+  const children = '#subview-mount [data-tab-list]';
+  const selectedChild = `${children} [aria-selected="true"]`;
+  await page.locator(`${children} [data-tab-id="corporate-actions"][aria-selected="true"]`).waitFor();
+  await page.evaluate(selector => { window.announcementList = document.querySelector(selector); }, children);
+  await page.locator(selectedChild).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator(selectedChild).getAttribute('data-tab-id'), 'corporate-actions', 'subtab arrows must only move focus');
+  await page.keyboard.press('Enter');
+  await page.locator(`${children} [data-tab-id="ipos"][aria-selected="true"]`).waitFor();
+  await page.locator('[data-ipo-filings] [data-score-table]').waitFor();
+  assert(await page.evaluate(selector => window.announcementList === document.querySelector(selector), children));
+  assert(await page.locator(selectedChild).evaluate(button => document.activeElement === button));
+  assert.equal(await page.locator(`${children} [tabindex="0"]`).count(), 1);
+  pass('Saved Announcements routes and keyboard subtabs preserve focus; IPOs loads with an empty watchlist');
   for (const width of [1440, 1100, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 850 });
     await visibleInStrip(active);
+    await page.waitForFunction(selector => {
+      const button = document.querySelector(selector).getBoundingClientRect();
+      const list = document.querySelector('#subview-mount [data-tab-list]').getBoundingClientRect();
+      return button.left >= list.left - 1 && button.right <= list.right + 1;
+    }, selectedChild);
     await noOverflow();
-    pass(`Active tab and page layout remain usable at ${width}px`);
+    const childMetrics = await page.locator(children).evaluate(list => ({ height: list.clientHeight, scrollHeight: list.scrollHeight }));
+    assert.equal(childMetrics.height, childMetrics.scrollHeight, 'subtabs must not overflow vertically');
+    pass(`Active parent, subtab and page layout remain usable at ${width}px`);
   }
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
