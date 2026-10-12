@@ -333,12 +333,12 @@ try {
       .filter(node => node.getBoundingClientRect().left < 0 || node.getBoundingClientRect().right > innerWidth + 1)
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
     assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
+    assert.equal(await frame.locator('[data-table-filter]').count(), 3, 'All Alerts retains importance, direction and date filters');
+    assert.equal(await frame.getByRole('combobox', { name: 'Company relationship' }).count(), 0, 'the company relationship filter is removed at every viewport size');
     if (size.width >= 1024) {
       const brand = await frame.locator('[data-brand-mark] img').evaluate(async image => { await image.decode(); return image.getBoundingClientRect().width; });
       assert(brand >= 180, `the full wordmark remains legible in the compact table header (${brand}px at ${size.width}px)`);
       assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
-      assert.equal(await frame.locator('[data-table-filter]').count(), 4, 'the compact layout retains all four independent filters');
-      assert(await frame.getByRole('combobox', { name: 'Company relationship' }).isVisible(), 'company relationship remains directly available');
       assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }

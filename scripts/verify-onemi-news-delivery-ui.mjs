@@ -15,7 +15,7 @@ import { FEEDS } from './daily-alerts-real.js';
 FEEDS.splice(0, FEEDS.length, FEEDS.find(feed => feed.id === 'news'));
 export * from './daily-alerts-real.js';
 export async function collect(options) {
-  (window.fixtureReads ||= []).push({refresh:options.refresh,load:options.load});
+  (window.fixtureReads ||= []).push({refresh:options.refresh,load:options.load,queryWindow:options.queryWindow || null});
   window.fixtureOptions = options;
   // A release completes EVERY read still outstanding, not only the latest: a source announcement
   // — made after the reader's rows are prepared, so no longer inside the refresh that caused it —
@@ -90,8 +90,12 @@ try {
   // source store: it must publish the newly requested history rather than assume Today kept it.
   await page.evaluate(() => window.fixtureRelease(window.fixtureReport([window.fixtureStory, window.fixtureNoise])));
   await page.waitForFunction(() => document.querySelector('[data-alerts-coverage-state]')?.dataset.alertsCoverageState === 'checked');
+  const readsBeforeHistory = await page.evaluate(() => window.fixtureReads.length);
   await period.selectOption('all');
-  assert.equal(await page.evaluate(() => window.fixtureReads.length), 2, 'broadening the selected period requests its retained history');
+  assert(await page.evaluate(before => window.fixtureReads.length > before, readsBeforeHistory),
+    'broadening the selected period requests its retained history');
+  assert.equal(await page.evaluate(() => window.fixtureReads.at(-1).queryWindow), null,
+    'the new source read covers retained history rather than the Today window');
   assert.equal(await state.getAttribute('data-alerts-coverage-state'), 'loading', 'Today cannot certify that the rest of history has been checked');
   await page.evaluate(() => window.fixtureOptions.onPartial(window.fixtureReport([window.fixtureStory, window.fixtureNoise], 'pending')));
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('JM Financial'));
@@ -104,12 +108,11 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-alerts-coverage-state]')?.dataset.alertsCoverageState === 'checked');
   assert.equal(await search.inputValue(), 'kissht', 'completion preserves the active customer search');
   const filters = page.locator('[data-table-filter]');
-  assert.equal(await filters.count(), 4, 'relationship choice is additive after the existing controls');
-  await filters.nth(3).selectOption('confirmed');
-  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('JM Financial') && !document.querySelector('tbody')?.textContent.includes('Kiss band'));
-  await filters.nth(3).selectOption('uncertain');
-  await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('Kiss band') && !document.querySelector('tbody')?.textContent.includes('JM Financial'));
-  await filters.nth(3).selectOption('all');
+  assert.equal(await filters.count(), 3, 'only importance, direction and date remain');
+  assert.equal(await page.getByRole('combobox', { name: 'Company relationship' }).count(), 0, 'the company relationship filter is removed');
+  assert.match(await page.locator('tbody').innerText(), /JM Financial/);
+  assert.match(await page.locator('tbody').innerText(), /Kiss band/, 'possible matches remain retained and searchable without a relationship filter');
+  assert.match(await page.locator('tbody [data-news-attribution="uncertain"]').innerText(), /Possible match/, 'uncertain attribution stays visible on its row');
   await search.fill('onemi technology');
   await page.waitForFunction(() => document.querySelector('tbody')?.textContent.includes('JM Financial'));
   await page.evaluate(() => { void window.fixtureRefresh(); });
@@ -147,7 +150,7 @@ try {
   await page.clock.setSystemTime(new Date('2026-09-08T09:04:00Z'));
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   assert.equal(await page.evaluate(() => window.fixtureReads.length), afterDestroy, 'destroy removes focus rechecks');
-  console.log('PASS browser: initial loading is not Live/zero, exact OnEMI KISSHT search, optional noisy-match separation, partial/failure disclosure, search retention, reopening and rollover.');
+  console.log('PASS browser: initial loading is not Live/zero, exact OnEMI KISSHT search, retained possible matches without the removed relationship filter, partial/failure disclosure, search retention, reopening and rollover.');
 } finally {
   await browser.close();
   await new Promise(done => server.close(done));
