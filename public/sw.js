@@ -142,7 +142,7 @@ const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earning
 self.addEventListener('install', (event) => {
   // Set the activation intent before asynchronous warm-up. Installation still has to
   // complete successfully before this version can replace the active worker.
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting());
   event.waitUntil((async () => {
     const cache = await caches.open(dashboardCacheKey());
     // A new version activates only when its whole required shell is complete;

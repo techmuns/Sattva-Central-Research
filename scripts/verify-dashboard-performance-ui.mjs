@@ -282,7 +282,17 @@ try {
   upgradeAssetsOnly = true;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-  await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  try {
+    await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  } catch (error) {
+    console.error('Worker upgrade state', await page.evaluate(async () => {
+      const r = await navigator.serviceWorker.getRegistration();
+      return { active: r?.active?.state, waiting: r?.waiting?.state, installing: r?.installing?.state,
+        release: globalThis.__performanceRelease, caches: (await caches.keys()).map(name => ({
+          previous: name.includes('previous-fixture'), revision: name.slice(-130) })) };
+    }), errors);
+    throw error;
+  }
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
