@@ -33,7 +33,9 @@ const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
   const upgradeAsset = /^\/(?:$|index\.html$|sw\.js$|sdk-fixture\.js$|js\/|css\/|assets\/brand\/|data\/portfolio-companies\.json$)/.test(url.pathname);
-  if (offline && !(upgradeAssetsOnly && upgradeAsset)) { res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return; }
+  if (offline && !(upgradeAssetsOnly && upgradeAsset)) {
+    res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return;
+  }
   if (url.pathname === '/sdk-fixture.js') {
     res.writeHead(200, { 'content-type': 'text/javascript' });
     res.end('/* No host SDK in this local performance fixture. */'); return;
@@ -56,7 +58,8 @@ const server = createServer((req, res) => {
     }[extname(path)] || 'application/octet-stream');
     res.setHeader('cache-control', 'public, max-age=0, must-revalidate');
     if (pathname === '/sw.js') {
-      // Worker-initiated fetches bypass page routing. Keep its SDK warm-up local.
+      // Page routing does not isolate the worker's own SDK warm-up. Keep both its cache
+      // and the returning document local, as in the other service-worker upgrade fixtures.
       const source = readFileSync(path, 'utf8').replace(/const MUNSHOT_SDK = .*;/,
         "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
       res.end(previousRelease ? source.replace(/const CACHE_NAME = ([^;\n]+);/, 'const CACHE_NAME = $1 + "-previous-fixture";') : source);
@@ -272,8 +275,9 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
-  // Return deployment assets while preserving the data outage tested above.
-  // Unrelated full-history cache writes must not compete with the upgrade oracle.
+  // Only deployment assets return. Keep the data/API outage from the interaction sweep:
+  // restoring every capture here starts unrelated large background cache writes and can
+  // leave the already-installed replacement waiting behind the active worker's reads.
   upgradeAssetsOnly = true;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });

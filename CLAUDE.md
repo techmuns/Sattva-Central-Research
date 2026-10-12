@@ -2694,6 +2694,13 @@ unfinished grouping remain distinct (for example, `Partial coverage · Ungrouped
 the scope count, date window and grouping/retention explanation live on its tooltip.
 Do not restore the separate grouping sentence, scope-count badge or window badge.
 
+Toolbar layout (12 October 2026): priority tabs sit on the left, with a compact search box,
+event types and sort together on the right. Secondary filters remain underneath. Wrap the
+groups at smaller widths without page overflow. Keep the search node mounted through
+filter/count updates and incoming data so typing, focus and composition survive.
+Collection progress is independent of source quality and story projection. Alert views expose
+their collection state separately; a Partial coverage badge is not a finished-ranking signal.
+
 **Story evolution (23 September 2026):** `alert-stories.js` groups public company news and
 exchange disclosures across publishers, keeping every original record in `card.sourceEvents`.
 `card.events` contains distinct developments for ranking; one story row opens its earlier
