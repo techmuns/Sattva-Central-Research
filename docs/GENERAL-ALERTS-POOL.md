@@ -119,6 +119,10 @@ All Alerts / Universe. The initial reviewed mismatch is the user's exact Lululem
 summary against JAYNECOIND. Changed text invalidates that exclusion. There is no publisher blacklist,
 generic other-company rejection, or guarantee that every unverified search result is relevant.
 
+The Company relationship selector in All Alerts was removed at the user's request on 13 October
+2026. Its stream keeps all retained relationship states; attribution labels, source evidence,
+search and export continue to distinguish confirmed and possible matches.
+
 Only confirmed news can score, corroborate or enrich AI Alerts; legacy cached news without current
 attribution cannot bypass that rule. This is separate from All Alerts visibility and topic filters.
 Ask Research and exports carry query provenance, status and reasons so a query label is not presented

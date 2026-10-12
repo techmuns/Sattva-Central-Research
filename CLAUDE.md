@@ -3377,6 +3377,8 @@ source failures, pending reads, check times and empty-state explanations remain 
 The 12 October 2026 cleanup also removes Focus table and the scope/company-count and
 history/calendar badges beside the All Alerts title. The redundant Till Today label and the
 item/source-report summary above the table are also removed at the user's request.
+The 13 October follow-up removes the Company relationship filter from All Alerts;
+retain all relationship states in its stream, with accurate attribution labels on the rows.
 Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 

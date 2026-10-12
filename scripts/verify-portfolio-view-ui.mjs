@@ -57,7 +57,8 @@ const concallRows = [
   concallRow({ ticker: 'OUTSIDE', name: 'Outside universe concall', type: 'Recording' }),
   concallRow({ ticker: null, name: 'Unresolved BSE concall' }),
 ];
-const todayIst = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+const fixtureNow = Date.now();
+const todayIst = new Date(fixtureNow + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
 const calendarRows = [
   { eventId: `result:${todayIst}:KISSHT`, eventType: 'Result', eventSource: 'Moneycontrol', scId: 'KISSHT', ticker: 'KISSHT', name: 'OnEMI scheduled result', resultDate: todayIst, quarter: 'Q2', time: null, exchange: 'N', noticeUrl: null },
   { eventId: 'concall:newco', eventType: 'Con-call', eventSource: 'Screener', scId: 'screener:newco', ticker: 'NEWCO', name: 'New holding scheduled call', resultDate: todayIst, quarter: null, time: '16:00:00', exchange: 'B', noticeUrl: 'https://www.bseindia.com/newco.pdf' },
@@ -85,7 +86,8 @@ addEventListener('message', event => {
 send({ id:'connector',type:'available' });
 </script>`;
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
-const context = await browser.newContext({ viewport: { width: 1365, height: 900 } });
+// This fixture owns every source response; service-worker fetches bypass its routed mocks.
+const context = await browser.newContext({ viewport: { width: 1365, height: 900 }, serviceWorkers: 'block' });
 const errors = [], questions = [];
 let searches = 0, calendarRequests = 0, calendarVersion = 0;
 await context.addInitScript(() => localStorage.setItem('sattva:scope-lists:v1', JSON.stringify({ portfolio: { added: [{ ticker:'MANUAL',name:'Manual research selection' }], removed:[{ ticker:'KISSHT',name:'OnEMI' }] } })));
@@ -159,6 +161,8 @@ await context.route('**/*', route => {
 let page;
 try {
   page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
+  // This single-day book/layout fixture may span IST midnight; rollover has dedicated suites.
+  await page.clock.setFixedTime(new Date(fixtureNow));
   await page.goto(`${origin}/#/research/news?scope=portfolio`);
   await page.waitForFunction(async () => (await import('/js/data/coverage.js')).meta().syncStatus === 'family-session');
   const peer = await (await page.locator('iframe[title="Private portfolio connection"]').elementHandle()).contentFrame(); assert.ok(peer);
@@ -329,12 +333,12 @@ try {
       .filter(node => node.getBoundingClientRect().left < 0 || node.getBoundingClientRect().right > innerWidth + 1)
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
     assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
+    assert.equal(await frame.locator('[data-table-filter]').count(), 3, 'All Alerts retains importance, direction and date filters');
+    assert.equal(await frame.getByRole('combobox', { name: 'Company relationship' }).count(), 0, 'the company relationship filter is removed at every viewport size');
     if (size.width >= 1024) {
       const brand = await frame.locator('[data-brand-mark] img').evaluate(async image => { await image.decode(); return image.getBoundingClientRect().width; });
       assert(brand >= 180, `the full wordmark remains legible in the compact table header (${brand}px at ${size.width}px)`);
       assert(normal.controls <= 52, `desktop view controls fit on one row: ${JSON.stringify(normal)}`);
-      assert.equal(await frame.locator('[data-table-filter]').count(), 4, 'the compact layout retains all four independent filters');
-      assert(await frame.getByRole('combobox', { name: 'Company relationship' }).isVisible(), 'company relationship remains directly available');
       assert(normal.height >= normal.viewport * 0.55, `table owns at least 55% of the embedded viewport: ${JSON.stringify(normal)}`);
       assert(normal.bottom <= normal.viewport + 2, `table ends inside the frame: ${JSON.stringify(normal)}`);
     }

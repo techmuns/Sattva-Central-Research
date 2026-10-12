@@ -182,7 +182,7 @@ export function makeFilingsTab(cfg) {
     if (!cfg.feed.isLoaded()) {
       // Keep the reading controls and overlapping last-good rows usable while a new period
       // loads. Replacing an already-painted table with a splash loses the user's next choice.
-      if (cfg.preserveReadingPosition && ctx.root.querySelector('[data-filings-info]')) paint(ctx);
+      if (cfg.preserveReadingPosition && ctx.root.querySelector(`[data-filings-view="${cfg.id}"]`)) paint(ctx);
       else {
         disposers.forEach(dispose => dispose && dispose()); disposers = [];
         ctx.root.innerHTML = `${sectionHead({ title: cfg.title, description: cfg.subtitle })}${loadingHtml()}`;
@@ -196,13 +196,14 @@ export function makeFilingsTab(cfg) {
   }
 
   function paint(ctx) {
-    const oldScroller = cfg.preserveReadingPosition && ctx.root.querySelector('[data-table-scroll]');
+    const ownsView = !!ctx.root.querySelector(`[data-filings-view="${cfg.id}"]`);
+    const oldScroller = cfg.preserveReadingPosition && ownsView && ctx.root.querySelector('[data-table-scroll]');
     const oldRows = oldScroller ? [...oldScroller.querySelectorAll('tbody tr[data-row-key]')] : [];
     const anchor = oldScroller?.scrollTop > 0
       ? oldRows.find((row) => row.getBoundingClientRect().bottom > oldScroller.getBoundingClientRect().top + 40) : null;
     const position = oldScroller ? { top: oldScroller.scrollTop, left: oldScroller.scrollLeft,
       key: anchor?.dataset.rowKey, offset: anchor ? anchor.getBoundingClientRect().top - oldScroller.getBoundingClientRect().top : 0 } : null;
-    const oldSearch = cfg.preserveReadingPosition && ctx.root.querySelector('[data-table-search]');
+    const oldSearch = cfg.preserveReadingPosition && ownsView && ctx.root.querySelector('[data-table-search]');
     const selection = oldSearch && document.activeElement === oldSearch
       ? { value: oldSearch.value, start: oldSearch.selectionStart, end: oldSearch.selectionEnd } : null;
     const m = cfg.feed.meta();
@@ -229,12 +230,14 @@ export function makeFilingsTab(cfg) {
         renderedRows.rows.length === rows.length && rows.every((row, i) => row === renderedRows.rows[i]);
       // Archive/check status can change several times in one poll without changing a filing.
       // Keep the mounted search field and rows intact for those notifications.
-      if (sameRows && ctx.root.querySelector('[data-score-table]')) {
+      if (sameRows && ownsView && ctx.root.querySelector('[data-score-table]')) {
         // Keep freshness honest without throwing away the focused search field or scroll window.
         const info = ctx.root.querySelector('[data-filings-info]');
         if (info) info.outerHTML = cfg.status ? cfg.status(m) : pill(m, ctx.scope, rows);
         const busy = ctx.root.querySelector('[data-filings-busy]');
         if (busy) busy.innerHTML = busyStrip(m);
+        const method = ctx.root.querySelector('[data-filings-method]');
+        if (method) method.textContent = methodLabel(cfg, m);
         return;
       }
       renderedRows = { scope: ctx.scope, reason: m.reason, emptyMessage: customEmptyMessage, revision, rows };
@@ -277,7 +280,7 @@ export function makeFilingsTab(cfg) {
         })}
         ${cfg.aboveTable?.(ctx, m) || ''}
         ${unavailablePanel(m, refreshLabel === 'Check for new' ? 'Try again' : refreshLabel)}
-        ${methodFooter(cfg)}`;
+        ${methodFooter(cfg, m)}`;
       wireRefresh(ctx.root);
       disposers.push(cfg.wireAboveTable?.(ctx.root, ctx));
       wireMethod(ctx.root, m, null, ctx.scope, []);
@@ -394,11 +397,11 @@ export function makeFilingsTab(cfg) {
         // the description happen to be, and both change as companies are added. A control that
         // moves when you use it reads as a different page.
       })}
-      <div data-filings-busy>${busyStrip(m)}</div>
+      <div data-filings-view="${escapeHtml(cfg.id)}" data-filings-busy>${busyStrip(m)}</div>
       ${cfg.aboveTable?.(ctx, m) || ''}
       ${table.html}
       ${cfg.belowTable?.(ctx, m) || ''}
-      ${methodFooter(cfg)}`;
+      ${methodFooter(cfg, m)}`;
 
     const nextScroller = ctx.root.querySelector('[data-table-scroll]');
     // We restore a specific filing below. Native scroll anchoring must not apply a second
@@ -516,11 +519,12 @@ export function makeFilingsTab(cfg) {
  * how many companies answered, how many had nothing, how many could not be read at all. CLAUDE.md's
  * denominator rule says that number has to stay reachable, not that it has to stay on the page.
  */
-const methodFooter = (cfg) => `
+const methodLabel = (cfg, m) => cfg.methodLabel?.(m) || `How ${cfg.title} is collected, and what this view covers`;
+const methodFooter = (cfg, m) => `
   <div class="mt-6 border-t border-slate-100 pt-4 text-center">
     <button type="button" data-filings-method
       class="text-xs font-semibold text-slate-400 underline decoration-slate-200 underline-offset-4 transition-colors hover:text-indigo-600 hover:decoration-indigo-300">
-      How ${escapeHtml(cfg.title)} is collected, and what this view covers
+      ${escapeHtml(methodLabel(cfg, m))}
     </button>
   </div>`;
 

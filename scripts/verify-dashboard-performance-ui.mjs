@@ -135,10 +135,11 @@ try {
   await page.goto(origin);
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor();
   await page.evaluate(async () => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.evaluate(async () => {
-    await fetch('/api/private-fixture');
-    await fetch('/data/authorized-fixture.json', { headers: { authorization: 'Bearer test-only' } });
-    await fetch('/data/no-store-fixture.json', { cache: 'no-store' });
+    await (await fetch('/api/private-fixture')).text();
+    await (await fetch('/data/authorized-fixture.json', { headers: { authorization: 'Bearer test-only' } })).text();
+    await (await fetch('/data/no-store-fixture.json', { cache: 'no-store' })).text();
   });
 
   const cacheState = await page.evaluate(async () => {
@@ -263,8 +264,24 @@ try {
   upgradeAssetsOnly = true;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-  await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  try {
+    await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  } catch (error) {
+    console.error('Worker upgrade state', await page.evaluate(async () => {
+      const r = await navigator.serviceWorker.getRegistration();
+      return { active: r?.active?.state, waiting: r?.waiting?.state, installing: r?.installing?.state,
+        release: globalThis.__performanceRelease, caches: (await caches.keys()).map(name => ({
+          previous: name.includes('previous-fixture'), revision: name.slice(-130) })) };
+    }), errors);
+    throw error;
+  }
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
+  assert.equal(await page.evaluate(async () => {
+    const response = await fetch('/api/private-fixture');
+    await response.text();
+    return response.status;
+  }), 503,
+    'the code upgrade completes while source availability remains independent');
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
