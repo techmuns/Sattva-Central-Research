@@ -22,7 +22,7 @@ const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmark
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
   'corporate-actions', 'nse-filings', 'insider-trades', 'mutual-funds'];
 const currentTabOrder = ['alerts', 'announcements',
-  'earnings-hub', 'breakouts', 'insider-trades', 'mutual-funds', 'concall', 'news', 'public-chatter', 'super-investors'];
+  'earnings', 'breakouts', 'insider-trades', 'mutual-funds', 'news', 'public-chatter', 'super-investors'];
 const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
@@ -73,8 +73,9 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__performanceRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/tabs/catalog.js') {
       const source = readFileSync(path, 'utf8');
-      res.end(previousRelease ? source.replace("navigationTitle: 'Earnings',", '').replace("navigationTitle: 'Corporate Announcements',", '')
-        .replaceAll(/navigationGroup: '(?:alerts|announcements)',/g, '')
+      res.end(previousRelease ? source.replace("navigationTitle: 'Results',", '').replace("navigationTitle: 'Concall',", '')
+        .replace("navigationTitle: 'Corporate Announcements',", '')
+        .replaceAll(/navigationGroup: '(?:alerts|announcements|earnings)',/g, '')
         .replace(/(title: 'NSE Filings',\s*\/\/[^\n]*\s*)hideFromNavigation: true,/, '$1') : source);
     } else if (pathname === '/js/tabs/registry.js') {
       const source = readFileSync(path, 'utf8');
@@ -275,6 +276,9 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
+  // Cache semantics are already checked. Release the test-only DevTools session
+  // before the upgrade so worker activation uses the ordinary browser lifecycle.
+  await cacheSession.detach();
   // Only deployment assets return. Keep the data/API outage from the interaction sweep:
   // restoring every capture here starts unrelated large background cache writes and can
   // leave the already-installed replacement waiting behind the active worker's reads.
@@ -303,7 +307,7 @@ try {
   assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'automatic upgrade removes NSE Filings from navigation');
   assert.deepEqual(await page.locator('#tabbar-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
     currentTabOrder, 'automatic upgrade applies the requested order in the returning session');
-  assert.equal((await page.locator('[data-tab-id="earnings-hub"]').textContent()).trim(), 'Earnings', 'the shortened Earnings label reaches the returning session');
+  assert.equal((await page.locator('#tabbar-mount [data-tab-id="earnings"]').textContent()).trim(), 'Earnings', 'the Earnings parent reaches the returning session');
   assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
     ['ai-alerts', 'daily-alerts'], 'the returning session receives both alert subtabs');
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
@@ -322,6 +326,14 @@ try {
     await page.locator(`[data-active-tab="${id}"]`).waitFor();
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="announcements"]').getAttribute('aria-selected'), 'true');
   }
+  await page.locator('#tabbar-mount [data-tab-id="earnings"]').click();
+  await page.locator('#subview-mount [data-tab-id="earnings-hub"][aria-selected="true"]').waitFor();
+  assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+    tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+    [['earnings-hub', 'Results'], ['concall', 'Concall']], 'the returning session receives Results by default and Concall beside it');
+  await page.locator('#subview-mount [data-tab-id="concall"]').click();
+  await page.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
+  assert.equal(await page.locator('#tabbar-mount [data-tab-id="earnings"]').getAttribute('aria-selected'), 'true');
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {

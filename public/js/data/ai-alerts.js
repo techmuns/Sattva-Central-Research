@@ -966,8 +966,19 @@ const cardKey = card => card.key || card.ticker || card.entityId;
 function mergePlan(previous, next) {
   if (!previous || previous.scope !== next.scope || previous.day !== next.day) return null;
   const eventKey = event => `${event.feed}:${event.id || JSON.stringify([event.ticker, event.entityId, event.day, event.url, event.headline])}`;
-  const nextEvidence = new Set((rankingEvidence.get(next) || []).map(eventKey));
-  for (const card of next.allCards) for (const event of [...(card.sourceEvents || card.events), ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) nextEvidence.add(eventKey(event));
+  const nextEvidence = new Set(), superseded = new Set();
+  const accept = event => {
+    const id = eventKey(event);
+    nextEvidence.add(id);
+    // The completed publisher projection keeps the chosen copy and provenance
+    // for its other routes. An earlier partial must not restore those copies.
+    for (const source of event.newsProvenance || []) {
+      const copy = `${source.feed}:${source.eventId}`;
+      if (source.feed && source.eventId && copy !== id) superseded.add(copy);
+    }
+  };
+  for (const event of rankingEvidence.get(next) || []) accept(event);
+  for (const card of next.allCards) for (const event of [...(card.sourceEvents || card.events), ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) accept(event);
   // Union EVIDENCE, not whole cards. Keeping the old card until every prior source answers
   // hides a new material story about that same company behind an unrelated slow feed.
   const evidence = new Map();
@@ -975,6 +986,7 @@ function mergePlan(previous, next) {
   for (const report of [previous, next]) for (const card of report.allCards) {
     for (const event of [...(card.sourceEvents || card.events), ...(card.contextEvents || []), ...(card.upcomingEvents || [])]) {
       const id = eventKey(event);
+      if (report === previous && superseded.has(id)) continue;
       if (report === previous && !nextEvidence.has(id)) needsMerge = true;
       evidence.set(id, event); // New source corrections win under their stable identity.
     }

@@ -10,7 +10,7 @@ const { chromium } = await import(`${PW_ROOT}/index.mjs`);
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
 });
-const context = await browser.newContext({ viewport: { width: 1100, height: 800 } });
+const context = await browser.newContext({ viewport: { width: 900, height: 800 } });
 await context.route('**/*', (route) => {
   const url = new URL(route.request().url());
   if (url.origin === new URL(BASE).origin && !url.pathname.startsWith('/api/')) return route.continue();
@@ -132,6 +132,24 @@ try {
     assert.equal(childMetrics.height, childMetrics.scrollHeight, 'subtabs must not overflow vertically');
     pass(`Active parent, subtab and page layout remain usable at ${width}px`);
   }
+
+  await page.locator('#tabbar-mount [data-tab-id="earnings"]').click();
+  await page.locator(`${children} [data-tab-id="earnings-hub"][aria-selected="true"]`).waitFor();
+  await page.locator(selectedChild).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator(selectedChild).getAttribute('data-tab-id'), 'earnings-hub', 'Results stays selected until keyboard activation');
+  await page.keyboard.press('Enter');
+  await page.locator(`${children} [data-tab-id="concall"][aria-selected="true"]`).waitFor();
+  assert(await page.locator(selectedChild).evaluate(button => document.activeElement === button));
+  for (const width of [1440, 1100, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    await visibleInStrip(active);
+    await noOverflow();
+    assert(await page.locator('#subview-mount [data-tab-scroll-controls]').isHidden(), 'Results and Concall fit without overflow controls');
+    assert(await page.locator(`${children} [data-tab-id="earnings-hub"]`).isVisible());
+    assert(await page.locator(selectedChild).isVisible());
+  }
+  pass('Earnings defaults to Results; Concall keyboard activation and both subtabs fit at 320–1440px');
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.locator(active).focus();

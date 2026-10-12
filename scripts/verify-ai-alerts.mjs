@@ -114,6 +114,25 @@ const retractedEligibility = rankReport({ ...report, pending: 1,
 assert.equal(mergePartialReport(byPriority, retractedEligibility).cards.length, 0,
   'a source correction removing AI eligibility cannot resurrect old material evidence during a partial refresh');
 
+const publisherCopy = { ...report.events[0], id: 'publisher-overlap', feed: 'market-news',
+  direction: 'neutral', url: 'https://example.test/publisher-overlap', time: '09:15',
+  headline: 'Large holding announces a material contract', storyText: 'The same captured report.',
+  attribution: { version: ATTRIBUTION_VERSION, status: 'confirmed' } };
+const companyCopy = { ...publisherCopy, id: 'company-overlap', feed: 'news',
+  newsProvenance: [{ feed: 'market-news', eventId: publisherCopy.id }, { feed: 'news', eventId: 'company-overlap' }] };
+const overlapFeeds = [{ id: 'market-news', status: 'ok', reachesToday: true },
+  { id: 'news', status: 'failed', reachesToday: false }];
+const earlyPublisher = rankReport({ ...report, pending: 1, feeds: overlapFeeds, events: [publisherCopy] }, { holdings: sizeHoldings });
+const chosenCompany = rankReport({ ...report, pending: 0, feeds: overlapFeeds, events: [companyCopy] }, { holdings: sizeHoldings });
+const mergedPublisher = mergePartialReport(earlyPublisher, chosenCompany);
+assert.equal(mergedPublisher.allCards[0].score, chosenCompany.allCards[0].score,
+  'a partial publisher copy cannot change the completed lead source and its health penalty');
+assert.deepEqual(mergedPublisher.allCards[0].sourceEvents.map(event => event.id), [companyCopy.id],
+  'the chosen report retains the other route as provenance instead of restoring duplicate evidence');
+const withOlderEvidence = mergePartialReport(byPriority, earlyPublisher);
+assert(!mergePartialReport(withOlderEvidence, chosenCompany).allCards.flatMap(card => card.sourceEvents).some(event => event.id === publisherCopy.id),
+  'the superseded copy stays excluded when other unfinished evidence still needs merging');
+
 const context = {
   id: 'LARGE-raw-filing', ticker: 'LARGE', company: 'Large holding', feed: 'announcements',
   day: '2026-09-04', headline: 'LARGE signal source document', detail: 'Underlying source record',

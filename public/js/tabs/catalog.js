@@ -6,6 +6,7 @@ import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 export const TAB_GROUPS = Object.freeze({
   alerts: { id: 'alerts', title: 'Alerts' },
   announcements: { id: 'announcements', title: 'Announcements' },
+  earnings: { id: 'earnings', title: 'Earnings' },
 });
 
 export const TAB_META = Object.freeze({
@@ -39,7 +40,8 @@ export const TAB_META = Object.freeze({
   'earnings-hub': {
     id: 'earnings-hub',
     title: 'Earnings Hub',
-    navigationTitle: 'Earnings',
+    navigationTitle: 'Results',
+    navigationGroup: 'earnings',
     subtitle: 'Live quarterly results across the listed universe, updated as companies report.',
     // No sub-views: this tab is one table. The shell hides the rail entirely when this is empty.
     subviews: [],
@@ -47,6 +49,8 @@ export const TAB_META = Object.freeze({
   'concall': {
     id: 'concall',
     title: 'Con-call',
+    navigationTitle: 'Concall',
+    navigationGroup: 'earnings',
     subtitle: 'The complete Screener concall document index, enriched with current-quarter third-party analysis.',
     // No sub-views: the shell hides the rail entirely when this is empty and the table spans the
     // full width. The schedule is an overlay, not a second page.
