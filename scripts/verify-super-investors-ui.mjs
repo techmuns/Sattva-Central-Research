@@ -160,6 +160,11 @@ try {
     'internal retry states stay out of customer chrome');
   await page.evaluate(() => paint('universe', 'quarterly-changes'));
   assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, 'failed source checks do not restore the removed heading details');
+  const source = await page.evaluate(async () => (await import('/js/ui/sources.js')).sourceGroups().flatMap(g => g.items)
+    .find(item => item.name === 'Ticker Finology — superstar investors'));
+  assert.equal(source.readState, 'partial', 'Sources still exposes incomplete coverage during an outage');
+  assert.match(source.cadence, /3 of 4 tracked books available · 1 unavailable · 3 retained books could not be re-checked/);
+  assert.match(source.cadence, /Oldest source check: 2026-09-06T00:00:00.000Z/, 'Sources retains the actual check time');
 
   fail = false;
   await page.evaluate(() => testSI.feed.refresh());
