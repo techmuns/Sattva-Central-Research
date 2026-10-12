@@ -12,7 +12,9 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
   const decisions = new Map(), listeners = new Set(), failures = new Map();
   let loading, running, waiting, revision = 0, sequence = 0, checking = false, attempted = false;
   let historyRevision = -1, histories = new Map();
-  const emit = () => { revision++; for (const fn of listeners) { try { fn(); } catch { /* A view cannot break saved readings. */ } } };
+  // Status changes must not invalidate the evidence graph or restart collection. A failed
+  // optional grouping check changes its reading status, not any captured fact or decision.
+  const emit = (changed = true) => { if (changed) revision++; for (const fn of listeners) { try { fn({ changed }); } catch { /* A view cannot break saved readings. */ } } };
   const cutoff = () => new Date(now() - STORY_HISTORY_DAYS * 86400000).toISOString().slice(0, 10);
   async function load() {
     if (!loading) loading = (async () => {
@@ -26,7 +28,7 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
           }
         }
       } catch { /* Sources remain usable when the optional reading cache is unavailable. */ }
-      emit();
+      emit(decisions.size > 0);
     })();
     return loading;
   }
@@ -134,7 +136,7 @@ export function createStoryGrouping({ read = readEntry, write = writeEntry, fetc
       checking = true; attempted = false; const before = revision;
       try {
         while (waiting) { const job = waiting; waiting = null; await check(job.events, job.isCurrent); }
-      } finally { checking = false; running = null; if (attempted || revision !== before) emit(); }
+      } finally { checking = false; running = null; if (attempted || revision !== before) emit(false); }
     })();
     return running;
   }

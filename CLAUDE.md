@@ -4627,3 +4627,23 @@ an intraday crossing after a level was set, and outages cannot reconstruct those
 A level fires once until its value changes. Family's current-price status can change back after a
 reversal while Central keeps the dated hit. Sharing currently requires a verified NSE ticker/ISIN;
 unsupported holdings are refused explicitly. No test writes sample levels to production.
+
+### Browser JSON preparation and prepared portfolio transport (12 October 2026)
+
+`core/json-reader.js` sends large JSON bytes to one browser-local `json-worker.js`; `json-codec.js`
+shares repeated strings and transfers typed buffers. The page materializes the identical JSON in
+8 ms slices. Reconstructible source-cache writes use the worker, serialize per key, and preserve
+old IndexedDB entries and failure recovery. The worker has no network access code and expires
+after its queue is idle. Keep its entry in the service-worker core and advance the release marker.
+
+`alert-pool-projection.js` derives exact portfolio members alongside the complete AI members.
+The reader verifies the complete identity/alias signature, original source revisions and all
+span descriptors; new holdings and out-of-book research use the complete source immediately.
+The ordinary collector still performs scope, discovery, dedupe and ranking. Preserve original
+source/unresolved counts, and save a scoped opening window separately with its exact context;
+never replace the universal cache with a portfolio projection. News snapshot adoption and
+durable writes stay ordered while yielding, so a newer capture cannot lose or regress records.
+
+Verify with `verify-json-preparation.mjs`, `verify-json-preparation-ui.mjs`,
+`verify-alert-pool-projection.mjs`, the existing pool/cache suites and returning-reader
+performance/startup checks. Complete source fixtures, IDs and fields are the parity oracle.

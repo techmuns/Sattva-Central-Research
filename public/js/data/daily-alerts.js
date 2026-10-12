@@ -65,7 +65,7 @@ import { scopeMatcher } from './scope.js';
 import * as coverage from './coverage.js';
 import { ADDITIONAL_SOURCES, additionalSourceDependencies } from './alert-sources.js';
 import * as records from './alert-records.js';
-import { alertWindowCache } from './alert-window-cache.js';
+import { alertWindowCache, createAlertWindowCache, ALERT_WINDOW_CACHE_KEY } from './alert-window-cache.js';
 import { allAlertsCache, allAlertsViewCache, alertWindowKey, materializeAllAlerts, restoreAllAlertSources, retainAlertSource, publicAlertFeed } from './all-alerts-cache.js';
 import { scopeTickers } from './scope.js';
 import * as scopeLists from '../core/scope-lists.js';
@@ -117,6 +117,13 @@ export function materializePublicAlertWindow(report) {
   };
 }
 
+const scopedWindowCaches = new Map();
+function scopedWindowCache(scope) {
+  if (!scopedWindowCaches.has(scope)) scopedWindowCaches.set(scope,
+    createAlertWindowCache({ cacheKey: `${ALERT_WINDOW_CACHE_KEY}:selected:${scope}` }));
+  return scopedWindowCaches.get(scope);
+}
+
 function validAlertWindow(value, throughDay) {
   const privateFeeds = new Set(['price-levels', 'company-documents', 'drhp-documents']);
   if (value?.version !== 1 || !/^\d{4}-\d{2}-\d{2}$/.test(value.day || '') ||
@@ -133,8 +140,15 @@ function validAlertWindow(value, throughDay) {
 
 /** Restore a ready public alert window, narrowed against the current in-memory scope. */
 export async function readCachedAlertWindow({ scope = 'portfolio', holdings = null, day = today() } = {}) {
-  const entry = await alertWindowCache.read();
-  if (!validAlertWindow(entry?.value, day)) return null;
+  const book = holdings || coverage.holdings();
+  let entry = null;
+  for (const cache of [scopedWindowCache(scope), alertWindowCache]) {
+    const candidate = await cache.read();
+    if (validAlertWindow(candidate?.value, day) && (!candidate.value.scopeContext ||
+        candidate.value.scopeContext === alertContextKey(scope, book, candidate.value.day)) &&
+        (!entry || candidate.savedAt > entry.savedAt)) entry = candidate;
+  }
+  if (!entry) return null;
   const wanted = scopeMatcher(scope, holdings || coverage.holdings());
   const firstDay = shiftDay(day, -(ALERT_WINDOW_CACHE_DAYS - 1));
   const entityIds = new Set(portfolioNewsEntities(holdings || coverage.holdings()).map(e => e.entityId));
@@ -675,7 +689,8 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     const module = feedId === 'news' ? news : feedId === 'insider' ? insider : null;
     return module?.holdsSessionRows?.() ? 'rows read live in this session' : null;
   };
-  const poolOptions = { mode: poolMode, day, queryWindow, refresh, isCurrent, book, newsState: (meta) => companyNewsState(day, meta), sessionRows };
+  const poolOptions = { mode: poolMode, day, queryWindow, refresh, isCurrent, book, scope, requestedCompanies,
+    newsState: (meta) => companyNewsState(day, meta), sessionRows };
   const poolRead = !poolMode ? Promise.resolve(null)
     : load ? alertPool.read(poolOptions).catch((error) => { console.warn('[daily-alerts] alert pool unavailable', error); return null; })
       : Promise.resolve(alertPool.current(poolOptions));
@@ -857,9 +872,16 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
     // Materialize from the already-settled source records; this starts no second
     // read. Universe is used so the same public snapshot can be narrowed against
     // the current Portfolio or Watchlist after a reload without persisting either.
-    const allPublic = scope === 'universe' && !requestedCompanies.length ? completed
-      : await assembleInSlices({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds }, yieldForInput);
-    void alertWindowCache.write(materializePublicAlertWindow(allPublic));
+    if ([...settledFeeds.values()].some(feed => feed.preparedProjection)) {
+      // A portfolio shortcut is complete for this exact view, not a new Universe archive.
+      // Preserve the preceding full-scope cache and give this view its own immediate reopening.
+      void scopedWindowCache(scope).write({ ...materializePublicAlertWindow(completed),
+        scopeContext: alertContextKey(scope, book, day) });
+    } else {
+      const allPublic = scope === 'universe' && !requestedCompanies.length ? completed
+        : await assembleInSlices({ day, scope: 'universe', holdings: book, includeHistory, settledFeeds }, yieldForInput);
+      void alertWindowCache.write(materializePublicAlertWindow(allPublic));
+    }
   }
   return completed;
   } finally {
@@ -1243,10 +1265,12 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
         unresolved: all.filter(event => !event.ticker && !event.entityId).length };
       scopeProjections.set(all, projection);
     }
-    const { events, unresolved, todayCount } = projection;
+    const { events, todayCount } = projection;
+    const unresolved = feed.preparedProjection?.unresolvedCount ?? projection.unresolved;
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
-    scopedFeeds.push({ ...feed, events, count: events.length, todayCount,
-      sourceCount: all.length, unresolvedCount: unresolved, scopable: !unscopable,
+    const { preparedProjection: _preparedProjection, ...publicFeed } = feed;
+    scopedFeeds.push({ ...publicFeed, events, count: events.length, todayCount,
+      sourceCount: feed.preparedProjection?.sourceCount ?? all.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null });
     yield;
   }

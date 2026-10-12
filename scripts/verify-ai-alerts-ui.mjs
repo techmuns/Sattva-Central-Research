@@ -59,7 +59,7 @@ window.refreshAlerts=()=>refresh.refreshAll();
 window.show(new URLSearchParams(location.search).get('scope') || 'portfolio');
 </script></body></html>`;
 const fixtureModule = `
-const listeners=new Set(); export const onChange=fn=>{listeners.add(fn);return()=>listeners.delete(fn);}; window.feedChanged=()=>listeners.forEach(fn=>fn());
+const listeners=new Set(); export const onChange=fn=>{listeners.add(fn);return()=>listeners.delete(fn);}; window.feedChanged=update=>listeners.forEach(fn=>fn(update));
 export { currentDay as today } from '../ui/ai-alert-utils.js';
 import { currentDay } from '../ui/ai-alert-utils.js';
 import { readEntry, writeEntry } from '../core/store.js';
@@ -71,6 +71,7 @@ export async function readCachedAlertWindow({scope,holdings,day=currentDay()}){
   return {...saved.value,day,scope,events:saved.value.events.filter(e=>scope==='universe'||wanted.has(e.ticker)),cacheSavedAt:saved.savedAt};
 }
 export async function collect({scope,onPartial,holdings,load=true}) {
+  window.assemblies=(window.assemblies||0)+1;
   if (window.throwCollection || new URLSearchParams(location.search).has('throwFirst')) throw new Error('Fixture initial collection failed');
   if(load) window.reads++;
   if(load && window.holdStart) await new Promise(done=>window.releaseStart=done);
@@ -233,6 +234,11 @@ try {
   await settled();
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
   assert.equal(await page.locator('[data-ai-card]').first().getAttribute('data-ticker'), 'A00', 'weights arriving cannot silently change newest-first order');
+  const beforeStatusUpdate = await page.evaluate(() => window.assemblies);
+  await page.evaluate(() => window.feedChanged({ storyStatusOnly: true }));
+  await page.clock.runFor(300);
+  assert.equal(await page.evaluate(() => window.assemblies), beforeStatusUpdate,
+    'optional grouping status updates do not restart collection or ranking');
   await page.evaluate(() => {
     window.stableNodes = ['[data-ai-card][data-ticker="A00"]', '[data-ai-card][data-ticker="A02"]',
       '[data-ai-cards]', '[data-ai-sort]', '[data-ai-heading] h2', '[data-ai-more]'].map(selector => [selector, document.querySelector(selector)]);

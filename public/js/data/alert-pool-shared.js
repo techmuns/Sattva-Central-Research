@@ -81,7 +81,7 @@ export const dayMember = (day) => `days/${day}.json.gz`;
 // The AI pool uses one shard per day for the pool's thirty-one days, then one per older month.
 // Members are reusable within an artifact; a new artifact gives even unchanged spans new URLs.
 export const aiMember = (span) => `ai/${span}.json.gz`;
-export const MEMBER_PATTERN = /^(days\/\d{4}-\d{2}-\d{2}|ai\/\d{4}-\d{2}(?:-\d{2})?)(?:\.(technicals|announcements|insider|news|market-news))?\.json\.gz$/;
+export const MEMBER_PATTERN = /^(days\/\d{4}-\d{2}-\d{2}|ai\/\d{4}-\d{2}(?:-\d{2})?(?:\.portfolio)?)(?:\.(technicals|announcements|insider|news|market-news))?\.json\.gz$/;
 export const isPoolMember = (name) => MEMBER_PATTERN.test(String(name || ''));
 export function feedMember(member, feedId) {
   if (!POOL_FEEDS.includes(feedId) || !isPoolMember(member) || MEMBER_PATTERN.exec(member)[2])

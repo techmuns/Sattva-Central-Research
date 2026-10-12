@@ -152,21 +152,31 @@ const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbo
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
 // route this sandbox cannot answer left a feed failed — and the cards have stopped changing.
 const settledRanking = async (page, timeout) => {
-  // A failed source keeps its Partial coverage label while collection/ranking continues.
-  // That quality label alone cannot establish that the final ranking has been painted.
-  const ready = () => {
-    const state = document.querySelector('[data-ai-feed-status]')?.dataset.state;
-    return !!state && state !== 'pending' && document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') === 'false';
+  const snapshot = () => {
+    const status = document.querySelector('[data-ai-feed-status]');
+    const cards = [...document.querySelectorAll('[data-ai-card]')].map(card => card.dataset.ticker);
+    // A source failure has priority in the compact status label while the remaining sources
+    // still read. Collection readiness is separate from that truthful coverage label.
+    const ready = !!status?.dataset.state && status.dataset.state !== 'pending' &&
+      document.querySelector('[data-ai-cards]')?.getAttribute('aria-busy') === 'false' &&
+      document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') === 'false';
+    return { cards, ready, coverage: status?.dataset.state, grouping: status?.dataset.aiStoryStatus };
   };
-  await page.waitForFunction(ready, null, { timeout });
+  await page.waitForFunction(() => {
+    const status = document.querySelector('[data-ai-feed-status]');
+    return !!status?.dataset.state && status.dataset.state !== 'pending' &&
+      document.querySelector('[data-ai-cards]')?.getAttribute('aria-busy') === 'false' &&
+      document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') === 'false';
+  }, null, { timeout }).catch(async error => {
+    console.error('AI ranking did not finish collection:', await page.evaluate(snapshot));
+    throw error;
+  });
   let previous = null;
   for (let i = 0; i < 40; i++) {
-    const snapshot = await page.evaluate(() => ({
-      cards: [...document.querySelectorAll('[data-ai-card]')].map((card) => card.dataset.ticker).join(','),
-      collecting: document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') !== 'false',
-    }));
-    if (!snapshot.collecting && snapshot.cards && snapshot.cards === previous) return snapshot.cards.split(',');
-    previous = snapshot.collecting ? null : snapshot.cards;
+    // Recheck readiness with the order: another source arrival can start a reassembly.
+    const state = await page.evaluate(snapshot), cards = state.cards.join(',');
+    if (state.ready && cards && cards === previous) return state.cards;
+    previous = state.ready ? cards : null;
     await page.waitForTimeout(1500);
   }
   throw new Error('the ranking did not settle');

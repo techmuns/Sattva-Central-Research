@@ -44,10 +44,24 @@ try {
     const { insider } = await import('/js/data/filings.js');
     const { filterByScope } = await import('/js/data/scope.js');
     const { matchesNewsPeriod } = await import('/js/data/news-window.js');
-    return filterByScope(insider.rows(), scope).filter(r => matchesNewsPeriod(r, '30')).length;
+    window.expectedDealCount = scope => filterByScope(insider.rows(), scope).filter(r => matchesNewsPeriod(r, '30')).length;
+    window.insiderCaptureSettled = () => insider.isLoaded() && !insider.meta().archive?.pending;
+    return window.expectedDealCount(scope);
   }, scope);
   const count = async () => Number((await page.locator('[data-row-count]').first().innerText()).replace(/,/g, '').match(/\d+/)[0]);
-  assert.equal(await count(), await expected('portfolio'), 'Sattva portfolio alone selects the captured trades');
+  const settleCaptures = () => page.evaluate(async () => {
+    const { insider } = await import('/js/data/filings.js');
+    const exchange = await import('/js/data/exchange-deals.js');
+    await Promise.all([insider.load(), exchange.refresh()]);
+  });
+  const assertCount = async scope => {
+    await expected(scope);
+    // Source arrivals and UI paints run independently. Compare both in the same browser turn
+    // against the current complete source, rather than freeze a count before another arrival.
+    await page.waitForFunction(scope => window.insiderCaptureSettled() &&
+      Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === window.expectedDealCount(scope), scope);
+  };
+  await settleCaptures(); await assertCount('portfolio');
   const portfolioCount = await count();
   for (const [value, range] of [['today', 'today'], ['7', '7d'], ['3m', '3m'], ['1y', '1y'], ['all', 'all']]) {
     await period().selectOption(value);
@@ -56,20 +70,19 @@ try {
   }
   await page.reload();
   await page.waitForFunction(() => document.querySelector('[aria-label="Trade period"]')?.value === 'all');
+  await settleCaptures();
   assert(await count() > portfolioCount, 'all captured exposes older disclosures');
   await period().selectOption('30');
   await page.evaluate(() => { location.hash = location.hash.replace('scope=portfolio', 'scope=universe'); });
-  await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === n, await expected('universe'));
-  assert.equal(await count(), await expected('universe'));
+  await assertCount('universe');
   assert(await count() > portfolioCount, 'Universe is not filtered by Glow holdings or Sattva portfolio');
   await page.evaluate(async ticker => {
     const watchlist = await import('/js/core/watchlist.js'); watchlist.add(ticker, ticker);
     location.hash = location.hash.replace('scope=universe', 'scope=watchlist');
   }, ticker);
-  await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === n, await expected('watchlist'));
-  assert.equal(await count(), await expected('watchlist'));
+  await assertCount('watchlist');
   await page.evaluate(() => { location.hash = location.hash.replace('scope=watchlist', 'scope=portfolio'); });
-  await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === n, await expected('portfolio'));
+  await assertCount('portfolio');
   const search = () => page.locator('[data-table-search]');
   await search().fill(ticker);
   await period().selectOption('today');

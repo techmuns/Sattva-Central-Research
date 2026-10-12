@@ -52,7 +52,7 @@ import { conditionalJson, readEntries, writeEntry, KEYS, isPersistent } from '..
 import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
 import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
-import { dedupeArticles } from './filings-shared.js';
+import { dedupeArticles, dedupeArticlesAsync } from './filings-shared.js';
 import { attributeNewsRow } from './company-news-attribution.js';
 import { withTradingViewNews } from './tradingview-news.js';
 import { withNewsHistory } from './news-history.js';
@@ -713,7 +713,19 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
    * win over what is in memory; on the initial seed a company already read live must not be
    * overwritten by an older file.
    */
-  async function seedFromSnapshot({ replace = false } = {}) {
+  let snapshotQueue = Promise.resolve();
+  function seedFromSnapshot(options = {}) {
+    // Cooperative preparation must still adopt captures in order. A scope change shares this
+    // queue; it cannot lose a source arrival or publish a half-prepared replacement.
+    const job = snapshotQueue.catch(() => {}).then(() => applySnapshot(options));
+    snapshotQueue = job;
+    return job;
+  }
+  async function applySnapshot(options) {
+    try { return await applySnapshotRows(options); }
+    finally { state.snapshotPending = false; }
+  }
+  async function applySnapshotRows({ replace = false } = {}) {
     if (kind === 'insider') void exchangeDeals.refresh();
     let res;
     state.snapshotPending = true;
@@ -723,7 +735,6 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       res = null;
     }
     const body = res?.value;
-    state.snapshotPending = false;
     state.snapshotChecked = true;
     state.checkedAt = res?.checkedAt || Date.now();
     if (!body || typeof body !== 'object' || (kind === 'news' && (!body.byTicker || typeof body.byTicker !== 'object' || Array.isArray(body.byTicker)))) {
@@ -806,10 +817,10 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       // of the rolling window or answered empty in the new run must lose yesterday's rows now,
       // without waiting for a page reload. Preserve only companies read live in this session —
       // those bytes are newer than the bulk file by definition.
-      if (kind === 'insider' || kind === 'news') {
+      if (kind === 'insider') {
         // A smaller response cannot retract a disclosure. Only the retention window expires it.
         for (const t of state.rows.keys()) storeRows(t, []);
-      } else {
+      } else if (kind !== 'news') {
         for (const t of state.fromSnapshot) {
           if (!state.confirmedHere.has(t)) state.rows.delete(t);
         }
@@ -829,7 +840,18 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       // On the initial seed the device's copy has already been placed and is newer; on a refresh a
       // newer capture wins unless this session confirmed the company AFTER the capture was made.
       if (kind !== 'insider' && state.rows.has(t) && !(newer && snapshotWins(t))) continue;
-      storeRows(t, kind === 'news' ? dedupeArticles(list) : list);
+      if (kind === 'news') {
+        let previous, merged;
+        do {
+          previous = state.rows.get(t);
+          const captureFirst = !state.confirmedHere.has(t) || newer && snapshotWins(t);
+          merged = await dedupeArticlesAsync(captureFirst ? [...list, ...(previous || [])] : [...(previous || []), ...list]);
+        } while (previous !== state.rows.get(t));
+        // A live reading may have arrived while preparation yielded to the browser.
+        // Preserve its complete merge and its newer source check rather than adopting this capture.
+        state.rows.set(t, merged);
+        if (state.confirmedHere.has(t) && (!newer || !snapshotWins(t))) continue;
+      } else storeRows(t, list);
       if (kind === 'insider' && state.confirmedHere.has(t) && !snapshotWins(t)) continue;
       state.fromSnapshot.add(t);
       if (newer) {
@@ -847,7 +869,8 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       // Empty latest search results are not a retraction of previously captured news/disclosures.
       const wins = !newer || snapshotWins(ticker);
       if (newer && wins) {
-        if (kind === 'insider' || kind === 'news') storeRows(ticker, []);
+        if (kind === 'insider') storeRows(ticker, []);
+        else if (kind === 'news') { if (!state.rows.has(ticker)) state.rows.set(ticker, []); }
         else state.rows.delete(ticker);
         state.fromSnapshot.delete(ticker);
         state.confirmedHere.delete(ticker);

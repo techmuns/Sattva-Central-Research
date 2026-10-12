@@ -51,7 +51,7 @@ jobs:
       - name: Verify variable-height virtual list geometry
         run: node scripts/verify-windowed-geometry.mjs
       - name: Verify filings snapshot recovery
-        run: node scripts/verify-filings-snapshot.mjs
+        run: node scripts/verify-filings-snapshot.mjs && node scripts/verify-news-snapshot-adoption.mjs
       - name: Verify permanent company-news identities and archive
         run: node scripts/verify-company-news-archive.mjs
       - name: Verify complete BSE/NSE company universe and identity-safe enrollment
@@ -61,7 +61,7 @@ jobs:
       - name: Verify bounded memory, lossless saves and exact news reading windows
         # The working-set oracle replays the complete retained news history in one process: about
         # 6 GB on 1 October 2026, past Node's default 4 GB heap on the 16 GB runner.
-        run: node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node --max-old-space-size=8192 scripts/verify-news-working-set.mjs
+        run: node scripts/verify-json-preparation.mjs && node scripts/verify-alert-pool-projection.mjs && node scripts/verify-memory-primitives.mjs && node scripts/verify-news-query-boundaries.mjs && node --max-old-space-size=8192 scripts/verify-news-working-set.mjs
       - name: Verify Mutual Fund calculations and resumable capture
         run: node scripts/verify-mutual-funds.mjs && node scripts/verify-mutual-funds-denominators.mjs && node scripts/verify-mutual-funds-sources.mjs && node scripts/verify-mutual-funds-schedule.mjs && node scripts/verify-mutual-funds-scanner.mjs
       - name: Verify hot-path caches are invisible (same answers, live edits, exact byte counts)
@@ -355,6 +355,10 @@ jobs:
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
         run: node scripts/verify-table-drag-ui.mjs
+      - name: Verify responsive JSON preparation and lossless durable replay
+        env:
+          PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
+        run: node scripts/verify-json-preparation-ui.mjs
       - name: Verify filter transitions, loading placeholders and latest selection
         if: ${{ matrix.part == 2 }}
         env:

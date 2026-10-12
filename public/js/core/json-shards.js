@@ -1,6 +1,7 @@
 // Lossless transport for large public news captures. A manifest is not an empty feed.
 // No caller may adopt it until every referenced part has passed its integrity checks.
 import { createMemoryCache } from './memory-cache.js';
+import { parseJsonBytes } from './json-reader.js';
 export const JSON_SHARD_BYTES = 4 * 1024 * 1024;
 export const JSON_ASSET_LIMIT = 25 * 1024 * 1024;
 const encoder = new TextEncoder();
@@ -116,8 +117,9 @@ export async function decodeShard(input, part) {
   const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
     .map(x => x.toString(16).padStart(2, '0')).join('');
   if (hash !== part.sha256) throw Error('News part integrity mismatch');
-  const text = typeof input === 'string' ? input : new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-  return parseShard(text, part);
+  const data = await parseJsonBytes(bytes);
+  if (!Array.isArray(data.items) || data.items.length !== part.rows) throw Error('News part record count mismatch');
+  return data.items;
 }
 
 export function parseShard(text, part) {
