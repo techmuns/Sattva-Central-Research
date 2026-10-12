@@ -91,6 +91,11 @@ export async function collect({scope,onPartial,holdings,load=true}) {
 }`;
 const server = createServer((req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
+  if (pathname === '/js/data/holding-sizes.js') {
+    // This harness controls the authenticated peer; shared defaults have their own suite.
+    res.setHeader('content-type', 'text/javascript');
+    res.end("import * as b from '../research/portfolio-bridge.js';export const cachedHoldingSizes=b.cachedPositionSizes;export const readHoldingSizes=(...args)=>b.portfolioConnectionState()==='locked'?Promise.resolve(null):b.readPositionSizes(...args);");return;
+  }
   try {
     if (pathname === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
     if (pathname === '/js/data/daily-alerts.js') { res.setHeader('content-type', 'text/javascript'); res.end(fixtureModule); return; }
