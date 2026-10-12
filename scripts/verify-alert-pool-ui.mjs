@@ -125,7 +125,13 @@ const settledAlerts = async (page) => {
     previous = state;
     await page.waitForTimeout(1500);
   }
-  throw new Error('alert rows, counts and source chips did not settle together');
+  const diagnostic = await page.evaluate(() => ({
+    count: document.querySelector('[data-row-count]')?.textContent.trim(),
+    chips: Object.fromEntries([...document.querySelectorAll('[data-feed]')].map(chip => [chip.dataset.feed, chip.textContent.trim()])),
+    grouping: document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy'),
+    loading: !!document.querySelector('[data-table-loading]'),
+  }));
+  throw new Error(`alert rows, counts and source chips did not settle together: ${JSON.stringify(diagnostic)}`);
 };
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
