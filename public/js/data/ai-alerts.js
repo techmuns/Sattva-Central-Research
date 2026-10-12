@@ -34,7 +34,10 @@ export { AI_ALERT_WINDOW_DAYS as WINDOW_DAYS } from '../core/alert-window.js';
 
 export const MIN_SCORE = 64;
 export const MUST_SEE_SCORE = 82;
-export const onChange = fn => { const a = generalAlerts.onChange(fn), b = storyGrouping.onChange(fn); return () => { a(); b(); }; };
+export const onChange = fn => {
+  const a = generalAlerts.onChange(fn), b = storyGrouping.onChange(({ changed = true } = {}) => fn({ storyStatusOnly: !changed }));
+  return () => { a(); b(); };
+};
 export const storyStatus = report => storyGrouping.status(report?.allCards?.flatMap(card => card.sourceEvents || card.events) || []);
 // Keep ranking inputs in memory only; private position sizes must never enter a saved report.
 const rankingOptions = new WeakMap();

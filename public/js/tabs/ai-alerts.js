@@ -115,8 +115,15 @@ function refreshTimelineHistory() {
     if (reader === historyReader) for (const state of timelines.values()) state.controller.historyFailed();
   });
 }
-function sourceChanged() {
+function sourceChanged(change) {
   if (!ctxRef) return;
+  if (change?.storyStatusOnly) {
+    // Ending an optional check updates the compact status without another full Universe
+    // assembly/ranking. New decisions still follow the normal source reassembly below.
+    const heading = ctxRef.root.querySelector('[data-ai-heading]');
+    if (heading) reconcileMarkup(heading, head(ctxRef));
+    return;
+  }
   captureDirty = true;
   if (collecting || sourceTimer !== null) return;
   sourceTimer = setTimeout(() => {

@@ -551,3 +551,8 @@ cache formats, and publish only after source validation. Failed writes retain th
 reading and the previous durable record. Regression checks compare complete records and counts,
 exercise corrections and scope changes, measure input during large reads/writes, and verify that
 a returning session receives the new module and worker graph. Rendering limits remain DOM limits.
+
+Optional story-check status changes do not invalidate the evidence revision or restart collection
+and ranking. Failed checks remain visible in the status heading; new source records and accepted
+grouping decisions still update the complete view. Tests distinguish status publications from
+actual decision changes and verify that a status-only update performs no new assembly.

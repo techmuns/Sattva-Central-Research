@@ -135,7 +135,13 @@ assert.deepEqual(await outage.projectAsync(tiedRows, { sliceMs: 0, yieldForInput
 const longTies = Array.from({ length: 600 }, (_, i) => event(`tie-${i}`, `Distinct source report ${i}`, { url: i % 3 ? `https://example.test/${i}` : null }));
 assert.deepEqual((await outage.projectAsync(longTies, { sliceMs: 0, yieldForInput: async () => { projectionYields++; } })).map(row => row.id), longTies.map(row => row.id));
 assert(projectionYields > 0, 'order preservation still yields across the full history');
+const outageUpdates = [];
+outage.onChange(update => outageUpdates.push(update));
+const beforeFailedReview = outage.revision();
 await outage.review([proposal, copy]);
+assert.equal(outage.revision(), beforeFailedReview, 'a failed optional check does not invalidate unchanged evidence');
+assert(outageUpdates.length > 0 && outageUpdates.every(update => update.changed === false),
+  'failed checks still publish their reading status without claiming new decisions');
 assert.equal(outage.project([proposal, copy]).length, 2); assert(outage.status([proposal, copy]).partial);
 assert(outage.status([event('large', 'x'.repeat(16001))]).partial, 'oversized unchecked text cannot claim complete grouping');
 const sameUrlCorrection = event('a', proposal.headline, { detail: 'Correction: exchange ratio is 3 shares' });
