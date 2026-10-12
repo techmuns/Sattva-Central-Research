@@ -5,6 +5,7 @@ import { AI_ALERT_WINDOW_DAYS } from '../core/alert-window.js';
 // Navigation groups share chrome while their readers retain their own routes and lifecycles.
 export const TAB_GROUPS = Object.freeze({
   alerts: { id: 'alerts', title: 'Alerts' },
+  announcements: { id: 'announcements', title: 'Announcements' },
 });
 
 export const TAB_META = Object.freeze({
@@ -97,10 +98,12 @@ export const TAB_META = Object.freeze({
       'Undated stories have their own filter; older news stays saved in All Alerts.',
     subviews: [],
   },
-  'ipos': { id: 'ipos', title: 'IPOs', subtitle: 'Official public-issue filings, including unlisted issuers. Newest filings first.', allowEmptyScope: true, subviews: [] },
+  'ipos': { id: 'ipos', title: 'IPOs', navigationGroup: 'announcements', subtitle: 'Official public-issue filings, including unlisted issuers. Newest filings first.', allowEmptyScope: true, subviews: [] },
   'corp-announcements': {
     id: 'corp-announcements',
     title: 'Corp Announcements',
+    navigationTitle: 'Corporate Announcements',
+    navigationGroup: 'announcements',
     subtitle:
       'Company announcements from BSE, NSE and captured filings — newest day first, the most relevant first within each day.',
     subviews: [],
@@ -108,6 +111,7 @@ export const TAB_META = Object.freeze({
   'corporate-actions': {
     id: 'corporate-actions',
     title: 'Corporate Actions',
+    navigationGroup: 'announcements',
     subtitle: 'One deduplicated feed of NSE actions, enriched with Screener ratios, terms, prices and additional records.',
     subviews: [],
   },

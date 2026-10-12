@@ -20,7 +20,7 @@ let previousRelease = true;
 const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmarks', 'earnings-hub',
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
   'corporate-actions', 'nse-filings', 'insider-trades', 'mutual-funds'];
-const currentTabOrder = ['alerts', 'corp-announcements', 'corporate-actions', 'ipos',
+const currentTabOrder = ['alerts', 'announcements',
   'earnings-hub', 'breakouts', 'insider-trades', 'mutual-funds', 'concall', 'news', 'public-chatter', 'super-investors'];
 const requests = [];
 const partBody = '{"items":[{"title":"Original retained story"}]}';
@@ -59,7 +59,8 @@ const server = createServer((req, res) => {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__performanceRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/tabs/catalog.js') {
       const source = readFileSync(path, 'utf8');
-      res.end(previousRelease ? source.replace("navigationTitle: 'Earnings',", '').replaceAll("navigationGroup: 'alerts',", '')
+      res.end(previousRelease ? source.replace("navigationTitle: 'Earnings',", '').replace("navigationTitle: 'Corporate Announcements',", '')
+        .replaceAll(/navigationGroup: '(?:alerts|announcements)',/g, '')
         .replace(/(title: 'NSE Filings',\s*\/\/[^\n]*\s*)hideFromNavigation: true,/, '$1') : source);
     } else if (pathname === '/js/tabs/registry.js') {
       const source = readFileSync(path, 'utf8');
@@ -292,6 +293,18 @@ try {
   await page.locator('#subview-mount [data-tab-id="daily-alerts"]').click();
   await page.locator('[data-active-tab="daily-alerts"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="alerts"]').getAttribute('aria-selected'), 'true');
+  await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
+  await page.locator('[data-active-tab="corp-announcements"]').waitFor();
+  assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+    tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+    [['corp-announcements', 'Corporate Announcements'], ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs']],
+    'the returning session receives all three Announcements subtabs with the default selected');
+  assert.equal(await page.locator('#subview-mount [data-tab-id="corp-announcements"]').getAttribute('aria-selected'), 'true');
+  for (const id of ['corporate-actions', 'ipos']) {
+    await page.locator(`#subview-mount [data-tab-id="${id}"]`).click();
+    await page.locator(`[data-active-tab="${id}"]`).waitFor();
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="announcements"]').getAttribute('aria-selected'), 'true');
+  }
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {
