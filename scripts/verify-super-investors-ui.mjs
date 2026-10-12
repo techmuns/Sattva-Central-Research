@@ -72,7 +72,11 @@ try {
   await page.goto(origin + '/#/research/super-investors?scope=portfolio');
   await page.waitForFunction(() => window.testSI && !window.testSI.feed.meta().confirming);
   await page.waitForSelector('[data-changes-ready="true"]');
-  assert.doesNotMatch(await page.locator('[data-si-freshness]').innerText(), /up to date/i, 'an incomplete source never claims complete freshness');
+  for (const section of ['investors', 'data-table', 'quarterly-changes']) {
+    await page.evaluate(section => paint('portfolio', section), section);
+    assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, `${section} omits the source-status chip and derivation control`);
+  }
+  await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'scope excludes another company; duplicate reports group but exchange and side stay separate');
   await page.locator('[data-changes-period]').selectOption('6m');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-holdings-total'), '1', 'only the scoped confirmed change appears');
@@ -150,16 +154,12 @@ try {
   assert.equal(await page.locator('[data-open-investor]:has-text("quarter disclosures")').count(), 3, 'every retained book still shows its figures during an outage');
   assert.equal(await page.locator('[data-open-investor]:has-text("No book published")').count(), 1, 'an investor with no book still says so');
 
-  // The amber block and the raw upstream error string are out of the chrome — and NOT deleted:
-  // the age is on the page and the mechanism is behind the panel's own provenance door.
+  // Operational details stay out of the customer heading, including during an outage.
   assert.equal(await page.locator('#test-root .bg-amber-50').count(), 0, 'no amber caveat block over real filed holdings');
   assert.doesNotMatch(await page.locator('#test-root').innerText(), /Showing the last good read|fixture outage|book reads failed/,
     'internal retry states stay out of customer chrome');
   await page.evaluate(() => paint('universe', 'quarterly-changes'));
-  assert.match(await page.locator('[data-si-freshness]').first().innerText(), /Ticker Finology · partial · read /, 'one quiet freshness label states the age');
-  await page.locator('[data-summary-help]').click();
-  assert.match(await page.locator('#modal-content').innerText(), /could not be re-checked just now/, 'the provenance modal still carries what the chrome stopped printing');
-  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, 'failed source checks do not restore the removed heading details');
 
   fail = false;
   await page.evaluate(() => testSI.feed.refresh());
