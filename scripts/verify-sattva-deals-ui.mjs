@@ -47,6 +47,11 @@ try {
     return filterByScope(insider.rows(), scope).filter(r => matchesNewsPeriod(r, '30')).length;
   }, scope);
   const count = async () => Number((await page.locator('[data-row-count]').first().innerText()).replace(/,/g, '').match(/\d+/)[0]);
+  // Exchange rows can paint while the independently retained disclosure snapshot prepares.
+  // Compare the complete capture after adoption, then allow its subscribed view to repaint.
+  await page.evaluate(async () => { const { insider } = await import('/js/data/filings.js'); await insider.load(); });
+  await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === n,
+    await expected('portfolio'));
   assert.equal(await count(), await expected('portfolio'), 'Sattva portfolio alone selects the captured trades');
   const portfolioCount = await count();
   for (const [value, range] of [['today', 'today'], ['7', '7d'], ['3m', '3m'], ['1y', '1y'], ['all', 'all']]) {
