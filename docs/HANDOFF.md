@@ -887,11 +887,11 @@ Two things that follow, and neither is optional:
   response is specific to the caller must not be given that env; read the note above
   `withCallerToken` before adding one.
 
-The Superstar surface is split into three in-page tabs in this order: **All Investors** for the
-card directory, **Quarterly Changes** for the six cross-book summaries, and **Data Table** for every
-disclosed investor-company position. Data Table retains the wide quarter history, search,
-investor/change filters, watchlist control and Excel export; do not put that table back underneath
-the directory cards.
+The Superstar surface now has **Changes**, **My Managers**, **All Investors** and
+**Data Table**. Changes opens first with manager/public-investor audiences. My Managers
+reads the authenticated Family workbook in memory; see `INVESTOR-DISCLOSURE-EVIDENCE.md`
+for privacy, dates and the unsupported PMS statement/AMC look-through sources. Data Table
+retains the public quarter history, filters, Watchlist and export independently of the cards.
 
 **Three things about the data that are easy to get wrong:**
 

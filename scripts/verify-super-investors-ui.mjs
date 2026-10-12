@@ -19,6 +19,14 @@ const books = {
 };
 const investors = [...Object.keys(books), 'missing'].map(slug => ({ slug, name: slug }));
 const snapshot = { capturedAt: at, investors, books };
+const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2026-08-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: 'fixture-book',
+  privateWorkbook: { source: 'fixture.xlsx', received: '2026-09-02', saved: null }, coverage: { transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 1, note: 'Fixture custodians, retained ledger events and private funds; no PMS statement return series.' },
+  managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2026-08-31',
+    values: { marketValue: 1000, costBasis: 800, unrealised: 200, cashValue: 0, positionCount: 2 },
+    positions: [{ isin: 'INE000A01001', security: 'Portfolio Only Ltd.', ticker: 'ONLY', assetClass: 'Equity', quantity: 10, marketValue: 500, costBasis: 400, weightPct: 50 }, { isin: 'INF000000001', security: 'Example ETF', ticker: null, assetClass: 'ETF', quantity: 10, marketValue: 500, costBasis: 400, weightPct: 50 }],
+    transactions: [1, 2].map(i => ({ id: `ledger-${i}`, date: '2026-09-05', dateSheet: i === 2 ? '2026-03-31' : null, security: 'Portfolio Only Ltd.', isin: 'INE000A01001', ticker: 'ONLY', side: i === 1 ? 'buy' : 'sell', quantity: 10, amount: i === 1 ? 0 : 500, unitPrice: i === 1 ? 0 : 50, transfer: i === 2 })) },
+  { id: 'fund-example-1', name: 'Example Private Fund', kind: 'fund', asOf: null, positions: [], transactions: [], values: { marketValue: 200, costBasis: null, unrealised: null, cashValue: null, positionCount: 1 },
+    capital: { committed: 100, drawn: 120, distributed: 20, currentValue: 200, tvpi: 220 / 120, dpi: 20 / 120, firstInvest: '2020-01-01' } }] };
 const trade = (ticker, person, side = 'Buy', exchange = 'NSE') => ({ ticker, sourceId: `${exchange.toLowerCase()}-bulk`, date: '2026-09-05', url: 'https://www.screener.in/trades/bulk/', cells: { Company: ticker === 'ONLY' ? 'Portfolio Only Ltd.' : 'Aavas Financiers Ltd.', Insider: person, Transaction: side, 'Trade Category': 'Bulk deal', 'Trade Shares': '1000', Price: '50', Exchange: exchange } });
 const trades = { kind: 'insider', capturedAt: at, coversUniverse: true, byTicker: { ONLY: [trade('ONLY', 'one'), trade('ONLY', 'one'), trade('ONLY', 'one', 'Sell'), trade('ONLY', 'one', 'Buy', 'BSE')], AAVAS: [trade('AAVAS', 'two'), trade('AAVAS', 'one and others')] }, empty: [], failed: {} };
 const publicRow = (id, company, isin) => ({ id, personId: 'one', person: 'one', kind: 'investor', company, isin, legalHolder: 'one', asOf: '2026-06-30', shares: 1000, stakePct: 1.2, state: 'latest-disclosure', comparison: 'agrees', sources: [{ source: 'bse', url: 'https://www.bseindia.com/example.xml', filedAt: at, checkedAt: at, shares: 1000, stakePct: 1.2 }] });
@@ -33,7 +41,7 @@ import * as coverage from '/js/data/coverage.js';
 import * as watchlist from '/js/core/watchlist.js';
 import { renderLive, openInvestor } from '/js/investors/live.js';
 coverage.prime({ holdings: [{ ticker: 'ONLY', name: 'Portfolio Only' }] });
-let disposers = [], scope = 'portfolio', section = 'quarterly-changes', changesView = { period: 'quarter' }; window.openInvestor = openInvestor;
+let disposers = [], scope = 'portfolio', section = 'quarterly-changes', changesView = { audience: 'investors', period: 'quarter' }; window.openInvestor = openInvestor;
 window.paint = (nextScope = scope, nextSection = section) => {
   scope = nextScope; section = nextSection;
   disposers.forEach(fn => fn()); disposers = [];
@@ -65,7 +73,18 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1050 } });
-  await context.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
+  await context.route('**/*', route => {
+    if (route.request().url() === 'https://sattva-family.pages.dev/research-bridge') return route.fulfill({ contentType: 'text/html', body: `<script>
+      window.fixture = ${JSON.stringify(managerFixture)};
+      const send = m => parent.postMessage({channel:'sattva-portfolio-v1', ...m}, ${JSON.stringify(origin)});
+      window.send = send;
+      addEventListener('message', e => { if(e.origin !== ${JSON.stringify(origin)} || e.source !== parent || e.data.channel !== 'sattva-portfolio-v1') return;
+        const m=e.data; if(m.type==='hello') send({id:m.id,type:'ready',capabilities:['manager-workbook']});
+        if(m.type==='managers') send({id:m.id,type:'result',managers:{...fixture,checkedAt:new Date().toISOString()}});
+      }); send({type:'available'});
+    </script>` });
+    return route.request().url().startsWith(origin + '/') ? route.continue() : route.abort();
+  });
   const page = await context.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.clock.install({ time: new Date(at) });
@@ -195,6 +214,55 @@ try {
   });
   await page.clock.setSystemTime(new Date('2026-10-01T00:00:00Z'));
   assert.equal(await page.evaluate(() => testSI.feed.allMoves().find(m => m.companySlug === 'ONLY').latest), 'Sep 2026', 'quarter rollover invalidates derived cache');
+  await page.evaluate(() => paint('portfolio', 'my-managers'));
+  await page.waitForSelector('[data-open-manager="custodian-example"]');
+  assert.equal(await page.locator('[data-open-manager]').count(), 3);
+  assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, 'manager view preserves heading cleanup');
+  await page.locator('[data-manager-search]').fill('private');
+  assert.equal(await page.locator('[data-open-manager]').count(), 1);
+  await page.locator('[data-manager-search]').fill('');
+  await page.locator('[data-open-manager="custodian-example"]').click();
+  assert.equal(await page.locator('#workspace-content [data-bookmark-key]').count(), 0, 'private holdings cannot be saved to the public notebook');
+  assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 2);
+  await page.locator('[data-ws-tab="trades"]').click();
+  assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 2, 'distinct ledger lots survive');
+  assert.match(await page.locator('#workspace-content').innerText(), /Earliest ledger sighting/);
+  await page.locator('[data-ws-tab="period"]').click();
+  await page.locator('[data-manager-period]').selectOption('itd');
+  assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 2);
+  await page.keyboard.press('Escape');
+  await page.locator('[data-open-manager="scheme-INF000000001"]').click();
+  assert.equal(await page.locator('[data-ws-tab="holdings"]').innerText(), 'Units');
+  assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 1);
+  await page.keyboard.press('Escape');
+  await page.locator('[data-open-manager="fund-example-1"]').click();
+  assert.match(await page.locator('#workspace-content').innerText(), /Drawn|Distributed/);
+  await page.locator('[data-ws-tab="performance"]').click();
+  assert.match(await page.locator('#workspace-content').innerText(), /capital multiples/);
+  const family = page.frames().find(f => f.url() === 'https://sattva-family.pages.dev/research-bridge');
+  await family.evaluate(() => send({ type: 'auth-required' }));
+  await page.waitForSelector('[data-manager-unlock]');
+  assert.equal(await page.locator('#workspace-content').innerText(), '', 'expired access clears the open private workspace');
+  assert.equal(await page.locator('[data-open-manager]').count(), 0, 'expired access clears private cards');
+  await family.evaluate(() => { send({ type: 'available' }); send({ type: 'positions-ready', version: 1 }); });
+  await page.evaluate(async () => (await import('/js/data/managers.js')).load({ force: true }));
+  await page.waitForSelector('[data-open-manager="custodian-example"]');
+  await page.evaluate(() => paint('portfolio', 'quarterly-changes'));
+  await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'My Managers' }).click();
+  await page.locator('[data-changes-period]').selectOption('itd');
+  assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '2');
+  assert.equal(await page.locator('[data-changes-activity] [data-bookmark-key]').count(), 0);
+  await page.locator('[data-changes-activity] [data-row-key]').last().click();
+  assert.match(await page.locator('#modal-content').innerText(), /not a verified execution date/);
+  await family.evaluate(() => send({ type: 'invalidated', version: 2 }));
+  assert.equal(await page.locator('#modal-content').innerText(), '', 'archive change revokes private evidence');
+  await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'All Investors' }).click();
+  assert(await page.locator('[data-changes-activity] [data-row-key]').count() > 0, 'public history stays available after private revocation');
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => paint('portfolio', 'my-managers'));
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `manager view has no page overflow at ${width}`);
+  }
   assert.deepEqual(errors, []);
   console.log('PASS investor scope, identity, disclosure notes, shared changes, drill evidence, missing books, outages and mobile layout');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

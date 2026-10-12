@@ -1,6 +1,6 @@
 # Investor disclosures and changes
 
-Superstar Investors retains its All Investors default. Changes combines two visibly separate
+Superstar Investors opens on Changes, with My Managers / All Investors audiences. Public Changes combines two visibly separate
 readings: dated public bulk/block trades matched to tracked investor names, and changes between
 consecutive completed quarterly disclosures. A quarter-end observation is never a trade date.
 Unknown, missing, conflicting and filing-due cells cannot establish purchases or sales. Only
@@ -16,8 +16,8 @@ enter the coverage review. Search and exports use the same disclosure predicate.
 
 Finology books retain their existing daily capture and automatic reader revalidation. Failed
 books and investors missing from the latest directory retain previous evidence and their real
-source check time. Older quarterly columns survive rolling source windows. The coverage review
-is behind How this is derived, while the source age remains visible on the page.
+source check time. Older quarterly columns survive rolling source windows. The public feed’s status and source age remain in Sources; the customer heading omits
+the source-status chip and derivation button at the user’s request.
 
 The new `investor-disclosures-refresh.yml` workflow is scheduled every six hours and runs after
 changes to its implementation, tracked books or reviewed relationships. It reads the BSE and
@@ -49,3 +49,30 @@ restore limit. Exceeding a limit fails publication and retains the checkpoint; i
 older disclosures to make the file fit. Storage must be expanded before further publication.
 
 Before the first scheduled capture, `public-holdings.json` is an explicit `not-started` manifest with null source-check dates and no records. Readers expose that state without a missing asset request, and never adopt it as a successful empty disclosure capture or overwrite previously saved evidence.
+
+## Sattva Family manager parity (12 October 2026)
+
+My Managers uses the authenticated Sattva Family workbook, as requested by the owner.
+It groups canonical held positions and retained ledger events by the existing custodian
+classification, and lists private-fund investments and held fund units/ETFs. Units also
+remain inside their custodian books; their directory is not additional NAV. Fund entries
+remain separate workbook investments, including repeated names; no source rows are deleted.
+Manager workspaces provide holdings/units, period-filtered and retained transactions,
+capital amounts, available gain/capital-multiple measures, exchange evidence and profiles.
+
+The bridge revalidates the adopted whole-family book and serializes this read with
+positions/questions. Account/owner/counterparty identifiers and raw workbook rows are
+excluded. The complete bounded projection stays in memory, never in static assets,
+browser storage, bookmarks or model requests. Archive/auth invalidation clears private
+cards and open evidence/workspaces; failed source checks withhold figures until recovery.
+Private exports recheck the source revision after asynchronous workbook generation.
+
+Workbook periods, valuation marks, source-check times and private workbook receipt dates
+remain separate. Carried purchase dates are earliest ledger sightings, not execution dates;
+family transfers remain labelled and all real repeated lots survive. Custodians are not
+inferred to be discretionary PMS mandates. Private funds are not assigned regulatory AIF
+status. The workbook does not supply paired PMS statements, manager NAV/flow return series,
+dated private capital calls/distributions or AMC scheme look-through; these remain explicitly
+unavailable. Existing public quarterly histories, official source coverage and exports stay
+intact. My Managers cards cover the whole book; Watchlist narrows eligible workspace
+securities/activity without changing the full-book weight denominator.
