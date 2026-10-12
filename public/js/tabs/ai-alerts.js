@@ -606,7 +606,7 @@ function controls(cards, visibleCount) {
 function cardsPanel(ctx, cards, total) {
   if (!cards.length) return emptyPanel(ctx, total);
   return `
-    <section class="grid gap-4 lg:grid-cols-2" data-ai-cards>
+    <section class="grid gap-4 lg:grid-cols-2" data-ai-cards aria-busy="${collecting || awaitingBook !== null}">
       ${cards.map((card) => cardMarkup(card, ctx.scope, currentDay(), filter === 'archived')).join('')}
     </section>
     ${total > cards.length ? `<div class="mt-5 text-center"><button type="button" data-ai-more class="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-slate-200 transition hover:ring-indigo-300">Show ${escapeHtml(formatNumber(Math.min(PAGE_SIZE, total - cards.length)))} more</button></div>` : ''}`;
