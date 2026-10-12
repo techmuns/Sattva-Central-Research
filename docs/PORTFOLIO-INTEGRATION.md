@@ -49,13 +49,15 @@ account rows, quantities or rupee values. Research validates freshness, unique i
 and a complete 100% denominator before using sizes. Percentages include held equities, ETFs and
 liquid positions; unpriced source values withhold size ordering instead of becoming zeros.
 
-Only Portfolio scope uses size ordering, after the normal alert materiality threshold. Priority
-filters remain available, with evidence priority breaking equal-size ties. Missing symbols stay
-in the portfolio denominator even when no research feed can match them. Archive invalidations
-clear private cards before a new read, and tab cleanup cancels in-flight requests.
-Central Research automatically uses the same hidden connection for size ordering.
-Without access, the queue retains explicitly labelled priority ordering and offers
-inline unlock when sign-in is required.
+Dashboard holding percentages load automatically through `/api/holding-sizes`, using the existing
+server-only Family holdings credential and the producer's `include=sizes` projection. The latest
+shared workbook supplies aggregate percentages across every held listed ISIN, including funds;
+no account rows, quantities or rupee values are returned. This is independent of each reader's
+Family sign-in. The committed names-only snapshots are unchanged. Sizes remain in page memory,
+refresh through the existing 60-second reader lifecycle, and are withheld after failed checks.
+The full ledger, detailed Ask Research analysis and shared private price alerts retain their
+existing authenticated bridge. A Family sign-out cannot make the shared percentages require unlock.
+AI Alerts retains its selected sort; Largest holdings remains an explicit choice in every scope.
 
 ## Local browser verification
 

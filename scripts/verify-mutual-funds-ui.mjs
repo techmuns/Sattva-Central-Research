@@ -12,6 +12,7 @@ const book=await(await fetch('/data/portfolio-companies.json')).json();coverage.
 const bridge=`export const cachedPositionSizes=()=>({sizes:{complete:true},holdings:window.testBook||[]});export const readPositionSizes=async()=>cachedPositionSizes();export const onPortfolioReady=()=>()=>{};export const onPortfolioInvalidation=()=>()=>{};export const portfolioConnectionState=()=> 'connected';export const unlockPortfolio=()=>{};`;
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture');try{
   if(url.pathname==='/'){res.setHeader('content-type','text/html');res.end(html);return;}
+  if(url.pathname==='/js/data/holding-sizes.js'){res.setHeader('content-type','text/javascript');res.end('export const cachedHoldingSizes=()=>({sizes:{complete:true},holdings:window.testBook||[]});export const readHoldingSizes=async()=>cachedHoldingSizes();');return;}
   if(url.pathname==='/js/research/portfolio-bridge.js'){res.setHeader('content-type','text/javascript');res.end(bridge);return;}
   const file=resolve(root,'.'+url.pathname);if(!file.startsWith(root+sep))throw Error();res.setHeader('content-type',{'.js':'text/javascript','.json':'application/json','.css':'text/css','.html':'text/html'}[extname(file)]||'application/octet-stream');res.end(readFileSync(file));
 }catch{res.writeHead(404).end('{}');}});

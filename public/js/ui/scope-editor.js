@@ -12,7 +12,7 @@ import * as watchlist from '../core/watchlist.js';
 import { askContributor } from './watchlist-attribution.js';
 import { attributionLabel } from '../data/watchlist-shared.js';
 import * as scopeLists from '../core/scope-lists.js';
-import { portfolioConnectionState, onPortfolioConnection, unlockPortfolio } from '../research/portfolio-bridge.js';
+import { onPortfolioConnection } from '../research/portfolio-bridge.js';
 import { refreshFamilySession } from '../data/family-session.js';
 
 const SEARCH_DELAY_MS = 250;
@@ -398,12 +398,6 @@ function openPortfolioView({ onChanged }) {
     const status = root.querySelector('[data-portfolio-status]');
     status.textContent = active ? `From Family Office${day}. Holdings without research coverage are included.`
       : `${m.syncStatus === 'family-checking' ? 'Last verified Family Office portfolio' : 'Saved Family Office portfolio'}${day} · ${m.syncStatus === 'unavailable' ? 'Unable to check for changes.' : 'Checking for changes…'}`;
-    if (portfolioConnectionState() === 'locked') {
-      const button = document.createElement('button');
-      button.type = 'button'; button.className = 'ml-2 font-semibold text-indigo-700 hover:underline';
-      button.textContent = 'Unlock portfolio'; button.onclick = unlockPortfolio;
-      status.append(button);
-    }
   };
   offBook = coverage.onChange(event => { changed ||= event.changed; paint(); });
   offConnection = onPortfolioConnection(paint);
