@@ -111,12 +111,21 @@ const settledAlerts = async (page) => {
   let previous = null;
   for (let attempt = 0; attempt < 40; attempt++) {
     await page.evaluate(async () => { await (await import('/js/data/surface-relevance.js')).relevanceSettled(); });
-    const state = JSON.stringify(await page.evaluate(() => [document.querySelector('[data-row-count]')?.textContent.trim() || '',
-      ...[...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey)]));
-    if (state === previous) return;
+    const snapshot = await page.evaluate(() => {
+      const chips = [...document.querySelectorAll('[data-feed]')];
+      if (chips.some(chip => chip.textContent.includes('reading…'))
+        || document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') !== 'false'
+        || document.querySelector('[data-table-loading]')) return null;
+      return { count: document.querySelector('[data-row-count]')?.textContent.trim() || '',
+        keys: [...document.querySelectorAll('tbody tr[data-row-key]')].map(row => row.dataset.rowKey),
+        chips: Object.fromEntries(chips.map(chip => [chip.dataset.feed, chip.textContent.trim().replace(/\s+/g, ' ')])) };
+    });
+    const state = snapshot && JSON.stringify(snapshot);
+    if (state && state === previous) return snapshot;
     previous = state;
     await page.waitForTimeout(1500);
   }
+  throw new Error('alert rows, counts and source chips did not settle together');
 };
 const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbody tr[data-row-key]')].map((row) => row.dataset.rowKey));
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
@@ -142,11 +151,8 @@ try {
   const pooled = await openPage();
   const from = served.requests.length;
   await pooled.page.goto(`${origin}/#/research/daily-alerts?scope=universe`);
-  await settledAlerts(pooled.page);
-  await pooled.page.waitForTimeout(1500);
-  const pooledKeys = await rowKeys(pooled.page);
-  const pooledCount = await rowCount(pooled.page);
-  const pooledChips = await feedChips(pooled.page);
+  const pooledSnapshot = await settledAlerts(pooled.page);
+  const { keys: pooledKeys, count: pooledCount, chips: pooledChips } = pooledSnapshot;
   assert(poolReads(from).some((path) => path.endsWith(`/days/${index.day}.json.gz`)), `today's shard is read (${poolReads(from).join(', ')})`);
   assert.deepEqual(captureReads(from), [], `no pooled capture is downloaded for Today (${captureReads(from).join(', ')})`);
   const poolState = await pooled.page.evaluate(async () => (await import('/js/data/alert-pool.js')).status());
@@ -224,12 +230,11 @@ try {
   await withoutPool(live.page);
   const liveFrom = served.requests.length;
   await live.page.goto(`${origin}/#/research/daily-alerts?scope=universe`);
-  await settledAlerts(live.page);
-  await live.page.waitForTimeout(1500);
+  const liveSnapshot = await settledAlerts(live.page);
   assert(captureReads(liveFrom).length > 0, 'the live path downloads captures');
-  assert.deepEqual(pooledKeys, await rowKeys(live.page), 'the pool paints the rows the live collection paints, in the same order');
-  assert.equal(pooledCount, await rowCount(live.page), 'the same total');
-  const liveChips = await feedChips(live.page);
+  assert.deepEqual(pooledKeys, liveSnapshot.keys, 'the pool paints the rows the live collection paints, in the same order');
+  assert.equal(pooledCount, liveSnapshot.count, 'the same total');
+  const liveChips = liveSnapshot.chips;
   // A source chip is compared where the live read succeeded here. A sandbox that times out an
   // archive read paints that feed partial on the live page; the runner read it whole, and the pool
   // says so — that is the environment failing the live path, not the pool disagreeing with it.
