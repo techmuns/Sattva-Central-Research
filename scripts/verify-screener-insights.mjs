@@ -4,7 +4,7 @@ import { ATTRIBUTION_VERSION } from '../public/js/data/company-news-attribution.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
-import { parseScreenerInsightsPage } from './lib/screener-insights.mjs';
+import { parseScreenerInsightsPage, insightAccessRefused } from './lib/screener-insights.mjs';
 import { buildInsightInventory, insightInventoryDiagnostic, splitInsightReadTargets } from './lib/screener-insights-inventory.mjs';
 import { collectInsightBatch } from './lib/screener-insights-batch.mjs';
 import { insightError } from './lib/screener-insights-control.mjs';
@@ -35,6 +35,10 @@ const html = `<main><section id="insights"><h2>Insights</h2>
   </section></main>`;
 
 const parsed = parseScreenerInsightsPage(html);
+assert(insightAccessRefused('<div>Requires Premium</div>'));
+assert(!insightAccessRefused('<table><tr><td>Requires Premium subscription for other tools</td></tr></table>'));
+assert.throws(() => parseScreenerInsightsPage('<section id="insights"><div id="quarterly-insights">Requires Premium</div></section>'),
+  error => error.insightCode === 'access-denied', 'verified access refusal retains the account cooldown category');
 assert.equal(parsed.available, true);
 assert.equal(parsed.companyId, '1596');
 assert.equal(parsed.rows.length, 2);

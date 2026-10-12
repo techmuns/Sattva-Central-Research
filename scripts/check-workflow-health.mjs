@@ -38,7 +38,13 @@ export function assessWorkflow(workflow, metadata, runs, { now = Date.now(), gra
   if (metadata.state !== 'active') issues.push('workflow-disabled');
   const ordered = runs.filter(r => r.head_branch === 'main' && ['schedule', 'workflow_dispatch', 'workflow_run', 'push'].includes(r.event))
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
-  const latest = ordered[0], completed = ordered.find(r => r.status === 'completed');
+  const latest = ordered[0];
+  // Condition-skipped workflow_run jobs performed no collection. A concurrency
+  // cancellation superseded by a newer run is likewise not a failed capture.
+  // Retain real failures and unsuperseded cancellations; the cadence check below
+  // still requires an actual successful run, even through a streak of no-ops.
+  const completed = ordered.find((r, index) => r.status === 'completed' && r.conclusion !== 'skipped' &&
+    (r.conclusion !== 'cancelled' || !ordered.slice(0, index).some(newer => newer.conclusion !== 'skipped')));
   if (!latest) issues.push('no-main-run');
   if (completed && completed.conclusion !== 'success') issues.push(`latest-completed-${completed.conclusion || 'unknown'}`);
   if (latest && latest.status !== 'completed' && now - Date.parse(latest.created_at) > graceMs) issues.push('run-overdue');

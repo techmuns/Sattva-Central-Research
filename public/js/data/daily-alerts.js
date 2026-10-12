@@ -820,8 +820,12 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
         await warm();
         if (!readingCurrent()) return;
         out = await readFeed(feed, args, yieldForInput);
-        if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
-        else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
+        if (!load && loadErrors.has(feed.id)) {
+          if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
+        }
+        else if (!load && (feed.id === 'news' && newsReader !== news
+          ? !newsReader.isLoaded()
+          : !loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
       } catch (err) {
         if (!readingCurrent()) return;
         // A failed refresh must not erase a last-good capture or masquerade as an empty feed — and
@@ -831,7 +835,10 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
         try { await warm(); } catch { /* The read below still answers. */ }
         if (!readingCurrent()) return;
         try { out = await readFeed(feed, args, yieldForInput); } catch { out = toFeedRow(feed, { events: [] }, day); }
-        out = { ...out, status: 'failed', reachesToday: false, note: `Read failed: ${String(err?.message || err)}. Retained records remain visible.` };
+        // A partial company-news capture already describes its required sources,
+        // archive gaps and failure times. Preserve that failed reading across the
+        // live and pooled paths instead of replacing it with a generic exception.
+        if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Read failed: ${String(err?.message || err)}. Retained records remain visible.` };
       }
       settledFeeds.set(feed.id, out);
       schedulePartial();
