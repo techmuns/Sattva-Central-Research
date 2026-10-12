@@ -34,6 +34,7 @@ jobs:
       - name: Verify the sync contract
         run: node scripts/verify-family-sync.mjs
       - name: Read the active shared holdings
+        id: active_book
         env:
           FAMILY_HOLDINGS_TOKEN: ${{ secrets.FAMILY_HOLDINGS_TOKEN }}
         run: node scripts/sync-family-book.mjs
@@ -51,6 +52,9 @@ jobs:
           PWDEBUG: ""
         run: node scripts/sync-screener-watchlist.mjs
       - name: Open or update the fallback snapshot PR
+        # A failed Screener mirror must not discard the independently verified
+        # Family book. The mirror still fails the job and retains its own guards.
+        if: ${{ !cancelled() && steps.active_book.outcome == 'success' }}
         id: fallback_snapshot
         continue-on-error: true
         uses: peter-evans/create-pull-request@v8.1.1

@@ -18,6 +18,7 @@ watchWorkerChanges(navigator.serviceWorker, () => location.reload());
 await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready; window.ready = true;
 </script>`;
 const previousModule = 'export function companyCaptureStatusFromIndex() { return { failed: 1, partial: 0, nonExchange: [] }; }';
+const previousAlerts = 'export const previousCollectorRelease = true;';
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   res.setHeader('cache-control', 'no-cache');
@@ -32,6 +33,7 @@ const server = createServer((req, res) => {
       if (!upgraded) body = body.replace(/const CACHE_NAME = .*;/, 'const CACHE_NAME = `${CACHE_PREFIX}previous-company-feed-release`;');
     }
     if (path === '/js/data/company-captures.js' && !upgraded) body = previousModule;
+    if (path === '/js/data/daily-alerts.js' && !upgraded) body = previousAlerts;
     res.setHeader('content-type', { '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' }[extname(file)] || 'application/octet-stream');
     res.end(body);
   } catch { res.writeHead(404).end(); }
@@ -48,11 +50,16 @@ try {
   await page.reload(); await page.waitForFunction(() => window.ready);
   assert.deepEqual(JSON.parse(await page.locator('#coverage').innerText()), { failed: 1, partial: 0, private: 0 });
   assert((await page.evaluate(() => caches.keys())).some(key => key.includes('previous-company-feed-release')));
+  assert.equal(await page.evaluate(async () => (await fetch('/js/data/daily-alerts.js')).text()), previousAlerts);
+  await page.evaluate(() => localStorage.setItem('collector-upgrade-reader-state', 'retained'));
   upgraded = true;
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.waitForFunction(() => JSON.parse(document.querySelector('#coverage').textContent).partial === 1);
   assert.deepEqual(JSON.parse(await page.locator('#coverage').innerText()), { failed: 0, partial: 1, private: 1 });
   assert(!(await page.evaluate(() => caches.keys())).some(key => key.includes('previous-company-feed-release')));
+  assert.equal(await page.evaluate(async () => (await fetch('/js/data/daily-alerts.js')).text()),
+    readFileSync(resolve(root, 'js/data/daily-alerts.js'), 'utf8'), 'the returning reader receives the corrected collector module');
+  assert.equal(await page.evaluate(() => localStorage.getItem('collector-upgrade-reader-state')), 'retained');
   assert.deepEqual(errors, []);
   console.log('PASS returning dashboard upgrades warm immutable modules and shows partial recent coverage and unavailable private filings without clearing storage.');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

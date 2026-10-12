@@ -31,6 +31,18 @@ await test('all five catalogue families combine by stable issuer id without impo
   assert(capture.rows.every((r) => r.filingDate === null && r.sourceId === 'ipo-platform' && !('score' in r)));
   assert.equal(capture.companies.find((c) => c.id === '3').openingDate, undefined, 'year not invented from adjacent listing date');
 });
+await test('directory-only issuers retain their filings without an invented dashboard status', async () => {
+  const result = await collectPlatform({ now, fetcher: async (url, init) =>
+    url.includes('main-board/index') && new URL(url).searchParams.get('ipo_type') === 'SME'
+      ? Response.json(page(6)) : fetcher(url, init) });
+  const directoryOnly = result.companies.find(c => c.id === '6');
+  assert(directoryOnly);
+  assert.equal(directoryOnly.status, undefined);
+  assert.equal(result.rows.filter(r => r.companyId === '6').length, 2);
+  assert.equal(result.counts.sme, 1);
+  assert.equal(result.counts.dashboard, 3);
+  assert.equal(result.companies.find(c => c.id === '2').status, 'Listed');
+});
 await test('publisher draft dates never become exchange dates or RHP dates', () => {
   const p = page(1); p.data[0].refiled_date = '2026-09-04';
   const rows = parsePlatformPage(p, 'SME', at).rows;

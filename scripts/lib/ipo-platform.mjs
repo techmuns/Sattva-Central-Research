@@ -102,8 +102,10 @@ export async function collectPlatform({ fetcher = fetch, now = Date.now, signal 
     counts[key] = total;
   }
   const dashboard = parsePlatformDashboard(await read(PLATFORM_URL), at); counts.dashboard = dashboard.length;
-  const dashboardIds = new Set(dashboard.map((c) => c.id));
-  if (allCompanies.some((c) => !dashboardIds.has(c.id))) throw Error('IPOPlatform directory/dashboard mismatch');
+  // The paginated directory includes issuers absent from the lifecycle dashboard
+  // (for example withdrawn or historical issues). Each view has its own verified
+  // inventory; absence from the dashboard cannot erase directory filings or
+  // supply an inferred lifecycle status.
   const drafts = [];
   for (const [kind, board, key] of [['sme', 'SME', 'smeDrafts'], ['mainboard', 'Mainboard', 'mainboardDrafts']]) {
     const p = parsePlatformDrafts(await read(`https://www.ipoplatform.com/ipo/drhp-filed-${kind}-ipos`), board, at);

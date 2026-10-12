@@ -810,7 +810,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           // The publisher route can correct dates at the same URL. Its complete original pool
           // supplies companions before the company working set is selected.
           try { await loadFeed('market-news', refresh); } catch { /* Company capture remains useful. */ }
-          await refreshFilings(newsReader, refresh);
+          await refreshFilings(newsReader, refresh, { coverageOwnsStatus: true });
           loadedFeeds.add('news'); invalidateNormalizedFeed('news');
         } else if (load) await loadFeed(feed.id, refresh);
         // Shared source loading can finish after this view has left. Its replacement
@@ -873,7 +873,7 @@ const LOADERS = {
   investors: (refresh) => refresh ? investors.refreshSnapshot() : investors.load(),
   announcements: (refresh) => refreshFilings(announcements, refresh),
   insider: (refresh) => refreshFilings(insider, refresh),
-  news: (refresh) => refreshFilings(news, refresh),
+  news: (refresh) => refreshFilings(news, refresh, { coverageOwnsStatus: true }),
   'market-news': async (refresh) => {
     await marketNews.load();
     if (refresh) await marketNews.refresh();
@@ -892,7 +892,7 @@ const LOADERS = {
 };
 
 const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
-async function refreshFilings(feed, refresh) {
+async function refreshFilings(feed, refresh, { coverageOwnsStatus = false } = {}) {
   await feed.seed();
   if (refresh && !(await feed.refreshSnapshot()).available) throw Error('Latest filings capture unavailable');
   // `meta()` below rebuilds the reader's rows synchronously, and after a load every row is new:
@@ -901,7 +901,11 @@ async function refreshFilings(feed, refresh) {
   // is unchanged.
   await feed.warm?.(yieldToInput);
   const m = feed.meta();
-  if (m.reason || m.failed || m.truncated) throw Error(m.message || 'Filings coverage is incomplete');
+  // Company news describes each required source, archive gap and failed check
+  // in companyNewsState. A completed partial read is already failed there.
+  // Replacing that evidence with a generic load exception made the live and
+  // pooled readers disagree despite reading the same retained capture.
+  if (!coverageOwnsStatus && (m.reason || m.failed || m.truncated)) throw Error(m.message || 'Filings coverage is incomplete');
 }
 
 // Read-only source notifications; the tab reassembles loaded records without triggering fetches.

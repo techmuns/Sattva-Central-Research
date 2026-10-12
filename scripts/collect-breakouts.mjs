@@ -8,6 +8,7 @@ import { loadActivePortfolio } from './lib/active-portfolio.mjs';
 import { marketTicker } from '../public/js/data/market-identity.js';
 import { upstoxIdentity } from '../worker/upstox-market.mjs';
 import { yahooQuote, upstoxQuotes, recoverYahoo } from './lib/breakout-providers.mjs';
+import { quoteTargetIdentity } from './lib/quote-target-identity.mjs';
 
 export function captureTarget(company) {
   const ticker = marketTicker(company);
@@ -159,17 +160,24 @@ async function main() {
   const technicals = JSON.parse(readFileSync('public/data/technicals.json', 'utf8'));
   const targets = new Map();
   let discoveryFailed = false;
-  for (const c of technicals.companies) { const target=captureTarget(c); if(target) targets.set(target.ticker,target); else discoveryFailed=true; }
+  let identify = target => target;
+  try {
+    const nse = JSON.parse(readFileSync('public/data/filing-capture/nse-identities.json', 'utf8')).directories;
+    const bse = JSON.parse(readFileSync('public/data/announcement-identities.json', 'utf8'));
+    identify = quoteTargetIdentity({ nseEntries: [...nse.equity.entries, ...nse.sme.entries], bseEntries: bse.entries });
+  } catch { discoveryFailed = true; }
+  const targetFor = company => identify(captureTarget(company));
+  for (const c of technicals.companies) { const target=targetFor(c); if(target) targets.set(target.ticker,target); else discoveryFailed=true; }
   const universe = JSON.parse(readFileSync('public/data/universe.json', 'utf8'));
-  for (const c of universe) { const target=captureTarget(c); if(target) { if(!targets.has(target.ticker)) targets.set(target.ticker,target); } else discoveryFailed=true; }
+  for (const c of universe) { const target=targetFor(c); if(target) { if(!targets.has(target.ticker)) targets.set(target.ticker,target); } else discoveryFailed=true; }
   try {
     const book = await loadActivePortfolio(resolve('public/data/portfolio-companies.json'), { live: true });
-    for (const c of book.holdings || []) { const target=captureTarget(c); if(target) targets.set(target.ticker,target); }
+    for (const c of book.holdings || []) { const target=targetFor(c); if(target) targets.set(target.ticker,target); }
   } catch { discoveryFailed = true; }
   try {
     const watchlist = await boundedJson(await fetch(`${BREAKOUT_ORIGIN}/api/watchlist`, { signal: AbortSignal.timeout(20000) }), 2 * 1024 * 1024);
     if (!Array.isArray(watchlist.companies)) throw Error('Watchlist unavailable');
-    for (const c of watchlist.companies) if (tickerValid(c.ticker) && !targets.has(c.ticker)) targets.set(c.ticker, captureTarget(c));
+    for (const c of watchlist.companies) if (tickerValid(c.ticker) && !targets.has(c.ticker)) targets.set(c.ticker, targetFor(c));
   } catch { discoveryFailed = true; }
   if (discoveryFailed) for (const ticker of previous?.targets || []) if (!targets.has(ticker)) targets.set(ticker, {ticker,name:previous?.rows?.find(row=>row.ticker===ticker)?.name || ticker});
   const client = breakoutClient();

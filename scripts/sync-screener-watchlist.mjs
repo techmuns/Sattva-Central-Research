@@ -14,7 +14,7 @@ import {
   reconcileWatchlist,
 } from './lib/screener-watchlist.mjs';
 
-import { readWatchlistInventory } from './lib/screener-watchlist-browser.mjs';
+import { readWatchlistInventory, watchlistFailureReason } from './lib/screener-watchlist-browser.mjs';
 
 const ORIGIN = 'https://www.screener.in';
 const WATCHLIST_ID = '10850427';
@@ -137,10 +137,10 @@ try {
     await report(`S Screen ${result.additions.length ? 'partially synced' : 'synced'}: ${final.length} portfolio companies present; ${result.additions.length} listed holdings are unavailable on Screener.`);
     if (result.additions.length) console.log(`::warning::Screener could not add ${result.additions.length} listed portfolio holdings; they will be retried on the next sync.`);
   }
-} catch {
+} catch (error) {
   // Browser exceptions can include account, holding, or form data. Keep public
   // logs limited to a fixed stage name and never print the caught exception.
-  await report(`FAIL: S Screen sync stopped during ${stage}. No credentials or portfolio identifiers were logged.`);
+  await report(`FAIL: S Screen sync stopped during ${stage} (${watchlistFailureReason(error)}). No credentials or portfolio identifiers were logged.`);
   process.exitCode = 1;
 } finally {
   await browser?.close().catch(() => {});
