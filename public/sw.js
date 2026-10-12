@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-10-12-compact-ai-status-v2`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-12-portfolio-holding-sizes-v3`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -45,7 +45,12 @@ function moduleSpecifiers(source) {
 
 // Compose with every other module revision without editing their shared version lines.
 function releaseCacheKey() {
-  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1`;
+  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1`;
+}
+
+// Compose this UI revision without editing another release's version marker.
+function appReleaseCacheKey() {
+  return `${releaseCacheKey()}-compact-ai-status-v2`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -136,7 +141,7 @@ const RELEASE_CACHE_KEY = `${CACHE_KEY}-ai-alerts-clean-search-v1-direct-earning
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
-    const cache = await caches.open(releaseCacheKey());
+    const cache = await caches.open(appReleaseCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -151,7 +156,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== releaseCacheKey()).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== appReleaseCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -220,7 +225,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(releaseCacheKey());
+    const cache = await caches.open(appReleaseCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture

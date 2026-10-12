@@ -138,6 +138,9 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
+// The full-site harness uses its authenticated fixture peer for sizes.
+await page.route('**/js/data/holding-sizes.js',route=>route.fulfill({contentType:'text/javascript',body:"import * as b from '../research/portfolio-bridge.js';export const cachedHoldingSizes=b.cachedPositionSizes;export const readHoldingSizes=(...args)=>b.portfolioConnectionState()==='locked'?Promise.resolve(null):b.readPositionSizes(...args);"}));
+
 // Research requires a fresh private-portfolio exchange before submitting. Exercise the real
 // iframe/message contract with a local response, without opening a production Family session.
 const familyFixture = JSON.parse(readFileSync(new URL('../public/data/portfolio-companies.json', import.meta.url)));

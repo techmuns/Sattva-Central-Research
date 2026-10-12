@@ -12,7 +12,7 @@ pending reads with no matching rows show placeholders until they complete or fai
 Scope, tab and full-view filter changes cover the previous view until its replacement is ready,
 so a follow-up interaction cannot target controls that are about to be replaced.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
-All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
+All history / Older than 30 days; the Upcoming switch was removed on 12 October 2026. Company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
 All Alerts streams newly received rows directly inside Till Today, with no separate live banner.
 The first screen enters one row every 110ms (at most 12 staged rows); the complete filtered model

@@ -9,6 +9,7 @@ const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = fileURLToPath(new URL('../public', import.meta.url));
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
+  if(path==='/js/data/holding-sizes.js'){res.setHeader('content-type','text/javascript');res.end("import * as b from '../research/portfolio-bridge.js';export const cachedHoldingSizes=b.cachedPositionSizes;export const readHoldingSizes=(...args)=>b.portfolioConnectionState()==='locked'?Promise.resolve(null):b.readPositionSizes(...args);");return;}
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
