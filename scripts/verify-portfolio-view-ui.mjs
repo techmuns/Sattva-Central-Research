@@ -379,19 +379,14 @@ try {
     assert(panel.width <= normal.width, 'source picker stays within the host frame');
     await frame.locator('[data-sources-close]').click();
     await frame.locator('[data-table-search]').fill('KISSHT');
-    await frame.locator('[data-alerts-focus]').click();
-    const focused = await measure();
-    assert.equal(focused.headerVisible, false);
-    assert(await frame.locator('#subview-mount').isHidden(), 'explicit table focus hides subtab navigation too');
-    assert(focused.controls <= (size.width >= 1024 ? 52 : 100), `view controls keep their compact row budget: ${JSON.stringify(focused)}`);
-    assert(focused.visibleHeight > normal.visibleHeight + 60, `focus gains meaningful visible reading room: ${JSON.stringify({ normal, focused })}`);
-    assert(focused.visibleHeight >= focused.viewport * (size.width >= 1024 ? 0.6 : 0.45), `focus leaves a useful reading area even with wrapped mobile controls: ${JSON.stringify(focused)}`);
+    assert.equal(await frame.locator('[data-alerts-focus]').count(), 0, 'Focus table is removed at every viewport size');
+    assert.equal(await frame.locator('[data-alerts-meta]').count(), 0, 'company and date-count badges are removed');
+    assert.equal((await measure()).headerVisible, true, 'the app header remains visible');
+    assert(await frame.locator('#subview-mount').isVisible(), 'Alerts subtabs remain available without table focus');
     // The shared table case-folds its saved query on a source repaint. Verify the search term,
-    // not whether that asynchronous repaint has happened between fill and the layout click.
-    assert.equal((await frame.locator('[data-table-search]').inputValue()).toLowerCase(), 'kissht', 'layout controls preserve search');
+    // not whether that asynchronous repaint has happened after typing.
+    assert.equal((await frame.locator('[data-table-search]').inputValue()).toLowerCase(), 'kissht', 'the compact layout preserves search');
     await frame.locator('[data-table-search]').fill('');
-    if (size.width === 1440 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT });
-    if (size.width === 390 && process.env.ALERTS_FOCUS_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_FOCUS_SCREENSHOT.replace('.png', '-mobile.png') });
     // Font fallback differs between macOS and Linux. Exercise wider control-label metrics too
     // so a toolbar that only fits with the developer's system font cannot silently ship.
     const widerFont = await frame.addStyleTag({ content: '.alerts-controls, .alerts-workspace [data-table-toolbar] { font-family: Verdana, sans-serif; }' });
@@ -399,16 +394,13 @@ try {
     assert(fallback.controls <= (size.width >= 1024 ? 52 : 100), `fallback-font controls stay compact: ${JSON.stringify(fallback)}`);
     assert(fallback.toolbar <= (size.width >= 1024 ? 66 : 165), `fallback-font filters stay compact: ${JSON.stringify(fallback)}`);
     await widerFont.evaluate(node => node.remove());
-    await frame.locator('[data-alerts-focus]').press('Escape');
-    assert.equal((await measure()).headerVisible, true, 'Escape restores the header and navigation');
+    assert.equal((await measure()).headerVisible, true, 'the header remains visible after source and layout interactions');
     if (size.width === 1440 && process.env.ALERTS_LAYOUT_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_LAYOUT_SCREENSHOT });
     if (size.width === 1024 && process.env.ALERTS_LAYOUT_SCREENSHOT) await page.screenshot({ path: process.env.ALERTS_LAYOUT_SCREENSHOT.replace('.png', '-tablet.png') });
-    console.log(`Table-first iframe ${size.width}x${size.height}: ${Math.round(normal.height)}px normal, ${Math.round(focused.height)}px focus (${normal.viewport}px inner viewport)`);
+    console.log(`Table-first iframe ${size.width}x${size.height}: ${Math.round(normal.height)}px table (${normal.viewport}px inner viewport)`);
   }
-  await frame.locator('[data-alerts-focus]').click();
   await frame.evaluate(() => { location.hash = '#/research/news?scope=portfolio'; });
   await frame.waitForFunction(() => document.querySelector('#app')?.dataset.readingLayout === 'standard');
-  assert.equal(await frame.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false, 'navigation out of All Alerts resets focus mode');
   assert(await frame.locator('[data-app-nav]').isVisible(), 'other tabs retain their normal navigation');
   assert.deepEqual(errors, []);
   console.log('PASS: any-tab startup, OnEMI name/ticker/ISIN search, read-only ownership, uncovered holdings, legacy Watchlist migration, whole-book parity, additions/exits while open, Con-call and Earnings Calendar scope isolation across Portfolio/Watchlist/Universe, open-calendar refresh, all tabs, Ask exposure, outage status and verified recovery.');
