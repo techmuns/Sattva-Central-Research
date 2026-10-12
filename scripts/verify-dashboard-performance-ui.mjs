@@ -27,6 +27,14 @@ const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
 const mutablePath = '/data/performance-fixture.json';
 const corruptPath = `/data/performance-fixture.parts/${'a'.repeat(64)}.json`;
+const originalSdkUrl = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
+// Service-worker fetches bypass page routing. Keep its opaque SDK cache local too.
+const sdkServer = createServer((_req, res) => {
+  res.writeHead(200, { 'content-type': 'application/javascript' });
+  res.end('/* local SDK fixture */\n');
+});
+await new Promise(done => sdkServer.listen(0, '127.0.0.1', done));
+const sdkUrl = `http://127.0.0.1:${sdkServer.address().port}/sdk.js`;
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
@@ -49,7 +57,7 @@ const server = createServer((req, res) => {
     }[extname(path)] || 'application/octet-stream');
     res.setHeader('cache-control', 'public, max-age=0, must-revalidate');
     if (pathname === '/sw.js') {
-      const source = readFileSync(path, 'utf8');
+      const source = readFileSync(path, 'utf8').replaceAll(originalSdkUrl, sdkUrl);
       res.end(previousRelease ? source.replace(/const CACHE_NAME = ([^;\n]+);/, 'const CACHE_NAME = $1 + "-previous-fixture";') : source);
     } else if (pathname === '/js/core/watchlist.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__watchlistRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
@@ -78,7 +86,8 @@ researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrd
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__storyOrderRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/css/tailwind.css') {
       res.end(`${readFileSync(path, 'utf8')}\n:root { --table-scroll-release: ${previousRelease ? 'previous' : 'current'}; }`);
-    } else res.end(readFileSync(path));
+    } else if (pathname === '/index.html') res.end(readFileSync(path, 'utf8').replaceAll(originalSdkUrl, sdkUrl));
+    else res.end(readFileSync(path));
   } catch { res.writeHead(404); res.end(); }
 });
 
@@ -114,7 +123,19 @@ try {
     return timing;
   };
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
+  const cacheDiagnostic = async stage => {
+    console.error('Cache lifecycle diagnostic', stage, await page.evaluate(async () => {
+      const r = await navigator.serviceWorker.getRegistration();
+      return { release: globalThis.__performanceRelease,
+        active: r?.active?.state, waiting: r?.waiting?.state, installing: r?.installing?.state,
+        caches: (await caches.keys()).map(key => key.slice(-150)),
+        page: document.body.innerText.slice(0, 700) };
+    }), errors);
+  };
+  // Leave fixture traffic native; intercept only requests outside the two local origins.
+  const externalOnly = url => !url.href.startsWith(origin + '/') && url.href !== sdkUrl;
+  const blockExternal = route => route.abort();
+  await context.route(externalOnly, blockExternal);
   await page.goto(origin);
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor();
   await page.evaluate(async () => navigator.serviceWorker.ready);
@@ -131,6 +152,10 @@ try {
     return { names, urls: entries.map((request) => request.url) };
   });
   assert.equal(cacheState.names.length, 1, 'one current app cache is active');
+  assert.equal(await page.evaluate(async sdkUrl => {
+    const names = await caches.keys();
+    return (await (await caches.open(names[0])).match(sdkUrl))?.type;
+  }, sdkUrl), 'opaque', 'the local cross-origin SDK retains the real opaque public-cache boundary');
   assert(cacheState.urls.filter((url) => url.includes('/js/')).length > 90, 'complete native module graph is warm');
   assert(cacheState.urls.some((url) => url.endsWith('/data/portfolio-companies.json')), 'critical portfolio identity snapshot is warm');
   for (const asset of ['sattva-ventures-wordmark.png', 'sattva-ventures-mark.svg', 'favicon.svg']) {
@@ -149,7 +174,7 @@ try {
   const cacheSession = await context.newCDPSession(page);
   await cacheSession.send('Network.enable');
   await cacheSession.send('Network.setBlockedURLs', { urls: ['https://*'] });
-  await page.unroute('**/*');
+  await context.unroute(externalOnly, blockExternal);
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: false });
   for (const path of [immutablePath, mutablePath, corruptPath]) {
     await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
@@ -165,7 +190,7 @@ try {
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
   // Native cache assertions are complete; close this observer before routing UI requests again.
   await cacheSession.detach();
-  await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
+  await context.route(externalOnly, blockExternal);
 
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
@@ -173,7 +198,8 @@ try {
   // Measure when the cached navigation is visible, not the later load event: load also waits
   // for unrelated resources even after the app shell has painted. Keep the same 1.5s budget.
   await page.reload({ waitUntil: 'commit' });
-  await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 });
+  try { await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 }); }
+  catch (error) { await cacheDiagnostic('offline paint'); throw error; }
   const repeatPaintMs = Date.now() - reloadedAt;
   assert(repeatPaintMs < 1500,
     `repeat visit paints from the app cache without waiting for the network (${repeatPaintMs}ms)`);
@@ -267,7 +293,8 @@ try {
   offline = false;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-  await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
+  try { await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 }); }
+  catch (error) { await cacheDiagnostic('automatic upgrade'); throw error; }
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
@@ -313,4 +340,5 @@ try {
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));
+  await new Promise(done => sdkServer.close(done));
 }
