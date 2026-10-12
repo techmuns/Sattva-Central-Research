@@ -171,6 +171,7 @@ try {
   assert.equal(await shell.locator('[data-theme-toggle] + [data-header-bookmarks]').count(),1);
   assert.equal(await shell.getByRole('tab',{name:/Bookmark/}).count(),0);
   assert.equal(await shell.locator('[role="tab"][tabindex="0"]').count(),1,'Research navigation remains keyboard-accessible from Bookmarks');
+  await shell.getByRole('tab',{name:'Alerts',exact:true}).click();
   await shell.getByRole('tab',{name:'All Alerts',exact:true}).click();
   await shell.locator('[data-tab-id="daily-alerts"][aria-selected="true"]').waitFor();
   assert.equal(await bookmarksLink.getAttribute('aria-current'),null);
