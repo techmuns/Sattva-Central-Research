@@ -573,7 +573,12 @@ function paint(ctx) {
     const status = { loading: !report || report.pending > 0 };
     // A changed relevance model (a vote, company sizes arriving) re-sorts the same rows in place.
     if (tableRows === visible && relevanceSeen === relevanceRevision()) tableInstance.updateStatus(status);
-    else { tableInstance.updateData(visible, undefined, status); tableRows = visible; relevanceSeen = relevanceRevision(); }
+    else {
+      tableInstance.updateData(visible, undefined, status); tableRows = visible; relevanceSeen = relevanceRevision();
+      // Receipt decoration and staged arrivals can change the DOM before the windowed list
+      // measures it. Reapply the reading position captured before that in-place update.
+      restoreTablePosition(ctx.root, tablePosition);
+    }
     return;
   }
 
