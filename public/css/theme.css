@@ -562,3 +562,22 @@ html [data-announcement-search] .announcement-search-input:focus { outline: none
 .news-row-extras { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 4px; white-space: normal; }
 /* Filled accent controls: the dark accent is a light indigo, so their text turns dark. */
 html[data-theme="dark"] .ann-read-original, html[data-theme="dark"] .relevance-vote[aria-pressed="true"], html[data-theme="dark"] .ca-popover-foot button.is-primary { color: #0f172a; }
+
+/* AI Alerts keeps search beside the list controls, with the input mounted independently. */
+.ai-alert-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 12px; }
+.ai-alert-priorities { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.ai-alert-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; max-width: 100%; margin-left: auto; }
+.ai-alert-search { flex: 0 1 230px; width: 230px; min-width: 180px; max-width: 100%; }
+.ai-alert-search-box { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px; }
+.ai-alert-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; max-width: 100%; }
+.ai-alert-view-controls select { min-width: 0; max-width: 100%; min-height: 36px; }
+.ai-alert-view-controls summary { min-height: 36px; line-height: 24px; white-space: nowrap; }
+.ai-alert-priorities button { min-height: 36px; }
+.ai-alert-count { white-space: nowrap; }
+@media (max-width: 640px) {
+  .ai-alert-tools, .ai-alert-view-controls { width: 100%; }
+  .ai-alert-search { flex-basis: 100%; width: 100%; }
+  .ai-alert-search-box, .ai-alert-priorities button, .ai-alert-view-controls select { min-height: 44px; }
+  .ai-alert-view-controls summary { min-height: 44px; line-height: 32px; }
+  .ai-alert-view-controls > label { min-width: 0; max-width: 100%; }
+}

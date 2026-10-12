@@ -95,7 +95,8 @@ try {
   await page.evaluate(() => window.calls.at(-1).partial({'nse-filings':[window.event('Beta current alert',{ticker:'BBB',company:'Beta Ltd'})]}, {'nse-filings':'ok'}));
   await contains('Beta current alert');
   assert(!(await page.locator('#root tbody').innerText()).includes('Stale Alpha response'));
-  assert((await page.locator('[data-alerts-meta]').innerText()).includes('1 of 1'));
+  assert(!(await page.locator('#root tbody').innerText()).includes('Saved current-day alert'), 'the previous company membership stays excluded');
+  assert.equal(await page.locator('[data-alerts-meta]').count(), 0, 'restoring a report does not restore the removed header badges');
   console.log('PASS same-scope membership changes revoke old rows and reject late callbacks.');
 
   await page.evaluate(() => {
@@ -180,8 +181,9 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
     && document.querySelectorAll('#root tbody tr[data-row-key]').length === 2);
   await contains('A separate development');
-  assert.match(await page.locator('[data-alerts-reading-count]').innerText(), /^2 items · 3 source reports/,
-    'the table callback updates the grouped summary during incremental repaint');
+  assert.equal(await page.locator('#root').getAttribute('data-alerts-source-count'), '3',
+    'the table callback retains the original source count during incremental repaint');
+  assert.equal(await page.locator('[data-alerts-reading-count]').count(), 0, 'grouping does not restore the removed summary');
   console.log('PASS grouping readiness follows the current projection; copies fold after completion and distinct developments remain.');
 
   await page.evaluate(() => {
@@ -205,7 +207,8 @@ try {
   await page.evaluate(() => { window.holdGrouping = false; for (const job of window.groupings) job.release(); });
   await page.waitForFunction(() => document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
     && document.querySelectorAll('#root tbody tr[data-row-key]').length === 3);
-  assert.match(await page.locator('[data-alerts-reading-count]').innerText(), /^3 items · 4 source reports/);
+  assert.equal(await page.locator('#root').getAttribute('data-alerts-source-count'), '4');
+  assert.equal(await page.locator('[data-alerts-history-summary]').count(), 0, 'returning does not restore Till Today');
   console.log('PASS returning to an unchanged retained report restarts cancelled grouping and settles the complete counts.');
   assert.deepEqual(errors, []);
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
