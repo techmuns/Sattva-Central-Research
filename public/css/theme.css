@@ -194,11 +194,12 @@ html[data-theme="dark"] body {
 .theme-toggle:focus-visible, .header-bookmarks:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 3px; }
 @media (min-width: 960px) {
   /* Make room for the alert subtabs without shrinking the table's reading area. */
-  [data-reading-layout="table"] [data-app-header] { padding-top: 4px; padding-bottom: 0; }
+  [data-reading-layout="table"] [data-app-header] { padding-top: 0; padding-bottom: 0; }
   [data-reading-layout="table"] [data-app-header] > div { flex-wrap: nowrap; gap: 12px; }
   [data-reading-layout="table"] [data-app-header] > div > div:first-child { flex-shrink: 1; min-width: 180px; }
   [data-reading-layout="table"] [data-app-header] > div > div:last-child { gap: 6px; }
-  [data-reading-layout="table"] [data-app-content] { padding-top: 4px; }
+  [data-reading-layout="table"] [data-app-content] { padding-top: 0; }
+  [data-reading-layout="table"] [data-section-head] h2 { line-height: 24px; }
   [data-reading-layout="table"] [data-app-nav] .tab-bar { padding-block: 2px; }
   [data-reading-layout="table"] [data-app-nav] .tab-btn { min-height: 36px; padding-block: 6px; }
   [data-reading-layout="table"] [data-app-nav] .tab-scroll-btn { height: 36px; }
