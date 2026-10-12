@@ -94,7 +94,7 @@ export function domesticFilingsHref(ticker, { form = 'all', scope = 'universe' }
 
 // Compare the reported period, never the publication day or array order. A missing
 // quarter cannot silently send a reader to an older report or an annual document.
-function reportPeriod(value) {
+export function reportPeriod(value) {
   const text = String(value || '').trim();
   const named = /^(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{4}|\d{2})$/i.exec(text);
   if (named) {

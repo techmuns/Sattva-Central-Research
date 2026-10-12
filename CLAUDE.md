@@ -3734,6 +3734,12 @@ Four rules hold it together:
    while the cache is held in ours; anything order-sensitive reports "changed" on every single
    tick. It sums per-row hashes for exactly this reason.
 
+Results labels (13 October 2026): keep the Latest Results subtitle evergreen. The comparison
+columns, filing button labels and exports name the displayed feed's actual periods with four-digit
+years. Reuse the filing-period parser; never roll old cached figures forward using the wall clock.
+Period/quarter metadata corrections trigger a structural repaint even when the numeric figures and
+price structure tag are unchanged. Preserve the selected metric sort and table filters on rollover.
+
 ### A percentage across a sign change is not a growth rate
 
 169 of 1,319 companies in a full quarter — **13%** — report a profit move where the sign flips.
