@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { validSnapshot } from '../public/js/data/managers.js';
+import { validSnapshot, managerId } from '../public/js/data/managers.js';
 import { managerTrades } from '../public/js/data/investor-changes.js';
 import { exportRows } from '../public/js/ui/export.js';
 const tx = { id: 'ledger-1', date: '2026-09-01', dateSheet: null, security: 'Example', isin: 'INE000000001', ticker: 'EXAMPLE', side: 'buy', quantity: 10, amount: 0, unitPrice: 0, transfer: false };
@@ -17,6 +17,8 @@ assert.equal(events[0].amount, 0, 'stated nil amount remains zero');
 assert.equal(events[1].source, 'Family ledger · date unverified');
 assert.equal(events[1].raw.transfer, true);
 assert.equal(events[1].raw.dateSheet, '2026-03-31');
+assert.notEqual(managerId({ id: 'fund-pe-12', kind: 'fund', name: 'Alpha Fund' }), managerId({ id: 'fund-pe-12', kind: 'fund', name: 'Beta Fund' }), 'a reassigned workbook row cannot inherit another fund’s public relationships');
+assert.notEqual(managerId({ id: 'fund-pe-12', kind: 'fund', name: 'Alpha Fund' }), managerId({ id: 'fund-pe-13', kind: 'fund', name: 'Alpha Fund' }), 'repeated investments remain separate');
 let authorised = true;
 globalThis.window = { ExcelJS: { Workbook: class { constructor() { this.xlsx = { writeBuffer: async () => { authorised = false; return new Uint8Array([1]); } }; } addWorksheet() { return { addRow() {}, getRow: () => ({}) }; } } } };
 assert.equal(await exportRows({ rows: [{ value: 1 }], columns: [{ key: 'value', header: 'Value', get: r => r.value }], canExport: () => authorised }), false, 'revoked access stops an asynchronous private download');

@@ -59,6 +59,8 @@ remain inside their custodian books; their directory is not additional NAV. Fund
 remain separate workbook investments, including repeated names; no source rows are deleted.
 Manager workspaces provide holdings/units, period-filtered and retained transactions,
 capital amounts, available gain/capital-multiple measures, exchange evidence and profiles.
+Fund identities include their name and source-entry identifier: reusing a workbook row
+for another fund cannot transfer the previous fund's reviewed public relationships.
 
 The bridge revalidates the adopted whole-family book and serializes this read with
 positions/questions. Account/owner/counterparty identifiers and raw workbook rows are

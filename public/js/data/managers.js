@@ -9,6 +9,14 @@ const nullableNumber = v => v === null || Number.isFinite(v);
 const day = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v;
 const isin = v => typeof v === 'string' && /^[A-Z]{2}[A-Z0-9]{10}$/.test(v);
 const ticker = v => v === null || typeof v === 'string' && /^[A-Z0-9&.-]{1,30}$/.test(v);
+// A workbook row can later contain a different fund. Its old public relationships
+// must never follow that row to the new name; repeated investments still stay distinct.
+export function managerId(m) {
+  if (m.kind !== 'fund') return m.id;
+  let hash = 14695981039346656037n;
+  for (const char of m.name.normalize('NFKC').trim().toLowerCase()) hash = BigInt.asUintN(64, (hash ^ BigInt(char.codePointAt(0))) * 1099511628211n);
+  return `${m.id.slice(0, 100)}-${hash.toString(16)}`;
+}
 export function validSnapshot(v, startedAt = Date.now()) {
   try { return snapshotShape(v, startedAt); } catch { return false; }
 }
@@ -65,7 +73,9 @@ export function load({ force = false } = {}) {
   pending = readManagerWorkbook().then(v => {
     if (epoch !== generation) return null;
     if (!validSnapshot(v, startedAt)) throw Error('The Family manager reading was incomplete or invalid.');
-    snapshot = v; failure = null; emit(); return v;
+    const next = { ...v, managers: v.managers.map(m => ({ ...m, id: managerId(m) })) };
+    if (!validSnapshot(next, startedAt)) throw Error('Manager identities could not be verified.');
+    snapshot = next; failure = null; emit(); return next;
   }).catch(error => {
     if (epoch === generation) { snapshot = null; failure = String(error.message || 'Manager data is unavailable.').slice(0, 400); emit(); }
     return null;

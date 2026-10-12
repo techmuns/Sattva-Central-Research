@@ -235,7 +235,7 @@ try {
   assert.equal(await page.locator('[data-ws-tab="holdings"]').innerText(), 'Units');
   assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 1);
   await page.keyboard.press('Escape');
-  await page.locator('[data-open-manager="fund-example-1"]').click();
+  await page.locator('[data-open-manager^="fund-example-1-"]').click();
   assert.match(await page.locator('#workspace-content').innerText(), /Drawn|Distributed/);
   await page.locator('[data-ws-tab="performance"]').click();
   assert.match(await page.locator('#workspace-content').innerText(), /capital multiples/);
