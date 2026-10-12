@@ -295,6 +295,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  cancelPositionCorrection();
   // All-history restores from its complete device snapshot. Retain only bounded period views
   // as a fast RAM return path; leaving this tab must release its full-history source graph.
   if (report && !report.queryWindow) {
@@ -577,11 +578,12 @@ function paint(ctx) {
       tableInstance.updateData(visible, undefined, status); tableRows = visible; relevanceSeen = relevanceRevision();
       // Receipt decoration and staged arrivals can change the DOM before the windowed list
       // measures it. Reapply the reading position captured before that in-place update.
-      restoreTablePosition(ctx.root, tablePosition);
+      restoreTablePositionAfterPaint(ctx.root, tablePosition);
     }
     return;
   }
 
+  cancelPositionCorrection();
   if (tableDispose) tableDispose();
   arrivalsUI.detach();
   tableDispose = null;
@@ -681,6 +683,31 @@ function restoreTablePosition(root, position) {
   } finally {
     scroller.style.scrollBehavior = inlineBehavior;
   }
+}
+
+let positionFrame = 0;
+let releasePositionInput = null;
+function cancelPositionCorrection() {
+  if (positionFrame) cancelAnimationFrame(positionFrame);
+  positionFrame = 0;
+  releasePositionInput?.(); releasePositionInput = null;
+}
+function restoreTablePositionAfterPaint(root, position) {
+  cancelPositionCorrection();
+  restoreTablePosition(root, position);
+  if (!position?.key || position.top <= 1) return;
+  const scroller = root.querySelector('[data-table-scroll]');
+  // Natural row measurements and receipt badges settle after the synchronous data paint.
+  // Correct once afterwards; new input always wins over this short bookkeeping window.
+  const inputs = ['wheel', 'pointerdown', 'touchstart', 'keydown', 'input', 'click'];
+  for (const type of inputs) root.addEventListener(type, cancelPositionCorrection, { capture: true, passive: true });
+  releasePositionInput = () => { for (const type of inputs) root.removeEventListener(type, cancelPositionCorrection, true); };
+  positionFrame = requestAnimationFrame(() => {
+    positionFrame = requestAnimationFrame(() => {
+      cancelPositionCorrection();
+      if (scroller?.isConnected && root.querySelector('[data-table-scroll]') === scroller) restoreTablePosition(root, position);
+    });
+  });
 }
 
 /**
