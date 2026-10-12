@@ -17,6 +17,7 @@ const TAB_INTERACTION_LIMIT_MS = 1000;
 const POPUP_INTERACTION_LIMIT_MS = 600;
 let offline = false;
 let upgradeAssetsOnly = false;
+let cacheMeasurements = false;
 let previousRelease = true;
 const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmarks', 'earnings-hub',
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
@@ -33,7 +34,8 @@ const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
   const upgradeAsset = /^\/(?:$|index\.html$|sw\.js$|sdk-fixture\.js$|js\/|css\/|assets\/brand\/|data\/portfolio-companies\.json$)/.test(url.pathname);
-  if (offline && !(upgradeAssetsOnly && upgradeAsset)) {
+  const cacheFixture = cacheMeasurements && [immutablePath, mutablePath, corruptPath].includes(url.pathname);
+  if (offline && !(upgradeAssetsOnly && upgradeAsset) && !cacheFixture) {
     res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return;
   }
   if (url.pathname === '/sdk-fixture.js') {
@@ -158,38 +160,6 @@ try {
     'Authorization and explicit no-store reads are never persisted');
 
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-  // Playwright routing disables the HTTP cache and rewrites request.cache to "reload".
-  // Restore ordinary browser semantics while checking immutable vs. mutable data reads.
-  const cacheSession = await context.newCDPSession(page);
-  await cacheSession.send('Network.enable');
-  await cacheSession.send('Network.setBlockedURLs', { urls: ['https://*'] });
-  await page.unroute('**/*');
-  await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: false });
-  for (const path of [immutablePath, mutablePath, corruptPath]) {
-    await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
-    await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
-  }
-  // Allow any background revalidation to reach the local server before counting it.
-  await new Promise(resolve => setTimeout(resolve, 250));
-  assert.equal(requests.filter(path => path === immutablePath).length, 1, 'unchanged content-addressed parts are downloaded only once');
-  assert.equal(requests.filter(path => path === mutablePath).length, 2, 'mutable manifests still revalidate on repeat reads');
-  assert.equal(requests.filter(path => path === corruptPath).length, 2, 'corrupt success responses never enter the immutable cache');
-  await page.evaluate(async path => { await (await fetch(path, { cache: 'reload' })).text(); }, immutablePath);
-  assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
-  await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
-  await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
-  // The temporary session only measures HTTP-cache semantics. Release it before
-  // reloads can replace its target and before testing ordinary worker activation.
-  try {
-    await cacheSession.detach();
-  } catch (error) {
-    // Chromium can close the inspection session before detach acknowledges it.
-    // A closed page/browser is still a failure; all subsequent upgrade checks run.
-    if (!String(error.message).includes('Target page, context or browser has been closed')) throw error;
-    assert(!page.isClosed() && browser.isConnected(), 'the returning page and browser remain open');
-    assert.equal(await page.evaluate(() => globalThis.__performanceRelease), 'previous', 'the same cached reader is still usable');
-  }
-
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
   const reloadedAt = Date.now();
@@ -342,6 +312,28 @@ try {
   await page.locator('#subview-mount [data-tab-id="concall"]').click();
   await page.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
   assert.equal(await page.locator('#tabbar-mount [data-tab-id="earnings"]').getAttribute('aria-selected'), 'true');
+  // Upgrade and interaction checks must run before any DevTools inspection:
+  // some Chromium versions retain a worker debugger attachment after detach.
+  // Keep the data/API outage, restoring only these synthetic cache fixtures.
+  cacheMeasurements = true;
+  // Playwright routing disables the HTTP cache and rewrites request.cache to "reload".
+  // Restore ordinary browser semantics while checking immutable vs. mutable data reads.
+  const cacheSession = await context.newCDPSession(page);
+  await cacheSession.send('Network.enable');
+  await cacheSession.send('Network.setBlockedURLs', { urls: ['https://*'] });
+  await page.unroute('**/*');
+  await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: false });
+  for (const path of [immutablePath, mutablePath, corruptPath]) {
+    await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
+    await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
+  }
+  // Allow any background revalidation to reach the local server before counting it.
+  await new Promise(resolve => setTimeout(resolve, 250));
+  assert.equal(requests.filter(path => path === immutablePath).length, 1, 'unchanged content-addressed parts are downloaded only once');
+  assert.equal(requests.filter(path => path === mutablePath).length, 2, 'mutable manifests still revalidate on repeat reads');
+  assert.equal(requests.filter(path => path === corruptPath).length, 2, 'corrupt success responses never enter the immutable cache');
+  await page.evaluate(async path => { await (await fetch(path, { cache: 'reload' })).text(); }, immutablePath);
+  assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
   assert.deepEqual(errors, []);
   console.log('PASS: app-shell cache, offline repeat paint, immediate tab/popup actions, private-cache boundary, freshness-aware poll restart and automatic warm-session release upgrade.');
 } finally {
