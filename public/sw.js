@@ -45,7 +45,7 @@ function moduleSpecifiers(source) {
 
 // Compose with every other module revision without editing their shared version lines.
 function releaseCacheKey() {
-  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1`;
+  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1-super-investor-managers-v1`;
 }
 
 // Compose this UI revision without editing another release's version marker.

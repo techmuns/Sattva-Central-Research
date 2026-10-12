@@ -4515,8 +4515,9 @@ Alert-pool content reuse and streamed Telegram delivery follow `docs/ALERT-DELIV
 Capture identity and source health must be rechecked even when decoded content is unchanged.
 
 Investor evidence parity (24 September 2026): `docs/INVESTOR-DISCLOSURE-EVIDENCE.md`
-defines public-only Changes, explicit disclosure states, original filing reconciliation and
-checkpoint-first capture publication through PRs. Preserve the All Investors default and
+defines public Changes, explicit disclosure states, original filing reconciliation and
+checkpoint-first capture publication through PRs. The 12 October manager parity addition opens
+on Changes and adds authenticated Sattva Family managers (see that document). Preserve
 Sattva's existing Institutions/MF ownership product. Unknown cells never establish trades or
 new/removed disclosures; a zero valuation is not evidence of an exit. Original source dates,
 partial coverage and retained versions must survive every refresh and export.

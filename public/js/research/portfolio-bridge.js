@@ -13,6 +13,7 @@ let transportReady = false;
 let connection = null;
 let positionSizesSupported = false;
 let priceLevelsSupported = false;
+let managersSupported = false;
 const listeners = new Set();
 const invalidations = new Set();
 const portfolioReady = new Set();
@@ -84,8 +85,10 @@ function ensureTarget() {
         setConnection('locked');
         for (const fn of invalidations) fn(-1);
       } else if (event.data.type === 'available') {
+        const reloaded = transportReady || managersSupported || positionSizesSupported || priceLevelsSupported;
         transportReady = false;
         lastPositionReply = null;
+        if (reloaded) for (const fn of invalidations) fn(-1);
         if (state !== 'unavailable') setConnection('connecting');
         connectPortfolio();
       } else if (Number.isSafeInteger(event.data.version)) {
@@ -139,6 +142,7 @@ export function connectPortfolio() {
   if (!connection) connection = request('hello', null, null, 15_000).then((reply) => {
     priceLevelsSupported = Array.isArray(reply.capabilities) && reply.capabilities.includes('price-levels');
     positionSizesSupported = Array.isArray(reply.capabilities) && reply.capabilities.includes('position-sizes');
+    managersSupported = Array.isArray(reply.capabilities) && reply.capabilities.includes('manager-workbook');
     transportReady = true;
     if (state !== 'unavailable') setConnection('connected');
     return true;
@@ -194,22 +198,22 @@ function forConsumer(operation, signal) {
     if (signal.aborted) abort();
   });
 }
-function enqueueRead(read, signal) {
+function enqueueRead(read, signal, { adoptHoldings = true } = {}) {
   const operation = readTail.then(async () => {
     if (signal?.aborted) throw cancelled();
     reading = true;
     try {
       const reply = await read();
-      if (reply) useFamilyBook(reply.holdings, reply.sizes.bookAsOf, reply.sizes.checkedAt);
-      else {
+      if (reply && adoptHoldings) useFamilyBook(reply.holdings, reply.sizes.bookAsOf, reply.sizes.checkedAt);
+      else if (!reply && adoptHoldings) {
         lastPositionReply = null;
         failFamilyBook();
       }
-      if (reply) setConnection('connected');
-      else if (state !== 'locked') setConnection('unavailable');
+      if (adoptHoldings && reply) setConnection('connected');
+      else if (adoptHoldings && state !== 'locked') setConnection('unavailable');
       return reply;
     } catch (error) {
-      if (error?.name !== 'AbortError') {
+      if (adoptHoldings && error?.name !== 'AbortError') {
         lastPositionReply = null;
         failFamilyBook();
         if (state !== 'locked') setConnection('unavailable');
@@ -272,6 +276,14 @@ export function readPositionSizes(signal, { force = false } = {}) {
 }
 
 export const priceLevelsAvailable = () => transportReady && state === 'connected' && priceLevelsSupported;
+/** Manager projection shares the authenticated read queue, but never changes company scope. */
+export function readManagerWorkbook(signal) {
+  return forConsumer(enqueueRead(async () => {
+    if (!transportReady && !await connectPortfolio()) throw Error(state === 'locked' ? 'Unlock Sattva Family to see your managers.' : 'Sattva Family is unavailable.');
+    if (!managersSupported) throw Error('The Family manager connection is not available yet.');
+    return (await request('managers', null, signal, 125_000)).managers;
+  }, signal, { adoptHoldings: false }), signal);
+}
 export async function readPriceLevels(cursor = null) {
   if (!priceLevelsAvailable()) throw Error('Unlock Sattva Family to read shared price alerts.');
   const reply = await request('price-levels', cursor, null, 30000);
