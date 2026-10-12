@@ -133,6 +133,7 @@ try {
   await page.goto(origin);
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor();
   await page.evaluate(async () => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.evaluate(async () => {
     await (await fetch('/api/private-fixture')).text();
     await (await fetch('/data/authorized-fixture.json', { headers: { authorization: 'Bearer test-only' } })).text();
@@ -157,7 +158,6 @@ try {
   assert(!cacheState.urls.some((url) => /authorized-fixture|no-store-fixture/.test(url)),
     'Authorization and explicit no-store reads are never persisted');
 
-  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   // Playwright routing disables the HTTP cache and rewrites request.cache to "reload".
   // Restore ordinary browser semantics while checking immutable vs. mutable data reads.
   const cacheSession = await context.newCDPSession(page);
@@ -179,7 +179,6 @@ try {
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
   await cacheSession.detach();
   await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
-
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
   const reloadedAt = Date.now();
@@ -277,9 +276,6 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
-  // Cache semantics are already checked. Release the test-only DevTools session
-  // before the upgrade so worker activation uses the ordinary browser lifecycle.
-  await cacheSession.detach();
   // Only deployment assets return. Keep the data/API outage from the interaction sweep:
   // restoring every capture here starts unrelated large background cache writes and can
   // leave the already-installed replacement waiting behind the active worker's reads.
@@ -298,6 +294,12 @@ try {
     throw error;
   }
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
+  assert.equal(await page.evaluate(async () => {
+    const response = await fetch('/api/private-fixture');
+    await response.text();
+    return response.status;
+  }), 503,
+    'the code upgrade completes while source availability remains independent');
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
   await page.evaluate(() => import('/js/ui/windowed-list.js'));
