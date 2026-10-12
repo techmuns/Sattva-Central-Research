@@ -70,7 +70,7 @@ const SECTIONS = [
   { id: 'data-table', label: 'Data Table' },
 ];
 
-export function renderLive(ctx, { disposers = [], section = 'quarterly-changes', tableView, onView, onSection, changesView, onChangesView } = {}) {
+export function renderLive(ctx, { disposers = [], section = 'quarterly-changes', tableView, onView, onSection, changesView, onChangesView, managersView, onManagersView } = {}) {
   const m = feed.meta();
 
   disposers.push(feed.watchFreshness(), publicHoldings.watchFreshness());
@@ -82,13 +82,15 @@ export function renderLive(ctx, { disposers = [], section = 'quarterly-changes',
   const sectionTabs = tabBar({ tabs: sections, activeId: activeSection, onSelect: onSection || (() => {}) });
 
   const summary = activeSection === 'quarterly-changes' ? renderChanges(ctx, { view: changesView, onView: onChangesView, openInvestor, includeHolding: scopeFilter(ctx) }) : null;
-  const mine = activeSection === 'my-managers' ? renderManagers(ctx) : null;
+  const mine = activeSection === 'my-managers' ? renderManagers(ctx, { view: managersView, onView: onManagersView }) : null;
   const table = activeSection === 'data-table' ? holdingsTable(ctx, rows, quarters, tableView) : null;
   if (table) onView?.(table.view);
 
   const panel =
     mine ? mine.html : activeSection === 'quarterly-changes'
       ? summary.html
+      : !feed.isLoaded()
+      ? '<div role="status" aria-busy="true" class="skeleton-shimmer h-96 rounded-2xl bg-slate-100"><span class="sr-only">Loading investor holdings…</span></div>'
       : !m.ok
       ? unavailableHtml(m)
       : activeSection === 'data-table'
@@ -105,7 +107,7 @@ export function renderLive(ctx, { disposers = [], section = 'quarterly-changes',
       title: 'Superstar Investors',
       description: 'Follow your managers and tracked investors through holdings, ledger activity and reported bulk/block deals.',
     })}
-    ${!m.ok && activeSection === 'quarterly-changes' ? unavailableHtml(m) : ''}
+    ${feed.isLoaded() && !m.ok && activeSection === 'quarterly-changes' && changesView?.audience === 'investors' ? unavailableHtml(m) : ''}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
       ${sectionTabs.html}
     </div>
@@ -500,30 +502,30 @@ function summaryHelpBody(q, m = {}) {
 
 const REASONS = {
   'no-route': {
-    title: 'The live investor feed needs the Worker',
-    body: 'This origin serves the static files only, so there is no <code>/api/super-investors</code> route to answer. Run <code>npx wrangler dev</code>, or open the deployed site.',
+    title: 'Investor holdings unavailable',
+    body: 'The investor source is unavailable at this address. Please open Sattva Central Research from your usual dashboard link.',
   },
   'no-token': {
-    title: 'No API token is configured',
-    body: 'The super-investor API requires a bearer token, and this deployment has none. An operator sets it with <code>npx wrangler secret put MUNS_TOKEN</code> — it lives on the Worker and never reaches the browser.',
+    title: 'Investor source access unavailable',
+    body: 'Access to the investor source needs attention. Please check back.',
   },
   unauthorised: {
-    title: 'The API rejected the token',
-    body: 'The token configured on the Worker was refused, which usually means it has expired. Renewing it is <code>npx wrangler secret put MUNS_TOKEN</code>.',
+    title: 'Investor source access unavailable',
+    body: 'The investor source could not be accessed. Please check back.',
   },
   // This is a deployment fact, not a data condition, so it says so rather than implying the
   // investor list came back empty. The credential is fine; the endpoint is simply not there.
   'route-missing': {
-    title: 'That service does not have the super-investor endpoints',
-    body: 'The token works, but <code>GET /super-investors</code> returns 404 on the host this dashboard is pointed at. Its own OpenAPI document (<code>/api-json</code>) lists no route matching "investor", so this is not a bad path on our side — the endpoint is not deployed there. Whoever owns that backend needs to ship it, or point us at the host that already has it.',
+    title: 'Investor holdings unavailable',
+    body: 'The investor source could not be found. Please check back.',
   },
   timeout: {
-    title: 'The super-investor API did not answer in time',
-    body: 'The request was given 15 seconds and retried, and the upstream did not respond. It answers in about a second when healthy, so this usually means the service is restarting.',
+    title: 'Investor source took too long to respond',
+    body: 'Holdings could not be checked. Please try again later.',
   },
-  unreachable: { title: 'The super-investor API could not be reached', body: 'The upstream service did not answer. Nothing is wrong with this page; there is nothing to show until it does.' },
-  upstream: { title: 'The super-investor API returned an error', body: 'The upstream answered, but not with data. This usually clears on its own.' },
-  shape: { title: 'The super-investor API returned something unreadable', body: 'The response was not JSON in the shape this dashboard knows. That is a change on their side worth looking at.' },
+  unreachable: { title: 'Investor source could not be reached', body: 'Holdings could not be checked. Please try again later.' },
+  upstream: { title: 'Investor holdings temporarily unavailable', body: 'The source did not supply a usable holdings book. Please check back.' },
+  shape: { title: 'Investor holdings could not be verified', body: 'The source reading was incomplete or invalid. Please check back.' },
 };
 
 /**
@@ -549,10 +551,8 @@ function unavailableHtml(m) {
         <div class="min-w-0 flex-1">
           <h3 class="font-display text-base font-bold text-slate-900">${escapeHtml(r.title)}</h3>
           <p class="mt-1.5 text-sm leading-relaxed text-slate-600">${r.body}</p>
-          ${m.message ? `<p class="mt-2 rounded-lg bg-slate-50 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-500">${escapeHtml(m.message)}</p>` : ''}
           <p class="mt-3 text-xs leading-relaxed text-slate-500">
-            <strong>No positions are shown.</strong> Not an empty book and not last week's figures — there is nothing to display
-            until the feed answers, and inventing furniture to fill the space would be worse than the gap.
+            No verified holdings are available to display. This does not establish that an investor has no holdings.
           </p>
         </div>
       </div>

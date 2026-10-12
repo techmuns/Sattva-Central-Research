@@ -24,6 +24,7 @@ import { state } from '../core/state.js';
 import * as notebook from '../core/bookmarks.js';
 import { snapshotForRow, SECTION_LABELS } from '../core/bookmark-record.js';
 import { bookmarkButton, wireBookmarks } from './bookmark-button.js';
+import { tabBar } from './components.js';
 
 // ---------------------------------------------------------------------------------------
 // Overlay focus management — shared by the drill, the modal and the workspace.
@@ -54,7 +55,7 @@ function trapFocus(el, { label } = {}) {
 
   const onKey = (e) => {
     if (e.key !== 'Tab') return;
-    const items = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.offsetParent !== null || n === document.activeElement);
+    const items = [...el.querySelectorAll(FOCUSABLE)].filter((n) => n.tabIndex >= 0 && (n.offsetParent !== null || n === document.activeElement));
     if (!items.length) {
       e.preventDefault();
       el.focus({ preventScroll: true });
@@ -1692,6 +1693,10 @@ export function openWorkspace({
 
   const { color, initials } = avatarFor(avatarName || title);
   const activeId = tabs.some((t) => t.id === activeTab) ? activeTab : tabs[0].id;
+  const navigation = tabBar({ tabs, activeId, onSelect: selectWorkspaceTab, label: `${title} views` });
+  // Replacing a workspace must release its old navigation and Escape listener.
+  workspaceState?.stopNavigation?.();
+  if (workspaceState?.keyHandler) document.removeEventListener('keydown', workspaceState.keyHandler);
 
   content.innerHTML = `
     <div class="sticky top-0 z-10 border-b border-slate-200 bg-white ">
@@ -1706,38 +1711,26 @@ export function openWorkspace({
         </div>
         <div class="flex flex-shrink-0 items-center gap-2">
           ${actionsHtml}
-          <button data-ws-close class="rounded-lg px-2 text-2xl leading-none text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700" aria-label="Close">×</button>
+          <button data-ws-close class="flex h-11 w-11 items-center justify-center rounded-lg text-2xl leading-none text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700" aria-label="Close">×</button>
         </div>
       </div>
-      <div class="scrollbar-thin mt-3 flex gap-1 overflow-x-auto px-6" role="tablist">
-        ${tabs
-          .map(
-            (t) => `
-          <button data-ws-tab="${escapeHtml(t.id)}" role="tab" aria-selected="${t.id === activeId}"
-            class="ws-tab relative flex-shrink-0 whitespace-nowrap px-3 py-2.5 text-sm font-semibold transition-colors ${
-              t.id === activeId ? 'text-indigo-700' : 'text-slate-500 hover:text-slate-800'
-            }">
-            ${escapeHtml(t.label)}
-            ${t.badge != null ? `<span class="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-600">${escapeHtml(t.badge)}</span>` : ''}
-            <span class="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-transform duration-200 ${
-              t.id === activeId ? 'scale-x-100' : 'scale-x-0'
-            }"></span>
-          </button>`
-          )
-          .join('')}
-      </div>
+      <div class="mt-3 px-6" data-workspace-navigation>${navigation.html}</div>
     </div>
     <div id="workspace-panel" class="scrollbar-thin max-h-[calc(100vh-11rem)] overflow-y-auto px-6 py-5"></div>`;
 
-  workspaceState = { tabs, activeId, onTabChange, onClose };
+  workspaceState = { tabs, activeId, onTabChange, onClose, navigation };
 
   content.querySelector('[data-ws-close]')?.addEventListener('click', () => closeWorkspace());
-  content.querySelectorAll('[data-ws-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => selectWorkspaceTab(btn.dataset.wsTab));
+  content.querySelectorAll('[data-workspace-navigation] [data-tab-id]').forEach((btn) => {
+    btn.dataset.wsTab = btn.dataset.tabId;
+    btn.classList.add('ws-tab');
+    const badge = tabs.find(t => t.id === btn.dataset.tabId)?.badge;
+    if (badge != null) btn.insertAdjacentHTML('beforeend', `<span class="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-600">${escapeHtml(badge)}</span>`);
   });
 
   overlay.classList.remove('hidden');
   overlay.classList.add('is-open');
+  workspaceState.stopNavigation = navigation.wire(content.querySelector('[data-workspace-navigation]'));
   releaseWorkspaceFocus?.();
   releaseWorkspaceFocus = trapFocus(container, { label: `${title} workspace` });
   document.body.classList.add('workspace-open');
@@ -1780,15 +1773,7 @@ function renderWorkspacePanel(id) {
 export function selectWorkspaceTab(id) {
   if (!workspaceState || !workspaceState.tabs.some((t) => t.id === id)) return;
   workspaceState.activeId = id;
-  document.querySelectorAll('[data-ws-tab]').forEach((btn) => {
-    const on = btn.dataset.wsTab === id;
-    btn.setAttribute('aria-selected', String(on));
-    btn.classList.toggle('text-indigo-700', on);
-    btn.classList.toggle('text-slate-500', !on);
-    const bar = btn.querySelector('span:last-child');
-    bar?.classList.toggle('scale-x-100', on);
-    bar?.classList.toggle('scale-x-0', !on);
-  });
+  workspaceState.navigation.update(id);
   renderWorkspacePanel(id);
   workspaceState.onTabChange?.(id);
 }
@@ -1810,6 +1795,7 @@ export function closeWorkspace({ silent = false } = {}) {
   workspaceState = null;
 
   if (state?.keyHandler) document.removeEventListener('keydown', state.keyHandler);
+  state?.stopNavigation?.();
   overlay?.classList.remove('is-open');
   overlay?.classList.add('hidden');
   container?.classList.add('translate-y-4', 'scale-[0.98]');

@@ -12,6 +12,7 @@ const h = (company, companySlug, latest, prior, valueCr = 10) => ({ company, com
   quarterlyHoldings: { 'Aug 2026': 'Filing Due', 'Jun 2026': latest, 'Mar 2026': prior }, valueCr });
 const b = (slug, holdings) => ({ ...normalisePortfolio({ name: slug, slug, quarters: ['Aug 2026', 'Jun 2026', 'Mar 2026'], holdings }, slug), ok: true, fetchedAt: at });
 let fail = false, publicFail = false, publicReads = 0;
+let holdPublic = null;
 const books = {
   one: b('one', [h('Aavas Financiers Ltd.', 'AAVAS', 2.13, 1.65), h('Portfolio Only Ltd.', 'ONLY', 1.2, 1), h('Pending Ltd.', 'PENDING', 'Filing Due', 1, 0)]),
   two: b('two', [h('Aavas Financiers Limited', 'AAVAS', 1.1, null), h('Portfolio Only Other Ltd.', 'OTHER', 1.5, 1)]),
@@ -31,36 +32,46 @@ const trade = (ticker, person, side = 'Buy', exchange = 'NSE') => ({ ticker, sou
 const trades = { kind: 'insider', capturedAt: at, coversUniverse: true, byTicker: { ONLY: [trade('ONLY', 'one'), trade('ONLY', 'one'), trade('ONLY', 'one', 'Sell'), trade('ONLY', 'one', 'Buy', 'BSE')], AAVAS: [trade('AAVAS', 'two'), trade('AAVAS', 'one and others')] }, empty: [], failed: {} };
 const publicRow = (id, company, isin) => ({ id, personId: 'one', person: 'one', kind: 'investor', company, isin, legalHolder: 'one', asOf: '2026-06-30', shares: 1000, stakePct: 1.2, state: 'latest-disclosure', comparison: 'agrees', sources: [{ source: 'bse', url: 'https://www.bseindia.com/example.xml', filedAt: at, checkedAt: at, shares: 1000, stakePct: 1.2 }] });
 let publicPayload = { version: 1, checkedAt: at, captureCheckedAt: at, complete: false, holdings: [publicRow('one-only', 'Portfolio Only Ltd.', 'INE000A01001'), publicRow('one-aavas', 'Aavas Financiers Ltd.', 'INE000A01002')], issues: [], candidates: [], profiles: [], sources: [], coverage: { indexed: 2, parsed: 2, pending: 0, partial: 0, securities: 2, profiles: 1 } };
-const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css">
+const inlineStyles = readFileSync(resolve(root, 'index.html'), 'utf8').match(/<style>[\s\S]*?<\/style>/g).join('\n');
+const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css">${inlineStyles}
 <body class="bg-slate-50"><main id="test-root" class="mx-auto max-w-7xl p-4"></main>
 <div id="modal-overlay" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/30 p-4"><div id="modal-container"><div id="modal-content"></div></div></div>
-<div id="workspace-overlay" class="hidden fixed inset-0 z-40 bg-slate-900/30 p-4"><div id="workspace-container"><div id="workspace-content"></div></div></div>
+<div id="workspace-overlay" class="fixed inset-0 z-[55] hidden items-start justify-center overflow-y-auto bg-slate-900/70 p-0 sm:p-6"><div id="workspace-container" class="relative w-full max-w-[1200px] translate-y-4 scale-[0.98] overflow-hidden rounded-none bg-white opacity-0 shadow-2xl transition-all duration-200 sm:my-4 sm:rounded-3xl"><div id="workspace-content"></div></div></div>
 <script type="module">
 import * as feed from '/js/data/super-investors.js';
 import * as coverage from '/js/data/coverage.js';
 import * as watchlist from '/js/core/watchlist.js';
 import { renderLive, openInvestor } from '/js/investors/live.js';
 coverage.prime({ holdings: [{ ticker: 'ONLY', name: 'Portfolio Only' }] });
-let disposers = [], scope = 'portfolio', section = 'quarterly-changes', changesView = { audience: 'investors', period: 'quarter' }; window.openInvestor = openInvestor;
+let disposers = [], scope = 'portfolio', section = 'quarterly-changes', changesView = { audience: 'investors', period: 'quarter' }, managersView = {}; window.openInvestor = openInvestor;
 window.paint = (nextScope = scope, nextSection = section) => {
   scope = nextScope; section = nextSection;
   disposers.forEach(fn => fn()); disposers = [];
-  renderLive({ root: document.querySelector('#test-root'), scope }, { disposers, section, changesView, onChangesView: (v) => changesView = v });
+  renderLive({ root: document.querySelector('#test-root'), scope }, { disposers, section, changesView, onChangesView: (v) => changesView = v, managersView, onManagersView: v => managersView = v });
 };
 window.addEventListener('hashchange', () => paint(new URLSearchParams(location.hash.split('?')[1]).get('scope') || 'portfolio'));
 feed.onChange(() => paint());
 await feed.load(); paint(); window.testSI = { feed, watchlist };
 </script>`;
-const server = createServer((req, res) => {
+const dispatcherHtml = html.replace(/<script type="module">[\s\S]*?<\/script>/, `<script type="module">
+  import * as tab from '/js/tabs/super-investors.js';
+  import * as coverage from '/js/data/coverage.js';
+  coverage.prime({ holdings: [{ticker:'ONLY',name:'Portfolio Only'}] });
+  let scope = 'portfolio';
+  window.paint = next => { scope = next || scope; tab.render({root:document.querySelector('#test-root'),scope,subview:'superstar-investors',params:{}}); };
+  paint(); window.testDispatcher = tab;
+</script>`);
+const server = createServer(async (req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   res.setHeader('cache-control', 'no-store');
   const json = value => { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(value)); };
   if (path === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
+  if (path === '/dispatcher') { res.setHeader('content-type', 'text/html'); res.end(dispatcherHtml); return; }
   if (path === '/data/public-holdings.json') { publicReads++; if (publicFail) res.statusCode = 503; return json(publicFail ? {} : publicPayload); }
   if (path === '/data/holding-evidence.json') return json({ relations: [], holdings: [] });
   if (path === '/data/insider-trades.json') return json(trades);
   if (path === '/data/exchange-deals.json' || path.startsWith('/api/exchange-deals')) return json({ version: 1, records: [], sources: [], checkedAt: at });
-  if (path === '/data/super-investors.json') return json(snapshot);
+  if (path === '/data/super-investors.json') { if (holdPublic) await holdPublic; return json(snapshot); }
   if (path === '/api/super-investors') return json({ ok: true, investors, fetchedAt: at });
   if (path.startsWith('/api/super-investors/')) return json(fail ? { ok: false, reason: 'fixture outage' } : books[path.split('/').at(-1)] || { ok: false, reason: 'missing fixture' });
   const file = resolve(root, `.${path}`);
@@ -73,7 +84,7 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1050 } });
-  await context.route('**/*', route => {
+  const fixtureRoute = route => {
     if (route.request().url() === 'https://sattva-family.pages.dev/research-bridge') return route.fulfill({ contentType: 'text/html', body: `<script>
       window.fixture = ${JSON.stringify(managerFixture)};
       const send = m => parent.postMessage({channel:'sattva-portfolio-v1', ...m}, ${JSON.stringify(origin)});
@@ -84,7 +95,8 @@ try {
       }); send({type:'available'});
     </script>` });
     return route.request().url().startsWith(origin + '/') ? route.continue() : route.abort();
-  });
+  };
+  await context.route('**/*', fixtureRoute);
   const page = await context.newPage(), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.clock.install({ time: new Date(at) });
@@ -220,7 +232,26 @@ try {
   assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, 'manager view preserves heading cleanup');
   await page.locator('[data-manager-search]').fill('private');
   assert.equal(await page.locator('[data-open-manager]').count(), 1);
+  assert.equal(await page.locator('[data-manager-kind]:visible').count(), 1, 'search hides unrelated empty categories');
+  await page.locator('[data-manager-sources] summary').click();
+  assert.deepEqual(await page.evaluate(() => {
+    const input = document.querySelector('[data-manager-search]'); input.focus(); input.setSelectionRange(2, 4);
+    input.setRangeText('i', 2, 4, 'end'); input.dispatchEvent(new Event('input', { bubbles:true }));
+    const current = document.querySelector('[data-manager-search]');
+    return { same: input === current, start: current.selectionStart, end: current.selectionEnd };
+  }), { same: true, start: 3, end: 3 }, 'filtering retains the composing input node and edited caret');
+  await page.locator('[data-manager-search]').fill('private');
+  await page.locator('[data-manager-search]').evaluate(el => el.setSelectionRange(2, 4));
+  await page.evaluate(async () => (await import('/js/data/managers.js')).load({ force:true }));
+  assert.deepEqual(await page.locator('[data-manager-search]').evaluate(el => [el.selectionStart, el.selectionEnd, el === document.activeElement]), [2, 4, true], 'fresh workbook retains focus and selection');
+  assert(await page.locator('[data-manager-sources]').evaluate(el => el.open), 'source refresh retains expanded coverage');
+  await page.evaluate(() => paint('universe'));
+  assert.equal(await page.locator('[data-manager-search]').inputValue(), 'private', 'scope repaint retains manager query');
+  assert(await page.locator('[data-manager-sources]').evaluate(el => el.open));
+  await page.locator('[data-manager-search]').fill('nothing matches');
+  assert.equal(await page.locator('[data-manager-empty]').count(), 1, 'one helpful empty result replaces three empty grids');
   await page.locator('[data-manager-search]').fill('');
+  if (process.env.SI_QA_DIR) await page.screenshot({ path: `${process.env.SI_QA_DIR}/managers-light.png`, fullPage: true });
   await page.locator('[data-open-manager="custodian-example"]').click();
   assert.equal(await page.locator('#workspace-content [data-bookmark-key]').count(), 0, 'private holdings cannot be saved to the public notebook');
   assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 2);
@@ -228,17 +259,38 @@ try {
   assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 2, 'distinct ledger lots survive');
   assert.match(await page.locator('#workspace-content').innerText(), /Earliest ledger sighting/);
   await page.locator('[data-ws-tab="period"]').click();
+  assert.equal(await page.locator('[data-ws-tab][tabindex="0"]').count(), 1, 'workspace has one tab stop');
+  await page.locator('[data-ws-tab="period"]').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.wsTab), 'trades');
+  assert.equal(await page.locator('[data-ws-tab="period"]').getAttribute('aria-selected'), 'true', 'arrows move focus before activation');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('[data-ws-tab="trades"]').getAttribute('aria-selected'), 'true');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('[data-ws-tab="profile"]').getAttribute('aria-selected'), 'true');
+  await page.keyboard.press('Home'); await page.keyboard.press('Enter');
+  await page.locator('[data-ws-tab="period"]').click();
   await page.locator('[data-manager-period]').selectOption('itd');
   assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 2);
   await page.keyboard.press('Escape');
   await page.locator('[data-open-manager="scheme-INF000000001"]').click();
   assert.equal(await page.locator('[data-ws-tab="holdings"]').innerText(), 'Units');
   assert.equal(await page.locator('#workspace-content [data-row-key]').count(), 1);
+  assert.equal(await page.locator('#workspace-content th').filter({ hasText: /^Weight$/ }).count(), 0, 'units omit unavailable custodian weights');
+  assert.match(await page.locator('#workspace-content').innerText(), /combined across custodians/);
   await page.keyboard.press('Escape');
   await page.locator('[data-open-manager^="fund-example-1-"]').click();
   assert.match(await page.locator('#workspace-content').innerText(), /Drawn|Distributed/);
+  assert.match(await page.locator('#workspace-content').innerText(), /This fund investment/);
+  assert.doesNotMatch(await page.locator('#workspace-content').innerText(), /Whole Family book, combined/);
   await page.locator('[data-ws-tab="performance"]').click();
   assert.match(await page.locator('#workspace-content').innerText(), /capital multiples/);
+  await page.locator('[data-ws-tab="performance"]').focus();
+  await page.keyboard.press('Tab');
+  assert(await page.locator('[data-ws-close]').evaluate(el => el === document.activeElement), 'Tab wraps inside a workspace with a static panel');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.wsTab), 'performance', 'reverse Tab skips inactive workspace tabs');
   const family = page.frames().find(f => f.url() === 'https://sattva-family.pages.dev/research-bridge');
   await family.evaluate(() => send({ type: 'auth-required' }));
   await page.waitForSelector('[data-manager-unlock]');
@@ -251,6 +303,10 @@ try {
   await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'My Managers' }).click();
   await page.locator('[data-changes-period]').selectOption('itd');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '2');
+  await page.locator('[data-changes-activity] [data-table-search]').fill('Portfolio');
+  await page.locator('[data-changes-activity] [data-table-search]').evaluate(el => el.setSelectionRange(2, 5));
+  await page.evaluate(async () => (await import('/js/data/managers.js')).load({force:true}));
+  assert.deepEqual(await page.locator('[data-changes-activity] [data-table-search]').evaluate(el => [el.selectionStart, el.selectionEnd, el === document.activeElement]), [2, 5, true], 'Changes retains the active search selection on source refresh');
   assert.equal(await page.locator('[data-changes-activity] [data-bookmark-key]').count(), 0);
   await page.locator('[data-changes-activity] [data-row-key]').last().click();
   assert.match(await page.locator('#modal-content').innerText(), /not a verified execution date/);
@@ -266,5 +322,55 @@ try {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `manager view has no page overflow at ${width}`);
   }
   assert.deepEqual(errors, []);
+  // A slow public directory cannot hide private navigation or reset a live query.
+  let releasePublic;
+  holdPublic = new Promise(done => releasePublic = done);
+  const cold = await browser.newContext({ viewport: { width:320, height:900 }, serviceWorkers:'block' });
+  await cold.route('**/*', fixtureRoute);
+  const coldPage = await cold.newPage(), coldErrors = [];
+  coldPage.on('pageerror', e => coldErrors.push(e.message));
+  await coldPage.clock.install({ time:new Date(at) });
+  await coldPage.goto(origin + '/dispatcher', { waitUntil:'domcontentloaded' });
+  await coldPage.locator('[data-changes-audience] [data-tab-id="investors"]').click();
+  assert.match(await coldPage.locator('[data-changes-panel]').innerText(), /Investor directory is loading/);
+  assert.doesNotMatch(await coldPage.locator('[data-changes-panel]').innerText(), /0 buys · 0 sells/);
+  await coldPage.locator('[data-live-section-tabs] [data-tab-id="data-table"]').click();
+  assert.equal(await coldPage.locator('[data-live-panel] [aria-busy="true"]').count(), 1);
+  await coldPage.locator('[data-live-section-tabs] [data-tab-id="my-managers"]').click();
+  await coldPage.waitForSelector('[data-open-manager="custodian-example"]');
+  assert.equal(await coldPage.evaluate(async () => (await import('/js/data/super-investors.js')).isLoaded()), false, 'private book opens before delayed public data');
+  await coldPage.locator('[data-manager-search]').fill('Example');
+  await coldPage.locator('[data-manager-sources] summary').click();
+  releasePublic(); holdPublic = null;
+  await coldPage.waitForFunction(async () => (await import('/js/data/super-investors.js')).isLoaded());
+  assert.equal(await coldPage.locator('[data-manager-search]').inputValue(), 'Example', 'public arrival leaves private query intact');
+  await coldPage.evaluate(() => paint('watchlist'));
+  assert.equal(await coldPage.locator('[data-manager-search]').inputValue(), 'Example');
+  await coldPage.evaluate(() => paint('portfolio'));
+  await coldPage.locator('[data-open-manager="custodian-example"]').click();
+  assert(await coldPage.locator('[data-workspace-navigation] [data-tab-scroll-controls]').isVisible(), 'narrow workspace reveals tab scrolling controls');
+  for (const theme of ['light', 'dark']) {
+    await coldPage.evaluate(theme => document.documentElement.dataset.theme = theme, theme);
+    assert(await coldPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    const close = await coldPage.locator('[data-ws-close]').boundingBox();
+    assert(close.width >= 44 && close.height >= 44 && close.x >= 0 && close.x + close.width <= 320, 'close control stays visible and touch sized');
+    if (process.env.SI_QA_DIR) await coldPage.screenshot({ path:`${process.env.SI_QA_DIR}/workspace-mobile-${theme}.png`, fullPage:true, animations:'disabled' });
+  }
+  await coldPage.keyboard.press('Escape');
+  assert.equal(await coldPage.evaluate(() => document.activeElement.dataset.openManager), 'custodian-example', 'closing restores keyboard focus to the manager card');
+  assert.deepEqual(coldErrors, []);
+  await cold.close();
+  const unavailable = await browser.newContext({ serviceWorkers:'block' });
+  await unavailable.route('**/*', fixtureRoute);
+  await unavailable.route('**/data/super-investors.json', route => route.fulfill({status:503,body:'{}'}));
+  await unavailable.route('**/api/super-investors', route => route.fulfill({contentType:'application/json',body:JSON.stringify({ok:false,reason:'no-token',message:'npx wrangler secret put MUNS_TOKEN'})}));
+  const unavailablePage = await unavailable.newPage();
+  await unavailablePage.goto(origin + '/dispatcher');
+  await unavailablePage.locator('[data-live-section-tabs] [data-tab-id="investors"]').click();
+  await unavailablePage.waitForFunction(() => document.querySelector('[data-live-panel]')?.textContent.includes('Investor source access unavailable'));
+  const customerText = await unavailablePage.locator('[data-live-panel]').innerText();
+  assert.doesNotMatch(customerText, /npx|wrangler|MUNS_TOKEN|\/api\/|bearer token/);
+  assert.match(customerText, /does not establish that an investor has no holdings/);
+  await unavailable.close();
   console.log('PASS investor scope, identity, disclosure notes, shared changes, drill evidence, missing books, outages and mobile layout');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

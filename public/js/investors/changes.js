@@ -35,9 +35,15 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
   }
   function paint(focus = null) {
     if (disposed || !host?.isConnected) return;
+    const reading = focus ? [] : ['activity', 'observations'].map(key => {
+      const panel = host.querySelector(`[data-changes-${key}]`), search = panel?.querySelector('[data-table-search]'), scroll = panel?.querySelector('[data-table-scroll]');
+      return { key, focused: search === document.activeElement, start: search?.selectionStart, end: search?.selectionEnd,
+        direction: search?.selectionDirection, top: scroll?.scrollTop || 0, left: scroll?.scrollLeft || 0 };
+    });
     remember(); tableDisposers.forEach((d) => d?.()); tableDisposers = [];
     const list = investors.list();
     const mine = state.audience === 'my-managers';
+    const directoryPending = !mine && !investors.isLoaded();
     const people = withVerifiedEntities(mine ? managers.all().map(m => ({ id: m.id, name: m.name })) : list.map((i) => ({ id: i.slug, name: i.name })), evidence(), mine ? 'manager' : 'investor');
     const allows = (r) => mine ? ctx.scope !== 'watchlist' || r.ticker && watchlist.has(r.ticker) : r.ticker ? scopeAllowsTicker(ctx.scope, r.ticker) : !includeHolding || includeHolding(r.company, r);
     const activity = [...(mine ? managerTrades(managers.all()) : []), ...matchedDeals(insider.rows(), people)].filter(allows);
@@ -58,7 +64,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       searchPlaceholder: 'Search company or investor...', initialView: state.activityView,
       onExport: (rows) => exportChanges(rows, state, range, false, ctx.scope),
       filters: [{ label: 'Direction', options: [{ value: 'all', label: 'All activity' }, { value: 'buy', label: 'Buys' }, { value: 'sell', label: 'Sells' }], match: (r, v) => r.action === v }],
-      emptyMessage: mine && !managers.meta() ? 'Manager records have not been verified.' : ready ? 'No matching trades in the available records for this period.' : 'Loading captured bulk/block deals…',
+      emptyMessage: directoryPending ? 'Loading the tracked investor directory…' : mine && !managers.meta() ? 'Manager records have not been verified.' : ready ? 'No matching trades in the available records for this period.' : 'Loading captured bulk/block deals…',
       onRowClick: (r) => openEvidence(r, openPerson, mine),
       columns: [
         { label: 'Action', get: (r) => r.action === 'buy' ? 'Bought' : 'Sold' },
@@ -102,7 +108,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       </div>
       <div data-changes-panel="${state.audience}" data-activity-total="${events.length}" data-holdings-total="${observations.length}">
         ${mine && !managers.meta() ? managerUnavailable() : ''}
-        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-display text-lg font-bold text-slate-900">${mine ? 'Your managers · ledger events & reported deals' : 'Tracked investors · reported trades'}</h2><span class="text-xs text-slate-500">${mine && !managers.meta() ? 'Manager records are not yet available' : `${buys} buys · ${sells} sells · ${new Set(events.map(r => r.personId)).size} ${mine ? 'managers' : 'investors'}`}</span></div>
+        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-display text-lg font-bold text-slate-900">${mine ? 'Your managers · ledger events & reported deals' : 'Tracked investors · reported trades'}</h2><span class="text-xs text-slate-500">${directoryPending ? 'Investor directory is loading…' : mine && !managers.meta() ? 'Manager records are not yet available' : `${buys} buys · ${sells} sells · ${new Set(events.map(r => r.personId)).size} ${mine ? 'managers' : 'investors'}`}</span></div>
         <p class="mb-3 text-xs text-slate-500">${range.from ? `${esc(date(range.from))} – ${esc(date(range.to))}` : 'ITD · all available captured history'} · ${mine ? 'Family ledger events and matched public bulk/block deals' : 'matched public bulk/block deals'}. Click a row for evidence.</p>
         <p class="mb-3 text-xs text-slate-500" data-exchange-status>${esc(exchanges?.summary || (ready ? 'Exchange coverage has not been verified.' : 'NSE / BSE reports are loading.'))}</p>
         <div data-changes-activity>${table.html}</div>
@@ -128,6 +134,11 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
     wireManagerUnlock(host);
     host.querySelector('[data-changes-period]').addEventListener('change', (e) => { state.period = e.target.value; onView(state); paint('period'); });
     host.querySelectorAll('[data-changes-holdings], [data-changes-sources]').forEach((el) => el.addEventListener('toggle', () => { if (!disposed && el.isConnected) { remember(); onView(state); } }));
+    for (const saved of reading) {
+      const panel = host.querySelector(`[data-changes-${saved.key}]`), scroll = panel?.querySelector('[data-table-scroll]');
+      if (scroll) { scroll.scrollTop = saved.top; scroll.scrollLeft = saved.left; }
+      if (saved.focused) { const search = panel?.querySelector('[data-table-search]'); search?.focus({ preventScroll: true }); search?.setSelectionRange(saved.start, saved.end, saved.direction); }
+    }
     if (focus) host.querySelector(focus === 'audience' ? '[data-changes-audience] [aria-selected="true"]' : '[data-changes-period]')?.focus();
   }
   return { html: '<div data-investor-changes></div>', wire(root, disposers) {

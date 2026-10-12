@@ -1,6 +1,6 @@
 import * as managers from '../data/managers.js';
 import * as watchlist from '../core/watchlist.js';
-import { escapeHtml as esc } from '../core/dom.js';
+import { escapeHtml as esc, syncListDOM } from '../core/dom.js';
 import { formatNumber, formatDate, formatCroreCompact } from '../core/format.js';
 import { scoreTable, openWorkspace, closeWorkspace } from '../ui/screener.js';
 import { exportRows } from '../ui/export.js';
@@ -29,25 +29,63 @@ export function managerUnavailable() {
 }
 export function wireManagerUnlock(root) { root.querySelector('[data-manager-unlock]')?.addEventListener('click', unlockPortfolio); }
 export const sectionsFor = base => [{ id: 'quarterly-changes', label: 'Changes' }, { id: 'my-managers', label: 'My Managers' }, ...base.filter(s => s.id !== 'quarterly-changes')];
-export function renderManagers(ctx) {
-  let host, stopped = false, query = '';
+export function renderManagers(ctx, { view = {}, onView = () => {} } = {}) {
+  const state = { query: '', sourcesOpen: false, ...view };
+  let host, stopped = false;
+  const remember = () => {
+    if (stopped) return;
+    const sources = host?.querySelector('[data-manager-sources]');
+    if (sources) state.sourcesOpen = sources.open;
+    onView(state);
+  };
   function paint() {
     if (stopped || !host?.isConnected) return;
-    const focused = host.querySelector('[data-manager-search]') === document.activeElement;
+    remember();
     if (!managers.meta()) { host.innerHTML = managerUnavailable(); wireManagerUnlock(host); return; }
-    const filtered = entries().filter(m => m.name.toLowerCase().includes(query.toLowerCase()));
+    // Keep the input mounted while filtering or receiving a fresh book. Replacing it
+    // interrupts composition and sends an edited selection to the end of the query.
+    if (!host.querySelector('[data-manager-search]')) {
+      host.innerHTML = `<div class="mb-4 flex flex-wrap items-center justify-between gap-3"><p class="text-sm text-slate-600">Your holdings and fund investments from Sattva Family.</p><label class="flex flex-wrap items-center gap-2 text-xs text-slate-500">Find a manager <input data-manager-search aria-label="Search managers" value="${esc(state.query)}" class="min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2"></label></div>
+        <div data-manager-groups></div><details class="text-xs text-slate-500" data-manager-sources ${state.sourcesOpen ? 'open' : ''}><summary class="cursor-pointer font-semibold">Sources &amp; coverage</summary><p class="mt-2 leading-relaxed" data-manager-coverage></p></details>`;
+      host.querySelector('[data-manager-search]').addEventListener('input', e => { state.query = e.target.value; onView(state); paint(); });
+      host.querySelector('[data-manager-sources]').addEventListener('toggle', remember);
+      host.querySelector('[data-manager-groups]').addEventListener('click', e => {
+        const button = e.target.closest('[data-open-manager]');
+        if (button) openManager(button.dataset.openManager, ctx);
+      });
+    }
+    const all = entries(), query = state.query.trim().toLowerCase();
+    const investmentGroups = new Map();
+    for (const m of all.filter(m => m.kind === 'fund')) {
+      const group = investmentGroups.get(m.name) || []; group.push(m.id); investmentGroups.set(m.name, group);
+    }
+    const filtered = all.filter(m => m.name.toLowerCase().includes(query));
     const groups = [['custodian', 'Custodians & direct holdings'], ['fund', 'Private funds'], ['listed-fund', 'Fund units & ETFs']];
-    host.innerHTML = `<div class="mb-4 flex flex-wrap items-center justify-between gap-3"><p class="text-sm text-slate-600">Your holdings and fund investments from Sattva Family.</p><label class="text-xs text-slate-500">Find a manager <input data-manager-search aria-label="Search managers" value="${esc(query)}" class="ml-2 rounded-lg border border-slate-200 bg-white px-3 py-2"></label></div>
-      ${groups.map(([kind, title]) => `<section class="mb-6"><h2 class="mb-3 font-display text-lg font-bold text-slate-900">${title}</h2><div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${filtered.filter(m => m.kind === kind).map(m => `<button data-open-manager="${esc(m.id)}" class="rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition-colors hover:bg-slate-50"><p class="text-xs text-slate-500">${label(m)}</p><h3 class="mt-1 font-display font-bold text-slate-900">${esc(m.name)}</h3><p class="mt-3 text-lg font-semibold tabular-nums text-slate-800">${money(m.values.marketValue)}</p><p class="mt-1 text-xs text-slate-500">${m.kind === 'fund' ? `Drawn ${money(m.capital.drawn)} · distributed ${money(m.capital.distributed)}` : `${m.values.positionCount} securities · cost ${money(m.values.costBasis)}`}</p><p class="mt-2 text-xs text-slate-500">${esc(sourcePeriod(m))}</p></button>`).join('') || '<p class="text-sm text-slate-500">No matching entries in the connected workbook.</p>'}</div></section>`).join('')}
-      <details class="text-xs text-slate-500"><summary class="cursor-pointer font-semibold">Sources &amp; coverage</summary><p class="mt-2 leading-relaxed">${esc(managers.meta().coverage.note)} Source checked ${esc(managers.meta().checkedAt)}. ${ctx.scope === 'watchlist' ? 'Cards show the complete book; workspace holdings and trades follow your Watchlist.' : 'Manager cards cover the whole Family book.'}</p></details>`;
-    host.querySelector('[data-manager-search]').addEventListener('input', e => { query = e.target.value; paint(); });
-    host.querySelectorAll('[data-open-manager]').forEach(b => b.addEventListener('click', () => openManager(b.dataset.openManager, ctx)));
-    if (focused) { const input = host.querySelector('[data-manager-search]'); input.focus(); input.setSelectionRange(query.length, query.length); }
+    const groupHost = host.querySelector('[data-manager-groups]');
+    // Hide empty search categories and give one clear, recoverable empty result.
+    for (const [kind, title] of groups) {
+      let section = groupHost.querySelector(`[data-manager-kind="${kind}"]`);
+      if (!section) {
+        section = document.createElement('section'); section.dataset.managerKind = kind; section.className = 'mb-6';
+        section.innerHTML = `<h2 class="mb-3 font-display text-lg font-bold text-slate-900">${title}</h2><div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-manager-cards></div>`;
+        groupHost.append(section);
+      }
+      const matching = filtered.filter(m => m.kind === kind);
+      section.hidden = !matching.length;
+      syncListDOM(section.querySelector('[data-manager-cards]'), matching.map(m => {
+        const siblings = investmentGroups.get(m.name) || [];
+        const investment = m.kind === 'fund' ? `${siblings.length > 1 ? `Investment ${siblings.indexOf(m.id) + 1} of ${siblings.length} · ` : ''}First invested ${date(m.capital.firstInvest)}` : '';
+        return `<button type="button" data-row-key="${esc(m.id)}" data-open-manager="${esc(m.id)}" class="min-w-0 rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-100 transition-colors hover:bg-slate-50"><p class="text-xs text-slate-500">${label(m)}</p><h3 class="mt-1 break-words font-display font-bold text-slate-900">${esc(m.name)}</h3><p class="mt-3 text-xs text-slate-500">${m.kind === 'fund' ? 'Residual value' : 'Current value'}</p><p class="text-lg font-semibold tabular-nums text-slate-800">${money(m.values.marketValue)}</p><p class="mt-1 text-xs text-slate-500">${m.kind === 'fund' ? `Drawn ${money(m.capital.drawn)} · distributed ${money(m.capital.distributed)}` : `${m.values.positionCount} ${m.values.positionCount === 1 ? 'security' : 'securities'} · cost ${money(m.values.costBasis)}`}</p>${investment ? `<p class="mt-2 text-xs text-slate-500">${esc(investment)}</p>` : ''}<p class="mt-2 text-xs text-slate-500">${esc(sourcePeriod(m))}</p></button>`;
+      }).join(''));
+    }
+    groupHost.querySelector('[data-manager-empty]')?.remove();
+    if (!filtered.length) groupHost.insertAdjacentHTML('beforeend', '<p class="mb-6 text-sm text-slate-500" data-manager-empty>No matching investments. Try another name or clear the search.</p>');
+    host.querySelector('[data-manager-coverage]').textContent = `${managers.meta().coverage.note} Source checked ${managers.meta().checkedAt}. Cards include listed custodian holdings, private fund entries and held fund units. ${ctx.scope === 'watchlist' ? 'Workspace holdings and trades follow your Watchlist; fund capital amounts cover the complete investment.' : 'Held fund units also appear in custodian holdings.'}`;
   }
   return { html: '<div data-my-managers></div>', wire(root, disposers) {
     host = root.querySelector('[data-my-managers]');
     const off = managers.onChange(paint), stop = managers.watchFreshness();
-    disposers.push(() => { stopped = true; off(); stop(); }); paint();
+    disposers.push(() => { remember(); stopped = true; off(); stop(); }); paint();
   } };
 }
 
@@ -59,7 +97,9 @@ export function openManager(id, ctx = { scope: 'portfolio' }) {
   let panelStop = null, off = null, observer = null, period = 'quarter';
   const views = {};
   const dispose = () => { panelStop?.(); panelStop = null; off?.(); off = null; observer?.disconnect(); };
-  const note = () => `<p class="mb-4 text-xs leading-relaxed text-slate-500">${esc(sourcePeriod(manager))}. ${ctx.scope === 'watchlist' ? 'Watchlist securities only; weights use the complete custodian book.' : 'Whole Family book, combined across its accounts.'}</p>`;
+  const scopeNote = manager.kind === 'fund' ? 'This fund investment; cumulative capital amounts.' : manager.kind === 'listed-fund'
+    ? 'These fund units, combined across custodians; also included in custodian holdings.' : 'This custodian’s holdings, combined across its Family accounts.';
+  const note = () => `<p class="mb-4 text-xs leading-relaxed text-slate-500">${esc(sourcePeriod(manager))}. ${esc(scopeNote)} ${ctx.scope === 'watchlist' && manager.kind !== 'fund' ? `Watchlist securities only.${manager.kind === 'custodian' ? ' Weights use the complete custodian book.' : ''}` : ''}</p>`;
   const tableTab = (id, title, rows, columns, sub) => ({ id, label: title,
     render() { panelStop?.(); panelStop = null; const table = scoreTable({ rows, key: r => r.id || r.isin, name: r => r.security,
       sub: sub || (r => r.isin), watchKey: r => r.ticker || null, watchName: r => r.security,
@@ -71,7 +111,7 @@ export function openManager(id, ctx = { scope: 'portfolio' }) {
     wire(root) { panelStop = this.table.wire(root.querySelector('[data-manager-table]')); } });
   const tabs = manager.kind !== 'fund' ? [tableTab('holdings', manager.kind === 'listed-fund' ? 'Units' : 'Holdings', positions, [
     { label: 'Quantity', get: r => num(r.quantity) }, { label: 'Value (INR)', get: r => money(r.marketValue) },
-    { label: 'Cost (INR)', get: r => money(r.costBasis) }, { label: 'Weight', get: r => r.weightPct === null ? '—' : `${r.weightPct.toFixed(2)}%` },
+    { label: 'Cost (INR)', get: r => money(r.costBasis) }, ...(manager.kind === 'listed-fund' ? [] : [{ label: 'Weight', get: r => r.weightPct === null ? '—' : `${r.weightPct.toFixed(2)}%` }]),
     { label: 'Asset class', get: r => r.assetClass },
   ])] : [];
   if (manager.kind !== 'fund') {
