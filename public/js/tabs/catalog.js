@@ -7,6 +7,8 @@ export const TAB_GROUPS = Object.freeze({
   alerts: { id: 'alerts', title: 'Alerts' },
   announcements: { id: 'announcements', title: 'Announcements' },
   earnings: { id: 'earnings', title: 'Earnings' },
+  // Keep the parent distinct from the saved `news` reader route.
+  'news-section': { id: 'news-section', title: 'News' },
 });
 
 export const TAB_META = Object.freeze({
@@ -59,6 +61,7 @@ export const TAB_META = Object.freeze({
   'public-chatter': {
     id: 'public-chatter',
     title: 'Public Chatter',
+    navigationGroup: 'news-section',
     subtitle: 'What retail is actually discussing, across ValuePickr, TradingQnA and Google News.',
     // No shell sub-view picker: Coverage, Not in coverage and Telegram are simple tabs inside this
     // page.
@@ -97,6 +100,8 @@ export const TAB_META = Object.freeze({
   'news': {
     id: 'news',
     title: 'News',
+    navigationTitle: 'Market News',
+    navigationGroup: 'news-section',
     subtitle:
       'Company news, updated automatically. Opens on Today (IST); choose another period up to 30 days or This month. ' +
       'Undated stories have their own filter; older news stays saved in All Alerts.',

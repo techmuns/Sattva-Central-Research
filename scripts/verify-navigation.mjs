@@ -58,10 +58,10 @@ try {
   await page.evaluate((selector) => { window.navigationList = document.querySelector(selector); }, strip);
   await page.locator(active).focus();
   await page.keyboard.press('ArrowRight');
-  assert.equal(await page.locator(active).getAttribute('data-tab-id'), 'news', 'Arrows must not load a new page');
+  assert.equal(await page.locator(active).getAttribute('data-tab-id'), 'news-section', 'Arrows must not load a new page');
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => location.hash.includes('/public-chatter'));
-  await page.locator(`${strip} [data-tab-id="public-chatter"][aria-selected="true"]`).waitFor();
+  await page.waitForFunction(() => location.hash.includes('/super-investors'));
+  await page.locator(`${strip} [data-tab-id="super-investors"][aria-selected="true"]`).waitFor();
   await visibleInStrip(active);
   assert(await page.evaluate((selector) => window.navigationList === document.querySelector(selector), strip));
   assert(await page.locator(active).evaluate((button) => document.activeElement === button));
@@ -100,8 +100,35 @@ try {
 
   // Keep the off-screen active tab in view after browser history and viewport changes.
   await page.goBack();
-  await page.waitForFunction(() => location.hash.includes('/public-chatter'));
-  await page.locator(`${strip} [data-tab-id="public-chatter"][aria-selected="true"]`).waitFor();
+  await page.waitForFunction(() => location.hash.includes('/super-investors'));
+  await page.locator(`${strip} [data-tab-id="super-investors"][aria-selected="true"]`).waitFor();
+
+  await page.locator('#tabbar-mount [data-tab-id="news-section"]').click();
+  const newsChildren = '#subview-mount [data-tab-list]';
+  await page.locator(`${newsChildren} [data-tab-id="news"][aria-selected="true"]`).waitFor();
+  assert.deepEqual(await page.locator(`${newsChildren} [data-tab-id]`).evaluateAll(tabs =>
+    tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+    [['news', 'Market News'], ['public-chatter', 'Public Chatter']]);
+  assert.equal(await page.locator('#tabbar-mount [data-tab-id="public-chatter"]').count(), 0);
+  await page.evaluate(selector => { window.newsList = document.querySelector(selector); }, newsChildren);
+  await page.locator(`${newsChildren} [data-tab-id="news"]`).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator(`${newsChildren} [aria-selected="true"]`).getAttribute('data-tab-id'), 'news');
+  await page.keyboard.press('Enter');
+  await page.locator(`${newsChildren} [data-tab-id="public-chatter"][aria-selected="true"]`).waitFor();
+  assert(await page.evaluate(selector => window.newsList === document.querySelector(selector), newsChildren));
+  assert(await page.locator(`${newsChildren} [data-tab-id="public-chatter"]`).evaluate(button => document.activeElement === button));
+  const chatterUrl = page.url();
+  await page.locator('#tabbar-mount [data-tab-id="news-section"]').click();
+  assert.equal(page.url(), chatterUrl, 'the active News parent retains Public Chatter');
+  await page.locator(`${newsChildren} [data-tab-id="public-chatter"]`).focus();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('Enter');
+  await page.locator(`${newsChildren} [data-tab-id="news"][aria-selected="true"]`).waitFor();
+  assert.match(page.url(), /news\?scope=watchlist/);
+  await page.goBack();
+  await page.locator(`${newsChildren} [data-tab-id="public-chatter"][aria-selected="true"]`).waitFor();
+  pass('News defaults to Market News; keyboard subtabs, empty Watchlist and saved Chatter history retain focus and scope');
 
   await page.evaluate(() => { location.hash = '#/research/corporate-actions?scope=watchlist'; });
   await page.locator(`${strip} [data-tab-id="announcements"][aria-selected="true"]`).waitFor();

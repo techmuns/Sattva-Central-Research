@@ -74,11 +74,11 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 10, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 9, 'all retained navigation remains available before its code loads');
     assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
       ['alerts', 'Alerts'], ['announcements', 'Announcements'], ['earnings', 'Earnings'],
       ['breakouts', 'Breakouts / Technical'], ['insider-trades', 'Bulk/Block Deal'], ['mutual-funds', 'Mutual Funds'],
-      ['news', 'News'], ['public-chatter', 'Public Chatter'], ['super-investors', 'Super Investors'],
+      ['news-section', 'News'], ['super-investors', 'Super Investors'],
     ], 'navigation matches the requested parent order and labels');
     assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');
     assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'NSE Filings is absent from navigation');
@@ -164,8 +164,32 @@ try {
     await page.goBack();
     await page.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="earnings"]').getAttribute('aria-selected'), 'true', 'history restores Concall inside Earnings');
-    await page.locator('#tabbar-mount [data-tab-id="news"]').click();
+    await page.locator('#tabbar-mount [data-tab-id="news-section"]').click();
     await page.locator('[data-active-tab="news"]').waitFor();
+    assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+      tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+      [['news', 'Market News'], ['public-chatter', 'Public Chatter']]);
+    await page.evaluate(() => { window.newsSubtabs = document.querySelector('#subview-mount [data-tab-list]'); });
+    await page.locator('#subview-mount [data-tab-id="news"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#subview-mount [aria-selected="true"]').getAttribute('data-tab-id'), 'news');
+    await page.keyboard.press('Enter');
+    await page.locator('[data-active-tab="public-chatter"]').waitFor();
+    assert(await page.evaluate(() => window.newsSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
+    assert(await page.locator('#subview-mount [data-tab-id="public-chatter"]').evaluate(tab => document.activeElement === tab));
+    await page.evaluate(() => { location.hash = '#/research/public-chatter?scope=watchlist&topic=SYNTHETIC'; });
+    await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Watchlist');
+    await page.locator('#tabbar-mount [data-tab-id="news-section"]').click();
+    assert.match(page.url(), /public-chatter\?scope=watchlist&topic=SYNTHETIC/, 'active News retains its reader, scope and topic');
+    await page.locator('#subview-mount [data-tab-id="news"]').click();
+    await page.locator('#subview-mount [data-tab-id="news"][aria-selected="true"]').waitFor();
+    await page.goBack();
+    await page.locator('[data-active-tab="public-chatter"]').waitFor();
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="news-section"]').getAttribute('aria-selected'), 'true');
+    await page.evaluate(() => { location.hash = '#/research/public-chatter?scope=universe'; });
+    await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Universe');
+    await page.locator('#tabbar-mount [data-tab-id="insider-trades"]').click();
+    await page.locator('[data-active-tab="insider-trades"]').waitFor();
     assert(await page.locator('#subview-mount').isHidden(), 'group subtabs leave with their parent');
 
     // Hold one real renderer request while the reader moves to another interface.
