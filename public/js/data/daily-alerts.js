@@ -810,7 +810,7 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
           // The publisher route can correct dates at the same URL. Its complete original pool
           // supplies companions before the company working set is selected.
           try { await loadFeed('market-news', refresh); } catch { /* Company capture remains useful. */ }
-          await refreshFilings(newsReader, refresh, { coverageOwnsStatus: true });
+          await refreshFilings(newsReader, refresh);
           loadedFeeds.add('news'); invalidateNormalizedFeed('news');
         } else if (load) await loadFeed(feed.id, refresh);
         // Shared source loading can finish after this view has left. Its replacement
@@ -820,7 +820,9 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
         await warm();
         if (!readingCurrent()) return;
         out = await readFeed(feed, args, yieldForInput);
-        if (!load && loadErrors.has(feed.id)) out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
+        if (!load && loadErrors.has(feed.id)) {
+          if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
+        }
         else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
       } catch (err) {
         if (!readingCurrent()) return;
@@ -831,7 +833,10 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
         try { await warm(); } catch { /* The read below still answers. */ }
         if (!readingCurrent()) return;
         try { out = await readFeed(feed, args, yieldForInput); } catch { out = toFeedRow(feed, { events: [] }, day); }
-        out = { ...out, status: 'failed', reachesToday: false, note: `Read failed: ${String(err?.message || err)}. Retained records remain visible.` };
+        // A partial company-news capture already describes its required sources,
+        // archive gaps and failure times. Preserve that failed reading across the
+        // live and pooled paths instead of replacing it with a generic exception.
+        if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Read failed: ${String(err?.message || err)}. Retained records remain visible.` };
       }
       settledFeeds.set(feed.id, out);
       schedulePartial();
@@ -873,7 +878,7 @@ const LOADERS = {
   investors: (refresh) => refresh ? investors.refreshSnapshot() : investors.load(),
   announcements: (refresh) => refreshFilings(announcements, refresh),
   insider: (refresh) => refreshFilings(insider, refresh),
-  news: (refresh) => refreshFilings(news, refresh, { coverageOwnsStatus: true }),
+  news: (refresh) => refreshFilings(news, refresh),
   'market-news': async (refresh) => {
     await marketNews.load();
     if (refresh) await marketNews.refresh();
@@ -892,7 +897,7 @@ const LOADERS = {
 };
 
 const yieldToInput = () => typeof window === 'undefined' ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, 0));
-async function refreshFilings(feed, refresh, { coverageOwnsStatus = false } = {}) {
+async function refreshFilings(feed, refresh) {
   await feed.seed();
   if (refresh && !(await feed.refreshSnapshot()).available) throw Error('Latest filings capture unavailable');
   // `meta()` below rebuilds the reader's rows synchronously, and after a load every row is new:
@@ -901,11 +906,7 @@ async function refreshFilings(feed, refresh, { coverageOwnsStatus = false } = {}
   // is unchanged.
   await feed.warm?.(yieldToInput);
   const m = feed.meta();
-  // Company news describes each required source, archive gap and failed check
-  // in companyNewsState. A completed partial read is already failed there.
-  // Replacing that evidence with a generic load exception made the live and
-  // pooled readers disagree despite reading the same retained capture.
-  if (!coverageOwnsStatus && (m.reason || m.failed || m.truncated)) throw Error(m.message || 'Filings coverage is incomplete');
+  if (m.reason || m.failed || m.truncated) throw Error(m.message || 'Filings coverage is incomplete');
 }
 
 // Read-only source notifications; the tab reassembles loaded records without triggering fetches.
