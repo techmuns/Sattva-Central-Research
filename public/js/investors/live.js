@@ -81,9 +81,6 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
   const sectionTabs = tabBar({ tabs: sections, activeId: activeSection, onSelect: onSection || (() => {}) });
 
   const summary = activeSection === 'quarterly-changes' ? renderChanges(ctx, { view: changesView, onView: onChangesView, openInvestor, includeHolding: scopeFilter(ctx) }) : null;
-  // `limit: 0` asks for the counts and the quarter pair only — the modal's figures — and none of
-  // the ranked rows, which this view draws from its own Changes reader.
-  const derivation = feed.quarterSummary({ include: scopeFilter(ctx), limit: 0 });
   const table = activeSection === 'data-table' ? holdingsTable(ctx, rows, quarters, tableView) : null;
   if (table) onView?.(table.view);
 
@@ -105,13 +102,6 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
     ${sectionHead({
       title: 'Superstar Investors',
       description: 'Follow tracked investors through dated holdings disclosures and reported bulk/block deals.',
-      // The chip stays a passive label — it states the age on its face and opens nothing. The door
-      // is its own control beside it, because the explanation behind it is the one that says which
-      // books could not be re-checked and which investors have no book at all. That sentence had
-      // no caller on this deployment at all once this view replaced the template's roll-up: the
-      // button was built into a block nothing renders here any more, which is the worst state for
-      // an explanation to be in — maintained, correct and unreachable.
-      meta: `${freshnessChip(m)}${derivationButton}`,
     })}
     ${!m.ok && activeSection === 'quarterly-changes' ? unavailableHtml(m) : ''}
     <div class="mb-5 rounded-2xl bg-white px-3 shadow-sm ring-1 ring-slate-100" data-live-section-tabs>
@@ -121,11 +111,6 @@ export function renderLive(ctx, { disposers = [], section = 'investors', tableVi
       ${panel}
     </div>`;
 
-  // EVERY "How this is derived" button on this view opens the one provenance modal — the head's
-  // and the quarterly roll-up's alike — and the coverage audit lives inside it. See integrity.js
-  // for why it is behind this door rather than at the top of the page.
-  ctx.root.querySelectorAll('[data-summary-help]').forEach((btn) =>
-    btn.addEventListener('click', () => openDerivation(derivation, m)));
   // The sources the audit reads are revalidated on mount whether or not the audit is opened:
   // "refresh on opening" is a standing requirement, not a side effect of a panel.
   ensureHoldingsFresh().catch(() => {});
@@ -570,27 +555,6 @@ function unavailableHtml(m) {
       </div>
     </div>`;
 }
-
-// Source freshness and book completeness are separate. Display the oldest source check;
-// incomplete or failed reads remain partial even when some recently checked books exist.
-function freshnessLabel(m) {
-  const read = typeof m.checkedAt === 'number' ? m.checkedAt : Date.parse(m.checkedAt || '');
-  const partial = !m.ok || m.failedBooks > 0 || m.uncheckedBooks > 0 || m.stale || m.pending > 0;
-  const age = Number.isFinite(read) ? `read ${formatRelativeTime(read)}` : m.confirming || m.pending ? 'checking source' : 'source check unavailable';
-  return `Ticker Finology · ${partial ? 'partial · ' : ''}${age}`;
-}
-
-const derivationButton = `
-  <button type="button" data-summary-help
-    class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-    <span>How this is derived</span><span aria-hidden="true">?</span>
-  </button>`;
-
-const freshnessChip = (m) => `
-  <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500" data-si-freshness>
-    <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-slate-400" aria-hidden="true"></span>
-    ${escapeHtml(freshnessLabel(m))}
-  </span>`;
 
 // THERE IS NO FRESHNESS HERO ON THIS VIEW, deliberately.
 //

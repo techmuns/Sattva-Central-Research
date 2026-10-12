@@ -85,7 +85,7 @@ jobs:
       - name: Verify private shared price alerts, retained history and Worker restart
         run: node scripts/verify-private-price-levels.mjs && npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-private-price-runtime.mjs'
       - name: Verify private portfolio bridge
-        run: node scripts/verify-portfolio-bridge.mjs
+        run: node scripts/verify-portfolio-bridge.mjs && node scripts/verify-holding-sizes.mjs
       - name: Verify comparable portfolio businesses and dated event returns
         run: node scripts/verify-research-business.mjs && node scripts/verify-research-reasoning.mjs && node scripts/verify-bars.mjs
       - name: Verify Momentum Scanner indicators by independent recompute
@@ -255,7 +255,7 @@ jobs:
       - name: Verify portfolio reload, offline, resume and cache behaviour
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-family-sync-ui.mjs
+        run: node scripts/verify-family-sync-ui.mjs && node scripts/verify-holding-sizes-ui.mjs
       - name: Verify Screener Insights collector and last-good cache offline
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright

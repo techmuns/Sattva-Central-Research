@@ -913,7 +913,10 @@ async function refreshFilings(feed, refresh) {
   // is unchanged.
   await feed.warm?.(yieldToInput);
   const m = feed.meta();
-  if (m.reason || m.failed || m.truncated) throw Error(m.message || 'Filings coverage is incomplete');
+  // News builds its failure state from these coverage flags and the individual delivery sources.
+  // Throwing for known partial coverage would replace that detail with a generic read error,
+  // while the prepared reader retains it. Actual read failures still take the failure path.
+  if (m.reason || (m.kind !== 'news' && (m.failed || m.truncated))) throw Error(m.message || 'Filings coverage is incomplete');
 }
 
 // Read-only source notifications; the tab reassembles loaded records without triggering fetches.

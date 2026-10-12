@@ -218,7 +218,8 @@ and This month are IST calendar filters; each
 rolling period includes today, and This month can include 31 days. Date not supplied is a separate
 choice: observation timestamps never make undated articles appear current. Portfolio, Watchlist
 and Universe use these same boundaries. All Alerts also retains All history through today,
-Older than 30 days and its unchanged Upcoming horizon. Explicit company "See all" links select
+Older than 30 days. The Upcoming switch was removed on 12 October 2026; schedule collection and
+retained source records are unchanged. Explicit company "See all" links select
 All history rather than silently applying the Today default. Capture cadence, permanent storage,
 AI Alerts and research history are unchanged; these are reading windows, not deletion policies.
 
@@ -517,3 +518,17 @@ an intraday crossing after a level was set, and outages cannot reconstruct those
 A level fires once until its value changes. Family's current-price status can change back after a
 reversal while Central keeps the dated hit. Sharing currently requires a verified NSE ticker/ISIN;
 unsupported holdings are refused explicitly. No test writes sample levels to production.
+
+### Shared holding sizes by default (12 October 2026)
+
+Dashboard percentages use the existing server-only Family holdings connection, independently
+of a browser's Family session. Every held listed ISIN, including funds and repeated lots,
+contributes to the workbook-value denominator. Missing marks withhold all weights; a failed
+check removes the in-memory snapshot without dropping public alert evidence. Percentages carry
+the workbook period, mark date, source revision and actual check time, never a live-price claim.
+No sizes enter committed snapshots, service-worker caches, IndexedDB or localStorage. Detailed
+ledger analysis and private price alerts retain their existing Family authentication boundary.
+
+A pooled news reading retains an actual failed-read receipt alongside saved records when
+coverage is re-aged. Freshness recalculation cannot replace that failure with a different
+coverage note; a newer verified capture is required to replace the receipt.

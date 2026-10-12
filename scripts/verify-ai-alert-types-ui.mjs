@@ -35,6 +35,7 @@ export async function collect({scope,onPartial}) {
 }`;
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
+  if(path==='/js/data/holding-sizes.js'){res.setHeader('content-type','text/javascript');res.end("import * as b from '../research/portfolio-bridge.js';export const cachedHoldingSizes=b.cachedPositionSizes;export const readHoldingSizes=(...args)=>b.portfolioConnectionState()==='locked'?Promise.resolve(null):b.readPositionSizes(...args);");return;}
   res.setHeader('cache-control', 'no-cache');
   try {
     if (path === '/' || path === '/index.html') { res.setHeader('content-type', 'text/html'); return res.end(html); }

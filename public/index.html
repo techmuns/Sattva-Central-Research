@@ -300,6 +300,29 @@
         .tab-btn, .tab-btn::after, .tab-scroll-btn { transition: none; }
       }
 
+      /* Reader groups use compact pills beneath the primary navigation. */
+      #subview-mount[data-navigation="group"] .tab-bar {
+        padding: 0 6px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+      #subview-mount[data-navigation="group"] .tab-list { gap: 8px; }
+      #subview-mount[data-navigation="group"] .tab-btn {
+        min-height: 36px;
+        padding: 5px 16px;
+        border: 1px solid rgb(var(--edge-slate-200, 226 232 240) / 1);
+        border-radius: 999px;
+        background: rgb(var(--surface-white, 255 255 255) / 1);
+      }
+      #subview-mount[data-navigation="group"] .tab-btn::after { display: none; }
+      #subview-mount[data-navigation="group"] .tab-btn.is-active {
+        color: var(--accent-600);
+        border-color: var(--accent-600);
+        background: rgb(var(--surface-indigo-50, 238 242 255) / 1);
+      }
+
       /* scoreTable row numbers come from a CSS counter, not from the markup — that keeps each
          row's HTML position-independent so sorting can reorder cached strings instead of
          regenerating 500+ rows. */

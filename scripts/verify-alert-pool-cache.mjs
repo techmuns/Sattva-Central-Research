@@ -49,6 +49,27 @@ const downloads = () => requests.filter(path => /^api\/alert-pool\/\d+\//.test(p
 const window = length => ({ mode: 'window', queryWindow: { from: shiftDay(day, 1 - length), to: day, includeUndated: false } });
 const ids = result => [...result.feeds].map(([id, feed]) => [id, feed.events.map(event => event.id)]);
 
+for (const prefix of ['Read failed:', 'Last read failed:']) {
+  reset();
+  const receipt = `${prefix} Source unavailable. Retained records remain visible.`;
+  served.feeds.news.row = { ...served.feeds.news.row, status: 'failed', reachesToday: false, note: receipt };
+  const newsState = () => ({ status: 'ok', reachesToday: true, note: 'Coverage re-aged' });
+  const retained = await read({ newsState });
+  assert.equal(retained.feeds.get('news').status, 'failed');
+  assert.equal(retained.feeds.get('news').reachesToday, false);
+  assert.equal(retained.feeds.get('news').note, receipt, 'freshness recalculation retains the actual failure receipt');
+  assert(retained.feeds.get('news').events.length > 0, 'failed readings retain their evidence');
+  served.artifact++;
+  captures.companyNews.revision = served.captures.companyNews.revision = 'verified-new-capture';
+  served.feeds.news.row = { ...served.feeds.news.row, status: 'ok', reachesToday: true, note: null };
+  const recovered = await read({ refresh: true, newsState });
+  assert.equal(recovered.feeds.get('news').status, 'ok', 'a newer verified capture replaces the failure receipt');
+  assert.equal(recovered.feeds.get('news').note, 'Coverage re-aged');
+  assert.deepEqual(ids(recovered), ids(retained), 'recovery preserves every retained event');
+  captures.companyNews.revision = 'fixture-v1';
+}
+console.log('PASS failed-read receipts survive re-aging and recover only with a newer verified capture');
+
 reset();
 const failureNote = 'Read failed: Filings coverage is incomplete. Retained records remain visible.';
 served.feeds.news.row = { ...served.feeds.news.row, status: 'failed', reachesToday: false, note: failureNote };

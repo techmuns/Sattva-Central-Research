@@ -1,3 +1,4 @@
+import { cachedHoldingSizes as cachedPositionSizes, readHoldingSizes as readPositionSizes } from '../data/holding-sizes.js';
 import {escapeHtml as esc} from '../core/dom.js';
 import {scoreTable,openModal,closeModal} from '../ui/screener.js';
 import * as feed from '../data/mutual-funds.js';
@@ -5,7 +6,7 @@ import {coverageRows,coverageTime} from '../data/mutual-funds-coverage.js';
 import {comparisonStatus} from '../data/mutual-funds-status.js';
 import {supplementStatus} from '../data/mutual-funds-supplement.js';
 import * as coverage from '../data/coverage.js';
-import {cachedPositionSizes,readPositionSizes,onPortfolioReady,onPortfolioInvalidation,portfolioConnectionState,unlockPortfolio} from '../research/portfolio-bridge.js';
+import {onPortfolioReady,onPortfolioInvalidation} from '../research/portfolio-bridge.js';
 export const meta={id:'mutual-funds',title:'Mutual Funds',subtitle:'Monthly mutual-fund ownership across your portfolio.',subviews:[]};
 let ctx=null,disposeTable=null,table=null,offReady=null,offInvalid=null,offSession=null,offUpdate=null,timer=null,sequence=0,dialog=0,sort='holdings',busy=false,lastRead=0;
 const num=n=>Number.isFinite(n)?n.toLocaleString('en-IN',{maximumFractionDigits:0}):'—';
@@ -77,8 +78,7 @@ function paintStatus() {
   ctx.root.querySelector('[data-mf-coverage]').title=[m.revalidating?'Showing saved disclosures · Checking for updates':'',`${feed.health()} · Checked ${checked(m)}`,supplementStatus(m)].filter(Boolean).join(' · ');
   const sizeNode=ctx.root.querySelector('[data-mf-sizes]'),sizes=cachedPositionSizes();
   sizeNode.innerHTML=sort==='holdings'&&ctx.scope==='portfolio'&&!sizes?.sizes?.complete
-    ? portfolioConnectionState()==='locked'?'<button data-mf-unlock class="text-indigo-600">Unlock portfolio for Largest holdings</button> · Newest shown while sizes are unavailable.' : 'Portfolio sizes unavailable · Newest shown.' : '';
-  sizeNode.querySelector('[data-mf-unlock]')?.addEventListener('click',()=>unlockPortfolio());
+    ? 'Portfolio sizes unavailable · Newest shown.' : '';
 }
 let activeCompany=null,detailData=null,selectedMonth=null,detailSort={key:'change',dir:'desc'};
 async function openCompany(row) {

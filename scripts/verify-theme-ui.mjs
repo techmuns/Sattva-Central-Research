@@ -145,7 +145,11 @@ try {
     if (tab === 'nse-filings') {
       assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'saved filing routes render without a navigation button');
     } else {
-      await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, tab);
+      const navigationTab = ['daily-alerts', 'ai-alerts'].includes(tab) ? 'alerts' : tab;
+      await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, navigationTab);
+      if (navigationTab === 'alerts') {
+        assert.equal(await page.locator(`#subview-mount [data-tab-id="${tab}"]`).getAttribute('aria-selected'), 'true');
+      }
     }
     assert.equal(await theme(page), 'dark', tab);
     assert(contrast((await surface(page, '[data-app-header] h1')).color, 'rgb(11,18,32)') >= 7);

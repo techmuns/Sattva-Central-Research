@@ -78,7 +78,7 @@ try {
     'initial source status belongs in Sources, not the reading header');
   assert.equal(await state.getAttribute('data-alerts-coverage-state'), 'loading');
   assert(!/\bLive\b/.test(await state.innerText()), 'the initial null report is never Live');
-  assert.match(await page.locator('[data-horizon-toggle="through"]').innerText(), /…/, 'unchecked is not a confirmed zero');
+  assert.match(await page.locator('[data-alerts-history-summary]').innerText(), /…/, 'unchecked is not a confirmed zero');
   assert.match(await page.locator('#root').innerText(), /Reading sources/);
   await page.evaluate(() => window.fixtureOptions.onPartial(window.fixtureReport([window.fixtureStory, window.fixtureNoise], 'pending')));
   const period = page.getByRole('combobox', { name: 'Date range' });

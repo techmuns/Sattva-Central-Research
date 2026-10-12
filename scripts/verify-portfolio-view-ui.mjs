@@ -9,6 +9,7 @@ const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = fileURLToPath(new URL('../public', import.meta.url));
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
+  if(path==='/js/data/holding-sizes.js'){res.setHeader('content-type','text/javascript');res.end("import * as b from '../research/portfolio-bridge.js';export const cachedHoldingSizes=b.cachedPositionSizes;export const readHoldingSizes=(...args)=>b.portfolioConnectionState()==='locked'?Promise.resolve(null):b.readPositionSizes(...args);");return;}
   const file = resolve(root, `.${path === '/' ? '/index.html' : path}`);
   if (!file.startsWith(root + sep)) { res.writeHead(404); res.end(); return; }
   try {
@@ -317,11 +318,13 @@ try {
         headerVisible: getComputedStyle(document.querySelector('[data-app-header]')).display !== 'none' };
     });
     const normal = await measure();
+    assert(await frame.locator('#subview-mount [data-tab-id="ai-alerts"]').isVisible(), 'AI Alerts stays available beside the All Alerts reader');
+    assert(await frame.locator('#subview-mount [data-tab-id="daily-alerts"]').isVisible(), 'All Alerts retains its selected subtab');
     assert.equal(await frame.locator('[data-alert-arrivals]').count(), 0, 'rows stream directly without a separate live banner');
     assert(normal.pageWidth <= normal.width + 2, `no horizontal page clipping at ${size.width}px`);
     assert(normal.toolbar <= (size.width >= 1024 ? 66 : 165), `search, watchlist and all filters retain a compact row budget: ${JSON.stringify(normal)}`);
     assert((await frame.locator('[data-table-search]').boundingBox()).width >= 160, 'company search remains a usable text field, not a collapsed icon');
-    const clipped = await frame.evaluate(() => [...document.querySelectorAll('[data-alerts-workspace] button, [data-sources-summary], [data-table-search], [data-table-filter]')]
+    const clipped = await frame.evaluate(() => [...document.querySelectorAll('[data-app-header] button, [data-header-bookmarks], [data-alerts-workspace] button, [data-sources-summary], [data-table-search], [data-table-filter]')]
       .filter(node => !node.closest('tbody') && node.getBoundingClientRect().width > 0)
       .filter(node => node.getBoundingClientRect().left < 0 || node.getBoundingClientRect().right > innerWidth + 1)
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
@@ -348,11 +351,16 @@ try {
     });
     assert.deepEqual(pickerState, { afterOpenRepaint: true, afterCloseRepaint: false }, 'repaints preserve native source-menu state before the queued toggle event');
     await settleLayout();
-    const beforePicker = await measure();
-    await frame.locator('[data-sources-summary]').click();
+    // Compare the menu's own effect in one browser turn; a concurrent source-status update
+    // can independently wrap the header between separate automation calls.
+    const pickerLayout = await frame.evaluate(() => {
+      const height = () => document.querySelector('[data-table-scroll]').getBoundingClientRect().height;
+      const before = height();
+      document.querySelector('[data-sources-summary]').click();
+      return { before, expanded: height() };
+    });
     await frame.locator('[data-alerts-coverage]').waitFor({ state: 'visible' });
-    const expanded = await measure();
-    assert.equal(expanded.height, beforePicker.height, 'filters overlay, rather than consume, the reading space');
+    assert.equal(pickerLayout.expanded, pickerLayout.before, 'filters overlay, rather than consume, the reading space');
     // Repeated source arrivals must not stack handlers on the preserved panel. A single
     // source selection and its description must agree after every repaint.
     for (let repaint = 0; repaint < 3; repaint++) {
@@ -374,6 +382,7 @@ try {
     await frame.locator('[data-alerts-focus]').click();
     const focused = await measure();
     assert.equal(focused.headerVisible, false);
+    assert(await frame.locator('#subview-mount').isHidden(), 'explicit table focus hides subtab navigation too');
     assert(focused.controls <= (size.width >= 1024 ? 52 : 100), `view controls keep their compact row budget: ${JSON.stringify(focused)}`);
     assert(focused.visibleHeight > normal.visibleHeight + 60, `focus gains meaningful visible reading room: ${JSON.stringify({ normal, focused })}`);
     assert(focused.visibleHeight >= focused.viewport * (size.width >= 1024 ? 0.6 : 0.45), `focus leaves a useful reading area even with wrapped mobile controls: ${JSON.stringify(focused)}`);

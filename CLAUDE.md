@@ -12,7 +12,7 @@ pending reads with no matching rows show placeholders until they complete or fai
 Scope, tab and full-view filter changes cover the previous view until its replacement is ready,
 so a follow-up interaction cannot target controls that are about to be replaced.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
-All history / Older than 30 days and its separate Upcoming horizon; company "See all" links open
+All history / Older than 30 days; the Upcoming switch was removed on 12 October 2026. Company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
 All Alerts streams newly received rows directly inside Till Today, with no separate live banner.
 The first screen enters one row every 110ms (at most 12 staged rows); the complete filtered model
@@ -288,12 +288,14 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 
 ## Module interface contract
 
-Navigation update (9 October 2026): the tab strip is ordered AI Alerts, All Alerts,
+Navigation update (12 October 2026): the tab strip is ordered Alerts,
 Corp Announcements, Corporate Actions, IPOs, Earnings, Breakouts / Technical,
 Bulk/Block Deal, Mutual Funds, Con-call, News, Public Chatter, Super Investors.
 `meta.navigationTitle` optionally shortens the tab label without changing its page title or route.
 Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
-AI Alerts remains the first/default tab. Hidden navigation metadata does not remove route support.
+Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
+`TAB_GROUPS` in the catalog. Both retain their existing routes and independent reader lifecycles.
+AI Alerts remains the first/default reader. Hidden navigation metadata does not remove route support.
 
 Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
