@@ -550,7 +550,7 @@ const tab = makeFilingsTab({
   },
 });
 
-export const meta = tab.meta;
+export const meta = TAB_META['corp-announcements'];
 /** The paged query behind the table — for diagnostics and the browser checks. */
 export const announcementQuery = query;
 let liveRef = null;

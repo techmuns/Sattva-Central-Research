@@ -412,6 +412,7 @@ export function scoreTable(config) {
     onRowClick = null,
     // All record tables can save a snapshot. A specialized adapter may replace the default.
     bookmark = null,
+    showBookmarks = true,
     bookmarkSection = state.tab || '',
     bookmarkDate = null,
     bookmarkSource = null,
@@ -737,7 +738,7 @@ export function scoreTable(config) {
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
                 <div class="min-w-0">
                   <div class="truncate font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-                  <div class="flex items-center gap-1"><span class="truncate text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${bookmarkButton(bookmarkEntry(row))}</div>
+                  <div class="flex items-center gap-1"><span class="truncate text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${showBookmarks ? bookmarkButton(bookmarkEntry(row)) : ''}</div>
                   ${afterSub ? afterSub(row) || '' : ''}
                 </div>
               </div>`)}

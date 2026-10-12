@@ -74,13 +74,12 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 13, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 11, 'all retained navigation remains available before its code loads');
     assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
-      ['alerts', 'Alerts'], ['corp-announcements', 'Corp Announcements'],
-      ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs'], ['earnings-hub', 'Earnings'],
+      ['alerts', 'Alerts'], ['announcements', 'Announcements'], ['earnings-hub', 'Earnings'],
       ['breakouts', 'Breakouts / Technical'], ['insider-trades', 'Bulk/Block Deal'], ['mutual-funds', 'Mutual Funds'],
       ['concall', 'Con-call'], ['news', 'News'], ['public-chatter', 'Public Chatter'], ['super-investors', 'Super Investors'],
-    ], 'navigation matches the requested order and labels, with IPOs appearing once');
+    ], 'navigation matches the requested parent order and labels');
     assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');
     assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'NSE Filings is absent from navigation');
     await page.evaluate(() => { location.hash = '#/research/nse-filings?scope=universe'; });
@@ -119,8 +118,33 @@ try {
     await page.goBack();
     await page.locator('[data-active-tab="ai-alerts"]').waitFor();
     assert.equal(await page.locator('#subview-mount [data-tab-id="ai-alerts"]').getAttribute('aria-selected'), 'true');
-    await page.locator('#tabbar-mount [data-tab-id="corporate-actions"]').click();
+    await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
+    await page.locator('[data-active-tab="corp-announcements"]').waitFor();
+    assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+      tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+      [['corp-announcements', 'Corporate Announcements'], ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs']]);
+    assert.equal(await page.locator('#subview-mount [data-tab-id="corp-announcements"]').getAttribute('aria-selected'), 'true', 'Announcements defaults to Corporate Announcements');
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="announcements"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('#subview-mount [data-tab-id="ai-alerts"]').count(), 0, 'the new parent replaces the previous group');
+    await page.evaluate(() => { window.announcementSubtabs = document.querySelector('#subview-mount [data-tab-list]'); });
+    await page.locator('#subview-mount [data-tab-id="corp-announcements"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#content-host').getAttribute('data-active-tab'), 'corp-announcements', 'subtab arrows only move focus');
+    await page.keyboard.press('Enter');
     await page.locator('[data-active-tab="corporate-actions"]').waitFor();
+    assert(await page.evaluate(() => window.announcementSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
+    assert(await page.locator('#subview-mount [data-tab-id="corporate-actions"]').evaluate(tab => document.activeElement === tab));
+    await page.evaluate(() => { location.hash = '#/research/corporate-actions?scope=watchlist&company=SYNTHETIC'; });
+    await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Watchlist');
+    await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
+    assert.match(page.url(), /corporate-actions\?scope=watchlist&company=SYNTHETIC/, 'active Announcements retains its reader and filters');
+    await page.goBack();
+    await page.waitForFunction(() => location.hash.includes('/corporate-actions?scope=universe'));
+    await page.goBack();
+    await page.locator('[data-active-tab="corp-announcements"]').waitFor();
+    assert.equal(await page.locator('#subview-mount [data-tab-id="corp-announcements"]').getAttribute('aria-selected'), 'true', 'history restores the selected announcement reader');
+    await page.locator('#tabbar-mount [data-tab-id="earnings-hub"]').click();
+    await page.locator('[data-active-tab="earnings-hub"]').waitFor();
     assert(await page.locator('#subview-mount').isHidden(), 'group subtabs leave with their parent');
 
     // Hold one real renderer request while the reader moves to another interface.
@@ -134,8 +158,8 @@ try {
     await page.locator('[data-header-bookmarks]').click();
     await arrived;
     assert(await page.locator('#content-host').evaluate(el => el.inert), 'obsolete controls stay covered while loading');
-    await page.locator('[data-tab-id="corporate-actions"]').click();
-    await page.locator('[data-active-tab="corporate-actions"]').waitFor();
+    await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
+    await page.locator('[data-active-tab="corp-announcements"]').waitFor();
     release();
     // Await module evaluation itself, then allow its queued mount continuation to run.
     await page.evaluate(async () => {
@@ -143,7 +167,7 @@ try {
       await new Promise(requestAnimationFrame);
       await new Promise(requestAnimationFrame);
     });
-    assert.equal(await page.locator('#content-host').getAttribute('data-active-tab'), 'corporate-actions');
+    assert.equal(await page.locator('#content-host').getAttribute('data-active-tab'), 'corp-announcements');
     assert.equal(await page.locator('#content-host').evaluate(el => el.inert), false);
     await page.locator('[data-header-bookmarks]').click();
     await page.locator('[data-active-tab="bookmarks"]').waitFor();
@@ -151,6 +175,8 @@ try {
     await page.locator('[data-active-tab="ask-research"]').waitFor();
     assert.equal(requests.filter(path => path === '/js/tabs/ask-research.js').length, 1, 'repeat visits reuse the loaded interface');
     await page.route('**/js/tabs/ipos.js', route => route.fulfill({ status: 503, body: '' }));
+    await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
+    await page.locator('[data-active-tab="corp-announcements"]').waitFor();
     await page.locator('[data-tab-id="ipos"]').click();
     await page.getByText('This panel hit a snag', { exact: true }).waitFor();
     assert.equal(await page.locator('#content-host').evaluate(el => el.inert), false, 'a failed module cannot leave the cover stuck');

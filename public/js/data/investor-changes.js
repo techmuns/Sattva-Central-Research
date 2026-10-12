@@ -92,6 +92,13 @@ export function matchedDeals(rows, people) {
   }
   return events;
 }
+/** Ledger events retain uncertain carried dates and transfers with their own labels. */
+export function managerTrades(managers) {
+  return managers.flatMap(m => (m.transactions || []).map(t => ({ id: `${m.id}|${t.id}`, date: t.date,
+    person: m.name, personId: m.id, company: t.security, ticker: t.ticker, action: t.side,
+    quantity: t.quantity, amount: t.amount, source: t.dateSheet ? 'Family ledger · date unverified' : t.transfer ? 'Family ledger · transfer' : 'Family ledger',
+    dateKind: 'ledger', raw: t, evidence: [], reportedName: null })));
+}
 const quarterEnd = (label) => {
   const order = quarterOrder(label), year = Math.floor(order / 100), month = order % 100;
   return order && [3, 6, 9, 12].includes(month) ? iso(new Date(Date.UTC(year, month, 0))) : null;

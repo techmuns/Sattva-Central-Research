@@ -465,13 +465,14 @@ roadmap* card that used to close each tab has been removed from the UI:
 ### Super Investors — `super-investors`
 Superstar holdings and institutional ownership.
 
-**Superstar Investors has three in-page tabs.** *All Investors* opens first with only the investor
-cards. *Quarterly Changes* follows with the cross-book roll-up, so a reader can see companies bought
-or sold down by more than one tracked investor, new entrants, the largest increases and reductions,
-and positions no longer disclosed without opening ninety books one at a time. *Data Table* sits
-after Quarterly Changes and owns the complete all-disclosed-positions grid, including search,
-investor/change filters, watchlist control and Excel export. The chosen in-page tab survives scope
-changes and live-data repaints until the reader leaves Super Investors.
+**Superstar Investors has four in-page tabs.** *Changes* opens first with My Managers /
+All Investors audiences, period filters, dated ledger/public-deal activity and separately
+labelled holdings observations. *My Managers* uses the authenticated Sattva Family workbook
+for custodian holdings, private fund capital and held fund units, with searchable workspaces
+and exports. Unsupported statement returns and AMC look-through remain unavailable.
+*All Investors* owns the public investor card directory. *Data Table* owns the complete
+public positions grid, search, investor/change filters, Watchlist and Excel export. The
+chosen tab survives scope/data repaints until the reader leaves Super Investors.
 
 The view stays intentionally quiet around that content: it renders no per-view cache/status pill,
 scope-count tag, progressive-reading strip, or source/action badge in an investor workspace. Scope

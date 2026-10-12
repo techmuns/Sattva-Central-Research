@@ -451,7 +451,8 @@ try {
   assert(await page.evaluate(() => window.firstPageCards.every(node => node.isConnected &&
     document.querySelector(`[data-ai-key="${node.dataset.aiKey}"]`) === node)), 'Show more appends without replacing existing card nodes');
   assert.equal(await card('OLD').count(), 1, 'day-14 evidence remains available before midnight');
-  assert.match(await page.locator('#root').innerText(), /14-day window/);
+  assert.match(await page.locator('[data-section-head]').innerText(), /last 14 days/);
+  assert.match(await page.locator('[data-ai-feed-status] > span').getAttribute('title'), /14-day window/);
   await search.fill('A00');
   // A calendar-only refresh reuses the recent, verified in-memory position
   // snapshot instead of asking Family for the same book again.
@@ -496,7 +497,7 @@ try {
   assert.equal(await card('A00').count(), 1, 'a portfolio outage keeps alert evidence visible');
   assert.equal(await page.locator('[data-ai-holding-size]').count(), 0, 'unverified sizes are removed');
   assert.equal(await page.locator('[data-ai-error]').count(), 0, 'portfolio outages do not show customer-facing error banners');
-  assert.equal(await page.locator('[data-ai-feed-status]').innerText(), 'Latest available');
+  assert.match(await page.locator('[data-ai-feed-status]').innerText(), /^Latest available( · (Grouping|Ungrouped))?$/);
   assert.doesNotMatch(await page.locator('#root').innerText(), /temporarily unavailable|refresh unavailable|could not be checked|showing available alerts|try again|holding sizes unavailable/i);
   assert.equal(await page.evaluate(async () => (await import('/js/data/coverage.js')).meta().syncStatus), 'family-unavailable');
   // Background rechecks may send invalidated and then fail without ever sending
@@ -506,7 +507,7 @@ try {
     await waitFor(page, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'pending');
     await page.evaluate(async () => { try { await (await import('/js/research/portfolio-bridge.js')).readPositionSizes(); } catch {} });
     assert.equal(await page.locator('[data-ai-feed-status]').getAttribute('data-state'), 'complete');
-    assert.equal(await page.locator('[data-ai-feed-status]').innerText(), 'Latest available');
+    assert.match(await page.locator('[data-ai-feed-status]').innerText(), /^Latest available( · (Grouping|Ungrouped))?$/);
     assert.equal(await card('A00').count(), 1, 'a repeated background failure preserves the evidence');
   }
   for (const scope of ['universe', 'watchlist']) {
@@ -560,7 +561,7 @@ try {
   await page.evaluate(() => window.show('universe'));
   await peer.evaluate(() => window.releasePositions());
   await settled();
-  assert.match(await page.locator('[data-ai-heading]').innerText(), /Universe/);
+  assert.match(await page.locator('[data-ai-feed-status] > span').getAttribute('title'), /Universe/);
   assert.equal(await page.locator('[data-ai-holding-size]').count(), 1, 'the active Universe view receives verified sizes after a scope change');
   assert.equal(await page.locator('[data-ai-sort] option[value="holdings"]').evaluate(option => option.disabled), false);
   await page.evaluate(() => window.show());
@@ -614,7 +615,7 @@ try {
   assert.equal(await page.getByRole('combobox', { name: 'Sort AI Alerts' }).inputValue(), 'newest', 'pending weights display the actual newest-first fallback');
   assert.equal(await page.evaluate(() => localStorage.getItem('sattva:ai-alerts:sort:v1')), 'holdings', 'the requested sort survives reload while its data loads');
   await page.getByRole('combobox', { name: 'Sort AI Alerts' }).selectOption('newest');
-  assert.match(await page.locator('[data-ai-feed-status]').innerText(), /Ready/i);
+  assert.match(await page.locator('[data-ai-feed-status]').innerText(), /Checking sources/i);
   assert.equal(await page.evaluate(() => !!window.releaseStart), true, 'live collection is still blocked while cached cards are ready');
   console.log('PASS: reload restores a ready privacy-safe alert view before live collection completes.');
   // The following public/tickerless cases use a separate coverage fixture.

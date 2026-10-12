@@ -36,7 +36,7 @@ function loadExcelJs() {
  * Returns true on success, false if the export could not run (offline, CDN blocked) — the
  * caller decides how loudly to complain. Never throws into a click handler.
  */
-export async function exportRows({ filename = 'export', sheetName = 'Sheet1', columns = [], rows = [] }) {
+export async function exportRows({ filename = 'export', sheetName = 'Sheet1', columns = [], rows = [], canExport = () => true }) {
   let ExcelJS;
   try {
     ExcelJS = await loadExcelJs();
@@ -46,6 +46,7 @@ export async function exportRows({ filename = 'export', sheetName = 'Sheet1', co
   }
 
   try {
+    if (!canExport()) return false;
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Sattva Central Research';
     wb.created = new Date();
@@ -68,6 +69,7 @@ export async function exportRows({ filename = 'export', sheetName = 'Sheet1', co
     ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
 
     const buffer = await wb.xlsx.writeBuffer();
+    if (!canExport()) return false;
     triggerDownload(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${filename}.xlsx`);
     return true;
   } catch (err) {

@@ -103,6 +103,15 @@ const alertSnapshot = page => page.evaluate(() => {
 // relevance in slices after its first paint (surface-relevance.js), and rows not yet read sort by
 // time until then. Comparing two pages mid-way would compare two partial orders.
 const settledAlerts = async (page) => {
+  // Relevance warm-up alone does not wait for its asynchronously loaded inputs.
+  // A fast pooled page can otherwise be sampled with unknown size bands while
+  // the slower live page already has company profiles and a different final order.
+  await page.evaluate(async () => {
+    const [profiles, feedback] = await Promise.all([
+      import('/js/data/company-profiles.js'), import('/js/data/relevance-feedback.js'),
+    ]);
+    await Promise.all([profiles.loadProfiles(), feedback.loadModel()]);
+  });
   await page.waitForFunction(() => {
     const rows = document.querySelectorAll('tbody tr[data-row-key]').length;
     const chips = [...document.querySelectorAll('[data-feed]')];

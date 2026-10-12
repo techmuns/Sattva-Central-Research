@@ -145,9 +145,10 @@ try {
     if (tab === 'nse-filings') {
       assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'saved filing routes render without a navigation button');
     } else {
-      const navigationTab = ['daily-alerts', 'ai-alerts'].includes(tab) ? 'alerts' : tab;
+      const navigationTab = ['daily-alerts', 'ai-alerts'].includes(tab) ? 'alerts'
+        : ['corp-announcements', 'corporate-actions', 'ipos'].includes(tab) ? 'announcements' : tab;
       await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, navigationTab);
-      if (navigationTab === 'alerts') {
+      if (['alerts', 'announcements'].includes(navigationTab)) {
         assert.equal(await page.locator(`#subview-mount [data-tab-id="${tab}"]`).getAttribute('aria-selected'), 'true');
       }
     }

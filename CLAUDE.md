@@ -289,13 +289,16 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 ## Module interface contract
 
 Navigation update (12 October 2026): the tab strip is ordered Alerts,
-Corp Announcements, Corporate Actions, IPOs, Earnings, Breakouts / Technical,
+Announcements, Earnings, Breakouts / Technical,
 Bulk/Block Deal, Mutual Funds, Con-call, News, Public Chatter, Super Investors.
-`meta.navigationTitle` optionally shortens the tab label without changing its page title or route.
+`meta.navigationTitle` optionally changes the tab label without changing its page title or route.
 Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
 Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
 `TAB_GROUPS` in the catalog. Both retain their existing routes and independent reader lifecycles.
 AI Alerts remains the first/default reader. Hidden navigation metadata does not remove route support.
+Announcements uses the same grouping for Corporate Announcements, Corporate Actions and IPOs,
+in that order, defaulting to Corporate Announcements when entering from another section.
+Each reader keeps its saved routes, scope behavior and independent data lifecycle.
 
 Bookmarks (`tabs/bookmarks.js`) is a personal saved-record view, reached from the header beside Dark mode. Its
 `scopeIndependent: true` metadata hides the global scope controls; `allowEmptyScope: true`
@@ -2686,6 +2689,11 @@ contract does not cover: a tab the shell decided not to mount.
 
 ## AI Alerts — the explainable priority layer
 
+Header simplification (12 October 2026): show one short status badge. Source health and
+unfinished grouping remain distinct (for example, `Partial coverage · Ungrouped`);
+the scope count, date window and grouping/retention explanation live on its tooltip.
+Do not restore the separate grouping sentence, scope-count badge or window badge.
+
 **Story evolution (23 September 2026):** `alert-stories.js` groups public company news and
 exchange disclosures across publishers, keeping every original record in `card.sourceEvents`.
 `card.events` contains distinct developments for ranking; one story row opens its earlier
@@ -3356,6 +3364,10 @@ The customer-requested All Alerts header cleanup on 15 September keeps aggregate
 status and its date inside the expandable Sources panel as plain text. Do not restore the colored
 coverage or pending-feed badges beside the title. The timeline controls retain the selected date;
 source failures, pending reads, check times and empty-state explanations remain accurate.
+
+The 12 October 2026 cleanup also removes Focus table and the scope/company-count and
+history/calendar badges beside the All Alerts title. Keep the global scope picker, date filter,
+source coverage and retained history available; collection and retention are unchanged.
 
 It is computed differently depending on what the feed IS, and the distinction matters:
 
@@ -4510,8 +4522,9 @@ Alert-pool content reuse and streamed Telegram delivery follow `docs/ALERT-DELIV
 Capture identity and source health must be rechecked even when decoded content is unchanged.
 
 Investor evidence parity (24 September 2026): `docs/INVESTOR-DISCLOSURE-EVIDENCE.md`
-defines public-only Changes, explicit disclosure states, original filing reconciliation and
-checkpoint-first capture publication through PRs. Preserve the All Investors default and
+defines public Changes, explicit disclosure states, original filing reconciliation and
+checkpoint-first capture publication through PRs. The 12 October manager parity addition opens
+on Changes and adds authenticated Sattva Family managers (see that document). Preserve
 Sattva's existing Institutions/MF ownership product. Unknown cells never establish trades or
 new/removed disclosures; a zero valuation is not evidence of an exit. Original source dates,
 partial coverage and retained versions must survive every refresh and export.
