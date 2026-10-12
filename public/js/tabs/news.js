@@ -376,7 +376,7 @@ const tab = makeFilingsTab({
   },
 });
 
-export const meta = tab.meta;
+export const meta = TAB_META['news'];
 
 // ---------------------------------------------------------------------------------------
 // TWO FEEDS UNDER ONE TAB, CHOSEN BY THE SCOPE TOGGLE
