@@ -823,7 +823,9 @@ export async function collect({ scope = 'universe', day = today(), holdings = nu
         if (!load && loadErrors.has(feed.id)) {
           if (feed.id !== 'news' || out.status !== 'failed') out = { ...out, status: 'failed', reachesToday: false, note: `Last read failed: ${loadErrors.get(feed.id)}. Retained records remain visible.` };
         }
-        else if (!load && (!loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
+        else if (!load && (feed.id === 'news' && newsReader !== news
+          ? !newsReader.isLoaded()
+          : !loadedFeeds.has(feed.id) || loadingFeeds.has(feed.id)) && LOADERS[feed.id]) out = { ...out, status: 'pending' };
       } catch (err) {
         if (!readingCurrent()) return;
         // A failed refresh must not erase a last-good capture or masquerade as an empty feed — and
