@@ -354,6 +354,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     alertWindowKey(context.queryWindow) === alertWindowKey(currentContext().queryWindow);
   const current = () => token === loadToken && viewCurrent();
   collecting++;
+  ctxRef.root.querySelector('[data-alerts-workspace]')?.setAttribute('data-alerts-collecting', 'true');
   if (load && forceRefresh) lastRevalidatedAt = Date.now();
   try {
     const next = await alerts.collect({
@@ -400,6 +401,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true } = {
     }
   } finally {
     collecting--;
+    ctxRef?.root.querySelector('[data-alerts-workspace]')?.setAttribute('data-alerts-collecting', String(collecting > 0));
     // A period switch can still be reading when the visible recheck becomes due. Complete
     // that check as soon as the read settles instead of missing a whole polling interval.
     if (!collecting && ctxRef && !(document.hidden || innerWidth === 0) && Date.now() - lastRevalidatedAt >= RECHECK_MS)
@@ -539,6 +541,7 @@ function paint(ctx) {
     // Source reads can finish before sliced grouping. Keep the painted rows usable while
     // exposing that their final presentation/count is still being calculated.
     ctx.root.querySelector('[data-alerts-workspace]')?.setAttribute('aria-busy', String(lastVisible.grouping));
+    ctx.root.querySelector('[data-alerts-workspace]')?.setAttribute('data-alerts-collecting', String(collecting > 0));
     const horizonToggleContainer = ctx.root.querySelector('.alerts-horizon-control');
     if (horizonToggleContainer) horizonToggleContainer.outerHTML = historySummary(allThrough.length, day, !!report);
     
@@ -588,7 +591,7 @@ function paint(ctx) {
   tableViews[horizon] = table.view;
 
   ctx.root.innerHTML = `
-    <div class="alerts-workspace" data-alerts-workspace data-fullscreen-workspace aria-busy="${lastVisible.grouping}">
+    <div class="alerts-workspace" data-alerts-workspace data-alerts-collecting="${collecting > 0}" data-fullscreen-workspace aria-busy="${lastVisible.grouping}">
     ${sectionHead({ title: 'All Alerts' })}
     ${horizon===HORIZON.THROUGH?`<p data-alerts-reading-count class="mb-1 text-xs text-slate-500" title="Checked equivalent reports share one item. Unchecked reports remain separate; every original is available in the item and export.">${formatNumber(visible.length)} items · ${formatNumber(visible.reduce((n,e)=>n+membersOf(e).length,0))} source reports · All originals remain available in each item and export.</p>`:''}
     <div class="alerts-controls" data-alerts-controls>

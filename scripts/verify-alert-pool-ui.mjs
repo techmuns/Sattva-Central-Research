@@ -76,6 +76,10 @@ async function openPage() {
   await context.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.fulfill({ status: 503, body: '{}' }));
   await context.addInitScript((base) => { localStorage.setItem('sattva:chatter-base', `${base}/fixture/chatter`); }, origin);
   const page = await context.newPage();
+  // Both readers compare one immutable captured instant, including freshness and the IST day.
+  // Timer-driven lifecycle/rollover checks have dedicated suites; this oracle must not age its
+  // inputs between the fast pooled reading and the slower full-history reading.
+  await page.clock.setFixedTime(new Date(index.builtAt));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
@@ -96,6 +100,7 @@ const alertSnapshot = page => page.evaluate(() => {
   const ready = (keys.length > 0 || empty) && Object.keys(chips).length > 0 &&
     !Object.values(chips).some(label => label.includes('reading…')) &&
     document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false' &&
+    document.querySelector('[data-alerts-workspace]')?.getAttribute('data-alerts-collecting') === 'false' &&
     !document.querySelector('[data-table-loading]');
   return { keys, count, chips, ready };
 });
@@ -123,6 +128,7 @@ const settledAlerts = async (page) => {
     // Compare completed line items, never a fixed-delay sample of an intermediate count.
     return (rows > 0 || empty) && chips.length > 0 && !chips.some((chip) => chip.textContent.includes('reading…'))
       && document.querySelector('[data-alerts-workspace]')?.getAttribute('aria-busy') === 'false'
+      && document.querySelector('[data-alerts-workspace]')?.getAttribute('data-alerts-collecting') === 'false'
       && !document.querySelector('[data-table-loading]');
   }, null, { timeout: 120000 });
   // Story grouping folds exact duplicate reports after the first paint and hands the table new row
@@ -146,12 +152,21 @@ const rowKeys = (page) => page.evaluate(() => [...document.querySelectorAll('tbo
 // THE RANKING IS SETTLED when the tab is no longer reading — `complete`, or `partial` where a live
 // route this sandbox cannot answer left a feed failed — and the cards have stopped changing.
 const settledRanking = async (page, timeout) => {
-  await page.waitForFunction(() => { const state = document.querySelector('[data-ai-feed-status]')?.dataset.state; return !!state && state !== 'pending'; }, null, { timeout });
+  // A failed source keeps its Partial coverage label while collection/ranking continues.
+  // That quality label alone cannot establish that the final ranking has been painted.
+  const ready = () => {
+    const state = document.querySelector('[data-ai-feed-status]')?.dataset.state;
+    return !!state && state !== 'pending' && document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') === 'false';
+  };
+  await page.waitForFunction(ready, null, { timeout });
   let previous = null;
   for (let i = 0; i < 40; i++) {
-    const cards = await page.evaluate(() => [...document.querySelectorAll('[data-ai-card]')].map((card) => card.dataset.ticker).join(','));
-    if (cards && cards === previous) return cards.split(',');
-    previous = cards;
+    const snapshot = await page.evaluate(() => ({
+      cards: [...document.querySelectorAll('[data-ai-card]')].map((card) => card.dataset.ticker).join(','),
+      collecting: document.querySelector('[data-ai-layout]')?.getAttribute('data-ai-collecting') !== 'false',
+    }));
+    if (!snapshot.collecting && snapshot.cards && snapshot.cards === previous) return snapshot.cards.split(',');
+    previous = snapshot.collecting ? null : snapshot.cards;
     await page.waitForTimeout(1500);
   }
   throw new Error('the ranking did not settle');

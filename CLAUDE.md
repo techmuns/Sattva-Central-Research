@@ -2698,6 +2698,8 @@ Toolbar layout (12 October 2026): priority tabs sit on the left, with a compact 
 event types and sort together on the right. Secondary filters remain underneath. Wrap the
 groups at smaller widths without page overflow. Keep the search node mounted through
 filter/count updates and incoming data so typing, focus and composition survive.
+Collection progress is independent of source quality and story projection. Alert views expose
+their collection state separately; a Partial coverage badge is not a finished-ranking signal.
 
 **Story evolution (23 September 2026):** `alert-stories.js` groups public company news and
 exchange disclosures across publishers, keeping every original record in `card.sourceEvents`.
