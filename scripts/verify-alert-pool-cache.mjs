@@ -50,6 +50,16 @@ const window = length => ({ mode: 'window', queryWindow: { from: shiftDay(day, 1
 const ids = result => [...result.feeds].map(([id, feed]) => [id, feed.events.map(event => event.id)]);
 
 reset();
+const failureNote = 'Read failed: Filings coverage is incomplete. Retained records remain visible.';
+served.feeds.news.row = { ...served.feeds.news.row, status: 'failed', reachesToday: false, note: failureNote };
+const failedNews = await read({ newsState: () => ({ status: 'ok', reachesToday: true, note: 'Derived clock status' }) });
+assert.equal(failedNews.feeds.get('news').status, 'failed');
+assert.equal(failedNews.feeds.get('news').reachesToday, false);
+assert.equal(failedNews.feeds.get('news').note, failureNote, 'the saved failed-read explanation survives age revalidation');
+assert.equal(failedNews.feeds.get('news').events.length, 7, 'failed health retains every eligible event');
+console.log('PASS news age revalidation preserves failed collection health, its explanation and retained events');
+
+reset();
 const first = await read();
 assert.equal(downloads().length, 7);
 const initialBytes = served.ai.reduce((total, entry) => total + entry.bytes, 0);
