@@ -50,7 +50,7 @@ function releaseCacheKey() {
 
 // Compose this UI revision without editing another release's version marker.
 function appReleaseCacheKey() {
-  return `${releaseCacheKey()}-compact-ai-status-v2`;
+  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v1`;
+  return `${appReleaseCacheKey()}-all-alerts-clean-header-v2`;
 }
 
 // Retain the shared releases and advance the returning reader for this UI cleanup.

@@ -14,7 +14,7 @@ so a follow-up interaction cannot target controls that are about to be replaced.
 Both offer Today, Last 3/7/14/30 days, This month (IST) and undated records. All Alerts also keeps
 All history / Older than 30 days; the Upcoming switch was removed on 12 October 2026. Company "See all" links open
 the complete company history. These are display defaults, not deletion or collection rules.
-All Alerts streams newly received rows directly inside Till Today, with no separate live banner.
+All Alerts streams newly received rows directly inside the history table, with no separate live banner.
 The first screen enters one row every 110ms (at most 12 staged rows); the complete filtered model
 is immediately available to counts, search and export. Reduced motion, changed filters and hidden
 pages bypass the entrance queue. Existing visible-page 90-second checks and source cadence remain
@@ -2694,6 +2694,13 @@ unfinished grouping remain distinct (for example, `Partial coverage · Ungrouped
 the scope count, date window and grouping/retention explanation live on its tooltip.
 Do not restore the separate grouping sentence, scope-count badge or window badge.
 
+Toolbar layout (12 October 2026): priority tabs sit on the left, with a compact search box,
+event types and sort together on the right. Secondary filters remain underneath. Wrap the
+groups at smaller widths without page overflow. Keep the search node mounted through
+filter/count updates and incoming data so typing, focus and composition survive.
+Collection progress is independent of source quality and story projection. Alert views expose
+their collection state separately; a Partial coverage badge is not a finished-ranking signal.
+
 **Story evolution (23 September 2026):** `alert-stories.js` groups public company news and
 exchange disclosures across publishers, keeping every original record in `card.sourceEvents`.
 `card.events` contains distinct developments for ranking; one story row opens its earlier
@@ -3366,7 +3373,9 @@ coverage or pending-feed badges beside the title. The timeline controls retain t
 source failures, pending reads, check times and empty-state explanations remain accurate.
 
 The 12 October 2026 cleanup also removes Focus table and the scope/company-count and
-history/calendar badges beside the All Alerts title. Keep the global scope picker, date filter,
+history/calendar badges beside the All Alerts title. The redundant Till Today label and the
+item/source-report summary above the table are also removed at the user's request.
+Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 
 It is computed differently depending on what the feed IS, and the distinction matters:

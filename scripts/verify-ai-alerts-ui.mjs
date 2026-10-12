@@ -43,7 +43,7 @@ addEventListener('message',e=>{
  if(window.holdPositions) window.releasePositions=()=>{window.holdPositions=false;window.releasePositions=null;reply();}; else reply();
 });
 </script>`;
-const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"></head><body style="padding:24px;background:#f6f4fb;font-family:Arial,sans-serif"><main id="root" class="mx-auto max-w-7xl"></main>
+const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/tailwind.css"><link rel="stylesheet" href="/css/theme.css"></head><body style="padding:24px;background:#f6f4fb;font-family:Arial,sans-serif"><main id="root" class="mx-auto max-w-7xl"></main>
 <script>window.fixtureEvents=${JSON.stringify(events)};window.reads=0;window.holdStart=new URLSearchParams(location.search).has('hold');</script>
 <script type="module">
 import * as tab from '/js/tabs/ai-alerts.js';
@@ -478,6 +478,15 @@ try {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), `no page overflow at ${width}px`);
     const inputBox = await search.boundingBox();
     assert(inputBox.width > 120 && inputBox.x >= 0 && inputBox.x + inputBox.width <= width);
+    const searchBox = await page.locator('[role="search"][aria-label="Search AI Alerts"]').boundingBox();
+    if (width > 640) assert(searchBox.width <= 260, `search remains compact at ${width}px`);
+    if (width === 1440) {
+      const typesBox = await page.locator('[data-ai-types-menu] > summary').boundingBox();
+      const sortBox = await sortControl.boundingBox();
+      const middle = box => box.y + box.height / 2;
+      assert(Math.abs(middle(searchBox) - middle(typesBox)) < 3 && Math.abs(middle(searchBox) - middle(sortBox)) < 3,
+        'desktop search, event types and sort share one aligned row');
+    }
     if (process.env.AI_ALERT_SCREENSHOT && [1440, 390].includes(width)) await page.screenshot({ path: `${process.env.AI_ALERT_SCREENSHOT}-${width}.png` });
   }
   await page.setViewportSize({ width: 1440, height: 1100 });

@@ -395,7 +395,11 @@ function paint(ctx) {
   // Keep the input node mounted while typing and while independent feeds deliver partials.
   // Replacing the whole root loses the caret, keyboard focus and IME composition.
   if (!ctx.root.querySelector('[data-ai-layout]')) {
-    ctx.root.innerHTML = `<div data-ai-layout><div data-ai-heading></div>${searchMarkup()}<div data-ai-position-status></div><div data-ai-toolbar></div><div data-ai-results></div></div>`;
+    ctx.root.innerHTML = `<div data-ai-layout><div data-ai-heading></div><div data-ai-position-status></div>
+      <div data-ai-toolbar><div data-ai-controls class="ai-alert-toolbar">
+        <div data-ai-priorities class="ai-alert-priorities" role="group" aria-label="Filter AI Alerts by priority"></div>
+        <div class="ai-alert-tools">${searchMarkup()}<div data-ai-view-controls class="ai-alert-view-controls text-xs text-slate-500"></div></div>
+      </div><div data-ai-filter-summary></div></div><div data-ai-results></div></div>`;
     const input = ctx.root.querySelector('[data-ai-search]');
     input.value = query;
     input.addEventListener('input', () => {
@@ -405,12 +409,16 @@ function paint(ctx) {
     });
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
   }
+  ctx.root.querySelector('[data-ai-layout]').setAttribute('data-ai-collecting', String(collecting));
   reconcileMarkup(ctx.root.querySelector('[data-ai-heading]'), head(ctx));
   reconcileMarkup(ctx.root.querySelector('[data-ai-position-status]'), positionStatus() + kpiStatusMarkup());
   ctx.root.querySelector('[data-ai-clear]').hidden = !query.length;
+  const toolbar = report ? controls(matches, cards.length) : { priorities: '', view: '' };
   // Identical results keep their DOM, expanded evidence and keyboard focus.
   for (const [selector, markup] of [
-    ['[data-ai-toolbar]', report ? controls(matches, cards.length) + eventFilterSummary() : ''],
+    ['[data-ai-priorities]', toolbar.priorities],
+    ['[data-ai-view-controls]', toolbar.view],
+    ['[data-ai-filter-summary]', report ? eventFilterSummary() : ''],
     ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : loadError ? quietFallbackPanel() : loadingPanel()],
   ]) {
     const node = ctx.root.querySelector(selector);
@@ -445,12 +453,12 @@ function positionStatus() {
 }
 
 function searchMarkup() {
-  return `<div role="search" aria-label="Search AI Alerts" class="mb-4">
+  return `<div role="search" aria-label="Search AI Alerts" class="ai-alert-search">
     <label for="ai-alert-search" class="sr-only">Search AI Alerts</label>
-    <div class="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-indigo-500">
+    <div class="ai-alert-search-box rounded-xl bg-white ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-indigo-500">
       <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input id="ai-alert-search" data-ai-search type="search" autocomplete="off" placeholder="Search company, symbol or alert…" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400">
-      <button type="button" data-ai-clear class="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-indigo-500">Clear</button>
+      <input id="ai-alert-search" data-ai-search type="search" autocomplete="off" placeholder="Search alerts…" class="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400">
+      <button type="button" data-ai-clear aria-label="Clear search" title="Clear search" class="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-indigo-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
     </div>
   </div>`;
 }
@@ -577,13 +585,10 @@ function controls(cards, visibleCount) {
     // from having lost it — and this page's whole promise is that it tells you what happened.
     { id: 'archived', label: `Archived · ${archived}` },
   ];
-  return `
-    <div class="relative mb-4 flex flex-wrap items-center justify-between gap-3" data-ai-controls>
-      <div class="flex flex-wrap gap-2" role="group" aria-label="Filter AI Alerts by priority">
-        ${options.map((option) => `<button type="button" data-ai-filter="${option.id}" aria-pressed="${filter === option.id}"
-          class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === option.id ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:text-indigo-700 hover:ring-indigo-200'}">${escapeHtml(option.label)}</button>`).join('')}
-      </div>
-      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+  return {
+    priorities: options.map((option) => `<button type="button" data-ai-filter="${option.id}" aria-pressed="${filter === option.id}"
+      class="rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${filter === option.id ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white text-slate-600 ring-slate-200 hover:text-indigo-700 hover:ring-indigo-200'}">${escapeHtml(option.label)}</button>`).join(''),
+    view: `
         ${eventTypesControl()}
         <label class="flex items-center gap-2">Sort
           <select data-ai-sort aria-label="Sort AI Alerts" class="rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
@@ -594,9 +599,8 @@ function controls(cards, visibleCount) {
           </select>
         </label>
         ${filter === 'archived' && archived ? `<button type="button" data-ai-unmute-all class="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200">Restore all</button>` : ''}
-        <span role="status" aria-live="polite" aria-atomic="true"><strong class="font-semibold text-slate-700">${escapeHtml(formatNumber(visibleCount))}</strong> ${visibleCount === 1 ? 'company' : 'companies'} ${query.trim() ? 'matching in this view' : 'in this view'}</span>
-      </div>
-    </div>`;
+        <span class="ai-alert-count" role="status" aria-live="polite" aria-atomic="true"><strong class="font-semibold text-slate-700">${escapeHtml(formatNumber(visibleCount))}</strong> ${visibleCount === 1 ? 'company' : 'companies'}${query.trim() ? ' matching' : ''}</span>`,
+  };
 }
 
 function cardsPanel(ctx, cards, total) {

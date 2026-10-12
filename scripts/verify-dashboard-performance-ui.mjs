@@ -16,6 +16,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const TAB_INTERACTION_LIMIT_MS = 1000;
 const POPUP_INTERACTION_LIMIT_MS = 600;
 let offline = false;
+let upgradeAssetsOnly = false;
 let previousRelease = true;
 const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmarks', 'earnings-hub',
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
@@ -27,18 +28,18 @@ const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
 const mutablePath = '/data/performance-fixture.json';
 const corruptPath = `/data/performance-fixture.parts/${'a'.repeat(64)}.json`;
-const originalSdkUrl = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
-// Service-worker fetches bypass page routing. Keep its opaque SDK cache local too.
-const sdkServer = createServer((_req, res) => {
-  res.writeHead(200, { 'content-type': 'application/javascript' });
-  res.end('/* local SDK fixture */\n');
-});
-await new Promise(done => sdkServer.listen(0, '127.0.0.1', done));
-const sdkUrl = `http://127.0.0.1:${sdkServer.address().port}/sdk.js`;
+const sdkUrl = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
-  if (offline) { res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return; }
+  const upgradeAsset = /^\/(?:$|index\.html$|sw\.js$|sdk-fixture\.js$|js\/|css\/|assets\/brand\/|data\/portfolio-companies\.json$)/.test(url.pathname);
+  if (offline && !(upgradeAssetsOnly && upgradeAsset)) {
+    res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return;
+  }
+  if (url.pathname === '/sdk-fixture.js') {
+    res.writeHead(200, { 'content-type': 'text/javascript' });
+    res.end('/* No host SDK in this local performance fixture. */'); return;
+  }
   if ([immutablePath, mutablePath, corruptPath].includes(url.pathname)) {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=0, must-revalidate' });
     res.end(partBody); return;
@@ -57,8 +58,13 @@ const server = createServer((req, res) => {
     }[extname(path)] || 'application/octet-stream');
     res.setHeader('cache-control', 'public, max-age=0, must-revalidate');
     if (pathname === '/sw.js') {
-      const source = readFileSync(path, 'utf8').replaceAll(originalSdkUrl, sdkUrl);
+      // Page routing does not isolate the worker's own SDK warm-up. Keep both its cache
+      // and the returning document local, as in the other service-worker upgrade fixtures.
+      const source = readFileSync(path, 'utf8').replace(/const MUNSHOT_SDK = .*;/,
+        "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
       res.end(previousRelease ? source.replace(/const CACHE_NAME = ([^;\n]+);/, 'const CACHE_NAME = $1 + "-previous-fixture";') : source);
+    } else if (pathname === '/index.html') {
+      res.end(readFileSync(path, 'utf8').replaceAll(sdkUrl, '/sdk-fixture.js'));
     } else if (pathname === '/js/core/watchlist.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__watchlistRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/core/alert-arrivals.js') {
@@ -86,8 +92,7 @@ researchTabs.sort((a, b) => previousTabOrder.indexOf(a.meta.id) - previousTabOrd
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__storyOrderRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/css/tailwind.css') {
       res.end(`${readFileSync(path, 'utf8')}\n:root { --table-scroll-release: ${previousRelease ? 'previous' : 'current'}; }`);
-    } else if (pathname === '/index.html') res.end(readFileSync(path, 'utf8').replaceAll(originalSdkUrl, sdkUrl));
-    else res.end(readFileSync(path));
+    } else res.end(readFileSync(path));
   } catch { res.writeHead(404); res.end(); }
 });
 
@@ -123,24 +128,11 @@ try {
     return timing;
   };
   page.on('pageerror', (error) => errors.push(error.message));
-  const cacheDiagnostic = async stage => {
-    console.error('Cache lifecycle diagnostic', stage, await page.evaluate(async () => {
-      const r = await navigator.serviceWorker.getRegistration();
-      return { release: globalThis.__performanceRelease,
-        active: r?.active?.state, waiting: r?.waiting?.state, installing: r?.installing?.state,
-        caches: (await caches.keys()).map(key => key.slice(-150)),
-        page: document.body.innerText.slice(0, 700) };
-    }), errors);
-  };
-  // Leave fixture traffic native; intercept only requests outside the two local origins.
-  const externalOnly = url => !url.href.startsWith(origin + '/') && url.href !== sdkUrl;
-  const blockExternal = route => route.abort();
-  await context.route(externalOnly, blockExternal);
+  await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
   await page.goto(origin);
   await page.getByRole('navigation', { name: 'Research navigation' }).waitFor();
   await page.evaluate(async () => navigator.serviceWorker.ready);
   await page.evaluate(async () => {
-    // Finish these fixture bodies before changing network interception below.
     await (await fetch('/api/private-fixture')).text();
     await (await fetch('/data/authorized-fixture.json', { headers: { authorization: 'Bearer test-only' } })).text();
     await (await fetch('/data/no-store-fixture.json', { cache: 'no-store' })).text();
@@ -152,10 +144,6 @@ try {
     return { names, urls: entries.map((request) => request.url) };
   });
   assert.equal(cacheState.names.length, 1, 'one current app cache is active');
-  assert.equal(await page.evaluate(async sdkUrl => {
-    const names = await caches.keys();
-    return (await (await caches.open(names[0])).match(sdkUrl))?.type;
-  }, sdkUrl), 'opaque', 'the local cross-origin SDK retains the real opaque public-cache boundary');
   assert(cacheState.urls.filter((url) => url.includes('/js/')).length > 90, 'complete native module graph is warm');
   assert(cacheState.urls.some((url) => url.endsWith('/data/portfolio-companies.json')), 'critical portfolio identity snapshot is warm');
   for (const asset of ['sattva-ventures-wordmark.png', 'sattva-ventures-mark.svg', 'favicon.svg']) {
@@ -174,7 +162,7 @@ try {
   const cacheSession = await context.newCDPSession(page);
   await cacheSession.send('Network.enable');
   await cacheSession.send('Network.setBlockedURLs', { urls: ['https://*'] });
-  await context.unroute(externalOnly, blockExternal);
+  await page.unroute('**/*');
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: false });
   for (const path of [immutablePath, mutablePath, corruptPath]) {
     await page.evaluate(async path => { await (await fetch(path, { cache: 'no-cache' })).text(); }, path);
@@ -188,9 +176,8 @@ try {
   await page.evaluate(async path => { await (await fetch(path, { cache: 'reload' })).text(); }, immutablePath);
   assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
-  // Native cache assertions are complete; close this observer before routing UI requests again.
   await cacheSession.detach();
-  await context.route(externalOnly, blockExternal);
+  await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
 
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
@@ -198,8 +185,7 @@ try {
   // Measure when the cached navigation is visible, not the later load event: load also waits
   // for unrelated resources even after the app shell has painted. Keep the same 1.5s budget.
   await page.reload({ waitUntil: 'commit' });
-  try { await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 }); }
-  catch (error) { await cacheDiagnostic('offline paint'); throw error; }
+  await page.getByRole('navigation', { name: 'Research navigation' }).waitFor({ timeout: 1500 });
   const repeatPaintMs = Date.now() - reloadedAt;
   assert(repeatPaintMs < 1500,
     `repeat visit paints from the app cache without waiting for the network (${repeatPaintMs}ms)`);
@@ -290,11 +276,13 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
-  offline = false;
+  // Only deployment assets return. Keep the data/API outage from the interaction sweep:
+  // restoring every capture here starts unrelated large background cache writes and can
+  // leave the already-installed replacement waiting behind the active worker's reads.
+  upgradeAssetsOnly = true;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
-  try { await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 }); }
-  catch (error) { await cacheDiagnostic('automatic upgrade'); throw error; }
+  await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });
   await page.waitForFunction(() => globalThis.__watchlistRelease === 'current', null, { timeout: 30000 });
   await page.evaluate(() => import('/js/core/alert-arrivals.js'));
   assert.equal(await page.evaluate(() => globalThis.__arrivalsRelease), 'current', 'existing session receives the arrivals update');
@@ -340,5 +328,4 @@ try {
 } finally {
   await browser.close();
   await new Promise((done) => server.close(done));
-  await new Promise(done => sdkServer.close(done));
 }

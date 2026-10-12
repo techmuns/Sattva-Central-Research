@@ -103,7 +103,7 @@
 .alerts-workspace [data-section-head] > div { align-items: center; gap: 8px; }
 .alerts-workspace [data-section-head] h2 { font-size: 20px; }
 .alerts-controls { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
-/* Incoming records enter the existing Till Today table in a short, real-data sequence. */
+/* Incoming records enter the existing history table in a short, real-data sequence. */
 .alert-stream-enter { animation: alert-row-enter 220ms ease-out both; animation-delay: var(--stream-age, 0ms); }
 .alert-just-arrived > td { animation: alert-row-arrival 20s ease-out both; animation-delay: var(--arrival-age, 0ms); }
 .alert-arrival-badge { display: table; margin-top: 5px; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 800; letter-spacing: .06em; color: rgb(var(--text-indigo-700, 67 56 202)); background: rgb(var(--surface-indigo-100, 224 231 255)); }
@@ -113,12 +113,9 @@
   .alert-stream-enter { animation: none; }
   .alert-just-arrived > td { animation: none; background-color: rgb(var(--surface-indigo-50, 238 242 255)); }
 }
-.alerts-horizon-control, .alerts-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.alerts-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; width: 100%; justify-content: space-between; }
 .alerts-view-controls [data-table-actions] { flex-shrink: 0; }
 .alerts-workspace [data-export] { white-space: nowrap; }
-.alerts-horizon-control [role="tablist"] { border-radius: 12px; padding: 3px; }
-.alerts-horizon-control [role="tab"] { border-radius: 9px; padding-top: 6px; padding-bottom: 6px; }
-.alerts-horizon-caption { display: none; }
 .alerts-layout-button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; padding: 7px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240) / 1); border-radius: 10px; background: rgb(var(--surface-white, 255 255 255) / 1); color: rgb(var(--text-slate-600, 71 85 105) / 1); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .alerts-layout-button:hover { border-color: rgb(var(--edge-indigo-200, 199 210 254) / 1); background: rgb(var(--surface-slate-50, 248 250 252) / 1); color: rgb(var(--text-indigo-600, 79 70 229) / 1); }
 .alerts-layout-button:focus-visible { outline: 2px solid rgb(var(--text-indigo-500, 99 102 241) / 1); outline-offset: 2px; }
@@ -149,7 +146,6 @@
   .alerts-controls { column-gap: 8px; }
   .alerts-view-controls, .alerts-view-controls [data-table-actions] { gap: 8px; }
   .alerts-view-controls .alerts-layout-button { padding-left: 8px; padding-right: 8px; font-size: 12px; gap: 6px; }
-  .alerts-horizon-control [role="tab"] { padding-left: 8px; padding-right: 8px; gap: 4px; }
   .alerts-workspace [data-export-format] { display: none; }
   .alerts-workspace [data-export] { padding-left: 10px; padding-right: 10px; }
 }
@@ -159,8 +155,6 @@
   .alerts-workspace [data-section-head] { margin-bottom: 8px; }
   .alerts-controls { gap: 8px 6px; margin-bottom: 8px; }
   .alerts-view-controls { width: 100%; justify-content: space-between; gap: 6px; }
-  .alerts-horizon-control [role="tab"] { padding-left: 6px; padding-right: 6px; gap: 4px; white-space: nowrap; }
-  .alerts-horizon-control [role="tab"] > span { padding-left: 2px; padding-right: 2px; }
   .alerts-workspace [data-export-format] { display: none; }
   .alerts-workspace [data-export] { padding-left: 10px; padding-right: 10px; }
   .alerts-source-panel { padding: 12px; max-height: 50vh; }
@@ -172,8 +166,4 @@
   .alerts-workspace [data-table-toolbar] > div:first-child > div:first-child { order: -2; flex-basis: calc(100% - 128px); min-width: 0 !important; max-width: none; }
   .alerts-workspace [data-table-filter], .alerts-workspace [data-watch-toggle] { flex: 1 1 calc(50% - 4px); min-width: 0; width: calc(50% - 4px); max-width: calc(50% - 4px); }
   .alerts-workspace [data-watch-toggle] { order: -1; flex: 0 0 120px; width: 120px; max-width: 120px; padding-left: 8px; padding-right: 8px; font-size: 12px; }
-}
-@media (min-width: 350px) and (max-width: 767px) {
-  .alerts-horizon-control { padding-right: 90px; }
-  .alerts-view-controls [data-alerts-table-actions] { position: absolute; top: 3px; right: 0; }
 }
