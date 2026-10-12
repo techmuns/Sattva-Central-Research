@@ -69,6 +69,10 @@ try {
   assert.equal(reading.largeParses, 0, 'large JSON is never parsed on the page thread');
   assert.equal(reading.largeWrites, 0, 'large record graphs are never cloned into IndexedDB on the page thread');
   assert(reading.maxInputMs < 250, `input paints during preparation (${Math.round(reading.maxInputMs)}ms)`);
+  await page.evaluate(async () => { window.preparationState = (await import('/js/core/json-reader.js')).jsonPreparationState; });
+  await page.waitForFunction(() => !window.preparationState().worker, null, { timeout: 20000 });
+  assert.deepEqual(await page.evaluate(async () => (await import('/js/core/json-reader.js')).jsonPreparationState()),
+    { worker: false, pending: 0 }, 'an idle session retains neither a preparation worker nor pending jobs');
   await page.reload(); await page.waitForFunction(() => window.ready);
   const restored = await page.evaluate(async () => {
     const entry = await window.cache.readEntry('news-history:json-worker-fixture');
@@ -91,6 +95,7 @@ try {
   assert.deepEqual(replay, [['news-history:json-worker-fixture', { tag: 'new', savedAt: 42, value: { records: [{ id: 'corrected-record', correction: true }] } }],
     ['fixture-legacy', { tag: 'legacy', savedAt: 7, value: { intact: true } }]], 'overlapping revisions commit in order and legacy entries remain readable');
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ bytes: Buffer.byteLength(body), ...reading }));
+  const { last, ...measurements } = reading;
+  console.log(JSON.stringify({ bytes: Buffer.byteLength(body), ...measurements }));
   console.log('PASS: responsive input, worker parsing/persistence, exact complete durable history, corrections, source timestamps and legacy cache replay.');
 } finally { await browser.close(); server.closeAllConnections(); await new Promise(done => server.close(done)); }
