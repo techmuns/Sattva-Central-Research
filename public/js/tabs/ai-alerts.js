@@ -172,6 +172,9 @@ function portfolioUnavailable() {
 }
 
 export function render(ctx) {
+  if (report && coverage.meta().syncStatus === 'family-unavailable' && !cachedPositionSizes()) {
+    report = alerts.withoutPositionSnapshot(report);
+  }
   if (ctxRef !== ctx) clearTimelines({ history: true });
   actionGeneration++;
   ctxRef = ctx;

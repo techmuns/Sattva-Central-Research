@@ -13,6 +13,7 @@ import { currentDay } from '/js/ui/ai-alert-utils.js';
 coverage.prime({holdings:${JSON.stringify(book)}});
 window.fixtureEvents=${JSON.stringify(book)}.flatMap(h=>['earnings','announcements','insider'].map((feed,i)=>({id:h.ticker+feed,ticker:h.ticker,company:h.name,feed,feedLabel:feed,day:currentDay(),time:'12:00',headline:h.name+' material fraud risk '+i,keywordIds:['fraud'],importance:'high',direction:'negative',tab:'daily-alerts'})));
 window.ctx={root:document.querySelector('#root'),scope:'portfolio',params:{}};tab.render(window.ctx);
+window.hideAlerts=()=>{tab.destroy();document.querySelector('#root').innerHTML='';};window.showAlerts=()=>tab.render(window.ctx);
 window.refreshSizes=async()=>{await (await import('/js/core/refresh.js')).refreshAll();};
 watchWorkerChanges(navigator.serviceWorker,()=>location.reload());await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;window.ready=true;
 </script>`;
@@ -76,6 +77,10 @@ try{
   assert.equal(await page.locator('[data-ai-unlock]').count(),0);
   failed=false;await page.evaluate(()=>window.refreshSizes());
   assert.equal(await page.locator('[data-ai-holding-size]').count(),2);
+  await page.evaluate(()=>window.hideAlerts());failed=true;
+  await page.evaluate(async()=>{try{await (await import('/js/data/holding-sizes.js')).readHoldingSizes(undefined,{force:true});}catch{}});
+  await page.evaluate(()=>window.showAlerts());
+  assert.equal(await page.locator('[data-ai-holding-size]').count(),0,'returning to alerts cannot restore weights after a background failure');
   assert.equal(await page.evaluate(()=>JSON.stringify(localStorage).includes('weightPct')),false);
   const after=await page.evaluate(()=>caches.keys());assert(after.some(k=>!before.includes(k)));assert(!after.some(k=>k.includes('previous-holding-sizes-release')));
   assert.equal(await page.evaluate(async()=>{for(const key of await caches.keys()){const c=await caches.open(key);if((await c.keys()).some(r=>r.url.includes('/api/holding-sizes')))return true;}return false;}),false);
