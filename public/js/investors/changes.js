@@ -58,7 +58,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       searchPlaceholder: 'Search company or investor...', initialView: state.activityView,
       onExport: (rows) => exportChanges(rows, state, range, false, ctx.scope),
       filters: [{ label: 'Direction', options: [{ value: 'all', label: 'All activity' }, { value: 'buy', label: 'Buys' }, { value: 'sell', label: 'Sells' }], match: (r, v) => r.action === v }],
-      emptyMessage: ready ? 'No matching trades in the available records for this period.' : 'Loading captured bulk/block deals…',
+      emptyMessage: mine && !managers.meta() ? 'Manager records have not been verified.' : ready ? 'No matching trades in the available records for this period.' : 'Loading captured bulk/block deals…',
       onRowClick: (r) => openEvidence(r, openPerson, mine),
       columns: [
         { label: 'Action', get: (r) => r.action === 'buy' ? 'Bought' : 'Sold' },
@@ -102,13 +102,13 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
       </div>
       <div data-changes-panel="${state.audience}" data-activity-total="${events.length}" data-holdings-total="${observations.length}">
         ${mine && !managers.meta() ? managerUnavailable() : ''}
-        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-display text-lg font-bold text-slate-900">${mine ? 'Your managers · ledger events & reported deals' : 'Tracked investors · reported trades'}</h2><span class="text-xs text-slate-500">${buys} buys · ${sells} sells · ${new Set(events.map(r => r.personId)).size} ${mine ? 'managers' : 'investors'}</span></div>
+        <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-display text-lg font-bold text-slate-900">${mine ? 'Your managers · ledger events & reported deals' : 'Tracked investors · reported trades'}</h2><span class="text-xs text-slate-500">${mine && !managers.meta() ? 'Manager records are not yet available' : `${buys} buys · ${sells} sells · ${new Set(events.map(r => r.personId)).size} ${mine ? 'managers' : 'investors'}`}</span></div>
         <p class="mb-3 text-xs text-slate-500">${range.from ? `${esc(date(range.from))} – ${esc(date(range.to))}` : 'ITD · all available captured history'} · ${mine ? 'Family ledger events and matched public bulk/block deals' : 'matched public bulk/block deals'}. Click a row for evidence.</p>
         <p class="mb-3 text-xs text-slate-500" data-exchange-status>${esc(exchanges?.summary || (ready ? 'Exchange coverage has not been verified.' : 'NSE / BSE reports are loading.'))}</p>
         <div data-changes-activity>${table.html}</div>
         <p class="my-3 text-xs text-slate-500" data-changes-coverage>${ready ? dates.length ? `Matching retained records: ${esc(date(dates[0]))} – ${esc(date(dates.at(-1)))}. ` : 'No matching records loaded. ' : 'Loading source records. '}${mine ? 'Ledger events include labelled transfers and unverified carried purchase dates. Public deals concern the named institution, not your account. ' : ''}ITD covers retained records and may not reach inception. Deals do not establish total allocation.</p>
         <details class="mb-4 rounded-2xl bg-white p-4 ring-1 ring-slate-100" data-changes-holdings ${state.holdingsOpen ? 'open' : ''}>
-          <summary class="cursor-pointer text-sm font-semibold text-slate-700">Holdings changes · ${observations.length} dated comparisons</summary>
+          <summary class="cursor-pointer text-sm font-semibold text-slate-700">Holdings changes · ${mine ? 'paired reports unavailable' : `${observations.length} dated comparisons`}</summary>
           <p class="my-3 text-xs text-slate-500">${mine ? 'Paired manager statements are not supplied by the Sattva workbook. Current holdings are available in My Managers; quantity/value differences are not inferred as trades.' : 'Both quarter-end dates are shown. The period filter uses the later date; these are holdings observations, not trade dates. A missing or unavailable disclosure does not prove a purchase or sale. Unknown comparisons remain in the holding book and coverage review.'}</p>
           <div data-changes-observations>${mine ? '' : holdingTable.html}</div>
         </details>
