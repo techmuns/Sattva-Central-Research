@@ -74,11 +74,11 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 11, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 10, 'all retained navigation remains available before its code loads');
     assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
-      ['alerts', 'Alerts'], ['announcements', 'Announcements'], ['earnings-hub', 'Earnings'],
+      ['alerts', 'Alerts'], ['announcements', 'Announcements'], ['earnings', 'Earnings'],
       ['breakouts', 'Breakouts / Technical'], ['insider-trades', 'Bulk/Block Deal'], ['mutual-funds', 'Mutual Funds'],
-      ['concall', 'Con-call'], ['news', 'News'], ['public-chatter', 'Public Chatter'], ['super-investors', 'Super Investors'],
+      ['news', 'News'], ['public-chatter', 'Public Chatter'], ['super-investors', 'Super Investors'],
     ], 'navigation matches the requested parent order and labels');
     assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');
     assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'NSE Filings is absent from navigation');
@@ -143,8 +143,29 @@ try {
     await page.goBack();
     await page.locator('[data-active-tab="corp-announcements"]').waitFor();
     assert.equal(await page.locator('#subview-mount [data-tab-id="corp-announcements"]').getAttribute('aria-selected'), 'true', 'history restores the selected announcement reader');
-    await page.locator('#tabbar-mount [data-tab-id="earnings-hub"]').click();
+    await page.locator('#tabbar-mount [data-tab-id="earnings"]').click();
     await page.locator('[data-active-tab="earnings-hub"]').waitFor();
+    assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
+      tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
+      [['earnings-hub', 'Results'], ['concall', 'Concall']]);
+    assert.equal(await page.locator('#subview-mount [data-tab-id="earnings-hub"]').getAttribute('aria-selected'), 'true', 'Earnings defaults to Results');
+    await page.evaluate(() => { window.earningsSubtabs = document.querySelector('#subview-mount [data-tab-list]'); });
+    await page.locator('#subview-mount [data-tab-id="earnings-hub"]').focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.locator('#subview-mount [aria-selected="true"]').getAttribute('data-tab-id'), 'earnings-hub', 'arrows only move focus between Earnings readers');
+    await page.keyboard.press('Enter');
+    await page.locator('[data-active-tab="concall"]').waitFor();
+    assert(await page.evaluate(() => window.earningsSubtabs === document.querySelector('#subview-mount [data-tab-list]')));
+    assert(await page.locator('#subview-mount [data-tab-id="concall"]').evaluate(tab => document.activeElement === tab));
+    await page.evaluate(() => { location.hash = '#/research/earnings-hub?scope=universe&view=filings&company=SYNTHETIC'; });
+    await page.locator('#subview-mount [data-tab-id="earnings-hub"][aria-selected="true"]').waitFor();
+    await page.locator('#tabbar-mount [data-tab-id="earnings"]').click();
+    assert.match(page.url(), /earnings-hub\?scope=universe&view=filings&company=SYNTHETIC/, 'active Earnings retains the reader view and company filter');
+    await page.goBack();
+    await page.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="earnings"]').getAttribute('aria-selected'), 'true', 'history restores Concall inside Earnings');
+    await page.locator('#tabbar-mount [data-tab-id="news"]').click();
+    await page.locator('[data-active-tab="news"]').waitFor();
     assert(await page.locator('#subview-mount').isHidden(), 'group subtabs leave with their parent');
 
     // Hold one real renderer request while the reader moves to another interface.
