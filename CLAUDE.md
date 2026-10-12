@@ -3379,6 +3379,8 @@ history/calendar badges beside the All Alerts title. The redundant Till Today la
 item/source-report summary above the table are also removed at the user's request.
 The 13 October follow-up removes the Company relationship filter from All Alerts;
 retain all relationship states in its stream, with accurate attribution labels on the rows.
+The redundant table Watchlist button is also removed; Watchlist is selected through the global
+scope picker, while company stars continue to edit the same shared list.
 Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 

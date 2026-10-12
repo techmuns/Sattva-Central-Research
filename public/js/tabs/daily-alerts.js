@@ -1113,6 +1113,8 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     nameMaxPx: 220,
     sub: (e) => [e.ticker, e.section, e.feedLabel].filter(Boolean).join(' · '),
     showRank: false,
+    // The global scope picker already offers Watchlist; avoid a second scope restriction here.
+    showWatchFilter: false,
     // Date and time lead every row. Some feeds resolve only to a day; saying "Day only" is more
     // informative than an em dash and keeps older rows intelligibly ordered as the reader scrolls.
     // History adds the combined signal/priority marker before company identity. Upcoming has no

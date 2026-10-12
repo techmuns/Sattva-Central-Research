@@ -167,6 +167,7 @@ try {
   console.log('Rendered complete All Alerts pool');
   const period = page.getByRole('combobox', { name: 'Date range', exact: true });
   assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
+  assert.equal(await page.locator('[data-watch-toggle]').count(), 0, 'All Alerts uses the global Watchlist scope instead of a second table toggle');
   assert.equal(await page.locator('[data-alert-arrivals]').count(), 0, 'no separate live banner');
   assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'initial history is not a live arrival');
   // THE TIMELINE IS A WINDOWED TABLE, SO `tbody` IS ONE SCREEN AND NOT THE ROW SET.

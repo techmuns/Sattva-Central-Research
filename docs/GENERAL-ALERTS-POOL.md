@@ -123,6 +123,9 @@ The Company relationship selector in All Alerts was removed at the user's reques
 2026. Its stream keeps all retained relationship states; attribution labels, source evidence,
 search and export continue to distinguish confirmed and possible matches.
 
+The redundant All Alerts table Watchlist button is also removed. Use the global Watchlist scope
+to select the shared company list; per-company stars remain available in the table.
+
 Only confirmed news can score, corroborate or enrich AI Alerts; legacy cached news without current
 attribution cannot bypass that rule. This is separate from All Alerts visibility and topic filters.
 Ask Research and exports carry query provenance, status and reasons so a query label is not presented

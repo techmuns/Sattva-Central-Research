@@ -208,6 +208,19 @@ try {
     await page.getByRole('button', { name:'View Portfolio',exact:true }).click();
     assert.equal(await page.locator('[data-scope-count]').innerText(), '3', tab);
     await page.getByRole('button', { name:'Done',exact:true }).click();
+    if (tab === 'daily-alerts') {
+      assert.equal(await page.locator('[data-watch-toggle]').count(), 0);
+      await page.locator('[data-watch="KISSHT"]').first().click();
+      await page.getByRole('textbox', { name:'Your name',exact:true }).fill('Local fixture');
+      await page.getByRole('button', { name:'Add to watchlist',exact:true }).click();
+      await page.locator('#scope-toggle-mount').getByRole('button', { name:'Watchlist',exact:true }).click();
+      await page.waitForFunction(async () => (await import('/js/core/state.js')).state.scope === 'watchlist');
+      await page.getByText('KISSHT announces dividend', { exact:true }).waitFor();
+      assert.equal(await page.getByText('NEWCO announces dividend', { exact:true }).count(), 0, 'global Watchlist scope limits All Alerts to starred companies');
+      assert.equal(await page.locator('[data-watch="KISSHT"]').first().innerText(), '★', 'company stars keep editing the shared Watchlist');
+      await page.locator('#scope-toggle-mount').getByRole('button', { name:'Portfolio',exact:true }).click();
+      await page.getByText('NEWCO announces dividend', { exact:true }).waitFor();
+    }
     if (tab === 'concall') {
       await page.getByRole('heading', { name:'Concall Library', exact:true }).waitFor();
       const portfolioCalls = await page.locator('#content-host').innerText();
@@ -326,7 +339,7 @@ try {
     assert(await frame.locator('#subview-mount [data-tab-id="daily-alerts"]').isVisible(), 'All Alerts retains its selected subtab');
     assert.equal(await frame.locator('[data-alert-arrivals]').count(), 0, 'rows stream directly without a separate live banner');
     assert(normal.pageWidth <= normal.width + 2, `no horizontal page clipping at ${size.width}px`);
-    assert(normal.toolbar <= (size.width >= 1024 ? 66 : 165), `search, watchlist and all filters retain a compact row budget: ${JSON.stringify(normal)}`);
+    assert(normal.toolbar <= (size.width >= 1024 ? 66 : 165), `search and all filters retain a compact row budget: ${JSON.stringify(normal)}`);
     assert((await frame.locator('[data-table-search]').boundingBox()).width >= 160, 'company search remains a usable text field, not a collapsed icon');
     const clipped = await frame.evaluate(() => [...document.querySelectorAll('[data-app-header] button, [data-header-bookmarks], [data-alerts-workspace] button, [data-sources-summary], [data-table-search], [data-table-filter]')]
       .filter(node => !node.closest('tbody') && node.getBoundingClientRect().width > 0)
@@ -334,6 +347,7 @@ try {
       .map(node => node.textContent.trim() || node.getAttribute('aria-label') || node.placeholder));
     assert.deepEqual(clipped, [], 'layout controls stay reachable, not merely hidden by page overflow clipping');
     assert.equal(await frame.locator('[data-table-filter]').count(), 3, 'All Alerts retains importance, direction and date filters');
+    assert.equal(await frame.locator('[data-watch-toggle]').count(), 0, 'the redundant Watchlist button is removed at every viewport size');
     assert.equal(await frame.getByRole('combobox', { name: 'Company relationship' }).count(), 0, 'the company relationship filter is removed at every viewport size');
     if (size.width >= 1024) {
       const brand = await frame.locator('[data-brand-mark] img').evaluate(async image => { await image.decode(); return image.getBoundingClientRect().width; });
