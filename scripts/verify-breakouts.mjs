@@ -11,10 +11,27 @@ import { collectBreakouts, breakoutClient, captureTarget, bootstrapBreakouts, cl
 import { baseFromBars, yahooSymbol, parseYahooQuote, mapUpstoxTargets, upstoxQuotes, recoveryCandles } from './lib/breakout-providers.mjs';
 import { upstoxRows } from '../worker/upstox-market.mjs';
 import { tickerFromScreenerUrl, marketTicker } from '../public/js/data/market-identity.js';
+import { quoteTargetIdentity } from './lib/quote-target-identity.mjs';
 const AT = Date.parse('2026-09-15T06:30:00Z'), iso = at => new Date(at).toISOString();
 const historyDates = count => {const dates=[];for(let at=AT-86400000;dates.length<count;at-=86400000)if(marketWindow(at).collect)dates.unshift(iso(at).slice(0,10));return dates;};
 const base = {high:100,low:95,average:97,averageVolume:1000,count:30,to:'2026-09-11'};
 const quote = (ticker='TEST', at=AT, extra={}) => validateQuote({ticker,price:105,volume:2000,prevClose:98,quoteAt:iso(at),checkedAt:iso(at),sessionDate:'2026-09-15',provider:'Yahoo Finance',base,volumeBase:{average:1000,from:'2026-08-20',to:expectedSession(Date.parse(`${extra.sessionDate || '2026-09-15'}T09:00:00+05:30`)),count:10,exchange:extra.exchange || 'NSE'},...extra},at);
+test('current exact exchange identities repair renamed and BSE-only provider targets without deleting ticker history',()=>{
+ const isin='INE545A01024', bseOnly='INE658D01029';
+ const identify=quoteTargetIdentity({nseEntries:[{isin,ticker:'HEGAM',aliases:['HEG']}],
+  bseEntries:[{isin,ticker:'HEG',bseSymbol:'HEGAM',status:'Active'}, {isin:bseOnly,ticker:'SIMPLEXCAS',bseSymbol:'SIMPLEXCAS',status:'Active'}]});
+ assert.deepEqual(identify({ticker:'HEG',name:'Old display name'}),{ticker:'HEG',name:'Old display name',isin,yahooTicker:'HEGAM.NS'});
+ const bse=identify({ticker:'SIMPLEXCAS'});assert.equal(yahooSymbol(bse),'SIMPLEXCAS.BO');
+ assert.equal(mapUpstoxTargets([bse],[{segment:'BSE_EQ',trading_symbol:'SIMPLEXCAS',instrument_key:'BSE_EQ|'+bseOnly}])[0].exchange,'BSE');
+ assert.equal(identify({ticker:'HEG',isin:'INE000A01001'}).isin,'INE000A01001','an explicit conflicting ISIN cannot fall through to a ticker');
+ assert.equal(identify({ticker:'HEG',yahooTicker:'REVIEWED.BO'}).yahooTicker,'REVIEWED.BO');
+ const ambiguous=quoteTargetIdentity({nseEntries:[{isin,ticker:'SHARED'},{isin:bseOnly,ticker:'SHARED'}]});
+ assert.deepEqual(ambiguous({ticker:'SHARED'}),{ticker:'SHARED'});
+ const overlap=quoteTargetIdentity({nseEntries:[{isin,ticker:'REUSED'}],bseEntries:[{isin:bseOnly,ticker:'REUSED',bseSymbol:'REUSED',status:'Active'}]});
+ assert.deepEqual(overlap({ticker:'REUSED'}),{ticker:'REUSED'},'conflicting exchange identities cannot replace an old ticker with a different issuer');
+ assert.equal(overlap({ticker:'REUSED',isin}).yahooTicker,'REUSED.NS');
+ assert.deepEqual(identify({ticker:'UNKNOWN',name:'HEG Advanced Materials'}),{ticker:'UNKNOWN',name:'HEG Advanced Materials'});
+});
 test('reviewed Screener IDs resolve consistently; unknown IDs never become a stock called ID',()=>{
  const url='https://www.screener.in/company/id/1286088/consolidated/';
  assert.equal(tickerFromScreenerUrl(url),'DHOOTTRANS');

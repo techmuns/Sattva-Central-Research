@@ -1,5 +1,25 @@
 import { parseWatchlistExport } from './screener-watchlist.mjs';
 
+const INVENTORY_FAILURES = new Map([
+  ['Screener page unavailable', 'source-page-unavailable'],
+  ['Unexpected watchlist identity', 'watchlist-identity'],
+  ['Watchlist management controls are unavailable', 'management-controls'],
+  ['Unrecognized company removal controls', 'removal-controls'],
+  ['Watchlist manage link is unavailable', 'management-link'],
+  ['Nonempty watchlist export is unavailable', 'missing-export'],
+  ['Ambiguous watchlist export controls', 'ambiguous-export'],
+  ['Unexpected export target', 'export-target'],
+  ['Watchlist export download failed', 'export-download'],
+  ['Watchlist export stream unavailable', 'export-stream'],
+  ['Watchlist export is oversized', 'export-size'],
+  ['Export and manage counts differ', 'inventory-count'],
+  ['Screener export has no ISIN column', 'export-identity'],
+  ['Screener export contains a duplicate ISIN', 'export-identity'],
+  ['A stale Screener company could not be matched unambiguously', 'removal-identity'],
+]);
+export const watchlistFailureReason = error => error?.name === 'TimeoutError' ? 'source-timeout'
+  : INVENTORY_FAILURES.get(error?.message) || 'unclassified';
+
 // Read both independent views before allowing a membership change. Screener
 // omits its export form for a brand-new empty watchlist.
 export async function readWatchlistInventory(page, { origin, watchlistId, watchlistName }) {
@@ -24,7 +44,9 @@ export async function readWatchlistInventory(page, { origin, watchlistId, watchl
     const companyId = /removeCompany\(['"](\d+)['"]\)/.exec(onclick)?.[1] || '';
     const container = button.closest('li, tr') || button.parentElement;
     const link = container?.querySelector('a[href^="/company/"]');
-    return { companyId, href: link?.getAttribute('href') || '', name: (link?.textContent || container?.textContent || '').trim() };
+    // Current management rows use a name span without a company link. Exclude
+    // the removal control's label from the exact-name reconciliation.
+    return { companyId, href: link?.getAttribute('href') || '', name: (link?.textContent || container?.querySelector('.shrink-text')?.textContent || container?.textContent || '').trim() };
   }));
   if (manageRows.some(row => !row.companyId) || new Set(manageRows.map(row => row.companyId)).size !== manageRows.length) {
     throw new Error('Unrecognized company removal controls');

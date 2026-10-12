@@ -3,8 +3,14 @@ import fs from 'node:fs';
 import {retainSeedObservations} from './lib/mutual-funds-seed.mjs';
 import {projectCompany} from '../worker/mutual-funds-model.mjs';
 import {publishCompanies} from './lib/mutual-funds-transport.mjs';
-import {collectorClient} from './collect-mutual-funds.mjs';
+import {collectorClient,mutualFundSourceCoverage} from './collect-mutual-funds.mjs';
 import './verify-mutual-funds-feed.mjs';
+assert.deepEqual(mutualFundSourceCoverage([{status:'ok',month:'2026-09'},{status:'ok',month:'2026-08'},
+ {status:'partial',month:'2026-09'},{status:'unavailable',month:null}],'2026-09'),
+ {state:'incomplete',targetMonth:'2026-09',currentAmcs:1,totalAmcs:4,olderPeriodAmcs:1,states:{ok:2,partial:1,unavailable:1}},
+ 'acknowledged import completion cannot certify upstream freshness/completeness');
+assert.equal(mutualFundSourceCoverage([],'2026-09').state,'incomplete');
+assert.equal(mutualFundSourceCoverage([{status:'ok',month:'2026-09'}],'2026-09').state,'current');
 const dated={isin:'INE123A01016',name:'Captured company',funds:[{id:'amc:fund',name:'Fund',amc:'AMC',months:{'2026-08':{shares:100,checkedAt:'2026-09-20T08:00:00Z',change:100,action:'New'}}}]};
 const missing={isin:dated.isin,name:'Current portfolio name',funds:[]};
 const retained=retainSeedObservations([missing],[{company:dated}])[0];

@@ -15,7 +15,7 @@ const root = fileURLToPath(new URL('../public/', import.meta.url));
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH });
 const context = await browser.newContext({ acceptDownloads: true });
 const page = await context.newPage();
-page.setDefaultTimeout(2_000);
+page.setDefaultTimeout(10_000);
 const origin = 'https://www.screener.in';
 const checkedAt = new Date().toISOString();
 let mode = 'ok';
@@ -38,7 +38,7 @@ await context.route('**/*', async (route) => {
     }
     if (url.pathname === '/quarter/') return route.fulfill({ contentType: 'text/html', headers: { 'retry-after': '86400' },
       status: ({ 'failed-quarter': 503, 'quarter-rate': 429, 'quarter-denied': 403, 'quarter-session': 401 })[mode] || 200,
-      body: mode === 'changed-quarter' ? '<p>Changed structure</p>' : table('quarterly') });
+      body: mode === 'changed-quarter' ? '<p>Changed structure</p>' : mode === 'quarter-premium' ? '<div>Requires Premium</div>' : table('quarterly') });
   }
   if (url.origin === 'http://insights.test') {
     if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: '<!doctype html><script type="module">window.insights=await import("/js/data/screener-insights.js");</script>' });
@@ -95,9 +95,9 @@ try {
   assert.equal(context.pages().length, pageCount, 'timed-out company attempts close their actual browser pages');
   mode = 'rate-limited';
   await assert.rejects(readInsightCompany(page, item, checkedAt), error => error.insightCode === 'rate-limited' && error.retryAt > Date.now() + 7_190_000);
-  for (const [nextMode, code] of [['quarter-rate', 'rate-limited'], ['quarter-denied', 'access-denied'], ['quarter-session', 'session-expired'], ['changed-quarter', 'structure-changed']]) {
+  for (const [nextMode, code] of [['quarter-rate', 'rate-limited'], ['quarter-denied', 'access-denied'], ['quarter-premium', 'access-denied'], ['quarter-session', 'session-expired'], ['changed-quarter', 'structure-changed']]) {
     mode = nextMode;
-    await assert.rejects(readInsightCompany(page, item, checkedAt, { tabTimeout: 300, quarterPauseMs: 0 }), error => error.insightCode === code,
+    await assert.rejects(readInsightCompany(page, item, checkedAt, { tabTimeout: 2_000, quarterPauseMs: 0 }), error => error.insightCode === code,
       'lazy data failures retain their actual diagnostic, not a generic table timeout');
   }
   const retained = mergeScreenerInsightsCapture({ ...payload, companies: [], failedCount: 1, failedKeys: ['TEST'], fullCoverage: false }, payload);

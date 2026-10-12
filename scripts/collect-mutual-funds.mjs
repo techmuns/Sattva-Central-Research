@@ -32,6 +32,13 @@ export function collectorClient({fetcher=fetch,env=process.env,pause=ms=>new Pro
     }
   };
 }
+export function mutualFundSourceCoverage(amcs,target) {
+  const current=amcs.filter(a=>a.status==='ok'&&a.month===target).length;
+  return {state:current===amcs.length&&amcs.length>0?'current':'incomplete',targetMonth:target,
+    currentAmcs:current,totalAmcs:amcs.length,
+    olderPeriodAmcs:amcs.filter(a=>a.month&&a.month<target).length,
+    states:amcs.reduce((counts,a)=>({...counts,[a.status]:(counts[a.status]||0)+1}),{})};
+}
 async function main() {
   if(process.argv.includes('--bootstrap')) {
     const client=collectorClient();for(let attempt=0;attempt<45;attempt++){try{await client({action:'arm'});console.log('Mutual Funds timer armed');return;}catch{await new Promise(done=>setTimeout(done,10000));}}
@@ -90,8 +97,14 @@ async function main() {
     for(let at=0;at<unchanged.length;at+=25)await client({action:'confirm',companies:unchanged.slice(at,at+25)});
     await client({action:'finish'});await client({action:'arm'});
     console.log(`Published ${companies.length-unchanged.length} changed companies; ${unchanged.length} unchanged.`);
-    // Source degradation is operationally visible after every useful checkpoint was saved.
-    if(amcs.some(a=>a.status!=='ok'||a.month!==meta.targetMonth))process.exitCode=1;
+    // This job imports a verified upstream snapshot and its failure states. Its
+    // success means every import checkpoint was acknowledged, not that the AMCs
+    // published complete current disclosures. The independent health endpoint
+    // still returns 503 for incomplete/stale source coverage. Invalid snapshots
+    // and failed writes continue to throw and fail this workflow.
+    const coverage=mutualFundSourceCoverage(meta.amcs,meta.targetMonth);
+    console.log(JSON.stringify({stage:'source-coverage',...coverage}));
+    if(coverage.state!=='current')console.warn(`${process.env.GITHUB_ACTIONS==='true'?'::warning::':''}Import completed; upstream AMC coverage is incomplete (${coverage.currentAmcs}/${coverage.totalAmcs} current). Retained disclosures and source failure states were preserved; see Mutual Funds coverage.`);
   } else if(process.argv.includes('--seed')) {
     const out='public/data/mutual-funds';fs.mkdirSync(out+'/companies',{recursive:true});
     // Static fallback is the requested portfolio only. Production serves the complete universe.

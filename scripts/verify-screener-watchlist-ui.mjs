@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { readWatchlistInventory } from './lib/screener-watchlist-browser.mjs';
+import { readWatchlistInventory, watchlistFailureReason } from './lib/screener-watchlist-browser.mjs';
+import { matchRemovalButtons } from './lib/screener-watchlist.mjs';
 
 const { chromium } = await import(pathToFileURL(resolve(process.env.PLAYWRIGHT_ROOT, 'index.mjs')).href);
 const browser = await chromium.launch({ headless: true });
@@ -37,6 +38,11 @@ try {
   const populated = await inventory({ rows: company, form: exportForm });
   assert.equal(populated.current[0].isin, 'INE000A01001', 'populated lists must still read the downloaded export');
   assert.equal(populated.manageRows[0].companyId, '11');
+  const spanOnly = await inventory({ rows: company.replace('<a href="/company/ALPHA/">Alpha Ltd</a>', '<span class="shrink-text">Alpha Ltd</span>'), form: exportForm });
+  assert.equal(spanOnly.manageRows[0].name, 'Alpha Ltd');
+  assert.equal(matchRemovalButtons(spanOnly.current, spanOnly.manageRows)[0].companyId, '11');
+  assert.equal(watchlistFailureReason(Error('Export and manage counts differ')), 'inventory-count');
+  assert.equal(watchlistFailureReason(Error('account-secret@example.test / private holding')), 'unclassified', 'unexpected errors never enter public diagnostics');
   await assert.rejects(inventory({ rows: company }), /Nonempty watchlist export/);
   await assert.rejects(inventory({ table: '<a href="/company/ALPHA/">Alpha</a>' }), /Nonempty watchlist export/);
   await assert.rejects(inventory({ rows: '<a href="/company/ALPHA/">Alpha</a>' }), /Nonempty watchlist export/);
