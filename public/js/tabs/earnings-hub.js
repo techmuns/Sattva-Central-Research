@@ -53,12 +53,13 @@ import { filterByScope, scopePossessive } from '../data/scope.js';
 import { renderCompanyFilings } from './company-filings.js';
 import { wireEarningsReports } from '../ui/earnings-report.js';
 import { safeDocumentUrl } from '../data/screener-concalls-shared.js';
+import { reportPeriod } from '../data/domestic-filings-shared.js';
 
 export const meta = TAB_META['earnings-hub'];
 
 // Filed results and scheduled results. Old document links remain readable.
 const VIEWS = [
-  { value: 'reported', label: 'Earnings Reported', help: 'Companies that have already filed this quarter' },
+  { value: 'reported', label: 'Earnings Reported', help: 'Published quarterly results' },
   { value: 'calendar', label: 'Earnings Calendar', help: 'Scheduled results and upcoming con-calls, by date' },
 ];
 
@@ -403,15 +404,29 @@ function wirePeriodToggle(root, ctx) {
 // ---------------------------------------------------------------------------------------
 // Latest Results — the table
 // ---------------------------------------------------------------------------------------
+const PERIOD_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function reportingPeriodLabel(value, fallback) {
+  const period = reportPeriod(value);
+  return period ? `${PERIOD_MONTHS[Number(period.slice(5, 7)) - 1]} ${period.slice(0, 4)}` : String(value || fallback);
+}
+
 function renderLatest(ctx) {
   const rows = rowsFor(ctx);
   const m = feed.meta();
 
-  // Column headers name the actual periods being compared — "REV JUN 26" / "REV JUN 25" — rather
-  // than "current" and "prior". A screenshot of this table should say which quarters it is,
-  // because a growth percentage is meaningless without knowing what it is measured against.
-  const cur = m?.currentPeriod || 'Current';
-  const pri = m?.priorPeriod || 'Prior';
+  // Periods belong to the displayed source, including an older snapshot. Keep the subtitle
+  // evergreen and put unambiguous years beside the figures, using the report-matching parser.
+  const cur = reportingPeriodLabel(m?.currentPeriod, 'Current period');
+  const pri = reportingPeriodLabel(m?.priorPeriod, 'Comparison period');
+  // The kit keys sort by heading. Carry the same metric/comparison across a period rollover.
+  if (panel?.periods && tableView?.sort) {
+    const previousSort = tableView.sort.key;
+    for (const metric of ['Revenue', 'Net Profit']) for (const [side, label] of [['current', cur], ['prior', pri]]) {
+      if (previousSort === `${metric} ${panel.periods[side]}`) {
+        tableView = { ...tableView, sort: { ...tableView.sort, key: `${metric} ${label}` } };
+      }
+    }
+  }
 
   // Ticker and industry are not columns any more: they live on the second line of the identity
   // cell, where they stay searchable and visible without costing two columns of width. The width
@@ -465,7 +480,7 @@ function renderLatest(ctx) {
 
       { label: 'Market Cap', get: (r) => (r.marketCap == null ? '<span class="text-slate-300">—</span>' : escapeHtml(formatCroreCompact(r.marketCap))), html: true, align: 'right', sortValue: (r) => r.marketCap ?? -1 },
       { label: 'Basis', get: (r) => basisPill(r.basis), html: true, align: 'right', sortValue: (r) => r.basis || '' },
-      { label: 'Filings', get: (r) => r.ticker ? `<button type="button" data-norow data-earnings-report="${escapeHtml(r.ticker)}" data-report-period="${escapeHtml(m?.currentPeriod || '')}" data-report-date="${escapeHtml(r.resultDate || '')}" class="font-semibold text-indigo-600" aria-label="Open ${escapeHtml(r.company)} ${escapeHtml(m?.currentPeriod || '')} filing">Reports</button>` : '—', html: true, sortable: false },
+      { label: 'Filings', get: (r) => r.ticker ? `<button type="button" data-norow data-earnings-report="${escapeHtml(r.ticker)}" data-report-period="${escapeHtml(m?.currentPeriod || '')}" data-report-date="${escapeHtml(r.resultDate || '')}" class="font-semibold text-indigo-600" aria-label="Open ${escapeHtml(r.company)} ${escapeHtml(cur)} filing">Reports</button>` : '—', html: true, sortable: false },
     ],
     // Two dropdowns, not one: "PAT grew" and "Consolidated only" are different questions and a
     // reader should be able to ask both at once.
@@ -516,25 +531,26 @@ function renderLatest(ctx) {
     // No onRowClick, deliberately — see "WHY THERE IS NO DRILL PANEL" at the top of this file.
     exportName: 'sattva-earnings',
     onExport: (visible) => exportResults(visible, feed.meta()),
-    emptyMessage: scopePossessive(ctx.scope) ? `None of ${scopePossessive(ctx.scope)} has reported in this quarter yet.` : 'No results match your filters.',
+    emptyMessage: scopePossessive(ctx.scope) ? `None of ${scopePossessive(ctx.scope)} has results in this reporting period.` : 'No results match your filters.',
     initialView: tableView,
   });
   const header = `
     ${sectionHead({
       title: 'Latest Results',
-      description: `Every company that has reported this quarter, newest first. Reported figures in ₹ crore${m?.currentPeriod ? `, ${m.currentPeriod} against ${m.priorPeriod}` : ''}.`,
+      description: 'Latest reported quarterly results, newest first. Figures in ₹ crore.',
       controls: `${viewToggle('reported')}${periodToggle(m)}${liveButton(m, rows)}${scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'reported', book: coverage.meta() })}`,
     })}
     ${
       periodError
         ? `<div class="mb-4 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 ring-1 ring-amber-200">
              <strong>Comparison not switched.</strong> ${escapeHtml(periodError)}
-             You are still looking at ${escapeHtml((m?.subType || 'yoy').toUpperCase())} — ${escapeHtml(m?.currentPeriod || '')} against ${escapeHtml(m?.priorPeriod || '')}, as the column headers say.
+             You are still looking at ${escapeHtml((m?.subType || 'yoy').toUpperCase())} — ${escapeHtml(cur)} against ${escapeHtml(pri)}, as the column headers say.
            </div>`
         : ''
     }
   `;
   const table = paintPanel(ctx, JSON.stringify(['reported', ctx.scope, cur, pri, m?.subType]), header, makeTable, rows);
+  panel.periods = { current: cur, prior: pri };
   tableView = table.view;
   wireViewToggle(ctx.root, ctx);
   wirePeriodToggle(ctx.root, ctx);
@@ -963,7 +979,7 @@ async function exportResults(rows, m) {
   const banner = {
     __banner:
       `REAL DATA. Quarterly results from the live published-results feed — ${m?.quarter || ''}, ` +
-      `${(m?.subType || 'yoy').toUpperCase()}: ${m?.currentPeriod || ''} vs ${m?.priorPeriod || ''}, ` +
+      `${(m?.subType || 'yoy').toUpperCase()}: ${reportingPeriodLabel(m?.currentPeriod, 'Current period')} vs ${reportingPeriodLabel(m?.priorPeriod, 'Comparison period')}, ` +
       `captured ${new Date().toISOString()}. Figures in Rs. crore. Where the sign flips between periods the "growth" column reads ` +
       `"To profit" / "To loss" / "Loss narrowed" instead of a percentage, because a percentage change across zero is not a growth rate. ` +
       `Return since result = live price vs the close on the result date. Blank cells mean not joined, not zero.`,
@@ -972,8 +988,8 @@ async function exportResults(rows, m) {
   // The sheet carries the same three metrics × two periods the table does. Ticker and industry
   // stay as columns here even though they are no longer columns on screen: a spreadsheet has no
   // second line under the company name, and a workbook you cannot filter by ticker is less useful.
-  const cur = m?.currentPeriod || 'Current';
-  const pri = m?.priorPeriod || 'Prior';
+  const cur = reportingPeriodLabel(m?.currentPeriod, 'Current period');
+  const pri = reportingPeriodLabel(m?.priorPeriod, 'Comparison period');
   const val = (mm, field) => (mm?.[field] ?? '');
   await exportRows({
     filename: 'sattva-earnings',
