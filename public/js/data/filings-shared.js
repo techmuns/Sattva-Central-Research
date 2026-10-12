@@ -8,7 +8,8 @@
 //
 // PURE, AND IMPORTED BY `worker/muns.mjs`. Same arrangement as stockscans-shared.js and
 // finology-shared.js: one definition of what a row is, so the Worker and the browser cannot drift.
-// Nothing here touches the DOM, `fetch` or any global.
+// Nothing here touches the DOM or `fetch`. Both dedupe drivers use the same pure generator.
+import { runSteps, runStepsInSlices } from '../core/slices.js';
 //
 // WHY EVERYTHING HERE IS DELIBERATELY LOOSE ABOUT FIELD NAMES
 //   These three payloads are not ours and their shapes are not pinned by any contract we control.
@@ -401,29 +402,35 @@ export function articleStoryKey(row) {
     : null;
 }
 
-export function dedupeArticles(list = []) {
+export function* dedupeArticleSteps(list = []) {
   const seenUrl = new Set();
   const seenStory = new Set();
   const seenAnonymous = new Set();
-  return list.filter((row) => {
+  const kept = [];
+  let visited = 0;
+  for (const row of list) {
+    if (++visited % 128 === 0) yield;
     const url = articleUrlKey(row);
     if (url) {
-      if (seenUrl.has(url)) return false;
+      if (seenUrl.has(url)) continue;
       seenUrl.add(url);
     }
     const story = articleStoryKey(row);
     if (story) {
-      if (seenStory.has(story)) return false;
+      if (seenStory.has(story)) continue;
       seenStory.add(story);
     }
     if (!url && !story) {
       const content = anonymousArticleContentKey(row);
-      if (seenAnonymous.has(content)) return false;
+      if (seenAnonymous.has(content)) continue;
       seenAnonymous.add(content);
     }
-    return true;
-  });
+    kept.push(row);
+  }
+  return kept;
 }
+export const dedupeArticles = (list = []) => runSteps(dedupeArticleSteps(list));
+export const dedupeArticlesAsync = (list = []) => runStepsInSlices(dedupeArticleSteps(list), { sliceMs: 8 });
 
 /**
  * The insider-trades payload, whichever form it arrives in.

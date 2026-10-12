@@ -25,7 +25,7 @@
 const CACHE_PREFIX = 'sattva-dashboard-';
 const CACHE_NAME = `${CACHE_PREFIX}2026-10-12-collector-reliability-v3`;
 const APP_ENTRY = '/js/app.js';
-const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/data/portfolio-companies.json',
+const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/js/core/json-worker.js', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
 const MUNSHOT_SDK = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
 const WARM_CONCURRENCY = 8;
@@ -45,7 +45,7 @@ function moduleSpecifiers(source) {
 
 // Compose with every other module revision without editing their shared version lines.
 function releaseCacheKey() {
-  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1-super-investor-managers-v1`;
+  return `${RELEASE_CACHE_KEY}-2026-10-09-full-exchange-universe-v1-directory-recovery-v1-responsive-directory-v1-super-investor-clean-heading-v1-news-coverage-detail-v1-all-alerts-history-only-v1-super-investor-managers-v1-json-worker-v1-scoped-alert-pool-v1`;
 }
 
 // Compose this UI revision without editing another release's version marker.

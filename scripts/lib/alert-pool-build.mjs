@@ -12,6 +12,7 @@ import { captureRevision, captureStamp, POOL_CAPTURES, POOL_FEEDS, ALERT_POOL_CO
 import { buildDayShards, buildAiShards, validateShard, compactAiEvent } from '../../public/js/data/alert-pool-format.js';
 import { newsStateInputs, bookSignature } from '../../public/js/data/alert-pool.js';
 import { verifyAnnouncementDelivery } from './announcement-delivery.mjs';
+import { createPortfolioProjection, projectPortfolioShard, portfolioProjectionSignature } from '../../public/js/data/alert-pool-projection.js';
 
 const LIVE_ROUTES = { 'api/earnings': 'data/earnings-live.json', 'api/concalls': 'data/concall-scans.json',
   'api/nse-announcements': 'data/nse-announcements.json', 'api/ipo-filings': 'data/ipo-filings.json' };
@@ -98,10 +99,33 @@ export function writePoolMembers({ outDir, sourceFeeds, day, now, book, newsMeta
     return { ...entry, feedMembers };
   };
   const days = [...buildDayShards(sourceFeeds, day).values()].map((shard) => ({ day: shard.day, ...writeVariants(dayMember(shard.day), shard) }));
-  const ai = [...buildAiShards(sourceFeeds, day).entries()].map(([member, shard]) => ({ span: shard.span, from: shard.from, to: shard.to, ...writeVariants(member, shard) }));
+  const aiShards = buildAiShards(sourceFeeds, day);
+  const ai = [...aiShards.entries()].map(([member, shard]) => ({ span: shard.span, from: shard.from, to: shard.to, ...writeVariants(member, shard) }));
+  const projection = createPortfolioProjection(book);
+  const sourceStats = {};
+  for (const id of POOL_FEEDS) {
+    const seen = new Set();
+    let sourceCount = 0, unresolvedCount = 0;
+    for (const shard of aiShards.values()) {
+      const group = shard.feeds[id];
+      for (const columns of [group, group.companions].filter(Boolean)) columns.events.forEach((event, i) => {
+        if (seen.has(columns.order[i])) return;
+        seen.add(columns.order[i]);
+        const reading = projection(event);
+        sourceCount += reading.sourceCount; unresolvedCount += reading.unresolvedCount;
+      });
+    }
+    sourceStats[id] = { sourceCount, unresolvedCount };
+  }
+  const portfolioAi = { signature: portfolioProjectionSignature(book), sourceStats,
+    entries: [...aiShards.entries()].map(([member, shard]) => {
+      const projected = projectPortfolioShard(shard, projection);
+      return { span: shard.span, from: shard.from, to: shard.to,
+        ...writeVariants(member.replace(/\.json\.gz$/, '.portfolio.json.gz'), projected) };
+    }) };
   const index = {
     version: 1, contract: ALERT_POOL_CONTRACT, policy: ALERT_POOL_POLICY, builtAt: new Date(now).toISOString(), day,
-    bookSignature: bookSignature(book), pooledFeeds: POOL_FEEDS, captures, feeds, days, ai,
+    bookSignature: bookSignature(book), pooledFeeds: POOL_FEEDS, captures, feeds, days, ai, portfolioAi,
     sourceEvents: Object.fromEntries(pooled.map((feed) => [feed.id, feed.events.length])),
   };
   writeFileSync(join(outDir, ALERT_POOL_INDEX_MEMBER), JSON.stringify(index));
@@ -169,6 +193,17 @@ export function verifyPoolMembers({ outDir, sourceFeeds, index }) {
       group.companions.events.forEach((event, i) => {
         assert.deepEqual(event, jsonForm(compactAiEvent(feed.id, feed.events[group.companions.order[i]])), `${entry.member}: ${feed.id} companion ${i} is the collector's event in compact form`);
       });
+    }
+  }
+  if (index.portfolioAi) {
+    const model = JSON.parse(index.portfolioAi.signature)[1];
+    const projection = createPortfolioProjection([], model);
+    for (let i = 0; i < index.ai.length; i++) {
+      const entry = index.portfolioAi.entries[i];
+      const original = validateShard(readMember(outDir, index.ai[i].member), { span: entry.span });
+      const projected = validateShard(readMember(outDir, entry.member), { span: entry.span });
+      assert.deepEqual(projected, projectPortfolioShard(original, projection), `${entry.member}: exact portfolio records, fields, positions and companions`);
+      verifyVariants(entry, projected);
     }
   }
 }

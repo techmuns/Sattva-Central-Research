@@ -31,6 +31,8 @@
 import { authHeaders } from './host-context.js';
 import { hydrateJsonShards } from './json-shards.js';
 import { createMemoryCache, estimateMemoryBytes } from './memory-cache.js';
+import { readJsonResponse, persistJsonEntry, canPrepareJson, isPreparedJson } from './json-reader.js';
+import { unpackJsonAsync } from './json-codec.js';
 
 const DB_NAME = 'sattva-cache';
 const DB_VERSION = 1;
@@ -178,8 +180,12 @@ export async function readEntry(key) {
   if (mem) return mem;
   const db = await openDb();
   if (!db) return null;
-  const row = await tx(db, 'readonly', (s) => s.get(key));
+  let row = await tx(db, 'readonly', (s) => s.get(key));
   if (!row || !row.value) return null;
+  if (row.jsonEncoding === 1) {
+    try { const { jsonEncoding, ...metadata } = row; row = { ...metadata, value: await unpackJsonAsync(row.value) }; }
+    catch { return null; }
+  }
   const newer = memory.get(key);
   if (newer) return newer;
   remember(key, row, true);
@@ -231,7 +237,7 @@ export async function readEntries(keys) {
         const row = req.result;
         if (!row || !row.value) return;
         const newer = memory.get(key);
-        if (!newer) remember(key, row, true);
+        if (!newer && row.jsonEncoding !== 1) remember(key, row, true);
         out.set(key, newer || row);
       };
     }
@@ -239,6 +245,15 @@ export async function readEntries(keys) {
     t.onerror = resolve;
     t.onabort = resolve;
   });
+  for (const [key, saved] of out) if (saved.jsonEncoding === 1) {
+    try {
+      const { jsonEncoding, ...metadata } = saved;
+      const row = { ...metadata, value: await unpackJsonAsync(saved.value) };
+      const newer = memory.get(key);
+      if (!newer) remember(key, row, true);
+      out.set(key, newer || row);
+    } catch { out.delete(key); }
+  }
   return out;
 }
 
@@ -285,16 +300,27 @@ export async function listKeys(prefix) {
   return [...keys];
 }
 
+const queuedWrites = new Map();
 export function writeEntry(key, { tag, value, savedAt = Date.now() }) {
   const row = { tag: tag || null, savedAt, value };
   remember(key, row);
-  return openDb()
+  const pending = (queuedWrites.get(key) || Promise.resolve()).then(() => openDb())
     .then(async db => {
-      const result = db ? await tx(db, 'readwrite', s => s.put(row, key)) : null;
+      // Persist large reconstructible source graphs in the browser worker. Transferred binary
+      // buffers preserve every JSON field while avoiding a multi-second page-thread IDB clone.
+      let result = null;
+      const sourceJson = reconstructible(key) || /^(snapshot:|filings:|insider-history:|nse-filings:|ipo-filings:)/.test(key) || isPreparedJson(value);
+      if (db && sourceJson && canPrepareJson(value)) {
+        try { result = await persistJsonEntry(key, row); }
+        catch { /* Failed writes retain the complete current RAM value and the preceding disk row. */ }
+      } else if (db) result = await tx(db, 'readwrite', s => s.put(row, key));
       if (result === key && reconstructible(key)) memory.markEvictable(key, row);
       return result;
     })
     .catch(() => null);
+  queuedWrites.set(key, pending);
+  void pending.finally(() => { if (queuedWrites.get(key) === pending) queuedWrites.delete(key); });
+  return pending;
 }
 
 /** Atomically replace a multi-entry cache. Quota/transaction failure keeps the previous disk
@@ -441,7 +467,7 @@ async function readConditionalJson(path, { key, optional = false, signal, valida
   try {
     // Each immutable part has its own bounded timeout. A large complete capture must not share
     // the manifest's 20-second budget; an explicit caller cancellation still covers every read.
-    const body = await res.json();
+    const body = await readJsonResponse(res);
     value = rawManifest ? body : await hydrateJsonShards(body, path, { signal: callerSignal });
   } catch (err) {
     if (optional) return miss(res.status);
@@ -495,7 +521,7 @@ export function revalidatedJson(path, { optional = false, allowCached = false } 
   const p = fetch(path, { cache: 'no-cache', ...(allowCached ? { headers: { 'x-sattva-bootstrap': '1' } } : {}), signal: AbortSignal.timeout(20000) })
     .then((res) => {
       if (!res.ok) throw new Error(`${path} (${res.status})`);
-      return res.json().then(value => hydrateJsonShards(value, path));
+      return readJsonResponse(res).then(value => hydrateJsonShards(value, path));
     })
     .finally(() => inFlightJson.delete(requestKey));
 
