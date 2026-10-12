@@ -174,7 +174,7 @@ export function render(ctx) {
   const requestedCompany = String(ctx.params?.company || '').trim();
   if (requestedCompany && requestedCompany !== routeCompany) {
     picked = null;
-    tableViews = { [HORIZON.THROUGH]: { q: requestedCompany, filters: ['all', 'all', 'all', 'all'] },
+    tableViews = { [HORIZON.THROUGH]: { q: requestedCompany, filters: ['all', 'all', 'all'] },
       [HORIZON.UPCOMING]: { q: requestedCompany } };
   } else if (!requestedCompany && routeCompany) {
     tableViews = {
@@ -1170,8 +1170,8 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
         location.hash = `#/research/${e.tab}?${params.join('&')}`;
       }
     },
-    // Query identity remains searchable as a possible match, not publisher evidence. The explicit
-    // relationship filter can separate those leads without silently deleting retained coverage.
+    // Query identity remains searchable as a possible match, not publisher evidence.
+    // Attribution labels distinguish those leads while all retained records remain available.
     searchable: e => membersOf(e).map(alerts.eventSearchText).join(' '),
     filters,
     initialSort: { key: 'Date / time', dir: mode === HORIZON.UPCOMING ? 'asc' : 'desc' },
@@ -1207,17 +1207,6 @@ function buildTableFilters(events, day, mode, matchesDate) {
       match: (e, v) => membersOf(e).some(m=>m.direction===v),
     },
     { label: 'Date range', value: 'today', options: dateRangeOptions(events, day, mode), match: (e, v) => membersOf(e).some(m=>matchesDate(m.day,v)) },
-    {
-      label: 'Company relationship',
-      options: [
-        { value: 'all', label: 'All retained records' },
-        { value: 'confirmed', label: 'Matched companies / filings' },
-        { value: 'related', label: 'Related-entity news' },
-        { value: 'uncertain', label: 'Possible news matches' },
-        { value: 'unrelated', label: 'Reviewed unrelated news' },
-      ],
-      match: (e,v)=>membersOf(e).some(m=>matchesCompanyRelationship(m,v)),
-    },
   ];
 }
 
@@ -1279,14 +1268,6 @@ function emptyMessageFor(scope, day, mode) {
   const where = scope === 'universe' ? 'across the market' : `for your ${scopeLabel(scope).toLowerCase()}`;
   if (mode === HORIZON.UPCOMING) return `No loaded upcoming event ${where} matches the current search, source and date filters from ${day}.`;
   return `No loaded event ${where} matches the current search, feed, direction, importance and date filters through ${day}. Use the source filters above to adjust the view.`;
-}
-
-/** An explicit display filter, never a collection or history-retention rule. */
-export function matchesCompanyRelationship(event, value) {
-  if (!value || value === 'all') return true;
-  if (event.attribution) return event.attribution.status === value;
-  if (['news', 'market-news', 'twitter'].includes(event.feed)) return value === 'uncertain';
-  return value === 'confirmed' && !!(event.ticker || event.entityId);
 }
 
 // ---------------------------------------------------------------------------------------

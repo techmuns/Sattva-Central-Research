@@ -12,7 +12,7 @@ const { newsSignal, companyNewsState, eventSearchText, mapPortfolioDiscoveryEven
 const { enrichmentCoverageIncomplete, newsViewStatus } = await import('../public/js/core/news-view-status.js');
 const { rankReport, mergePartialReport } = await import('../public/js/data/ai-alerts.js');
 const { matchesSearch } = await import('../public/js/ui/ai-alert-utils.js');
-const { alertCoverageState, feedState, matchesCompanyRelationship } = await import('../public/js/tabs/daily-alerts.js');
+const { alertCoverageState, feedState } = await import('../public/js/tabs/daily-alerts.js');
 const { writeEntry } = await import('../public/js/core/store.js');
 const holdings = [{ ticker: 'KISSHT', isin: 'INE12F801023', name: 'OnEMI Technology Solutions' }];
 const identities = portfolioNewsEntities(holdings);
@@ -70,12 +70,7 @@ for (const headline of ['Kiss band announces tour', 'Kishtwar residents face a l
   assert.equal(noisy.attribution.status, 'uncertain');
   assert.equal(newsSignal(noisy).aiEligible, false);
   assert(eventSearchText({ ...event, ...newsSignal(noisy), sourceRecord: noisy, headline }).toLowerCase().includes('kissht'), 'unverified query hits are retained and searchable, not deleted');
-  assert(matchesCompanyRelationship({ ...event, ...newsSignal(noisy) }, 'uncertain'));
-  assert(!matchesCompanyRelationship({ ...event, ...newsSignal(noisy) }, 'confirmed'));
 }
-assert(matchesCompanyRelationship(event, 'confirmed'));
-assert(matchesCompanyRelationship({ feed: 'announcements', ticker: 'KISSHT' }, 'confirmed'), 'matched-company filter retains source-attributed filings');
-assert(matchesCompanyRelationship({ feed: 'news', attribution: { status: 'unrelated' } }, 'all'));
 
 const feeds = status => [{ id: 'news', status, reachesToday: status === 'ok' }];
 const report = (events = [event], day = '2026-09-07', status = 'ok') => ({ day, scope: 'portfolio', includeHistory: true, events, feeds: feeds(status), pending: status === 'pending' ? 1 : 0 });
