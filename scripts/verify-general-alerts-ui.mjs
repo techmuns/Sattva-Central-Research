@@ -252,6 +252,8 @@ try {
   assert.equal(await page.locator('[data-feed]').count(), 20, 'Universe includes private price status and hides the portfolio-only calendar');
   assert.equal(await page.locator('[data-horizon-toggle]').count(), 0, 'All Alerts has no horizon switch');
   assert.match(await page.locator('[data-alerts-history-summary]').innerText(), /Till Today/);
+  assert.equal(await page.locator('[data-alerts-focus]').count(), 0, 'Focus table is removed');
+  assert.equal(await page.locator('[data-alerts-meta]').count(), 0, 'company and date-count badges are removed');
   const sourceControl = await page.locator('[data-feed]').first().evaluate((node) => {
     const checkbox = node.querySelector('span');
     return {
@@ -314,7 +316,7 @@ try {
   assert(!(await page.locator('tbody').innerText()).includes('AGM scheduled'), 'future schedules stay outside the history view');
   await page.evaluate(() => window.show('universe'));
   await settled();
-  assert.equal(await page.locator('[data-alerts-meta] [data-alerts-info]').count(), 0,
+  assert.equal(await page.locator('[data-section-head] [data-alerts-info]').count(), 0,
     'source-check badges stay out of the customer reading header');
   await page.locator('[data-sources-summary]').click();
   const coverageText = await page.locator('[data-alerts-coverage]').innerText();
@@ -570,19 +572,6 @@ try {
   assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
   assert(await page.evaluate(() => window.observedReadingArrival), 'new row arrived above the preserved reading position');
 
-  await page.locator('[data-alerts-focus]').click();
-  assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'true');
-  assert.equal(await page.evaluate(() => document.documentElement.dataset.alertsFocusMode), 'true');
-  const focusAnchor = await page.locator('[data-table-scroll]').evaluate((scroller, key) => {
-    const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find(node => node.dataset.rowKey === key);
-    return row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.querySelector('thead').offsetHeight;
-  }, beforeRefresh.key);
-  assert(Math.abs(focusAnchor - beforeRefresh.offset) <= 2,
-    `focus mode keeps the same reading anchor: ${JSON.stringify({ beforeRefresh, afterRefresh, focusAnchor })}`);
-  await page.locator('[data-table-scroll]').press('Escape');
-  assert.equal(await page.locator('[data-alerts-focus]').getAttribute('aria-pressed'), 'false');
-  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false);
-
   for (const width of [1440, 1024, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.waitForTimeout(300);
@@ -612,9 +601,7 @@ try {
   await page.route('**/fixture-before-dispose', route => { heldTeardownRead = route; markTeardownReadHeld(); });
   await page.evaluate(() => { window.pendingTeardownRead = fetch('/fixture-before-dispose'); });
   await teardownReadHeld;
-  await page.locator('[data-alerts-focus]').click();
   await page.evaluate(() => window.dispose());
-  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-alerts-focus-mode')), false, 'tab teardown restores navigation');
   assert.equal(await page.evaluate(() => window.testListenerCount('scroll')), 0, 'destroy removes the table scroll listener');
   assert.equal(await page.evaluate(() => window.testListenerCount('resize')), 0, 'destroy removes the table resize listener');
   const count = await page.evaluate(() => window.testFetches.length);

@@ -1843,15 +1843,15 @@ console.log('\n— AI alerts —');
     return !m || m.classList.contains('hidden') || !m.innerText.trim();
   }));
   // Source-check details and their Indian date remain inside the open Sources panel.
-  ok('source-check badges stay out of the reading header', (await page.locator('[data-alerts-meta] [data-alerts-info]').count()) === 0);
+  ok('source-check badges stay out of the reading header', (await page.locator('[data-section-head] [data-alerts-info]').count()) === 0);
   const dayPillText = await page.locator('[data-alerts-info]').first().innerText();
   ok('it states the Indian trading date rather than a UTC one',
     /\d{2} \w{3,4} \d{4}/.test(dayPillText), dayPillText.replace(/\s+/g, ' '));
   ok('...and the date/status control is a passive label',
     (await page.locator('[data-alerts-info]').count()) === 1 &&
       (await page.locator('[data-alerts-info]').evaluate((el) => el.tagName)) === 'SPAN');
-  const historyPillText = await page.locator('#content-host [title*="newest first"]').innerText();
-  ok('All Alerts states that retained history is loaded', /History · \d+ dates?/.test(historyPillText), historyPillText);
+  ok('All Alerts omits scope/count and history/calendar header badges', (await page.locator('[data-alerts-meta]').count()) === 0);
+  ok('retained history remains selectable', (await page.getByRole('combobox', { name: 'Date range', exact: true }).locator('option[value="all"]').count()) === 1);
 
   // THE COVERAGE PANEL IS THE HONESTY HALF. Without it an empty bucket reads as an all-clear.
   const panel = await page.locator('[data-alerts-coverage]').innerText();

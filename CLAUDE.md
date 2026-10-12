@@ -3365,6 +3365,10 @@ status and its date inside the expandable Sources panel as plain text. Do not re
 coverage or pending-feed badges beside the title. The timeline controls retain the selected date;
 source failures, pending reads, check times and empty-state explanations remain accurate.
 
+The 12 October 2026 cleanup also removes Focus table and the scope/company-count and
+history/calendar badges beside the All Alerts title. Keep the global scope picker, date filter,
+source coverage and retained history available; collection and retention are unchanged.
+
 It is computed differently depending on what the feed IS, and the distinction matters:
 
 - feeds whose ROWS carry their own date (earnings, con-calls, announcements, insider, news, market news) use
