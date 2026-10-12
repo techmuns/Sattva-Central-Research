@@ -677,7 +677,7 @@ export function sourceGroups() {
           url: 'https://ticker.finology.in/superstar-portfolios',
           feeds:
             '<strong>Real filings.</strong> The whole Superstar Investors view: every tracked investor Finology carry, and for each one the full book they publish — company by company, one column per quarter of disclosed holding percentage, with their net worth, active and total stock counts and any biography. <strong>Percentages are what the company filed with the exchanges; the ₹ value beside each holding is Finology\'s own derivation</strong> from that percentage and a market cap, reproduced unchanged rather than recomputed. A blank quarter means <strong>not disclosed</strong> — below the threshold a real holding is invisible — so it renders as a dash and is excluded from totals, never counted as zero. The one figure this dashboard computes is the quarter-over-quarter change, headed <em>Change (derived)</em>.',
-          cadence: 'Daily capture · automatic visible checks within the six-hour source cache. Exchange completeness is unverified. ' + siCoverage,
+          cadence: 'Weekday capture at 07:00 IST · automatic visible checks within the six-hour source cache. Exchange completeness is unverified. ' + siCoverage,
           status: 'live', readState: siReadState,
           file: 'worker/index.js → /api/super-investors · worker/finology.mjs · public/js/data/finology-shared.js',
         },
@@ -689,7 +689,7 @@ export function sourceGroups() {
             '<strong>Every book in one file.</strong> <code class="rounded bg-slate-100 px-1">public/data/super-investors.json</code>, written by <code class="rounded bg-slate-100 px-1">scripts/scrape-super-investors.mjs</code> reading this dashboard\'s own Worker, carries <n> investors\' books as the Worker itself served them.'
           ) +
             ' It exists because that view is <strong>one request per investor</strong> — each book is a separate scrape upstream — so a first visit meant ninety-one round trips and most of a minute of the grid filling in. One conditional GET replaces them. <strong>A book the capture could not read is absent, never empty</strong>, and is fetched live instead; a book already on this device wins over the file, because those bytes were confirmed later.',
-          cadence: 'Refreshed daily · revalidated automatically while the view is open',
+          cadence: 'Refreshed weekdays at 07:00 IST · revalidated automatically while the view is open',
           status: 'live',
           file: 'scripts/scrape-super-investors.mjs · public/data/super-investors.json · public/js/data/super-investors.js',
         },
