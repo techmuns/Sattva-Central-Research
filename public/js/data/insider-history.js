@@ -116,7 +116,18 @@ export function insiderTradeIdentity(input) {
 }
 function deriveIdentity(input) {
   const row = withTradeCategory(input);
-  const cells = row.cells;
+  let cells = row.cells;
+  // Older action-less Screener captures put the security quantity in Transaction. Match that
+  // exact representation to its corrected capture without guessing a direction or dropping raw
+  // cells. Conflicting stated quantities/security types must remain distinct disclosures.
+  if (row.sourceId === 'insiders') {
+    const quantity = /^([\d,]+(?:\.\d+)?)\s+(.+)$/.exec(String(cells.Transaction || '').trim());
+    if (quantity && (!cells['Trade Shares'] || compactNumber(cells['Trade Shares']) === compactNumber(quantity[1]))
+      && (!cells['Security Type'] || String(cells['Security Type']).trim() === quantity[2])) {
+      cells = { ...cells, 'Trade Shares': quantity[1].replaceAll(',', ''), 'Security Type': quantity[2] };
+      delete cells.Transaction;
+    }
+  }
   // Official exchange reports retain venue, report type and price. They are reconciled
   // against secondary coverage before reaching this additive archive layer.
   if (/^(nse|bse)-(bulk|block)$/.test(row.sourceId || '')) {
@@ -133,7 +144,7 @@ function deriveIdentity(input) {
     return `event|${category}|${ticker}|${date}|${person}|${transaction}|${shares}`;
   }
   const { raw, url, ...rest } = row;
-  const cleanCells = Object.fromEntries(Object.entries(rest.cells || {}).filter(([key]) => !/^(source|.*url|.*link)$/i.test(key)));
+  const cleanCells = Object.fromEntries(Object.entries(cells || {}).filter(([key]) => !/^(source|.*url|.*link)$/i.test(key)));
   return `row|${JSON.stringify(canonical({ ...rest, cells: cleanCells }))}`;
 }
 

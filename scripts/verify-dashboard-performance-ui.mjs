@@ -277,9 +277,7 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
-  // Cache semantics are already checked. Release the test-only DevTools session
-  // before the upgrade so worker activation uses the ordinary browser lifecycle.
-  await cacheSession.detach();
+  // The test-only DevTools session was released after the cache assertions above.
   // Only deployment assets return. Keep the data/API outage from the interaction sweep:
   // restoring every capture here starts unrelated large background cache writes and can
   // leave the already-installed replacement waiting behind the active worker's reads.

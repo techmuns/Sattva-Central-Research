@@ -1,6 +1,7 @@
 // Pure normalisation and snapshot assembly for Screener.in's four market-wide trade lists.
 
 import { isoDate } from '../../public/js/data/filings-shared.js';
+import { transactionText } from '../../public/js/data/insider-transaction.js';
 import {
   insiderTradeIdentity,
   mergeInsiderHeaders,
@@ -131,7 +132,7 @@ const transaction = (value) => {
   if (/^b$/i.test(text)) return 'Buy';
   if (/^s$/i.test(text)) return 'Sell';
   if (/^acq$/i.test(text)) return 'Acquisition';
-  return text || null;
+  return transactionText(text);
 };
 
 const insiderParts = (lines) => {
@@ -143,10 +144,12 @@ const insiderParts = (lines) => {
 };
 
 const insiderQuantity = (lines) => {
-  const detail = lines.slice(1).join(' ');
-  const match = /([\d,]+(?:\.\d+)?)\s+(.+)/.exec(detail);
+  // Some disclosures omit the action entirely, leaving the quantity as the first line.
+  const start = lines.findIndex((line) => /^[\d,]+(?:\.\d+)?(?:\s|$)/.test(line));
+  const detail = start < 0 ? '' : lines.slice(start).join(' ');
+  const match = /^([\d,]+(?:\.\d+)?)(?:\s+(.+))?$/.exec(detail);
   return match
-    ? { quantity: compact(match[1]), security: clean(match[2]) }
+    ? { quantity: compact(match[1]), security: clean(match[2]) || null }
     : { quantity: quantity(lines), security: null };
 };
 

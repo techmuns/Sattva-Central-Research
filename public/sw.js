@@ -252,5 +252,5 @@ function currentCacheKey() {
 
 // Retain the shared releases and advance the returning reader for this UI cleanup.
 function dashboardCacheKey() {
-  return `${currentCacheKey()}-clean-announcements-momentum-v5`;
+  return `${currentCacheKey()}-clean-announcements-momentum-v5-insider-transaction-filter-v1`;
 }
