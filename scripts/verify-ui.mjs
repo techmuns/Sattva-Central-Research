@@ -6804,21 +6804,16 @@ console.log('\n— news, announcements and insider trades —');
     // statement nobody can make without asking every company — the honest line is about US.
     const strip = await hostText();
     if (st.rows) {
-      // The compact feed status remains on the face and never launches an explainer overlay.
       ok('the page body carries no permanent freshness paragraph', !/Showing the (news|filings)/i.test(strip));
-      ok('...and the provenance pill is on the face instead', (await page.locator('[data-filings-info]').count()) > 0);
-      await page.locator('[data-filings-info]').first().click();
-      await page.waitForTimeout(200);
-      ok('...and opens no provenance popup',
-        (await page.locator('[data-filings-info]').evaluate((el) => el.tagName)) === 'SPAN' &&
-          (await page.locator('#modal-overlay:not(.hidden)').count()) === 0);
+      ok('...and collection status is absent from the header', (await page.locator('[data-filings-info]').count()) === 0);
+      ok('...and provenance remains reachable below the table', (await page.locator('[data-filings-method]').count()) === 1);
       ok('...and labels the company count as companies with filings',
         /announcements? · .*compan(?:y|ies) with filings/i.test(await page.locator('#content-host [data-row-count]').innerText()));
       ok('...and the global Refresh control remains available', (await page.locator('[data-header-refresh]').count()) === 1);
     } else {
       skip('the page body carries no permanent freshness paragraph', 'no rows cached on this origin');
-      skip('...and the provenance pill is on the face instead', 'no rows cached on this origin');
-      skip('...and opens no provenance popup', 'no rows cached on this origin');
+      skip('...and collection status is absent from the header', 'no rows cached on this origin');
+      skip('...and provenance remains reachable below the table', 'no rows cached on this origin');
       skip('...and accounts for the companies in scope rather than leaving a gap to misread', 'no rows cached on this origin');
       skip('...and the global Refresh control remains available', 'no rows cached on this origin');
     }
@@ -7955,23 +7950,8 @@ const annWidth = await page.evaluate(() => {
   return el ? { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth } : null;
 });
 ok('...and the table still fits without a horizontal scrollbar of its own', annWidth && annWidth.scrollWidth <= annWidth.clientWidth, `${annWidth?.scrollWidth}px in ${annWidth?.clientWidth}px`);
-// THE EXPLANATION HAS TO BE REACHABLE, AND ON THESE TABS THE MODAL IS NOT.
-//
-// `cfg.provenance` is built for all three filings tabs and `openProvenance` is never called: the
-// status pill is a passive `<span>` by design (see CLAUDE.md — "the status pill is passive and
-// opens no modal"), so nothing on screen opens it. That is a pre-existing gap and not this
-// layer's to close, but it does decide where a Topic explanation may be asserted: the only
-// surfaces a reader can actually reach are the option labels and the cells' own tooltips. So
-// those are what is checked HERE. The pill itself is still passive and must stay that way; the
-// tab's provenance now has a door of its own under the table, asserted in section 17.
-const annPillOpens = await (async () => {
-  await page.locator('#content-host [data-filings-info]').first().click({ timeout: 2000 }).catch(() => {});
-  await page.waitForTimeout(500);
-  const text = await page.locator('#modal-content').innerText().catch(() => '');
-  if (text) await page.keyboard.press('Escape');
-  return !!text;
-})();
-ok('the passive status pill still opens nothing, so the reachable surfaces are what must explain Topic', annPillOpens === false);
+// Collection diagnostics live behind the method link, leaving the announcement header clear.
+ok('Corp Announcements has no status banner', (await page.locator('#content-host [data-filings-info]').count()) === 0);
 const annTopicTitles = await page.evaluate(() => {
   const host = document.querySelector('#content-host');
   const cells = [...host.querySelectorAll('tbody tr')].map((tr) => tr.children[3]).filter(Boolean);
@@ -8152,13 +8132,12 @@ for (const [route, title, scope] of [
     return {
       present: true,
       belowTable: !table || !!(table.compareDocumentPosition(btn) & Node.DOCUMENT_POSITION_FOLLOWING),
-      pillIsSpan: (document.querySelector('#content-host [data-filings-info]') || {}).tagName === 'SPAN',
+      pillTag: document.querySelector('#content-host [data-filings-info]')?.tagName || null,
     };
   });
   ok(`${title} carries a method link under its table`, placement.present && placement.belowTable, JSON.stringify(placement));
-  // The decision CLAUDE.md recorded is preserved exactly: the label stays a passive span that opens
-  // nothing. What changed is that the explanation gained a door, not that the label became one.
-  ok(`...and ${title}'s freshness label is still a passive span`, placement.pillIsSpan === true);
+  ok(`...and ${title}'s header keeps its expected status placement`,
+    title === 'Corp Announcements' ? placement.pillTag === null : placement.pillTag === 'SPAN');
   await page.locator('#content-host [data-filings-method]').click({ timeout: 4000 }).catch(() => {});
   await page.waitForTimeout(700);
   const text = await page.locator('#modal-content').innerText().catch(() => '');
