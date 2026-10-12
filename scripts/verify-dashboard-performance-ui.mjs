@@ -16,6 +16,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../public');
 const TAB_INTERACTION_LIMIT_MS = 1000;
 const POPUP_INTERACTION_LIMIT_MS = 600;
 let offline = false;
+let upgradeAssetsOnly = false;
 let previousRelease = true;
 const previousTabOrder = ['ai-alerts', 'ask-research', 'daily-alerts', 'bookmarks', 'earnings-hub',
   'concall', 'public-chatter', 'breakouts', 'super-investors', 'news', 'ipos', 'corp-announcements',
@@ -27,10 +28,18 @@ const partBody = '{"items":[{"title":"Original retained story"}]}';
 const immutablePath = `/data/performance-fixture.parts/${createHash('sha256').update(partBody).digest('hex')}.json`;
 const mutablePath = '/data/performance-fixture.json';
 const corruptPath = `/data/performance-fixture.parts/${'a'.repeat(64)}.json`;
+const sdkUrl = 'https://munshot.s3.ap-south-1.amazonaws.com/SDK+script/munshot-dashboard-sdk.v1.0.0.min.js';
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.push(url.pathname);
-  if (offline) { res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return; }
+  const upgradeAsset = /^\/(?:$|index\.html$|sw\.js$|sdk-fixture\.js$|js\/|css\/|assets\/brand\/|data\/portfolio-companies\.json$)/.test(url.pathname);
+  if (offline && !(upgradeAssetsOnly && upgradeAsset)) {
+    res.writeHead(503, { 'cache-control': 'no-store' }); res.end('offline'); return;
+  }
+  if (url.pathname === '/sdk-fixture.js') {
+    res.writeHead(200, { 'content-type': 'text/javascript' });
+    res.end('/* No host SDK in this local performance fixture. */'); return;
+  }
   if ([immutablePath, mutablePath, corruptPath].includes(url.pathname)) {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'public, max-age=0, must-revalidate' });
     res.end(partBody); return;
@@ -49,8 +58,13 @@ const server = createServer((req, res) => {
     }[extname(path)] || 'application/octet-stream');
     res.setHeader('cache-control', 'public, max-age=0, must-revalidate');
     if (pathname === '/sw.js') {
-      const source = readFileSync(path, 'utf8');
+      // Page routing does not isolate the worker's own SDK warm-up. Keep both its cache
+      // and the returning document local, as in the other service-worker upgrade fixtures.
+      const source = readFileSync(path, 'utf8').replace(/const MUNSHOT_SDK = .*;/,
+        "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
       res.end(previousRelease ? source.replace(/const CACHE_NAME = ([^;\n]+);/, 'const CACHE_NAME = $1 + "-previous-fixture";') : source);
+    } else if (pathname === '/index.html') {
+      res.end(readFileSync(path, 'utf8').replaceAll(sdkUrl, '/sdk-fixture.js'));
     } else if (pathname === '/js/core/watchlist.js') {
       res.end(`${readFileSync(path, 'utf8')}\nglobalThis.__watchlistRelease = ${JSON.stringify(previousRelease ? 'previous' : 'current')};`);
     } else if (pathname === '/js/core/alert-arrivals.js') {
@@ -261,7 +275,10 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
-  offline = false;
+  // Only deployment assets return. Keep the data/API outage from the interaction sweep:
+  // restoring every capture here starts unrelated large background cache writes and can
+  // leave the already-installed replacement waiting behind the active worker's reads.
+  upgradeAssetsOnly = true;
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
   await page.waitForFunction(() => globalThis.__performanceRelease === 'current', null, { timeout: 30000 });

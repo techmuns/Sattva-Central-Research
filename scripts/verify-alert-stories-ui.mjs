@@ -17,6 +17,7 @@ let upgraded = false, failGrouping = false, apiCalls = 0, noteCalls = 0, debugPa
 const oldFiles = new Map([['/js/data/alert-stories.js', `export const storyGrouping={project:e=>e,projectAsync:async e=>e,revision:()=>0,
  status:()=>({total:0}),onChange:()=>()=>{},load:async()=>{},review:async()=>{}};`]]);
 oldFiles.set('/js/data/newsletter-shared.js', 'export const normaliseEmailList = undefined;');
+oldFiles.set('/css/theme.css', readFileSync(resolve(root, 'css/theme.css'), 'utf8') + '\n.ai-alert-tools { width:100%; } .ai-alert-search { flex-basis:100%; width:100%; }');
 oldFiles.set('/js/tabs/ai-alerts.js', readFileSync(resolve(root, 'js/tabs/ai-alerts.js'), 'utf8').replace(
   /    meta: `<span data-ai-feed-status[^\n]+/,
   '    meta: `<div><span>Some reports remain ungrouped</span><span>Partial coverage · retained evidence shown</span><span>Universe · companies with recent events</span><span>14-day window</span></div>`,',
@@ -88,11 +89,15 @@ try {
   assert.equal(await page.evaluate(()=>window.newsletterBatchAvailable),false,'the returning session starts with its old newsletter module');
   const before=await page.evaluate(()=>caches.keys());assert(before.some(k=>k.includes('before-story-grouping')));
   assert.match(await page.locator('[data-section-head]').innerText(), /retained evidence shown/);
+  assert((await page.locator('[role="search"][aria-label="Search AI Alerts"]').boundingBox()).width > 700,
+    'the warm reader starts with its cached full-width search styling');
   upgraded=true;await page.evaluate(async()=>await(await navigator.serviceWorker.getRegistration()).update());
   await page.waitForFunction(()=>document.querySelectorAll('[data-ai-evidence] [data-ai-related-source], [data-ai-evidence] [data-ai-story-source]').length===2&&document.querySelectorAll('[data-ai-timeline-row]').length===1);
   assert.equal(await card.locator('[data-ai-evidence] [data-ai-related-source], [data-ai-evidence] [data-ai-story-source]').count(),2);
   assert(!(await page.evaluate(()=>caches.keys())).some(k=>k.includes('before-story-grouping')));
   assert.equal(await page.evaluate(()=>window.newsletterBatchAvailable),true,'the automatic upgrade replaces the cached newsletter module too');
+  assert((await page.locator('[role="search"][aria-label="Search AI Alerts"]').boundingBox()).width <= 260,
+    'the automatic upgrade replaces the cached full-width search styling');
   assert.equal(await page.locator('[data-section-head] [data-ai-feed-status] > span').count(),1);
   assert.doesNotMatch(await page.locator('[data-section-head]').innerText(), /retained evidence shown|companies with recent events|14-day window/);
   assert.match(await page.locator('[data-ai-feed-status] > span').getAttribute('title'), /Universe.*companies with recent events.*14-day window/);
