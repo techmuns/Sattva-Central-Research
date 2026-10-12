@@ -575,10 +575,15 @@ try {
 
   // A source refresh can insert rows above the viewport. Preserve the visible event, not merely
   // its old pixel offset, so a reader never loses their place while the stream is live.
-  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
+  await page.locator('[data-table-scroll]').evaluate((scroller) => {
     scroller.style.scrollBehavior = 'auto';
     scroller.scrollTop = Math.min(900, scroller.scrollHeight - scroller.clientHeight);
     scroller.style.removeProperty('scroll-behavior');
+  });
+  // Native scroll events and the virtual row measurements run on later frames. Record the
+  // reader's settled position, rather than geometry from before that gesture has finished.
+  await stableReadingSurface();
+  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
     const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
     const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((item) => item.getBoundingClientRect().bottom > boundary);
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : 0 };
@@ -605,7 +610,7 @@ try {
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : null };
   }, beforeRefresh.key);
   assert.equal(afterRefresh.key, beforeRefresh.key);
-  assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
+  assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh: ${JSON.stringify({before:beforeRefresh,after:afterRefresh})}`);
   assert(await page.evaluate(() => window.observedReadingArrival), 'new row arrived above the preserved reading position');
 
   for (const width of [1440, 1024, 390]) {
