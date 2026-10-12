@@ -2150,7 +2150,7 @@
       "pending": []
     },
     "isin:INE685T01010|HORIZONIND": {
-      "lastAttemptAt": "2026-10-07T01:59:58+00:00",
+      "lastAttemptAt": "2026-10-12T20:22:48+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0LRU01027|Aarti Pharmalabs": {
@@ -2394,6 +2394,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 246,
-    "checkedAt": "2026-10-12T19:51:25.153619+00:00"
+    "checkedAt": "2026-10-12T20:22:48.065761+00:00"
   }
 }
