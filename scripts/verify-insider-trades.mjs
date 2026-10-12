@@ -220,6 +220,7 @@ try {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   for (const file of ['scripts/scrape-filings.mjs', 'scripts/lib/filings-snapshot.mjs', 'scripts/lib/company-capture.mjs', 'scripts/lib/filing-archive.mjs', 'scripts/lib/company-news-archive.mjs', 'worker/muns.mjs', 'worker/free-news.mjs',
     'scripts/lib/news-json-storage.mjs', 'public/js/core/json-shards.js', 'public/js/core/memory-cache.js', 'public/js/core/slices.js',
+    'public/js/core/json-reader.js', 'public/js/core/json-codec.js', 'public/js/core/json-worker.js',
     'public/js/data/news-query-index.js', 'public/js/data/news-window.js',
     'scripts/lib/active-portfolio.mjs', 'public/js/data/family-book-contract.js',
     'public/js/data/filings-shared.js', 'public/js/data/insider-history.js', 'public/js/data/announcements-shared.js', 'public/js/data/announcement-identity.js', 'public/js/data/exchange-universe.js', 'public/js/data/market-identity.js', 'public/js/data/company-security-identities.js', 'public/js/data/domestic-filings-shared.js', 'public/js/data/company-news-identity.js', 'public/js/data/company-news-reviewed.js']) {
