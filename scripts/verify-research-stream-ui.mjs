@@ -58,7 +58,7 @@ for (const [name, field] of [
   capture._provenance = 'Bounded conversation UI fixture; full source history is tested separately.';
   captureFixtures.set(`/data/${name}.json`, JSON.stringify(capture));
 }
-const questions = [], timings = [], errors = [];
+const questions = [], timings = [], errors = [], streamEvents = [];
 let holdAnswer = false;
 let failAnswer = false;
 let truncateAnswer = false;
@@ -102,8 +102,15 @@ const server = createServer(async (req, res) => {
     const validated = validateResearchBody(body);
     if (!validated.ok) { res.writeHead(validated.status, { 'content-type': 'application/json' }); res.end(JSON.stringify(validated)); return; }
     questions.push(body);
-    res.writeHead(200, { 'content-type': 'application/x-ndjson', 'cache-control': 'no-store, no-transform' });
-    const send = event => res.write(JSON.stringify(event) + '\n');
+    // Match the production Worker's streaming headers. A small paused fixture must not wait
+    // for browser content sniffing before exposing the first chunk to its assertions.
+    res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8',
+      'cache-control': 'no-store, no-transform', 'x-content-type-options': 'nosniff', 'x-accel-buffering': 'no' });
+    const responseId = questions.length, responseStarted = Date.now();
+    const send = event => {
+      streamEvents.push({ responseId, type: event.type, afterMs: Date.now() - responseStarted });
+      return res.write(JSON.stringify(event) + '\n');
+    };
     const failThisAnswer = failAnswer;
     const truncateThisAnswer = truncateAnswer;
     const answer = customAnswer;
@@ -586,7 +593,7 @@ try {
       phase: document.querySelector('[data-research-phase]')?.textContent,
       transcript: document.querySelector('[data-research-transcript]')?.textContent?.slice(-1400),
       button: document.querySelector('[data-research-send]')?.getAttribute('aria-label'),
-    })), receivedRequests: questions.length, timings }));
+    })), receivedRequests: questions.length, streamEvents: streamEvents.slice(0, 12), timings }));
   }
   throw error;
 } finally {
