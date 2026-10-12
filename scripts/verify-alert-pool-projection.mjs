@@ -53,6 +53,7 @@ try {
     settledFeeds: new Map(selectedFeeds.map(feed => [feed.id, feed])) });
   assert.deepEqual(b.events, a.events, 'every eligible event ID, field, correction, discovery and companion stays identical');
   assert.deepEqual(b.meta, a.meta, 'source/unresolved counts and honest health metadata remain exact');
+  assert.deepEqual(b.feeds, a.feeds, 'public feed fields and source descriptions stay identical; transport bookkeeping stays internal');
   const fullWindow = materializePublicAlertWindow(assemble({ day, scope: 'universe', holdings: book, includeHistory: true,
     settledFeeds: new Map(fullFeeds.map(feed => [feed.id, feed])) }));
   const scopedWindow = { ...materializePublicAlertWindow(b), scopeContext: alertContextKey('portfolio', book, day) };

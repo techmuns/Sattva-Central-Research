@@ -1268,7 +1268,8 @@ function* assembleSteps({ day, scope, holdings, includeHistory, settledFeeds, re
     const { events, todayCount } = projection;
     const unresolved = feed.preparedProjection?.unresolvedCount ?? projection.unresolved;
     const unscopable = feed.portfolioOnly && scope !== 'portfolio';
-    scopedFeeds.push({ ...feed, events, count: events.length, todayCount,
+    const { preparedProjection: _preparedProjection, ...publicFeed } = feed;
+    scopedFeeds.push({ ...publicFeed, events, count: events.length, todayCount,
       sourceCount: feed.preparedProjection?.sourceCount ?? all.length, unresolvedCount: unresolved, scopable: !unscopable,
       note: [feed.note, scope !== 'universe' && unresolved ? `${unresolved} records have no resolved ticker and are available in Universe only.` : null].filter(Boolean).join(' ') || null });
     yield;
