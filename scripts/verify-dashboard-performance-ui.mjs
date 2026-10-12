@@ -178,6 +178,9 @@ try {
   assert.equal(requests.filter(path => path === immutablePath).length, 2, 'an explicit recovery read can bypass the immutable cache');
   await cacheSession.send('Network.setCacheDisabled', { cacheDisabled: true });
   await page.route('**/*', (route) => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
+  // The temporary session only measures HTTP-cache semantics. Release it before
+  // reloads can replace its target and before testing ordinary worker activation.
+  await cacheSession.detach();
 
   await page.getByRole('button', { name: 'Dark mode', exact: true }).click();
   offline = true;
@@ -276,9 +279,6 @@ try {
   assert.equal(await page.evaluate(() => globalThis.__announcementHistoryRelease), 'previous', 'returning reader starts with the older announcement-history module');
   await page.evaluate(() => import('/js/data/alert-stories.js'));
   assert.equal(await page.evaluate(() => globalThis.__storyOrderRelease), 'previous', 'returning reader starts with the older story projection');
-  // Cache semantics are already checked. Release the test-only DevTools session
-  // before the upgrade so worker activation uses the ordinary browser lifecycle.
-  await cacheSession.detach();
   // Only deployment assets return. Keep the data/API outage from the interaction sweep:
   // restoring every capture here starts unrelated large background cache writes and can
   // leave the already-installed replacement waiting behind the active worker's reads.
