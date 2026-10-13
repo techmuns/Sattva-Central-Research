@@ -34,8 +34,12 @@ import { newsViewStatus } from '../core/news-view-status.js';
 
 const REASONS = {
   'no-route': {
-    title: 'This feed needs the Worker',
-    body: 'This origin serves the static files only, so there is no <code>/api/</code> route to answer, and no committed snapshot has been written yet. Run <code>npx wrangler dev</code>, or open the deployed site.',
+    title: 'This feed endpoint is unavailable',
+    body: 'The requested feed endpoint was not found. Previously loaded records remain available.',
+  },
+  'capture-unavailable': {
+    title: 'The saved trade capture is temporarily unavailable',
+    body: 'This view checks again automatically. Retained trades will appear as soon as the capture can be read.',
   },
   'no-token': {
     title: 'No API token is configured',

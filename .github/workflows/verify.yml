@@ -398,7 +398,7 @@ jobs:
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-corporate-actions-ui.mjs && node scripts/verify-insider-filter-ui.mjs
+        run: node scripts/verify-corporate-actions-ui.mjs && node scripts/verify-insider-filter-ui.mjs && node scripts/verify-insider-recovery-ui.mjs
       - name: Verify direct NSE feed, retained history and document component isolation
         if: ${{ matrix.part == 1 }}
         env:

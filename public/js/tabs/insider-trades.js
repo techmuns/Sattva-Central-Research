@@ -158,6 +158,8 @@ const tab = makeFilingsTab({
     return key;
   },
   filters: tradeFilters,
+  preserveReadingPosition: true,
+  renderRevision: m => `${newsDay()}:${m.snapshotReadError || ''}`,
   // Keep the selected period in the URL across links and reloads.
   // Range selection changes only the displayed rows; automatic capture retains its full history.
   prepareView: (ctx, previous) => {
@@ -251,6 +253,7 @@ const tab = makeFilingsTab({
         ${m.headers?.length ? `<p class="mt-2 text-xs">Their columns on this pull: ${m.headers.map((h) => `<code class="rounded bg-slate-100 px-1">${escapeHtml(h)}</code>`).join(' ')}</p>` : ''}
 
         ${coverageBlock(m)}
+        ${m.snapshotReadError ? `<p class="mt-2 text-xs">${escapeHtml(m.snapshotReadError)}</p>` : ''}
         ${m.disclosuresStatus ? `<p class="mt-2 text-xs">${escapeHtml(m.disclosuresStatus)}</p>` : ''}
 
         <p class="mt-4 text-xs text-slate-500">A dash means <em>the source left that cell empty</em> — never zero.</p>
@@ -271,7 +274,7 @@ const tab = makeFilingsTab({
               ? `REAL DISCLOSURES, NOT OURS. Bulk deals, block deals, SAST and insider trades from NSE/BSE reports and Screener.in, supplemented by Muns disclosures, reaching back ${m.windowDays} days, exported ${new Date().toISOString()}. ` +
                 `THE SOURCE-SPECIFIC COLUMNS AND THEIR HEADINGS ARE RETAINED; Trade Category is the common four-list classifier. Duplicate economic events appear once. ` +
                 `No aggregate totals or judgement about what a trade means. Official quantity × price is an approximate rupee trade value marked ≈; other values retain source units. ` +
-                `${visible.length} visible trades from ${new Set(visible.map(r => r.ticker)).size} companies. ${m.exchanges?.summary || ''} ${m.disclosuresStatus || ''} ` +
+                `${visible.length} visible trades from ${new Set(visible.map(r => r.ticker)).size} companies. ${m.exchanges?.summary || ''} ${m.disclosuresStatus || ''} ${m.snapshotReadError || ''} ` +
                 `A blank cell is one the source left empty, never a zero.`
               : r.date || '',
         },

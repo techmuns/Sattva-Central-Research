@@ -1,5 +1,5 @@
 // Sattva-owned shared feed for Bulk/Block Deals and insider disclosures.
-import { conditionalJson } from '../core/store.js';
+import { conditionalJson, readEntry, writeEntry } from '../core/store.js';
 import { exchangeRows, combineExchangeDeals, validateExchangeSnapshot, exchangeSummary, insiderSummary } from './exchange-deals-shared.js';
 let lastDispatch = 0, apiTag = null;
 let byTicker = new Map(), insidersByTicker = new Map();
@@ -7,6 +7,7 @@ let snapshot = null, rows = [], pending = null, loaded = false, lastCheck = 0, t
 const listeners = new Set();
 // Cache observers receive updates without keeping the active-reader poll alive.
 const pollers = new Set();
+const API_CACHE_KEY = 'sattva:exchange-deals:api';
 // A repaint may replace a subscription; deliver each revision to the original listeners once.
 const emit = () => [...listeners].forEach((fn) => fn());
 export const meta = () => snapshot ? { ...snapshot, records: undefined, insiders: undefined, securityMap: undefined, deliveryError, summary: exchangeSummary(snapshot, deliveryError), rowCount: rows.length } : null;
@@ -30,16 +31,27 @@ export async function refresh() {
   if (loaded && Date.now() - lastCheck < 55000) return;
   pending = (async () => {
     let changed = false;
-    if (!loaded) {
-      const seed = await conditionalJson('data/exchange-deals.json', { key: 'sattva:exchange-deals:seed', optional: true });
+    if (!loaded || !snapshot || deliveryError) {
+      const seed = await conditionalJson('data/exchange-deals.json', { key: 'sattva:exchange-deals:seed', optional: true,
+        validate: validateExchangeSnapshot }).catch(() => null);
       if (seed?.value) { try { changed = accept(seed.value); } catch {} }
+      if (!snapshot) {
+        for (const key of [API_CACHE_KEY, 'sattva:exchange-deals:seed']) {
+          const saved = await readEntry(key);
+          if (saved?.value) { try { changed = accept(saved.value) || changed; } catch {} }
+        }
+      }
       loaded = true; if (changed) emit();
     }
     try {
       const result = await fetch('api/bulk-block-deals', { cache: 'no-cache', signal: AbortSignal.timeout(30000) });
       if (!result.ok) throw new Error('Live delivery is unavailable; the saved exchange capture is shown.');
       const tag = result.headers.get('etag');
-      if (!tag || tag !== apiTag) { changed = accept(await result.json()) || changed; apiTag = tag; }
+      if (!tag || tag !== apiTag) {
+        const data = await result.json();
+        if (accept(data)) { changed = true; void writeEntry(API_CACHE_KEY, { value: data, tag, savedAt: Date.now() }); }
+        apiTag = tag;
+      }
       deliveryError = result.headers.get('x-sattva-exchange-fallback') === '1' ? 'Live delivery is unavailable; the saved exchange capture is shown.' : null;
     } catch (error) { deliveryError = error.message; }
     lastCheck = Date.now();
