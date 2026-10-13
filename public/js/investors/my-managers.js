@@ -1,4 +1,5 @@
 import * as managers from '../data/managers.js';
+import { newsDay } from '../data/news-window.js';
 import * as watchlist from '../core/watchlist.js';
 import { escapeHtml as esc, syncListDOM } from '../core/dom.js';
 import { formatNumber, formatDate, formatCroreCompact } from '../core/format.js';
@@ -17,7 +18,8 @@ const sourcePeriod = m => {
   if (m.kind === 'fund') return privatePeriod();
   const meta = managers.meta(), basis = meta?.listedValuationBasis;
   const mark = basis === 'stated' ? `marks ${date(meta.listedValuationAt)}` : basis === 'traded' ? `last trade ${date(meta.listedValuationAt)}; valuation date unverified` : 'valuation date unstated';
-  return `Workbook period ${date(m.asOf)} · ${mark}`;
+  const period = m.asOf > newsDay() ? `Workbook period ending ${date(m.asOf)} (open period)` : `Workbook period ${date(m.asOf)}`;
+  return `${period} · ${mark}`;
 };
 function privatePeriod() {
   const w = managers.meta()?.privateWorkbook;
