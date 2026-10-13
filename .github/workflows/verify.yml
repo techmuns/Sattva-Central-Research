@@ -279,7 +279,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-super-investors-ui.mjs && node scripts/verify-manager-upgrade-ui.mjs
+        run: node scripts/verify-super-investors-ui.mjs && node scripts/verify-manager-upgrade-ui.mjs && node scripts/verify-investor-changes-upgrade-ui.mjs
       - name: Verify portfolio reload, offline, resume and cache behaviour
         if: ${{ matrix.part == 2 }}
         env:

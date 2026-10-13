@@ -411,20 +411,18 @@ export function* dedupeArticleSteps(list = []) {
   for (const row of list) {
     if (++visited % 128 === 0) yield;
     const url = articleUrlKey(row);
-    if (url) {
-      if (seenUrl.has(url)) continue;
-      seenUrl.add(url);
-    }
+    if (url && seenUrl.has(url)) continue;
     const story = articleStoryKey(row);
-    if (story) {
-      if (seenStory.has(story)) continue;
-      seenStory.add(story);
-    }
+    if (story && seenStory.has(story)) continue;
     if (!url && !story) {
       const content = anonymousArticleContentKey(row);
       if (seenAnonymous.has(content)) continue;
       seenAnonymous.add(content);
     }
+    // A discarded same-headline copy must not reserve its URL: a later corrected
+    // publication at that address may have a distinct story/date and still be eligible.
+    if (url) seenUrl.add(url);
+    if (story) seenStory.add(story);
     kept.push(row);
   }
   return kept;

@@ -76,6 +76,7 @@ export function matchedDeals(rows, people) {
     const quantity = field(row.cells, ['trade shares', 'quantity']);
     const price = field(row.cells, ['price']);
     for (const person of Array.isArray(match) ? match : [match]) {
+      const relation = person.verifiedNames?.find((n) => identity(n.name) === identity(reportedName));
       const key = [person.id, category, row.exchangeSecurity || row.ticker, row.date, identity(reportedName), action, quantity.replace(/,/g, ''), price.replace(/,/g, ''), field(row.cells, ['exchange'])].join('|');
       if (seen.has(key)) {
         const event = seen.get(key);
@@ -85,7 +86,10 @@ export function matchedDeals(rows, people) {
       const event = { id: key, date: row.date, person: person.name, personId: person.id,
         company: field(row.cells, ['company']) || row.ticker, ticker: row.ticker,
         action, quantity: quantity || null, value: field(row.cells, ['trade value']) || null,
-        source: `${category}${row.cells?.Exchange ? ` · ${row.cells.Exchange}` : ''}`, reportedName, raw: row, evidence: [row], url: row.url || null };
+        source: `${category}${row.cells?.Exchange ? ` · ${row.cells.Exchange}` : ''}`, reportedName,
+        attribution: relation ? ['same-person', 'same-entity'].includes(relation.kind) ? 'Reviewed identity' : 'Associated entity' : 'Exact directory name',
+        relationship: relation?.relationship || null, relationshipUrl: relation?.sourceUrl || null, identityCheckedAt: relation?.verifiedAt || null,
+        raw: row, evidence: [row], url: row.url || null };
       seen.set(key, event);
       events.push(event);
     }

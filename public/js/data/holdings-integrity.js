@@ -59,7 +59,8 @@ export function assessCoverage({ snapshot = {}, deals = {}, exchange = null, evi
 export function withVerifiedEntities(people, evidence, kind, today = new Date().toISOString()) {
   return people.map((person) => {
     const relations = (evidence?.relations || []).filter((r) => currentRelation(r, today) && (kind === 'investor' ? r.investorSlugs : r.managerIds)?.includes(person.id));
-    const verifiedNames = relations.flatMap((r) => [r.legalName, ...(r.aliases || [])].map((name) => ({ name, entityId: r.entityId })));
+    const verifiedNames = relations.flatMap((r) => [r.legalName, ...(r.aliases || [])].map((name) => ({ name, entityId: r.entityId,
+      kind: r.kind, relationship: r.relationship, sourceUrl: r.sourceUrl, verifiedAt: r.verifiedAt })));
     return { ...person, verifiedNames, aliases: [...(person.aliases || []), ...verifiedNames.map((r) => r.name)] };
   });
 }
