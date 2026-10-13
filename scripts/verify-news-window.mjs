@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { newsDay, newsPublicationDay, newsPeriodBounds, recentNewsWindow, matchesNewsPeriod, newsPeriodFilter,
+import { newsDay, newsPublicationDay, newsPublicationKey, newsPeriodBounds, recentNewsWindow, matchesNewsPeriod, newsPeriodFilter,
   newsShardInWindow, newsHeadCoversArchive } from '../public/js/data/news-window.js';
 import { withNewsHistory } from '../public/js/data/news-history.js';
 import { newsSourceMeta } from '../public/js/ui/news-sources.js';
@@ -29,6 +29,24 @@ assert.equal(newsPublicationDay({ date: '2026-02-30' }), null);
 assert.equal(newsPublicationDay({ date: '2024-02-29' }), '2024-02-29');
 assert.equal(newsPublicationDay({ date: '2026-09-03', publishedAt: '2026-09-03T20:00:00Z' }), '2026-09-03');
 assert.equal(newsPublicationDay({ publishedAt: '2026-09-03T20:00:00Z' }), '2026-09-04');
+const ordered = [
+  { id:'older-impact', title:'Company defaults on repayment', date:'2026-09-08', publishedAt:'2026-09-08T08:50:00+05:30' },
+  { id:'undated', firstSeenAt:'2026-09-09T12:00:00Z' },
+  { id:'date-only', date:'2026-09-08', publishedAt:'2026-09-08' },
+  { id:'newer-routine', date:'2026-09-08', publishedAt:'2026-09-08T11:57:00+05:30' },
+  { id:'newest-second', publishedAt:'2026-09-08T06:27:01Z' },
+  { id:'previous-day', publishedAt:'2026-09-07T18:29:59Z' },
+];
+ordered.sort((a,b) => newsPublicationKey(b).localeCompare(newsPublicationKey(a)));
+assert.deepEqual(ordered.map(row => row.id), ['newest-second','newer-routine','older-impact','date-only','previous-day','undated'],
+  'publication instants, offsets and seconds own newest-first ordering; missing clocks/dates remain missing');
+assert.equal(newsPublicationKey({date:'2026-09-08',publishedAt:'unavailable'}), '2026-09-08|');
+const corrected = {date:'2026-09-08',publishedAt:'2026-09-08T03:00:00Z'};
+const originalKey = newsPublicationKey(corrected);
+corrected.publishedAt = '2026-09-08T04:00:00Z';
+assert(newsPublicationKey(corrected) > originalKey, 'an in-place source clock correction invalidates its cached sort key');
+corrected.date = '2026-09-07';
+assert(newsPublicationKey(corrected) < originalKey, 'a corrected source day also invalidates the key');
 for (const [period, from] of [['today','2026-09-08'],['3','2026-09-06'],['7','2026-09-02'],['14','2026-08-26'],['30','2026-08-10'],['month','2026-09-01']]) {
   assert.equal(newsPeriodBounds(period, now).from, from);
   assert(matchesNewsPeriod({ date: from }, period, now), `${period}: inclusive first day`);
