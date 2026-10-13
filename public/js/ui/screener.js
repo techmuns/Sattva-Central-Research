@@ -45,6 +45,12 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 function trapFocus(el, { label } = {}) {
   if (!el) return () => {};
   const previous = document.activeElement;
+  // A source refresh may replace a table opener while the dialog is open.
+  // Keep its identity so closing can return to the current row button.
+  const previousRow = previous?.matches('[data-row-open]') ? {
+    host: previous.closest('[data-score-table]')?.parentElement,
+    key: previous.dataset.rowOpen,
+  } : null;
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   if (label) el.setAttribute('aria-label', label);
@@ -82,7 +88,8 @@ function trapFocus(el, { label } = {}) {
     // elsewhere, yanking it back would be the more surprising behaviour.
     const wasInside = el.contains(document.activeElement);
     if (!wasInside && document.activeElement !== document.body) return;
-    if (previous?.isConnected && typeof previous.focus === 'function') previous.focus({ preventScroll: true });
+    const returnTarget = previous?.isConnected ? previous : previousRow?.host?.querySelector(`[data-row-open="${CSS.escape(previousRow.key)}"]`);
+    if (typeof returnTarget?.focus === 'function') returnTarget.focus({ preventScroll: true });
     // The opener is often a table row, which is not focusable, so the focus() above is a no-op
     // and focus would stay parked inside a panel the user can no longer see. Blur out of it so
     // the next Tab restarts from the document rather than from an invisible dialog.
@@ -715,7 +722,7 @@ export function scoreTable(config) {
         const label = String(name(row));
         const nameClasses = `${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900`;
         const nameCell = onRowClick && rowActionLabel
-          ? `<button type="button" data-row-open aria-label="${escapeHtml(rowActionLabel(row))}" title="${escapeHtml(label)}" class="block max-w-full rounded-sm text-left ${nameClasses} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${escapeHtml(label)}</button>`
+          ? `<button type="button" data-row-open="${escapeHtml(slug)}" aria-label="${escapeHtml(rowActionLabel(row))}" title="${escapeHtml(label)}" class="block max-w-full rounded-sm text-left ${nameClasses} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${escapeHtml(label)}</button>`
           : `<div class="${nameClasses}" title="${escapeHtml(label)}">${escapeHtml(label)}</div>`;
         const { color, initials } = avatarFor(label);
         const sc = showScore && score ? score(row) : null;

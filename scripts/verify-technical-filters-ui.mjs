@@ -103,16 +103,23 @@ try {
       assert.equal(await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).count(), 0);
       assert(await page.locator('[data-score-table]').evaluate(el => /companies match these filters\./.test(el.previousElementSibling?.textContent)), 'the table follows the filter match count directly');
       assert.equal(quoteTickers.length,0,'view reads saved capture without spending Muns requests');
-      const details = page.getByRole('button', { name: 'Open technical details for Filter fixture A', exact: true });
+      assert.equal(await page.getByRole('button', { name: 'Open technical details for Filter fixture A', exact: true }).count(), 1);
+      // Compare the current focus by identity in one browser evaluation; a refresh may
+      // legitimately replace the node between a locator match and its evaluation.
+      const detailsFocused = () => page.evaluate(ticker => document.activeElement?.matches('button[data-row-open]') && document.activeElement.dataset.rowOpen === ticker, identities[0].ticker);
       await page.locator(`[data-row-key="${identities[0].ticker}"] [data-watch]`).focus();
       await page.keyboard.press('Tab');
-      assert(await details.evaluate(el => el === document.activeElement), 'Tab reaches the company drilldown button');
+      assert(await detailsFocused(), 'Tab reaches the company drilldown button');
       for (const key of ['Enter', 'Space']) {
         await page.keyboard.press(key);
         await page.locator('#drill-panel [data-drill-close]').waitFor();
         assert((await page.locator('#drill-panel').innerText()).includes('Filter fixture A'));
+        // The original opener is replaced while the details panel is open.
+        await page.evaluate(async () => (await import('/js/data/technicals.js')).refresh());
         await page.keyboard.press('Escape');
-        assert(await details.evaluate(el => el === document.activeElement), 'closing details returns focus to its company button');
+        assert(await detailsFocused(), 'closing details returns focus to its company button');
+        await page.evaluate(async () => (await import('/js/data/breakout-live.js')).refresh());
+        assert(await detailsFocused(), 'price repaint preserves the focused company button');
       }
       await page.locator('[data-table-filter]').selectOption('below200'); await rowsAre('');
       await choose('volume', 'all', 'vol');
