@@ -341,6 +341,7 @@ export function makeFilingsTab(cfg) {
       showWatchFilter: cfg.showWatchFilter !== false,
       columns: cfg.columns(m),
       filters: cfg.filters ? cfg.filters(rows) : null,
+      filterGroup: cfg.filterGroup || null,
       searchable: cfg.searchable,
       searchControl,
       link: cfg.link === false ? null : cfg.link || ((r) => r.url || null),

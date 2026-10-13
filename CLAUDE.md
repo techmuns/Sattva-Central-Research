@@ -295,6 +295,12 @@ docs/HANDOFF.md               live-vs-mock inventory, architecture map, deploy, 
 Navigation update (12 October 2026): the tab strip is ordered Alerts,
 Announcements, Earnings, Breakouts / Technical,
 Bulk/Block Deal, Mutual Funds, News, Super Investors.
+Readers can rearrange this main strip by dragging a tab (or its grip on touch screens).
+Alt + Left/Right moves the focused tab; Alt + Home restores the catalog order.
+`ui/tab-order.js` saves this browser's preference independently of scopes and reader routes.
+New sections append to saved layouts; malformed or disabled storage cannot block navigation,
+and an unavailable save is disclosed. Reordering never selects a reader or changes the default
+landing route, feed collection, filters or history. Subtabs retain their catalog order.
 `meta.navigationTitle` optionally changes the tab label without changing its page title or route.
 Ask Research and NSE Filings use `meta.hideFromNavigation`; saved links still resolve.
 Alerts contains AI Alerts and All Alerts as pill subtabs, using `meta.navigationGroup` and
