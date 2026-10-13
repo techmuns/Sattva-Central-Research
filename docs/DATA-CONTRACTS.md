@@ -1224,26 +1224,55 @@ as *their* 404 page, which reads as "their document is gone" rather than "our UR
 artefact pointed away from the bug. Verify a constructed deep link against the upstream —
 `curl -o /dev/null -w '%{http_code}'` on one real row — before shipping it.
 
-### Two caches on one route, because the feed is newest-first
+### Independent current-page, historical and schedule reads
 
-A quarter is ~880 calls over 18 pages of 50. Re-pulling all eighteen every 30 seconds to catch one
-new row would be slow and rude. But `when` descends monotonically from offset 0 — verified across
-a full quarter — so **a call that has just been analysed can only appear on page one**:
+The current provider routes are `POST /api/scans/concall/run`,
+`POST /api/scans/concall/upcoming` and `GET /api/scans/concall/today`. The previous
+`/api/company/concall-scan` routes stopped serving data. Scan reads explicitly clear the source
+UI's market-cap, industry, index, watchlist and assessment filters. Each paginated walk pins its
+quarter, validates an advancing cursor and checks the declared first-page total; later pages may
+legitimately omit that total.
 
-| Part | Offsets | TTL | Why |
-| --- | --- | --- | --- |
-| head | 0–49 | 30s | the freshness path; everything new lands here |
-| tail | 50+ | 10 min | it cannot change |
-| schedule | — | 2 min | today + upcoming, two small calls |
+The current quarter's first page has a 30-second cache. History is a separate resumable checkpoint
+covering every quarter the provider still publishes (up to 12, with explicit incomplete status if
+that bound is exceeded). Each background batch takes at most five pages, four seconds apart, and
+saves its cursor after every page. Rate limits retain progress and respect `Retry-After` (at least
+one minute). A best-effort cache lease prevents overlapping batches from overwriting a newer
+owner's progress; this is not a globally atomic lock. Completed history expires after ten minutes;
+in-progress checkpoints live for one hour. History never blocks first paint. Older assessments
+can change, so a successful head check cannot certify the whole history.
 
-The head is merged **over** the tail (`mergeScans`), keyed on `companyKey|when`, so a row whose
-analysis landed between the two fetches is taken from the head with its score rather than from the
-tail without one. Steady state is one upstream request per 30 seconds instead of eighteen.
+Schedules are independently cached for two minutes. A failed schedule never replaces healthy
+analysis; its saved schedule and a separate failure message remain available. The committed
+snapshot contributes older published assessments during a partial walk. `analysisLive`,
+`analysisRetained`, `quarterChecks`, `historyError`, `scheduleErrors` and `truncated` separate
+current-page freshness, dated saved data and incomplete history. The existing independent snapshot
+collector now walks available quarters with pacing, retains previously captured records through
+quarter rollover, and atomically replaces the file only after a successful analysis capture.
+
+`mergeScans` gives the current head precedence and keys on `companyKey|when|source-document`,
+so distinct analyses of one call survive. The browser separately saves public analysis under
+`concalls:published-analysis-history-v1`. An older or smaller outage delivery cannot erase newer
+saved assessments. Exact shared documents may reconnect an otherwise document-only row to a saved
+assessment only within one ticker and one unambiguous call; unrelated documents remain separate.
+Saved assessments carry their source capture date. Original responses and their ETags stay paired
+under the original store key. The small independent calendar write completes before load/refresh
+returns, so an immediate reload can retain it; the larger analysis archive is saved in the
+background after that write and stays off the paint path.
+
+Result, Sentiment / View and Highlights show published values or a specific status: pending,
+source unavailable, coverage incomplete, no matching assessment or no published field. An absent
+assessment never becomes a rating. The free Deep Dive index refreshes every five minutes while
+visible and retries failed reads after 30 seconds, including returning/online checks. Exact-call,
+confirmed-quarter, transcript-backed reports may fill missing fields with an attributed `DD`
+label; source values keep precedence. No automatic paid generation, private-summary budget or
+collector scope changes are part of this recovery. Live repaints preserve the visible row and
+search input focus/selection.
 
 ### The change worth repainting for is not a new row
 
 A call joins the feed when it is **held** and gains its score some minutes later. So the client's
-fingerprint covers `resultScore`, `sentimentTier`, `notesReady` and the tag count as well as
+fingerprint covers `resultScore`, `sentimentTier`, `notesReady` and the full highlight text, source documents and retained status as well as
 identity, and `newArrivals()` counts *newly analysed* as an arrival alongside *newly listed*.
 `resultScore: null` renders **pending**, never zero — a zero would claim StockScans had assessed
 the call and found it worthless.
@@ -1416,7 +1445,8 @@ compute run. The reads are plain GETs with no pipeline behind them. So:
   the explicit command: its one click opens live progress and dispatches exactly once. There is no
   second setup/connection/force screen, no service URL is printed, and a finished report has no
   force/re-run control that could spend from an incidental click.
-- **The free index IS fetched unprompted**, once per page load — never polled, never per row. It
+- **The free index IS fetched unprompted**, shared across rows and refreshed every five minutes
+  while the library is visible (failed reads retry after 30 seconds). It
   is what lets a row say *"report ready"* instead of making the reader pay to find out. Rows it
   names get a filled button and open through `resume(slug)`, which only polls.
 - Reopening a panel uses `resume(slug)` too. Their API would dedup a second `POST` anyway, but not
@@ -1427,7 +1457,7 @@ compute run. The reads are plain GETs with no pipeline behind them. So:
   the second is stronger, because it needs no network at all and is known synchronously, so those
   rows are filled on first paint rather than upgraded when `/api/summary` lands.
 
-### Filling document-only result/view/highlight gaps
+### Filling missing published result/view/highlight fields
 
 The free summary index already publishes Concall Deep Dive's own `result`, `verdict`, `headline`
 and `tags`. The Con-call table may reproduce those fields in an otherwise blank Screener row only

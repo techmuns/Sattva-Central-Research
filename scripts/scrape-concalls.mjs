@@ -12,24 +12,35 @@
 // Unlike the calendar capture, there is no bot wall here: StockScans answers a Cloudflare Worker
 // the same way it answers this script. So this really is a fallback, not the primary path.
 
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile, rename } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fetchConcallScans, fetchUpcoming, fetchToday, resultTierOf, sentimentTierOf } from '../worker/stockscans.mjs';
+import { fetchConcallHistory, fetchUpcoming, fetchToday, mergeScans, resultTierOf, sentimentTierOf } from '../worker/stockscans.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(__dirname, '../public/data/concall-scans.json');
 
 async function main() {
   console.log('Fetching the con-call scan from StockScans…');
-  const { rows, meta } = await fetchConcallScans({ pages: 'all' });
+  const { rows: captured, meta } = await fetchConcallHistory({ gapMs: 4000 });
+  let previous = null;
+  try { previous = JSON.parse(await readFile(OUT, 'utf8')); } catch { /* A first capture has no history. */ }
+  const keys = new Set(captured.map(row => `${row.companyKey}|${row.when}|${row.ssUrl || row.pptSsUrl || ''}`));
+  const retained = (previous?.rows || []).filter(row => !keys.has(`${row.companyKey}|${row.when}|${row.ssUrl || row.pptSsUrl || ''}`))
+    .map(row => ({ ...row, analysisRetained: true, analysisCheckedAt: row.analysisCheckedAt || previous?.meta?.fetchedAt || null }));
+  const rows = mergeScans(captured, retained);
   if (!rows.length) throw new Error('StockScans returned no rows — refusing to write an empty snapshot');
   if (meta.truncated) console.warn(`  WARNING: stopped at our own page bound with ${rows.length} of ${meta.total} rows.`);
 
-  const [upcoming, today] = await Promise.all([fetchUpcoming().catch(() => []), fetchToday().catch(() => ({ day: null, rows: [] }))]);
+  const parts = await Promise.allSettled([fetchUpcoming(), fetchToday()]);
+  const upcoming = parts[0].status === 'fulfilled' ? parts[0].value : previous?.upcoming || [];
+  const today = parts[1].status === 'fulfilled' ? parts[1].value : previous?.today || { day: null, rows: [] };
+  const scheduleErrors = parts.flatMap((part, i) => part.status === 'rejected' ? [`${i ? 'Today' : 'Upcoming'} schedule unavailable`] : []);
 
-  const payload = { ok: true, degraded: null, rows, upcoming, today, meta };
-  await writeFile(OUT, `${JSON.stringify(payload)}\n`);
+  const payload = { ok: true, degraded: scheduleErrors.join('; ') || (meta.truncated ? 'Analysis history partially checked' : null),
+    rows, upcoming, today, meta: { ...meta, analysisRetained: retained.length, scheduleErrors } };
+  await writeFile(`${OUT}.tmp`, `${JSON.stringify(payload)}\n`);
+  await rename(`${OUT}.tmp`, OUT);
 
   const scored = rows.filter((r) => r.resultScore != null);
   const pending = rows.length - scored.length;

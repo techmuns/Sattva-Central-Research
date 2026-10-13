@@ -11,9 +11,9 @@
 //   render. Inventing our own bands would be presenting our judgement under their name.
 
 export const SS_BASE = 'https://www.stockscans.in';
-export const SCAN_URL = `${SS_BASE}/api/company/concall-scan`;
-export const UPCOMING_URL = `${SCAN_URL}/upcoming`;
-export const TODAY_URL = `${SCAN_URL}/today`;
+export const SCAN_URL = `${SS_BASE}/api/scans/concall/run`;
+export const UPCOMING_URL = `${SS_BASE}/api/scans/concall/upcoming`;
+export const TODAY_URL = `${SS_BASE}/api/scans/concall/today`;
 export const PAGE_SIZE = 50;
 
 /** StockScans' own tier vocabulary. Do not re-band these — see the header. */
@@ -123,8 +123,9 @@ export function docUrl({ ssUrl }) {
  */
 export function mergeScans(head = [], tail = []) {
   const byKey = new Map();
-  for (const r of tail) byKey.set(`${r.companyKey}|${r.when}`, r);
-  for (const r of head) byKey.set(`${r.companyKey}|${r.when}`, r);
+  const key = r => `${r.companyKey}|${r.when}|${r.ssUrl || r.pptSsUrl || ''}`;
+  for (const r of tail) byKey.set(key(r), r);
+  for (const r of head) byKey.set(key(r), r);
   return [...byKey.values()].sort((a, b) => String(b.when || '').localeCompare(String(a.when || '')));
 }
 
@@ -139,7 +140,7 @@ export function fingerprint(rows = []) {
   let total = 0;
   for (const r of rows) {
     const documents = (r.documents || []).map((document) => `${document.type}:${document.url}`).sort().join(',');
-    const tok = `${r.companyKey}|${r.when}|${r.resultScore ?? ''}|${r.sentimentTier ?? ''}|${r.notesReady ? 1 : 0}|${r.tags.length}|${documents}`;
+    const tok = `${r.companyKey}|${r.when}|${r.ssUrl || r.pptSsUrl || ''}|${r.resultScore ?? ''}|${r.sentimentTier ?? ''}|${r.notesReady ? 1 : 0}|${r.analysisRetained ? 1 : 0}|${r.tags.join('|')}|${documents}`;
     let h = 0;
     for (let i = 0; i < tok.length; i++) h = (h * 31 + tok.charCodeAt(i)) | 0;
     total = (total + h) | 0;
