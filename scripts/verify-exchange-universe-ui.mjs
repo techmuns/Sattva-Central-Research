@@ -7,7 +7,8 @@ import { createHash } from 'node:crypto';
 import { buildExchangeUniverse } from '../public/js/data/exchange-universe.js';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
-let upgraded = false, failed = false;
+let upgraded = false, failed = false, delayed = false, releaseReads;
+let heldReads = Promise.resolve();
 let directoryReads = 0;
 const bse = JSON.parse(readFileSync(resolve(root, 'data/announcement-identities.json')));
 const nse = JSON.parse(readFileSync(resolve(root, 'data/filing-capture/nse-identities.json')));
@@ -23,7 +24,7 @@ await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.
 window.ready = true; window.openUniverse();
 </script>`;
 const html = readFileSync(resolve(root, 'index.html'), 'utf8').replace('<script type="module" src="js/app.js"></script>', harness);
-const server = createServer((req, res) => {
+const server = createServer(async (req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
   res.setHeader('cache-control', 'no-cache');
   try {
@@ -31,6 +32,7 @@ const server = createServer((req, res) => {
     if (path === '/sdk-fixture.js') { res.end('/* isolated SDK */'); return; }
     if (path === '/data/announcement-identities.json' || path === '/data/filing-capture/nse-identities.json') {
       directoryReads++;
+      if (delayed) await heldReads;
       if (failed) { res.writeHead(503).end(); return; }
       const body = JSON.stringify(path.includes('nse-identities') ? nse : bse);
       const tag = `"${createHash('sha256').update(body).digest('hex')}"`;
@@ -136,6 +138,35 @@ try {
   await page.evaluate(async () => { await (await import('/js/data/listed-companies.js')).load(); });
   assert(directoryReads > hiddenReads, 'returning to the editor rechecks the sources');
   await page.getByRole('button', { name: 'Done', exact: true }).click();
+  delayed = true;
+  heldReads = new Promise(resolve => { releaseReads = resolve; });
+  const warmStart = performance.now();
+  await page.evaluate(() => {
+    window.openUniverse();
+    if (!document.querySelector('[data-scope-member]') || document.querySelector('[data-scope-list-panel]').classList.contains('hidden'))
+      throw Error('Warm opening waited for the directory network request');
+  });
+  const warmMs = performance.now() - warmStart; // Real elapsed time; the page clock is mocked above.
+  assert(warmMs < 150, `warm names paint immediately (${warmMs.toFixed(1)}ms)`);
+  await page.locator('[data-scope-search]').fill('DP Abhushan');
+  await page.locator('[data-scope-remove="ticker:DPABHUSHAN"]').waitFor({ state: 'visible' });
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  delayed = false; releaseReads();
+  await page.evaluate(async () => { await (await import('/js/data/listed-companies.js')).load(); });
+  // New module instance / returning page restores durable names even while the server is held.
+  delayed = true; heldReads = new Promise(resolve => { releaseReads = resolve; });
+  await page.reload();
+  await countIs(expected.length + 1);
+  assert(/Saved company list/.test(await page.locator('[data-universe-status]').innerText()));
+  await page.locator('[data-scope-search]').fill('DP Abhushan');
+  await page.locator('[data-scope-remove="ticker:DPABHUSHAN"]').waitFor({ state: 'visible' });
+  failed = true; delayed = false; releaseReads();
+  await page.waitForFunction(() => /unavailable|revalidated/.test(document.querySelector('[data-universe-status]')?.textContent));
+  await countIs(expected.length + 1);
+  failed = false;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await page.waitForFunction(() => !/unavailable|revalidated|Saved company/.test(document.querySelector('[data-universe-status]')?.textContent));
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
   const closedReads = directoryReads;
   await page.clock.fastForward(180_001);
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -154,5 +185,5 @@ try {
   assert(await recovery.locator('[data-scope-list-panel]').isVisible(), 'initial outages recover without reopening or manual Refresh');
   await recovery.close();
   assert.deepEqual(errors, []);
-  console.log(`PASS returning 600-company session upgrades to ${expected.length} exchange listings; full-list scrolling/search, persisted exclusions, new-listing recovery, source failures and responsive themes.`);
+  console.log(`PASS returning 600-company session upgrades to ${expected.length} exchange listings; full-list scrolling/search, persisted exclusions, new-listing recovery, source failures, delayed-network cached openings (${warmMs.toFixed(1)}ms), offline reloads and responsive themes.`);
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

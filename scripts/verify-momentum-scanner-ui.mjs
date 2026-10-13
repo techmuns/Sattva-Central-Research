@@ -87,7 +87,7 @@ const companies = [
 const fixture = { ...original, companies, company_count: companies.length, failures: 0 };
 // The prior release's actual renderer proves a warm module cache receives the new criteria UI.
 const previousControls = readFileSync(resolve('scripts/fixtures/momentum-controls-previous.txt'), 'utf8');
-let previousRelease = false;
+let previousRelease = false, quoteUnavailable = false;
 
 // ---- the server ------------------------------------------------------------------------------
 const CT = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2' };
@@ -99,7 +99,7 @@ const server = createServer((req, res) => {
   // module falls back to it. Every other /api/* answers a benign 200 so no same-origin 404 is logged.
   if (path === '/data/technicals.json') return json(fixture);
   if (path === '/api/breakouts') return json({version:1,state:'complete',targets:companies.map(c=>c.ticker),failures:[],
-    completedAt:new Date(AT).toISOString(),rows:companies.filter(c=>Number.isFinite(c.cmp)&&c.cmp>0).map(c=>({ticker:c.ticker,price:c.cmp,volume:500,prevClose:c.cmp,
+    completedAt:new Date(AT).toISOString(),rows:quoteUnavailable ? [] : companies.filter(c=>Number.isFinite(c.cmp)&&c.cmp>0).map(c=>({ticker:c.ticker,price:c.cmp,volume:500,prevClose:c.cmp,
       sessionDate:'2026-10-09',quoteAt:new Date(AT).toISOString(),checkedAt:new Date(AT).toISOString(),provider:'Upstox',exchange:'NSE',
       volumeBase:{average:1000,from:'2026-09-24',to:'2026-10-08',count:10,exchange:'NSE'}}))});
   if (path.startsWith('/api/')) return json({ ok: false });
@@ -330,6 +330,59 @@ try {
 
     const own = [...new Set(errors)].filter(isOurError);
     ok('zero application console errors at 1440px', own.length === 0, own.slice(0, 3).join(' | ') || `${errors.length - own.length} environment error(s) filtered`);
+  }
+
+  // A source gap keeps names and dated readings in the same table, with no certified passes.
+  {
+    const { context, page, errors } = await newPage(1440, 1000);
+    await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#content-host [data-score-table]');
+    quoteUnavailable = true;
+    await page.evaluate(async () => { await (await import('/js/data/breakout-live.js')).refresh(); });
+    await page.waitForFunction(() => /Saved readings are shown as exceptions/.test(document.querySelector('#content-host')?.textContent));
+    const saved = await page.locator('#content-host [data-score-table] tbody').innerText();
+    ok('source failures retain all company names in the existing scanner table', companies.every(c => saved.includes(c.name)));
+    ok('saved rows carry dated prices and Exception status', /Saved daily close/.test(saved) && /Exception/.test(saved) && !/\bPass\b/.test(saved));
+    ok('unavailable data is never counted as a current pass', /0 of 0 stocks pass/.test(await page.locator('#content-host').innerText()));
+    await page.evaluate(() => {
+      window.exported = { columns: [], rows: [] };
+      window.ExcelJS = { Workbook: class {
+        constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array() }; }
+        addWorksheet() { return { set columns(value) { window.exported.columns = value; },
+          addRow(row) { window.exported.rows.push(row); }, getRow() { return {}; } }; }
+      } };
+    });
+    await page.locator('#content-host [data-export]').click();
+    await page.waitForFunction(() => window.exported.rows.length > 0);
+    const exported = await page.evaluate(() => window.exported);
+    ok('exports retain every saved row with dated prices and Exception status', exported.rows.length === companies.length &&
+      exported.rows.every(row => row.f1 === 'Exception' && row.f2 === 'Exception' && /Saved daily close/.test(row.quote_time)));
+    ok('saved export headers make no live freshness claim', exported.columns.every(c => !/\blive\b|so far today/i.test(c.header)));
+    await page.locator('#content-host [data-table-search]').fill('MOMOA');
+    await page.waitForFunction(() => !document.querySelector('[data-rows-pending]'));
+    ok('saved names remain searchable during failure', (await page.locator('#content-host [data-score-table] tbody').innerText()).includes(companies[0].name));
+    quoteUnavailable = false;
+    await page.evaluate(async () => { await (await import('/js/data/breakout-live.js')).refresh(); });
+    await page.waitForFunction(() => !/Saved readings are shown as exceptions/.test(document.querySelector('#content-host')?.textContent));
+    ok('live recovery keeps the reader search', (await page.locator('#content-host [data-table-search]').inputValue()).toUpperCase() === 'MOMOA');
+    ok('recovery restores current Pass status automatically', /\bPass\b/.test(await page.locator('#content-host [data-score-table] tbody').innerText()));
+    ok('saved-first scanner recovery has no application errors', errors.filter(isOurError).length === 0);
+    await context.close();
+  }
+
+  {
+    const { context, page } = await newPage(1440, 1000);
+    await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#content-host [data-score-table]');
+    await page.evaluate(async () => {
+      (await import('/js/core/watchlist.js')).add('MOMOF', 'Young Stock');
+      location.hash = '#/research/breakouts/momentum-scanner?scope=watchlist';
+    });
+    await page.waitForFunction(() => /Current prices are available, but the history required/.test(document.querySelector('#content-host')?.textContent));
+    const text = await page.locator('#content-host').innerText();
+    ok('fresh quotes with insufficient history are never described as a quote outage', text.includes('Young Stock') &&
+      text.includes('Exception') && !/current data is unavailable|Saved daily close/.test(text));
+    await context.close();
   }
 
   // ---- 390px: mobile layout holds ----------------------------------------------------------
