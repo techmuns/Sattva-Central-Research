@@ -101,3 +101,14 @@ result or its cleanup cannot replace/clear the new pending read.
 `verify-manager-upgrade-ui.mjs` cover catalogue-sized revisions, the full sharing bound,
 queued freshness, invalidation races, private failure handling, automatic recovery, scopes,
 workspaces and returning readers upgrading the immutable service-worker module graph.
+
+
+Live validation also found the active FY27 workbook reports `bookAsOf: 2027-03-31`.
+This is Family's workbook period label, including while that year remains open; rejecting
+it because the period ends after today withheld a valid checked book. ISO calendar validity
+remains required, while source freshness continues to use only the actual `checkedAt`.
+Cards/workspaces identify a future workbook period as an open period. Valuation dates and
+basis remain separate; no future period is presented as a completed statement, transaction
+date, current mark or source check. Browser fixtures now exercise an open FY period together
+with a catalogue-sized revision, including the returning-session upgrade from the rejected
+period guard. Stale checks and invalid calendar dates still fail.

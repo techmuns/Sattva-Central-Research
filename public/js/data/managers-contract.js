@@ -1,5 +1,4 @@
 // Ephemeral Family manager contract, shared by the transport and reader.
-import { newsDay } from './news-window.js';
 const text = (v, max = 300) => typeof v === 'string' && v.length > 0 && v.length <= max;
 const nullableNumber = v => v === null || Number.isFinite(v);
 const day = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v;
@@ -24,7 +23,9 @@ export function snapshotIssue(v, startedAt = Date.now()) {
 function snapshotShape(v, startedAt) {
   const checked = Date.parse(v?.checkedAt || '');
   if (!v || v.version !== 1 || v.valuation !== 'workbook') return 'format';
-  if (!day(v.bookAsOf) || v.bookAsOf > newsDay()) return 'period';
+  // An active FY workbook can end in the future. This is its period label,
+  // not the source check or valuation date; Family supplies those separately.
+  if (!day(v.bookAsOf)) return 'period';
   // Family's revision is the complete serialized workbook catalogue, not a hash.
   // Its length grows with retained workbooks; the whole-message budget bounds it.
   if (!Number.isSafeInteger(v.archiveVersion) || v.archiveVersion < 0 || !text(v.sourceRevision, MAX_MANAGER_CHARS)) return 'revision';
