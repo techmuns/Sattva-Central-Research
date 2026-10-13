@@ -146,7 +146,7 @@ try {
       assert.equal(await page.locator('[data-tab-id="nse-filings"]').count(), 0, 'saved filing routes render without a navigation button');
     } else {
       const navigationTab = ['daily-alerts', 'ai-alerts'].includes(tab) ? 'alerts'
-        : ['corp-announcements', 'corporate-actions', 'ipos'].includes(tab) ? 'announcements'
+        : ['corp-announcements', 'corporate-actions', 'ipos', 'insider-trades'].includes(tab) ? 'announcements'
           : ['earnings-hub', 'concall'].includes(tab) ? 'earnings'
             : ['news', 'public-chatter'].includes(tab) ? 'news-section' : tab;
       await page.waitForFunction(tab => document.querySelector('#tabbar-mount .tab-btn.is-active')?.dataset.tabId === tab, navigationTab);
