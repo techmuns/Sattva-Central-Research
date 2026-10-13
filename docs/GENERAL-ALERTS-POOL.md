@@ -126,6 +126,9 @@ search and export continue to distinguish confirmed and possible matches.
 The redundant All Alerts table Watchlist button is also removed. Use the global Watchlist scope
 to select the shared company list; per-company stars remain available in the table.
 
+Priority and Direction are consolidated behind one Signal & priority control. The panel retains
+both independent predicates and the button shows their active values; Clear affects only that pair.
+
 Only confirmed news can score, corroborate or enrich AI Alerts; legacy cached news without current
 attribution cannot bypass that rule. This is separate from All Alerts visibility and topic filters.
 Ask Research and exports carry query provenance, status and reasons so a query label is not presented

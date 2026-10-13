@@ -2187,11 +2187,11 @@
       "error": "search-unavailable"
     },
     "isin:INE852O01025|Aptus Value Housing Finance India": {
-      "lastAttemptAt": "2026-10-07T12:26:38+00:00",
+      "lastAttemptAt": "2026-10-12T23:42:43+00:00",
       "error": "search-unavailable"
     },
     "isin:INE852O01025|APTUS": {
-      "lastAttemptAt": "2026-10-07T13:05:39+00:00",
+      "lastAttemptAt": "2026-10-13T00:16:36+00:00",
       "error": "search-unavailable"
     },
     "isin:INE0UIZ01018|BlackBuck": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-12T23:08:33.047937+00:00"
+    "checkedAt": "2026-10-13T00:16:36.163974+00:00"
   }
 }

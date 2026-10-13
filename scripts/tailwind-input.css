@@ -127,18 +127,27 @@
 .alerts-source-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; font-size: 14px; }
 .alerts-workspace [data-table-toolbar] { padding: 8px 12px; gap: 8px; }
 .alerts-workspace [data-table-toolbar] > div:first-child > div:first-child { min-width: 180px; }
+.table-filter-group { flex: 0 1 186px; min-width: 0; }
+.table-filter-group-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 38px; padding: 8px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 8px; background: rgb(var(--surface-slate-50, 248 250 252)); color: rgb(var(--text-slate-600, 71 85 105)); font-size: 14px; text-align: left; }
+.table-filter-group-toggle [data-filter-group-summary] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table-filter-group-toggle[data-active="true"] { border-color: rgb(var(--edge-indigo-200, 199 210 254)); background: rgb(var(--surface-indigo-50, 238 242 255)); color: rgb(var(--text-indigo-700, 67 56 202)); }
+.table-filter-group-panel { position: fixed; inset: auto; margin: 0; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; padding: 14px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 12px; background: rgb(var(--surface-white, 255 255 255)); color: rgb(var(--text-slate-900, 15 23 42)); box-shadow: 0 12px 36px #0f172a26; }
+.table-filter-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; }
+.table-filter-group-heading button { min-height: 32px; padding: 4px 8px; color: rgb(var(--text-indigo-600, 79 70 229)); font-size: 12px; }
+.table-filter-group-field { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; color: rgb(var(--text-slate-600, 71 85 105)); font-size: 12px; font-weight: 600; }
+.table-filter-group-field select { width: 100%; min-height: 40px; font-weight: 400; }
+.table-filter-group-done { width: 100%; min-height: 36px; margin-top: 14px; border-radius: 8px; background: rgb(var(--surface-indigo-50, 238 242 255)); color: rgb(var(--text-indigo-700, 67 56 202)); font-size: 13px; font-weight: 600; }
+.table-filter-group :where(button, select):focus-visible { outline: 2px solid rgb(var(--text-indigo-600, 79 70 229)); outline-offset: 2px; }
 @media (min-width: 768px) {
   .alerts-workspace [data-section-head] > div { display: grid; grid-template-columns: auto minmax(0, 1fr); }
 }
 @media (min-width: 960px) {
-  /* Native selects size themselves to their longest option. Three independent filters must
-     share the laptop reading row instead; opening a selector still shows every full label. */
+  /* The grouped signal control and date selector stay compact beside company search. */
   .alerts-workspace [data-table-toolbar] > div:first-child { flex-wrap: nowrap; }
-  .alerts-workspace [data-table-filter] { flex: 1 1 0; min-width: 0; }
-  .alerts-workspace [data-table-filter="2"] { flex-grow: 1.35; }
+  .alerts-workspace [data-table-toolbar] > div:first-child > [data-table-filter] { flex: 0 1 230px; min-width: 0; }
 }
 @media (min-width: 960px) and (max-width: 1199px) {
-  .alerts-workspace [data-table-filter] { padding-left: 8px; padding-right: 8px; font-size: 12px; }
+  .alerts-workspace [data-table-toolbar] > div:first-child > [data-table-filter], .alerts-workspace .table-filter-group-toggle { padding-left: 8px; padding-right: 8px; font-size: 12px; }
 }
 @media (min-width: 768px) and (max-width: 1199px) {
   /* Keep the view row on one line on smaller laptops, including wider fallback fonts. */
@@ -163,5 +172,6 @@
   /* Search fills the first row; the remaining selectors wrap below it.
      The shared table's inline search minimum is for standalone toolbars, not this phone grid. */
   .alerts-workspace [data-table-toolbar] > div:first-child > div:first-child { order: -2; flex-basis: 100%; min-width: 0 !important; max-width: none; }
-  .alerts-workspace [data-table-filter] { flex: 1 1 calc(50% - 4px); min-width: 0; width: calc(50% - 4px); max-width: calc(50% - 4px); }
+  .alerts-workspace [data-table-toolbar] > div:first-child > :is([data-table-filter], [data-filter-group]) { flex: 1 1 calc(50% - 4px); min-width: 0; width: calc(50% - 4px); max-width: calc(50% - 4px); }
+  .alerts-workspace .table-filter-group-toggle { font-size: 12px; }
 }
