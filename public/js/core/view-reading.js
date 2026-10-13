@@ -9,7 +9,9 @@ export function seedTableReading(config, filters) {
   const saved = context?.preset?.reading;
   if (!saved || (saved.tableKey && saved.tableKey !== keyFor(config)) || config.initialView?.savedViewKey === context.key) return config.initialView;
   return { q: saved.q, watchOnly: saved.watchOnly, sort: saved.sort,
-    filters: filters.map(filter => saved.filters.find(item => item.label === filter.label)?.value ?? filter.value ?? 'all'), savedViewKey: context.key };
+    // A clearer display label must not silently reset an older saved screen.
+    filters: filters.map(filter => (saved.filters.find(item => item.label === filter.label) ??
+      saved.filters.find(item => filter.readingAliases?.includes(item.label)))?.value ?? filter.value ?? 'all'), savedViewKey: context.key };
 }
 export function registerTableReading(root, host, config, view, filters) {
   tableReadings.set(root, { host, read: () => cleanReading({ tableKey: keyFor(config), q: view.q, watchOnly: view.watchOnly, sort: view.sort,

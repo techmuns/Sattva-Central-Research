@@ -651,11 +651,13 @@ ok('loss → profit renders as a pill, not a percentage', /to profit/i.test(ehTe
 ok('profit → loss renders as a pill', /to loss/i.test(ehText));
 ok('loss in both periods is labelled as a loss', /loss\s*[↓↑]/i.test(ehText)); // \s matches the nbsp in the pill
 
-await page.locator('#content-host select').first().selectOption('turnaround');
+await page.locator('#content-host [data-filter-group-toggle]').click();
+await page.getByRole('combobox', { name: 'Result screen', exact: true }).selectOption('turnaround');
 await page.waitForTimeout(600);
 const turnRows = await rowCount();
 ok('the loss → profit filter narrows the set', turnRows > 0 && turnRows < latestRows, `${turnRows} turnarounds`);
-await page.locator('#content-host select').first().selectOption('all');
+await page.getByRole('combobox', { name: 'Result screen', exact: true }).selectOption('all');
+await page.locator('#content-host .table-filter-group-done').click();
 await page.waitForTimeout(400);
 
 // ---------------------------------------------------------------------------------------
@@ -1068,9 +1070,11 @@ await page.locator('#content-host thead th').nth(3).click();
 await page.waitForTimeout(300);
 ok('header sort keeps every row', (await rowCount()) === beforeSort, `${beforeSort} rows`);
 
-// The two filter dropdowns are independent questions and must AND together.
+// More filters keeps the two independent questions and their AND combination.
 const selCount = await page.locator('#content-host select').count();
-ok('there are two filter dropdowns', selCount === 2, `${selCount} selects`);
+ok('More filters contains the result screen and reporting basis', selCount === 2 &&
+  (await page.locator('#content-host [data-filter-group-toggle]').innerText()).includes('More filters'), `${selCount} selectors`);
+await page.locator('#content-host [data-filter-group-toggle]').click();
 const preBasis = await rowCount();
 await page.locator('#content-host select').nth(1).selectOption('std');
 await page.waitForTimeout(500);
@@ -1087,6 +1091,7 @@ const bothFilters = await rowCount();
 ok('the two dropdowns combine rather than replace each other', bothFilters > 0 && bothFilters < conOnly, `${conOnly} CON → ${bothFilters} CON with PAT up`);
 await page.locator('#content-host select').first().selectOption('all');
 await page.locator('#content-host select').nth(1).selectOption('all');
+await page.locator('#content-host .table-filter-group-done').click();
 await page.waitForTimeout(400);
 
 // ---------------------------------------------------------------------------------------
