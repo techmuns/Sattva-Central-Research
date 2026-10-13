@@ -53,7 +53,7 @@ const server = createServer((req, res) => {
     let body = readFileSync(file);
     if (path === '/sw.js') {
       body = body.toString().replace(/const MUNSHOT_SDK = .*;/, "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
-      if (!upgraded) body = body.replace(/-insider-more-filters-v\d+/, '-previous-insider-capture');
+      if (!upgraded) body = body.replace(/-insider-company-first-v\d+/, '-previous-insider-capture');
     }
     if (path === '/js/tabs/insider-trades.js' && !upgraded) body = `export const meta={};export const destroy=()=>{};export function render(ctx){ctx.root.innerHTML='<h2>This feed needs the Worker</h2>';}`;
     res.setHeader('content-type', {'.js':'text/javascript','.json':'application/json','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'}[extname(file)] || 'application/octet-stream');
@@ -101,6 +101,10 @@ try {
   assert.equal(await page.evaluate(() => window.feed.meta().capturedAt),capturedAt,'failed reload reuses the validated whole capture and original source time');
   assert(await page.evaluate(() => !!window.feed.meta().snapshotReadError),'saved bytes do not turn a failed check into success');
 
+  // Screener rows can restore before the independent exchange request settles.
+  // Finish that failed check before advancing the mock minute: refresh() shares
+  // the pending read (or is a no-op inside its freshness window), not a recovery.
+  await page.evaluate(async () => { await (await import('/js/data/exchange-deals.js')).refresh(); });
   exchangeMode = 'ok';
   await page.clock.fastForward(61000);
   await page.waitForFunction(() => window.feed.rows().some(row => row.cells.Insider === 'Official fund'));
@@ -144,6 +148,7 @@ try {
   assert.doesNotMatch(await warm.locator('#root').innerText(),/needs the Worker/);
   assert(await warm.getByRole('button',{name:'More filters (5)',exact:true}).isVisible(),'returning readers receive the compact toolbar');
   assert(!await warm.getByLabel('Transaction type',{exact:true}).isVisible());
+  assert.equal(await warm.getByRole('columnheader',{name:'Company',exact:true}).count(),1,'returning readers receive company-first identities');
   assert.equal(await warm.evaluate(() => localStorage.getItem('insider-reader-preference')),'retained');
   assert(!(await warm.evaluate(() => caches.keys())).some(key => key.includes('previous-insider-capture')));
   assert.deepEqual(errors,[]);

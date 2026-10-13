@@ -23,7 +23,7 @@
 // stylesheet it depends on does not, and the result is a half-applied design nobody can see a
 // fault in. Advancing a revision here is the whole mechanism; editing the CSS is not enough.
 const CACHE_PREFIX = 'sattva-dashboard-';
-const CACHE_NAME = `${CACHE_PREFIX}2026-10-13-manager-contract-v1`;
+const CACHE_NAME = `${CACHE_PREFIX}2026-10-13-manager-contract-v2`;
 const APP_ENTRY = '/js/app.js';
 const CORE = ['/', '/index.html', '/css/tailwind.css', '/css/theme.css', '/js/core/json-worker.js', '/data/portfolio-companies.json',
   '/assets/brand/sattva-ventures-wordmark.png', '/assets/brand/sattva-ventures-mark.svg', '/assets/brand/favicon.svg'];
@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v13`;
+  return `${appReleaseCacheKey()}-all-alerts-clean-header-v13-announcement-deals-subtab-v2`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.
@@ -265,5 +265,5 @@ function sharedWorkspaceCacheKey() {
 }
 
 function tableLayoutCacheKey() {
-  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1`;
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1`;
 }

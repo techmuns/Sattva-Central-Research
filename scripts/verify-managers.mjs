@@ -8,6 +8,12 @@ const snapshot = { version: 1, valuation: 'workbook', bookAsOf: '2026-08-31', li
     values: { marketValue: 100, costBasis: null, unrealised: null, cashValue: 0, positionCount: 1 }, positions: [{ isin: 'INE000000001', ticker: 'EXAMPLE', security: 'Example', assetClass: 'Equity', quantity: 10, marketValue: 100, costBasis: null, weightPct: 100 }],
     transactions: [tx, { ...tx, id: 'ledger-2', dateSheet: '2026-03-31', transfer: true }] }] };
 assert(validSnapshot(snapshot));
+const openPeriod = structuredClone(snapshot);
+openPeriod.bookAsOf = `${new Date().getUTCFullYear() + 1}-03-31`;
+openPeriod.managers[0].asOf = openPeriod.bookAsOf;
+assert(validSnapshot(openPeriod), 'an active FY workbook retains its future period label, distinct from its checked and valuation dates');
+assert.equal(snapshotIssue({ ...openPeriod, checkedAt: '2020-01-01' }), 'check time', 'a valid open period cannot certify a stale source check');
+assert.equal(snapshotIssue({ ...openPeriod, bookAsOf: '2027-02-29' }), 'period', 'invalid calendar dates still fail');
 // Family sends the entire catalogue identity. It grows with retained workbooks,
 // and must stay exact so revisions still revoke open workspaces and exports.
 const catalogueRevision = JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-10-01T00:00:00Z', null])) + '|whole-family';

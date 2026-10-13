@@ -128,6 +128,7 @@ export const TAB_META = Object.freeze({
   'insider-trades': {
     id: 'insider-trades',
     title: 'Bulk/Block Deal',
+    navigationGroup: 'announcements',
     subtitle: '',
     subviews: [],
   },

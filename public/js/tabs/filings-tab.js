@@ -336,6 +336,7 @@ export function makeFilingsTab(cfg) {
       dense: true,
       wrapHeads: true,
       nameMaxPx: cfg.nameMaxPx || 460,
+      nameWrap: cfg.nameWrap || false,
       stickyHead: cfg.stickyHead || 'max(320px, calc(100vh - 300px))',
       fillMode: cfg.fillMode || 'auto',
       initialRowCount: oldRows.length || 40,

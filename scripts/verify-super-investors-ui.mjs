@@ -20,9 +20,9 @@ const books = {
 };
 const investors = [...Object.keys(books), 'missing'].map(slug => ({ slug, name: slug }));
 const snapshot = { capturedAt: at, investors, books };
-const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2026-08-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-09-01T00:00:00Z', null])) + '|whole-family',
+const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2027-03-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-09-01T00:00:00Z', null])) + '|whole-family',
   privateWorkbook: { source: 'fixture.xlsx', received: '2026-09-02', saved: null }, coverage: { transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 1, note: 'Fixture custodians, retained ledger events and private funds; no PMS statement return series.' },
-  managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2026-08-31',
+  managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2027-03-31',
     values: { marketValue: 1000, costBasis: 800, unrealised: 200, cashValue: 0, positionCount: 2 },
     positions: [{ isin: 'INE000A01001', security: 'Portfolio Only Ltd.', ticker: 'ONLY', assetClass: 'Equity', quantity: 10, marketValue: 500, costBasis: 400, weightPct: 50 }, { isin: 'INF000000001', security: 'Example ETF', ticker: null, assetClass: 'ETF', quantity: 10, marketValue: 500, costBasis: 400, weightPct: 50 }],
     transactions: [1, 2].map(i => ({ id: `ledger-${i}`, date: '2026-09-05', dateSheet: i === 2 ? '2026-03-31' : null, security: 'Portfolio Only Ltd.', isin: 'INE000A01001', ticker: 'ONLY', side: i === 1 ? 'buy' : 'sell', quantity: 10, amount: i === 1 ? 0 : 500, unitPrice: i === 1 ? 0 : 50, transfer: i === 2 })) },
@@ -229,6 +229,7 @@ try {
   await page.evaluate(() => paint('portfolio', 'my-managers'));
   await page.waitForSelector('[data-open-manager="custodian-example"]');
   assert.equal(await page.locator('[data-open-manager]').count(), 3);
+  assert.match(await page.locator('[data-open-manager="custodian-example"]').innerText(), /Workbook period ending.*open period.*marks/, 'open FY labels do not become completed statements or valuation dates');
   assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, 'manager view preserves heading cleanup');
   await page.locator('[data-manager-search]').fill('private');
   assert.equal(await page.locator('[data-open-manager]').count(), 1);
