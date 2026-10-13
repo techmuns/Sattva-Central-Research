@@ -452,7 +452,9 @@ export function stopLive(live) {
 
 function hasChanged(payload) {
   if (!cache) return true;
-  if ((payload.rows?.length ?? 0) !== cache.meta.count) return true;
+  const visible = retainConcallAnalysis(payload?.rows || [], analysisHistory, payload?.meta?.fetchedAt || null,
+    payload?.meta?.analysisLive !== true && !!payload?.degraded).rows;
+  if (visible.length !== cache.meta.count) return true;
   if (!!payload.degraded !== !!cache.meta.degraded) return true;
   if (payload?.meta?.truncated !== cache.meta.truncated || payload?.meta?.analysisLive !== cache.meta.analysisLive ||
       payload?.meta?.historyError !== cache.meta.historyError) return true;
@@ -472,7 +474,7 @@ function hasChanged(payload) {
   const schedule = (rows) => JSON.stringify(rows.map((row) => [row.id, row.date, row.time, row.eventType, row.sourceUrl]));
   const incoming = scheduleFrom(payload);
   if (incoming && schedule(incoming) !== schedule(cache.portfolioUpcoming)) return true;
-  return fingerprint(payload.rows) !== fingerprint(cache.rows);
+  return fingerprint(visible) !== fingerprint(cache.rows);
 }
 
 export function onChange(fn) {

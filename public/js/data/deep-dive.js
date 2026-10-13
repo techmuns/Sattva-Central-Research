@@ -381,13 +381,13 @@ export async function peek(ticker, recordId = null) {
 // `GET /api/summary` lists every report that dashboard has already produced. Reading it is a
 // plain GET with no pipeline behind it, so unlike a dispatch it is safe to fetch on our own —
 // and it is what lets the scan table say "this one is ready" instead of making the reader pay to
-// find out. Fetched ONCE per page load: it is small, it changes only when a run completes, and
-// polling someone else's service for a list that moves a few times a day would be rude.
+// find out. Shared across callers; the mounted library refreshes it on its bounded free-read
+// cadence so reports arriving after first paint and temporary failures can recover automatically.
 // ---------------------------------------------------------------------------------------
 
 let summaryPromise = null;
 
-/** The raw `/api/summary` payload, fetched at most once per page load. Never throws. */
+/** The shared raw `/api/summary` payload. `refresh` invalidates the cached read. Never throws. */
 export function summary({ refresh = false } = {}) {
   if (refresh) summaryPromise = null;
   if (!summaryPromise) {

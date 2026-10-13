@@ -21,7 +21,8 @@ window.SATTVA_DEEPDIVE_URL=location.origin+'/publisher';
 import * as tab from '/js/tabs/concall.js';
 import * as feed from '/js/data/concall-scans.js';
 window.feed=feed;
-tab.render({root:document.querySelector('#root'),scope:'universe',params:{},data:{},live:{register(_id,options){window.tick=options.fetcher},subscribe(){return ()=>{}},start(){},stop(){}}});
+let subscriber=null;
+tab.render({root:document.querySelector('#root'),scope:'universe',params:{},data:{},live:{register(_id,options){window.tick=async()=>{const value=await options.fetcher();subscriber?.(value);return !!value}},subscribe(_id,fn){subscriber=fn;return ()=>{subscriber=null}},start(){},stop(){}}});
 </script>`;
 const server = createServer((req, res) => {
   const path = new URL(req.url, 'http://localhost').pathname;
@@ -65,6 +66,8 @@ try {
     meta:{fetchedAt:'2026-09-14T00:00:00Z',analysisLive:false} };
   await page.evaluate(async()=>{await window.tick()});
   assert.match(await row('SCORED').innerText(), /82.6/);
+  assert.match(await row('SCORED').innerText(), /saved/);
+  assert.equal(await page.evaluate(()=>window.tick()),false,'an unchanged outage response does not repaint retained rows');
   await page.waitForFunction(async()=>!!(await (await import('/js/core/store.js')).readEntry('concalls:published-analysis-history-v1'))?.value?.rows?.length);
   await page.reload(); await row('SCORED').waitFor();
   assert.match(await row('SCORED').innerText(), /82.6/);

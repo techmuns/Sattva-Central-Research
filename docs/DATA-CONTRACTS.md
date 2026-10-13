@@ -1443,7 +1443,8 @@ compute run. The reads are plain GETs with no pipeline behind them. So:
   the explicit command: its one click opens live progress and dispatches exactly once. There is no
   second setup/connection/force screen, no service URL is printed, and a finished report has no
   force/re-run control that could spend from an incidental click.
-- **The free index IS fetched unprompted**, once per page load — never polled, never per row. It
+- **The free index IS fetched unprompted**, shared across rows and refreshed every five minutes
+  while the library is visible (failed reads retry after 30 seconds). It
   is what lets a row say *"report ready"* instead of making the reader pay to find out. Rows it
   names get a filled button and open through `resume(slug)`, which only polls.
 - Reopening a panel uses `resume(slug)` too. Their API would dedup a second `POST` anyway, but not
@@ -1454,7 +1455,7 @@ compute run. The reads are plain GETs with no pipeline behind them. So:
   the second is stronger, because it needs no network at all and is known synchronously, so those
   rows are filled on first paint rather than upgraded when `/api/summary` lands.
 
-### Filling document-only result/view/highlight gaps
+### Filling missing published result/view/highlight fields
 
 The free summary index already publishes Concall Deep Dive's own `result`, `verdict`, `headline`
 and `tags`. The Con-call table may reproduce those fields in an otherwise blank Screener row only
