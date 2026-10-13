@@ -368,7 +368,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
     window.addEventListener('online', resumeDirectory);
   }
 
-  Promise.resolve(scope === 'universe' ? listedCompanies.load() : null)
+  Promise.resolve(scope === 'universe' ? listedCompanies.load({ recheck: true }) : null)
     .then(() => {
       if (!document.body.contains(root)) return;
       if (scope === 'universe') { showDirectory(); return; }

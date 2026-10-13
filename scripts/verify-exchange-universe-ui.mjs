@@ -61,6 +61,18 @@ try {
   page.on('pageerror', e => errors.push(e.message));
   await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 200, body: '' }));
   const countIs = count => page.waitForFunction(count => Number(document.querySelector('[data-scope-count]')?.textContent.replace(/,/g, '')) === count, count);
+  const holdOlderDirectoryRead = async () => {
+    // Drain initial preparation, then hold both old responses before changing the source.
+    await page.evaluate(async () => (await import('/js/data/listed-companies.js')).load());
+    delayed = true;
+    heldReads = new Promise(resolve => { releaseReads = resolve; });
+    const started = new Promise(resolve => {
+      let count = 0;
+      onHeldRead = () => { if (++count === 2) resolve(); };
+    });
+    await page.evaluate(() => { void import('/js/data/listed-companies.js').then(listed => { window.olderDirectoryRead = listed.load(); }); });
+    await started;
+  };
   await page.goto(origin); await page.waitForFunction(() => window.ready && navigator.serviceWorker.controller);
   await page.reload(); await countIs(600);
   await page.evaluate(() => localStorage.setItem('sattva:universe-upgrade-proof', 'retained'));
@@ -105,19 +117,9 @@ try {
   await page.reload(); await countIs(expected.length - 1);
   await page.locator('[data-scope-search]').fill(dp.isin);
   await page.locator('[data-scope-result="0"]').click(); await countIs(expected.length);
-  // Restored names can paint before the returning session's initial source check ends.
-  // Drain that read before starting the controlled older request below.
-  await page.evaluate(async () => (await import('/js/data/listed-companies.js')).load());
   // Hold both older HTTP replies before publishing the listing and returning to the editor.
   // The visibility event must schedule a subsequent check, rather than reuse those old replies.
-  delayed = true;
-  heldReads = new Promise(resolve => { releaseReads = resolve; });
-  const olderReadsStarted = new Promise(resolve => {
-    let count = 0;
-    onHeldRead = () => { if (++count === 2) resolve(); };
-  });
-  await page.evaluate(() => { void import('/js/data/listed-companies.js').then(listed => { window.olderDirectoryRead = listed.load(); }); });
-  await olderReadsStarted;
+  await holdOlderDirectoryRead();
   bse.entries.push({ isin: 'INE999Z01011', ticker: 'NEWLISTED', bseCode: '599999', bseSymbol: 'NEWLISTED', name: 'New Listed Company', status: 'Active' });
   bse.capturedAt = new Date().toISOString();
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -126,10 +128,19 @@ try {
   await page.locator('[data-scope-search]').fill('NEWLISTED');
   assert(await page.locator('[data-scope-remove="ticker:NEWLISTED"]').isVisible(), 'new listings appear on return without manual Refresh');
   assert(/BSE:|NSE main board:|NSE SME:/.test(await page.locator('[data-universe-status]').innerText()));
+  await holdOlderDirectoryRead();
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  bse.entries.push({ isin: 'INE999Z01029', ticker: 'REOPENLIST', bseCode: '599998', bseSymbol: 'REOPENLIST', name: 'Listing Published Before Reopen', status: 'Active' });
+  bse.capturedAt = new Date().toISOString();
+  await page.locator('#open-universe').click();
+  delayed = false; onHeldRead = null; releaseReads();
+  await countIs(expected.length + 2);
+  await page.locator('[data-scope-search]').fill('REOPENLIST');
+  assert(await page.locator('[data-scope-remove="ticker:REOPENLIST"]').isVisible(), 'reopening during an older read captures the subsequently published listing');
   failed = true;
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await page.waitForFunction(() => /saved|unavailable|revalidated/i.test(document.querySelector('[data-universe-status]')?.textContent));
-  await countIs(expected.length + 1);
+  await countIs(expected.length + 2);
   failed = false;
   await page.locator('[data-scope-search]').fill('');
   for (const width of [1440, 390]) for (const theme of ['light', 'dark']) {
@@ -170,13 +181,13 @@ try {
   // New module instance / returning page restores durable names even while the server is held.
   delayed = true; heldReads = new Promise(resolve => { releaseReads = resolve; });
   await page.reload();
-  await countIs(expected.length + 1);
+  await countIs(expected.length + 2);
   assert(/Saved company list/.test(await page.locator('[data-universe-status]').innerText()));
   await page.locator('[data-scope-search]').fill('DP Abhushan');
   await page.locator('[data-scope-remove="ticker:DPABHUSHAN"]').waitFor({ state: 'visible' });
   failed = true; delayed = false; releaseReads();
   await page.waitForFunction(() => /unavailable|revalidated/.test(document.querySelector('[data-universe-status]')?.textContent));
-  await countIs(expected.length + 1);
+  await countIs(expected.length + 2);
   failed = false;
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await page.waitForFunction(() => !/unavailable|revalidated|Saved company/.test(document.querySelector('[data-universe-status]')?.textContent));
@@ -195,9 +206,9 @@ try {
   await recovery.waitForFunction(() => /Could not read this list/.test(document.querySelector('[data-scope-loading]')?.textContent));
   failed = false;
   await recovery.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-  await recovery.waitForFunction(count => Number(document.querySelector('[data-scope-count]')?.textContent.replace(/,/g, '')) === count, expected.length + 1);
+  await recovery.waitForFunction(count => Number(document.querySelector('[data-scope-count]')?.textContent.replace(/,/g, '')) === count, expected.length + 2);
   assert(await recovery.locator('[data-scope-list-panel]').isVisible(), 'initial outages recover without reopening or manual Refresh');
   await recovery.close();
   assert.deepEqual(errors, []);
-  console.log(`PASS returning 600-company session upgrades to ${expected.length} exchange listings; full-list scrolling/search, persisted exclusions, new-listing recovery, source failures, delayed-network cached openings (${warmMs.toFixed(1)}ms), offline reloads and responsive themes.`);
+  console.log(`PASS returning 600-company session upgrades to ${expected.length} exchange listings; full-list scrolling/search, persisted exclusions, new listings during return/reopen races, source failures, delayed-network cached openings (${warmMs.toFixed(1)}ms), offline reloads and responsive themes.`);
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
