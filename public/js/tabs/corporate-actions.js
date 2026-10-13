@@ -39,8 +39,7 @@ const detailsCell = (row) => {
 const sourceCell = (row) => {
   const links = [];
   if ((row.sources || [row.source]).includes('NSE')) links.push(`<a href="${escapeHtml(row.sourceUrl)}" target="_blank" rel="noopener noreferrer" data-stop aria-label="Open NSE corporate action for ${escapeHtml(row.company)}" title="Open the official NSE record" class="inline-flex h-7 items-center justify-center rounded-md px-2 text-[10px] font-bold text-indigo-700 ring-1 ring-indigo-200 transition-colors hover:bg-indigo-50">NSE ↗</a>`);
-  if ((row.sources || [row.source]).includes('Screener')) links.push(`<a href="${escapeHtml(row.screenerUrl || row.sourceUrl)}" target="_blank" rel="noopener noreferrer" data-stop aria-label="Open Screener corporate action for ${escapeHtml(row.company)}" title="Open the Screener action catalogue" class="inline-flex h-7 items-center justify-center rounded-md px-2 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50">SCR ↗</a>`);
-  return `<span class="flex gap-1">${links.join('')}</span>`;
+  return links.length ? `<span class="flex gap-1">${links.join('')}</span>` : dash('No official NSE link is available for this action');
 };
 
 function filters(rows) {
@@ -129,7 +128,7 @@ const tab = makeFilingsTab({
     </div>
     <div class="space-y-3 text-sm leading-relaxed text-slate-600">
       <p><strong>Summative source feed.</strong> NSE supplies the official market-wide company, symbol, ISIN, purpose, face value, ex date, record date and book-closure dates. Screener adds bonus and rights ratios, rights premium, split face values, buyback terms and dividend type and percentage. An NSE purpose stays exactly as filed.</p>
-      <p>A Screener action joins an NSE row only when ticker, action type and ex date form one unambiguous one-to-one match. The terms enrich that row and both source links remain. Ambiguous matches and actions found by only one source remain separate, so the merge neither guesses nor drops source records. Screener-only purpose text is visibly derived from its structured fields.</p>
+      <p>A Screener action joins an NSE row only when ticker, action type and ex date form one unambiguous one-to-one match. The terms enrich that row; its official NSE link remains available where supplied. Ambiguous matches and actions found by only one source remain separate, so the merge neither guesses nor drops source records. Screener-only purpose text is visibly derived from its structured fields.</p>
       <p>Action type is a navigation label so dividends, distributions, bonuses, rights, splits, buybacks, demergers, interest, redemptions and capital reductions can be filtered. Meeting-only AGM/EGM diary entries from NSE are excluded; a meeting row that also declares an action remains.</p>
       <p>The retained snapshot covers <strong>${escapeHtml(meta.requestedFrom || 'an unknown start')}</strong> through <strong>${escapeHtml(meta.requestedTo || 'an unknown end')}</strong>. Incremental source checks run every 15 minutes and a full Screener reconciliation runs daily. The dashboard checks the committed file every 90 seconds while visible. Either upstream can fail without erasing its last valid layer.</p>
       <p>Because the capture is exchange-wide, adding a stock to the portfolio or watchlist needs no new company scrape: the same file is filtered on the next paint. Portfolio matching uses ISIN as well as NSE symbol so a rename does not detach earlier actions. Company changes in the family book refresh independently every minute.</p>
