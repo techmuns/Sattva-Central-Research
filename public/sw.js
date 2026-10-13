@@ -252,7 +252,7 @@ function currentCacheKey() {
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.
 function mutualFundsCacheKey() {
-  return `${dashboardCacheKey()}-mutual-funds-table-space-v2-concall-compact-note-v1`;
+  return `${dashboardCacheKey()}-mutual-funds-table-space-v2-concall-compact-note-v1-news-company-search-v1`;
 }
 
 function dashboardCacheKey() {

@@ -383,7 +383,7 @@ jobs:
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-news-publisher-ui.mjs && node scripts/verify-onemi-news-delivery-ui.mjs && node scripts/verify-news-customer-delivery.mjs
+        run: node scripts/verify-news-publisher-ui.mjs && node scripts/verify-news-toolbar-ui.mjs && node scripts/verify-onemi-news-delivery-ui.mjs && node scripts/verify-news-customer-delivery.mjs
       - name: Verify clean corporate stream, automatic history and live scope updates
         if: ${{ matrix.part == 1 }}
         env:
