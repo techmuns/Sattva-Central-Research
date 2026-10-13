@@ -376,6 +376,7 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  nameAfter     default 0. How many of `columns` render before the identity column.
  *  nameMaxPx     default null. Hard px cap on the identity column so long names/subs truncate
  *                instead of widening the table.
+ *  nameWrap      default false. Wrap complete names/subs within the identity column's cap.
  *  dense         default false. true tightens horizontal cell padding for wide numeric tables.
  *  fillMode      'auto' (default) windows large scrollable tables with natural measured heights;
  *                'idle'/'scroll' retain legacy fill; 'virtual' uses an explicitly fixed stride.
@@ -443,6 +444,7 @@ export function scoreTable(config) {
     // the inner block is what actually makes the ellipsis engage. Without it one long sub-line
     // ("Aluminium & Aluminium Products") takes 474px and pushes the numeric columns off-screen.
     nameMaxPx = null,
+    nameWrap = false,
     // Tighter horizontal padding. For wide numeric tables where the alternative is a horizontal
     // scrollbar, which is worse than slightly closer columns.
     dense = false,
@@ -738,12 +740,12 @@ export function scoreTable(config) {
                 : ''
             }
             ${leadCols.map(dataTd).join('')}
-            ${td(`<div class="flex items-center gap-2"${nameMaxPx ? ` style="max-width:${nameMaxPx}px"` : ''}>
+            ${td(`<div class="flex items-center gap-2"${nameMaxPx ? ` style="max-width:${nameMaxPx}px${nameWrap ? `;width:${nameMaxPx}px` : ''}"` : ''}>
                 ${showRank ? '' : star}
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
                 <div class="min-w-0">
-                  <div class="truncate font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-                  <div class="flex items-center gap-1"><span class="truncate text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${showBookmarks ? bookmarkButton(bookmarkEntry(row)) : ''}</div>
+                  <div class="${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                  <div class="flex items-center gap-1"><span class="${nameWrap ? 'min-w-0 whitespace-normal break-words' : 'truncate'} text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${showBookmarks ? bookmarkButton(bookmarkEntry(row)) : ''}</div>
                   ${afterSub ? afterSub(row) || '' : ''}
                 </div>
               </div>`)}
