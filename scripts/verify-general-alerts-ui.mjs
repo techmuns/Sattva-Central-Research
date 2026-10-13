@@ -291,6 +291,8 @@ try {
   assert.equal(await picker.getAttribute('open'), null);
   assert.match(await sourceSummary.innerText(), /2 selected/, 'collapsed control discloses the active filter');
   // Closing a shared preset must return every ordinary-reader choice, including its source set.
+  const searchBeforeSaved = await page.locator('[data-table-search]').inputValue();
+  await page.locator('[data-table-search]').fill('Baseline reader filter');
   const normalReading = await page.evaluate(async () => ({
     reading: (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')),
     extras: (await import('/js/tabs/daily-alerts.js')).getSavedView(),
@@ -301,7 +303,7 @@ try {
     const reading = { q: 'Saved screen only', filters: [{ label: 'Priority', value: 'high' }, { label: 'Direction', value: 'positive' }, { label: 'Date range', value: '7d' }], extras: { allSources: false, sources: ['earnings'] } };
     views.enterView({ source: 'daily-alerts', key: 'fixture-saved-alerts', preset: { reading } });
     tab.applySavedView(reading.extras, reading);
-    tab.render({ root: document.querySelector('#root'), scope: 'universe', params: {}, data: {}, savedView: { reading }, savedViewKey: 'fixture-saved-alerts' });
+    tab.render({ root: document.querySelector('#root'), scope: 'universe', params: { company: 'STLTECH' }, data: {}, savedView: { reading }, savedViewKey: 'fixture-saved-alerts' });
   });
   await settled();
   assert.equal(await page.locator('[data-table-search]').inputValue(), 'Saved screen only');
@@ -314,6 +316,7 @@ try {
     extras: (await import('/js/tabs/daily-alerts.js')).getSavedView(),
   }));
   assert.deepEqual(restoredReading, normalReading, 'ordinary sources, search, priority, direction, sort and date window survive a shared saved screen');
+  await page.locator('[data-table-search]').fill(searchBeforeSaved);
   await sourceSummary.press('Enter');
   await page.locator('[data-feed-toggle="__all"]').click();
   await page.locator('[data-feed-toggle="__all"]').press('Escape');

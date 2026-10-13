@@ -128,7 +128,7 @@ let picked = null;
 let normalSavedReading = null;
 export function getSavedView() { return { allSources: picked === null, sources: picked ? [...picked] : [] }; }
 export function applySavedView(extras = {}, reading = {}) {
-  normalSavedReading ||= { picked: picked ? new Set(picked) : null, tableViews: structuredClone(tableViews) };
+  normalSavedReading ||= { picked: picked ? new Set(picked) : null, tableViews: structuredClone(tableViews), routeCompany };
   picked = extras.allSources === false ? new Set(extras.sources || []) : null;
   tableViews[HORIZON.THROUGH] = { q: reading.q || '', watchOnly: reading.watchOnly, sort: reading.sort,
     filters: ['Priority', 'Direction', 'Date range'].map((label, index) => reading.filters?.find(filter => filter.label === label)?.value || ['all', 'all', 'today'][index]) };
@@ -180,11 +180,11 @@ export function render(ctx) {
   // All Alerts filter state: "See all" cannot quietly retain e.g. Today-only or one feed and
   // then show an empty subset. Subsequent feed repaints retain the new table's own state as usual.
   const requestedCompany = String(ctx.params?.company || '').trim();
-  if (requestedCompany && requestedCompany !== routeCompany) {
+  if (!ctx.savedView && requestedCompany && requestedCompany !== routeCompany) {
     picked = null;
     tableViews = { [HORIZON.THROUGH]: { q: requestedCompany, filters: ['all', 'all', 'all'] },
       [HORIZON.UPCOMING]: { q: requestedCompany } };
-  } else if (!requestedCompany && routeCompany) {
+  } else if (!ctx.savedView && !requestedCompany && routeCompany) {
     tableViews = {
       [HORIZON.THROUGH]: { ...(tableViews[HORIZON.THROUGH] || {}), q: '' },
       [HORIZON.UPCOMING]: { ...(tableViews[HORIZON.UPCOMING] || {}), q: '' },
@@ -340,7 +340,7 @@ export function destroy() {
     }
   }
   unsubs = [];
-  if (normalSavedReading) { ({ picked, tableViews } = normalSavedReading); normalSavedReading = null; }
+  if (normalSavedReading) { ({ picked, tableViews, routeCompany } = normalSavedReading); normalSavedReading = null; }
 }
 
 /**
