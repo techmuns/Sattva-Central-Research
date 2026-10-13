@@ -105,6 +105,9 @@ try {
   await page.reload(); await countIs(expected.length - 1);
   await page.locator('[data-scope-search]').fill(dp.isin);
   await page.locator('[data-scope-result="0"]').click(); await countIs(expected.length);
+  // Restored names can paint before the returning session's initial source check ends.
+  // Complete that read before changing its response, so the return event starts a new check.
+  await page.evaluate(async () => { await (await import('/js/data/listed-companies.js')).load(); });
   bse.entries.push({ isin: 'INE999Z01011', ticker: 'NEWLISTED', bseCode: '599999', bseSymbol: 'NEWLISTED', name: 'New Listed Company', status: 'Active' });
   bse.capturedAt = new Date().toISOString();
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
