@@ -35,14 +35,8 @@ try {
   await page.route('**/*', route => new URL(route.request().url()).origin === base ? route.fallback() : route.abort());
   await page.goto(`${base}/#/research/insider-trades?scope=portfolio`);
   await page.locator('[data-insider-source-link]').first().waitFor();
-  const period = () => page.getByRole('combobox', { name: 'Trade period', exact: true });
-  assert.equal(await period().inputValue(), '30');
-  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(!await page.getByRole('combobox', { name, exact: true }).isVisible());
-  await page.getByRole('button', { name: 'More filters (5)', exact: true }).click();
-  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
-  await page.getByRole('dialog', { name: 'More filters (5)', exact: true }).getByRole('button', { name: 'Done', exact: true }).click();
-  assert.equal(await page.getByRole('columnheader', { name: 'Exchange', exact: true }).count(), 1);
-  assert(await page.locator('[data-insider-source-link]').count());
+  // Complete source preparation before testing the mounted toolbar. A schema arrival
+  // during the first popover gesture can replace that still-provisional control.
   const expected = async scope => page.evaluate(async scope => {
     const { insider } = await import('/js/data/filings.js');
     const { filterByScope } = await import('/js/data/scope.js');
@@ -65,6 +59,14 @@ try {
       Number(document.querySelector('[data-row-count]')?.textContent.replace(/,/g, '').match(/\d+/)?.[0]) === window.expectedDealCount(scope), scope);
   };
   await settleCaptures(); await assertCount('portfolio');
+  const period = () => page.getByRole('combobox', { name: 'Trade period', exact: true });
+  assert.equal(await period().inputValue(), '30');
+  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(!await page.getByRole('combobox', { name, exact: true }).isVisible());
+  await page.getByRole('button', { name: 'More filters (5)', exact: true }).click();
+  for (const name of ['Trade category', 'Exchange', 'Category', 'Transaction type', 'Mode']) assert(await page.getByRole('combobox', { name, exact: true }).isVisible());
+  await page.getByRole('dialog', { name: 'More filters (5)', exact: true }).getByRole('button', { name: 'Done', exact: true }).click();
+  assert.equal(await page.getByRole('columnheader', { name: 'Exchange', exact: true }).count(), 1);
+  assert(await page.locator('[data-insider-source-link]').count());
   const portfolioCount = await count();
   for (const [value, range] of [['today', 'today'], ['7', '7d'], ['3m', '3m'], ['1y', '1y'], ['all', 'all']]) {
     await period().selectOption(value);
