@@ -358,7 +358,8 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
       .map((t) => ({ id: t.meta.id, label: t.meta.navigationTitle || t.meta.title }))
     : (tabModule.meta.subviews || []).map((s) => ({ id: s.id, label: s.label, badge: s.badge }));
   const activeSubview = group ? resolved.tab : resolved.subview;
-  const hasSubviews = subviewItems.length > 0;
+  // These views keep their route metadata while owning a compact selector in their toolbar.
+  const hasSubviews = subviewItems.length > 0 && tabModule.meta.subviewNavigation !== 'toolbar';
   const useSubviewTabs = hasSubviews && (group || tabModule.meta.subviewNavigation === 'tabs');
   const subviewMount = $('#subview-mount', root);
   subviewMount.dataset.navigation = group ? 'group' : 'views';

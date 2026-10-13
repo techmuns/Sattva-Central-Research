@@ -35,7 +35,7 @@ export function rowGeometry(count, estimate = 72) {
 
 export function mountWindowedList({ scroller, content, items, key, renderRows, renderParts = null, spacerHtml,
   rowSelector, estimateHeight = 72, initialKey = null, onScrollActivity = null, onWindow = null,
-  minRows = 40, maxRows = 100, overscan = 8, patchRow = null }) {
+  minRows = 40, maxRows = 100, overscan = 8, patchRow = null, viewportInset = () => 0 }) {
   const rendered = new Map(); // only mounted nodes and their last generated markup
   const measured = new Map(); // at most one small measurement per currently retained record
   let rows = items, geometry, start = -1, end = 0, frame = 0, measureFrame = 0, disposed = false;
@@ -50,7 +50,9 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     geometry = rowGeometry(rows.length, estimateHeight);
     rows.forEach((row, i) => { const old = measured.get(String(key(row))); if (old?.row === row) geometry.set(i, old.height); });
   };
-  const anchor = () => { const top = rowTop(), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
+  // Preserve the first readable row. A sticky header can hide the geometric top row;
+  // holding that hidden row lets arrivals below it push the visible record down.
+  const anchor = () => { const top = Math.max(0, scroller.scrollTop - head() + viewportInset()), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
   function spacers() {
     const top = content.querySelector('[data-window-spacer="top"]');
     const bottom = content.querySelector('[data-window-spacer="bottom"]');
@@ -58,7 +60,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     if (bottom) bottom.style.height = `${geometry.offset(rows.length) - geometry.offset(end)}px`;
   }
   function restore(held) {
-    const target = head() + geometry.offset(held.index) + held.inside;
+    const target = head() + geometry.offset(held.index) + held.inside - viewportInset();
     if (Math.abs(target - scroller.scrollTop) >= 0.5) scroller.scrollTop = target;
   }
   function measureBoxes(boxes) {
@@ -94,7 +96,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     if (settleScrollbar) {
       // The drag displayed natural heights against frozen estimates. Keep the row actually
       // under the reader's eyes when adopting those heights, rather than the estimated row.
-      const top = scroller.getBoundingClientRect().top;
+      const top = scroller.getBoundingClientRect().top + viewportInset();
       const visible = boxes.findIndex(box => box.bottom > top);
       if (visible >= 0) held = { index: start + visible, inside: top - boxes[visible].top };
       settleScrollbar = false;

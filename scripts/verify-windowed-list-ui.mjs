@@ -69,6 +69,36 @@ try {
   const removed = await page.evaluate(() => { const id = held().key; rows = rows.filter(row => row.id !== id); list.update(rows); return { present: !!document.querySelector(`[data-row-key="${id}"]`), count: document.querySelectorAll('.row').length, total: rows.length }; });
   assert.equal(removed.present, false); assert(removed.count <= 100); assert.equal(removed.total, 50001);
   await page.evaluate(() => list.destroy());
+  // A sticky table header hides part of the mounted window. An arrival between the hidden
+  // row and the first readable row must preserve the readable row, even when that insertion
+  // leaves the old geometric anchor unchanged. Fixed heights make this deterministic on
+  // both overlay-scrollbar and native-gutter browsers.
+  const sticky = await page.evaluate(async () => {
+    const { mountWindowedList } = await import('/js/ui/windowed-list.js');
+    document.body.innerHTML = '<div id="scroll"><table style="border-collapse:collapse;width:100%"><thead style="position:sticky;top:0;background:white"><tr><th style="height:60px;padding:0">Sticky header</th></tr></thead><tbody id="content"></tbody></table></div>';
+    const scroller = document.querySelector('#scroll'), content = document.querySelector('#content');
+    const rows = Array.from({ length: 1000 }, (_, i) => ({ id: String(i) }));
+    const markup = r => `<tr data-row-key="${r.id}"><td style="height:86px;padding:0">Record ${r.id}</td></tr>`;
+    const list = mountWindowedList({ scroller, content, items: rows, key: r => r.id,
+      rowSelector: 'tr[data-row-key]', estimateHeight: 86,
+      viewportInset: () => scroller.querySelector('thead').offsetHeight,
+      renderRows: (all, from, to) => all.slice(from, to).map(markup).join(''),
+      renderParts: (all, from, to) => all.slice(from, to).map(markup),
+      spacerHtml: (height, where) => `<tr><td data-window-spacer="${where}" style="height:${height}px;padding:0;border:0"></td></tr>` });
+    scroller.scrollTop = 900;
+    await new Promise(requestAnimationFrame);
+    const boundary = () => scroller.getBoundingClientRect().top + scroller.querySelector('thead').offsetHeight;
+    const visible = () => [...content.querySelectorAll('tr[data-row-key]')].find(row => row.getBoundingClientRect().bottom > boundary());
+    const row = visible(), key = row.dataset.rowKey, before = row.getBoundingClientRect().top - boundary();
+    const insertion = rows.findIndex(row => row.id === key);
+    list.update([...rows.slice(0, insertion), { id: 'arrival-under-header' }, ...rows.slice(insertion)]);
+    const after = [...content.querySelectorAll('tr[data-row-key]')].find(row => row.dataset.rowKey === key).getBoundingClientRect().top - boundary();
+    const first = visible().dataset.rowKey;
+    list.destroy();
+    return { key, first, before, after };
+  });
+  assert(Math.abs(sticky.after - sticky.before) <= 1, `sticky-header reading row moved ${sticky.after - sticky.before}px`);
+  assert.equal(sticky.first, sticky.key, 'an insertion below the sticky header preserves the first readable record');
   assert.deepEqual(errors, []);
-  console.log('PASS natural row measurement, replacement anchors, badge changes, thumb-drag additions/corrections, release and immediate removal over 50,000 records');
+  console.log('PASS natural row measurement, replacement anchors, badge changes, thumb-drag additions/corrections, release, immediate removal over 50,000 records and sticky-header reading anchors');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

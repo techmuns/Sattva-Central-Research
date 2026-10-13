@@ -1238,6 +1238,16 @@
       [data-fullscreen-workspace] [data-table-scroll] { flex: 1 1 auto; min-height: 0; max-height: none !important; }
 
       #modal-container:has(.mf-coverage) { background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-900); }
+      .mf-table-control { max-width:100%; min-width:0; padding:7px 10px; border:1px solid rgb(var(--edge-slate-200,226 232 240)); border-radius:8px; background:rgb(var(--surface-slate-50,248 250 252)); color:var(--ink-900); font-size:13px; }
+      .mf-coverage-control { padding:7px 8px; color:var(--accent-600); font-size:12px; white-space:nowrap; }
+      .mf-table-control:focus-visible, .mf-coverage-control:focus-visible { outline:2px solid var(--brand-500); outline-offset:2px; }
+      .mf-holdings [data-table-toolbar] { padding:12px; gap:10px; }
+      .mf-holdings [data-table-toolbar] .relative:has([data-table-search]) { max-width:340px; }
+      .mf-holdings [data-mf-sizes]:empty { display:none; }
+      .mf-holdings [data-table-actions] { justify-content:space-between; flex-wrap:wrap; }
+      .mf-holdings [data-table-actions] > div { display:block; }
+      .mf-holdings [data-table-body] td { padding-block:10px; }
+      .mf-holdings .mf-insight { font-size:13px; line-height:1.45; }
       .mf-coverage-status { display: inline-block; border-radius: 999px; padding: 3px 9px; font-weight: 600; color: rgb(var(--text-amber-700, 180 83 9) / 1); background: rgb(var(--surface-amber-50, 255 251 235) / 1); }
       .mf-coverage-status[data-tone="positive"] { color: rgb(var(--text-emerald-700, 4 120 87) / 1); background: rgb(var(--surface-emerald-50, 236 253 245) / 1); }
       .mf-detail-table th[aria-sort]{cursor:pointer}.mf-sort-header{display:inline-block;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:inherit;cursor:pointer;white-space:nowrap}.mf-sort-header:hover,.mf-sort-header:focus-visible{color:var(--accent-600)}.mf-sort-header:focus-visible{outline:2px solid currentColor;outline-offset:4px;border-radius:2px}.mf-sort-header [data-mf-sort-arrow]{display:inline-block;width:10px;margin-left:3px;opacity:.55}.mf-detail-table th[aria-sort="ascending"] [data-mf-sort-arrow],.mf-detail-table th[aria-sort="descending"] [data-mf-sort-arrow]{opacity:1}
