@@ -54,7 +54,7 @@ export function render(ctx) {
       filters: [options('filingType', 'Filings'), options('board', 'Boards'), options('source', 'Sources')],
       searchable: (r) => `${r.company} ${r.title} ${r.isin || ''} ${r.ticker || ''} ${(r.aliases || []).join(' ')}`,
       initialSort: { key: 'Filed / document date', dir: 'desc' }, initialView: view,
-      link: (r) => r.url, countNoun: 'filings', exportName: 'sattva-ipo-filings',
+      countNoun: 'filings', exportName: 'sattva-ipo-filings',
       emptyMessage: 'No captured filings match these filters. This is not proof that no IPO or filing exists. Try All captured or another search.',
       onExport: async (visible, filename) => {
         const success = await exportSheets({ filename: `${filename}-${todayStamp()}`, banner: `${status}. Source check: ${stamp(m.checkedAt)}. Captured public-issue documents, not a complete IPO universe or confirmation an offer is open.`, sheets: [{ name: 'IPO filings', rows: visible, columns: [
