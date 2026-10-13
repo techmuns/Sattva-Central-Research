@@ -135,12 +135,6 @@ try {
   await page.locator('[data-changes-activity] [data-export]').click();
   await page.waitForFunction(() => window.exportedChanges.length > 0);
   assert.match(await page.evaluate(() => JSON.stringify(window.exportedChanges)), /Associated entity.*example\.test\/official-fund/, 'exports retain the relationship distinction and primary evidence');
-  await page.clock.setSystemTime(new Date('2026-12-07T00:00:00Z'));
-  await page.evaluate(() => paint('universe'));
-  await page.locator('[data-changes-period]').selectOption('itd');
-  assert.match(await page.locator('[data-changes-identity-warning]').innerText(), /1 entity relationships await renewed verification/);
-  assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'expired entity attribution is withheld while exact-name history stays available');
-  await page.clock.setSystemTime(new Date(at));
   await page.evaluate(() => paint('portfolio'));
   await page.locator('[data-changes-period]').selectOption('6m');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-holdings-total'), '1', 'only the scoped confirmed change appears');
@@ -406,5 +400,20 @@ try {
   assert.doesNotMatch(customerText, /npx|wrangler|MUNS_TOKEN|\/api\/|bearer token/);
   assert.match(customerText, /does not establish that an investor has no holdings/);
   await unavailable.close();
+  // Expiry gets its own clock/cache. Rewinding the refresh test's clock would leave its
+  // last-check throttle in the future, preventing the later six-minute recovery checks.
+  const expired = await browser.newContext({ serviceWorkers: 'block' });
+  await expired.route('**/*', fixtureRoute);
+  const expiredPage = await expired.newPage(), expiredErrors = [];
+  expiredPage.on('pageerror', error => expiredErrors.push(error.message));
+  await expiredPage.clock.install({ time: new Date('2026-12-07T00:00:00Z') });
+  await expiredPage.goto(origin + '/#/research/super-investors?scope=universe');
+  await expiredPage.waitForSelector('[data-changes-ready="true"]');
+  await expiredPage.evaluate(() => paint('universe'));
+  await expiredPage.locator('[data-changes-period]').selectOption('itd');
+  assert.match(await expiredPage.locator('[data-changes-identity-warning]').innerText(), /1 entity relationships await renewed verification/);
+  assert.equal(await expiredPage.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'expired entity attribution is withheld while exact-name history stays available');
+  assert.deepEqual(expiredErrors, []);
+  await expired.close();
   console.log('PASS investor scope, identity, disclosure notes, shared changes, drill evidence, missing books, outages and mobile layout');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }
