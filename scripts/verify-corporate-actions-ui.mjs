@@ -92,7 +92,7 @@ try {
   assert.match(await page.locator('tbody').innerText(), /Interim · 100.00%/);
   assert.deepEqual(await page.locator('thead th').allInnerTexts(), ['PURPOSE', 'TYPE', 'EX DATE ▾', 'RECORD / END DATE', 'TERMS', 'SOURCE']);
   assert.equal(await page.locator('tbody a[href*="nseindia.com"]').count(), 1);
-  assert.equal(await page.locator('tbody a[href*="screener.in"]').count(), 1);
+  assert.equal(await page.locator('tbody a[href*="screener.in"]').count(), 0);
   assert(await page.evaluate(() => window.pollStarted && window.poll.intervalMs === 90000));
 
   // Persist the capture, then reopen inside an iframe with an eight-second check.
