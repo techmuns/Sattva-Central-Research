@@ -2267,9 +2267,9 @@
       ]
     },
     "isin:INE0DRI01029|Esds Software Solution": {
-      "lastAttemptAt": "2026-10-07T17:08:22+00:00",
+      "lastAttemptAt": "2026-10-13T05:55:39+00:00",
       "lastResultCount": 61,
-      "error": null,
+      "error": "search-unavailable",
       "lastSuccessAt": "2026-10-07T17:08:22+00:00",
       "targetThrough": null,
       "pending": []
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T05:22:39.672712+00:00"
+    "checkedAt": "2026-10-13T05:55:39.973566+00:00"
   }
 }
