@@ -361,6 +361,7 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  showSignals   default false. When true, supply signals(row) => [{ label, status }]
  *  link          (row) => url for the right-aligned ↗, or null to omit the column
  *  onRowClick    (row) => void
+ *  rowActionLabel optional (row) => accessible label; makes the company name a native drilldown button.
  *  filters       { label, options: [{ value, label }], match(row, value), value? } — toolbar filters.
  *                Pass an ARRAY for several controls; they AND together. `type: 'checkbox'`
  *                toggles between 'all' and the single other option, including restored views.
@@ -415,6 +416,7 @@ export function scoreTable(config) {
     signals = null,
     link = null,
     onRowClick = null,
+    rowActionLabel = null,
     // All record tables can save a snapshot. A specialized adapter may replace the default.
     bookmark = null,
     showBookmarks = true,
@@ -711,6 +713,10 @@ export function scoreTable(config) {
 
   function rowHtml(row, slug, isWatched, watchSlug = null, watchLabel = null, rowIndex = null) {
         const label = String(name(row));
+        const nameClasses = `${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900`;
+        const nameCell = onRowClick && rowActionLabel
+          ? `<button type="button" data-row-open aria-label="${escapeHtml(rowActionLabel(row))}" title="${escapeHtml(label)}" class="block max-w-full rounded-sm text-left ${nameClasses} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">${escapeHtml(label)}</button>`
+          : `<div class="${nameClasses}" title="${escapeHtml(label)}">${escapeHtml(label)}</div>`;
         const { color, initials } = avatarFor(label);
         const sc = showScore && score ? score(row) : null;
         const redFlag = !!(sc && sc.redFlag);
@@ -747,7 +753,7 @@ export function scoreTable(config) {
                 ${showRank ? '' : star}
                 ${showAvatar ? `<div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-xs font-bold text-white shadow-sm">${escapeHtml(initials)}</div>` : ''}
                 <div class="min-w-0">
-                  <div class="${nameWrap ? 'whitespace-normal break-words' : 'truncate'} font-semibold text-slate-900" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                  ${nameCell}
                   <div class="flex items-center gap-1"><span class="${nameWrap ? 'min-w-0 whitespace-normal break-words' : 'truncate'} text-xs text-slate-500" title="${escapeHtml(sub(row))}">${escapeHtml(sub(row))}</span>${showBookmarks ? bookmarkButton(bookmarkEntry(row)) : ''}</div>
                   ${afterSub ? afterSub(row) || '' : ''}
                 </div>

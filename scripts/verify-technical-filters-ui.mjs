@@ -65,6 +65,7 @@ try {
     await page.goto(`${origin}/#/research/breakouts/${view}?scope=universe`);
     await rowsAre(view === 'technical-scanner' ? 'ABCDEF' : 'ABCEF');
     if (view === 'technical-scanner') {
+      assert.equal(await page.locator('[data-row-open]').count(), 6, 'every scored row exposes a keyboard-accessible drilldown');
       // Hold the view replacement between the filter click and its render. The old search
       // control must not accept input for a view that is about to be replaced.
       await page.evaluate(() => {
@@ -102,6 +103,17 @@ try {
       assert.equal(await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).count(), 0);
       assert(await page.locator('[data-score-table]').evaluate(el => /companies match these filters\./.test(el.previousElementSibling?.textContent)), 'the table follows the filter match count directly');
       assert.equal(quoteTickers.length,0,'view reads saved capture without spending Muns requests');
+      const details = page.getByRole('button', { name: 'Open technical details for Filter fixture A', exact: true });
+      await page.locator(`[data-row-key="${identities[0].ticker}"] [data-watch]`).focus();
+      await page.keyboard.press('Tab');
+      assert(await details.evaluate(el => el === document.activeElement), 'Tab reaches the company drilldown button');
+      for (const key of ['Enter', 'Space']) {
+        await page.keyboard.press(key);
+        await page.locator('#drill-panel [data-drill-close]').waitFor();
+        assert((await page.locator('#drill-panel').innerText()).includes('Filter fixture A'));
+        await page.keyboard.press('Escape');
+        assert(await details.evaluate(el => el === document.activeElement), 'closing details returns focus to its company button');
+      }
       await page.locator('[data-table-filter]').selectOption('below200'); await rowsAre('');
       await choose('volume', 'all', 'vol');
       assert.equal(await page.locator('[data-table-filter]').inputValue(), 'below200', 'score selection survives chip changes');

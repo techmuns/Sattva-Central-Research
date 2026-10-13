@@ -259,6 +259,7 @@ function renderScanner(ctx, rows) {
 
   const table = scoreTable({
     ...tableBase(filtered, ctx),
+    rowActionLabel: (s) => `Open technical details for ${s.company.name || s.company.ticker}`,
     // `?company=` from a citation or an AI Alerts card opens the scanner searched for it.
     initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     showScore: true,
