@@ -57,6 +57,12 @@ try {
   };
   await ready();
   check('native NSE-style table replaces weekly tracker and scoring', await page.locator('[data-score-table]').count() === 1 && await page.locator('.ipo-board, .ipo-card, [data-ipo-settings]').count() === 0);
+  check('filing rows retain one labelled document link without a duplicate Link column',
+    await page.getByRole('columnheader', { name: 'Link', exact: true }).count() === 0 &&
+    await page.locator('tbody tr[data-row-key]').evaluateAll((rows) => rows.length > 0 && rows.every((row) => {
+      const links = [...row.querySelectorAll('a')];
+      return links.length === 1 && links[0].textContent === 'Open filing ↗' && links[0].href;
+    })));
   const history = page.getByRole('combobox', { name: 'History range', exact: true });
   const today = new Date(Date.parse(capture.checkedAt) + 19800000).toISOString().slice(0, 10);
   const dayOffset = (days) => new Date(Date.parse(today) + days * 86400000).toISOString().slice(0, 10);
