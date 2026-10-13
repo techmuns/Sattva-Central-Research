@@ -8,6 +8,7 @@ const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public'), initialAt = '2026-09-15T12:00:00Z';
 let now = initialAt, generation = initialAt, revision = 1, failed = false, malformed = false, delayMs = 0, postDelayMs = 0;
 let calls = 0, postCalls = 0, indexDelayMs = 0, olderUnavailable = false;
+const detailPages = [];
 let collection = { intervalMinutes: 120, state: 'ok', discoveryOnly: true,
   sources: Object.fromEntries(['valuepickr', 'news', 'tradingqna'].map(source => [source, { state: 'ok', lastSuccessAt: initialAt, history: { complete: true } }])) };
 const state = { readable: true, ok: true, collection };
@@ -64,6 +65,7 @@ const server = createServer((request, response) => {
     setTimeout(() => {
       if (history?.[1] === '2026-07' && olderUnavailable) return json({ error: 'offline' }, 503);
       const slug = detail?.[1] || 'old-company';
+      if (detail) detailPages.push({ slug, offset: Number(url.searchParams.get('offset') || 0) });
       const rows = history ? posts.slice(0, history[1] === '2026-08' ? 3 : 2).map((post, i) => ({ ...post, id: `${history[1]}-${i}`, timestamp: `${history[1]}-0${3-i}T12:00:00Z` })) : posts;
       const offset = Number(url.searchParams.get('offset') || 0), page = rows.slice(offset, offset + 1000);
       json({ ticker: slug, name: history ? 'Old Company' : 'Tata Consultancy Services', generatedAt: generation,
@@ -135,7 +137,7 @@ try {
   await page.locator('#root tbody tr[data-row-key="tata-consultancy-services"]').click();
   await page.waitForFunction(() => chatter.loadedPosts().some(group => group.posts.length === 1002));
   assert.equal(await page.locator('[data-chatter-mention-row]').count(), 40, 'large detail lists have a bounded first paint');
-  assert.equal(postCalls, 2, 'all mention pages, including beyond 1000, are retained');
+  assert(detailPages.some(page => page.slug === 'tata-consultancy-services' && page.offset === 1000), 'all mention pages, including beyond 1000, are retained by the shared highlight/dialog reader');
   assert.deepEqual(await page.locator('[data-mention-id]').evaluateAll(rows => rows.slice(0, 3).map(row => row.dataset.mentionId)), ['new-post', 'post-0', 'post-1'], 'publication instants, not timestamp text, sentiment or source pagination, determine newest first');
   const dialog = page.locator('[data-chatter-mentions-dialog]');
   // Complete the opening transform before measuring a reading anchor.
