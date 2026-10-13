@@ -3,10 +3,10 @@
   "kind": "insider",
   "source": "Screener.in market-wide trade listings, supplemented by retained Muns insider disclosures",
   "generator": "scripts/scrape-screener-trades.mjs",
-  "capturedAt": "2026-10-13T16:41:56.733Z",
-  "oldestDataAt": "2026-10-13T16:41:56.733Z",
-  "from": "2025-10-13",
-  "to": "2026-10-13",
+  "capturedAt": "2026-10-13T21:29:42.156Z",
+  "oldestDataAt": "2026-10-13T21:29:42.156Z",
+  "from": "2025-10-14",
+  "to": "2026-10-14",
   "windowDays": 365,
   "coverageFrom": "2026-08-05",
   "scope": "exchange",
@@ -22,13 +22,13 @@
       "id": "bulk",
       "label": "Bulk deal",
       "url": "https://www.screener.in/trades/bulk/?o=-2",
-      "pagesRead": 9,
+      "pagesRead": 2,
       "latestDate": "2026-10-13",
-      "oldestDate": "2026-10-12",
+      "oldestDate": "2026-10-13",
       "bootstrapDays": null,
       "ok": true,
-      "rowCount": 225,
-      "capturedAt": "2026-10-13T16:41:56.733Z",
+      "rowCount": 50,
+      "capturedAt": "2026-10-13T21:29:42.156Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -41,7 +41,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T16:41:56.733Z",
+      "capturedAt": "2026-10-13T21:29:42.156Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -54,7 +54,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T16:41:56.733Z",
+      "capturedAt": "2026-10-13T21:29:42.156Z",
       "coverageFrom": "2026-08-05"
     },
     {
@@ -67,7 +67,7 @@
       "bootstrapDays": null,
       "ok": true,
       "rowCount": 50,
-      "capturedAt": "2026-10-13T16:41:56.733Z",
+      "capturedAt": "2026-10-13T21:29:42.156Z",
       "coverageFrom": "2026-08-04"
     }
   ],
@@ -75,7 +75,7 @@
   "covered": 4,
   "withRows": 1932,
   "emptyCount": 0,
-  "rowCount": 21000,
+  "rowCount": 20998,
   "failedCount": 0,
   "fallbackCount": 0,
   "headers": [
@@ -125093,50 +125093,6 @@
           "From Date": "2025-10-13",
           "To Date": "2025-10-13",
           "Broadcast Date": "2025-10-15",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-13",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "HCL Technologies Stock Options Trust",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "2621",
-          "Trade %": "0",
-          "Trade Value": "3808837",
-          "Post Holding Shares": "8148433",
-          "Post Holding %": "0.3",
-          "Mode": "ESOS",
-          "From Date": "2025-10-09",
-          "To Date": "2025-10-09",
-          "Broadcast Date": "2025-10-13",
-          "Source": "TRENDLYNE",
-          "Trade Category": "Insider trade"
-        }
-      },
-      {
-        "ticker": "HCLTECH",
-        "date": "2025-10-13",
-        "cells": {
-          "Company": "HCLTECH",
-          "Insider": "HCL Technologies Stock Options Trust",
-          "Category": "Designated Person",
-          "Security Type": "Equity Shares",
-          "Transaction": "Disposal",
-          "Trade Shares": "3753",
-          "Trade %": "0",
-          "Trade Value": "5336766",
-          "Post Holding Shares": "8151054",
-          "Post Holding %": "0.3",
-          "Mode": "ESOS",
-          "From Date": "2025-10-07",
-          "To Date": "2025-10-07",
-          "Broadcast Date": "2025-10-13",
           "Source": "TRENDLYNE",
           "Trade Category": "Insider trade"
         }
