@@ -63,7 +63,9 @@ export function liftColumn(state, node, startX, startY) {
     const copy = cell.cloneNode(true), style = getComputedStyle(cell);
     for (const element of [copy, ...copy.querySelectorAll('*')]) {
       element.removeAttribute('id');
-      for (const attribute of [...element.attributes]) if (attribute.name.startsWith('data-column-')) element.removeAttribute(attribute.name);
+      // A visual copy must never look like a second application control to delegated handlers,
+      // refresh code or selectors. Its styling comes from classes and the measured cell style.
+      for (const attribute of [...element.attributes]) if (attribute.name.startsWith('data-')) element.removeAttribute(attribute.name);
     }
     copy.classList.add('column-lift-cell');
     const background = style.backgroundColor === 'rgba(0, 0, 0, 0)' ? getComputedStyle(cell.parentElement).backgroundColor : style.backgroundColor;

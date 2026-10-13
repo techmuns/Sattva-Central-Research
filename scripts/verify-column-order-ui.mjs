@@ -46,7 +46,10 @@ try{
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const headers=()=>page.locator('#fixture th').allTextContents();
  const tidy=list=>list.map(x=>x.replace(/[▴▾▲▼↕]/g,'').trim());
- const settle=()=>page.evaluate(async()=>{await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);});
+ const settle=()=>page.evaluate(async()=>{
+  await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+  await Promise.all([...document.querySelectorAll('th,td')].flatMap(cell=>cell.getAnimations().map(animation=>animation.finished.catch(()=>{}))));
+ });
  await page.goto(origin);await page.waitForSelector('#fixture [data-column-reorder]');await settle();
  const baseline=tidy(await headers());
  const rowsBefore=await page.locator('#fixture [data-row-key]').count();
@@ -67,6 +70,7 @@ try{
  assert.match(await lift.innerText(),/Net monthly shares/i);
  assert(await lift.locator('td').count()>1 && await lift.locator('td').count()<80,'the preview contains visible cells only');
  assert.equal(await lift.getAttribute('aria-hidden'),'true','the visual copy is excluded from accessibility');
+ assert.equal(await lift.locator('[data-sort],[data-watch],[data-mf-fund-sort]').count(),0,'the preview exposes no duplicate application controls');
  assert(await page.locator('[data-column-insertion]').isVisible());
  assert((await page.locator('[data-column-insertion]').boundingBox()).height>200,'insertion marker spans the visible column');
  mkdirSync('artifacts/column-order',{recursive:true});
