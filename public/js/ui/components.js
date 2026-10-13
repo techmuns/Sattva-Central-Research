@@ -1,4 +1,5 @@
 import { installColumnOrder } from './column-order.js';
+import { restoreTabOrder, wireTabOrder } from './tab-order.js';
 // ui/components.js — shared UI primitives reused by every tab. Each primitive is a pure
 // function: it returns either a plain HTML string, or `{ html, wire(root) }` when it needs
 // event listeners / measurement after being inserted into the DOM. `wire()` never mutates
@@ -96,18 +97,22 @@ export function scopeSummary({ scope, count, noun = 'companies', book = null }) 
 }
 
 // Scrollable tabs with explicit overflow controls and manual keyboard activation.
-export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
+export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey = null }) {
+  const defaults = tabs.map(tab => tab.id);
+  if (orderKey) tabs = restoreTabOrder(tabs, orderKey);
   let list = null;
   let revealActive = () => {};
   const tabStopId = () => tabs.some((tab) => tab.id === activeId) ? activeId : tabs[0]?.id;
   const html = `
-    <div class="tab-bar" data-tab-bar>
+    <div class="tab-bar" data-tab-bar${orderKey ? ' data-tab-reorderable' : ''}>
       <div class="tab-list" role="tablist" aria-label="${escapeHtml(label)}" data-tab-list>
       ${tabs
         .map(
           (t) => `
         <button type="button" role="tab" data-tab-id="${escapeHtml(t.id)}" aria-selected="${t.id === activeId}"
+          ${orderKey ? `data-tab-default-index="${defaults.indexOf(t.id)}" title="Drag to rearrange. Alt + Left/Right moves this tab; Alt + Home resets the order." aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+Home"` : ''}
           tabindex="${t.id === tabStopId() ? 0 : -1}" class="tab-btn${t.id === activeId ? ' is-active' : ''}">
+          ${orderKey ? '<span class="tab-drag-handle" data-tab-drag-handle aria-hidden="true"><svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="4" r="1"/><circle cx="7" cy="4" r="1"/><circle cx="3" cy="8" r="1"/><circle cx="7" cy="8" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="7" cy="12" r="1"/></svg></span>' : ''}
           ${escapeHtml(t.label)}
         </button>`
         )
@@ -192,6 +197,14 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
       frame = requestAnimationFrame(syncEdges);
     };
 
+    const disposeOrder = orderKey ? wireTabOrder(list, orderKey, () => {
+      buttons.splice(0, buttons.length, ...list.querySelectorAll('[data-tab-id]'));
+      const byId = new Map(tabs.map(tab => [tab.id, tab]));
+      tabs = buttons.map(button => byId.get(button.dataset.tabId));
+      if (buttons.includes(document.activeElement)) tabStop(document.activeElement);
+      measure();
+    }) : null;
+
     list.addEventListener('click', onClick);
     list.addEventListener('keydown', onKeydown);
     list.addEventListener('scroll', onScroll, { passive: true });
@@ -203,6 +216,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections' }) {
     measure();
 
     return () => {
+      disposeOrder?.();
       observer.disconnect();
       cancelAnimationFrame(frame);
       list.removeEventListener('click', onClick);
