@@ -14,10 +14,11 @@ import { mergeLastGoodFilings } from './lib/filings-snapshot.mjs';
 import { buildScreenerTradesSnapshot, hasScreenerTradeOverlap, indexPriorScreenerTradeIdentities, normaliseScreenerTrade, SCREENER_TRADE_SOURCES } from './lib/screener-trades.mjs';
 import { fetchInsiderTrades } from '../worker/muns.mjs';
 import { createFeed } from '../public/js/data/filings.js';
+import { newsDay } from '../public/js/data/news-window.js';
 import { clearAll, readEntry, writeEntry, KEYS } from '../public/js/core/store.js';
 
 const now = Date.now();
-const day = (offset) => new Date(now + offset * 86400000).toISOString().slice(0, 10);
+const day = (offset) => newsDay(now + offset * 86400000);
 const trade = (name, source = 'NSE', date = day(-1)) => ({
   ticker: 'TEST', date, cells: { Insider: name, Transaction: 'Acquisition', 'Trade Shares': '100', Source: source },
 });

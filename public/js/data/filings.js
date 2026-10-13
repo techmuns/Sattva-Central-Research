@@ -57,7 +57,7 @@ import { attributeNewsRow } from './company-news-attribution.js';
 import { withTradingViewNews } from './tradingview-news.js';
 import { withNewsHistory } from './news-history.js';
 import { withPortfolioPublisherNews } from './portfolio-publisher-news.js';
-import { newsPeriodBounds } from './news-window.js';
+import { newsPeriodBounds, newsDay } from './news-window.js';
 import * as marketNews from './market-news.js';
 import { createNewsWorkingSet } from './news-working-set.js';
 import { holdsTicker } from './row-ticker-index.js';
@@ -659,7 +659,7 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
 
   function storeRows(ticker, incoming) {
     const list = kind === 'insider'
-      ? mergeInsiderTrades(state.rows.get(ticker) || [], incoming, { from: daysAgo(WINDOW_DAYS.insider), to: iso(Date.now()) })
+      ? mergeInsiderTrades(state.rows.get(ticker) || [], incoming, { from: newsDay(Date.now() - WINDOW_DAYS.insider * 86400000), to: newsDay() })
       : kind === 'news' ? dedupeArticles([...incoming, ...(state.rows.get(ticker) || [])])
       : incoming;
     state.rows.set(ticker, list);
@@ -966,7 +966,9 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     if (kind === 'insider') await seedFromDevice([t]);
     state.asked.add(t);
 
-    const range = `from=${daysAgo(WINDOW_DAYS[kind])}&to=${iso(Date.now())}`;
+    const range = kind === 'insider'
+      ? `from=${newsDay(Date.now() - WINDOW_DAYS[kind] * 86400000)}&to=${newsDay()}`
+      : `from=${daysAgo(WINDOW_DAYS[kind])}&to=${iso(Date.now())}`;
     const path = ROUTE[kind](kind === 'news' ? queryFor(t) : t, range);
     let res;
     const abort = new AbortController();

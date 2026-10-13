@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadActivePortfolio } from './lib/active-portfolio.mjs';
+import { newsDay } from '../public/js/data/news-window.js';
 // scripts/scrape-filings.mjs — news and insider trades for the universe.
 //
 //   node scripts/scrape-filings.mjs                              news and insider, the whole universe
@@ -514,8 +515,8 @@ async function run(kind, list) {
     console.log(`${kind}: last complete capture is inside the configured refresh interval.`);
     return;
   }
-  const from = daysAgo(windowDays);
-  const to = iso(Date.now());
+  const from = kind === 'insider' ? newsDay(Date.now() - windowDays * 86400000) : daysAgo(windowDays);
+  const to = kind === 'insider' ? newsDay() : iso(Date.now());
 
   const byTicker = {};
   // AN ANSWER OF "NOTHING" IS STILL AN ANSWER, and it has to be recorded as one. The news route
