@@ -25,6 +25,7 @@ import * as notebook from '../core/bookmarks.js';
 import { snapshotForRow, SECTION_LABELS } from '../core/bookmark-record.js';
 import { bookmarkButton, wireBookmarks } from './bookmark-button.js';
 import { tabBar } from './components.js';
+import { tableFilterGroup } from './table-filter-group.js';
 
 // ---------------------------------------------------------------------------------------
 // Overlay focus management — shared by the drill, the modal and the workspace.
@@ -489,6 +490,8 @@ export function scoreTable(config) {
     allowSort = true,
     // Extra trusted controls in the toolbar, after the filters: { html, wire(host) => disposer }.
     toolbarControls = null,
+    // Optional adjacent filters grouped behind one compact, independently adjustable control.
+    filterGroup = null,
   } = config;
 
   // `watchKey` defaults to the row key, which is correct wherever a row is a company. `watchName`
@@ -828,6 +831,19 @@ export function scoreTable(config) {
   // is the truth for an unmounted table.
   let updateRows = () => 0;
 
+  const renderSelect = i => {
+    const f = filterDefs[i];
+    return `<select data-table-filter="${i}" ${f.label ? `aria-label="${escapeHtml(f.label)}" title="${escapeHtml(f.label)}"` : ''}
+      ${Number.isFinite(f.maxWidthPx) ? `style="max-width:${Math.max(120, Math.min(400, Math.round(f.maxWidthPx)))}px"` : ''}
+      class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      ${f.options.map(o => `<option value="${escapeHtml(o.value)}"${o.value === view.filters[i] ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('')}
+    </select>`;
+  };
+  renderSelect.label = i => filterDefs[i].label;
+  const groupedFilters = new Set(filterGroup?.indices || []);
+  const groupControl = filterGroup ? tableFilterGroup(filterGroup, renderSelect, view) : null;
+  let activeFilterGroup = null;
+
   const html = `
     <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100" data-score-table${fillMode === 'scroll' || isVirtual ? ' data-scroll-paged' : ''}${isVirtual ? ` data-virtualized data-virtual-total="${initialList.length}" data-virtual-start="${initialVirtualStart}"` : ''}${!isVirtual && initialList.length > FIRST_PAINT_ROWS ? ` data-rows-pending="${initialList.length - FIRST_PAINT_ROWS}"` : ''}>
       <div data-table-toolbar class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center">
@@ -849,11 +865,9 @@ export function scoreTable(config) {
               // shortening anyone's labels. `maxWidthPx` is the optional tighter desktop cap for a
               // toolbar with several filters; Insider Trades uses it so a long Mode value does not
               // force the Watchlist control onto another row.
-              (f, i) => `<select data-table-filter="${i}" ${f.label ? `aria-label="${escapeHtml(f.label)}" title="${escapeHtml(f.label)}"` : ''}
-                   ${Number.isFinite(f.maxWidthPx) ? `style="max-width:${Math.max(120, Math.min(400, Math.round(f.maxWidthPx)))}px"` : ''}
-                   class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                   ${f.options.map((o) => `<option value="${escapeHtml(o.value)}"${o.value === view.filters[i] ? ' selected' : ''}>${escapeHtml(o.label)}</option>`).join('')}
-                 </select>`
+              (_f, i) => groupedFilters.has(i)
+                ? (i === filterGroup.indices[0] ? groupControl.html : '')
+                : renderSelect(i)
             )
             .join('')}
           ${toolbarControls?.html || ''}
@@ -1351,6 +1365,15 @@ export function scoreTable(config) {
     });
 
     const releaseToolbar = toolbarControls?.wire?.(host) || null;
+    activeFilterGroup = groupControl?.wire(host, indices => {
+      for (const i of indices) {
+        view.filters[i] = 'all';
+        host.querySelector(`[data-table-filter="${i}"]`).value = 'all';
+      }
+      activeFilterGroup.sync();
+      requestFilterPaint();
+      for (const i of indices) onFilterChange?.(view, i);
+    }) || null;
     const releaseSearch = searchControl?.wire(host, {
       onQuery: q => { view.q = q; requestFilterPaint(); },
       onChange: () => requestFilterPaint(),
@@ -1360,9 +1383,11 @@ export function scoreTable(config) {
       requestFilterPaint();
     });
 
-    filterEls.forEach((el, i) =>
+    filterEls.forEach(el =>
       el.addEventListener('change', () => {
+        const i = Number(el.dataset.tableFilter);
         view.filters[i] = el.value;
+        activeFilterGroup?.sync();
         requestFilterPaint();
         onFilterChange?.(view, i);
       })
@@ -1409,6 +1434,7 @@ export function scoreTable(config) {
       isDisposed = true;
       releaseSearch?.();
       releaseToolbar?.();
+      activeFilterGroup?.dispose(); activeFilterGroup = null;
       rowHtmlCache.clear(); staleKeys.clear();
       activeRepaint = null;
       activePresentation = null;
@@ -1456,6 +1482,7 @@ export function scoreTable(config) {
         if (f.options.some(o => o.value === existing)) return existing;
         return f.value || 'all';
       });
+      activeFilterGroup?.sync();
     }
     
     totalCount = rows.length;

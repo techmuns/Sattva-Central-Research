@@ -295,6 +295,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  cancelPositionCorrection();
   // All-history restores from its complete device snapshot. Retain only bounded period views
   // as a fast RAM return path; leaving this tab must release its full-history source graph.
   if (report && !report.queryWindow) {
@@ -573,10 +574,16 @@ function paint(ctx) {
     const status = { loading: !report || report.pending > 0 };
     // A changed relevance model (a vote, company sizes arriving) re-sorts the same rows in place.
     if (tableRows === visible && relevanceSeen === relevanceRevision()) tableInstance.updateStatus(status);
-    else { tableInstance.updateData(visible, undefined, status); tableRows = visible; relevanceSeen = relevanceRevision(); }
+    else {
+      tableInstance.updateData(visible, undefined, status); tableRows = visible; relevanceSeen = relevanceRevision();
+      // Receipt decoration and staged arrivals can change the DOM before the windowed list
+      // measures it. Reapply the reading position captured before that in-place update.
+      restoreTablePositionAfterPaint(ctx.root, tablePosition);
+    }
     return;
   }
 
+  cancelPositionCorrection();
   if (tableDispose) tableDispose();
   arrivalsUI.detach();
   tableDispose = null;
@@ -676,6 +683,31 @@ function restoreTablePosition(root, position) {
   } finally {
     scroller.style.scrollBehavior = inlineBehavior;
   }
+}
+
+let positionFrame = 0;
+let releasePositionInput = null;
+function cancelPositionCorrection() {
+  if (positionFrame) cancelAnimationFrame(positionFrame);
+  positionFrame = 0;
+  releasePositionInput?.(); releasePositionInput = null;
+}
+function restoreTablePositionAfterPaint(root, position) {
+  cancelPositionCorrection();
+  restoreTablePosition(root, position);
+  if (!position?.key || position.top <= 1) return;
+  const scroller = root.querySelector('[data-table-scroll]');
+  // Natural row measurements and receipt badges settle after the synchronous data paint.
+  // Correct once afterwards; new input always wins over this short bookkeeping window.
+  const inputs = ['wheel', 'pointerdown', 'touchstart', 'keydown', 'input', 'click'];
+  for (const type of inputs) root.addEventListener(type, cancelPositionCorrection, { capture: true, passive: true });
+  releasePositionInput = () => { for (const type of inputs) root.removeEventListener(type, cancelPositionCorrection, true); };
+  positionFrame = requestAnimationFrame(() => {
+    positionFrame = requestAnimationFrame(() => {
+      cancelPositionCorrection();
+      if (scroller?.isConnected && root.querySelector('[data-table-scroll]') === scroller) restoreTablePosition(root, position);
+    });
+  });
 }
 
 /**
@@ -1115,6 +1147,14 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     showRank: false,
     // The global scope picker already offers Watchlist; avoid a second scope restriction here.
     showWatchFilter: false,
+    filterGroup: mode === HORIZON.THROUGH ? {
+      label: 'Signal & priority', indices: [0, 1],
+      summary: values => {
+        const priority = values[0] === 'high' ? 'High' : values[0] === 'low' ? 'Low' : '';
+        const direction = { positive: 'Positive', negative: 'Negative', neutral: 'Neutral' }[values[1]] || '';
+        return priority && direction ? `${priority} · ${direction}` : priority ? `${priority} priority` : direction;
+      },
+    } : null,
     // Date and time lead every row. Some feeds resolve only to a day; saying "Day only" is more
     // informative than an em dash and keeps older rows intelligibly ordered as the reader scrolls.
     // History adds the combined signal/priority marker before company identity. Upcoming has no
@@ -1190,7 +1230,7 @@ function buildTableFilters(events, day, mode, matchesDate) {
   }
   return [
     {
-      label: 'Importance',
+      label: 'Priority',
       options: [
         { value: 'all', label: 'All priorities' },
         { value: 'high', label: 'High priority only' },

@@ -168,6 +168,29 @@ try {
   const period = page.getByRole('combobox', { name: 'Date range', exact: true });
   assert.equal(await period.inputValue(), 'today', 'All Alerts opens on Today');
   assert.equal(await page.locator('[data-watch-toggle]').count(), 0, 'All Alerts uses the global Watchlist scope instead of a second table toggle');
+  const signalControl = page.locator('[data-filter-group-toggle]');
+  assert.equal(await page.locator('[data-filter-group-summary]').innerText(), 'Signal & priority');
+  assert.equal(await page.getByRole('combobox', { name:'Priority',exact:true }).isVisible(), false, 'Priority and Direction occupy one closed toolbar control');
+  const routineHeadline = 'Jayaswal Neco Industries shares an update';
+  await page.locator('[data-table-search]').fill(routineHeadline);
+  await signalControl.click();
+  await page.getByRole('combobox', { name:'Priority',exact:true }).selectOption('low');
+  await page.getByRole('combobox', { name:'Direction',exact:true }).selectOption('neutral');
+  await page.locator('[data-filter-group-panel]').press('Escape');
+  await page.waitForFunction(() => document.querySelector('[data-score-table]')?.dataset.virtualTotal === '1' && document.querySelector('[data-alert-signal]')?.dataset.alertImportance === 'low');
+  assert.equal(await page.locator('[data-filter-group-summary]').innerText(), 'Low · Neutral');
+  assert.equal(await signalControl.evaluate(node => node === document.activeElement), true, 'Escape returns keyboard focus to the grouped control');
+  await page.evaluate(() => window.show());
+  await settled();
+  assert.equal(await page.locator('[data-filter-group-summary]').innerText(), 'Low · Neutral', 'a source repaint retains both independent choices');
+  await page.locator('[data-filter-group-toggle]').click();
+  await page.getByRole('button', { name:'Clear signal & priority',exact:true }).click();
+  assert.equal(await page.getByRole('combobox', { name:'Priority',exact:true }).inputValue(), 'all');
+  assert.equal(await page.getByRole('combobox', { name:'Direction',exact:true }).inputValue(), 'all');
+  assert.equal(await period.inputValue(), 'today', 'Clear preserves the selected date');
+  assert.equal((await page.locator('[data-table-search]').inputValue()).toLowerCase(), routineHeadline.toLowerCase(), 'Clear preserves company search');
+  await page.getByRole('button', { name:'Done',exact:true }).click();
+  await page.locator('[data-table-search]').fill('');
   assert.equal(await page.locator('[data-alert-arrivals]').count(), 0, 'no separate live banner');
   assert.equal(await page.locator('[data-arrival-badge]').count(), 0, 'initial history is not a live arrival');
   // THE TIMELINE IS A WINDOWED TABLE, SO `tbody` IS ONE SCREEN AND NOT THE ROW SET.
@@ -500,6 +523,17 @@ try {
   assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
   assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
   assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+  await page.locator('[data-filter-group-toggle]').click();
+  await page.locator('[data-table-scroll]').evaluate(node => { node.scrollTop = 120; });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert(await page.locator('[data-filter-group-panel]').isVisible(), 'table scrolling does not detach the toolbar or close its filter panel');
+  await page.getByRole('combobox', { name:'Priority',exact:true }).selectOption('low');
+  await page.waitForFunction(() => document.querySelector('[data-table-scroll]')?.scrollTop === 0);
+  assert(await page.locator('[data-filter-group-panel]').isVisible(), 'a filter resetting table scroll keeps the second choice available');
+  await page.getByRole('combobox', { name:'Direction',exact:true }).selectOption('neutral');
+  await page.getByRole('button', { name:'Clear signal & priority',exact:true }).click();
+  await page.getByRole('button', { name:'Done',exact:true }).click();
+  await stableReadingSurface();
   // The export button moved out of the table toolbar, but must still use the full filtered
   // model. Capture its count at the export click, rather than an earlier snapshot that
   // asynchronous feed repaints can change. A local workbook stand-in counts full rows.
@@ -541,10 +575,15 @@ try {
 
   // A source refresh can insert rows above the viewport. Preserve the visible event, not merely
   // its old pixel offset, so a reader never loses their place while the stream is live.
-  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
+  await page.locator('[data-table-scroll]').evaluate((scroller) => {
     scroller.style.scrollBehavior = 'auto';
     scroller.scrollTop = Math.min(900, scroller.scrollHeight - scroller.clientHeight);
     scroller.style.removeProperty('scroll-behavior');
+  });
+  // Native scroll events and the virtual row measurements run on later frames. Record the
+  // reader's settled position, rather than geometry from before that gesture has finished.
+  await stableReadingSurface();
+  const beforeRefresh = await page.locator('[data-table-scroll]').evaluate((scroller) => {
     const boundary = scroller.getBoundingClientRect().top + (scroller.querySelector('thead')?.offsetHeight || 0);
     const row = [...scroller.querySelectorAll('tbody tr[data-row-key]')].find((item) => item.getBoundingClientRect().bottom > boundary);
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : 0 };
@@ -571,7 +610,7 @@ try {
     return { key: row?.dataset.rowKey || null, offset: row ? row.getBoundingClientRect().top - boundary : null };
   }, beforeRefresh.key);
   assert.equal(afterRefresh.key, beforeRefresh.key);
-  assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh`);
+  assert(Math.abs(afterRefresh.offset - beforeRefresh.offset) <= 2, `visible row moved ${afterRefresh.offset - beforeRefresh.offset}px during refresh: ${JSON.stringify({before:beforeRefresh,after:afterRefresh})}`);
   assert(await page.evaluate(() => window.observedReadingArrival), 'new row arrived above the preserved reading position');
 
   for (const width of [1440, 1024, 390]) {
