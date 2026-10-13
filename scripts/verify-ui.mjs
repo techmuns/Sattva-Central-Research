@@ -3651,7 +3651,7 @@ if (!chatterState.ok) {
   // `unreachable`, which is the correct answer and still has to be NAMED on screen.
   const named = await hostText();
   skip('the chatter feed is live', `reason=${chatterState.reason} — no egress to the upstream from here`);
-  ok('...and the tab names the state rather than showing an empty table', /could not be reached|no address|404|unexpected|error/i.test(named), named.slice(0, 90));
+  ok('...and the tab names the state rather than showing an empty table', /unavailable|could not be reached|no address|404|unexpected|error/i.test(named), named.slice(0, 90));
 } else {
   ok('the chatter feed is live', chatterState.total > 0, `${chatterState.total} entries`);
   ok('...split into covered companies and everything else', chatterState.companies + chatterState.uncovered === chatterState.total,
@@ -3659,29 +3659,15 @@ if (!chatterState.ok) {
   ok('...opens on Coverage with only its table visible', chatterState.selectedTab === 'Coverage' && chatterState.panel === 'coverage' && chatterState.tables === 1,
     `${chatterState.selectedTab} · ${chatterState.panel} · ${chatterState.tables} table(s)`);
   ok('...with the four summary cards removed', chatterState.statCards === 0, `${chatterState.statCards} stat cards`);
-  ok('...and their coverage, posts, mood and scrape facts retained as footnotes',
-    /Footnotes.*Coverage:.*Posts:.*Market mood:.*Last scrape:/i.test(chatterState.footnotes), chatterState.footnotes);
+  await page.locator('[data-chatter-source-details]').click();
+  const chatterSourceFacts = await page.locator('[data-chatter-source-dialog]').innerText();
+  ok('coverage, posts, mood and source times remain in Source details',
+    /Coverage:.*Posts:.*Market mood:.*Snapshot assembled:/is.test(chatterSourceFacts), chatterSourceFacts);
+  await page.getByRole('button', { name: 'Close source details', exact: true }).click();
+  ok('Coverage opens directly on its table', await page.locator('#content-host [data-top-cards]').count() === 0);
   ok('every unresolved entry carries a reason, not just a null', chatterState.unresolvedAllNull);
   ok('the resolver produced real NSE symbols', chatterState.resolvedSample.length > 0, chatterState.resolvedSample.join(', '));
   ok('the scrape time is shown', !!chatterState.generatedAt, chatterState.generatedAt || 'missing');
-
-  const featuredCard = page.locator('#content-host [data-top-cards] [data-top-idx]').first();
-  if (await featuredCard.count()) {
-    const featured = await evalSafe(async () => {
-      const c = await import('/js/data/chatter-live.js');
-      const row = c.forScope('universe').find((entry) => entry.mentions > 0);
-      return { name: row.name, slug: row.slug, mentions: row.mentions };
-    });
-    const cardText = (await featuredCard.innerText()).replace(/\s+/g, ' ');
-    ok('a most-discussed card explains its count, time period and action',
-      /\bmentions?\b/.test(cardText) && /Last \d+ days?/.test(cardText) && cardText.includes('Read mentions'), cardText);
-    await featuredCard.click();
-    await page.locator('[data-chatter-mention-row]').first().waitFor({ state: 'visible' });
-    ok('clicking the card opens that company’s underlying mentions',
-      await page.locator('[data-chatter-mentions-dialog]').getAttribute('data-chatter-slug') === featured.slug,
-      `${featured.name} · ${featured.mentions} mentions`);
-    await page.locator('#modal-content [data-modal-close]').click();
-  }
 
   // A ALL ALERTS CHATTER ROW OPENS THE COMPANY'S MENTIONS POPUP, not just the tab. The chatter
   // event carries no source URL, so daily-alerts.js falls back to the tab WITH the company and an
@@ -3919,6 +3905,12 @@ if (await tgTabBtn.count()) {
   await page.waitForTimeout(600);
 }
 
+let telegramSourceFacts = '';
+if (await page.locator('[data-chatter-source-details]').count()) {
+  await page.locator('[data-chatter-source-details]').click();
+  telegramSourceFacts = await page.locator('[data-chatter-source-dialog]').innerText();
+  await page.getByRole('button', { name: 'Close source details', exact: true }).click();
+}
 const tg = await evalSafe(async () => {
   const t = await import('/js/data/telegram-posts.js');
   const host = document.querySelector('#content-host');
@@ -3974,9 +3966,9 @@ if (!tg?.ok) {
   ok('...with unique, content-derived row keys', tg.uniqueKeys, `${tg.count} keys`);
 
   ok('Telegram renders a source publication date column', tg.heads.some((h) => /Published/.test(h)));
-  ok('the description explains source publication dates', /original publication dates/i.test(tg.description));
+  ok('Source details explains source publication dates', /Publication dates come from Telegram/i.test(telegramSourceFacts));
   ok('collector time is not rendered as publication time', tg.firstSeenNotDrawn !== false);
-  ok('history and retry coverage are stated', /history/i.test(tg.footnotes) && /awaiting retry/i.test(tg.footnotes));
+  ok('history and retry coverage are stated', /history/i.test(telegramSourceFacts) && /awaiting retry/i.test(telegramSourceFacts));
   ok('archive coverage reconciles', tg.readable + tg.unreadable === tg.span && tg.readable === tg.count);
   ok('the Telegram status label is passive and opens no explainer',
     tg.pillTag === 'SPAN' && tg.modalsOpen === 0, tg.pill);

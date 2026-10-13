@@ -396,7 +396,7 @@ Community sentiment.
 - **Telegram** is a second, independent feed on the tab: posts from a public research channel, reproduced as published, ordered by message number because the route publishes no post times. Either feed may be down without taking the other's section with it
 - Telegram has a **Hide link-only posts** checkbox, checked by default. Unchecking restores saved date/link entries; named files, captured text and identified media remain available.
 - Clicking a company or its mention count opens the underlying mentions, newest first, with a direct link to every source item
-- No summary-card row; coverage, posts, market mood and scrape timing appear as footnotes below the tables
+- A compact row holds the title, section tabs, source status and Source details/History controls. Tables fill the remaining viewport; descriptions, ranking cards, explanatory banners and default footnotes are removed. Source details shows capture counts, source check times, publication dates and history limits on demand.
 - Real-time ValuePickr thread crawler with dedup
 - ~~Telegram channel ingestion via bot API~~ — **built, by a different route.** Posts from a
   public channel now have their own section on this tab. Not via the Bot API, which was never

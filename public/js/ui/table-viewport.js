@@ -13,7 +13,7 @@ export function fitTableViewport(root, { bottomGap = 24, minHeight = 120 } = {})
   const schedule = () => { if (!frame) frame = requestAnimationFrame(apply); };
   const observer = new ResizeObserver(schedule);
   for (const node of document.querySelectorAll('[data-app-header], [data-app-nav], #subview-mount')) observer.observe(node);
-  for (const node of root.querySelectorAll('[data-table-toolbar], [data-mf-sizes]')) observer.observe(node);
+  for (const node of root.querySelectorAll('[data-table-toolbar], [data-mf-sizes], [data-chatter-toolbar]')) observer.observe(node);
   window.addEventListener('resize', schedule);
   schedule();
   return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('resize', schedule); };

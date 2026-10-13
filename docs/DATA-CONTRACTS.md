@@ -2349,8 +2349,10 @@ times. Readable saved rows remain visible after failures; failed or malformed re
 replace the last good capture. Public company names are cached separately so cold identity
 resolution does not block a returning reader. Private portfolio membership is not persisted here.
 
-The UI does not render these aggregate facts as a KPI strip. Coverage, total posts and source
-split, market mood and scrape timing are printed as one footnote beneath the active in-page tab.
+The UI opens directly on the table under one compact title/tab/control row. Aggregate facts,
+source counts, check times, market mood and archive limits live in **Source details**. The visible
+status still distinguishes delayed, failed, partial and unconfirmed checks. Ranking cards,
+descriptions and explanatory banners do not precede either table.
 Coverage is the default; Telegram opens its independent public-channel capture. Unresolved
 entries remain in the source data and retained history, without a separate in-page tab.
 
@@ -3676,6 +3678,9 @@ or named documents retain their publication date and original Telegram link.
 The Telegram table defaults to **Hide link-only posts**, a visible checkbox. It excludes only
 posts without captured text, filenames or an identified media type. Named documents and known
 images/videos remain available even without captions. Unchecking restores link-only entries.
+The title, section tabs and source controls share one compact row. The table fits the remaining
+viewport. Archive/source counts, publication clocks and capture limits are available in Source
+details; no explanatory banner precedes the table.
 The checkbox combines with search and Content; counts and export use the complete filtered
 model. Live refreshes preserve the choice. Collection, stored records and source-status counts
 remain independent of the display filter.
