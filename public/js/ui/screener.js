@@ -360,8 +360,9 @@ export function topCards({ title, items = [], valueFormat = 'metric', onSelect =
  *  showSignals   default false. When true, supply signals(row) => [{ label, status }]
  *  link          (row) => url for the right-aligned ↗, or null to omit the column
  *  onRowClick    (row) => void
- *  filters       { label, options: [{ value, label }], match(row, value), value? } — the <select>.
- *                Pass an ARRAY of these for several dropdowns; they AND together.
+ *  filters       { label, options: [{ value, label }], match(row, value), value? } — toolbar filters.
+ *                Pass an ARRAY for several controls; they AND together. `type: 'checkbox'`
+ *                toggles between 'all' and the single other option, including restored views.
  *  searchable    (row) => haystack string. Defaults to name(row).
  *  initialSort   { key, dir } where key is a column label, 'name', or 'score'
  *  emptyMessage  string shown when nothing matches
@@ -528,7 +529,7 @@ export function scoreTable(config) {
     return snapshotForRow(row, context);
   }
 
-  // `filters` takes one config or several. Several render as several <select>s and AND together,
+  // `filters` takes one config or several. Controls AND together,
   // which is what lets "PAT grew" and "Consolidated only" be asked at the same time — folding both
   // into one dropdown would make them mutually exclusive for no reason.
   let filterDefs = filters ? (Array.isArray(filters) ? filters : [filters]) : [];
@@ -833,6 +834,14 @@ export function scoreTable(config) {
 
   const renderSelect = i => {
     const f = filterDefs[i];
+    if (f.type === 'checkbox') {
+      const checkedValue = f.options.find(option => option.value !== 'all').value;
+      return `<label class="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+        <input type="checkbox" data-table-filter="${i}" value="${escapeHtml(checkedValue)}"${view.filters[i] === checkedValue ? ' checked' : ''}
+          class="h-4 w-4 rounded border-slate-300 accent-indigo-600 focus:ring-2 focus:ring-indigo-500">
+        <span>${escapeHtml(f.label)}</span>
+      </label>`;
+    }
     return `<select data-table-filter="${i}" ${f.label ? `aria-label="${escapeHtml(f.label)}" title="${escapeHtml(f.label)}"` : ''}
       ${Number.isFinite(f.maxWidthPx) ? `style="max-width:${Math.max(120, Math.min(400, Math.round(f.maxWidthPx)))}px"` : ''}
       class="max-w-full truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -1369,7 +1378,9 @@ export function scoreTable(config) {
     activeFilterGroup = groupControl?.wire(host, indices => {
       for (const i of indices) {
         view.filters[i] = 'all';
-        host.querySelector(`[data-table-filter="${i}"]`).value = 'all';
+        const control = host.querySelector(`[data-table-filter="${i}"]`);
+        if (control.type === 'checkbox') control.checked = false;
+        else control.value = 'all';
       }
       activeFilterGroup.sync();
       requestFilterPaint();
@@ -1387,7 +1398,7 @@ export function scoreTable(config) {
     filterEls.forEach(el =>
       el.addEventListener('change', () => {
         const i = Number(el.dataset.tableFilter);
-        view.filters[i] = el.value;
+        view.filters[i] = el.type === 'checkbox' && !el.checked ? 'all' : el.value;
         activeFilterGroup?.sync();
         requestFilterPaint();
         onFilterChange?.(view, i);
