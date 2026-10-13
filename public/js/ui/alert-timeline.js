@@ -6,6 +6,8 @@ import { prepareTimeline, incompleteHistory } from '../data/alert-timeline.js';
 export function mountAlertTimeline({ root, renderEvent, readHistory }) {
   const scroller = root.querySelector('[data-ai-timeline]');
   const content = root.querySelector('[data-ai-timeline-content]');
+  const frame = root.querySelector('[data-ai-timeline-frame]');
+  const scrollCue = root.querySelector('[data-ai-timeline-scroll-cue]');
   let card, day, filters, history = null, rows = [], generation = 0, disposed = false;
   let preparing = false, loading = false, attempted = false, historyWanted = false, failed = false;
   let inputCard = null, inputDay = null, inputFilters = null, newestId = null, unseen = false;
@@ -26,6 +28,10 @@ export function mountAlertTimeline({ root, renderEvent, readHistory }) {
     if (status.textContent !== message) status.textContent = message;
     status.hidden = !message;
     scroller.setAttribute('aria-busy', String(preparing || loading));
+    const canScrollDown = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop > 2;
+    frame?.toggleAttribute('data-can-scroll-up', scroller.scrollTop > 2);
+    frame?.toggleAttribute('data-can-scroll-down', canScrollDown);
+    if (scrollCue) scrollCue.hidden = !canScrollDown;
   }
   function onScroll() {
     controls();
@@ -40,6 +46,7 @@ export function mountAlertTimeline({ root, renderEvent, readHistory }) {
     renderParts: (items, start, end) => items.slice(start, end).map(row => renderEvent(row.event, day, row.dev)),
     patchRow: (node, next) => reconcileMarkup(node, next.innerHTML),
     onScrollActivity: onScroll,
+    onWindow: controls,
   });
   async function prepare() {
     const token = ++generation;
