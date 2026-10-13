@@ -166,6 +166,23 @@ try {
   await page.evaluate(() => window.destroyTab());
   assert(await page.evaluate(() => window.pollStopped));
 
+  const splitTerms = screener('SPLITCO', 'Split Only Company', 'split', '2026-09-13', { oldFaceValue: '10.00', newFaceValue: '5.00' });
+  const splitPurpose = 'Stock split · Face value ₹10.00 → ₹5.00';
+  responseCapture = { ...capture, companyCount: 4, typeCounts: { ...capture.typeCounts, split: 1 }, rows: [...capture.rows, {
+    ...row('SPLITCO', 'Split Only Company', splitPurpose, 'split', '2026-09-13', splitTerms),
+    sources: ['Screener'], source: 'Screener', purposeSource: 'Derived from Screener fields',
+    isin: null, series: null, recordDate: null, sourceUrl: splitTerms.sourceUrl,
+  }] };
+  await page.goto(origin);
+  await page.waitForFunction(() => window.feed.rows().length === 4);
+  await page.evaluate(() => window.renderScope('universe'));
+  await page.locator('[data-table-search]').fill('Split Only Company');
+  await page.waitForFunction(() => document.querySelectorAll('tbody tr[data-row-key]').length === 1);
+  const splitRow = page.locator('tbody tr[data-row-key]');
+  assert.equal((await splitRow.innerText()).match(/Face value ₹10\.00 → ₹5\.00/g)?.length, 1, 'generated action details appear once, in Terms');
+  assert.equal(await splitRow.locator('td').first().locator('[title="Stock split"]').count(), 1);
+  assert.equal(await page.evaluate(() => window.feed.rows().find(r => r.ticker === 'SPLITCO').purpose), splitPurpose, 'the original action purpose remains retained');
+
   // Exercise the disk-clone/validation cost too: all real retained fields and rows,
   // not only the small semantic fixture above. External traffic remains blocked.
   responseCapture = JSON.parse(readFileSync(resolve(root, 'data/corporate-actions.json'), 'utf8'));

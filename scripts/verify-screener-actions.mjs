@@ -63,6 +63,18 @@ const ambiguousNse = normaliseNseCorporateActions([
 const ambiguous = mergeCorporateActionRows(ambiguousNse.rows, rights.rows);
 assert.equal(ambiguous.length, 3, 'an ambiguous cross-source match remains separate instead of guessing');
 assert.equal(ambiguous.filter((row) => row.source === 'NSE + Screener').length, 0);
+const distinct = normaliseNseCorporateActions([
+  { symbol: 'ALPHA', comp: 'Alpha Ltd', series: 'EQ', subject: 'Final Dividend - Rs 2 Per Share', exDate: '04-Sep-2026', recDate: '04-Sep-2026' },
+  { symbol: 'ALPHA', comp: 'Alpha Ltd', series: 'EQ', subject: 'Special Dividend - Rs 2 Per Share', exDate: '04-Sep-2026', recDate: '04-Sep-2026' },
+  { symbol: 'ALPHA', comp: 'Alpha Ltd', series: 'EQ', subject: 'Final Dividend - Rs 2 Per Share', exDate: '05-Sep-2026', recDate: '05-Sep-2026' },
+  { symbol: 'OTHER', comp: 'Other Ltd', series: 'EQ', subject: 'Final Dividend - Rs 2 Per Share', exDate: '04-Sep-2026', recDate: '04-Sep-2026' },
+]);
+assert.equal(distinct.rows.length, 4, 'matching amounts do not collapse different terms, dates or companies');
+const pairCandidates = [
+  { ...dividend.rows[0], dividendType: 'Final' },
+  { ...dividend.rows[0], dividendType: 'Special' },
+];
+assert.equal(mergeCorporateActionRows(distinct.rows, pairCandidates).length, 6, 'ambiguous final and special dividends retain every source record');
 validateScreenerActionRows([...dividend.rows, ...rights.rows]);
 assert.throws(() => validateScreenerActionRows([{ ...rights.rows[0], companyUrl: 'https://evil.example/company/BETA/' }]));
 

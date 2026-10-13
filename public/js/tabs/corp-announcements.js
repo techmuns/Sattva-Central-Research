@@ -22,7 +22,7 @@ import { formatDate, formatNumber } from '../core/format.js';
 import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { corporateAnnouncements as identityFeed } from '../data/corporate-announcements.js';
-import { announcementSources, announcementSourceUrls } from '../data/announcements-shared.js';
+import { announcementSources, announcementSourceUrls, announcementUrl } from '../data/announcements-shared.js';
 import { captureCoverageHtml } from '../ui/capture-coverage.js';
 import { announcementCoverage } from '../data/announcement-coverage.js';
 import { announcementSearch } from '../ui/announcement-search.js';
@@ -42,6 +42,30 @@ import { loadModel } from '../data/relevance-feedback.js';
 const DEFAULT_PERIOD = '3';
 // The periods this tab has always offered; the index answers any of ANNOUNCEMENT_PERIODS.
 const TAB_PERIODS = ['today', '3', '7', 'month', 'all'].map((value) => ANNOUNCEMENT_PERIODS.find((p) => p.value === value));
+
+function companyCell(row) {
+  const name = row.company || row.ticker || row.scripCode || 'Company unavailable';
+  const symbol = [row.ticker, row.scripCode !== row.ticker ? row.scripCode : null].filter(Boolean).join(' · ');
+  return `<div class="ca-company-cell"><strong>${escapeHtml(name)}</strong>${symbol ? `<small>${escapeHtml(symbol)}</small>` : ''}</div>`;
+}
+
+function filingLinks(row) {
+  const sources = announcementSources(row), links = announcementSourceUrls(row);
+  const anchor = (source, url, reference = false) => `<a data-stop href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="ca-exchange-link"${reference ? ' title="Source reference page; no filing document was supplied"' : ''}>${escapeHtml(source)}${reference ? ' reference' : ''} ↗</a>`;
+  const linkedSources = new Set(links.map(link => link.source));
+  const parts = links.map(link => anchor(link.source, link.url));
+  const primary = announcementUrl(row.url), reference = !primary && !links.length && announcementUrl(row.referenceUrl);
+  for (const source of sources) {
+    if (linkedSources.has(source)) continue;
+    parts.push(reference && sources.length === 1 ? anchor(source, reference, true) : `<span>${escapeHtml(source)}</span>`);
+  }
+  // Legacy combined-source records can carry an unattributed primary URL. Keep it reachable
+  // without assigning that document to an exchange the capture did not identify.
+  if (primary && !links.some(link => link.url === primary)) parts.push(anchor('Open filing', primary));
+  if (reference && sources.length !== 1) parts.push(anchor('Open', reference, true));
+  return parts.length ? `<div class="ca-exchange-links">${parts.join('')}</div>` : 'Not specified';
+}
+
 const FILTERS_KEY = 'sattva:announcement-filters:v1';
 const POLL_ID = 'corporate-announcements-index';
 const POLL_MS = 90_000;
@@ -422,17 +446,17 @@ const tab = makeFilingsTab({
   stickyHead: 'max(320px, calc(100vh - 260px))',
   noun: 'announcements',
   nameLabel: 'Subject',
+  nameAfter: 1,
   nameMaxPx: 560,
   // The subject is the exchange's own words, exactly as filed.
   rowName: (r) => cleanFilingText(r.title || r.headline) || '(no subject)',
-  // The company name leads, because a date-indexed feed covers companies this dashboard has no
-  // ticker for and a bare scrip code identifies nothing to a reader.
-  rowSub: (r) => [r.company, r.ticker, r.category && r.category !== r.subCategory ? r.category : null, r.subCategory, r.documentUnavailable ? 'Source supplied no document link' : null].filter(Boolean).join(' · '),
+  rowSub: (r) => [r.category && r.category !== r.subCategory ? r.category : null, r.subCategory, r.documentUnavailable ? 'Source supplied no document link' : null].filter(Boolean).join(' · '),
   afterSub: relatedHtml,
-  link: (r) => r.url || r.referenceUrl || null,
+  link: false,
   onRowClick: (row) => openAnnouncementRead(row, { loadEvent: (event) => query.event(event.id, event), item: feedbackItem(row) }),
   searchable: () => '',
   columns: () => [
+    { label: 'Company', get: companyCell, html: true, sortable: false },
     {
       label: 'Date',
       get: (r) => (r.date
@@ -443,7 +467,7 @@ const tab = makeFilingsTab({
     },
     { label: 'Categories', get: (r) => categoryChips(r.categories || [], { weak: r.weakCategories || [], max: 2, empty: dash('No category matched') }), html: true, sortable: false },
     { label: 'Market cap', get: mcapCell, html: true, align: 'right', sortable: false },
-    { label: 'Source', get: (r) => announcementSources(r).join(' / ') || 'Not specified', sortable: false },
+    { label: 'Link', get: filingLinks, html: true, sortable: false },
   ],
   provenance: (m, { scope } = {}) => {
     const qm = m.query || {};

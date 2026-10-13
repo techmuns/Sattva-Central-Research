@@ -323,6 +323,7 @@ export function makeFilingsTab(cfg) {
       watchName: (r) => r.company || cfg.rowName(r) || r.ticker,
       name: (r) => cfg.rowName(r),
       nameLabel: cfg.nameLabel || 'Headline',
+      nameAfter: cfg.nameAfter || 0,
       sub: (r) => cfg.rowSub(r),
       showRank: false,
       showAvatar: false,
