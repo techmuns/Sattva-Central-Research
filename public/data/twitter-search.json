@@ -2383,7 +2383,7 @@
       "error": "search-unavailable"
     },
     "isin:INE092A01019|TATACHEM": {
-      "lastAttemptAt": "2026-10-08T02:05:58+00:00",
+      "lastAttemptAt": "2026-10-13T17:48:28+00:00",
       "error": "search-unavailable"
     },
     "isin:INE011K01018|Tega Industries": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T17:17:47.920026+00:00"
+    "checkedAt": "2026-10-13T17:48:28.837406+00:00"
   }
 }
