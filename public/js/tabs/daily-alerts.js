@@ -18,8 +18,8 @@ import { alertReadingHtml, watchAlertReadings } from '../ui/alert-reading.js';
 //
 // ---------------------------------------------------------------------------------------
 // DIRECTION AND IMPORTANCE ARE SEPARATE. Green/red/grey reproduce an explicit source band,
-// transaction direction, or a conservative rule. High/Low is a second badge driven by the stated
-// thresholds in data/daily-alerts.js. Their reasons remain in the marker's hover details and export.
+// transaction direction, or a conservative rule. Priority controls the row's visual weight using
+// the stated thresholds in data/daily-alerts.js. Both readings and their reasons remain in export.
 //
 // ---------------------------------------------------------------------------------------
 // THE COVERAGE PANEL IS NOT DECORATION — IT IS THE HALF THAT MAKES AN EMPTY DAY READABLE
@@ -56,7 +56,7 @@ import { promptAfterOpen } from '../ui/relevance-feedback-ui.js';
 // RELEVANCE WITHIN A DAY, NO LABEL. The stream stays newest day first; within a day the shared
 // relevance reading (data/relevance.js — the same one Corporate Announcements and News use, with the
 // desk's Important / Not important votes) puts what an analyst would read first at the top. The
-// existing High/Low priority badge is the feed's own stated threshold and is unchanged; the relevance
+// High/Low priority filter uses the feed's own stated threshold and is unchanged; the relevance
 // order prints nothing. Category tags come from the same master list, read from the item's own words
 // where it has them and from what the feed is where it does not.
 const TEXT_NEWS_FEEDS = new Set(['news', 'market-news', 'twitter']);
@@ -1009,39 +1009,19 @@ export function feedState(f) {
 // order rather than by class order, which is a coin toss dressed up as a decision.
 const DIR = {
   positive: {
-    label: 'Positive', symbol: '↑', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
     highRow: 'bg-emerald-50/60 shadow-[inset_4px_0_0_#059669]', lowRow: 'bg-emerald-50/20 shadow-[inset_2px_0_0_#10b981]',
   },
   negative: {
-    label: 'Negative', symbol: '↓', chip: 'bg-rose-50 text-rose-700 ring-rose-200',
     highRow: 'bg-rose-50/60 shadow-[inset_4px_0_0_#e11d48]', lowRow: 'bg-rose-50/20 shadow-[inset_2px_0_0_#fb7185]',
   },
   neutral: {
-    label: 'Neutral', symbol: '•', chip: 'bg-slate-100 text-slate-600 ring-slate-200',
     highRow: 'bg-violet-50/40 shadow-[inset_4px_0_0_#64748b]', lowRow: 'shadow-[inset_2px_0_0_#cbd5e1]',
   },
-};
-const IMP = {
-  high: { label: 'High priority', chip: 'bg-violet-600 text-white ring-violet-600 shadow-sm' },
-  low: { label: 'Low priority', chip: 'bg-white/70 text-slate-500 ring-slate-200' },
 };
 
 function alertRowClass(event) {
   const direction = DIR[event.direction] || DIR.neutral;
   return event.importance === 'high' ? direction.highRow : direction.lowRow;
-}
-
-function signalCell(event) {
-  const direction = DIR[event.direction] || DIR.neutral;
-  const importance = IMP[event.importance] || IMP.low;
-  const title = `${direction.label} direction — ${event.signalReason || 'No direction reason supplied'}. ${importance.label} — ${event.importanceReason || 'No importance reason supplied'}.`;
-  return `<div data-alert-signal data-alert-direction="${escapeHtml(event.direction || 'neutral')}" data-alert-importance="${escapeHtml(event.importance || 'low')}"
-      class="flex min-w-[108px] flex-col items-start gap-1.5" role="group" aria-label="${escapeHtml(`${direction.label} direction, ${importance.label}`)}" title="${escapeHtml(title)}">
-    <span class="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ring-1 ${direction.chip}">
-      <span aria-hidden="true" class="text-sm leading-none">${direction.symbol}</span>${direction.label}
-    </span>
-    <span class="inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ${importance.chip}">${importance.label}</span>
-  </div>`;
 }
 
 /** Today belongs to Upcoming only while the source still explicitly calls the row scheduled. */
@@ -1128,12 +1108,6 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     ? [dateColumn, eventColumn, { label: 'Source', get: (e) => e.feedLabel }]
     : [
         dateColumn,
-        {
-          label: 'Signal / priority',
-          get: signalCell,
-          html: true,
-          sortValue: (e) => (e.importance === 'high' ? 1 : 0),
-        },
         eventColumn,
         {
           label: 'Feed',
@@ -1170,9 +1144,8 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     } : null,
     // Date and time lead every row. Some feeds resolve only to a day; saying "Day only" is more
     // informative than an em dash and keeps older rows intelligibly ordered as the reader scrolls.
-    // History adds the combined signal/priority marker before company identity. Upcoming has no
-    // inferred signal, so company follows the date directly.
-    nameAfter: mode === HORIZON.UPCOMING ? 1 : 2,
+    // Company identity follows the date directly in both history and the calendar.
+    nameAfter: 1,
     dense: true,
     wrapHeads: true,
     stickyHead: 'max(320px, calc(100vh - 260px))',

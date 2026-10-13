@@ -153,8 +153,9 @@ source record as JSON alongside the readable columns.
 ## Table-first reading layout
 
 Headlines emphasize fraud, default, arrest and insolvency/bankruptcy terms in red and bold.
-The repeated Signal and Priority explanation lines below the headline are removed. The signal
-markers retain their hover reasons, and export retains the underlying readings and source records.
+The Signal / priority column and repeated explanation lines below the headline are removed.
+Company follows Date / time directly. The combined filtering control and export retain the
+underlying readings; export also retains their reasons and all original source records.
 Keyword emphasis reproduces source wording; it does not classify a row or verify an allegation.
 
 All Alerts opts into a wider, compact app frame. Source filters start collapsed behind **Sources**;

@@ -185,8 +185,7 @@ try {
   assert.equal(emphasis.color, 'rgb(190, 18, 60)', 'light-theme risk words are red');
   const riskRow = page.locator('tbody tr[data-row-key]').first();
   assert(!/Signal ·|Priority ·/.test(await riskRow.innerText()), 'rows omit both repeated explanation lines');
-  assert((await riskRow.locator('[data-alert-signal]').getAttribute('title')).includes('Rule-derived from the filing text'), 'classification reasons remain available on hover');
-  assert.equal(await riskRow.locator('[data-alert-signal]').getAttribute('data-alert-importance'), 'high');
+  assert.equal(await riskRow.locator('[data-alert-signal]').count(), 0, 'the signal/priority marker column is removed');
   await period.selectOption('today');
   const routineHeadline = 'Jayaswal Neco Industries shares an update';
   await page.locator('[data-table-search]').fill(routineHeadline);
@@ -194,7 +193,7 @@ try {
   await page.getByRole('combobox', { name:'Priority',exact:true }).selectOption('low');
   await page.getByRole('combobox', { name:'Direction',exact:true }).selectOption('neutral');
   await page.locator('[data-filter-group-panel]').press('Escape');
-  await page.waitForFunction(() => document.querySelector('[data-score-table]')?.dataset.virtualTotal === '1' && document.querySelector('[data-alert-signal]')?.dataset.alertImportance === 'low');
+  await page.waitForFunction(() => document.querySelector('[data-score-table]')?.dataset.virtualTotal === '1' && document.querySelector('tbody [data-alert-headline]')?.textContent.includes('Jayaswal Neco Industries shares an update'));
   assert.equal(await page.locator('[data-filter-group-summary]').innerText(), 'Low · Neutral');
   assert.equal(await signalControl.evaluate(node => node === document.activeElement), true, 'Escape returns keyboard focus to the grouped control');
   await page.evaluate(() => window.show());
@@ -498,14 +497,10 @@ try {
       label: scroller.getAttribute('aria-label'),
       overscroll: style.overscrollBehavior,
       touchAction: style.touchAction,
-      signals: [...document.querySelectorAll('[data-alert-signal]')].map((cell) => ({
-        direction: cell.dataset.alertDirection,
-        importance: cell.dataset.alertImportance,
-        label: cell.getAttribute('aria-label'),
-      })),
+      signals: document.querySelectorAll('[data-alert-signal]').length,
     };
   });
-  assert.deepEqual(tableContract.headers.slice(0, 3), ['DATE / TIME', 'SIGNAL / PRIORITY', 'COMPANY']);
+  assert.deepEqual(tableContract.headers, ['DATE / TIME', 'COMPANY', 'WHAT HAPPENED', 'FEED', 'LINK']);
   assert(!tableContract.headers.includes('DIRECTION') && !tableContract.headers.includes('IMPORTANCE'));
   assert(tableContract.className.includes('table-scroll-surface'));
   assert.equal(tableContract.tabIndex, 0);
@@ -513,10 +508,7 @@ try {
   assert.equal(tableContract.label, 'All Alerts history table');
   assert.equal(tableContract.overscroll, 'contain');
   assert.equal(tableContract.touchAction, 'pan-x pan-y');
-  assert(tableContract.signals.length > 0 && tableContract.signals.every((signal) =>
-    ['positive', 'negative', 'neutral'].includes(signal.direction) &&
-    ['high', 'low'].includes(signal.importance) &&
-    /direction, (High|Low) priority/.test(signal.label)));
+  assert.equal(tableContract.signals, 0);
 
   const virtualContract = await page.evaluate(() => {
     const host = document.querySelector('[data-score-table]');
