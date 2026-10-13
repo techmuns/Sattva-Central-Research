@@ -156,6 +156,11 @@ try {
       synWorking.release();
     }
     assert.deepEqual(dedupeArticles([original, otherOutlet, copy]), [original, otherOutlet], 'the pair folds as the full history folds it');
+    // The rejected duplicate has the original's URL but the accepted copy's earlier
+    // headline/date. It cannot poison that URL and hide a later corrected publication.
+    const corrected = { ...original, date: '2026-09-16' };
+    assert.deepEqual(dedupeArticles([copy, original, corrected]), [copy, corrected],
+      'a discarded headline duplicate cannot suppress a distinct corrected date at its URL');
   }
 
   // Exercise the real facade and explicit live searches in separate windows. Empty Today

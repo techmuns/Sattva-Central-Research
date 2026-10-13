@@ -94,6 +94,13 @@ retention alone cannot create a Must see priority. A failed refresh does not ret
 Routine news, unresolved identities, undated rows and context-only records have no retention bypass.
 
 The public 14-day alert window persists in IndexedDB and is re-scoped and re-aged on reload.
+Article deduplication registers URL/headline identities only for accepted records. A discarded
+same-headline copy cannot reserve its URL and suppress a later corrected publication at that
+address. Full-history and date-window readers must keep the same eligible corrections; the
+derived alert-pool policy advances when this interpretation changes so older artifacts are
+rejected until the existing automatic build publishes a compatible pool. Raw captures remain
+the authority. `verify-news-query-boundaries.mjs` covers the duplicate/correction sequence, and
+`verify-alert-pool-ui.mjs` compares the resulting live and pooled records and their order.
 First useful evidence can paint while remaining feeds, operating context and private holding
 sizes are still being checked. An early empty partial cannot block later cards or a delayed cache
 read. Partial refreshes add new material arrivals while retaining previously visible companies and
