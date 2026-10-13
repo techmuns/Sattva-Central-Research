@@ -3384,6 +3384,9 @@ scope picker, while company stars continue to edit the same shared list.
 Priority and Direction share one compact Signal & priority control. Keep the two predicates
 independent inside its panel, show active selections on the button, and retain both across refreshes.
 Clearing that control resets only those predicates, preserving search, sources, scope and date.
+Rows omit the repeated Signal and Priority explanation lines. Their reasons remain in marker
+hover details and export. Fraud, default, arrest and insolvency/bankruptcy words in the displayed
+headline are red and bold; this is emphasis of source wording, independent of signal classification.
 Keep the global scope picker, date filter,
 source coverage and retained history available; collection and retention are unchanged.
 

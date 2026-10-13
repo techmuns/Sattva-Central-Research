@@ -18,8 +18,8 @@ import { alertReadingHtml, watchAlertReadings } from '../ui/alert-reading.js';
 //
 // ---------------------------------------------------------------------------------------
 // DIRECTION AND IMPORTANCE ARE SEPARATE. Green/red/grey reproduce an explicit source band,
-// transaction direction, or the conservative rule printed beside the row. High/Low is a second
-// badge driven by the stated thresholds in data/daily-alerts.js. Neither is left unexplained.
+// transaction direction, or a conservative rule. High/Low is a second badge driven by the stated
+// thresholds in data/daily-alerts.js. Their reasons remain in the marker's hover details and export.
 //
 // ---------------------------------------------------------------------------------------
 // THE COVERAGE PANEL IS NOT DECORATION — IT IS THE HALF THAT MAKES AN EMPTY DAY READABLE
@@ -1009,15 +1009,15 @@ export function feedState(f) {
 // order rather than by class order, which is a coin toss dressed up as a decision.
 const DIR = {
   positive: {
-    label: 'Positive', symbol: '↑', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200', reason: 'text-emerald-700',
+    label: 'Positive', symbol: '↑', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
     highRow: 'bg-emerald-50/60 shadow-[inset_4px_0_0_#059669]', lowRow: 'bg-emerald-50/20 shadow-[inset_2px_0_0_#10b981]',
   },
   negative: {
-    label: 'Negative', symbol: '↓', chip: 'bg-rose-50 text-rose-700 ring-rose-200', reason: 'text-rose-700',
+    label: 'Negative', symbol: '↓', chip: 'bg-rose-50 text-rose-700 ring-rose-200',
     highRow: 'bg-rose-50/60 shadow-[inset_4px_0_0_#e11d48]', lowRow: 'bg-rose-50/20 shadow-[inset_2px_0_0_#fb7185]',
   },
   neutral: {
-    label: 'Neutral', symbol: '•', chip: 'bg-slate-100 text-slate-600 ring-slate-200', reason: 'text-slate-500',
+    label: 'Neutral', symbol: '•', chip: 'bg-slate-100 text-slate-600 ring-slate-200',
     highRow: 'bg-violet-50/40 shadow-[inset_4px_0_0_#64748b]', lowRow: 'shadow-[inset_2px_0_0_#cbd5e1]',
   },
 };
@@ -1081,6 +1081,20 @@ function sourceReportsHtml(event) {
   return `<details data-norow data-alert-originals class="mt-1 text-xs text-slate-500"><summary class="cursor-pointer text-indigo-700">${reports.length} original source reports</summary>${reports.map(r=>`<div class="mt-1 break-words">${escapeHtml(r.feedLabel||r.feed)} · ${escapeHtml(r.day||'Date unavailable')} · ${/^https?:\/\//i.test(r.url||'')?`<a class="text-indigo-700 hover:underline" target="_blank" rel="noopener noreferrer" href="${escapeHtml(readableFilingUrl(r.url))}">${escapeHtml(r.headline)}</a>`:escapeHtml(r.headline)}</div>`).join('')}</details>`;
 }
 
+// Emphasize words actually present in the displayed headline; this does not assign a signal
+// or assert that an allegation is proven. Escape both matched and ordinary source text.
+function alertHeadlineHtml(headline) {
+  const text = String(headline || '');
+  const terms = /\b(?:fraud(?:s|ulent(?:ly)?)?|default(?:s|ed|ing)?|arrest(?:s|ed|ing)?|insolvency|insolvent|bankrupt(?:cy|cies)?)\b/gi;
+  let html = '', end = 0;
+  for (const match of text.matchAll(terms)) {
+    html += escapeHtml(text.slice(end, match.index));
+    html += `<strong data-alert-risk class="font-bold text-rose-700">${escapeHtml(match[0])}</strong>`;
+    end = match.index + match[0].length;
+  }
+  return html + escapeHtml(text.slice(end));
+}
+
 function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, warmSearch = false) {
   const matchesDate = dateRangeMatcher(day);
   const dateColumn = {
@@ -1103,10 +1117,9 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     get: (e) => `
       <div class="max-w-[560px]">
         ${e.feed === 'news' ? `<div data-news-attribution="${escapeHtml(e.attribution?.status || 'uncertain')}" class="text-xs font-semibold text-slate-600" title="${escapeHtml(e.attribution?.reason || 'Company relationship unverified')}">${escapeHtml(attributionLabel(e))}</div>` : ''}
-        <div class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${escapeHtml(mode===HORIZON.UPCOMING?e.headline:developmentLine(developmentOfRow(e),{fallback:e.headline}))}</div>
+        <div data-alert-headline class="truncate font-medium text-slate-800" title="${escapeHtml(e.headline)}">${mode===HORIZON.UPCOMING?escapeHtml(e.headline):alertHeadlineHtml(developmentLine(developmentOfRow(e),{fallback:e.headline}))}</div>
         <div class="truncate text-xs text-slate-500" title="${escapeHtml(e.detail || '')}">${escapeHtml(e.detail || '')}</div>
-        ${mode === HORIZON.UPCOMING ? '' : `${sourceReportsHtml(e)}${alertReadingHtml(e)}<div class="mt-0.5 truncate text-xs font-semibold ${(DIR[e.direction] || DIR.neutral).reason}" title="${escapeHtml(e.signalReason || '')}"><span class="text-slate-400">Signal ·</span> ${escapeHtml(e.signalReason || '')}</div>
-        <div class="truncate text-[11px] ${e.importance === 'high' ? 'font-semibold text-violet-700' : 'text-slate-400'}" title="${escapeHtml(e.importanceReason || '')}"><span class="text-slate-400">Priority ·</span> ${escapeHtml(e.importanceReason || '')}</div>`}
+        ${mode === HORIZON.UPCOMING ? '' : `${sourceReportsHtml(e)}${alertReadingHtml(e)}`}
       </div>`,
     html: true,
     sortValue: (e) => String(e.headline || '').toLowerCase(),
@@ -1164,11 +1177,10 @@ function eventsTable(ctx, events, day, mode, initialView, tablePosition = null, 
     wrapHeads: true,
     stickyHead: 'max(320px, calc(100vh - 260px))',
     // The timeline can exceed five thousand rows. Keep all of them in the data model for search,
-    // filters, counts and export, while mounting only a bounded viewport window. Historical rows
-    // News carries five lines including attribution. Its 115px natural height exceeded the old
-    // 96px virtual stride, causing a visible jump whenever a window replaced those taller rows.
+    // filters, counts and export, while mounting only a bounded viewport window. Compact news rows
+    // carry attribution, headline and detail; natural measurements handle expanded source details.
     fillMode: 'windowed',
-    virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 120,
+    virtualRowHeight: mode === HORIZON.UPCOMING ? 72 : 88,
     preindexSearch: warmSearch,
     onScrollActivity: noteTableScroll,
     onVisibleRowsChange: mode === HORIZON.THROUGH ? rows => {

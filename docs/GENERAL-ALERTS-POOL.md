@@ -152,16 +152,19 @@ source record as JSON alongside the readable columns.
 
 ## Table-first reading layout
 
+Headlines emphasize fraud, default, arrest and insolvency/bankruptcy terms in red and bold.
+The repeated Signal and Priority explanation lines below the headline are removed. The signal
+markers retain their hover reasons, and export retains the underlying readings and source records.
+Keyword emphasis reproduces source wording; it does not classify a row or verify an allegation.
+
 All Alerts opts into a wider, compact app frame. Source filters start collapsed behind **Sources**;
 the control always states **All sources** or the number selected. The same source checkboxes open
 in an overlaid panel, so using them does not reduce the table's height. Selection persists across
 feed repaints. **Done**, Escape and an outside click close the panel; closing does not clear filters.
 
-**Focus table** hides only this app's brand header and navigation, not the embedding host's controls.
-**Exit focus** or Escape restores them. Search, filters, the current reading anchor, source counts,
-date/scope metadata and the complete export model survive layout changes. Leaving All Alerts resets
-focus mode. Other research tabs keep their existing layout. No source records, attribution rules,
-row font sizes, row heights or retention policies change.
+Search, filters, the current reading anchor, source counts, date/scope metadata and the complete
+export model survive layout changes. Other research tabs keep their existing layout. No source
+records, attribution rules or retention policies change.
 
 The table is sized from its actual position inside the host frame, including after window resizing
 or control/status wrapping. Existing virtual scrolling keeps the DOM bounded without truncating
