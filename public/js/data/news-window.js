@@ -47,6 +47,19 @@ export function newsPublicationDay(row = {}) {
   if (cacheable) publicationDays.set(row, { date: row.date, publishedAt: row.publishedAt, day });
   return day;
 }
+// Descending publication order: source day, then the actual instant where supplied.
+// A date-only story follows known clocks on that day; undated stories stay last.
+// The existing row cache invalidates this key when either source field changes.
+export function newsPublicationKey(row = {}) {
+  const day = newsPublicationDay(row);
+  if (!day) return '';
+  const cached = publicationDays.get(row);
+  if (cached?.key !== undefined) return cached.key;
+  const at = /\d{1,2}:\d{2}/.test(row.publishedAt || '') ? Date.parse(row.publishedAt) : NaN;
+  const key = `${day}|${Number.isFinite(at) ? new Date(at).toISOString() : ''}`;
+  if (cached) cached.key = key;
+  return key;
+}
 function publicationDayOf(row) {
   const date = row.date;
   if (/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {

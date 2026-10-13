@@ -45,8 +45,8 @@ import * as twitterNews from '../data/twitter-news.js';
 import * as twitterHandles from '../core/twitter-handles.js';
 import { openTwitterSources } from '../ui/twitter-sources.js';
 import { classifyStory, topicFilterOptions, matchesTopic, topicLabel } from '../data/news-keywords.js';
-import { newsPublicationDay } from '../data/news-window.js';
-import { surfaceReading, feedbackItemFor, relevanceRevision, rankedKey } from '../data/surface-relevance.js';
+import { newsPublicationKey } from '../data/news-window.js';
+import { surfaceReading, feedbackItemFor, relevanceRevision } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
 import { newsFeedbackBar } from '../ui/relevance-feedback-ui.js';
@@ -55,7 +55,8 @@ import { newsSearchText } from '../data/company-news-attribution.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
 
 // The shared relevance reading of a market-wide story or post. These carry no company, so size and
-// sector read as unknown for every one of them alike; what orders a day is what each story is about.
+// sector read as unknown for every one of them alike. This supplies category tags and feedback;
+// publication time owns the list order.
 const relevanceOf = (r) => surfaceReading(r, { surface: 'news', kind: 'news', context: r.kind === twitterNews.KIND ? { feed: 'twitter' } : { feed: 'market-news' } });
 
 // The same thirty keywords the company half of this tab filters by, over the same reading. Cached
@@ -200,8 +201,8 @@ const FIRST_PAINT = 24;
 // THE MERGED SORT IS BY TIME, NOT BY THE PUBLISHER'S ID. market-news.js orders by Moneycontrol's
 // own article id, which increases with publication and works even for the stories whose timestamp
 // was never read — correct within one publisher and meaningless across two. So the merged list
-// sorts on `publishedAt` where both sides have one, and a story with no time keeps the publisher's
-// relative order among the others rather than being dated with something we made up.
+// sorts on the source publication day and instant. Date-only stories follow known clocks on that
+// day; undated stories retain their source order at the end without an invented publication time.
 // ---------------------------------------------------------------------------------------
 
 /** Every story in the list: the publisher feed plus the posts from monitored handles. */
@@ -220,41 +221,11 @@ function feedRows() {
 function orderedFeed(window, sources, postSource) {
   const publisher = sources.filter(row => inNewsWindow(row, window));
   const posts = postSource.filter(row => inNewsWindow(row, window));
-  if (!posts.length) {
-    const order = new Map(publisher.map((r, i) => [r, i]));
-    return rankWithinDay([...publisher], (a, b) => order.get(a) - order.get(b));
-  }
-
-  // Publisher stories keep their own order and their index becomes the tie-break, so a story with
-  // no readable time still sits where the publisher put it rather than falling to the bottom.
-  const order = new Map(publisher.map((r, i) => [r.id, i]));
-  const timeOf = (r) => {
-    const t = Date.parse(r.publishedAt || '');
-    return Number.isFinite(t) ? t : null;
-  };
-  return rankWithinDay([...publisher, ...posts], (a, b) => {
-    const ta = timeOf(a);
-    const tb = timeOf(b);
-    if (ta !== null && tb !== null) return tb - ta;
-    // One side has no time. Keep the timed one first — it is the only one whose position is known.
-    if (ta !== null) return -1;
-    if (tb !== null) return 1;
-    return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
-  });
-}
-
-/**
- * Newest publication day first; within each of the last seven days, the shared relevance reading;
- * then the order the rows already had (time, or the publisher's own). Undated stories stay last, in
- * their own order. The readings are made within one short budget and the rest in slices
- * (surface-relevance.js), so a long period never freezes the list while it is ordered.
- */
-function rankWithinDay(rows, within) {
-  const keys = new Map(rows.map((r) => [r, rankedKey(r, { day: newsPublicationDay(r), surface: 'news', read: relevanceOf })]));
+  const rows = [...publisher, ...posts];
+  const keys = new Map(rows.map(row => [row, newsPublicationKey(row)]));
   return rows.sort((a, b) => {
     const ka = keys.get(a), kb = keys.get(b);
-    if (ka !== kb) return ka < kb ? 1 : -1;
-    return within(a, b);
+    return ka === kb ? 0 : ka < kb ? 1 : -1;
   });
 }
 

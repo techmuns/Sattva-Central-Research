@@ -22,14 +22,9 @@ import { TAB_META } from './catalog.js';
 // reproduced, the article is linked, and nothing is summarised into our own words. See the header
 // of tabs/filings-tab.js for the machinery all three of these tabs share.
 //
-// NO SENTIMENT COLUMN, AND RELEVANCE ONLY WITHIN A DAY. Stories stay newest day first; within a day
-// the one a buy-side analyst would read first comes first — the same reading Corporate Announcements
-// and All Alerts use (data/relevance.js: what the story is about, the company's size and sector, any
-// amount it states against that size, whether it names the company, and the desk's shared Important
-// / Not important votes). No label is printed and no story is hidden by its rank. Scoring a headline
-// as positive or negative would still be a judgement of ours beside somebody else's reporting, and
-// this tab still does not do it. The row keeps opening the article; visible controls beneath it
-// let the reader vote separately.
+// NEWEST PUBLICATION FIRST. Source clocks order stories within their source day; neither relevance
+// nor the desk's Important / Not important votes moves an older story above a newer one. Category
+// tags and visible feedback remain available below the story, separately from its article link.
 
 import { escapeHtml } from '../core/dom.js';
 import { formatDate, formatNumber } from '../core/format.js';
@@ -38,13 +33,13 @@ import { newsViewStatus } from '../core/news-view-status.js';
 import { exportRows } from '../ui/export.js';
 import { makeFilingsTab, coverageBlock } from './filings-tab.js';
 import { recentNews as feed } from '../data/filings.js';
-import { newsPeriodFilter, newsPublicationDay, newsPeriodBounds } from '../data/news-window.js';
+import { newsPeriodFilter, newsPublicationDay, newsPublicationKey, newsPeriodBounds } from '../data/news-window.js';
 import * as marketNews from './market-news-view.js';
 import { KEYWORDS, GROUPS, classifyStory, topicFilterOptions, matchesTopic, groupLabel } from '../data/news-keywords.js';
 import { filterByScope as filterTickerRows } from '../data/scope.js';
 import { attributionFor, attributionLabel, newsSearchText } from '../data/company-news-attribution.js';
 import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
-import { surfaceReading, feedbackItemFor, rankedKey, istClock, relevanceRevision, onRelevanceChange, primeRelevance, warmReadings } from '../data/surface-relevance.js';
+import { surfaceReading, feedbackItemFor, relevanceRevision, onRelevanceChange, primeRelevance, warmReadings } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel as categoryLabelOf } from '../data/announcement-categories.js';
 import { newsFeedbackBar, installNewsFeedback } from '../ui/relevance-feedback-ui.js';
@@ -143,7 +138,7 @@ const tab = makeFilingsTab({
   rowName: (r) => r.title || '(untitled)',
   rowSub: (r) => [attributionLabel(r), r.company || r.ticker, r.company && r.ticker, canonicalPublisherName(r.source)].filter(Boolean).join(' · '),
   afterSub: (r) => newsRowExtras(newsRelevance(r), r),
-  // The order depends on the shared model and the company profiles, so either moving repaints it.
+  // Category/feedback decorations follow the shared model; publication owns the default order.
   renderRevision: () => relevanceRevision(),
   searchable: newsSearchText,
   searchControl: ({ view }) => newsSearchControl({ q: view?.q || '', searchable: newsSearchText }),
@@ -157,9 +152,7 @@ const tab = makeFilingsTab({
       label: 'Date',
       get: (r) => (newsPublicationDay(r) ? `<span class="whitespace-nowrap tabular-nums text-slate-600">${escapeHtml(formatDate(newsPublicationDay(r)))}</span>` : dash('the article carried no readable date')),
       html: true,
-      // Newest day first; within each of the last seven days the most relevant story first, then the
-      // latest. A row with no date sorts last rather than first. An unreadable date is not "today".
-      sortValue: (r) => rankedKey(r, { day: newsPublicationDay(r), time: istClock(r.publishedAt), surface: 'news', read: newsRelevance }),
+      sortValue: newsPublicationKey,
     },
     {
       // THE TOPIC COLUMN TOOK THE OUTLET COLUMN'S PLACE RATHER THAN BEING ADDED BESIDE IT. The
@@ -306,10 +299,8 @@ const tab = makeFilingsTab({
           <li><strong>Headline, outlet and date</strong> — the upstream's, unchanged.</li>
           <li><strong>The article itself</strong> — not here. Every row links to the publisher, and nothing is summarised
               into our words.</li>
-          <li><strong>No sentiment of ours, and relevance only within a day.</strong> Stories are ordered newest source day first; within a day
-              the stories an analyst would read first come first (what the story is about, the company's size and sector, any amount it
-              states against that size, whether it names the company, and the desk's shared Important / Not important votes). Nothing is
-              hidden by its rank and no rank label is printed. Undated articles remain undated, never borrowing their capture time.
+          <li><strong>Newest publication first.</strong> Stories are ordered by source publication day and time, newest to oldest.
+              Date-only stories follow known clocks on the same day. Undated articles remain undated, never borrowing their capture time.
               A topic identifies the subject, not a trade recommendation.</li>
           <li><strong>Categories</strong> under each headline come from the same master list Corporate Announcements uses. The ⋯ beside
               a row records Important / Not important (with an optional why) into one shared preference for the desk; opening the

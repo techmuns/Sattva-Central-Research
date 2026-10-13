@@ -4,6 +4,10 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
 `docs/DATA-CONTRACTS.md` has every JSON shape.
 
 **Reading defaults (updated 15 September 2026):** News and All Alerts open on Today.
+News ordering (13 October 2026): Market News opens newest publication first in every scope,
+including stories within the same day. Source dates and actual publication instants own the order;
+date-only stories follow known clocks on that day, and undated stories remain undated. Category
+tags and shared feedback do not move older News stories above newer ones.
 All Alerts search respects the visibly selected date interval. Use All history or a company
 "See all" link for older evidence; typing a search must not silently bypass the interval.
 When a large table applies filters, show pulsing empty rows while preserving its dimensions and
@@ -4111,7 +4115,7 @@ nothing — which is exactly why the con-call route has no projection either.
 | Change News or Insider | `worker/muns.mjs` + `js/data/filings-shared.js`, then the routes in `worker/index.js` — read *Three feeds whose SHAPE is not ours to pin* first |
 | Change Corporate Announcements | Keep the exchange-wide base in `worker/bse-ann.mjs` + `scripts/scrape-bse-announcements.mjs`. Additional user-requested company/date lookups use `worker/muns.mjs` + `js/data/announcements-extra.js`; they merge with the table and never replace the base capture or claim universe coverage. |
 | Change a category, its rules or the master list | `ANNOUNCEMENT_CATEGORY_LIST` in `public/js/data/announcement-categories.js`, then bump `CATEGORY_VERSION` so the next index build re-tags — read `docs/ANNOUNCEMENT-RELEVANCE.md` first; tags are topics, never directions |
-| Change how relevance orders an item within its day | `relevanceReading()` / `rankKey()` in `public/js/data/relevance.js` (bump `RELEVANCE_VERSION`), and `rankedKey()` / `RECENT_RELEVANCE_DAYS` in `public/js/data/surface-relevance.js` for News and All Alerts — never read a large list inside one sort |
+| Change how relevance orders an item within its day | `relevanceReading()` / `rankKey()` in `public/js/data/relevance.js` (bump `RELEVANCE_VERSION`), and `rankedKey()` / `RECENT_RELEVANCE_DAYS` in `public/js/data/surface-relevance.js` for All Alerts — never read a large list inside one sort. News uses `newsPublicationKey()` in `news-window.js` for chronological ordering. |
 | Change the Corporate Announcements index, its query or its routes | `public/js/data/announcement-index-shared.js` (format + query, imported by runner, Worker and browser), `announcement-index-build.js`, `scripts/build-announcement-index.mjs`, `worker/announcement-index-store.mjs` / `announcement-index.mjs`, `.github/workflows/announcement-index-refresh.yml`; the browser fallback is `announcement-query-local.js` |
 | Change "N related filings" | `stitchEvents()` in `public/js/data/event-stitching.js` (bump `STITCH_VERSION`) |
 | Change the Important / Not important feedback or the shared model | `public/js/data/relevance-feedback-shared.js` (votes, keys, model), `relevance-feedback.js` (browser + outbox), `ui/relevance-feedback-ui.js`, `worker/relevance-feedback-store.mjs` / `relevance-feedback.mjs` |
@@ -4613,11 +4617,12 @@ object over the `announcement-index` Actions artifact (built from the committed 
 Categories, Market cap and "N related filings" (`event-stitching.js`), filters by category and market
 cap, and opens the on-request **AI Read** popup (`announcement-read:v1`, exchange documents only,
 stored per document, daily budget) when a filing is clicked. Where the index cannot be read, the same
-question is answered in the browser by the same code, in slices. News and All Alerts order only the
+question is answered in the browser by the same code, in slices. All Alerts orders only the
 last seven IST days by relevance, read within a 120 ms budget per sort and the rest in slices
 (`surface-relevance.js`): a large retained history must never be read inside one task. Important /
 Not important (+ optional Why?) on all three surfaces trains ONE shared `relevance-feedback:v1`
-preference; News keeps its click-to-article behaviour and shows vote controls directly below each story. Do not
+preference; News keeps its click-to-article behaviour and shows vote controls directly below each story.
+Do not reorder News by those readings: its default is newest publication first in every scope. Do not
 add per-example rules: a new case is a category rule or a reading weight. Verify with
 `verify-relevance.mjs`, `verify-announcements-ui.mjs` and `verify-announcements-runtime.mjs`.
 

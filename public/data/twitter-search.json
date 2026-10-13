@@ -2211,7 +2211,7 @@
       "error": "search-unavailable"
     },
     "isin:INE488A01050|Chemplast Sanmar": {
-      "lastAttemptAt": "2026-10-07T16:07:57+00:00",
+      "lastAttemptAt": "2026-10-13T03:00:34+00:00",
       "error": "search-unavailable"
     },
     "isin:INE488A01050|CHEMPLASTS": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T02:09:45.984959+00:00"
+    "checkedAt": "2026-10-13T03:00:34.786574+00:00"
   }
 }

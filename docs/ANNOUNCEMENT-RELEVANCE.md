@@ -13,7 +13,8 @@ rule below is generic — no company, filing or headline is special-cased.
 | Event stitching | `public/js/data/event-stitching.js` | runner (index), browser fallback |
 | Shared feedback | `public/js/data/relevance-feedback-shared.js`, `relevance-feedback.js`, `worker/relevance-feedback*.mjs` | Worker object + browser |
 | Announcement index | `public/js/data/announcement-index-*.js`, `scripts/build-announcement-index.mjs`, `worker/announcement-index*.mjs` | runner → Actions artifact → Worker object |
-| News / All Alerts ordering | `public/js/data/surface-relevance.js` | browser |
+| All Alerts ordering | `public/js/data/surface-relevance.js` | browser |
+| News publication ordering | `newsPublicationKey()` in `public/js/data/news-window.js` | browser |
 | AI Read | `public/js/data/announcement-read-shared.js`, `worker/announcement-read*.mjs`, `public/js/ui/announcement-read.js` | Worker object (on click) |
 
 ## 1. Categories — one editable master list
@@ -68,7 +69,11 @@ undated last** under a plain descending comparison.
 
 - **Corporate Announcements** — every day, server-side (the index stores each filing's base reading;
   the query adds the current shared adjustment).
-- **News and All Alerts** — in the browser (`surface-relevance.js`), within each of the last
+- **News** — newest source publication day and instant first in every scope (13 October 2026).
+  Date-only stories follow known clocks on their day; undated stories retain their source order.
+  Category readings and Important / Not important feedback remain available without changing
+  chronological order. Capture time never supplies a missing publication date.
+- **All Alerts** — in the browser (`surface-relevance.js`), within each of the last
   `RECENT_RELEVANCE_DAYS` (7) IST days, today included; an older day keeps its plain time order.
   A sort makes at most 120 ms of new readings per synchronous run; the rest are made in slices behind
   the paint and `onRelevanceChange` fires once when they settle, so the table re-sorts in place. A
