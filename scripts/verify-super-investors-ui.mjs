@@ -135,6 +135,12 @@ try {
   await page.locator('[data-changes-activity] [data-export]').click();
   await page.waitForFunction(() => window.exportedChanges.length > 0);
   assert.match(await page.evaluate(() => JSON.stringify(window.exportedChanges)), /Associated entity.*example\.test\/official-fund/, 'exports retain the relationship distinction and primary evidence');
+  await page.clock.setSystemTime(new Date('2026-12-07T00:00:00Z'));
+  await page.evaluate(() => paint('universe'));
+  await page.locator('[data-changes-period]').selectOption('itd');
+  assert.match(await page.locator('[data-changes-identity-warning]').innerText(), /1 entity relationships await renewed verification/);
+  assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'expired entity attribution is withheld while exact-name history stays available');
+  await page.clock.setSystemTime(new Date(at));
   await page.evaluate(() => paint('portfolio'));
   await page.locator('[data-changes-period]').selectOption('6m');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-holdings-total'), '1', 'only the scoped confirmed change appears');

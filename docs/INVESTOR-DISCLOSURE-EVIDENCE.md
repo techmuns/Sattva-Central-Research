@@ -29,7 +29,8 @@ Opportunities Fund (its March 2026 SEC prospectus). The latter has one explicitl
 `Intl` exchange-name abbreviation; no substring matching is introduced. The reported legal
 entity, relationship, evidence URL and review date travel with each matched deal and export.
 Fund/subsidiary deals are labelled associated activity, not personal trades or group allocation.
-These reviews expire after 90 days; the existing coverage audit exposes overdue reviews.
+These reviews expire after 90 days; Changes and the existing coverage audit expose overdue
+reviews. Underlying reports remain in Insider Trades when entity attribution is withheld.
 All other associated entities remain unverified. This is not an exhaustive relationship map.
 
 Finology books retain their existing daily capture and automatic reader revalidation. Failed

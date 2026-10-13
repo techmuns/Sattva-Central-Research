@@ -13,6 +13,7 @@ import { scopeMatcher, scopeLabel } from '../data/scope.js';
 import { buildHash } from '../core/router.js';
 import { exportRows } from '../ui/export.js';
 import { withVerifiedEntities } from '../data/holdings-integrity.js';
+import { currentRelation } from '../data/public-holdings-shared.js';
 import { loadEvidence, evidence } from '../data/holding-evidence.js';
 import { PERIODS, periodRange, inPeriod, matchedDeals, investorHoldings, managerTrades } from '../data/investor-changes.js';
 
@@ -45,6 +46,8 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
     const list = investors.list();
     const mine = state.audience === 'my-managers';
     const directoryPending = !mine && !investors.isLoaded();
+    const trackedIds = new Set(list.map(i => i.slug));
+    const unverifiedRelations = mine ? [] : evidence().relations.filter(r => r.investorSlugs?.some(id => trackedIds.has(id)) && !currentRelation(r, new Date().toISOString()));
     const people = withVerifiedEntities(mine ? managers.all().map(m => ({ id: m.id, name: m.name })) : list.map((i) => ({ id: i.slug, name: i.name })), evidence(), mine ? 'manager' : 'investor');
     const companyScope = scopeMatcher(ctx.scope), universe = scopeMatcher('universe');
     const allows = (r) => mine ? ctx.scope !== 'watchlist' || r.ticker && watchlist.has(r.ticker) : r.ticker ? companyScope.has(r.ticker, r.raw || r) : !includeHolding || includeHolding(r.company, r);
@@ -116,6 +119,7 @@ export function renderChanges(ctx, { view = {}, onView = () => {}, openInvestor,
         <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 class="font-display text-lg font-bold text-slate-900">${mine ? 'Your managers · ledger events & reported deals' : 'Tracked investors · reported trades'}</h2><span class="text-xs text-slate-500">${directoryPending ? 'Investor directory is loading…' : mine && !managers.meta() ? 'Manager records are not yet available' : `${buys} buys · ${sells} sells · ${new Set(events.map(r => r.personId)).size} ${mine ? 'managers' : 'investors'}`}</span></div>
         <p class="mb-3 text-xs text-slate-500">${range.from ? `${esc(date(range.from))} – ${esc(date(range.to))}` : 'ITD · all available captured history'} · ${mine ? 'Family ledger events and matched public bulk/block deals' : 'matched public bulk/block deals'}. Click a row for evidence.</p>
         ${!mine ? `<p class="mb-3 text-xs text-slate-500" data-changes-context>${directoryPending ? 'Loading tracked investors' : `${list.length} tracked investors`} · Company scope: ${esc(scopeLabel(ctx.scope))}. All Investors includes the tracked directory; the company scope still applies.</p>` : ''}
+        ${unverifiedRelations.length ? `<p class="mb-3 text-xs text-slate-500" data-changes-identity-warning>${unverifiedRelations.length} entity relationships await renewed verification. Their reports remain in Insider Trades and are excluded from these attributed totals.</p>` : ''}
         <p class="mb-3 text-xs text-slate-500" data-exchange-status>${esc(exchanges?.summary || (ready ? 'Exchange coverage has not been verified.' : 'NSE / BSE reports are loading.'))}</p>
         ${!mine && ready && !directoryPending && !events.length ? `<div class="mb-3 rounded-2xl bg-white p-4 ring-1 ring-slate-100" data-changes-empty-context>
           <p class="text-sm text-slate-700">No matched reported trades in the available records for ${esc(scopeLabel(ctx.scope))} companies in ${esc(PERIODS.find(p => p.id === state.period).label)}. This does not establish that investors made no trades.</p>
