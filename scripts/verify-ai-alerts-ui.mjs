@@ -457,8 +457,14 @@ try {
   await page.evaluate(() => { window.scrollReader = window.firstPageCards[4]; window.scrollReader.scrollIntoView({ block: 'start' }); });
   await page.clock.runFor(100);
   assert(await page.evaluate(() => document.querySelector(`[data-ai-key="${window.scrollReader.dataset.aiKey}"]`) === window.scrollReader), 'scrolling preserves the card being read');
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await page.clock.runFor(100); // This fixture pauses time near midnight; scrolling paints on frames.
+  // Time is paused near midnight. Continue the end gesture across asynchronous timeline
+  // preparation/height measurements instead of freezing after a single estimated jump.
+  for (let frame = 0; frame < 16; frame++) {
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.clock.runFor(16);
+    await page.waitForTimeout(20);
+    if (await card('OLD').isVisible()) break;
+  }
   await card('OLD').waitFor();
   assert.equal(await card('OLD').count(), 1, 'day-14 evidence remains available before midnight');
   assert.match(await page.locator('[data-section-head]').innerText(), /last 14 days/);
