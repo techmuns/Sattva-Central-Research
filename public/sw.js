@@ -144,7 +144,7 @@ self.addEventListener('install', (event) => {
   // complete successfully before this version can replace the active worker.
   event.waitUntil(self.skipWaiting());
   event.waitUntil((async () => {
-    const cache = await caches.open(tableLayoutCacheKey());
+    const cache = await caches.open(sharedWorkspaceCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -158,7 +158,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== tableLayoutCacheKey()).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== sharedWorkspaceCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -227,7 +227,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(tableLayoutCacheKey());
+    const cache = await caches.open(sharedWorkspaceCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
@@ -260,6 +260,10 @@ function dashboardCacheKey() {
 }
 
 // Compose column presentation with other releases without changing their version markers.
+function sharedWorkspaceCacheKey() {
+  return `${tableLayoutCacheKey()}-shared-workspace-saved-tabs-v1`;
+}
+
 function tableLayoutCacheKey() {
   return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1`;
 }

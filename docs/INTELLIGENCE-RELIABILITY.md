@@ -433,6 +433,16 @@ stay bounded. Verify with `verify-exchange-universe.mjs` and `verify-exchange-un
 
 ## Performance vs. Data Integrity
 
+Shared saved screens (13 October 2026) store reading definitions rather than copied datasets.
+Reopening a named screen applies its source table, scope and filters to the current retained data;
+normal source revalidation, partial/failed states, pagination and exports remain authoritative.
+Relative date windows advance in IST and cannot become frozen snapshots. Workspace confirmation
+does not establish source freshness or completeness. Layout changes cannot alter collector budgets,
+cadence, enrollment or history. Shared-state failures retain the last verified definitions and
+pending device edits; version conflicts cannot silently overwrite another user's definition.
+Verify across separate browser storage, failed reads, incoming source rows and a controlled warm
+service-worker upgrade before release. Production validation of workspace features remains read-only.
+
 **DATA INTEGRITY IS A RELEASE-BLOCKING REQUIREMENT.**
 
 Performance improvements must preserve incoming data, historical records, and existing freshness guarantees.

@@ -90,6 +90,13 @@ let failure = null;
 // The reader's own filters. Module state, not node state: every repaint rebuilds the list, so a
 // value held on the input would be discarded the moment a capture landed.
 let listView = { q: '', section: 'all', publisher: 'all', topic: 'all', source: 'all', period: DEFAULT_NEWS_PERIOD };
+export function getSavedView() { return Object.fromEntries(Object.entries(listView).map(([key, value]) => [`news${key[0].toUpperCase()}${key.slice(1)}`, value])); }
+export function applySavedView(extras = {}) {
+  for (const key of Object.keys(listView)) {
+    const saved = extras[`news${key[0].toUpperCase()}${key.slice(1)}`];
+    if (typeof saved === 'string') listView[key] = saved;
+  }
+}
 let fillStop = null;
 let filterFrame = 0;
 let filterTask = 0;

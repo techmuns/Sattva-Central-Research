@@ -31,6 +31,7 @@ import * as scopeLists from '../core/scope-lists.js';
 import * as refreshRegistry from '../core/refresh.js';
 import { portfolioNewsEntities, newsRowEntityKey } from '../data/company-news-identity.js';
 import { newsViewStatus } from '../core/news-view-status.js';
+import { seedTableReading } from '../core/view-reading.js';
 
 const REASONS = {
   'no-route': {
@@ -134,7 +135,8 @@ export function makeFilingsTab(cfg) {
     renderedRows = null;
     const seeded = companySeededView(ctx, routeCompany, view);
     routeCompany = seeded.company;
-    view = cfg.prepareView?.(ctx, seeded.view) ?? seeded.view;
+    const restored = seedTableReading({ initialView: seeded.view, exportName: `sattva-${cfg.id}` }, cfg.filters?.([]) || []) || seeded.view;
+    view = cfg.prepareView?.(ctx, restored) ?? restored;
     cfg.prepareReading?.(view);
 
     // SUBSCRIBE BEFORE THE EARLY RETURN, not after it.

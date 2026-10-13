@@ -144,7 +144,7 @@ try {
   await fresh.evaluate(() => localStorage.setItem('dashboard:tab-order:v1:research', '{broken'));
   await fresh.reload(); await fresh.waitForFunction(() => window.ready); assert.deepEqual(await order(fresh), ids);
   // Exercise the actual shell through grouped routes and scope changes, with source reads denied.
-  await fresh.evaluate(order => localStorage.setItem('dashboard:tab-order:v1:research', JSON.stringify(order)), ['news-section', ...ids.filter(id => id !== 'news-section')]);
+  await fresh.evaluate(order => localStorage.setItem('sattva:shared-workspace:v1', JSON.stringify({version:1,revision:1,updatedAt:null,tabs:[],order})), ['news-section', ...ids.filter(id => id !== 'news-section')]);
   await clean.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 200, body: '', contentType: 'text/javascript' }));
   await fresh.goto(`${origin}/#/research/ask-research?scope=universe`);
   await fresh.locator('[data-active-tab="ask-research"]').waitFor();

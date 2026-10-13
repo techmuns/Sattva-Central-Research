@@ -10,6 +10,8 @@ import { directoryTable } from './ipo-directory.js';
 
 export const meta = TAB_META['ipos'];
 let dispose = null;
+let readView = () => ({});
+export function getSavedView() { return readView(); }
 const when = (day) => day ? new Date(`${day}T00:00:00+05:30`).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : 'Date not supplied';
 const stamp = (at) => at ? new Date(at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) + ' IST' : 'not yet checked';
 export function render(ctx) {
@@ -18,6 +20,10 @@ export function render(ctx) {
   // Ordinary visits open on the recent week. Explicit company links from research must still
   // reveal older evidence, rather than silently hiding it behind the default reading window.
   let history = ctx.params?.company ? 'all' : '7', busy = !feed.meta().loaded, mode = 'filings';
+  const extras = ctx.savedView?.reading.extras || {};
+  if (['all','7','30','90','365','undated'].includes(extras.ipoHistory)) history = extras.ipoHistory;
+  if (extras.ipoMode === 'directory') mode = 'directory';
+  readView = () => ({ ipoHistory: history, ipoMode: mode });
   const filtered = () => {
     if (history === 'all') return feed.rows();
     if (history === 'undated') return feed.rows().filter((r) => !ipoDisplayDay(r));

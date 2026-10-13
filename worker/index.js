@@ -88,6 +88,7 @@ import { handleAnnouncementIndex } from './announcement-index.mjs';
 import { handleAnnouncementRead } from './announcement-read.mjs';
 import { handleRelevanceFeedback } from './relevance-feedback.mjs';
 import { handleWatchlist } from './watchlist.mjs';
+import { handleWorkspace } from './workspace.mjs';
 import { handleNewsletter } from './newsletter.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
 import { readScreenerConcallCollector, readScreenerConcallCollection } from './screener-concalls-collector.mjs';
@@ -177,6 +178,7 @@ export default {
     if (url.pathname === '/api/announcement-read' || url.pathname === '/api/announcement-read/status') return handleAnnouncementRead(request, env);
     if (url.pathname.startsWith('/api/relevance/')) return handleRelevanceFeedback(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
+    if (url.pathname === '/api/workspace') return handleWorkspace(request, env);
     if (url.pathname === '/api/newsletter' || url.pathname.startsWith('/api/newsletter/')) return handleNewsletter(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
       return handleConcallSummaries(request, env);

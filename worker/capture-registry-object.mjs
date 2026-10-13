@@ -11,6 +11,7 @@ import { TelegramDelivery } from './telegram-delivery.mjs';
 import { ConcallSummaryStore } from './concall-summary-store.mjs';
 import { ConcallSummarySchedule } from './concall-summary-schedule.mjs';
 import { SharedWatchlistStore } from './watchlist-store.mjs';
+import { WorkspaceStore } from './workspace-store.mjs';
 import { BreakoutStore } from './breakout-store.mjs';
 import { BreakoutSchedule } from './breakout-schedule.mjs';
 import { BreakoutPrimary, PRIMARY_OBJECT, PRIMARY_TIMER } from './breakout-primary.mjs';
@@ -95,6 +96,9 @@ export class CaptureRegistry extends DurableObject {
   storyReviewComplete(key, token, result) { return this.alertStories.complete(key, token, result); }
   watchlistSnapshot() { return this.watchlist.watchlistSnapshot(); }
   watchlistApply(intents) { return this.watchlist.watchlistApply(intents); }
+  get workspaceStore() { return (this._workspaceStore ||= new WorkspaceStore(this.ctx.storage)); }
+  workspaceSnapshot() { return this.workspaceStore.snapshot(); }
+  workspaceApply(intent) { return this.workspaceStore.apply(intent); }
   request(source) { return this.schedule.request(source); }
   async breakoutArm() {
     await this.breakoutSchedule.arm();
