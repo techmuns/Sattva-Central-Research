@@ -147,7 +147,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   let searchTimer = null;
   let searchAbort = null;
   let offWatchlist = null;
-  let memberList = null, pollTimer = null, lastQuery = '';
+  let memberList = null, pollTimer = null, lastQuery = '', offDirectory = null;
   // Exchange rows are immutable and replaced on a changed capture. Search text belongs to the
   // row, not the keystroke; a WeakMap lets superseded directories disappear with their rows.
   const searchText = new WeakMap();
@@ -168,7 +168,10 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
       offWatchlist?.();
       memberList?.destroy();
       clearInterval(pollTimer);
+      offDirectory?.();
       document.removeEventListener('visibilitychange', resumeDirectory);
+      window.removeEventListener('focus', resumeDirectory);
+      window.removeEventListener('online', resumeDirectory);
       if (changed) onChanged?.();
     },
   });
@@ -336,28 +339,39 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
   async function refreshDirectory() {
     try {
       await listedCompanies.load();
-      if (!document.body.contains(root)) return;
-      base = listedCompanies.all();
-      loading.classList.add('hidden');
-      panel.classList.remove('hidden');
-      const entries = paintMembers();
-      paintStatus(); paintSearch({ entries });
+      showDirectory();
     } catch (err) {
+      if (!document.body.contains(root)) return;
       const status = root.querySelector('[data-universe-status]');
       if (status) status.textContent = `Could not recheck the company list: ${err.message}. Saved companies retained.`;
+      if (!listedCompanies.all().length) loading.innerHTML = `<span class="text-rose-600">Could not read this list: ${escapeHtml(err.message)}</span>`;
     }
+  }
+  function showDirectory() {
+    if (!document.body.contains(root) || !listedCompanies.all().length) return;
+    const unchanged = base === listedCompanies.all();
+    base = listedCompanies.all();
+    loading.classList.add('hidden');
+    panel.classList.remove('hidden');
+    if (!unchanged) paintSearch({ entries: paintMembers() });
+    paintStatus();
   }
   function resumeDirectory() { if (!document.hidden && scope === 'universe') void refreshDirectory(); }
 
   if (scope === 'universe') {
+    offDirectory = listedCompanies.onChange(showDirectory);
+    showDirectory(); // Warm reopen paints synchronously; freshness checks never hide saved names.
+    input.focus();
     pollTimer = setInterval(resumeDirectory, 90_000);
     document.addEventListener('visibilitychange', resumeDirectory);
+    window.addEventListener('focus', resumeDirectory);
+    window.addEventListener('online', resumeDirectory);
   }
 
   Promise.resolve(scope === 'universe' ? listedCompanies.load() : null)
     .then(() => {
       if (!document.body.contains(root)) return;
-      if (scope === 'universe') base = listedCompanies.all();
+      if (scope === 'universe') { showDirectory(); return; }
       loading.classList.add('hidden');
       panel.classList.remove('hidden');
       paintMembers();
