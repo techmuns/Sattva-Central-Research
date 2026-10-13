@@ -2327,7 +2327,7 @@
       "error": "search-unavailable"
     },
     "isin:INE040A01034|HDFCBANK": {
-      "lastAttemptAt": "2026-10-07T17:43:25+00:00",
+      "lastAttemptAt": "2026-10-13T09:37:17+00:00",
       "error": "search-unavailable"
     },
     "isin:INE391J01032|Jtl Industries": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T09:15:50.386095+00:00"
+    "checkedAt": "2026-10-13T09:37:17.132346+00:00"
   }
 }
