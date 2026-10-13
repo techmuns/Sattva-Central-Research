@@ -2199,7 +2199,7 @@
       "error": "search-unavailable"
     },
     "isin:INE0UIZ01018|BLACKBUCK": {
-      "lastAttemptAt": "2026-10-07T14:34:26+00:00",
+      "lastAttemptAt": "2026-10-13T01:24:21+00:00",
       "error": "search-unavailable"
     },
     "isin:INE120A01034|Carborundum Universal": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T00:51:12.837321+00:00"
+    "checkedAt": "2026-10-13T01:24:21.040327+00:00"
   }
 }
