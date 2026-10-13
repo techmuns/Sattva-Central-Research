@@ -100,8 +100,14 @@ try {
   assert.equal(await page.locator('[data-ai-card]').count(), 1);
   assert.match(await card('WARRANT').textContent(), /Preferential issue of warrants/);
   await page.locator('[data-ai-search]').fill('');
-  await page.locator('[data-ai-more]').click();
-  assert.equal(await page.locator('[data-ai-card]').count(), 12, 'OR selections include all matching companies beyond the first page');
+  assert.equal(await page.locator('[data-ai-more]').count(), 0);
+  const seen = new Set();
+  for (let step = 0; step < 20 && seen.size < 12; step++) {
+    for (const key of await page.locator('[data-ai-card]').evaluateAll(nodes => nodes.map(node => node.dataset.aiKey))) seen.add(key);
+    await page.evaluate(() => window.scrollBy(0, innerHeight * .75));
+    await page.waitForTimeout(50);
+  }
+  assert.equal(seen.size, 12, 'scrolling exposes every company matching either selected type');
   await page.reload(); await page.waitForSelector('[data-ai-remove-type="warrants"]');
   assert.equal(await page.locator('[data-ai-remove-type]').count(), 2, 'choices survive reload');
   await page.evaluate(() => window.arrive());
@@ -152,5 +158,5 @@ try {
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-ai-lead-link]')).color === 'rgb(241, 245, 249)');
   await page.screenshot({ path: '/tmp/sattva-ai-alert-event-filters-dark.png' });
   assert.deepEqual(errors, []);
-  console.log('PASS: warm-session upgrade, matching cards, OR filters, search, counts/pagination, saved choices, arrivals, routine recovery, archive, keyboard and 320–1280px layouts.');
+  console.log('PASS: warm-session upgrade, matching cards, OR filters, search, counts/infinite scrolling, saved choices, arrivals, routine recovery, archive, keyboard and 320–1280px layouts.');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

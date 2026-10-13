@@ -3,6 +3,7 @@ import { TAB_META } from './catalog.js';
 import * as generalAlerts from '../data/daily-alerts.js';
 import { createTimelineHistory, timelineKey } from '../data/alert-timeline.js';
 import { mountAlertTimeline } from '../ui/alert-timeline.js';
+import { mountAlertCardGrid } from '../ui/alert-card-grid.js';
 import { AI_EVENT_TYPES, aiEventTypes, matchesAIEvent, loadAIEventFilters, saveAIEventFilters } from '../data/ai-alert-types.js';
 import { developmentOfRow, developmentSource, publisherOf, venuesOf, storyKindOf, KIND_LABEL } from '../data/alert-developments.js';
 import { alertReadingHtml, watchAlertReadings } from '../ui/alert-reading.js';
@@ -40,7 +41,6 @@ export { relativeAge } from '../ui/ai-alert-utils.js';
 export const meta = TAB_META['ai-alerts'];
 
 const REFRESH_ID = 'ai-alerts';
-const PAGE_SIZE = 8;
 const RECHECK_MS = 90_000;
 const SORT_KEY = 'sattva:ai-alerts:sort:v1';
 const SORTS = { newest: 'Newest first', holdings: 'Largest holdings', priority: 'Highest priority' };
@@ -59,7 +59,8 @@ let filter = 'all';
 let eventFilters = loadAIEventFilters();
 let eventViews = new WeakMap();
 let displayedCards = [];
-let visibleLimit = PAGE_SIZE;
+let cardGrid = null;
+let resetCardScroll = false;
 let query = '';
 let sizeController = null;
 let sizesLoading = false;
@@ -229,7 +230,7 @@ export function render(ctx) {
 
   if (report && report.scope !== ctx.scope) {
     report = null;
-    visibleLimit = PAGE_SIZE;
+    resetCardScroll = true;
   }
 
   paint(ctx);
@@ -256,6 +257,7 @@ export function render(ctx) {
 }
 
 export function destroy() {
+  cardGrid?.destroy(); cardGrid = null;
   clearTimelines({ history: true });
   alerts.clearRankingCache();
   offBookmarks?.(); offBookmarks = null;
@@ -390,7 +392,7 @@ async function recollect(ctx, { refresh: forceRefresh = false, load = true, reus
 
 function paint(ctx) {
   if (!ctx || ctx !== ctxRef) return;
-  const anchor = [...ctx.root.querySelectorAll('[data-ai-card]')].find(node => {
+  const anchor = resetCardScroll ? null : [...ctx.root.querySelectorAll('[data-ai-card]')].find(node => {
     const rect = node.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight;
   });
   const anchorTop = anchor?.getBoundingClientRect().top;
@@ -398,7 +400,6 @@ function paint(ctx) {
   const matches = candidates.map(eventView).filter(card => card && matchesSearch(card, query));
   displayedCards = matches;
   const cards = sortAlertCards(filteredCards(matches), effectiveSort());
-  const shown = cards.slice(0, visibleLimit);
   // Keep the input node mounted while typing and while independent feeds deliver partials.
   // Replacing the whole root loses the caret, keyboard focus and IME composition.
   if (!ctx.root.querySelector('[data-ai-layout]')) {
@@ -411,7 +412,7 @@ function paint(ctx) {
     input.value = query;
     input.addEventListener('input', () => {
       query = input.value;
-      visibleLimit = PAGE_SIZE;
+      resetCardScroll = true;
       paint(ctxRef);
     });
     ctx.root.querySelector('[data-ai-clear]')?.addEventListener('click', clearSearch);
@@ -426,13 +427,27 @@ function paint(ctx) {
     ['[data-ai-priorities]', toolbar.priorities],
     ['[data-ai-view-controls]', toolbar.view],
     ['[data-ai-filter-summary]', report ? eventFilterSummary() : ''],
-    ['[data-ai-results]', report ? cardsPanel(ctx, shown, cards.length) : loadError ? quietFallbackPanel() : loadingPanel()],
   ]) {
     const node = ctx.root.querySelector(selector);
     reconcileMarkup(node, markup);
   }
-  syncTimelines(ctx, shown);
-  wire(ctx, cards.length);
+  const results = ctx.root.querySelector('[data-ai-results]');
+  if (report && cards.length) {
+    if (!cardGrid || !results.contains(cardGrid.element)) {
+      cardGrid?.destroy();
+      reconcileMarkup(results, '<section data-ai-cards role="feed" aria-label="AI Alerts companies"></section>');
+      cardGrid = mountAlertCardGrid({ element: results.querySelector('[data-ai-cards]'),
+        renderCard: card => cardMarkup(card, ctxRef.scope, currentDay(), filter === 'archived'),
+        onWindow: shown => { if (ctxRef) { syncTimelines(ctxRef, shown); wire(ctxRef); } } });
+    }
+    results.querySelector('[data-ai-cards]').setAttribute('aria-busy', String(collecting || awaitingBook !== null));
+    cardGrid.update(cards, { resetScroll: resetCardScroll });
+  } else {
+    cardGrid?.destroy(); cardGrid = null; clearTimelines();
+    reconcileMarkup(results, report ? emptyPanel(ctx) : loadError ? quietFallbackPanel() : loadingPanel());
+  }
+  resetCardScroll = false;
+  wire(ctx);
   if (anchor?.isConnected && anchorTop != null) {
     const delta = anchor.getBoundingClientRect().top - anchorTop;
     if (Math.abs(delta) > 1) window.scrollBy(0, delta);
@@ -472,7 +487,7 @@ function searchMarkup() {
 
 function clearSearch() {
   query = '';
-  visibleLimit = PAGE_SIZE;
+  resetCardScroll = true;
   const input = ctxRef?.root.querySelector('[data-ai-search]');
   if (input) input.value = '';
   if (ctxRef) paint(ctxRef);
@@ -608,15 +623,6 @@ function controls(cards, visibleCount) {
         ${filter === 'archived' && archived ? `<button type="button" data-ai-unmute-all class="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200">Restore all</button>` : ''}
         <span class="ai-alert-count" role="status" aria-live="polite" aria-atomic="true"><strong class="font-semibold text-slate-700">${escapeHtml(formatNumber(visibleCount))}</strong> ${visibleCount === 1 ? 'company' : 'companies'}${query.trim() ? ' matching' : ''}</span>`,
   };
-}
-
-function cardsPanel(ctx, cards, total) {
-  if (!cards.length) return emptyPanel(ctx, total);
-  return `
-    <section class="grid gap-4 lg:grid-cols-2" data-ai-cards aria-busy="${collecting || awaitingBook !== null}">
-      ${cards.map((card) => cardMarkup(card, ctx.scope, currentDay(), filter === 'archived')).join('')}
-    </section>
-    ${total > cards.length ? `<div class="mt-5 text-center"><button type="button" data-ai-more class="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm ring-1 ring-slate-200 transition hover:ring-indigo-300">Show ${escapeHtml(formatNumber(Math.min(PAGE_SIZE, total - cards.length)))} more</button></div>` : ''}`;
 }
 
 /**
@@ -1026,7 +1032,7 @@ function filteredCards(cards) {
   return byPriority.filter((card) => !archived(card));
 }
 
-function wire(ctx, total) {
+function wire(ctx) {
   if (bookmarkRoot !== ctx.root) {
     offBookmarks?.();
     bookmarkRoot = ctx.root;
@@ -1059,7 +1065,7 @@ function wire(ctx, total) {
     if (!Object.hasOwn(SORTS, sort.value)) return;
     sortOrder = sort.value;
     try { localStorage.setItem(SORT_KEY, sortOrder); } catch { /* Keep the session preference. */ }
-    visibleLimit = PAGE_SIZE;
+    resetCardScroll = true;
     paint(ctxRef);
     ctxRef?.root.querySelector('[data-ai-sort]')?.focus({ preventScroll: true });
   };
@@ -1101,12 +1107,7 @@ function wire(ctx, total) {
     const button = event.target.closest('[data-ai-filter]');
     if (!button) return;
     filter = button.dataset.aiFilter;
-    visibleLimit = PAGE_SIZE;
-    paint(ctxRef);
-  });
-
-  click('[data-ai-more]', () => {
-    visibleLimit = Math.min(total, visibleLimit + PAGE_SIZE);
+    resetCardScroll = true;
     paint(ctxRef);
   });
 
@@ -1234,7 +1235,7 @@ function changeEventFilters(ctx) {
   clearTimelines();
   saveAIEventFilters(eventFilters);
   eventViews = new WeakMap();
-  visibleLimit = PAGE_SIZE;
+  resetCardScroll = true;
   paint(ctx);
 }
 

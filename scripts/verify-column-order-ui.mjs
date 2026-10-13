@@ -46,7 +46,10 @@ try{
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  const headers=()=>page.locator('#fixture th').allTextContents();
  const tidy=list=>list.map(x=>x.replace(/[▴▾▲▼↕]/g,'').trim());
- const settle=()=>page.evaluate(async()=>{await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);});
+ const settle=()=>page.evaluate(async()=>{
+  await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+  await Promise.all([...document.querySelectorAll('th,td')].flatMap(cell=>cell.getAnimations().map(animation=>animation.finished.catch(()=>{}))));
+ });
  await page.goto(origin);await page.waitForSelector('#fixture [data-column-reorder]');await settle();
  const baseline=tidy(await headers());
  const rowsBefore=await page.locator('#fixture [data-row-key]').count();
@@ -62,7 +65,19 @@ try{
  await page.mouse.move(dest.x+dest.width-3,dest.y+dest.height/2,{steps:8});await settle();
  assert.deepEqual(tidy(await headers()),baseline,'pointer movement never rebuilds/reorders body or headings');
  assert.equal(await page.locator('#fixture [data-row-key]').count(),rowsBefore);
+ const lift=page.locator('[data-column-lift]');
+ assert(await lift.isVisible(),'the whole visible column lifts above the table');
+ assert.match(await lift.innerText(),/Net monthly shares/i);
+ assert(await lift.locator('td').count()>1 && await lift.locator('td').count()<80,'the preview contains visible cells only');
+ assert.equal(await lift.getAttribute('aria-hidden'),'true','the visual copy is excluded from accessibility');
+ assert.equal(await lift.locator('[data-sort],[data-watch],[data-mf-fund-sort]').count(),0,'the preview exposes no duplicate application controls');
+ assert(await page.locator('[data-column-insertion]').isVisible());
+ assert((await page.locator('[data-column-insertion]').boundingBox()).height>200,'insertion marker spans the visible column');
+ mkdirSync('artifacts/column-order',{recursive:true});
+ await page.screenshot({path:'artifacts/column-order/drag.png'});
  await page.mouse.up();await settle();
+ await page.waitForFunction(()=>!document.querySelector('[data-column-lift]'));
+ assert.equal(await page.locator('[data-column-lifted],[data-column-insertion]').count(),0,'drop restores the real cells and removes its marker');
  const preferred=['Company','Month','MF shares held','Net monthly shares','Added / reduced'];
  assert.deepEqual(tidy(await headers()),preferred);
  assert.equal(await page.evaluate(()=>table.view.sort),null,'drag release does not sort');
@@ -106,6 +121,14 @@ try{
  await grouped.locator('thead tr').nth(1).locator('th').nth(2).focus();await page.keyboard.press('Alt+ArrowRight');await settle();
  assert.deepEqual(await grouped.locator('tbody tr').first().locator('td').allTextContents(),['Fund','J1','J2','A2','A1']);
  assert.equal(await grouped.locator('tbody tr').last().locator('td').getAttribute('colspan'),'5');
+ const groupBox=await grouped.locator('th').filter({hasText:'August'}).boundingBox();
+ await page.mouse.move(groupBox.x+10,groupBox.y+10);await page.mouse.down();
+ await page.mouse.move(groupBox.x+70,groupBox.y+10);await settle();
+ assert.match(await page.locator('[data-column-lift]').innerText(),/August/);
+ assert.match(await page.locator('[data-column-lift]').innerText(),/A1/);
+ assert.match(await page.locator('[data-column-lift]').innerText(),/A2/);
+ await page.keyboard.press('Escape');await page.mouse.up();
+ assert.equal(await page.locator('[data-column-lift],[data-column-lifted]').count(),0,'cancelling a grouped lift cleans up every preview cell');
  await page.evaluate(()=>custom());await settle();assert.deepEqual(await grouped.locator('tbody tr').first().locator('td').allTextContents(),['Fund','J1','J2','A2','A1']);
  // A source-document table keeps both of its original data cells.
  assert.equal(await page.locator('[data-column-layout="document"] tbody td').count(),2);
@@ -115,6 +138,12 @@ try{
  await page.mouse.move(box.x+10,box.y+10);await page.mouse.down();await page.mouse.move(box.x+80,box.y+10);await page.keyboard.press('Escape');await page.mouse.up();await settle();
  assert.deepEqual(tidy(await headers()),preferred);assert.equal(await page.locator('[data-column-dragging]').count(),0);
  await page.locator('#fixture th').first().focus();await page.keyboard.press('Alt+Home');await settle();assert.deepEqual(tidy(await headers()),baseline,'reset restores original order');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.locator('#fixture th').first().focus();await page.keyboard.press('Alt+ArrowRight');await settle();
+ assert.deepEqual(tidy(await headers()),['Month','Company',...baseline.slice(2)],'reduced motion retains keyboard reordering');
+ assert.equal(await page.evaluate(()=>document.querySelector('#fixture th').getAnimations().length),0,'reduced motion skips the settle animation');
+ await page.locator('#fixture th').first().focus();await page.keyboard.press('Alt+Home');await settle();
+ await page.emulateMedia({reducedMotion:'no-preference'});
  // Storage errors must not break the table or promise durable persistence.
  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Quota','QuotaExceededError');};});
  await page.locator('#fixture th').first().focus();await page.keyboard.press('Alt+ArrowRight');await settle();

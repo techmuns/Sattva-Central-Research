@@ -70,12 +70,17 @@ spans the full 1400px on every tab.
 Only Breakouts and Super Investors have sub-views; every other tab hides the picker entirely.
 
 Corporate Announcements has an **Announcement period (IST)** selector: Today, Last 3 days,
-Last 7 days, This month and All time (the default). Recent windows include today and exclude
+Last 7 days, This month and All time (Last 3 days is the default). Recent windows include today and exclude
 undated or invalid publication dates; All time includes every retained record. The selector
 combines with company search and scope and narrows counts and exports. Source refreshes preserve
 the choice; the existing automatic poll reapplies relative windows after midnight in IST even
 when the source rows are unchanged. Collection and historical retention are independent of this
 display filter, and All time does not claim an exhaustive exchange archive.
+
+Corporate Announcements leads with Company in bold and ticker/scrip code below it, followed
+by Subject, Date, Categories, Market cap and Link. Link names the exchange (for example, NSE ↗).
+Merged filings keep each exchange's own document link. Subjects, bookmarks, watchlist actions
+and related filings retain their existing behavior.
 
 **Ask Research is first, and first is the default.** The shell falls back to `ws.tabs[0]` for an
 unknown or absent tab, so the order of the `WORKSPACES` array *is* the landing page — there is no

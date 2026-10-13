@@ -50,7 +50,7 @@ function releaseCacheKey() {
 
 // Compose this UI revision without editing another release's version marker.
 function appReleaseCacheKey() {
-  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-single-ipo-filing-link-v1`;
+  return `${releaseCacheKey()}-compact-ai-status-v2-compact-ai-toolbar-v2-insider-capture-recovery-v2-hide-screener-source-buttons-v1-universe-saved-first-v1-source-cache-recovery-v2-single-ipo-filing-link-v1`;
 }
 
 async function cacheOne(cache, input, init = {}, timeoutMs = 8000) {
@@ -144,7 +144,7 @@ self.addEventListener('install', (event) => {
   // complete successfully before this version can replace the active worker.
   event.waitUntil(self.skipWaiting());
   event.waitUntil((async () => {
-    const cache = await caches.open(mutualFundsCacheKey());
+    const cache = await caches.open(tableLayoutCacheKey());
     // A new version activates only when its whole required shell is complete;
     // otherwise the previous worker/cache remains the safe fallback.
     await Promise.all(CORE.map((asset) => cacheRequired(cache, asset)));
@@ -158,7 +158,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== mutualFundsCacheKey()).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== tableLayoutCacheKey()).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -227,7 +227,7 @@ self.addEventListener('fetch', (event) => {
   if (!cacheable(request, url)) return;
 
   event.respondWith((async () => {
-    const cache = await caches.open(mutualFundsCacheKey());
+    const cache = await caches.open(tableLayoutCacheKey());
     const key = cacheKey(request, url);
     // Explicit data revalidation must reach the server in THIS request. Returning
     // the held body while updating it behind the scenes made Refresh one capture
@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v11`;
+  return `${appReleaseCacheKey()}-all-alerts-clean-header-v13`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.
@@ -257,4 +257,9 @@ function mutualFundsCacheKey() {
 
 function dashboardCacheKey() {
   return `${currentCacheKey()}-clean-announcements-momentum-v5-insider-transaction-filter-v1`;
+}
+
+// Compose column presentation with other releases without changing their version markers.
+function tableLayoutCacheKey() {
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3`;
 }

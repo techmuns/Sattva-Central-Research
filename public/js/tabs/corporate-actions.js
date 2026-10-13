@@ -79,7 +79,11 @@ const tab = makeFilingsTab({
   noun: 'actions',
   nameLabel: 'Purpose',
   nameMaxPx: 560,
-  rowName: (row) => row.purpose,
+  // Screener-only purposes are our generated labels. Show their terms once in Terms; retain
+  // every original purpose in the model/search/export, and keep NSE's wording exactly as filed.
+  rowName: (row) => row.purposeSource === 'Derived from Screener fields' && screenerActionDetails(row.screener)
+    ? ({ split: 'Stock split', rights: 'Rights issue', buyback: 'Buyback', dividend: 'Dividend', bonus: 'Bonus' }[row.actionType] || row.purpose)
+    : row.purpose,
   rowSub: (row) => [row.company, row.ticker, row.series].filter(Boolean).join(' · '),
   searchable: (row) => `${row.purpose} ${row.company} ${row.ticker || ''} ${row.isin || ''} ${LABELS[row.actionType] || ''} ${screenerActionDetails(row.screener)}`,
   keyFor: (row) => row.id,

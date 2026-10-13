@@ -145,7 +145,13 @@ try {
   assert.equal(await page.evaluate(() => window.stream.rows().filter(r => r.url === 'https://example.test/nse.pdf').length), 1);
   await fillSearch('cross-exchange');
   assert.equal(await page.locator('tbody tr[data-row-key]').count(), 1, 'byte-identical BSE/NSE rows render once');
-  assert.match(await page.locator('tbody tr[data-row-key]').innerText(), /BSE \/ NSE/);
+  assert.deepEqual((await page.locator('thead th').allTextContents()).map(s => s.trim().replace(/[▴▾]/g, '').trim()), ['Company', 'Subject', 'Date', 'Categories', 'Market cap', 'Link']);
+  const mergedFiling = page.locator('tbody tr[data-row-key]');
+  assert.match(await mergedFiling.locator('td').first().innerText(), /TCS Test Company/);
+  assert.equal(await mergedFiling.locator('td').first().locator('strong').count(), 1, 'company is bold in its own first column');
+  assert.match(await mergedFiling.locator('td').nth(1).innerText(), /cross-exchange/);
+  assert.equal(await mergedFiling.getByRole('link', { name: 'BSE ↗', exact: true }).getAttribute('href'), 'https://example.test/TCS/cross-exchange.pdf');
+  assert.equal(await mergedFiling.getByRole('link', { name: 'NSE ↗', exact: true }).getAttribute('href'), 'https://nsearchives.nseindia.com/corporate/cross-exchange.pdf');
   assert.deepEqual(await page.evaluate(() => window.stream.rows().find(r => r.documentHash)?.sourceUrls), [
     { source: 'BSE', url: 'https://example.test/TCS/cross-exchange.pdf' },
     { source: 'NSE', url: 'https://nsearchives.nseindia.com/corporate/cross-exchange.pdf' },

@@ -2096,8 +2096,11 @@ reloads. Date-stamped exports must not create a fresh layout every day. Cleared 
 browser storage cannot provide permanent retention; a failed save is disclosed visibly.
 
 Keep this presentation-only: do not change source rows, searches, exports or collection.
-Only the drop moves mounted cells; pointer movement updates a header indicator. The single
-child-list observer handles new/replaced rows before paint and disconnects for its own writes.
+Only the drop moves mounted cells. Pointer movement moves a lifted visual copy of the visible
+header and column cells, with a full-height insertion line. Snapshot mounted visible cells once
+at drag start; never copy offscreen records or walk data on pointer movement. Drop settles the
+copy and animates the displaced visible cells. Reduced motion keeps immediate position feedback.
+The single child-list observer handles new/replaced rows before paint and disconnects for its own writes.
 Do not add per-row listeners or full-dataset work. Grouped headings move with their descendants;
 individual child columns move within their group so month attribution remains correct.
 Preserve semantic cell styles (never style the identity cell by its current position).
@@ -4593,6 +4596,13 @@ attempts per content key, and honor server retry times across readers and restar
 Keep Sattva's pinned OpenAI provider and ordinary-object RPC responses.
 
 ### Company alert timelines
+
+AI Alerts companies scroll automatically through a measured page window of four to six grid rows
+(up to twelve desktop cards), with no Show more control. Keep all eligible cards available to
+search, counts, sorting and actions; keep mounted cards, timelines and listeners bounded.
+Preserve overlapping card nodes, focus and the company being read across source paints and
+responsive column changes. All Alerts already scrolls its complete filtered record model in its
+bounded table window; never add a manual paging button or change the selected date on scroll.
 
 AI cards expose all selected recent developments in a bounded scrolling window and
 lazily load complete retained older public history. Older evidence must not change

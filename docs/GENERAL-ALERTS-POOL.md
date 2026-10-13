@@ -152,6 +152,12 @@ source record as JSON alongside the readable columns.
 
 ## Table-first reading layout
 
+All Alerts reveals the full selected record set automatically as its table scrolls, with a
+bounded row window and no Show more button. Scrolling preserves the selected date and filters;
+counts, search and export still include records outside the currently mounted window.
+AI Alerts uses the same measured-window approach for its company grid, with at most six grid
+rows mounted. Its 14-day ranking window and each company's retained-history timeline are unchanged.
+
 Headlines emphasize fraud, default, arrest and insolvency/bankruptcy terms in red and bold.
 The Signal / priority column and repeated explanation lines below the headline are removed.
 Company follows Date / time directly. The combined filtering control and export retain the

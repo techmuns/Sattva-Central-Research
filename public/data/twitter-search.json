@@ -2351,11 +2351,11 @@
       "error": "search-unavailable"
     },
     "isin:INE00GO01025|LEAPIND": {
-      "lastAttemptAt": "2026-10-07T21:21:54+00:00",
+      "lastAttemptAt": "2026-10-13T13:32:33+00:00",
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|Lumino Industries": {
-      "lastAttemptAt": "2026-10-07T21:57:26+00:00",
+      "lastAttemptAt": "2026-10-13T14:03:01+00:00",
       "error": "search-unavailable"
     },
     "isin:INE185Q01025|LUMINO": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T12:55:17.748959+00:00"
+    "checkedAt": "2026-10-13T14:03:01.784084+00:00"
   }
 }
