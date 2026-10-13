@@ -144,12 +144,21 @@ const settled = async (target = page) => {
 // A finished provider read can still leave the tab's 250ms source coalescer / 180ms
 // scroll-quiet paint queued. Start geometry gestures only after the rendered surface itself
 // is stable; a chip that no longer says "reading" does not establish that condition.
-const stableReadingSurface = (target = page) => target.evaluate(async () => {
+const stableReadingSurface = (target = page) => target.evaluate(async preparationTimeout => {
   const [profiles, feedback, relevance] = await Promise.all([
     import('/js/data/company-profiles.js'), import('/js/data/relevance-feedback.js'),
     import('/js/data/surface-relevance.js'),
   ]);
   await Promise.all([profiles.loadProfiles(), feedback.loadModel()]);
+  const preparedBy = performance.now() + preparationTimeout;
+  for (;;) {
+    await relevance.relevanceSettled();
+    await new Promise(requestAnimationFrame);
+    const workspace = document.querySelector('[data-alerts-workspace]');
+    if (workspace?.getAttribute('aria-busy') === 'false' &&
+        workspace.getAttribute('data-alerts-collecting') === 'false' && !document.querySelector('[data-table-loading]')) break;
+    if (performance.now() > preparedBy) throw Error('Alert presentation did not finish preparation');
+  }
   let previous = null, previousNode = null, stableAt = performance.now();
   const deadline = performance.now() + 10000;
   for (;;) {
@@ -170,7 +179,7 @@ const stableReadingSurface = (target = page) => target.evaluate(async () => {
     if (performance.now() > deadline) throw Error('Rendered reading surface did not stabilize');
     previous = stamp; previousNode = node;
   }
-});
+}, Number(process.env.GENERAL_ALERTS_SETTLE_MS || 90000));
 try {
   await page.clock.install();
   await page.goto(origin);
