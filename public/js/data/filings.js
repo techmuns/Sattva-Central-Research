@@ -48,7 +48,7 @@
 // Worker named, and the pill says how many could not be read. Rendering them as zero rows would
 // report an outage as an absence of events.
 
-import { conditionalJson, readEntries, writeEntry, KEYS, isPersistent } from '../core/store.js';
+import { conditionalJson, readEntry, readEntries, writeEntry, KEYS, isPersistent } from '../core/store.js';
 import { mergeInsiderTrades, mergeInsiderHeaders } from './insider-history.js';
 import { withFilingArchive } from './filing-archives.js';
 import { withAnnouncementLookups } from './announcements-extra.js';
@@ -155,7 +155,24 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
   let loading = null;
   let seeding = null;
   const subscribers = new Set();
+  const activeReaders = new Set();
+  let snapshotTimer = null, snapshotAttemptAt = 0, snapshotRecheck = null;
   const emit = () => [...subscribers].forEach((fn) => fn());
+  // The exchange API and Screener capture are independent inputs. Polling only the former left
+  // a failed opening capture pinned until reload, and never delivered later SAST/insider rows.
+  // These checks read saved public captures only; they never start a per-company source walk.
+  function checkInsiderSnapshot() {
+    if (kind !== 'insider' || !state.loaded || document.hidden || innerWidth === 0 ||
+        snapshotRecheck || Date.now() - snapshotAttemptAt < 55000) return;
+    snapshotRecheck = refreshSnapshot().catch(() => {}).finally(() => { snapshotRecheck = null; });
+  }
+  function stopSnapshotChecks() {
+    if (!snapshotTimer) return;
+    clearInterval(snapshotTimer); snapshotTimer = null;
+    document.removeEventListener('visibilitychange', checkInsiderSnapshot);
+    window.removeEventListener('focus', checkInsiderSnapshot);
+    window.removeEventListener('online', checkInsiderSnapshot);
+  }
   function adoptLiveNews(ticker, saved, notify = true) {
     const newer = saved.at > (Date.parse(state.snapshotUpdatedAt || state.capturedAt || '') || 0);
     const previous = state.rows.get(ticker) || [];
@@ -286,10 +303,11 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       kind,
       exchanges: kind === 'insider' ? exchangeDeals.meta() : null,
       disclosuresStatus: kind === 'insider' ? exchangeDeals.disclosuresStatus(state.wanted) : null,
-      ok: covered > 0 || state.failures.size === 0,
+      ok: (covered > 0 || state.failures.size === 0) && !(kind === 'insider' && state.snapshotReadError),
       loaded: state.loaded,
       reason: state.reason,
       message: state.message,
+      snapshotReadError: state.snapshotReadError,
       covered,
       failed: state.failures.size,
       pending: state.pending,
@@ -722,26 +740,46 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     return job;
   }
   async function applySnapshot(options) {
+    snapshotAttemptAt = Date.now();
     try { return await applySnapshotRows(options); }
     finally { state.snapshotPending = false; }
   }
   async function applySnapshotRows({ replace = false } = {}) {
     if (kind === 'insider') void exchangeDeals.refresh();
+    const validCapture = value => value && typeof value === 'object' &&
+      (kind === 'announcements' || value.byTicker && typeof value.byTicker === 'object' && !Array.isArray(value.byTicker)) &&
+      (kind !== 'insider' || Number.isFinite(Date.parse(value.capturedAt || value.generated_at)) &&
+        Object.values(value.byTicker).every(Array.isArray));
     let res;
     state.snapshotPending = true;
     try {
-      res = await read(SNAPSHOT[kind], { key: KEYS.filings(kind), optional: true });
+      res = await read(SNAPSHOT[kind], { key: KEYS.filings(kind), optional: true,
+        ...(kind === 'insider' ? { validate: value => { if (!validCapture(value)) throw Error('Unreadable trade capture'); } } : {}) });
     } catch {
       res = null;
     }
-    const body = res?.value;
+    let body = res?.value;
     state.snapshotChecked = true;
-    state.checkedAt = res?.checkedAt || Date.now();
-    if (!body || typeof body !== 'object' || (kind === 'news' && (!body.byTicker || typeof body.byTicker !== 'object' || Array.isArray(body.byTicker)))) {
-      state.snapshotReadError = 'Company-news capture could not be verified. Previously loaded records remain visible.';
+    const verified = validCapture(body);
+    if (kind === 'insider' && !verified) {
+      state.snapshotReadError = 'The latest saved trade capture could not be read. Retained trades remain available; this view checks again automatically.';
+      // A last-good whole-universe capture includes companies outside the current Portfolio.
+      // Per-company device entries alone cannot recover that history after an opening failure.
+      const saved = await readEntry(KEYS.filings(kind));
+      if (validCapture(saved?.value)) { body = saved.value; state.checkedAt ||= saved.savedAt || null; }
+    }
+    if (!validCapture(body)) {
+      state.snapshotReadError ||= 'Company-news capture could not be verified. Previously loaded records remain visible.';
+      if (kind === 'insider') { state.reason = 'capture-unavailable'; state.message = state.snapshotReadError; }
       return false;
     }
-    state.snapshotReadError = null;
+    if (verified) {
+      state.checkedAt = res?.checkedAt || Date.now();
+      state.snapshotReadError = null;
+    }
+    if (kind === 'insider' && ['capture-unavailable', 'no-route', 'unreachable', 'upstream', 'shape', 'timeout'].includes(state.reason)) {
+      state.reason = null; state.message = null;
+    }
 
     const capturedAt = body.capturedAt || body.generated_at || null;
     // An independent source may enrich a last-good core capture. Its revision changes the
@@ -810,7 +848,9 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
         if (entity.name) state.names.set(key, entity.name);
       }
     }
-    if (replace && !newer) return state.rows.size > 0 || !!body.queryWindow;
+    // The first capture may have been a verified empty result. Rechecking those same bytes is
+    // still a successful read, and must not report unavailable or trigger a company walk.
+    if (replace && !newer) return kind === 'insider' ? !!verified : state.rows.size > 0 || !!body.queryWindow;
 
     if (newer) {
       // Announcement snapshots replace rows. Companies that aged out
@@ -893,7 +933,7 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     // whoever asks first — a poller as easily as the tab. Warm the head's readings here, in
     // slices, so that first read pays for the join and not for every story's attribution.
     await warmRows(yieldToInput);
-    return state.rows.size > 0 || state.askedEmpty.size > 0 || !!body.queryWindow;
+    return kind === 'insider' ? !!verified : state.rows.size > 0 || state.askedEmpty.size > 0 || !!body.queryWindow;
   }
 
   /** The rows out of one company's payload, deduplicated where duplication is meaningless. */
@@ -941,11 +981,18 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
     const body = res?.value;
 
     if (!body) {
-      // No route at this origin at all — a plain static server rather than the Worker.
-      state.failures.set(t, { reason: 'no-route', message: `This origin has no /api/${kind} route. The live feed needs the Cloudflare Worker.` });
+      // A missing optional value also represents timeouts, failed HTTP replies and unreadable
+      // 200s. It is not evidence that this deployment is a static server without a Worker.
+      const status = res?.status || 0;
+      const reason = status === 404 || status === 405 ? 'no-route' : status === 401 || status === 403 ? 'unauthorised'
+        : status === 429 ? 'rate-limited' : status === 408 || status === 504 ? 'timeout'
+        : status === 200 ? 'shape' : status ? 'upstream' : 'unreachable';
+      const message = status ? `The feed request could not be read (HTTP ${status}). Retained records remain available.`
+        : 'The feed request did not complete. Retained records remain available.';
+      state.failures.set(t, { reason, message });
       if (!state.reason) {
-        state.reason = 'no-route';
-        state.message = 'This origin serves the static files only, so there is no live route to answer. Run `npx wrangler dev`, or open the deployed site.';
+        state.reason = reason;
+        state.message = message;
       }
       return null;
     }
@@ -1017,16 +1064,27 @@ export function createFeed(kind, { read = conditionalJson, allowColdStart = true
       for (const ticker of state.rows.keys()) if (!state.fromSnapshot.has(ticker)) return true;
       return false;
     },
-    dispose() { state = fresh(); rowSnapshot = null; subscribers.clear(); liveNewsSubscribers.delete(adoptLiveNews); },
+    dispose() { stopSnapshotChecks(); activeReaders.clear(); state = fresh(); rowSnapshot = null; subscribers.clear(); liveNewsSubscribers.delete(adoptLiveNews); },
     invalidate() {
       state = fresh();
       loading = null;
       seeding = null;
+      snapshotAttemptAt = 0;
     },
     onChange(fn, options) {
       subscribers.add(fn);
       const stop = kind === 'insider' ? exchangeDeals.onChange(fn, options) : null;
-      return () => { subscribers.delete(fn); stop?.(); };
+      if (kind === 'insider' && options?.poll !== false && typeof document !== 'undefined') {
+        activeReaders.add(fn);
+        if (!snapshotTimer) {
+          snapshotTimer = setInterval(checkInsiderSnapshot, 60000);
+          document.addEventListener('visibilitychange', checkInsiderSnapshot);
+          window.addEventListener('focus', checkInsiderSnapshot);
+          window.addEventListener('online', checkInsiderSnapshot);
+        }
+        checkInsiderSnapshot();
+      }
+      return () => { subscribers.delete(fn); stop?.(); activeReaders.delete(fn); if (!activeReaders.size) stopSnapshotChecks(); };
     },
   };
 }
@@ -1122,4 +1180,4 @@ export function createQueryNews(window, { extraRows = () => marketNews.rows(), a
   };
 }
 export const announcements = withAnnouncementLookups(withFilingArchive(createFeed('announcements'), 'announcements'));
-export const insider = withFilingArchive(createFeed('insider'), 'insider');
+export const insider = withFilingArchive(createFeed('insider', { allowColdStart: false }), 'insider');

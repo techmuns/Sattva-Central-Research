@@ -34,8 +34,12 @@ import { newsViewStatus } from '../core/news-view-status.js';
 
 const REASONS = {
   'no-route': {
-    title: 'This feed needs the Worker',
-    body: 'This origin serves the static files only, so there is no <code>/api/</code> route to answer, and no committed snapshot has been written yet. Run <code>npx wrangler dev</code>, or open the deployed site.',
+    title: 'This feed endpoint is unavailable',
+    body: 'The requested feed endpoint was not found. Previously loaded records remain available.',
+  },
+  'capture-unavailable': {
+    title: 'The saved trade capture is temporarily unavailable',
+    body: 'This view checks again automatically. Retained trades will appear as soon as the capture can be read.',
   },
   'no-token': {
     title: 'No API token is configured',
@@ -696,7 +700,8 @@ function coverageSentence(m, cov) {
 function openProvenanceFactory(cfg, refreshLabelRef, onRefresh) {
   return function openProvenance(m, cov, scope, rows) {
     openModal(
-      `${cfg.provenance(m, { scope })}
+      `<div style="max-height:calc(100dvh - 8rem);overflow-y:auto">
+       ${cfg.provenance(m, { scope })}
        <div class="border-t border-slate-100 px-7 py-5">
          <p class="text-xs leading-relaxed text-slate-600">${freshnessLine(m)}${coverageSentence(m, cov)}</p>
          <p class="mt-2 text-xs leading-relaxed text-slate-600">${escapeHtml(scopeTitle(scope, rows, m).replace(' Click for where this comes from.', ''))}</p>
@@ -708,7 +713,7 @@ function openProvenanceFactory(cfg, refreshLabelRef, onRefresh) {
            </svg>
            <span>${escapeHtml(m.pending || m.inFlight ? 'Checking…' : refreshLabelRef())}</span>
          </button>
-       </div>`,
+       </div></div>`,
       { size: 'default' }
     );
     const host = document.getElementById('modal-content');

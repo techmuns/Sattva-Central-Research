@@ -45,9 +45,14 @@ try {
     window.feeds = await import('/js/data/filings.js');
     await window.deals.refresh(); // the committed capture, then the one live check every reader makes
   });
-  const readsDuring = async (action) => {
+  const readsDuring = async (action, expected = 0) => {
     const before = reads;
+    const request = expected ? page.waitForRequest(`**/api/bulk-block-deals`) : null;
     await action();
+    // Recovery now revalidates the complete retained seed before the API read. Its cooperative
+    // preparation can take more than 250ms; await the actual read and its completion, never use
+    // an arbitrary sleep as proof that the reader did (or did not) refresh.
+    if (request) { await request; await page.evaluate(() => window.deals.refresh()); }
     await page.waitForTimeout(250);
     return reads - before;
   };
@@ -60,10 +65,11 @@ try {
   assert.equal(await readsDuring(minute), 0, 'nor the minute after that');
 
   // 2. Insider Trades opens: an active reader checks a stale capture at once and every minute after.
+  const openingRead = page.waitForRequest(`**/api/bulk-block-deals`);
   await page.evaluate(() => { window.stopInsider = window.feeds.insider.onChange(() => {}); });
-  await page.waitForTimeout(250);
+  await openingRead; await page.evaluate(() => window.deals.refresh());
   assert.equal(reads, 2, 'an active reader refreshes the stale capture as it opens');
-  assert.equal(await readsDuring(minute), 1, 'and keeps it current every minute while it is open');
+  assert.equal(await readsDuring(minute, 1), 1, 'and keeps it current every minute while it is open');
 
   // 3. It closes: the cache observer left behind does not keep the poll alive.
   await page.evaluate(() => window.stopInsider());

@@ -343,6 +343,14 @@ navigation, date rollover and portfolio synchronization using local fixtures.
 These checks test data handling and failure detection. They do not prove exhaustive upstream news
 coverage or delivery to any separate Morning CIO product.
 
+Bulk/Block Deal checks both the exchange archive and the independently saved Screener trade
+capture every minute while visible, and after returning to a stale view or reconnecting. A failed
+opening read retries without a per-company walk. Validated last-good captures survive failed
+reloads; their source times and failed delivery state remain distinct. An HTTP failure or unreadable
+response cannot establish that the deployed Worker is missing. `verify-insider-recovery-ui.mjs`
+tests these cases, retained history, reading controls and an existing service-worker session upgrade
+against isolated local fixtures. It does not certify complete exchange coverage.
+
 
 ## Dashboard-first investment research
 

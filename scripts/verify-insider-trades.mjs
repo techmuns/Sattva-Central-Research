@@ -246,6 +246,22 @@ try {
   await clearAll();
 }
 
+// A failed optional read is classified by its actual response, never assumed to be a static host.
+try {
+  const emptyCapture = { kind: 'insider', capturedAt: new Date(now).toISOString(), coversUniverse: true, byTicker: {} };
+  for (const [status, reason] of [[404, 'no-route'], [503, 'upstream'], [403, 'unauthorised'],
+    [429, 'rate-limited'], [504, 'timeout'], [200, 'shape'], [0, 'unreachable']]) {
+    await clearAll();
+    globalThis.fetch = async () => { if (!status) throw Error('offline'); return new Response('not readable JSON', { status }); };
+    const feed = createFeed('insider', { read: async () => ({ value: emptyCapture }), allowColdStart: false });
+    await feed.load(['TEST']);
+    assert.equal((await feed.refreshSnapshot()).available, true, 'a verified empty capture is an available feed');
+    await feed.loadOne('TEST', { force: true });
+    assert.equal(feed.failureFor('TEST').reason, reason, `HTTP ${status} has its own failure category`);
+    feed.dispose();
+  }
+} finally { globalThis.fetch = realFetch; await clearAll(); }
+
 // Run the real capture against a localhost fixture in a disposable copy. In particular, the
 // news collapse guard and FILINGS_FORCE must not bypass additive insider retention.
 const scratch = await mkdtemp(join(tmpdir(), 'sattva-insider-'));
