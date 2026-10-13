@@ -124,4 +124,41 @@ await writeEntry('capture:data/announcement-identities.json', { value: { ...chan
 const malformed = await import('../public/js/data/listed-companies.js?malformed-source-cache');
 await malformed.restore();
 assert.deepEqual(malformed.all(), changedRows, 'a malformed per-source cache cannot replace the verified joined snapshot');
+
+// Returning during an older read must schedule one subsequent source check. Joining only
+// the old promise misses a listing published after that request began until the next poll.
+const overlapping = await import('../public/js/data/listed-companies.js?return-during-read');
+let deliveredBse = changedBse, overlapReads = 0, releaseOld, began, releaseFollowUp, followUpBegan;
+const oldReadHeld = new Promise(resolve => { releaseOld = resolve; });
+const readsBegan = new Promise(resolve => { began = resolve; });
+const followUpHeld = new Promise(resolve => { releaseFollowUp = resolve; });
+const followUpStarted = new Promise(resolve => { followUpBegan = resolve; });
+const overlapRead = async path => {
+  const value = path.includes('nse-identities') ? nse : deliveredBse;
+  const index = ++overlapReads;
+  if (index <= 2) { if (index === 2) began(); await oldReadHeld; }
+  if (index === 3 || index === 4) { if (index === 4) followUpBegan(); await followUpHeld; }
+  return { value, stale: false };
+};
+const priorRead = overlapping.load({ read: overlapRead });
+await readsBegan;
+deliveredBse = { ...changedBse, capturedAt: new Date(Date.parse(changedBse.capturedAt) + 2000).toISOString(),
+  entries: [...changedBse.entries, { isin: 'INE999Z01029', ticker: 'AFTERRETURN', bseCode: '599998',
+    bseSymbol: 'AFTERRETURN', name: 'Listed After Earlier Read', status: 'Active' }] };
+const returnCheck = overlapping.load({ read: overlapRead, recheck: true });
+assert.equal(overlapping.load({ read: overlapRead, recheck: true }), returnCheck, 'overlapping return/focus events share one queued check');
+releaseOld();
+await priorRead;
+await followUpStarted;
+deliveredBse = { ...deliveredBse, capturedAt: new Date(Date.parse(changedBse.capturedAt) + 4000).toISOString(),
+  entries: [...deliveredBse.entries, { isin: 'INE999Z01037', ticker: 'DURINGFOLLOWUP', bseCode: '599997',
+    bseSymbol: 'DURINGFOLLOWUP', name: 'Listed During Follow-up Read', status: 'Active' }] };
+assert.equal(overlapping.load({ read: overlapRead, recheck: true }), returnCheck, 'a return during the follow-up waits for the same complete recheck chain');
+assert.equal(overlapping.load({ read: overlapRead, recheck: true }), returnCheck, 'repeated events during the follow-up coalesce');
+releaseFollowUp();
+await returnCheck;
+assert.equal(overlapReads, 6, 'each overlapping return burst adds one subsequent pair of source reads');
+assert.deepEqual(overlapping.all(), buildExchangeUniverse(deliveredBse, nse).companies,
+  'the return check includes a listing published after the previous source request began');
+assert.equal(overlapping.meta().sources.find(s => s.label === 'BSE').checkedAt, deliveredBse.capturedAt);
 console.log(`PASS ${expected.size} exchange equity identities: complete union, BSE/NSE collisions, automatic enrollment, persisted exclusions and failure retention.`);

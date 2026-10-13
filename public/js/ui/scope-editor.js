@@ -338,7 +338,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
 
   async function refreshDirectory() {
     try {
-      await listedCompanies.load();
+      await listedCompanies.load({ recheck: true });
       showDirectory();
     } catch (err) {
       if (!document.body.contains(root)) return;
@@ -368,7 +368,7 @@ export function openScopeEditor({ scope, onChanged = null } = {}) {
     window.addEventListener('online', resumeDirectory);
   }
 
-  Promise.resolve(scope === 'universe' ? listedCompanies.load() : null)
+  Promise.resolve(scope === 'universe' ? listedCompanies.load({ recheck: true }) : null)
     .then(() => {
       if (!document.body.contains(root)) return;
       if (scope === 'universe') { showDirectory(); return; }

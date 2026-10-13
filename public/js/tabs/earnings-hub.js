@@ -458,15 +458,23 @@ function renderLatest(ctx) {
       { label: 'Basis', get: (r) => basisPill(r.basis), html: true, align: 'right', sortValue: (r) => r.basis || '' },
       { label: 'Filings', get: (r) => r.ticker ? `<button type="button" data-norow data-earnings-report="${escapeHtml(r.ticker)}" data-report-period="${escapeHtml(m?.currentPeriod || '')}" data-report-date="${escapeHtml(r.resultDate || '')}" class="font-semibold text-indigo-600" aria-label="Open ${escapeHtml(r.company)} ${escapeHtml(cur)} filing">Reports</button>` : '—', html: true, sortable: false },
     ],
-    // Two dropdowns, not one: "PAT grew" and "Consolidated only" are different questions and a
-    // reader should be able to ask both at once.
+    // Keep performance and reporting basis independent, behind one compact toolbar control.
+    filterGroup: {
+      label: 'More filters',
+      indices: [0, 1],
+      summary: values => {
+        const count = values.filter(value => value !== 'all').length;
+        return count ? `More filters (${count})` : 'More filters';
+      },
+    },
     filters: [
       {
-        label: 'Result shape',
+        label: 'Result screen',
+        readingAliases: ['Result shape'],
         options: [
           { value: 'all', label: 'All results' },
-          { value: 'pat-up', label: 'PAT grew' },
-          { value: 'pat-down', label: 'PAT fell' },
+          { value: 'pat-up', label: 'Profit growth (%) · no losses' },
+          { value: 'pat-down', label: 'Profit decline (%) · no losses' },
           { value: 'turnaround', label: 'Loss → profit' },
           { value: 'to-loss', label: 'Profit → loss' },
           { value: 'rev-up-20', label: 'Revenue +20% or more' },
@@ -490,7 +498,7 @@ function renderLatest(ctx) {
         // the same three-way choice for the same reason. The Basis column shows which each row is.
         label: 'Reporting basis',
         options: [
-          { value: 'all', label: 'All' },
+          { value: 'all', label: 'All reporting bases' },
           { value: 'con', label: 'Consolidated' },
           { value: 'std', label: 'Standalone' },
         ],
