@@ -145,17 +145,27 @@ const settled = async (target = page) => {
 // scroll-quiet paint queued. Start geometry gestures only after the rendered surface itself
 // is stable; a chip that no longer says "reading" does not establish that condition.
 const stableReadingSurface = (target = page) => target.evaluate(async () => {
+  const [profiles, feedback, relevance] = await Promise.all([
+    import('/js/data/company-profiles.js'), import('/js/data/relevance-feedback.js'),
+    import('/js/data/surface-relevance.js'),
+  ]);
+  await Promise.all([profiles.loadProfiles(), feedback.loadModel()]);
   let previous = null, previousNode = null, stableAt = performance.now();
   const deadline = performance.now() + 10000;
   for (;;) {
+    // Source chips can finish before sliced grouping and deferred relevance change row order.
+    await relevance.relevanceSettled();
     await new Promise(requestAnimationFrame);
+    const workspace = document.querySelector('[data-alerts-workspace]');
+    const ready = workspace?.getAttribute('aria-busy') === 'false' &&
+      workspace.getAttribute('data-alerts-collecting') === 'false' && !document.querySelector('[data-table-loading]');
     const node = document.querySelector('[data-table-scroll]');
     const box = node?.getBoundingClientRect();
     const rows = [...(node?.querySelectorAll('tr[data-row-key]') || [])];
     const stamp = JSON.stringify([box?.x, box?.y, box?.width, box?.height, node?.scrollTop,
       node?.scrollHeight, node?.querySelector('thead')?.offsetHeight,
       node?.closest('[data-score-table]')?.dataset.virtualTotal, rows[0]?.dataset.rowKey, rows.at(-1)?.dataset.rowKey]);
-    if (!node || node !== previousNode || stamp !== previous) stableAt = performance.now();
+    if (!ready || !node || node !== previousNode || stamp !== previous) stableAt = performance.now();
     else if (performance.now() - stableAt >= 400) return;
     if (performance.now() > deadline) throw Error('Rendered reading surface did not stabilize');
     previous = stamp; previousNode = node;
