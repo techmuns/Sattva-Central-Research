@@ -2351,7 +2351,8 @@ resolution does not block a returning reader. Private portfolio membership is no
 
 The UI does not render these aggregate facts as a KPI strip. Coverage, total posts and source
 split, market mood and scrape timing are printed as one footnote beneath the active in-page tab.
-Coverage is the default; Not in coverage replaces it with the unresolved-entry table.
+Coverage is the default; Telegram opens its independent public-channel capture. Unresolved
+entries remain in the source data and retained history, without a separate in-page tab.
 
 ### Four traps, and what this repo does about each
 
@@ -2466,9 +2467,10 @@ under `data` the way the real API does, so *that* bug cannot come back unnoticed
 
 ### What the tab does with it
 
-One view, two sections, `subviews: []`. **Covered companies** — the resolved half, scope-aware,
-rows opening the technicals drill. **Not in our coverage** — everything else, whole in both scopes,
-because a list with no tickers cannot be filtered by one.
+One view, two sections, `subviews: []`. **Coverage** — resolved company mentions, scope-aware,
+with rows opening their source mentions. **Telegram** — the independent public-channel capture.
+The former unresolved-entry tab is removed; raw topics, saved captures and exact-topic links
+remain available to the data readers. Coverage history continues to show scoped, resolved companies.
 
 Measured on a real 219-entry run: **45 covered, 174 not, 8 of them in the book.**
 

@@ -263,12 +263,11 @@ try {
   await cold.evaluate(() => { tab.destroy(); window.renderScope('universe'); });
   await cold.evaluate(() => chatter.refresh());
   await cold.locator('[data-table-search]').first().fill('');
-  for (const section of ['coverage', 'not-in-coverage']) {
-    await cold.locator(`[data-chatter-section-tabs] [data-tab-id="${section}"]`).click();
-    await cold.locator('th[data-sort]').filter({ hasText: /^Sentiment/ }).click();
-    const labels = await cold.locator('tbody tr[data-row-key]').evaluateAll(rows => rows.map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent.trim()).find(text => ['Mixed', 'Bullish', 'Bearish'].includes(text))));
-    assert.deepEqual(labels, ['Mixed', 'Bullish', 'Bearish'], `${section} sorts displayed summaries, not deliberately conflicting source scores`);
-  }
+  await cold.locator('th[data-sort]').filter({ hasText: /^Sentiment/ }).click();
+  const labels = await cold.locator('tbody tr[data-row-key]').evaluateAll(rows => rows.map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent.trim()).find(text => ['Mixed', 'Bullish', 'Bearish'].includes(text))));
+  assert.deepEqual(labels, ['Mixed', 'Bullish', 'Bearish'], 'Coverage sorts displayed summaries, not deliberately conflicting source scores');
+  assert.equal(await cold.evaluate(() => chatter.uncovered().length), 3, 'removing the tab does not discard unresolved source records');
+  assert.equal(await cold.locator('[data-chatter-section-tabs] [data-tab-id="not-in-coverage"]').count(), 0);
   await cold.close();
   console.log('PASS exact chatter collector reading, delayed company resolution and dismissed-dialog stability');
   assert.deepEqual(errors, []);

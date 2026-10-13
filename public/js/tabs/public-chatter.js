@@ -1,9 +1,9 @@
 import { TAB_META } from './catalog.js';
 // tabs/public-chatter.js — retail chatter across ValuePickr, TradingQnA and Google News.
 //
-// ONE PAGE, TWO SIMPLE IN-PAGE TABS, ONE PROVENANCE.
-//   Covered companies    entries whose slug resolves to an NSE symbol we cover. Scope-aware.
-//   Not in our coverage  everything else, whole, in both scopes.
+// ONE PAGE, TWO INDEPENDENT IN-PAGE FEEDS.
+//   Coverage  company mentions whose slug resolves to an NSE symbol we cover. Scope-aware.
+//   Telegram  retained posts from a public channel, independent of company coverage.
 //
 // The tab used to be three sub-views over a synthetic corpus — ValuePickr threads, Telegram groups
 // and a Trending join — with fictional handles, because inventing words for a named person is not
@@ -42,7 +42,7 @@ export const meta = TAB_META['public-chatter'];
 let renderToken = 0;
 let disposers = [];
 let paintDisposers = [];
-let tableViews = { covered: null, other: null, telegram: null };
+let tableViews = { covered: null, telegram: null };
 let chatterSection = 'coverage';
 let mentionRequestToken = 0;
 // A company deep-link from a General Alerts chatter row: `?company=TICKER&open=mentions`. Tracked at
@@ -56,11 +56,8 @@ let historyCatalogueOff = null;
 
 const SECTIONS = [
   { id: 'coverage', label: 'Coverage' },
-  { id: 'not-in-coverage', label: 'Not in coverage' },
-  // A THIRD SECTION OVER A SECOND, INDEPENDENT FEED. The first two are two readings of one chatter
-  // payload; this one is a committed capture of a public Telegram channel and shares nothing with
-  // them but the page. That independence is load-bearing in `paint()`: either feed may be down
-  // without taking the other's section with it.
+  // Telegram is an independent capture. Either feed may be down without taking the other's
+  // section with it.
   { id: 'telegram', label: 'Telegram' },
 ];
 
@@ -102,11 +99,14 @@ export function render(ctx) {
   };
   if (requestedCompany && requestedCompany !== routeCompany) {
     chatterSection = 'coverage';
-    tableViews = { covered: { q: requestedCompany }, other: tableViews.other, telegram: tableViews.telegram };
+    tableViews = { covered: { q: requestedCompany }, telegram: tableViews.telegram };
   }
   routeCompany = requestedCompany || null;
   if (ctx?.params?.section === 'telegram') {
     chatterSection = 'telegram';
+  } else if (ctx?.params?.section) {
+    // Older links to a removed section return to the default company view.
+    chatterSection = 'coverage';
   }
 
   ctx.root.innerHTML = loadingHtml();
@@ -164,7 +164,7 @@ export function destroy() {
   renderToken++;
   cleanup();
   chatterSection = 'coverage';
-  tableViews = { covered: null, other: null, telegram: null };
+  tableViews = { covered: null, telegram: null };
   // Forget the deep-link so returning to the same company from another chatter alert re-seeds and
   // re-opens rather than being silently ignored as "unchanged".
   routeCompany = null;
@@ -262,11 +262,9 @@ function paint(ctx) {
   });
 
   const covered = chatterOk ? chatter.forScope(ctx.scope) : [];
-  const other = chatterOk ? chatter.uncovered() : [];
 
   const cards = chatterOk && activeSection === 'coverage' ? buildTopCards(covered) : null;
   const coveredTable = chatterOk && activeSection === 'coverage' ? buildCoveredTable(covered) : null;
-  const otherTable = chatterOk && activeSection === 'not-in-coverage' ? buildOtherTable(other) : null;
   const telegramTable = onTelegram ? buildTelegramTable() : null;
 
   let panel;
@@ -277,14 +275,8 @@ function paint(ctx) {
     panel = `<div class="rounded-2xl bg-white p-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-slate-100">Loading chatter…</div>`;
   } else if (!chatterOk) {
     panel = unavailablePanel(m?.reason, m?.url);
-  } else if (activeSection === 'coverage') {
-    panel = `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : m.resolving ? '<p class="text-sm text-slate-500">Matching companies…</p>' : emptyCovered(ctx.scope)}`;
   } else {
-    panel = `${sectionHead({
-      title: 'Not in our coverage',
-      description:
-        'Entries whose slug does not resolve to a symbol in our universe or the book. This is a statement about OUR coverage, not about them — the list mixes Indian companies we do not carry, foreign names and bare themes, and we do not guess which is which. Shown in full in every scope, because a holding cannot be filtered out of a list that has no tickers.',
-    })}${otherTable.html}`;
+    panel = `${cards ? cards.html : ''}${coveredTable ? coveredTable.html : m.resolving ? '<p class="text-sm text-slate-500">Matching companies…</p>' : emptyCovered(ctx.scope)}`;
   }
 
   ctx.root.innerHTML = `
@@ -306,7 +298,6 @@ function paint(ctx) {
   paintDisposers.push(sectionTabs.wire(ctx.root.querySelector('[data-chatter-section-tabs]')));
   if (cards) cards.wire(ctx.root);
   if (coveredTable) paintDisposers.push(coveredTable.wire(ctx.root));
-  if (otherTable) paintDisposers.push(otherTable.wire(ctx.root));
   if (telegramTable) paintDisposers.push(telegramTable.wire(ctx.root));
   wireHistoryButton(ctx);
   if (!onTelegram) {
@@ -445,7 +436,7 @@ function openHistoryCatalogue(ctx) {
     if (!body) return;
     historyCatalogueOff?.();
     const resolved = chatter.resolveArchiveTopics(value);
-    const rows = chatterSection === 'not-in-coverage' ? resolved.filter(row => !row.ticker) : chatter.forScope(ctx.scope, resolved.filter(row => row.ticker));
+    const rows = chatter.forScope(ctx.scope, resolved.filter(row => row.ticker));
     const table = scoreTable({ rows, key: row => row.slug, name: row => row.name, sub: row => row.ticker || row.slug,
       nameLabel: 'Company / topic', showRank: false, showAvatar: false, showWatchFilter: false,
       watchKey: () => null, searchable: row => `${row.name} ${row.ticker || ''} ${row.slug}`,
@@ -607,10 +598,9 @@ const sourceSummary = (totals) => {
 
 /**
  * Export the currently visible table rows, not the whole feed hidden behind the reader's search
- * and sentiment filters. Both in-page tables use the same upstream metrics, but only Coverage can
- * honestly carry an NSE symbol; the uncovered export keeps the resolver's reason instead.
+ * and sentiment filters. Coverage exports retain the matched company and original forum topic.
  */
-function exportChatterRows(rows, { covered }) {
+function exportChatterRows(rows) {
   const m = chatter.meta();
   const banner = {
     __banner: true,
@@ -623,17 +613,10 @@ function exportChatterRows(rows, { covered }) {
   };
   const value = (row, get) => (row.__banner ? '' : get(row));
   const columns = [
-    { header: covered ? 'Company' : 'Topic', key: 'name', width: 30, get: (r) => (r.__banner ? r.text : r.name || '') },
-    ...(covered
-      ? [
-          { header: 'NSE ticker', key: 'ticker', width: 16, get: (r) => value(r, (x) => x.ticker || '') },
-          { header: 'Forum topic', key: 'slug', width: 24, get: (r) => value(r, (x) => x.slug || '') },
-          { header: 'Matched company', key: 'matched', width: 30, get: (r) => value(r, (x) => x.matchedName || '') },
-        ]
-      : [
-          { header: 'Topic slug', key: 'slug', width: 24, get: (r) => value(r, (x) => x.slug || '') },
-          { header: 'Coverage result', key: 'coverage', width: 46, get: (r) => value(r, (x) => x.unresolvedReason || 'No NSE symbol resolved') },
-        ]),
+    { header: 'Company', key: 'name', width: 30, get: (r) => (r.__banner ? r.text : r.name || '') },
+    { header: 'NSE ticker', key: 'ticker', width: 16, get: (r) => value(r, (x) => x.ticker || '') },
+    { header: 'Forum topic', key: 'slug', width: 24, get: (r) => value(r, (x) => x.slug || '') },
+    { header: 'Matched company', key: 'matched', width: 30, get: (r) => value(r, (x) => x.matchedName || '') },
     { header: 'Mentions', key: 'mentions', width: 14, get: (r) => value(r, (x) => x.mentions ?? '') },
     { header: 'Previous mentions', key: 'mentions_prev', width: 18, get: (r) => value(r, (x) => x.mentionsPrev ?? '') },
     { header: 'Mention change %', key: 'mention_change', width: 18, get: (r) => value(r, (x) => x.mentionsChangePct ?? '') },
@@ -648,8 +631,8 @@ function exportChatterRows(rows, { covered }) {
   ];
 
   return exportRows({
-    filename: `sattva-public-chatter-${covered ? 'coverage' : 'not-in-coverage'}-${todayStamp()}`,
-    sheetName: covered ? 'Coverage' : 'Not in coverage',
+    filename: `sattva-public-chatter-coverage-${todayStamp()}`,
+    sheetName: 'Coverage',
     columns,
     rows: [banner, ...rows],
   });
@@ -749,7 +732,7 @@ function buildCoveredTable(rows) {
     initialSort: { key: 'Mentions', dir: 'desc' },
     initialView: tableViews.covered,
     exportName: 'chatter-companies',
-    onExport: (visible) => exportChatterRows(visible, { covered: true }),
+    onExport: (visible) => exportChatterRows(visible),
     onRowClick: openMentions,
     filters: [sentimentFilter()],
     columns: [
@@ -811,51 +794,9 @@ const emptyCovered = (scope) => `
     <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-600">${
       scope === 'portfolio'
         ? 'No mentions matched the current book in this captured snapshot. Discovery sources do not check every holding; switch to Universe or captured history to browse more.'
-        : 'No captured mentions matched this scope. Source discovery and identity matching can have gaps; browse Not in coverage or captured history for more.'
+        : 'No captured mentions matched this scope. Source discovery and identity matching can have gaps; browse captured history for more.'
     }</p>
   </div>`;
-
-function buildOtherTable(rows) {
-  const table = scoreTable({
-    rows,
-    key: (r) => r.slug,
-    // The uncovered half is BY DEFINITION the entries that resolved to no company — that is what
-    // puts them in this table — so there is nothing to star.
-    watchKey: () => null,
-    name: (r) => r.name,
-    sub: (r) => r.slug,
-    // A function, not `true` — see the covered table above; `scoreTable` calls it to build the
-    // search haystack, so a bare `true` throws the moment anyone types in this box.
-    searchable: (r) => `${r.name || ''} ${r.slug || ''}`,
-    dense: true,
-    wrapHeads: true,
-    showAvatar: false,
-    showRank: false,
-    initialSort: { key: 'Mentions', dir: 'desc' },
-    initialView: tableViews.other,
-    exportName: 'chatter-uncovered',
-    onExport: (visible) => exportChatterRows(visible, { covered: false }),
-    stickyHead: 'max(320px, calc(100vh - 420px))',
-    onRowClick: openMentions,
-    filters: [sentimentFilter()],
-    columns: [
-      { label: 'Mentions', get: mentionsCell, html: true, align: 'right', sortable: true, sortValue: (r) => r.mentions },
-      { label: 'Mentions Δ', get: mentionsDeltaCell, html: true, align: 'right', sortable: true, sortValue: (r) => r.mentionsChangePct ?? -Infinity },
-      { label: 'Sentiment', get: (r) => sentimentPill(r.sentimentReading), html: true, sortable: true, sortValue: (r) => r.sentimentReading.labelText },
-      { label: 'Sources', get: sourceCell, html: true },
-    ],
-  });
-  return {
-    html: table.html,
-    wire: (root) => {
-      const off = table.wire(root);
-      return () => {
-        tableViews.other = table.view ?? tableViews.other;
-        off?.();
-      };
-    },
-  };
-}
 
 // ---------------------------------------------------------------------------------------
 // Telegram — retained posts with source dates and collection progress.

@@ -62,7 +62,7 @@ spans the full 1400px on every tab.
 | Ask Research | *(none — one conversation workspace, so the picker is hidden)* |
 | Earnings Hub | *(none — one table, so the picker is hidden)* |
 | Con-call | *(no sub-views)* — one scan table, with no schedule or feed-status chips above it |
-| Public Chatter | *(no shell sub-views)* — in-page **Coverage** and **Not in coverage** tabs, one table at a time |
+| Public Chatter | *(no shell sub-views)* — in-page **Coverage** (default) and **Telegram** tabs, one feed at a time |
 | Breakouts / Technical | Momentum Scanner *(default)* · Strong Breakouts · Technical Scanner · FII Accumulation |
 | Super Investors | Superstar Investors · Institutions |
 | News · Corp Announcements · NSE Filings · Insider Trades | *(no sub-views)* — one table each, off the shared filings renderer |
@@ -392,7 +392,7 @@ Deep Dive — were removed rather than kept behind a ribbon; see `docs/HANDOFF.m
 
 ### Public Chatter — `public-chatter`
 Community sentiment.
-- Simple in-page tabs: **Coverage** (default), **Not in coverage** — each owning its table and its own sentiment selector — and **Telegram**
+- Simple in-page tabs: **Coverage** (default) and **Telegram**, each owning its independent feed and table
 - **Telegram** is a second, independent feed on the tab: posts from a public research channel, reproduced as published, ordered by message number because the route publishes no post times. Either feed may be down without taking the other's section with it
 - Clicking a company or its mention count opens the underlying mentions, newest first, with a direct link to every source item
 - No summary-card row; coverage, posts, market mood and scrape timing appear as footnotes below the tables

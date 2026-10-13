@@ -143,12 +143,15 @@ try {
   await page.route('**/*', (route) => (new URL(route.request().url()).origin === base ? route.continue() : route.abort()));
 
   await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.querySelectorAll('#content-host [data-chatter-section-tabs] [role="tab"]').length === 3, null, { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelectorAll('#content-host [data-chatter-section-tabs] [role="tab"]').length === 2, null, { timeout: 20000 });
 
   const tabs = await page.$$eval('#content-host [data-chatter-section-tabs] [role="tab"]', (els) => els.map((e) => e.textContent.trim()));
-  assert.deepEqual(tabs, ['Coverage', 'Not in coverage', 'Telegram'], 'the three in-page sections');
+  assert.deepEqual(tabs, ['Coverage', 'Telegram'], 'the two remaining in-page sections');
   await page.evaluate(() => window.renderScope('portfolio', { section: 'telegram', company: 'JAYNECOIND' }));
   await page.locator('[data-chatter-section-tabs] [role="tab"][aria-selected="true"]', { hasText: 'Telegram' }).waitFor();
+  await page.evaluate(() => window.renderScope('portfolio', { section: 'not-in-coverage' }));
+  await page.locator('[data-chatter-section-tabs] [role="tab"][aria-selected="true"]', { hasText: 'Coverage' }).waitFor();
+  assert.equal(await page.locator('[data-chatter-panel]').getAttribute('data-chatter-panel'), 'coverage', 'removed-section links fall back to Coverage even after Telegram was selected');
 
   await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
   await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr', { timeout: 20000 });
@@ -278,7 +281,7 @@ try {
   // Posts carry no company, so the scope cannot narrow them — and an empty watchlist must not let
   // the shell hide the section while claiming the tab has nothing to show.
   await page.evaluate(() => window.renderScope('watchlist'));
-  await page.waitForFunction(() => document.querySelectorAll('#content-host [data-chatter-section-tabs] [role="tab"]').length === 3, null, { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelectorAll('#content-host [data-chatter-section-tabs] [role="tab"]').length === 2, null, { timeout: 20000 });
   await page.locator('#content-host [data-chatter-section-tabs] [role="tab"]', { hasText: 'Telegram' }).click();
   await page.waitForSelector('[data-chatter-panel="telegram"] tbody tr', { timeout: 20000 });
   await content.selectOption('all');
