@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
 
 // Keep this UI revision separate from the shared dashboard release markers.
 function currentCacheKey() {
-  return `${appReleaseCacheKey()}-all-alerts-clean-header-v11`;
+  return `${appReleaseCacheKey()}-all-alerts-clean-header-v12`;
 }
 
 // Preserve every shared release and upgrade returning readers to the compact Mutual Funds layout.

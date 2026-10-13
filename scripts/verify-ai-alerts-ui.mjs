@@ -241,7 +241,7 @@ try {
     'optional grouping status updates do not restart collection or ranking');
   await page.evaluate(() => {
     window.stableNodes = ['[data-ai-card][data-ticker="A00"]', '[data-ai-card][data-ticker="A02"]',
-      '[data-ai-cards]', '[data-ai-sort]', '[data-ai-heading] h2', '[data-ai-more]'].map(selector => [selector, document.querySelector(selector)]);
+      '[data-ai-cards]', '[data-ai-sort]', '[data-ai-heading] h2'].map(selector => [selector, document.querySelector(selector)]);
     window.stableButton = document.querySelector('[data-ai-card][data-ticker="A00"] [data-ai-mute]');
     window.stableButton.focus({preventScroll:true});
     window.fixtureEvents = window.fixtureEvents.map(event => event.id === 'A02-announcements'
@@ -312,7 +312,7 @@ try {
   await page.locator('[data-ai-empty-clear]').click();
   assert.equal(await search.inputValue(), '');
   assert.equal(await page.locator('[data-ai-card]').count(), 8);
-  console.log('PASS: search beyond pagination and preview, priority, archive/restore and clear search.');
+  console.log('PASS: search beyond the mounted window and preview, priority, archive/restore and clear search.');
 
   // --- the reading, on the row that holds its record ---
   //
@@ -453,9 +453,13 @@ try {
   assert.equal(await card('A01').locator('[data-ai-date] time').getAttribute('datetime'), '2026-09-04');
   await page.locator('[data-ai-clear]').click();
   await page.evaluate(() => { window.firstPageCards = [...document.querySelectorAll('[data-ai-card]')]; });
-  await page.locator('[data-ai-more]').click();
-  assert(await page.evaluate(() => window.firstPageCards.every(node => node.isConnected &&
-    document.querySelector(`[data-ai-key="${node.dataset.aiKey}"]`) === node)), 'Show more appends without replacing existing card nodes');
+  assert.equal(await page.locator('[data-ai-more]').count(), 0);
+  await page.evaluate(() => { window.scrollReader = window.firstPageCards[4]; window.scrollReader.scrollIntoView({ block: 'start' }); });
+  await page.clock.runFor(100);
+  assert(await page.evaluate(() => document.querySelector(`[data-ai-key="${window.scrollReader.dataset.aiKey}"]`) === window.scrollReader), 'scrolling preserves the card being read');
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.clock.runFor(100); // This fixture pauses time near midnight; scrolling paints on frames.
+  await card('OLD').waitFor();
   assert.equal(await card('OLD').count(), 1, 'day-14 evidence remains available before midnight');
   assert.match(await page.locator('[data-section-head]').innerText(), /last 14 days/);
   assert.match(await page.locator('[data-ai-feed-status] > span').getAttribute('title'), /14-day window/);
@@ -717,8 +721,12 @@ try {
   });
   await waitFor(capacityPage, () => document.querySelector('[data-ai-feed-status]')?.dataset.state === 'complete', 30000);
   assert.equal(await capacityPage.locator('[data-ai-card]').count(), 8, 'large evidence windows keep the initial DOM bounded');
-  await capacityPage.locator('[data-ai-more]').click();
-  assert.equal(await capacityPage.locator('[data-ai-card]').count(), 16);
+  assert.equal(await capacityPage.locator('[data-ai-more]').count(), 0);
+  const firstWindow = await capacityPage.locator('[data-ai-card]').first().getAttribute('data-ai-key');
+  await capacityPage.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await capacityPage.clock.runFor(100);
+  await capacityPage.waitForFunction(first => document.querySelector('[data-ai-card]')?.dataset.aiKey !== first, firstWindow);
+  assert((await capacityPage.locator('[data-ai-card]').count()) <= 12, 'scrolling to the tail keeps card DOM bounded');
   await capacityPage.locator('[data-ai-search]').fill('Tail evidence needle');
   assert.equal(await capacityPage.locator('[data-ai-card][data-ticker="CAP404"]').count(), 1,
     'search evaluates the 100,005th event, not only paginated cards or the evidence preview');
@@ -751,7 +759,7 @@ try {
   await capacityPage.evaluate(() => { window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('online')); });
   assert.equal(await capacityPage.evaluate(() => window.reads), disposedReads, 'destroy removes freshness intervals and wake listeners');
   await capacityContext.close();
-  console.log('PASS: 100,005-event UI, bounded pagination, tail search, same-company partial/failure arrivals, 90-second visible rechecks, inactivity resume and cleanup.');
+  console.log('PASS: 100,005-event UI, bounded automatic scrolling, tail search, same-company partial/failure arrivals, 90-second visible rechecks, inactivity resume and cleanup.');
   const obsolete = await page.evaluate(async () => {
     const ai = await import('/js/data/ai-alerts.js');
     const saved = window.fixtureEvents;

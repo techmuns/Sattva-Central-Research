@@ -35,7 +35,17 @@ export function rowGeometry(count, estimate = 72) {
 
 export function mountWindowedList({ scroller, content, items, key, renderRows, renderParts = null, spacerHtml,
   rowSelector, estimateHeight = 72, initialKey = null, onScrollActivity = null, onWindow = null,
-  minRows = 40, maxRows = 100, overscan = 8, patchRow = null, viewportInset = () => 0 }) {
+  minRows = 40, maxRows = 100, overscan = 8, patchRow = null, viewportInset = () => 0, pageScroll = false }) {
+  // Page-sized card grids share the measured window without adding a nested scroll container.
+  const scrollTarget = pageScroll ? window : scroller;
+  const scrollTop = () => pageScroll ? window.scrollY : scroller.scrollTop;
+  const viewportHeight = () => pageScroll ? innerHeight : scroller.clientHeight;
+  const viewportBox = () => pageScroll ? { top: 0, left: 0 } : scroller.getBoundingClientRect();
+  const setScrollTop = top => {
+    if (pageScroll) window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+    else scroller.scrollTop = top;
+  };
+  const previousOverflowAnchor = scroller.style.overflowAnchor;
   const rendered = new Map(); // only mounted nodes and their last generated markup
   const measured = new Map(); // at most one small measurement per currently retained record
   let rows = items, geometry, start = -1, end = 0, frame = 0, measureFrame = 0, disposed = false;
@@ -44,15 +54,15 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   let settleScrollbar = false;
   let pendingRows = null;
   const head = () => content === scroller ? 0 : Math.max(0,
-    content.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop);
-  const rowTop = () => Math.max(0, scroller.scrollTop - head());
+    content.getBoundingClientRect().top - viewportBox().top + scrollTop());
+  const rowTop = () => Math.max(0, scrollTop() - head());
   const resetGeometry = () => {
     geometry = rowGeometry(rows.length, estimateHeight);
     rows.forEach((row, i) => { const old = measured.get(String(key(row))); if (old?.row === row) geometry.set(i, old.height); });
   };
   // Preserve the first readable row. A sticky header can hide the geometric top row;
   // holding that hidden row lets arrivals below it push the visible record down.
-  const anchor = () => { const top = Math.max(0, scroller.scrollTop - head() + viewportInset()), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
+  const anchor = () => { const top = Math.max(0, scrollTop() - head() + viewportInset()), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
   function spacers() {
     const top = content.querySelector('[data-window-spacer="top"]');
     const bottom = content.querySelector('[data-window-spacer="bottom"]');
@@ -61,7 +71,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   }
   function restore(held) {
     const target = head() + geometry.offset(held.index) + held.inside - viewportInset();
-    if (Math.abs(target - scroller.scrollTop) >= 0.5) scroller.scrollTop = target;
+    if (Math.abs(target - scrollTop()) >= 0.5) setScrollTop(target);
   }
   function measureBoxes(boxes) {
     let changed = false;
@@ -96,13 +106,13 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     if (settleScrollbar) {
       // The drag displayed natural heights against frozen estimates. Keep the row actually
       // under the reader's eyes when adopting those heights, rather than the estimated row.
-      const top = scroller.getBoundingClientRect().top + viewportInset();
+      const top = viewportBox().top + viewportInset();
       const visible = boxes.findIndex(box => box.bottom > top);
       if (visible >= 0) held = { index: start + visible, inside: top - boxes[visible].top };
       settleScrollbar = false;
     }
     const changed = measureBoxes(boxes);
-    if (changed && scroller.scrollTop > 0) restore(held);
+    if (changed && scrollTop() > 0) restore(held);
     onWindow?.(start, pendingRows?.length ?? rows.length);
     // Measuring shorter rows can expose an unpainted part of the viewport without another
     // user scroll. Recheck coverage on the next frame after the spacer/anchor correction.
@@ -116,7 +126,7 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   const scheduleMeasure = () => { if (!measureFrame && !disposed) measureFrame = requestAnimationFrame(measure); };
   function onPointerDown(event) {
     if (event.button !== 0 || event.target !== scroller || scroller.scrollHeight <= scroller.clientHeight) return;
-    const box = scroller.getBoundingClientRect();
+    const box = viewportBox();
     const left = box.left + scroller.clientLeft;
     const right = left + scroller.clientWidth;
     const top = box.top + scroller.clientTop;
@@ -137,7 +147,12 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     scheduleMeasure();
   }
   function paint(index, force = false) {
-    const count = Math.max(minRows, Math.min(maxRows, Math.ceil(scroller.clientHeight / 40) + overscan * 2));
+    const visibleHeight = Math.max(0, viewportHeight() - (pageScroll ? Math.max(0, head() - scrollTop()) : 0));
+    const lastVisible = geometry.indexAt(rowTop() + visibleHeight);
+    const needed = pageScroll ? lastVisible - index + 1 + Math.min(overscan, index)
+      + Math.min(overscan, Math.max(0, rows.length - lastVisible - 1))
+      : Math.ceil(viewportHeight() / 40) + overscan * 2;
+    const count = Math.max(minRows, Math.min(maxRows, needed));
     const next = Math.max(0, Math.min(Math.max(0, rows.length - count), index - overscan));
     if (!force && next === start && end === Math.min(rows.length, next + count)) return false;
     start = next; end = Math.min(rows.length, start + count);
@@ -199,12 +214,12 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     frame = requestAnimationFrame(() => {
       frame = 0;
       const index = geometry.indexAt(rowTop());
-      const lastVisible = geometry.indexAt(rowTop() + scroller.clientHeight);
+      const lastVisible = geometry.indexAt(rowTop() + viewportHeight());
       if (index < start + overscan / 2 || lastVisible >= end - overscan / 2) settle(index, { held: draggingScrollbar ? null : anchor() });
     });
   }
   function onScroll() { onScrollActivity?.(); scheduleViewport(); }
-  function update(next, { resetScroll = false } = {}) {
+  function update(next, { resetScroll = false, anchorKey = null, anchorOffset = 0 } = {}) {
     if (draggingScrollbar && !resetScroll) {
       const nextByKey = new Map(next.map(row => [String(key(row)), row]));
       if (rows.every(row => nextByKey.has(String(key(row))))) {
@@ -221,13 +236,14 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
     // disappear immediately, and an older queued presentation must never restore them.
     pendingRows = null;
     draggingScrollbar = false;
-    const held = !resetScroll && scroller.scrollTop > 0 ? anchor() : null;
-    const heldKey = held && rows[held.index] ? String(key(rows[held.index])) : null;
+    const held = anchorKey != null ? { index: 0, inside: anchorOffset }
+      : !resetScroll && scrollTop() > 0 ? anchor() : null;
+    const heldKey = anchorKey != null ? String(anchorKey) : held && rows[held.index] ? String(key(rows[held.index])) : null;
     rows = next;
     const keys = new Set(rows.map(row => String(key(row))));
     for (const k of measured.keys()) if (!keys.has(k)) measured.delete(k);
     resetGeometry();
-    if (resetScroll) scroller.scrollTop = 0;
+    if (resetScroll) setScrollTop(0);
     const nextIndex = heldKey == null ? -1 : rows.findIndex(row => String(key(row)) === heldKey);
     if (nextIndex >= 0) {
       // Source updates can insert rows or replace their objects without changing the record
@@ -237,15 +253,15 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   }
   resetGeometry();
   scroller.style.overflowAnchor = 'none';
-  scroller.addEventListener('scroll', onScroll, { passive: true });
+  scrollTarget.addEventListener('scroll', onScroll, { passive: true });
   scroller.addEventListener('pointerdown', onPointerDown, { passive: true });
   document.addEventListener('pointerup', endScrollbarDrag, true);
   document.addEventListener('pointercancel', endScrollbarDrag, true);
   window.addEventListener('blur', endScrollbarDrag);
   const initialIndex = initialKey == null ? -1 : rows.findIndex(row => String(key(row)) === initialKey);
-  if (initialIndex >= 0) scroller.scrollTop = geometry.offset(initialIndex);
+  if (initialIndex >= 0) setScrollTop(geometry.offset(initialIndex));
   settle(initialIndex >= 0 ? initialIndex : geometry.indexAt(rowTop()), { force: true });
-  if (initialIndex >= 0) scroller.scrollTop = head() + geometry.offset(initialIndex);
+  if (initialIndex >= 0) setScrollTop(head() + geometry.offset(initialIndex));
   const observer = new ResizeObserver(() => {
     if (width !== scroller.clientWidth) {
       const held = anchor(); width = scroller.clientWidth;
@@ -258,11 +274,12 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   observer.observe(scroller); observer.observe(content);
   return {
     update,
-    refresh() { settle(geometry.indexAt(rowTop()), { force: true, held: scroller.scrollTop > 0 ? anchor() : null }); },
+    refresh() { settle(geometry.indexAt(rowTop()), { force: true, held: scrollTop() > 0 ? anchor() : null }); },
     destroy() {
       disposed = true;
       pendingRows = null;
-      observer.disconnect(); scroller.removeEventListener('scroll', onScroll);
+      if (pageScroll) scroller.style.overflowAnchor = previousOverflowAnchor;
+      observer.disconnect(); scrollTarget.removeEventListener('scroll', onScroll);
       scroller.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('pointerup', endScrollbarDrag, true);
       document.removeEventListener('pointercancel', endScrollbarDrag, true);

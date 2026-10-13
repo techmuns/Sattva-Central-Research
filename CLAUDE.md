@@ -4594,6 +4594,13 @@ Keep Sattva's pinned OpenAI provider and ordinary-object RPC responses.
 
 ### Company alert timelines
 
+AI Alerts companies scroll automatically through a measured page window of four to six grid rows
+(up to twelve desktop cards), with no Show more control. Keep all eligible cards available to
+search, counts, sorting and actions; keep mounted cards, timelines and listeners bounded.
+Preserve overlapping card nodes, focus and the company being read across source paints and
+responsive column changes. All Alerts already scrolls its complete filtered record model in its
+bounded table window; never add a manual paging button or change the selected date on scroll.
+
 AI cards expose all selected recent developments in a bounded scrolling window and
 lazily load complete retained older public history. Older evidence must not change
 the 14-day priority or current headline. Preserve checked story members, source
