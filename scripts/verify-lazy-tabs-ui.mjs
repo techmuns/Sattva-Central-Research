@@ -74,10 +74,10 @@ try {
     assert.deepEqual(scripts.filter(row => row.path.startsWith('/js/tabs/')).map(row => row.path).sort(),
       ['/js/tabs/ai-alerts.js', '/js/tabs/ask-research.js', '/js/tabs/catalog.js', '/js/tabs/registry.js']);
     assert(!requests.includes('/data/institution-holdings.json'), 'unrelated holdings are not fetched at startup');
-    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 9, 'all retained navigation remains available before its code loads');
+    assert.equal(await page.locator('[data-tab-id], [data-header-bookmarks]').count(), 8, 'all retained navigation remains available before its code loads');
     assert.deepEqual(await page.locator('[data-tab-id]').evaluateAll(tabs => tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])), [
       ['alerts', 'Alerts'], ['announcements', 'Announcements'], ['earnings', 'Earnings'],
-      ['breakouts', 'Breakouts / Technical'], ['insider-trades', 'Bulk/Block Deal'], ['mutual-funds', 'Mutual Funds'],
+      ['breakouts', 'Breakouts / Technical'], ['mutual-funds', 'Mutual Funds'],
       ['news-section', 'News'], ['super-investors', 'Super Investors'],
     ], 'navigation matches the requested parent order and labels');
     assert.equal(await page.locator('[data-tab-id="ask-research"]').count(), 0, 'Ask Research is absent from navigation, including on its saved route');
@@ -122,7 +122,7 @@ try {
     await page.locator('[data-active-tab="corp-announcements"]').waitFor();
     assert.deepEqual(await page.locator('#subview-mount [data-tab-id]').evaluateAll(tabs =>
       tabs.map(tab => [tab.dataset.tabId, tab.textContent.trim()])),
-      [['corp-announcements', 'Corporate Announcements'], ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs']]);
+      [['corp-announcements', 'Corporate Announcements'], ['corporate-actions', 'Corporate Actions'], ['ipos', 'IPOs'], ['insider-trades', 'Bulk/Block Deal']]);
     assert.equal(await page.locator('#subview-mount [data-tab-id="corp-announcements"]').getAttribute('aria-selected'), 'true', 'Announcements defaults to Corporate Announcements');
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="announcements"]').getAttribute('aria-selected'), 'true');
     assert.equal(await page.locator('#subview-mount [data-tab-id="ai-alerts"]').count(), 0, 'the new parent replaces the previous group');
@@ -188,8 +188,14 @@ try {
     assert.equal(await page.locator('#tabbar-mount [data-tab-id="news-section"]').getAttribute('aria-selected'), 'true');
     await page.evaluate(() => { location.hash = '#/research/public-chatter?scope=universe'; });
     await page.waitForFunction(() => document.querySelector('#scope-toggle-mount [aria-pressed="true"]')?.textContent.trim() === 'Universe');
-    await page.locator('#tabbar-mount [data-tab-id="insider-trades"]').click();
+    await page.locator('#tabbar-mount [data-tab-id="announcements"]').click();
+    await page.locator('[data-active-tab="corp-announcements"]').waitFor();
+    await page.locator('#subview-mount [data-tab-id="insider-trades"]').click();
     await page.locator('[data-active-tab="insider-trades"]').waitFor();
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="announcements"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('#tabbar-mount [data-tab-id="insider-trades"]').count(), 0, 'deals only occupy their announcement subtab');
+    await page.locator('#tabbar-mount [data-tab-id="mutual-funds"]').click();
+    await page.locator('[data-active-tab="mutual-funds"]').waitFor();
     assert(await page.locator('#subview-mount').isHidden(), 'group subtabs leave with their parent');
 
     // Hold one real renderer request while the reader moves to another interface.

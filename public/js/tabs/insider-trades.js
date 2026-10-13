@@ -300,6 +300,6 @@ const tab = makeFilingsTab({
   },
 });
 
-export const meta = tab.meta;
+export const meta = TAB_META['insider-trades'];
 export const render = tab.render;
 export const destroy = tab.destroy;

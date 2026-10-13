@@ -155,6 +155,12 @@ try {
   await fresh.locator('#subview-mount [data-tab-id="concall"][aria-selected="true"]').waitFor();
   assert.equal(await fresh.locator('#tabbar-mount [data-tab-id]').first().getAttribute('data-tab-id'), 'news-section');
   assert.equal(await fresh.locator('#subview-mount [data-tab-drag-handle]').count(), 0, 'subtabs keep their catalog order');
+  await fresh.evaluate(() => location.hash = '#/research/insider-trades?scope=universe&range=all');
+  await fresh.locator('#subview-mount [data-tab-id="insider-trades"][aria-selected="true"]').waitFor();
+  assert.equal(await fresh.locator('#tabbar-mount [data-tab-id="insider-trades"]').count(), 0, 'saved orders cannot restore the removed deals parent');
+  assert.equal(await fresh.locator('#tabbar-mount [data-tab-id]').first().getAttribute('data-tab-id'), 'news-section', 'moving a reader into a group preserves the saved parent layout');
+  assert.deepEqual(await fresh.locator('#subview-mount [data-tab-id]').evaluateAll(tabs => tabs.map(tab => tab.dataset.tabId)),
+    ['corp-announcements', 'corporate-actions', 'ipos', 'insider-trades'], 'announcement readers retain catalog order');
   await clean.close();
 
   previousRelease = true; upgradeFixture = true;
