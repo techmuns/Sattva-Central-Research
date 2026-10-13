@@ -1,6 +1,6 @@
 import { capturedJson } from './company-captures.js';
 import { buildExchangeUniverseAsync } from './exchange-universe.js';
-import { readEntry, writeEntry } from '../core/store.js';
+import { readEntries, writeEntry } from '../core/store.js';
 export { buildExchangeUniverse } from './exchange-universe.js';
 
 let bse = null, nse = null, pending = null;
@@ -32,19 +32,32 @@ export function restore({ build = buildExchangeUniverseAsync } = {}) {
   if (restored || companies.length) return Promise.resolve(companies);
   if (restoring) return restoring;
   restoring = (async () => {
-    const saved = (await readEntry(SAVED_KEY))?.value;
-    let savedBse = saved?.version === 1 ? saved.bse : null;
-    let savedNse = saved?.version === 1 ? saved.nse : null;
-    if (!savedBse && !savedNse) {
-      const entries = await Promise.all(['data/announcement-identities.json', 'data/filing-capture/nse-identities.json']
-        .map(path => readEntry(`capture:${path}`)));
-      [savedBse, savedNse] = entries.map(entry => entry?.value);
+    const bseKey = 'capture:data/announcement-identities.json', nseKey = 'capture:data/filing-capture/nse-identities.json';
+    const entries = await readEntries([SAVED_KEY, bseKey, nseKey]);
+    const saved = entries.get(SAVED_KEY)?.value;
+    const snapshots = saved?.version === 1 ? saved : {};
+    // Per-source responses can finish saving before the joined snapshot. Reconcile every
+    // exchange independently by its actual check time, including a missing half or NSE segment.
+    async function newest(candidates, valid, timeOf, prepare, sizeOf) {
+      const baseline = valid(candidates[0]) ? sizeOf(candidates[0]) : 0;
+      const ordered = [...new Set(candidates)].filter(c => valid(c) && sizeOf(c) >= baseline * 0.8)
+        .sort((a, b) => Date.parse(timeOf(b)) - Date.parse(timeOf(a)));
+      for (const candidate of ordered) {
+        try { await prepare(candidate); return candidate; } catch { /* Try the preceding valid source. */ }
+      }
+      return null;
     }
-    if (!validBse(savedBse)) savedBse = null;
+    const savedBse = await newest([snapshots.bse, entries.get(bseKey)?.value], validBse,
+      c => c.capturedAt, c => build(c, {}), c => c.entries.length);
+    const nseCandidates = [snapshots.nse, entries.get(nseKey)?.value].filter(c => c?.version === 1);
     const directories = {};
-    for (const kind of ['equity', 'sme']) if (savedNse?.version === 1 && validNse(savedNse.directories?.[kind], kind))
-      directories[kind] = savedNse.directories[kind];
-    savedNse = Object.keys(directories).length ? { ...savedNse, directories } : null;
+    for (const kind of ['equity', 'sme']) {
+      const d = await newest([snapshots.nse?.version === 1 ? snapshots.nse.directories?.[kind] : null,
+        ...nseCandidates.map(c => c.directories?.[kind])],
+        d => validNse(d, kind), d => d.checkedAt, d => build({}, { directories: { [kind]: d } }), d => d.entries.length);
+      if (d) directories[kind] = d;
+    }
+    const savedNse = Object.keys(directories).length ? { version: 1, directories } : null;
     if (!savedBse && !savedNse) return companies;
     const built = await build(savedBse || {}, savedNse || {});
     bse = savedBse; nse = savedNse;

@@ -937,7 +937,15 @@ function renderMomentumScanner(ctx, rows) {
   const passers = rows.filter((s) => momentum.passesGate(gate, vf(s), thresholds));
   // A source gap is not an empty company universe. Keep saved, dated readings searchable in
   // the existing table when no row can be evaluated; Exception pills never certify a live pass.
-  const savedOnly = !evaluable.length && rows.length > 0;
+  const unscannable = !evaluable.length && rows.length > 0;
+  const allQuotesUnavailable = rows.every(s => /Current market data/.test(vf(s).unavailableReason || ''));
+  const allHistoryOutdated = rows.every(s => /Daily price history/.test(vf(s).unavailableReason || ''));
+  const allQuotesCurrent = rows.every(s => vf(s).isLiveQuote);
+  const exceptionNote = allQuotesUnavailable
+    ? 'Saved readings are shown as exceptions while current data is unavailable.'
+    : allHistoryOutdated ? 'Saved readings are shown as exceptions while daily price history is outdated.'
+      : allQuotesCurrent ? 'Current prices are available, but the history required for this filter is incomplete.'
+        : `${rows.every(s => !vf(s).isLiveQuote) ? 'Saved' : 'Available'} readings are shown as exceptions; see scan coverage for the missing data.`;
   const priceCell = s => {
     if (vf(s).isLiveQuote) return cmpCell(s.company);
     const c = s.company;
@@ -948,7 +956,7 @@ function renderMomentumScanner(ctx, rows) {
   const col = (label, build, sortValue, align = 'left') => ({ label, get: (s) => build(vf(s)), html: true, align, sortValue: (s) => sortValue(vf(s)) });
 
   const table = scoreTable({
-    ...tableBase(savedOnly ? rows : passers, ctx),
+    ...tableBase(unscannable ? rows : passers, ctx),
     initialView: tableViews.get(ctx.subview) || (ctx.params?.company ? { q: String(ctx.params.company).trim().toUpperCase() } : null),
     nameLabel: 'Stock',
     emptyMessage:
@@ -986,7 +994,7 @@ function renderMomentumScanner(ctx, rows) {
         'A live momentum screener across the top-500 universe. Adjust the thresholds and the list re-filters instantly.',
     })}
     ${momentumControls(gate, thresholds)}
-    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${savedOnly ? ' Saved readings are shown as exceptions while current data is unavailable.' : ''}${scopeHint}</div>
+    <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${formatNumber(passers.length)} of ${formatNumber(evaluable.length)}</span> ${evaluable.length === 1 ? 'stock passes' : 'stocks pass'} ${escapeHtml(gateLabel)}.${unscannable ? ` ${escapeHtml(exceptionNote)}` : ''}${scopeHint}</div>
     ${table.html}
     <div class="mt-6 border-t border-slate-100 pt-4 text-center">
       <button type="button" data-momentum-coverage
@@ -1023,16 +1031,16 @@ function runMomentumExport(visibleRows, filename, thresholds) {
     { header: 'Quote source and time', key: 'quote_time', width: 40, get: (s) => vf(s).isLiveQuote ? live.priceInfo(s.company).label : `Saved daily close · ${s.company.price_date || s.company.bar_date || 'date unavailable'}` },
     { header: 'Filter 1 (Strong Momentum)', key: 'f1', width: 24, get: (s) => vf(s).f1.evaluable ? yn(vf(s).f1.pass) : 'Exception' },
     { header: 'Filter 2 (Volume + Momentum)', key: 'f2', width: 26, get: (s) => vf(s).f2.evaluable ? yn(vf(s).f2.pass) : 'Exception' },
-    { header: 'Volume vs 10D avg (× so far today)', key: 'vol', width: 30, get: (s) => (vf(s).volRatio10d == null ? null : Number(vf(s).volRatio10d.toFixed(2))) },
-    { header: 'RSI Daily (live)', key: 'rsid', width: 16, get: (s) => (vf(s).rsiDaily == null ? null : Number(vf(s).rsiDaily.toFixed(2))) },
-    { header: 'RSI Weekly (live)', key: 'rsiw', width: 16, get: (s) => (vf(s).rsiWeekly == null ? null : Number(vf(s).rsiWeekly.toFixed(2))) },
-    { header: 'RSI Monthly (live)', key: 'rsim', width: 16, get: (s) => (vf(s).rsiMonthly == null ? null : Number(vf(s).rsiMonthly.toFixed(2))) },
-    { header: 'MACD bullish (live)', key: 'macd', width: 16, get: (s) => yn(vf(s).macdBullish) },
+    { header: 'Volume / 10-day average', key: 'vol', width: 30, get: (s) => (vf(s).volRatio10d == null ? null : Number(vf(s).volRatio10d.toFixed(2))) },
+    { header: 'RSI Daily', key: 'rsid', width: 16, get: (s) => (vf(s).rsiDaily == null ? null : Number(vf(s).rsiDaily.toFixed(2))) },
+    { header: 'RSI Weekly', key: 'rsiw', width: 16, get: (s) => (vf(s).rsiWeekly == null ? null : Number(vf(s).rsiWeekly.toFixed(2))) },
+    { header: 'RSI Monthly', key: 'rsim', width: 16, get: (s) => (vf(s).rsiMonthly == null ? null : Number(vf(s).rsiMonthly.toFixed(2))) },
+    { header: 'MACD bullish', key: 'macd', width: 16, get: (s) => yn(vf(s).macdBullish) },
     { header: 'MACD fresh cross', key: 'xcross', width: 16, get: (s) => yn(vf(s).freshCross) },
-    { header: 'Above 20 DMA (live)', key: 'd20', width: 16, get: (s) => yn(vf(s).above20dma) },
-    { header: 'Above 50 DMA (live)', key: 'd50', width: 16, get: (s) => yn(vf(s).above50dma) },
-    { header: 'Above 100 DMA (live)', key: 'd100', width: 17, get: (s) => yn(vf(s).above100dma) },
-    { header: 'Above 200 DMA (live)', key: 'd200', width: 17, get: (s) => yn(vf(s).above200dma) },
+    { header: 'Above 20 DMA', key: 'd20', width: 16, get: (s) => yn(vf(s).above20dma) },
+    { header: 'Above 50 DMA', key: 'd50', width: 16, get: (s) => yn(vf(s).above50dma) },
+    { header: 'Above 100 DMA', key: 'd100', width: 17, get: (s) => yn(vf(s).above100dma) },
+    { header: 'Above 200 DMA', key: 'd200', width: 17, get: (s) => yn(vf(s).above200dma) },
     { header: 'Thresholds', key: 'thr', width: 44, get: () => `RSI D1>${thresholds.rsiD1}, W>${thresholds.rsiW}, M>${thresholds.rsiM}; F2 RSI D>${thresholds.rsiD2}, Vol≥${thresholds.volMult}×` },
   ];
   exportRows({ filename, sheetName: 'Momentum Scanner', columns, rows }).then((ok) => {

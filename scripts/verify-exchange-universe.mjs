@@ -109,4 +109,19 @@ release(); await loading; off();
 assert.deepEqual(reloaded.all(), changedRows);
 assert.deepEqual(reloaded.meta().sources.map(s => s.checkedAt), restoredTimes);
 assert(reloaded.meta().errors.length >= 2);
+
+// An interrupted save can leave an old partial joined snapshot and independently newer source
+// entries. Recover all exchanges/segments, not just whichever fields the joined snapshot had.
+await writeEntry('snapshot:listed-companies:verified-sources:v1', { value: { version: 1, bse,
+  nse: { version: 1, directories: { equity: nse.directories.equity } } } });
+await writeEntry('capture:data/announcement-identities.json', { value: changedBse });
+await writeEntry('capture:data/filing-capture/nse-identities.json', { value: nse });
+const interrupted = await import('../public/js/data/listed-companies.js?interrupted-source-save');
+await interrupted.load({ read: async () => { throw Error('offline'); } });
+assert.deepEqual(interrupted.all(), changedRows, 'newer per-exchange caches fill every missing exchange and NSE segment');
+assert.equal(interrupted.meta().sources.find(s => s.label === 'BSE').checkedAt, changedBse.capturedAt);
+await writeEntry('capture:data/announcement-identities.json', { value: { ...changedBse, entries: [] } });
+const malformed = await import('../public/js/data/listed-companies.js?malformed-source-cache');
+await malformed.restore();
+assert.deepEqual(malformed.all(), changedRows, 'a malformed per-source cache cannot replace the verified joined snapshot');
 console.log(`PASS ${expected.size} exchange equity identities: complete union, BSE/NSE collisions, automatic enrollment, persisted exclusions and failure retention.`);

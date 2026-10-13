@@ -344,6 +344,20 @@ try {
     ok('source failures retain all company names in the existing scanner table', companies.every(c => saved.includes(c.name)));
     ok('saved rows carry dated prices and Exception status', /Saved daily close/.test(saved) && /Exception/.test(saved) && !/\bPass\b/.test(saved));
     ok('unavailable data is never counted as a current pass', /0 of 0 stocks pass/.test(await page.locator('#content-host').innerText()));
+    await page.evaluate(() => {
+      window.exported = { columns: [], rows: [] };
+      window.ExcelJS = { Workbook: class {
+        constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array() }; }
+        addWorksheet() { return { set columns(value) { window.exported.columns = value; },
+          addRow(row) { window.exported.rows.push(row); }, getRow() { return {}; } }; }
+      } };
+    });
+    await page.locator('#content-host [data-export]').click();
+    await page.waitForFunction(() => window.exported.rows.length > 0);
+    const exported = await page.evaluate(() => window.exported);
+    ok('exports retain every saved row with dated prices and Exception status', exported.rows.length === companies.length &&
+      exported.rows.every(row => row.f1 === 'Exception' && row.f2 === 'Exception' && /Saved daily close/.test(row.quote_time)));
+    ok('saved export headers make no live freshness claim', exported.columns.every(c => !/\blive\b|so far today/i.test(c.header)));
     await page.locator('#content-host [data-table-search]').fill('MOMOA');
     await page.waitForFunction(() => !document.querySelector('[data-rows-pending]'));
     ok('saved names remain searchable during failure', (await page.locator('#content-host [data-score-table] tbody').innerText()).includes(companies[0].name));
@@ -353,6 +367,21 @@ try {
     ok('live recovery keeps the reader search', (await page.locator('#content-host [data-table-search]').inputValue()).toUpperCase() === 'MOMOA');
     ok('recovery restores current Pass status automatically', /\bPass\b/.test(await page.locator('#content-host [data-score-table] tbody').innerText()));
     ok('saved-first scanner recovery has no application errors', errors.filter(isOurError).length === 0);
+    await context.close();
+  }
+
+  {
+    const { context, page } = await newPage(1440, 1000);
+    await page.goto(ROUTE, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#content-host [data-score-table]');
+    await page.evaluate(async () => {
+      (await import('/js/core/watchlist.js')).add('MOMOF', 'Young Stock');
+      location.hash = '#/research/breakouts/momentum-scanner?scope=watchlist';
+    });
+    await page.waitForFunction(() => /Current prices are available, but the history required/.test(document.querySelector('#content-host')?.textContent));
+    const text = await page.locator('#content-host').innerText();
+    ok('fresh quotes with insufficient history are never described as a quote outage', text.includes('Young Stock') &&
+      text.includes('Exception') && !/current data is unavailable|Saved daily close/.test(text));
     await context.close();
   }
 
