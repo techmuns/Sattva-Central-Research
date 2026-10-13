@@ -819,6 +819,46 @@ try {
   const updatesAtDispose = await embedded.evaluate(() => { window.streamFixture.add(['leave-two', 'leave-one']); return window.streamFixture.dispose(); });
   await page.clock.runFor(500);
   assert.equal(await embedded.evaluate(() => window.streamFixture.updates()), updatesAtDispose, 'leaving the table cancels queued entrances');
+  // Keep this lifecycle regression independent of the ordinary reader's scrolling timers.
+  const savedContext = await browser.newContext({ serviceWorkers: 'block' });
+  await savedContext.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 404, body: '' }));
+  const savedPage = await savedContext.newPage();
+  savedPage.on('pageerror', error => errors.push(error.message));
+  await savedPage.goto(origin); await settled(savedPage);
+  const savedPeriod = savedPage.getByRole('combobox', { name: 'Date range', exact: true });
+  await savedPeriod.selectOption('all');
+  await savedPage.locator('[data-sources-summary]').click();
+  await savedPage.locator('[data-feed-toggle="news"]').click();
+  await savedPage.locator('[data-feed-toggle="announcements"]').click();
+  await savedPage.locator('[data-sources-close]').click();
+  // Closing a shared preset must return every ordinary-reader choice, including its source set.
+  const searchBeforeSaved = await savedPage.locator('[data-table-search]').inputValue();
+  await savedPage.locator('[data-table-search]').fill('Baseline reader filter');
+  const normalReading = await savedPage.evaluate(async () => ({
+    reading: (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')),
+    extras: (await import('/js/tabs/daily-alerts.js')).getSavedView(),
+  }));
+  await savedPage.evaluate(async () => {
+    window.dispose();
+    const tab = await import('/js/tabs/daily-alerts.js'), views = await import('/js/core/view-reading.js');
+    const reading = { q: 'Saved screen only', filters: [{ label: 'Priority', value: 'high' }, { label: 'Direction', value: 'positive' }, { label: 'Date range', value: '7d' }], extras: { allSources: false, sources: ['earnings'] } };
+    views.enterView({ source: 'daily-alerts', key: 'fixture-saved-alerts', preset: { reading } });
+    tab.applySavedView(reading.extras, reading);
+    tab.render({ root: document.querySelector('#root'), scope: 'universe', params: { company: 'STLTECH' }, data: {}, savedView: { reading }, savedViewKey: 'fixture-saved-alerts' });
+  });
+  await settled(savedPage);
+  assert.equal(await savedPage.locator('[data-table-search]').inputValue(), 'Saved screen only');
+  assert.equal(await savedPeriod.inputValue(), '7d');
+  assert.deepEqual(await savedPage.evaluate(async () => (await import('/js/tabs/daily-alerts.js')).getSavedView().sources), ['earnings']);
+  await savedPage.evaluate(async () => { window.dispose(); (await import('/js/core/view-reading.js')).enterView(null); window.show(); });
+  await settled(savedPage);
+  const restoredReading = await savedPage.evaluate(async () => ({
+    reading: (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')),
+    extras: (await import('/js/tabs/daily-alerts.js')).getSavedView(),
+  }));
+  assert.deepEqual(restoredReading, normalReading, 'ordinary sources, search, priority, direction, sort and date window survive a shared saved screen');
+  await savedPage.locator('[data-table-search]').fill(searchBeforeSaved);
+  await savedContext.close();
   assert.deepEqual(errors, [], 'zero application errors');
   console.log('PASS: source updates, privacy, filters, cleanup and native iframe wheel scrolling with stable virtual geometry.');
 } finally { await browser.close(); await new Promise((done) => server.close(done)); }
