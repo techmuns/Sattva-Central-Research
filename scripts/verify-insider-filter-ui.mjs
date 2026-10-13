@@ -8,7 +8,7 @@ import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 const at = new Date().toISOString();
-const date = at.slice(0, 10);
+const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at));
 const types = ['Buy', 'Sell', 'Acquisition', 'Disposal', 'Pledge', 'Revoke', 'Invoke', 'Gift'];
 const categories = ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'];
 const fullCompany = 'A Very Long Company Name With Investments Manufacturing And Telecommunications Limited';
