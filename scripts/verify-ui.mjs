@@ -6678,6 +6678,11 @@ console.log('\n— news, announcements and insider trades —');
     insiderSources.rows > 0 && insiderSources.linked === insiderSources.rows && insiderSources.onlyArrow && insiderSources.safe,
     `${insiderSources.linked} links across ${insiderSources.rows} sampled rows`);
   const insiderFilters = await page.evaluate(async () => {
+    const [{ insider }, { filterByScope }, { matchesNewsPeriod }, { tradeFilters }] = await Promise.all([
+      import('/js/data/filings.js'), import('/js/data/scope.js'), import('/js/data/news-window.js'), import('/js/tabs/insider-trades.js'),
+    ]);
+    const rows = filterByScope(insider.rows(), 'portfolio');
+    const definitions = tradeFilters(rows);
     const selects = [...document.querySelectorAll('[data-table-filter]')];
     const countText = document.querySelector('[data-row-count]')?.textContent || '';
     const total = Number((countText.match(/[\d,]+/) || ['0'])[0].replace(/,/g, ''));
@@ -6690,14 +6695,19 @@ console.log('\n— news, announcements and insider trades —');
       select.value = choice.value;
       select.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 30));
-      const shown = Number((document.querySelector('[data-row-count]')?.textContent || '').match(/\d+/)?.[0] || 0);
-      results.push({ label: select.getAttribute('aria-label'), initial, choice: choice.textContent, shown });
+      const shown = Number((document.querySelector('[data-row-count]')?.textContent || '').replace(/,/g, '').match(/\d+/)?.[0] || 0);
+      const label = select.getAttribute('aria-label');
+      const definition = definitions.find(field => field.label === label);
+      const expected = rows.filter(row => definition.match(row, choice.value) && (period || matchesNewsPeriod(row, '30'))).length;
+      results.push({ label, initial, choice: choice.textContent, shown, expected });
       select.value = initial;
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }
     return {
       labels: selects.map((s) => s.getAttribute('aria-label')),
       optionCounts: selects.map((s) => s.options.length),
+      expectedOptions: selects.map(select => definitions.find(field => field.label === select.getAttribute('aria-label')).options.length),
+      availableChoices: definitions.filter(field => field.label !== 'Trade period' && field.options.length > 1).length,
       countText,
       total,
       results,
@@ -6705,15 +6715,15 @@ console.log('\n— news, announcements and insider trades —');
   });
   ok('the Insider Trades toolbar separates trade rows from portfolio companies',
     /^[\d,]+ trades from [\d,]+ portfolio companies$/i.test(insiderFilters.countText.trim()), insiderFilters.countText.trim());
-  ok('insider trades offers Category, Transaction type, Mode and Trade period filters',
-    ['Category', 'Transaction type', 'Mode', 'Trade period'].every((label) => insiderFilters.labels.includes(label)),
+  ok('insider trades offers Trade category, Exchange, Transaction type, Mode and Trade period without a person Category predicate',
+    ['Trade category', 'Exchange', 'Transaction type', 'Mode', 'Trade period'].every((label) => insiderFilters.labels.includes(label)) && !insiderFilters.labels.includes('Category'),
     insiderFilters.labels.join(' · '));
   ok('...each dropdown is populated from the rows in scope',
-    insiderFilters.optionCounts.length === 4 && insiderFilters.optionCounts.every((n) => n > 1),
+    insiderFilters.optionCounts.length === 5 && insiderFilters.optionCounts.every((n, i) => n === insiderFilters.expectedOptions[i]),
     insiderFilters.optionCounts.join(' · '));
-  ok('...and each selection narrows the table',
-    insiderFilters.results.filter((r) => r.label !== 'Trade period').length === 3 &&
-      insiderFilters.results.filter((r) => r.label !== 'Trade period').every((r) => r.shown > 0 && r.shown < insiderFilters.total),
+  ok('...and each selection displays its exact matching source rows',
+    insiderFilters.results.filter((r) => r.label !== 'Trade period').length === insiderFilters.availableChoices &&
+      insiderFilters.results.every((r) => r.shown === r.expected),
     insiderFilters.results.map((r) => `${r.label}: ${r.choice} → ${r.shown}`).join(' · '));
   const insiderPeriod = insiderFilters.results.find((r) => r.label === 'Trade period');
   ok('...with Trade period defaulting to 30 days and All captured restoring older rows',

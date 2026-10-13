@@ -3,6 +3,9 @@
 [data-filings-view="insider-trades"] ~ [data-score-table] { border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); box-shadow: none; }
 [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 18px; }
 [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child { display: grid; grid-template-columns: minmax(220px, 1fr) 180px 155px 110px 128px; gap: 8px; align-items: center; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child:has([data-watch-toggle]) { grid-template-columns: minmax(180px, 1fr) 180px 155px 110px 136px 128px; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-watch-toggle] { width: 100%; min-height: 42px; font-size: 13px; padding: 8px 10px; white-space: nowrap; }
+[data-filings-view="insider-trades"] ~ [data-score-table] [data-watch-count] { display: none; }
 [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] .relative:has([data-table-search]) { min-width: 0 !important; max-width: none; }
 [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] :where(input, select, [data-filter-group-toggle], [data-export]) { width: 100%; min-width: 0; min-height: 42px; border-radius: 9px; font-size: 13px; box-shadow: none; }
 [data-filings-view="insider-trades"] ~ [data-score-table] [data-filter-group] { min-width: 0; }
@@ -35,11 +38,14 @@
 }
 @media (max-width: 1100px) {
   [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child:has([data-watch-toggle]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   [data-filings-view="insider-trades"] ~ [data-score-table] .relative:has([data-table-search]) { grid-column: 1 / -1; }
 }
 @media (max-width: 600px) {
   [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] { padding: 12px; }
   [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] > div:first-child:has([data-watch-toggle]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-filings-view="insider-trades"] ~ [data-score-table] [data-watch-toggle] + [data-export] { grid-column: 1 / -1; }
   [data-filings-view="insider-trades"] ~ [data-score-table] [data-table-toolbar] :where(input, select, [data-filter-group-toggle], [data-export]) { min-height: 44px; }
 }
 /* IPO reading controls stay together, with a separate, consistently aligned results row. */

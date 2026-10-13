@@ -341,7 +341,7 @@ export function makeFilingsTab(cfg) {
       fillMode: cfg.fillMode || 'auto',
       initialRowCount: oldRows.length || 40,
       initialRowKey: position?.key || null,
-      showWatchFilter: cfg.showWatchFilter !== false,
+      showWatchFilter: typeof cfg.showWatchFilter === 'function' ? cfg.showWatchFilter(ctx, view) : cfg.showWatchFilter !== false,
       columns: cfg.columns(m),
       filters: cfg.filters ? cfg.filters(rows) : null,
       filterGroup: cfg.filterGroup || null,

@@ -162,7 +162,8 @@ const tab = makeFilingsTab({
   rowName: companyNameFor,
   rowSub: (r) => insiderNameFor(r) || '(not named)',
   afterSub: (r) => r.ticker ? `<span class="deal-ticker">${escapeHtml(r.ticker)}</span>` : '',
-  showWatchFilter: false,
+  // Keep the exact scope intersection of legacy saved screens until the reader clears it.
+  showWatchFilter: (_ctx, reading) => !!reading?.watchOnly,
   searchable: (r) => `${companyNameFor(r)} ${r.ticker || ''} ${Object.values(r.cells || {}).join(' ')} ${Object.entries(r.cells || {})
     .filter(([header]) => /shares|quantity|price|value|amount|stake|%/i.test(header))
     .map(([, value]) => numberText(String(value ?? ''))).join(' ')}`,
@@ -210,6 +211,11 @@ const tab = makeFilingsTab({
     const exportIcon = table?.querySelector('[data-export] [aria-hidden]');
     if (exportIcon) exportIcon.innerHTML = '<svg class="deal-control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></svg>';
     const toolbar = table?.querySelector('[data-table-toolbar]');
+    const watchButton = toolbar?.querySelector('[data-watch-toggle]');
+    if (watchButton) {
+      watchButton.children[1].textContent = 'Watchlist only';
+      watchButton.title = 'Restrict this scope to watchlisted companies';
+    }
     const exportButton = toolbar?.querySelector('[data-export]');
     if (exportButton) toolbar.firstElementChild.append(exportButton);
     const select = root.querySelector('[data-table-filter][aria-label="Trade period"]');

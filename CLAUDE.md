@@ -6,7 +6,8 @@ Read this before touching anything. `docs/SPEC.md` has the product detail;
 Bulk/Block Deals reading controls: search, Trade category and Trade period remain visible;
 Exchange, Transaction type and Mode live under Filters. Person Category is a source column,
 searchable and exported, with no selector or hidden predicate. The shared Watchlist scope owns
-company selection. Keep full issuer/party names, all source columns, exact named saved filters,
+company selection; legacy saved Watchlist intersections retain an explicit Watchlist only
+control until cleared. Keep full issuer/party names, all source columns, exact named saved filters,
 source links, bounded mounted rows and automatic arrivals. Numeric display groups digits as
 text without changing units, decimal precision, source tooltips or exported values.
 

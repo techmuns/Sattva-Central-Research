@@ -189,9 +189,11 @@ try {
   await page.evaluate(async () => {
     const tab = await import('/js/tabs/insider-trades.js');
     const { enterView } = await import('/js/core/view-reading.js');
+    const watchlist = await import('/js/core/watchlist.js');
+    watchlist.add('TEST', 'Test Company');
     tab.destroy();
     enterView({ key: 'legacy-deals', source: 'insider-trades', preset: { reading: {
-      tableKey: 'sattva-insider-trades', q: 'Window party 249', watchOnly: false, sort: { key: 'Date', dir: 'desc' },
+      tableKey: 'sattva-insider-trades', q: 'Window party 249', watchOnly: true, sort: { key: 'Date', dir: 'desc' },
       filters: [{ label: 'Category', value: 'Public' }, { label: 'Trade category', value: 'Bulk deal' },
         { label: 'Exchange', value: 'NSE' }, { label: 'Transaction type', value: 'Buy' },
         { label: 'Mode', value: 'On Market' }, { label: 'Trade period', value: 'today' }],
@@ -204,6 +206,19 @@ try {
     assert.equal(await page.getByLabel(label, { exact: true }).inputValue(), value, `saved ${label} keeps its meaning`);
   }
   assert.equal(await page.getByLabel('Category', { exact: true }).count(), 0);
+  const legacyWatch = page.getByRole('button', { name: /Watchlist only/ });
+  assert(await legacyWatch.isVisible(), 'legacy Watchlist restrictions remain explicit and clearable');
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    const box = await legacyWatch.boundingBox();
+    assert(box && box.x >= 0 && box.x + box.width <= width, 'legacy control fits every viewport');
+  }
+  await page.locator('[data-watch="TEST"]').click();
+  await page.waitForFunction(() => /^0 trades/.test(document.querySelector('[data-row-count]')?.textContent));
+  await legacyWatch.click();
+  await page.waitForFunction(() => /^1 trade /.test(document.querySelector('[data-row-count]')?.textContent));
+  assert.equal(await page.evaluate(async () => (await import('/js/core/view-reading.js')).captureTableReading(document.querySelector('#root')).watchOnly), false,
+    'only an explicit clear releases the saved company restriction');
   assert.deepEqual(errors, []);
   console.log('PASS company-first complete names, issuer fallbacks, bounded wrapped history, compact filters, small viewports and retained disclosures');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
