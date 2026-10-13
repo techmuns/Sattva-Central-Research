@@ -20,7 +20,7 @@ const books = {
 };
 const investors = [...Object.keys(books), 'missing'].map(slug => ({ slug, name: slug }));
 const snapshot = { capturedAt: at, investors, books };
-const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2026-08-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: 'fixture-book',
+const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2026-08-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-09-01T00:00:00Z', null])) + '|whole-family',
   privateWorkbook: { source: 'fixture.xlsx', received: '2026-09-02', saved: null }, coverage: { transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 1, note: 'Fixture custodians, retained ledger events and private funds; no PMS statement return series.' },
   managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2026-08-31',
     values: { marketValue: 1000, costBasis: 800, unrealised: 200, cashValue: 0, positionCount: 2 },
