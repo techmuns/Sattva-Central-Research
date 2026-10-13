@@ -89,7 +89,8 @@ try {
   await page.route('**/*', route => route.request().url().startsWith(origin + '/') ? route.continue() : route.abort());
   await page.clock.install({ time: new Date(now) });
   await page.goto(origin);
-  await page.locator('[data-chatter-state="updated"]').waitFor();
+  await page.waitForFunction(() => chatter.meta()?.health?.state === 'updated');
+  assert.equal(await page.locator('[data-chatter-live]').count(), 0, 'collection status is absent from the page header');
   assert.equal(await page.evaluate(() => chatter.meta().total), 3, 'every dashboard page is included');
   assert.equal(await page.locator('#root tbody tr[data-row-key]').count(), 2);
   assert.equal(calls, 2, 'two pages, with no duplicate initial read');
@@ -102,7 +103,7 @@ try {
   await search.evaluate(input => { window.originalSearch = input; });
   collection = { ...collection, sources: { ...collection.sources, news: { ...collection.sources.news, state: 'partial' } } }; revision++;
   await page.evaluate(() => chatter.refresh());
-  assert.equal(await page.locator('[data-chatter-live]').getAttribute('data-chatter-state'), 'partial');
+  assert.equal(await page.evaluate(() => chatter.meta().health.state), 'partial');
   assert(await page.evaluate(() => originalSearch === document.querySelector('#root [data-table-search]')), 'status changes preserve the mounted search input');
   assert.equal(await search.inputValue(), 'Tata');
 
@@ -113,8 +114,8 @@ try {
   await page.reload();
   await page.locator('#root tbody tr[data-row-key]').first().waitFor({ timeout: 1500 });
   assert(performance.now() - start < 1500, 'saved rows paint before slow revalidation');
-  assert.equal(await page.locator('[data-chatter-live]').getAttribute('data-chatter-state'), 'checking');
-  await page.locator('[data-chatter-state="failed"]').waitFor();
+  assert.equal(await page.evaluate(() => chatter.meta().health.state), 'checking');
+  await page.waitForFunction(() => chatter.meta()?.health?.state === 'failed');
   assert.equal(await page.locator('#root tbody tr[data-row-key]').count(), 2, 'failed first revalidation retains disk data');
   delayMs = 0; failed = false;
   await page.evaluate(() => chatter.refresh());
@@ -211,13 +212,16 @@ try {
   await page.clock.setSystemTime(new Date('2026-09-15T18:00:00Z'));
   await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
   await page.waitForFunction(() => chatter.meta().health.state === 'delayed' && !chatter.meta().checking);
-  assert.equal(await page.locator('[data-chatter-live]').getAttribute('data-chatter-state'), 'delayed', 'unchanged transport success cannot refresh source-check times');
+  assert.equal(await page.locator('[data-chatter-live]').count(), 0, 'delayed collection does not add the removed header badge');
+  await page.locator('[data-chatter-source-details]').click();
+  assert((await page.locator('[data-chatter-source-dialog]').innerText()).includes('Collection delayed'), 'source details retain the actual collection state');
+  await page.getByRole('button', { name: 'Close source details', exact: true }).click();
   malformed = true;
   await page.evaluate(() => chatter.refresh());
   failed = true; malformed = false;
   await page.reload();
   await page.locator('#root tbody tr[data-row-key]').first().waitFor();
-  await page.locator('[data-chatter-state="failed"]').waitFor();
+  await page.waitForFunction(() => chatter.meta()?.health?.state === 'failed');
   assert.equal(await page.evaluate(() => chatter.byTicker('TCS').mentions), 1002, 'malformed responses never replace the last-good disk capture');
   failed = false; generation = '2026-09-14T00:00:00Z'; revision++;
   await page.evaluate(() => chatter.refresh());
