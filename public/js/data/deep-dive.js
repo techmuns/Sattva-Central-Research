@@ -425,8 +425,9 @@ export async function readyByTicker() {
 }
 
 /** ticker -> every finished summary, newest first, so an older quarter is not hidden by the latest. */
-export async function readyReportsByTicker() {
-  const body = await summary();
+export async function readyReportsByTicker({ refresh = false, strict = false } = {}) {
+  const body = await summary({ refresh });
+  if (strict && !Array.isArray(body?.summaries)) throw Error('Published assessment index is unavailable');
   const out = {};
   for (const row of body?.summaries || []) {
     const ticker = String(row?.ticker || '').toUpperCase();

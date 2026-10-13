@@ -41,11 +41,13 @@ import { resultTierOf, sentimentTierOf, docUrl, fingerprint, mergeScans } from '
 import { validateScreenerUpcomingRows } from './screener-upcoming-shared.js';
 import { filterByScope } from './scope.js';
 import { KEYS, conditionalJson, readEntry, writeEntry, revalidatedJson, isPersistent } from '../core/store.js';
+import { retainConcallAnalysis } from './concall-analysis-history.js';
 
 const SNAPSHOT_PATH = 'data/concall-scans.json';
 const LIVE_ENDPOINT = 'api/concalls';
 const STORE_KEY = KEYS.concalls;
 const SCHEDULE_KEY = KEYS.concallPortfolioUpcoming;
+const ANALYSIS_HISTORY_KEY = 'concalls:published-analysis-history-v1';
 
 export const LIVE_ID = 'concall-scans';
 export const POLL_MS = 30000;
@@ -57,6 +59,7 @@ let heldSchedule = null;
 let seenKeys = null; // key -> hadAnalysis, so "analysis landed" counts as an arrival
 let arrivals = [];
 const listeners = new Set();
+let analysisHistory = [];
 
 /**
  * A ROW'S IDENTITY IS NOT (COMPANY, TIME) — measured, on this feed, today.
@@ -102,6 +105,9 @@ export function load() {
 }
 
 async function build() {
+  const archive = await readEntry(ANALYSIS_HISTORY_KEY);
+  if (Array.isArray(archive?.value?.rows)) analysisHistory = archive.value.rows.filter(row => row &&
+    typeof row.name === 'string' && typeof row.companyKey === 'string' && Array.isArray(row.tags) && row.analysisTracked !== false);
   // 0. The retained portfolio calendar, BEFORE anything is ingested. Without it a reload during an
   //    S Screen outage repaints an empty Upcoming view from the stored response, which is the
   //    version of this failure that looks permanent — see `ingest`. Validated on the way in: these
@@ -250,7 +256,12 @@ function markScheduleUnconfirmed() {
 }
 
 function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
-  const rows = assignRowIds((payload?.rows || []).map(decorate).sort(byNewest));
+  const archived = retainConcallAnalysis(payload?.rows || [], analysisHistory, payload?.meta?.fetchedAt || null,
+    !live || (payload?.meta?.analysisLive !== true && !!payload?.degraded));
+  analysisHistory = archived.analysisRows;
+  const rows = assignRowIds(archived.rows.map(decorate).sort(byNewest));
+  // Separate from STORE_KEY: a conditional response's bytes must remain paired with its ETag.
+  void writeEntry(ANALYSIS_HISTORY_KEY, { value: { rows: analysisHistory } });
   const schedule = scheduleFrom(payload);
   const screener = payload?.meta?.screener || null;
   const suppliedAt = screener?.checkedAt || null;
@@ -306,7 +317,7 @@ function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
       ...(payload?.meta || {}),
       count: rows.length,
       analysed: rows.filter((r) => r.resultScore != null).length,
-      isLive: live && !payload?.degraded,
+      isLive: live && (payload?.meta?.analysisLive === true || !payload?.degraded),
       degraded: payload?.degraded || null,
       receivedAt: Date.now(),
       // Where this paint came from, and when the server last confirmed it. `fetchedAt` is when
@@ -443,6 +454,8 @@ function hasChanged(payload) {
   if (!cache) return true;
   if ((payload.rows?.length ?? 0) !== cache.meta.count) return true;
   if (!!payload.degraded !== !!cache.meta.degraded) return true;
+  if (payload?.meta?.truncated !== cache.meta.truncated || payload?.meta?.analysisLive !== cache.meta.analysisLive ||
+      payload?.meta?.historyError !== cache.meta.historyError) return true;
   // A CALENDAR ARRIVING OR GOING MISSING IS ITSELF A CHANGE, even when its rows are identical.
   // The coverage chip reads `portfolioUpcomingRetained`, so a transition nobody is told about
   // leaves All Alerts printing the previous answer — a retained calendar still labelled
