@@ -3935,7 +3935,6 @@ const tg = await evalSafe(async () => {
     panel: host.querySelector('[data-chatter-panel]')?.dataset.chatterPanel || '',
     heads,
     description: host.querySelector('p')?.textContent?.replace(/\s+/g, ' ').trim() || '',
-    footnotes: host.querySelector('[data-telegram-footnotes]')?.textContent?.replace(/\s+/g, ' ').trim() || '',
     pill: host.querySelector('[data-telegram-live]')?.textContent?.replace(/\s+/g, ' ').trim() || '',
     pillState: host.querySelector('[data-telegram-live]')?.dataset.telegramFreshness || '',
     pillTag: host.querySelector('[data-telegram-live]')?.tagName || '',
@@ -3976,7 +3975,8 @@ if (!tg?.ok) {
   // the job last looked, so nothing here may wear the word that means "confirmed just now".
   ok('...and never claims to be Live, which this feed cannot know',
     !/\bLive\b/i.test(tg.pill) && !/\bLive\b/i.test(tg.pillState), tg.pill);
-  ok('publication and collection times are distinguished', /collection and first-seen times are separate/i.test(tg.footnotes));
+  ok('publication and collection times are distinguished',
+    /Last successful check:/i.test(telegramSourceFacts) && /Newest captured post:/i.test(telegramSourceFacts));
 }
 
 // GREEN IS A CLAIM ABOUT DATA, so the threshold is asserted directly at both sides. The shipped
