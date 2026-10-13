@@ -44,6 +44,8 @@ jobs:
         run: node scripts/verify-chatter-sentiment.mjs
       - name: Verify personal notebook snapshot and backup contracts
         run: node scripts/verify-bookmarks.mjs
+      - name: Verify durable shared tab layouts and live saved-reader definitions
+        run: node scripts/verify-shared-workspace.mjs
       - name: Verify notification receipts, retained unread items and private content isolation
         run: node scripts/verify-notification-inbox.mjs
       - name: Verify shared technical filter boundaries and counts
@@ -89,7 +91,7 @@ jobs:
       - name: Verify Claude streaming in the native local Worker runtime
         run: node scripts/verify-research-claude-runtime.mjs
       - name: Verify private shared price alerts, retained history and Worker restart
-        run: node scripts/verify-private-price-levels.mjs && npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-private-price-runtime.mjs'
+        run: node scripts/verify-private-price-levels.mjs && npx --yes --package=wrangler@4.119.0 -c 'node scripts/verify-private-price-runtime.mjs && node scripts/verify-shared-workspace-runtime.mjs'
       - name: Verify private portfolio bridge
         run: node scripts/verify-portfolio-bridge.mjs && node scripts/verify-holding-sizes.mjs
       - name: Verify comparable portfolio businesses and dated event returns
@@ -157,7 +159,7 @@ jobs:
       - name: Verify IPOPlatform pagination, archive integrity and repeat collection
         run: node scripts/verify-ipo-platform.mjs
       - name: Verify Screener concall pagination, deduplication and artifact integrity
-        run: node scripts/verify-screener-concalls.mjs && node scripts/verify-concall-delivery.mjs
+        run: node scripts/verify-screener-concalls.mjs && node scripts/verify-concall-delivery.mjs && node scripts/verify-stockscans-contract.mjs
       - name: Verify private summaries, dynamic portfolio queue, durable quota and authorisation
         run: node scripts/verify-concall-summaries.mjs
       - name: Verify Screener Insights capture and context-only correlation
@@ -279,7 +281,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-super-investors-ui.mjs && node scripts/verify-manager-upgrade-ui.mjs
+        run: node scripts/verify-super-investors-ui.mjs && node scripts/verify-manager-upgrade-ui.mjs && node scripts/verify-investor-changes-upgrade-ui.mjs
       - name: Verify portfolio reload, offline, resume and cache behaviour
         if: ${{ matrix.part == 2 }}
         env:
@@ -339,7 +341,7 @@ jobs:
         if: ${{ matrix.part == 1 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-lazy-tabs-ui.mjs && node scripts/verify-tab-order-ui.mjs
+        run: node scripts/verify-lazy-tabs-ui.mjs && node scripts/verify-tab-order-ui.mjs && node scripts/verify-shared-workspace-ui.mjs
       - name: Verify bounded Earnings ownership and unchanged scrolling work
         if: ${{ matrix.part == 2 }}
         env:
@@ -398,7 +400,7 @@ jobs:
         if: ${{ matrix.part == 3 }}
         env:
           PLAYWRIGHT_ROOT: ${{ runner.temp }}/family-browser/node_modules/playwright
-        run: node scripts/verify-corporate-actions-ui.mjs && node scripts/verify-insider-filter-ui.mjs && node scripts/verify-insider-recovery-ui.mjs
+        run: node scripts/verify-corporate-actions-ui.mjs && node scripts/verify-insider-filter-ui.mjs && node scripts/verify-insider-recovery-ui.mjs && node scripts/verify-concall-insight-coverage-ui.mjs
       - name: Verify direct NSE feed, retained history and document component isolation
         if: ${{ matrix.part == 1 }}
         env:

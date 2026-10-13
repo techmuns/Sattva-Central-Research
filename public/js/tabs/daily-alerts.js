@@ -125,6 +125,12 @@ let routeCompany = null; // a company deep-link supplied by an AI Alert card
 // a full Set silently becomes a partial filter when a sixth feed is added. The same distinction
 // `scopeTickers` draws between `null` and an empty Set, for the same reason.
 let picked = null;
+export function getSavedView() { return { allSources: picked === null, sources: picked ? [...picked] : [] }; }
+export function applySavedView(extras = {}, reading = {}) {
+  picked = extras.allSources === false ? new Set(extras.sources || []) : null;
+  tableViews[HORIZON.THROUGH] = { q: reading.q || '', watchOnly: reading.watchOnly, sort: reading.sort,
+    filters: ['Priority', 'Direction', 'Date range'].map((label, index) => reading.filters?.find(filter => filter.label === label)?.value || ['all', 'all', 'today'][index]) };
+}
 let collecting = 0;
 let sourceTimer = null;
 let sourceDirty = false;

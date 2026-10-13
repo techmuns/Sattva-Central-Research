@@ -396,6 +396,8 @@ export const meta = TAB_META['news'];
 let mounted = null; // 'universe' | 'companies'
 let lastCtx = null;
 let offRelevance = null;
+export function getSavedView() { return mounted === 'universe' ? marketNews.getSavedView() : {}; }
+export function applySavedView(extras) { marketNews.applySavedView(extras); }
 
 export function render(ctx) {
   lastCtx = ctx;

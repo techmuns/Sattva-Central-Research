@@ -20,16 +20,18 @@ const books = {
 };
 const investors = [...Object.keys(books), 'missing'].map(slug => ({ slug, name: slug }));
 const snapshot = { capturedAt: at, investors, books };
-const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2026-08-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-09-01T00:00:00Z', null])) + '|whole-family',
+const managerFixture = { version: 1, valuation: 'workbook', bookAsOf: '2027-03-31', listedValuationAt: '2026-09-04', listedValuationBasis: 'stated', checkedAt: at, archiveVersion: 1, sourceRevision: JSON.stringify(Array.from({ length: 60 }, (_, i) => [`workbook-${i}`, `revision-${i}`, '2026-09-01T00:00:00Z', null])) + '|whole-family',
   privateWorkbook: { source: 'fixture.xlsx', received: '2026-09-02', saved: null }, coverage: { transactionAsOf: '2026-08-31', sourceCount: 6, privateCount: 1, note: 'Fixture custodians, retained ledger events and private funds; no PMS statement return series.' },
-  managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2026-08-31',
+  managers: [{ id: 'custodian-example', name: 'Example Custodian', kind: 'custodian', asOf: '2027-03-31',
     values: { marketValue: 1000, costBasis: 800, unrealised: 200, cashValue: 0, positionCount: 2 },
     positions: [{ isin: 'INE000A01001', security: 'Portfolio Only Ltd.', ticker: 'ONLY', assetClass: 'Equity', quantity: 10, marketValue: 500, costBasis: 400, weightPct: 50 }, { isin: 'INF000000001', security: 'Example ETF', ticker: null, assetClass: 'ETF', quantity: 10, marketValue: 500, costBasis: 400, weightPct: 50 }],
     transactions: [1, 2].map(i => ({ id: `ledger-${i}`, date: '2026-09-05', dateSheet: i === 2 ? '2026-03-31' : null, security: 'Portfolio Only Ltd.', isin: 'INE000A01001', ticker: 'ONLY', side: i === 1 ? 'buy' : 'sell', quantity: 10, amount: i === 1 ? 0 : 500, unitPrice: i === 1 ? 0 : 50, transfer: i === 2 })) },
   { id: 'fund-example-1', name: 'Example Private Fund', kind: 'fund', asOf: null, positions: [], transactions: [], values: { marketValue: 200, costBasis: null, unrealised: null, cashValue: null, positionCount: 1 },
     capital: { committed: 100, drawn: 120, distributed: 20, currentValue: 200, tvpi: 220 / 120, dpi: 20 / 120, firstInvest: '2020-01-01' } }] };
 const trade = (ticker, person, side = 'Buy', exchange = 'NSE') => ({ ticker, sourceId: `${exchange.toLowerCase()}-bulk`, date: '2026-09-05', url: 'https://www.screener.in/trades/bulk/', cells: { Company: ticker === 'ONLY' ? 'Portfolio Only Ltd.' : 'Aavas Financiers Ltd.', Insider: person, Transaction: side, 'Trade Category': 'Bulk deal', 'Trade Shares': '1000', Price: '50', Exchange: exchange } });
-const trades = { kind: 'insider', capturedAt: at, coversUniverse: true, byTicker: { ONLY: [trade('ONLY', 'one'), trade('ONLY', 'one'), trade('ONLY', 'one', 'Sell'), trade('ONLY', 'one', 'Buy', 'BSE')], AAVAS: [trade('AAVAS', 'two'), trade('AAVAS', 'one and others')] }, empty: [], failed: {} };
+const relatedTrade = { ...trade('AAVAS', 'Example Associated Fund'), date: '2026-09-06' };
+const relationshipEvidence = { relations: [{ entityId: 'fixture-associated-fund', legalName: 'Example Associated Fund', investorSlugs: ['two'], kind: 'managed-fund', relationship: 'Fund managed by the tracked institution', sourceUrl: 'https://example.test/official-fund', verifiedAt: at }], holdings: [] };
+const trades = { kind: 'insider', capturedAt: at, coversUniverse: true, byTicker: { ONLY: [trade('ONLY', 'one'), trade('ONLY', 'one'), trade('ONLY', 'one', 'Sell'), trade('ONLY', 'one', 'Buy', 'BSE')], AAVAS: [relatedTrade, trade('AAVAS', 'one and others')] }, empty: [], failed: {} };
 const publicRow = (id, company, isin) => ({ id, personId: 'one', person: 'one', kind: 'investor', company, isin, legalHolder: 'one', asOf: '2026-06-30', shares: 1000, stakePct: 1.2, state: 'latest-disclosure', comparison: 'agrees', sources: [{ source: 'bse', url: 'https://www.bseindia.com/example.xml', filedAt: at, checkedAt: at, shares: 1000, stakePct: 1.2 }] });
 let publicPayload = { version: 1, checkedAt: at, captureCheckedAt: at, complete: false, holdings: [publicRow('one-only', 'Portfolio Only Ltd.', 'INE000A01001'), publicRow('one-aavas', 'Aavas Financiers Ltd.', 'INE000A01002')], issues: [], candidates: [], profiles: [], sources: [], coverage: { indexed: 2, parsed: 2, pending: 0, partial: 0, securities: 2, profiles: 1 } };
 const inlineStyles = readFileSync(resolve(root, 'index.html'), 'utf8').match(/<style>[\s\S]*?<\/style>/g).join('\n');
@@ -68,7 +70,7 @@ const server = createServer(async (req, res) => {
   if (path === '/') { res.setHeader('content-type', 'text/html'); res.end(html); return; }
   if (path === '/dispatcher') { res.setHeader('content-type', 'text/html'); res.end(dispatcherHtml); return; }
   if (path === '/data/public-holdings.json') { publicReads++; if (publicFail) res.statusCode = 503; return json(publicFail ? {} : publicPayload); }
-  if (path === '/data/holding-evidence.json') return json({ relations: [], holdings: [] });
+  if (path === '/data/holding-evidence.json') return json(relationshipEvidence);
   if (path === '/data/insider-trades.json') return json(trades);
   if (path === '/data/exchange-deals.json' || path.startsWith('/api/exchange-deals')) return json({ version: 1, records: [], sources: [], checkedAt: at });
   if (path === '/data/super-investors.json') { if (holdPublic) await holdPublic; return json(snapshot); }
@@ -109,6 +111,31 @@ try {
   }
   await page.waitForSelector('[data-changes-ready="true"]');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'scope excludes another company; duplicate reports group but exchange and side stay separate');
+  assert.match(await page.locator('[data-changes-context]').innerText(), /4 tracked investors.*Company scope: Portfolio/);
+  await page.locator('[data-changes-period]').selectOption('today');
+  assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '0');
+  assert.match(await page.locator('[data-changes-empty-context]').innerText(), /Portfolio companies in Today.*does not establish/);
+  assert.match(await page.locator('[data-changes-universe]').innerText(), /1 trade in Universe for this period/);
+  await page.locator('[data-changes-history]').click();
+  assert.equal(await page.locator('[data-changes-period]').inputValue(), 'itd');
+  assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'history shortcut exposes older matched records without widening the company scope');
+  await page.locator('[data-changes-period]').selectOption('today');
+  await page.locator('[data-changes-universe]').click();
+  await page.waitForFunction(() => document.querySelector('[data-changes-panel]')?.dataset.activityTotal === '1');
+  assert.equal(await page.locator('[data-changes-period]').inputValue(), 'today', 'Universe shortcut keeps the selected period and audience');
+  assert.match(await page.locator('[data-changes-context]').innerText(), /Company scope: Universe/);
+  await page.locator('[data-changes-activity] [data-row-key]').click();
+  assert.match(await page.locator('[data-change-attribution]').innerText(), /Associated entity.*Example Associated Fund/);
+  assert.equal(await page.locator('[data-change-attribution] a').getAttribute('href'), relationshipEvidence.relations[0].sourceUrl);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => {
+    window.exportedChanges = [];
+    window.ExcelJS = { Workbook: class { constructor() { this.xlsx = { writeBuffer: async () => new Uint8Array([1]) }; } addWorksheet() { return { addRow: r => window.exportedChanges.push(r), getRow: () => ({}) }; } } };
+  });
+  await page.locator('[data-changes-activity] [data-export]').click();
+  await page.waitForFunction(() => window.exportedChanges.length > 0);
+  assert.match(await page.evaluate(() => JSON.stringify(window.exportedChanges)), /Associated entity.*example\.test\/official-fund/, 'exports retain the relationship distinction and primary evidence');
+  await page.evaluate(() => paint('portfolio'));
   await page.locator('[data-changes-period]').selectOption('6m');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-holdings-total'), '1', 'only the scoped confirmed change appears');
   await page.locator('[data-changes-holdings] summary').click();
@@ -229,6 +256,7 @@ try {
   await page.evaluate(() => paint('portfolio', 'my-managers'));
   await page.waitForSelector('[data-open-manager="custodian-example"]');
   assert.equal(await page.locator('[data-open-manager]').count(), 3);
+  assert.match(await page.locator('[data-open-manager="custodian-example"]').innerText(), /Workbook period ending.*open period.*marks/, 'open FY labels do not become completed statements or valuation dates');
   assert.equal(await page.locator('[data-si-freshness], [data-summary-help]').count(), 0, 'manager view preserves heading cleanup');
   await page.locator('[data-manager-search]').fill('private');
   assert.equal(await page.locator('[data-open-manager]').count(), 1);
@@ -303,6 +331,8 @@ try {
   await page.locator('[data-changes-audience] [role="tab"]').filter({ hasText: 'My Managers' }).click();
   await page.locator('[data-changes-period]').selectOption('itd');
   assert.equal(await page.locator('[data-changes-panel]').getAttribute('data-activity-total'), '2');
+  assert.match(await page.locator('[data-changes-coverage]').innerText(), /Retained ledger \/ reported deal dates.*transfers and unverified carried purchase dates/);
+  assert.doesNotMatch(await page.locator('[data-changes-coverage]').innerText(), /Matched trade dates/);
   await page.locator('[data-changes-activity] [data-table-search]').fill('Portfolio');
   await page.locator('[data-changes-activity] [data-table-search]').evaluate(el => el.setSelectionRange(2, 5));
   await page.evaluate(async () => (await import('/js/data/managers.js')).load({force:true}));
@@ -372,5 +402,20 @@ try {
   assert.doesNotMatch(customerText, /npx|wrangler|MUNS_TOKEN|\/api\/|bearer token/);
   assert.match(customerText, /does not establish that an investor has no holdings/);
   await unavailable.close();
+  // Expiry gets its own clock/cache. Rewinding the refresh test's clock would leave its
+  // last-check throttle in the future, preventing the later six-minute recovery checks.
+  const expired = await browser.newContext({ serviceWorkers: 'block' });
+  await expired.route('**/*', fixtureRoute);
+  const expiredPage = await expired.newPage(), expiredErrors = [];
+  expiredPage.on('pageerror', error => expiredErrors.push(error.message));
+  await expiredPage.clock.install({ time: new Date('2026-12-07T00:00:00Z') });
+  await expiredPage.goto(origin + '/#/research/super-investors?scope=universe');
+  await expiredPage.waitForSelector('[data-changes-ready="true"]');
+  await expiredPage.evaluate(() => paint('universe'));
+  await expiredPage.locator('[data-changes-period]').selectOption('itd');
+  assert.match(await expiredPage.locator('[data-changes-identity-warning]').innerText(), /1 entity relationships await renewed verification/);
+  assert.equal(await expiredPage.locator('[data-changes-panel]').getAttribute('data-activity-total'), '3', 'expired entity attribution is withheld while exact-name history stays available');
+  assert.deepEqual(expiredErrors, []);
+  await expired.close();
   console.log('PASS investor scope, identity, disclosure notes, shared changes, drill evidence, missing books, outages and mobile layout');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

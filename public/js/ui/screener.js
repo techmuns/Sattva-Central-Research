@@ -1,4 +1,5 @@
 import { installColumnOrder } from './column-order.js';
+import { activeView, seedTableReading, registerTableReading } from '../core/view-reading.js';
 // ui/screener.js — the screener kit. Five components every tab is assembled from.
 //
 //   statStrip(cards)      4-up KPI row; card 4 is always the gradient freshness hero
@@ -417,7 +418,7 @@ export function scoreTable(config) {
     // All record tables can save a snapshot. A specialized adapter may replace the default.
     bookmark = null,
     showBookmarks = true,
-    bookmarkSection = state.tab || '',
+    bookmarkSection = activeView()?.source || state.tab || '',
     bookmarkDate = null,
     bookmarkSource = null,
     filters = null,
@@ -535,6 +536,7 @@ export function scoreTable(config) {
   // which is what lets "PAT grew" and "Consolidated only" be asked at the same time — folding both
   // into one dropdown would make them mutually exclusive for no reason.
   let filterDefs = filters ? (Array.isArray(filters) ? filters : [filters]) : [];
+  initialView = seedTableReading(config, filterDefs) || initialView;
 
   // Internal view state — search text, one value per filter, watchlist-only, sort.
   const view = {
@@ -543,6 +545,7 @@ export function scoreTable(config) {
     watchOnly: false,
     sort: initialSort ? { ...initialSort } : null,
   };
+  if (activeView()?.preset) view.savedViewKey = activeView().key;
   if (initialView) {
     if (typeof initialView.q === 'string') view.q = initialView.q;
     if (typeof initialView.watchOnly === 'boolean') view.watchOnly = initialView.watchOnly;
@@ -913,6 +916,7 @@ export function scoreTable(config) {
     installColumnOrder();
     const host = root.querySelector('[data-score-table]');
     if (!host) return () => {};
+    registerTableReading(root, host, config, view, filterDefs);
     const head = host.querySelector('[data-table-head]');
     const body = host.querySelector('[data-table-body]');
     const countEl = host.querySelector('[data-row-count]');

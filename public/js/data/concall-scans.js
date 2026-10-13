@@ -41,11 +41,13 @@ import { resultTierOf, sentimentTierOf, docUrl, fingerprint, mergeScans } from '
 import { validateScreenerUpcomingRows } from './screener-upcoming-shared.js';
 import { filterByScope } from './scope.js';
 import { KEYS, conditionalJson, readEntry, writeEntry, revalidatedJson, isPersistent } from '../core/store.js';
+import { retainConcallAnalysis } from './concall-analysis-history.js';
 
 const SNAPSHOT_PATH = 'data/concall-scans.json';
 const LIVE_ENDPOINT = 'api/concalls';
 const STORE_KEY = KEYS.concalls;
 const SCHEDULE_KEY = KEYS.concallPortfolioUpcoming;
+const ANALYSIS_HISTORY_KEY = 'concalls:published-analysis-history-v1';
 
 export const LIVE_ID = 'concall-scans';
 export const POLL_MS = 30000;
@@ -57,6 +59,8 @@ let heldSchedule = null;
 let seenKeys = null; // key -> hadAnalysis, so "analysis landed" counts as an arrival
 let arrivals = [];
 const listeners = new Set();
+let analysisHistory = [];
+let calendarWrite = Promise.resolve();
 
 /**
  * A ROW'S IDENTITY IS NOT (COMPANY, TIME) — measured, on this feed, today.
@@ -102,6 +106,9 @@ export function load() {
 }
 
 async function build() {
+  const archive = await readEntry(ANALYSIS_HISTORY_KEY);
+  if (Array.isArray(archive?.value?.rows)) analysisHistory = archive.value.rows.filter(row => row &&
+    typeof row.name === 'string' && typeof row.companyKey === 'string' && Array.isArray(row.tags) && row.analysisTracked !== false);
   // 0. The retained portfolio calendar, BEFORE anything is ingested. Without it a reload during an
   //    S Screen outage repaints an empty Upcoming view from the stored response, which is the
   //    version of this failure that looks permanent — see `ingest`. Validated on the way in: these
@@ -146,6 +153,7 @@ async function build() {
   if (!confirmedLive) markScheduleUnconfirmed();
 
   if (!cache) throw new Error(`${SNAPSHOT_PATH} could not be loaded and no cached copy exists.`);
+  await calendarWrite;
   return cache;
 }
 
@@ -250,7 +258,10 @@ function markScheduleUnconfirmed() {
 }
 
 function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
-  const rows = assignRowIds((payload?.rows || []).map(decorate).sort(byNewest));
+  const archived = retainConcallAnalysis(payload?.rows || [], analysisHistory, payload?.meta?.fetchedAt || null,
+    !live || (payload?.meta?.analysisLive !== true && !!payload?.degraded));
+  analysisHistory = archived.analysisRows;
+  const rows = assignRowIds(archived.rows.map(decorate).sort(byNewest));
   const schedule = scheduleFrom(payload);
   const screener = payload?.meta?.screener || null;
   const suppliedAt = screener?.checkedAt || null;
@@ -268,8 +279,12 @@ function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
     heldSchedule = { rows: adopted, checkedAt: suppliedAt, savedAt: Date.now() };
     // Its own entry, never a patched copy of the response: `core/store.js` holds the server's own
     // bytes under the server's own tag, and that pairing is the whole basis for trusting a 304.
-    void writeEntry(SCHEDULE_KEY, { value: { rows: adopted, checkedAt: suppliedAt } });
+    calendarWrite = writeEntry(SCHEDULE_KEY, { value: { rows: adopted, checkedAt: suppliedAt } });
   }
+  // Persist the small independent calendar first; a ready load/refresh must survive an immediate
+  // reload. Keep the larger public analysis graph off the paint path and separate from ETag bytes.
+  const savedAnalysis = analysisHistory;
+  void calendarWrite.then(() => writeEntry(ANALYSIS_HISTORY_KEY, { value: { rows: savedAnalysis } }));
   // `supplied` is a fact about the RESPONSE; `retained` is the claim made to a reader. They are
   // not the same and neither can be derived from the other: a payload that carried no calendar
   // while nothing was held supplies nothing and retains nothing.
@@ -306,7 +321,7 @@ function ingest(payload, { live, origin = 'live', checkedAt = Date.now() }) {
       ...(payload?.meta || {}),
       count: rows.length,
       analysed: rows.filter((r) => r.resultScore != null).length,
-      isLive: live && !payload?.degraded,
+      isLive: live && (payload?.meta?.analysisLive === true || !payload?.degraded),
       degraded: payload?.degraded || null,
       receivedAt: Date.now(),
       // Where this paint came from, and when the server last confirmed it. `fetchedAt` is when
@@ -385,6 +400,7 @@ export function startLive(live) {
       // the reader's sort and search for a tick that carried nothing new.
       const changed = hasChanged(out.value);
       ingest(out.value, { live: true, origin: 'live', checkedAt: out.checkedAt });
+      await calendarWrite;
       return changed ? cache : null;
     },
   });
@@ -423,6 +439,7 @@ export async function refresh() {
   }
   const changed = hasChanged(out.value);
   ingest(out.value, { live: true, origin: 'live', checkedAt: out.checkedAt });
+  await calendarWrite;
   if (changed) {
     for (const fn of listeners) {
       try {
@@ -441,8 +458,12 @@ export function stopLive(live) {
 
 function hasChanged(payload) {
   if (!cache) return true;
-  if ((payload.rows?.length ?? 0) !== cache.meta.count) return true;
+  const visible = retainConcallAnalysis(payload?.rows || [], analysisHistory, payload?.meta?.fetchedAt || null,
+    payload?.meta?.analysisLive !== true && !!payload?.degraded).rows;
+  if (visible.length !== cache.meta.count) return true;
   if (!!payload.degraded !== !!cache.meta.degraded) return true;
+  if (payload?.meta?.truncated !== cache.meta.truncated || payload?.meta?.analysisLive !== cache.meta.analysisLive ||
+      payload?.meta?.historyError !== cache.meta.historyError) return true;
   // A CALENDAR ARRIVING OR GOING MISSING IS ITSELF A CHANGE, even when its rows are identical.
   // The coverage chip reads `portfolioUpcomingRetained`, so a transition nobody is told about
   // leaves All Alerts printing the previous answer — a retained calendar still labelled
@@ -459,7 +480,7 @@ function hasChanged(payload) {
   const schedule = (rows) => JSON.stringify(rows.map((row) => [row.id, row.date, row.time, row.eventType, row.sourceUrl]));
   const incoming = scheduleFrom(payload);
   if (incoming && schedule(incoming) !== schedule(cache.portfolioUpcoming)) return true;
-  return fingerprint(payload.rows) !== fingerprint(cache.rows);
+  return fingerprint(visible) !== fingerprint(cache.rows);
 }
 
 export function onChange(fn) {

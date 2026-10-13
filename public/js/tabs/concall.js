@@ -69,6 +69,9 @@ function renderFeed(ctx) {
         updateSummaryButtons(ctx.root);
       }));
       mountDisposers.push(summaries.start());
+      mountDisposers.push(scans.watchPublishedAssessments(() => {
+        if (token === renderToken && ctx.root.isConnected) paint(ctx, token);
+      }));
     })
     .catch((err) => {
       if (token !== renderToken) return;
@@ -111,12 +114,21 @@ function disposePanel() {
 }
 
 function paint(ctx, token = renderToken) {
+  const previous = ctx.root.querySelector('[data-table-scroll]');
+  const edge = previous ? previous.getBoundingClientRect().top + (ctx.root.querySelector('thead')?.offsetHeight || 0) : 0;
+  const visible = previous && [...previous.querySelectorAll('tr[data-row-key]')].find(row => row.getBoundingClientRect().bottom > edge + 1);
+  const position = previous ? { top: previous.scrollTop, left: previous.scrollLeft, key: visible?.dataset.rowKey,
+    offset: visible ? visible.getBoundingClientRect().top - previous.getBoundingClientRect().top : 0 } : null;
+  const active = document.activeElement;
+  const selection = active?.matches?.('[data-table-search]') && ctx.root.contains(active)
+    ? { start: active.selectionStart, end: active.selectionEnd } : null;
   // `renderScans` rebuilds the panel, so its listeners go with it — dispose before repainting or
   // every live tick would stack another set on the new DOM.
   disposePanel();
   scans.renderScans(ctx, {
     disposers: panelDisposers,
     tableView,
+    initialRowKey: position?.key || null,
     onView: (v) => (tableView = v),
     // The free Deep Dive index arrives after first paint. Repaint once so exact, transcript-backed
     // result/view/headline fields can fill without waiting for the 30-second con-call tick.
@@ -124,6 +136,16 @@ function paint(ctx, token = renderToken) {
       if (token === renderToken && ctx.root.isConnected) paint(ctx, token);
     },
   });
+  const scroller = ctx.root.querySelector('[data-table-scroll]');
+  if (position && scroller) {
+    scroller.style.overflowAnchor = 'none'; scroller.scrollTop = position.top; scroller.scrollLeft = position.left;
+    const row = [...scroller.querySelectorAll('tr[data-row-key]')].find(row => row.dataset.rowKey === position.key);
+    if (row) scroller.scrollTop += row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - position.offset;
+  }
+  if (selection) {
+    const search = ctx.root.querySelector('[data-table-search]');
+    search?.focus({ preventScroll: true }); search?.setSelectionRange(selection.start, selection.end);
+  }
 }
 
 function loadingHtml() {

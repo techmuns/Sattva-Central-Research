@@ -97,11 +97,15 @@ export function scopeSummary({ scope, count, noun = 'companies', book = null }) 
 }
 
 // Scrollable tabs with explicit overflow controls and manual keyboard activation.
-export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey = null }) {
+export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey = null, sharedOrder = null, onOrderChange = null }) {
   const defaults = tabs.map(tab => tab.id);
-  if (orderKey) tabs = restoreTabOrder(tabs, orderKey);
+  if (sharedOrder) {
+    const rank = new Map(sharedOrder.map((id, index) => [id, index]));
+    tabs = [...tabs].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
+  } else if (orderKey) tabs = restoreTabOrder(tabs, orderKey);
   let list = null;
   let revealActive = () => {};
+  let syncButtonOrder = () => {};
   const tabStopId = () => tabs.some((tab) => tab.id === activeId) ? activeId : tabs[0]?.id;
   const html = `
     <div class="tab-bar" data-tab-bar${orderKey ? ' data-tab-reorderable' : ''}>
@@ -132,6 +136,11 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
     const bar = root.querySelector('[data-tab-bar]');
     list = bar.querySelector('[data-tab-list]');
     const buttons = [...list.querySelectorAll('[data-tab-id]')];
+    syncButtonOrder = () => {
+      buttons.splice(0, buttons.length, ...list.querySelectorAll('[data-tab-id]'));
+      const byId = new Map(tabs.map(tab => [tab.id, tab]));
+      tabs = buttons.map(button => byId.get(button.dataset.tabId));
+    };
     const controls = bar.querySelector('[data-tab-scroll-controls]');
     const previous = bar.querySelector('[data-tab-scroll="-1"]');
     const next = bar.querySelector('[data-tab-scroll="1"]');
@@ -203,7 +212,7 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
       tabs = buttons.map(button => byId.get(button.dataset.tabId));
       if (buttons.includes(document.activeElement)) tabStop(document.activeElement);
       measure();
-    }) : null;
+    }, onOrderChange) : null;
 
     list.addEventListener('click', onClick);
     list.addEventListener('keydown', onKeydown);
@@ -228,9 +237,18 @@ export function tabBar({ tabs, activeId, onSelect, label = 'Sections', orderKey 
     };
   }
 
-  function update(nextActiveId) {
+  function update(nextActiveId, nextOrder = null) {
     activeId = nextActiveId;
     if (!list) return;
+    if (nextOrder && !list.querySelector('[data-tab-dragging]')) {
+      const focused = list.contains(document.activeElement) ? document.activeElement : null;
+      const byId = new Map([...list.querySelectorAll('[data-tab-id]')].map(button => [button.dataset.tabId, button]));
+      const desired = nextOrder.filter(id => byId.has(id));
+      if (desired.some((id, index) => [...byId.keys()][index] !== id)) {
+        for (const id of desired) list.append(byId.get(id));
+        syncButtonOrder(); focused?.focus({ preventScroll: true });
+      }
+    }
     for (const button of list.querySelectorAll('[data-tab-id]')) {
       const selected = button.dataset.tabId === activeId;
       button.setAttribute('aria-selected', String(selected));

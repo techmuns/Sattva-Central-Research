@@ -50,7 +50,8 @@ import { TELEGRAM_DELIVERY_NAME } from './telegram-delivery.mjs';
 import { handleBreakouts, handleTechnicals } from './breakouts.mjs';
 import { TELEGRAM_SCHEDULER_NAME, TELEGRAM_PRODUCTION_HOST } from './telegram-scheduler.mjs';
 import { fetchLatestResults, freshnessOf, resolveMissing, applyIdentity, fetchCalendarStrip, fetchCalendarDay, CALENDAR_PAGE_SIZE } from './mc.mjs';
-import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans, PAGE_SIZE } from './stockscans.mjs';
+import { fetchConcallScans, fetchUpcoming, fetchToday, mergeScans } from './stockscans.mjs';
+import { newConcallHistory, advanceConcallHistory } from './concall-history.mjs';
 import { fetchInvestorList, fetchInvestorPortfolio, isSlug } from './finology.mjs';
 import { fetchNews, fetchAnnouncements, fetchInsiderTrades, fetchDomesticFilings, searchStocks, withCallerToken, MunsError } from './muns.mjs';
 import { fetchGoogleNews } from './free-news.mjs';
@@ -88,6 +89,7 @@ import { handleAnnouncementIndex } from './announcement-index.mjs';
 import { handleAnnouncementRead } from './announcement-read.mjs';
 import { handleRelevanceFeedback } from './relevance-feedback.mjs';
 import { handleWatchlist } from './watchlist.mjs';
+import { handleWorkspace } from './workspace.mjs';
 import { handleNewsletter } from './newsletter.mjs';
 import { readPlatformCollector } from './ipo-platform-collector.mjs';
 import { readScreenerConcallCollector, readScreenerConcallCollection } from './screener-concalls-collector.mjs';
@@ -177,6 +179,7 @@ export default {
     if (url.pathname === '/api/announcement-read' || url.pathname === '/api/announcement-read/status') return handleAnnouncementRead(request, env);
     if (url.pathname.startsWith('/api/relevance/')) return handleRelevanceFeedback(request, env);
     if (url.pathname === '/api/watchlist') return handleWatchlist(request, env);
+    if (url.pathname === '/api/workspace') return handleWorkspace(request, env);
     if (url.pathname === '/api/newsletter' || url.pathname.startsWith('/api/newsletter/')) return handleNewsletter(request, env);
     if (url.pathname === '/api/concall-summaries' || url.pathname === '/api/concall-summaries/collector')
       return handleConcallSummaries(request, env);
@@ -1343,19 +1346,48 @@ async function handleConcalls(request, env, ctx) {
   // been read perfectly well, which is the failure this whole route was just fixed for. On a cold
   // device there is no retained copy to fall back to, so the loss would reach the screen.
   const screenerRead = readCachedScreenerCollector(request, env, ctx, true).catch(() => null);
+  const snapshotRead = loadConcallSnapshot(env, request);
+  // Schedule endpoints and published analysis fail independently. A missing calendar must not
+  // replace a healthy assessment feed with an old snapshot.
+  const scheduleRead = cached('schedule-v2', CONCALL_SCHEDULE_TTL_S, async () => {
+    const [upcoming, today] = await Promise.allSettled([fetchUpcoming(), fetchToday()]);
+    return {
+      upcoming: upcoming.status === 'fulfilled' ? upcoming.value : null,
+      today: today.status === 'fulfilled' ? today.value : null,
+      errors: [upcoming, today].flatMap((part, i) => part.status === 'rejected'
+        ? [`StockScans ${i ? 'today' : 'upcoming'} schedule is unavailable (${part.reason?.message || 'unreachable'}).`] : []),
+    };
+  }).catch(error => ({ value: { upcoming: null, today: null, errors: [`StockScans schedule is unavailable (${error.message}).`] } }));
 
   try {
-    const [head, tail, sched] = await Promise.all([
-      cached('head', CONCALL_HEAD_TTL_S, () => fetchConcallScans({ pages: 1 })),
-      cached('tail', CONCALL_TAIL_TTL_S, () => fetchConcallScans({ pages: 'all', startOffset: PAGE_SIZE })),
-      cached('schedule', CONCALL_SCHEDULE_TTL_S, async () => {
-        const [upcoming, today] = await Promise.all([fetchUpcoming(), fetchToday()]);
-        return { upcoming, today };
-      }),
-    ]);
+    const head = await cached('head-v2', CONCALL_HEAD_TTL_S, () => fetchConcallScans({ pages: 1 }));
+    const historyKey = `history-v2/${head.value.meta.quarter}/${(head.value.meta.quarters || []).join(',')}`;
+    const [historyHit, sched, baseline] = await Promise.all([cache.match(edgeKey(`concalls/${historyKey}`)), scheduleRead, snapshotRead]);
+    let history = historyHit ? await historyHit.json() : newConcallHistory(head.value);
+    // Earlier rollout entries held a completed history rather than a cursor checkpoint.
+    if (!history.quarters) history = { ...newConcallHistory(head.value), rows: history.rows,
+      checks: history.meta?.quarterChecks || [], complete: !history.meta?.truncated };
+    if (!history.complete && history.retryAt <= Date.now() && !(history.leasedUntil > Date.now())) {
+      const reserved = { ...history, leaseId: crypto.randomUUID(), leasedUntil: Date.now() + 60000 };
+      const save = async value => {
+        const entry = await cache.match(edgeKey(`concalls/${historyKey}`));
+        const owner = entry && await entry.json();
+        if (owner?.leaseId && owner.leaseId !== reserved.leaseId) return false;
+        await cache.put(edgeKey(`concalls/${historyKey}`), tagged(JSON.stringify(value), contentTag(historyKey), value.complete ? CONCALL_TAIL_TTL_S : 3600));
+        return true;
+      };
+      await cache.put(edgeKey(`concalls/${historyKey}`), tagged(JSON.stringify(reserved), contentTag(historyKey), 3600));
+      ctx?.waitUntil?.(advanceConcallHistory(reserved, { save }));
+    }
+    const tail = { value: { rows: history.rows, meta: { truncated: !history.complete,
+      historyError: history.error || null, quarterChecks: history.checks || [] } } };
     const screener = (await screenerRead) || { value: { capture: null, source: null } };
 
-    const stockscansRows = mergeScans(head.value.rows, tail.value.rows);
+    const published = mergeScans(head.value.rows, tail.value.rows);
+    const publishedKeys = new Set(published.map(row => `${row.companyKey}|${row.when}|${row.ssUrl || row.pptSsUrl || ''}`));
+    const retained = (baseline?.rows || []).filter(row => !publishedKeys.has(`${row.companyKey}|${row.when}|${row.ssUrl || row.pptSsUrl || ''}`))
+      .map(row => ({ ...row, analysisRetained: true, analysisCheckedAt: row.analysisCheckedAt || baseline?.meta?.fetchedAt || null }));
+    const stockscansRows = mergeScans(published, retained);
     if (!stockscansRows.length) throw new Error('upstream returned no rows');
     const rows = screener.value.capture
       ? enrichConcallScans(stockscansRows, screener.value.capture.rows)
@@ -1363,9 +1395,11 @@ async function handleConcalls(request, env, ctx) {
 
     const payload = {
       ok: true,
-      degraded: null,
+      degraded: [...(sched.value.errors || []), ...(tail.value.meta.historyError
+        ? [`Historical analysis is unavailable (${tail.value.meta.historyError}); current calls and retained history are shown.`]
+        : tail.value.meta.truncated ? ['Published analysis history is updating; current calls and retained assessments remain available.'] : [])].join(' ') || null,
       rows,
-      upcoming: sched.value.upcoming || [],
+      upcoming: sched.value.upcoming ?? baseline?.upcoming ?? [],
       // Portfolio-only schedule from the exact S Screen dashboard. Kept separate from the
       // market-wide StockScans schedule so the browser can enforce scope without guessing.
       //
@@ -1379,11 +1413,17 @@ async function handleConcalls(request, env, ctx) {
       // have, and `source.portfolioUpcomingAvailable` already reports it as such. Sending `[]` for
       // one would state that the dashboard is clear on the strength of a capture that never asked.
       portfolioUpcoming: Array.isArray(screener.value.capture?.portfolioUpcoming) ? screener.value.capture.portfolioUpcoming : null,
-      today: sched.value.today || { day: null, rows: [] },
+      today: sched.value.today ?? baseline?.today ?? { day: null, rows: [] },
       meta: {
         ...head.value.meta,
         total: rows.length,
         stockscansTotal: stockscansRows.length,
+        analysisLive: true,
+        analysisRetained: retained.length,
+        analysisRetainedAt: baseline?.meta?.fetchedAt || null,
+        quarterChecks: tail.value.meta.quarterChecks || [],
+        historyError: tail.value.meta.historyError || null,
+        scheduleErrors: sched.value.errors || [],
         headRows: head.value.rows.length,
         tailRows: tail.value.rows.length,
         screener: screener.value.source,
@@ -1400,7 +1440,8 @@ async function handleConcalls(request, env, ctx) {
     const { body, tag } = withTag(payload);
     return revalidate(request, tagged(body, tag, CONCALL_HEAD_TTL_S, { 'x-sattva-head': head.fresh ? 'fresh' : 'cached' }), head.fresh ? 'miss' : 'hit');
   } catch (err) {
-    const fallback = await loadConcallSnapshot(env, request);
+    const fallback = await snapshotRead;
+    const sched = await scheduleRead;
     const screener = (await screenerRead) || { value: { capture: null, source: null } };
     const stockscansRows = Array.isArray(fallback?.rows) ? fallback.rows : [];
     // The independently collected documents must survive every analysis failure too. Otherwise
@@ -1421,10 +1462,11 @@ async function handleConcalls(request, env, ctx) {
       ...fallback,
       ok: true,
       rows,
-      upcoming: fallback?.upcoming || [],
-      today: fallback?.today || { day: null, rows: [] },
+      upcoming: sched.value.upcoming ?? fallback?.upcoming ?? [],
+      today: sched.value.today ?? fallback?.today ?? { day: null, rows: [] },
       portfolioUpcoming: Array.isArray(screener.value?.capture?.portfolioUpcoming) ? screener.value.capture.portfolioUpcoming : null,
       meta: { ...(fallback?.meta || {}), total: rows.length, stockscansTotal: stockscansRows.length,
+        analysisLive: false, scheduleErrors: sched.value.errors || [],
         screener: screener.value?.source || fallback?.meta?.screener || null },
       degraded: `StockScans is unavailable (${String(err.message || err)}) — ${stockscansRows.length
         ? 'showing the last committed analysis snapshot with available collected documents.'

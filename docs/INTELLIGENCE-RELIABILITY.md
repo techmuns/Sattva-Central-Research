@@ -94,6 +94,13 @@ retention alone cannot create a Must see priority. A failed refresh does not ret
 Routine news, unresolved identities, undated rows and context-only records have no retention bypass.
 
 The public 14-day alert window persists in IndexedDB and is re-scoped and re-aged on reload.
+Article deduplication registers URL/headline identities only for accepted records. A discarded
+same-headline copy cannot reserve its URL and suppress a later corrected publication at that
+address. Full-history and date-window readers must keep the same eligible corrections; the
+derived alert-pool policy advances when this interpretation changes so older artifacts are
+rejected until the existing automatic build publishes a compatible pool. Raw captures remain
+the authority. `verify-news-query-boundaries.mjs` covers the duplicate/correction sequence, and
+`verify-alert-pool-ui.mjs` compares the resulting live and pooled records and their order.
 First useful evidence can paint while remaining feeds, operating context and private holding
 sizes are still being checked. An early empty partial cannot block later cards or a delayed cache
 read. Partial refreshes add new material arrivals while retaining previously visible companies and
@@ -432,6 +439,16 @@ offscreen companies survive recovery. Preparation remains sliced and outside sta
 stay bounded. Verify with `verify-exchange-universe.mjs` and `verify-exchange-universe-ui.mjs`.
 
 ## Performance vs. Data Integrity
+
+Shared saved screens (13 October 2026) store reading definitions rather than copied datasets.
+Reopening a named screen applies its source table, scope and filters to the current retained data;
+normal source revalidation, partial/failed states, pagination and exports remain authoritative.
+Relative date windows advance in IST and cannot become frozen snapshots. Workspace confirmation
+does not establish source freshness or completeness. Layout changes cannot alter collector budgets,
+cadence, enrollment or history. Shared-state failures retain the last verified definitions and
+pending device edits; version conflicts cannot silently overwrite another user's definition.
+Verify across separate browser storage, failed reads, incoming source rows and a controlled warm
+service-worker upgrade before release. Production validation of workspace features remains read-only.
 
 **DATA INTEGRITY IS A RELEASE-BLOCKING REQUIREMENT.**
 

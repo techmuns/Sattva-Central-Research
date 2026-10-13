@@ -1,1 +1,44 @@
-{"version":1,"relations":[],"holdings":[],"note":"No associated-entity relationships have been independently reviewed for this Sattva deployment."}
+{
+  "version": 1,
+  "relations": [
+    {
+      "entityId": "gs-bank-europe-se",
+      "legalName": "Goldman Sachs Bank Europe SE",
+      "investorSlugs": [
+        "goldman-sachs"
+      ],
+      "kind": "subsidiary",
+      "relationship": "Goldman Sachs group banking subsidiary; reported trades belong to the bank",
+      "sourceUrl": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/gs-20251231.htm",
+      "verifiedAt": "2026-10-13T16:18:01Z"
+    },
+    {
+      "entityId": "gs-investments-mauritius-i",
+      "legalName": "Goldman Sachs Investments (Mauritius) I Limited",
+      "investorSlugs": [
+        "goldman-sachs"
+      ],
+      "kind": "subsidiary",
+      "relationship": "Goldman Sachs group subsidiary, identified by GLEIF LEI B3YMDTGLQBI8P83MLI39 and its ultimate parent",
+      "sourceUrl": "https://api.gleif.org/api/v1/lei-records/B3YMDTGLQBI8P83MLI39/ultimate-parent",
+      "identityUrl": "https://api.gleif.org/api/v1/lei-records/B3YMDTGLQBI8P83MLI39",
+      "verifiedAt": "2026-10-13T16:18:01Z"
+    },
+    {
+      "entityId": "gs-trust-ii-gqg-international-opportunities",
+      "legalName": "Goldman Sachs Trust II - Goldman Sachs GQG Partners International Opportunities Fund",
+      "aliases": [
+        "Goldman Sachs Trust II Goldman Sachs GQG Partners Intl Opportunities Fund"
+      ],
+      "investorSlugs": [
+        "goldman-sachs"
+      ],
+      "kind": "managed-fund",
+      "relationship": "Goldman Sachs Trust II fund managed by Goldman Sachs Asset Management and sub-advised by GQG Partners; fund trades remain separate from group proprietary trades",
+      "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1557156/000119312526076832/d14939d485bpos.htm",
+      "verifiedAt": "2026-10-13T16:18:01Z"
+    }
+  ],
+  "holdings": [],
+  "note": "Only the named relationships have been independently reviewed against the cited public primary sources. Exact full legal names and explicitly reviewed exchange abbreviations apply; other entities remain unverified. Reviews expire after 90 days. No completeness of associated entities or trades is claimed."
+}

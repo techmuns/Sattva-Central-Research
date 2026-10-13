@@ -14,6 +14,25 @@ imported. Original NSE/BSE holdings show the named legal holder, security identi
 date, filing time, check time and source links. Conflicting exchange figures stay separate and
 enter the coverage review. Search and exports use the same disclosure predicate.
 
+The All Investors audience selects the tracked investor directory; the company scope and
+trade-date period still apply. The Changes view names both filters. If there are no matched
+trades in that slice, it offers the available same-period Universe trades and retained
+same-scope ITD history explicitly. It never silently widens the selected scope or period.
+Matched trade dates are separate from exchange capture coverage: an August last match does
+not establish an August collection cutoff. A zero match does not establish zero investor
+activity, and a quarterly holding observation remains filtered by its quarter end.
+
+On 13 October 2026 three Goldman Sachs relationships were reviewed against primary public
+sources: Bank Europe SE (the group's 2025 Form 10-K), Investments (Mauritius) I Limited
+(GLEIF's legal entity and ultimate-parent records), and the Trust II GQG International
+Opportunities Fund (its March 2026 SEC prospectus). The latter has one explicitly reviewed
+`Intl` exchange-name abbreviation; no substring matching is introduced. The reported legal
+entity, relationship, evidence URL and review date travel with each matched deal and export.
+Fund/subsidiary deals are labelled associated activity, not personal trades or group allocation.
+These reviews expire after 90 days; Changes and the existing coverage audit expose overdue
+reviews. Underlying reports remain in Insider Trades when entity attribution is withheld.
+All other associated entities remain unverified. This is not an exhaustive relationship map.
+
 Finology books retain their existing daily capture and automatic reader revalidation. Failed
 books and investors missing from the latest directory retain previous evidence and their real
 source check time. Older quarterly columns survive rolling source windows. The public feed’s status and source age remain in Sources; the customer heading omits
@@ -42,7 +61,9 @@ per-source check dates disclose that, and a new scheduled reconciliation updates
 Validation: `verify-super-investors.mjs`, `verify-holdings-integrity.mjs`,
 `verify-investor-changes.mjs`, `verify-public-holdings.mjs`,
 `verify-investor-publishing.mjs`, `verify-super-investors-ui.mjs`. The returning-session
-service-worker check also imports the changed investor view before and after cache adoption.
+service-worker check (`verify-investor-changes-upgrade-ui.mjs`) verifies the new Changes
+module graph after warm-cache adoption, failed-capture retention and automatic recovery
+with the selected period and search preserved.
 
 Publication currently enforces a 24 MiB compressed static-asset ceiling and a 256 MiB expanded
 restore limit. Exceeding a limit fails publication and retains the checkpoint; it never prunes
@@ -101,3 +122,14 @@ result or its cleanup cannot replace/clear the new pending read.
 `verify-manager-upgrade-ui.mjs` cover catalogue-sized revisions, the full sharing bound,
 queued freshness, invalidation races, private failure handling, automatic recovery, scopes,
 workspaces and returning readers upgrading the immutable service-worker module graph.
+
+
+Live validation also found the active FY27 workbook reports `bookAsOf: 2027-03-31`.
+This is Family's workbook period label, including while that year remains open; rejecting
+it because the period ends after today withheld a valid checked book. ISO calendar validity
+remains required, while source freshness continues to use only the actual `checkedAt`.
+Cards/workspaces identify a future workbook period as an open period. Valuation dates and
+basis remain separate; no future period is presented as a completed statement, transaction
+date, current mark or source check. Browser fixtures now exercise an open FY period together
+with a catalogue-sized revision, including the returning-session upgrade from the rejected
+period guard. Stale checks and invalid calendar dates still fail.
