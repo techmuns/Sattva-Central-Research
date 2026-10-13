@@ -257,13 +257,13 @@ try {
     ok('keyboard activation opens Strong Breakouts in the current scope', /strong-breakouts\?scope=universe$/.test(page.url()));
     ok('focus stays on the selected view tab', await page.evaluate(() => document.activeElement?.dataset.tabId === 'strong-breakouts'));
     await page.locator('#subview-mount [data-tab-id="technical-scanner"]').click();
-    await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).waitFor();
-    ok('Technical Scanner opens its scored table', (await page.locator('#content-host').innerText()).includes('Top 10 by Technicals Score'));
+    await page.locator('#content-host thead [data-sort="score"]').waitFor();
+    ok('Technical Scanner opens its scored table without top cards', await page.locator('#content-host [data-top-idx]').count() === 0);
     await page.locator('#subview-mount [data-tab-id="fii-accumulation"]').click();
     await page.waitForSelector('#content-host [data-chip-group="side"]');
     ok('FII Accumulation opens its holdings table', await page.locator('#content-host thead [data-sort="Chg FII"]').count() === 1);
     await page.goBack();
-    await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).waitFor();
+    await page.locator('#content-host thead [data-sort="score"]').waitFor();
     ok('Back restores the previous view and selected tab', await page.locator('#subview-mount [data-tab-id="technical-scanner"]').getAttribute('aria-selected') === 'true');
     await viewTabs.first().click();
     await page.waitForSelector('#content-host [data-mgate]');

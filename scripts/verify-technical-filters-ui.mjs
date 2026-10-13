@@ -98,7 +98,9 @@ try {
     await page.waitForFunction(() => Array.isArray(window.exportedRows));
     assert.deepEqual(await page.evaluate(() => exportedRows.map(row => row.ticker).sort()), tickers('AC'));
     if (view === 'technical-scanner') {
-      assert.equal(await page.locator('[data-top-idx]').count(), 2, 'top cards obey market filters');
+      assert.equal(await page.locator('[data-top-idx]').count(), 0, 'Technical Scanner focuses on the scored table without top cards');
+      assert.equal(await page.getByRole('heading', { name: /Top 10 by Technicals Score/ }).count(), 0);
+      assert(await page.locator('[data-score-table]').evaluate(el => /companies match these filters\./.test(el.previousElementSibling?.textContent)), 'the table follows the filter match count directly');
       assert.equal(quoteTickers.length,0,'view reads saved capture without spending Muns requests');
       await page.locator('[data-table-filter]').selectOption('below200'); await rowsAre('');
       await choose('volume', 'all', 'vol');
@@ -135,5 +137,5 @@ try {
   await rowsAre('C');
   assert(await chip('volume', '1.5').evaluate(el => el.classList.contains('bg-indigo-50')), 'refresh preserves the selected filter');
   assert.deepEqual(errors, []);
-  console.log('PASS shared filter UI: intersections, contextual counts, saved URLs, all scopes, score/search and FII controls, cards/export/quotes, refreshed data and responsive themes');
+  console.log('PASS shared filter UI: intersections, contextual counts, saved URLs, all scopes, score/search and FII controls, table focus/export/quotes, refreshed data and responsive themes');
 } finally { await browser.close(); await new Promise(done => server.close(done)); }

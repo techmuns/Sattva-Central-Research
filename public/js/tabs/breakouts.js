@@ -1,7 +1,7 @@
 import { TAB_META } from './catalog.js';
 import * as live from '../data/breakout-live.js';
 import { filterByScope, scopeTickers } from '../data/scope.js';
-import { topCards, scoreTable, sectionHead, openModal, statStrip } from '../ui/screener.js';
+import { scoreTable, sectionHead, openModal, statStrip } from '../ui/screener.js';
 import { legendStrip } from '../ui/visual.js';
 import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
@@ -257,20 +257,6 @@ function renderScanner(ctx, rows) {
     more: { label: 'How the 16-rule score works', open: () => openModal(scoringHelpModalBody(), { size: 'wide' }) },
   });
 
-  const cards = topCards({
-    title: 'Top 10 by Technicals Score',
-    items: scored.slice(0, 10).map((s) => ({
-      name: s.company.name || s.company.ticker,
-      sub: s.company.sector || s.company.ticker,
-      value: fmtPoints(s.totalPoints),
-      max: s.totalMax,
-      warn: s.hardFails.length ? s.hardFails.join(', ') : null,
-      payload: s,
-    })),
-    valueFormat: 'score',
-    onSelect: (item) => openTechnicalsDrill(item.payload),
-  });
-
   const table = scoreTable({
     ...tableBase(filtered, ctx),
     // `?company=` from a citation or an AI Alerts card opens the scanner searched for it.
@@ -322,13 +308,11 @@ function renderScanner(ctx, rows) {
     })}
     ${chipBar(TECHNICAL_FILTERS, state, counts)}
     <div class="mb-3 text-xs text-slate-500"><span class="font-semibold text-slate-700">${filtered.length} of ${rows.length}</span> companies match these filters.</div>
-    ${cards.html}
     ${table.html}
     ${legendStrip({ note: `Scored from Muns API daily OHLCV plus NSE delivery data. ${m?.failures || 0} of ${m?.company_count || 0} companies have no usable price history and score 0 of 0.` })}
   `;
 
   pill.wire(ctx.root);
-  cards.wire(ctx.root);
   tableViews.set(ctx.subview, table.view);
   tableOff = table.wire(ctx.root);
 
