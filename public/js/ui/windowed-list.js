@@ -62,7 +62,13 @@ export function mountWindowedList({ scroller, content, items, key, renderRows, r
   };
   // Preserve the first readable row. A sticky header can hide the geometric top row;
   // holding that hidden row lets arrivals below it push the visible record down.
-  const anchor = () => { const top = Math.max(0, scrollTop() - head() + viewportInset()), index = geometry.indexAt(top); return { index, inside: top - geometry.offset(index) }; };
+  const anchor = () => {
+    const position = scrollTop() - head() + viewportInset();
+    // A page can still be above the grid. Retain that leading space so measuring row zero
+    // does not scroll the toolbar out of view when the reader returns to the page top.
+    const top = pageScroll ? position : Math.max(0, position), index = geometry.indexAt(Math.max(0, top));
+    return { index, inside: top - geometry.offset(index) };
+  };
   function spacers() {
     const top = content.querySelector('[data-window-spacer="top"]');
     const bottom = content.querySelector('[data-window-spacer="bottom"]');

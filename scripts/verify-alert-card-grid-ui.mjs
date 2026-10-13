@@ -55,6 +55,8 @@ try{
  await page.locator('[data-ai-key="C499"]').waitFor();
  assert((await page.locator('[data-ai-card]').count())<=6);
  await page.evaluate(()=>window.scrollTo(0,0));await page.locator('[data-ai-key="NEW"]').waitFor();
+  await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(()=>window.scrollY),0,'returning to the top keeps the toolbar visible');
  const before=await page.evaluate(()=>{window.grid.destroy();return window.renders;});
  await page.mouse.wheel(0,1000);await page.waitForTimeout(100);
  assert.equal(await page.evaluate(()=>window.renders),before,'disposal removes scroll/resize work');
