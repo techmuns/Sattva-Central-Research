@@ -2,9 +2,8 @@ import { TAB_META } from './catalog.js';
 // tabs/earnings-hub.js — LIVE quarterly results for the whole listed universe.
 //
 // This tab is genuinely live. It paints from a committed snapshot instantly, then polls
-// /api/earnings every 30s; a company that files at 14:32 is on this table by about 14:33. The
-// header pill shows which of the two you are looking at, and the "just reported" strip names
-// anything that arrived while the tab was open.
+// /api/earnings every 30s; the table updates in place as new filings arrive. The header keeps
+// the source period and financial unit together without repeating the scope and row count.
 //
 // THE TABLE IS THE POINT. No score, no signal dots, no hero cards on the main view — this is a
 // dense sortable table because that is what a results screen is for. The screener kit's
@@ -35,13 +34,12 @@ import { TAB_META } from './catalog.js';
 //   There was one, and the six reported figures were the bulk of what it said — so once those
 //   became columns it was mostly restating the row you clicked. Rows are not clickable now.
 //   Nothing accountable was lost with it: the return-since-result figure it explained is no
-//   longer a column at all, and the passive Live label reports status without opening a dialog.
+//   longer a column at all, and the plain snapshot notice reports failures without opening a dialog.
 //   Detailed source metadata remains in the canonical registry.
 //
 //   Do not re-add a drill to hold a number that could be a column. Add the column.
 
 import { scoreTable, sectionHead, companySeededView } from '../ui/screener.js';
-import { scopeSummary } from '../ui/components.js';
 import { escapeHtml } from '../core/dom.js';
 import { withoutPublisherName } from '../core/source-copy.js';
 import { formatCroreCompact, formatPct, formatNumber, formatRupee } from '../core/format.js';
@@ -59,8 +57,8 @@ export const meta = TAB_META['earnings-hub'];
 
 // Filed results and scheduled results. Old document links remain readable.
 const VIEWS = [
-  { value: 'reported', label: 'Earnings Reported', help: 'Published quarterly results' },
-  { value: 'calendar', label: 'Earnings Calendar', help: 'Scheduled results and upcoming con-calls, by date' },
+  { value: 'reported', label: 'Reported', help: 'Published quarterly results' },
+  { value: 'calendar', label: 'Calendar', help: 'Scheduled results and upcoming con-calls, by date' },
 ];
 
 let disposers = [];
@@ -212,12 +210,10 @@ function paint(ctx) {
  */
 function viewToggle(active) {
   return `
-    <div class="inline-flex items-center gap-1 rounded-full bg-slate-100 p-0.5 ring-1 ring-slate-200" data-view-toggle>
+    <div class="earnings-switch" data-view-toggle role="group" aria-label="Earnings view">
       ${VIEWS.map(
         (v) => `<button type="button" data-view="${v.value}" title="${escapeHtml(v.help)}" aria-pressed="${v.value === active}"
-             class="rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
-               v.value === active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'
-             }">${escapeHtml(v.label)}</button>`
+             class="earnings-switch-option">${escapeHtml(v.label)}</button>`
       ).join('')}
     </div>`;
 }
@@ -329,34 +325,16 @@ function basisPill(basis) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Chrome — one small passive live status label.
-//
-// This page used to open with a green ribbon, a "just reported" strip and a 4-card stat row
-// before you reached a single result. That is a lot of furniture in front of the thing people
-// came for. It is now a pill in the section head.
-//
-// The compact label reports whether the feed is live or a snapshot without opening an explainer
-// dialog. Task-oriented dialogs, such as the schedule, remain separate controls.
-// ---------------------------------------------------------------------------------------
-function liveButton(m, rows) {
-  if (!m) return '';
-  const degraded = !!m.degraded;
-  const cls = degraded
-    ? 'bg-amber-50 text-amber-800 ring-amber-300'
-    : 'bg-emerald-50 text-emerald-800 ring-emerald-300';
-  const dot = degraded
-    ? '<span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>'
-    : '<span class="relative flex h-1.5 w-1.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span></span>';
+// The source period and financial unit are plain reading context. Failures still stay visible;
+// source timestamps and coverage remain in the canonical Sources panel.
+function resultsContext(m) {
+  const period = m?.quarter || reportingPeriodLabel(m?.currentPeriod, 'Period not supplied');
+  const status = m?.degraded ? 'Snapshot · update unavailable' : !m?.isLive ? 'Snapshot' : '';
+  return `<p data-results-context class="earnings-context">${escapeHtml(period)} · Figures in ₹ crore${status ? `<span data-results-status> · ${status}</span>` : ''}</p>`;
+}
 
-  const arrivals = feed.newArrivals().length;
-  return `
-    <span data-live-info title="Current results-feed status"
-      class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${cls}">
-      ${dot}
-      <span>${degraded ? 'Snapshot' : 'Live'}</span>
-      <span class="font-normal opacity-70">${escapeHtml(m.quarter || '')} · ${escapeHtml(formatNumber(rows.length))} reported</span>
-      ${arrivals ? `<span class="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-bold tabular-nums">+${arrivals} new</span>` : ''}
-    </span>`;
+function earningsControls(active, context, comparison = '') {
+  return `<div class="earnings-reading-controls"><div class="earnings-switches">${viewToggle(active)}${comparison}</div>${context}</div>`;
 }
 
 /**
@@ -368,13 +346,11 @@ function periodToggle(m) {
   const active = m?.subType || feed.currentSubType();
   const help = { yoy: 'Compare against the same quarter last year', qoq: 'Compare against the previous quarter' };
   return `
-    <div class="inline-flex items-center gap-1 rounded-full bg-slate-100 p-0.5 ring-1 ring-slate-200" data-period-toggle>
+    <div class="earnings-switch" data-period-toggle role="group" aria-label="Growth comparison">
       ${feed.SUB_TYPES.map(
         (s) => `<button type="button" data-period="${s.value}" title="${escapeHtml(help[s.value] || '')}"
              aria-pressed="${s.value === active}"
-             class="rounded-full px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
-               s.value === active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'
-             }">${escapeHtml(s.label)}</button>`
+             class="earnings-switch-option">${escapeHtml(s.label)}</button>`
       ).join('')}
     </div>`;
 }
@@ -537,8 +513,8 @@ function renderLatest(ctx) {
   const header = `
     ${sectionHead({
       title: 'Latest Results',
-      description: 'Latest reported quarterly results, newest first. Figures in ₹ crore.',
-      controls: `${viewToggle('reported')}${periodToggle(m)}${liveButton(m, rows)}${scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'reported', book: coverage.meta() })}`,
+      description: 'Latest reported quarterly results, newest first.',
+      controls: earningsControls('reported', resultsContext(m), periodToggle(m)),
     })}
     ${
       periodError
@@ -805,7 +781,7 @@ function renderCalendar(ctx) {
     ${sectionHead({
       title: 'Earnings Calendar',
       description: 'Scheduled results and upcoming con-calls, by date. Pick a date from the strip.',
-      controls: `${viewToggle('calendar')}${calendarPill(payload, err)}${scopeSummary({ scope: ctx.scope, count: scoped.length, noun: 'scheduled', book: coverage.meta() })}`,
+      controls: earningsControls('calendar', calendarStatus(payload, err)),
     })}
     ${dateStrip(wanted, today)}
   `;
@@ -890,30 +866,20 @@ function priceChangeCell(pct) {
  * list comes from the committed capture when the calendar page is blocked. Screener's invitation
  * list is a frequently refreshed Actions artifact. The label must describe that provenance.
  */
-function calendarPill(payload, err) {
+function calendarStatus(payload, err) {
   if (!payload && !err) {
     return `
       <span data-cal-info title="Loading the current calendar feed"
-        class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-        <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400"></span><span>Loading calendar</span>
+        class="earnings-context">
+        <span>Loading calendar</span>
       </span>`;
   }
   const bad = !!err || !!payload?.degraded || payload?.complete !== true || !payload?.countSource || !payload?.listSource || !payload?.screenerUpcomingSource;
-  // Either half can be a capture and either makes the pill say so. The list and the counts fail
+  // Either half can be a capture and either makes the status say so. The list and the counts fail
   // independently — the calendar page is bot-walled while the count API is not, and on 14 Aug 2026
   // the count API went flat while the list capture was fine — so "Live" may only be claimed when
   // BOTH were read live.
   const captured = payload?.listSource === 'snapshot' || payload?.countSource === 'snapshot' || payload?.screenerUpcomingSource === 'artifact';
-  const cls = bad
-    ? 'bg-slate-50 text-slate-600 ring-slate-200'
-    : captured
-      ? 'bg-sky-50 text-sky-800 ring-sky-300'
-      : 'bg-emerald-50 text-emerald-800 ring-emerald-300';
-  const dot = bad
-    ? ''
-    : captured
-      ? '<span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>'
-      : '<span class="relative flex h-1.5 w-1.5"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span></span>';
   // A count of zero on a date that has named companies is the count endpoint failing, not a quiet
   // day. Say "schedule" rather than assert a number we do not believe.
   const count = believableCount(payload);
@@ -921,9 +887,9 @@ function calendarPill(payload, err) {
     <span data-cal-info title="${escapeHtml(err
       ? `${payload ? 'Showing the saved schedule. ' : ''}The latest calendar check failed; retrying automatically.`
       : 'Current calendar-feed status')}"
-      class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${cls}">
-      ${dot}<span>${err ? (payload ? 'Saved schedule · retrying' : 'Unavailable · retrying') : bad ? 'Updating' : captured ? 'Schedule updated' : 'Up to date'}</span>
-      <span class="font-normal opacity-70">${count != null ? `${escapeHtml(formatNumber(count))} scheduled` : 'schedule'}</span>
+      class="earnings-context">
+      <span>${err ? (payload ? 'Saved schedule · retrying' : 'Unavailable · retrying') : bad ? 'Updating' : captured ? 'Schedule updated' : 'Up to date'}</span>
+      <span> · ${count != null ? `${escapeHtml(formatNumber(count))} scheduled` : 'schedule'}</span>
     </span>`;
 }
 

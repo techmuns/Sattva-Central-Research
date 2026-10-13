@@ -26,6 +26,17 @@
   [data-ipo-mode="filings"] [data-table-toolbar] > div:first-child { grid-template-columns: minmax(0, 1fr); }
   [data-ipo-mode="filings"] [data-table-actions] [data-export] { padding-inline: 10px; }
 }
+/* Earnings uses two grouped switches and plain source-period context. */
+.earnings-reading-controls { display: flex; width: 100%; min-width: 0; flex-direction: column; gap: 10px; }
+.earnings-switches { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.earnings-switch { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 12px; background: rgb(var(--surface-slate-100, 241 245 249)); }
+.earnings-switch-option { min-height: 40px; padding: 8px 14px; border: 1px solid transparent; border-radius: 9px; color: var(--ink-600); font-size: 13px; font-weight: 600; line-height: 20px; }
+.earnings-switch-option[aria-pressed="true"] { border-color: rgb(var(--edge-slate-200, 226 232 240)); background: rgb(var(--surface-white, 255 255 255)); color: rgb(var(--text-indigo-700, 67 56 202)); box-shadow: 0 1px 3px rgb(15 23 42 / .08); }
+.earnings-switch-option:hover:not(:disabled) { color: var(--accent-600); }
+.earnings-switch-option:focus-visible { outline: 2px solid var(--accent-600); outline-offset: 2px; }
+.earnings-switch-option:disabled { cursor: wait; opacity: .6; }
+.earnings-context { margin: 0; color: var(--ink-600); font-size: 13px; line-height: 20px; overflow-wrap: anywhere; }
+.earnings-context [data-results-status] { color: rgb(var(--text-amber-700, 180 83 9)); }
 /* Momentum criteria stay grouped and readable without repeating the screen name per field. */
 .momentum-controls { margin-bottom: 20px; padding: 18px 20px 12px; border: 1px solid rgb(var(--edge-slate-200, 226 232 240)); border-radius: 16px; background: rgb(var(--surface-white, 255 255 255)); color: var(--ink-600); }
 .momentum-controls-toolbar, .momentum-mode-picker { display: flex; align-items: center; gap: 16px; }

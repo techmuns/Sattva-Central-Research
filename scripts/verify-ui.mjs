@@ -442,10 +442,10 @@ ok('Latest Results renders the full listed universe', latestRows > 1000, `${late
 
 const ehText = await hostText();
 ok('states the source quarter and both comparison periods', /Q\d\s*FY/i.test(ehText) && (ehText.match(/Revenue\s+[A-Z][a-z]{2}\s+\d{4}/g) || []).length === 2);
-ok('says whether it is live or a snapshot', /\bLive\b/i.test(ehText) || /snapshot/i.test(ehText));
-// This tab deliberately has no stat strip and no sub-view picker: one table, one passive Live label.
+ok('the source period and financial unit share one plain line', /Q\d\s*FY.*Figures in ₹ crore/i.test(await page.locator('[data-results-context]').innerText()));
+// Two grouped switches and one period/unit line lead directly into the results table.
 ok('no stat-card furniture in front of the table', (await page.locator('#content-host .stat-card').count()) === 0);
-ok('a single small passive Live label instead', (await page.locator('[data-live-info]').count()) === 1);
+ok('exactly two switches replace the Live and scope chips', (await page.locator('[data-view-toggle], [data-period-toggle]').count()) === 2 && (await page.locator('#content-host [data-live-info]').count()) === 0 && !/Universe|Live/.test(await page.locator('[data-section-controls]').innerText()));
 ok('the sub-view picker is hidden for this single-view tab', await page.evaluate(() => {
   const m = document.getElementById('subview-mount');
   return !m || m.classList.contains('hidden') || !m.innerText.trim();
@@ -639,10 +639,10 @@ const ehRecon = await page.evaluate(async () => {
 ok('the figure columns reconcile with the growth column', ehRecon.checked > 100 && ehRecon.bad.length === 0, `${ehRecon.checked} checked${ehRecon.bad.length ? ' — ' + ehRecon.bad.slice(0, 3).join('; ') : ''}`);
 
 // Status is visible without turning into another wall of explanatory chrome.
-await page.locator('[data-live-info]').click();
+await page.locator('[data-results-context]').click();
 await page.waitForTimeout(200);
-ok('the results status is a passive label, not a provenance popup trigger',
-  (await page.locator('[data-live-info]').evaluate((el) => el.tagName)) === 'SPAN' &&
+ok('the period/unit line is passive, not a provenance popup trigger',
+  (await page.locator('[data-results-context]').evaluate((el) => el.tagName)) === 'P' &&
     (await page.locator('#modal-overlay:not(.hidden)').count()) === 0);
 
 // THE HONESTY CHECK. A percentage across a sign change is not a growth rate, and about 13% of
@@ -2677,8 +2677,8 @@ const ehDrillOpen = await page.evaluate(() => {
   return !!d && d.classList.contains('translate-x-0');
 });
 ok('...and clicking one opens no drill', !ehDrillOpen);
-// The passive Live label stays visible, but it no longer acts as a route to an explainer dialog.
-ok('...and keeps one passive Live status label', (await page.locator('[data-live-info]').count()) === 1);
+// Plain period/unit context stays visible without an explainer dialog.
+ok('...and keeps one plain period/unit line', (await page.locator('[data-results-context]').count()) === 1);
 
 // The drill itself still has to work where it IS used. Breakouts is the reference consumer: a
 // scored row with per-rule provenance behind it.
@@ -7393,10 +7393,10 @@ const freshness = await page.evaluate(async () => {
 });
 ok('the feed records where this paint came from', !!freshness?.origin, `origin=${freshness?.origin}`);
 ok('...and when the server last confirmed it', Number.isFinite(freshness?.checkedAt), String(freshness?.checkedAt));
-await page.locator('[data-live-info]').click();
+await page.locator('[data-results-context]').click();
 await page.waitForTimeout(200);
-ok('the feed status stays passive when the paint came from cache',
-  (await page.locator('[data-live-info]').evaluate((el) => el.tagName)) === 'SPAN' &&
+ok('the period/unit context stays passive when the paint came from cache',
+  (await page.locator('[data-results-context]').evaluate((el) => el.tagName)) === 'P' &&
     (await page.locator('#modal-overlay:not(.hidden)').count()) === 0);
 
 // Con-call: same contract, one channel — nothing on a con-call row moves on a tick, so the
