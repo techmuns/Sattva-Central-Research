@@ -4628,6 +4628,9 @@ AI cards expose all selected recent developments in a bounded scrolling window a
 lazily load complete retained older public history. Older evidence must not change
 the 14-day priority or current headline. Preserve checked story members, source
 links, bookmarks, scroll anchors and partial public history when a source fails.
+The source window has a theme-aware indigo surface and scrollbar, with edge fades and
+a compact scroll cue only while more content remains below. Measure overflow after
+row preparation, refreshes and resizing; short lists and the end of history hide the cue.
 Clear private history on access changes. Timeline scrolling must not request AI
 summaries; only the visible card headline can carry its optional factual summary.
 

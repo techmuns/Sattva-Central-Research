@@ -144,23 +144,42 @@ const settled = async (target = page) => {
 // A finished provider read can still leave the tab's 250ms source coalescer / 180ms
 // scroll-quiet paint queued. Start geometry gestures only after the rendered surface itself
 // is stable; a chip that no longer says "reading" does not establish that condition.
-const stableReadingSurface = (target = page) => target.evaluate(async () => {
+const stableReadingSurface = (target = page) => target.evaluate(async preparationTimeout => {
+  const [profiles, feedback, relevance] = await Promise.all([
+    import('/js/data/company-profiles.js'), import('/js/data/relevance-feedback.js'),
+    import('/js/data/surface-relevance.js'),
+  ]);
+  await Promise.all([profiles.loadProfiles(), feedback.loadModel()]);
+  const preparedBy = performance.now() + preparationTimeout;
+  for (;;) {
+    await relevance.relevanceSettled();
+    await new Promise(requestAnimationFrame);
+    const workspace = document.querySelector('[data-alerts-workspace]');
+    if (workspace?.getAttribute('aria-busy') === 'false' &&
+        workspace.getAttribute('data-alerts-collecting') === 'false' && !document.querySelector('[data-table-loading]')) break;
+    if (performance.now() > preparedBy) throw Error('Alert presentation did not finish preparation');
+  }
   let previous = null, previousNode = null, stableAt = performance.now();
   const deadline = performance.now() + 10000;
   for (;;) {
+    // Source chips can finish before sliced grouping and deferred relevance change row order.
+    await relevance.relevanceSettled();
     await new Promise(requestAnimationFrame);
+    const workspace = document.querySelector('[data-alerts-workspace]');
+    const ready = workspace?.getAttribute('aria-busy') === 'false' &&
+      workspace.getAttribute('data-alerts-collecting') === 'false' && !document.querySelector('[data-table-loading]');
     const node = document.querySelector('[data-table-scroll]');
     const box = node?.getBoundingClientRect();
     const rows = [...(node?.querySelectorAll('tr[data-row-key]') || [])];
     const stamp = JSON.stringify([box?.x, box?.y, box?.width, box?.height, node?.scrollTop,
       node?.scrollHeight, node?.querySelector('thead')?.offsetHeight,
       node?.closest('[data-score-table]')?.dataset.virtualTotal, rows[0]?.dataset.rowKey, rows.at(-1)?.dataset.rowKey]);
-    if (!node || node !== previousNode || stamp !== previous) stableAt = performance.now();
+    if (!ready || !node || node !== previousNode || stamp !== previous) stableAt = performance.now();
     else if (performance.now() - stableAt >= 400) return;
     if (performance.now() > deadline) throw Error('Rendered reading surface did not stabilize');
     previous = stamp; previousNode = node;
   }
-});
+}, Number(process.env.GENERAL_ALERTS_SETTLE_MS || 90000));
 try {
   await page.clock.install();
   await page.goto(origin);
@@ -538,9 +557,10 @@ try {
   assert(virtualContract.elements < 3000, `bounded timeline DOM has ${virtualContract.elements} elements`);
   assert.equal(virtualContract.scrollListeners, 1, 'feed repaints retain exactly one active table scroll listener');
   assert.equal(virtualContract.resizeListeners, 1, 'feed repaints retain exactly one active resize listener');
+  await stableReadingSurface();
   await page.locator('[data-filter-group-toggle]').click();
   await page.locator('[data-table-scroll]').evaluate(node => { node.scrollTop = 120; });
-  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await stableReadingSurface();
   assert(await page.locator('[data-filter-group-panel]').isVisible(), 'table scrolling does not detach the toolbar or close its filter panel');
   await page.getByRole('combobox', { name:'Priority',exact:true }).selectOption('low');
   await page.waitForFunction(() => document.querySelector('[data-table-scroll]')?.scrollTop === 0);

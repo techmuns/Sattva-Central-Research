@@ -63,7 +63,15 @@ const server = createServer((req, res) => {
       // Page routing does not isolate the worker's own SDK warm-up. Keep both its cache
       // and the returning document local, as in the other service-worker upgrade fixtures.
       const source = readFileSync(path, 'utf8').replace(/const MUNSHOT_SDK = .*;/,
-        "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;");
+        "const MUNSHOT_SDK = new URL('/sdk-fixture.js', self.location).href;")
+        .replace('async function fetchAndCache(', 'async function fixtureFetchAndCache(') + `
+globalThis.__performancePublicReads = new Set();
+function fetchAndCache(...args) {
+  const pending = fixtureFetchAndCache(...args);
+  __performancePublicReads.add(pending);
+  pending.then(() => __performancePublicReads.delete(pending), () => __performancePublicReads.delete(pending));
+  return pending;
+}`;
       res.end(previousRelease ? source.replace(/const CACHE_NAME = ([^;\n]+);/, 'const CACHE_NAME = $1 + "-previous-fixture";') : source);
     } else if (pathname === '/index.html') {
       res.end(readFileSync(path, 'utf8').replaceAll(sdkUrl, '/sdk-fixture.js'));
@@ -267,6 +275,16 @@ try {
   // restoring every capture here starts unrelated large background cache writes and can
   // leave the already-installed replacement waiting behind the active worker's reads.
   upgradeAssetsOnly = true;
+  // A cached response can paint before the old worker finishes its background cache write.
+  // Complete this fixture's earlier reads before measuring the separate code-only upgrade;
+  // joining them preserves the real worker behavior and the 30-second activation assertion.
+  const previousWorker = context.serviceWorkers().find(worker => worker.url() === `${origin}/sw.js`);
+  assert(previousWorker, 'the returning fixture has its real active service worker');
+  await previousWorker.evaluate(async () => {
+    while (globalThis.__performancePublicReads.size) {
+      await Promise.allSettled([...globalThis.__performancePublicReads]);
+    }
+  });
   previousRelease = false;
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update(); });
   try {
