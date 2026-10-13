@@ -473,8 +473,8 @@ function renderLatest(ctx) {
         readingAliases: ['Result shape'],
         options: [
           { value: 'all', label: 'All results' },
-          { value: 'pat-up', label: 'Net profit increased' },
-          { value: 'pat-down', label: 'Net profit decreased' },
+          { value: 'pat-up', label: 'Profit growth (%) · no losses' },
+          { value: 'pat-down', label: 'Profit decline (%) · no losses' },
           { value: 'turnaround', label: 'Loss → profit' },
           { value: 'to-loss', label: 'Profit → loss' },
           { value: 'rev-up-20', label: 'Revenue +20% or more' },

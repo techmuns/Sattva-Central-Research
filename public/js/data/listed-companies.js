@@ -4,6 +4,7 @@ import { readEntries, writeEntry } from '../core/store.js';
 export { buildExchangeUniverse } from './exchange-universe.js';
 
 let bse = null, nse = null, pending = null, nextCheck = null;
+let recheckNeeded = false;
 let companies = [], status = { sources: [], errors: [] };
 let builtInputs = null, counts = {};
 const SAVED_KEY = 'snapshot:listed-companies:verified-sources:v1';
@@ -76,10 +77,23 @@ export function load({ read = capturedJson, build = buildExchangeUniverseAsync, 
   if (pending) {
     if (!recheck) return pending;
     // A return/focus event can follow a source change while an older request is still running.
-    // Recheck after it settles; a burst of resume events shares this one follow-up read.
+    // Recheck after it settles. Events during each read share one subsequent check, including
+    // events arriving while a queued check is running. Every caller waits for the whole chain.
+    recheckNeeded = true;
     if (!nextCheck) {
-      const check = () => load({ read, build });
-      nextCheck = pending.then(check, check).finally(() => { nextCheck = null; });
+      nextCheck = (async () => {
+        try { await pending; } catch { /* A return can recover the preceding failed read. */ }
+        for (;;) {
+          recheckNeeded = false;
+          let value, failed = false, failure;
+          try { value = await load({ read, build }); }
+          catch (error) { failed = true; failure = error; }
+          if (recheckNeeded) continue;
+          nextCheck = null;
+          if (failed) throw failure;
+          return value;
+        }
+      })();
     }
     return nextCheck;
   }

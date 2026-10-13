@@ -7,6 +7,14 @@ import { readWorkbook } from './lib/xlsx-read.mjs';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const excelBrowser = readFileSync(resolve(process.env.EXCELJS_ROOT || resolve(process.env.PLAYWRIGHT_ROOT, '../exceljs'), 'dist/exceljs.min.js'));
 const root = resolve('public');
+const directionalCases = [
+  { kind: 'loss-narrowed', current: -10, prior: -20, pct: 50, direction: 1 },
+  { kind: 'loss-widened', current: -30, prior: -20, pct: -50, direction: -1 },
+  { kind: 'turnaround', current: 10, prior: -20, pct: null, direction: 1 },
+  { kind: 'slipped-to-loss', current: -10, prior: 20, pct: null, direction: -1 },
+  { kind: 'from-zero', current: 10, prior: 0, pct: null, direction: 1 },
+];
+const filterFixtureCount = 3 + directionalCases.length;
 const results = { meta: { currentPeriod: 'Jun 26', priorPeriod: 'Jun 25', subType: 'yoy', count: 2 },
   rows: ['HORIZONIND', 'RELIANCE'].map((ticker, index) => ({
     ticker, scId: `fixture-${index}`, name: ticker, resultDate: '2026-09-11', basis: 'Standalone',
@@ -21,6 +29,8 @@ const resultsFor = subType => {
     { ...results.rows[0], netProfit: growth },
     { ...results.rows[1], basis: 'Consolidated', netProfit: { ...growth, current: 40, pct: -20, direction: -1 } },
     { ...results.rows[0], ticker: 'FILTERCON', scId: 'fixture-con', name: 'Filter Consolidated', fullName: 'Filter Consolidated', basis: 'Consolidated', netProfit: growth },
+    ...directionalCases.map((netProfit, index) => ({ ...results.rows[0], ticker: `CLASS${index}`, scId: `classified-${index}`,
+      name: `Classified ${netProfit.kind}`, fullName: `Classified ${netProfit.kind}`, basis: 'Consolidated', netProfit })),
   ] : results.rows;
   const meta = { ...results.meta, count: rows.length, subType, structureTag: filterResults ? 'filter-fixture' : 'unchanged-figures',
     quarter: future ? 'Q2 FY28-29' : 'Q1 FY26-27',
@@ -175,7 +185,7 @@ try {
   const filtersPage = await open();
   await filtersPage.evaluate(() => { ctx.scope = 'universe'; tab.render(ctx); });
   const rowsShown = () => filtersPage.locator('tr[data-row-key]').count();
-  await filtersPage.waitForFunction(() => document.querySelectorAll('tr[data-row-key]').length === 3);
+  await filtersPage.waitForFunction(count => document.querySelectorAll('tr[data-row-key]').length === count, filterFixtureCount);
   const more = filtersPage.locator('[data-filter-group-toggle]');
   const resultScreen = filtersPage.getByRole('combobox', { name: 'Result screen', exact: true, includeHidden: true });
   const basis = filtersPage.getByRole('combobox', { name: 'Reporting basis', exact: true, includeHidden: true });
@@ -187,7 +197,7 @@ try {
   await filtersPage.locator('[data-filter-group-panel]:popover-open').waitFor();
   assert.deepEqual(await filterPanel.locator('.table-filter-group-field > span').allTextContents(), ['Result screen', 'Reporting basis']);
   assert.equal(await basis.locator('option:checked').innerText(), 'All reporting bases');
-  assert.deepEqual(await resultScreen.locator('option[value^="pat-"]').allTextContents(), ['Net profit increased', 'Net profit decreased']);
+  assert.deepEqual(await resultScreen.locator('option[value^="pat-"]').allTextContents(), ['Profit growth (%) · no losses', 'Profit decline (%) · no losses']);
   await resultScreen.selectOption('pat-up');
   await filtersPage.waitForFunction(() => document.querySelectorAll('tr[data-row-key]').length === 2);
   await basis.selectOption('con');
@@ -196,7 +206,7 @@ try {
   assert.match(await more.innerText(), /More filters \(2\)/);
   await resultScreen.selectOption('pat-down');
   await filtersPage.waitForFunction(() => document.querySelector('tr[data-row-key]')?.textContent.includes('RELIANCE'));
-  assert.equal(await rowsShown(), 1, 'the two performance directions remain distinct within the selected basis');
+  assert.equal(await rowsShown(), 1, 'the labelled percentage decline excludes losses, sign changes and moves from zero');
   await resultScreen.selectOption('pat-up');
   await filterPanel.getByRole('button', { name: 'Done', exact: true }).click();
   await filtersPage.locator('[data-table-search]').fill('filter');

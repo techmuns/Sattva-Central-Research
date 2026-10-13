@@ -256,7 +256,7 @@ function mutualFundsCacheKey() {
 }
 
 function dashboardCacheKey() {
-  return `${currentCacheKey()}-clean-announcements-momentum-v5-insider-transaction-filter-v1-earnings-header-switches-v1-earnings-more-filters-v2`;
+  return `${currentCacheKey()}-clean-announcements-momentum-v5-insider-transaction-filter-v1-earnings-header-switches-v1-earnings-more-filters-v3`;
 }
 
 // Compose column presentation with other releases without changing their version markers.
