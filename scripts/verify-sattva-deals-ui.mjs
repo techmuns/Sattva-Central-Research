@@ -109,6 +109,13 @@ try {
   await page.locator('[data-filings-method]').click();
   await page.getByRole('dialog').getByText(/Test outage/).waitFor();
   await page.getByRole('dialog').getByText(/Muns insider disclosures/).waitFor();
+  for (const size of [{width:1440,height:1000},{width:390,height:844}]) {
+    await page.setViewportSize(size);
+    const close = await page.getByRole('dialog').locator('[data-modal-close]').boundingBox();
+    assert(close && close.y >= 0 && close.y + close.height <= size.height,
+      'complete source coverage keeps the close button inside the viewport');
+  }
+  await page.setViewportSize({width:1440,height:1000});
   await page.getByRole('dialog').locator('[data-modal-close]').click();
   assert(await page.getByText('NEW SATTVA DEAL', { exact: true }).count(), 'failed source retains visible evidence');
   await search().fill(''); await period().selectOption('30');
