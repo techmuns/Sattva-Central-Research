@@ -8,7 +8,9 @@ import { resolve, extname, sep } from 'node:path';
 const { chromium } = await import(`${process.env.PLAYWRIGHT_ROOT}/index.mjs`);
 const root = resolve('public');
 const at = new Date().toISOString();
-const date = at.slice(0, 10);
+// Source dates and the Today selector use the same IST day, including after IST midnight.
+const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric',
+  month: '2-digit', day: '2-digit' }).format(new Date(at));
 const types = ['Buy', 'Sell', 'Acquisition', 'Disposal', 'Pledge', 'Revoke', 'Invoke', 'Gift'];
 const categories = ['Bulk deal', 'Block deal', 'SAST', 'Insider trade'];
 const fullCompany = 'A Very Long Company Name With Investments Manufacturing And Telecommunications Limited';
@@ -52,6 +54,7 @@ try {
     ? route.continue() : route.fulfill({ status: 404, body: '' }));
   const page = await context.newPage();
   const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.clock.setFixedTime(new Date(at));
   await page.goto(origin);
   const count = page.locator('[data-row-count]');
   await page.waitForFunction(n => Number(document.querySelector('[data-row-count]')?.textContent.match(/\d+/)?.[0]) === n, rows.length);

@@ -64,6 +64,8 @@ import {
   DEFAULT_OVERLAP_HOURS,
 } from './lib/company-news-archive.mjs';
 
+import { insiderRetentionWindow } from '../public/js/data/insider-history.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = (f) => resolve(__dirname, '../public/data', f);
 const NEWS_ARCHIVE = DATA('company-news');
@@ -514,8 +516,8 @@ async function run(kind, list) {
     console.log(`${kind}: last complete capture is inside the configured refresh interval.`);
     return;
   }
-  const from = daysAgo(windowDays);
-  const to = iso(Date.now());
+  const { from, to } = kind === 'insider' ? insiderRetentionWindow(windowDays)
+    : { from: daysAgo(windowDays), to: iso(Date.now()) };
 
   const byTicker = {};
   // AN ANSWER OF "NOTHING" IS STILL AN ANSWER, and it has to be recorded as one. The news route

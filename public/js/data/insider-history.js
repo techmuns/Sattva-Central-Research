@@ -1,6 +1,22 @@
 // Insider disclosures are events: a later response may omit an event we already captured.
 // Share the same additive, duplicate-free merge between scheduled captures and the browser.
 
+const indianCalendar = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+});
+let retainedWindow = null;
+/** Source disclosure dates are IST calendar days, even while UTC is still on yesterday. */
+export function insiderRetentionWindow(days = 365, at = Date.now()) {
+  const minute = Math.floor(at / 60000);
+  if (retainedWindow?.minute === minute && retainedWindow.days === days) return retainedWindow.value;
+  const parts = Object.fromEntries(indianCalendar.formatToParts(at).map(part => [part.type, part.value]));
+  const to = `${parts.year}-${parts.month}-${parts.day}`;
+  const from = new Date(Date.parse(`${to}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
+  const value = Object.freeze({ from, to });
+  retainedWindow = { minute, days, value };
+  return value;
+}
+
 const canonical = (value) => {
   if (Array.isArray(value)) return value.map(canonical);
   if (!value || typeof value !== 'object') return value;

@@ -270,5 +270,5 @@ function tableLayoutCacheKey() {
 
 // Keep the IPO revision independent of other dashboard release markers.
 function ipoFilingCacheKey() {
-  return `${appReleaseCacheKey()}-single-ipo-filing-link-v5-accepted-article-identities-v1`;
+  return `${appReleaseCacheKey()}-single-ipo-filing-link-v6-insider-ist-v1`;
 }
