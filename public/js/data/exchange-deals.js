@@ -35,7 +35,7 @@ export async function refresh() {
       const seed = await conditionalJson('data/exchange-deals.json', { key: 'sattva:exchange-deals:seed', optional: true,
         validate: validateExchangeSnapshot }).catch(() => null);
       if (seed?.value) { try { changed = accept(seed.value); } catch {} }
-      if (!snapshot) {
+      if (!loaded || !snapshot) {
         for (const key of [API_CACHE_KEY, 'sattva:exchange-deals:seed']) {
           const saved = await readEntry(key);
           if (saved?.value) { try { changed = accept(saved.value) || changed; } catch {} }

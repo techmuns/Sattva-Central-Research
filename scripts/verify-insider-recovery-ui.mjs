@@ -12,6 +12,7 @@ let capture = { kind: 'insider', capturedAt: at, coversUniverse: true, windowDay
   headers: ['Insider', 'Transaction', 'Trade Shares', 'Trade Category'], byTicker: { TEST: [trade('Alice')] } };
 let exchange = { version: 1, checkedAt: at, updatedAt: at, records: [['nse-bulk', date, 'TEST', 'Test Company', 'Official fund', 'Buy', 10, 5, '']],
   sources: EXCHANGE_SOURCES.map(s => ({ ...s, ok: true, checkedAt: at, lastSuccessAt: at, coverage: [{ from: date, to: date }] })) };
+let exchangeSeed = null;
 let captureMode = 'failed', exchangeMode = 'failed', seedMode = 'failed', captureReads = 0, liveWalks = 0, upgraded = true;
 const html = `<!doctype html><link rel="stylesheet" href="/css/tailwind.css"><main id="root"></main>
 <div id="modal-overlay" class="hidden"><div id="modal-container"><div id="modal-content"></div></div></div>
@@ -41,7 +42,7 @@ const server = createServer((req, res) => {
     if (captureMode === 'malformed') return json({ capturedAt: at, byTicker: [] });
     return json(capture);
   }
-  if (path === '/data/exchange-deals.json') return seedMode === 'failed' ? json({},503) : json(exchange);
+  if (path === '/data/exchange-deals.json') return seedMode === 'failed' ? json({},503) : json(exchangeSeed || exchange);
   if (path === '/api/bulk-block-deals') return exchangeMode === 'failed' ? json({},503) : json(exchange);
   if (path.startsWith('/api/insider-trades/')) { liveWalks++; return json({},503); }
   if (path.startsWith('/api/') || path.includes('-archive/')) return json({},404);
@@ -102,12 +103,15 @@ try {
   await page.clock.fastForward(61000);
   await page.waitForFunction(() => window.feed.rows().some(row => row.cells.Insider === 'Official fund'));
   await page.waitForFunction(async () => !!(await (await import('/js/core/store.js')).readEntry('sattva:exchange-deals:api'))?.value);
-  exchangeMode = 'failed'; await page.reload();
+  exchangeMode = 'failed'; seedMode = 'ok';
+  exchangeSeed = {...exchange,checkedAt:'2026-10-13T07:00:00Z',updatedAt:'2026-10-13T07:00:00Z',records:[]};
+  await page.reload();
   await page.waitForFunction(() => window.ready && window.feed.rows().some(row => row.cells.Insider === 'Official fund'));
+  assert.equal(await page.evaluate(() => window.feed.meta().exchanges.updatedAt),at,'an older committed seed cannot hide newer saved API history');
   assert.match(await page.evaluate(() => window.feed.meta().exchanges.deliveryError),/unavailable/);
 
   // The live exchange route remains down while its independent committed input recovers.
-  seedMode = 'ok';
+  exchangeSeed = null;
   exchange = {...exchange,updatedAt:'2026-10-13T08:01:00Z',records:[...exchange.records,['nse-bulk',date,'TEST','Test Company','Second official fund','Sell',20,5,'']]};
   await page.clock.fastForward(61000);
   await page.waitForFunction(() => window.feed.rows().some(row => row.cells.Insider === 'Second official fund'));
