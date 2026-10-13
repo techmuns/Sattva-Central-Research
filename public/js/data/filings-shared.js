@@ -413,18 +413,19 @@ export function* dedupeArticleSteps(list = []) {
     const url = articleUrlKey(row);
     if (url) {
       if (seenUrl.has(url)) continue;
-      seenUrl.add(url);
     }
     const story = articleStoryKey(row);
     if (story) {
       if (seenStory.has(story)) continue;
-      seenStory.add(story);
     }
     if (!url && !story) {
       const content = anonymousArticleContentKey(row);
       if (seenAnonymous.has(content)) continue;
       seenAnonymous.add(content);
     }
+    // A rejected story copy must not reserve its URL and hide a later valid record.
+    if (url) seenUrl.add(url);
+    if (story) seenStory.add(story);
     kept.push(row);
   }
   return kept;
