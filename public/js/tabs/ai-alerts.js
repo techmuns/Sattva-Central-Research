@@ -862,12 +862,15 @@ function cardMarkup(card, scope, day, archived = false) {
         ${kpiMarkup(card, scope)}
 
         ${listHeadMarkup(card)}
-        <div data-ai-timeline class="ai-alert-timeline" tabindex="0" role="region" aria-label="${escapeHtml(`${card.company} alert timeline, newest first`)}">
-          <ul data-ai-evidence data-ai-timeline-content class="ai-timeline-rows"></ul>
-          <div class="ai-timeline-history">
-            <p data-ai-timeline-status role="status" hidden></p>
-            <button type="button" data-ai-timeline-older>Load older alerts</button>
+        <div data-ai-timeline-frame class="ai-timeline-frame">
+          <div data-ai-timeline class="ai-alert-timeline" tabindex="0" role="region" aria-label="${escapeHtml(`${card.company} alert timeline, newest first`)}">
+            <ul data-ai-evidence data-ai-timeline-content class="ai-timeline-rows"></ul>
+            <div class="ai-timeline-history">
+              <p data-ai-timeline-status role="status" hidden></p>
+              <button type="button" data-ai-timeline-older>Load older alerts</button>
+            </div>
           </div>
+          <span data-ai-timeline-scroll-cue class="ai-timeline-scroll-cue" aria-hidden="true" hidden>Scroll for more ↓</span>
         </div>
         ${contextMarkup(card, scope)}
       </div>

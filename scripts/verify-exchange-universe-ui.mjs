@@ -105,6 +105,8 @@ try {
   await page.reload(); await countIs(expected.length - 1);
   await page.locator('[data-scope-search]').fill(dp.isin);
   await page.locator('[data-scope-result="0"]').click(); await countIs(expected.length);
+  // Restored names can paint before the returning session's initial source check ends.
+  // Drain that read before starting the controlled older request below.
   await page.evaluate(async () => (await import('/js/data/listed-companies.js')).load());
   // Hold both older HTTP replies before publishing the listing and returning to the editor.
   // The visibility event must schedule a subsequent check, rather than reuse those old replies.
