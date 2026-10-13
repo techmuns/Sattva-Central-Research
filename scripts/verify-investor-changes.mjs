@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { PERIODS, indiaDay, periodRange, inPeriod, matchedDeals, investorHoldings, identityIndex, preserveBulkDeals } from '../public/js/data/investor-changes.js';
+import { withVerifiedEntities } from '../public/js/data/holdings-integrity.js';
+import { readFileSync } from 'node:fs';
 
 
 assert.deepEqual(PERIODS.map((p) => p.id), ['today', '3d', '7d', 'month', 'quarter', '6m', 'year', 'itd']);
@@ -42,6 +44,29 @@ assert.equal(matchedDeals([deal, deal], people)[0].evidence.length, 2);
 assert.equal(grouped[0].source, 'Bulk deal');
 assert.equal(matchedDeals([deal, variant({ Transaction: 'Sell' })], people).length, 2);
 assert.equal(matchedDeals([deal, variant({ 'Trade Shares': '20,000' })], people).length, 2);
+
+// Relationship attribution is explicit, exact and time-limited. A group name alone never
+// matches a subsidiary; all reviewed source identity survives into evidence and exports.
+const evidence = JSON.parse(readFileSync(new URL('../public/data/holding-evidence.json', import.meta.url)));
+const reviewedAt = evidence.relations[0].verifiedAt;
+const goldman = [{ id: 'goldman-sachs', name: 'Goldman Sachs' }];
+for (const relation of evidence.relations) {
+  assert(relation.sourceUrl.startsWith('https://'));
+  assert.equal(relation.investorSlugs[0], 'goldman-sachs');
+  for (const name of [relation.legalName, ...(relation.aliases || [])]) {
+    const row = variant({ Insider: name });
+    assert.equal(matchedDeals([row], goldman).length, 0);
+    const matches = matchedDeals([row], withVerifiedEntities(goldman, evidence, 'investor', reviewedAt));
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].attribution, 'Associated entity');
+    assert.equal(matches[0].reportedName, name);
+    assert.equal(matches[0].relationshipUrl, relation.sourceUrl);
+    assert.equal(matches[0].identityCheckedAt, relation.verifiedAt);
+    assert.equal(matchedDeals([variant({ Insider: name + ' & Others' })], withVerifiedEntities(goldman, evidence, 'investor', reviewedAt)).length, 0);
+    const expired = new Date(Date.parse(reviewedAt) + 91 * 86400000).toISOString();
+    assert.equal(matchedDeals([row], withVerifiedEntities(goldman, evidence, 'investor', expired)).length, 0, 'expired reviews cannot attribute trades');
+  }
+}
 
 const books = [{ slug: 'example', quarters: ['Sep 2026', 'Jun 2026', 'Mar 2026', 'Dec 2025'], holdings: [
   { company: 'Example', companySlug: 'EXAMPLE', quarterlyHoldings: { 'Sep 2026': 8, 'Jun 2026': 3, 'Mar 2026': 2, 'Dec 2025': null } },

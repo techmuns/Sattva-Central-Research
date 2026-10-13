@@ -14,6 +14,24 @@ imported. Original NSE/BSE holdings show the named legal holder, security identi
 date, filing time, check time and source links. Conflicting exchange figures stay separate and
 enter the coverage review. Search and exports use the same disclosure predicate.
 
+The All Investors audience selects the tracked investor directory; the company scope and
+trade-date period still apply. The Changes view names both filters. If there are no matched
+trades in that slice, it offers the available same-period Universe trades and retained
+same-scope ITD history explicitly. It never silently widens the selected scope or period.
+Matched trade dates are separate from exchange capture coverage: an August last match does
+not establish an August collection cutoff. A zero match does not establish zero investor
+activity, and a quarterly holding observation remains filtered by its quarter end.
+
+On 13 October 2026 three Goldman Sachs relationships were reviewed against primary public
+sources: Bank Europe SE (the group's 2025 Form 10-K), Investments (Mauritius) I Limited
+(GLEIF's legal entity and ultimate-parent records), and the Trust II GQG International
+Opportunities Fund (its March 2026 SEC prospectus). The latter has one explicitly reviewed
+`Intl` exchange-name abbreviation; no substring matching is introduced. The reported legal
+entity, relationship, evidence URL and review date travel with each matched deal and export.
+Fund/subsidiary deals are labelled associated activity, not personal trades or group allocation.
+These reviews expire after 90 days; the existing coverage audit exposes overdue reviews.
+All other associated entities remain unverified. This is not an exhaustive relationship map.
+
 Finology books retain their existing daily capture and automatic reader revalidation. Failed
 books and investors missing from the latest directory retain previous evidence and their real
 source check time. Older quarterly columns survive rolling source windows. The public feed’s status and source age remain in Sources; the customer heading omits
@@ -42,7 +60,9 @@ per-source check dates disclose that, and a new scheduled reconciliation updates
 Validation: `verify-super-investors.mjs`, `verify-holdings-integrity.mjs`,
 `verify-investor-changes.mjs`, `verify-public-holdings.mjs`,
 `verify-investor-publishing.mjs`, `verify-super-investors-ui.mjs`. The returning-session
-service-worker check also imports the changed investor view before and after cache adoption.
+service-worker check (`verify-investor-changes-upgrade-ui.mjs`) verifies the new Changes
+module graph after warm-cache adoption, failed-capture retention and automatic recovery
+with the selected period and search preserved.
 
 Publication currently enforces a 24 MiB compressed static-asset ceiling and a 256 MiB expanded
 restore limit. Exceeding a limit fails publication and retains the checkpoint; it never prunes
