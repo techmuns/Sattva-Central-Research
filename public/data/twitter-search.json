@@ -2323,7 +2323,7 @@
       "pending": []
     },
     "isin:INE040A01034|HDFC Bank": {
-      "lastAttemptAt": "2026-10-07T17:08:22+00:00",
+      "lastAttemptAt": "2026-10-13T09:15:50+00:00",
       "error": "search-unavailable"
     },
     "isin:INE040A01034|HDFCBANK": {
@@ -2419,6 +2419,6 @@
     "planned": 254,
     "attempted": 1,
     "incomplete": 240,
-    "checkedAt": "2026-10-13T08:42:44.623594+00:00"
+    "checkedAt": "2026-10-13T09:15:50.386095+00:00"
   }
 }
