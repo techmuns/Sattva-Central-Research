@@ -256,6 +256,12 @@ html[data-theme="dark"] body {
 /* Allow the appearance control to wrap with the existing header actions. */
 [data-app-header] > div { flex-wrap: wrap; }
 [data-app-header] > div > div { min-width: 0; max-width: 100%; }
+/* Both alert readers share the navigation's centered frame. Wide columns scroll
+   inside their table rather than widening the subtab row after loading. */
+[data-navigation-group="alerts"] [data-app-frame] { max-width: 1400px; }
+@media (max-width: 767px) {
+  [data-navigation-group="alerts"] [data-app-frame] { padding-left: 12px; padding-right: 12px; }
+}
 .header-personal-controls { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.5rem; }
 .theme-toggle, .header-bookmarks {
   display: inline-flex;

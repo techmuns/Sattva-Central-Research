@@ -441,8 +441,11 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
   bookmarksLink.href = router.buildHash({ workspace: ws.id, tab: bookmarks.meta.id, scope: resolved.scope });
   if (tabModule === bookmarks) bookmarksLink.setAttribute('aria-current', 'page');
   else bookmarksLink.removeAttribute('aria-current');
-  // Table-first is an opt-in layout, not a redesign of the other research views.
-  
+  // Grouped readers share framing from the first navigation paint, including while
+  // their renderer loads or the selected scope is empty.
+  const group = TAB_GROUPS[tabModule.meta.navigationGroup];
+  root.dataset.navigationGroup = group?.id || '';
+  root.dataset.readingLayout = (group?.layout || tabModule.meta.layout) === 'table' ? 'table' : 'standard';
 
   const subtitleEl = $('#brand-subtitle', root);
   if (subtitleEl) subtitleEl.textContent = `${ws.label} · Indian equities`;
@@ -486,7 +489,6 @@ function renderRouteChrome(root, ws, tabModule, resolved) {
 
   // Grouped readers use their existing tab routes as subtabs. Keep the strip mounted across
   // reader, subview and scope changes so keyboard focus and horizontal scroll survive.
-  const group = TAB_GROUPS[tabModule.meta.navigationGroup];
   const navigationId = group?.id || resolved.tab;
   const subviewItems = group
     ? ws.tabs.filter((t) => t.meta.navigationGroup === group.id && !t.meta.hideFromNavigation)
@@ -683,7 +685,6 @@ function mountTab(root, tabModule, resolved) {
       if (tabModule.load) await tabModule.load();
       if (ctx.isCancelled) return;
       releaseRouteLoading?.(); releaseRouteLoading = null;
-      root.dataset.readingLayout = tabModule.meta.layout === 'table' ? 'table' : 'standard';
       contentHost.setAttribute('data-active-tab', tabModule.meta.id);
       enterView({ key: tabModule.meta.readingKey || null, source: tabModule.meta.savedView?.source || tabModule.meta.id, preset: tabModule.meta.savedView || null });
       tabModule.render(ctx);
