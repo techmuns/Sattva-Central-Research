@@ -80,14 +80,13 @@ try {
     const [path, section] = route.split('|');
     const profiler = process.env.TAB_PERF_PROFILE ? await context.newCDPSession(page) : null;
     if (profiler) { await profiler.send('Profiler.enable'); await profiler.send('Profiler.start'); }
-    const started = await frame.evaluate(route => { window.__longTasks = []; location.hash = `#/research/${route}`; return performance.now(); }, path);
+    const started = await frame.evaluate(route => { window.__longTasks = []; location.hash = `#/research/${route}`; return performance.now(); }, section === 'directory' ? `${path}&view=directory` : path);
     await frame.waitForFunction(id => document.querySelector(`[data-tab-id="${id}"]`)?.getAttribute('aria-selected') === 'true', route.split(/[/?]/)[0]);
     await frame.waitForFunction(() => {
       const panel = document.querySelector('#content-host');
       return panel?.textContent.trim() && !panel.inert && !panel.querySelector('.skeleton-shimmer');
     }, null, { timeout: 60000 });
-    if (section === 'directory') await frame.locator('[data-ipo-view]').selectOption('directory');
-    else if (section) await frame.locator('[data-chatter-section-tabs]').getByRole('tab', { name: section, exact: true }).click();
+    if (section && section !== 'directory') await frame.locator('[data-chatter-section-tabs]').getByRole('tab', { name: section, exact: true }).click();
     const readyMs = await frame.evaluate(start => performance.now() - start, started);
     // Fixed observation interval, not an application-readiness assumption: expose background fill.
     await frame.waitForTimeout(1500);
