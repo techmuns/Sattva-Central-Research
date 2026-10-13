@@ -2462,6 +2462,10 @@ recently rebuilt archive cannot turn stale collection green. Research evidence f
 same source-health rules, and awaits bounded fresh detail reads instead of treating a failed
 background check as successful evidence.
 
+The Coverage page header omits the collection-status/time badge. The existing Source details
+dialog retains the actual status and per-source check times; freshness evaluation and automatic
+collection are unchanged.
+
 `GET /archive` exposes retained topics including companies outside the recent list.
 `GET /archive/{slug}/{YYYY-MM}` reads monthly captures with pagination. The reader caches
 complete responses, opens them immediately, then revalidates. All pages are fetched (with an

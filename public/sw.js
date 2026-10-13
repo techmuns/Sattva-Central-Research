@@ -265,5 +265,5 @@ function sharedWorkspaceCacheKey() {
 }
 
 function tableLayoutCacheKey() {
-  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1`;
+  return `${mutualFundsCacheKey()}-company-columns-lift-v3-insider-more-filters-v1-insider-company-first-v1-concall-assessment-recovery-v1-chatter-clean-header-v1`;
 }
