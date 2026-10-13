@@ -53,9 +53,6 @@ import { summaryIdsForRow } from '../data/concall-summaries-shared.js';
 import { available as summariesAvailable } from '../data/concall-summaries.js';
 import { openSummary, openSummaryCoverage, summaryStatusHtml, updateSummaryButtons } from './summary.js';
 
-const ATTRIBUTION =
-  'Scores and current-quarter sentiment are the research provider’s own analysis. Where an exact, transcript-backed Deep Dive report is already available for one unambiguous call, its result, view and headline fill otherwise blank cells unchanged; no score or sentiment tier is inferred.';
-
 // StockScans' tone vocabulary -> our semantic palette. Emerald/amber/rose are pass/partial/fail
 // here, which is exactly what these tiers mean, so the mapping is honest rather than decorative.
 const TONE = {
@@ -463,8 +460,8 @@ export function renderScans(ctx, { disposers, tableView, onView, onInsights = nu
     ${sectionHead({
       title: 'Concall Library',
       description: screener?.status === 'ok'
-        ? `Screener’s complete retained concall document index (${escapeHtml(formatNumber(screener.records || 0))} unique source records), newest first, joined without duplicate company/date rows to current-quarter analysis. Times are IST; “published” dates are labelled separately. ${ATTRIBUTION}`
-        : `Current-quarter analysis is available. Screener’s scheduled complete document index is temporarily unavailable on this origin, so historical Transcript / Recording / Presentation links will fill in after its next successful collection. ${ATTRIBUTION}`,
+        ? 'Provider’s own analysis · Concall documents.'
+        : 'Provider’s own analysis · Documents incomplete.',
       meta: scopeSummary({ scope: ctx.scope, count: rows.length, noun: 'calls', book: coverage.meta() }),
     })}
     ${table.html}
