@@ -2,8 +2,8 @@
 //
 //   feedbackBar(item)            the row of controls inside Corporate Announcements' AI Read popup
 //   wireFeedback(root, item)     makes a bar inside `root` live; returns a disposer
-//   feedbackMenuButton(item)     News: a small ⋯ beside the row — the row's own click still opens the
-//                                article, exactly as before; this is a second, separate control
+//   newsFeedbackBar(item)        News: visible controls below each story, outside its article link
+//   installNewsFeedback()        delegates clicks for virtual rows and preserves optional drafts
 //   promptAfterOpen(item)        All Alerts: after the reader opens an item, a small prompt asks
 //
 // Every one of them casts the same vote into the same shared preference (data/relevance-feedback.js):
@@ -16,7 +16,8 @@ import { escapeHtml } from '../core/dom.js';
 import { vote, myVote, loadMine, onChange as onFeedbackChange } from '../data/relevance-feedback.js';
 import { WHY_MAX } from '../data/relevance-feedback-shared.js';
 
-const registry = new Map(); // itemKey -> item, for menu buttons rendered inside table markup
+const registry = new Map(); // itemKey -> item, for visible controls rendered inside news markup
+const newsStates = new Map(); // only interacted items: drafts and in-flight/status state across paints
 let sequence = 0;
 
 const statusText = (result, chosen) => {
@@ -27,26 +28,26 @@ const statusText = (result, chosen) => {
 };
 
 /** The control row. `compact` drops the leading question for tight spaces. */
-export function feedbackBar(item, { compact = false, question = 'Is this important?' } = {}) {
+export function feedbackBar(item, { compact = false, question = 'Is this important?', state = null } = {}) {
   const id = `relevance-feedback-${++sequence}`;
   const current = myVote(item.itemKey);
   const pressed = (value) => (current?.vote === value ? 'true' : 'false');
-  return `<div class="relevance-feedback${compact ? ' is-compact' : ''}" data-relevance-feedback="${escapeHtml(item.itemKey)}" id="${id}">
+  return `<div class="relevance-feedback${compact ? ' is-compact' : ''}" data-relevance-feedback="${escapeHtml(item.itemKey)}" id="${id}"${state?.busy ? ' aria-busy="true"' : ''}>
     ${compact ? '' : `<span class="relevance-feedback-question">${escapeHtml(question)}</span>`}
     <div class="relevance-feedback-actions" role="group" aria-label="${escapeHtml(question)}">
       <button type="button" data-vote="important" aria-pressed="${pressed('important')}" class="relevance-vote">Important</button>
       <button type="button" data-vote="not-important" aria-pressed="${pressed('not-important')}" class="relevance-vote">Not important</button>
-      <button type="button" data-why aria-expanded="false" aria-controls="${id}-why" class="relevance-why-toggle">Why?</button>
+      <button type="button" data-why aria-expanded="${!!state?.open}" aria-controls="${id}-why" class="relevance-why-toggle">Why?</button>
     </div>
-    <div id="${id}-why" data-why-box class="relevance-why" hidden>
+    <div id="${id}-why" data-why-box class="relevance-why"${state?.open ? '' : ' hidden'}>
       <label class="relevance-why-label" for="${id}-text">Why? <span>(optional — helps the desk's shared ranking)</span></label>
-      <textarea id="${id}-text" data-why-text maxlength="${WHY_MAX}" rows="2" placeholder="e.g. order is large for this company's size; routine notice">${escapeHtml(current?.why || '')}</textarea>
+      <textarea id="${id}-text" data-why-text maxlength="${WHY_MAX}" rows="2" placeholder="e.g. order is large for this company's size; routine notice">${escapeHtml(state?.why ?? current?.why ?? '')}</textarea>
       <div class="relevance-why-actions">
         <button type="button" data-why-save="important" class="relevance-vote">Save as important</button>
         <button type="button" data-why-save="not-important" class="relevance-vote">Save as not important</button>
       </div>
     </div>
-    <p data-feedback-status role="status" class="relevance-feedback-status">${current?.pending ? escapeHtml(statusText({ state: 'queued' })) : ''}</p>
+    <p data-feedback-status role="status" class="relevance-feedback-status">${escapeHtml(state?.status || (current?.pending ? statusText({ state: 'queued' }) : ''))}</p>
   </div>`;
 }
 
@@ -95,88 +96,77 @@ export function wireFeedback(root, item) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// News: a small secondary control beside the row. The row itself keeps opening the article.
+// News: one delegated controller for the mounted rows, so windowing never accumulates listeners.
 // ---------------------------------------------------------------------------------------------
 
-export function registerFeedbackItem(item) { registry.set(item.itemKey, item); }
+export function newsFeedbackBar(item) {
+  registry.set(item.itemKey, item);
+  return `<div class="news-feedback" data-news-feedback="${escapeHtml(item.itemKey)}" data-stop data-norow>${feedbackBar(item, { state: newsStates.get(item.itemKey) })}</div>`;
+}
 
-export function feedbackMenuButton(item) {
-  registerFeedbackItem(item);
+const newsState = key => {
+  if (!newsStates.has(key)) newsStates.set(key, { open: false, why: null, busy: false, status: '' });
+  return newsStates.get(key);
+};
+
+function syncNewsFeedback(key = null) {
+  const selector = key ? `[data-news-feedback="${CSS.escape(key)}"]` : '[data-news-feedback]';
+  for (const host of document.querySelectorAll(selector)) {
+    const itemKey = host.dataset.newsFeedback, current = myVote(itemKey), state = newsStates.get(itemKey);
+    const bar = host.querySelector('[data-relevance-feedback]');
+    if (state?.busy) bar.setAttribute('aria-busy', 'true'); else bar.removeAttribute('aria-busy');
+    for (const button of bar.querySelectorAll('[data-vote]')) button.setAttribute('aria-pressed', String(current?.vote === button.dataset.vote));
+    bar.querySelector('[data-why-box]').hidden = !state?.open;
+    bar.querySelector('[data-why]').setAttribute('aria-expanded', String(!!state?.open));
+    bar.querySelector('[data-why-text]').value = state?.why ?? current?.why ?? '';
+    bar.querySelector('[data-feedback-status]').textContent = state?.status || (current?.pending ? statusText({ state: 'queued' }) : '');
+  }
+}
+
+async function castNewsFeedback(item, value, { why = null, saveWhy = false } = {}) {
+  const state = newsState(item.itemKey);
+  if (state.busy) return;
+  state.busy = true; state.status = ''; syncNewsFeedback(item.itemKey);
   const current = myVote(item.itemKey);
-  const mark = current?.vote === 'important' ? ' is-important' : current?.vote === 'not-important' ? ' is-not-important' : '';
-  return `<button type="button" class="relevance-menu-button${mark}" data-stop data-norow data-feedback-menu="${escapeHtml(item.itemKey)}"
-    aria-haspopup="dialog" aria-label="Rate this item: important or not important" title="Important / Not important">⋯</button>`;
+  const chosen = !saveWhy && current?.vote === value ? 'clear' : value;
+  const result = await vote({ ...item, vote: chosen, why: chosen === 'clear' ? null : saveWhy ? why : current?.why ?? null });
+  state.busy = false; state.status = statusText(result, chosen);
+  if (saveWhy && result.state !== 'refused') { state.why = null; state.open = false; }
+  // Saving can re-order/repaint the news. Address the replacement bar, not the removed DOM node.
+  syncNewsFeedback(item.itemKey);
+  document.querySelector(`[data-news-feedback="${CSS.escape(item.itemKey)}"] [data-vote="${value}"]`)?.focus({ preventScroll: true });
 }
 
-let menu = null;
-let menuDispose = null;
-function closeMenu() {
-  menuDispose?.(); menuDispose = null;
-  if (menu) { menu.remove(); menu = null; }
-}
-
-function openMenu(button, item) {
-  closeMenu();
-  menu = document.createElement('div');
-  menu.className = 'relevance-menu';
-  menu.setAttribute('role', 'dialog');
-  menu.setAttribute('aria-label', 'Rate this item');
-  menu.innerHTML = `${feedbackBar(item, { question: 'Is this important?' })}<p class="relevance-menu-note">Votes train one shared ranking for the desk. Nothing is hidden.</p>`;
-  document.body.append(menu);
-  const r = button.getBoundingClientRect();
-  const width = Math.min(320, innerWidth - 16);
-  menu.style.width = `${width}px`;
-  menu.style.left = `${Math.max(8, Math.min(r.right - width, innerWidth - width - 8))}px`;
-  const below = innerHeight - r.bottom;
-  menu.style.top = `${below > 220 ? r.bottom + 6 : Math.max(8, r.top - menu.offsetHeight - 6)}px`;
-  const release = wireFeedback(menu, item);
-  menu.querySelector('[data-vote]')?.focus();
-  // The list under the menu can repaint while it is open (new stories, the order settling), which
-  // replaces the ⋯ it was opened from with an identical one. So the anchor is found by its item, and
-  // the menu closes when that row moves or leaves — the reader scrolling — not on every scroll event
-  // a repaint restoring its position fires.
-  const anchor = () => (button.isConnected ? button : document.querySelector(`[data-feedback-menu="${CSS.escape(item.itemKey)}"]`));
-  const at = button.getBoundingClientRect().top;
-  const onKey = (event) => { if (event.key === 'Escape') { closeMenu(); anchor()?.focus(); } };
-  const onDown = (event) => { if (menu && !menu.contains(event.target) && !event.target.closest?.(`[data-feedback-menu="${CSS.escape(item.itemKey)}"]`)) closeMenu(); };
-  const onScroll = (event) => {
-    if (!menu || menu.contains(event.target)) return;
-    const current = anchor();
-    if (!current || Math.abs(current.getBoundingClientRect().top - at) > 4) closeMenu();
-  };
-  document.addEventListener('keydown', onKey);
-  document.addEventListener('pointerdown', onDown, true);
-  window.addEventListener('scroll', onScroll, true);
-  menuDispose = () => {
-    release();
-    document.removeEventListener('keydown', onKey);
-    document.removeEventListener('pointerdown', onDown, true);
-    window.removeEventListener('scroll', onScroll, true);
-    // A vote changes the button's own mark; the list does not have to repaint for it.
-    const current = myVote(item.itemKey);
-    const target = anchor();
-    target?.classList.toggle('is-important', current?.vote === 'important');
-    target?.classList.toggle('is-not-important', current?.vote === 'not-important');
-  };
-}
-
-// One capture-phase listener for every ⋯ on the page: it runs before a row's own click handler and
-// stops that click there, so opening the menu never also opens the article.
-let installed = false;
-export function installFeedbackMenus() {
-  if (installed || typeof document === 'undefined') return;
-  installed = true;
-  document.addEventListener('click', (event) => {
-    const button = event.target.closest?.('[data-feedback-menu]');
-    if (!button) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const item = registry.get(button.dataset.feedbackMenu);
+let newsInstalled = false;
+export function installNewsFeedback() {
+  if (newsInstalled || typeof document === 'undefined') return;
+  newsInstalled = true;
+  document.addEventListener('click', event => {
+    const host = event.target.closest?.('[data-news-feedback]'), button = event.target.closest?.('button');
+    if (!host || !button || !host.contains(button)) return;
+    event.preventDefault(); event.stopPropagation();
+    const item = registry.get(host.dataset.newsFeedback);
     if (!item) return;
-    if (menu && menu.dataset.for === item.itemKey) { closeMenu(); return; }
-    openMenu(button, item);
-    if (menu) menu.dataset.for = item.itemKey;
+    if (button.dataset.vote) void castNewsFeedback(item, button.dataset.vote);
+    else if (button.hasAttribute('data-why')) {
+      const state = newsState(item.itemKey); state.open = !state.open;
+      syncNewsFeedback(item.itemKey);
+      if (state.open) host.querySelector('[data-why-text]').focus();
+    } else if (button.dataset.whySave) void castNewsFeedback(item, button.dataset.whySave, { why: host.querySelector('[data-why-text]').value.trim() || null, saveWhy: true });
   }, true);
+  document.addEventListener('input', event => {
+    const host = event.target.closest?.('[data-news-feedback]');
+    if (host && event.target.matches('[data-why-text]')) newsState(host.dataset.newsFeedback).why = event.target.value;
+  });
+  document.addEventListener('keydown', event => {
+    const host = event.target.closest?.('[data-news-feedback]');
+    if (event.key !== 'Escape' || !host || !newsState(host.dataset.newsFeedback).open) return;
+    event.preventDefault(); event.stopPropagation();
+    newsState(host.dataset.newsFeedback).open = false; syncNewsFeedback(host.dataset.newsFeedback);
+    host.querySelector('[data-why]').focus();
+  });
+  onFeedbackChange(() => syncNewsFeedback());
+  void loadMine().then(() => syncNewsFeedback());
 }
 
 // ---------------------------------------------------------------------------------------------

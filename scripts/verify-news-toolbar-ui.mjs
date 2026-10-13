@@ -53,6 +53,12 @@ try{
   assert(geometry.search>(width===390?280:350),'search has useful company/headline width at '+width);
   for(const selector of ['[data-news-period]','[data-news-publisher]','[data-news-section]','[data-news-topic]','[data-news-export]'])assert(await page.locator(selector).isVisible(),'reachable '+selector);
   if(width>=1024)assert(geometry.second>Math.max(...geometry.primary)+25,'filters have their own deliberate row');
+  const firstCard=page.locator('[data-news-key]').first();
+  assert.equal(await firstCard.locator('a [data-news-feedback]').count(),0,'feedback stays outside the story link');
+  for(const name of ['Important','Not important','Why?'])assert(await firstCard.getByRole('button',{name,exact:true}).isVisible(),'visible feedback '+name+' at '+width);
+  const footer=await firstCard.evaluate(card=>({top:card.querySelector('[data-news-feedback]').getBoundingClientRect().top,bottom:card.querySelector('a').getBoundingClientRect().bottom}));
+  assert(footer.top>=footer.bottom,'feedback is below the story at '+width);
+  assert.equal(await page.locator('[data-feedback-menu]').count(),0,'no hidden feedback menu');
   await page.screenshot({path:`/tmp/sattva-news-toolbar-${width}.png`});
  }
  await page.setViewportSize({width:1280,height:800});
@@ -93,6 +99,9 @@ try{
  assert.equal(await page.locator('tbody tr[data-row-key]').count(),1,'company metadata is searched when absent from the headline');
  assert.equal(await page.locator('.news-toolbar-primary [data-table-search]').count(),1);
  assert.equal(await page.locator('.news-toolbar-filters select').count(),3,'all scoped secondary filters remain available');
+ const companyStory=page.locator('tbody tr[data-row-key]').first();
+ for(const name of ['Important','Not important','Why?'])assert(await companyStory.getByRole('button',{name,exact:true}).isVisible(),'visible company-news feedback '+name);
+ assert.equal(await companyStory.locator('a [data-news-feedback]').count(),0,'company feedback is outside the article link');
  assert(!requests.some(path=>path==='/api/stock-search'),'company lookup uses captured exchange directories, not another search service');
  assert.deepEqual(errors,[]);
  console.log('PASS full-shell News toolbar: wide unified search, desktop/mobile filters, ticker/name and BSE-only code expansion, company metadata, refresh retention, full filtered export and bounded cards');

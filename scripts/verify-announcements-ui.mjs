@@ -221,31 +221,58 @@ try {
   assert.equal((await caMeta()).total, beforeTotal, 'a vote never removes captured filings');
   ok('Important / Not important + Why? in the popup re-orders the day and hides nothing');
 
-  // ---- News: the row still opens the article; the ⋯ is a separate control ---------------------
+  // ---- News: visible controls below the story, separate from the article link ----------------
   await page.goto(`${srv.url}#/research/news?scope=universe`);
-  await page.waitForSelector('[data-news-key] [data-feedback-menu]', { timeout: 60000 });
-  // The order within a day can still be settling (readings past the first budget are made in
-  // slices); act on the list once it has, as a reader would after the first second.
+  await page.waitForSelector('[data-news-key] [data-news-feedback]', { timeout: 60000 });
   await page.evaluate(async () => {
     const { relevanceSettled } = await import('/js/data/surface-relevance.js');
     await relevanceSettled();
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
-  const card = page.locator('[data-news-key]').filter({ has: page.locator('a[href^="http"]') }).first();
-  const articleHref = await card.locator('a[href^="http"]').first().getAttribute('href');
+  const firstCard = page.locator('[data-news-key]').filter({ has: page.locator('a[href^="http"]') }).first();
+  const articleHref = await firstCard.locator('a[href^="http"]').first().getAttribute('href');
   assert(/^https?:/.test(articleHref), 'the card is still a link to the article');
+  const feedbackKey = await firstCard.locator('[data-news-feedback]').getAttribute('data-news-feedback');
+  const control = page.locator(`[data-news-feedback=${JSON.stringify(feedbackKey)}]`);
+  assert.equal(await page.locator('[data-feedback-menu]').count(), 0, 'no hidden News importance menu');
+  const placement = await firstCard.evaluate(card => ({
+    storyBottom: card.querySelector('a').getBoundingClientRect().bottom,
+    feedbackTop: card.querySelector('[data-news-feedback]').getBoundingClientRect().top,
+    insideLink: !!card.querySelector('a [data-news-feedback]'),
+  }));
+  assert(!placement.insideLink && placement.feedbackTop >= placement.storyBottom, 'importance controls are directly below and outside the story link');
   const pagesBefore = opened.length;
-  await card.locator('[data-feedback-menu]').click();
-  const menu = page.locator('.relevance-menu');
-  await menu.waitFor();
-  assert.equal(opened.length, pagesBefore, 'the ⋯ does not open the article');
-  await menu.locator('[data-vote="important"]').click();
-  await page.waitForFunction(() => document.querySelector('.relevance-menu [data-vote="important"]')?.getAttribute('aria-pressed') === 'true');
-  await page.waitForFunction(() => /shared ranking learns|Saved on this device/.test(document.querySelector('.relevance-menu [data-feedback-status]')?.textContent || ''));
-  assert(srv.feedback.model().recent.some((v) => v.surface === 'news' && v.vote === 'important'), 'the News vote reached the shared store');
-  await page.keyboard.press('Escape');
+  await control.locator('[data-why]').click();
+  await control.locator('[data-why-text]').fill('material update for the company');
+  // Relevance settling/source updates can replace the card while someone is explaining their vote.
+  await page.evaluate(async () => {
+    await (await import('/js/data/market-news.js')).refresh();
+  });
+  assert.equal(await control.locator('[data-why-text]').inputValue(), 'material update for the company', 'an optional draft survives repainting');
+  const waitVote = (value) => page.waitForFunction(([key, vote]) => {
+    const host = document.querySelector(`[data-news-feedback="${CSS.escape(key)}"]`);
+    return host?.querySelector(`[data-vote="${vote}"]`)?.getAttribute('aria-pressed') === 'true'
+      && /shared ranking learns/.test(host.querySelector('[data-feedback-status]')?.textContent || '');
+  }, [feedbackKey, value]);
+  await control.locator('[data-vote="important"]').click(); await waitVote('important');
+  assert.equal(await control.locator('[data-why-text]').inputValue(), 'material update for the company', 'rating keeps an unsaved optional draft');
+  await control.locator('[data-vote="important"]').click();
+  await page.waitForFunction(key => /Vote withdrawn/.test(document.querySelector(`[data-news-feedback="${CSS.escape(key)}"] [data-feedback-status]`)?.textContent || ''), feedbackKey);
+  assert.equal(await control.locator('[data-vote="important"]').getAttribute('aria-pressed'), 'false', 'clicking the chosen answer withdraws it');
+  await control.locator('[data-vote="not-important"]').click(); await waitVote('not-important');
+  assert(srv.feedback.model().recent.some(v => v.surface === 'news' && v.vote === 'not-important'), 'the visible negative vote reaches the shared store');
+  await control.locator('[data-why-save="important"]').click();
+  await page.waitForFunction(key => document.querySelector(`[data-news-feedback="${CSS.escape(key)}"] [data-vote="important"]`)?.getAttribute('aria-pressed') === 'true', feedbackKey);
+  await page.waitForFunction(key => /shared ranking learns|Saved on this device/.test(document.querySelector(`[data-news-feedback="${CSS.escape(key)}"] [data-feedback-status]`)?.textContent || ''), feedbackKey);
+  assert(srv.feedback.model().recent.some(v => v.surface === 'news' && v.vote === 'important' && v.why === 'material update for the company'), 'the inline News vote and optional reason reached the shared store');
+  assert.equal(opened.length, pagesBefore, 'feedback does not open the article');
   assert(await page.locator('[data-news-key] .category-chip').count() > 0, 'news carries category tags');
-  ok('News: ⋯ menu votes without opening the article; tags under the headline');
+  const article = control.locator('xpath=ancestor::article').locator('a[href]').first();
+  const [articlePage] = await Promise.all([context.waitForEvent('page'), article.click()]);
+  await articlePage.waitForLoadState('domcontentloaded');
+  assert.equal(articlePage.url(), articleHref, 'the story still opens its original publisher URL');
+  await articlePage.close();
+  ok('News: visible Important / Not important / Why? below the article, retained drafts and saved feedback after repaint');
 
   // ---- All Alerts: after opening an item, it asks --------------------------------------------
   await page.goto(`${srv.url}#/research/daily-alerts?scope=universe`);

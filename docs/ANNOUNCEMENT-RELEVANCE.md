@@ -139,7 +139,7 @@ the table has stayed open for 600 ms, so a tab passed through on the way to anot
 
 Corporate Announcements and All Alerts ask **Important / Not important** (with an optional
 **Why?**) after an item is opened; News keeps its click-to-article behaviour and offers the same
-controls behind a small ⋯ beside each story. Every vote goes to the `relevance-feedback:v1` object:
+controls directly below each story, outside its article link. Optional Why? drafts and vote status survive list repainting; votes still never hide a story. Every vote goes to the `relevance-feedback:v1` object:
 
 | Route | |
 | --- | --- |

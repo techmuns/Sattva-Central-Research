@@ -24,7 +24,7 @@ import { TAB_META } from './catalog.js';
 //
 // NEWEST PUBLICATION FIRST. Source clocks order stories within their source day; neither relevance
 // nor the desk's Important / Not important votes moves an older story above a newer one. Category
-// tags and feedback remain available. The row opens the article; the small ⋯ owns the vote.
+// tags and visible feedback remain available below the story, separately from its article link.
 
 import { escapeHtml } from '../core/dom.js';
 import { formatDate, formatNumber } from '../core/format.js';
@@ -42,7 +42,7 @@ import { filterCompanyNewsByScope } from '../data/company-news-identity.js';
 import { surfaceReading, feedbackItemFor, relevanceRevision, onRelevanceChange, primeRelevance, warmReadings } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel as categoryLabelOf } from '../data/announcement-categories.js';
-import { feedbackMenuButton, installFeedbackMenus } from '../ui/relevance-feedback-ui.js';
+import { newsFeedbackBar, installNewsFeedback } from '../ui/relevance-feedback-ui.js';
 import { newsSearchControl } from '../ui/news-search.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
 
@@ -79,10 +79,9 @@ function readingFor(row) {
 // and whether the story names the company (company-news-attribution.js).
 const newsRelevance = (r) => surfaceReading(r, { surface: 'news', kind: 'news', context: { match: attributionFor(r).status } });
 
-// Under the headline: the category tags, and the ⋯ that asks Important / Not important. The row's
-// own link still opens the article; the ⋯ never does.
+// Under the headline: category tags, then visible importance controls outside the article link.
 export function newsRowExtras(entry, r) {
-  return `<div class="news-row-extras">${categoryChips(entry.categories, { weak: entry.weak, max: 3 })}${feedbackMenuButton(feedbackItemFor(entry, r))}</div>`;
+  return `<div class="news-row-extras">${categoryChips(entry.categories, { weak: entry.weak, max: 3 })}</div>${newsFeedbackBar(feedbackItemFor(entry, r))}`;
 }
 
 function deliveryDetails(meta) {
@@ -400,7 +399,7 @@ let offRelevance = null;
 
 export function render(ctx) {
   lastCtx = ctx;
-  installFeedbackMenus();
+  installNewsFeedback();
   primeRelevance();
   // A vote anywhere, or company sizes arriving, re-orders the day; repaint whichever half is mounted.
   offRelevance ||= onRelevanceChange(() => { if (lastCtx && mounted) render(lastCtx); });

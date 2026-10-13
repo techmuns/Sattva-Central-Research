@@ -49,7 +49,7 @@ import { newsPublicationKey } from '../data/news-window.js';
 import { surfaceReading, feedbackItemFor, relevanceRevision } from '../data/surface-relevance.js';
 import { categoryChips } from '../ui/category-chips.js';
 import { categoryLabel } from '../data/announcement-categories.js';
-import { feedbackMenuButton } from '../ui/relevance-feedback-ui.js';
+import { newsFeedbackBar } from '../ui/relevance-feedback-ui.js';
 import { createNewsMatcher, prepareNewsSearch } from '../data/news-search.js';
 import { newsSearchText } from '../data/company-news-attribution.js';
 import { arrangeNewsToolbar } from '../ui/news-toolbar.js';
@@ -417,19 +417,18 @@ function cardHtml(r) {
   const key = escapeHtml(String(r.id || r.url));
   const shell = 'group flex gap-4 px-5 py-4 transition-colors';
 
-  if (!canLink) {
-    return `<div data-news-key="${key}" data-news-unlinkable class="${shell}">${body}
-      ${bookmarkButton(snapshotForRow(r, { section: 'news' }))}
-      <span class="self-start rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500" title="The capture carried no usable http(s) address for this story.">no link</span>
-    </div>`;
-  }
-  // The ⋯ sits beside the bookmark, OUTSIDE the anchor: the card's own click still opens the article.
-  return `
-    <article data-news-key="${key}" class="flex items-start gap-1 pr-3 hover:bg-slate-50">
-      <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer"
-         class="${shell} min-w-0 flex-1 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">${body}</a>
-      <span class="mt-4 flex items-center gap-0.5">${bookmarkButton(snapshotForRow(r, { section: 'news' }))}${feedbackMenuButton(feedbackItemFor(relevanceOf(r), r))}</span>
-    </article>`;
+  const feedback = newsFeedbackBar(feedbackItemFor(relevanceOf(r), r));
+  const bookmark = bookmarkButton(snapshotForRow(r, { section: 'news' }));
+  // Controls live below the story and outside its link, including records without a usable URL.
+  const content = canLink
+    ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener noreferrer"
+         class="${shell} min-w-0 flex-1 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">${body}</a>`
+    : `<div data-news-unlinkable class="${shell} min-w-0 flex-1">${body}</div>`;
+  return `<article data-news-key="${key}"${canLink ? '' : ' data-news-unlinkable'} class="news-story hover:bg-slate-50">
+    <div class="news-story-content">${content}<span class="news-story-bookmark">${bookmark}</span></div>
+    ${canLink ? '' : '<span class="news-story-no-link">No link available</span>'}
+    <div class="news-story-feedback">${feedback}</div>
+  </article>`;
 }
 
 /**
